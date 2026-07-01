@@ -1,0 +1,441 @@
+import {
+  eq,
+  sql
+} from "drizzle-orm";
+import {
+  applyActivationFilters,
+  applyContextROI,
+  assembleContext,
+  persistActivationTrace,
+  promoteMemoryCandidateThroughGate,
+  retrieveActivationCandidates
+} from "@krn/harness";
+
+import {
+  assertSmokeReadbackChecks,
+  cleanupBrainLoopSmokeRows,
+  countBrainLoopSmokeMarkerRows,
+  createSmokeHarnessScaffold,
+  requireSmokeReadbackValue
+} from "./dbSmokeSupport.js";
+import {
+  contextAssemblies,
+  memoryApplications,
+  memoryRecordVersions
+} from "./schema/index.js";
+
+export interface BrainLoopSmokeInput {
+  databaseUrl: string;
+  migrationsFolder: string;
+  smokeId: string;
+}
+
+export interface BrainLoopSmokeReport {
+  workspaceSlug: string;
+  projectSlug: string;
+  executionRunId: string;
+  evidenceBundleId: string;
+  reviewAssessmentId: string;
+  feedbackDeltaId: string;
+  sourceClaimId: string;
+  memoryCandidateId: string;
+  reviewedMemoryCandidateStatus: string;
+  memoryRecordId: string;
+  readBackMemoryRecordId: string;
+  memoryRecordVersionId: string;
+  retrievalRunId: string;
+  contextAssemblyId: string;
+  readBackContextAssemblyId: string;
+  activationDecisionCount: number;
+  includedMemoryDecisionCount: number;
+  contextItemCount: number;
+  memoryApplicationId: string;
+  runEventCount: number;
+  remainingMarkerCount: number;
+  cleanedUp: boolean;
+}
+
+const now = "2026-07-01T12:00:00.000Z";
+
+export const runBrainLoopSmokeCheck = async (
+  input: BrainLoopSmokeInput
+): Promise<BrainLoopSmokeReport> => {
+  let feedbackDeltaId: string | undefined;
+  let retrievalRunId: string | undefined;
+  const scaffold = await createSmokeHarnessScaffold({
+    databaseUrl: input.databaseUrl,
+    migrationsFolder: input.migrationsFolder,
+    smokeId: input.smokeId,
+    smokeName: "brain loop smoke",
+    workspacePrefix: "krn-brain-loop-smoke",
+    projectSlug: "brain-loop",
+    cleanupRows: (cleanupInput) => cleanupBrainLoopSmokeRows({
+      ...cleanupInput,
+      feedbackDeltaId,
+      retrievalRunId
+    }),
+    countMarkerRows: (markerInput) => countBrainLoopSmokeMarkerRows({
+      ...markerInput,
+      feedbackDeltaId,
+      retrievalRunId
+    }),
+    rawIntent: `brain loop smoke ${input.smokeId}`,
+    taskContract: {
+      title: "Use reviewed DB-backed brain loop memory",
+      objective: "Prove persisted evidence and review can become reviewed Memory Core context for a next activation.",
+      constraints: ["promote through MemoryReviewGate", "reuse promoted memory through activation"],
+      nonGoals: ["no activation scoring rewrite", "no worker runtime", "no schema migration"],
+      acceptance: ["evidence readback", "reviewed memory promotion", "next activation includes memory"]
+    },
+    harnessPlan: {
+      summary: "DB-backed governed brain loop smoke",
+      nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it."
+    }
+  });
+  const {
+    client,
+    db,
+    marker,
+    workspaceSlug,
+    projectSlug,
+    project,
+    taskContract,
+    harnessPlan,
+    harnessRunRepository,
+    memoryRepository,
+    retrievalRepository,
+    sourceRepository,
+    cleanup,
+    setContextAssemblyId
+  } = scaffold;
+
+  try {
+    const executionRun = await harnessRunRepository.createExecutionRun({
+      harnessPlanId: harnessPlan.id,
+      adapter: "smoke",
+      status: "running",
+      startedAt: now,
+      initialEvent: {
+        sequence: 1,
+        type: "smoke.brain_loop.started",
+        message: "Brain loop smoke started",
+        payload: {
+          smokeId: marker
+        }
+      },
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: ["packages/db/src/brainLoopSmoke.ts"],
+      commands: [{
+        command: "pnpm db:smoke:brain-loop",
+        status: "passed",
+        provenance: "operator_reported",
+        assertedBy: "brain-loop-smoke",
+        doesNotProve: "This command does not prove product readiness, ranking quality, worker execution, or autonomous memory quality."
+      }],
+      diffRisk: "low",
+      reviewBurden: "DB smoke proof only.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 2,
+        type: "smoke.brain_loop.evidence_captured",
+        message: "Brain loop smoke evidence captured",
+        payload: {
+          smokeId: marker
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        doesNotProve: "Evidence capture does not mutate Memory Core without review."
+      }
+    });
+    const reviewAssessment = await harnessRunRepository.createReviewAssessment({
+      evidenceBundleId: evidenceBundle.id,
+      status: "accepted",
+      reviewer: "brain-loop-smoke",
+      summary: "Evidence is sufficient for one reviewed MemoryCandidate.",
+      findings: [],
+      metadata: {
+        smokeId: marker,
+        diffRisk: "low",
+        reviewBurden: "low"
+      }
+    });
+    const feedbackDelta = await harnessRunRepository.createFeedbackDelta({
+      reviewAssessmentId: reviewAssessment.id,
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        smokeId: marker,
+        memoryRecordMutation: "none"
+      }
+    });
+    feedbackDeltaId = feedbackDelta.id;
+
+    const sourceArtifact = await sourceRepository.createSourceArtifact({
+      projectId: project.id,
+      kind: "operator_input",
+      trustTier: "project-decision",
+      uri: `operator://brain-loop-smoke/${marker}`,
+      title: "Brain loop smoke source",
+      contentHash: `brain-loop-smoke-${marker}`,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const sourceClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      executionRunId: executionRun.id,
+      claim: "A reviewed evidence bundle can become Memory Core context for a later activation.",
+      mechanism: "Postgres persists evidence, review, feedback, a reviewable MemoryCandidate, MemoryReviewGate promotion, and activation trace readback.",
+      krnImplication: "KRN can test the governed evidence-to-memory-to-activation loop against live DB repositories.",
+      doesNotProve: "This does not prove activation ranking quality, product readiness, worker runtime, or autonomous reflection quality.",
+      trustTier: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "E2E-02 brain loop smoke",
+      falsifier: "Brain loop smoke readback or cleanup fails.",
+      revisitWhen: "The evidence, memory, or activation persistence contracts change.",
+      status: "proposed",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const memoryCandidate = await memoryRepository.createMemoryCandidate({
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      feedbackDeltaId: feedbackDelta.id,
+      proposedBy: "brain-loop-smoke",
+      kind: "procedure",
+      status: "candidate",
+      summary: "Use reviewed DB-backed brain loop memory",
+      body: "A KRN brain loop proof must preserve evidence lineage through evidence, review, feedback, MemoryReviewGate promotion, and next activation.",
+      owner: "kernel",
+      confidence: 90,
+      applicationGuidance: "Use when checking whether KRN can reuse reviewed evidence as active context.",
+      invalidationRule: "Revisit when the DB-backed brain loop smoke is replaced by a broader product workflow.",
+      sourceClaimIds: [sourceClaim.id],
+      sourceLineage: [{ sourceId: sourceClaim.id, note: "E2E-02 source-to-decision" }],
+      isUserPreference: false,
+      validFrom: now,
+      metadata: {
+        smokeId: marker,
+        reflectionCandidateEvidence: {
+          provenance: "evidence_bundle",
+          evidenceRefs: [evidenceBundle.id, reviewAssessment.id, feedbackDelta.id],
+          doesNotProve: "This candidate is not Memory Core truth until MemoryReviewGate accepts it."
+        }
+      }
+    });
+    const promotion = await promoteMemoryCandidateThroughGate({
+      memoryRepository,
+      sourceRepository,
+      review: {
+        candidateId: memoryCandidate.id,
+        reviewer: "brain-loop-smoke",
+        evidenceReviewedRef: evidenceBundle.id,
+        recordKey: `brain-loop-smoke:${marker}`,
+        metadata: {
+          smokeId: marker
+        }
+      }
+    });
+    const memoryRecord = promotion.memoryRecord;
+
+    const retrieved = await retrieveActivationCandidates({
+      taskContract,
+      limits: {
+        memory: 10,
+        source: 10,
+        search: 10,
+        antiMemory: 10
+      },
+      repositories: {
+        memoryRepository,
+        sourceRepository,
+        retrievalRepository
+      }
+    });
+    const retrievalRun = await retrievalRepository.startRetrievalRun({
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      taskContractId: taskContract.id,
+      query: retrieved.memoryQuery.text,
+      mode: "mixed",
+      tokenBudget: 360,
+      metadata: {
+        smokeId: marker,
+        sourceQuery: retrieved.sourceQuery.text
+      }
+    });
+    retrievalRunId = retrievalRun.id;
+    const filtered = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumTrustTier: "medium",
+      now
+    });
+    const bounded = applyContextROI(filtered.candidates, {
+      tokenBudget: 360,
+      maxInclusions: 2,
+      minimumDiverseKinds: ["memory"]
+    });
+    const draftContext = assembleContext({
+      id: `brain-loop-context-${marker}`,
+      harnessPlanId: harnessPlan.id,
+      candidates: bounded,
+      tokenBudget: 360,
+      createdAt: now,
+      metadata: {
+        smokeId: marker,
+        retrievalRunId: retrievalRun.id,
+        conflictSets: filtered.conflictSets
+      }
+    });
+    const contextAssembly = await harnessRunRepository.createContextAssembly({
+      harnessPlanId: harnessPlan.id,
+      status: draftContext.status,
+      ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
+      inclusions: draftContext.inclusions,
+      exclusions: draftContext.exclusions,
+      metadata: draftContext.metadata
+    });
+    setContextAssemblyId(contextAssembly.id);
+
+    await persistActivationTrace({
+      retrievalRunId: retrievalRun.id,
+      candidates: bounded,
+      contextAssembly,
+      completedAt: now,
+      retrievalRepository,
+      metadata: {
+        smokeId: marker,
+        evidenceBundleId: evidenceBundle.id,
+        memoryRecordId: memoryRecord.id
+      }
+    });
+
+    const memoryApplication = await memoryRepository.recordMemoryApplication({
+      memoryRecordId: memoryRecord.id,
+      executionRunId: executionRun.id,
+      taskContractId: taskContract.id,
+      contextAssemblyId: contextAssembly.id,
+      expectedUse: "Verify next activation reused reviewed memory.",
+      outcome: "helped",
+      notes: "DB-backed brain loop smoke included reviewed memory in context.",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
+    const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
+    const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+    const activationDecisions = await retrievalRepository.listActivationDecisionsForRun(
+      retrievalRun.id
+    );
+    const includedMemoryDecisionCount = activationDecisions.filter((decision) =>
+      decision.decision === "included" &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === memoryRecord.id
+    ).length;
+    const contextAssemblyRows = await db
+      .select({
+        id: contextAssemblies.id
+      })
+      .from(contextAssemblies)
+      .where(eq(contextAssemblies.id, contextAssembly.id));
+    const [versionRows, applicationRows] = await Promise.all([
+      db
+        .select()
+        .from(memoryRecordVersions)
+        .where(eq(memoryRecordVersions.memoryRecordId, memoryRecord.id)),
+      db
+        .select()
+        .from(memoryApplications)
+        .where(eq(memoryApplications.id, memoryApplication.id))
+    ]);
+    const includedContextItems = contextAssembly.inclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
+    );
+    const memoryApplicationCountRows = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(memoryApplications)
+      .where(eq(memoryApplications.id, memoryApplication.id));
+    const readbackError = "Brain loop smoke readback did not match persisted records";
+
+    assertSmokeReadbackChecks([
+      { label: "harness aggregate", passed: aggregate !== undefined },
+      { label: "evidence bundle", passed: aggregate?.evidenceBundles.length === 1 },
+      { label: "review assessment", passed: aggregate?.reviewAssessments.length === 1 },
+      { label: "feedback delta", passed: aggregate?.feedbackDeltas.length === 1 },
+      { label: "memory candidate accepted", passed: reviewedCandidate?.status === "accepted" },
+      { label: "memory record readback", passed: readBackMemoryRecord?.id === memoryRecord.id },
+      { label: "memory review gate metadata", passed: "reviewGate" in memoryRecord.metadata },
+      { label: "memory record version", passed: versionRows.length === 1 },
+      {
+        label: "memory version candidate lineage",
+        passed: versionRows[0]?.createdFromCandidateId === memoryCandidate.id
+      },
+      { label: "activation included memory", passed: includedMemoryDecisionCount === 1 },
+      { label: "context included memory", passed: includedContextItems.length === 1 },
+      { label: "context assembly readback", passed: contextAssemblyRows[0]?.id === contextAssembly.id },
+      { label: "activation trace readback", passed: aggregate?.activationTrace?.retrievalRunId === retrievalRun.id },
+      { label: "memory application", passed: applicationRows.length === 1 },
+      {
+        label: "memory application count sanity",
+        passed: (memoryApplicationCountRows[0]?.count ?? 0) === 1
+      }
+    ], readbackError);
+
+    const persistedMemoryRecord = requireSmokeReadbackValue(
+      readBackMemoryRecord,
+      "memory record readback",
+      readbackError
+    );
+    const memoryRecordVersion = requireSmokeReadbackValue(
+      versionRows[0],
+      "memory record version",
+      readbackError
+    );
+    const readBackContextAssemblyId = requireSmokeReadbackValue(
+      contextAssemblyRows[0]?.id,
+      "context assembly readback",
+      readbackError
+    );
+
+    const remainingMarkerCount = await cleanup();
+
+    return {
+      workspaceSlug,
+      projectSlug,
+      executionRunId: executionRun.id,
+      evidenceBundleId: evidenceBundle.id,
+      reviewAssessmentId: reviewAssessment.id,
+      feedbackDeltaId: feedbackDelta.id,
+      sourceClaimId: sourceClaim.id,
+      memoryCandidateId: memoryCandidate.id,
+      reviewedMemoryCandidateStatus: reviewedCandidate?.status ?? "missing",
+      memoryRecordId: memoryRecord.id,
+      readBackMemoryRecordId: persistedMemoryRecord.id,
+      memoryRecordVersionId: memoryRecordVersion.id,
+      retrievalRunId: retrievalRun.id,
+      contextAssemblyId: contextAssembly.id,
+      readBackContextAssemblyId,
+      activationDecisionCount: activationDecisions.length,
+      includedMemoryDecisionCount,
+      contextItemCount: contextAssembly.inclusions.length,
+      memoryApplicationId: memoryApplication.id,
+      runEventCount: aggregate?.runEvents.length ?? 0,
+      remainingMarkerCount,
+      cleanedUp: remainingMarkerCount === 0
+    };
+  } finally {
+    await client.end();
+  }
+};

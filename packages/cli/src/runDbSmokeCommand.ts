@@ -1,6 +1,7 @@
 import path from "node:path";
 import {
   runActivationSmokeCheck,
+  runBrainLoopSmokeCheck,
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
   runInitConnectSmokeCheck,
@@ -37,6 +38,7 @@ export interface DbSmokeRuntime {
     | "memoryGovernance"
     | "retrievalSubstrate"
     | "activation"
+    | "brainLoop"
     | "codexAdapter"
     | "workerJobs"
     | "initConnect"
@@ -107,6 +109,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Activation Smoke",
     skippedLine: "Activation smoke: skipped (database not configured)",
     failureLabel: "Activation smoke"
+  },
+  brainLoop: {
+    title: "KRN Brain Loop Smoke",
+    skippedLine: "Brain loop smoke: skipped (database not configured)",
+    failureLabel: "Brain loop smoke"
   },
   codexAdapter: {
     title: "KRN Codex Adapter Smoke",
@@ -395,6 +402,51 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runBrainLoopSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("brain-loop-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Brain Loop Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Evidence bundle: ${report.evidenceBundleId}`,
+      `Review assessment: ${report.reviewAssessmentId}`,
+      `Feedback delta: ${report.feedbackDeltaId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Memory candidate: ${report.memoryCandidateId}`,
+      `Memory candidate reviewed status: ${report.reviewedMemoryCandidateStatus}`,
+      `Memory record: ${report.memoryRecordId}`,
+      `Memory record readback: ${
+        report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
+      }`,
+      `Memory record version: ${report.memoryRecordVersionId}`,
+      `Retrieval run: ${report.retrievalRunId}`,
+      `Context assembly: ${report.contextAssemblyId}`,
+      `Context assembly readback: ${
+        report.readBackContextAssemblyId === report.contextAssemblyId ? "matched" : "mismatch"
+      }`,
+      `Activation decisions: ${report.activationDecisionCount}`,
+      `Included memory decisions: ${report.includedMemoryDecisionCount}`,
+      `Context items: ${report.contextItemCount}`,
+      `Memory application: ${report.memoryApplicationId}`,
+      `Run events: ${report.runEventCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Brain loop smoke")
+    ]
+  );
+};
+
 const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -532,6 +584,7 @@ const dbSmokeTargetHandlers = {
   memoryGovernance: runMemoryGovernanceSmokeTarget,
   retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
   activation: runActivationSmokeTarget,
+  brainLoop: runBrainLoopSmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,
   workerJobs: runWorkerJobsSmokeTarget,
   initConnect: runInitConnectSmokeTarget,

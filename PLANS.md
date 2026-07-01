@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-02 Add DB-backed evidence-to-memory activation smoke
+current task: E2E-03 Enforce worker Memory Core write authority gate
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-E2E-02 Add DB-backed evidence-to-memory activation smoke is active.
+E2E-03 Enforce worker Memory Core write authority gate is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,11 +36,12 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-E2E-01 complete: harness integration now proves one governed evidence ->
-candidate -> review gate -> memory -> activation path and one weak-evidence
-abstention path. Report:
-docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md
-Next: E2E-02 runs the same proof shape through DB-backed smoke/readback.
+E2E-02 complete: DB-backed smoke now proves evidence -> review -> feedback ->
+MemoryReviewGate -> memory -> activation readback with cleanup in one command.
+Report:
+docs/reviews/controlled-dogfood/2026-07-01-e2e-02-db-backed-brain-loop-smoke/REPORT.md
+Next: E2E-03 turns worker Memory Core gate/write-boundary declarations into
+executable proof instead of prose-only safety strings.
 ```
 
 ## 2. Product Thesis
@@ -2394,9 +2395,15 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md`.
   Next: `mise-en-palace-txr` / E2E-02 adds DB-backed smoke/readback for the
   same proof shape.
-- [ ] E2E-02 active: `mise-en-palace-txr` adds DB-backed
-  evidence-to-memory activation smoke without schema, worker runtime, crawler,
-  dashboard, API, MCP, broad benchmark, or activation scoring rewrite.
+- [x] E2E-02 complete: DB-backed smoke now proves evidence -> review ->
+  feedback -> MemoryReviewGate -> memory -> activation readback with cleanup in
+  one command. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-e2e-02-db-backed-brain-loop-smoke/REPORT.md`.
+  Next: `mise-en-palace-br6` / E2E-03 enforces or falsifies worker Memory Core
+  write-authority gates without adding a worker daemon or broad policy engine.
+- [ ] E2E-03 active: `mise-en-palace-br6` turns worker Memory Core
+  gate/write-boundary declarations into executable proof instead of prose-only
+  safety strings.
 
 ## 21. Final Response Format For Codex Runs
 

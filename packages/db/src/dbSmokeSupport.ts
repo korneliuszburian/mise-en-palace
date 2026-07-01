@@ -29,12 +29,15 @@ import {
   antiMemoryCandidates,
   contextExclusions,
   contextItems,
+  evidenceBundles,
+  feedbackDeltas,
   memoryApplications,
   memoryCandidates,
   memoryRecords,
   memoryRecordVersions,
   outboxEvents,
   retrievalRuns,
+  reviewAssessments,
   runEvents,
   searchDocuments,
   sourceArtifacts,
@@ -259,6 +262,16 @@ export interface SmokeRetrievalRunCleanupInput extends SmokeCleanupInput {
 }
 
 export interface HarnessCompilerSmokeRowInput extends SmokeBaseMarkerInput {
+  feedbackDeltaId: string | undefined;
+  retrievalRunId: string | undefined;
+}
+
+export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
+  feedbackDeltaId: string | undefined;
+  retrievalRunId: string | undefined;
+}
+
+export interface BrainLoopSmokeCleanupInput extends SmokeCleanupInput {
   feedbackDeltaId: string | undefined;
   retrievalRunId: string | undefined;
 }
@@ -677,6 +690,20 @@ export const countMemoryGovernanceSmokeMarkerRows = async (
   ]
 });
 
+export const countBrainLoopSmokeMarkerRows = async (
+  input: BrainLoopSmokeRowInput
+): Promise<number> => sumSmokeCountTasks([
+  () => countMemoryGovernanceSmokeMarkerRows(input),
+  countOptionalSmokeContextSelectionRows(input.db, input.contextAssemblyId),
+  () => countSmokeRows(input.db, evidenceBundles, sql`${evidenceBundles.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, reviewAssessments, sql`${reviewAssessments.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, feedbackDeltas, sql`${feedbackDeltas.metadata}->>'smokeId' = ${input.marker}`),
+  optionalSmokeCount(
+    input.feedbackDeltaId,
+    (id) => countSmokeRows(input.db, outboxEvents, sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${id}`)
+  )
+]);
+
 export const countSourceGraphSmokeMarkerRows = async (
   input: SmokeRetrievalRunMarkerRowInput
 ): Promise<number> => countSmokeRetrievalRunMarkerRows({
@@ -932,6 +959,29 @@ export const cleanupMemoryGovernanceSmokeRows = async (
       deleteSmokeRowsTask(input, memoryCandidates, sql`${memoryCandidates.metadata}->>'smokeId' = ${input.marker}`)
     ]
   });
+};
+
+export const cleanupBrainLoopSmokeRows = async (
+  input: Omit<BrainLoopSmokeCleanupInput, "beforeSourceClaimDeleteTasks">
+): Promise<void> => {
+  const feedbackDeltaRows = await input.db
+    .select({ id: feedbackDeltas.id })
+    .from(feedbackDeltas)
+    .where(sql`${feedbackDeltas.metadata}->>'smokeId' = ${input.marker}`);
+
+  for (const row of feedbackDeltaRows) {
+    await input.db
+      .delete(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${row.id}`);
+  }
+
+  if (input.feedbackDeltaId !== undefined) {
+    await input.db
+      .delete(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${input.feedbackDeltaId}`);
+  }
+
+  await cleanupMemoryGovernanceSmokeRows(input);
 };
 
 export const cleanupSourceGraphSmokeRows = async (

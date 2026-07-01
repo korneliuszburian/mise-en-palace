@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: E2E-02 Add DB-backed evidence-to-memory activation smoke.
+current task: E2E-03 Enforce worker Memory Core write authority gate.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-E2E-01 complete: harness integration now proves one governed evidence ->
-candidate -> review gate -> memory -> activation path and one weak-evidence
-abstention path.
+E2E-02 complete: DB-backed smoke now proves evidence -> review -> feedback ->
+MemoryReviewGate -> memory -> activation readback with cleanup in one command.
 ```
 
 ## Direction

@@ -39,6 +39,12 @@ describe("parseDbArgs", () => {
         target: "targetRepoHarness"
       }
     });
+    expect(parseDbArgs(["smoke", "brain-loop"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "brainLoop"
+      }
+    });
   });
 
   it("rejects unsupported db command shapes", () => {

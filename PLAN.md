@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-02 Add DB-backed evidence-to-memory activation smoke
+current task: E2E-03 Enforce worker Memory Core write authority gate
 ```
 
 ## Compact Checkpoints
@@ -68,6 +68,7 @@ core evidence normalizer: one provenance switch preserves command proof semantic
 activation memory safety: blocking review signals now structurally exclude memory candidates
 activation trust boundary: activation/source/schema trust tiers share one source-domain vocabulary
 brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
+DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -78,7 +79,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### E2E-02 Add DB-Backed Evidence-To-Memory Activation Smoke
+### E2E-03 Enforce Worker Memory Core Write Authority Gate
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -90,13 +91,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-e2e-02-db-backed-brain-loop-smoke/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-txr: Add DB-backed evidence-to-memory activation smoke.
+mise-en-palace-br6: Enforce worker Memory Core write authority gate.
 ```
 
 Deferred slice:

@@ -4,7 +4,7 @@ import type {
 
 const dbUsage = [
   "Usage: krn db readiness|smoke",
-  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
+  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "",
   "Internal/dev commands:",
   "krn db readiness",
@@ -23,6 +23,7 @@ const dbSmokeTargets = {
   "memory-governance": "memoryGovernance",
   "retrieval-substrate": "retrievalSubstrate",
   activation: "activation",
+  "brain-loop": "brainLoop",
   "codex-adapter": "codexAdapter",
   "worker-jobs": "workerJobs",
   "init-connect": "initConnect",
