@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: GCR-01 Add graph contradiction and duplicate candidate readback
+current task: GRE-01 Use graph relation focus in bounded eval readback
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,19 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-GCR-01 Add graph contradiction and duplicate candidate readback is active.
-KRN needs more real graph-brain usefulness: existing relation readbacks should
-produce reviewable contradiction/duplicate candidates when persisted graph
-evidence indicates conflict or overlap, without crawler/runtime/platform work.
+GRE-01 Use graph relation focus in bounded eval readback is active.
+KRN needs proof that graph relation candidate focus improves a downstream
+bounded eval or mini Brain-QA readback, not only candidate text.
 ```
 
 Latest outcome:
 
 ```txt
-EBF-01 complete: ExecutionBrief has an explicit format version contract and DB
-codex-adapter smoke confirms the rendered marker is present.
+GCR-01 complete: source relation heartbeat candidates and CLI readback expose
+contradiction/duplicate relation review focus and review questions.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-ebf-01-execution-brief-format-contract/REPORT.md
-Next: GCR-01 adds bounded graph contradiction/duplicate candidate readback from
-existing relation/source paths.
+docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md
+Next: GRE-01 uses relation focus in one bounded eval or mini Brain-QA readback.
 ```
 
 ## 2. Product Thesis
