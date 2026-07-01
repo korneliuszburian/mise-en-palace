@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CRP-01 Retain consensus relation heartbeat review boundary
+current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,21 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CRP-01 Retain consensus relation heartbeat review boundary is active.
-KRN needs the now-proven consensus relation heartbeat review pattern retained as
-queryable brain knowledge with source-to-decision fields and usefulness evidence.
+CQR-01 Use retained consensus relation boundary in mini Brain-QA is active.
+KRN needs to prove that the newly retained consensus relation boundary is reused
+or explicitly classified by the next planning/readback loop.
 ```
 
 Latest outcome:
 
 ```txt
-CRU-01 complete: heartbeat consensus_evaluation readback was exercised in one
-bounded review loop; relation focus/question/usefulness reduced review burden
-from medium to low for a duplicate relation candidate.
+CRP-01 complete: consensus relation heartbeat review boundary is retained as
+queryable brain knowledge with source refs, evidence refs, consumers, falsifier,
+doesNotProve, and helped usefulness feedback.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/REPORT.md
-Next: CRP-01 retains this boundary as queryable brain knowledge.
+docs/reviews/controlled-dogfood/2026-07-01-crp-01-consensus-relation-pattern-retention/REPORT.md
+Next: CQR-01 verifies retained-pattern reuse in a bounded mini Brain-QA or
+consensus-lane readback.
 ```
 
 ## 2. Product Thesis
@@ -100,6 +101,8 @@ CRO-01 complete: `krn heartbeat preview` accepts `--candidate-kind
 CRU-01 complete: consensus_evaluation heartbeat readback accepted one duplicate
   relation candidate for manual follow-up with reviewability ready, relation
   focus/question/usefulness visible, and mutation none.
+CRP-01 complete: consensus relation heartbeat review boundary retained as
+  queryable brain knowledge with helped usefulness feedback.
 IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
   with summary, consumers, falsifier, proof boundary, and next action.
 IMR-02 complete: `krn brain search --store-only` skips file catalog readback and

@@ -1,0 +1,16 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:consensus-relation-heartbeat-review-boundary",
+      "outcome": "helped",
+      "summary": "CRU-01 proved that heartbeat consensus_evaluation readback reduced review burden from medium to low for a duplicate relation candidate by exposing relation focus, review question, review usefulness, support/risk evidence refs, decision options, and mutation none in one operator-facing readback.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/REPORT.md",
+        "docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/consensus-candidate.json",
+        "docs/patterns/retained-patterns/consensus-relation-heartbeat-review-boundary.json"
+      ],
+      "doesNotProve": "This feedback does not prove source truth, relation correctness, consensus correctness, graph ranking quality, autonomous worker execution, Memory Core mutation safety, or KRN product readiness.",
+      "observedAt": "2026-07-01"
+    }
+  ]
+}

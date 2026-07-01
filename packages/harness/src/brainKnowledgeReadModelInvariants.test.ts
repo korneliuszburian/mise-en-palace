@@ -150,6 +150,9 @@ describe("Brain knowledge read model invariants", () => {
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json"
     );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/consensus-relation-heartbeat-review-boundary.json"
+    );
     expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");
     expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
     expect(patternFiles).toContain(
@@ -163,6 +166,9 @@ describe("Brain knowledge read model invariants", () => {
     );
     expect(usefulnessFeedbackFiles).toContain(
       "usefulness-feedback/v288-external-codex-workflow-patterns.json"
+    );
+    expect(usefulnessFeedbackFiles).toContain(
+      "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json"
     );
   });
 

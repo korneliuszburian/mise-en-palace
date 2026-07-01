@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CRP-01 Retain consensus relation heartbeat review boundary
+current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA
 ```
 
 ## Compact Checkpoints
@@ -82,6 +82,7 @@ graph relation eval readback: relationReviewFocus is consumed by bounded relatio
 consensus relation focus: relationReviewFocus is consumed by candidate-only consensus/eval preview
 consensus relation operator readback: heartbeat preview exposes consensus_evaluation relation review focus/question/usefulness
 consensus relation review proof: heartbeat consensus_evaluation readback reduced review burden in one bounded review loop
+consensus relation retained pattern: heartbeat consensus_evaluation review boundary is queryable brain knowledge with helped usefulness feedback
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -91,7 +92,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CRP-01 Retain Consensus Relation Heartbeat Review Boundary
+### CQR-01 Use Retained Consensus Relation Boundary In Mini Brain-QA
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -107,22 +108,24 @@ docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-read
 docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-cro-01-consensus-operator-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-crp-01-consensus-relation-pattern-retention/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-mmk: Retain consensus relation heartbeat review boundary.
+mise-en-palace-vgy: Use retained consensus relation boundary in mini Brain-QA.
 ```
 
 Task boundary:
 
 ```txt
-Add one bounded retained pattern/readback entry for the consensus relation
-heartbeat review boundary, with mechanism, implication, consumer, falsifier,
-doesNotProve, and usefulness evidence. No broad eval platform, multi-agent
-runtime, worker daemon, crawler/entity extraction, DB schema, Memory Core
-auto-mutation, dashboard/API/MCP, or graph ranking rewrite.
+Run one bounded readback that asks for consensus relation candidate review,
+verifies whether pattern:consensus-relation-heartbeat-review-boundary is selected
+or explicitly classifies any miss, and records whether it changes the next
+source-to-decision decision. No broad eval platform, multi-agent runtime, worker
+daemon, crawler/entity extraction, DB schema, Memory Core auto-mutation,
+dashboard/API/MCP, or graph ranking rewrite.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

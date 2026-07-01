@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CRP-01 Retain consensus relation heartbeat review boundary.
+current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,10 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-CRU-01 complete: consensus relation heartbeat readback was exercised in a
-bounded review loop and reduced review burden for a duplicate relation
-candidate without consensus runtime, DB schema, worker daemon, dashboard/API/MCP,
-graph ranking, or Memory Core mutation.
+CRP-01 complete: the CRU-01 consensus relation heartbeat review boundary is now
+retained as queryable brain knowledge with source refs, evidence refs, consumer,
+falsifier, doesNotProve, and helped usefulness feedback.
 ```
 
 ## Direction

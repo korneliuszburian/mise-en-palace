@@ -12,7 +12,8 @@
     "usefulness-feedback/v301-untrusted-context-warning.json",
     "usefulness-feedback/v375-codex-hook-guardrail-pattern.json",
     "usefulness-feedback/v377-brain-qa-pattern-coverage-gap.json",
-    "usefulness-feedback/imr-21-cost-aware-acquisition-escalation.json"
+    "usefulness-feedback/imr-21-cost-aware-acquisition-escalation.json",
+    "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",
@@ -22,6 +23,7 @@
     "../patterns/retained-patterns/codex-hook-deterministic-guardrail-boundary.json",
     "../patterns/retained-patterns/codex-prompt-task-contract-proof-boundary.json",
     "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json",
+    "../patterns/retained-patterns/consensus-relation-heartbeat-review-boundary.json",
     "../patterns/retained-patterns/cost-aware-acquisition-escalation-boundary.json",
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
     "../patterns/retained-patterns/graph-relation-readback-boundary.json",
