@@ -51,6 +51,13 @@ import type {
 import {
   formatProjectResolutionKind
 } from "./projectResolutionReadback.js";
+import {
+  formatRetainedPatternSelectionLines,
+  retainedPatternSelectionFromMetadata
+} from "./retainedPatternPlanBridge.js";
+import type {
+  RetainedPatternPlanSelection
+} from "./retainedPatternPlanBridge.js";
 
 export interface RunShowCommandRuntime {
   env: Record<string, string | undefined>;
@@ -162,6 +169,7 @@ export interface RunReadbackResource {
     objective: string;
     status: string;
   };
+  retainedPatternSelection?: RetainedPatternPlanSelection;
   context: {
     status: string;
     inclusions: number;
@@ -993,11 +1001,18 @@ const proofResource = (): RunReadbackProofResource => ({
   doesNotProve: [...runReadbackDoesNotProve]
 });
 
+const retainedPatternSelectionResource = (
+  aggregate: HarnessRunAggregate
+): RetainedPatternPlanSelection | undefined =>
+  retainedPatternSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
+  retainedPatternSelectionFromMetadata(aggregate.executionRun.metadata);
+
 const buildRunReadbackResource = (
   aggregate: HarnessRunAggregate
 ): RunReadbackResource => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
+  const retainedPatternSelection = retainedPatternSelectionResource(aggregate);
 
   return {
     kind: "krn.run.readback.v1",
@@ -1005,6 +1020,7 @@ const buildRunReadbackResource = (
     mutation: "none",
     run: runResource(aggregate, projectResolution),
     task: taskResource(aggregate),
+    ...(retainedPatternSelection === undefined ? {} : { retainedPatternSelection }),
     context: contextResource(aggregate, activationTrace),
     evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
@@ -1062,6 +1078,13 @@ const renderContextSection = (
   ...renderActivationTrace(aggregate)
 ];
 
+const renderRetainedPatternSelection = (
+  aggregate: HarnessRunAggregate
+): string[] => [
+  "Retained Pattern Selection:",
+  ...formatRetainedPatternSelectionLines(retainedPatternSelectionResource(aggregate))
+];
+
 const renderReviewAssessments = (
   aggregate: HarnessRunAggregate
 ): string[] => [
@@ -1095,6 +1118,8 @@ const renderAggregate = (
     "Mutation: none",
     "",
     ...renderTaskSection(aggregate, projectResolution),
+    "",
+    ...renderRetainedPatternSelection(aggregate),
     "",
     ...renderContextSection(aggregate, activationDiagnostics),
     "",

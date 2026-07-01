@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-05 Surface retained pattern selection in run show readback
+current task: WRK-01 Verify and repair worker enqueue atomicity
 ```
 
 ## Compact Checkpoints
@@ -60,6 +60,7 @@ shared brain vertical: source-to-decision pattern reached plan, brief, evidence,
 retained pattern code-quality vertical: unknown-first pattern improved CLI JSON boundary; persisted plan/evidence bridge gap exposed
 retained pattern usefulness bridge: pattern usefulness persists through evidence/run readback without fake SourceClaim feedback
 retained pattern plan/brief bridge: selected retained pattern IDs persist through plan metadata and Codex brief readback
+retained pattern run readback: run show text/JSON exposes retained pattern selection beside usefulness outcomes
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -70,7 +71,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### SBV-05 Surface Retained Pattern Selection In Run Show Readback
+### WRK-01 Verify And Repair Worker Enqueue Atomicity
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -82,13 +83,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-sbv-04-pattern-plan-brief/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-sbv-05-run-show-pattern-selection/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-rtw: Surface retained pattern selection in run show readback.
+mise-en-palace-60b: Verify and repair worker enqueue atomicity.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

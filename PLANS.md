@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-05 Surface retained pattern selection in run show readback
+current task: WRK-01 Verify and repair worker enqueue atomicity
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-05 Surface retained pattern selection in run show readback is active.
+WRK-01 Verify and repair worker enqueue atomicity is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,9 +36,8 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-SBV-04 complete: selected retained pattern IDs persist through plan metadata and
-render in Codex brief readback. Gap: run show still does not expose retained
-pattern selection metadata directly.
+SBV-05 complete: krn run show text/JSON exposes retained pattern selection
+metadata beside later pattern usefulness outcomes.
 ```
 
 ## 2. Product Thesis
@@ -2349,8 +2348,11 @@ Falsifier:
 - [x] SBV-04 complete: selected retained pattern IDs persist through plan
   metadata and Codex brief readback. Report:
   `docs/reviews/controlled-dogfood/2026-07-01-sbv-04-pattern-plan-brief/REPORT.md`.
-  Next: `mise-en-palace-rtw` / SBV-05 surfaces retained pattern selection in
-  `krn run show`.
+- [x] SBV-05 complete: retained pattern selection surfaces in `krn run show`
+  text/JSON beside pattern usefulness outcomes. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-sbv-05-run-show-pattern-selection/REPORT.md`.
+  Next: `mise-en-palace-60b` / WRK-01 verifies and repairs worker enqueue
+  atomicity if the audit finding is confirmed.
 
 ## 21. Final Response Format For Codex Runs
 

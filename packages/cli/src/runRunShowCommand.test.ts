@@ -59,7 +59,31 @@ const aggregate: HarnessRunAggregate = {
     version: 1,
     status: "ready",
     summary: "Run readback plan",
-    metadata: {},
+    metadata: {
+      retainedPatternSelection: {
+        kind: "krn.retainedPatternPlanSelection.v1",
+        status: "selected",
+        query: "unknown first",
+        source: "brain_knowledge_catalog",
+        selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
+        selectedPatterns: [{
+          id: "pattern:ts-boundary-unknown-first-result-state",
+          patternId: "ts-boundary-unknown-first-result-state",
+          title: "Unknown-first TypeScript boundary",
+          reviewability: "ready",
+          nextAction: "Apply to CLI/JSON/file/env boundaries before implementation.",
+          doesNotProve:
+            "This retained pattern does not prove the implementation used unknown-first validation correctly."
+        }],
+        reason: "Retained brain knowledge matched the pre-coding plan query.",
+        doesNotProve:
+          "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+        proof: {
+          proves: ["brain knowledge catalog selected a retained pattern for the plan query"],
+          doesNotProve: ["future pattern recall quality"]
+        }
+      }
+    },
     createdAt: now,
     updatedAt: now
   },
@@ -340,6 +364,16 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain(
       "project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
     );
+    expect(result.stdout).toContain("Retained Pattern Selection:");
+    expect(result.stdout).toContain("Retained pattern selection: selected");
+    expect(result.stdout).toContain("Retained pattern query: unknown first");
+    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain(
+      "pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready"
+    );
+    expect(result.stdout).toContain(
+      "Retained pattern does not prove: Selected retained patterns do not prove implementation correctness"
+    );
     expect(result.stdout).toContain("Activation diagnostics:");
     expect(result.stdout).toContain("Context inclusion details:");
     expect(result.stdout).toContain("source_claim:claim-1");
@@ -453,6 +487,22 @@ describe("runRunShowCommand", () => {
             "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
           repoPathHint: "/repo/root"
         }
+      },
+      retainedPatternSelection: {
+        kind: "krn.retainedPatternPlanSelection.v1",
+        status: "selected",
+        query: "unknown first",
+        source: "brain_knowledge_catalog",
+        selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
+        selectedPatterns: [{
+          id: "pattern:ts-boundary-unknown-first-result-state",
+          patternId: "ts-boundary-unknown-first-result-state",
+          title: "Unknown-first TypeScript boundary",
+          reviewability: "ready",
+          nextAction: "Apply to CLI/JSON/file/env boundaries before implementation.",
+          doesNotProve:
+            "This retained pattern does not prove the implementation used unknown-first validation correctly."
+        }]
       },
       context: {
         inclusionDetails: [{
