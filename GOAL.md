@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: REV-01 Consolidate review feedback domain ownership.
+current task: ACT-02 Align activation and source trust tier types.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-EVD-03 complete: the canonical core evidence command normalizer is now one
-provenance switch with focused command-kind coverage.
+ACT-01 complete: blocking memory review signals now structurally exclude memory
+from activation context while warning-only signals remain reviewable metadata.
 ```
 
 ## Direction

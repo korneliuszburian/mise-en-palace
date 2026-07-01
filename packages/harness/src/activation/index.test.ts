@@ -1374,6 +1374,89 @@ describe("activation engine", () => {
     });
   });
 
+  it("excludes memory records with blocking review signals during activation filtering", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-stale-review",
+            status: "stale",
+            confidence: 95
+          })
+        ),
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-negative-review",
+            positiveFeedbackCount: 1,
+            negativeFeedbackCount: 3
+          })
+        ),
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-warning-only",
+            positiveFeedbackCount: 0,
+            negativeFeedbackCount: 0
+          })
+        )
+      ],
+      query
+    );
+
+    const result = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [],
+      minimumTrustTier: "medium",
+      now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("memory-stale-review")).toMatchObject({
+      exclusion: {
+        reason: "stale",
+        explanation: expect.stringContaining("stale_high_confidence")
+      },
+      memoryReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "stale_high_confidence",
+          severity: "blocking"
+        })
+      ]),
+      metadata: {
+        memoryReviewSignals: expect.arrayContaining([
+          expect.objectContaining({
+            kind: "stale_high_confidence",
+            severity: "blocking"
+          })
+        ])
+      }
+    });
+    expect(bySubjectId.get("memory-negative-review")).toMatchObject({
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("unresolved_negative_feedback")
+      },
+      memoryReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "unresolved_negative_feedback",
+          severity: "blocking"
+        })
+      ])
+    });
+    expect(bySubjectId.get("memory-warning-only")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("memory-warning-only")).toMatchObject({
+      memoryReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "no_application_feedback",
+          severity: "warning"
+        })
+      ])
+    });
+  });
+
   it("blocks memory records by explicit anti-memory key", () => {
     const query = buildMemoryQuery(task);
     const ranked = rankCandidates(

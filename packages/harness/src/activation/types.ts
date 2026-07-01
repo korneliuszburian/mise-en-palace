@@ -5,6 +5,7 @@ import type {
   ContextSubjectType,
   HarnessPlanId,
   IsoTimestamp,
+  MemoryRecordReviewSignal,
   MemoryRecordStatus,
   ProjectId,
   SourceTrustTier
@@ -78,6 +79,7 @@ export interface ActivationCandidate {
   searchDocumentIds?: readonly string[];
   sourceClaimId?: string;
   memoryRecordId?: string;
+  memoryReviewSignals?: readonly MemoryRecordReviewSignal[];
   antiMemoryRecordId?: string;
   conflictReason?: "anti_memory_block";
   metadata: Record<string, unknown>;

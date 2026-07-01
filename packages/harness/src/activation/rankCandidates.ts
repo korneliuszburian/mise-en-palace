@@ -3,8 +3,12 @@ import type {
 } from "../repositories/types.js";
 import type {
   MemoryRecord,
+  MemoryRecordReviewSignal,
   SourceClaim,
   SourceClaimEdge
+} from "@krn/core";
+import {
+  assessMemoryRecordReviewSignals
 } from "@krn/core";
 
 import type {
@@ -187,6 +191,11 @@ const mergeTwoCandidates = (
 const memoryFeedbackScore = (record: MemoryRecord): number =>
   record.positiveFeedbackCount * 2 - record.negativeFeedbackCount * 15;
 
+const memoryReviewSignalMetadata = (
+  signals: readonly MemoryRecordReviewSignal[]
+): Record<string, unknown> =>
+  signals.length === 0 ? {} : { memoryReviewSignals: signals };
+
 export interface SourceClaimEdgeInfluenceInput {
   edges: readonly SourceClaimEdge[];
   seedSourceClaimIds: readonly SourceClaim["id"][];
@@ -283,33 +292,39 @@ export const applySourceClaimEdgeInfluence = (
   });
 };
 
-export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => ({
-  id: record.id,
-  kind: "memory",
-  subjectType: "memory_record",
-  subjectId: record.id,
-  text: [record.summary, record.body, record.applicationGuidance].join(" "),
-  trustTier: confidenceToTrustTier(record.confidence),
-  reason: `Memory: ${record.summary}`,
-  expectedUse: record.applicationGuidance,
-  tokenEstimate: estimateTokens([record.summary, record.body].join(" ")),
-  status: record.status,
-  validFrom: record.validFrom,
-  ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
-  ...(record.invalidatedAt === undefined ? {} : { invalidatedAt: record.invalidatedAt }),
-  ...(record.invalidationReason === undefined
-    ? {}
-    : { invalidationReason: record.invalidationReason }),
-  feedbackScore: memoryFeedbackScore(record),
-  metadata: {
-    key: record.key,
-    kind: record.kind,
-    confidence: record.confidence,
-    positiveFeedbackCount: record.positiveFeedbackCount,
-    negativeFeedbackCount: record.negativeFeedbackCount,
-    feedbackPenalty: Math.min(0, memoryFeedbackScore(record))
-  }
-});
+export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => {
+  const memoryReviewSignals = assessMemoryRecordReviewSignals(record);
+
+  return {
+    id: record.id,
+    kind: "memory",
+    subjectType: "memory_record",
+    subjectId: record.id,
+    text: [record.summary, record.body, record.applicationGuidance].join(" "),
+    trustTier: confidenceToTrustTier(record.confidence),
+    reason: `Memory: ${record.summary}`,
+    expectedUse: record.applicationGuidance,
+    tokenEstimate: estimateTokens([record.summary, record.body].join(" ")),
+    status: record.status,
+    validFrom: record.validFrom,
+    ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
+    ...(record.invalidatedAt === undefined ? {} : { invalidatedAt: record.invalidatedAt }),
+    ...(record.invalidationReason === undefined
+      ? {}
+      : { invalidationReason: record.invalidationReason }),
+    feedbackScore: memoryFeedbackScore(record),
+    ...(memoryReviewSignals.length === 0 ? {} : { memoryReviewSignals }),
+    metadata: {
+      key: record.key,
+      kind: record.kind,
+      confidence: record.confidence,
+      positiveFeedbackCount: record.positiveFeedbackCount,
+      negativeFeedbackCount: record.negativeFeedbackCount,
+      feedbackPenalty: Math.min(0, memoryFeedbackScore(record)),
+      ...memoryReviewSignalMetadata(memoryReviewSignals)
+    }
+  };
+};
 
 export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate => ({
   id: claim.id,

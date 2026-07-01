@@ -478,6 +478,65 @@ describe("compileHarnessPlan", () => {
     expect(retrievalRepository.decisions.every((item) => item.decision !== "included")).toBe(true);
   });
 
+  it("excludes memory with blocking review signals from compiled activation context", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        tokenBudget: 500
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([
+          memoryRecord({
+            id: "memory-negative-review",
+            positiveFeedbackCount: 1,
+            negativeFeedbackCount: 3
+          })
+        ]),
+        sourceRepository: new FakeSourceRepository([
+          sourceClaim({ id: "claim-supported" })
+        ]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-memory-review`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions.map((item) => item.subjectId))
+      .not.toContain("memory-negative-review");
+    expect(result.contextAssembly.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "memory-negative-review",
+        reason: "unsafe",
+        explanation: expect.stringContaining("unresolved_negative_feedback")
+      })
+    ]));
+    expect(retrievalRepository.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "memory-negative-review",
+        status: "excluded",
+        metadata: expect.objectContaining({
+          memoryReviewSignals: expect.arrayContaining([
+            expect.objectContaining({
+              kind: "unresolved_negative_feedback",
+              severity: "blocking"
+            })
+          ])
+        })
+      })
+    ]));
+    expect(retrievalRepository.decisions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        decision: "excluded",
+        subjectId: "memory-negative-review",
+        reason: "unsafe",
+        exclusionCategory: "unsafe"
+      })
+    ]));
+  });
+
   it("hardens capability requirements with priority and binding kinds outside TaskContract", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),

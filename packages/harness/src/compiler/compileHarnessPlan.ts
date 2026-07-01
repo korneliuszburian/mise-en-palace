@@ -10,6 +10,7 @@ import type {
 } from "@krn/core";
 import {
   applyContextROI,
+  applyMemoryReviewSignalFilter,
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
@@ -205,7 +206,10 @@ const filterActivationCandidates = (
   createdAt: string
 ): FilteredActivationCandidates => applyContextROI(
   applyTemporalFilter(
-    applyTrustFilter(conflictResult.candidates, { minimumTrustTier }),
+    applyTrustFilter(
+      applyMemoryReviewSignalFilter(conflictResult.candidates),
+      { minimumTrustTier }
+    ),
     createdAt
   ),
   {

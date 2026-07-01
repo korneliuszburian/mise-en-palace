@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: REV-01 Consolidate review feedback domain ownership
+current task: ACT-02 Align activation and source trust tier types
 ```
 
 ## Compact Checkpoints
@@ -65,6 +65,8 @@ worker enqueue atomicity: workers helper requires one queue-port contract for wo
 evidence metadata boundary: known evidence readback metadata validates before DB persistence
 evidence command normalization: schema delegates command proof normalization to core
 core evidence normalizer: one provenance switch preserves command proof semantics
+activation memory safety: blocking review signals now structurally exclude memory candidates
+activation trust boundary: active slice aligns activation/source trust tier types
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -75,7 +77,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### REV-01 Consolidate Review Feedback Domain Ownership
+### ACT-02 Align Activation And Source Trust Tier Types
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -87,13 +89,20 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-evd-03-core-evidence-normalizer/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-act-01-memory-review-activation/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-ktz: Consolidate review feedback domain ownership.
+mise-en-palace-8hb: Align activation and source trust tier types.
+```
+
+Deferred slice:
+
+```txt
+mise-en-palace-ktz: Review feedback domain ownership is valid later cleanup,
+but the newer audit made activation memory-safety enforcement higher ROI now.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
