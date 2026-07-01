@@ -490,6 +490,106 @@ describe("runBrainSearchCommand", () => {
     expect(JSON.stringify(parsed)).toContain("store-backed source/search evidence");
   });
 
+  it("classifies selected knowledge target fit without changing store-only selection", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "EKOLOGUS Brain quality gate",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "target-claim",
+                claim: "EKOLOGUS Brain README defines the current quality gate.",
+                mechanism: "A persisted second-repo README source artifact can be searched directly.",
+                krnImplication: "Use target-specific source evidence before generic KRN patterns.",
+                consumer: "IMR-47 multi-repo Brain-QA",
+                falsifier: "EKOLOGUS source search returns no target-specific README evidence.",
+                doesNotProve: "This does not prove broad target repo readiness."
+              }, {
+                sourceClaimId: "generic-claim",
+                claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
+                mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
+                krnImplication: "Treat this as a guardrail, not target repo evidence.",
+                consumer: "pattern application gate",
+                falsifier: "A retained decision omits the falsifier field.",
+                doesNotProve: "This does not prove target repo source recall."
+              }, {
+                sourceClaimId: "adjacent-claim",
+                claim: "Graph relation source readback pattern supports selected knowledge review.",
+                mechanism: "SourceClaimEdge relation summaries expose adjacent graph evidence.",
+                krnImplication: "Use as adjacent context only when target-specific evidence is absent.",
+                consumer: "graph brain readback",
+                falsifier: "Graph relation readback is treated as target-specific source truth.",
+                doesNotProve: "This does not prove target repo source relevance."
+              }],
+              supportingDocuments: [{ label: "ekologus-readme" }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 3,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: [
+          expect.objectContaining({
+            id: "target-claim",
+            targetFit: "target_specific",
+            targetFitReasons: ["matched distinctive query token(s): ekologus."]
+          }),
+          expect.objectContaining({
+            id: "generic-claim",
+            targetFit: "generic_guardrail",
+            targetFitReasons: expect.arrayContaining([
+              "no distinctive query token matched.",
+              "generic guardrail token(s): consumer, falsifier, gate, guardrail, must, retained."
+            ])
+          }),
+          expect.objectContaining({
+            id: "adjacent-claim",
+            targetFit: "adjacent_pattern",
+            targetFitReasons: expect.arrayContaining([
+              "no distinctive query token matched."
+            ])
+          })
+        ]
+      }
+    });
+  });
+
   it("uses ready source-backed selected knowledge when catalog search misses", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
@@ -899,6 +999,7 @@ describe("runBrainSearchCommand", () => {
     );
     expect(result.stdout).toContain("missingEvidence: included SearchDocument evidence");
     expect(result.stdout).toContain("Activation utility:");
+    expect(result.stdout).toContain("targetFit:");
     expect(result.stdout).toContain("selectedKnowledge: useful");
     expect(result.stdout).toContain("sourceLinkGraph: useful");
   });

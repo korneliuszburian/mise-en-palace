@@ -95,6 +95,8 @@ interface BrainSearchKnowledgePacket {
   title: string;
   summary: string;
   source: "catalog_file" | "source_search";
+  targetFit: BrainSearchKnowledgeTargetFit;
+  targetFitReasons: readonly string[];
   reviewability: "ready" | "needs_more_evidence";
   reviewabilityReasons: readonly string[];
   consumers: readonly string[];
@@ -102,6 +104,13 @@ interface BrainSearchKnowledgePacket {
   doesNotProve: string;
   nextAction: string;
 }
+
+type BrainSearchKnowledgeTargetFit =
+  | "target_specific"
+  | "generic_guardrail"
+  | "adjacent_pattern"
+  | "noise"
+  | "unknown";
 
 interface SourceSearchKnowledgeFields {
   id: string;
@@ -183,6 +192,53 @@ const activationUtilityAnswerUsefulness = (
 const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
   [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
 
+const targetFitGenericQueryTokens = new Set([
+  "brain",
+  "gate",
+  "quality",
+  "krn",
+  "knowledge",
+  "pattern",
+  "patterns"
+]);
+
+const targetFitGenericGuardrailTokens = new Set([
+  "boundary",
+  "consumer",
+  "falsifier",
+  "gate",
+  "governed",
+  "guardrail",
+  "must",
+  "proof",
+  "retained",
+  "should"
+]);
+
+const targetFitAdjacentPatternTokens = new Set([
+  "activation",
+  "artifact",
+  "candidate",
+  "claim",
+  "evidence",
+  "graph",
+  "heartbeat",
+  "ingest",
+  "memory",
+  "readback",
+  "relation",
+  "search",
+  "source"
+]);
+
+const targetFitDistinctiveQueryTokens = (query: string): readonly string[] =>
+  brainKnowledgeQueryTokens(query).filter(
+    (token) => token.length >= 4 && !targetFitGenericQueryTokens.has(token)
+  );
+
+const targetFitTextTokens = (text: string): ReadonlySet<string> =>
+  new Set(brainKnowledgeQueryTokens(text));
+
 const compactBrainKnowledgeQuery = (query: string): string | undefined => {
   const compactTokens = brainKnowledgeQueryTokens(query).filter(
     (token) => !brainKnowledgeBridgeTerms.has(token)
@@ -226,6 +282,100 @@ const sourceKnowledgeNextAction: Record<
   ready: "use",
   needs_more_evidence: "needs_more_evidence"
 };
+
+const packetTargetFitText = (packet: BrainSearchKnowledgePacket): string =>
+  [
+    packet.id,
+    packet.title,
+    packet.summary,
+    packet.source,
+    ...packet.consumers,
+    packet.falsifier,
+    packet.doesNotProve,
+    packet.nextAction
+  ].join(" ");
+
+const targetFitForPacket = (
+  query: string,
+  packet: BrainSearchKnowledgePacket
+): Pick<BrainSearchKnowledgePacket, "targetFit" | "targetFitReasons"> => {
+  const distinctiveQueryTokens = targetFitDistinctiveQueryTokens(query);
+  const packetTokens = targetFitTextTokens(packetTargetFitText(packet));
+
+  if (packetTokens.size === 0) {
+    return {
+      targetFit: "unknown",
+      targetFitReasons: ["selectedKnowledge packet has no classifiable text."]
+    };
+  }
+
+  if (distinctiveQueryTokens.length === 0) {
+    return {
+      targetFit: "unknown",
+      targetFitReasons: ["query has no distinctive target token after generic term filtering."]
+    };
+  }
+
+  const distinctiveMatches = distinctiveQueryTokens.filter((token) => packetTokens.has(token));
+
+  if (distinctiveMatches.length > 0) {
+    return {
+      targetFit: "target_specific",
+      targetFitReasons: [
+        `matched distinctive query token(s): ${distinctiveMatches.join(", ")}.`
+      ]
+    };
+  }
+
+  const allQueryTokenMatches = brainKnowledgeQueryTokens(query).filter(
+    (token) => token.length >= 4 && packetTokens.has(token)
+  );
+  const guardrailMatches = [...targetFitGenericGuardrailTokens].filter((token) =>
+    packetTokens.has(token)
+  );
+
+  if (guardrailMatches.length > 0) {
+    return {
+      targetFit: "generic_guardrail",
+      targetFitReasons: [
+        "no distinctive query token matched.",
+        `generic guardrail token(s): ${guardrailMatches.join(", ")}.`
+      ]
+    };
+  }
+
+  const adjacentMatches = [...targetFitAdjacentPatternTokens].filter((token) =>
+    packetTokens.has(token)
+  );
+
+  if (allQueryTokenMatches.length > 0 || adjacentMatches.length > 0) {
+    return {
+      targetFit: "adjacent_pattern",
+      targetFitReasons: [
+        "no distinctive query token matched.",
+        ...(allQueryTokenMatches.length === 0
+          ? []
+          : [`generic query token overlap: ${allQueryTokenMatches.join(", ")}.`]),
+        ...(adjacentMatches.length === 0
+          ? []
+          : [`adjacent pattern token(s): ${adjacentMatches.join(", ")}.`])
+      ]
+    };
+  }
+
+  return {
+    targetFit: "noise",
+    targetFitReasons: ["no distinctive, generic, or adjacent query/pattern signal matched."]
+  };
+};
+
+const withTargetFit = (
+  query: string,
+  packet: BrainSearchKnowledgePacket
+): BrainSearchKnowledgePacket => ({
+  ...packet,
+  ...targetFitForPacket(query, packet)
+});
 
 const proofDoesNotProve = (value: unknown): readonly string[] => {
   const proof = recordValue(value);
@@ -272,7 +422,10 @@ const reviewabilityFromReasons = (
     ? "needs_more_evidence"
     : "ready";
 
-const knowledgePackets = (cards: readonly unknown[]): readonly BrainSearchKnowledgePacket[] =>
+const knowledgePackets = (
+  cards: readonly unknown[],
+  query: string
+): readonly BrainSearchKnowledgePacket[] =>
   cards.flatMap((card) => {
     const record = recordValue(card);
 
@@ -295,18 +448,20 @@ const knowledgePackets = (cards: readonly unknown[]): readonly BrainSearchKnowle
       { name: "doesNotProve", value: doesNotProve }
     ]);
 
-    return [{
+    return [withTargetFit(query, {
       id,
       title: stringValue(record["title"], ""),
       summary: stringValue(record["summary"], ""),
       source: "catalog_file",
+      targetFit: "unknown",
+      targetFitReasons: [],
       reviewability: reviewabilityFromReasons(reviewabilityReasons),
       reviewabilityReasons,
       consumers,
       falsifier: falsifier ?? "",
       doesNotProve: doesNotProve ?? "",
       nextAction: stringValue(record["nextAction"], "unknown")
-    }];
+    })];
   });
 
 const sourceSearchKnowledgeId = (record: JsonRecord): string | undefined =>
@@ -362,6 +517,8 @@ const sourceSearchKnowledgePacketFromFields = (
     title: firstDefinedString([fields.claimText, fields.label, fields.id]),
     summary: firstDefinedString([fields.krnImplication, fields.mechanism, fields.reason]),
     source: "source_search",
+    targetFit: "unknown",
+    targetFitReasons: [],
     reviewability,
     reviewabilityReasons,
     consumers: optionalStringArray(fields.consumer),
@@ -385,7 +542,8 @@ const sourceSearchKnowledgePacket = (
 };
 
 const sourceSearchKnowledgePackets = (
-  supportingClaims: readonly unknown[]
+  supportingClaims: readonly unknown[],
+  query: string
 ): readonly BrainSearchKnowledgePacket[] =>
   supportingClaims.flatMap((claim) => {
     const record = recordValue(claim);
@@ -395,21 +553,22 @@ const sourceSearchKnowledgePackets = (
     }
     const packet = sourceSearchKnowledgePacket(record);
 
-    return packet === undefined ? [] : [packet];
+    return packet === undefined ? [] : [withTargetFit(query, packet)];
   });
 
 const selectedKnowledgePackets = (input: {
   brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
   cards: readonly unknown[];
   supportingClaims: readonly unknown[];
+  query: string;
 }): readonly BrainSearchKnowledgePacket[] => {
-  const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims);
+  const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
   if (input.brainKnowledgeReadback === "store_only") {
     return sourcePackets;
   }
 
-  const catalogPackets = knowledgePackets(input.cards);
+  const catalogPackets = knowledgePackets(input.cards, input.query);
 
   return catalogPackets.length > 0
     ? catalogPackets
@@ -476,7 +635,8 @@ const buildResource = (
   const selectedKnowledge = selectedKnowledgePackets({
     brainKnowledgeReadback: input.brainKnowledgeReadback,
     cards,
-    supportingClaims
+    supportingClaims,
+    query: input.query
   });
   const answerUsefulness = stringValue(answerPackage["answerUsefulness"], "unknown");
   const linkedSearchDocuments = linkedSearchDocumentCount(sourceClaimDocumentLinks);
@@ -660,6 +820,10 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
       `  title: ${card.title}`,
       `  summary: ${card.summary}`,
       `  source: ${card.source}`,
+      `  targetFit: ${card.targetFit}`,
+      ...(card.targetFitReasons.length === 0
+        ? ["  targetFitReason: none"]
+        : card.targetFitReasons.map((reason) => `  targetFitReason: ${reason}`)),
       `  reviewability: ${card.reviewability}`,
       ...(card.reviewabilityReasons.length === 0
         ? ["  reviewabilityReason: none"]

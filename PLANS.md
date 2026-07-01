@@ -229,7 +229,30 @@ IMR-46 complete: second internal repo README persisted through the same source
 IMR-47 complete: compact two-question multi-repo Brain-QA showed useful
   KRN/source recall and second-repo source recall, but exposed target-fit
   precision/context-waste work for selectedKnowledge.
+IMR-48 complete: `krn brain search` selectedKnowledge now exposes targetFit
+  labels/reasons, making generic guardrail packets visible in multi-repo readback.
 ```
+
+## Outcome IMR-48 Selected Knowledge Target-Fit Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-48-selected-knowledge-target-fit/REPORT.md
+```
+
+Outcome: brain-search JSON/text selectedKnowledge packets now include targetFit
+and targetFitReasons. Live readback shows source artifact queries as
+target_specific and the `EKOLOGUS Brain quality gate` selectedKnowledge packets
+as generic_guardrail, making the IMR-47 precision issue visible without ranking,
+schema, crawler, API/MCP, target writes, source truth, eval promotion, or Memory
+Core mutation.
+
+Decision: next make activation utility or brain-search recommendation
+target-fit aware, because generic-only selectedKnowledge should not silently
+read as fully sufficient.
 
 ## Outcome IMR-47 Multi-Repo Brain-QA Batch
 
