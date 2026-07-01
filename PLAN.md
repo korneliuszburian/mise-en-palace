@@ -46,7 +46,7 @@ brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocum
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
-pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
+pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 second-operator launch packet: historical packet only; no longer active direction
@@ -69,13 +69,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-20-missing-evidence-only-acquisition-escalation/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-21-cost-aware-acquisition-brain-knowledge-retention/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-n71: retain cost-aware acquisition escalation as brain knowledge.
+mise-en-palace-85t: add acquisition escalation to mini Brain-QA.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -131,7 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-20: cost-aware acquisition escalation added and accepted for linked and missing-only candidates.
+IMR-18-21: cost-aware acquisition escalation added, accepted, and retained as brain knowledge.
 ```
 
 ## Remaining Product Gaps

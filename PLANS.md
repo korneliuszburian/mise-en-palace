@@ -144,6 +144,46 @@ IMR-19 complete: one live linked-document acquisition escalation candidate was
   accepted for manual follow-up; next branch is missing-evidence-only.
 IMR-20 complete: one live source-search missing-evidence-only acquisition
   candidate was accepted; escalation starts at source_search_review.
+IMR-21 complete: cost-aware acquisition escalation retained as queryable brain
+  knowledge with usefulness feedback.
+```
+
+## Outcome IMR-21 Cost-Aware Acquisition Brain Knowledge Retention
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-21-cost-aware-acquisition-brain-knowledge-retention/REPORT.md
+```
+
+Outcome: `cost-aware-acquisition-escalation-boundary` is now retained in the
+brain knowledge catalog with usefulness feedback. `krn brain knowledge` and
+integrated `krn brain search` can surface it as review-ready selected
+knowledge.
+
+Source-to-decision:
+
+- Source: IMR-18, IMR-19, IMR-20 and retained `Towards Autonomous Memory
+  Agents`.
+- Mechanism: acquisition escalates from cheaper available evidence to more
+  expensive review only when cheaper evidence remains insufficient.
+- KRN implication: future heartbeat/dreaming acquisition work should recall the
+  low-to-high candidate-only rule before opening external research, human
+  review, automation, or mutation work.
+- Decision: retain the pattern as active brain knowledge.
+- Rejection: no autonomous acquisition, crawler, worker, API/MCP, ranking,
+  schema, source truth, or Memory Core mutation.
+- Consumer: heartbeat acquisition review, pattern/research gates, and future
+  acquisition eval candidates.
+- Falsifier: a future acquisition candidate skips cheaper review paths or a
+  missing-evidence-only candidate starts at `linked_document_review`.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-85t: Add acquisition escalation to mini Brain-QA.
 ```
 
 ## Outcome IMR-20 Missing-Evidence-Only Acquisition Escalation

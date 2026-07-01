@@ -409,7 +409,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "heartbeat candidate runtime boundary"
+        text: "heartbeat scheduler daemon automatic memory source mutation"
       },
       format: "json"
     });
@@ -528,6 +528,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-hook-deterministic-guardrail-boundary",
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
+      "pattern:cost-aware-acquisition-escalation-boundary",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
@@ -553,7 +554,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalCards).toBe(14);
+    expect(preview.totalCards).toBe(15);
     expect(preview.returnedCards).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.cards).toHaveLength(2);
@@ -575,7 +576,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 14");
+    expect(result.stdout).toContain("Total filtered results: 15");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -804,6 +805,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-hook-deterministic-guardrail-boundary",
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
+      "pattern:cost-aware-acquisition-escalation-boundary",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
