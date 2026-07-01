@@ -10,6 +10,7 @@ import {
   readMetadataObjectList,
   readMetadataString,
   readMetadataStringList,
+  patternUsefulnessOutcomesFromMetadata,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata
@@ -200,6 +201,7 @@ export interface RunReadbackResource {
     };
     candidates: RunReadbackCandidateResource[];
     sourceUsefulnessOutcomes: RunReadbackSourceUsefulnessOutcomeResource[];
+    patternUsefulnessOutcomes: RunReadbackPatternUsefulnessOutcomeResource[];
   }[];
   proof: {
     proves: string[];
@@ -219,6 +221,14 @@ export interface RunReadbackCandidateResource {
 export interface RunReadbackSourceUsefulnessOutcomeResource {
   sourceClaimId?: string;
   sourceDecisionId?: string;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+}
+
+export interface RunReadbackPatternUsefulnessOutcomeResource {
+  patternId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
@@ -767,6 +777,17 @@ const runReadbackSourceUsefulnessOutcomes = (
     doesNotProve: outcome.doesNotProve
   }));
 
+const runReadbackPatternUsefulnessOutcomes = (
+  feedback: FeedbackDelta
+): RunReadbackPatternUsefulnessOutcomeResource[] =>
+  patternUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
+    patternId: outcome.patternId,
+    outcome: outcome.outcome,
+    reason: outcome.reason,
+    evidenceRefs: outcome.evidenceRefs,
+    doesNotProve: outcome.doesNotProve
+  }));
+
 const renderSourceUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): string[] => {
@@ -789,6 +810,28 @@ const renderSourceUsefulnessOutcomes = (
   ];
 };
 
+const renderPatternUsefulnessOutcomes = (
+  feedback: FeedbackDelta
+): string[] => {
+  const outcomes = runReadbackPatternUsefulnessOutcomes(feedback);
+
+  if (outcomes.length === 0) {
+    return ["  pattern usefulness outcomes: none"];
+  }
+
+  return [
+    "  pattern usefulness outcomes:",
+    ...outcomes.flatMap((outcome) => [
+      `  - outcome=${outcome.outcome} pattern=${outcome.patternId}`,
+      `    reason: ${outcome.reason}`,
+      ...(outcome.evidenceRefs.length === 0
+        ? ["    evidenceRef: none"]
+        : outcome.evidenceRefs.map((evidenceRef) => `    evidenceRef: ${evidenceRef}`)),
+      `    doesNotProve: ${outcome.doesNotProve}`
+    ])
+  ];
+};
+
 const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   const summary = summarizeFeedbackCandidateProposals(feedback);
   const candidateDetails = runReadbackCandidateResources(feedback).flatMap((candidate) => [
@@ -802,6 +845,7 @@ const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
     `  memoryRecordMutation: ${summary.memoryRecordMutation}`,
     `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates}, source_claim=${summary.counts.sourceClaimCandidates}, source_decision=${summary.counts.sourceDecisionCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
     ...renderSourceUsefulnessOutcomes(feedback),
+    ...renderPatternUsefulnessOutcomes(feedback),
     ...(
       candidateDetails.length === 0
         ? ["  candidate details: none"]
@@ -939,7 +983,8 @@ const feedbackDeltaResource = (
       observation: summary.counts.observationCandidates
     },
     candidates: runReadbackCandidateResources(feedback),
-    sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
+    sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback),
+    patternUsefulnessOutcomes: runReadbackPatternUsefulnessOutcomes(feedback)
   };
 };
 

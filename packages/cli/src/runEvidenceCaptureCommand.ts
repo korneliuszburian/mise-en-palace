@@ -10,6 +10,7 @@ import type {
   EvidenceCommand,
   NormalizedEvidenceCommand,
   MemoryCandidate,
+  PatternUsefulnessOutcomeFeedback,
   SourceDecision,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidence,
@@ -49,6 +50,7 @@ export interface EvidenceCaptureRuntime {
   commandOutcomes?: readonly EvidenceCommand[];
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -571,6 +573,23 @@ const renderSourceUsefulnessOutcomes = (
   ]);
 };
 
+const renderPatternUsefulnessOutcomes = (
+  outcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined
+): string[] => {
+  if (outcomes === undefined || outcomes.length === 0) {
+    return ["- none"];
+  }
+
+  return outcomes.flatMap((outcome) => [
+    `- outcome=${outcome.outcome} pattern=${outcome.patternId}`,
+    `  reason: ${outcome.reason}`,
+    ...(outcome.evidenceRefs.length === 0
+      ? ["  evidenceRef: none"]
+      : outcome.evidenceRefs.map((evidenceRef) => `  evidenceRef: ${evidenceRef}`)),
+    `  doesNotProve: ${outcome.doesNotProve}`
+  ]);
+};
+
 const renderMemoryCandidateProposals = (
   proposals: readonly MemoryCandidateProposal[]
 ): string[] => {
@@ -742,7 +761,8 @@ const buildFeedbackDeltaInput = (
   counts: EvidencePersistenceCounts,
   memoryCandidates: readonly MemoryCandidate[],
   sourceDecisionCandidates: readonly SourceDecision[],
-  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined
+  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  patternUsefulnessOutcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
@@ -757,7 +777,10 @@ const buildFeedbackDeltaInput = (
     sourceDecisionCandidateCount: sourceDecisionCandidates.length,
     ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
       ? {}
-      : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] })
+      : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
+    ...(patternUsefulnessOutcomes === undefined || patternUsefulnessOutcomes.length === 0
+      ? {}
+      : { patternUsefulnessOutcomes: [...patternUsefulnessOutcomes] })
   }
 });
 
@@ -769,6 +792,7 @@ const persistEvidenceCapture = async (
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  patternUsefulnessOutcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
@@ -819,7 +843,8 @@ const persistEvidenceCapture = async (
         counts,
         memoryCandidates,
         sourceDecisionCandidates,
-        sourceUsefulnessOutcomes
+        sourceUsefulnessOutcomes,
+        patternUsefulnessOutcomes
       )
     );
 
@@ -863,6 +888,7 @@ export const runEvidenceCaptureCommand = async (
       diffRisk,
       targetEvidence,
       runtime.sourceUsefulnessOutcomes,
+      runtime.patternUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals
     )
@@ -898,7 +924,9 @@ export const runEvidenceCaptureCommand = async (
     "sourceDecisionCandidates:",
     ...renderSourceDecisionCandidates(sourceDecisionCandidates),
     "sourceUsefulnessOutcomes:",
-    ...renderSourceUsefulnessOutcomes(runtime.sourceUsefulnessOutcomes)
+    ...renderSourceUsefulnessOutcomes(runtime.sourceUsefulnessOutcomes),
+    "patternUsefulnessOutcomes:",
+    ...renderPatternUsefulnessOutcomes(runtime.patternUsefulnessOutcomes)
   ];
 
   if (persistedIdentity !== undefined) {

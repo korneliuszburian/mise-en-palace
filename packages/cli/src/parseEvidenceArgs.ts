@@ -1,6 +1,7 @@
 import type {
   EvidenceCommand,
   EvidenceCommandStatus,
+  PatternUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceChangedFileInput,
   TargetEvidenceInput
@@ -16,9 +17,10 @@ import type {
 } from "./parseArgs.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--pattern-usefulness \"pattern:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
+  "Pattern usefulness example: krn evidence capture --pattern-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
   "Note: evidence capture records operator/captured evidence; it does not run commands."
@@ -256,6 +258,21 @@ const parseSourceUsefulnessBody = (
   };
 };
 
+const parsePatternUsefulnessBody = (
+  body: string
+): SourceUsefulnessParseResult<SourceUsefulnessBody> => {
+  const parsed = parseSourceUsefulnessBody(body);
+
+  if (parsed.ok) {
+    return parsed;
+  }
+
+  return {
+    ok: false,
+    error: parsed.error.replaceAll("--source-usefulness", "--pattern-usefulness")
+  };
+};
+
 const buildSourceUsefulnessOutcome = (
   selector: SourceUsefulnessSelector,
   body: SourceUsefulnessBody
@@ -296,6 +313,53 @@ const parseSourceUsefulness = (
 
   return {
     outcome: buildSourceUsefulnessOutcome(selector.value, body.value)
+  };
+};
+
+const parsePatternUsefulness = (
+  value: string
+): { outcome?: PatternUsefulnessOutcomeFeedback; error?: string } => {
+  const separatorIndex = value.indexOf("=");
+
+  if (separatorIndex < 0) {
+    return {
+      error: "--pattern-usefulness requires <pattern:id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
+    };
+  }
+
+  const selector = value.slice(0, separatorIndex).trim();
+  const selectorSeparatorIndex = selector.indexOf(":");
+
+  if (selectorSeparatorIndex < 0 || selector.slice(0, selectorSeparatorIndex).trim() !== "pattern") {
+    return {
+      error: "--pattern-usefulness selector must start with pattern:<id>"
+    };
+  }
+
+  const patternId = selector.slice(selectorSeparatorIndex + 1).trim();
+
+  if (patternId.length === 0) {
+    return {
+      error: "--pattern-usefulness requires a non-empty pattern id"
+    };
+  }
+
+  const body = parsePatternUsefulnessBody(value.slice(separatorIndex + 1));
+
+  if (!body.ok) {
+    return {
+      error: body.error
+    };
+  }
+
+  return {
+    outcome: {
+      patternId,
+      outcome: body.value.outcome,
+      reason: body.value.reason,
+      evidenceRefs: body.value.evidenceRefs,
+      doesNotProve: body.value.doesNotProve
+    }
   };
 };
 
@@ -444,6 +508,7 @@ type EvidenceParseState = {
   targetChangedFilesExplicitNone: boolean;
   targetCommands: string[];
   sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes: PatternUsefulnessOutcomeFeedback[];
 };
 
 type EvidenceOptionResult =
@@ -483,6 +548,7 @@ const evidenceOptionNames = [
   "--command",
   "--verification",
   "--source-usefulness",
+  "--pattern-usefulness",
   "--status",
   "--exit-code",
   "--output"
@@ -795,6 +861,29 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
+  "--pattern-usefulness": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--pattern-usefulness");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    const outcomeResult = parsePatternUsefulness(parsed.value);
+
+    if (outcomeResult.error !== undefined || outcomeResult.outcome === undefined) {
+      return {
+        ok: false,
+        error: outcomeResult.error ?? evidenceUsage
+      };
+    }
+
+    state.patternUsefulnessOutcomes.push(outcomeResult.outcome);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
   "--status": (rest, index, state) => {
     const parsed = parseEvidenceOption(rest, index, "--status");
 
@@ -985,7 +1074,8 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     targetChangedFiles: [],
     targetChangedFilesExplicitNone: false,
     targetCommands: [],
-    sourceUsefulnessOutcomes: []
+    sourceUsefulnessOutcomes: [],
+    patternUsefulnessOutcomes: []
   };
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -1033,7 +1123,8 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       ...(state.intendedFiles.length === 0 ? {} : { intendedFiles: state.intendedFiles }),
       ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
       ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),
-      ...(state.sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes: state.sourceUsefulnessOutcomes })
+      ...(state.sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes: state.sourceUsefulnessOutcomes }),
+      ...(state.patternUsefulnessOutcomes.length === 0 ? {} : { patternUsefulnessOutcomes: state.patternUsefulnessOutcomes })
     }
   };
 };

@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-03 Bridge retained pattern usefulness into persisted planning
+current task: SBV-04 Surface selected retained pattern IDs in persisted plan/brief context
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-03 Bridge retained pattern usefulness into persisted planning is active.
+SBV-04 Surface selected retained pattern IDs in persisted plan/brief context is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,11 +36,10 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-SBV-02 complete: `pattern:ts-boundary-unknown-first-result-state` drove
-finite JSON read result states for brain knowledge catalog parsing. DB-backed
-evidence/observe/reflect passed without Memory Core mutation. Gap: persisted
-plan/evidence records the general retention-gate SourceClaim, not the specific
-catalog pattern; follow-up issue `mise-en-palace-5dn`.
+SBV-03 complete: `--pattern-usefulness` records retained pattern usefulness in
+FeedbackDelta metadata and `krn run show` text/JSON readback without fake
+SourceClaim feedback. Gap: persisted plan/brief still do not expose exact
+selected retained pattern IDs before coding.
 ```
 
 ## 2. Product Thesis
@@ -2345,6 +2344,11 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-sbv-01-retained-pattern-priority/REPORT.md`.
   Next: `mise-en-palace-yjh` / SBV-02 runs a retained-pattern code-quality
   vertical using the repaired recall path.
+- [x] SBV-03 complete: retained pattern usefulness persists through evidence
+  and run readback. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-sbv-03-pattern-usefulness-bridge/REPORT.md`.
+  Next: SBV-04 surfaces selected retained pattern IDs in persisted plan/brief
+  context.
 
 ## 21. Final Response Format For Codex Runs
 

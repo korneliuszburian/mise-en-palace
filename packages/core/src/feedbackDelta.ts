@@ -90,6 +90,14 @@ export interface SourceUsefulnessOutcomeFeedback {
   doesNotProve: string;
 }
 
+export interface PatternUsefulnessOutcomeFeedback {
+  patternId: string;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+}
+
 const sourceUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
   "selected",
   "used",
@@ -135,6 +143,27 @@ export const sourceUsefulnessOutcomesFromMetadata = (
     return [{
       ...(sourceClaimId === undefined ? {} : { sourceClaimId }),
       ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
+      outcome: sourceUsefulnessOutcomeField(item),
+      reason,
+      evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
+      doesNotProve
+    }];
+  });
+
+export const patternUsefulnessOutcomesFromMetadata = (
+  metadata: Record<string, unknown>
+): PatternUsefulnessOutcomeFeedback[] =>
+  readMetadataObjectList(metadata, "patternUsefulnessOutcomes").flatMap((item) => {
+    const patternId = readMetadataString(item, "patternId");
+    const reason = readMetadataString(item, "reason");
+    const doesNotProve = readMetadataString(item, "doesNotProve");
+
+    if (patternId === undefined || reason === undefined || doesNotProve === undefined) {
+      return [];
+    }
+
+    return [{
+      patternId,
       outcome: sourceUsefulnessOutcomeField(item),
       reason,
       evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
