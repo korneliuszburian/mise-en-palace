@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial
+current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair
 ```
 
 ## Compact Checkpoints
@@ -86,6 +86,7 @@ consensus relation retained pattern: heartbeat consensus_evaluation review bound
 consensus relation pattern reuse: brain knowledge/search select the retained pattern; plan bridge recall missed it
 retained pattern plan bridge recall: long task contracts compact to mechanism query and select the consensus relation retained pattern in plan/run/brief
 reference implementation recipe boundary: user-provided clone-workflow sources retained as a lab-test pattern with catalog/search readback and no runtime expansion
+TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable local reference implementation recipe with helped usefulness feedback
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -95,7 +96,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-dvy Use Reference Implementation Recipe Pattern In One TypeScript Exemplar Trial
+### mise-en-palace-9dt Use Parser Exemplar In One Real Evidence Metadata Boundary Repair
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -107,23 +108,24 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-sdt-01-reference-implementation-pattern/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-dvy: Use reference implementation recipe pattern in one TypeScript exemplar trial.
+mise-en-palace-9dt: Use parser exemplar in one real evidence metadata boundary repair.
 ```
 
 Task boundary:
 
 ```txt
-Use the SDT-01 retained reference implementation recipe boundary in one tiny
-local TypeScript exemplar trial. Pick one well-reviewed local TypeScript
-boundary example, map it through source-to-decision, verify with tests/typecheck,
-and measure whether the pattern reduces implementation or review burden. No
-recipe runtime, crawler, broad skill/subagent system, DB schema, dashboard, API/MCP, graph ranking rewrite, or Memory Core mutation.
+Use the DVY-01 retained parser exemplar in one real source repair. Inspect
+EvidenceBundle metadata/readback parsing, choose one narrow unknown-first
+metadata boundary only if source inspection confirms unsafe or ad hoc parsing,
+apply the exemplar pattern with focused tests, and measure review-burden delta.
+No broad Zod platform, DB schema, dashboard/API/MCP, worker daemon, crawler,
+graph ranking rewrite, sweeping review-domain consolidation, or Memory Core mutation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

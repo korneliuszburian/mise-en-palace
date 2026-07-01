@@ -1,0 +1,30 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:reference-implementation-recipe-clone-boundary",
+      "outcome": "helped",
+      "summary": "Constrained DVY-01 to a local, reviewed TypeScript exemplar with source refs, evidence refs, falsifier, and proof/non-proof boundaries instead of creating recipe runtime, crawler, broad skill/subagent system, or more markdown instructions.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md",
+        "docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json",
+        "packages/harness/src/brainKnowledgeReadModel.ts",
+        "packages/harness/src/brainKnowledgeReadModel.test.ts"
+      ],
+      "doesNotProve": "This feedback does not prove clone workflows outperform skills, runtime recipe automation is needed, broad code quality improved, or KRN is product-ready.",
+      "observedAt": "2026-07-01"
+    },
+    {
+      "cardId": "pattern:ts-boundary-brain-knowledge-parser-exemplar",
+      "outcome": "helped",
+      "summary": "Made the existing brain knowledge parser boundary searchable as a reviewable local exemplar for future unknown-first catalog parser work, while keeping the implementation in code and tests rather than new instructions.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md",
+        "packages/harness/src/brainKnowledgeReadModel.ts",
+        "packages/harness/src/brainKnowledgeReadModel.test.ts",
+        "packages/cli/src/runKnowledgeCardsCommand.test.ts"
+      ],
+      "doesNotProve": "This feedback does not prove the exemplar transfers to every TypeScript boundary, semantic search quality, DB-backed ranking quality, or product readiness.",
+      "observedAt": "2026-07-01"
+    }
+  ]
+}

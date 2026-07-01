@@ -554,8 +554,10 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
+      "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
+      "pattern:ts-boundary-brain-knowledge-parser-exemplar",
       "pattern:ts-boundary-unknown-first-result-state",
       "pattern:untrusted-context-warning-boundary"
     ].sort());
@@ -576,7 +578,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalCards).toBe(16);
+    expect(preview.totalCards).toBe(18);
     expect(preview.returnedCards).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.cards).toHaveLength(2);
@@ -598,7 +600,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 16");
+    expect(result.stdout).toContain("Total filtered results: 18");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -616,9 +618,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual([
-      "pattern:reference-implementation-recipe-clone-boundary"
-    ]);
+    expect(cardIds(preview)).toEqual([]);
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
@@ -810,6 +810,27 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
+  it("searches the brain knowledge parser exemplar through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "brain knowledge parser exemplar unknown-first recipe"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:ts-boundary-brain-knowledge-parser-exemplar"]);
+    expect(preview.totalCards).toBe(1);
+    expect(preview.returnedCards).toBe(1);
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.access).toBe("read_only");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("returns every catalog card without a text filter", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -837,6 +858,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
+      "pattern:ts-boundary-brain-knowledge-parser-exemplar",
       "pattern:untrusted-context-warning-boundary",
       "pattern:ts-boundary-unknown-first-result-state"
     ].sort());

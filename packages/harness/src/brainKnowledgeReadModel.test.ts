@@ -30,6 +30,9 @@ const patternDecisionFixture = (): unknown =>
 const referenceImplementationPatternDecisionFixture = (): unknown =>
   readJsonRootFile("docs/patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json");
 
+const brainKnowledgeParserExemplarPatternDecisionFixture = (): unknown =>
+  readJsonRootFile("docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json");
+
 const parsedCardFixture = () => {
   const card = parseBrainKnowledgeReadModel(cardFixture());
 
@@ -55,6 +58,16 @@ const parsedReferenceImplementationPatternDecisionFixture = () => {
 
   if (patternDecision === undefined) {
     throw new Error("Expected reference implementation retained pattern decision to parse.");
+  }
+
+  return patternDecision;
+};
+
+const parsedBrainKnowledgeParserExemplarPatternDecisionFixture = () => {
+  const patternDecision = parseRetainedPatternDecision(brainKnowledgeParserExemplarPatternDecisionFixture());
+
+  if (patternDecision === undefined) {
+    throw new Error("Expected brain knowledge parser exemplar retained pattern decision to parse.");
   }
 
   return patternDecision;
@@ -237,6 +250,27 @@ describe("Brain knowledge read model", () => {
     });
     expect(searchBrainKnowledgeCards([card], {
       text: "reference implementation clone recipe TypeScript"
+    })).toEqual([card]);
+  });
+
+  it("keeps the brain knowledge parser exemplar searchable but deferred", () => {
+    const patternDecision = parsedBrainKnowledgeParserExemplarPatternDecisionFixture();
+    const card = brainKnowledgeCardFromRetainedPatternDecision(patternDecision);
+
+    expect(card).toMatchObject({
+      id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
+      kind: "pattern",
+      status: "deferred",
+      confidence: "medium",
+      reviewability: "ready",
+      nextAction: "review"
+    });
+    expect(card.sourceRefs).toContain("packages/harness/src/brainKnowledgeReadModel.ts");
+    expect(card.evidenceRefs).toContain(
+      "docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md"
+    );
+    expect(searchBrainKnowledgeCards([card], {
+      text: "brain knowledge parser exemplar unknown-first recipe"
     })).toEqual([card]);
   });
 

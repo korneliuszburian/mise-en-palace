@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial
+current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair
 latest pushed commit: see git history
 ```
 
@@ -24,26 +24,25 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial is active.
-SDT-01 retained the reference implementation recipe clone boundary as a lab-test
-pattern. KRN now needs one tiny local TypeScript exemplar trial to test whether
-that pattern reduces implementation or review burden.
+mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair is active.
+DVY-01 retained packages/harness/src/brainKnowledgeReadModel.ts as a searchable
+local TypeScript parser exemplar. KRN now needs one real source repair that uses
+that exemplar against a narrow evidence metadata/readback boundary.
 ```
 
 Latest outcome:
 
 ```txt
-SDT-01 complete: persisted plan metadata, run show, and Codex brief selected
-pattern:consensus-relation-heartbeat-review-boundary; it helped as a governance
-boundary while user-provided clone-workflow/practitioner sources were retained
-only as pattern:reference-implementation-recipe-clone-boundary with lab status,
-catalog/search readback, and no runtime expansion.
+DVY-01 complete: pattern:reference-implementation-recipe-clone-boundary selected
+in persisted plan. packages/harness/src/brainKnowledgeReadModel.ts was retained
+as pattern:ts-boundary-brain-knowledge-parser-exemplar with source refs,
+evidence refs, usefulness feedback, catalog/search readback, tests, full
+typecheck/test/Fallow/DB/diff verification, evidence capture, observe, and
+reflect. Owner-file recall missed the exemplar and source inspection found it.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-sdt-01-reference-implementation-pattern/REPORT.md
-Next: `mise-en-palace-dvy` uses the retained recipe boundary in one tiny
-TypeScript exemplar trial without recipe runtime, crawler, broad skill/subagent
-system, schema, dashboard, API/MCP, graph ranking rewrite, or Memory Core
-mutation.
+docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md
+Next: `mise-en-palace-9dt` uses the parser exemplar in one real evidence
+metadata boundary repair, if source inspection confirms the boundary is worth changing.
 ```
 
 ## 2. Product Thesis

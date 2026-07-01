@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial.
+current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,11 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-SDT-01 complete: the repaired retained-pattern bridge selected the consensus
-relation boundary in persisted plan/run/brief, and user-provided reference
-implementation / clone workflow sources were retained only as a lab-test pattern
-with catalog/search readback. Next: use it in one tiny TypeScript exemplar trial
-(`mise-en-palace-dvy`).
+DVY-01 complete: the retained reference implementation recipe boundary selected
+one existing local TypeScript parser exemplar. The exemplar is now queryable as
+pattern:ts-boundary-brain-knowledge-parser-exemplar with helped usefulness
+feedback, tests, DB-backed evidence, observe/reflect readback, and no runtime
+expansion. Next: use that exemplar in one real evidence metadata boundary repair
+(`mise-en-palace-9dt`).
 ```
 
 ## Direction

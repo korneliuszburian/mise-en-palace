@@ -993,14 +993,22 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain(
+      "Retained pattern IDs: ts-boundary-brain-knowledge-parser-exemplar, ts-boundary-unknown-first-result-state"
+    );
+    expect(result.stdout).toContain(
+      "- pattern=ts-boundary-brain-knowledge-parser-exemplar | card=pattern:ts-boundary-brain-knowledge-parser-exemplar"
+    );
     expect(result.stdout).toContain(
       "- pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );
     expect(executionRunMetadata).toMatchObject({
       retainedPatternSelection: {
         status: "selected",
-        selectedPatternIds: ["ts-boundary-unknown-first-result-state"]
+        selectedPatternIds: [
+          "ts-boundary-brain-knowledge-parser-exemplar",
+          "ts-boundary-unknown-first-result-state"
+        ]
       }
     });
   });
