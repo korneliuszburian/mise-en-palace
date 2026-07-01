@@ -80,6 +80,44 @@ describe("evidence bundle completeness", () => {
     });
   });
 
+  test("normalizes operator-reported command rows", () => {
+    expect(normalizeEvidenceCommand({
+      command: "pnpm test",
+      status: "failed",
+      provenance: "operator_reported",
+      exitCode: 1,
+      assertedBy: " codex ",
+      doesNotProve: " Only proves the operator reported this command result. "
+    })).toEqual({
+      kind: "operator_reported",
+      command: "pnpm test",
+      status: "failed",
+      provenance: "operator_reported",
+      exitCode: 1,
+      assertedBy: "codex",
+      doesNotProve: "Only proves the operator reported this command result."
+    });
+  });
+
+  test("normalizes external-log command rows with output refs", () => {
+    expect(normalizeEvidenceCommand({
+      command: "KRN CI",
+      status: "passed",
+      provenance: "external_log",
+      outputRef: " gh-run-28524994922 ",
+      exitCode: 0
+    })).toEqual({
+      kind: "external_log",
+      command: "KRN CI",
+      status: "passed",
+      provenance: "external_log",
+      outputRef: "gh-run-28524994922",
+      exitCode: 0,
+      doesNotProve:
+        "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    });
+  });
+
   test("does not allow weak default provenance to become passed proof", () => {
     expect(normalizeEvidenceCommand({
       command: "pnpm test",

@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: EVD-03 Simplify core evidence command normalizer
+current task: REV-01 Consolidate review feedback domain ownership
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-EVD-03 Simplify core evidence command normalizer is active.
+REV-01 Consolidate review feedback domain ownership is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,9 +36,8 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-EVD-02 complete: schema evidence command parsing now validates unknown input
-then delegates command proof normalization semantics to the canonical core
-normalizer.
+EVD-03 complete: core evidence command normalization now uses one provenance
+switch with focused command-kind coverage.
 ```
 
 ## 2. Product Thesis
@@ -2368,6 +2367,12 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-evd-02-evidence-command-normalization/REPORT.md`.
   Next: `mise-en-palace-r8d` / EVD-03 simplifies the canonical core normalizer
   internals if behavior can stay identical.
+- [x] EVD-03 complete: the canonical core evidence command normalizer now uses
+  one provenance switch while preserving weak-default fallback and command-kind
+  behavior. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-evd-03-core-evidence-normalizer/REPORT.md`.
+  Next: `mise-en-palace-ktz` / REV-01 inspects and consolidates review/feedback
+  domain ownership where source inspection proves duplicate concepts.
 
 ## 21. Final Response Format For Codex Runs
 

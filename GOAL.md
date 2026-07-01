@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: EVD-03 Simplify core evidence command normalizer.
+current task: REV-01 Consolidate review feedback domain ownership.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-EVD-02 complete: schema evidence command parsing delegates normalization
-semantics to the canonical core normalizer.
+EVD-03 complete: the canonical core evidence command normalizer is now one
+provenance switch with focused command-kind coverage.
 ```
 
 ## Direction

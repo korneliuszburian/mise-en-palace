@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: EVD-03 Simplify core evidence command normalizer
+current task: REV-01 Consolidate review feedback domain ownership
 ```
 
 ## Compact Checkpoints
@@ -64,6 +64,7 @@ retained pattern run readback: run show text/JSON exposes retained pattern selec
 worker enqueue atomicity: workers helper requires one queue-port contract for worker job plus outbox event
 evidence metadata boundary: known evidence readback metadata validates before DB persistence
 evidence command normalization: schema delegates command proof normalization to core
+core evidence normalizer: one provenance switch preserves command proof semantics
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -74,7 +75,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### EVD-03 Simplify Core Evidence Command Normalizer
+### REV-01 Consolidate Review Feedback Domain Ownership
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -86,13 +87,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-evd-02-evidence-command-normalization/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-evd-03-core-evidence-normalizer/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-r8d: Simplify core evidence command normalizer.
+mise-en-palace-ktz: Consolidate review feedback domain ownership.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

@@ -451,13 +451,6 @@ const normalizedCommandDoesNotProve = (
       ? defaultTemplateCommandDoesNotProve
       : commandResultDoesNotProve;
 
-interface EvidenceCommandNormalizationContext {
-  command: EvidenceCommand;
-  provenance: EvidenceCommandProvenance;
-  outputRef?: string;
-  doesNotProve: string;
-}
-
 type OptionalCommandExecutionDetails = {
   exitCode?: number;
   capturedAt?: IsoTimestamp;
@@ -475,109 +468,6 @@ const optionalCommandAssertionDetails = (
 ): Pick<OperatorReportedEvidenceCommand, "assertedBy"> | Record<string, never> =>
   hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {};
 
-const buildEvidenceCommandNormalizationContext = (
-  command: EvidenceCommand
-): EvidenceCommandNormalizationContext => {
-  const outputRef = normalizedCommandOutputRef(command);
-  const provenance = command.provenance ?? inferCommandProvenance(command);
-  const doesNotProve = normalizedCommandDoesNotProve(command, provenance);
-
-  return {
-    command,
-    provenance,
-    ...(outputRef === undefined ? {} : { outputRef }),
-    doesNotProve
-  };
-};
-
-const normalizeCapturedOutputFileCommand = (
-  context: EvidenceCommandNormalizationContext
-): CapturedOutputFileEvidenceCommand | undefined => {
-  const { command, outputRef, provenance, doesNotProve } = context;
-
-  if (provenance === "captured_output_file" && outputRef !== undefined) {
-    return {
-      kind: "captured_output_file",
-      command: command.command,
-      status: command.status,
-      provenance,
-      outputRef,
-      ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
-      ...optionalCommandExecutionDetails(command),
-      ...optionalCommandAssertionDetails(command),
-      doesNotProve
-    };
-  }
-
-  return undefined;
-};
-
-const normalizeExternalLogCommand = (
-  context: EvidenceCommandNormalizationContext
-): ExternalLogEvidenceCommand | undefined => {
-  const { command, outputRef, provenance, doesNotProve } = context;
-
-  if (provenance === "external_log" && outputRef !== undefined) {
-    return {
-      kind: "external_log",
-      command: command.command,
-      status: command.status,
-      provenance,
-      outputRef,
-      ...optionalCommandExecutionDetails(command),
-      doesNotProve
-    };
-  }
-
-  return undefined;
-};
-
-const normalizeCommandRunnerCommand = (
-  context: EvidenceCommandNormalizationContext
-): CommandRunnerEvidenceCommand | undefined => {
-  const { command, outputRef, provenance, doesNotProve } = context;
-
-  if (
-    provenance === "command_runner" &&
-    isPassedOrFailed(command.status) &&
-    command.exitCode !== undefined &&
-    hasText(command.capturedAt)
-  ) {
-    return {
-      kind: "command_runner",
-      command: command.command,
-      status: command.status,
-      provenance,
-      exitCode: command.exitCode,
-      capturedAt: command.capturedAt.trim(),
-      ...(outputRef === undefined ? {} : { outputRef }),
-      doesNotProve
-    };
-  }
-
-  return undefined;
-};
-
-const normalizeOperatorReportedCommand = (
-  context: EvidenceCommandNormalizationContext
-): OperatorReportedEvidenceCommand | undefined => {
-  const { command, provenance, doesNotProve } = context;
-
-  if (provenance === "operator_reported") {
-    return {
-      kind: "operator_reported",
-      command: command.command,
-      status: command.status,
-      provenance: "operator_reported",
-      ...optionalCommandExecutionDetails(command),
-      ...optionalCommandAssertionDetails(command),
-      doesNotProve
-    };
-  }
-
-  return undefined;
-};
-
 const normalizeDefaultTemplateCommand = (
   command: EvidenceCommand
 ): DefaultTemplateEvidenceCommand => (
@@ -593,13 +483,76 @@ const normalizeDefaultTemplateCommand = (
 export const normalizeEvidenceCommand = (
   command: EvidenceCommand
 ): NormalizedEvidenceCommand => {
-  const context = buildEvidenceCommandNormalizationContext(command);
+  const provenance = command.provenance ?? inferCommandProvenance(command);
+  const outputRef = normalizedCommandOutputRef(command);
+  const doesNotProve = normalizedCommandDoesNotProve(command, provenance);
 
-  return normalizeCapturedOutputFileCommand(context)
-    ?? normalizeExternalLogCommand(context)
-    ?? normalizeCommandRunnerCommand(context)
-    ?? normalizeOperatorReportedCommand(context)
-    ?? normalizeDefaultTemplateCommand(command);
+  switch (provenance) {
+    case "captured_output_file":
+      if (outputRef !== undefined) {
+        return {
+          kind: "captured_output_file",
+          command: command.command,
+          status: command.status,
+          provenance,
+          outputRef,
+          ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
+          ...optionalCommandExecutionDetails(command),
+          ...optionalCommandAssertionDetails(command),
+          doesNotProve
+        };
+      }
+      break;
+
+    case "external_log":
+      if (outputRef !== undefined) {
+        return {
+          kind: "external_log",
+          command: command.command,
+          status: command.status,
+          provenance,
+          outputRef,
+          ...optionalCommandExecutionDetails(command),
+          doesNotProve
+        };
+      }
+      break;
+
+    case "command_runner":
+      if (
+        isPassedOrFailed(command.status) &&
+        command.exitCode !== undefined &&
+        hasText(command.capturedAt)
+      ) {
+        return {
+          kind: "command_runner",
+          command: command.command,
+          status: command.status,
+          provenance,
+          exitCode: command.exitCode,
+          capturedAt: command.capturedAt.trim(),
+          ...(outputRef === undefined ? {} : { outputRef }),
+          doesNotProve
+        };
+      }
+      break;
+
+    case "operator_reported":
+      return {
+        kind: "operator_reported",
+        command: command.command,
+        status: command.status,
+        provenance,
+        ...optionalCommandExecutionDetails(command),
+        ...optionalCommandAssertionDetails(command),
+        doesNotProve
+      };
+
+    case "default_template":
+      break;
+  }
+
+  return normalizeDefaultTemplateCommand(command);
 };
 
 const hasRequiredCommand = (
