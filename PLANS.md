@@ -140,6 +140,46 @@ IMR-17 complete: linked-document acquisition wording now directs operators to
   review linked evidence before opening new acquisition work.
 IMR-18 complete: acquisition candidates now expose candidate-only low-to-high
   cost escalation preview without execution or mutation.
+IMR-19 complete: one live linked-document acquisition escalation candidate was
+  accepted for manual follow-up; next branch is missing-evidence-only.
+```
+
+## Outcome IMR-19 Cost-Aware Acquisition Escalation Review
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-19-cost-aware-acquisition-escalation-review/REPORT.md
+```
+
+Outcome: one live DB-backed knowledge-acquisition candidate was reviewed. The
+cost-aware escalation preview was accepted for manual follow-up because it
+orders linked-document review before source-search review, bounded external
+research, and human review. No source repair is needed for the linked-document
+branch.
+
+Source-to-decision:
+
+- Source: IMR-18 live heartbeat output and retained `Towards Autonomous Memory
+  Agents` decision.
+- Mechanism: acquisition should escalate from cheaper available evidence to
+  more expensive review only when cheaper evidence is insufficient.
+- KRN implication: candidate-only acquisition output should let the operator
+  choose the next review step without raw JSON inspection or autonomous
+  mutation.
+- Decision: accept current linked-document escalation output.
+- Rejection: no autonomous acquisition, crawler, worker, API/MCP, ranking,
+  schema, source truth, or Memory Core mutation.
+- Consumer: heartbeat acquisition review and missing-evidence-only dogfood.
+- Falsifier: a future operator cannot choose the next acquisition step from the
+  preview without guessing cost order.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-ich: Dogfood missing-evidence-only acquisition escalation.
 ```
 
 ## Outcome IMR-18 Cost-Aware Acquisition Escalation Preview
