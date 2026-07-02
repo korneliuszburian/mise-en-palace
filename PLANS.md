@@ -31,7 +31,7 @@ Reduce adapter smoke ceremony next; do not start broad cleanup.
 Latest outcome:
 
 ```txt
-mise-en-palace-q4jh complete pending CI/Beads: source-search answer packages
+mise-en-palace-q4jh complete: source-search answer packages
 show SourceDecisionEdge linked/missing state for accepted SourceClaims.
 Report:
 docs/runs/2026-07-02-source-decision-link-readback.md

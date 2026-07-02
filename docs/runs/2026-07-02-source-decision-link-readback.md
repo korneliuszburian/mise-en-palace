@@ -61,8 +61,9 @@ Focused result:
 - CLI package typecheck passed through `rtk proxy`.
 - active-plan/context-hygiene focused tests passed.
 - diff whitespace check passed.
+- KRN CI `28620282428`: passed after push of `db92485`.
 
-Broader verification is reserved for the final slice commit/CI gate.
+CI supplied the broader typecheck/test/eval/DB smoke gate for this slice.
 
 ## Proof Boundary
 
