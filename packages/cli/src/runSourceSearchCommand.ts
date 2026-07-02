@@ -72,6 +72,10 @@ type SourceSearchCandidateStatus =
   | "included"
   | "excluded";
 
+type SourceSearchDecisionSupportState =
+  | "linked"
+  | "missing";
+
 interface ReviewabilityResult {
   reviewability: SearchReviewability;
   reasons: readonly string[];
@@ -104,6 +108,9 @@ interface SourceSearchAnswerCandidate {
   doesNotProve: string | undefined;
   exclusionReason: string | undefined;
   exclusionExplanation: string | undefined;
+  sourceDecisionSupportState: SourceSearchDecisionSupportState | undefined;
+  sourceDecisionSupportEdgeIds: readonly string[] | undefined;
+  sourceDecisionSupportCaveat: string | undefined;
 }
 
 type SourceSearchRelationDirection = "outgoing" | "incoming";
@@ -381,7 +388,11 @@ const candidateLabel = (candidate: RankedActivationCandidate): string =>
 
 const candidateToOutput = (
   candidate: RankedActivationCandidate,
-  status: SourceSearchCandidateStatus
+  status: SourceSearchCandidateStatus,
+  decisionSupportBySourceClaimId?: ReadonlyMap<
+    SourceClaim["id"],
+    readonly SourceSearchDecisionSupport[]
+  >
 ): SourceSearchAnswerCandidate => {
   const reviewability = reviewabilityFor(candidate);
   const claim = metadataString(candidate.metadata, "claim");
@@ -395,6 +406,10 @@ const candidateToOutput = (
     candidate.subjectType === "source_claim"
       ? sourceClaimIdFor(candidate)
       : candidate.sourceClaimId;
+  const decisionSupportReadback = sourceDecisionSupportReadbackFor(
+    candidate.subjectType === "source_claim" ? sourceClaimId : undefined,
+    decisionSupportBySourceClaimId
+  );
 
   return {
     label: candidateLabel(candidate),
@@ -422,7 +437,10 @@ const candidateToOutput = (
     falsifier,
     doesNotProve: candidate.doesNotProve,
     exclusionReason: candidate.exclusion?.reason,
-    exclusionExplanation: candidate.exclusion?.explanation
+    exclusionExplanation: candidate.exclusion?.explanation,
+    sourceDecisionSupportState: decisionSupportReadback.state,
+    sourceDecisionSupportEdgeIds: decisionSupportReadback.edgeIds,
+    sourceDecisionSupportCaveat: decisionSupportReadback.caveat
   };
 };
 
@@ -739,6 +757,57 @@ const buildSourceDecisionSupport = async (input: {
   return edgeGroups.flat();
 };
 
+const groupSourceDecisionSupportByClaimId = (
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
+): ReadonlyMap<SourceClaim["id"], readonly SourceSearchDecisionSupport[]> => {
+  const supportByClaimId = new Map<SourceClaim["id"], SourceSearchDecisionSupport[]>();
+
+  for (const support of sourceDecisionSupport) {
+    supportByClaimId.set(support.sourceClaimId, [
+      ...(supportByClaimId.get(support.sourceClaimId) ?? []),
+      support
+    ]);
+  }
+
+  return supportByClaimId;
+};
+
+const sourceDecisionSupportReadbackFor = (
+  sourceClaimId: SourceClaim["id"] | undefined,
+  decisionSupportBySourceClaimId:
+    | ReadonlyMap<SourceClaim["id"], readonly SourceSearchDecisionSupport[]>
+    | undefined
+): {
+  state: SourceSearchDecisionSupportState | undefined;
+  edgeIds: readonly string[] | undefined;
+  caveat: string | undefined;
+} => {
+  if (sourceClaimId === undefined) {
+    return {
+      state: undefined,
+      edgeIds: undefined,
+      caveat: undefined
+    };
+  }
+
+  const support = decisionSupportBySourceClaimId?.get(sourceClaimId) ?? [];
+
+  if (support.length > 0) {
+    return {
+      state: "linked",
+      edgeIds: support.map((item) => item.sourceDecisionEdgeId),
+      caveat: undefined
+    };
+  }
+
+  return {
+    state: "missing",
+    edgeIds: [],
+    caveat:
+      `Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback; treat it as accepted claim evidence, not decision-linked authority.`
+  };
+};
+
 const buildAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
@@ -747,7 +816,12 @@ const buildAnswerPackage = (input: {
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
 }): SourceSearchAnswerPackage => {
-  const included = input.included.map((candidate) => candidateToOutput(candidate, "included"));
+  const decisionSupportBySourceClaimId = groupSourceDecisionSupportByClaimId(
+    input.sourceDecisionSupport
+  );
+  const included = input.included.map((candidate) =>
+    candidateToOutput(candidate, "included", decisionSupportBySourceClaimId)
+  );
   const supportingClaims = included.filter(
     (candidate) => candidate.subjectType === "source_claim"
   );
@@ -780,6 +854,9 @@ const buildAnswerPackage = (input: {
     supportingDocumentCount: supportingDocuments.length,
     searchResultCount: input.diagnostics.searchResultCount
   });
+  const missingDecisionSupportCount = supportingClaims.filter(
+    (candidate) => candidate.sourceDecisionSupportState === "missing"
+  ).length;
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
       ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
@@ -806,7 +883,10 @@ const buildAnswerPackage = (input: {
         : ["Answer package includes SourceClaimEdge relation support."]),
       ...(input.sourceDecisionSupport.length === 0
         ? []
-        : ["Answer package includes SourceDecisionEdge decision support."])
+        : ["Answer package includes SourceDecisionEdge decision support."]),
+      ...(missingDecisionSupportCount === 0
+        ? []
+        : ["Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."])
     ],
     queryShapeDiagnostics,
     supportingClaims,
@@ -853,7 +933,17 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
     "supporting claims:",
     ...(answerPackage.supportingClaims.length === 0
       ? ["- none"]
-      : answerPackage.supportingClaims.map((candidate) => `- ${candidate.label} | ${candidate.reason}`)),
+      : answerPackage.supportingClaims.map((candidate) =>
+          [
+            `- ${candidate.label} | ${candidate.reason}`,
+            candidate.sourceDecisionSupportState === undefined
+              ? ""
+              : ` | sourceDecisionSupport:${candidate.sourceDecisionSupportState}`,
+            candidate.sourceDecisionSupportCaveat === undefined
+              ? ""
+              : ` | caveat:${candidate.sourceDecisionSupportCaveat}`
+          ].join("")
+        )),
     "supporting documents:",
     ...(answerPackage.supportingDocuments.length === 0
       ? ["- none"]
@@ -990,6 +1080,9 @@ type SourceSearchRenderInput = {
 const buildSearchReadback = (input: SourceSearchRenderInput) => {
   const included = input.candidates.filter((candidate) => candidate.exclusion === undefined);
   const excluded = input.candidates.filter((candidate) => candidate.exclusion !== undefined);
+  const decisionSupportBySourceClaimId = groupSourceDecisionSupportByClaimId(
+    input.sourceDecisionSupport
+  );
   const answerPackage = buildAnswerPackage({
     query: input.query,
     included,
@@ -1002,6 +1095,7 @@ const buildSearchReadback = (input: SourceSearchRenderInput) => {
   return {
     included,
     excluded,
+    decisionSupportBySourceClaimId,
     answerPackage,
     noMatchGuidance: buildNoMatchGuidance(input.candidates.length)
   };
@@ -1082,7 +1176,9 @@ const formatSearchJson = (input: SourceSearchRenderInput): string => {
       doesNotProve: input.diagnostics.doesNotProve
     },
     answerPackage: readback.answerPackage,
-    includedCandidates: readback.included.map((candidate) => candidateToOutput(candidate, "included")),
+    includedCandidates: readback.included.map((candidate) =>
+      candidateToOutput(candidate, "included", readback.decisionSupportBySourceClaimId)
+    ),
     excludedCandidates: readback.excluded.map((candidate) => candidateToOutput(candidate, "excluded")),
     noMatchGuidance: readback.noMatchGuidance,
     proof: {

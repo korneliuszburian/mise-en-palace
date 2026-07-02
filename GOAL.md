@@ -27,21 +27,21 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: source-search authority readback boundary fixed; next P1 is accepted SourceClaim decision-link/readback enforcement.
+current task: accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction.
 ```
 
-Current task state: source-search readback now applies the accepted-only
-source-authority boundary before answer packaging can present SourceClaims as
-supporting evidence.
+Current task state: accepted SourceClaims in source-search readback now expose
+SourceDecisionEdge linkage or an explicit missing-link caveat before they can
+look like decision-backed authority.
 
 Latest slice:
 
 ```txt
-Source-search authority readback now excludes proposed/rejected/deprecated
-SourceClaims before ContextROI answer packaging.
+Accepted SourceClaims in source-search answer packages now expose
+decision-linked or missing-decision-support state.
 Report:
-docs/runs/2026-07-02-source-search-authority-boundary.md
-Next: enforce accepted SourceClaim decision-link/readback without broad cleanup.
+docs/runs/2026-07-02-source-decision-link-readback.md
+Next: reduce codexAdapterSmoke ceremony without adapter behavior rewrite.
 ```
 
 ## Direction

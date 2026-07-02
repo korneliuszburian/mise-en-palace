@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: source-search authority readback boundary fixed; next P1 is accepted SourceClaim decision-link/readback enforcement
+current task: accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction
 ```
 
 ## Compact Checkpoints
@@ -69,7 +69,7 @@ source taxonomy boundary: legacy trustTier/supportType now project into explicit
 brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
 DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 product loop source authority: MemoryReviewGate requires SourceDecision-accepted SourceClaims
-source authority lifecycle: non-accepted SourceClaims are unsafe before activation filtering and source-search answer packaging
+source authority lifecycle: non-accepted SourceClaims are unsafe; accepted SourceClaims expose decision-linked or missing-link readback
 eval proof-boundary manifest: verification gates have typed proves/doesNotProve readback
 alpha verify full gate: alpha:verify remains fast; alpha:verify:full aggregates static, eval-adapter, DB-runtime, and DB-backed brain-loop proof lanes
 worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
@@ -111,20 +111,20 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Source-Search Authority Readback Boundary
+### Source Decision-Link Readback Boundary
 
-Goal: close the source-search readback leak found by second-opinion review.
+Goal: prevent accepted SourceClaims from looking decision-backed without visible SourceDecisionEdge support.
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy or CLI redesign.
 
-Latest report: `docs/runs/2026-07-02-source-search-authority-boundary.md`.
+Latest report: `docs/runs/2026-07-02-source-decision-link-readback.md`.
 
 Task boundary:
 
 ```txt
-Only accepted SourceClaims may become authoritative source-search support.
-Non-accepted SourceClaims must be explicitly unsafe before source-search ContextROI.
-Next work after closure is SourceDecision linkage/readback, not broad cleanup.
+Accepted SourceClaims remain usable evidence but must expose linked/missing SourceDecisionEdge readback.
+Missing SourceDecisionEdge support is a caveat, not silent decision authority.
+Next work after closure is codexAdapterSmoke reduction, not broad cleanup.
 ```
 
 ## Recent Completed Streams

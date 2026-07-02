@@ -397,6 +397,10 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("- none detected by current diagnostics");
     expect(result.stdout).toContain("supporting claims:");
     expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
+    expect(result.stdout).toContain("sourceDecisionSupport:missing");
+    expect(result.stdout).toContain(
+      `caveat:Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback`
+    );
     expect(result.stdout).toContain("supporting documents:");
     expect(result.stdout).toContain(`- search_document:${searchDocumentId}`);
     expect(result.stdout).toContain("source claim document links:");
@@ -459,7 +463,8 @@ describe("runSourceSearchCommand", () => {
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toEqual([
       "Answer package includes governed SourceClaim evidence.",
       "Answer package includes SearchDocument retrieval evidence.",
-      "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims."
+      "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims.",
+      "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
     ]);
     expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([]);
     expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
@@ -486,6 +491,13 @@ describe("runSourceSearchCommand", () => {
     expect(firstClaim.falsifier).toBe("The claim cannot be found by a later readback.");
     expect(firstClaim.doesNotProve).toBe("This does not prove product search quality.");
     expect(firstClaim.sourceArtifactId).toBe("f6db868a-4c82-406a-8371-9ab7d8594fc5");
+    expect(firstClaim.sourceDecisionSupportState).toBe("missing");
+    expect(firstClaim.sourceDecisionSupportCaveat).toBe(
+      `Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback; treat it as accepted claim evidence, not decision-linked authority.`
+    );
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
+      "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
+    );
     expect(firstDocument.label).toBe(`search_document:${searchDocumentId}`);
     expect(firstDocument.reviewability).toBe("ready");
     expect(firstDocumentLink.sourceClaimId).toBe(sourceClaimId);
@@ -780,6 +792,12 @@ describe("runSourceSearchCommand", () => {
     expect(decisionSupport.confidence).toBe("medium");
     expect(decisionSupport.notes).toBe("Accepted review retained as manual source/eval follow-up evidence.");
     expect(decisionSupport.doesNotProve).toBe("This edge does not prove eval promotion or source truth.");
+
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+
+    expect(firstClaim.sourceDecisionSupportState).toBe("linked");
+    expect(firstClaim.sourceDecisionSupportCaveat).toBeUndefined();
   });
 
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
