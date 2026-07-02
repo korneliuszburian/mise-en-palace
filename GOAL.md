@@ -27,21 +27,21 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction.
+current task: codexAdapterSmoke ceremony reduction implemented; CI closure pending.
 ```
 
-Current task state: accepted SourceClaims in source-search readback now expose
-SourceDecisionEdge linkage or an explicit missing-link caveat before they can
-look like decision-backed authority.
+Current task state: codexAdapterSmoke now reports a compact adapter-boundary
+proof instead of a many-field boolean dashboard, while preserving persisted
+readback, rendered-contract, stale-exclusion, hook-phase, and no-Codex-invoke
+assertions.
 
 Latest slice:
 
 ```txt
-Accepted SourceClaims in source-search answer packages now expose
-decision-linked or missing-decision-support state.
+codexAdapterSmoke ceremony mass reduced without adapter behavior rewrite.
 Report:
-docs/runs/2026-07-02-source-decision-link-readback.md
-Next: reduce codexAdapterSmoke ceremony without adapter behavior rewrite.
+docs/runs/2026-07-02-codex-adapter-smoke-reduction.md
+Next: verify CI, close Beads, then select next ready bounded slice.
 ```
 
 ## Direction

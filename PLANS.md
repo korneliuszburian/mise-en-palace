@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction
+current task: codexAdapterSmoke ceremony reduction implemented; CI closure pending
 latest pushed commit: see git history
 ```
 
@@ -24,18 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction.
-Reduce adapter smoke ceremony next; do not start broad cleanup.
+codexAdapterSmoke ceremony reduction implemented; CI closure pending.
+Verify CI, close Beads, then select the next bounded ready task.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-q4jh complete: source-search answer packages
-show SourceDecisionEdge linked/missing state for accepted SourceClaims.
+mise-en-palace-euos implementation: codexAdapterSmoke report collapsed from
+boolean dashboard to compact adapter-boundary checks.
 Report:
-docs/runs/2026-07-02-source-decision-link-readback.md
-Next: reduce codexAdapterSmoke ceremony without adapter behavior rewrite.
+docs/runs/2026-07-02-codex-adapter-smoke-reduction.md
+Next: verify CI, close Beads, then select next ready bounded slice.
 ```
 
 ## 2. Product Thesis

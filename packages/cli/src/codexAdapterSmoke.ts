@@ -24,19 +24,15 @@ import {
   createSmokeIdFactory,
   createSmokeDatabaseRuntime,
   createSmokeRepositories,
-  completedOrNot,
   countMemoryRecordsBySmokeId,
   countRetrievalRunById,
   countRunEventsBySmokeId,
   countSourceArtifactsBySmokeId,
   countSourceClaimsBySmokeId,
-  matchedOrMismatch,
   metadataString,
   normalizeSmokeSlugPart,
-  passedOrFailed,
   renderCodexBriefFromAggregate,
-  sumCountRows,
-  yesNo
+  sumCountRows
 } from "./codexBriefSupport.js";
 
 export interface CodexAdapterSmokeInput {
@@ -47,23 +43,9 @@ export interface CodexAdapterSmokeInput {
 
 export interface CodexAdapterSmokeReport {
   workspaceSlug: string;
-  projectSlug: string;
   executionRunId: string;
-  readBackExecutionRunId: string;
   contextAssemblyId: string;
-  renderedObjective: boolean;
-  renderedFormatVersion: boolean;
-  renderedNonGoals: boolean;
-  renderedExplicitExclusions: boolean;
-  renderedEvidenceContract: boolean;
-  renderedSkillPatternRefs: boolean;
-  expiredMemoryExcluded: boolean;
-  expiredMemoryExclusionReason: string;
-  expiredMemoryValidUntil: string;
-  sourceClaimsUsed: number;
-  memoryRecordsUsed: number;
-  antiMemoryWarnings: number;
-  hookExpectationCount: number;
+  boundaryChecks: readonly string[];
   codexInvocationCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -73,21 +55,13 @@ interface CountRow {
   count: number;
 }
 
-interface CodexAdapterBriefProof {
+interface CodexAdapterBoundaryProof {
   contextAssemblyId: string;
-  renderedObjective: boolean;
-  renderedFormatVersion: boolean;
-  renderedNonGoals: boolean;
-  renderedExplicitExclusions: boolean;
-  renderedEvidenceContract: boolean;
-  renderedSkillPatternRefs: boolean;
-  expiredMemoryExcluded: boolean;
-  expiredMemoryExclusionReason: string;
-  expiredMemoryValidUntil: string;
+  checks: readonly string[];
   codexInvocationCount: number;
 }
 
-interface CodexAdapterBriefProofCheck {
+interface CodexAdapterBoundaryCheck {
   label: string;
   passed: boolean;
 }
@@ -96,29 +70,6 @@ type CodexAdapterReadBackContextAssembly = NonNullable<
   HarnessRunAggregate["contextAssembly"]
 >;
 
-interface ExpiredMemoryExclusionProof {
-  excluded: boolean;
-  reason: string;
-}
-
-interface CodexAdapterProofCheckInput {
-  aggregate: HarnessRunAggregate;
-  codexInvocationCount: number;
-  contextAssembly: CodexAdapterReadBackContextAssembly;
-  expiredMemoryExcluded: boolean;
-  executionRunId: string;
-  expectedContextAssemblyId: string;
-  expectedMemoryRecordId: string;
-  expectedSourceClaimId: string;
-  rendered: RenderedCodexBrief;
-  renderedEvidenceContract: boolean;
-  renderedExplicitExclusions: boolean;
-  renderedFormatVersion: boolean;
-  renderedNonGoals: boolean;
-  renderedObjective: boolean;
-  renderedSkillPatternRefs: boolean;
-}
-
 const sameStringList = (
   actual: readonly string[],
   expected: readonly string[]
@@ -126,13 +77,11 @@ const sameStringList = (
   actual.length === expected.length &&
   actual.every((value, index) => value === expected[index]);
 
-const hasTypedSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
+const hasRenderedSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
   rendered.brief.skillBindingHints.length > 0 &&
   rendered.brief.skillBindingHints.every((hint) =>
     hint.patternRefs.includes(skillRoutingPatternRef)
-  );
-
-const rendersSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
+  ) &&
   rendered.renderedBrief.includes(`patterns=${skillRoutingPatternRef}`);
 
 const countMarkerRows = async (
@@ -188,13 +137,13 @@ const cleanupMarkerRows = async (
   return countMarkerRows(client, workspaceSlug, marker, retrievalRunId, contextAssemblyId);
 };
 
-const proveExpiredMemoryExclusion = (
+const hasStaleMemoryExclusion = (
   input: {
     contextAssembly: CodexAdapterReadBackContextAssembly;
     expectedExpiredMemoryRecordId: string;
     rendered: RenderedCodexBrief;
   }
-): ExpiredMemoryExclusionProof => {
+): boolean => {
   const exclusion = input.contextAssembly.exclusions.find((item) =>
     item.subjectType === "memory_record" &&
     item.subjectId === input.expectedExpiredMemoryRecordId
@@ -211,114 +160,81 @@ const proveExpiredMemoryExclusion = (
     input.expectedExpiredMemoryRecordId
   );
 
-  return {
-    excluded:
-      exclusion?.reason === "stale" &&
-      explicitExclusionRendered &&
-      renderedTextIncludesExclusion &&
-      excludedFromUsedMemory,
-    reason: exclusion?.reason ?? "missing"
-  };
+  return exclusion?.reason === "stale" &&
+    explicitExclusionRendered &&
+    renderedTextIncludesExclusion &&
+    excludedFromUsedMemory;
 };
 
-const codexAdapterProofChecks = (
-  input: CodexAdapterProofCheckInput
-): CodexAdapterBriefProofCheck[] => [
-  {
-    label: "execution run readback",
-    passed: input.aggregate.executionRun.id === input.executionRunId
-  },
-  {
-    label: "context assembly readback",
-    passed: input.contextAssembly.id === input.expectedContextAssemblyId
-  },
-  { label: "rendered objective", passed: input.renderedObjective },
-  { label: "rendered format version", passed: input.renderedFormatVersion },
-  { label: "rendered non-goals", passed: input.renderedNonGoals },
-  { label: "rendered explicit exclusions", passed: input.renderedExplicitExclusions },
-  { label: "rendered evidence contract", passed: input.renderedEvidenceContract },
-  { label: "rendered skill pattern refs", passed: input.renderedSkillPatternRefs },
-  {
-    label: "seeded source claim selected",
-    passed: sameStringList(input.rendered.brief.sourceClaimsUsed, [input.expectedSourceClaimId])
-  },
-  {
-    label: "seeded memory selected",
-    passed: sameStringList(input.rendered.brief.memoryRecordsUsed, [input.expectedMemoryRecordId])
-  },
-  { label: "expired memory stale exclusion", passed: input.expiredMemoryExcluded },
-  {
-    label: "hook expectation phases",
-    passed: sameStringList(
-      input.rendered.brief.hookExpectations.map((expectation) => expectation.phase),
-      codexHookPhases
-    )
-  },
-  { label: "codex invocation count", passed: input.codexInvocationCount === 0 }
-];
+const renderedBriefCoversContract = (
+  aggregate: HarnessRunAggregate,
+  rendered: RenderedCodexBrief
+): boolean =>
+  rendered.renderedBrief.includes(`Objective: ${aggregate.taskContract.objective}`) &&
+  rendered.renderedBrief.includes(`Format Version: ${rendered.brief.formatVersion}`) &&
+  aggregate.taskContract.nonGoals.every((nonGoal) =>
+    rendered.renderedBrief.includes(`- ${nonGoal}`)
+  ) &&
+  rendered.renderedBrief.includes("Explicit Exclusions:") &&
+  !rendered.renderedBrief.includes("Explicit Exclusions:\n- none") &&
+  rendered.renderedBrief.includes("Evidence Contract:") &&
+  rendered.evidenceContract.commands.every((command) =>
+    rendered.renderedBrief.includes(command.command)
+  ) &&
+  hasRenderedSkillRoutingPatternRefs(rendered);
 
-const assertCodexAdapterBriefProof = (
+const assertCodexAdapterBoundary = (
   input: {
     aggregate: HarnessRunAggregate;
     executionRunId: string;
     expectedContextAssemblyId: string;
     expectedExpiredMemoryRecordId: string;
-    expectedExpiredMemoryValidUntil: string;
     expectedMemoryRecordId: string;
     expectedSourceClaimId: string;
     rendered: RenderedCodexBrief;
   }
-): CodexAdapterBriefProof => {
+): CodexAdapterBoundaryProof => {
   const contextAssembly = input.aggregate.contextAssembly;
 
   if (contextAssembly === undefined) {
     throw new Error("Codex adapter smoke failed to read back persisted run");
   }
 
-  const renderedObjective = input.rendered.renderedBrief.includes(
-    `Objective: ${input.aggregate.taskContract.objective}`
-  );
-  const renderedFormatVersion = input.rendered.renderedBrief.includes(
-    `Format Version: ${input.rendered.brief.formatVersion}`
-  );
-  const renderedNonGoals = input.aggregate.taskContract.nonGoals.every((nonGoal) =>
-    input.rendered.renderedBrief.includes(`- ${nonGoal}`)
-  );
-  const renderedExplicitExclusions =
-    contextAssembly.exclusions.length > 0 &&
-    input.rendered.renderedBrief.includes("Explicit Exclusions:") &&
-    !input.rendered.renderedBrief.includes("Explicit Exclusions:\n- none");
-  const renderedEvidenceContract =
-    input.rendered.renderedBrief.includes("Evidence Contract:") &&
-    input.rendered.evidenceContract.commands.every((command) =>
-      input.rendered.renderedBrief.includes(command.command)
-    );
-  const renderedSkillPatternRefs =
-    hasTypedSkillRoutingPatternRefs(input.rendered) &&
-    rendersSkillRoutingPatternRefs(input.rendered);
-  const expiredMemoryProof = proveExpiredMemoryExclusion({
-    contextAssembly,
-    expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
-    rendered: input.rendered
-  });
   const codexInvocationCount = countCodexInvocationEvents(input.aggregate);
-  const proofChecks = codexAdapterProofChecks({
-    aggregate: input.aggregate,
-    codexInvocationCount,
-    contextAssembly,
-    expiredMemoryExcluded: expiredMemoryProof.excluded,
-    executionRunId: input.executionRunId,
-    expectedContextAssemblyId: input.expectedContextAssemblyId,
-    expectedMemoryRecordId: input.expectedMemoryRecordId,
-    expectedSourceClaimId: input.expectedSourceClaimId,
-    rendered: input.rendered,
-    renderedEvidenceContract,
-    renderedExplicitExclusions,
-    renderedFormatVersion,
-    renderedNonGoals,
-    renderedObjective,
-    renderedSkillPatternRefs
-  });
+  const proofChecks: readonly CodexAdapterBoundaryCheck[] = [
+    {
+      label: "persisted-readback",
+      passed:
+        input.aggregate.executionRun.id === input.executionRunId &&
+        contextAssembly.id === input.expectedContextAssemblyId
+    },
+    {
+      label: "rendered-contract",
+      passed: renderedBriefCoversContract(input.aggregate, input.rendered)
+    },
+    {
+      label: "bounded-selected-context",
+      passed:
+        sameStringList(input.rendered.brief.sourceClaimsUsed, [input.expectedSourceClaimId]) &&
+        sameStringList(input.rendered.brief.memoryRecordsUsed, [input.expectedMemoryRecordId])
+    },
+    {
+      label: "stale-memory-exclusion",
+      passed: hasStaleMemoryExclusion({
+        contextAssembly,
+        expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
+        rendered: input.rendered
+      })
+    },
+    {
+      label: "hook-phases",
+      passed: sameStringList(
+        input.rendered.brief.hookExpectations.map((expectation) => expectation.phase),
+        codexHookPhases
+      )
+    },
+    { label: "no-codex-invocation", passed: codexInvocationCount === 0 }
+  ];
   const failedCheck = proofChecks.find((check) => !check.passed);
 
   if (failedCheck !== undefined) {
@@ -329,42 +245,19 @@ const assertCodexAdapterBriefProof = (
 
   return {
     contextAssemblyId: contextAssembly.id,
-    renderedObjective,
-    renderedFormatVersion,
-    renderedNonGoals,
-    renderedExplicitExclusions,
-    renderedEvidenceContract,
-    renderedSkillPatternRefs,
-    expiredMemoryExcluded: expiredMemoryProof.excluded,
-    expiredMemoryExclusionReason: expiredMemoryProof.reason,
-    expiredMemoryValidUntil: input.expectedExpiredMemoryValidUntil,
+    checks: proofChecks.map((check) => check.label),
     codexInvocationCount
   };
 };
 
 const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Workspace smoke row: ${report.workspaceSlug}`,
-  `Project smoke row: ${report.projectSlug}`,
   `Execution run: ${report.executionRunId}`,
-  `Readback: ${matchedOrMismatch(report.readBackExecutionRunId, report.executionRunId)}`,
   `Context assembly: ${report.contextAssemblyId}`,
-  `Objective present: ${yesNo(report.renderedObjective)}`,
-  `Format version present: ${yesNo(report.renderedFormatVersion)}`,
-  `Non-goals present: ${yesNo(report.renderedNonGoals)}`,
-  `Explicit exclusions present: ${yesNo(report.renderedExplicitExclusions)}`,
-  `Expired memory excluded: ${yesNo(report.expiredMemoryExcluded)}`,
-  `Expired memory exclusion reason: ${report.expiredMemoryExclusionReason}`,
-  `Expired memory valid until: ${report.expiredMemoryValidUntil}`,
-  `Evidence contract present: ${yesNo(report.renderedEvidenceContract)}`,
-  `Skill pattern refs present: ${yesNo(report.renderedSkillPatternRefs)}`,
-  `Source claims used: ${report.sourceClaimsUsed}`,
-  `Memory records used: ${report.memoryRecordsUsed}`,
-  `Anti-memory warnings: ${report.antiMemoryWarnings}`,
-  `Hook expectations: ${report.hookExpectationCount}`,
+  `Boundary checks: ${report.boundaryChecks.join(", ")}`,
   `Codex invocations: ${report.codexInvocationCount}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-  `Cleanup: ${completedOrNot(report.cleanedUp)}`,
-  `Codex adapter smoke: ${passedOrFailed(report.cleanedUp)}`
+  `Codex adapter smoke: ${report.cleanedUp ? "passed" : "failed"}`
 ];
 
 export const formatCodexAdapterSmokeReport = (report: CodexAdapterSmokeReport): string =>
@@ -463,22 +356,6 @@ export const runCodexAdapterSmokeCheck = async (
         smokeId: marker
       }
     });
-    const invokeCodexClaim = await sourceRepository.createSourceClaim({
-      sourceArtifactId: sourceArtifact.id,
-      claim: "Codex adapter smoke should invoke Codex to prove the adapter.",
-      mechanism: "Running Codex would prove execution.",
-      krnImplication: "The smoke command would become an executor.",
-      doesNotProve: "M26 allows actual Codex invocation.",
-      trustTier: "project-decision",
-      supportType: "rejection",
-      consumer: "M26 Codex adapter smoke",
-      falsifier: "M26 non-goals forbid Codex invocation.",
-      revisitWhen: "A later milestone explicitly accepts execution.",
-      status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
-    });
     const boundedMemoryRecord = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `codex-adapter-smoke:${marker}:bounded-brief`,
@@ -513,38 +390,6 @@ export const runCodexAdapterSmokeCheck = async (
       isUserPreference: false,
       validFrom: past,
       validUntil: expiredValidUntil,
-      metadata: {
-        smokeId: marker
-      }
-    });
-    await memoryRepository.createAntiMemoryRecord({
-      projectId: project.id,
-      key: `codex-adapter-smoke:${marker}:anti-invoke-codex`,
-      rejectedClaim: "Codex adapter smoke should invoke Codex to prove the adapter.",
-      reason: "M26 must render instructions and expectations without actual Codex execution.",
-      invalidatedBySourceClaimIds: [invokeCodexClaim.id],
-      appliesTo: "M26 Codex adapter smoke",
-      mayRevisitWhen: "A later execution milestone is accepted.",
-      summary: "Do not invoke Codex for M26 adapter smoke",
-      body: "The adapter smoke path proves rendered output, not executor behavior.",
-      owner: "kernel",
-      confidence: 98,
-      sourceLineage: [{ sourceId: adapterClaim.id }],
-      metadata: {
-        smokeId: marker
-      }
-    });
-    await retrievalRepository.createSearchDocument({
-      projectId: project.id,
-      subjectType: "source_claim",
-      subjectId: adapterClaim.id,
-      sourceClaimId: adapterClaim.id,
-      title: "Codex adapter smoke search document",
-      body:
-        "Codex adapter smoke renders persisted execution brief objective non-goals explicit exclusions evidence contract source memory hook expectations no Codex invocation cleanup count zero.",
-      searchText:
-        "codex adapter smoke execution brief objective non-goals explicit exclusions evidence contract source memory hook expectations cleanup",
-      trustTier: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -647,12 +492,11 @@ export const runCodexAdapterSmokeCheck = async (
       execPlanReference: "GOAL.md M26.05",
       missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });
-    const proof = assertCodexAdapterBriefProof({
+    const proof = assertCodexAdapterBoundary({
       aggregate,
       executionRunId: executionRun.id,
       expectedContextAssemblyId: result.contextAssembly.id,
       expectedExpiredMemoryRecordId: expiredMemoryRecord.id,
-      expectedExpiredMemoryValidUntil: expiredValidUntil,
       expectedMemoryRecordId: boundedMemoryRecord.id,
       expectedSourceClaimId: adapterClaim.id,
       rendered
@@ -668,23 +512,9 @@ export const runCodexAdapterSmokeCheck = async (
 
     return {
       workspaceSlug,
-      projectSlug,
       executionRunId: executionRun.id,
-      readBackExecutionRunId: aggregate.executionRun.id,
       contextAssemblyId: proof.contextAssemblyId,
-      renderedObjective: proof.renderedObjective,
-      renderedFormatVersion: proof.renderedFormatVersion,
-      renderedNonGoals: proof.renderedNonGoals,
-      renderedExplicitExclusions: proof.renderedExplicitExclusions,
-      renderedEvidenceContract: proof.renderedEvidenceContract,
-      renderedSkillPatternRefs: proof.renderedSkillPatternRefs,
-      expiredMemoryExcluded: proof.expiredMemoryExcluded,
-      expiredMemoryExclusionReason: proof.expiredMemoryExclusionReason,
-      expiredMemoryValidUntil: proof.expiredMemoryValidUntil,
-      sourceClaimsUsed: rendered.brief.sourceClaimsUsed.length,
-      memoryRecordsUsed: rendered.brief.memoryRecordsUsed.length,
-      antiMemoryWarnings: rendered.brief.antiMemoryWarnings.length,
-      hookExpectationCount: rendered.brief.hookExpectations.length,
+      boundaryChecks: proof.checks,
       codexInvocationCount: proof.codexInvocationCount,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

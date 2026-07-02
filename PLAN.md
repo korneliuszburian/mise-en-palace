@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted SourceClaim decision-link readback fixed; next P2 is codexAdapterSmoke ceremony reduction
+current task: codexAdapterSmoke ceremony reduction implemented; CI closure pending
 ```
 
 ## Compact Checkpoints
@@ -111,20 +111,20 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Source Decision-Link Readback Boundary
+### Codex Adapter Smoke Reduction
 
-Goal: prevent accepted SourceClaims from looking decision-backed without visible SourceDecisionEdge support.
+Goal: reduce codexAdapterSmoke ceremony without changing Codex adapter behavior.
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy or CLI redesign.
 
-Latest report: `docs/runs/2026-07-02-source-decision-link-readback.md`.
+Latest report: `docs/runs/2026-07-02-codex-adapter-smoke-reduction.md`.
 
 Task boundary:
 
 ```txt
-Accepted SourceClaims remain usable evidence but must expose linked/missing SourceDecisionEdge readback.
-Missing SourceDecisionEdge support is a caveat, not silent decision authority.
-Next work after closure is codexAdapterSmoke reduction, not broad cleanup.
+codexAdapterSmoke now reports compact adapter-boundary checks instead of a boolean dashboard.
+The <=5 KB target was not forced by hiding DB fixture mass in another file.
+Next work after CI closure is selected from Beads ready tasks, not broad cleanup.
 ```
 
 ## Recent Completed Streams
