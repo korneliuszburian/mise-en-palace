@@ -16,10 +16,10 @@ import {
 
 import {
   runSourceArtifactPreviewCommand
-} from "./runSourceArtifactPreviewCommand.js";
+} from "../runSourceArtifactPreviewCommand.js";
 import type {
   DatabaseRuntime
-} from "./databaseRuntime.js";
+} from "../databaseRuntime.js";
 import type {
   SourceClaim,
   SourceClaimEdge
