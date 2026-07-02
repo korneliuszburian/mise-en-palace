@@ -13,9 +13,10 @@ dashboard-first application.
 
 1. Read `AGENTS.md`.
 2. Read `docs/KRN_KERNEL.md`.
-3. Use `GOAL.md` as the compact activation contract.
-4. Use `PLAN.md` as the canonical living execution map.
-5. Treat `docs/materials/` as raw source/audit quarantine, not default context.
+3. Read `docs/KRN_BRAIN.md` when you need the target brain architecture.
+4. Use `GOAL.md` as the compact activation contract.
+5. Use `PLAN.md` as the canonical living execution map.
+6. Treat `docs/materials/` as raw source/audit quarantine, not default context.
 
 `docs/plans/memory-ideal-state/PLAN.md`, QG docs, handoff docs, and review docs
 are historical ledgers unless the root `PLAN.md` explicitly names them as
