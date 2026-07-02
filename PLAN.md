@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: codexAdapterSmoke ceremony reduction implemented; CI closure pending
+current task: codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open
 ```
 
 ## Compact Checkpoints
@@ -124,7 +124,7 @@ Task boundary:
 ```txt
 codexAdapterSmoke now reports compact adapter-boundary checks instead of a boolean dashboard.
 The <=5 KB target was not forced by hiding DB fixture mass in another file.
-Next work after CI closure is selected from Beads ready tasks, not broad cleanup.
+KRN CI 28621194333 passed. Next work requires Beads backlog inspection or a new bounded issue.
 ```
 
 ## Recent Completed Streams

@@ -27,13 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: codexAdapterSmoke ceremony reduction implemented; CI closure pending.
+current task: codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open.
 ```
 
 Current task state: codexAdapterSmoke now reports a compact adapter-boundary
 proof instead of a many-field boolean dashboard, while preserving persisted
 readback, rendered-contract, stale-exclusion, hook-phase, and no-Codex-invoke
-assertions.
+assertions. KRN CI `28621194333` passed.
 
 Latest slice:
 
@@ -41,7 +41,7 @@ Latest slice:
 codexAdapterSmoke ceremony mass reduced without adapter behavior rewrite.
 Report:
 docs/runs/2026-07-02-codex-adapter-smoke-reduction.md
-Next: verify CI, close Beads, then select next ready bounded slice.
+Next: inspect Beads backlog and create/claim the next bounded slice from current audit evidence.
 ```
 
 ## Direction

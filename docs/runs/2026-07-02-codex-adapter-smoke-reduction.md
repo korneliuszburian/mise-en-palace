@@ -60,6 +60,12 @@ rtk git diff --check
 
 All passed locally.
 
+CI:
+
+```txt
+KRN CI 28621194333: passed
+```
+
 ## Non-Proof
 
 - `KRN_DATABASE_URL` was not set locally, so `db:smoke:codex-adapter` was not run
