@@ -39,13 +39,14 @@ the product goal.
 Latest slice:
 
 ```txt
-source taxonomy boundary now projects legacy trustTier/supportType into explicit
-trust level, source kind, support relation, and source use for activation/context
-readback before any DB enum migration.
+worker job type ownership now derives DB repository active worker job
+type/status contracts from @krn/workers canonical tuples while preserving
+schema-only legacy/future statuses outside the active mapper lifecycle.
 Report:
-docs/runs/2026-07-02-source-taxonomy-boundary.md
-Next: continue audit-hardening through ID branding, DB source migration
-planning, execution-brief boundaries, and bounded naming cleanup.
+docs/runs/2026-07-02-worker-job-type-ownership.md
+Next: continue audit-hardening through doctor typed readiness, smoke fixture
+clocks, execution-brief proof boundaries, source relation metadata typing,
+retrieval ID branding, and bounded naming cleanup.
 ```
 
 ## Direction

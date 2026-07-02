@@ -1,24 +1,20 @@
 import type { IsoTimestamp } from "@krn/core";
+import {
+  maintenanceJobTypes,
+  workerJobStatuses
+} from "@krn/workers";
+import type {
+  MaintenanceJobType,
+  WorkerJobStatus
+} from "@krn/workers";
 
-export const workerJobTypes = [
-  "embed_source_chunk",
-  "embed_memory_record",
-  "compact_memory",
-  "detect_contradiction",
-  "expire_stale_memory"
-] as const;
+export const workerJobTypes = maintenanceJobTypes;
 
-export type WorkerJobType = (typeof workerJobTypes)[number];
+export type WorkerJobType = MaintenanceJobType;
 
-export const workerJobLifecycleStatuses = [
-  "queued",
-  "running",
-  "succeeded",
-  "failed",
-  "skipped"
-] as const;
+export const workerJobLifecycleStatuses = workerJobStatuses;
 
-export type WorkerJobLifecycleStatus = (typeof workerJobLifecycleStatuses)[number];
+export type WorkerJobLifecycleStatus = WorkerJobStatus;
 
 export interface EnqueueWorkerJobInput {
   jobType: WorkerJobType;
