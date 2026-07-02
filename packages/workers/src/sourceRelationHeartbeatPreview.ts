@@ -1,8 +1,7 @@
 import {
   assessCandidateReviewability,
   isSourceClaimTemporallyValid,
-  readMetadataString,
-  readMetadataStringList
+  readSourceRelationMetadataReadback
 } from "@krn/core";
 import type {
   CandidateReviewability,
@@ -11,6 +10,7 @@ import type {
   SourceClaimEdge,
   SourceClaimEdgeKind,
   SourceClaimId,
+  SourceRelationMetadataReadback,
   SourceRelationReviewFocus
 } from "@krn/core";
 
@@ -196,13 +196,8 @@ const buildCandidate = (
   };
 };
 
-const relationEvidenceIsWeak = (edge: SourceClaimEdge): boolean => {
-  const evidenceRefs = readMetadataStringList(edge.metadata, "evidenceRefs");
-  const consumer = readMetadataString(edge.metadata, "consumer");
-  const doesNotProve = readMetadataString(edge.metadata, "doesNotProve");
-
-  return evidenceRefs.length === 0 || !hasText(consumer) || !hasText(doesNotProve);
-};
+const relationEvidenceIsWeak = (metadata: SourceRelationMetadataReadback): boolean =>
+  metadata.evidenceRefs.length === 0 || metadata.missingProofBoundaryFields.length > 0;
 
 const connectedClaimIsStale = (
   edge: SourceClaimEdge,
@@ -223,7 +218,8 @@ const connectedClaimIsStale = (
 const chooseCandidateKind = (
   input: BuildSourceRelationHeartbeatPreviewInput,
   edge: SourceClaimEdge,
-  claimsById: ReadonlyMap<SourceClaimId, SourceClaim>
+  claimsById: ReadonlyMap<SourceClaimId, SourceClaim>,
+  relationMetadata: SourceRelationMetadataReadback
 ): Pick<SourceRelationHeartbeatCandidate, "action" | "reason"> | undefined => {
   if (connectedClaimIsStale(edge, claimsById, input.now)) {
     return {
@@ -232,7 +228,7 @@ const chooseCandidateKind = (
     };
   }
 
-  if (relationEvidenceIsWeak(edge)) {
+  if (relationEvidenceIsWeak(relationMetadata)) {
     return {
       action: "review_relation_evidence",
       reason: "relation_evidence_is_weak"
@@ -269,7 +265,8 @@ export const buildSourceRelationHeartbeatPreview = (
   }
 
   for (const edge of input.sourceClaimEdges) {
-    const candidateKind = chooseCandidateKind(input, edge, claimsById);
+    const relationMetadata = readSourceRelationMetadataReadback(edge.metadata);
+    const candidateKind = chooseCandidateKind(input, edge, claimsById, relationMetadata);
 
     if (candidateKind === undefined) {
       continue;
@@ -281,7 +278,7 @@ export const buildSourceRelationHeartbeatPreview = (
         edge,
         candidateKind.reason,
         candidateKind.action,
-        readMetadataStringList(edge.metadata, "evidenceRefs")
+        relationMetadata.evidenceRefs
       )
     );
 

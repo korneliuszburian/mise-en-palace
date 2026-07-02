@@ -132,6 +132,46 @@ describe("source relation heartbeat preview", () => {
     );
   });
 
+  test("normalizes singular and plural relation evidence refs before candidate review", () => {
+    const result = buildSourceRelationHeartbeatPreview({
+      now,
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [
+        sourceClaimEdge({
+          metadata: {
+            consumer: " source relation heartbeat preview test ",
+            doesNotProve: " This edge does not prove source truth. ",
+            evidenceRef: " docs/reviews/source-edge-a.md ",
+            evidenceRefs: [
+              "docs/reviews/source-edge-a.md",
+              " docs/reviews/source-edge-b.md ",
+              "",
+              12
+            ]
+          }
+        })
+      ],
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+    });
+
+    expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
+      "docs/reviews/source-edge-a.md",
+      "docs/reviews/source-edge-b.md"
+    ]);
+    expect(result.candidates[0]?.evidenceRefs).toEqual([
+      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md",
+      "docs/reviews/source-edge-a.md",
+      "docs/reviews/source-edge-b.md"
+    ]);
+    expect(result.candidates[0]?.relationEvidenceRequest).toBe(
+      "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    );
+    expect(result.candidates[0]?.reviewability).toBe("ready");
+  });
+
   test("prioritizes stale connected claims before relation-kind maintenance", () => {
     const result = buildSourceRelationHeartbeatPreview({
       now,

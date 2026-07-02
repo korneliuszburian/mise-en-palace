@@ -81,7 +81,15 @@ const sourceClaimEdge = (
     consumer: "graph mini Brain-QA",
     doesNotProve: "This edge does not prove graph retrieval quality.",
     evidenceRef: "docs/decisions/ADR-0021-temporal-claim-graph.md",
-    sourceRanges: ["docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"]
+    sourceDecisionRef: "source-decision:temporal-claim-graph",
+    sourceRanges: [
+      "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119",
+      "",
+      "  ",
+      123
+    ],
+    validFrom: "2026-06-01T00:00:00.000Z",
+    validUntil: "2026-12-31T00:00:00.000Z"
   },
   createdAt: now,
   ...overrides
@@ -543,6 +551,9 @@ describe("runSourceSearchCommand", () => {
     expect(relation.consumer).toBe("graph mini Brain-QA");
     expect(relation.doesNotProve).toBe("This edge does not prove graph retrieval quality.");
     expect(relation.evidenceRef).toBe("docs/decisions/ADR-0021-temporal-claim-graph.md");
+    expect(relation.sourceDecisionRef).toBe("source-decision:temporal-claim-graph");
+    expect(relation.validFrom).toBe("2026-06-01T00:00:00.000Z");
+    expect(relation.validUntil).toBe("2026-12-31T00:00:00.000Z");
     expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
       "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
     ]);
@@ -557,8 +568,56 @@ describe("runSourceSearchCommand", () => {
     expect(firstRelationKind.count).toBe(1);
     expect(graphReadback.graphAware).toBe(true);
     expect(arrayValue(graphReadback.caveats, "graph caveats")).toContain(
-      "entity extraction is not available in this bounded readback"
+      "relation support does not prove source truth, edge correctness, or ranking quality"
     );
+  });
+
+  it("filters blank and non-string SourceClaimEdge relation metadata in JSON readback", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "temporal claim graph",
+        limit: 10,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        edges: [
+          sourceClaimEdge({
+            metadata: {
+              consumer: " ",
+              doesNotProve: 123,
+              evidenceRef: "",
+              validFrom: " ",
+              validUntil: false,
+              invalidatedAt: "2026-06-30T00:00:00.000Z",
+              sourceRanges: ["", " docs/example.md:1-2 ", 42]
+            }
+          })
+        ]
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const relationSupport = arrayValue(answerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+
+    expect(relation.consumer).toBeUndefined();
+    expect(relation.doesNotProve).toBeUndefined();
+    expect(relation.evidenceRef).toBeUndefined();
+    expect(relation.validFrom).toBeUndefined();
+    expect(relation.validUntil).toBeUndefined();
+    expect(relation.invalidatedAt).toBe("2026-06-30T00:00:00.000Z");
+    expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
+      "docs/example.md:1-2"
+    ]);
   });
 
   it("scans enough source claims before ranking bounded source-search output", async () => {

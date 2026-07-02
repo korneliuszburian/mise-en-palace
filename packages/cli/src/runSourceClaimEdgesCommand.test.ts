@@ -58,13 +58,17 @@ const sourceClaimEdge: SourceClaimEdge = {
   toSourceClaimId: relatedSourceClaimId,
   kind: "narrows",
   metadata: {
-    consumer: "graph brain v0",
-    doesNotProve: "This edge does not prove claim truth.",
-    evidenceRef: "docs/example.md:1-3",
-    sourceDecisionRef: "decision-1",
-    scope: "bounded preview",
+    consumer: " graph brain v0 ",
+    doesNotProve: " This edge does not prove claim truth. ",
+    evidenceRef: " docs/example.md:1-3 ",
+    sourceDecisionRef: " decision-1 ",
+    scope: " bounded preview ",
+    validFrom: " 2026-06-01T00:00:00.000Z ",
+    validUntil: " 2026-12-31T00:00:00.000Z ",
     sourceRanges: [
-      "docs/example.md:1-3"
+      " docs/example.md:1-3 ",
+      "",
+      12
     ]
   },
   createdAt: now
@@ -138,7 +142,14 @@ describe("runSourceClaimEdgesCommand", () => {
     expect(result.stdout).toContain("kind: narrows");
     expect(result.stdout).toContain("consumer: graph brain v0");
     expect(result.stdout).toContain("doesNotProve: This edge does not prove claim truth.");
+    expect(result.stdout).toContain("evidenceRef: docs/example.md:1-3");
+    expect(result.stdout).toContain("sourceDecisionRef: decision-1");
+    expect(result.stdout).toContain("scope: bounded preview");
+    expect(result.stdout).toContain("validFrom: 2026-06-01T00:00:00.000Z");
+    expect(result.stdout).toContain("validUntil: 2026-12-31T00:00:00.000Z");
     expect(result.stdout).toContain("sourceRanges:");
+    expect(result.stdout).toContain("  - docs/example.md:1-3");
+    expect(result.stdout).not.toContain("  - 12");
     expect(result.stdout).toContain("edgeInfluencedSourceContext:");
     expect(result.stdout).toContain(`relatedSourceClaimId: ${relatedSourceClaimId}`);
     expect(result.stdout).toContain("relatedSourceClaimReadback: hit");

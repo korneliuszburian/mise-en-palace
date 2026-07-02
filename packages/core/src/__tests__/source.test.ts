@@ -8,6 +8,7 @@ import {
   classifySourceSupportType,
   classifySourceTrustTier,
   rankSourceTrustTier,
+  readSourceRelationMetadataReadback,
   sourceKinds,
   sourceSupportRelations,
   sourceSupportTypes,
@@ -55,6 +56,67 @@ const sourceDecision = (overrides: Partial<SourceDecision>): SourceDecision => (
 });
 
 describe("source review signals", () => {
+  test("source relation metadata readback trims known keys and proof boundaries", () => {
+    expect(readSourceRelationMetadataReadback({
+      consumer: " graph brain ",
+      doesNotProve: " relation metadata does not prove source truth ",
+      evidenceRef: " docs/reviews/source-edge-a.md ",
+      evidenceRefs: [
+        "docs/reviews/source-edge-a.md",
+        " docs/reviews/source-edge-b.md ",
+        "",
+        " ",
+        42
+      ],
+      sourceDecisionRef: " source-decision:edge ",
+      scope: " relation-review ",
+      validFrom: " 2026-06-01T00:00:00.000Z ",
+      validUntil: " 2026-12-31T00:00:00.000Z ",
+      invalidatedAt: " 2027-01-01T00:00:00.000Z ",
+      file: " docs/decisions/ADR-0021-temporal-claim-graph.md ",
+      contentHash: " sha256:source-edge ",
+      sourceRanges: [
+        " docs/decisions/ADR-0021-temporal-claim-graph.md:112-119 ",
+        "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119",
+        false
+      ],
+      unrelated: "must not leak"
+    })).toEqual({
+      consumer: "graph brain",
+      doesNotProve: "relation metadata does not prove source truth",
+      evidenceRef: "docs/reviews/source-edge-a.md",
+      evidenceRefs: [
+        "docs/reviews/source-edge-a.md",
+        "docs/reviews/source-edge-b.md"
+      ],
+      file: "docs/decisions/ADR-0021-temporal-claim-graph.md",
+      contentHash: "sha256:source-edge",
+      missingProofBoundaryFields: [],
+      sourceDecisionRef: "source-decision:edge",
+      scope: "relation-review",
+      sourceRanges: [
+        "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
+      ],
+      validFrom: "2026-06-01T00:00:00.000Z",
+      validUntil: "2026-12-31T00:00:00.000Z",
+      invalidatedAt: "2027-01-01T00:00:00.000Z"
+    });
+  });
+
+  test("source relation metadata readback reports missing proof boundary fields", () => {
+    expect(readSourceRelationMetadataReadback({
+      consumer: " ",
+      doesNotProve: 12,
+      evidenceRef: "",
+      evidenceRefs: [" ", 42, "docs/reviews/source-edge.md"],
+      sourceRanges: ["", " docs/source.md:1-2 "]
+    })).toEqual({
+      evidenceRefs: ["docs/reviews/source-edge.md"],
+      missingProofBoundaryFields: ["consumer", "doesNotProve"],
+      sourceRanges: ["docs/source.md:1-2"]
+    });
+  });
+
   test("separates source claim create status from review lifecycle states", () => {
     expectTypeOf<SourceClaimCreateStatus>().toEqualTypeOf<"proposed">();
     expectTypeOf<SourceClaimLifecycleStatus>().toEqualTypeOf<

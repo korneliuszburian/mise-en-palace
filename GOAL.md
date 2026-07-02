@@ -39,12 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-Compiler/smoke boundary characterization now protects the retrieval-run and
-context-assembly activation trace contract without broad refactor.
+Source relation metadata readbacks now share one typed source-domain parser
+across CLI source-search, source-claim edge text, and worker candidate preview.
 Report:
-docs/runs/2026-07-02-compiler-smoke-boundary-characterization.md
-Next: continue audit-hardening through source relation metadata typing,
-retrieval ID branding, execution-brief profile readback, and root-doc cleanup.
+docs/runs/2026-07-02-source-relation-metadata-readback.md
+Next: continue audit-hardening through retrieval ID branding,
+execution-brief profile readback, root-doc cleanup, and bounded CLI topology.
 ```
 
 ## Direction

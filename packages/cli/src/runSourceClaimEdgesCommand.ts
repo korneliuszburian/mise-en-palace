@@ -3,6 +3,9 @@ import type {
   SourceClaimEdge
 } from "@krn/core";
 import {
+  readSourceRelationMetadataReadback
+} from "@krn/core";
+import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -34,27 +37,6 @@ export type CreateSourceClaimEdgesDatabaseRuntime = (
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item): item is string => typeof item === "string");
-
-const stringMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
-const stringArrayMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): string[] | undefined => {
-  const value = metadata[key];
-
-  return isStringArray(value) && value.length > 0 ? value : undefined;
-};
-
 const directionFor = (
   sourceClaimId: SourceClaim["id"],
   edge: SourceClaimEdge
@@ -74,35 +56,35 @@ const relatedSourceClaimIdFor = (
     ? edge.toSourceClaimId
     : edge.fromSourceClaimId) as SourceClaim["id"];
 
-const optionalMetadataLine = (
-  metadata: Record<string, unknown>,
-  key: string
+const optionalValueLine = (
+  key: string,
+  value: string | undefined
+): string[] =>
+  value === undefined ? [] : [`  ${key}: ${value}`];
+
+const sourceRelationMetadataLines = (
+  edge: SourceClaimEdge
 ): string[] => {
-  const value = stringMetadata(metadata, key);
+  const metadata = readSourceRelationMetadataReadback(edge.metadata);
 
-  return value === undefined ? [] : [`  ${key}: ${value}`];
-};
-
-const optionalEdgeMetadataLines = (edge: SourceClaimEdge): string[] => [
-  ...optionalMetadataLine(edge.metadata, "evidenceRef"),
-  ...optionalMetadataLine(edge.metadata, "sourceDecisionRef"),
-  ...optionalMetadataLine(edge.metadata, "scope"),
-  ...optionalMetadataLine(edge.metadata, "validFrom"),
-  ...optionalMetadataLine(edge.metadata, "validUntil"),
-  ...optionalMetadataLine(edge.metadata, "invalidatedAt"),
-  ...optionalMetadataLine(edge.metadata, "file"),
-  ...optionalMetadataLine(edge.metadata, "contentHash")
-];
-
-const sourceRangeLines = (edge: SourceClaimEdge): string[] => {
-  const sourceRanges = stringArrayMetadata(edge.metadata, "sourceRanges");
-
-  return sourceRanges === undefined
-    ? []
-    : [
-        "  sourceRanges:",
-        ...sourceRanges.map((range) => `  - ${range}`)
-      ];
+  return [
+    ...optionalValueLine("consumer", metadata.consumer),
+    ...optionalValueLine("doesNotProve", metadata.doesNotProve),
+    ...optionalValueLine("evidenceRef", metadata.evidenceRef),
+    ...optionalValueLine("sourceDecisionRef", metadata.sourceDecisionRef),
+    ...optionalValueLine("scope", metadata.scope),
+    ...optionalValueLine("validFrom", metadata.validFrom),
+    ...optionalValueLine("validUntil", metadata.validUntil),
+    ...optionalValueLine("invalidatedAt", metadata.invalidatedAt),
+    ...optionalValueLine("file", metadata.file),
+    ...optionalValueLine("contentHash", metadata.contentHash),
+    ...(metadata.sourceRanges.length === 0
+      ? []
+      : [
+          "  sourceRanges:",
+          ...metadata.sourceRanges.map((range) => `  - ${range}`)
+        ])
+  ];
 };
 
 const relatedSourceClaimReadbackLines = (
@@ -136,10 +118,7 @@ const formatEdge = (
     `  fromSourceClaimId: ${edge.fromSourceClaimId}`,
     `  toSourceClaimId: ${edge.toSourceClaimId}`,
     `  kind: ${edge.kind}`,
-    `  consumer: ${edge.metadata.consumer}`,
-    `  doesNotProve: ${edge.metadata.doesNotProve}`,
-    ...optionalEdgeMetadataLines(edge),
-    ...sourceRangeLines(edge),
+    ...sourceRelationMetadataLines(edge),
     "  edgeInfluencedSourceContext:",
     `    relatedSourceClaimId: ${relatedSourceClaimId}`,
     ...relatedSourceClaimReadbackLines(readback)

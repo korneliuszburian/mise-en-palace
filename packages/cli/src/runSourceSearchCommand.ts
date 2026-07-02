@@ -5,6 +5,9 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
+  readSourceRelationMetadataReadback
+} from "@krn/core";
+import {
   applyContextROI,
   buildActivationQuery,
   retrieveActivationCandidates
@@ -572,29 +575,11 @@ const metadataString = (
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 };
 
-const metadataStringArray = (
-  metadata: Record<string, unknown>,
-  key: string
-): readonly string[] | undefined => {
-  const value = metadata[key];
-
-  return Array.isArray(value) && value.every((item): item is string => typeof item === "string")
-    ? value
-    : undefined;
-};
-
 const relationSupportFromEdge = (
   sourceClaimId: SourceClaim["id"],
   edge: SourceClaimEdge
 ): SourceSearchRelationSupport => {
-  const consumer = metadataString(edge.metadata, "consumer");
-  const doesNotProve = metadataString(edge.metadata, "doesNotProve");
-  const evidenceRef = metadataString(edge.metadata, "evidenceRef");
-  const sourceDecisionRef = metadataString(edge.metadata, "sourceDecisionRef");
-  const sourceRanges = metadataStringArray(edge.metadata, "sourceRanges");
-  const validFrom = metadataString(edge.metadata, "validFrom");
-  const validUntil = metadataString(edge.metadata, "validUntil");
-  const invalidatedAt = metadataString(edge.metadata, "invalidatedAt");
+  const metadata = readSourceRelationMetadataReadback(edge.metadata);
   const support: SourceSearchRelationSupport = {
     sourceClaimId,
     edgeId: edge.id,
@@ -604,36 +589,36 @@ const relationSupportFromEdge = (
     createdAt: edge.createdAt
   };
 
-  if (consumer !== undefined) {
-    support.consumer = consumer;
+  if (metadata.consumer !== undefined) {
+    support.consumer = metadata.consumer;
   }
 
-  if (doesNotProve !== undefined) {
-    support.doesNotProve = doesNotProve;
+  if (metadata.doesNotProve !== undefined) {
+    support.doesNotProve = metadata.doesNotProve;
   }
 
-  if (evidenceRef !== undefined) {
-    support.evidenceRef = evidenceRef;
+  if (metadata.evidenceRef !== undefined) {
+    support.evidenceRef = metadata.evidenceRef;
   }
 
-  if (sourceDecisionRef !== undefined) {
-    support.sourceDecisionRef = sourceDecisionRef;
+  if (metadata.sourceDecisionRef !== undefined) {
+    support.sourceDecisionRef = metadata.sourceDecisionRef;
   }
 
-  if (sourceRanges !== undefined) {
-    support.sourceRanges = sourceRanges;
+  if (metadata.sourceRanges.length > 0) {
+    support.sourceRanges = metadata.sourceRanges;
   }
 
-  if (validFrom !== undefined) {
-    support.validFrom = validFrom;
+  if (metadata.validFrom !== undefined) {
+    support.validFrom = metadata.validFrom;
   }
 
-  if (validUntil !== undefined) {
-    support.validUntil = validUntil;
+  if (metadata.validUntil !== undefined) {
+    support.validUntil = metadata.validUntil;
   }
 
-  if (invalidatedAt !== undefined) {
-    support.invalidatedAt = invalidatedAt;
+  if (metadata.invalidatedAt !== undefined) {
+    support.invalidatedAt = metadata.invalidatedAt;
   }
 
   return support;
