@@ -14,7 +14,7 @@ import {
 
 import {
   checkRepoFiles
-} from "./doctorRepoChecks.js";
+} from "../doctorRepoChecks.js";
 
 describe("doctorRepoChecks", () => {
   it("checks repo files without requiring runtime writes", async () => {

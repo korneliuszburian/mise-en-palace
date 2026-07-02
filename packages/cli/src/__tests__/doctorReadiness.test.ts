@@ -18,10 +18,10 @@ import {
   deriveSourceGraphReadiness,
   deriveTargetRepoReadiness,
   deriveWorkerJobReadiness
-} from "./doctorReadiness.js";
+} from "../doctorReadiness.js";
 import type {
   DoctorCheck
-} from "./runDoctorCommand.js";
+} from "../runDoctorCommand.js";
 
 const postgresReadyTyped: DoctorCheck[] = [
   {

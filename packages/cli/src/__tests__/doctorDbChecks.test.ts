@@ -19,10 +19,10 @@ import {
   checkPostgres,
   checkRetrievalSubstrate,
   checkSourceGraph
-} from "./doctorDbChecks.js";
+} from "../doctorDbChecks.js";
 import type {
   DoctorCheck
-} from "./runDoctorCommand.js";
+} from "../runDoctorCommand.js";
 
 const writeDoctorPackageJson = async (): Promise<string> => {
   const repoRoot = await mkdtemp(path.join(os.tmpdir(), "krn-doctor-db-"));

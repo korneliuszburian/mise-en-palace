@@ -6,10 +6,10 @@ import {
 
 import {
   hasDoctorFailure
-} from "./runDoctorCommand.js";
+} from "../runDoctorCommand.js";
 import type {
   DoctorCheck
-} from "./runDoctorCommand.js";
+} from "../runDoctorCommand.js";
 
 describe("runDoctorCommand", () => {
   it("uses typed severity before legacy status wording for failure policy", () => {

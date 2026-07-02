@@ -12,7 +12,7 @@ import {
   checkCodexAdapter,
   checkTargetRepoReadiness,
   checkWorkerJobs
-} from "./doctorStaticChecks.js";
+} from "../doctorStaticChecks.js";
 
 describe("doctorStaticChecks", () => {
   it("exports focused static doctor checks", () => {
