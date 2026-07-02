@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-t8i Internal multi-repo operator loop
+current task: audit-hardening closure complete; waiting for ruthless second-opinion review
 ```
 
 ## Compact Checkpoints
@@ -110,23 +110,21 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-t8i Internal Multi-Repo Operator Loop
+### Audit-Hardening Closure
 
-Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
+Goal: preserve audit-hardening closure and use second-opinion review to select the next bounded slice.
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-cli-command-registry-pilot.md`.
+Latest artifact: `docs/KRN_BRAIN.md`; latest report:
+`docs/runs/2026-07-02-audit-hardening-final-handoff.md`.
 
 Task boundary:
 
 ```txt
-Validate the shared KRN brain loop across internal real repos: plan, context,
-brief, execution evidence, review, candidates, and next-run reuse/rejection.
-Do not fake external operator proof or build broad product surfaces.
+Do not start broad cleanup from old audits. Run the final second-opinion prompt,
+then create one bounded Beads issue from the highest-confidence remaining gap.
 ```
-
-Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
 
 ## Recent Completed Streams
 
@@ -134,6 +132,7 @@ Point: build one shared memory system that condenses patterns, research, local e
 V358-V378: graph/source/ingest/heartbeat/Fallow/consensus foundations, brain search, replay, mini Brain-QA, and current second-operator de-scope completed.
 IMR-01-55: selected brain knowledge, store-only pattern readback, acquisition bridge, linked evidence, AMA/source-backed lanes, and EKOLOGUS target-fit precision completed.
 SBV-00: retained source-to-decision pattern flows through brain knowledge, plan, Codex brief, evidence, observe, and reflect; next-run check exposes over-budget exclusion before successful reuse.
+Audit-hardening closure: all 7pb3 children closed; final handoff and second-opinion prompt recorded.
 ```
 
 ## Remaining Product Gaps

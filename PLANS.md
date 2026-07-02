@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-t8i Internal multi-repo operator loop
+current task: audit-hardening closure complete; waiting for ruthless second-opinion review
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,21 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-t8i Internal multi-repo operator loop is active. The current
-product gap is proving one shared KRN brain loop across internal real repos.
+audit-hardening closure complete; waiting for ruthless second-opinion review.
+Select the next product gap from fresh current-state review, not stale audit
+backlog.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-3pze in progress: `run show` parse/help metadata moved into a
-small typed CLI command registry pilot; runtime dispatch and public behavior
-stay unchanged.
+mise-en-palace-7pb3 complete: audit-hardening program closed after the internal
+multi-repo loop and all tracked child tasks completed or were explicitly
+bounded/rejected.
 Report:
-docs/runs/2026-07-02-cli-command-registry-pilot.md
-Next: close `mise-en-palace-3pze`, then use second-opinion review to choose the
-next bounded CLI/topology slice.
+docs/runs/2026-07-02-audit-hardening-final-handoff.md
+Next: run the final second-opinion prompt and create one bounded Beads issue
+from the highest-confidence remaining gap.
 ```
 
 ## 2. Product Thesis
@@ -2194,7 +2195,7 @@ Source-to-decision:
 
 ID: IMR-00
 Name: Internal Multi-Repo Operator Loop
-Status: active
+Status: complete
 
 Goal: build the shared KRN brain kernel as the foundation for future
 agentic/harness work and prove it through internal multi-repo use.
@@ -2204,27 +2205,28 @@ memory system that condenses best patterns, papers, courses, local evidence,
 and senior engineering standards into reusable decisions that improve future
 software work. Multi-repo internal work is the proof surface.
 
-Next Beads issue:
+Closure:
 
 ```txt
-mise-en-palace-zh0:
-Route generic-only target-fit readback into heartbeat acquisition.
+mise-en-palace-t8i closed the internal multi-repo operator loop.
+mise-en-palace-7pb3 closed the audit-hardening umbrella.
+Final handoff: docs/runs/2026-07-02-audit-hardening-final-handoff.md
 ```
 
 Evidence sources:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-imr-49-target-fit-aware-activation-utility/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-55-source-usefulness-feedback/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-sbv-00-retained-pattern-vertical/REPORT.md
+docs/runs/2026-07-02-audit-hardening-final-handoff.md
 ```
 
 Next task:
 
 ```txt
-mise-en-palace-zh0 — Route generic-only target-fit readback into heartbeat acquisition.
-Goal: make heartbeat preview consume brain-search targetFitSummary so useful
-target/source evidence with generic-only selectedKnowledge becomes a
-mutation-free acquisition candidate.
+Run the final second-opinion prompt and create one bounded Beads issue from the
+highest-confidence remaining gap. Do not restart broad audit mode from stale
+attachments.
 ```
 
 Allowed writes:
