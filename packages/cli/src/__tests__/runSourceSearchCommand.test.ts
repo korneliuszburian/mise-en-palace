@@ -14,13 +14,13 @@ import type {
 } from "@krn/harness/repositories/internal";
 import type {
   DatabaseRuntime
-} from "./databaseRuntime.js";
+} from "../databaseRuntime.js";
 import {
   classifySourceSearchAnswerUsefulness,
   buildSourceSearchQueryShapeDiagnostics,
   buildSourceSearchMissingEvidence,
   runSourceSearchCommand
-} from "./runSourceSearchCommand.js";
+} from "../runSourceSearchCommand.js";
 
 const now = "2026-06-29T12:00:00.000Z";
 const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
