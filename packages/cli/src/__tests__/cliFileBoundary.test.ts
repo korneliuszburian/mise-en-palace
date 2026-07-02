@@ -17,7 +17,7 @@ import {
   readJsonObject,
   readJsonObjectResult,
   resolveRepoInputFile
-} from "./cliFileBoundary.js";
+} from "../cliFileBoundary.js";
 
 describe("cliFileBoundary", () => {
   it("reads JSON objects as unknown-first records and rejects non-objects", async () => {

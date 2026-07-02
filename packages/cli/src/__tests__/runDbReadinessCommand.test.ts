@@ -4,10 +4,10 @@ import {
   dbBootstrapDoesNotProve,
   missingDbConfigRecovery,
   unreachablePostgresRecovery
-} from "./dbRecoveryGuidance.js";
+} from "../dbRecoveryGuidance.js";
 import {
   redactedPostgresEndpoint
-} from "./runDbReadinessCommand.js";
+} from "../runDbReadinessCommand.js";
 
 describe("DB readiness command", () => {
   it("redacts credentials and non-endpoint URL parts from Postgres endpoint output", () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatProjectResolutionKind,
   projectResolutionKindLabel
-} from "./projectResolutionFormat.js";
+} from "../projectResolutionFormat.js";
 
 describe("projectResolutionFormat", () => {
   it("labels every current project resolution kind for operator output", () => {

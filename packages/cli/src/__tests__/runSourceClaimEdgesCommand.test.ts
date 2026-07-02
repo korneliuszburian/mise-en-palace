@@ -10,10 +10,10 @@ import type {
 } from "@krn/core";
 import type {
   DatabaseRuntime
-} from "./databaseRuntime.js";
+} from "../databaseRuntime.js";
 import {
   runSourceClaimEdgesCommand
-} from "./runSourceClaimEdgesCommand.js";
+} from "../runSourceClaimEdgesCommand.js";
 
 const now = "2026-06-29T12:00:00.000Z";
 const sourceClaimId = "11111111-1111-4111-8111-111111111111" as SourceClaim["id"];

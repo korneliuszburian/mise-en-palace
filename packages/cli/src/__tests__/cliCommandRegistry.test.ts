@@ -9,7 +9,7 @@ import {
   isRegisteredHelpCommandKind,
   parseRegisteredTopLevelCommand,
   registeredCliCommandGroups
-} from "./cliCommandRegistry.js";
+} from "../cliCommandRegistry.js";
 
 describe("cliCommandRegistry", () => {
   it("registers the run show parser and help as the first pilot", () => {

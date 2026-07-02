@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatCodexAdapterSmokeReport
-} from "./codexAdapterSmoke.js";
+} from "../codexAdapterSmoke.js";
 
 describe("codexAdapterSmoke", () => {
   it("formats bounded Codex adapter smoke proof", () => {

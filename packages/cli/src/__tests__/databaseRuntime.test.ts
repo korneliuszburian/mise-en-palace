@@ -95,7 +95,7 @@ describe("createDatabaseRuntime", () => {
   });
 
   it("does not list repo installations before explicit project kernel failure", async () => {
-    const { createDatabaseRuntime } = await import("./databaseRuntime.js");
+    const { createDatabaseRuntime } = await import("../databaseRuntime.js");
     mocks.projectRepository.getProject.mockResolvedValue(project);
     mocks.projectRepository.getLatestProjectKernel.mockResolvedValue(undefined);
     mocks.projectRepository.listRepoInstallationsForProject.mockRejectedValue(
@@ -116,7 +116,7 @@ describe("createDatabaseRuntime", () => {
   });
 
   it("exposes source chunk persistence through the CLI database runtime", async () => {
-    const { createDatabaseRuntime } = await import("./databaseRuntime.js");
+    const { createDatabaseRuntime } = await import("../databaseRuntime.js");
     const sourceChunk = {
       id: "source-chunk-1"
     };

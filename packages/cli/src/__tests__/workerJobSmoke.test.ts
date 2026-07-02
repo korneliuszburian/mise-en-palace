@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatWorkerJobSmokeReportLines } from "./workerJobSmoke.js";
+import { formatWorkerJobSmokeReportLines } from "../workerJobSmoke.js";
 
 describe("worker job smoke report formatting", () => {
   it("prints the transition and cleanup proof lines", () => {

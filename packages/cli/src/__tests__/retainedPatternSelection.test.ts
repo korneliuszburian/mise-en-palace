@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   retainedPatternSelectionFromKnowledgeJson,
   retainedPatternSelectionFromMetadata
-} from "./retainedPatternSelection.js";
+} from "../retainedPatternSelection.js";
 
 const validPatternCard = {
   id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
