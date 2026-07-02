@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open
+current task: accepted-only SourceDecisionEdge support implemented; CI closure pending
 latest pushed commit: see git history
 ```
 
@@ -24,19 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open.
-Inspect backlog and create/claim the next bounded audit-derived issue.
+accepted-only SourceDecisionEdge support implemented; CI closure pending.
+Verify CI, close Beads, then inspect/create the next bounded audit-derived issue.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-euos implementation: codexAdapterSmoke report collapsed from
-boolean dashboard to compact adapter-boundary checks.
+mise-en-palace-b89r implementation: SourceDecisionEdge and SourceClaimEdge
+support now require accepted SourceClaims.
 Report:
-docs/runs/2026-07-02-codex-adapter-smoke-reduction.md
-CI: KRN CI 28621194333 passed.
-Next: inspect backlog and create/claim next bounded audit-derived issue.
+docs/runs/2026-07-02-source-decision-edge-authority.md
+Next: verify CI, close Beads, then inspect/create next bounded audit-derived issue.
 ```
 
 ## 2. Product Thesis

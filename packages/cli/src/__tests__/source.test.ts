@@ -408,7 +408,7 @@ describe("runCli", () => {
                 trustTier: "project-decision",
                 supportType: "implementation-boundary",
                 consumer: "M22",
-                status: "proposed",
+                status: "accepted",
                 metadata: {},
                 createdAt: now,
                 updatedAt: now
@@ -540,7 +540,83 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("SourceDecisionEdge cannot use rejected SourceClaim");
+    expect(result.stderr).toContain("SourceDecisionEdge requires accepted SourceClaim; current status rejected");
+  });
+
+  it("rejects source decision link when the source claim is still proposed", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "link",
+        "--source-claim-id",
+        "source-claim-1",
+        "--target-type",
+        "harness_run",
+        "--target-id",
+        "execution-run-1",
+        "--support-type",
+        "implementation-boundary",
+        "--confidence",
+        "medium",
+        "--notes",
+        "Proposed sources cannot support decisions",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "Proposed source needs review before decision support",
+                mechanism: "No SourceDecision has adopted the claim yet.",
+                krnImplication: "KRN must not turn proposed evidence into decision support.",
+                doesNotProve: "This does not prove all source graph paths are authoritative.",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "source decision link",
+                status: "proposed",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called for proposed claim");
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("SourceDecisionEdge requires accepted SourceClaim; current status proposed");
   });
 
   it("prints source claim reject help", async () => {

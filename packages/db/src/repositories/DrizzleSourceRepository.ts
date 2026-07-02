@@ -138,8 +138,10 @@ export const assertSourceDecisionEdgeGovernance = (
 export const assertSourceDecisionSourceClaimCanSupport = (
   sourceClaim: Pick<SourceClaim, "id" | "status">
 ): void => {
-  if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
-    throw new Error(`SourceDecisionEdge cannot use ${sourceClaim.status} SourceClaim`);
+  if (sourceClaim.status !== "accepted") {
+    throw new Error(
+      `SourceDecisionEdge requires accepted SourceClaim; current status ${sourceClaim.status}`
+    );
   }
 };
 

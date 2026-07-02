@@ -27,21 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open.
+current task: accepted-only SourceDecisionEdge support implemented; CI closure pending.
 ```
 
-Current task state: codexAdapterSmoke now reports a compact adapter-boundary
-proof instead of a many-field boolean dashboard, while preserving persisted
-readback, rendered-contract, stale-exclusion, hook-phase, and no-Codex-invoke
-assertions. KRN CI `28621194333` passed.
+Current task state: SourceDecisionEdge and SourceClaimEdge support now require
+accepted SourceClaims, and `krn source decision link --persist` rejects proposed
+claims before creating decision-support edges.
 
 Latest slice:
 
 ```txt
-codexAdapterSmoke ceremony mass reduced without adapter behavior rewrite.
+accepted-only SourceDecisionEdge support implemented.
 Report:
-docs/runs/2026-07-02-codex-adapter-smoke-reduction.md
-Next: inspect Beads backlog and create/claim the next bounded slice from current audit evidence.
+docs/runs/2026-07-02-source-decision-edge-authority.md
+Next: verify CI, close Beads, then inspect/create next bounded audit-derived slice.
 ```
 
 ## Direction

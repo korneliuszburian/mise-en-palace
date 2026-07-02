@@ -140,6 +140,32 @@ export const runSourceGraphSmokeCheck = async (
       }
     });
     const readBackClaim = await sourceRepository.getSourceClaimById(sourceClaim.id);
+    const sourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: sourceClaim.id,
+      status: "adopt",
+      decision: "Adopt source graph smoke claim as source graph support.",
+      rationale:
+        "The claim has an explicit mechanism, consumer, falsifier, and bounded non-proof.",
+      falsifier: "Source graph smoke cannot read back accepted claim support.",
+      consumer: "M22 source graph smoke",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: staleSourceClaim.id,
+      status: "adopt",
+      decision: "Adopt legacy source graph claim before relation invalidation.",
+      rationale:
+        "SourceClaimEdge support is decision-grade and requires accepted endpoint claims before it can express invalidation.",
+      falsifier: "Temporal source claim edge cannot link accepted endpoint claims.",
+      consumer: "B-01 temporal source graph smoke",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const sourceClaimEdge = await sourceRepository.createSourceClaimEdge({
       fromSourceClaimId: sourceClaim.id,
       toSourceClaimId: staleSourceClaim.id,
@@ -150,19 +176,6 @@ export const runSourceGraphSmokeCheck = async (
         scope: "source graph repository readback",
         evidenceRef: executionRun.id,
         doesNotProve: "This temporal edge does not prove activation uses invalidation yet."
-      }
-    });
-    const sourceDecision = await sourceRepository.createSourceDecision({
-      projectId: project.id,
-      sourceClaimId: sourceClaim.id,
-      status: "adopt",
-      decision: "Adopt source_claim_edges as the first temporal claim graph substrate.",
-      rationale: `Temporal edge ${sourceClaimEdge.id} invalidates an older source graph claim without adding a graph database.`,
-      falsifier: "Temporal source claim edges cannot be created, read back, or cleaned up.",
-      consumer: "B-01 temporal source graph smoke",
-      metadata: {
-        smokeId: marker,
-        sourceClaimEdgeId: sourceClaimEdge.id
       }
     });
     const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({

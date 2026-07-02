@@ -134,7 +134,7 @@ describe("DrizzleSourceRepository", () => {
     })).toThrow("SourceClaimEdge requires metadata.doesNotProve");
   });
 
-  it("rejects rejected or deprecated source claims as decision support", () => {
+  it("requires accepted source claims as decision support", () => {
     const validClaim = {
       id: "source-claim-1",
       status: "accepted",
@@ -144,12 +144,16 @@ describe("DrizzleSourceRepository", () => {
     expect(() => assertSourceDecisionSourceClaimCanSupport(validClaim)).not.toThrow();
     expect(() => assertSourceDecisionSourceClaimCanSupport({
       ...validClaim,
+      status: "proposed"
+    })).toThrow("SourceDecisionEdge requires accepted SourceClaim; current status proposed");
+    expect(() => assertSourceDecisionSourceClaimCanSupport({
+      ...validClaim,
       status: "rejected"
-    })).toThrow("SourceDecisionEdge cannot use rejected SourceClaim");
+    })).toThrow("SourceDecisionEdge requires accepted SourceClaim; current status rejected");
     expect(() => assertSourceDecisionSourceClaimCanSupport({
       ...validClaim,
       status: "deprecated"
-    })).toThrow("SourceDecisionEdge cannot use deprecated SourceClaim");
+    })).toThrow("SourceDecisionEdge requires accepted SourceClaim; current status deprecated");
   });
 
   it("maps adopted and rejected source decisions to claim lifecycle status", () => {

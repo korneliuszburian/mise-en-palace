@@ -115,8 +115,10 @@ export const runSourceDecisionLinkCommand = async (
       throw new Error(`SourceClaim not found: ${edgeInput.sourceClaimId}`);
     }
 
-    if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
-      throw new Error(`SourceDecisionEdge cannot use ${sourceClaim.status} SourceClaim`);
+    if (sourceClaim.status !== "accepted") {
+      throw new Error(
+        `SourceDecisionEdge requires accepted SourceClaim; current status ${sourceClaim.status}`
+      );
     }
 
     const sourceDecisionEdge = await databaseRuntime.sourceRepository.createSourceDecisionEdge({

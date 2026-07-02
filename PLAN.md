@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: codexAdapterSmoke ceremony reduction complete; no Beads-ready task currently open
+current task: accepted-only SourceDecisionEdge support implemented; CI closure pending
 ```
 
 ## Compact Checkpoints
@@ -111,20 +111,20 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Codex Adapter Smoke Reduction
+### Source Decision Edge Authority
 
-Goal: reduce codexAdapterSmoke ceremony without changing Codex adapter behavior.
+Goal: prevent proposed SourceClaims from becoming decision-grade edge support.
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy or CLI redesign.
 
-Latest report: `docs/runs/2026-07-02-codex-adapter-smoke-reduction.md`.
+Latest report: `docs/runs/2026-07-02-source-decision-edge-authority.md`.
 
 Task boundary:
 
 ```txt
-codexAdapterSmoke now reports compact adapter-boundary checks instead of a boolean dashboard.
-The <=5 KB target was not forced by hiding DB fixture mass in another file.
-KRN CI 28621194333 passed. Next work requires Beads backlog inspection or a new bounded issue.
+SourceDecisionEdge and SourceClaimEdge support require accepted SourceClaims.
+Proposed SourceClaims remain review candidates, not decision-support authority.
+Next work after CI closure is selected from Beads or created from bounded audit evidence.
 ```
 
 ## Recent Completed Streams
