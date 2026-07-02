@@ -39,13 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-Schema/core contract ownership audited: broad unification rejected as unsafe
-input DTO vs runtime-record collapse; two live drift points repaired
-(EvidenceCapture executionRunId shape and GoldenTask reasoningTrace metadata).
+CLI command registry piloted on exactly one command group: `krn run show`
+parse/help metadata now lives in a tiny typed registry while runtime dispatch
+and public CLI behavior stay unchanged.
 Report:
-docs/runs/2026-07-02-schema-core-contract-ownership.md
-Next: continue audit-hardening through bounded CLI topology and product-loop
-proof.
+docs/runs/2026-07-02-cli-command-registry-pilot.md
+Next: use second-opinion review to decide whether to migrate one more command,
+stop registry expansion, or split larger CLI command files first.
 ```
 
 ## Direction

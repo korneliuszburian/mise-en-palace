@@ -18,9 +18,6 @@ import {
   formatHeartbeatUsage
 } from "./parseHeartbeatArgs.js";
 import {
-  formatRunUsage
-} from "./parseRunArgs.js";
-import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
@@ -58,6 +55,11 @@ import {
 import {
   missingDbConfigRecovery
 } from "./dbRecoveryGuidance.js";
+import {
+  formatRegisteredCommandHelp,
+  isRegisteredHelpCommandKind,
+  type RegisteredHelpCommandKind
+} from "./cliCommandRegistry.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -107,6 +109,7 @@ const createDefaultIdFactory = (): ((prefix: string) => string) => {
 };
 
 type HelpCommandKind = Extract<CliCommand, { kind: `${string}Help` }>["kind"];
+type LegacyHelpCommandKind = Exclude<HelpCommandKind, RegisteredHelpCommandKind>;
 
 const helpRenderers = {
   brainSearchHelp: formatBrainSearchUsage,
@@ -117,7 +120,6 @@ const helpRenderers = {
   sourceArtifactPreviewHelp: formatSourceArtifactPreviewUsage,
   sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
-  runShowHelp: formatRunUsage,
   knowledgeCardsHelp: formatKnowledgeUsage,
   heartbeatPreviewHelp: formatHeartbeatUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
@@ -127,9 +129,11 @@ const helpRenderers = {
   memoryAntiAddHelp: formatMemoryAntiAddUsage,
   memoryAntiPromoteHelp: formatMemoryAntiPromoteUsage,
   memoryAntiRejectHelp: formatMemoryAntiRejectUsage
-} satisfies Record<HelpCommandKind, () => string>;
+} satisfies Record<LegacyHelpCommandKind, () => string>;
 
-const isHelpCommandKind = (kind: CliCommand["kind"]): kind is HelpCommandKind =>
+const isLegacyHelpCommandKind = (
+  kind: CliCommand["kind"]
+): kind is LegacyHelpCommandKind =>
   Object.prototype.hasOwnProperty.call(helpRenderers, kind);
 
 const formatHelpForCommand = (command: CliCommand): string | undefined => {
@@ -137,7 +141,11 @@ const formatHelpForCommand = (command: CliCommand): string | undefined => {
     return formatUsage();
   }
 
-  if (!isHelpCommandKind(command.kind)) {
+  if (isRegisteredHelpCommandKind(command.kind)) {
+    return formatRegisteredCommandHelp(command.kind);
+  }
+
+  if (!isLegacyHelpCommandKind(command.kind)) {
     return undefined;
   }
 

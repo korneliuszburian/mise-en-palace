@@ -31,13 +31,13 @@ product gap is proving one shared KRN brain loop across internal real repos.
 Latest outcome:
 
 ```txt
-mise-en-palace-a44d in progress: schema/core ownership audit rejects broad
-contract unification and repairs live drift in evidence capture ID parsing and
-GoldenTask private metadata validation.
+mise-en-palace-3pze in progress: `run show` parse/help metadata moved into a
+small typed CLI command registry pilot; runtime dispatch and public behavior
+stay unchanged.
 Report:
-docs/runs/2026-07-02-schema-core-contract-ownership.md
-Next: close `mise-en-palace-a44d`, then continue the internal multi-repo
-operator loop through the next highest-ROI audit-hardening task.
+docs/runs/2026-07-02-cli-command-registry-pilot.md
+Next: close `mise-en-palace-3pze`, then use second-opinion review to choose the
+next bounded CLI/topology slice.
 ```
 
 ## 2. Product Thesis

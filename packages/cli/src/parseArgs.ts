@@ -48,11 +48,11 @@ import {
   parseReviewArgs
 } from "./parseReviewArgs.js";
 import {
-  parseRunArgs
-} from "./parseRunArgs.js";
-import {
   parseSourceArgs
 } from "./parseSourceArgs.js";
+import {
+  parseRegisteredTopLevelCommand
+} from "./cliCommandRegistry.js";
 
 export type CliCommand =
   | {
@@ -507,7 +507,6 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
   db: parseDbArgs,
   evidence: parseEvidenceArgs,
   review: parseReviewArgs,
-  run: parseRunArgs,
   knowledge: parseKnowledgeArgs,
   heartbeat: parseHeartbeatArgs,
   observe: parseObserveArgs,
@@ -530,6 +529,11 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   const parser = topLevelCommandParsers[command];
+  const registered = parseRegisteredTopLevelCommand(command, rest);
+
+  if (registered !== undefined) {
+    return registered;
+  }
 
   if (parser === undefined) {
     return {
