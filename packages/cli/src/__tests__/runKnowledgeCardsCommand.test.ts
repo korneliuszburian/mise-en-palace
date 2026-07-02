@@ -11,10 +11,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   runKnowledgeCardsCommand
-} from "./runKnowledgeCardsCommand.js";
+} from "../runKnowledgeCardsCommand.js";
 
-const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const cliPackageRoot = fileURLToPath(new URL("..", import.meta.url));
+const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
+const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
 const patternFile = "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json";
 const catalogFile = "docs/brain-knowledge/catalog.json";
