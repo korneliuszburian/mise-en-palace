@@ -8,7 +8,7 @@ import {
 
 import {
   detectSourceSeeds
-} from "./runInitCommand.js";
+} from "../runInitCommand.js";
 
 describe("runInitCommand source seed detection", () => {
   it("detects source-to-decision owner seeds in the KRN repo", async () => {

@@ -39,11 +39,11 @@ the product goal.
 Latest slice:
 
 ```txt
-test-topology cleanup complete so far: workers, small packages, and harness
-smoke-filter root tests now use bounded src/__tests__ islands; recipe drift
-uses explicit non-crypto checksum wording.
+test-topology cleanup complete so far: workers, small packages, harness
+smoke-filter root tests, and the CLI init command group now use bounded
+src/__tests__ islands; recipe drift uses explicit non-crypto checksum wording.
 Report:
-docs/runs/2026-07-02-harness-root-test-topology.md
+docs/runs/2026-07-02-cli-init-test-topology.md
 Next: continue bounded test topology migration and naming
 shortening through Beads follow-ups.
 ```

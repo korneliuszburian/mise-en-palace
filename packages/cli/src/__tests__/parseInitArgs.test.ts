@@ -6,7 +6,7 @@ import {
 
 import {
   parseInitArgs
-} from "./parseInitArgs.js";
+} from "../parseInitArgs.js";
 
 const initUsage =
   "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]";
