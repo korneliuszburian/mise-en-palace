@@ -39,6 +39,7 @@ import {
   selectObservationPrefix
 } from "./observations/observationPrefix.js";
 import type {
+  TargetActivationTrustExclusion,
   TargetActivationReadModel
 } from "./activation/ownerFileRecall.js";
 
@@ -48,6 +49,91 @@ export interface RunKrnBehaviorGoldenGateInput {
 }
 
 const evidenceRefs = ["packages/harness/src/goldenKrnBehaviorGate.ts"] as const;
+
+const defaultTargetTrustExclusions = (): TargetActivationTrustExclusion[] => [
+  {
+    pathPattern: ".env*",
+    reason: "secret-shaped environment files must not enter planning context"
+  },
+  {
+    pathPattern: ".git/",
+    reason: "repository internals are not planning source truth"
+  },
+  {
+    pathPattern: "node_modules/",
+    reason: "third-party install output is not target source truth"
+  },
+  {
+    pathPattern: ".muke/",
+    reason: "generated target state is not source truth by default"
+  },
+  {
+    pathPattern: ".supersearch/runtime/",
+    reason: "runtime search output is generated state"
+  },
+  {
+    pathPattern: "dist/",
+    reason: "build output is generated state"
+  },
+  {
+    pathPattern: "build/",
+    reason: "build output is generated state"
+  }
+];
+
+const hasPathPattern = (value: unknown, pathPattern: string): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  "pathPattern" in value &&
+  value.pathPattern === pathPattern;
+
+const hasTrustExclusionPatterns = (
+  value: unknown,
+  requiredPatterns: readonly string[]
+): boolean =>
+  Array.isArray(value) &&
+  requiredPatterns.every((pathPattern) =>
+    value.some((pattern) => hasPathPattern(pattern, pathPattern))
+  );
+
+const buildTargetRecallState = (
+  now: string,
+  objective: string,
+  readModel: TargetActivationReadModel
+) => {
+  const candidates = buildOwnerFileRecallCandidates(
+    taskContract(now, objective),
+    { targetReadModel: readModel }
+  );
+  const trustExclusionCandidate = candidates.find((candidate) =>
+    candidate.metadata.targetReadModelKind === "trust_exclusions"
+  );
+
+  return {
+    candidates,
+    trustExclusionPatterns: trustExclusionCandidate?.metadata.trustExclusions,
+    hasTrustExclusionCandidate: trustExclusionCandidate !== undefined,
+    staticKrnOwnerFileSelected: candidates.some((candidate) =>
+      candidate.metadata.source === "owner_file_recall"
+    )
+  };
+};
+
+const hasSourceSeedPath = (
+  candidates: ReturnType<typeof buildOwnerFileRecallCandidates>,
+  path: string
+): boolean =>
+  candidates.some((candidate) =>
+    candidate.metadata.targetReadModelKind === "source_seed" &&
+    candidate.metadata.targetPath === path
+  );
+
+const sourceSeedPaths = (
+  candidates: ReturnType<typeof buildOwnerFileRecallCandidates>
+): unknown[] =>
+  candidates
+    .filter((candidate) => candidate.metadata.targetReadModelKind === "source_seed")
+    .map((candidate) => candidate.metadata.targetPath);
 
 const taskContract = (now: string, objective: string): TaskContract => ({
   id: "task-real-behavior-gate",
@@ -440,47 +526,12 @@ const runTargetTrustExclusions = (now: string): GoldenBehaviorProof => {
         reason: "seed eval, acceptance report, and test owner-file recall"
       }
     ],
-    trustExclusions: [
-      {
-        pathPattern: ".env*",
-        reason: "secret-shaped environment files must not enter planning context"
-      },
-      {
-        pathPattern: ".git/",
-        reason: "repository internals are not planning source truth"
-      },
-      {
-        pathPattern: "node_modules/",
-        reason: "third-party install output is not target source truth"
-      },
-      {
-        pathPattern: ".muke/",
-        reason: "generated target state is not source truth by default"
-      },
-      {
-        pathPattern: ".supersearch/runtime/",
-        reason: "runtime search output is generated state"
-      },
-      {
-        pathPattern: "dist/",
-        reason: "build output is generated state"
-      },
-      {
-        pathPattern: "build/",
-        reason: "build output is generated state"
-      }
-    ]
+    trustExclusions: defaultTargetTrustExclusions()
   };
-  const candidates = buildOwnerFileRecallCandidates(
-    taskContract(now, "Repair muke-v2 eval tests and keep target trust exclusions explicit."),
-    { targetReadModel: readModel }
-  );
-  const trustExclusionCandidate = candidates.find((candidate) =>
-    candidate.metadata.targetReadModelKind === "trust_exclusions"
-  );
-  const patterns = trustExclusionCandidate?.metadata.trustExclusions;
-  const staticKrnOwnerFileSelected = candidates.some((candidate) =>
-    candidate.metadata.source === "owner_file_recall"
+  const recall = buildTargetRecallState(
+    now,
+    "Repair muke-v2 eval tests and keep target trust exclusions explicit.",
+    readModel
   );
   const requiredPatterns = [
     ".env*",
@@ -492,21 +543,10 @@ const runTargetTrustExclusions = (now: string): GoldenBehaviorProof => {
     "build/"
   ];
   const passed =
-    trustExclusionCandidate !== undefined &&
-    Array.isArray(patterns) &&
-    requiredPatterns.every((pathPattern) =>
-      patterns.some((pattern) =>
-        typeof pattern === "object" &&
-        pattern !== null &&
-        "pathPattern" in pattern &&
-        pattern.pathPattern === pathPattern
-      )
-    ) &&
-    candidates.some((candidate) =>
-      candidate.metadata.targetReadModelKind === "source_seed" &&
-      candidate.metadata.targetPath === "evals"
-    ) &&
-    !staticKrnOwnerFileSelected;
+    recall.hasTrustExclusionCandidate &&
+    hasTrustExclusionPatterns(recall.trustExclusionPatterns, requiredPatterns) &&
+    hasSourceSeedPath(recall.candidates, "evals") &&
+    !recall.staticKrnOwnerFileSelected;
 
   return proof(
     "golden-case-target-trust-exclusions-001-a",
@@ -549,69 +589,21 @@ const runTargetFixtureBattleHarness = (now: string): GoldenBehaviorProof => {
         reason: "behavior proof and test owner-file root"
       }
     ],
-    trustExclusions: [
-      {
-        pathPattern: ".env*",
-        reason: "secret-shaped environment files must not enter planning context"
-      },
-      {
-        pathPattern: ".git/",
-        reason: "repository internals are not planning source truth"
-      },
-      {
-        pathPattern: "node_modules/",
-        reason: "third-party install output is not target source truth"
-      },
-      {
-        pathPattern: ".muke/",
-        reason: "generated target state is not source truth by default"
-      },
-      {
-        pathPattern: ".supersearch/runtime/",
-        reason: "runtime search output is generated state"
-      },
-      {
-        pathPattern: "dist/",
-        reason: "build output is generated state"
-      },
-      {
-        pathPattern: "build/",
-        reason: "build output is generated state"
-      }
-    ]
+    trustExclusions: defaultTargetTrustExclusions()
   };
-  const candidates = buildOwnerFileRecallCandidates(
-    taskContract(
-      now,
-      "Repair TypeScript fixture tests and source readiness while keeping docs and target trust exclusions explicit."
-    ),
-    { targetReadModel: readModel }
+  const recall = buildTargetRecallState(
+    now,
+    "Repair TypeScript fixture tests and source readiness while keeping docs and target trust exclusions explicit.",
+    readModel
   );
-  const selectedSeedPaths = candidates
-    .filter((candidate) => candidate.metadata.targetReadModelKind === "source_seed")
-    .map((candidate) => candidate.metadata.targetPath);
-  const trustExclusionCandidate = candidates.find((candidate) =>
-    candidate.metadata.targetReadModelKind === "trust_exclusions"
-  );
-  const patterns = trustExclusionCandidate?.metadata.trustExclusions;
-  const staticKrnOwnerFileSelected = candidates.some((candidate) =>
-    candidate.metadata.source === "owner_file_recall"
-  );
+  const selectedSeedPaths = sourceSeedPaths(recall.candidates);
   const requiredSeedPaths = ["docs", "src", "tests"];
   const requiredPatterns = [".env*", ".muke/", ".supersearch/runtime/", "dist/", "build/"];
   const passed =
     requiredSeedPaths.every((path) => selectedSeedPaths.includes(path)) &&
-    trustExclusionCandidate !== undefined &&
-    Array.isArray(patterns) &&
-    requiredPatterns.every((pathPattern) =>
-      patterns.some((pattern) =>
-        typeof pattern === "object" &&
-        pattern !== null &&
-        "pathPattern" in pattern &&
-        pattern.pathPattern === pathPattern
-      )
-    ) &&
-    !staticKrnOwnerFileSelected;
+    recall.hasTrustExclusionCandidate &&
+    hasTrustExclusionPatterns(recall.trustExclusionPatterns, requiredPatterns) &&
+    !recall.staticKrnOwnerFileSelected;
 
   return proof(
     "golden-case-target-fixture-battle-001-a",
