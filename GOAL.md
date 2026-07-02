@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback.
+current task: mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,15 +39,14 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-9sg complete: exported remaining BrainKnowledge CLI filter value
-tuples for kind/status/usefulness, reused them in `parseKnowledgeArgs`, added
-invalid status filter coverage, and verified focused/full tests, Fallow, DB
-readiness, and diff check.
+mise-en-palace-1fwk complete: added deterministic plan proof that long
+reference-implementation recipe tasks select the retained recipe boundary and
+parser exemplar; live brain knowledge readback returns both cards read-only with
+mutation none.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-9sg-brain-knowledge-cli-filter-values/REPORT.md
-Next: `mise-en-palace-1fwk` proves a reference-implementation recipe pattern
-through existing executable/readback brain surfaces without building clone
-runtime, dashboard, API, MCP, broad ingestion, or hash-manifest system.
+docs/reviews/controlled-dogfood/2026-07-02-1fwk-reference-implementation-readback/REPORT.md
+Next: `mise-en-palace-x4c4` applies the retained recipe to one real
+code-quality repair from the audit without broad refactor or runtime expansion.
 ```
 
 ## Direction

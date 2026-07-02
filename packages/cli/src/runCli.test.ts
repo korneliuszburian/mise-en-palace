@@ -1146,6 +1146,79 @@ describe("runCli", () => {
     });
   });
 
+  it("selects reference implementation recipe patterns for exemplar tasks", async () => {
+    let executionRunMetadata: Record<string, unknown> | undefined;
+    const result = await runCli(
+      [
+        "plan",
+        "--task",
+        "Prove the retained reference-implementation recipe pattern through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              executionRunMetadata = runInput.metadata ?? {};
+
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Retained pattern selection: selected");
+    expect(result.stdout).toContain("Retained pattern query: prove reference implementation recipe");
+    expect(result.stdout).toContain(
+      "Retained pattern IDs: reference-implementation-recipe-clone-boundary, ts-boundary-brain-knowledge-parser-exemplar"
+    );
+    expect(executionRunMetadata).toMatchObject({
+      retainedPatternSelection: {
+        status: "selected",
+        query: "prove reference implementation recipe",
+        selectedPatternIds: [
+          "reference-implementation-recipe-clone-boundary",
+          "ts-boundary-brain-knowledge-parser-exemplar"
+        ]
+      }
+    });
+  });
+
   it("passes the current repo root hint for default persisted planning", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     let observedRepoPathHint: string | undefined;

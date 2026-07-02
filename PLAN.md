@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback
+current task: mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair
 ```
 
 ## Compact Checkpoints
@@ -88,6 +88,7 @@ consensus relation pattern reuse: brain knowledge/search select the retained pat
 retained pattern plan bridge recall: long task contracts compact to mechanism query and select the consensus relation retained pattern in plan/run/brief
 reference implementation recipe boundary: user-provided clone-workflow sources retained as a lab-test pattern with catalog/search readback and no runtime expansion
 TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable local reference implementation recipe with helped usefulness feedback
+reference recipe plan proof: long recipe tasks select the retained recipe boundary and parser exemplar
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
@@ -102,7 +103,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-1fwk Prove Reference-Implementation Recipe Pattern Through Executable Readback
+### mise-en-palace-x4c4 Apply Reference-Implementation Recipe To One Real Code-Quality Repair
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
@@ -113,17 +114,16 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-9sg-brain-knowledge-cli-filter-values/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-1fwk-reference-implementation-readback/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Reference implementation / clone-workflow sources sharpen the product direction:
-code exemplars should become durable retrievable patterns. Prove one bounded
-executable/readback path through existing BrainKnowledge/retained-pattern/
-source-to-decision surfaces. Do not build clone runtime, dashboard, API, MCP,
-broad ingestion, DB schema, or hash-manifest system.
+Use the retained recipe on one bounded audit finding. Choose a small
+TypeScript/CLI/harness code-quality repair where an exemplar can guide a simpler
+implementation. Do not broad-refactor, delete mass files, or build clone
+runtime, dashboard, API, MCP, DB schema, or package topology work.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

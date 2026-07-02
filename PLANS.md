@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback
+current task: mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair
 latest pushed commit: see git history
 ```
 
@@ -24,24 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback is active.
-The current product gap is making reference-implementation recipes useful as
-retrievable, testable brain patterns instead of long markdown instructions or
-shallow skill prompts.
+mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair is active.
+The current product gap is using the retained recipe on a real audit-driven code
+repair, not only proving that it can be selected.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-9sg complete: exported remaining BrainKnowledge CLI filter value
-tuples for kind/status/usefulness, reused them in `parseKnowledgeArgs`, added
-invalid status filter coverage, and verified focused/full tests, Fallow, DB
-readiness, and diff check.
+mise-en-palace-1fwk complete: added deterministic plan proof that long
+reference-implementation recipe tasks select the retained recipe boundary and
+parser exemplar; live brain knowledge readback returns both cards read-only with
+mutation none.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-9sg-brain-knowledge-cli-filter-values/REPORT.md
-Next: `mise-en-palace-1fwk` proves a reference-implementation recipe pattern
-through existing executable/readback brain surfaces without building clone
-runtime, dashboard, API, MCP, broad ingestion, or hash-manifest system.
+docs/reviews/controlled-dogfood/2026-07-02-1fwk-reference-implementation-readback/REPORT.md
+Next: `mise-en-palace-x4c4` applies the retained recipe to one real
+code-quality repair from the audit without broad refactor or runtime expansion.
 ```
 
 ## 2. Product Thesis
