@@ -5,6 +5,9 @@ import type {
   SourceTrustTier,
   TaskContract
 } from "@krn/core";
+import {
+  activationExclusionReasons
+} from "@krn/core";
 
 import type {
   ActivationDecisionSourceSupportState,
@@ -124,15 +127,24 @@ const activationDecisionForExclusion = (
   return "excluded";
 };
 
+const isActivationExclusionReason = (
+  reason: string
+): reason is ActivationExclusionReason =>
+  activationExclusionReasons.some((candidate) => candidate === reason);
+
 const exclusionCategoryFor = (
   candidate: RankedActivationCandidate | undefined,
-  subjectId: string
+  exclusion: ActivationTraceExclusion
 ): ActivationExclusionReason => {
   if (candidate?.exclusion?.reason !== undefined) {
     return candidate.exclusion.reason;
   }
 
-  throw new Error(`Activation decision for ${subjectId} is missing exclusion category`);
+  if (isActivationExclusionReason(exclusion.reason)) {
+    return exclusion.reason;
+  }
+
+  throw new Error(`Activation decision for ${exclusion.subjectId} has unknown exclusion category ${exclusion.reason}`);
 };
 
 const nonStaleExclusionCategory = (
@@ -291,7 +303,7 @@ const recordExclusionTraceDecision = async (
   const decision = activationDecisionForExclusion(input.candidate);
   const exclusionCategory = exclusionCategoryFor(
     input.candidate,
-    input.exclusion.subjectId
+    input.exclusion
   );
   const commonInput = {
     retrievalRunId: input.retrievalRunId,

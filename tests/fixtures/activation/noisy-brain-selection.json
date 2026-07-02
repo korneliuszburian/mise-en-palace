@@ -71,7 +71,7 @@
       "trustTier": "project-decision",
       "supportType": "implementation-boundary",
       "consumer": "M25 activation fixture",
-      "status": "proposed",
+      "status": "accepted",
       "metadata": {},
       "createdAt": "2026-06-01T00:00:00.000Z",
       "updatedAt": "2026-06-01T00:00:00.000Z"
@@ -101,7 +101,7 @@
       "trustTier": "high",
       "supportType": "background",
       "consumer": "M25 activation fixture",
-      "status": "proposed",
+      "status": "accepted",
       "metadata": {},
       "createdAt": "2026-06-01T00:00:00.000Z",
       "updatedAt": "2026-06-01T00:00:00.000Z"

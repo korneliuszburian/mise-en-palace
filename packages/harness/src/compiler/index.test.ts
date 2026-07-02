@@ -77,7 +77,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   trustTier: "high",
   supportType: "supports",
   consumer: "compiler-test",
-  status: "proposed",
+  status: "accepted",
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",

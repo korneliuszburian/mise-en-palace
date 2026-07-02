@@ -85,7 +85,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   trustTier: "high",
   supportType: "supports",
   consumer: "activation-engine-test",
-  status: "proposed",
+  status: "accepted",
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
@@ -1636,5 +1636,35 @@ describe("activation engine", () => {
       subjectId: "claim-1",
       reason: "unsafe"
     });
+  });
+
+  it("excludes proposed source claims from implementation authority context", () => {
+    const query = buildSourceQuery(task);
+    const ranked = rankCandidates(
+      [
+        toSourceClaimCandidate(
+          sourceClaim({
+            id: "claim-proposed",
+            status: "proposed"
+          })
+        )
+      ],
+      query
+    );
+
+    const context = assembleContext({
+      id: "context-proposed-source-claim",
+      harnessPlanId: "plan-1",
+      candidates: ranked,
+      createdAt: now
+    });
+
+    expect(context.status).toBe("abstained");
+    expect(context.inclusions).toHaveLength(0);
+    expect(context.exclusions).toEqual([expect.objectContaining({
+      subjectId: "claim-proposed",
+      reason: "unsafe",
+      explanation: expect.stringContaining("accepted status")
+    })]);
   });
 });

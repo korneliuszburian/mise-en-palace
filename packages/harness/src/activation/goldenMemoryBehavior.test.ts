@@ -91,7 +91,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   trustTier: "high",
   supportType: "supports",
   consumer: "golden-memory-behavior-test",
-  status: "proposed",
+  status: "accepted",
   metadata: {},
   createdAt: now,
   updatedAt: now,

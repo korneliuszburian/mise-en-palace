@@ -8,6 +8,7 @@ import type {
   MemoryRecordReviewSignal,
   MemoryRecordStatus,
   ProjectId,
+  SourceClaimStatus,
   SourceTrustTier
 } from "@krn/core";
 import type {
@@ -78,6 +79,7 @@ export interface ActivationCandidate {
   searchDocumentId?: string;
   searchDocumentIds?: readonly string[];
   sourceClaimId?: string;
+  sourceClaimStatus?: SourceClaimStatus;
   memoryRecordId?: string;
   memoryReviewSignals?: readonly MemoryRecordReviewSignal[];
   antiMemoryRecordId?: string;

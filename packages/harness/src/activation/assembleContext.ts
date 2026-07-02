@@ -13,6 +13,7 @@ import {
 } from "@krn/core";
 
 import type {
+  ActivationExclusion,
   ActivationExclusionReason,
   AssembleContextInput,
   RankedActivationCandidate
@@ -27,6 +28,52 @@ export type AssembledContextAssembly = Omit<ContextAssembly, "status"> & {
   status: AssembleContextStatus;
 };
 
+const shouldPreserveExistingSourceExclusion = (
+  candidate: RankedActivationCandidate
+): boolean =>
+  candidate.exclusion !== undefined &&
+  candidate.exclusion.reason !== "over_budget" &&
+  candidate.exclusion.reason !== "low_context_roi";
+
+const sourceClaimAuthorityExclusion = (
+  candidate: RankedActivationCandidate
+): ActivationExclusion | undefined => {
+  if (candidate.sourceClaimStatus === "accepted") {
+    return undefined;
+  }
+
+  return {
+    reason: "unsafe",
+    explanation:
+      `Source claims require accepted status before activation; ${candidate.sourceClaimStatus ?? "unknown"} claims remain review candidates, not implementation authority.`
+  };
+};
+
+const sourceClaimContentExclusion = (
+  candidate: RankedActivationCandidate
+): ActivationExclusion | undefined => {
+  if (candidate.hasMechanism === false) {
+    return {
+      reason: "unsafe",
+      explanation: "Source claims require mechanism before activation."
+    };
+  }
+
+  if (candidate.doesNotProve !== undefined && candidate.doesNotProve.trim().length > 0) {
+    return undefined;
+  }
+
+  return {
+    reason: "unsafe",
+    explanation: "Source claims require doesNotProve before activation."
+  };
+};
+
+const sourceClaimSafetyExclusion = (
+  candidate: RankedActivationCandidate
+): ActivationExclusion | undefined =>
+  sourceClaimAuthorityExclusion(candidate) ?? sourceClaimContentExclusion(candidate);
+
 const enforceSourceClaimSafety = (
   candidate: RankedActivationCandidate
 ): RankedActivationCandidate => {
@@ -34,29 +81,13 @@ const enforceSourceClaimSafety = (
     return candidate;
   }
 
-  if (
-    candidate.exclusion !== undefined &&
-    candidate.exclusion.reason !== "over_budget" &&
-    candidate.exclusion.reason !== "low_context_roi"
-  ) {
+  if (shouldPreserveExistingSourceExclusion(candidate)) {
     return candidate;
   }
 
-  if (candidate.hasMechanism === false) {
-    return markExcluded(candidate, {
-      reason: "unsafe",
-      explanation: "Source claims require mechanism before activation."
-    });
-  }
+  const exclusion = sourceClaimSafetyExclusion(candidate);
 
-  if (candidate.doesNotProve !== undefined && candidate.doesNotProve.trim().length > 0) {
-    return candidate;
-  }
-
-  return markExcluded(candidate, {
-    reason: "unsafe",
-    explanation: "Source claims require doesNotProve before activation."
-  });
+  return exclusion === undefined ? candidate : markExcluded(candidate, exclusion);
 };
 
 const toInclusion = (candidate: RankedActivationCandidate): ContextInclusion => ({
