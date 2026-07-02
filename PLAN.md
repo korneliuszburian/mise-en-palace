@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted-only SourceDecisionEdge support implemented; CI closure pending
+current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending
 ```
 
 ## Compact Checkpoints
@@ -124,7 +124,7 @@ Task boundary:
 ```txt
 SourceDecisionEdge and SourceClaimEdge support require accepted SourceClaims.
 Proposed SourceClaims remain review candidates, not decision-support authority.
-Next work after CI closure is selected from Beads or created from bounded audit evidence.
+KRN CI 28621751037 passed. Next work is selected from Beads or created from bounded audit evidence.
 ```
 
 ## Recent Completed Streams

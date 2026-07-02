@@ -60,6 +60,12 @@ rtk git diff --check
 
 All passed locally.
 
+CI:
+
+```txt
+KRN CI 28621751037: passed
+```
+
 ## Non-Proof
 
 - `KRN_DATABASE_URL` was not set locally, so DB smoke commands were not run

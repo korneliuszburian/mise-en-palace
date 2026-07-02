@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted-only SourceDecisionEdge support implemented; CI closure pending
+current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending
 latest pushed commit: see git history
 ```
 
@@ -24,8 +24,8 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-accepted-only SourceDecisionEdge support implemented; CI closure pending.
-Verify CI, close Beads, then inspect/create the next bounded audit-derived issue.
+accepted-only SourceDecisionEdge support complete; next bounded issue selection pending.
+Inspect/create the next bounded audit-derived issue.
 ```
 
 Latest outcome:
@@ -35,7 +35,8 @@ mise-en-palace-b89r implementation: SourceDecisionEdge and SourceClaimEdge
 support now require accepted SourceClaims.
 Report:
 docs/runs/2026-07-02-source-decision-edge-authority.md
-Next: verify CI, close Beads, then inspect/create next bounded audit-derived issue.
+CI: KRN CI 28621751037 passed.
+Next: inspect/create next bounded audit-derived issue.
 ```
 
 ## 2. Product Thesis

@@ -27,12 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: accepted-only SourceDecisionEdge support implemented; CI closure pending.
+current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending.
 ```
 
 Current task state: SourceDecisionEdge and SourceClaimEdge support now require
 accepted SourceClaims, and `krn source decision link --persist` rejects proposed
-claims before creating decision-support edges.
+claims before creating decision-support edges. KRN CI `28621751037` passed.
 
 Latest slice:
 
@@ -40,7 +40,7 @@ Latest slice:
 accepted-only SourceDecisionEdge support implemented.
 Report:
 docs/runs/2026-07-02-source-decision-edge-authority.md
-Next: verify CI, close Beads, then inspect/create next bounded audit-derived slice.
+Next: inspect/create next bounded audit-derived slice.
 ```
 
 ## Direction
