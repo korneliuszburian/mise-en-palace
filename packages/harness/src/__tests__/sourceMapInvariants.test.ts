@@ -6,7 +6,7 @@ import {
   it
 } from "vitest";
 
-const sourceMapPath = new URL("../../../docs/KRN_SOURCES.md", import.meta.url);
+const sourceMapPath = new URL("../../../../docs/KRN_SOURCES.md", import.meta.url);
 
 interface SourceSection {
   title: string;

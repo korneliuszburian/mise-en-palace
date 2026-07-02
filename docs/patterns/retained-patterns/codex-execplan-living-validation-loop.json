@@ -13,8 +13,8 @@
   "evidenceRefs": [
     "PLAN.md#current-product-state",
     "docs/reviews/controlled-dogfood/2026-06-28-v255-active-ledger-condensation/REPORT.md",
-    "packages/harness/src/contextHygieneInvariants.test.ts",
-    "packages/harness/src/activePlanInvariants.test.ts"
+    "packages/harness/src/__tests__/contextHygieneInvariants.test.ts",
+    "packages/harness/src/__tests__/activePlanInvariants.test.ts"
   ],
   "consumers": [
     "root PLANS.md continuous ExecPlan",

@@ -11,7 +11,7 @@ import {
   it
 } from "vitest";
 
-const repoRoot = path.resolve(import.meta.dirname, "../../..");
+const repoRoot = path.resolve(import.meta.dirname, "../../../..");
 const packagesRoot = path.join(repoRoot, "packages");
 
 const productionTypeScriptFiles = (directory: string): string[] => {

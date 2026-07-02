@@ -9,7 +9,7 @@ import {
   it
 } from "vitest";
 
-const skillsRoot = new URL("../../../.agents/skills/", import.meta.url);
+const skillsRoot = new URL("../../../../.agents/skills/", import.meta.url);
 
 interface SkillFile {
   directoryName: string;

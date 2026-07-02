@@ -7,20 +7,20 @@ import {
 } from "vitest";
 
 const matrixPath = new URL(
-  "../../../docs/architecture/brain-battle-eval-matrix.md",
+  "../../../../docs/architecture/brain-battle-eval-matrix.md",
   import.meta.url
 );
-const packageJsonPath = new URL("../../../package.json", import.meta.url);
+const packageJsonPath = new URL("../../../../package.json", import.meta.url);
 const promptfooBoundaryPath = new URL(
-  "../../../docs/architecture/promptfoo-adapter-boundary.md",
+  "../../../../docs/architecture/promptfoo-adapter-boundary.md",
   import.meta.url
 );
 const promptfooFixturePath = new URL(
-  "../../../tests/fixtures/promptfoo/krn-golden-smoke.yaml",
+  "../../../../tests/fixtures/promptfoo/krn-golden-smoke.yaml",
   import.meta.url
 );
 const promptfooProviderPath = new URL(
-  "../../../tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs",
+  "../../../../tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs",
   import.meta.url
 );
 

@@ -7,7 +7,7 @@ import {
 } from "vitest";
 
 const readRootFile = (path: string): string =>
-  readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
+  readFileSync(new URL(`../../../../${path}`, import.meta.url), "utf8");
 
 const requiredLine = (body: string, pattern: RegExp, label: string): string => {
   const match = body.match(pattern);
@@ -268,7 +268,7 @@ describe("KRN active plan invariants", () => {
   it("keeps source-class vocabulary aligned across intake, skills, and source guidance", () => {
     const runbook = readRootFile("docs/runbooks/pattern-intake.md");
     const sourceSkill = readRootFile(".agents/skills/source-to-decision/SKILL.md");
-    const sourceMapInvariant = readRootFile("packages/harness/src/sourceMapInvariants.test.ts");
+    const sourceMapInvariant = readRootFile("packages/harness/src/__tests__/sourceMapInvariants.test.ts");
     const sourceMap = readRootFile("docs/KRN_SOURCES.md");
     const expectedInline = sourceClassVocabulary.join(" | ");
 

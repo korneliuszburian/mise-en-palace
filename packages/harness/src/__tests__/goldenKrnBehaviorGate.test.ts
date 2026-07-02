@@ -5,7 +5,7 @@ import type {
 
 import {
   runKrnBehaviorGoldenGate
-} from "./goldenKrnBehaviorGate.js";
+} from "../goldenKrnBehaviorGate.js";
 
 const now = "2026-06-23T10:00:00.000Z";
 

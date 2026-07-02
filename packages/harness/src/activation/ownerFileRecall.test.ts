@@ -156,7 +156,7 @@ describe("owner-file recall", () => {
           reason: "seed TypeScript best-pattern and finite-state standard"
         },
         {
-          path: "packages/harness/src/sourceMapInvariants.test.ts",
+          path: "packages/harness/src/__tests__/sourceMapInvariants.test.ts",
           kind: "invariant_test",
           reason: "seed source-map invariant and Codex/source decision guard tests"
         }
@@ -176,7 +176,7 @@ describe("owner-file recall", () => {
         "Target source seed: docs/KRN_SOURCES.md",
         "Target source seed: docs/runbooks/pattern-intake.md",
         "Target source seed: docs/standards/typescript-excellence.md",
-        "Target source seed: packages/harness/src/sourceMapInvariants.test.ts"
+        "Target source seed: packages/harness/src/__tests__/sourceMapInvariants.test.ts"
       ])
     );
     expect(candidates).toEqual(
@@ -191,7 +191,7 @@ describe("owner-file recall", () => {
         }),
         expect.objectContaining({
           metadata: expect.objectContaining({
-            targetPath: "packages/harness/src/sourceMapInvariants.test.ts",
+            targetPath: "packages/harness/src/__tests__/sourceMapInvariants.test.ts",
             seedKind: "invariant_test"
           })
         })
@@ -216,7 +216,7 @@ describe("owner-file recall", () => {
           reason: "seed evidence-review-loop skill owner for proof and sequencing work"
         },
         {
-          path: "packages/harness/src/skillInvariants.test.ts",
+          path: "packages/harness/src/__tests__/skillInvariants.test.ts",
           kind: "skill_invariant_test",
           reason: "seed skill invariant tests for repo-local skill workflow guards"
         }
@@ -234,7 +234,7 @@ describe("owner-file recall", () => {
     expect(candidates.map((candidate) => candidate.reason)).toEqual(
       expect.arrayContaining([
         "Target source seed: .agents/skills/evidence-review-loop/SKILL.md",
-        "Target source seed: packages/harness/src/skillInvariants.test.ts"
+        "Target source seed: packages/harness/src/__tests__/skillInvariants.test.ts"
       ])
     );
     expect(candidates).toEqual(
@@ -249,7 +249,7 @@ describe("owner-file recall", () => {
         }),
         expect.objectContaining({
           metadata: expect.objectContaining({
-            targetPath: "packages/harness/src/skillInvariants.test.ts",
+            targetPath: "packages/harness/src/__tests__/skillInvariants.test.ts",
             seedKind: "skill_invariant_test"
           })
         })

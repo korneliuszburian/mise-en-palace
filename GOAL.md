@@ -39,12 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-yuvw/dqqf complete: repo naming/layout inventory added;
-workers test topology pilot moved six tests into src/__tests__ with focused
-verification; recipe drift hash vocabulary corrected to non-crypto checksum.
+test-topology cleanup complete so far: workers, small packages, and harness
+smoke-filter root tests now use bounded src/__tests__ islands; recipe drift
+uses explicit non-crypto checksum wording.
 Report:
-docs/runs/2026-07-02-naming-layout-inventory.md
-Next: continue small-package test topology migration and bounded naming
+docs/runs/2026-07-02-harness-root-test-topology.md
+Next: continue bounded test topology migration and naming
 shortening through Beads follow-ups.
 ```
 

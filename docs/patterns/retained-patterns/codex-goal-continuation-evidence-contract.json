@@ -13,7 +13,7 @@
   "evidenceRefs": [
     "GOAL.md#current-objective",
     "docs/reviews/controlled-dogfood/2026-06-28-v255-active-ledger-condensation/REPORT.md",
-    "packages/harness/src/activePlanInvariants.test.ts"
+    "packages/harness/src/__tests__/activePlanInvariants.test.ts"
   ],
   "consumers": [
     "root GOAL.md continuation contract",

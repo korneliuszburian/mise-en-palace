@@ -14,7 +14,7 @@
     "docs/reviews/controlled-dogfood/2026-06-28-v251-fresh-target-trial-gate-after-activation-guards/REPORT.md",
     "docs/reviews/controlled-dogfood/2026-06-28-v252-normalized-target-trial-substrate/REPORT.md",
     "docs/reviews/controlled-dogfood/2026-06-28-v256-replayable-target-repair-trial/REPORT.md",
-    "packages/harness/src/skillInvariants.test.ts"
+    "packages/harness/src/__tests__/skillInvariants.test.ts"
   ],
   "consumers": [
     "future target-repo trials",

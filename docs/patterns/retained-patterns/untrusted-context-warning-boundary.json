@@ -14,7 +14,7 @@
     "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
     "packages/codex-adapter/src/renderExecutionBrief.test.ts",
     "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
-    "packages/harness/src/goldenKrnBehaviorGate.test.ts"
+    "packages/harness/src/__tests__/goldenKrnBehaviorGate.test.ts"
   ],
   "consumers": [
     "future Codex adapter changes",

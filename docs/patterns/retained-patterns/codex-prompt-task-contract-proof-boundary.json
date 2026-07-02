@@ -12,7 +12,7 @@
   ],
   "evidenceRefs": [
     "docs/reviews/controlled-dogfood/2026-06-28-v286-brain-knowledge-catalog-coverage-expansion/REPORT.md",
-    "packages/harness/src/activePlanInvariants.test.ts",
+    "packages/harness/src/__tests__/activePlanInvariants.test.ts",
     "packages/cli/src/runKnowledgeCardsCommand.test.ts"
   ],
   "consumers": [

@@ -7,7 +7,7 @@ import {
 } from "vitest";
 
 const readRootFile = (path: string): string =>
-  readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
+  readFileSync(new URL(`../../../../${path}`, import.meta.url), "utf8");
 
 const lineCount = (body: string): number => body.split("\n").length;
 
