@@ -8,6 +8,7 @@ import {
   readSourceRelationMetadataReadback
 } from "@krn/core";
 import {
+  applySourceClaimAuthorityFilter,
   applyContextROI,
   buildActivationQuery,
   retrieveActivationCandidates
@@ -1166,7 +1167,8 @@ export const runSourceSearchCommand = async (
         retrievalRepository
       }
     });
-    const bounded = applyContextROI(retrieved.candidates, {
+    const authoritySafe = applySourceClaimAuthorityFilter(retrieved.candidates);
+    const bounded = applyContextROI(authoritySafe, {
       maxInclusions,
       minimumDiverseKinds: ["source", "search"]
     });

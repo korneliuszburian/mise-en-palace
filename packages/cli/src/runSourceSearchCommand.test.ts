@@ -39,7 +39,7 @@ const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
   supportType: "implementation-boundary",
   consumer: "V341 Product-Facing Knowledge Search Readback Preview",
   falsifier: "The claim cannot be found by a later readback.",
-  status: "proposed",
+  status: "accepted",
   metadata: {},
   createdAt: now,
   updatedAt: now,
@@ -512,6 +512,78 @@ describe("runSourceSearchCommand", () => {
     expect(runtimeOutput.crawler).toBe("none");
     expect(runtimeOutput.embeddings).toBe("not_run");
     expect(runtimeOutput.graphRuntime).toBe("not_run");
+  });
+
+  it("excludes non-accepted source claims from source-search authority", async () => {
+    const proposedSourceClaimId = "d05913a9-4ac2-4564-aa59-1194fbac4561" as SourceClaim["id"];
+    const rejectedSourceClaimId = "d7e0d503-3d55-4c72-80f8-0a6089cdb3af" as SourceClaim["id"];
+    const deprecatedSourceClaimId = "f9bf59fc-9815-4f14-abbd-b527464fa6ac" as SourceClaim["id"];
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "bounded local ingest loop crawler authority",
+        limit: 10,
+        maxInclusions: 5,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          sourceClaim(),
+          sourceClaim({
+            id: proposedSourceClaimId,
+            status: "proposed"
+          }),
+          sourceClaim({
+            id: rejectedSourceClaimId,
+            status: "rejected"
+          }),
+          sourceClaim({
+            id: deprecatedSourceClaimId,
+            status: "deprecated"
+          })
+        ],
+        documents: [searchDocument()]
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const supportingClaimIds = supportingClaims.map((candidate) =>
+      objectValue(candidate, "supporting claim").sourceClaimId
+    );
+
+    expect(supportingClaimIds).toEqual([sourceClaimId]);
+
+    const supportingDocuments = arrayValue(answerPackage.supportingDocuments, "supportingDocuments");
+    const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
+    const excludedByClaimId = new Map(excludedCandidates.map((candidate) => {
+      const outputCandidate = objectValue(candidate, "excluded candidate");
+
+      return [outputCandidate.sourceClaimId, outputCandidate];
+    }));
+
+    expect(supportingDocuments).toHaveLength(1);
+    for (const [id, status] of [
+      [proposedSourceClaimId, "proposed"],
+      [rejectedSourceClaimId, "rejected"],
+      [deprecatedSourceClaimId, "deprecated"]
+    ] as const) {
+      const excluded = excludedByClaimId.get(id);
+
+      expect(excluded, `${status} claim should be excluded`).toBeDefined();
+      expect(excluded?.status).toBe("excluded");
+      expect(excluded?.exclusionReason).toBe("unsafe");
+      expect(excluded?.exclusionExplanation).toContain(
+        `Source claims require accepted status before activation; ${status} claims remain review candidates`
+      );
+    }
   });
 
   it("includes read-only SourceClaimEdge relation support in JSON answer packages", async () => {

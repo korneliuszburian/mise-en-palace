@@ -27,21 +27,21 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: source activation authority boundary fixed; next P1 is verification/CI closure.
+current task: source-search authority readback boundary fixed; next P1 is accepted SourceClaim decision-link/readback enforcement.
 ```
 
-Current task state: `mise-en-palace-2huq` closed the activation source-authority
-leak by making non-accepted SourceClaims unsafe before activation filtering can
-look authoritative.
+Current task state: source-search readback now applies the accepted-only
+source-authority boundary before answer packaging can present SourceClaims as
+supporting evidence.
 
 Latest slice:
 
 ```txt
-Source activation authority boundary now covers filter/compile paths and keeps
-assembly as defense in depth.
+Source-search authority readback now excludes proposed/rejected/deprecated
+SourceClaims before ContextROI answer packaging.
 Report:
-docs/runs/2026-07-02-source-claim-authority-boundary.md
-Next: verify CI, close Beads, then choose the next bounded P1 without broad cleanup.
+docs/runs/2026-07-02-source-search-authority-boundary.md
+Next: enforce accepted SourceClaim decision-link/readback without broad cleanup.
 ```
 
 ## Direction

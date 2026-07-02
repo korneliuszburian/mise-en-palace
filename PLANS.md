@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: source activation authority boundary fixed; next P1 is verification/CI closure
+current task: source-search authority readback boundary fixed; next P1 is accepted SourceClaim decision-link/readback enforcement
 latest pushed commit: see git history
 ```
 
@@ -24,18 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-source activation authority boundary fixed; next P1 is verification/CI closure.
-Close CI/Beads, then select the next bounded gap from current repo evidence.
+source-search authority readback boundary fixed; next P1 is accepted SourceClaim decision-link/readback enforcement.
+Close source decision-link/readback next; do not start broad cleanup.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-2huq complete pending CI/Beads: non-accepted SourceClaims are
-unsafe before activation filtering can look authoritative.
+mise-en-palace-52kw complete pending CI/Beads: source-search answer packaging
+applies accepted-only SourceClaim authority before ContextROI.
 Report:
-docs/runs/2026-07-02-source-claim-authority-boundary.md
-Next: verify CI, close Beads, then choose the next bounded P1 without broad cleanup.
+docs/runs/2026-07-02-source-search-authority-boundary.md
+Next: enforce accepted SourceClaim decision-link/readback without broad cleanup.
 ```
 
 ## 2. Product Thesis

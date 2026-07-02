@@ -80,6 +80,9 @@ Does not prove:
 
 - Accepted SourceClaims are true.
 - Accepted SourceClaims always have linked `SourceDecision` records.
+- Every direct activation-candidate readback consumer applies this boundary;
+  `krn source search` is covered by
+  `docs/runs/2026-07-02-source-search-authority-boundary.md`.
 - Source graph edge correctness or ranking quality.
 - DB-level source governance is complete.
 - Product-loop E2E readiness is complete.
