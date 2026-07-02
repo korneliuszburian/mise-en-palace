@@ -10,7 +10,7 @@ import {
   formatSourceClaimRejectUsage,
   formatSourceSearchUsage,
   parseSourceArgs
-} from "./parseSourceArgs.js";
+} from "../parseSourceArgs.js";
 
 describe("parseSourceArgs", () => {
   it("parses source artifact preview options", () => {
