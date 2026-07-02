@@ -11,6 +11,7 @@ import type {
 import {
   applyContextROI,
   applyMemoryReviewSignalFilter,
+  applySourceClaimAuthorityFilter,
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
@@ -207,7 +208,9 @@ const filterActivationCandidates = (
 ): FilteredActivationCandidates => applyContextROI(
   applyTemporalFilter(
     applyTrustFilter(
-      applyMemoryReviewSignalFilter(conflictResult.candidates),
+      applySourceClaimAuthorityFilter(
+        applyMemoryReviewSignalFilter(conflictResult.candidates)
+      ),
       { minimumTrustTier }
     ),
     createdAt

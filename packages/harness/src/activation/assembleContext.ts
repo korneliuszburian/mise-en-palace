@@ -21,6 +21,9 @@ import type {
 import {
   markExcluded
 } from "./types.js";
+import {
+  sourceClaimAuthorityExclusion
+} from "./sourceClaimAuthority.js";
 
 export type AssembleContextStatus = ContextAssemblyCurrentStatus;
 
@@ -34,20 +37,6 @@ const shouldPreserveExistingSourceExclusion = (
   candidate.exclusion !== undefined &&
   candidate.exclusion.reason !== "over_budget" &&
   candidate.exclusion.reason !== "low_context_roi";
-
-const sourceClaimAuthorityExclusion = (
-  candidate: RankedActivationCandidate
-): ActivationExclusion | undefined => {
-  if (candidate.sourceClaimStatus === "accepted") {
-    return undefined;
-  }
-
-  return {
-    reason: "unsafe",
-    explanation:
-      `Source claims require accepted status before activation; ${candidate.sourceClaimStatus ?? "unknown"} claims remain review candidates, not implementation authority.`
-  };
-};
 
 const sourceClaimContentExclusion = (
   candidate: RankedActivationCandidate

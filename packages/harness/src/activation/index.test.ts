@@ -1065,6 +1065,60 @@ describe("activation engine", () => {
     });
   });
 
+  it("filters non-accepted source claims before activation authority", () => {
+    const query = buildSourceQuery(task);
+    const ranked = rankCandidates([
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-accepted",
+        status: "accepted"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-proposed",
+        status: "proposed"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-rejected",
+        status: "rejected"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-deprecated",
+        status: "deprecated"
+      }))
+    ], query);
+    const result = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [],
+      minimumTrustTier: "medium",
+      now
+    });
+    const bySubjectId = new Map(
+      result.candidates.map((candidate) => [candidate.subjectId, candidate])
+    );
+
+    expect(bySubjectId.get("claim-accepted")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("claim-proposed")).toMatchObject({
+      sourceClaimStatus: "proposed",
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("proposed claims remain review candidates")
+      }
+    });
+    expect(bySubjectId.get("claim-rejected")).toMatchObject({
+      sourceClaimStatus: "rejected",
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("rejected claims remain review candidates")
+      }
+    });
+    expect(bySubjectId.get("claim-deprecated")).toMatchObject({
+      sourceClaimStatus: "deprecated",
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("deprecated claims remain review candidates")
+      }
+    });
+  });
+
   it("selects a small high-signal working set from noisy candidates", () => {
     const query = buildMemoryQuery(task);
     const candidates = [

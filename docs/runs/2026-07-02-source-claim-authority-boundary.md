@@ -2,38 +2,47 @@
 
 ## Verdict
 
-The audit finding was live.
+The activation authority gap was real and is now closed for the harness
+activation and compiler paths.
 
-`retrieveActivationCandidates` retrieved project SourceClaims without an
-accepted-status authority gate, and `assembleContext` previously allowed a
-well-formed `proposed` SourceClaim to become an inclusion when it had mechanism
-and `doesNotProve` text.
+Before this slice, `assembleContext` excluded non-accepted SourceClaims as a
+late defense-in-depth guard, but `applyActivationFilters` and the compiler
+filter pipeline could still carry `proposed`, `rejected`, or `deprecated`
+SourceClaims as clean ranked candidates until assembly. That made readback and
+review ambiguous: the candidate pool looked authoritative even though only
+accepted SourceClaims should be usable as implementation context.
+
+This slice moves the lifecycle boundary earlier: non-accepted SourceClaims are
+marked `unsafe` before trust, temporal, and ContextROI filtering. The assembly
+guard remains as defense in depth.
 
 ## Source To Decision
 
 ```yaml
-source_id: repo-local-audit-ksvm
-title: Proposed SourceClaims can enter activation as implementation authority
+source_id: repo-local-audit-2huq
+title: Non-accepted SourceClaims can survive activation filtering as clean candidates
 trust_tier: high
 source_class: repo-local evidence
-mechanism: SourceClaim defaults to proposed in persistence, activation mapped claims into candidates without carrying lifecycle status, and context assembly only checked mechanism and doesNotProve.
-krn_implication: Activation must distinguish reviewed source authority from review candidates before rendering Codex-facing context.
+mechanism: SourceClaim lifecycle status was carried as metadata/sourceClaimStatus, but filterActivationCandidates did not enforce accepted-only authority before trust/temporal/ContextROI.
+krn_implication: Activation must distinguish reviewed source authority from review candidates before ranking/readback can be mistaken for implementation guidance.
 decision_kind: adopt
-decision: Carry SourceClaim lifecycle status into activation candidates and exclude non-accepted source claims at context assembly.
-does_not_prove: This does not prove source taxonomy is normalized, SourceDecision links are fully enforced, or all DB source governance invariants are complete.
-consumer: packages/harness/src/activation/assembleContext.ts
-falsifier: A proposed/rejected/deprecated SourceClaim appears in ContextAssembly.inclusions without an explicit exploratory/untrusted path.
+decision: Add one source-claim authority helper and apply it in activation filters and compiler filtering; keep assembleContext as defense-in-depth.
+does_not_prove: This does not prove source truth, SourceDecision linkage for every accepted claim, graph retrieval quality, DB source governance completeness, or product readiness.
+consumer: packages/harness/src/activation/activationFilters.ts
+falsifier: A proposed/rejected/deprecated SourceClaim passes applyActivationFilters without an explicit unsafe exclusion.
 ```
 
 ## Implementation
 
-- Added `sourceClaimStatus` to activation candidates.
-- Preserved SourceClaim lifecycle status in `toSourceClaimCandidate`.
-- Excluded non-accepted source claims in `assembleContext` with `reason: "unsafe"`.
-- Let activation trace persistence record exclusion categories that are created
-  during context assembly.
-- Updated tests/fixtures that intentionally model authoritative source claims to
-  use `status: "accepted"`.
+- Added `sourceClaimAuthorityExclusion` as the single lifecycle-status helper.
+- Added `applySourceClaimAuthorityFilter` to mark non-accepted SourceClaims
+  `unsafe` before trust and temporal filters.
+- Wired the compiler activation pipeline through the same source-authority
+  filter before ContextROI.
+- Kept `assembleContext` using the shared helper so direct callers still get
+  the accepted-only guard.
+- Added focused activation coverage for accepted, proposed, rejected, and
+  deprecated SourceClaims.
 
 ## Verification
 
@@ -48,10 +57,10 @@ rtk git diff --check
 
 Result:
 
-- focused activation: 34 files passed, 189 tests passed;
+- focused activation: 36 files passed, 203 tests passed;
 - workspace typecheck: passed;
-- full workspace tests: 129 files passed, 744 tests passed;
-- Fallow changed-files gate: passed, with inherited duplication findings excluded by gate;
+- full workspace tests: 147 files passed, 782 tests passed;
+- Fallow changed-files gate: passed;
 - brain-battle smoke: passed;
 - diff whitespace check: passed.
 
@@ -59,14 +68,18 @@ Result:
 
 Proves:
 
-- Proposed SourceClaims do not silently enter assembled implementation context
-  through the activation assembly path.
-- Existing activation and compiler-focused harness tests accept the new source
-  authority boundary.
+- `applyActivationFilters` marks `proposed`, `rejected`, and `deprecated`
+  SourceClaims as `unsafe`.
+- `accepted` SourceClaims remain eligible for activation.
+- Compiler filtering uses the same accepted-only authority boundary before
+  ContextROI and context assembly.
+- `assembleContext` still prevents non-accepted SourceClaims from becoming
+  inclusions if a direct caller bypasses the filter pipeline.
 
 Does not prove:
 
-- Source taxonomy is normalized.
-- Accepted SourceClaims always have linked SourceDecision records.
+- Accepted SourceClaims are true.
+- Accepted SourceClaims always have linked `SourceDecision` records.
+- Source graph edge correctness or ranking quality.
 - DB-level source governance is complete.
-- Product-loop E2E proof is complete.
+- Product-loop E2E readiness is complete.

@@ -14,6 +14,9 @@ import {
   applyTrustFilter,
   type TrustFilterPolicy
 } from "./trustFilter.js";
+import {
+  sourceClaimAuthorityExclusion
+} from "./sourceClaimAuthority.js";
 import type {
   ActivationExclusionReason,
   RankedActivationCandidate
@@ -74,12 +77,26 @@ export const applyMemoryReviewSignalFilter = (
     });
   });
 
+export const applySourceClaimAuthorityFilter = (
+  candidates: readonly RankedActivationCandidate[]
+): RankedActivationCandidate[] =>
+  candidates.map((candidate) => {
+    if (candidate.exclusion !== undefined) {
+      return candidate;
+    }
+
+    const exclusion = sourceClaimAuthorityExclusion(candidate);
+
+    return exclusion === undefined ? candidate : markExcluded(candidate, exclusion);
+  });
+
 export const applyActivationFilters = (
   input: ApplyActivationFiltersInput
 ): ApplyActivationFiltersResult => {
   const conflictResult = detectConflicts(input.candidates, input.antiMemoryRecords);
   const memoryReviewSafe = applyMemoryReviewSignalFilter(conflictResult.candidates);
-  const trusted = applyTrustFilter(memoryReviewSafe, {
+  const sourceAuthoritySafe = applySourceClaimAuthorityFilter(memoryReviewSafe);
+  const trusted = applyTrustFilter(sourceAuthoritySafe, {
     minimumTrustTier: input.minimumTrustTier
   });
   const current = applyTemporalFilter(trusted, input.now);

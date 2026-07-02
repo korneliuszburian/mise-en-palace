@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: audit-hardening closure complete; waiting for ruthless second-opinion review
+current task: source activation authority boundary fixed; next P1 is verification/CI closure
 ```
 
 ## Compact Checkpoints
@@ -69,6 +69,7 @@ source taxonomy boundary: legacy trustTier/supportType now project into explicit
 brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
 DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 product loop source authority: MemoryReviewGate requires SourceDecision-accepted SourceClaims
+source activation authority: non-accepted SourceClaims are unsafe before trust/temporal/ContextROI filtering
 eval proof-boundary manifest: verification gates have typed proves/doesNotProve readback
 alpha verify full gate: alpha:verify remains fast; alpha:verify:full aggregates static, eval-adapter, DB-runtime, and DB-backed brain-loop proof lanes
 worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
@@ -110,20 +111,21 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Audit-Hardening Closure
+### Source Activation Authority Boundary
 
-Goal: preserve audit-hardening closure and use second-opinion review to select the next bounded slice.
+Goal: close the remaining source-authority leak found by second-opinion review.
 
-Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
+Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy redesign.
 
 Latest artifact: `docs/KRN_BRAIN.md`; latest report:
-`docs/runs/2026-07-02-audit-hardening-final-handoff.md`.
+`docs/runs/2026-07-02-source-claim-authority-boundary.md`.
 
 Task boundary:
 
 ```txt
-Do not start broad cleanup from old audits. Run the final second-opinion prompt,
-then create one bounded Beads issue from the highest-confidence remaining gap.
+Only accepted SourceClaims may become authoritative activation context.
+Non-accepted SourceClaims must be explicitly unsafe before trust/temporal/ContextROI.
+Next work after closure remains bounded; do not start broad CLI/smoke/naming cleanup.
 ```
 
 ## Recent Completed Streams
