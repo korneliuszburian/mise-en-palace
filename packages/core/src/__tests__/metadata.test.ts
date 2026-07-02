@@ -4,7 +4,7 @@ import {
   readMetadataObjectList,
   readMetadataString,
   readMetadataStringList
-} from "./metadata.js";
+} from "../metadata.js";
 
 describe("metadata readers", () => {
   it("reads non-empty string fields only", () => {

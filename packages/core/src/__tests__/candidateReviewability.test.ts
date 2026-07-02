@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assessCandidateReviewability
-} from "./candidateReviewability.js";
+} from "../candidateReviewability.js";
 
 describe("candidate reviewability", () => {
   it("classifies evidence-backed candidates as ready", () => {

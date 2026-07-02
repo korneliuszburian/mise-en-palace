@@ -5,7 +5,7 @@ import {
   validateCapabilityBindings,
   type CapabilityBinding,
   type CapabilityBindingCandidate
-} from "./capabilityPlan.js";
+} from "../capabilityPlan.js";
 
 const bindings = (): CapabilityBinding[] => [
   {

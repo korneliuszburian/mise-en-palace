@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   validateGoldenTaskContract,
   type GoldenTask
-} from "./goldenTask.js";
+} from "../goldenTask.js";
 
 const now = "2026-06-23T09:10:00.000Z";
 

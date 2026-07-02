@@ -9,7 +9,7 @@ import {
   scoreEvidenceBundleReviewRisk,
   targetEvidenceFromMetadata,
   type EvidenceBundle
-} from "./evidenceBundle.js";
+} from "../evidenceBundle.js";
 
 const now = "2026-06-23T07:10:00.000Z";
 

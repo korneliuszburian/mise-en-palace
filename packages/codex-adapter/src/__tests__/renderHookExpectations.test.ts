@@ -5,13 +5,13 @@ import type {
 
 import {
   codexHookPhases
-} from "./contracts.js";
+} from "../contracts.js";
 import {
   createCodexHookExpectationProjection,
   createCodexHookExpectations,
   renderHookExpectationProjection,
   renderHookExpectations
-} from "./renderHookExpectations.js";
+} from "../renderHookExpectations.js";
 
 const evidenceContract: EvidenceContract = {
   commands: [

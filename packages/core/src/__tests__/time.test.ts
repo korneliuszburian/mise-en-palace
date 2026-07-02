@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseTimestampMs } from "./time.js";
+import { parseTimestampMs } from "../time.js";
 
 describe("parseTimestampMs", () => {
   it("parses valid timestamp strings to epoch milliseconds", () => {

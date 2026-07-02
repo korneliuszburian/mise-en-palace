@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, test } from "vitest";
 import {
   normalizeReviewAssessment,
   type ReviewAssessment
-} from "./reviewAssessment.js";
+} from "../reviewAssessment.js";
 import {
   normalizeFeedbackDelta,
   sourceUsefulnessOutcomesFromMetadata,
@@ -11,7 +11,7 @@ import {
   type FeedbackDeltaCreateStatus,
   type FeedbackDeltaLifecycleStatus,
   type FeedbackDelta
-} from "./feedbackDelta.js";
+} from "../feedbackDelta.js";
 
 const now = "2026-06-23T07:20:00.000Z";
 

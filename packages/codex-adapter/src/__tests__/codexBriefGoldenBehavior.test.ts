@@ -15,11 +15,11 @@ import type {
 
 import {
   executionBriefFormatVersion
-} from "./contracts.js";
+} from "../contracts.js";
 import {
   createExecutionBrief,
   renderExecutionBriefText
-} from "./renderExecutionBrief.js";
+} from "../renderExecutionBrief.js";
 
 const now = "2026-06-25T14:20:00.000Z";
 const evidenceRefs = [

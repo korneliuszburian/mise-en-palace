@@ -12,7 +12,7 @@ import {
   normalizeReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
-} from "./reviewOutcome.js";
+} from "../reviewOutcome.js";
 
 describe("review outcome vocabulary", () => {
   test("normalizes shared review outcomes and risk values", () => {

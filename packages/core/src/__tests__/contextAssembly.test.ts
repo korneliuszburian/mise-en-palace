@@ -2,11 +2,11 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   contextAssemblyCurrentStatuses
-} from "./contextAssembly.js";
+} from "../contextAssembly.js";
 import type {
   ContextAssemblyCurrentStatus,
   ContextAssemblyStatus
-} from "./contextAssembly.js";
+} from "../contextAssembly.js";
 
 describe("context assembly lifecycle status", () => {
   it("separates current assembly outcomes from historical lifecycle states", () => {

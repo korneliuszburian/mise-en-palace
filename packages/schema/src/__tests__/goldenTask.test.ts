@@ -3,11 +3,11 @@ import { describe, expect, test } from "vitest";
 
 import {
   parseGoldenTaskFixtures
-} from "./goldenTask.js";
+} from "../goldenTask.js";
 
 const readFixture = (): unknown => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/memory-behavior.json",
+    "../../../../tests/fixtures/golden-tasks/memory-behavior.json",
     import.meta.url
   );
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
@@ -17,7 +17,7 @@ const readFixture = (): unknown => {
 
 const readBoundaryFixture = (): unknown => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/boundary-behavior.json",
+    "../../../../tests/fixtures/golden-tasks/boundary-behavior.json",
     import.meta.url
   );
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
@@ -27,7 +27,7 @@ const readBoundaryFixture = (): unknown => {
 
 const readObservationReflectionFixture = (): unknown => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/observation-reflection-behavior.json",
+    "../../../../tests/fixtures/golden-tasks/observation-reflection-behavior.json",
     import.meta.url
   );
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
@@ -37,7 +37,7 @@ const readObservationReflectionFixture = (): unknown => {
 
 const readEvidenceCaptureFixture = (): unknown => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json",
+    "../../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json",
     import.meta.url
   );
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
@@ -47,7 +47,7 @@ const readEvidenceCaptureFixture = (): unknown => {
 
 const readCodexBriefFixture = (): unknown => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/codex-brief-behavior.json",
+    "../../../../tests/fixtures/golden-tasks/codex-brief-behavior.json",
     import.meta.url
   );
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));

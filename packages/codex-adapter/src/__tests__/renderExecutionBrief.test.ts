@@ -13,13 +13,13 @@ import {
   createExecutionBrief,
   renderExecutionBriefText,
   renderExecutionBrief
-} from "./renderExecutionBrief.js";
+} from "../renderExecutionBrief.js";
 import {
   executionBriefFormatVersion
-} from "./contracts.js";
+} from "../contracts.js";
 import {
   createCodexSkillBindingHints
-} from "./renderSkillHints.js";
+} from "../renderSkillHints.js";
 
 const createdAt = "2026-06-21T12:00:00.000Z";
 

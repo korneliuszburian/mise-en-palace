@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   codexHookPhases,
   executionBriefFormatVersion
-} from "./contracts.js";
+} from "../contracts.js";
 import type {
   CodexAdapterPlan,
   CodexHookExpectation,
@@ -11,7 +11,7 @@ import type {
   CodexSkillBindingHint,
   CodexSubagentProbeHint,
   ExecutionBrief
-} from "./contracts.js";
+} from "../contracts.js";
 
 const createdAt = "2026-06-22T06:00:00.000Z";
 

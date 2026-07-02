@@ -15,7 +15,7 @@ import {
   TextListSchema,
   privateReasoningMetadataKeys,
   rejectForbiddenMetadataKeys
-} from "./schemaPrimitives.js";
+} from "../schemaPrimitives.js";
 
 describe("schemaPrimitives", () => {
   it("exports shared metadata, text, and text-list schemas", () => {

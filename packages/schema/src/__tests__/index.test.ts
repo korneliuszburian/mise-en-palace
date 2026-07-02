@@ -4,7 +4,7 @@ import {
 } from "@krn/core";
 import {
   OBSERVATION_SOURCE_RANGE_POLICY
-} from "../../core/src/observations/observationPolicy.js";
+} from "../../../core/src/observations/observationPolicy.js";
 
 import {
   type ObservationItem,
@@ -21,8 +21,8 @@ import {
   parseSourceClaimInput,
   parseSourceDecisionEdgeInput,
   parseTaskContractInput
-} from "./index.js";
-import * as schemaExports from "./index.js";
+} from "../index.js";
+import * as schemaExports from "../index.js";
 
 const parser = (name: string): ((input: unknown) => unknown) => {
   const exportsByName = schemaExports as Record<string, unknown>;

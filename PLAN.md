@@ -95,7 +95,7 @@ reference recipe plan proof: long recipe tasks select the retained recipe bounda
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
-reference recipe drift/layout pilot: recipe checksum lab stays bounded; repo scan proved 130 colocated tests; six worker tests moved to src/__tests__
+reference recipe drift/layout pilot: recipe checksum lab stays bounded; 26 package tests now live in src/__tests__
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
@@ -116,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed report: `docs/runs/2026-07-02-reference-recipe-drift.md`.
+Latest completed report: `docs/runs/2026-07-02-small-package-test-topology.md`.
 
 Task boundary:
 

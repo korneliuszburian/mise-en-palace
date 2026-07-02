@@ -5,7 +5,7 @@ import {
   type MemoryCandidateCreateStatus,
   type MemoryCandidateLifecycleStatus,
   type MemoryRecord
-} from "./memory.js";
+} from "../memory.js";
 
 const now = "2026-06-23T20:05:00.000Z";
 

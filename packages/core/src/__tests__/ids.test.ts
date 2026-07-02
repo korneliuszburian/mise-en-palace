@@ -4,7 +4,7 @@ import type {
   ExecutionRunId,
   MemoryRecordId,
   SourceClaimId
-} from "./ids.js";
+} from "../ids.js";
 
 describe("branded KRN ids", () => {
   test("remain runtime strings", () => {

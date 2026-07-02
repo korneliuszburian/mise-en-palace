@@ -10,7 +10,7 @@ import {
   type SourceClaimLifecycleStatus,
   type SourceClaim,
   type SourceDecision
-} from "./source.js";
+} from "../source.js";
 
 const now = "2026-06-24T08:00:00.000Z";
 
