@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   runBrainSearchCommand
-} from "./runBrainSearchCommand.js";
+} from "../runBrainSearchCommand.js";
 
 describe("runBrainSearchCommand", () => {
   it("combines brain knowledge and source search into a read-only brain preview", async () => {
