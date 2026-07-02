@@ -197,6 +197,18 @@ describe("parseKnowledgeArgs", () => {
     });
   });
 
+  it("rejects unknown status filters", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--card-file",
+      "card.json",
+      "--status",
+      "draft"
+    ])).toEqual({
+      error: expect.stringContaining("Unsupported knowledge status: draft")
+    });
+  });
+
   it("rejects invalid result limits", () => {
     for (const limit of ["0", "-1", "1.5", "many"]) {
       expect(parseKnowledgeArgs([

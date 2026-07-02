@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values
+current task: mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback
 latest pushed commit: see git history
 ```
 
@@ -24,23 +24,24 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values is active.
-The current product gap is removing the next local CLI filter vocabulary drift:
-BrainKnowledge kind/status/usefulness filters should reuse canonical value
-sources where source inspection proves sharing is safe.
+mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback is active.
+The current product gap is making reference-implementation recipes useful as
+retrievable, testable brain patterns instead of long markdown instructions or
+shallow skill prompts.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-3dy complete: exported canonical BrainKnowledge reviewability and
-nextAction value tuples, derived the public types from those values, reused them
-in retained-pattern plan metadata and CLI reviewability parsing, and captured
-persisted plan/evidence/observe/reflect proof.
+mise-en-palace-9sg complete: exported remaining BrainKnowledge CLI filter value
+tuples for kind/status/usefulness, reused them in `parseKnowledgeArgs`, added
+invalid status filter coverage, and verified focused/full tests, Fallow, DB
+readiness, and diff check.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-3dy-brain-knowledge-vocabulary-values/REPORT.md
-Next: `mise-en-palace-9sg` canonicalizes remaining brain-knowledge CLI filter
-vocabulary values where source inspection proves sharing is safe.
+docs/reviews/controlled-dogfood/2026-07-02-9sg-brain-knowledge-cli-filter-values/REPORT.md
+Next: `mise-en-palace-1fwk` proves a reference-implementation recipe pattern
+through existing executable/readback brain surfaces without building clone
+runtime, dashboard, API, MCP, broad ingestion, or hash-manifest system.
 ```
 
 ## 2. Product Thesis

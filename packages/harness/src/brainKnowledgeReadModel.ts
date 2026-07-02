@@ -1,25 +1,31 @@
-export type BrainKnowledgeKind =
-  | "source_claim"
-  | "source_decision"
-  | "pattern"
-  | "memory"
-  | "memory_candidate"
-  | "anti_memory_candidate"
-  | "eval_candidate"
-  | "adr"
-  | "standard"
-  | "skill"
-  | "run_evidence";
+export const brainKnowledgeKindValues = [
+  "source_claim",
+  "source_decision",
+  "pattern",
+  "memory",
+  "memory_candidate",
+  "anti_memory_candidate",
+  "eval_candidate",
+  "adr",
+  "standard",
+  "skill",
+  "run_evidence"
+] as const;
 
-export type BrainKnowledgeStatus =
-  | "active"
-  | "candidate"
-  | "accepted"
-  | "rejected"
-  | "deferred"
-  | "stale"
-  | "superseded"
-  | "unknown";
+export type BrainKnowledgeKind = typeof brainKnowledgeKindValues[number];
+
+export const brainKnowledgeStatusValues = [
+  "active",
+  "candidate",
+  "accepted",
+  "rejected",
+  "deferred",
+  "stale",
+  "superseded",
+  "unknown"
+] as const;
+
+export type BrainKnowledgeStatus = typeof brainKnowledgeStatusValues[number];
 
 export type BrainKnowledgeConfidence = "high" | "medium" | "low" | "unknown";
 
@@ -76,16 +82,25 @@ export const brainKnowledgeNextActionValues = [
 
 export type BrainKnowledgeNextAction = typeof brainKnowledgeNextActionValues[number];
 
+export const brainKnowledgeUsefulnessOutcomeValues = [
+  "helped",
+  "neutral",
+  "noise",
+  "stale",
+  "unknown"
+] as const;
+
 export type BrainKnowledgeUsefulnessOutcome =
-  | "helped"
-  | "neutral"
-  | "noise"
-  | "stale"
-  | "unknown";
+  typeof brainKnowledgeUsefulnessOutcomeValues[number];
 
 export type BrainKnowledgeUsefulnessOutcomeFilter =
   | BrainKnowledgeUsefulnessOutcome
   | "none";
+
+export const brainKnowledgeUsefulnessOutcomeFilterValues = [
+  ...brainKnowledgeUsefulnessOutcomeValues,
+  "none"
+] as const satisfies readonly BrainKnowledgeUsefulnessOutcomeFilter[];
 
 export type BrainKnowledgeUsefulnessFeedback = {
   cardId: string;
@@ -167,30 +182,9 @@ type NormalizedBrainKnowledgeSearchFilter = {
   textTokens: string[];
 };
 
-const knowledgeKinds = new Set<BrainKnowledgeKind>([
-  "source_claim",
-  "source_decision",
-  "pattern",
-  "memory",
-  "memory_candidate",
-  "anti_memory_candidate",
-  "eval_candidate",
-  "adr",
-  "standard",
-  "skill",
-  "run_evidence"
-]);
+const knowledgeKinds = new Set<BrainKnowledgeKind>(brainKnowledgeKindValues);
 
-const knowledgeStatuses = new Set<BrainKnowledgeStatus>([
-  "active",
-  "candidate",
-  "accepted",
-  "rejected",
-  "deferred",
-  "stale",
-  "superseded",
-  "unknown"
-]);
+const knowledgeStatuses = new Set<BrainKnowledgeStatus>(brainKnowledgeStatusValues);
 
 const knowledgeConfidences = new Set<BrainKnowledgeConfidence>([
   "high",
@@ -207,13 +201,9 @@ const knowledgeNextActions = new Set<BrainKnowledgeNextAction>(
   brainKnowledgeNextActionValues
 );
 
-const knowledgeUsefulnessOutcomes = new Set<BrainKnowledgeUsefulnessOutcome>([
-  "helped",
-  "neutral",
-  "noise",
-  "stale",
-  "unknown"
-]);
+const knowledgeUsefulnessOutcomes = new Set<BrainKnowledgeUsefulnessOutcome>(
+  brainKnowledgeUsefulnessOutcomeValues
+);
 
 const patternAdoptionStatuses = new Set<RetainedPatternAdoptionStatus>([
   "adopt_now",

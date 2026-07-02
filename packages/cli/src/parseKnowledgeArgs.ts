@@ -5,7 +5,10 @@ import type {
   BrainKnowledgeUsefulnessOutcomeFilter
 } from "@krn/harness";
 import {
-  brainKnowledgeReviewabilityValues
+  brainKnowledgeKindValues,
+  brainKnowledgeReviewabilityValues,
+  brainKnowledgeStatusValues,
+  brainKnowledgeUsefulnessOutcomeFilterValues
 } from "@krn/harness";
 import {
   optionValue
@@ -27,40 +30,6 @@ const knowledgeUsage = [
 ].join("\n");
 
 export const formatKnowledgeUsage = (): string => `${knowledgeUsage}\n`;
-
-const knowledgeKinds = [
-  "source_claim",
-  "source_decision",
-  "pattern",
-  "memory",
-  "memory_candidate",
-  "anti_memory_candidate",
-  "eval_candidate",
-  "adr",
-  "standard",
-  "skill",
-  "run_evidence"
-] as const satisfies readonly BrainKnowledgeKind[];
-
-const knowledgeStatuses = [
-  "active",
-  "candidate",
-  "accepted",
-  "rejected",
-  "deferred",
-  "stale",
-  "superseded",
-  "unknown"
-] as const satisfies readonly BrainKnowledgeStatus[];
-
-const knowledgeUsefulnessOutcomes = [
-  "helped",
-  "neutral",
-  "noise",
-  "stale",
-  "unknown",
-  "none"
-] as const satisfies readonly BrainKnowledgeUsefulnessOutcomeFilter[];
 
 const isAllowed = <T extends string>(
   value: string,
@@ -211,7 +180,7 @@ const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
   "--catalog-file": (args, index, state) =>
     pushPathOption(args, index, "--catalog-file", state.catalogFiles),
   "--kind": (args, index, state) => {
-    const parsed = parseAllowedOption(args, index, "--kind", knowledgeKinds, "kind");
+    const parsed = parseAllowedOption(args, index, "--kind", brainKnowledgeKindValues, "kind");
 
     if (!parsed.ok) {
       return parsed;
@@ -229,7 +198,7 @@ const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
       args,
       index,
       "--status",
-      knowledgeStatuses,
+      brainKnowledgeStatusValues,
       "status"
     );
 
@@ -269,7 +238,7 @@ const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
       args,
       index,
       "--usefulness-outcome",
-      knowledgeUsefulnessOutcomes,
+      brainKnowledgeUsefulnessOutcomeFilterValues,
       "usefulness outcome"
     );
 

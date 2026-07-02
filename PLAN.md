@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values
+current task: mise-en-palace-1fwk Prove reference-implementation recipe pattern through executable readback
 ```
 
 ## Compact Checkpoints
@@ -92,6 +92,7 @@ evidence metadata parser boundary: retained parser exemplar applied to EvidenceB
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
+brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -101,10 +102,9 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-9sg Canonicalize Remaining Brain-Knowledge CLI Filter Vocabulary Values
+### mise-en-palace-1fwk Prove Reference-Implementation Recipe Pattern Through Executable Readback
 
-Goal: build the shared KRN brain kernel through larger end-to-end vertical
-slices, not more defensive or target-bookkeeping closures.
+Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
 Hard boundary: do not build dashboard, API, MCP, worker daemon, crawler, broad
 eval platform, DB schema, or product server. Do not create synthetic proof. Use
@@ -113,17 +113,17 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-3dy-brain-knowledge-vocabulary-values/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-9sg-brain-knowledge-cli-filter-values/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-3dy canonicalized BrainKnowledge reviewability/nextAction values. Source
-inspection still shows local CLI filter arrays for kind/status/usefulness
-outcome. Canonicalize those where source inspection proves sharing is safe. Do
-not build a parser framework, runtime, dashboard, API, MCP, DB schema, or
-unrelated vocabulary rewrite.
+Reference implementation / clone-workflow sources sharpen the product direction:
+code exemplars should become durable retrievable patterns. Prove one bounded
+executable/readback path through existing BrainKnowledge/retained-pattern/
+source-to-decision surfaces. Do not build clone runtime, dashboard, API, MCP,
+broad ingestion, DB schema, or hash-manifest system.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
