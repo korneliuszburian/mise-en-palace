@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   buildKnowledgeAcquisitionHeartbeatPreview
-} from "./knowledgeAcquisitionHeartbeatPreview.js";
+} from "../knowledgeAcquisitionHeartbeatPreview.js";
 
 const now = "2026-06-30T21:10:00.000Z";
 const evidenceRef =

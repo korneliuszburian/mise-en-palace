@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   buildConsensusCandidateEvaluationPreview
-} from "./consensusCandidateEvaluationPreview.js";
+} from "../consensusCandidateEvaluationPreview.js";
 
 const generatedAt = "2026-06-29T06:00:00.000Z";
 

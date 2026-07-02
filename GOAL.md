@@ -39,13 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-e9f3/c2jg complete: reference recipe drift lab added with
-shorter recipes/__tests__ topology; large-slice handoff and 2nd-opinion prompt
-protocol added; repo-wide naming/layout migration tasks recorded in Beads.
+mise-en-palace-yuvw/dqqf complete: repo naming/layout inventory added;
+workers test topology pilot moved six tests into src/__tests__ with focused
+verification; recipe drift hash vocabulary corrected to checksum.
 Report:
-docs/runs/2026-07-02-reference-recipe-drift.md
-Next: continue repo naming/layout inventory through Beads issue
-mise-en-palace-yuvw.
+docs/runs/2026-07-02-naming-layout-inventory.md
+Next: continue small-package test topology migration and bounded naming
+shortening through Beads follow-ups.
 ```
 
 ## Direction

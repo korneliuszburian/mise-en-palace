@@ -7,7 +7,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   buildMemoryStalenessHeartbeatPreview
-} from "./memoryStalenessHeartbeatPreview.js";
+} from "../memoryStalenessHeartbeatPreview.js";
 
 const now = "2026-06-29T05:00:00.000Z";
 const evidenceRef =

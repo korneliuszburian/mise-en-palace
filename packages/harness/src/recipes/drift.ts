@@ -17,7 +17,7 @@ export type Recipe = {
   code: string[];
   docs: string[];
   sources: string[];
-  hash: string;
+  checksum: string;
   observedAt: string;
   doesNotProve: string;
 };
@@ -27,8 +27,8 @@ export type RecipeCheck = {
   entries: Array<{
     id: string;
     ok: boolean;
-    expected: string;
-    actual: string;
+    expectedChecksum: string;
+    actualChecksum: string;
     files: string[];
   }>;
   proof: RecipeDrift["proof"];
@@ -47,7 +47,7 @@ const recipeFields = [
   "code",
   "docs",
   "sources",
-  "hash",
+  "checksum",
   "observedAt",
   "doesNotProve"
 ] as const satisfies readonly (keyof Recipe)[];
@@ -74,13 +74,13 @@ export function checkRecipeDrift(
   read: ReadRecipeFile
 ): RecipeCheck {
   const entries = manifest.entries.map((entry) => {
-    const actual = hashRecipe(entry, read);
+    const actualChecksum = checksumRecipe(entry, read);
 
     return {
       id: entry.id,
-      ok: entry.hash === actual,
-      expected: entry.hash,
-      actual,
+      ok: entry.checksum === actualChecksum,
+      expectedChecksum: entry.checksum,
+      actualChecksum,
       files: [...entry.code, ...entry.docs]
     };
   });
@@ -92,7 +92,7 @@ export function checkRecipeDrift(
   };
 }
 
-function hashRecipe(entry: Recipe, read: ReadRecipeFile): string {
+function checksumRecipe(entry: Recipe, read: ReadRecipeFile): string {
   const parts = [
     entry.algorithm,
     entry.id,
@@ -159,7 +159,7 @@ function parseEntry(value: unknown): Recipe | undefined {
     code: paths(value["code"]),
     docs: paths(value["docs"]),
     sources: strings(value["sources"]),
-    hash: hex64(value["hash"]),
+    checksum: checksumHex64(value["checksum"]),
     observedAt: str(value["observedAt"]),
     doesNotProve: str(value["doesNotProve"])
   };
@@ -219,7 +219,7 @@ function str(value: unknown): string | undefined {
     : undefined;
 }
 
-function hex64(value: unknown): string | undefined {
+function checksumHex64(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value)
     ? value
     : undefined;

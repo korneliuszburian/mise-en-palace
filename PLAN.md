@@ -95,7 +95,7 @@ reference recipe plan proof: long recipe tasks select the retained recipe bounda
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
-reference recipe drift lab: local recipe manifest keeps one reviewed exemplar and retained recipe doc in sync; wider naming/layout migration is tracked in Beads
+reference recipe drift/layout pilot: recipe checksum lab stays bounded; repo scan proved 130 colocated tests; six worker tests moved to src/__tests__
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper

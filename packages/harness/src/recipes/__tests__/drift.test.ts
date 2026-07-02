@@ -31,7 +31,7 @@ describe("recipe drift", () => {
     });
   });
 
-  it("rejects bad hashes and unsafe paths", () => {
+  it("rejects bad checksums and unsafe paths", () => {
     expect(parseRecipeDrift({
       kind: "krn.recipeDrift.v1",
       entries: [
@@ -42,7 +42,7 @@ describe("recipe drift", () => {
           code: ["../escape.ts"],
           docs: ["docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"],
           sources: ["source"],
-          hash: "not-a-sha",
+          checksum: "not-a-checksum",
           observedAt: "2026-07-02",
           doesNotProve: "invalid fixture"
         }
@@ -91,6 +91,8 @@ describe("recipe drift", () => {
     });
 
     expect(check.ok).toBe(false);
-    expect(check.entries[0]?.actual).not.toBe(check.entries[0]?.expected);
+    expect(check.entries[0]?.actualChecksum).not.toBe(
+      check.entries[0]?.expectedChecksum
+    );
   });
 });

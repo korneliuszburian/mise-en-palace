@@ -8,7 +8,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   buildSourceRelationHeartbeatPreview
-} from "./sourceRelationHeartbeatPreview.js";
+} from "../sourceRelationHeartbeatPreview.js";
 
 const now = "2026-06-29T04:30:00.000Z";
 

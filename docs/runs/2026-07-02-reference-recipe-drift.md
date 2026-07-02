@@ -20,8 +20,8 @@ url:
   - https://github.com/polubis/gon-stack/blob/d901f7c134b4c0885fd7fe3c099f17b4dca88a78/packages/hashy/README.md
 trust_tier: medium
 source_class: practitioner writing / public repo evidence
-mechanism: a repo-local manifest maps module directories to their markdown docs; a deterministic hash check fails when implementation files change without the stamped doc being updated.
-krn_implication: KRN can lab-test local reference recipes as code-backed patterns by hashing a reviewed exemplar and its retained recipe document, while keeping recipe authority subordinate to tests, review gates, evidence, and source-to-decision.
+mechanism: a repo-local manifest maps module directories to their markdown docs; a deterministic checksum check fails when implementation files change without the stamped doc being updated.
+krn_implication: KRN can lab-test local reference recipes as code-backed patterns by checksumming a reviewed exemplar and its retained recipe document, while keeping recipe authority subordinate to tests, review gates, evidence, and source-to-decision.
 decision_kind: lab_test
 decision: Add a minimal harness recipe drift check for the existing brainKnowledgeReadModel TypeScript exemplar and retained recipe doc.
 does_not_prove: This does not prove clone workflows outperform skills, broad recipe automation is needed, KRN should add a clone runtime, real LLM behavior improved, or KRN is product-ready.
@@ -34,7 +34,7 @@ falsifier: the exemplar code can change without the drift check failing, or futu
 - Added `packages/harness/src/recipes/drift.ts`.
 - Added focused tests in `packages/harness/src/recipes/__tests__/drift.test.ts`.
 - Added `docs/patterns/reference-recipes/drift.json`.
-- Chose short names (`recipes`, `drift`, `Recipe`, `hashRecipe`) instead of
+- Chose short names (`recipes`, `drift`, `Recipe`, `checkRecipeDrift`) instead of
   long AI/control-plane names.
 - Kept the code inside harness; no CLI command, DB schema, runtime clone system,
   dashboard, MCP, worker, crawler, or skill zoo was added.
@@ -89,13 +89,15 @@ Proves:
 
 - One local reference recipe now has deterministic drift detection.
 - A simulated implementation change makes the drift check fail.
-- The manifest parser rejects unsafe paths and bad hashes before reading files.
+- The manifest parser rejects unsafe paths and bad checksums before reading files.
 - The external practitioner pattern was reduced into a bounded KRN lab-test.
 
 Does not prove:
 
 - KRN needs broad recipe automation.
 - Clone workflows outperform skills.
+- The checksum is a security hash, provenance proof, or semantic quality signal.
+- The checksum covers source/proof metadata; it covers selected code/docs only.
 - Repo-wide naming/layout has been fixed.
 - Test topology has been migrated repo-wide.
 - Real LLM behavior improved.

@@ -11,7 +11,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   buildBrainHeartbeatPreview
-} from "./brainHeartbeatPreview.js";
+} from "../brainHeartbeatPreview.js";
 
 const now = "2026-06-30T11:30:00.000Z";
 const evidenceRef =

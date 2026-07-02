@@ -9,14 +9,14 @@ import {
   maintenanceJobTypes,
   parseMaintenanceJobType,
   workerJobEnforcementBoundary
-} from "./index.js";
+} from "../index.js";
 import type {
   EnqueueMaintenanceJobRequest,
   EnqueueMaintenanceJobResult,
   MaintenanceJob,
   MaintenanceJobQueueRepository,
   WorkerJobRecord
-} from "./index.js";
+} from "../index.js";
 
 const isoNow = "2026-06-21T17:30:00.000Z";
 
