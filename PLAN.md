@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-8qer Verify evidence command normalization at persistence boundary
+current task: mise-en-palace-t8i Internal multi-repo operator loop
 ```
 
 ## Compact Checkpoints
@@ -62,7 +62,7 @@ retained pattern plan/brief bridge: selected retained pattern IDs persist throug
 retained pattern run readback: run show text/JSON exposes retained pattern selection beside usefulness outcomes
 worker enqueue atomicity: workers helper requires one queue-port contract for worker job plus outbox event
 evidence metadata boundary: known evidence readback metadata validates before DB persistence
-evidence command normalization: schema delegates command proof normalization to core
+evidence command normalization: schema/core/DB persistence delegate command proof normalization to core
 core evidence normalizer: one provenance switch preserves command proof semantics
 activation memory safety: blocking review signals now structurally exclude memory candidates
 activation trust boundary: activation/source/schema trust tiers share one source-domain vocabulary
@@ -106,7 +106,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-8qer Verify Evidence Command Normalization At Persistence Boundary
+### mise-en-palace-t8i Internal Multi-Repo Operator Loop
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
@@ -115,15 +115,15 @@ Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/p
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-tsa4-evidence-metadata-readback-typing/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Verify whether raw evidence command rows can persist without core normalization.
-If yes, add the smallest repository-boundary normalization/validation. No DB
-schema, provenance redesign, CLI behavior, metadata taxonomy, or review-domain work.
+Validate the shared KRN brain loop across internal real repos: plan, context,
+brief, execution evidence, review, candidates, and next-run reuse/rejection.
+Do not fake external operator proof or build broad product surfaces.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

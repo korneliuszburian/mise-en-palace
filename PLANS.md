@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-8qer Verify evidence command normalization at persistence boundary
+current task: mise-en-palace-t8i Internal multi-repo operator loop
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-8qer Verify evidence command normalization at persistence boundary
-is active. The current product gap is ensuring evidence command proof semantics
-hold at DB write boundaries, not only in core helpers.
+mise-en-palace-t8i Internal multi-repo operator loop is active. The current
+product gap is proving one shared KRN brain loop across internal real repos.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-tsa4 complete: named known EvidenceBundle metadata fields while
-keeping values unknown until parser validation.
+mise-en-palace-8qer complete: verified evidence command normalization is
+enforced at schema/core/DB persistence boundaries; no code fix needed.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-tsa4-evidence-metadata-readback-typing/REPORT.md
-Next: `mise-en-palace-8qer` verifies whether command normalization is enforced
-at evidence DB persistence boundaries.
+docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md
+Next: `mise-en-palace-t8i` validates the internal multi-repo operator loop.
 ```
 
 ## 2. Product Thesis
@@ -2518,3 +2516,12 @@ If that happens, do not roll the active stream backward.
 At creation time this compact ledger preserved active state, latest outcomes,
 task contract requirements, and final response requirements while moving detail
 to reports. It is historical guidance, not a second roadmap.
+
+- [x] 8QER complete: `mise-en-palace-8qer` verified the audit finding is stale:
+  `createEvidenceBundle` validates through `parseEvidenceCaptureInput`,
+  persists commands through `evidenceCommandsForPersistence`, and mapper
+  readback re-normalizes unknown DB command rows through `normalizeEvidenceCommand`.
+  Report:
+  `docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md`.
+  Next: `mise-en-palace-t8i` continues the internal multi-repo operator loop as
+  the product-facing shared-brain validation path.

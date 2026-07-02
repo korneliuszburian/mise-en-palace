@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-8qer Verify evidence command normalization at persistence boundary.
+current task: mise-en-palace-t8i Internal multi-repo operator loop.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,12 +39,11 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-tsa4 complete: named known EvidenceBundle metadata fields while
-keeping values unknown until parser validation.
+mise-en-palace-8qer complete: verified evidence command normalization is
+enforced at schema/core/DB persistence boundaries; no code fix needed.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-tsa4-evidence-metadata-readback-typing/REPORT.md
-Next: `mise-en-palace-8qer` verifies whether command normalization is enforced
-at evidence DB persistence boundaries.
+docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md
+Next: `mise-en-palace-t8i` validates the internal multi-repo operator loop.
 ```
 
 ## Direction
