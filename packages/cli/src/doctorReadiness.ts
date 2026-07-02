@@ -1,11 +1,22 @@
 import type {
-  DoctorCheck
+  DoctorCheck,
+  DoctorOutcome
 } from "./runDoctorCommand.js";
+
+const findCheck = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"]
+): DoctorCheck | undefined => checks.find((check) => check.label === label);
 
 const findCheckStatus = (
   checks: readonly DoctorCheck[],
   label: DoctorCheck["label"]
-): string | undefined => checks.find((check) => check.label === label)?.status;
+): string | undefined => findCheck(checks, label)?.status;
+
+const findCheckOutcome = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"]
+): DoctorOutcome | undefined => findCheck(checks, label)?.outcome;
 
 export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): DoctorCheck => {
   const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
@@ -65,6 +76,55 @@ const hasStatusPrefix = (
   label: DoctorCheck["label"],
   prefix: string
 ): boolean => findCheckStatus(checks, label)?.startsWith(prefix) === true;
+
+const hasCheckOutcome = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"],
+  outcome: DoctorOutcome,
+  legacyMatch: (status: string | undefined) => boolean
+): boolean => {
+  const checkOutcome = findCheckOutcome(checks, label);
+
+  return checkOutcome === undefined
+    ? legacyMatch(findCheckStatus(checks, label))
+    : checkOutcome === outcome;
+};
+
+interface BrainStoreOutcomeFlags {
+  postgresNotConfigured: boolean;
+  postgresUnreachable: boolean;
+  pgvectorAvailable: boolean;
+  migrationsVerified: boolean;
+}
+
+const readBrainStoreOutcomeFlags = (
+  postgresChecks: readonly DoctorCheck[]
+): BrainStoreOutcomeFlags => ({
+  postgresNotConfigured: hasCheckOutcome(
+    postgresChecks,
+    "Postgres config",
+    "not_configured",
+    (status) => status?.startsWith("not configured") === true
+  ),
+  postgresUnreachable: hasCheckOutcome(
+    postgresChecks,
+    "Postgres config",
+    "configured_unreachable",
+    (status) => status?.startsWith("configured but unreachable") === true
+  ),
+  pgvectorAvailable: hasCheckOutcome(
+    postgresChecks,
+    "pgvector",
+    "pgvector_available",
+    (status) => status === "available"
+  ),
+  migrationsVerified: hasCheckOutcome(
+    postgresChecks,
+    "migrations",
+    "migrations_verified",
+    (status) => status?.startsWith("verified") === true
+  )
+});
 
 export const deriveHarnessPersistenceReadiness = (
   postgresChecks: readonly DoctorCheck[],
@@ -494,37 +554,53 @@ export const deriveCodexAdapterReadiness = (
   postgresChecks: readonly DoctorCheck[],
   codexAdapterChecks: readonly DoctorCheck[]
 ): DoctorCheck => {
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
-  const rendererStatus = findCheckStatus(codexAdapterChecks, "Codex adapter renderer");
-  const smokeAvailable = hasStatusPrefix(
+  const brainStore = readBrainStoreOutcomeFlags(postgresChecks);
+  const rendererPresent = hasCheckOutcome(
+    codexAdapterChecks,
+    "Codex adapter renderer",
+    "present",
+    (status) => status === "present"
+  );
+  const smokeAvailable = hasCheckOutcome(
     codexAdapterChecks,
     "Execution brief smoke",
-    "available"
+    "available",
+    (status) => status?.startsWith("available") === true
   );
-  const hookProjectionStatus = findCheckStatus(
+  const hookProjectionPresent = hasCheckOutcome(
     codexAdapterChecks,
-    "Hook expectation projection"
+    "Hook expectation projection",
+    "present",
+    (status) => status === "present"
   );
-  const codexRunnerStatus = findCheckStatus(codexAdapterChecks, "Codex execution runner");
-  const mcpServerStatus = findCheckStatus(codexAdapterChecks, "KRN MCP server");
+  const codexRunnerPresent = hasCheckOutcome(
+    codexAdapterChecks,
+    "Codex execution runner",
+    "present",
+    (status) => status === "present"
+  );
+  const mcpServerPresent = hasCheckOutcome(
+    codexAdapterChecks,
+    "KRN MCP server",
+    "present",
+    (status) => status === "present"
+  );
 
-  if (codexRunnerStatus === "present" || mcpServerStatus === "present") {
+  if (codexRunnerPresent || mcpServerPresent) {
     return {
       label: "Codex adapter readiness",
       status: "blocked (forbidden Codex execution or MCP server present)"
     };
   }
 
-  if (rendererStatus !== "present") {
+  if (!rendererPresent) {
     return {
       label: "Codex adapter readiness",
       status: "incomplete (Codex adapter renderer missing)"
     };
   }
 
-  if (hookProjectionStatus !== "present") {
+  if (!hookProjectionPresent) {
     return {
       label: "Codex adapter readiness",
       status: "incomplete (hook expectation projection missing)"
@@ -538,21 +614,21 @@ export const deriveCodexAdapterReadiness = (
     };
   }
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (brainStore.postgresNotConfigured) {
     return {
       label: "Codex adapter readiness",
       status: "preview only (set KRN_DATABASE_URL and run codex adapter smoke for proof)"
     };
   }
 
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+  if (brainStore.postgresUnreachable) {
     return {
       label: "Codex adapter readiness",
       status: "blocked (Postgres unreachable)"
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Codex adapter readiness",
       status: "blocked (brain store not ready)"
@@ -569,30 +645,53 @@ export const deriveWorkerJobReadiness = (
   postgresChecks: readonly DoctorCheck[],
   workerJobChecks: readonly DoctorCheck[]
 ): DoctorCheck => {
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
-  const schemaStatus = findCheckStatus(workerJobChecks, "Worker job schema");
-  const repositoryStatus = findCheckStatus(workerJobChecks, "Worker job repository");
-  const smokeAvailable = hasStatusPrefix(workerJobChecks, "Worker job smoke", "available");
-  const redisKafkaStatus = findCheckStatus(workerJobChecks, "Redis/Kafka queue");
-  const daemonStatus = findCheckStatus(workerJobChecks, "Broad worker daemon");
+  const brainStore = readBrainStoreOutcomeFlags(postgresChecks);
+  const schemaPresent = hasCheckOutcome(
+    workerJobChecks,
+    "Worker job schema",
+    "present",
+    (status) => status === "present"
+  );
+  const repositoryPresent = hasCheckOutcome(
+    workerJobChecks,
+    "Worker job repository",
+    "present",
+    (status) => status === "present"
+  );
+  const smokeAvailable = hasCheckOutcome(
+    workerJobChecks,
+    "Worker job smoke",
+    "available",
+    (status) => status?.startsWith("available") === true
+  );
+  const redisKafkaPresent = hasCheckOutcome(
+    workerJobChecks,
+    "Redis/Kafka queue",
+    "present",
+    (status) => status === "present"
+  );
+  const daemonPresent = hasCheckOutcome(
+    workerJobChecks,
+    "Broad worker daemon",
+    "present",
+    (status) => status === "present"
+  );
 
-  if (redisKafkaStatus === "present" || daemonStatus === "present") {
+  if (redisKafkaPresent || daemonPresent) {
     return {
       label: "Worker job readiness",
       status: "blocked (forbidden worker runtime present)"
     };
   }
 
-  if (schemaStatus !== "present") {
+  if (!schemaPresent) {
     return {
       label: "Worker job readiness",
       status: "incomplete (worker job schema missing)"
     };
   }
 
-  if (repositoryStatus !== "present") {
+  if (!repositoryPresent) {
     return {
       label: "Worker job readiness",
       status: "incomplete (worker job repository missing)"
@@ -606,21 +705,21 @@ export const deriveWorkerJobReadiness = (
     };
   }
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (brainStore.postgresNotConfigured) {
     return {
       label: "Worker job readiness",
       status: "preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
     };
   }
 
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+  if (brainStore.postgresUnreachable) {
     return {
       label: "Worker job readiness",
       status: "blocked (Postgres unreachable)"
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Worker job readiness",
       status: "blocked (brain store not ready)"
@@ -637,26 +736,51 @@ export const deriveTargetRepoReadiness = (
   postgresChecks: readonly DoctorCheck[],
   targetRepoChecks: readonly DoctorCheck[]
 ): DoctorCheck => {
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
-  const initCommandAvailable = hasStatusPrefix(
+  const brainStore = readBrainStoreOutcomeFlags(postgresChecks);
+  const initCommandAvailable = hasCheckOutcome(
     targetRepoChecks,
     "Target repo init command",
-    "available"
+    "available",
+    (status) => status?.startsWith("available") === true
   );
-  const fixtureAvailable = hasStatusPrefix(
+  const fixtureAvailable = hasCheckOutcome(
     targetRepoChecks,
     "Target repo fixture smoke",
-    "available"
+    "available",
+    (status) => status?.startsWith("available") === true
   );
-  const projectSchemaStatus = findCheckStatus(targetRepoChecks, "Project registration schema");
-  const initConnectSmokeStatus = findCheckStatus(targetRepoChecks, "Init-connect smoke");
-  const targetHarnessSmokeStatus = findCheckStatus(targetRepoChecks, "Target repo harness smoke");
-  const leakageProofStatus = findCheckStatus(targetRepoChecks, "Cross-project leakage proof");
-  const forbiddenStatus = findCheckStatus(targetRepoChecks, "Target repo forbidden surfaces");
+  const projectSchemaPresent = hasCheckOutcome(
+    targetRepoChecks,
+    "Project registration schema",
+    "present",
+    (status) => status?.startsWith("present") === true
+  );
+  const initConnectSmokeProven = hasCheckOutcome(
+    targetRepoChecks,
+    "Init-connect smoke",
+    "proven",
+    (status) => status?.startsWith("proven") === true
+  );
+  const targetHarnessSmokeProven = hasCheckOutcome(
+    targetRepoChecks,
+    "Target repo harness smoke",
+    "proven",
+    (status) => status?.startsWith("proven") === true
+  );
+  const leakageProofKnown = hasCheckOutcome(
+    targetRepoChecks,
+    "Cross-project leakage proof",
+    "known",
+    (status) => status === "known"
+  );
+  const forbiddenSurfacePresent = hasCheckOutcome(
+    targetRepoChecks,
+    "Target repo forbidden surfaces",
+    "present",
+    (status) => status === "present"
+  );
 
-  if (forbiddenStatus === "present") {
+  if (forbiddenSurfacePresent) {
     return {
       label: "Target repo readiness",
       status: "blocked (forbidden target repo surface present)"
@@ -677,21 +801,21 @@ export const deriveTargetRepoReadiness = (
     };
   }
 
-  if (projectSchemaStatus?.startsWith("present") !== true) {
+  if (!projectSchemaPresent) {
     return {
       label: "Target repo readiness",
       status: "blocked (project registration schema missing)"
     };
   }
 
-  if (leakageProofStatus !== "known") {
+  if (!leakageProofKnown) {
     return {
       label: "Target repo readiness",
       status: "runtime unverified (cross-project leakage proof missing)"
     };
   }
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (brainStore.postgresNotConfigured) {
     return {
       label: "Target repo readiness",
       status:
@@ -699,28 +823,28 @@ export const deriveTargetRepoReadiness = (
     };
   }
 
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+  if (brainStore.postgresUnreachable) {
     return {
       label: "Target repo readiness",
       status: "blocked (Postgres unreachable)"
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Target repo readiness",
       status: "blocked (brain store not ready)"
     };
   }
 
-  if (initConnectSmokeStatus?.startsWith("proven") !== true) {
+  if (!initConnectSmokeProven) {
     return {
       label: "Target repo readiness",
       status: "unverified (init-connect smoke missing)"
     };
   }
 
-  if (targetHarnessSmokeStatus?.startsWith("proven") !== true) {
+  if (!targetHarnessSmokeProven) {
     return {
       label: "Target repo readiness",
       status: "partially ready (init-connect smoke proven; target repo harness smoke missing)"

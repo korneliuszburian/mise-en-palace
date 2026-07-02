@@ -83,6 +83,40 @@ describe("doctorDbChecks", () => {
     const repoRoot = await writeDoctorPackageJson();
     const postgresChecks = await checkPostgres(undefined, path.join(repoRoot, "migrations"));
 
+    expect(
+      postgresChecks.map(({ label, outcome, severity }) => ({
+        label,
+        outcome,
+        severity
+      }))
+    ).toEqual([
+      {
+        label: "Postgres mode",
+        outcome: "preview_only",
+        severity: "warning"
+      },
+      {
+        label: "Postgres config",
+        outcome: "not_configured",
+        severity: "warning"
+      },
+      {
+        label: "Postgres next action",
+        outcome: undefined,
+        severity: undefined
+      },
+      {
+        label: "pgvector",
+        outcome: "skipped",
+        severity: "warning"
+      },
+      {
+        label: "migrations",
+        outcome: "skipped",
+        severity: "warning"
+      }
+    ]);
+
     expectStatuses(await checkHarnessPersistence(repoRoot, undefined, postgresChecks), {
       "Harness persistence schema": "skipped (Postgres not configured)"
     });

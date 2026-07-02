@@ -19,6 +19,30 @@ import {
   deriveTargetRepoReadiness,
   deriveWorkerJobReadiness
 } from "./doctorReadiness.js";
+import type {
+  DoctorCheck
+} from "./runDoctorCommand.js";
+
+const postgresReadyTyped: DoctorCheck[] = [
+  {
+    label: "Postgres config",
+    status: "db reachable after wording change",
+    outcome: "configured_reachable",
+    severity: "pass"
+  },
+  {
+    label: "pgvector",
+    status: "extension ok after wording change",
+    outcome: "pgvector_available",
+    severity: "pass"
+  },
+  {
+    label: "migrations",
+    status: "migration history ok after wording change",
+    outcome: "migrations_verified",
+    severity: "pass"
+  }
+];
 
 describe("doctorReadiness", () => {
   it("exports focused readiness derivation helpers", () => {
@@ -46,5 +70,192 @@ describe("doctorReadiness", () => {
     expect(source).not.toContain("writeFile");
     expect(source).not.toContain("appendFile");
     expect(source).not.toContain("rm(");
+  });
+
+  it("uses typed Codex adapter outcomes instead of display wording", () => {
+    const codexAdapterChecks: DoctorCheck[] = [
+      {
+        label: "Codex adapter renderer",
+        status: "renderer ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
+        label: "Execution brief smoke",
+        status: "smoke command ok after wording change",
+        outcome: "available",
+        severity: "pass"
+      },
+      {
+        label: "Hook expectation projection",
+        status: "hook projection ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
+        label: "Codex execution runner",
+        status: "runner forbidden surface absent after wording change",
+        outcome: "absent",
+        severity: "pass"
+      },
+      {
+        label: "KRN MCP server",
+        status: "MCP forbidden surface absent after wording change",
+        outcome: "absent",
+        severity: "pass"
+      }
+    ];
+
+    expect(deriveCodexAdapterReadiness(postgresReadyTyped, codexAdapterChecks)).toEqual({
+      label: "Codex adapter readiness",
+      status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+    });
+    expect(
+      deriveCodexAdapterReadiness(
+        postgresReadyTyped,
+        codexAdapterChecks.map((check) =>
+          check.label === "KRN MCP server"
+            ? {
+                label: "KRN MCP server",
+                status: "custom forbidden wording",
+                outcome: "present",
+                severity: "failure"
+              }
+            : check
+        )
+      )
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "blocked (forbidden Codex execution or MCP server present)"
+    });
+  });
+
+  it("uses typed worker job outcomes instead of display wording", () => {
+    const workerJobChecks: DoctorCheck[] = [
+      {
+        label: "Worker job schema",
+        status: "schema ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
+        label: "Worker job repository",
+        status: "repository ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
+        label: "Worker job smoke",
+        status: "smoke command ok after wording change",
+        outcome: "available",
+        severity: "pass"
+      },
+      {
+        label: "Redis/Kafka queue",
+        status: "queue forbidden surface absent after wording change",
+        outcome: "absent",
+        severity: "pass"
+      },
+      {
+        label: "Broad worker daemon",
+        status: "daemon forbidden surface absent after wording change",
+        outcome: "absent",
+        severity: "pass"
+      }
+    ];
+
+    expect(deriveWorkerJobReadiness(postgresReadyTyped, workerJobChecks)).toEqual({
+      label: "Worker job readiness",
+      status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+    });
+    expect(
+      deriveWorkerJobReadiness(
+        postgresReadyTyped,
+        workerJobChecks.map((check) =>
+          check.label === "Redis/Kafka queue"
+            ? {
+                label: "Redis/Kafka queue",
+                status: "custom forbidden wording",
+                outcome: "present",
+                severity: "failure"
+              }
+            : check
+        )
+      )
+    ).toEqual({
+      label: "Worker job readiness",
+      status: "blocked (forbidden worker runtime present)"
+    });
+  });
+
+  it("uses typed target repo outcomes instead of display wording", () => {
+    const targetRepoChecks: DoctorCheck[] = [
+      {
+        label: "Target repo init command",
+        status: "init command ok after wording change",
+        outcome: "available",
+        severity: "pass"
+      },
+      {
+        label: "Target repo fixture smoke",
+        status: "fixture ok after wording change",
+        outcome: "available",
+        severity: "pass"
+      },
+      {
+        label: "Project registration schema",
+        status: "project schema ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
+        label: "Init-connect smoke",
+        status: "init-connect proof ok after wording change",
+        outcome: "proven",
+        severity: "pass"
+      },
+      {
+        label: "Target repo harness smoke",
+        status: "target harness proof ok after wording change",
+        outcome: "proven",
+        severity: "pass"
+      },
+      {
+        label: "Cross-project leakage proof",
+        status: "project scope proof ok after wording change",
+        outcome: "known",
+        severity: "pass"
+      },
+      {
+        label: "Target repo forbidden surfaces",
+        status: "forbidden target surfaces absent after wording change",
+        outcome: "absent",
+        severity: "pass"
+      }
+    ];
+
+    expect(deriveTargetRepoReadiness(postgresReadyTyped, targetRepoChecks)).toEqual({
+      label: "Target repo readiness",
+      status:
+        "ready (init-connect and target harness smokes proven; source seeds, owner files, evidence readback, and memory usefulness guarded)"
+    });
+    expect(
+      deriveTargetRepoReadiness(
+        postgresReadyTyped,
+        targetRepoChecks.map((check) =>
+          check.label === "Target repo forbidden surfaces"
+            ? {
+                label: "Target repo forbidden surfaces",
+                status: "custom forbidden wording",
+                outcome: "present",
+                severity: "failure"
+              }
+            : check
+        )
+      )
+    ).toEqual({
+      label: "Target repo readiness",
+      status: "blocked (forbidden target repo surface present)"
+    });
   });
 });

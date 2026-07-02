@@ -1,7 +1,9 @@
 import path from "node:path";
 
 import type {
-  DoctorCheck
+  DoctorCheck,
+  DoctorOutcome,
+  DoctorSeverity
 } from "./runDoctorCommand.js";
 import {
   pathExists,
@@ -24,6 +26,15 @@ const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
 
   return exists.some(Boolean);
 };
+
+const passOrWarning = (condition: boolean): DoctorSeverity =>
+  condition ? "pass" : "warning";
+
+const forbiddenSurfaceSeverity = (present: boolean): DoctorSeverity =>
+  present ? "failure" : "pass";
+
+const availableOutcome = (status: string): DoctorOutcome =>
+  status.startsWith("available") ? "available" : "missing";
 
 const packagePath = (
   repoRoot: string,
@@ -102,6 +113,11 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
       "createExecutionBrief",
       "renderExecutionBriefText"
     ]);
+  const executionBriefSmokeStatus = readScriptStatus(
+    packageJson,
+    "db:smoke:codex-adapter",
+    "krn db smoke codex-adapter"
+  );
   const hookProjectionPresent =
     includesAll(contractsText, ["CodexHookExpectationProjection"]) &&
     includesAll(renderHookExpectationsText, ["createCodexHookExpectationProjection"]);
@@ -111,27 +127,33 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
   return [
     {
       label: "Codex adapter renderer",
-      status: rendererPresent ? "present" : "missing"
+      status: rendererPresent ? "present" : "missing",
+      outcome: rendererPresent ? "present" : "missing",
+      severity: passOrWarning(rendererPresent)
     },
     {
       label: "Execution brief smoke",
-      status: readScriptStatus(
-        packageJson,
-        "db:smoke:codex-adapter",
-        "krn db smoke codex-adapter"
-      )
+      status: executionBriefSmokeStatus,
+      outcome: availableOutcome(executionBriefSmokeStatus),
+      severity: passOrWarning(executionBriefSmokeStatus.startsWith("available"))
     },
     {
       label: "Hook expectation projection",
-      status: hookProjectionPresent ? "present" : "missing"
+      status: hookProjectionPresent ? "present" : "missing",
+      outcome: hookProjectionPresent ? "present" : "missing",
+      severity: passOrWarning(hookProjectionPresent)
     },
     {
       label: "Codex execution runner",
-      status: codexRunnerPresent ? "present" : "absent"
+      status: codexRunnerPresent ? "present" : "absent",
+      outcome: codexRunnerPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(codexRunnerPresent)
     },
     {
       label: "KRN MCP server",
-      status: mcpServerPresent ? "present" : "absent"
+      status: mcpServerPresent ? "present" : "absent",
+      outcome: mcpServerPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(mcpServerPresent)
     }
   ];
 };
@@ -216,6 +238,11 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
     "cleanupTestWorkerJobs"
   ]);
   const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
+  const workerJobSmokeStatus = readScriptStatus(
+    packageJson,
+    "db:smoke:worker-jobs",
+    "krn db smoke worker-jobs"
+  );
   const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
     repoRoot,
     workersText,
@@ -225,27 +252,33 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
   return [
     {
       label: "Worker job schema",
-      status: schemaPresent ? "present" : "missing"
+      status: schemaPresent ? "present" : "missing",
+      outcome: schemaPresent ? "present" : "missing",
+      severity: passOrWarning(schemaPresent)
     },
     {
       label: "Worker job repository",
-      status: repositoryPresent ? "present" : "missing"
+      status: repositoryPresent ? "present" : "missing",
+      outcome: repositoryPresent ? "present" : "missing",
+      severity: passOrWarning(repositoryPresent)
     },
     {
       label: "Worker job smoke",
-      status: readScriptStatus(
-        packageJson,
-        "db:smoke:worker-jobs",
-        "krn db smoke worker-jobs"
-      )
+      status: workerJobSmokeStatus,
+      outcome: availableOutcome(workerJobSmokeStatus),
+      severity: passOrWarning(workerJobSmokeStatus.startsWith("available"))
     },
     {
       label: "Redis/Kafka queue",
-      status: redisKafkaPresent ? "present" : "absent"
+      status: redisKafkaPresent ? "present" : "absent",
+      outcome: redisKafkaPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(redisKafkaPresent)
     },
     {
       label: "Broad worker daemon",
-      status: broadWorkerDaemonPresent ? "present" : "absent"
+      status: broadWorkerDaemonPresent ? "present" : "absent",
+      outcome: broadWorkerDaemonPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(broadWorkerDaemonPresent)
     }
   ];
 };
@@ -405,39 +438,53 @@ export const checkTargetRepoReadiness = async (repoRoot: string): Promise<Doctor
       label: "Target repo init command",
       status: initCommandAvailable
         ? "available (krn init --connect --repo <path> --persist)"
-        : "missing (krn init --connect --repo <path> --persist)"
+        : "missing (krn init --connect --repo <path> --persist)",
+      outcome: initCommandAvailable ? "available" : "missing",
+      severity: passOrWarning(initCommandAvailable)
     },
     {
       label: "Target repo fixture smoke",
       status: fixtureAvailable
         ? "available (tests/fixtures/target-repos/typescript-basic)"
-        : "missing (tests/fixtures/target-repos/typescript-basic)"
+        : "missing (tests/fixtures/target-repos/typescript-basic)",
+      outcome: fixtureAvailable ? "available" : "missing",
+      severity: passOrWarning(fixtureAvailable)
     },
     {
       label: "Project registration schema",
       status: projectRegistrationSchemaPresent
         ? "present (Project, RepoInstallation, ProjectKernel)"
-        : "missing (Project, RepoInstallation, ProjectKernel)"
+        : "missing (Project, RepoInstallation, ProjectKernel)",
+      outcome: projectRegistrationSchemaPresent ? "present" : "missing",
+      severity: passOrWarning(projectRegistrationSchemaPresent)
     },
     {
       label: "Init-connect smoke",
       status: initConnectSmokeProven
         ? "proven (pnpm db:smoke:init-connect)"
-        : "unverified (pnpm db:smoke:init-connect missing)"
+        : "unverified (pnpm db:smoke:init-connect missing)",
+      outcome: initConnectSmokeProven ? "proven" : "runtime_unverified",
+      severity: passOrWarning(initConnectSmokeProven)
     },
     {
       label: "Target repo harness smoke",
       status: targetHarnessSmokeProven
         ? "proven (pnpm db:smoke:target-repo-harness)"
-        : "unverified (pnpm db:smoke:target-repo-harness missing)"
+        : "unverified (pnpm db:smoke:target-repo-harness missing)",
+      outcome: targetHarnessSmokeProven ? "proven" : "runtime_unverified",
+      severity: passOrWarning(targetHarnessSmokeProven)
     },
     {
       label: "Cross-project leakage proof",
-      status: crossProjectLeakageProofKnown ? "known" : "unproven"
+      status: crossProjectLeakageProofKnown ? "known" : "unproven",
+      outcome: crossProjectLeakageProofKnown ? "known" : "runtime_unverified",
+      severity: passOrWarning(crossProjectLeakageProofKnown)
     },
     {
       label: "Target repo forbidden surfaces",
-      status: forbiddenSurfacePresent ? "present" : "absent"
+      status: forbiddenSurfacePresent ? "present" : "absent",
+      outcome: forbiddenSurfacePresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(forbiddenSurfacePresent)
     }
   ];
 };

@@ -9,7 +9,9 @@ import {
 } from "@krn/db/dev";
 
 import type {
-  DoctorCheck
+  DoctorCheck,
+  DoctorOutcome,
+  DoctorSeverity
 } from "./runDoctorCommand.js";
 import {
   connectedButNotReadyRecovery,
@@ -60,6 +62,128 @@ const skippedChecks = (
   labels: readonly DoctorCheck["label"][],
   gate: Extract<BrainStoreGate, { kind: "skipped" }>
 ): DoctorCheck[] => labels.map((label) => skippedCheck(label, gate));
+
+type MigrationReadinessReport = Awaited<ReturnType<typeof inspectMigrationReadiness>>;
+
+const migrationStatus = (report: MigrationReadinessReport): string => {
+  if (!report.migrationTablePresent) {
+    return "migration table missing";
+  }
+
+  const counts = `${report.appliedMigrationCount}/${report.expectedMigrationCount} applied`;
+
+  return report.migrationsVerified ? `verified (${counts})` : `unverified (${counts})`;
+};
+
+const migrationOutcome = (report: MigrationReadinessReport): DoctorOutcome => {
+  if (!report.migrationTablePresent) {
+    return "migration_table_missing";
+  }
+
+  return report.migrationsVerified ? "migrations_verified" : "migrations_unverified";
+};
+
+const migrationSeverity = (report: MigrationReadinessReport): DoctorSeverity =>
+  report.migrationsVerified ? "pass" : "warning";
+
+const missingPostgresChecks = (): DoctorCheck[] => [
+  {
+    label: "Postgres mode",
+    status: "preview/no-DB",
+    outcome: "preview_only",
+    severity: "warning"
+  },
+  {
+    label: "Postgres config",
+    status: "not configured (KRN_DATABASE_URL missing)",
+    outcome: "not_configured",
+    severity: "warning"
+  },
+  {
+    label: "Postgres next action",
+    status: missingDbConfigRecovery()
+  },
+  {
+    label: "pgvector",
+    status: "skipped (Postgres not configured)",
+    outcome: "skipped",
+    severity: "warning"
+  },
+  {
+    label: "migrations",
+    status: "skipped (Postgres not configured)",
+    outcome: "skipped",
+    severity: "warning"
+  }
+];
+
+const configuredPostgresChecks = (
+  report: MigrationReadinessReport
+): DoctorCheck[] => {
+  const ready = report.pgvectorAvailable && report.migrationsVerified;
+
+  return [
+    {
+      label: "Postgres mode",
+      status: ready ? "ready" : "connected but not ready",
+      outcome: ready ? "ready" : "incomplete",
+      severity: ready ? "pass" : "warning"
+    },
+    {
+      label: "Postgres config",
+      status: "configured and reachable",
+      outcome: "configured_reachable",
+      severity: "pass"
+    },
+    {
+      label: "pgvector",
+      status: report.pgvectorAvailable ? "available" : "missing",
+      outcome: report.pgvectorAvailable ? "pgvector_available" : "pgvector_missing",
+      severity: report.pgvectorAvailable ? "pass" : "warning"
+    },
+    {
+      label: "migrations",
+      status: migrationStatus(report),
+      outcome: migrationOutcome(report),
+      severity: migrationSeverity(report)
+    },
+    {
+      label: "Postgres next action",
+      status: ready ? "none" : connectedButNotReadyRecovery()
+    }
+  ];
+};
+
+const unreachablePostgresChecks = (message: string): DoctorCheck[] => [
+  {
+    label: "Postgres mode",
+    status: "configured but unreachable",
+    outcome: "configured_unreachable",
+    severity: "failure"
+  },
+  {
+    label: "Postgres config",
+    status: `configured but unreachable (${message})`,
+    outcome: "configured_unreachable",
+    severity: "failure"
+  },
+  {
+    label: "Postgres next action",
+    status: unreachablePostgresRecovery()
+  },
+  {
+    label: "pgvector",
+    status: "skipped (Postgres unreachable)",
+    outcome: "skipped",
+    severity: "warning"
+  },
+  {
+    label: "migrations",
+    status: "skipped (Postgres unreachable)",
+    outcome: "skipped",
+    severity: "warning"
+  }
+];
 
 const brainStoreGate = (
   databaseUrl: string | undefined,
@@ -158,28 +282,7 @@ export const checkPostgres = async (
   migrationsFolder: string
 ): Promise<DoctorCheck[]> => {
   if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
-    return [
-      {
-        label: "Postgres mode",
-        status: "preview/no-DB"
-      },
-      {
-        label: "Postgres config",
-        status: "not configured (KRN_DATABASE_URL missing)"
-      },
-      {
-        label: "Postgres next action",
-        status: missingDbConfigRecovery()
-      },
-      {
-        label: "pgvector",
-        status: "skipped (Postgres not configured)"
-      },
-      {
-        label: "migrations",
-        status: "skipped (Postgres not configured)"
-      }
-    ];
+    return missingPostgresChecks();
   }
 
   try {
@@ -187,60 +290,11 @@ export const checkPostgres = async (
       databaseUrl,
       migrationsFolder
     });
-    const ready = report.pgvectorAvailable && report.migrationsVerified;
-    const migrationStatus = !report.migrationTablePresent
-      ? "migration table missing"
-      : report.migrationsVerified
-        ? `verified (${report.appliedMigrationCount}/${report.expectedMigrationCount} applied)`
-        : `unverified (${report.appliedMigrationCount}/${report.expectedMigrationCount} applied)`;
-
-    return [
-      {
-        label: "Postgres mode",
-        status: ready ? "ready" : "connected but not ready"
-      },
-      {
-        label: "Postgres config",
-        status: "configured and reachable"
-      },
-      {
-        label: "pgvector",
-        status: report.pgvectorAvailable ? "available" : "missing"
-      },
-      {
-        label: "migrations",
-        status: migrationStatus
-      },
-      {
-        label: "Postgres next action",
-        status: ready ? "none" : connectedButNotReadyRecovery()
-      }
-    ];
+    return configuredPostgresChecks(report);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown database error";
 
-    return [
-      {
-        label: "Postgres mode",
-        status: "configured but unreachable"
-      },
-      {
-        label: "Postgres config",
-        status: `configured but unreachable (${message})`
-      },
-      {
-        label: "Postgres next action",
-        status: unreachablePostgresRecovery()
-      },
-      {
-        label: "pgvector",
-        status: "skipped (Postgres unreachable)"
-      },
-      {
-        label: "migrations",
-        status: "skipped (Postgres unreachable)"
-      }
-    ];
+    return unreachablePostgresChecks(message);
   }
 };
 

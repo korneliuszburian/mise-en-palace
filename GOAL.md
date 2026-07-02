@@ -39,14 +39,14 @@ the product goal.
 Latest slice:
 
 ```txt
-worker job type ownership now derives DB repository active worker job
-type/status contracts from @krn/workers canonical tuples while preserving
-schema-only legacy/future statuses outside the active mapper lifecycle.
+doctor typed readiness now gives audited DB/static/readiness checks typed
+outcome/severity fields before legacy status-string fallback while preserving
+current doctor stdout.
 Report:
-docs/runs/2026-07-02-worker-job-type-ownership.md
-Next: continue audit-hardening through doctor typed readiness, smoke fixture
-clocks, execution-brief proof boundaries, source relation metadata typing,
-retrieval ID branding, and bounded naming cleanup.
+docs/runs/2026-07-02-doctor-typed-readiness.md
+Next: continue audit-hardening through smoke fixture clocks, execution-brief
+proof boundaries, source relation metadata typing, retrieval ID branding, and
+bounded naming cleanup.
 ```
 
 ## Direction

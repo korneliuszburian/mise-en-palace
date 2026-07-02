@@ -43,7 +43,34 @@ export interface DoctorResult {
 export interface DoctorCheck {
   label: string;
   status: string;
+  outcome?: DoctorOutcome;
+  severity?: DoctorSeverity;
 }
+
+export type DoctorOutcome =
+  | "absent"
+  | "available"
+  | "blocked"
+  | "configured_reachable"
+  | "configured_unreachable"
+  | "incomplete"
+  | "known"
+  | "migration_table_missing"
+  | "migrations_unverified"
+  | "migrations_verified"
+  | "missing"
+  | "not_configured"
+  | "partially_ready"
+  | "pgvector_available"
+  | "pgvector_missing"
+  | "present"
+  | "preview_only"
+  | "proven"
+  | "ready"
+  | "runtime_unverified"
+  | "skipped";
+
+export type DoctorSeverity = "pass" | "warning" | "failure";
 
 interface DoctorFailureRule {
   labels: ReadonlySet<string>;
@@ -114,6 +141,12 @@ const doctorFailureRules: readonly DoctorFailureRule[] = [
 const isDoctorCheckFailure = (check: DoctorCheck): boolean =>
   doctorFailureRules.some((rule) =>
     rule.labels.has(check.label) && rule.matches(check.status)
+  );
+
+export const hasDoctorFailure = (checks: readonly DoctorCheck[]): boolean =>
+  checks.some((check) =>
+    check.severity === "failure" ||
+    (check.severity === undefined && isDoctorCheckFailure(check))
   );
 
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
@@ -189,7 +222,7 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     `Repo root: ${repoRoot}`,
     ...checks.map((check) => `${check.label}: ${check.status}`)
   ].join("\n");
-  const failed = checks.some(isDoctorCheckFailure);
+  const failed = hasDoctorFailure(checks);
 
   return {
     exitCode: failed ? 1 : 0,
