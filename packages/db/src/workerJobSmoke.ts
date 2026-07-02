@@ -16,6 +16,9 @@ import {
 import {
   workerJobTypes
 } from "./repositories/workerJobTypes.js";
+import {
+  smokeFixtureClocks
+} from "./smokeFixtureClocks.js";
 import type {
   WorkerJobRecord,
   WorkerJobType
@@ -120,7 +123,7 @@ const payloadForJobType = (
     return {
       ...basePayload,
       projectId: `project-${marker}`,
-      olderThan: "2026-06-01T00:00:00.000Z"
+      olderThan: smokeFixtureClocks.workerJobs.olderThan
     };
   }
 
@@ -193,7 +196,7 @@ export const runWorkerJobSmokeCheck = async (
       const job = await repository.enqueueWorkerJob({
         jobType,
         payload: payloadForJobType(jobType, marker, index + 1),
-        runAfter: "2026-06-01T00:00:00.000Z"
+        runAfter: smokeFixtureClocks.workerJobs.runAfter
       });
 
       requireStatus(job, "queued", "enqueue");
@@ -218,7 +221,7 @@ export const runWorkerJobSmokeCheck = async (
     for (const [index, job] of enqueuedJobs.entries()) {
       const runningJob = await repository.markWorkerJobRunning(job.id, {
         lockedBy: "worker-job-smoke",
-        lockedAt: "2026-06-22T06:00:00.000Z"
+        lockedAt: smokeFixtureClocks.workerJobs.lockedAt
       });
 
       requireStatus(runningJob, "running", "running transition");

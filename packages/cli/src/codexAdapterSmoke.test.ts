@@ -18,6 +18,9 @@ describe("codexAdapterSmoke", () => {
       renderedExplicitExclusions: true,
       renderedEvidenceContract: true,
       renderedSkillPatternRefs: true,
+      expiredMemoryExcluded: true,
+      expiredMemoryExclusionReason: "stale",
+      expiredMemoryValidUntil: "2026-06-10T00:00:00.000Z",
       sourceClaimsUsed: 1,
       memoryRecordsUsed: 1,
       antiMemoryWarnings: 1,
@@ -35,6 +38,9 @@ describe("codexAdapterSmoke", () => {
     expect(output).toContain("Format version present: yes");
     expect(output).toContain("Non-goals present: yes");
     expect(output).toContain("Explicit exclusions present: yes");
+    expect(output).toContain("Expired memory excluded: yes");
+    expect(output).toContain("Expired memory exclusion reason: stale");
+    expect(output).toContain("Expired memory valid until: 2026-06-10T00:00:00.000Z");
     expect(output).toContain("Evidence contract present: yes");
     expect(output).toContain("Skill pattern refs present: yes");
     expect(output).toContain("Source claims used: 1");

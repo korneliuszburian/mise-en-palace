@@ -2,7 +2,8 @@ import type {
   Sql
 } from "postgres";
 import {
-  runMigrationReadinessCheck
+  runMigrationReadinessCheck,
+  smokeFixtureClocks
 } from "@krn/db/dev";
 import {
   compileHarnessPlan
@@ -433,7 +434,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
   const projectSlug = `typescript-basic-${marker}`;
   const repoFingerprint = `target-repo-harness:${marker}`;
   const repoPath = `${input.targetRepoPath}#${marker}`;
-  const now = "2026-06-22T07:00:00.000Z";
+  const now = smokeFixtureClocks.targetRepoHarness.now;
   const { client, db } = createSmokeDatabaseRuntime(input.databaseUrl);
   let retrievalRunId: string | undefined;
 

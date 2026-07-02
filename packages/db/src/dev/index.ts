@@ -14,4 +14,5 @@ export * from "../retrievalSubstrateReadiness.js";
 export * from "../retrievalSubstrateSmoke.js";
 export * from "../sourceGraphReadiness.js";
 export * from "../sourceGraphSmoke.js";
+export * from "../smokeFixtureClocks.js";
 export * from "../workerJobSmoke.js";

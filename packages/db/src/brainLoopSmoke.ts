@@ -23,6 +23,9 @@ import {
   memoryApplications,
   memoryRecordVersions
 } from "./schema/index.js";
+import {
+  smokeFixtureClocks
+} from "./smokeFixtureClocks.js";
 
 export interface BrainLoopSmokeInput {
   databaseUrl: string;
@@ -57,7 +60,7 @@ export interface BrainLoopSmokeReport {
   cleanedUp: boolean;
 }
 
-const now = "2026-07-01T12:00:00.000Z";
+const now = smokeFixtureClocks.brainLoop.now;
 
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput

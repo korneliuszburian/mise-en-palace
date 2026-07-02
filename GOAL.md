@@ -39,14 +39,14 @@ the product goal.
 Latest slice:
 
 ```txt
-doctor typed readiness now gives audited DB/static/readiness checks typed
-outcome/severity fields before legacy status-string fallback while preserving
-current doctor stdout.
+smoke fixture clocks now centralize deterministic DB/CLI smoke timestamps,
+Codex adapter smoke proves a concrete expired-memory stale exclusion in the
+rendered brief, and stale activation smoke count assumptions were repaired.
 Report:
-docs/runs/2026-07-02-doctor-typed-readiness.md
-Next: continue audit-hardening through smoke fixture clocks, execution-brief
-proof boundaries, source relation metadata typing, retrieval ID branding, and
-bounded naming cleanup.
+docs/runs/2026-07-02-smoke-fixture-clocks.md
+Next: continue audit-hardening through execution-brief proof boundaries,
+source relation metadata typing, retrieval ID branding, and bounded naming
+cleanup.
 ```
 
 ## Direction

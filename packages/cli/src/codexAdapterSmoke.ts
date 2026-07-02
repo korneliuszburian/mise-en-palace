@@ -2,7 +2,8 @@ import type {
   Sql
 } from "postgres";
 import {
-  runMigrationReadinessCheck
+  runMigrationReadinessCheck,
+  smokeFixtureClocks
 } from "@krn/db/dev";
 import {
   compileHarnessPlan
@@ -52,6 +53,9 @@ export interface CodexAdapterSmokeReport {
   renderedExplicitExclusions: boolean;
   renderedEvidenceContract: boolean;
   renderedSkillPatternRefs: boolean;
+  expiredMemoryExcluded: boolean;
+  expiredMemoryExclusionReason: string;
+  expiredMemoryValidUntil: string;
   sourceClaimsUsed: number;
   memoryRecordsUsed: number;
   antiMemoryWarnings: number;
@@ -73,7 +77,40 @@ interface CodexAdapterBriefProof {
   renderedExplicitExclusions: boolean;
   renderedEvidenceContract: boolean;
   renderedSkillPatternRefs: boolean;
+  expiredMemoryExcluded: boolean;
+  expiredMemoryExclusionReason: string;
+  expiredMemoryValidUntil: string;
   codexInvocationCount: number;
+}
+
+interface CodexAdapterBriefProofCheck {
+  label: string;
+  passed: boolean;
+}
+
+type CodexAdapterReadBackContextAssembly = NonNullable<
+  HarnessRunAggregate["contextAssembly"]
+>;
+
+interface ExpiredMemoryExclusionProof {
+  excluded: boolean;
+  reason: string;
+}
+
+interface CodexAdapterProofCheckInput {
+  aggregate: HarnessRunAggregate;
+  codexInvocationCount: number;
+  contextAssembly: CodexAdapterReadBackContextAssembly;
+  expiredMemoryExcluded: boolean;
+  executionRunId: string;
+  expectedContextAssemblyId: string;
+  rendered: RenderedCodexBrief;
+  renderedEvidenceContract: boolean;
+  renderedExplicitExclusions: boolean;
+  renderedFormatVersion: boolean;
+  renderedNonGoals: boolean;
+  renderedObjective: boolean;
+  renderedSkillPatternRefs: boolean;
 }
 
 const countMarkerRows = async (
@@ -88,6 +125,7 @@ const countMarkerRows = async (
     countRunEventsBySmokeId(client, marker),
     countSourceArtifactsBySmokeId(client, marker),
     countSourceClaimsBySmokeId(client, marker),
+    client<CountRow[]>`select count(*)::int as count from source_decisions where metadata->>'smokeId' = ${marker}`,
     client<CountRow[]>`select count(*)::int as count from search_documents where metadata->>'smokeId' = ${marker}`,
     countMemoryRecordsBySmokeId(client, marker),
     client<CountRow[]>`select count(*)::int as count from anti_memory_records where metadata->>'smokeId' = ${marker}`
@@ -121,17 +159,91 @@ const cleanupMarkerRows = async (
   }
 
   await client`delete from search_documents where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_decisions where metadata->>'smokeId' = ${marker}`;
   await client`delete from source_artifacts where metadata->>'smokeId' = ${marker}`;
   await client`delete from workspaces where slug = ${workspaceSlug}`;
 
   return countMarkerRows(client, workspaceSlug, marker, retrievalRunId, contextAssemblyId);
 };
 
+const proveExpiredMemoryExclusion = (
+  input: {
+    contextAssembly: CodexAdapterReadBackContextAssembly;
+    expectedExpiredMemoryRecordId: string;
+    rendered: RenderedCodexBrief;
+  }
+): ExpiredMemoryExclusionProof => {
+  const exclusion = input.contextAssembly.exclusions.find((item) =>
+    item.subjectType === "memory_record" &&
+    item.subjectId === input.expectedExpiredMemoryRecordId
+  );
+  const explicitExclusionRendered = input.rendered.brief.explicitExclusions.some((item) =>
+    item.subjectType === "memory_record" &&
+    item.subjectId === input.expectedExpiredMemoryRecordId &&
+    item.reason === "stale"
+  );
+  const renderedTextIncludesExclusion = input.rendered.renderedBrief.includes(
+    `memory_record:${input.expectedExpiredMemoryRecordId}`
+  );
+  const excludedFromUsedMemory = !input.rendered.brief.memoryRecordsUsed.includes(
+    input.expectedExpiredMemoryRecordId
+  );
+
+  return {
+    excluded:
+      exclusion?.reason === "stale" &&
+      explicitExclusionRendered &&
+      renderedTextIncludesExclusion &&
+      excludedFromUsedMemory,
+    reason: exclusion?.reason ?? "missing"
+  };
+};
+
+const codexAdapterProofChecks = (
+  input: CodexAdapterProofCheckInput
+): CodexAdapterBriefProofCheck[] => [
+  {
+    label: "execution run readback",
+    passed: input.aggregate.executionRun.id === input.executionRunId
+  },
+  {
+    label: "context assembly readback",
+    passed: input.contextAssembly.id === input.expectedContextAssemblyId
+  },
+  { label: "rendered objective", passed: input.renderedObjective },
+  { label: "rendered format version", passed: input.renderedFormatVersion },
+  { label: "rendered non-goals", passed: input.renderedNonGoals },
+  { label: "rendered explicit exclusions", passed: input.renderedExplicitExclusions },
+  { label: "rendered evidence contract", passed: input.renderedEvidenceContract },
+  { label: "rendered skill pattern refs", passed: input.renderedSkillPatternRefs },
+  {
+    label: "source claims lower bound",
+    passed: input.rendered.brief.sourceClaimsUsed.length > 0
+  },
+  {
+    label: "source claims upper bound",
+    passed: input.rendered.brief.sourceClaimsUsed.length <= 6
+  },
+  {
+    label: "memory records lower bound",
+    passed: input.rendered.brief.memoryRecordsUsed.length > 0
+  },
+  {
+    label: "memory records upper bound",
+    passed: input.rendered.brief.memoryRecordsUsed.length <= 6
+  },
+  { label: "expired memory stale exclusion", passed: input.expiredMemoryExcluded },
+  { label: "hook expectations", passed: input.rendered.brief.hookExpectations.length >= 5 },
+  { label: "codex invocation count", passed: input.codexInvocationCount === 0 }
+];
+
 const assertCodexAdapterBriefProof = (
   input: {
     aggregate: HarnessRunAggregate;
     executionRunId: string;
     expectedContextAssemblyId: string;
+    expectedExpiredMemoryRecordId: string;
+    expectedExpiredMemoryValidUntil: string;
     rendered: RenderedCodexBrief;
   }
 ): CodexAdapterBriefProof => {
@@ -162,26 +274,33 @@ const assertCodexAdapterBriefProof = (
   const renderedSkillPatternRefs = input.rendered.renderedBrief.includes(
     "pattern:codex-skill-progressive-disclosure-routing"
   );
+  const expiredMemoryProof = proveExpiredMemoryExclusion({
+    contextAssembly,
+    expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
+    rendered: input.rendered
+  });
   const codexInvocationCount = countCodexInvocationEvents(input.aggregate);
-  const proofChecks = [
-    input.aggregate.executionRun.id === input.executionRunId,
-    contextAssembly.id === input.expectedContextAssemblyId,
-    renderedObjective,
+  const proofChecks = codexAdapterProofChecks({
+    aggregate: input.aggregate,
+    codexInvocationCount,
+    contextAssembly,
+    expiredMemoryExcluded: expiredMemoryProof.excluded,
+    executionRunId: input.executionRunId,
+    expectedContextAssemblyId: input.expectedContextAssemblyId,
+    rendered: input.rendered,
+    renderedEvidenceContract,
+    renderedExplicitExclusions,
     renderedFormatVersion,
     renderedNonGoals,
-    renderedExplicitExclusions,
-    renderedEvidenceContract,
-    renderedSkillPatternRefs,
-    input.rendered.brief.sourceClaimsUsed.length > 0,
-    input.rendered.brief.sourceClaimsUsed.length <= 6,
-    input.rendered.brief.memoryRecordsUsed.length > 0,
-    input.rendered.brief.memoryRecordsUsed.length <= 6,
-    input.rendered.brief.hookExpectations.length >= 5,
-    codexInvocationCount === 0
-  ];
+    renderedObjective,
+    renderedSkillPatternRefs
+  });
+  const failedCheck = proofChecks.find((check) => !check.passed);
 
-  if (proofChecks.some((passed) => !passed)) {
-    throw new Error("Codex adapter smoke readback did not match expected brief proof");
+  if (failedCheck !== undefined) {
+    throw new Error(
+      `Codex adapter smoke readback did not match expected brief proof: ${failedCheck.label}`
+    );
   }
 
   return {
@@ -192,6 +311,9 @@ const assertCodexAdapterBriefProof = (
     renderedExplicitExclusions,
     renderedEvidenceContract,
     renderedSkillPatternRefs,
+    expiredMemoryExcluded: expiredMemoryProof.excluded,
+    expiredMemoryExclusionReason: expiredMemoryProof.reason,
+    expiredMemoryValidUntil: input.expectedExpiredMemoryValidUntil,
     codexInvocationCount
   };
 };
@@ -206,6 +328,9 @@ const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Format version present: ${yesNo(report.renderedFormatVersion)}`,
   `Non-goals present: ${yesNo(report.renderedNonGoals)}`,
   `Explicit exclusions present: ${yesNo(report.renderedExplicitExclusions)}`,
+  `Expired memory excluded: ${yesNo(report.expiredMemoryExcluded)}`,
+  `Expired memory exclusion reason: ${report.expiredMemoryExclusionReason}`,
+  `Expired memory valid until: ${report.expiredMemoryValidUntil}`,
   `Evidence contract present: ${yesNo(report.renderedEvidenceContract)}`,
   `Skill pattern refs present: ${yesNo(report.renderedSkillPatternRefs)}`,
   `Source claims used: ${report.sourceClaimsUsed}`,
@@ -239,8 +364,7 @@ export const runCodexAdapterSmokeCheck = async (
   const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-codex-adapter-smoke-${marker}`;
   const projectSlug = "codex-adapter";
-  const now = "2026-06-22T06:00:00.000Z";
-  const past = "2026-06-01T00:00:00.000Z";
+  const { now, past, expiredValidUntil } = smokeFixtureClocks.codexAdapter;
   const { client, db } = createSmokeDatabaseRuntime(input.databaseUrl);
   let retrievalRunId: string | undefined;
   let contextAssemblyId: string | undefined;
@@ -302,6 +426,19 @@ export const runCodexAdapterSmokeCheck = async (
         smokeId: marker
       }
     });
+    await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: adapterClaim.id,
+      status: "adopt",
+      decision: "Use Codex adapter smoke source claim as accepted brief context.",
+      rationale:
+        "The smoke source claim has an explicit mechanism, consumer, falsifier, and bounded non-proof, so it can anchor adapter readback.",
+      falsifier: "The adapter smoke stops rendering source-backed context from the accepted claim.",
+      consumer: "M26 Codex adapter smoke",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const invokeCodexClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
       claim: "Codex adapter smoke should invoke Codex to prove the adapter.",
@@ -337,7 +474,7 @@ export const runCodexAdapterSmokeCheck = async (
         smokeId: marker
       }
     });
-    await memoryRepository.createMemoryRecord({
+    const expiredMemoryRecord = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `codex-adapter-smoke:${marker}:expired`,
       kind: "preference",
@@ -351,7 +488,7 @@ export const runCodexAdapterSmokeCheck = async (
       sourceLineage: [{ sourceId: adapterClaim.id }],
       isUserPreference: false,
       validFrom: past,
-      validUntil: "2026-06-10T00:00:00.000Z",
+      validUntil: expiredValidUntil,
       metadata: {
         smokeId: marker
       }
@@ -490,6 +627,8 @@ export const runCodexAdapterSmokeCheck = async (
       aggregate,
       executionRunId: executionRun.id,
       expectedContextAssemblyId: result.contextAssembly.id,
+      expectedExpiredMemoryRecordId: expiredMemoryRecord.id,
+      expectedExpiredMemoryValidUntil: expiredValidUntil,
       rendered
     });
 
@@ -513,6 +652,9 @@ export const runCodexAdapterSmokeCheck = async (
       renderedExplicitExclusions: proof.renderedExplicitExclusions,
       renderedEvidenceContract: proof.renderedEvidenceContract,
       renderedSkillPatternRefs: proof.renderedSkillPatternRefs,
+      expiredMemoryExcluded: proof.expiredMemoryExcluded,
+      expiredMemoryExclusionReason: proof.expiredMemoryExclusionReason,
+      expiredMemoryValidUntil: proof.expiredMemoryValidUntil,
       sourceClaimsUsed: rendered.brief.sourceClaimsUsed.length,
       memoryRecordsUsed: rendered.brief.memoryRecordsUsed.length,
       antiMemoryWarnings: rendered.brief.antiMemoryWarnings.length,

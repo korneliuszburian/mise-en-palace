@@ -13,6 +13,9 @@ import {
   createSmokeHarnessScaffold,
   requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
+import {
+  smokeFixtureClocks
+} from "./smokeFixtureClocks.js";
 
 export interface HeartbeatWorkerAuthoritySmokeInput {
   databaseUrl: string;
@@ -43,8 +46,7 @@ export interface HeartbeatWorkerAuthoritySmokeReport {
   cleanedUp: boolean;
 }
 
-const now = "2026-07-01T12:00:00.000Z";
-const expiredAt = "2026-06-01T12:00:00.000Z";
+const { now, expiredAt, validFrom } = smokeFixtureClocks.heartbeatWorkerAuthority;
 
 const isMemoryStalenessCandidate = (
   candidate: BrainHeartbeatCandidate
@@ -166,7 +168,7 @@ export const runHeartbeatWorkerAuthoritySmokeCheck = async (
         }
       ],
       isUserPreference: false,
-      validFrom: "2026-05-01T12:00:00.000Z",
+      validFrom,
       validUntil: expiredAt,
       metadata: {
         smokeId: marker
