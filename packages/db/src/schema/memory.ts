@@ -73,6 +73,20 @@ const memoryGuidanceColumns = () => ({
   invalidationRule: text("invalidation_rule")
 });
 
+const memoryCandidateProposalColumns = () => ({
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+    onDelete: "set null"
+  }),
+  feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
+    onDelete: "set null"
+  }),
+  proposedBy: text("proposed_by").notNull()
+});
+
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
   "preference",
@@ -251,17 +265,7 @@ export const memoryEdges = pgTable(
 export const memoryCandidates = pgTable(
   "memory_candidates",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
-      onDelete: "set null"
-    }),
-    proposedBy: text("proposed_by").notNull(),
+    ...memoryCandidateProposalColumns(),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     ...memoryGuidanceColumns(),
@@ -303,17 +307,7 @@ export const memoryCandidates = pgTable(
 export const antiMemoryCandidates = pgTable(
   "anti_memory_candidates",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
-      onDelete: "set null"
-    }),
-    proposedBy: text("proposed_by").notNull(),
+    ...memoryCandidateProposalColumns(),
     key: text("key").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     rejectedClaim: text("rejected_claim"),
