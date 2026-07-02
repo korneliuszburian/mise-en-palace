@@ -31,11 +31,12 @@ product gap is proving one shared KRN brain loop across internal real repos.
 Latest outcome:
 
 ```txt
-mise-en-palace-vzos in progress: root historical docs are being demoted to
-pointer-only surfaces while archived originals stay discoverable.
+mise-en-palace-a44d in progress: schema/core ownership audit rejects broad
+contract unification and repairs live drift in evidence capture ID parsing and
+GoldenTask private metadata validation.
 Report:
-docs/runs/2026-07-02-root-doc-archive.md
-Next: close `mise-en-palace-vzos`, then continue the internal multi-repo
+docs/runs/2026-07-02-schema-core-contract-ownership.md
+Next: close `mise-en-palace-a44d`, then continue the internal multi-repo
 operator loop through the next highest-ROI audit-hardening task.
 ```
 

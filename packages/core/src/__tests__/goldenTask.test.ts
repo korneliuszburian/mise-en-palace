@@ -103,5 +103,17 @@ describe("golden task contract", () => {
         chainOfThought: "hidden reasoning must not be stored"
       }
     }))).toEqual(["metadata.chainOfThought is forbidden"]);
+
+    expect(validateGoldenTaskContract(goldenTask({
+      metadata: {
+        reasoningTrace: "hidden reasoning must not be stored"
+      }
+    }))).toEqual(["metadata.reasoningTrace is forbidden"]);
+
+    expect(validateGoldenTaskContract(goldenTask({
+      metadata: {
+        reasoning_trace: "hidden reasoning must not be stored"
+      }
+    }))).toEqual(["metadata.reasoning_trace is forbidden"]);
   });
 });

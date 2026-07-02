@@ -200,7 +200,7 @@ export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine((value, 
 });
 
 export const EvidenceCaptureInputSchema = z.object({
-  executionRunId: z.string().uuid().optional(),
+  executionRunId: OptionalTextSchema,
   changedFiles: TextListSchema,
   commands: z.array(EvidenceCommandSchema).default([]),
   diffRisk: DiffRiskSchema,

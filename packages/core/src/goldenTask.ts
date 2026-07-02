@@ -73,6 +73,8 @@ export interface GoldenTask {
 const forbiddenMetadataKeys = new Set([
   "chainOfThought",
   "chain_of_thought",
+  "reasoningTrace",
+  "reasoning_trace",
   "privateReasoning",
   "private_reasoning",
   "hiddenReasoning",

@@ -785,6 +785,18 @@ describe("schema parse boundaries", () => {
     expect(evidence.commands[0]?.provenance).toBe("captured_output_file");
     expect(evidence.commands[0]?.doesNotProve).toBe("This does not prove memory quality.");
 
+    expect(
+      parseEvidenceCaptureInput({
+        executionRunId: "execution-run-1",
+        changedFiles: ["packages/schema/src/index.ts"],
+        diffRisk: "low",
+        reviewBurden: "small",
+        rollbackPath: "Revert schema commit"
+      })
+    ).toMatchObject({
+      executionRunId: "execution-run-1"
+    });
+
     expect(() =>
       parseEvidenceCaptureInput({
         changedFiles: ["packages/schema/src/index.ts"],

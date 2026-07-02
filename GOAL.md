@@ -39,12 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-Historical root docs now stay pointer-only at root while archived originals
-remain discoverable under typed docs paths.
+Schema/core contract ownership audited: broad unification rejected as unsafe
+input DTO vs runtime-record collapse; two live drift points repaired
+(EvidenceCapture executionRunId shape and GoldenTask reasoningTrace metadata).
 Report:
-docs/runs/2026-07-02-root-doc-archive.md
-Next: continue audit-hardening through schema/core contract ownership, bounded
-CLI topology, and product-loop proof.
+docs/runs/2026-07-02-schema-core-contract-ownership.md
+Next: continue audit-hardening through bounded CLI topology and product-loop
+proof.
 ```
 
 ## Direction
