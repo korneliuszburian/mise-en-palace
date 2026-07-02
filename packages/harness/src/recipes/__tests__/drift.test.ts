@@ -38,7 +38,8 @@ describe("recipe drift", () => {
         {
           id: "recipe:bad",
           patternId: "ts-boundary-brain-knowledge-parser-exemplar",
-          algorithm: "fnv1a32x8:krn.recipe.v1",
+          algorithm: "noncrypto-fnv1a32x8:krn.recipe.v1",
+          checksumRole: "non_security_drift_detector",
           code: ["../escape.ts"],
           docs: ["docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"],
           sources: ["source"],

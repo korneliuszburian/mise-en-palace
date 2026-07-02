@@ -41,7 +41,7 @@ Latest slice:
 ```txt
 mise-en-palace-yuvw/dqqf complete: repo naming/layout inventory added;
 workers test topology pilot moved six tests into src/__tests__ with focused
-verification; recipe drift hash vocabulary corrected to checksum.
+verification; recipe drift hash vocabulary corrected to non-crypto checksum.
 Report:
 docs/runs/2026-07-02-naming-layout-inventory.md
 Next: continue small-package test topology migration and bounded naming

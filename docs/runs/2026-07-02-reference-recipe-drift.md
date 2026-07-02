@@ -96,7 +96,7 @@ Does not prove:
 
 - KRN needs broad recipe automation.
 - Clone workflows outperform skills.
-- The checksum is a security hash, provenance proof, or semantic quality signal.
+- Any checksum security, provenance authority, or semantic quality signal.
 - The checksum covers source/proof metadata; it covers selected code/docs only.
 - Repo-wide naming/layout has been fixed.
 - Test topology has been migrated repo-wide.

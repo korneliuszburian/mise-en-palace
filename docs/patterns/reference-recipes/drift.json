@@ -4,7 +4,8 @@
     {
       "id": "recipe:brain-knowledge-parser",
       "patternId": "ts-boundary-brain-knowledge-parser-exemplar",
-      "algorithm": "fnv1a32x8:krn.recipe.v1",
+      "algorithm": "noncrypto-fnv1a32x8:krn.recipe.v1",
+      "checksumRole": "non_security_drift_detector",
       "code": [
         "packages/harness/src/brainKnowledgeReadModel.ts",
         "packages/harness/src/brainKnowledgeReadModel.test.ts"
@@ -18,7 +19,7 @@
         "docs/patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json",
         "docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"
       ],
-      "checksum": "ae25c3c22daa9aaf30335da4bd90ac7145c66b1e4aa5036b491b5080beaa83ed",
+      "checksum": "8b5663030bd077269c00bfcdb3f7d4b8083336ef8d1c6012f2b05779d7d3a1c4",
       "observedAt": "2026-07-02",
       "doesNotProve": "This drift manifest does not prove clone workflows outperform skills, broad recipe automation is needed, semantic code quality improved, or KRN is product-ready."
     }

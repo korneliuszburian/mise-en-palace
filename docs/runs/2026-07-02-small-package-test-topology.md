@@ -60,7 +60,12 @@ pnpm -C packages/codex-adapter typecheck
 pnpm -C packages/core typecheck
 ```
 
-All six narrow checks passed before this report was written.
+All six narrow checks passed before this report was written. The package test
+commands are the evidence that the moved test files were discovered and their
+runtime imports still execute. The package typecheck commands prove runtime
+package source still typechecks after the move; they do not prove moved test
+files are included in `tsc`, because the current package configs exclude test
+files.
 
 Workspace checks:
 
@@ -83,7 +88,7 @@ This proves:
 - schema, codex-adapter, and core root tests can live in `src/__tests__`
   without changing runtime code
 - package-local Vitest discovery still finds the moved tests
-- package typecheck still passes after relative import updates
+- package runtime sources still typecheck after relative import updates
 - the `recipes/__tests__` topology exemplar can be repeated outside one lab
   island
 
@@ -94,6 +99,7 @@ This does not prove:
 - CLI test topology is safe to migrate
 - harness-root smoke filters are safe to rewrite
 - DB/readiness tests can move without path or environment regressions
+- moved test files are included in `tsc` package typecheck
 - repo naming has been shortened
 - product behavior improved
 - the KRN end-to-end loop is governed or complete

@@ -485,7 +485,7 @@ the same instructions.
 external practitioner pattern or local exemplar
   -> source-to-decision map
   -> local reference implementation
-  -> checksum over selected code/docs
+  -> non-security checksum over selected code/docs
   -> failing drift test
   -> future task can clone the approach
 ```
@@ -494,7 +494,7 @@ The recipe lab currently proves only one bounded mechanism:
 
 ```txt
 selected local code/docs changed
-  -> checksum mismatch
+  -> non-security checksum mismatch
   -> drift test fails
 ```
 
@@ -622,7 +622,7 @@ Mastra Observational Memory
 Polubis / reference implementation recipe idea
   mechanism: maintain one high-quality exemplar; generate/align future code by
              cloning proven structure rather than rereading large markdown docs
-  KRN use: local reference recipe lab with checksum drift tests
+  KRN use: local reference recipe lab with non-security checksum drift tests
   rejection: no recipe platform, crawler, skill zoo, or unreviewed clone runtime
 
 TypeScript official docs and Total TypeScript public sources

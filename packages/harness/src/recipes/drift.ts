@@ -1,5 +1,6 @@
 const recipeDriftKind = "krn.recipeDrift.v1";
-const recipeDriftAlgorithm = "fnv1a32x8:krn.recipe.v1";
+const recipeDriftAlgorithm = "noncrypto-fnv1a32x8:krn.recipe.v1";
+const recipeChecksumRole = "non_security_drift_detector";
 
 export type RecipeDrift = {
   kind: typeof recipeDriftKind;
@@ -14,6 +15,7 @@ export type Recipe = {
   id: string;
   patternId: string;
   algorithm: typeof recipeDriftAlgorithm;
+  checksumRole: typeof recipeChecksumRole;
   code: string[];
   docs: string[];
   sources: string[];
@@ -44,6 +46,7 @@ const recipeFields = [
   "id",
   "patternId",
   "algorithm",
+  "checksumRole",
   "code",
   "docs",
   "sources",
@@ -155,6 +158,9 @@ function parseEntry(value: unknown): Recipe | undefined {
     patternId: str(value["patternId"]),
     algorithm: value["algorithm"] === recipeDriftAlgorithm
       ? recipeDriftAlgorithm
+      : undefined,
+    checksumRole: value["checksumRole"] === recipeChecksumRole
+      ? recipeChecksumRole
       : undefined,
     code: paths(value["code"]),
     docs: paths(value["docs"]),

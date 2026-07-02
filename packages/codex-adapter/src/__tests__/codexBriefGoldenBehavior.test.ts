@@ -23,7 +23,7 @@ import {
 
 const now = "2026-06-25T14:20:00.000Z";
 const evidenceRefs = [
-  "packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts",
+  "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
   "tests/fixtures/golden-tasks/codex-brief-behavior.json"
 ] as const;
 
