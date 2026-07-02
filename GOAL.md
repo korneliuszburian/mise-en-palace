@@ -39,10 +39,10 @@ the product goal.
 Latest slice:
 
 ```txt
-two CLI-private helpers now use format/selection terminology instead of
-readback/bridge wording, without changing CLI behavior.
+Codex adapter smoke proof now uses typed skill pattern refs, exact seeded
+source/memory IDs, and exact hook phase ordering instead of brittle bounds.
 Report:
-docs/runs/2026-07-02-project-resolution-format-rename.md
+docs/runs/2026-07-02-codex-adapter-proof-hardening.md
 Next: continue audit-hardening through execution-brief proof boundaries,
 source relation metadata typing, retrieval ID branding, and bounded naming
 cleanup.

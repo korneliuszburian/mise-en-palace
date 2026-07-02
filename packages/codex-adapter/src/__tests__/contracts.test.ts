@@ -4,6 +4,9 @@ import {
   codexHookPhases,
   executionBriefFormatVersion
 } from "../contracts.js";
+import {
+  skillRoutingPatternRef
+} from "../renderSkillHints.js";
 import type {
   CodexAdapterPlan,
   CodexHookExpectation,
@@ -22,6 +25,7 @@ describe("Codex adapter contracts", () => {
       capabilityKind: "type_safety",
       reason: "Preserve strict TypeScript boundaries.",
       requiredEvidence: ["pnpm typecheck"],
+      patternRefs: [skillRoutingPatternRef],
       priority: "required",
       source: "capability_plan"
     };

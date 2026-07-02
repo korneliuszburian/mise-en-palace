@@ -23,7 +23,7 @@ describe("codexAdapterSmoke", () => {
       expiredMemoryValidUntil: "2026-06-10T00:00:00.000Z",
       sourceClaimsUsed: 1,
       memoryRecordsUsed: 1,
-      antiMemoryWarnings: 1,
+      antiMemoryWarnings: 0,
       hookExpectationCount: 5,
       codexInvocationCount: 0,
       remainingMarkerCount: 0,
@@ -45,7 +45,7 @@ describe("codexAdapterSmoke", () => {
     expect(output).toContain("Skill pattern refs present: yes");
     expect(output).toContain("Source claims used: 1");
     expect(output).toContain("Memory records used: 1");
-    expect(output).toContain("Anti-memory warnings: 1");
+    expect(output).toContain("Anti-memory warnings: 0");
     expect(output).toContain("Hook expectations: 5");
     expect(output).toContain("Codex invocations: 0");
     expect(output).toContain("Cleanup remaining marker count: 0");

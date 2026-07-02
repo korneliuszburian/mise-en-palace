@@ -103,12 +103,36 @@ describe("doctorReadiness", () => {
         status: "MCP forbidden surface absent after wording change",
         outcome: "absent",
         severity: "pass"
+      },
+      {
+        label: "Codex adapter runtime proof",
+        status: "runtime proof ok after wording change",
+        outcome: "proven",
+        severity: "pass"
       }
     ];
 
     expect(deriveCodexAdapterReadiness(postgresReadyTyped, codexAdapterChecks)).toEqual({
       label: "Codex adapter readiness",
-      status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+      status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
+    });
+    expect(
+      deriveCodexAdapterReadiness(
+        postgresReadyTyped,
+        codexAdapterChecks.map((check) =>
+          check.label === "Codex adapter runtime proof"
+            ? {
+                label: "Codex adapter runtime proof",
+                status: "custom unverified wording",
+                outcome: "runtime_unverified",
+                severity: "warning"
+              }
+            : check
+        )
+      )
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "runtime unverified (run pnpm db:smoke:codex-adapter)"
     });
     expect(
       deriveCodexAdapterReadiness(

@@ -4,6 +4,7 @@ import {
 } from "./cliFileBoundary.js";
 import {
   checkActivation,
+  checkCodexAdapterRuntimeProof,
   checkHarnessPersistence,
   checkMemoryGovernance,
   checkPostgres,
@@ -188,6 +189,15 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     postgresChecks
   );
   const codexAdapterChecks = await checkCodexAdapter(repoRoot);
+  const codexAdapterRuntimeProofChecks = await checkCodexAdapterRuntimeProof(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    postgresChecks
+  );
+  const codexAdapterReadinessChecks = [
+    ...codexAdapterChecks,
+    ...codexAdapterRuntimeProofChecks
+  ];
   const workerJobChecks = await checkWorkerJobs(repoRoot);
   const targetRepoChecks = await checkTargetRepoReadiness(repoRoot);
   const checks = [
@@ -209,8 +219,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
       retrievalSubstrateReadiness,
       activationChecks
     ),
-    ...codexAdapterChecks,
-    deriveCodexAdapterReadiness(postgresChecks, codexAdapterChecks),
+    ...codexAdapterReadinessChecks,
+    deriveCodexAdapterReadiness(postgresChecks, codexAdapterReadinessChecks),
     ...workerJobChecks,
     deriveWorkerJobReadiness(postgresChecks, workerJobChecks),
     ...targetRepoChecks,

@@ -585,6 +585,12 @@ export const deriveCodexAdapterReadiness = (
     "present",
     (status) => status === "present"
   );
+  const runtimeProofReady = hasCheckOutcome(
+    codexAdapterChecks,
+    "Codex adapter runtime proof",
+    "proven",
+    (status) => status?.startsWith("ready") === true
+  );
 
   if (codexRunnerPresent || mcpServerPresent) {
     return {
@@ -635,9 +641,16 @@ export const deriveCodexAdapterReadiness = (
     };
   }
 
+  if (!runtimeProofReady) {
+    return {
+      label: "Codex adapter readiness",
+      status: "runtime unverified (run pnpm db:smoke:codex-adapter)"
+    };
+  }
+
   return {
     label: "Codex adapter readiness",
-    status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+    status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
   };
 };
 

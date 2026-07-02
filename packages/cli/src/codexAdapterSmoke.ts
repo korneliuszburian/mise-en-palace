@@ -2,6 +2,10 @@ import type {
   Sql
 } from "postgres";
 import {
+  codexHookPhases,
+  skillRoutingPatternRef
+} from "@krn/codex-adapter";
+import {
   runMigrationReadinessCheck,
   smokeFixtureClocks
 } from "@krn/db/dev";
@@ -104,6 +108,8 @@ interface CodexAdapterProofCheckInput {
   expiredMemoryExcluded: boolean;
   executionRunId: string;
   expectedContextAssemblyId: string;
+  expectedMemoryRecordId: string;
+  expectedSourceClaimId: string;
   rendered: RenderedCodexBrief;
   renderedEvidenceContract: boolean;
   renderedExplicitExclusions: boolean;
@@ -112,6 +118,22 @@ interface CodexAdapterProofCheckInput {
   renderedObjective: boolean;
   renderedSkillPatternRefs: boolean;
 }
+
+const sameStringList = (
+  actual: readonly string[],
+  expected: readonly string[]
+): boolean =>
+  actual.length === expected.length &&
+  actual.every((value, index) => value === expected[index]);
+
+const hasTypedSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
+  rendered.brief.skillBindingHints.length > 0 &&
+  rendered.brief.skillBindingHints.every((hint) =>
+    hint.patternRefs.includes(skillRoutingPatternRef)
+  );
+
+const rendersSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
+  rendered.renderedBrief.includes(`patterns=${skillRoutingPatternRef}`);
 
 const countMarkerRows = async (
   client: Sql,
@@ -217,23 +239,21 @@ const codexAdapterProofChecks = (
   { label: "rendered evidence contract", passed: input.renderedEvidenceContract },
   { label: "rendered skill pattern refs", passed: input.renderedSkillPatternRefs },
   {
-    label: "source claims lower bound",
-    passed: input.rendered.brief.sourceClaimsUsed.length > 0
+    label: "seeded source claim selected",
+    passed: sameStringList(input.rendered.brief.sourceClaimsUsed, [input.expectedSourceClaimId])
   },
   {
-    label: "source claims upper bound",
-    passed: input.rendered.brief.sourceClaimsUsed.length <= 6
-  },
-  {
-    label: "memory records lower bound",
-    passed: input.rendered.brief.memoryRecordsUsed.length > 0
-  },
-  {
-    label: "memory records upper bound",
-    passed: input.rendered.brief.memoryRecordsUsed.length <= 6
+    label: "seeded memory selected",
+    passed: sameStringList(input.rendered.brief.memoryRecordsUsed, [input.expectedMemoryRecordId])
   },
   { label: "expired memory stale exclusion", passed: input.expiredMemoryExcluded },
-  { label: "hook expectations", passed: input.rendered.brief.hookExpectations.length >= 5 },
+  {
+    label: "hook expectation phases",
+    passed: sameStringList(
+      input.rendered.brief.hookExpectations.map((expectation) => expectation.phase),
+      codexHookPhases
+    )
+  },
   { label: "codex invocation count", passed: input.codexInvocationCount === 0 }
 ];
 
@@ -244,6 +264,8 @@ const assertCodexAdapterBriefProof = (
     expectedContextAssemblyId: string;
     expectedExpiredMemoryRecordId: string;
     expectedExpiredMemoryValidUntil: string;
+    expectedMemoryRecordId: string;
+    expectedSourceClaimId: string;
     rendered: RenderedCodexBrief;
   }
 ): CodexAdapterBriefProof => {
@@ -271,9 +293,9 @@ const assertCodexAdapterBriefProof = (
     input.rendered.evidenceContract.commands.every((command) =>
       input.rendered.renderedBrief.includes(command.command)
     );
-  const renderedSkillPatternRefs = input.rendered.renderedBrief.includes(
-    "pattern:codex-skill-progressive-disclosure-routing"
-  );
+  const renderedSkillPatternRefs =
+    hasTypedSkillRoutingPatternRefs(input.rendered) &&
+    rendersSkillRoutingPatternRefs(input.rendered);
   const expiredMemoryProof = proveExpiredMemoryExclusion({
     contextAssembly,
     expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
@@ -287,6 +309,8 @@ const assertCodexAdapterBriefProof = (
     expiredMemoryExcluded: expiredMemoryProof.excluded,
     executionRunId: input.executionRunId,
     expectedContextAssemblyId: input.expectedContextAssemblyId,
+    expectedMemoryRecordId: input.expectedMemoryRecordId,
+    expectedSourceClaimId: input.expectedSourceClaimId,
     rendered: input.rendered,
     renderedEvidenceContract,
     renderedExplicitExclusions,
@@ -455,7 +479,7 @@ export const runCodexAdapterSmokeCheck = async (
         smokeId: marker
       }
     });
-    await memoryRepository.createMemoryRecord({
+    const boundedMemoryRecord = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `codex-adapter-smoke:${marker}:bounded-brief`,
       kind: "constraint",
@@ -629,6 +653,8 @@ export const runCodexAdapterSmokeCheck = async (
       expectedContextAssemblyId: result.contextAssembly.id,
       expectedExpiredMemoryRecordId: expiredMemoryRecord.id,
       expectedExpiredMemoryValidUntil: expiredValidUntil,
+      expectedMemoryRecordId: boundedMemoryRecord.id,
+      expectedSourceClaimId: adapterClaim.id,
       rendered
     });
 

@@ -2585,14 +2585,25 @@ describe("runCli", () => {
       { label: "Execution brief smoke", status: "available (pnpm db:smoke:codex-adapter)" },
       { label: "Hook expectation projection", status: "present" },
       { label: "Codex execution runner", status: "absent" },
-      { label: "KRN MCP server", status: "absent" }
+      { label: "KRN MCP server", status: "absent" },
+      { label: "Codex adapter runtime proof", status: "ready (source 1, memory 1)" }
     ];
 
     expect(
       deriveCodexAdapterReadiness(postgresReady, codexAdapterReady)
     ).toEqual({
       label: "Codex adapter readiness",
-      status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+      status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
+    });
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, [
+        ...codexAdapterReady.slice(0, 5),
+        { label: "Codex adapter runtime proof", status: "unverified (run pnpm db:smoke:codex-adapter)" }
+      ])
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "runtime unverified (run pnpm db:smoke:codex-adapter)"
     });
 
     expect(

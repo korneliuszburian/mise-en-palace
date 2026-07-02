@@ -16,7 +16,7 @@ const skillByRequirement = {
   policy_gate: "activation-engine"
 } as const satisfies Record<CapabilityPlan["requirements"][number]["kind"], string>;
 
-const skillRoutingPatternRef = "pattern:codex-skill-progressive-disclosure-routing";
+export const skillRoutingPatternRef = "pattern:codex-skill-progressive-disclosure-routing";
 
 export const createCodexSkillBindingHints = (
   capabilityPlan: CapabilityPlan

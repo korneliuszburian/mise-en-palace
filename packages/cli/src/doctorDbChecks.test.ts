@@ -13,6 +13,7 @@ import {
 
 import {
   checkActivation,
+  checkCodexAdapterRuntimeProof,
   checkHarnessPersistence,
   checkMemoryGovernance,
   checkPostgres,
@@ -64,6 +65,7 @@ describe("doctorDbChecks", () => {
     expect(checkMemoryGovernance).toEqual(expect.any(Function));
     expect(checkRetrievalSubstrate).toEqual(expect.any(Function));
     expect(checkActivation).toEqual(expect.any(Function));
+    expect(checkCodexAdapterRuntimeProof).toEqual(expect.any(Function));
   });
 
   it("keeps DB-backed checks read-only at the CLI adapter layer", async () => {
@@ -138,6 +140,9 @@ describe("doctorDbChecks", () => {
     expectStatuses(await checkActivation(repoRoot, undefined, postgresChecks), {
       "Activation smoke runtime proof": "skipped (Postgres not configured)"
     });
+    expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, undefined, postgresChecks), {
+      "Codex adapter runtime proof": "skipped (Postgres not configured)"
+    });
   });
 
   it("keeps unreachable and not-ready Postgres skip reasons explicit", async () => {
@@ -185,6 +190,34 @@ describe("doctorDbChecks", () => {
       "Retrieval substrate schema": "skipped (brain store not ready)",
       "RetrievalRepository read path": "skipped (brain store not ready)",
       "Retrieval substrate runtime proof": "skipped (brain store not ready)"
+    });
+    expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, "postgres://example", unreachableChecks), {
+      "Codex adapter runtime proof": "skipped (Postgres unreachable)"
+    });
+    expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, "postgres://example", notReadyChecks), {
+      "Codex adapter runtime proof": "skipped (brain store not ready)"
+    });
+  });
+
+  it("reports Codex adapter runtime proof as unverified when DB is ready", async () => {
+    const repoRoot = await writeDoctorPackageJson();
+    const readyChecks: DoctorCheck[] = [
+      {
+        label: "Postgres config",
+        status: "configured and reachable"
+      },
+      {
+        label: "pgvector",
+        status: "available"
+      },
+      {
+        label: "migrations",
+        status: "verified (15/15 applied)"
+      }
+    ];
+
+    expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, "postgres://example", readyChecks), {
+      "Codex adapter runtime proof": "unverified (run pnpm db:smoke:codex-adapter)"
     });
   });
 });

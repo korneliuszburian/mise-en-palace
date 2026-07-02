@@ -741,3 +741,22 @@ export const checkActivation = async (
     ];
   }
 };
+
+export const checkCodexAdapterRuntimeProof = async (
+  _repoRoot: string,
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): Promise<DoctorCheck[]> => {
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
+
+  if (gate.kind === "skipped") {
+    return [skippedCheck("Codex adapter runtime proof", gate)];
+  }
+
+  return [{
+    label: "Codex adapter runtime proof",
+    status: "unverified (run pnpm db:smoke:codex-adapter)",
+    outcome: "runtime_unverified",
+    severity: "warning"
+  }];
+};
