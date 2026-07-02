@@ -116,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-execution-brief-profile-readback.md`.
+Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-root-doc-archive.md`.
 
 Task boundary:
 

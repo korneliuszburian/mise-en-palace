@@ -499,7 +499,7 @@ files likely touched:
 - `README.md`
 - `GOAL.md`
 - `PLAN.md`
-- `REVIEW.md`
+- `docs/reviews/anti-slop-review-request/REQUEST.md`
 - `docs/plans/memory-ideal-state/GOAL.md`
 - `docs/plans/memory-ideal-state/PLAN.md`
 - selected handoff docs if they claim current state
@@ -515,7 +515,7 @@ exact verification:
 - One canonical current-state surface is named.
 - Historical docs are marked historical.
 - README does not contradict QG-05/QG-06 decisions.
-- `rg -n "not adopted or rejected|QG-06 automates|feature work resumes|current phase|not built yet|built but not proven" README.md GOAL.md PLAN.md REVIEW.md docs/plans/memory-ideal-state`
+- `rg -n "not adopted or rejected|QG-06 automates|feature work resumes|current phase|not built yet|built but not proven" README.md GOAL.md PLAN.md docs/reviews/anti-slop-review-request/REQUEST.md docs/plans/memory-ideal-state`
 - Contradictions are removed or explicitly labeled as historical.
 
 what not to build:

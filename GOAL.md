@@ -39,13 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-ExecutionBrief v1 now has a typed default profile/readback that classifies
-required, diagnostic, and reserved sections while omitting empty MCP/subagent
-future-hook headings from default rendered text.
+Historical root docs now stay pointer-only at root while archived originals
+remain discoverable under typed docs paths.
 Report:
-docs/runs/2026-07-02-execution-brief-profile-readback.md
-Next: continue audit-hardening through root-doc cleanup, schema/core contract
-ownership, bounded CLI topology, and product-loop proof.
+docs/runs/2026-07-02-root-doc-archive.md
+Next: continue audit-hardening through schema/core contract ownership, bounded
+CLI topology, and product-loop proof.
 ```
 
 ## Direction

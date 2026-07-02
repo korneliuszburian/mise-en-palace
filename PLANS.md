@@ -31,11 +31,12 @@ product gap is proving one shared KRN brain loop across internal real repos.
 Latest outcome:
 
 ```txt
-mise-en-palace-8qer complete: verified evidence command normalization is
-enforced at schema/core/DB persistence boundaries; no code fix needed.
+mise-en-palace-vzos in progress: root historical docs are being demoted to
+pointer-only surfaces while archived originals stay discoverable.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md
-Next: `mise-en-palace-t8i` validates the internal multi-repo operator loop.
+docs/runs/2026-07-02-root-doc-archive.md
+Next: close `mise-en-palace-vzos`, then continue the internal multi-repo
+operator loop through the next highest-ROI audit-hardening task.
 ```
 
 ## 2. Product Thesis
@@ -2469,11 +2470,6 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md`.
   Next: `mise-en-palace-ej7` repairs or regresses the retained-pattern plan query
   miss exposed by 9DT.
-- [ ] EJ7 active: `mise-en-palace-ej7` improves retained-pattern plan query
-  shaping for parser exemplar tasks without broad ranking rewrite, semantic
-  embedding platform, DB schema, dashboard/API/MCP, worker daemon, crawler, or
-  Memory Core mutation.
-
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:

@@ -22,11 +22,11 @@
 
 - `AGENTS.md`
 - `docs/KRN_KERNEL.md`
-- `GOAL_REPO_RESET_AUDIT.md`
+- `docs/reviews/repo-reset-audit/GOAL_PROMPT.md`
 - `README.md`
 - `GOAL.md`
 - `PLAN.md` major current-state/QG and architecture sections
-- `REVIEW.md`
+- `docs/reviews/anti-slop-review-request/REQUEST.md`
 - `docs/plans/memory-ideal-state/GOAL.md`
 - `docs/plans/memory-ideal-state/PLAN.md` major current-state/QG and
   memory/observation/reflection/activation/eval sections
@@ -156,7 +156,7 @@ source changes.
 
 ## Resolved Suspect Areas
 
-From `GOAL_REPO_RESET_AUDIT.md`, the suspect areas resolve as follows:
+From archived `docs/reviews/repo-reset-audit/GOAL_PROMPT.md`, the suspect areas resolve as follows:
 
 - `krn audit`: confirmed wrong as product/quality direction; may survive only
   as narrow mechanical guard.
@@ -219,7 +219,7 @@ From `GOAL_REPO_RESET_AUDIT.md`, the suspect areas resolve as follows:
 - `git status --short --branch` -> `## main...origin/main` plus the two untracked raw material files
 - `ls -la` -> confirmed root shape and existing audit goal file
 - `sed -n '1,260p' docs/KRN_KERNEL.md` -> read kernel contract
-- `sed -n '1,260p' GOAL_REPO_RESET_AUDIT.md` and `sed -n '261,560p' GOAL_REPO_RESET_AUDIT.md` -> read full audit goal
+- `sed -n '1,260p' docs/reviews/repo-reset-audit/GOAL_PROMPT.md` and `sed -n '261,560p' docs/reviews/repo-reset-audit/GOAL_PROMPT.md` -> read full audit goal
 - `sed -n '1,260p' PLAN.md` -> read current-state addendum and beginning of root plan
 - `git rev-parse HEAD` -> `e618c9b54ac675c5e80952661ed03320895a002f`
 - `git log --oneline -20` -> latest reset-audit and QG commits recorded
@@ -281,6 +281,6 @@ From `GOAL_REPO_RESET_AUDIT.md`, the suspect areas resolve as follows:
 ## What To Read First After Context Loss
 
 1. `docs/reviews/repo-reset-audit/STATE.md`
-2. `GOAL_REPO_RESET_AUDIT.md`
+2. `docs/reviews/repo-reset-audit/GOAL_PROMPT.md`
 3. `docs/KRN_KERNEL.md`
 4. `git status --short --branch`
