@@ -16,6 +16,16 @@ import { executionRuns } from "./harness.js";
 type JsonObject = Record<string, unknown>;
 
 const emptyJsonObject = sql`'{}'::jsonb`;
+const attemptsColumn = () => integer("attempts").notNull().default(0);
+const availableAtColumn = () =>
+  timestamp("available_at", { withTimezone: true }).notNull().defaultNow();
+const lockedAtColumn = () => timestamp("locked_at", { withTimezone: true });
+const lockedByColumn = () => text("locked_by");
+const lastErrorColumn = () => text("last_error");
+const createdAtColumn = () =>
+  timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+const updatedAtColumn = () =>
+  timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
 
 export const runEventSeverity = pgEnum("run_event_severity", [
   "debug",
@@ -71,13 +81,13 @@ export const outboxEvents = pgTable(
     topic: text("topic").notNull(),
     status: outboxEventStatus("status").notNull().default("pending"),
     payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
-    attempts: integer("attempts").notNull().default(0),
-    availableAt: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
-    lockedAt: timestamp("locked_at", { withTimezone: true }),
-    lockedBy: text("locked_by"),
-    lastError: text("last_error"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    attempts: attemptsColumn(),
+    availableAt: availableAtColumn(),
+    lockedAt: lockedAtColumn(),
+    lockedBy: lockedByColumn(),
+    lastError: lastErrorColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("outbox_events_topic_idx").on(table.topic),
@@ -92,14 +102,14 @@ export const workerJobs = pgTable(
     jobType: text("type").notNull(),
     status: workerJobStatus("status").notNull().default("queued"),
     payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
-    attempts: integer("attempts").notNull().default(0),
+    attempts: attemptsColumn(),
     maxAttempts: integer("max_attempts").notNull().default(3),
-    runAfter: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
-    lockedAt: timestamp("locked_at", { withTimezone: true }),
-    lockedBy: text("locked_by"),
-    lastError: text("last_error"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    runAfter: availableAtColumn(),
+    lockedAt: lockedAtColumn(),
+    lockedBy: lockedByColumn(),
+    lastError: lastErrorColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("worker_jobs_type_idx").on(table.jobType),
