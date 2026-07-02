@@ -123,19 +123,23 @@ export const observationUsefulness = pgEnum("observation_usefulness", [
   "unknown"
 ]);
 
+const observationScopeColumns = () => ({
+  workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+    onDelete: "set null"
+  }),
+  taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
+    onDelete: "set null"
+  }),
+  targetRepoPath: text("target_repo_path")
+});
+
 export const observationGroups = pgTable(
   "observation_groups",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-      onDelete: "set null"
-    }),
-    targetRepoPath: text("target_repo_path"),
+    ...observationScopeColumns(),
     scope: jsonObjectColumn("scope"),
     title: text("title").notNull(),
     summary: text("summary").notNull(),
@@ -160,15 +164,7 @@ export const observationItems = pgTable(
     groupId: uuid("group_id")
       .notNull()
       .references(() => observationGroups.id, { onDelete: "cascade" }),
-    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-      onDelete: "set null"
-    }),
-    targetRepoPath: text("target_repo_path"),
+    ...observationScopeColumns(),
     kind: observationKind("kind").notNull(),
     status: observationStatus("status").notNull().default("observed"),
     priority: observationPriority("priority").notNull().default("medium"),
