@@ -39,11 +39,10 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-un8v complete: product-loop proof boundary hardened so
-MemoryReviewGate and AntiMemoryReviewGate require accepted SourceClaim authority;
-DB brain-loop smoke proves SourceDecision-adopted accepted source status.
+mise-en-palace-0dgi complete: eval proof-boundary manifest added so
+verification gates have typed proves/doesNotProve readback.
 Report:
-docs/runs/2026-07-02-product-loop-e2e-proof.md
+docs/runs/2026-07-02-eval-proof-boundary-manifest.md
 Next: continue audit-hardening through the next highest-ROI Beads task.
 ```
 

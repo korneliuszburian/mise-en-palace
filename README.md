@@ -120,3 +120,7 @@ pnpm db:smoke
 
 Do not claim DB runtime truth unless DB commands were run in the current
 environment.
+
+Gate proof boundaries are canonicalized in
+`packages/harness/src/evalProofBoundaryManifest.ts`; no verification command
+should be described as proving more than that manifest allows.
