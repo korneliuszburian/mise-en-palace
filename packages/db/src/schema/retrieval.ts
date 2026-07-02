@@ -22,11 +22,13 @@ import {
 import {
   contextAssemblies,
   evidenceBundles,
-  executionRuns,
-  projects,
   reviewAssessments,
-  taskContracts
 } from "./harness.js";
+import {
+  executionRunIdColumn,
+  nullableProjectIdColumn,
+  taskContractIdColumn
+} from "./referenceColumns.js";
 import { runEvents } from "./events.js";
 import {
   sourceArtifacts,
@@ -114,7 +116,7 @@ export const contextExclusionReason = pgEnum("context_exclusion_reason", [
 ]);
 
 const projectScopeColumn = () => ({
-  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" })
+  projectId: nullableProjectIdColumn()
 });
 
 const retrievalSubjectColumns = () => ({
@@ -263,13 +265,9 @@ export const retrievalRuns = pgTable(
   "retrieval_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-      onDelete: "set null"
-    }),
+    projectId: nullableProjectIdColumn(),
+    executionRunId: executionRunIdColumn(),
+    taskContractId: taskContractIdColumn(),
     status: retrievalRunStatus("status").notNull().default("running"),
     query: text("query").notNull(),
     mode: retrievalRunMode("mode").notNull().default("mixed"),

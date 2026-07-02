@@ -20,11 +20,13 @@ import {
 } from "./columns.js";
 import {
   contextAssemblies,
-  executionRuns,
-  feedbackDeltas,
-  projects,
-  taskContracts
+  feedbackDeltas
 } from "./harness.js";
+import {
+  executionRunIdColumn,
+  requiredProjectIdColumn,
+  taskContractIdColumn
+} from "./referenceColumns.js";
 import {
   sourceClaims
 } from "./sources.js";
@@ -75,12 +77,8 @@ const memoryGuidanceColumns = () => ({
 
 const memoryCandidateProposalColumns = () => ({
   id: uuid("id").primaryKey().defaultRandom(),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projects.id, { onDelete: "cascade" }),
-  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-    onDelete: "set null"
-  }),
+  projectId: requiredProjectIdColumn(),
+  executionRunId: executionRunIdColumn(),
   feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
     onDelete: "set null"
   }),
@@ -119,9 +117,7 @@ const memoryRunAnchorColumns = () => ({
   memoryRecordId: uuid("memory_record_id")
     .notNull()
     .references(() => memoryRecords.id, { onDelete: "cascade" }),
-  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-    onDelete: "set null"
-  })
+  executionRunId: executionRunIdColumn()
 });
 
 export const memoryRecordKind = pgEnum("memory_record_kind", [
@@ -190,9 +186,7 @@ export const memoryRecords = pgTable(
   "memory_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+    projectId: requiredProjectIdColumn(),
     currentVersionId: uuid("current_version_id"),
     key: text("key").notNull(),
     kind: memoryRecordKind("kind").notNull(),
@@ -370,9 +364,7 @@ export const memoryApplications = pgTable(
   "memory_applications",
   {
     ...memoryRunAnchorColumns(),
-    taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-      onDelete: "set null"
-    }),
+    taskContractId: taskContractIdColumn(),
     contextAssemblyId: uuid("context_assembly_id").references(() => contextAssemblies.id, {
       onDelete: "set null"
     }),
@@ -418,12 +410,8 @@ export const antiMemoryRecords = pgTable(
   "anti_memory_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    projectId: requiredProjectIdColumn(),
+    executionRunId: executionRunIdColumn(),
     createdFromCandidateId: uuid("created_from_candidate_id").references(() => antiMemoryCandidates.id, {
       onDelete: "set null"
     }),

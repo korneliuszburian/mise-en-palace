@@ -16,13 +16,15 @@ import {
 import { runEvents } from "./events.js";
 import {
   evidenceBundles,
-  executionRuns,
   feedbackDeltas,
-  projects,
   reviewAssessments,
-  taskContracts,
-  workspaces
 } from "./harness.js";
+import {
+  executionRunIdColumn,
+  nullableCascadeProjectIdColumn,
+  taskContractIdColumn,
+  workspaceIdColumn
+} from "./referenceColumns.js";
 import {
   sourceChunks,
   sourceClaims
@@ -124,14 +126,10 @@ export const observationUsefulness = pgEnum("observation_usefulness", [
 ]);
 
 const observationScopeColumns = () => ({
-  workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
-  projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
-  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-    onDelete: "set null"
-  }),
-  taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-    onDelete: "set null"
-  }),
+  workspaceId: workspaceIdColumn(),
+  projectId: nullableCascadeProjectIdColumn(),
+  executionRunId: executionRunIdColumn(),
+  taskContractId: taskContractIdColumn(),
   targetRepoPath: text("target_repo_path")
 });
 
@@ -211,9 +209,7 @@ export const observationSourceRanges = pgTable(
       .references(() => observationItems.id, { onDelete: "cascade" }),
     sourceType: observationSourceRangeType("source_type").notNull(),
     sourceId: text("source_id").notNull(),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    executionRunId: executionRunIdColumn(),
     runEventId: uuid("run_event_id").references(() => runEvents.id, { onDelete: "set null" }),
     sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
       onDelete: "set null"
@@ -292,10 +288,8 @@ export const observationFeedbackEvents = pgTable(
     observationItemId: uuid("observation_item_id")
       .notNull()
       .references(() => observationItems.id, { onDelete: "cascade" }),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    projectId: nullableCascadeProjectIdColumn(),
+    executionRunId: executionRunIdColumn(),
     eventType: observationFeedbackEventType("event_type").notNull(),
     usefulness: observationUsefulness("usefulness").notNull().default("unknown"),
     note: text("note"),

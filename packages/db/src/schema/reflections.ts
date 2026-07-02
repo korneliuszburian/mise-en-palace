@@ -13,10 +13,10 @@ import {
   updatedAtColumn
 } from "./columns.js";
 import {
-  executionRuns,
-  projects,
-  taskContracts
-} from "./harness.js";
+  executionRunIdColumn,
+  requiredProjectIdColumn,
+  taskContractIdColumn
+} from "./referenceColumns.js";
 
 export const reflectionStatus = pgEnum("reflection_status", [
   "candidate",
@@ -29,15 +29,9 @@ export const reflectionRecords = pgTable(
   "reflection_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
-    taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
-      onDelete: "set null"
-    }),
+    projectId: requiredProjectIdColumn(),
+    executionRunId: executionRunIdColumn(),
+    taskContractId: taskContractIdColumn(),
     status: reflectionStatus("status").notNull().default("candidate"),
     summary: text("summary").notNull(),
     scope: jsonObjectColumn("scope"),

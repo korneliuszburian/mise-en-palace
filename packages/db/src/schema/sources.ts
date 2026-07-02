@@ -15,9 +15,9 @@ import {
   updatedAtColumn
 } from "./columns.js";
 import {
-  executionRuns,
-  projects
-} from "./harness.js";
+  executionRunIdColumn,
+  nullableProjectIdColumn
+} from "./referenceColumns.js";
 
 export const sourceArtifactKind = pgEnum("source_artifact_kind", [
   "doc",
@@ -116,7 +116,7 @@ export const sourceArtifacts = pgTable(
   "source_artifacts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    projectId: nullableProjectIdColumn(),
     kind: sourceArtifactKind("kind").notNull(),
     trustTier: sourceTrustTier("trust_tier").notNull(),
     uri: text("uri").notNull(),
@@ -170,9 +170,7 @@ export const sourceClaims = pgTable(
     sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
       onDelete: "set null"
     }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    executionRunId: executionRunIdColumn(),
     claim: text("claim").notNull(),
     mechanism: text("mechanism").notNull(),
     krnImplication: text("krn_implication").notNull(),
@@ -223,7 +221,7 @@ export const sourceDecisions = pgTable(
   "source_decisions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    projectId: nullableProjectIdColumn(),
     sourceClaimId: uuid("source_claim_id").references(() => sourceClaims.id, {
       onDelete: "set null"
     }),
@@ -271,10 +269,8 @@ export const sourceRejections = pgTable(
   "source_rejections",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    projectId: nullableProjectIdColumn(),
+    executionRunId: executionRunIdColumn(),
     sourceArtifactId: uuid("source_artifact_id").references(() => sourceArtifacts.id, {
       onDelete: "set null"
     }),
