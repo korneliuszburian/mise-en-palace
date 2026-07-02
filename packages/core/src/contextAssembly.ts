@@ -9,7 +9,10 @@ import type {
   ObservationConfidence,
   ObservationPriority
 } from "./observations/observationKinds.js";
-import type { SourceTrustTier } from "./source.js";
+import type {
+  SourceContextTaxonomy,
+  SourceTrustTier,
+} from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 
 export const contextAssemblyCurrentStatuses = [
@@ -34,7 +37,7 @@ export type ContextSubjectType =
   | "task_contract"
   | "search_document";
 
-export interface ContextInclusion {
+export interface ContextInclusion extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;
   subjectId: string;
   reason: string;
@@ -43,7 +46,7 @@ export interface ContextInclusion {
   trustTier: SourceTrustTier;
 }
 
-export interface ContextExclusion {
+export interface ContextExclusion extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;
   subjectId: string;
   reason: string;

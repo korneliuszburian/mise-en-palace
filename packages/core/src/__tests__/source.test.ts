@@ -4,8 +4,16 @@ import {
   assessSourceClaimOverride,
   assessSourceClaimReviewSignals,
   assessSourceDecisionReviewSignals,
+  classifySourceClaimTaxonomy,
+  classifySourceSupportType,
+  classifySourceTrustTier,
   rankSourceTrustTier,
+  sourceKinds,
+  sourceSupportRelations,
+  sourceSupportTypes,
   sourceTrustTiers,
+  sourceTrustLevels,
+  sourceUses,
   type SourceClaimCreateStatus,
   type SourceClaimLifecycleStatus,
   type SourceClaim,
@@ -143,6 +151,27 @@ describe("source review signals", () => {
       "secondary",
       "hypothesis"
     ]);
+    expect(sourceTrustLevels).toEqual(["high", "medium", "low"]);
+    expect(sourceKinds).toEqual([
+      "unspecified",
+      "primary",
+      "official",
+      "project-decision",
+      "source-code",
+      "paper",
+      "practitioner",
+      "secondary",
+      "hypothesis"
+    ]);
+    expect(sourceSupportTypes).toContain("supports");
+    expect(sourceSupportRelations).toEqual([
+      "supports",
+      "contradicts",
+      "qualifies",
+      "does_not_support",
+      "not_applicable"
+    ]);
+    expect(sourceUses).toContain("implementation-boundary");
     expect(rankSourceTrustTier("official")).toBeGreaterThan(rankSourceTrustTier("high"));
     expect(rankSourceTrustTier("project-decision")).toBe(rankSourceTrustTier("official"));
     expect(rankSourceTrustTier("hypothesis")).toBeLessThan(rankSourceTrustTier("secondary"));
@@ -165,6 +194,54 @@ describe("source review signals", () => {
       allowed: false,
       reason: "weaker_than_current_valid_consensus",
       blockedBySourceClaimId: "source-claim-official"
+    });
+  });
+
+  test("projects legacy trust tiers into explicit trust level and source kind", () => {
+    expect(classifySourceTrustTier("high")).toEqual({
+      trustLevel: "high",
+      sourceKind: "unspecified"
+    });
+    expect(classifySourceTrustTier("source-code")).toEqual({
+      trustLevel: "high",
+      sourceKind: "source-code"
+    });
+    expect(classifySourceTrustTier("practitioner")).toEqual({
+      trustLevel: "medium",
+      sourceKind: "practitioner"
+    });
+    expect(classifySourceTrustTier("hypothesis")).toEqual({
+      trustLevel: "low",
+      sourceKind: "hypothesis"
+    });
+  });
+
+  test("projects legacy support types into relation and source use", () => {
+    expect(classifySourceSupportType("supports")).toEqual({
+      relation: "supports",
+      use: "relation-only",
+      decisionGrade: false
+    });
+    expect(classifySourceSupportType("contradicts")).toEqual({
+      relation: "contradicts",
+      use: "rejection",
+      decisionGrade: true
+    });
+    expect(classifySourceSupportType("implementation-boundary")).toEqual({
+      relation: "not_applicable",
+      use: "implementation-boundary",
+      decisionGrade: true
+    });
+
+    expect(classifySourceClaimTaxonomy(sourceClaim({
+      trustTier: "official",
+      supportType: "risk"
+    }))).toEqual({
+      trustLevel: "high",
+      sourceKind: "official",
+      supportRelation: "not_applicable",
+      sourceUse: "risk",
+      decisionGrade: true
     });
   });
 });

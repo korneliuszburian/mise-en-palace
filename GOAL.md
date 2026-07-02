@@ -39,13 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-test-topology cleanup complete so far: workers, small packages, harness
-smoke-filter root tests, and the CLI init command group now use bounded
-src/__tests__ islands; recipe drift uses explicit non-crypto checksum wording.
+source taxonomy boundary now projects legacy trustTier/supportType into explicit
+trust level, source kind, support relation, and source use for activation/context
+readback before any DB enum migration.
 Report:
-docs/runs/2026-07-02-cli-init-test-topology.md
-Next: continue bounded test topology migration and naming
-shortening through Beads follow-ups.
+docs/runs/2026-07-02-source-taxonomy-boundary.md
+Next: continue audit-hardening through ID branding, DB source migration
+planning, execution-brief boundaries, and bounded naming cleanup.
 ```
 
 ## Direction

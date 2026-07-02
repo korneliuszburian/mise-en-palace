@@ -5,7 +5,10 @@ import type {
   ContextSubjectType
 } from "./contextAssembly.js";
 import type { TaskContractId } from "./ids.js";
-import type { SourceTrustTier } from "./source.js";
+import type {
+  SourceContextTaxonomy,
+  SourceTrustTier
+} from "./source.js";
 
 export const activationCandidateKinds = [
   "memory",
@@ -85,7 +88,7 @@ export interface ContextROI {
   expectedDecisionImpact?: string;
 }
 
-export interface ActivationCandidate {
+export interface ActivationCandidate extends SourceContextTaxonomy {
   id: string;
   kind: ActivationCandidateKind;
   subjectType: ContextSubjectType;

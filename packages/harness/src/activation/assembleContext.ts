@@ -90,13 +90,30 @@ const enforceSourceClaimSafety = (
   return exclusion === undefined ? candidate : markExcluded(candidate, exclusion);
 };
 
+const sourceTaxonomyContextFields = (
+  candidate: RankedActivationCandidate
+): Pick<
+  ContextInclusion,
+  "sourceTrustLevel" | "sourceKind" | "sourceSupportRelation" | "sourceUse"
+> => ({
+  ...(candidate.sourceTrustLevel === undefined
+    ? {}
+    : { sourceTrustLevel: candidate.sourceTrustLevel }),
+  ...(candidate.sourceKind === undefined ? {} : { sourceKind: candidate.sourceKind }),
+  ...(candidate.sourceSupportRelation === undefined
+    ? {}
+    : { sourceSupportRelation: candidate.sourceSupportRelation }),
+  ...(candidate.sourceUse === undefined ? {} : { sourceUse: candidate.sourceUse })
+});
+
 const toInclusion = (candidate: RankedActivationCandidate): ContextInclusion => ({
   subjectType: candidate.subjectType,
   subjectId: candidate.subjectId,
   reason: candidate.reason,
   expectedUse: candidate.expectedUse,
   tokenEstimate: candidate.tokenEstimate,
-  trustTier: candidate.trustTier
+  trustTier: candidate.trustTier,
+  ...sourceTaxonomyContextFields(candidate)
 });
 
 const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | undefined => {
@@ -110,7 +127,8 @@ const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | u
     reason: candidate.exclusion.reason,
     explanation: candidate.exclusion.explanation,
     score: candidate.totalScore,
-    trustTier: candidate.trustTier
+    trustTier: candidate.trustTier,
+    ...sourceTaxonomyContextFields(candidate)
   };
 };
 

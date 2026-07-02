@@ -253,6 +253,50 @@ describe("activation engine", () => {
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
   });
 
+  it("carries source taxonomy projections from SourceClaim into activation context", () => {
+    const query = buildSourceQuery(task);
+    const source = toSourceClaimCandidate(sourceClaim({
+      id: "claim-taxonomy",
+      trustTier: "source-code",
+      supportType: "implementation-boundary"
+    }));
+    const [ranked] = rankCandidates([source], query);
+
+    expect(ranked).toMatchObject({
+      sourceTrustLevel: "high",
+      sourceKind: "source-code",
+      sourceSupportRelation: "not_applicable",
+      sourceUse: "implementation-boundary",
+      metadata: {
+        trustLevel: "high",
+        sourceKind: "source-code",
+        supportRelation: "not_applicable",
+        sourceUse: "implementation-boundary",
+        decisionGrade: true
+      }
+    });
+
+    const context = assembleContext({
+      id: "context-taxonomy",
+      harnessPlanId: "plan-1",
+      candidates: ranked === undefined ? [] : [ranked],
+      tokenBudget: 200,
+      createdAt: now
+    });
+
+    expect(context.inclusions).toEqual([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: "claim-taxonomy",
+        trustTier: "source-code",
+        sourceTrustLevel: "high",
+        sourceKind: "source-code",
+        sourceSupportRelation: "not_applicable",
+        sourceUse: "implementation-boundary"
+      })
+    ]);
+  });
+
   it("represents SourceClaimEdge influence as bounded graph-aware source candidate input", () => {
     const query = buildSourceQuery({
       ...task,

@@ -65,7 +65,7 @@ evidence metadata boundary: known evidence readback metadata validates before DB
 evidence command normalization: schema/core/DB persistence delegate command proof normalization to core
 core evidence normalizer: one provenance switch preserves command proof semantics
 activation memory safety: blocking review signals now structurally exclude memory candidates
-activation trust boundary: activation/source/schema trust tiers share one source-domain vocabulary
+source taxonomy boundary: legacy trustTier/supportType now project into explicit trust level, source kind, relation, and use before DB migration
 brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
 DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 product loop source authority: MemoryReviewGate requires SourceDecision-accepted SourceClaims
@@ -116,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-cli-init-test-topology.md`.
+Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-source-taxonomy-boundary.md`.
 
 Task boundary:
 

@@ -9,6 +9,7 @@ import type {
 } from "@krn/core";
 import {
   assessMemoryRecordReviewSignals,
+  classifySourceClaimTaxonomy,
   rankSourceTrustTier
 } from "@krn/core";
 
@@ -338,30 +339,43 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
   };
 };
 
-export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate => ({
-  id: claim.id,
-  kind: "source",
-  subjectType: "source_claim",
-  subjectId: claim.id,
-  text: [claim.claim, claim.mechanism, claim.krnImplication, claim.doesNotProve].join(" "),
-  trustTier: claim.trustTier,
-  reason: `Source claim: ${claim.claim}`,
-  expectedUse: claim.krnImplication,
-  tokenEstimate: estimateTokens([claim.claim, claim.mechanism, claim.krnImplication].join(" ")),
-  hasMechanism: claim.mechanism.trim().length > 0,
-  doesNotProve: claim.doesNotProve,
-  sourceClaimStatus: claim.status,
-  metadata: {
-    sourceArtifactId: claim.sourceArtifactId,
+export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate => {
+  const taxonomy = classifySourceClaimTaxonomy(claim);
+
+  return {
+    id: claim.id,
+    kind: "source",
+    subjectType: "source_claim",
+    subjectId: claim.id,
+    text: [claim.claim, claim.mechanism, claim.krnImplication, claim.doesNotProve].join(" "),
+    trustTier: claim.trustTier,
+    sourceTrustLevel: taxonomy.trustLevel,
+    sourceKind: taxonomy.sourceKind,
+    sourceSupportRelation: taxonomy.supportRelation,
+    sourceUse: taxonomy.sourceUse,
+    reason: `Source claim: ${claim.claim}`,
+    expectedUse: claim.krnImplication,
+    tokenEstimate: estimateTokens([claim.claim, claim.mechanism, claim.krnImplication].join(" ")),
+    hasMechanism: claim.mechanism.trim().length > 0,
+    doesNotProve: claim.doesNotProve,
     sourceClaimStatus: claim.status,
-    claim: claim.claim,
-    mechanism: claim.mechanism,
-    krnImplication: claim.krnImplication,
-    supportType: claim.supportType,
-    consumer: claim.consumer,
-    ...(claim.falsifier === undefined ? {} : { falsifier: claim.falsifier })
-  }
-});
+    metadata: {
+      sourceArtifactId: claim.sourceArtifactId,
+      sourceClaimStatus: claim.status,
+      claim: claim.claim,
+      mechanism: claim.mechanism,
+      krnImplication: claim.krnImplication,
+      supportType: claim.supportType,
+      trustLevel: taxonomy.trustLevel,
+      sourceKind: taxonomy.sourceKind,
+      supportRelation: taxonomy.supportRelation,
+      sourceUse: taxonomy.sourceUse,
+      decisionGrade: taxonomy.decisionGrade,
+      consumer: claim.consumer,
+      ...(claim.falsifier === undefined ? {} : { falsifier: claim.falsifier })
+    }
+  };
+};
 
 export const toSearchCandidate = (document: SearchDocumentSearchResult): ActivationCandidate => ({
   id: document.id,

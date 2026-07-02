@@ -8,6 +8,7 @@ import type {
   MemoryRecordReviewSignal,
   MemoryRecordStatus,
   ProjectId,
+  SourceContextTaxonomy,
   SourceClaimStatus,
   SourceTrustTier
 } from "@krn/core";
@@ -53,7 +54,7 @@ export interface ActivationQuery {
   risk: ActivationQueryRisk;
 }
 
-export interface ActivationCandidate {
+export interface ActivationCandidate extends SourceContextTaxonomy {
   id: string;
   kind: ActivationCandidateKind;
   subjectType: ContextSubjectType;

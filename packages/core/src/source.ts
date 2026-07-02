@@ -28,18 +28,86 @@ export const sourceTrustTiers = [
 
 export type SourceTrustTier = typeof sourceTrustTiers[number];
 
-export type SourceSupportType =
-  | "supports"
-  | "contradicts"
-  | "qualifies"
-  | "background"
-  | "does_not_support"
-  | "mechanism"
-  | "decision"
-  | "risk"
-  | "rejection"
-  | "eval-design"
-  | "implementation-boundary";
+export const sourceTrustLevels = ["high", "medium", "low"] as const;
+
+export type SourceTrustLevel = typeof sourceTrustLevels[number];
+
+export const sourceKinds = [
+  "unspecified",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
+] as const;
+
+export type SourceKind = typeof sourceKinds[number];
+
+export const sourceSupportTypes = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "background",
+  "does_not_support",
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary"
+] as const;
+
+export type SourceSupportType = typeof sourceSupportTypes[number];
+
+export const sourceSupportRelations = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "does_not_support",
+  "not_applicable"
+] as const;
+
+export type SourceSupportRelation = typeof sourceSupportRelations[number];
+
+export const sourceUses = [
+  "background",
+  "relation-only",
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary"
+] as const;
+
+export type SourceUse = typeof sourceUses[number];
+
+export interface SourceTrustTaxonomy {
+  trustLevel: SourceTrustLevel;
+  sourceKind: SourceKind;
+}
+
+export interface SourceSupportTaxonomy {
+  relation: SourceSupportRelation;
+  use: SourceUse;
+  decisionGrade: boolean;
+}
+
+export interface SourceClaimTaxonomy extends SourceTrustTaxonomy {
+  supportRelation: SourceSupportRelation;
+  sourceUse: SourceUse;
+  decisionGrade: boolean;
+}
+
+export interface SourceContextTaxonomy {
+  sourceTrustLevel?: SourceTrustLevel;
+  sourceKind?: SourceKind;
+  sourceSupportRelation?: SourceSupportRelation;
+  sourceUse?: SourceUse;
+}
 
 export type SourceClaimCreateStatus = "proposed";
 
@@ -163,24 +231,6 @@ export interface SourceRejection {
   rejectedAt: IsoTimestamp;
 }
 
-export const decisionGradeSourceSupportTypes = [
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary",
-  "contradicts"
-] as const satisfies readonly SourceSupportType[];
-
-const decisionGradeSourceSupportTypeSet = new Set<SourceSupportType>(
-  decisionGradeSourceSupportTypes
-);
-
-export const isDecisionGradeSourceSupportType = (
-  supportType: SourceSupportType
-): boolean => decisionGradeSourceSupportTypeSet.has(supportType);
-
 const sourceTrustTierRanks: Record<SourceTrustTier, number> = {
   official: 100,
   primary: 100,
@@ -197,6 +247,112 @@ const sourceTrustTierRanks: Record<SourceTrustTier, number> = {
 
 export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
   sourceTrustTierRanks[trustTier];
+
+const sourceTrustTaxonomy: Record<SourceTrustTier, SourceTrustTaxonomy> = {
+  high: { trustLevel: "high", sourceKind: "unspecified" },
+  medium: { trustLevel: "medium", sourceKind: "unspecified" },
+  low: { trustLevel: "low", sourceKind: "unspecified" },
+  primary: { trustLevel: "high", sourceKind: "primary" },
+  official: { trustLevel: "high", sourceKind: "official" },
+  "project-decision": { trustLevel: "high", sourceKind: "project-decision" },
+  "source-code": { trustLevel: "high", sourceKind: "source-code" },
+  paper: { trustLevel: "high", sourceKind: "paper" },
+  practitioner: { trustLevel: "medium", sourceKind: "practitioner" },
+  secondary: { trustLevel: "medium", sourceKind: "secondary" },
+  hypothesis: { trustLevel: "low", sourceKind: "hypothesis" }
+};
+
+export const classifySourceTrustTier = (
+  trustTier: SourceTrustTier
+): SourceTrustTaxonomy => sourceTrustTaxonomy[trustTier];
+
+const sourceSupportTaxonomy: Record<SourceSupportType, SourceSupportTaxonomy> = {
+  supports: {
+    relation: "supports",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  contradicts: {
+    relation: "contradicts",
+    use: "rejection",
+    decisionGrade: true
+  },
+  qualifies: {
+    relation: "qualifies",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  background: {
+    relation: "not_applicable",
+    use: "background",
+    decisionGrade: false
+  },
+  does_not_support: {
+    relation: "does_not_support",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  mechanism: {
+    relation: "not_applicable",
+    use: "mechanism",
+    decisionGrade: true
+  },
+  decision: {
+    relation: "not_applicable",
+    use: "decision",
+    decisionGrade: true
+  },
+  risk: {
+    relation: "not_applicable",
+    use: "risk",
+    decisionGrade: true
+  },
+  rejection: {
+    relation: "not_applicable",
+    use: "rejection",
+    decisionGrade: true
+  },
+  "eval-design": {
+    relation: "not_applicable",
+    use: "eval-design",
+    decisionGrade: true
+  },
+  "implementation-boundary": {
+    relation: "not_applicable",
+    use: "implementation-boundary",
+    decisionGrade: true
+  }
+};
+
+export const classifySourceSupportType = (
+  supportType: SourceSupportType
+): SourceSupportTaxonomy => sourceSupportTaxonomy[supportType];
+
+export const classifySourceClaimTaxonomy = (
+  claim: Pick<SourceClaim, "trustTier" | "supportType">
+): SourceClaimTaxonomy => {
+  const trust = classifySourceTrustTier(claim.trustTier);
+  const support = classifySourceSupportType(claim.supportType);
+
+  return {
+    ...trust,
+    supportRelation: support.relation,
+    sourceUse: support.use,
+    decisionGrade: support.decisionGrade
+  };
+};
+
+export const decisionGradeSourceSupportTypes: readonly SourceSupportType[] =
+  sourceSupportTypes.filter((supportType) =>
+    classifySourceSupportType(supportType).decisionGrade);
+
+const decisionGradeSourceSupportTypeSet = new Set<SourceSupportType>(
+  decisionGradeSourceSupportTypes
+);
+
+export const isDecisionGradeSourceSupportType = (
+  supportType: SourceSupportType
+): boolean => decisionGradeSourceSupportTypeSet.has(supportType);
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
