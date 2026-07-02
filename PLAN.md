@@ -95,6 +95,7 @@ reference recipe plan proof: long recipe tasks select the retained recipe bounda
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
+reference recipe drift lab: local recipe manifest keeps one reviewed exemplar and retained recipe doc in sync; wider naming/layout migration is tracked in Beads
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
@@ -115,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed report: `docs/runs/2026-07-02-alpha-verify-full-gate.md`.
+Latest completed report: `docs/runs/2026-07-02-reference-recipe-drift.md`.
 
 Task boundary:
 

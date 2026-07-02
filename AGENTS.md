@@ -44,6 +44,14 @@ For git history:
 For complex KRN implementation work, keep root `PLAN.md` current as the living
 ExecPlan.
 
+For larger migration or audit-hardening slices, the final response must include:
+
+- compact handoff of current repo state, changed files, verification, proof and
+  non-proof;
+- a second-opinion prompt asking another advanced AI to inspect the current
+  diff/state, challenge the migration direction, find remaining naming/layout
+  or quality gaps, and propose the next bounded slice.
+
 If the next step requires broad historical rereads, stop and re-scope.
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.

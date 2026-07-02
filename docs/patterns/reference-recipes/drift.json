@@ -1,0 +1,39 @@
+{
+  "kind": "krn.recipeDrift.v1",
+  "entries": [
+    {
+      "id": "recipe:brain-knowledge-parser",
+      "patternId": "ts-boundary-brain-knowledge-parser-exemplar",
+      "algorithm": "fnv1a32x8:krn.recipe.v1",
+      "code": [
+        "packages/harness/src/brainKnowledgeReadModel.ts",
+        "packages/harness/src/brainKnowledgeReadModel.test.ts"
+      ],
+      "docs": [
+        "docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"
+      ],
+      "sources": [
+        "https://github.com/polubis/gon-stack/blob/d901f7c134b4c0885fd7fe3c099f17b4dca88a78/hashy.modules.txt",
+        "https://github.com/polubis/gon-stack/blob/d901f7c134b4c0885fd7fe3c099f17b4dca88a78/packages/hashy/README.md",
+        "docs/patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json",
+        "docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"
+      ],
+      "hash": "ae25c3c22daa9aaf30335da4bd90ac7145c66b1e4aa5036b491b5080beaa83ed",
+      "observedAt": "2026-07-02",
+      "doesNotProve": "This drift manifest does not prove clone workflows outperform skills, broad recipe automation is needed, semantic code quality improved, or KRN is product-ready."
+    }
+  ],
+  "proof": {
+    "proves": [
+      "one local reviewed reference implementation exemplar has a deterministic drift check against its retained recipe document",
+      "the public polubis/gon-stack hashy mechanism was reduced to a bounded local lab-test consumer"
+    ],
+    "doesNotProve": [
+      "KRN needs a broad clone runtime",
+      "KRN needs a skill zoo",
+      "reference recipes should replace tests, evidence capture, source-to-decision, or review gates",
+      "real LLM behavior improved",
+      "KRN is product-ready"
+    ]
+  }
+}

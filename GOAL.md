@@ -39,12 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-481m complete: alpha:verify now has explicit fast/full
-semantics, and alpha:verify:full aggregates static, eval-adapter, DB-runtime,
-and DB-backed brain-loop proof lanes.
+mise-en-palace-e9f3/c2jg complete: reference recipe drift lab added with
+shorter recipes/__tests__ topology; large-slice handoff and 2nd-opinion prompt
+protocol added; repo-wide naming/layout migration tasks recorded in Beads.
 Report:
-docs/runs/2026-07-02-alpha-verify-full-gate.md
-Next: continue audit-hardening through the next highest-ROI Beads task.
+docs/runs/2026-07-02-reference-recipe-drift.md
+Next: continue repo naming/layout inventory through Beads issue
+mise-en-palace-yuvw.
 ```
 
 ## Direction
@@ -79,6 +80,10 @@ bounded product surface, or unblock the next vertical slice.
 - Do not mark this continuous goal complete after one slice.
 - After each slice: verify, capture evidence, commit, push, check CI, compact
   root state, and continue.
+- After each larger migration or audit-hardening slice: include a compact
+  handoff and a second-opinion prompt that forces another advanced AI to inspect
+  the current state, challenge the direction, find remaining gaps, and propose
+  the next bounded slice.
 - For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
   target-workflow, security, operator-UX, or research/paper/course-driven slice,
   apply:
