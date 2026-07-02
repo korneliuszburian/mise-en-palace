@@ -87,6 +87,17 @@ const memoryCandidateProposalColumns = () => ({
   proposedBy: text("proposed_by").notNull()
 });
 
+const memoryCandidateReviewColumns = () => ({
+  reviewer: text("reviewer"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+  validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
+  validUntil: timestamp("valid_until", { withTimezone: true }),
+  metadata: metadataColumn(),
+  createdAt: createdAtColumn(),
+  updatedAt: updatedAtColumn()
+});
+
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
   "preference",
@@ -272,14 +283,7 @@ export const memoryCandidates = pgTable(
     sourceClaimIds: jsonListColumn("source_claim_ids"),
     sourceLineage: jsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
-    reviewer: text("reviewer"),
-    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-    rejectionReason: text("rejection_reason"),
-    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
-    validUntil: timestamp("valid_until", { withTimezone: true }),
-    metadata: metadataColumn(),
-    createdAt: createdAtColumn(),
-    updatedAt: updatedAtColumn()
+    ...memoryCandidateReviewColumns()
   },
   (table) => [
     index("memory_candidates_project_id_idx").on(table.projectId),
@@ -323,14 +327,7 @@ export const antiMemoryCandidates = pgTable(
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
     sourceLineage: jsonListColumn("source_lineage"),
-    reviewer: text("reviewer"),
-    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-    rejectionReason: text("rejection_reason"),
-    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
-    validUntil: timestamp("valid_until", { withTimezone: true }),
-    metadata: metadataColumn(),
-    createdAt: createdAtColumn(),
-    updatedAt: updatedAtColumn()
+    ...memoryCandidateReviewColumns()
   },
   (table) => [
     index("anti_memory_candidates_project_id_idx").on(table.projectId),
