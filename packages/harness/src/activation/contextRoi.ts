@@ -5,6 +5,9 @@ import type {
 import {
   markExcluded
 } from "./types.js";
+import {
+  canonicalCandidateKey
+} from "./candidateIdentity.js";
 
 export interface ContextRoiPolicy {
   tokenBudget?: number;
@@ -12,18 +15,6 @@ export interface ContextRoiPolicy {
   minimumScore?: number;
   minimumDiverseKinds?: readonly ActivationCandidateKind[];
 }
-
-const canonicalCandidateKey = (candidate: RankedActivationCandidate): string => {
-  if (candidate.sourceClaimId !== undefined) {
-    return `source_claim:${candidate.sourceClaimId}`;
-  }
-
-  if (candidate.memoryRecordId !== undefined) {
-    return `memory_record:${candidate.memoryRecordId}`;
-  }
-
-  return `${candidate.subjectType}:${candidate.subjectId}`;
-};
 
 const canInclude = (
   candidate: RankedActivationCandidate,

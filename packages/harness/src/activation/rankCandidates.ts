@@ -21,6 +21,9 @@ import type {
 import {
   tokenizeActivationText
 } from "./memoryQuery.js";
+import {
+  canonicalCandidateKey
+} from "./candidateIdentity.js";
 
 const confidenceToTrustTier = (confidence: number): ActivationCandidate["trustTier"] => {
   if (confidence >= 85) {
@@ -41,18 +44,6 @@ const lexicalScore = (candidateText: string, query: ActivationQuery): number => 
   const hits = query.terms.filter((term) => candidateTerms.has(term)).length;
 
   return hits * 20;
-};
-
-const canonicalCandidateKey = (candidate: RankedActivationCandidate): string => {
-  if (candidate.sourceClaimId !== undefined) {
-    return `source_claim:${candidate.sourceClaimId}`;
-  }
-
-  if (candidate.memoryRecordId !== undefined) {
-    return `memory_record:${candidate.memoryRecordId}`;
-  }
-
-  return `${candidate.subjectType}:${candidate.subjectId}`;
 };
 
 const strongerTrustTier = (
