@@ -1,8 +1,6 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -11,11 +9,13 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 
-type JsonObject = Record<string, unknown>;
-type JsonList = unknown[];
-
-const emptyJsonObject = sql`'{}'::jsonb`;
-const emptyJsonList = sql`'[]'::jsonb`;
+import {
+  createdAtColumn,
+  jsonListColumn,
+  jsonObjectColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
 
 export const operatorIntentStatus = pgEnum("operator_intent_status", [
   "received",
@@ -84,9 +84,9 @@ export const workspaces = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     slug: text("slug").notNull(),
     displayName: text("display_name").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     uniqueIndex("workspaces_slug_unique").on(table.slug)
@@ -103,9 +103,9 @@ export const projects = pgTable(
     slug: text("slug").notNull(),
     displayName: text("display_name").notNull(),
     description: text("description"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     uniqueIndex("projects_workspace_slug_unique").on(table.workspaceId, table.slug),
@@ -125,9 +125,9 @@ export const repoInstallations = pgTable(
     defaultBranch: text("default_branch").notNull(),
     repoFingerprint: text("repo_fingerprint"),
     localPathHint: text("local_path_hint"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("repo_installations_project_id_idx").on(table.projectId),
@@ -147,9 +147,9 @@ export const projectKernels = pgTable(
     version: integer("version").notNull().default(1),
     summary: text("summary").notNull(),
     activeContextRule: text("active_context_rule").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("project_kernels_project_id_idx").on(table.projectId),
@@ -169,9 +169,9 @@ export const operatorIntents = pgTable(
     rawIntent: text("raw_intent").notNull(),
     normalizedIntent: text("normalized_intent"),
     status: operatorIntentStatus("status").notNull().default("received"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("operator_intents_workspace_id_idx").on(table.workspaceId),
@@ -190,13 +190,13 @@ export const taskContracts = pgTable(
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     objective: text("objective").notNull(),
-    constraints: jsonb("constraints").$type<JsonList>().notNull().default(emptyJsonList),
-    nonGoals: jsonb("non_goals").$type<JsonList>().notNull().default(emptyJsonList),
-    acceptance: jsonb("acceptance").$type<JsonList>().notNull().default(emptyJsonList),
+    constraints: jsonListColumn("constraints"),
+    nonGoals: jsonListColumn("non_goals"),
+    acceptance: jsonListColumn("acceptance"),
     status: taskContractStatus("status").notNull().default("draft"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("task_contracts_operator_intent_id_idx").on(table.operatorIntentId),
@@ -216,9 +216,9 @@ export const harnessPlans = pgTable(
     status: harnessPlanStatus("status").notNull().default("draft"),
     summary: text("summary").notNull(),
     nextAction: text("next_action"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("harness_plans_task_contract_id_idx").on(table.taskContractId),
@@ -238,10 +238,10 @@ export const contextAssemblies = pgTable(
     tokenBudget: integer("token_budget"),
     inclusionCount: integer("inclusion_count").notNull().default(0),
     exclusionCount: integer("exclusion_count").notNull().default(0),
-    selectedContext: jsonb("selected_context").$type<JsonObject>().notNull().default(emptyJsonObject),
-    excludedContext: jsonb("excluded_context").$type<JsonObject>().notNull().default(emptyJsonObject),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    selectedContext: jsonObjectColumn("selected_context"),
+    excludedContext: jsonObjectColumn("excluded_context"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("context_assemblies_harness_plan_id_idx").on(table.harnessPlanId),
@@ -260,9 +260,9 @@ export const executionRuns = pgTable(
     status: executionRunStatus("status").notNull().default("planned"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("execution_runs_harness_plan_id_idx").on(table.harnessPlanId),
@@ -279,14 +279,14 @@ export const evidenceBundles = pgTable(
       .notNull()
       .references(() => executionRuns.id, { onDelete: "cascade" }),
     status: evidenceBundleStatus("status").notNull().default("draft"),
-    changedFiles: jsonb("changed_files").$type<JsonList>().notNull().default(emptyJsonList),
-    commands: jsonb("commands").$type<JsonList>().notNull().default(emptyJsonList),
+    changedFiles: jsonListColumn("changed_files"),
+    commands: jsonListColumn("commands"),
     diffRisk: text("diff_risk").notNull(),
     reviewBurden: text("review_burden").notNull(),
     rollbackPath: text("rollback_path").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("evidence_bundles_execution_run_id_idx").on(table.executionRunId),
@@ -304,10 +304,10 @@ export const reviewAssessments = pgTable(
     status: reviewAssessmentStatus("status").notNull().default("pending"),
     reviewer: text("reviewer").notNull(),
     summary: text("summary").notNull(),
-    findings: jsonb("findings").$type<JsonList>().notNull().default(emptyJsonList),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    findings: jsonListColumn("findings"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("review_assessments_evidence_bundle_id_idx").on(table.evidenceBundleId),
@@ -323,12 +323,12 @@ export const feedbackDeltas = pgTable(
       .notNull()
       .references(() => reviewAssessments.id, { onDelete: "cascade" }),
     status: feedbackDeltaStatus("status").notNull().default("candidate"),
-    memoryCandidates: jsonb("memory_candidates").$type<JsonList>().notNull().default(emptyJsonList),
-    sourceDecisions: jsonb("source_decisions").$type<JsonList>().notNull().default(emptyJsonList),
-    evalCandidates: jsonb("eval_candidates").$type<JsonList>().notNull().default(emptyJsonList),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    memoryCandidates: jsonListColumn("memory_candidates"),
+    sourceDecisions: jsonListColumn("source_decisions"),
+    evalCandidates: jsonListColumn("eval_candidates"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("feedback_deltas_review_assessment_id_idx").on(table.reviewAssessmentId),

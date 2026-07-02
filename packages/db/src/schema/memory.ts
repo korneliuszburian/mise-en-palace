@@ -4,7 +4,6 @@ import {
   check,
   index,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -13,6 +12,12 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 
+import {
+  createdAtColumn,
+  jsonListColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
 import {
   contextAssemblies,
   executionRuns,
@@ -23,12 +28,6 @@ import {
 import {
   sourceClaims
 } from "./sources.js";
-
-type JsonObject = Record<string, unknown>;
-type JsonList = unknown[];
-
-const emptyJsonObject = sql`'{}'::jsonb`;
-const emptyJsonList = sql`'[]'::jsonb`;
 
 const confidenceRange = (
   column: SQLWrapper
@@ -144,7 +143,7 @@ export const memoryRecords = pgTable(
     confidence: integer("confidence").notNull(),
     applicationGuidance: text("application_guidance").notNull(),
     invalidationRule: text("invalidation_rule"),
-    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
+    sourceLineage: jsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
@@ -152,9 +151,9 @@ export const memoryRecords = pgTable(
     invalidationReason: text("invalidation_reason"),
     positiveFeedbackCount: integer("positive_feedback_count").notNull().default(0),
     negativeFeedbackCount: integer("negative_feedback_count").notNull().default(0),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     uniqueIndex("memory_records_project_key_unique").on(table.projectId, table.key),
@@ -195,9 +194,9 @@ export const memoryRecordVersions = pgTable(
     invalidationRule: text("invalidation_rule"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
-    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    sourceLineage: jsonListColumn("source_lineage"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     uniqueIndex("memory_record_versions_record_version_unique").on(
@@ -236,8 +235,8 @@ export const memoryEdges = pgTable(
       .references(() => memoryRecords.id, { onDelete: "cascade" }),
     kind: memoryEdgeKind("kind").notNull(),
     strength: integer("strength").notNull().default(0),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("memory_edges_from_idx").on(table.fromMemoryRecordId),
@@ -272,17 +271,17 @@ export const memoryCandidates = pgTable(
     confidence: integer("confidence").notNull(),
     applicationGuidance: text("application_guidance").notNull(),
     invalidationRule: text("invalidation_rule"),
-    sourceClaimIds: jsonb("source_claim_ids").$type<JsonList>().notNull().default(emptyJsonList),
-    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
+    sourceClaimIds: jsonListColumn("source_claim_ids"),
+    sourceLineage: jsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     reviewer: text("reviewer"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     rejectionReason: text("rejection_reason"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("memory_candidates_project_id_idx").on(table.projectId),
@@ -325,10 +324,7 @@ export const antiMemoryCandidates = pgTable(
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     rejectedClaim: text("rejected_claim"),
     reason: text("reason"),
-    invalidatedBySourceClaimIds: jsonb("invalidated_by_source_claim_ids")
-      .$type<JsonList>()
-      .notNull()
-      .default(emptyJsonList),
+    invalidatedBySourceClaimIds: jsonListColumn("invalidated_by_source_claim_ids"),
     invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
       onDelete: "set null"
     }),
@@ -338,15 +334,15 @@ export const antiMemoryCandidates = pgTable(
     body: text("body").notNull(),
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
-    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
+    sourceLineage: jsonListColumn("source_lineage"),
     reviewer: text("reviewer"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     rejectionReason: text("rejection_reason"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("anti_memory_candidates_project_id_idx").on(table.projectId),
@@ -390,8 +386,8 @@ export const memoryApplications = pgTable(
     expectedUse: text("expected_use").notNull(),
     outcome: memoryApplicationOutcome("outcome"),
     notes: text("notes"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("memory_applications_memory_record_id_idx").on(table.memoryRecordId),
@@ -419,8 +415,8 @@ export const memoryFeedbackEvents = pgTable(
     note: text("note").notNull(),
     reason: text("reason"),
     evidenceRef: text("evidence_ref"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("memory_feedback_events_memory_record_id_idx").on(table.memoryRecordId),
@@ -447,10 +443,7 @@ export const antiMemoryRecords = pgTable(
     key: text("key").notNull(),
     rejectedClaim: text("rejected_claim"),
     reason: text("reason"),
-    invalidatedBySourceClaimIds: jsonb("invalidated_by_source_claim_ids")
-      .$type<JsonList>()
-      .notNull()
-      .default(emptyJsonList),
+    invalidatedBySourceClaimIds: jsonListColumn("invalidated_by_source_claim_ids"),
     invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
       onDelete: "set null"
     }),
@@ -460,14 +453,14 @@ export const antiMemoryRecords = pgTable(
     body: text("body").notNull(),
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
-    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
+    sourceLineage: jsonListColumn("source_lineage"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
     invalidationReason: text("invalidation_reason"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     uniqueIndex("anti_memory_records_project_key_unique").on(table.projectId, table.key),
@@ -512,8 +505,8 @@ export const memoryActivationTraces = pgTable(
     decision: memoryActivationDecision("decision").notNull(),
     reason: text("reason").notNull(),
     score: integer("score"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("memory_activation_traces_context_assembly_id_idx").on(table.contextAssemblyId),

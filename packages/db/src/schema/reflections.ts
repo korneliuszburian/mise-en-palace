@@ -1,23 +1,22 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
-  jsonb,
   pgEnum,
   pgTable,
   text,
-  timestamp,
   uuid
 } from "drizzle-orm/pg-core";
 
+import {
+  createdAtColumn,
+  jsonObjectColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
 import {
   executionRuns,
   projects,
   taskContracts
 } from "./harness.js";
-
-type JsonObject = Record<string, unknown>;
-
-const emptyJsonObject = sql`'{}'::jsonb`;
 
 export const reflectionStatus = pgEnum("reflection_status", [
   "candidate",
@@ -41,12 +40,12 @@ export const reflectionRecords = pgTable(
     }),
     status: reflectionStatus("status").notNull().default("candidate"),
     summary: text("summary").notNull(),
-    scope: jsonb("scope").$type<JsonObject>().notNull().default(emptyJsonObject),
-    input: jsonb("input").$type<JsonObject>().notNull().default(emptyJsonObject),
-    output: jsonb("output").$type<JsonObject>().notNull().default(emptyJsonObject),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    scope: jsonObjectColumn("scope"),
+    input: jsonObjectColumn("input"),
+    output: jsonObjectColumn("output"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("reflection_records_project_id_idx").on(table.projectId),

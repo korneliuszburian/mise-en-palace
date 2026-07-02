@@ -1,8 +1,6 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -12,13 +10,14 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  createdAtColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
+import {
   executionRuns,
   projects
 } from "./harness.js";
-
-type JsonObject = Record<string, unknown>;
-
-const emptyJsonObject = sql`'{}'::jsonb`;
 
 export const sourceArtifactKind = pgEnum("source_artifact_kind", [
   "doc",
@@ -124,9 +123,9 @@ export const sourceArtifacts = pgTable(
     title: text("title").notNull(),
     contentHash: text("content_hash").notNull(),
     capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     uniqueIndex("source_artifacts_uri_hash_unique").on(table.uri, table.contentHash),
@@ -148,8 +147,8 @@ export const sourceChunks = pgTable(
     content: text("content").notNull(),
     tokenCount: integer("token_count"),
     contentHash: text("content_hash").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     uniqueIndex("source_chunks_artifact_ordinal_unique").on(
@@ -184,9 +183,9 @@ export const sourceClaims = pgTable(
     falsifier: text("falsifier"),
     revisitWhen: text("revisit_when"),
     status: sourceClaimStatus("status").notNull().default("proposed"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("source_claims_source_artifact_id_idx").on(table.sourceArtifactId),
@@ -210,8 +209,8 @@ export const sourceClaimEdges = pgTable(
       .notNull()
       .references(() => sourceClaims.id, { onDelete: "cascade" }),
     kind: sourceClaimEdgeKind("kind").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("source_claim_edges_from_idx").on(table.fromSourceClaimId),
@@ -233,9 +232,9 @@ export const sourceDecisions = pgTable(
     rationale: text("rationale").notNull(),
     falsifier: text("falsifier").notNull(),
     consumer: text("consumer").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("source_decisions_project_id_idx").on(table.projectId),
@@ -257,8 +256,8 @@ export const sourceDecisionEdges = pgTable(
     supportType: sourceSupportType("support_type").notNull(),
     confidence: sourceDecisionEdgeConfidence("confidence").notNull(),
     notes: text("notes").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("source_decision_edges_source_claim_id_idx").on(table.sourceClaimId),
@@ -288,7 +287,7 @@ export const sourceRejections = pgTable(
     reason: text("reason").notNull(),
     doesNotProve: text("does_not_prove").notNull(),
     consumer: text("consumer").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
+    metadata: metadataColumn(),
     rejectedAt: timestamp("rejected_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
@@ -311,8 +310,8 @@ export const sourceSnapshots = pgTable(
     snapshotUri: text("snapshot_uri").notNull(),
     contentHash: text("content_hash").notNull(),
     capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     uniqueIndex("source_snapshots_artifact_hash_unique").on(

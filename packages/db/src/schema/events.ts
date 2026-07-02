@@ -1,8 +1,6 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -11,21 +9,19 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 
+import {
+  createdAtColumn,
+  jsonObjectColumn,
+  updatedAtColumn
+} from "./columns.js";
 import { executionRuns } from "./harness.js";
 
-type JsonObject = Record<string, unknown>;
-
-const emptyJsonObject = sql`'{}'::jsonb`;
 const attemptsColumn = () => integer("attempts").notNull().default(0);
 const availableAtColumn = () =>
   timestamp("available_at", { withTimezone: true }).notNull().defaultNow();
 const lockedAtColumn = () => timestamp("locked_at", { withTimezone: true });
 const lockedByColumn = () => text("locked_by");
 const lastErrorColumn = () => text("last_error");
-const createdAtColumn = () =>
-  timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
-const updatedAtColumn = () =>
-  timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
 
 export const runEventSeverity = pgEnum("run_event_severity", [
   "debug",
@@ -63,7 +59,7 @@ export const runEvents = pgTable(
     type: text("type").notNull(),
     severity: runEventSeverity("severity").notNull().default("info"),
     message: text("message").notNull(),
-    payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
+    payload: jsonObjectColumn("payload"),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
@@ -80,7 +76,7 @@ export const outboxEvents = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     topic: text("topic").notNull(),
     status: outboxEventStatus("status").notNull().default("pending"),
-    payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
+    payload: jsonObjectColumn("payload"),
     attempts: attemptsColumn(),
     availableAt: availableAtColumn(),
     lockedAt: lockedAtColumn(),
@@ -101,7 +97,7 @@ export const workerJobs = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     jobType: text("type").notNull(),
     status: workerJobStatus("status").notNull().default("queued"),
-    payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
+    payload: jsonObjectColumn("payload"),
     attempts: attemptsColumn(),
     maxAttempts: integer("max_attempts").notNull().default(3),
     runAfter: availableAtColumn(),

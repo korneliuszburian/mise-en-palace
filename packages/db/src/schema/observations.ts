@@ -1,7 +1,5 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -9,6 +7,12 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 
+import {
+  createdAtColumn,
+  jsonObjectColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
 import { runEvents } from "./events.js";
 import {
   evidenceBundles,
@@ -23,10 +27,6 @@ import {
   sourceChunks,
   sourceClaims
 } from "./sources.js";
-
-type JsonObject = Record<string, unknown>;
-
-const emptyJsonObject = sql`'{}'::jsonb`;
 
 export const observationKind = pgEnum("observation_kind", [
   "fact",
@@ -136,13 +136,13 @@ export const observationGroups = pgTable(
       onDelete: "set null"
     }),
     targetRepoPath: text("target_repo_path"),
-    scope: jsonb("scope").$type<JsonObject>().notNull().default(emptyJsonObject),
+    scope: jsonObjectColumn("scope"),
     title: text("title").notNull(),
     summary: text("summary").notNull(),
     source: text("source").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("observation_groups_workspace_id_idx").on(table.workspaceId),
@@ -187,9 +187,9 @@ export const observationItems = pgTable(
     validUntil: timestamp("valid_until", { withTimezone: true }),
     invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
     supersededAt: timestamp("superseded_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("observation_items_group_id_idx").on(table.groupId),
@@ -234,7 +234,7 @@ export const observationSourceRanges = pgTable(
     locator: text("locator").notNull(),
     excerpt: text("excerpt"),
     capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject)
+    metadata: metadataColumn()
   },
   (table) => [
     index("observation_source_ranges_item_id_idx").on(table.observationItemId),
@@ -258,8 +258,8 @@ export const observationEntityEdges = pgTable(
     entityKind: observationEntityKind("entity_kind").notNull(),
     entityId: text("entity_id").notNull(),
     relation: text("relation").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("observation_entity_edges_item_id_idx").on(table.observationItemId),
@@ -279,8 +279,8 @@ export const observationClaimEdges = pgTable(
       .notNull()
       .references(() => sourceClaims.id, { onDelete: "cascade" }),
     relation: observationClaimRelation("relation").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("observation_claim_edges_item_id_idx").on(table.observationItemId),
@@ -303,8 +303,8 @@ export const observationFeedbackEvents = pgTable(
     eventType: observationFeedbackEventType("event_type").notNull(),
     usefulness: observationUsefulness("usefulness").notNull().default("unknown"),
     note: text("note"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("observation_feedback_events_item_id_idx").on(table.observationItemId),

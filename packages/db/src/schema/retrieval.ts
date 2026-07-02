@@ -1,8 +1,6 @@
-import { sql } from "drizzle-orm/sql";
 import {
   index,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -15,6 +13,12 @@ import {
   antiMemoryRecords,
   memoryRecords
 } from "./memory.js";
+import {
+  createdAtColumn,
+  jsonObjectColumn,
+  metadataColumn,
+  updatedAtColumn
+} from "./columns.js";
 import {
   contextAssemblies,
   evidenceBundles,
@@ -33,10 +37,6 @@ import {
 } from "./sources.js";
 import { tsvector } from "../sql/fullTextSearch.js";
 import { DEFAULT_EMBEDDING_DIMENSIONS } from "../sql/pgvector.js";
-
-type JsonObject = Record<string, unknown>;
-
-const emptyJsonObject = sql`'{}'::jsonb`;
 
 export const embeddingModelStatus = pgEnum("embedding_model_status", [
   "active",
@@ -122,9 +122,9 @@ export const embeddingModels = pgTable(
     dimensions: integer("dimensions").notNull(),
     distanceMetric: text("distance_metric").notNull(),
     status: embeddingModelStatus("status").notNull().default("active"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("embedding_models_provider_model_idx").on(table.provider, table.model),
@@ -164,13 +164,13 @@ export const embeddings = pgTable(
     contentHash: text("content_hash").notNull(),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
     validityStatus: retrievalValidityStatus("validity_status").notNull().default("active"),
-    metadataFilters: jsonb("metadata_filters").$type<JsonObject>().notNull().default(emptyJsonObject),
+    metadataFilters: jsonObjectColumn("metadata_filters"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("embeddings_project_id_idx").on(table.projectId),
@@ -227,13 +227,13 @@ export const searchDocuments = pgTable(
     body: text("body").notNull(),
     searchText: text("search_text").notNull().default(""),
     searchVector: tsvector("search_vector"),
-    metadataFilters: jsonb("metadata_filters").$type<JsonObject>().notNull().default(emptyJsonObject),
+    metadataFilters: jsonObjectColumn("metadata_filters"),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
   },
   (table) => [
     index("search_documents_project_id_idx").on(table.projectId),
@@ -264,11 +264,11 @@ export const retrievalRuns = pgTable(
     mode: retrievalRunMode("mode").notNull().default("mixed"),
     budget: integer("budget"),
     tokenBudget: integer("token_budget"),
-    metadataFilters: jsonb("metadata_filters").$type<JsonObject>().notNull().default(emptyJsonObject),
+    metadataFilters: jsonObjectColumn("metadata_filters"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("retrieval_runs_project_id_idx").on(table.projectId),
@@ -301,8 +301,8 @@ export const retrievalCandidates = pgTable(
     totalScore: integer("total_score"),
     score: integer("score"),
     reason: text("reason").notNull(),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("retrieval_candidates_retrieval_run_id_idx").on(table.retrievalRunId),
@@ -333,8 +333,8 @@ export const activationDecisions = pgTable(
     score: integer("score"),
     contextBudgetCost: integer("context_budget_cost"),
     expectedDecisionImpact: text("expected_decision_impact"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("activation_decisions_retrieval_run_id_idx").on(table.retrievalRunId),
@@ -359,8 +359,8 @@ export const contextItems = pgTable(
     expectedUse: text("expected_use").notNull(),
     tokenEstimate: integer("token_estimate"),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("context_items_context_assembly_id_idx").on(table.contextAssemblyId),
@@ -382,8 +382,8 @@ export const contextExclusions = pgTable(
     explanation: text("explanation").notNull(),
     score: integer("score"),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn()
   },
   (table) => [
     index("context_exclusions_context_assembly_id_idx").on(table.contextAssemblyId),
