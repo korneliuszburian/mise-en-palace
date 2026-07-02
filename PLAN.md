@@ -117,8 +117,7 @@ Goal: close the remaining source-authority leak found by second-opinion review.
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy redesign.
 
-Latest artifact: `docs/KRN_BRAIN.md`; latest report:
-`docs/runs/2026-07-02-source-claim-authority-boundary.md`.
+Latest report: `docs/runs/2026-07-02-source-claim-authority-boundary.md`.
 
 Task boundary:
 

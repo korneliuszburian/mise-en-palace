@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: audit-hardening closure complete; waiting for ruthless second-opinion review
+current task: source activation authority boundary fixed; next P1 is verification/CI closure
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-audit-hardening closure complete; waiting for ruthless second-opinion review.
-Select the next product gap from fresh current-state review, not stale audit
-backlog.
+source activation authority boundary fixed; next P1 is verification/CI closure.
+Close CI/Beads, then select the next bounded gap from current repo evidence.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-7pb3 complete: audit-hardening program closed after the internal
-multi-repo loop and all tracked child tasks completed or were explicitly
-bounded/rejected.
+mise-en-palace-2huq complete pending CI/Beads: non-accepted SourceClaims are
+unsafe before activation filtering can look authoritative.
 Report:
-docs/runs/2026-07-02-audit-hardening-final-handoff.md
-Next: run the final second-opinion prompt and create one bounded Beads issue
-from the highest-confidence remaining gap.
+docs/runs/2026-07-02-source-claim-authority-boundary.md
+Next: verify CI, close Beads, then choose the next bounded P1 without broad cleanup.
 ```
 
 ## 2. Product Thesis

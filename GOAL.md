@@ -27,22 +27,21 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: audit-hardening closure complete; waiting for ruthless second-opinion review.
+current task: source activation authority boundary fixed; next P1 is verification/CI closure.
 ```
 
-Current task state: `mise-en-palace-t8i` closed the internal multi-repo
-operator loop, and `mise-en-palace-7pb3` closed the audit-hardening umbrella.
-Use the final second-opinion prompt before choosing the next bounded slice.
+Current task state: `mise-en-palace-2huq` closed the activation source-authority
+leak by making non-accepted SourceClaims unsafe before activation filtering can
+look authoritative.
 
 Latest slice:
 
 ```txt
-Audit-hardening final handoff recorded the completed child tasks, proof and
-non-proof boundaries, residual debt, and a ruthless second-opinion prompt.
+Source activation authority boundary now covers filter/compile paths and keeps
+assembly as defense in depth.
 Report:
-docs/runs/2026-07-02-audit-hardening-final-handoff.md
-Next: run the second-opinion prompt, then create one bounded Beads issue from
-the highest-confidence remaining gap.
+docs/runs/2026-07-02-source-claim-authority-boundary.md
+Next: verify CI, close Beads, then choose the next bounded P1 without broad cleanup.
 ```
 
 ## Direction
