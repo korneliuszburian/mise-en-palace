@@ -24,7 +24,7 @@ import type {
 
 import {
   runHeartbeatPreviewCommand
-} from "./runHeartbeatPreviewCommand.js";
+} from "../runHeartbeatPreviewCommand.js";
 
 const now = "2026-06-30T12:00:00.000Z";
 const projectId = "11111111-1111-4111-8111-111111111111" as ProjectId;
