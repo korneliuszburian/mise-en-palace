@@ -24,10 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality
-slice is active. The current product gap is turning user-provided
-reference-implementation / clone-workflow material into a KRN pattern-brain
-mechanism that improves real code, not a markdown-only instruction pile.
+mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice is active.
+The current product gap is turning user-provided reference-implementation /
+clone-workflow material into a KRN pattern-brain mechanism that improves real
+code, not a markdown-only instruction pile.
 ```
 
 Latest outcome:
