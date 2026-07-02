@@ -39,12 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-Retrieval-owned persisted IDs now carry soft branded core aliases through
-harness repository contracts without DB/runtime parser expansion.
+ExecutionBrief v1 now has a typed default profile/readback that classifies
+required, diagnostic, and reserved sections while omitting empty MCP/subagent
+future-hook headings from default rendered text.
 Report:
-docs/runs/2026-07-02-retrieval-id-branding.md
-Next: continue audit-hardening through execution-brief profile readback,
-root-doc cleanup, schema/core contract ownership, and bounded CLI topology.
+docs/runs/2026-07-02-execution-brief-profile-readback.md
+Next: continue audit-hardening through root-doc cleanup, schema/core contract
+ownership, bounded CLI topology, and product-loop proof.
 ```
 
 ## Direction

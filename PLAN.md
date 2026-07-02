@@ -79,7 +79,7 @@ worker job authority/type ownership: invariant runtime fields stay centralized; 
 source relation metadata readback: SourceClaimEdge metadata parsing now shares one typed source-domain helper across CLI and worker surfaces
 retrieval ID branding: retrieval-owned persisted IDs carry soft branded aliases through harness repository contracts
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
-execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
+execution brief profile readback: Codex-facing ExecutionBrief keeps krn.executionBrief.v1, classifies sections, and omits empty MCP/subagent reserved headings
 maintenance enqueue wrapper: transparent enqueue helper removed; queue-port contract remains typed and tested
 anti-memory invalidation field: runtime/domain output uses plural invalidatedBySourceClaimIds; legacy singular remains input/read compatibility only
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
@@ -116,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-retrieval-id-branding.md`.
+Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-execution-brief-profile-readback.md`.
 
 Task boundary:
 

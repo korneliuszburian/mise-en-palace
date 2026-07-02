@@ -72,6 +72,62 @@ export const executionBriefFormatVersion = "krn.executionBrief.v1" as const;
 
 export type ExecutionBriefFormatVersion = typeof executionBriefFormatVersion;
 
+export type ExecutionBriefProfileName = "default";
+
+export type ExecutionBriefSectionKind = "required" | "diagnostic" | "reserved";
+
+export type ExecutionBriefSectionEmptyBehavior = "render_none" | "omit_when_empty";
+
+export const executionBriefSectionProfiles = [
+  { id: "title", kind: "required", emptyBehavior: "render_none" },
+  { id: "format_version", kind: "required", emptyBehavior: "render_none" },
+  { id: "objective", kind: "required", emptyBehavior: "render_none" },
+  { id: "non_goals", kind: "required", emptyBehavior: "render_none" },
+  { id: "current_task_contract", kind: "required", emptyBehavior: "render_none" },
+  { id: "context_inclusions", kind: "required", emptyBehavior: "render_none" },
+  { id: "untrusted_context_warnings", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
+  { id: "source_claims_used", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "memory_records_used", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
+  { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
+  { id: "hook_expectations", kind: "required", emptyBehavior: "render_none" },
+  { id: "skill_binding_hints", kind: "required", emptyBehavior: "render_none" },
+  { id: "mcp_resource_refs", kind: "reserved", emptyBehavior: "omit_when_empty" },
+  { id: "subagent_probe_hints", kind: "reserved", emptyBehavior: "omit_when_empty" },
+  { id: "goal_refs", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "exec_plan_refs", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
+  { id: "rollback_expectation", kind: "required", emptyBehavior: "render_none" },
+  { id: "next_action", kind: "required", emptyBehavior: "render_none" },
+  { id: "does_not_prove", kind: "required", emptyBehavior: "render_none" }
+] as const satisfies readonly {
+  id: string;
+  kind: ExecutionBriefSectionKind;
+  emptyBehavior: ExecutionBriefSectionEmptyBehavior;
+}[];
+
+export type ExecutionBriefSectionId = (typeof executionBriefSectionProfiles)[number]["id"];
+
+export const executionBriefSectionIds: ExecutionBriefSectionId[] =
+  executionBriefSectionProfiles.map((section) => section.id);
+
+export interface ExecutionBriefSectionReadback {
+  id: ExecutionBriefSectionId;
+  kind: ExecutionBriefSectionKind;
+  rendered: boolean;
+  itemCount: number;
+  emptyBehavior: ExecutionBriefSectionEmptyBehavior;
+}
+
+export interface ExecutionBriefProfileReadback {
+  formatVersion: ExecutionBriefFormatVersion;
+  profile: ExecutionBriefProfileName;
+  sections: ExecutionBriefSectionReadback[];
+  doesNotProve: string[];
+}
+
 export interface CodexGoalRef {
   source: string;
   objective: string;

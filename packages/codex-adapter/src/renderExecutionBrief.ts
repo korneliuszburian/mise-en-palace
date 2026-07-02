@@ -12,10 +12,14 @@ import type {
   CodexGoalRef,
   ExecutionBrief,
   ExecutionBriefContextExclusion,
-  ExecutionBriefContextInclusion
+  ExecutionBriefContextInclusion,
+  ExecutionBriefProfileReadback,
+  ExecutionBriefSectionId,
+  ExecutionBriefSectionReadback
 } from "./contracts.js";
 import {
-  executionBriefFormatVersion
+  executionBriefFormatVersion,
+  executionBriefSectionProfiles
 } from "./contracts.js";
 import {
   createCodexHookExpectations
@@ -37,6 +41,9 @@ export interface RenderExecutionBriefInput {
 
 const renderList = (items: readonly string[]): string[] =>
   items.length === 0 ? ["- none"] : items.map((item) => `- ${item}`);
+
+const renderJoinedValues = (items: readonly string[]): string =>
+  items.length === 0 ? "none" : items.join(", ");
 
 const renderContextInclusions = (
   inclusions: readonly ExecutionBriefContextInclusion[]
@@ -114,6 +121,95 @@ const renderToolBoundaries = (brief: ExecutionBrief): string[] => [
   "Tool Boundaries:",
   ...renderList(brief.toolBoundaries)
 ];
+
+type ExecutionBriefSectionCounter = (brief: ExecutionBrief) => number;
+
+const scalarSectionItemCount = (): number => 1;
+
+const executionBriefSectionCounters = {
+  title: scalarSectionItemCount,
+  format_version: scalarSectionItemCount,
+  objective: scalarSectionItemCount,
+  non_goals: (brief) => brief.nonGoals.length,
+  current_task_contract: scalarSectionItemCount,
+  context_inclusions: (brief) => brief.includedContext.length,
+  untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
+  explicit_exclusions: (brief) => brief.explicitExclusions.length,
+  source_claims_used: (brief) => brief.sourceClaimsUsed.length,
+  memory_records_used: (brief) => brief.memoryRecordsUsed.length,
+  anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
+  tool_boundaries: (brief) => brief.toolBoundaries.length,
+  evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
+  hook_expectations: (brief) => brief.hookExpectations.length,
+  skill_binding_hints: (brief) => brief.skillBindingHints.length,
+  mcp_resource_refs: (brief) => brief.mcpResourceRefs.length,
+  subagent_probe_hints: (brief) => brief.subagentProbeHints.length,
+  goal_refs: (brief) => brief.goalRefs.length,
+  exec_plan_refs: (brief) => brief.execPlanRefs.length,
+  stop_condition: scalarSectionItemCount,
+  rollback_expectation: scalarSectionItemCount,
+  next_action: scalarSectionItemCount,
+  does_not_prove: (brief) => brief.doesNotProve.length
+} satisfies Record<ExecutionBriefSectionId, ExecutionBriefSectionCounter>;
+
+const sectionItemCount = (
+  brief: ExecutionBrief,
+  sectionId: ExecutionBriefSectionId
+): number => executionBriefSectionCounters[sectionId](brief);
+
+const sectionReadback = (
+  brief: ExecutionBrief,
+  section: (typeof executionBriefSectionProfiles)[number]
+): ExecutionBriefSectionReadback => {
+  const itemCount = sectionItemCount(brief, section.id);
+
+  return {
+    id: section.id,
+    kind: section.kind,
+    rendered: section.emptyBehavior === "render_none" || itemCount > 0,
+    itemCount,
+    emptyBehavior: section.emptyBehavior
+  };
+};
+
+export const describeExecutionBriefProfile = (
+  brief: ExecutionBrief
+): ExecutionBriefProfileReadback => ({
+  formatVersion: brief.formatVersion,
+  profile: "default",
+  sections: executionBriefSectionProfiles.map((section) => sectionReadback(brief, section)),
+  doesNotProve: [
+    "Brief profile classification proves only adapter rendering intent.",
+    "Omitted reserved sections do not prove MCP resources or subagents exist.",
+    "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
+  ]
+});
+
+const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
+  const profile = describeExecutionBriefProfile(brief);
+  const requiredSections = profile.sections
+    .filter((section) => section.kind === "required")
+    .map((section) => section.id);
+  const diagnosticSections = profile.sections
+    .filter((section) => section.kind === "diagnostic")
+    .map((section) => section.id);
+  const renderedReservedSections = profile.sections
+    .filter((section) => section.kind === "reserved" && section.rendered)
+    .map((section) => section.id);
+  const omittedReservedSections = profile.sections
+    .filter((section) => section.kind === "reserved" && !section.rendered)
+    .map((section) => section.id);
+
+  return [
+    "Brief Profile:",
+    `- profile=${profile.profile} | format=${profile.formatVersion}`,
+    `- required=${renderJoinedValues(requiredSections)}`,
+    `- diagnostic=${renderJoinedValues(diagnosticSections)}`,
+    `- reserved_rendered=${renderJoinedValues(renderedReservedSections)}`,
+    `- reserved_omitted=${renderJoinedValues(omittedReservedSections)}`,
+    `- does_not_prove=${profile.doesNotProve.join(" | ")}`
+  ];
+};
 
 const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   ...brief.evidenceContract.commands.map((command) => `- ${command}`),
@@ -274,10 +370,37 @@ const renderRefs = (
         )
       ];
 
+const renderOptionalSection = (
+  label: string,
+  items: readonly string[]
+): string[] => (items.length === 0 ? [] : [label, ...items, ""]);
+
+const renderMcpResourceRefs = (brief: ExecutionBrief): string[] =>
+  brief.mcpResourceRefs.map((ref) =>
+    [
+      `- ${ref.name}`,
+      `access=${ref.access}`,
+      `purpose=${ref.purpose}`,
+      `does_not_grant=${ref.doesNotGrant.join(", ")}`
+    ].join(" | ")
+  );
+
+const renderSubagentProbeHints = (brief: ExecutionBrief): string[] =>
+  brief.subagentProbeHints.map((hint) =>
+    [
+      `- ${hint.name}`,
+      `mode=${hint.mode}`,
+      `purpose=${hint.purpose}`,
+      `trigger=${hint.trigger}`,
+      `allowed=${hint.allowedActions.join(", ")}`
+    ].join(" | ")
+  );
+
 export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const lines = [
     brief.title,
     `Format Version: ${brief.formatVersion}`,
+    ...renderExecutionBriefProfile(brief),
     "",
     `Objective: ${brief.objective}`,
     "",
@@ -319,31 +442,8 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "Skill Binding Hints:",
     ...renderSkillBindingHints(brief),
     "",
-    "MCP Resource Refs:",
-    ...renderList(
-      brief.mcpResourceRefs.map((ref) =>
-        [
-          ref.name,
-          `access=${ref.access}`,
-          `purpose=${ref.purpose}`,
-          `does_not_grant=${ref.doesNotGrant.join(", ")}`
-        ].join(" | ")
-      )
-    ),
-    "",
-    "Subagent Probe Hints:",
-    ...renderList(
-      brief.subagentProbeHints.map((hint) =>
-        [
-          hint.name,
-          `mode=${hint.mode}`,
-          `purpose=${hint.purpose}`,
-          `trigger=${hint.trigger}`,
-          `allowed=${hint.allowedActions.join(", ")}`
-        ].join(" | ")
-      )
-    ),
-    "",
+    ...renderOptionalSection("MCP Resource Refs:", renderMcpResourceRefs(brief)),
+    ...renderOptionalSection("Subagent Probe Hints:", renderSubagentProbeHints(brief)),
     ...renderRefs("Goal References:", brief.goalRefs),
     "",
     ...renderRefs("ExecPlan References:", brief.execPlanRefs),

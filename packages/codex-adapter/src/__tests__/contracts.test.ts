@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   codexHookPhases,
+  executionBriefSectionIds,
   executionBriefFormatVersion
 } from "../contracts.js";
 import {
@@ -13,7 +14,8 @@ import type {
   CodexMcpResourceRef,
   CodexSkillBindingHint,
   CodexSubagentProbeHint,
-  ExecutionBrief
+  ExecutionBrief,
+  ExecutionBriefProfileReadback
 } from "../contracts.js";
 
 const createdAt = "2026-06-22T06:00:00.000Z";
@@ -158,6 +160,32 @@ describe("Codex adapter contracts", () => {
     expect(plan.executionBrief.subagentProbeHints).toEqual([subagentHint]);
     expect(plan.executionBrief.hookExpectations.map((item) => item.phase)).toEqual(
       codexHookPhases
+    );
+  });
+
+  test("models execution brief profile readback without runtime authority", () => {
+    const readback: ExecutionBriefProfileReadback = {
+      formatVersion: executionBriefFormatVersion,
+      profile: "default",
+      sections: [{
+        id: "mcp_resource_refs",
+        kind: "reserved",
+        rendered: false,
+        itemCount: 0,
+        emptyBehavior: "omit_when_empty"
+      }],
+      doesNotProve: [
+        "Brief profile classification proves only adapter rendering intent.",
+        "Omitted reserved sections do not prove MCP resources or subagents exist."
+      ]
+    };
+
+    expect(executionBriefSectionIds).toContain("mcp_resource_refs");
+    expect(executionBriefSectionIds).toContain("subagent_probe_hints");
+    expect(readback.sections[0]?.kind).toBe("reserved");
+    expect(readback.sections[0]?.rendered).toBe(false);
+    expect(readback.doesNotProve).toContain(
+      "Omitted reserved sections do not prove MCP resources or subagents exist."
     );
   });
 });

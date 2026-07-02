@@ -109,6 +109,8 @@ const evidenceContract: EvidenceContract = {
 const expectedRenderedBriefFragments = [
   "Constraints:",
   `Format Version: ${executionBriefFormatVersion}`,
+  "Brief Profile:",
+  "reserved_omitted=mcp_resource_refs, subagent_probe_hints",
   "- do not mutate core state",
   "Acceptance:",
   "- brief exposes review contract fields",
@@ -185,7 +187,9 @@ describe("codex brief golden behavior", () => {
       execPlanReference: "PLAN.md D-00"
     });
     const rendered = renderExecutionBriefText(brief);
-    const passed = includesAllFragments(rendered, expectedRenderedBriefFragments);
+    const passed = includesAllFragments(rendered, expectedRenderedBriefFragments) &&
+      !rendered.includes("MCP Resource Refs:") &&
+      !rendered.includes("Subagent Probe Hints:");
     const report = runGoldenTaskFixtures({
       tasks: [task],
       proofs: [{
