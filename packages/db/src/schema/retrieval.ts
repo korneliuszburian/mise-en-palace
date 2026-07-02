@@ -153,6 +153,17 @@ const retrievalValidityWindowColumns = () => ({
   metadata: metadataColumn()
 });
 
+const contextAssemblyReferenceColumn = () => ({
+  contextAssemblyId: uuid("context_assembly_id")
+    .notNull()
+    .references(() => contextAssemblies.id, { onDelete: "cascade" })
+});
+
+const contextSubjectColumns = () => ({
+  ...contextAssemblyReferenceColumn(),
+  ...retrievalSubjectColumns()
+});
+
 export const embeddingModels = pgTable(
   "embedding_models",
   {
@@ -349,11 +360,7 @@ export const contextItems = pgTable(
   "context_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    contextAssemblyId: uuid("context_assembly_id")
-      .notNull()
-      .references(() => contextAssemblies.id, { onDelete: "cascade" }),
-    subjectType: retrievalSubjectType("subject_type").notNull(),
-    subjectId: uuid("subject_id").notNull(),
+    ...contextSubjectColumns(),
     position: integer("position").notNull(),
     reason: text("reason").notNull(),
     expectedUse: text("expected_use").notNull(),
@@ -373,11 +380,7 @@ export const contextExclusions = pgTable(
   "context_exclusions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    contextAssemblyId: uuid("context_assembly_id")
-      .notNull()
-      .references(() => contextAssemblies.id, { onDelete: "cascade" }),
-    subjectType: retrievalSubjectType("subject_type").notNull(),
-    subjectId: uuid("subject_id").notNull(),
+    ...contextSubjectColumns(),
     reason: contextExclusionReason("reason").notNull(),
     explanation: text("explanation").notNull(),
     score: integer("score"),
