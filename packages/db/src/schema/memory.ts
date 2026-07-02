@@ -64,6 +64,15 @@ const antiMemorySourceEvidence = (
   OR ${nonEmptyJsonArray(invalidatedBySourceClaimIds)}
   OR ${nonEmptyJsonArray(sourceLineage)}`;
 
+const memoryGuidanceColumns = () => ({
+  summary: text("summary").notNull(),
+  body: text("body").notNull(),
+  owner: text("owner").notNull(),
+  confidence: integer("confidence").notNull(),
+  applicationGuidance: text("application_guidance").notNull(),
+  invalidationRule: text("invalidation_rule")
+});
+
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
   "preference",
@@ -137,12 +146,7 @@ export const memoryRecords = pgTable(
     key: text("key").notNull(),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryRecordStatus("status").notNull().default("active"),
-    summary: text("summary").notNull(),
-    body: text("body").notNull(),
-    owner: text("owner").notNull(),
-    confidence: integer("confidence").notNull(),
-    applicationGuidance: text("application_guidance").notNull(),
-    invalidationRule: text("invalidation_rule"),
+    ...memoryGuidanceColumns(),
     sourceLineage: jsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
@@ -186,12 +190,7 @@ export const memoryRecordVersions = pgTable(
       onDelete: "set null"
     }),
     version: integer("version").notNull(),
-    summary: text("summary").notNull(),
-    body: text("body").notNull(),
-    owner: text("owner").notNull(),
-    confidence: integer("confidence").notNull(),
-    applicationGuidance: text("application_guidance").notNull(),
-    invalidationRule: text("invalidation_rule"),
+    ...memoryGuidanceColumns(),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     sourceLineage: jsonListColumn("source_lineage"),
@@ -265,12 +264,7 @@ export const memoryCandidates = pgTable(
     proposedBy: text("proposed_by").notNull(),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
-    summary: text("summary").notNull(),
-    body: text("body").notNull(),
-    owner: text("owner").notNull(),
-    confidence: integer("confidence").notNull(),
-    applicationGuidance: text("application_guidance").notNull(),
-    invalidationRule: text("invalidation_rule"),
+    ...memoryGuidanceColumns(),
     sourceClaimIds: jsonListColumn("source_claim_ids"),
     sourceLineage: jsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
