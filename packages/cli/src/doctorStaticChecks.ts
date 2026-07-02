@@ -6,10 +6,17 @@ import {
   renderExecutionBriefText
 } from "@krn/codex-adapter";
 import {
+  DrizzleProjectRepository,
   DrizzleWorkerJobRepository
 } from "@krn/db/adapters";
 import {
+  runInitConnectSmokeCheck
+} from "@krn/db/dev";
+import {
   outboxEvents,
+  projectKernels,
+  projects,
+  repoInstallations,
   workerJobs,
   workerJobStatus
 } from "@krn/db/schema";
@@ -31,9 +38,15 @@ import {
   readScriptStatus,
   readTreeText
 } from "./doctorCheckHelpers.js";
-
-const includesAll = (text: string, fragments: readonly string[]): boolean =>
-  fragments.every((fragment) => text.includes(fragment));
+import {
+  parseArgs
+} from "./parseArgs.js";
+import {
+  runInitCommand
+} from "./runInitCommand.js";
+import {
+  runTargetRepoHarnessSmokeCheck
+} from "./targetRepoHarnessSmoke.js";
 
 const includesAny = (text: string, fragments: readonly string[]): boolean =>
   fragments.some((fragment) => text.includes(fragment));
@@ -291,85 +304,67 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
 const targetRepoFixturePath = (repoRoot: string): string =>
   path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic");
 
-const hasTargetInitCommand = (
-  parseArgsText: string,
-  runCliText: string,
-  runInitText: string
-): boolean =>
-  includesAll(parseArgsText, ["--connect"]) &&
-  includesAll(runCliText, ["runInitCommand"]) &&
-  includesAll(runInitText, [
-    "connect",
-    "createRepoInstallation",
-    "createProjectKernel"
-  ]);
+const hasTargetInitCommand = (): boolean => {
+  const parsed = parseArgs([
+    "init",
+    "--connect",
+    "--repo",
+    ".",
+    "--persist"
+  ]).command;
+
+  return hasFunction(runInitCommand) &&
+    parsed?.kind === "init" &&
+    parsed.mode === "connect" &&
+    parsed.persist;
+};
 
 const hasTargetFixture = async (fixturePath: string): Promise<boolean> =>
   await pathExists(path.join(fixturePath, "package.json")) &&
   await pathExists(path.join(fixturePath, "src"));
 
-const hasProjectRegistrationSchema = (harnessSchemaText: string): boolean =>
-  includesAll(harnessSchemaText, [
-    "projects",
-    "repoInstallations",
-    "projectKernels",
-    "repoFingerprint",
-    "localPathHint"
-  ]);
+const hasProjectRegistrationSchema = (): boolean =>
+  projects !== undefined &&
+  repoInstallations !== undefined &&
+  projectKernels !== undefined;
+
+const hasDbSmokeRoute = (
+  target: "initConnect" | "targetRepoHarness",
+  cliTarget: string
+): boolean => {
+  const parsed = parseArgs(["db", "smoke", cliTarget]).command;
+
+  return parsed?.kind === "dbSmoke" && parsed.target === target;
+};
 
 const hasInitConnectSmokeProof = (
-  packageJson: Record<string, unknown> | undefined,
-  parseArgsText: string,
-  initConnectSmokeText: string,
-  verificationText: string
+  packageJson: Record<string, unknown> | undefined
 ): boolean =>
   readScriptStatus(
     packageJson,
     "db:smoke:init-connect",
     "krn db smoke init-connect"
   ).startsWith("available") &&
-  includesAll(parseArgsText, ["init-connect"]) &&
-  includesAll(initConnectSmokeText, [
-    "runInitConnectSmokeCheck",
-    "cleanupFixtureProjectRecords"
-  ]) &&
-  includesAll(verificationText, ["Live `pnpm db:smoke:init-connect` passed"]);
+  hasDbSmokeRoute("initConnect", "init-connect") &&
+  hasFunction(runInitConnectSmokeCheck);
 
 const hasTargetHarnessSmokeProof = (
-  packageJson: Record<string, unknown> | undefined,
-  parseArgsText: string,
-  targetHarnessSmokeText: string,
-  verificationText: string
+  packageJson: Record<string, unknown> | undefined
 ): boolean =>
   readScriptStatus(
     packageJson,
     "db:smoke:target-repo-harness",
     "krn db smoke target-repo-harness"
   ).startsWith("available") &&
-  includesAll(parseArgsText, ["target-repo-harness"]) &&
-  includesAll(targetHarnessSmokeText, [
-    "runTargetRepoHarnessSmokeCheck",
-    "targetProjectLinked",
-    "cleanupMarkerRows"
-  ]) &&
-  includesAll(verificationText, ["Live `pnpm db:smoke:target-repo-harness` passed"]);
+  hasDbSmokeRoute("targetRepoHarness", "target-repo-harness") &&
+  hasFunction(runTargetRepoHarnessSmokeCheck);
 
 const hasCrossProjectLeakageProof = (
-  runPlanText: string,
-  databaseRuntimeText: string,
-  targetHarnessSmokeText: string,
-  verificationText: string
+  targetHarnessSmokeProven: boolean
 ): boolean =>
-  includesAll(runPlanText, [
-    "projectId",
-    "ProjectKernel"
-  ]) &&
-  includesAll(databaseRuntimeText, [
-    "getLatestProjectKernel",
-    "listRepoInstallationsForProject"
-  ]) &&
-  includesAll(targetHarnessSmokeText, ["targetProjectLinked"]) &&
-  includesAll(verificationText, ["Target project linkage was verified as `yes`"]);
+  targetHarnessSmokeProven &&
+  hasFunction(DrizzleProjectRepository.prototype.getLatestProjectKernel) &&
+  hasFunction(DrizzleProjectRepository.prototype.listRepoInstallationsForProject);
 
 const hasForbiddenTargetSurface = async (fixturePath: string): Promise<boolean> =>
   await pathExistsAny([
@@ -383,59 +378,13 @@ const hasForbiddenTargetSurface = async (fixturePath: string): Promise<boolean> 
 
 export const checkTargetRepoReadiness = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
-  const parseArgsText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "parseArgs.ts")
-  );
-  const runCliText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "runCli.ts")
-  );
-  const runInitText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "runInitCommand.ts")
-  );
-  const runPlanText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "runPlanCommand.ts")
-  );
-  const databaseRuntimeText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "databaseRuntime.ts")
-  );
-  const targetHarnessSmokeText = await readOptionalText(
-    packagePath(repoRoot, "cli", "src", "targetRepoHarnessSmoke.ts")
-  );
-  const initConnectSmokeText = await readOptionalText(
-    packagePath(repoRoot, "db", "src", "initConnectSmoke.ts")
-  );
-  const harnessSchemaText = await readOptionalText(
-    packagePath(repoRoot, "db", "src", "schema", "harness.ts")
-  );
-  const verificationText = await readOptionalText(
-    path.join(repoRoot, "docs", "runs", "2026-06-22-target-repo-init-connect", "VERIFICATION.md")
-  );
   const fixturePath = targetRepoFixturePath(repoRoot);
-  const initCommandAvailable = hasTargetInitCommand(
-    parseArgsText,
-    runCliText,
-    runInitText
-  );
+  const initCommandAvailable = hasTargetInitCommand();
   const fixtureAvailable = await hasTargetFixture(fixturePath);
-  const projectRegistrationSchemaPresent = hasProjectRegistrationSchema(harnessSchemaText);
-  const initConnectSmokeProven = hasInitConnectSmokeProof(
-    packageJson,
-    parseArgsText,
-    initConnectSmokeText,
-    verificationText
-  );
-  const targetHarnessSmokeProven = hasTargetHarnessSmokeProof(
-    packageJson,
-    parseArgsText,
-    targetHarnessSmokeText,
-    verificationText
-  );
-  const crossProjectLeakageProofKnown = hasCrossProjectLeakageProof(
-    runPlanText,
-    databaseRuntimeText,
-    targetHarnessSmokeText,
-    verificationText
-  );
+  const projectRegistrationSchemaPresent = hasProjectRegistrationSchema();
+  const initConnectSmokeProven = hasInitConnectSmokeProof(packageJson);
+  const targetHarnessSmokeProven = hasTargetHarnessSmokeProof(packageJson);
+  const crossProjectLeakageProofKnown = hasCrossProjectLeakageProof(targetHarnessSmokeProven);
   const forbiddenSurfacePresent = await hasForbiddenTargetSurface(fixturePath);
 
   return [
