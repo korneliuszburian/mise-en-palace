@@ -247,6 +247,40 @@ describe("promoteMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
+  it("rejects promotion from source claims that are not accepted authority", async () => {
+    let promoteCalled = false;
+
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate();
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimById() {
+            return sourceClaim({
+              status: "proposed"
+            });
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      })
+    ).rejects.toThrow(
+      "SourceClaim source-claim-1 must be accepted before review gate promotion; current status proposed"
+    );
+
+    expect(promoteCalled).toBe(false);
+  });
+
   it("rejects promotion from untrusted source lineage without untrusted source review", async () => {
     let promoteCalled = false;
 

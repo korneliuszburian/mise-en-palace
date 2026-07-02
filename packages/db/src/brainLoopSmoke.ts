@@ -38,6 +38,8 @@ export interface BrainLoopSmokeReport {
   reviewAssessmentId: string;
   feedbackDeltaId: string;
   sourceClaimId: string;
+  sourceDecisionId: string;
+  sourceClaimStatus: string;
   memoryCandidateId: string;
   reviewedMemoryCandidateStatus: string;
   memoryRecordId: string;
@@ -190,7 +192,7 @@ export const runBrainLoopSmokeCheck = async (
         smokeId: marker
       }
     });
-    const sourceClaim = await sourceRepository.createSourceClaim({
+    const proposedSourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
       executionRunId: executionRun.id,
       claim: "A reviewed evidence bundle can become Memory Core context for a later activation.",
@@ -207,6 +209,23 @@ export const runBrainLoopSmokeCheck = async (
         smokeId: marker
       }
     });
+    const sourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: proposedSourceClaim.id,
+      status: "adopt",
+      decision: "Adopt the DB-backed brain loop source claim as implementation-boundary evidence.",
+      rationale: "The source claim maps the live DB smoke mechanism to the governed memory promotion path.",
+      falsifier: "MemoryReviewGate accepts a candidate whose source claim remains proposed.",
+      consumer: "E2E-02 brain loop smoke",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const sourceClaim = requireSmokeReadbackValue(
+      await sourceRepository.getSourceClaimById(proposedSourceClaim.id),
+      "accepted source claim readback",
+      "Brain loop smoke source decision did not accept the source claim"
+    );
     const memoryCandidate = await memoryRepository.createMemoryCandidate({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -374,6 +393,8 @@ export const runBrainLoopSmokeCheck = async (
       { label: "evidence bundle", passed: aggregate?.evidenceBundles.length === 1 },
       { label: "review assessment", passed: aggregate?.reviewAssessments.length === 1 },
       { label: "feedback delta", passed: aggregate?.feedbackDeltas.length === 1 },
+      { label: "source decision adopted", passed: sourceDecision.status === "adopt" },
+      { label: "source claim accepted", passed: sourceClaim.status === "accepted" },
       { label: "memory candidate accepted", passed: reviewedCandidate?.status === "accepted" },
       { label: "memory record readback", passed: readBackMemoryRecord?.id === memoryRecord.id },
       { label: "memory review gate metadata", passed: "reviewGate" in memoryRecord.metadata },
@@ -419,6 +440,8 @@ export const runBrainLoopSmokeCheck = async (
       reviewAssessmentId: reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
       sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
+      sourceClaimStatus: sourceClaim.status,
       memoryCandidateId: memoryCandidate.id,
       reviewedMemoryCandidateStatus: reviewedCandidate?.status ?? "missing",
       memoryRecordId: memoryRecord.id,

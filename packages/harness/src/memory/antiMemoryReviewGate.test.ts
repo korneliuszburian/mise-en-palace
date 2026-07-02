@@ -44,7 +44,9 @@ const candidate = (
   ...overrides
 });
 
-const sourceClaim = (): SourceClaim => ({
+const sourceClaim = (
+  overrides: Partial<SourceClaim> = {}
+): SourceClaim => ({
   id: "source-claim-1",
   sourceArtifactId: "source-artifact-1",
   claim: "KRN runtime memory is store-backed.",
@@ -57,7 +59,8 @@ const sourceClaim = (): SourceClaim => ({
   status: "accepted",
   metadata: {},
   createdAt: now,
-  updatedAt: now
+  updatedAt: now,
+  ...overrides
 });
 
 const antiMemoryRecord = (): AntiMemoryRecord => ({
@@ -201,5 +204,39 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
         }
       }
     });
+  });
+
+  it("rejects promotion from source claims that are not accepted authority", async () => {
+    let promoteCalled = false;
+
+    await expect(
+      promoteAntiMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getAntiMemoryCandidateById() {
+            return candidate();
+          },
+          async promoteReviewedAntiMemoryCandidate() {
+            promoteCalled = true;
+            return antiMemoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimById() {
+            return sourceClaim({
+              status: "proposed"
+            });
+          }
+        },
+        review: {
+          candidateId: "anti-memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "source-claim-1"
+        }
+      })
+    ).rejects.toThrow(
+      "SourceClaim source-claim-1 must be accepted before review gate promotion; current status proposed"
+    );
+
+    expect(promoteCalled).toBe(false);
   });
 });

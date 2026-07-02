@@ -39,11 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-8qer complete: verified evidence command normalization is
-enforced at schema/core/DB persistence boundaries; no code fix needed.
+mise-en-palace-un8v complete: product-loop proof boundary hardened so
+MemoryReviewGate and AntiMemoryReviewGate require accepted SourceClaim authority;
+DB brain-loop smoke proves SourceDecision-adopted accepted source status.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-8qer-evidence-command-persistence-boundary/REPORT.md
-Next: `mise-en-palace-t8i` validates the internal multi-repo operator loop.
+docs/runs/2026-07-02-product-loop-e2e-proof.md
+Next: continue audit-hardening through the next highest-ROI Beads task.
 ```
 
 ## Direction

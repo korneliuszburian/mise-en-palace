@@ -4,6 +4,7 @@ import type {
   ProjectId,
   SourceClaim,
   SourceClaimEdge,
+  SourceClaimLifecycleStatus,
   SourceDecision,
   SourceDecisionEdge,
   SourceDecisionStatus,
@@ -139,6 +140,20 @@ export const assertSourceDecisionSourceClaimCanSupport = (
 ): void => {
   if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
     throw new Error(`SourceDecisionEdge cannot use ${sourceClaim.status} SourceClaim`);
+  }
+};
+
+export const sourceClaimStatusForDecisionStatus = (
+  status: SourceDecisionStatus
+): SourceClaimLifecycleStatus | undefined => {
+  switch (status) {
+    case "adopt":
+      return "accepted";
+    case "reject":
+      return "rejected";
+    case "defer":
+    case "lab_test":
+      return undefined;
   }
 };
 
@@ -279,6 +294,7 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceDecisionGovernance(input);
 
     return this.db.transaction(async (tx) => {
+      const sourceClaimStatus = sourceClaimStatusForDecisionStatus(input.status);
       const row = requireReturnedRow(
         await tx
           .insert(sourceDecisions)
@@ -295,6 +311,20 @@ export class DrizzleSourceRepository implements SourceRepository {
           .returning(),
         "createSourceDecision"
       );
+
+      if (input.sourceClaimId !== undefined && sourceClaimStatus !== undefined) {
+        requireReturnedRow(
+          await tx
+            .update(sourceClaims)
+            .set({
+              status: sourceClaimStatus,
+              updatedAt: new Date()
+            })
+            .where(eq(sourceClaims.id, input.sourceClaimId))
+            .returning({ id: sourceClaims.id }),
+          "updateSourceClaimForSourceDecision"
+        );
+      }
 
       await tx.insert(outboxEvents).values({
         topic: "source.decision.created",

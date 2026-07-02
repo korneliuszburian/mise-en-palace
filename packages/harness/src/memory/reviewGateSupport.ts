@@ -129,6 +129,16 @@ export const assertReviewGateConfidence = (
   }
 };
 
+const assertReviewedSourceClaimAccepted = (
+  sourceClaim: SourceClaim
+): void => {
+  if (sourceClaim.status !== "accepted") {
+    throw new Error(
+      `SourceClaim ${sourceClaim.id} must be accepted before review gate promotion; current status ${sourceClaim.status}`
+    );
+  }
+};
+
 export const reviewedSourceClaims = async (
   sourceRepository: Pick<SourceRepository, "getSourceClaimById">,
   sourceClaimIds: readonly string[]
@@ -142,6 +152,7 @@ export const reviewedSourceClaims = async (
       throw new Error(`SourceClaim not found: ${sourceClaimId}`);
     }
 
+    assertReviewedSourceClaimAccepted(sourceClaim);
     sourceClaims.push(sourceClaim);
   }
 

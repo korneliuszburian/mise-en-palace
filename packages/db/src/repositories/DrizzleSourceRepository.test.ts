@@ -8,7 +8,8 @@ import {
   assertSourceDecisionGovernance,
   assertSourceDecisionSourceClaimCanSupport,
   assessSourceClaimOverride,
-  rankSourceTrustTier
+  rankSourceTrustTier,
+  sourceClaimStatusForDecisionStatus
 } from "./DrizzleSourceRepository.js";
 
 const methodNames = [
@@ -149,6 +150,13 @@ describe("DrizzleSourceRepository", () => {
       ...validClaim,
       status: "deprecated"
     })).toThrow("SourceDecisionEdge cannot use deprecated SourceClaim");
+  });
+
+  it("maps adopted and rejected source decisions to claim lifecycle status", () => {
+    expect(sourceClaimStatusForDecisionStatus("adopt")).toBe("accepted");
+    expect(sourceClaimStatusForDecisionStatus("reject")).toBe("rejected");
+    expect(sourceClaimStatusForDecisionStatus("defer")).toBeUndefined();
+    expect(sourceClaimStatusForDecisionStatus("lab_test")).toBeUndefined();
   });
 
   it("ranks source trust tiers deterministically", () => {
