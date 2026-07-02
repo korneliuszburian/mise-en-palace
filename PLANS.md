@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-tsa4 Tighten EvidenceBundle metadata readback typing
+current task: mise-en-palace-8qer Verify evidence command normalization at persistence boundary
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-tsa4 Tighten EvidenceBundle metadata readback typing is active.
-The current product gap is continuing audit-driven production-code simplification
-after tnvb removed repeated enum normalizer boilerplate.
+mise-en-palace-8qer Verify evidence command normalization at persistence boundary
+is active. The current product gap is ensuring evidence command proof semantics
+hold at DB write boundaries, not only in core helpers.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-tnvb complete: replaced five repeated TargetEvidence enum
-normalizers with one local typed helper and stable exported normalizer names.
+mise-en-palace-tsa4 complete: named known EvidenceBundle metadata fields while
+keeping values unknown until parser validation.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-tnvb-evidence-enum-normalizer/REPORT.md
-Next: `mise-en-palace-tsa4` tightens known EvidenceBundle metadata readback
-typing without DB schema or broad metadata taxonomy work.
+docs/reviews/controlled-dogfood/2026-07-02-tsa4-evidence-metadata-readback-typing/REPORT.md
+Next: `mise-en-palace-8qer` verifies whether command normalization is enforced
+at evidence DB persistence boundaries.
 ```
 
 ## 2. Product Thesis

@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-tsa4 Tighten EvidenceBundle metadata readback typing
+current task: mise-en-palace-8qer Verify evidence command normalization at persistence boundary
 ```
 
 ## Compact Checkpoints
@@ -96,6 +96,7 @@ brain knowledge vocabulary values: reviewability/nextAction now share exported r
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
+evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -105,7 +106,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-tsa4 Tighten EvidenceBundle Metadata Readback Typing
+### mise-en-palace-8qer Verify Evidence Command Normalization At Persistence Boundary
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
@@ -114,15 +115,15 @@ Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/p
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-tnvb-evidence-enum-normalizer/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-tsa4-evidence-metadata-readback-typing/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Verify the live EvidenceBundle metadata typing finding. If safe, narrow known
-metadata readback/input access without DB schema, broad taxonomy, command
-provenance, CLI behavior, or review-domain consolidation.
+Verify whether raw evidence command rows can persist without core normalization.
+If yes, add the smallest repository-boundary normalization/validation. No DB
+schema, provenance redesign, CLI behavior, metadata taxonomy, or review-domain work.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

@@ -166,9 +166,15 @@ export interface EvidenceBundle {
   diffRisk: DiffRisk;
   reviewBurden: string;
   rollbackPath: string;
-  metadata: Record<string, unknown>;
+  metadata: EvidenceBundleMetadata;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+export interface EvidenceBundleMetadata extends Record<string, unknown> {
+  diffSummary?: unknown;
+  sourceRefs?: unknown;
+  targetEvidence?: unknown;
 }
 
 export interface EvidenceBundleMetadataReadback {
@@ -304,11 +310,12 @@ export const parseEvidenceBundleMetadataReadback = (
     return { sourceRefs: [] };
   }
 
-  const diffSummary = normalizedOptionalString(readMetadataString(input, "diffSummary"));
+  const metadata = input as EvidenceBundleMetadata;
+  const diffSummary = normalizedOptionalString(readMetadataString(metadata, "diffSummary"));
 
   return {
     ...(diffSummary === undefined ? {} : { diffSummary }),
-    sourceRefs: normalizedStringList(readMetadataStringList(input, "sourceRefs"))
+    sourceRefs: normalizedStringList(readMetadataStringList(metadata, "sourceRefs"))
   };
 };
 
