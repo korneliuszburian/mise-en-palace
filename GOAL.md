@@ -39,13 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-Codex adapter smoke proof now uses typed skill pattern refs, exact seeded
-source/memory IDs, and exact hook phase ordering instead of brittle bounds.
+Compiler/smoke boundary characterization now protects the retrieval-run and
+context-assembly activation trace contract without broad refactor.
 Report:
-docs/runs/2026-07-02-codex-adapter-proof-hardening.md
-Next: continue audit-hardening through execution-brief proof boundaries,
-source relation metadata typing, retrieval ID branding, and bounded naming
-cleanup.
+docs/runs/2026-07-02-compiler-smoke-boundary-characterization.md
+Next: continue audit-hardening through source relation metadata typing,
+retrieval ID branding, execution-brief profile readback, and root-doc cleanup.
 ```
 
 ## Direction

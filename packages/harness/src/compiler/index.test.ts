@@ -16,6 +16,7 @@ import type {
 } from "@krn/core";
 import type {
   AddRetrievalCandidateInput,
+  CompleteRetrievalRunInput,
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
@@ -271,6 +272,7 @@ class FakeSourceRepository implements Pick<
 
 class FakeRetrievalRepository implements RetrievalRepository {
   readonly candidates: AddRetrievalCandidateInput[] = [];
+  readonly completedRuns: CompleteRetrievalRunInput[] = [];
   readonly decisions: RecordActivationDecisionInput[] = [];
   startedRunMetadata: Record<string, unknown> | undefined;
   storedSelection: ContextAssembly | undefined;
@@ -303,18 +305,20 @@ class FakeRetrievalRepository implements RetrievalRepository {
     return createRetrievalRunRecord(input, { now });
   }
 
-  async completeRetrievalRun(): Promise<RetrievalRunRecord> {
+  async completeRetrievalRun(input: CompleteRetrievalRunInput): Promise<RetrievalRunRecord> {
+    this.completedRuns.push(input);
+
     return {
-      id: "retrieval-1",
+      id: input.retrievalRunId,
       projectId: "project-1",
       taskContractId: "task-1",
-      status: "completed",
+      status: input.status,
       query: "doctor readiness",
       mode: "mixed",
       startedAt: now,
-      completedAt: now,
+      completedAt: input.completedAt,
       metadataFilters: {},
-      metadata: {},
+      metadata: input.metadata ?? {},
       createdAt: now
     };
   }
@@ -441,6 +445,63 @@ describe("compileHarnessPlan", () => {
     ]);
     expect(retrievalRepository.decisions.some((item) => item.decision === "included")).toBe(true);
     expect(harnessRunRepository.contexts[0]?.status).toBe("assembled");
+  });
+
+  it("persists activation trace against the created retrieval run and context assembly", async () => {
+    const harnessRunRepository = new FakeHarnessRunRepository();
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(compileInput, {
+      harnessRunRepository,
+      memoryRepository: new FakeMemoryRepository([memoryRecord({ id: "memory-trace" })]),
+      sourceRepository: new FakeSourceRepository([sourceClaim({ id: "claim-trace" })]),
+      retrievalRepository,
+      now: () => now,
+      createId: (prefix) => `${prefix}-trace`
+    });
+
+    expect(result.contextAssembly.metadata).toMatchObject({
+      retrievalRunId: "retrieval-1"
+    });
+    expect(harnessRunRepository.contexts[0]?.id).toBe(result.contextAssembly.id);
+    expect(retrievalRepository.storedSelection).toMatchObject({
+      id: result.contextAssembly.id,
+      inclusions: result.contextAssembly.inclusions,
+      exclusions: result.contextAssembly.exclusions
+    });
+    expect(retrievalRepository.candidates.map((candidate) => candidate.retrievalRunId)).toEqual(
+      ["retrieval-1", "retrieval-1"]
+    );
+    expect(retrievalRepository.decisions.map((decision) => ({
+      contextAssemblyId: decision.contextAssemblyId,
+      decision: decision.decision,
+      retrievalRunId: decision.retrievalRunId,
+      subjectId: decision.subjectId
+    }))).toEqual([
+      {
+        contextAssemblyId: result.contextAssembly.id,
+        decision: "included",
+        retrievalRunId: "retrieval-1",
+        subjectId: "memory-trace"
+      },
+      {
+        contextAssemblyId: result.contextAssembly.id,
+        decision: "included",
+        retrievalRunId: "retrieval-1",
+        subjectId: "claim-trace"
+      }
+    ]);
+    expect(retrievalRepository.completedRuns).toEqual([
+      expect.objectContaining({
+        retrievalRunId: "retrieval-1",
+        status: "completed",
+        metadata: {
+          conflictCount: 0,
+          exclusionCount: 0,
+          inclusionCount: 2
+        }
+      })
+    ]);
   });
 
   it("records weak context as abstain and exclusions instead of broad rereads", async () => {
