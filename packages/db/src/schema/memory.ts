@@ -114,6 +114,16 @@ const antiMemoryEvidenceColumns = () => ({
   sourceLineage: jsonListColumn("source_lineage")
 });
 
+const memoryRunAnchorColumns = () => ({
+  id: uuid("id").primaryKey().defaultRandom(),
+  memoryRecordId: uuid("memory_record_id")
+    .notNull()
+    .references(() => memoryRecords.id, { onDelete: "cascade" }),
+  executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+    onDelete: "set null"
+  })
+});
+
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
   "preference",
@@ -359,13 +369,7 @@ export const antiMemoryCandidates = pgTable(
 export const memoryApplications = pgTable(
   "memory_applications",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    memoryRecordId: uuid("memory_record_id")
-      .notNull()
-      .references(() => memoryRecords.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    ...memoryRunAnchorColumns(),
     taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
       onDelete: "set null"
     }),
@@ -389,13 +393,7 @@ export const memoryApplications = pgTable(
 export const memoryFeedbackEvents = pgTable(
   "memory_feedback_events",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    memoryRecordId: uuid("memory_record_id")
-      .notNull()
-      .references(() => memoryRecords.id, { onDelete: "cascade" }),
-    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
-      onDelete: "set null"
-    }),
+    ...memoryRunAnchorColumns(),
     feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
       onDelete: "set null"
     }),
