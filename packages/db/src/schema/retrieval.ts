@@ -113,6 +113,46 @@ export const contextExclusionReason = pgEnum("context_exclusion_reason", [
   "superseded"
 ]);
 
+const projectScopeColumn = () => ({
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" })
+});
+
+const retrievalSubjectColumns = () => ({
+  subjectType: retrievalSubjectType("subject_type").notNull(),
+  subjectId: uuid("subject_id").notNull()
+});
+
+const retrievalSourceMemoryReferenceColumns = () => ({
+  sourceArtifactId: uuid("source_artifact_id").references(() => sourceArtifacts.id, {
+    onDelete: "set null"
+  }),
+  sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
+    onDelete: "set null"
+  }),
+  sourceClaimId: uuid("source_claim_id").references(() => sourceClaims.id, {
+    onDelete: "set null"
+  }),
+  memoryRecordId: uuid("memory_record_id").references(() => memoryRecords.id, {
+    onDelete: "set null"
+  }),
+  antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
+    onDelete: "set null"
+  })
+});
+
+const retrievalTrustValidityColumns = () => ({
+  trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
+  validityStatus: retrievalValidityStatus("validity_status").notNull().default("active")
+});
+
+const retrievalValidityWindowColumns = () => ({
+  metadataFilters: jsonObjectColumn("metadata_filters"),
+  validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
+  validUntil: timestamp("valid_until", { withTimezone: true }),
+  invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
+  metadata: metadataColumn()
+});
+
 export const embeddingModels = pgTable(
   "embedding_models",
   {
@@ -136,39 +176,19 @@ export const embeddings = pgTable(
   "embeddings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    ...projectScopeColumn(),
     embeddingModelId: uuid("embedding_model_id")
       .notNull()
       .references(() => embeddingModels.id, { onDelete: "restrict" }),
-    subjectType: retrievalSubjectType("subject_type").notNull(),
-    subjectId: uuid("subject_id").notNull(),
-    sourceArtifactId: uuid("source_artifact_id").references(() => sourceArtifacts.id, {
-      onDelete: "set null"
-    }),
-    sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
-      onDelete: "set null"
-    }),
-    sourceClaimId: uuid("source_claim_id").references(() => sourceClaims.id, {
-      onDelete: "set null"
-    }),
-    memoryRecordId: uuid("memory_record_id").references(() => memoryRecords.id, {
-      onDelete: "set null"
-    }),
-    antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
-      onDelete: "set null"
-    }),
+    ...retrievalSubjectColumns(),
+    ...retrievalSourceMemoryReferenceColumns(),
     searchDocumentId: uuid("search_document_id").references(() => searchDocuments.id, {
       onDelete: "set null"
     }),
     embedding: vector("embedding", { dimensions: DEFAULT_EMBEDDING_DIMENSIONS }).notNull(),
     contentHash: text("content_hash").notNull(),
-    trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
-    validityStatus: retrievalValidityStatus("validity_status").notNull().default("active"),
-    metadataFilters: jsonObjectColumn("metadata_filters"),
-    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
-    validUntil: timestamp("valid_until", { withTimezone: true }),
-    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
-    metadata: metadataColumn(),
+    ...retrievalTrustValidityColumns(),
+    ...retrievalValidityWindowColumns(),
     createdAt: createdAtColumn(),
     updatedAt: updatedAtColumn()
   },
@@ -190,24 +210,9 @@ export const searchDocuments = pgTable(
   "search_documents",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
-    subjectType: retrievalSubjectType("subject_type").notNull(),
-    subjectId: uuid("subject_id").notNull(),
-    sourceArtifactId: uuid("source_artifact_id").references(() => sourceArtifacts.id, {
-      onDelete: "set null"
-    }),
-    sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
-      onDelete: "set null"
-    }),
-    sourceClaimId: uuid("source_claim_id").references(() => sourceClaims.id, {
-      onDelete: "set null"
-    }),
-    memoryRecordId: uuid("memory_record_id").references(() => memoryRecords.id, {
-      onDelete: "set null"
-    }),
-    antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
-      onDelete: "set null"
-    }),
+    ...projectScopeColumn(),
+    ...retrievalSubjectColumns(),
+    ...retrievalSourceMemoryReferenceColumns(),
     evidenceBundleId: uuid("evidence_bundle_id").references(() => evidenceBundles.id, {
       onDelete: "set null"
     }),
@@ -220,18 +225,13 @@ export const searchDocuments = pgTable(
     runEventId: uuid("run_event_id").references(() => runEvents.id, {
       onDelete: "set null"
     }),
-    trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
-    validityStatus: retrievalValidityStatus("validity_status").notNull().default("active"),
+    ...retrievalTrustValidityColumns(),
     language: text("language").notNull().default("english"),
     title: text("title").notNull(),
     body: text("body").notNull(),
     searchText: text("search_text").notNull().default(""),
     searchVector: tsvector("search_vector"),
-    metadataFilters: jsonObjectColumn("metadata_filters"),
-    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
-    validUntil: timestamp("valid_until", { withTimezone: true }),
-    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
-    metadata: metadataColumn(),
+    ...retrievalValidityWindowColumns(),
     createdAt: createdAtColumn(),
     updatedAt: updatedAtColumn()
   },
