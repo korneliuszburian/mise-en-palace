@@ -1,6 +1,7 @@
-import { sql } from "drizzle-orm/sql";
+import { sql, type SQLWrapper } from "drizzle-orm/sql";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -28,6 +29,41 @@ type JsonList = unknown[];
 
 const emptyJsonObject = sql`'{}'::jsonb`;
 const emptyJsonList = sql`'[]'::jsonb`;
+
+const confidenceRange = (
+  column: SQLWrapper
+) => sql`${column} >= 0 AND ${column} <= 100`;
+
+const nonEmptyText = (
+  column: SQLWrapper
+) => sql`length(btrim(${column})) > 0`;
+
+const nonEmptyJsonArray = (
+  column: SQLWrapper
+) => sql`jsonb_array_length(${column}) > 0`;
+
+const memoryTemporalStrategy = (
+  validFrom: SQLWrapper,
+  validUntil: SQLWrapper,
+  invalidationRule: SQLWrapper
+) => sql`${validUntil} IS NULL OR (
+  ${validUntil} > ${validFrom}
+  AND ${invalidationRule} IS NOT NULL
+  AND ${nonEmptyText(invalidationRule)}
+)`;
+
+const temporalWindow = (
+  validFrom: SQLWrapper,
+  validUntil: SQLWrapper
+) => sql`${validUntil} IS NULL OR ${validUntil} > ${validFrom}`;
+
+const antiMemorySourceEvidence = (
+  invalidatedBySourceClaimId: SQLWrapper,
+  invalidatedBySourceClaimIds: SQLWrapper,
+  sourceLineage: SQLWrapper
+) => sql`${invalidatedBySourceClaimId} IS NOT NULL
+  OR ${nonEmptyJsonArray(invalidatedBySourceClaimIds)}
+  OR ${nonEmptyJsonArray(sourceLineage)}`;
 
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
@@ -126,7 +162,17 @@ export const memoryRecords = pgTable(
     index("memory_records_project_id_idx").on(table.projectId),
     index("memory_records_kind_idx").on(table.kind),
     index("memory_records_status_idx").on(table.status),
-    index("memory_records_valid_until_idx").on(table.validUntil)
+    index("memory_records_valid_until_idx").on(table.validUntil),
+    check("memory_records_confidence_range", confidenceRange(table.confidence)),
+    check(
+      "memory_records_application_guidance_non_empty",
+      nonEmptyText(table.applicationGuidance)
+    ),
+    check("memory_records_source_lineage_non_empty", nonEmptyJsonArray(table.sourceLineage)),
+    check(
+      "memory_records_temporal_invalidation_strategy",
+      memoryTemporalStrategy(table.validFrom, table.validUntil, table.invalidationRule)
+    )
   ]
 );
 
@@ -161,7 +207,20 @@ export const memoryRecordVersions = pgTable(
     index("memory_record_versions_created_from_candidate_id_idx").on(
       table.createdFromCandidateId
     ),
-    index("memory_record_versions_memory_record_id_idx").on(table.memoryRecordId)
+    index("memory_record_versions_memory_record_id_idx").on(table.memoryRecordId),
+    check("memory_record_versions_confidence_range", confidenceRange(table.confidence)),
+    check(
+      "memory_record_versions_application_guidance_non_empty",
+      nonEmptyText(table.applicationGuidance)
+    ),
+    check(
+      "memory_record_versions_source_lineage_non_empty",
+      nonEmptyJsonArray(table.sourceLineage)
+    ),
+    check(
+      "memory_record_versions_temporal_invalidation_strategy",
+      memoryTemporalStrategy(table.validFrom, table.validUntil, table.invalidationRule)
+    )
   ]
 );
 
@@ -183,7 +242,11 @@ export const memoryEdges = pgTable(
   (table) => [
     index("memory_edges_from_idx").on(table.fromMemoryRecordId),
     index("memory_edges_to_idx").on(table.toMemoryRecordId),
-    index("memory_edges_kind_idx").on(table.kind)
+    index("memory_edges_kind_idx").on(table.kind),
+    check(
+      "memory_edges_strength_range",
+      sql`${table.strength} >= 0 AND ${table.strength} <= 100`
+    )
   ]
 );
 
@@ -227,7 +290,20 @@ export const memoryCandidates = pgTable(
     index("memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
     index("memory_candidates_status_idx").on(table.status),
     index("memory_candidates_kind_idx").on(table.kind),
-    index("memory_candidates_valid_until_idx").on(table.validUntil)
+    index("memory_candidates_valid_until_idx").on(table.validUntil),
+    check("memory_candidates_confidence_range", confidenceRange(table.confidence)),
+    check(
+      "memory_candidates_application_guidance_non_empty",
+      nonEmptyText(table.applicationGuidance)
+    ),
+    check(
+      "memory_candidates_source_lineage_non_empty",
+      nonEmptyJsonArray(table.sourceLineage)
+    ),
+    check(
+      "memory_candidates_temporal_invalidation_strategy",
+      memoryTemporalStrategy(table.validFrom, table.validUntil, table.invalidationRule)
+    )
   ]
 );
 
@@ -278,7 +354,20 @@ export const antiMemoryCandidates = pgTable(
     index("anti_memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
     index("anti_memory_candidates_status_idx").on(table.status),
     index("anti_memory_candidates_key_idx").on(table.key),
-    index("anti_memory_candidates_valid_until_idx").on(table.validUntil)
+    index("anti_memory_candidates_valid_until_idx").on(table.validUntil),
+    check("anti_memory_candidates_confidence_range", confidenceRange(table.confidence)),
+    check(
+      "anti_memory_candidates_source_evidence_non_empty",
+      antiMemorySourceEvidence(
+        table.invalidatedBySourceClaimId,
+        table.invalidatedBySourceClaimIds,
+        table.sourceLineage
+      )
+    ),
+    check(
+      "anti_memory_candidates_temporal_window",
+      temporalWindow(table.validFrom, table.validUntil)
+    )
   ]
 );
 
@@ -390,7 +479,20 @@ export const antiMemoryRecords = pgTable(
     index("anti_memory_records_invalidated_by_source_claim_id_idx").on(
       table.invalidatedBySourceClaimId
     ),
-    index("anti_memory_records_valid_until_idx").on(table.validUntil)
+    index("anti_memory_records_valid_until_idx").on(table.validUntil),
+    check("anti_memory_records_confidence_range", confidenceRange(table.confidence)),
+    check(
+      "anti_memory_records_source_evidence_non_empty",
+      antiMemorySourceEvidence(
+        table.invalidatedBySourceClaimId,
+        table.invalidatedBySourceClaimIds,
+        table.sourceLineage
+      )
+    ),
+    check(
+      "anti_memory_records_temporal_window",
+      temporalWindow(table.validFrom, table.validUntil)
+    )
   ]
 );
 

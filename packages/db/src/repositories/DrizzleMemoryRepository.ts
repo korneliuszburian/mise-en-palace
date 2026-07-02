@@ -961,6 +961,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   }
 
   async createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord> {
+    assertAntiMemoryCandidateInvariants(input, "Anti-memory record");
+
     const row = requireReturnedRow(
       await this.db
         .insert(antiMemoryRecords)

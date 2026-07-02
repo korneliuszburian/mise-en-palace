@@ -126,6 +126,34 @@ describe("DrizzleMemoryRepository", () => {
     );
   });
 
+  it("rejects ungoverned anti-memory record inputs", () => {
+    const valid = {
+      key: "anti-markdown-runtime-memory",
+      summary: "Do not treat markdown as runtime memory.",
+      body: "Markdown may be source/export, not Memory Core.",
+      owner: "operator",
+      confidence: 90,
+      sourceLineage: [{ sourceId: "source-claim-1" }]
+    };
+
+    expect(() => assertAntiMemoryCandidateInvariants(
+      {
+        ...valid,
+        confidence: -1
+      },
+      "Anti-memory record"
+    )).toThrow("Anti-memory record confidence must be an integer from 0 to 100");
+    expect(() => assertAntiMemoryCandidateInvariants(
+      {
+        ...valid,
+        sourceLineage: []
+      },
+      "Anti-memory record"
+    )).toThrow(
+      "Anti-memory record requires invalidating source claim or source lineage"
+    );
+  });
+
   it("preserves review gate metadata when promoting a candidate", () => {
     const metadata = memoryPromotionMetadata({
       id: "memory-candidate-1",
