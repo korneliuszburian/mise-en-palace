@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-tnvb Simplify evidence enum normalization with one local factory
+current task: mise-en-palace-tsa4 Tighten EvidenceBundle metadata readback typing
 ```
 
 ## Compact Checkpoints
@@ -95,6 +95,7 @@ reference implementation recipe application: retained parser exemplar tightened 
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
+evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -104,7 +105,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-tnvb Simplify Evidence Enum Normalization With One Local Factory
+### mise-en-palace-tsa4 Tighten EvidenceBundle Metadata Readback Typing
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
@@ -113,15 +114,15 @@ Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/p
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-x4c4-reference-recipe-code-quality-repair/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-tnvb-evidence-enum-normalizer/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Verify whether the evidence enum-normalizer audit finding is still true. If yes,
-replace repeated boilerplate with one local typed helper. No EvidenceBundle
-redesign, provenance change, DB schema, or broader consolidation.
+Verify the live EvidenceBundle metadata typing finding. If safe, narrow known
+metadata readback/input access without DB schema, broad taxonomy, command
+provenance, CLI behavior, or review-domain consolidation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

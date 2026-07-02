@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-tnvb Simplify evidence enum normalization with one local factory.
+current task: mise-en-palace-tsa4 Tighten EvidenceBundle metadata readback typing.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,13 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-x4c4 complete: applied the retained reference-implementation
-recipe to one real code-quality repair by replacing three repeated persisted
-plan metadata capture blocks in runCli tests with one local helper.
+mise-en-palace-tnvb complete: replaced five repeated TargetEvidence enum
+normalizers with one local typed helper and stable exported normalizer names.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-x4c4-reference-recipe-code-quality-repair/REPORT.md
-Next: `mise-en-palace-tnvb` verifies the current evidence normalizer audit
-finding and, if still true, applies one bounded production-code simplification.
+docs/reviews/controlled-dogfood/2026-07-02-tnvb-evidence-enum-normalizer/REPORT.md
+Next: `mise-en-palace-tsa4` tightens known EvidenceBundle metadata readback
+typing without DB schema or broad metadata taxonomy work.
 ```
 
 ## Direction

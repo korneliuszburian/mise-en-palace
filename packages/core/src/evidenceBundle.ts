@@ -208,87 +208,79 @@ const hasText = (value: string | undefined): value is string =>
 const normalizeToken = (value: string | undefined): string =>
   value?.trim().toLowerCase().replaceAll("-", "_") ?? "";
 
-const targetEvidenceModes = new Set<TargetEvidenceMode>([
+const createTokenNormalizer = <TValue extends string>(
+  values: readonly TValue[],
+  fallback: TValue
+): ((value: string | undefined) => TValue) => {
+  const allowedValues = new Set<string>(values);
+
+  return (value) => {
+    const normalized = normalizeToken(value);
+
+    return allowedValues.has(normalized) ? normalized as TValue : fallback;
+  };
+};
+
+const targetEvidenceModeValues = [
   "observation_only",
   "headless_repair",
   "real_second_operator",
   "unknown"
-]);
+] as const satisfies readonly TargetEvidenceMode[];
 
-const targetDirtyStates = new Set<TargetDirtyState>(["clean", "dirty", "unknown"]);
+const targetDirtyStateValues = [
+  "clean",
+  "dirty",
+  "unknown"
+] as const satisfies readonly TargetDirtyState[];
 
-const targetChangeOwnerships = new Set<TargetChangeOwnership>([
+const targetChangeOwnershipValues = [
   "external",
   "owned_by_current_krn_run",
   "partial",
   "unknown"
-]);
+] as const satisfies readonly TargetChangeOwnership[];
 
-const targetStatusFreshnesses = new Set<TargetStatusFreshness>([
+const targetStatusFreshnessValues = [
   "fresh_current_task",
   "stale_prior_selection",
   "changed_since_selection",
   "unknown"
-]);
+] as const satisfies readonly TargetStatusFreshness[];
 
-const targetPatchLifecycles = new Set<TargetPatchLifecycle>([
+const targetPatchLifecycleValues = [
   "none",
   "accepted_by_target_owner",
   "rejected_by_target_owner",
   "stronger_verification_requested",
   "handed_off_unresolved",
   "unknown"
-]);
+] as const satisfies readonly TargetPatchLifecycle[];
 
-export const normalizeTargetEvidenceMode = (
-  value: string | undefined
-): TargetEvidenceMode => {
-  const normalized = normalizeToken(value);
+export const normalizeTargetEvidenceMode = createTokenNormalizer(
+  targetEvidenceModeValues,
+  "unknown"
+);
 
-  return targetEvidenceModes.has(normalized as TargetEvidenceMode)
-    ? normalized as TargetEvidenceMode
-    : "unknown";
-};
+export const normalizeTargetDirtyState = createTokenNormalizer(
+  targetDirtyStateValues,
+  "unknown"
+);
 
-export const normalizeTargetDirtyState = (
-  value: string | undefined
-): TargetDirtyState => {
-  const normalized = normalizeToken(value);
+export const normalizeTargetChangeOwnership = createTokenNormalizer(
+  targetChangeOwnershipValues,
+  "unknown"
+);
 
-  return targetDirtyStates.has(normalized as TargetDirtyState)
-    ? normalized as TargetDirtyState
-    : "unknown";
-};
+export const normalizeTargetStatusFreshness = createTokenNormalizer(
+  targetStatusFreshnessValues,
+  "unknown"
+);
 
-export const normalizeTargetChangeOwnership = (
-  value: string | undefined
-): TargetChangeOwnership => {
-  const normalized = normalizeToken(value);
-
-  return targetChangeOwnerships.has(normalized as TargetChangeOwnership)
-    ? normalized as TargetChangeOwnership
-    : "unknown";
-};
-
-export const normalizeTargetStatusFreshness = (
-  value: string | undefined
-): TargetStatusFreshness => {
-  const normalized = normalizeToken(value);
-
-  return targetStatusFreshnesses.has(normalized as TargetStatusFreshness)
-    ? normalized as TargetStatusFreshness
-    : "unknown";
-};
-
-export const normalizeTargetPatchLifecycle = (
-  value: string | undefined
-): TargetPatchLifecycle => {
-  const normalized = normalizeToken(value);
-
-  return targetPatchLifecycles.has(normalized as TargetPatchLifecycle)
-    ? normalized as TargetPatchLifecycle
-    : "unknown";
-};
+export const normalizeTargetPatchLifecycle = createTokenNormalizer(
+  targetPatchLifecycleValues,
+  "unknown"
+);
 
 const normalizedStringList = (values: readonly string[] | undefined): string[] => [
   ...new Set((values ?? [])
