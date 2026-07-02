@@ -13,7 +13,7 @@ import {
   formatMemoryAntiPromoteUsage,
   formatMemoryAntiRejectUsage,
   parseMemoryArgs
-} from "./parseMemoryArgs.js";
+} from "../parseMemoryArgs.js";
 
 describe("parseMemoryArgs", () => {
   it("parses memory candidate add options and metadata", () => {

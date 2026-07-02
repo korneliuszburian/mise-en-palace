@@ -6,7 +6,7 @@ import {
 
 import {
   parseEvidenceArgs
-} from "./parseEvidenceArgs.js";
+} from "../parseEvidenceArgs.js";
 
 const evidenceUsage =
   [
