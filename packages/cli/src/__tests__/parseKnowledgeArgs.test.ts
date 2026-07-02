@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseKnowledgeArgs
-} from "./parseKnowledgeArgs.js";
+} from "../parseKnowledgeArgs.js";
 
 describe("parseKnowledgeArgs", () => {
   it("parses brain knowledge readback preview", () => {
