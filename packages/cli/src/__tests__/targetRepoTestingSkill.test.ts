@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 
 const skillText = (): string =>
   readFileSync(
-    new URL("../../../.agents/skills/target-repo-testing/SKILL.md", import.meta.url),
+    new URL("../../../../.agents/skills/target-repo-testing/SKILL.md", import.meta.url),
     "utf8"
   );
 
 const metadataText = (): string =>
   readFileSync(
     new URL(
-      "../../../.agents/skills/target-repo-testing/agents/openai.yaml",
+      "../../../../.agents/skills/target-repo-testing/agents/openai.yaml",
       import.meta.url
     ),
     "utf8"
