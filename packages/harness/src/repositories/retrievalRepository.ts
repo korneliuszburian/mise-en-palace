@@ -9,7 +9,6 @@ import type {
   ProjectId,
   RetrievalCandidateId,
   RetrievalRunId,
-  SearchDocumentId,
   SourceTrustTier,
   TaskContractId
 } from "@krn/core";
@@ -19,7 +18,8 @@ import type {
   EmbeddingModelRecord,
   EmbeddingModelStatus,
   EmbeddingRecord,
-  RetrievalCandidateKind,
+  EmbeddingSubjectFields,
+  RetrievalCandidateFields,
   RetrievalCandidateRecord,
   RetrievalCandidateStatus,
   RetrievalRunMode,
@@ -28,22 +28,11 @@ import type {
   RetrievalSubjectType,
   RetrievalValidityStatus,
   SearchDocumentRecord,
-  SearchDocumentSearchResult
+  SearchDocumentSearchResult,
+  SearchDocumentSubjectFields
 } from "./types.js";
 
-export interface CreateSearchDocumentInput {
-  projectId?: ProjectId;
-  subjectType: RetrievalSubjectType;
-  subjectId: string;
-  sourceArtifactId?: string;
-  sourceChunkId?: string;
-  sourceClaimId?: string;
-  memoryRecordId?: string;
-  antiMemoryRecordId?: string;
-  evidenceBundleId?: string;
-  reviewAssessmentId?: string;
-  sourceDecisionId?: string;
-  runEventId?: string;
+export interface CreateSearchDocumentInput extends SearchDocumentSubjectFields {
   trustTier?: SourceTrustTier;
   validityStatus?: RetrievalValidityStatus;
   language?: string;
@@ -71,17 +60,8 @@ export interface CreateEmbeddingModelInput {
   metadata?: Record<string, unknown>;
 }
 
-export interface CreateEmbeddingInput {
-  projectId?: ProjectId;
+export interface CreateEmbeddingInput extends EmbeddingSubjectFields {
   embeddingModelId: EmbeddingModelId;
-  subjectType: RetrievalSubjectType;
-  subjectId: string;
-  sourceArtifactId?: string;
-  sourceChunkId?: string;
-  sourceClaimId?: string;
-  memoryRecordId?: string;
-  antiMemoryRecordId?: string;
-  searchDocumentId?: SearchDocumentId;
   embedding: number[];
   contentHash: string;
   trustTier?: SourceTrustTier;
@@ -142,22 +122,8 @@ export interface CompleteRetrievalRunInput {
   metadata?: Record<string, unknown>;
 }
 
-export interface AddRetrievalCandidateInput {
-  retrievalRunId: RetrievalRunId;
-  kind: RetrievalCandidateKind;
+export interface AddRetrievalCandidateInput extends RetrievalCandidateFields {
   status?: RetrievalCandidateStatus;
-  subjectType: RetrievalSubjectType;
-  subjectId: string;
-  searchDocumentId?: SearchDocumentId;
-  trustTier: SourceTrustTier;
-  lexicalScore?: number;
-  vectorScore?: number;
-  graphScore?: number;
-  temporalScore?: number;
-  contextRoiScore?: number;
-  totalScore?: number;
-  score?: number;
-  reason: string;
   metadata?: Record<string, unknown>;
 }
 

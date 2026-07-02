@@ -161,8 +161,7 @@ export type ActivationDecisionStatus =
   | "conflict"
   | "stale";
 
-export interface SearchDocumentRecord {
-  id: SearchDocumentId;
+export interface SearchDocumentSubjectFields {
   projectId?: ProjectId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
@@ -175,6 +174,10 @@ export interface SearchDocumentRecord {
   reviewAssessmentId?: string;
   sourceDecisionId?: string;
   runEventId?: string;
+}
+
+export interface SearchDocumentRecord extends SearchDocumentSubjectFields {
+  id: SearchDocumentId;
   trustTier: SourceTrustTier;
   validityStatus: RetrievalValidityStatus;
   language: string;
@@ -210,8 +213,7 @@ export interface EmbeddingModelRecord {
   updatedAt: IsoTimestamp;
 }
 
-export interface EmbeddingRecord {
-  id: EmbeddingId;
+export interface EmbeddingSubjectFields {
   projectId?: ProjectId;
   embeddingModelId: EmbeddingModelId;
   subjectType: RetrievalSubjectType;
@@ -222,6 +224,10 @@ export interface EmbeddingRecord {
   memoryRecordId?: string;
   antiMemoryRecordId?: string;
   searchDocumentId?: SearchDocumentId;
+}
+
+export interface EmbeddingRecord extends EmbeddingSubjectFields {
+  id: EmbeddingId;
   embedding: number[];
   contentHash: string;
   trustTier: SourceTrustTier;
@@ -252,11 +258,9 @@ export interface RetrievalRunRecord {
   createdAt: IsoTimestamp;
 }
 
-export interface RetrievalCandidateRecord {
-  id: RetrievalCandidateId;
+export interface RetrievalCandidateFields {
   retrievalRunId: RetrievalRunId;
   kind: RetrievalCandidateKind;
-  status: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
   searchDocumentId?: SearchDocumentId;
@@ -269,6 +273,11 @@ export interface RetrievalCandidateRecord {
   totalScore?: number;
   score?: number;
   reason: string;
+}
+
+export interface RetrievalCandidateRecord extends RetrievalCandidateFields {
+  id: RetrievalCandidateId;
+  status: RetrievalCandidateStatus;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }
