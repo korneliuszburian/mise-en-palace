@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair
+current task: mise-en-palace-tnvb Simplify evidence enum normalization with one local factory
 ```
 
 ## Compact Checkpoints
@@ -94,6 +94,7 @@ retained pattern parser query shaping: long parser/metadata plan tasks select th
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
+reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -103,27 +104,24 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-x4c4 Apply Reference-Implementation Recipe To One Real Code-Quality Repair
+### mise-en-palace-tnvb Simplify Evidence Enum Normalization With One Local Factory
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical slices.
 
-Hard boundary: do not build dashboard, API, MCP, worker daemon, crawler, broad
-eval platform, DB schema, or product server. Do not create synthetic proof. Use
-real repo work, real evidence, and compact reports.
+Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-1fwk-reference-implementation-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-x4c4-reference-recipe-code-quality-repair/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Use the retained recipe on one bounded audit finding. Choose a small
-TypeScript/CLI/harness code-quality repair where an exemplar can guide a simpler
-implementation. Do not broad-refactor, delete mass files, or build clone
-runtime, dashboard, API, MCP, DB schema, or package topology work.
+Verify whether the evidence enum-normalizer audit finding is still true. If yes,
+replace repeated boilerplate with one local typed helper. No EvidenceBundle
+redesign, provenance change, DB schema, or broader consolidation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

@@ -82,6 +82,73 @@ const readRootPackageJson = async (
   return scripts === undefined ? {} : { scripts };
 };
 
+type CapturedPlanRun = {
+  result: Awaited<ReturnType<typeof runCli>>;
+  executionRunMetadata: Record<string, unknown> | undefined;
+};
+
+const runPersistedPlanWithCapturedMetadata = async (
+  task: string
+): Promise<CapturedPlanRun> => {
+  let executionRunMetadata: Record<string, unknown> | undefined;
+  const result = await runCli(
+    [
+      "plan",
+      "--task",
+      task,
+      "--persist"
+    ],
+    {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+        const dependencies = createNoStoreCompilerDependencies(input);
+        const harnessRunRepository = {
+          ...dependencies.harnessRunRepository,
+          async createExecutionRun(runInput: CreateExecutionRunInput) {
+            executionRunMetadata = runInput.metadata ?? {};
+
+            return {
+              id: "execution-run-1",
+              harnessPlanId: runInput.harnessPlanId,
+              adapter: runInput.adapter,
+              status: runInput.status ?? "planned",
+              metadata: runInput.metadata ?? {},
+              createdAt: now,
+              updatedAt: now
+            };
+          },
+          async getHarnessRunByExecutionRunId() {
+            return undefined;
+          }
+        };
+
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        };
+      }
+    }
+  );
+
+  return {
+    result,
+    executionRunMetadata
+  };
+};
+
 const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
     throw new Error("createMemoryCandidate should not be called");
@@ -1013,57 +1080,8 @@ describe("runCli", () => {
   });
 
   it("retries retained-pattern planning with compact mechanism terms", async () => {
-    let executionRunMetadata: Record<string, unknown> | undefined;
-    const result = await runCli(
-      [
-        "plan",
-        "--task",
-        "Use the retained consensus relation heartbeat review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-heartbeat-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work",
-        "--persist"
-      ],
-      {
-        env: {
-          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
-        },
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
-          const dependencies = createNoStoreCompilerDependencies(input);
-          const harnessRunRepository = {
-            ...dependencies.harnessRunRepository,
-            async createExecutionRun(runInput: CreateExecutionRunInput) {
-              executionRunMetadata = runInput.metadata ?? {};
-
-              return {
-                id: "execution-run-1",
-                harnessPlanId: runInput.harnessPlanId,
-                adapter: runInput.adapter,
-                status: runInput.status ?? "planned",
-                metadata: runInput.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
-            },
-            async getHarnessRunByExecutionRunId() {
-              return undefined;
-            }
-          };
-
-          return {
-            workspaceId: "workspace-1",
-            projectId: "project-1",
-            compilerDependencies: {
-              ...dependencies,
-              harnessRunRepository
-            },
-            harnessRunRepository,
-            memoryRepository: unusedMemoryRepository,
-            async close() {
-              return undefined;
-            }
-          };
-        }
-      }
+    const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "Use the retained consensus relation heartbeat review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-heartbeat-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
 
     expect(result.exitCode).toBe(0);
@@ -1079,57 +1097,8 @@ describe("runCli", () => {
   });
 
   it("retries retained-pattern planning with parser exemplar mechanism terms", async () => {
-    let executionRunMetadata: Record<string, unknown> | undefined;
-    const result = await runCli(
-      [
-        "plan",
-        "--task",
-        "Improve retained-pattern plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes",
-        "--persist"
-      ],
-      {
-        env: {
-          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
-        },
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
-          const dependencies = createNoStoreCompilerDependencies(input);
-          const harnessRunRepository = {
-            ...dependencies.harnessRunRepository,
-            async createExecutionRun(runInput: CreateExecutionRunInput) {
-              executionRunMetadata = runInput.metadata ?? {};
-
-              return {
-                id: "execution-run-1",
-                harnessPlanId: runInput.harnessPlanId,
-                adapter: runInput.adapter,
-                status: runInput.status ?? "planned",
-                metadata: runInput.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
-            },
-            async getHarnessRunByExecutionRunId() {
-              return undefined;
-            }
-          };
-
-          return {
-            workspaceId: "workspace-1",
-            projectId: "project-1",
-            compilerDependencies: {
-              ...dependencies,
-              harnessRunRepository
-            },
-            harnessRunRepository,
-            memoryRepository: unusedMemoryRepository,
-            async close() {
-              return undefined;
-            }
-          };
-        }
-      }
+    const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "Improve retained-pattern plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );
 
     expect(result.exitCode).toBe(0);
@@ -1147,57 +1116,8 @@ describe("runCli", () => {
   });
 
   it("selects reference implementation recipe patterns for exemplar tasks", async () => {
-    let executionRunMetadata: Record<string, unknown> | undefined;
-    const result = await runCli(
-      [
-        "plan",
-        "--task",
-        "Prove the retained reference-implementation recipe pattern through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions",
-        "--persist"
-      ],
-      {
-        env: {
-          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
-        },
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
-          const dependencies = createNoStoreCompilerDependencies(input);
-          const harnessRunRepository = {
-            ...dependencies.harnessRunRepository,
-            async createExecutionRun(runInput: CreateExecutionRunInput) {
-              executionRunMetadata = runInput.metadata ?? {};
-
-              return {
-                id: "execution-run-1",
-                harnessPlanId: runInput.harnessPlanId,
-                adapter: runInput.adapter,
-                status: runInput.status ?? "planned",
-                metadata: runInput.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
-            },
-            async getHarnessRunByExecutionRunId() {
-              return undefined;
-            }
-          };
-
-          return {
-            workspaceId: "workspace-1",
-            projectId: "project-1",
-            compilerDependencies: {
-              ...dependencies,
-              harnessRunRepository
-            },
-            harnessRunRepository,
-            memoryRepository: unusedMemoryRepository,
-            async close() {
-              return undefined;
-            }
-          };
-        }
-      }
+    const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "Prove the retained reference-implementation recipe pattern through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions"
     );
 
     expect(result.exitCode).toBe(0);

@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair
+current task: mise-en-palace-tnvb Simplify evidence enum normalization with one local factory
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,21 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-x4c4 Apply reference-implementation recipe to one real code-quality repair is active.
-The current product gap is using the retained recipe on a real audit-driven code
-repair, not only proving that it can be selected.
+mise-en-palace-tnvb Simplify evidence enum normalization with one local factory
+is active. The current product gap is applying the retained recipe to bounded
+production-code simplification after x4c4 proved it on a real test repair.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-1fwk complete: added deterministic plan proof that long
-reference-implementation recipe tasks select the retained recipe boundary and
-parser exemplar; live brain knowledge readback returns both cards read-only with
-mutation none.
+mise-en-palace-x4c4 complete: applied the retained reference-implementation
+recipe to one real code-quality repair by replacing three repeated persisted
+plan metadata capture blocks in runCli tests with one local helper.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-1fwk-reference-implementation-readback/REPORT.md
-Next: `mise-en-palace-x4c4` applies the retained recipe to one real
-code-quality repair from the audit without broad refactor or runtime expansion.
+docs/reviews/controlled-dogfood/2026-07-02-x4c4-reference-recipe-code-quality-repair/REPORT.md
+Next: `mise-en-palace-tnvb` verifies the current evidence normalizer audit
+finding and, if still true, applies one bounded production-code simplification.
 ```
 
 ## 2. Product Thesis
