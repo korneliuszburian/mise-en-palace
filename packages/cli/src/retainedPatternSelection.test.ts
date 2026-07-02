@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   retainedPatternSelectionFromKnowledgeJson,
   retainedPatternSelectionFromMetadata
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 
 const validPatternCard = {
   id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
@@ -32,7 +32,7 @@ const validSelectionMetadata = {
   }
 };
 
-describe("retainedPatternPlanBridge", () => {
+describe("retainedPatternSelection", () => {
   it("parses retained pattern cards through finite reviewability and action fields", () => {
     const result = retainedPatternSelectionFromKnowledgeJson(
       "unknown-first parser exemplar",

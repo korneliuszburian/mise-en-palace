@@ -45,7 +45,7 @@ import {
 } from "./cliFileBoundary.js";
 import {
   formatProjectResolutionKind
-} from "./projectResolutionReadback.js";
+} from "./projectResolutionFormat.js";
 import type {
   CliCommand
 } from "./parseArgs.js";

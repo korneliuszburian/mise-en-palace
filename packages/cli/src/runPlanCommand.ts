@@ -42,7 +42,7 @@ import {
 } from "./cliFileBoundary.js";
 import {
   formatProjectResolutionKind
-} from "./projectResolutionReadback.js";
+} from "./projectResolutionFormat.js";
 import {
   detectSourceSeeds
 } from "./runInitCommand.js";
@@ -57,10 +57,10 @@ import {
   retainedPatternPlanSelectionMetadataKey,
   retainedPatternSelectionFromKnowledgeJson,
   unavailableRetainedPatternSelection
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 import type {
   RetainedPatternPlanSelection
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 import {
   runKnowledgeCardsCommand
 } from "./runKnowledgeCardsCommand.js";

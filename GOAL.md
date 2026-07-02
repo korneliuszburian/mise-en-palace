@@ -39,11 +39,10 @@ the product goal.
 Latest slice:
 
 ```txt
-smoke fixture clocks now centralize deterministic DB/CLI smoke timestamps,
-Codex adapter smoke proves a concrete expired-memory stale exclusion in the
-rendered brief, and stale activation smoke count assumptions were repaired.
+two CLI-private helpers now use format/selection terminology instead of
+readback/bridge wording, without changing CLI behavior.
 Report:
-docs/runs/2026-07-02-smoke-fixture-clocks.md
+docs/runs/2026-07-02-project-resolution-format-rename.md
 Next: continue audit-hardening through execution-brief proof boundaries,
 source relation metadata typing, retrieval ID branding, and bounded naming
 cleanup.

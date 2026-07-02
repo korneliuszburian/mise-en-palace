@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   formatProjectResolutionKind,
   projectResolutionKindLabel
-} from "./projectResolutionReadback.js";
+} from "./projectResolutionFormat.js";
 
-describe("projectResolutionReadback", () => {
-  it("labels every current project resolution kind for operator readback", () => {
+describe("projectResolutionFormat", () => {
+  it("labels every current project resolution kind for operator output", () => {
     expect(projectResolutionKindLabel("explicit_project")).toBe("explicit project");
     expect(projectResolutionKindLabel("connected_repo_path")).toBe("connected repo path");
     expect(projectResolutionKindLabel("workspace_project_slug")).toBe(

@@ -8,7 +8,7 @@ import {
 import {
   formatRetainedPatternSelectionLines,
   retainedPatternSelectionFromMetadata
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 
 export interface CodexBriefCommandRuntime {
   env: Record<string, string | undefined>;

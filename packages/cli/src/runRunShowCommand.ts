@@ -50,14 +50,14 @@ import type {
 } from "./databaseRuntime.js";
 import {
   formatProjectResolutionKind
-} from "./projectResolutionReadback.js";
+} from "./projectResolutionFormat.js";
 import {
   formatRetainedPatternSelectionLines,
   retainedPatternSelectionFromMetadata
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 import type {
   RetainedPatternPlanSelection
-} from "./retainedPatternPlanBridge.js";
+} from "./retainedPatternSelection.js";
 
 export interface RunShowCommandRuntime {
   env: Record<string, string | undefined>;
