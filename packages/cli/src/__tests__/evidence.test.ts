@@ -1,0 +1,962 @@
+import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import {
+  runCli
+} from "../runCli.js";
+import {
+  createNoStoreCompilerDependencies
+} from "../noStoreRepositories.js";
+import {
+  commandResultDoesNotProve
+} from "@krn/core";
+import type {
+  AntiMemoryCandidate,
+  AntiMemoryRecord,
+  MemoryRecord,
+  ObservationItem,
+  SourceClaim
+} from "@krn/core";
+import type {
+  CreateAntiMemoryCandidateInput,
+  CreateEvidenceBundleInput,
+  CreateExecutionRunInput,
+  CreateFeedbackDeltaInput,
+  CreateMemoryFeedbackEventInput,
+  CreateMemoryCandidateInput,
+  InvalidateMemoryRecordInput,
+  PromoteAntiMemoryCandidateInput,
+  PromoteMemoryCandidateInput,
+  RejectAntiMemoryCandidateInput,
+  RejectMemoryCandidateInput,
+  RecordMemoryApplicationInput,
+  CreateReviewAssessmentInput,
+  HarnessRunAggregate,
+  SearchDocumentSearchResult
+} from "@krn/harness/repositories/internal";
+import type {
+  DatabaseRuntimeInput
+} from "../databaseRuntime.js";
+import {
+  deriveBrainStoreReadiness,
+  deriveHarnessPersistenceReadiness,
+  deriveActivationReadiness,
+  deriveCodexAdapterReadiness,
+  deriveMemoryGovernanceReadiness,
+  deriveRetrievalSubstrateReadiness,
+  deriveSourceGraphReadiness,
+  deriveTargetRepoReadiness,
+  deriveWorkerJobReadiness
+} from "../doctorReadiness.js";
+
+const now = "2026-06-21T12:00:00.000Z";
+
+const unusedMemoryRepository = {
+  async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
+    throw new Error("createMemoryCandidate should not be called");
+  },
+  async getMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getMemoryCandidateById should not be called");
+  },
+  async promoteReviewedMemoryCandidate(_input: PromoteMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedMemoryCandidate should not be called");
+  },
+  async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectMemoryCandidate should not be called");
+  },
+  async invalidateMemoryRecord(_input: InvalidateMemoryRecordInput): Promise<never> {
+    throw new Error("invalidateMemoryRecord should not be called");
+  },
+  async getMemoryRecordById(_id: string): Promise<never> {
+    throw new Error("getMemoryRecordById should not be called");
+  },
+  async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
+    throw new Error("recordMemoryApplication should not be called");
+  },
+  async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
+    throw new Error("createMemoryFeedbackEvent should not be called");
+  },
+  async createAntiMemoryCandidate(_input: CreateAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("createAntiMemoryCandidate should not be called");
+  },
+  async getAntiMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getAntiMemoryCandidateById should not be called");
+  },
+  async promoteReviewedAntiMemoryCandidate(_input: PromoteAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedAntiMemoryCandidate should not be called");
+  },
+  async rejectAntiMemoryCandidate(_input: RejectAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectAntiMemoryCandidate should not be called");
+  }
+};
+
+interface EvidencePersistenceCapture {
+  commands?: CreateEvidenceBundleInput["commands"];
+  evidenceBundle?: CreateEvidenceBundleInput;
+  sourceDecisions?: CreateFeedbackDeltaInput["sourceDecisions"];
+  memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
+  feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
+}
+
+type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
+
+const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
+  operatorIntent: {
+    id: "operator-intent-1",
+    workspaceId: "workspace-1",
+    projectId: "project-1",
+    source: "cli",
+    rawIntent: "persist harness run",
+    metadata: {},
+    createdAt: now
+  },
+  taskContract: {
+    id: "task-contract-1",
+    operatorIntentId: "operator-intent-1",
+    projectId: "project-1",
+    title: "persist harness run",
+    objective: "persist harness run",
+    constraints: [],
+    nonGoals: [],
+    acceptance: [],
+    status: "active",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  harnessPlan: {
+    id: "harness-plan-1",
+    taskContractId: "task-contract-1",
+    version: 1,
+    status: "ready",
+    summary: "persist harness run",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  contextAssembly: {
+    id: "context-assembly-1",
+    harnessPlanId: "harness-plan-1",
+    status: "assembled",
+    inclusions: [],
+    exclusions: [],
+    metadata: {},
+    createdAt: now
+  },
+  executionRun: {
+    id: "execution-run-1",
+    harnessPlanId: "harness-plan-1",
+    adapter: "codex",
+    status: "planned",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  evidenceBundles: [],
+  reviewAssessments: [],
+  feedbackDeltas: [],
+  runEvents: [{
+    id: "run-event-1",
+    executionRunId: "execution-run-1",
+    sequence: 1,
+    type: "plan.persisted",
+    severity: "info",
+    message: "plan persisted",
+    payload: {},
+    occurredAt: now
+  }]
+});
+
+const createCapturingEvidenceHarnessRunRepository = (
+  dependencies: NoStoreCompilerDependencies,
+  aggregate: HarnessRunAggregate,
+  capture: EvidencePersistenceCapture
+): NoStoreCompilerDependencies["harnessRunRepository"] => ({
+  ...dependencies.harnessRunRepository,
+  async createExecutionRun(_input: CreateExecutionRunInput) {
+    return aggregate.executionRun;
+  },
+  async getHarnessRunByExecutionRunId() {
+    return aggregate;
+  },
+  async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+    capture.evidenceBundle = input;
+    capture.commands = input.commands;
+
+    return {
+      id: "evidence-bundle-1",
+      executionRunId: input.executionRunId,
+      status: input.status ?? "captured",
+      changedFiles: input.changedFiles,
+      commands: input.commands,
+      diffRisk: input.diffRisk,
+      reviewBurden: input.reviewBurden,
+      rollbackPath: input.rollbackPath,
+      metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now
+    };
+  },
+  async createReviewAssessment(input: CreateReviewAssessmentInput) {
+    return {
+      id: "review-assessment-1",
+      evidenceBundleId: input.evidenceBundleId,
+      status: input.status ?? "pending",
+      reviewer: input.reviewer,
+      summary: input.summary,
+      findings: input.findings,
+      metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now
+    };
+  },
+  async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+    capture.memoryCandidates = input.memoryCandidates;
+    capture.sourceDecisions = input.sourceDecisions;
+    capture.feedbackDeltaMetadata = input.metadata;
+
+    return {
+      id: "feedback-delta-1",
+      reviewAssessmentId: input.reviewAssessmentId,
+      status: input.status ?? "candidate",
+      memoryCandidates: input.memoryCandidates,
+      sourceDecisions: input.sourceDecisions,
+      evalCandidates: input.evalCandidates,
+      metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+});
+
+const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
+  expect(stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+  expect(stdout).toContain("Run ID: execution-run-1");
+  expect(stdout).toContain("Persisted IDs:");
+  expect(stdout).toContain("evidenceBundle: evidence-bundle-1");
+  expect(stdout).toContain("reviewAssessment: review-assessment-1");
+  expect(stdout).toContain("feedbackDelta: feedback-delta-1");
+  expect(stdout).toContain("Memory mutation: none");
+  expect(stdout).toContain("memoryCandidates:");
+  expect(stdout).toContain("memory-candidate-proposal-1");
+  expect(stdout).toContain("No MemoryCandidate row created");
+  expect(stdout).toContain("sourceDecisionCandidates:");
+  expect(stdout).toContain("sourceUsefulnessOutcomes:");
+  expect(stdout).toContain("outcome=helped sourceClaim=source-claim-1 sourceDecision=none");
+  expect(stdout).toContain("reason: Source claim kept pattern-intake proof boundaries visible");
+  expect(stdout).toContain("evidenceRef: evidence-bundle-1");
+  expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
+  expect(stdout).toContain("patternUsefulnessOutcomes:");
+  expect(stdout).toContain("outcome=helped pattern=ts-boundary-unknown-first-result-state");
+  expect(stdout).toContain("reason: Pattern selected the unknown-first parser shape");
+  expect(stdout).toContain("doesNotProve: Does not prove future pattern recall quality");
+};
+
+const expectPersistedEvidenceCandidates = (capture: EvidencePersistenceCapture): void => {
+  expect(capture.memoryCandidates).toHaveLength(1);
+  const [memoryCandidate] = capture.memoryCandidates ?? [];
+  expect(memoryCandidate).toMatchObject({
+    projectId: "project-1",
+    executionRunId: "execution-run-1",
+    status: "proposed",
+    sourceLineage: []
+  });
+  expect(memoryCandidate?.invalidationRule).toBeUndefined();
+  expect(memoryCandidate?.applicationGuidance).toContain("Incomplete");
+  expect(memoryCandidate?.metadata).toMatchObject({
+    completeness: "incomplete",
+    reviewability: "too_vague",
+    reviewabilityReasons: ["Candidate does not name a concrete future use."],
+    persistence: "feedback-delta-proposal-only"
+  });
+
+  expect(capture.sourceDecisions).toHaveLength(1);
+  const [sourceDecision] = capture.sourceDecisions ?? [];
+  expect(sourceDecision).toMatchObject({
+    status: "defer",
+    consumer: "krn evidence capture"
+  });
+  expect(sourceDecision?.metadata).toMatchObject({
+    reviewability: "too_vague",
+    reviewabilityReasons: ["Candidate does not name a concrete future use."]
+  });
+};
+
+const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): void => {
+  expect(capture.feedbackDeltaMetadata).toMatchObject({
+    sourceUsefulnessOutcomes: [{
+      sourceClaimId: "source-claim-1",
+      outcome: "helped",
+      reason: "Source claim kept pattern-intake proof boundaries visible",
+      evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
+      doesNotProve: "Does not prove future source selector quality"
+    }],
+    patternUsefulnessOutcomes: [{
+      patternId: "ts-boundary-unknown-first-result-state",
+      outcome: "helped",
+      reason: "Pattern selected the unknown-first parser shape",
+      evidenceRefs: ["evidence-bundle-1"],
+      doesNotProve: "Does not prove future pattern recall quality"
+    }]
+  });
+  expect(capture.evidenceBundle?.reviewBurden).toBe(
+    "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."
+  );
+  expect(capture.evidenceBundle?.metadata).toMatchObject({
+    intendedFiles: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+    changedFileClassification: {
+      intended: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+      unrelated: [],
+      unknown: [],
+      unmatchedIntendedFiles: []
+    },
+    dirtyContext: {
+      hasUnrelatedFiles: false,
+      unrelatedFileCount: 0
+    },
+    targetEvidence: {
+      targetRepo: "../wilq-seo",
+      mode: "observation_only",
+      dirtyBefore: "dirty",
+      dirtyAfter: "dirty",
+      ownedChanges: "external",
+      targetStatusFreshness: "fresh_current_task",
+      targetPatchLifecycle: "none",
+      targetOwnerDecision: "no target patch",
+      allowedWrites: ["none"],
+      forbiddenWrites: [
+        "target source edits",
+        "target commits",
+        "target resets or cleans",
+        "target production/runtime writes"
+      ],
+      changedFiles: [{
+        status: "M",
+        path: "apps/dashboard/src/App.tsx",
+        ownership: "external"
+      }],
+      commands: ["wilq-seo scripts/test.sh"],
+      doesNotProve: [
+        "Target evidence does not prove KRN source correctness.",
+        "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
+        "Target evidence does not prove product readiness or V02-01 second-operator usability."
+      ]
+    }
+  });
+};
+
+const expectDefaultTemplateCommands = (
+  commands: CreateEvidenceBundleInput["commands"] | undefined
+): void => {
+  const doesNotProve =
+    "This command row does not prove the command executed; it is default template evidence only.";
+
+  expect(commands).toEqual([
+    {
+      kind: "default_template",
+      command: "pnpm typecheck",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve
+    },
+    {
+      kind: "default_template",
+      command: "pnpm test",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve
+    },
+    {
+      kind: "default_template",
+      command: "git diff --check",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve
+    }
+  ]);
+};
+
+describe("runCli", () => {
+  it("prints evidence capture verification examples in help", async () => {
+    const result = await runCli(["--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--pattern-usefulness \"pattern:<id>=helped|reason|evidence|doesNotProve\"] [--persist]"
+    );
+    expect(result.stdout).toContain(
+      "example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
+    );
+    expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
+    expect(result.stdout).toContain("pattern usefulness: krn evidence capture --pattern-usefulness");
+    expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
+    expect(result.stdout).toContain(
+      "evidence capture records outcomes; it does not execute commands"
+    );
+  });
+
+  it("prints evidence capture without mutating memory", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => " M packages/cli/src/runCli.ts\n?? notes.md\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Evidence Capture");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("packages/cli/src/runCli.ts");
+    expect(result.stdout).toContain("notes.md");
+    expect(result.stdout).toContain("Changed files:\nunknown:");
+    expect(result.stdout).toContain("Dirty context: unclassified (no --intended-file provided).");
+    expect(result.stdout).toContain("pnpm typecheck: not_run | provenance=default_template");
+    expect(result.stdout).toContain("pnpm test: not_run | provenance=default_template");
+    expect(result.stdout).toContain("git diff --check: not_run | provenance=default_template");
+    expect(result.stdout).toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
+    expect(result.stdout).toContain("Command execution: none");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("Feedback candidates:");
+    expect(result.stdout).toContain("memoryCandidates:");
+    expect(result.stdout).toContain("memory-candidate-proposal-1");
+    expect(result.stdout).toContain("status: proposed");
+    expect(result.stdout).toContain("reviewability: too_vague");
+    expect(result.stdout).toContain("reviewability reasons:\n  - Candidate does not name a concrete future use.");
+    expect(result.stdout).toContain("completeness: incomplete");
+    expect(result.stdout).toContain("missing: applicationGuidance, sourceLineage, invalidationRule");
+    expect(result.stdout).toContain("No MemoryCandidate row created");
+    expect(result.stdout).toContain("sourceDecisionCandidates:\n- none");
+  });
+
+  it("classifies intended and unrelated changed files during evidence capture", async () => {
+    const result = await runCli([
+      "evidence",
+      "capture",
+      "--intended-file",
+      "packages/cli/src/runEvidenceCaptureCommand.ts",
+      "--intended-file=./packages/cli/src/parseEvidenceArgs.ts",
+      "--intended-file",
+      "packages/core/src/candidateReviewability.ts",
+      "--intended-file",
+      "docs/reviews/controlled-dogfood/run/REPORT.md",
+      "--verification",
+      "pnpm typecheck=passed"
+    ], {
+      env: {},
+      cwd: process.cwd(),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () =>
+        " M src/runEvidenceCaptureCommand.ts\n" +
+        " M src/parseEvidenceArgs.ts\n" +
+        " M ../core/src/candidateReviewability.ts\n" +
+        "?? ../../docs/reviews/controlled-dogfood/run/\n" +
+        "?? ../../docs/materials/raw-audit.md\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Changed files:\nintended:");
+    expect(result.stdout).toContain("- M packages/cli/src/runEvidenceCaptureCommand.ts");
+    expect(result.stdout).toContain("- M packages/cli/src/parseEvidenceArgs.ts");
+    expect(result.stdout).toContain("- M packages/core/src/candidateReviewability.ts");
+    expect(result.stdout).toContain("- ?? docs/reviews/controlled-dogfood/run");
+    expect(result.stdout).not.toContain("../../docs/reviews/controlled-dogfood/run");
+    expect(result.stdout).not.toContain("- M core/src/candidateReviewability.ts");
+    expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
+    expect(result.stdout).toContain("unknown:\n- none");
+    expect(result.stdout).toContain("Dirty context: unrelated files present; review burden increased.");
+    expect(result.stdout).toContain(
+      "Review burden: Review intended files, unrelated dirty files, command proof, residual risk, and rollback path."
+    );
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+  });
+
+  it("renders target evidence separately from KRN changed files", async () => {
+    const result = await runCli([
+      "evidence",
+      "capture",
+      "--target-repo",
+      "../wilq-seo",
+      "--target-mode",
+      "observation-only",
+      "--target-dirty-before",
+      "dirty",
+      "--target-dirty-after",
+      "dirty",
+      "--target-owned-changes",
+      "external",
+      "--target-status-freshness",
+      "changed-since-selection",
+      "--target-patch-lifecycle",
+      "handed-off-unresolved",
+      "--target-handoff-artifact",
+      "docs/reviews/target/HANDOFF.md",
+      "--target-owner-decision",
+      "stronger verification requested",
+      "--target-changed-file",
+      "M apps/dashboard/src/App.tsx",
+      "--target-command",
+      "wilq-seo scripts/test.sh",
+      "--target-forbidden-write",
+      "wilq-seo/**",
+      "--verification",
+      "wilq-seo scripts/test.sh=failed"
+    ], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ""
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Changed files:\n- none");
+    expect(result.stdout).toContain("wilq-seo scripts/test.sh: failed | provenance=operator_reported");
+    expect(result.stdout).toContain("Target evidence:");
+    expect(result.stdout).toContain("- repo: ../wilq-seo");
+    expect(result.stdout).toContain("- mode: observation_only");
+    expect(result.stdout).toContain("- dirtyBefore: dirty");
+    expect(result.stdout).toContain("- dirtyAfter: dirty");
+    expect(result.stdout).toContain("- ownedChanges: external");
+    expect(result.stdout).toContain("- targetStatusFreshness: changed_since_selection");
+    expect(result.stdout).toContain("- targetPatchLifecycle: handed_off_unresolved");
+    expect(result.stdout).toContain("- handoffArtifact: docs/reviews/target/HANDOFF.md");
+    expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
+    expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
+    expect(result.stdout).toContain("- wilq-seo scripts/test.sh");
+    expect(result.stdout).toContain("- wilq-seo/**");
+    expect(result.stdout).toContain("Target evidence does not prove KRN source correctness.");
+    expect(result.stdout).toContain("Review target repo mode, dirty state, ownership");
+  });
+
+  it("surfaces proposal-only source decision candidates from source evidence", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () =>
+        " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n" +
+        " M packages/cli/src/runSourceClaimAddCommand.ts\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("sourceDecisionCandidates:");
+    expect(result.stdout).toContain("source-decision-candidate-1");
+    expect(result.stdout).toContain("status: defer");
+    expect(result.stdout).toContain("reviewability: too_vague");
+    expect(result.stdout).toContain("reviewability reasons:\n  - Candidate does not name a concrete future use.");
+    expect(result.stdout).toContain("consumer: krn evidence capture");
+    expect(result.stdout).toContain("No SourceClaim created");
+  });
+
+  it("requires database config for evidence capture --persist", async () => {
+    const result = await runCli(
+      ["evidence", "capture", "--run-id", "execution-run-1", "--persist"],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn evidence capture --persist"
+    );
+  });
+
+  it("requires run id for evidence capture --persist", async () => {
+    const result = await runCli(
+      ["evidence", "capture", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--run-id is required for krn evidence capture --persist");
+  });
+
+  it("persists evidence capture for a run id", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--intended-file",
+        "docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md",
+        "--target-repo",
+        "../wilq-seo",
+        "--target-mode",
+        "observation-only",
+        "--target-dirty-before",
+        "dirty",
+        "--target-dirty-after",
+        "dirty",
+        "--target-owned-changes",
+        "external",
+        "--target-status-freshness",
+        "fresh-current-task",
+        "--target-patch-lifecycle",
+        "none",
+        "--target-owner-decision",
+        "no target patch",
+        "--target-changed-file",
+        "M apps/dashboard/src/App.tsx",
+        "--target-command",
+        "wilq-seo scripts/test.sh",
+        "--source-usefulness",
+        "claim:source-claim-1=helped|Source claim kept pattern-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
+        "--pattern-usefulness",
+        "pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|evidence-bundle-1|Does not prove future pattern recall quality",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () =>
+          " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expectPersistedEvidenceCaptureStdout(result.stdout);
+    expectPersistedEvidenceCandidates(capture);
+    expectPersistedEvidenceMetadata(capture);
+    expectDefaultTemplateCommands(capture.commands);
+  });
+
+  it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--command",
+        "pnpm typecheck",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0",
+        "--output",
+        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--command",
+        "pnpm test",
+        "--status",
+        "failed",
+        "--exit-code",
+        "1",
+        "--output",
+        ".local-lab/p7-self-hosting/03-test.txt"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | provenance=captured_output_file | exitCode=0 | output=.local-lab/p7-self-hosting/02-typecheck.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).toContain(
+      "pnpm test: failed | provenance=captured_output_file | exitCode=1 | output=.local-lab/p7-self-hosting/03-test.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).not.toContain("pnpm typecheck: skipped");
+  });
+
+  it("prints explicit verification evidence as operator-reported provenance", async () => {
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--verification",
+        "pnpm typecheck=passed",
+        "--verification=pnpm test=passed"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).toContain(
+      "pnpm test: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).not.toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
+  });
+
+  it("persists supplied evidence command outcomes for a run id", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedCommands: CreateEvidenceBundleInput["commands"] | undefined;
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "persist harness run",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "persist harness run",
+        objective: "persist harness run",
+        constraints: [],
+        nonGoals: [],
+        acceptance: [],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "persist harness run",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      contextAssembly: {
+        id: "context-assembly-1",
+        harnessPlanId: "harness-plan-1",
+        status: "assembled",
+        inclusions: [],
+        exclusions: [],
+        metadata: {},
+        createdAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "planned",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: [{
+        id: "run-event-1",
+        executionRunId: "execution-run-1",
+        sequence: 1,
+        type: "plan.persisted",
+        severity: "info",
+        message: "plan persisted",
+        payload: {},
+        occurredAt: now
+      }]
+    };
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+        capturedCommands = input.commands;
+
+        return {
+          id: "evidence-bundle-1",
+          executionRunId: input.executionRunId,
+          status: input.status ?? "captured",
+          changedFiles: input.changedFiles,
+          commands: input.commands,
+          diffRisk: input.diffRisk,
+          reviewBurden: input.reviewBurden,
+          rollbackPath: input.rollbackPath,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createReviewAssessment(input: CreateReviewAssessmentInput) {
+        return {
+          id: "review-assessment-1",
+          evidenceBundleId: input.evidenceBundleId,
+          status: input.status ?? "pending",
+          reviewer: input.reviewer,
+          summary: input.summary,
+          findings: input.findings,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+        return {
+          id: "feedback-delta-1",
+          reviewAssessmentId: input.reviewAssessmentId,
+          status: input.status ?? "candidate",
+          memoryCandidates: input.memoryCandidates,
+          sourceDecisions: input.sourceDecisions,
+          evalCandidates: input.evalCandidates,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      }
+    };
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--persist",
+        "--command",
+        "pnpm typecheck",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0",
+        "--output",
+        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--command",
+        "pnpm test",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(capturedCommands).toEqual([
+      {
+        kind: "captured_output_file",
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "captured_output_file",
+        exitCode: 0,
+        outputPath: ".local-lab/p7-self-hosting/02-typecheck.txt",
+        outputRef: ".local-lab/p7-self-hosting/02-typecheck.txt",
+        doesNotProve:
+          "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+      },
+      {
+        kind: "operator_reported",
+        command: "pnpm test",
+        status: "passed",
+        provenance: "operator_reported",
+        exitCode: 0,
+        doesNotProve:
+          "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+      }
+    ]);
+  });
+
+  it("prints clean evidence capture when there are no changed files", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ""
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Changed files:\n- none");
+    expect(result.stdout).toContain("Diff risk: low");
+    expect(result.stdout).toContain("pnpm typecheck: not_run | provenance=default_template");
+    expect(result.stdout).toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
+    expect(result.stdout).toContain("memoryCandidates:\n- none");
+    expect(result.stdout).toContain("No changed files; no feedback candidate proposed.");
+  });
+});

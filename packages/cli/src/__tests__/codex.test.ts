@@ -1,0 +1,343 @@
+import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import {
+  runCli
+} from "../runCli.js";
+import {
+  createNoStoreCompilerDependencies
+} from "../noStoreRepositories.js";
+import {
+  commandResultDoesNotProve
+} from "@krn/core";
+import type {
+  AntiMemoryCandidate,
+  AntiMemoryRecord,
+  MemoryRecord,
+  ObservationItem,
+  SourceClaim
+} from "@krn/core";
+import type {
+  CreateAntiMemoryCandidateInput,
+  CreateEvidenceBundleInput,
+  CreateExecutionRunInput,
+  CreateFeedbackDeltaInput,
+  CreateMemoryFeedbackEventInput,
+  CreateMemoryCandidateInput,
+  InvalidateMemoryRecordInput,
+  PromoteAntiMemoryCandidateInput,
+  PromoteMemoryCandidateInput,
+  RejectAntiMemoryCandidateInput,
+  RejectMemoryCandidateInput,
+  RecordMemoryApplicationInput,
+  CreateReviewAssessmentInput,
+  HarnessRunAggregate,
+  SearchDocumentSearchResult
+} from "@krn/harness/repositories/internal";
+import type {
+  DatabaseRuntimeInput
+} from "../databaseRuntime.js";
+import {
+  deriveBrainStoreReadiness,
+  deriveHarnessPersistenceReadiness,
+  deriveActivationReadiness,
+  deriveCodexAdapterReadiness,
+  deriveMemoryGovernanceReadiness,
+  deriveRetrievalSubstrateReadiness,
+  deriveSourceGraphReadiness,
+  deriveTargetRepoReadiness,
+  deriveWorkerJobReadiness
+} from "../doctorReadiness.js";
+
+const now = "2026-06-21T12:00:00.000Z";
+
+const unusedMemoryRepository = {
+  async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
+    throw new Error("createMemoryCandidate should not be called");
+  },
+  async getMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getMemoryCandidateById should not be called");
+  },
+  async promoteReviewedMemoryCandidate(_input: PromoteMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedMemoryCandidate should not be called");
+  },
+  async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectMemoryCandidate should not be called");
+  },
+  async invalidateMemoryRecord(_input: InvalidateMemoryRecordInput): Promise<never> {
+    throw new Error("invalidateMemoryRecord should not be called");
+  },
+  async getMemoryRecordById(_id: string): Promise<never> {
+    throw new Error("getMemoryRecordById should not be called");
+  },
+  async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
+    throw new Error("recordMemoryApplication should not be called");
+  },
+  async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
+    throw new Error("createMemoryFeedbackEvent should not be called");
+  },
+  async createAntiMemoryCandidate(_input: CreateAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("createAntiMemoryCandidate should not be called");
+  },
+  async getAntiMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getAntiMemoryCandidateById should not be called");
+  },
+  async promoteReviewedAntiMemoryCandidate(_input: PromoteAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedAntiMemoryCandidate should not be called");
+  },
+  async rejectAntiMemoryCandidate(_input: RejectAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectAntiMemoryCandidate should not be called");
+  }
+};
+
+describe("runCli", () => {
+  it("renders a read-only Codex brief for a persisted execution run", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "render Codex execution brief",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "Render Codex execution brief for TypeScript review risk",
+        objective: "Render persisted activated context for Codex with TypeScript unknown-first boundary review and diff risk evidence.",
+        constraints: ["do not invoke Codex", "preserve strict unknown boundaries", "report review risk"],
+        nonGoals: ["do not mutate memory", "do not spawn agents"],
+        acceptance: ["brief renders from persisted run"],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "render persisted Codex brief",
+        metadata: {
+          retainedPatternSelection: {
+            kind: "krn.retainedPatternPlanSelection.v1",
+            status: "selected",
+            query: "unknown-first boundary",
+            source: "brain_knowledge_catalog",
+            selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
+            selectedPatterns: [
+              {
+                id: "pattern:ts-boundary-unknown-first-result-state",
+                patternId: "ts-boundary-unknown-first-result-state",
+                title: "Unknown-first TypeScript result boundary",
+                reviewability: "ready",
+                nextAction: "use",
+                doesNotProve: "This pattern does not prove implementation correctness."
+              }
+            ],
+            reason: "Retained brain knowledge matched the pre-coding plan query.",
+            doesNotProve:
+              "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+            proof: {
+              proves: ["local readback filters were applied deterministically"],
+              doesNotProve: ["ranking quality is good"]
+            }
+          },
+          evidenceContract: {
+            commands: [
+              {
+                command: "pnpm typecheck",
+                required: true
+              }
+            ],
+            diffRisk: "medium",
+            reviewBurden: "Review the CLI output only.",
+            rollbackPath: "Revert the CLI brief command.",
+            metadata: {}
+          }
+        },
+        createdAt: now,
+        updatedAt: now
+      },
+      contextAssembly: {
+        id: "context-assembly-1",
+        harnessPlanId: "harness-plan-1",
+        status: "assembled",
+        inclusions: [
+          {
+            subjectType: "source_claim",
+            subjectId: "source-claim-1",
+            reason: "Source claim grounds adapter boundary.",
+            expectedUse: "Use in the execution brief.",
+            trustTier: "project-decision"
+          },
+          {
+            subjectType: "memory_record",
+            subjectId: "memory-record-1",
+            reason: "Memory records prior adapter decision.",
+            expectedUse: "Keep output bounded.",
+            trustTier: "high"
+          }
+        ],
+        exclusions: [
+          {
+            subjectType: "anti_memory_record",
+            subjectId: "anti-memory-1",
+            reason: "unsafe",
+            explanation: "Do not mutate memory while rendering a brief.",
+            trustTier: "high"
+          }
+        ],
+        metadata: {},
+        createdAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "planned",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: []
+    };
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async createExecutionRun(_input: CreateExecutionRunInput) {
+        throw new Error("codex brief must not create execution runs");
+      },
+      async getHarnessRunByExecutionRunId(runId: string) {
+        return runId === "execution-run-1" ? aggregate : undefined;
+      }
+    };
+    const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {
+          ...dependencies,
+          harnessRunRepository
+        },
+        harnessRunRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Codex Brief");
+    expect(result.stdout).toContain("Run ID: execution-run-1");
+    expect(result.stdout).toContain("Persistence: read-only (Postgres)");
+    expect(result.stdout).toContain("Codex invocation: none");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("Retained Pattern Context:");
+    expect(result.stdout).toContain("Retained pattern selection: selected");
+    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain(
+      "- pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
+    );
+    expect(result.stdout).toContain("KRN Codex Execution Brief");
+    expect(result.stdout).toContain("Source Claims Used:");
+    expect(result.stdout).toContain("- source-claim-1");
+    expect(result.stdout).toContain("Memory Records Used:");
+    expect(result.stdout).toContain("- memory-record-1");
+    expect(result.stdout).toContain("Anti-memory Warnings:");
+    expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
+    expect(result.stdout).toContain("unknown-first boundary check");
+    expect(result.stdout).toContain("no type weakening");
+    expect(result.stdout).toContain("diff risk summary");
+    expect(result.stdout).toContain("review-risk notes");
+  });
+
+  it("requires database config for codex brief", async () => {
+    const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn codex brief");
+  });
+
+  it("distinguishes doctor Codex adapter readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (7/7 applied)" }
+    ];
+    const codexAdapterReady = [
+      { label: "Codex adapter renderer", status: "present" },
+      { label: "Execution brief smoke", status: "available (pnpm db:smoke:codex-adapter)" },
+      { label: "Hook expectation projection", status: "present" },
+      { label: "Codex execution runner", status: "absent" },
+      { label: "KRN MCP server", status: "absent" },
+      { label: "Codex adapter runtime proof", status: "ready (source 1, memory 1)" }
+    ];
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, codexAdapterReady)
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
+    });
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, [
+        ...codexAdapterReady.slice(0, 5),
+        { label: "Codex adapter runtime proof", status: "unverified (run pnpm db:smoke:codex-adapter)" }
+      ])
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "runtime unverified (run pnpm db:smoke:codex-adapter)"
+    });
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, [
+        ...codexAdapterReady.slice(0, 3),
+        { label: "Codex execution runner", status: "present" },
+        { label: "KRN MCP server", status: "absent" }
+      ])
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "blocked (forbidden Codex execution or MCP server present)"
+    });
+  });
+
+  it("reports Codex adapter smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "codex-adapter"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Codex Adapter Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Codex adapter smoke: skipped (database not configured)");
+  });
+});
