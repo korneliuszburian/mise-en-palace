@@ -76,8 +76,8 @@ heartbeat worker authority readback: memory-staleness candidates expose validate
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
 review/doctor outcome ownership: review objects use reviewOutcome vocabulary; audited doctor checks carry typed outcome/severity before string fallback
 worker job authority/type ownership: invariant runtime fields stay centralized; DB active job type/status contracts derive from @krn/workers
-compiler/smoke boundary characterization: retrieval-run/context-assembly activation trace contract protected without broad refactor
 source relation metadata readback: SourceClaimEdge metadata parsing now shares one typed source-domain helper across CLI and worker surfaces
+retrieval ID branding: retrieval-owned persisted IDs carry soft branded aliases through harness repository contracts
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
 execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
 maintenance enqueue wrapper: transparent enqueue helper removed; queue-port contract remains typed and tested
@@ -116,7 +116,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-source-relation-metadata-readback.md`.
+Latest completed artifact: `docs/KRN_BRAIN.md`; latest run report: `docs/runs/2026-07-02-retrieval-id-branding.md`.
 
 Task boundary:
 

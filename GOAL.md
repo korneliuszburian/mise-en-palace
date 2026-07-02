@@ -39,12 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-Source relation metadata readbacks now share one typed source-domain parser
-across CLI source-search, source-claim edge text, and worker candidate preview.
+Retrieval-owned persisted IDs now carry soft branded core aliases through
+harness repository contracts without DB/runtime parser expansion.
 Report:
-docs/runs/2026-07-02-source-relation-metadata-readback.md
-Next: continue audit-hardening through retrieval ID branding,
-execution-brief profile readback, root-doc cleanup, and bounded CLI topology.
+docs/runs/2026-07-02-retrieval-id-branding.md
+Next: continue audit-hardening through execution-brief profile readback,
+root-doc cleanup, schema/core contract ownership, and bounded CLI topology.
 ```
 
 ## Direction

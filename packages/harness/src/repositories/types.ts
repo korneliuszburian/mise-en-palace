@@ -1,9 +1,15 @@
 import type {
+  ActivationDecisionId,
   ContextAssemblyId,
+  EmbeddingId,
+  EmbeddingModelId,
   ExecutionRunId,
   OperatorIntentId,
   ProjectId,
   RepoInstallationId,
+  RetrievalCandidateId,
+  RetrievalRunId,
+  SearchDocumentId,
   SourceArtifactId,
   SourceChunkId,
   SourceTrustTier,
@@ -156,7 +162,7 @@ export type ActivationDecisionStatus =
   | "stale";
 
 export interface SearchDocumentRecord {
-  id: string;
+  id: SearchDocumentId;
   projectId?: ProjectId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
@@ -193,7 +199,7 @@ export interface SearchDocumentSearchResult extends SearchDocumentRecord {
 }
 
 export interface EmbeddingModelRecord {
-  id: string;
+  id: EmbeddingModelId;
   provider: string;
   model: string;
   dimensions: number;
@@ -205,9 +211,9 @@ export interface EmbeddingModelRecord {
 }
 
 export interface EmbeddingRecord {
-  id: string;
+  id: EmbeddingId;
   projectId?: ProjectId;
-  embeddingModelId: string;
+  embeddingModelId: EmbeddingModelId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
   sourceArtifactId?: string;
@@ -215,7 +221,7 @@ export interface EmbeddingRecord {
   sourceClaimId?: string;
   memoryRecordId?: string;
   antiMemoryRecordId?: string;
-  searchDocumentId?: string;
+  searchDocumentId?: SearchDocumentId;
   embedding: number[];
   contentHash: string;
   trustTier: SourceTrustTier;
@@ -230,7 +236,7 @@ export interface EmbeddingRecord {
 }
 
 export interface RetrievalRunRecord {
-  id: string;
+  id: RetrievalRunId;
   projectId?: ProjectId;
   executionRunId?: ExecutionRunId;
   taskContractId?: TaskContractId;
@@ -247,13 +253,13 @@ export interface RetrievalRunRecord {
 }
 
 export interface RetrievalCandidateRecord {
-  id: string;
-  retrievalRunId: string;
+  id: RetrievalCandidateId;
+  retrievalRunId: RetrievalRunId;
   kind: RetrievalCandidateKind;
   status: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
-  searchDocumentId?: string;
+  searchDocumentId?: SearchDocumentId;
   trustTier: SourceTrustTier;
   lexicalScore?: number;
   vectorScore?: number;
@@ -268,9 +274,9 @@ export interface RetrievalCandidateRecord {
 }
 
 export interface ActivationDecisionRecord {
-  id: string;
-  retrievalRunId: string;
-  retrievalCandidateId?: string;
+  id: ActivationDecisionId;
+  retrievalRunId: RetrievalRunId;
+  retrievalCandidateId?: RetrievalCandidateId;
   contextAssemblyId?: ContextAssemblyId;
   subjectType: RetrievalSubjectType;
   subjectId: string;

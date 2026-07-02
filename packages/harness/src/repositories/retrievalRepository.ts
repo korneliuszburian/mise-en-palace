@@ -3,8 +3,13 @@ import type {
   ActivationExclusionReason,
   ContextExclusion,
   ContextInclusion,
+  ContextAssemblyId,
+  EmbeddingModelId,
   ExecutionRunId,
   ProjectId,
+  RetrievalCandidateId,
+  RetrievalRunId,
+  SearchDocumentId,
   SourceTrustTier,
   TaskContractId
 } from "@krn/core";
@@ -68,7 +73,7 @@ export interface CreateEmbeddingModelInput {
 
 export interface CreateEmbeddingInput {
   projectId?: ProjectId;
-  embeddingModelId: string;
+  embeddingModelId: EmbeddingModelId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
   sourceArtifactId?: string;
@@ -76,7 +81,7 @@ export interface CreateEmbeddingInput {
   sourceClaimId?: string;
   memoryRecordId?: string;
   antiMemoryRecordId?: string;
-  searchDocumentId?: string;
+  searchDocumentId?: SearchDocumentId;
   embedding: number[];
   contentHash: string;
   trustTier?: SourceTrustTier;
@@ -128,7 +133,7 @@ export type ActivationDecisionSourceSupportState =
   | "source_claim_missing_does_not_prove";
 
 export interface CompleteRetrievalRunInput {
-  retrievalRunId: string;
+  retrievalRunId: RetrievalRunId;
   status: CompleteRetrievalRunStatus;
   completedAt: string;
   activationAbstentionReason?: ActivationAbstentionReason;
@@ -138,12 +143,12 @@ export interface CompleteRetrievalRunInput {
 }
 
 export interface AddRetrievalCandidateInput {
-  retrievalRunId: string;
+  retrievalRunId: RetrievalRunId;
   kind: RetrievalCandidateKind;
   status?: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
-  searchDocumentId?: string;
+  searchDocumentId?: SearchDocumentId;
   trustTier: SourceTrustTier;
   lexicalScore?: number;
   vectorScore?: number;
@@ -157,9 +162,9 @@ export interface AddRetrievalCandidateInput {
 }
 
 interface RecordActivationDecisionBaseInput {
-  retrievalRunId: string;
-  retrievalCandidateId?: string;
-  contextAssemblyId?: string;
+  retrievalRunId: RetrievalRunId;
+  retrievalCandidateId?: RetrievalCandidateId;
+  contextAssemblyId?: ContextAssemblyId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
   reason: string;
@@ -172,7 +177,7 @@ interface RecordActivationDecisionBaseInput {
 export interface RecordIncludedActivationDecisionInput
   extends RecordActivationDecisionBaseInput {
   decision: "included";
-  contextAssemblyId: string;
+  contextAssemblyId: ContextAssemblyId;
   expectedDecisionImpact: string;
   expectedUse: string;
   rawRecall?: ActivationTraceRawRecall;
@@ -185,7 +190,7 @@ export interface RecordIncludedActivationDecisionInput
 export interface RecordExcludedActivationDecisionInput
   extends RecordActivationDecisionBaseInput {
   decision: "excluded";
-  contextAssemblyId: string;
+  contextAssemblyId: ContextAssemblyId;
   expectedUse?: never;
   rawRecall?: never;
   antiMemoryRecordId?: never;
@@ -197,7 +202,7 @@ export interface RecordExcludedActivationDecisionInput
 export interface RecordConflictActivationDecisionInput
   extends RecordActivationDecisionBaseInput {
   decision: "conflict";
-  contextAssemblyId: string;
+  contextAssemblyId: ContextAssemblyId;
   expectedUse?: never;
   rawRecall?: never;
   antiMemoryRecordId: string;
@@ -209,7 +214,7 @@ export interface RecordConflictActivationDecisionInput
 export interface RecordStaleActivationDecisionInput
   extends RecordActivationDecisionBaseInput {
   decision: "stale";
-  contextAssemblyId: string;
+  contextAssemblyId: ContextAssemblyId;
   expectedUse?: never;
   rawRecall?: never;
   antiMemoryRecordId?: never;
@@ -237,7 +242,7 @@ export type RecordActivationDecisionInput =
   | RecordDeferredActivationDecisionInput;
 
 export interface StoreContextSelectionInput {
-  contextAssemblyId: string;
+  contextAssemblyId: ContextAssemblyId;
   inclusions: ContextInclusion[];
   exclusions: ContextExclusion[];
 }
@@ -264,8 +269,12 @@ export interface RetrievalRepository {
     input: RecordActivationDecisionInput
   ): Promise<ActivationDecisionRecord>;
   recordActivationDecision(input: RecordActivationDecisionInput): Promise<ActivationDecisionRecord>;
-  listCandidatesForRetrievalRun(retrievalRunId: string): Promise<RetrievalCandidateRecord[]>;
-  listActivationDecisionsForRun(retrievalRunId: string): Promise<ActivationDecisionRecord[]>;
+  listCandidatesForRetrievalRun(
+    retrievalRunId: RetrievalRunId
+  ): Promise<RetrievalCandidateRecord[]>;
+  listActivationDecisionsForRun(
+    retrievalRunId: RetrievalRunId
+  ): Promise<ActivationDecisionRecord[]>;
   cleanupTestRetrievalRecords(
     input: CleanupTestRetrievalRecordsInput
   ): Promise<CleanupTestRetrievalRecordsResult>;
