@@ -6,7 +6,7 @@ import {
 
 import {
   parseCodexArgs
-} from "./parseCodexArgs.js";
+} from "../parseCodexArgs.js";
 
 const codexUsage = "Usage: krn codex brief --run-id <id>";
 

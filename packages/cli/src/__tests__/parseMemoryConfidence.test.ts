@@ -6,7 +6,7 @@ import {
 
 import {
   parseMemoryConfidence
-} from "./parseMemoryConfidence.js";
+} from "../parseMemoryConfidence.js";
 
 describe("parseMemoryConfidence", () => {
   it("parses shared memory confidence labels and integer ranges", () => {

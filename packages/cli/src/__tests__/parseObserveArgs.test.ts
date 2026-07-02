@@ -6,7 +6,7 @@ import {
 
 import {
   parseObserveArgs
-} from "./parseObserveArgs.js";
+} from "../parseObserveArgs.js";
 
 const observeUsage = "Usage: krn observe --run <id>|--run-id <id> [--project <id>] [--persist]";
 

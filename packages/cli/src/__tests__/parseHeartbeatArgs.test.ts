@@ -6,7 +6,7 @@ import {
 
 import {
   parseHeartbeatArgs
-} from "./parseHeartbeatArgs.js";
+} from "../parseHeartbeatArgs.js";
 
 describe("parseHeartbeatArgs", () => {
   it("parses heartbeat preview options", () => {

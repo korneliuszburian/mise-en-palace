@@ -6,7 +6,7 @@ import {
 
 import {
   parseDoctorArgs
-} from "./parseDoctorArgs.js";
+} from "../parseDoctorArgs.js";
 
 describe("parseDoctorArgs", () => {
   it("parses doctor without arguments", () => {

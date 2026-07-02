@@ -6,7 +6,7 @@ import {
 
 import {
   parsePlanArgs
-} from "./parsePlanArgs.js";
+} from "../parsePlanArgs.js";
 
 describe("parsePlanArgs", () => {
   it("parses plan task with optional project and persist", () => {

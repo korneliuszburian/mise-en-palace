@@ -7,7 +7,7 @@ import {
 import {
   formatDbUsage,
   parseDbArgs
-} from "./parseDbArgs.js";
+} from "../parseDbArgs.js";
 
 describe("parseDbArgs", () => {
   it("parses db help", () => {

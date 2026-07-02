@@ -7,7 +7,7 @@ import {
 import {
   formatReviewAssessUsage,
   parseReviewArgs
-} from "./parseReviewArgs.js";
+} from "../parseReviewArgs.js";
 
 describe("parseReviewArgs", () => {
   it("parses review assess with findings, labels, metadata, and risk fields", () => {

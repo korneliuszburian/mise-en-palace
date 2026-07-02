@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseBrainArgs
-} from "./parseBrainArgs.js";
+} from "../parseBrainArgs.js";
 
 describe("parseBrainArgs", () => {
   it("parses brain search preview args", () => {

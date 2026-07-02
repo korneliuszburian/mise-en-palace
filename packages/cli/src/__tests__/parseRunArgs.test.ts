@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseRunArgs
-} from "./parseRunArgs.js";
+} from "../parseRunArgs.js";
 
 describe("parseRunArgs", () => {
   it("parses run show with run id", () => {
