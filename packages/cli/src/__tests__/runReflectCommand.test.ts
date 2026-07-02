@@ -7,10 +7,10 @@ import type {
 } from "@krn/core";
 import type {
   ReflectDatabaseRuntime
-} from "./databaseRuntime.js";
+} from "../databaseRuntime.js";
 import {
   runReflectCommand
-} from "./runReflectCommand.js";
+} from "../runReflectCommand.js";
 
 const now = "2026-06-22T12:00:00.000Z";
 
@@ -254,7 +254,7 @@ describe("runReflectCommand", () => {
   });
 
   it("does not contain direct Memory Core promotion calls", () => {
-    const source = readFileSync(new URL("./runReflectCommand.ts", import.meta.url), "utf8");
+    const source = readFileSync(new URL("../runReflectCommand.ts", import.meta.url), "utf8");
 
     expect(source).not.toMatch(/createMemoryRecord/u);
     expect(source).not.toMatch(/promoteMemoryCandidate/u);

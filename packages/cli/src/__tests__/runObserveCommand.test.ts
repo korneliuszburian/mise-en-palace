@@ -8,10 +8,10 @@ import type {
 } from "@krn/db/adapters";
 import type {
   ObserveDatabaseRuntime
-} from "./databaseRuntime.js";
+} from "../databaseRuntime.js";
 import {
   runObserveCommand
-} from "./runObserveCommand.js";
+} from "../runObserveCommand.js";
 
 const now = "2026-06-23T12:00:00.000Z";
 
