@@ -98,6 +98,22 @@ const memoryCandidateReviewColumns = () => ({
   updatedAt: updatedAtColumn()
 });
 
+const antiMemoryEvidenceColumns = () => ({
+  rejectedClaim: text("rejected_claim"),
+  reason: text("reason"),
+  invalidatedBySourceClaimIds: jsonListColumn("invalidated_by_source_claim_ids"),
+  invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
+    onDelete: "set null"
+  }),
+  appliesTo: text("applies_to"),
+  mayRevisitWhen: text("may_revisit_when"),
+  summary: text("summary").notNull(),
+  body: text("body").notNull(),
+  owner: text("owner").notNull(),
+  confidence: integer("confidence").notNull(),
+  sourceLineage: jsonListColumn("source_lineage")
+});
+
 export const memoryRecordKind = pgEnum("memory_record_kind", [
   "fact",
   "preference",
@@ -314,19 +330,7 @@ export const antiMemoryCandidates = pgTable(
     ...memoryCandidateProposalColumns(),
     key: text("key").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
-    rejectedClaim: text("rejected_claim"),
-    reason: text("reason"),
-    invalidatedBySourceClaimIds: jsonListColumn("invalidated_by_source_claim_ids"),
-    invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
-      onDelete: "set null"
-    }),
-    appliesTo: text("applies_to"),
-    mayRevisitWhen: text("may_revisit_when"),
-    summary: text("summary").notNull(),
-    body: text("body").notNull(),
-    owner: text("owner").notNull(),
-    confidence: integer("confidence").notNull(),
-    sourceLineage: jsonListColumn("source_lineage"),
+    ...antiMemoryEvidenceColumns(),
     ...memoryCandidateReviewColumns()
   },
   (table) => [
@@ -426,19 +430,7 @@ export const antiMemoryRecords = pgTable(
       onDelete: "set null"
     }),
     key: text("key").notNull(),
-    rejectedClaim: text("rejected_claim"),
-    reason: text("reason"),
-    invalidatedBySourceClaimIds: jsonListColumn("invalidated_by_source_claim_ids"),
-    invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
-      onDelete: "set null"
-    }),
-    appliesTo: text("applies_to"),
-    mayRevisitWhen: text("may_revisit_when"),
-    summary: text("summary").notNull(),
-    body: text("body").notNull(),
-    owner: text("owner").notNull(),
-    confidence: integer("confidence").notNull(),
-    sourceLineage: jsonListColumn("source_lineage"),
+    ...antiMemoryEvidenceColumns(),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
     invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
