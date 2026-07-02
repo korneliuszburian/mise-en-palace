@@ -69,6 +69,7 @@ Broader local result:
 - Full workspace tests: 147 files passed, 783 tests passed.
 - Fallow changed-files gate: passed on 8 changed files.
 - Brain-battle smoke: passed.
+- KRN CI `28619241504`: passed after push of `4ec8afa`.
 
 ## Proof Boundary
 

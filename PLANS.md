@@ -31,7 +31,7 @@ Close source decision-link/readback next; do not start broad cleanup.
 Latest outcome:
 
 ```txt
-mise-en-palace-52kw complete pending CI/Beads: source-search answer packaging
+mise-en-palace-52kw complete: source-search answer packaging
 applies accepted-only SourceClaim authority before ContextROI.
 Report:
 docs/runs/2026-07-02-source-search-authority-boundary.md
