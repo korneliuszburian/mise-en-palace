@@ -103,19 +103,33 @@ mechanisms.
 Common local checks:
 
 ```sh
-pnpm typecheck
-pnpm test
-pnpm exec promptfoo --version
-pnpm eval:promptfoo:smoke
-git diff --check
+pnpm alpha:verify
 ```
 
-DB runtime checks, only when local DB env is configured:
+`pnpm alpha:verify` is the fast local gate: typecheck, tests, and `krn doctor`.
+It does not prove Fallow, Promptfoo, brain-battle, or DB runtime truth.
+
+Full local verification, when local DB env is configured:
 
 ```sh
+pnpm alpha:verify:full
+```
+
+The full gate aggregates:
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm krn doctor
+pnpm quality:fallow:ci
+pnpm eval:brain-battle:smoke
+pnpm exec promptfoo --version
+pnpm eval:promptfoo:smoke
 pnpm db:ready
 pnpm --filter @krn/db db:check
 pnpm db:smoke
+pnpm db:smoke:brain-loop
+git diff --check
 ```
 
 Do not claim DB runtime truth unless DB commands were run in the current

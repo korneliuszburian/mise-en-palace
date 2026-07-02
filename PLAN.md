@@ -70,6 +70,7 @@ brain loop integration: in-memory harness proof covers evidence, candidate, revi
 DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 product loop source authority: MemoryReviewGate requires SourceDecision-accepted SourceClaims
 eval proof-boundary manifest: verification gates have typed proves/doesNotProve readback
+alpha verify full gate: alpha:verify remains fast; alpha:verify:full aggregates static, eval-adapter, DB-runtime, and DB-backed brain-loop proof lanes
 worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
 heartbeat worker authority readback: memory-staleness candidates expose validated expire_stale_memory authority
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
@@ -114,7 +115,7 @@ Goal: build the shared KRN brain kernel through larger end-to-end vertical slice
 
 Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; use real repo evidence.
 
-Latest completed report: `docs/runs/2026-07-02-eval-proof-boundary-manifest.md`.
+Latest completed report: `docs/runs/2026-07-02-alpha-verify-full-gate.md`.
 
 Task boundary:
 

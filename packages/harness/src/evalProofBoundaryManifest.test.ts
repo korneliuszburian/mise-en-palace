@@ -70,6 +70,9 @@ describe("eval proof boundary manifest", () => {
     const alphaVerify = evalProofBoundaryManifest.find((entry) =>
       entry.id === "alpha-verify-fast"
     );
+    const alphaVerifyFull = evalProofBoundaryManifest.find((entry) =>
+      entry.id === "alpha-verify-full"
+    );
 
     expect(promptfoo?.proves.join(" ")).toContain("integration evidence");
     expect(promptfoo?.doesNotProve.join(" ")).toContain("KRN behavior passed");
@@ -78,6 +81,11 @@ describe("eval proof boundary manifest", () => {
     expect(alphaVerify?.doesNotProve.join(" ")).toContain("Fallow changed-file audit passed");
     expect(alphaVerify?.doesNotProve.join(" ")).toContain("Promptfoo smoke passed");
     expect(alphaVerify?.doesNotProve.join(" ")).toContain("DB runtime truth exists");
+
+    expect(alphaVerifyFull?.requiredFor).toContain("product-loop");
+    expect(alphaVerifyFull?.proves.join(" ")).toContain("DB brain-loop smoke");
+    expect(alphaVerifyFull?.doesNotProve.join(" ")).toContain("worker runtime execution exists");
+    expect(alphaVerifyFull?.doesNotProve.join(" ")).toContain("KRN is product-ready");
   });
 
   it("renders a compact operator readback without changing proof authority", () => {

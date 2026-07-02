@@ -188,6 +188,23 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
+    id: "alpha-verify-full",
+    command: "pnpm alpha:verify:full",
+    scriptName: "alpha:verify:full",
+    owner: "local full alpha verification gate",
+    requiredFor: ["db-runtime", "product-loop", "handoff"],
+    proves: [
+      "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, brain-battle smoke, Promptfoo smoke, DB readiness, Drizzle check, baseline DB smoke, DB brain-loop smoke, and diff check completed in the current shell",
+      "the local full gate aggregated the current deterministic static, eval-adapter, DB-runtime, and product-loop smoke boundaries"
+    ],
+    doesNotProve: [
+      "worker runtime execution exists",
+      "all DB smoke targets passed",
+      "real LLM behavior is good",
+      "KRN is product-ready"
+    ]
+  },
+  {
     id: "diff-whitespace-check",
     command: "git diff --check",
     owner: "git diff hygiene",

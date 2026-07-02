@@ -39,10 +39,11 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-0dgi complete: eval proof-boundary manifest added so
-verification gates have typed proves/doesNotProve readback.
+mise-en-palace-481m complete: alpha:verify now has explicit fast/full
+semantics, and alpha:verify:full aggregates static, eval-adapter, DB-runtime,
+and DB-backed brain-loop proof lanes.
 Report:
-docs/runs/2026-07-02-eval-proof-boundary-manifest.md
+docs/runs/2026-07-02-alpha-verify-full-gate.md
 Next: continue audit-hardening through the next highest-ROI Beads task.
 ```
 
