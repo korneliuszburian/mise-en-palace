@@ -46,6 +46,12 @@ const sourceLineage = (command: MemoryAntiAddCommand): { sourceId: string }[] =>
   ...command.sourceLineageIds.map((sourceId) => ({ sourceId }))
 ];
 
+const formatSourceClaimIds = (sourceClaimIds: readonly string[]): string[] => (
+  sourceClaimIds.length === 0
+    ? []
+    : [`invalidatedBySourceClaimIds: ${sourceClaimIds.join(",")}`]
+);
+
 const formatPreview = (
   antiMemory: ReturnType<typeof parseAntiMemoryInput>
 ): string =>
@@ -58,9 +64,7 @@ const formatPreview = (
     `rejectedClaim: ${antiMemory.rejectedClaim}`,
     `reason: ${antiMemory.reason}`,
     `runId: ${antiMemory.executionRunId}`,
-    ...(antiMemory.invalidatedBySourceClaimId === undefined
-      ? []
-      : [`invalidatedBySourceClaimId: ${antiMemory.invalidatedBySourceClaimId}`]),
+    ...formatSourceClaimIds(antiMemory.invalidatedBySourceClaimIds),
     `confidence: ${antiMemory.confidence}`,
     "No AntiMemoryRecord created",
     "No MemoryRecord created",
@@ -79,9 +83,7 @@ const formatPersisted = (
     "Persisted IDs:",
     `antiMemoryCandidate: ${antiMemoryCandidateId}`,
     `runId: ${antiMemory.executionRunId}`,
-    ...(antiMemory.invalidatedBySourceClaimId === undefined
-      ? []
-      : [`invalidatedBySourceClaimId: ${antiMemory.invalidatedBySourceClaimId}`]),
+    ...formatSourceClaimIds(antiMemory.invalidatedBySourceClaimIds),
     `rejectedClaim: ${antiMemory.rejectedClaim}`,
     `status: ${antiMemory.status}`,
     ...(evidence === undefined
@@ -109,7 +111,6 @@ export const runMemoryAntiAddCommand = async (
     key: command.key ?? runtime.createId("anti-memory"),
     rejectedClaim: command.rejectedClaim,
     reason: command.reason,
-    invalidatedBySourceClaimId: command.invalidatedBySourceClaimId,
     invalidatedBySourceClaimIds:
       command.invalidatedBySourceClaimId === undefined
         ? []
@@ -128,7 +129,6 @@ export const runMemoryAntiAddCommand = async (
     status: "candidate",
     rejectedClaim: antiMemoryInput.rejectedClaim,
     reason: antiMemoryInput.reason,
-    invalidatedBySourceClaimId: antiMemoryInput.invalidatedBySourceClaimId,
     invalidatedBySourceClaimIds: antiMemoryInput.invalidatedBySourceClaimIds,
     appliesTo: antiMemoryInput.appliesTo,
     mayRevisitWhen: antiMemoryInput.mayRevisitWhen,
@@ -155,8 +155,8 @@ export const runMemoryAntiAddCommand = async (
   );
 
   try {
-    if (antiMemoryInput.invalidatedBySourceClaimId !== undefined) {
-      await assertSourceClaimExists(databaseRuntime, antiMemoryInput.invalidatedBySourceClaimId);
+    for (const sourceClaimId of antiMemoryInput.invalidatedBySourceClaimIds) {
+      await assertSourceClaimExists(databaseRuntime, sourceClaimId);
     }
 
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.createAntiMemoryCandidate({
@@ -177,9 +177,6 @@ export const runMemoryAntiAddCommand = async (
         ? {}
         : { reason: antiMemoryCandidateInput.reason }),
       invalidatedBySourceClaimIds: antiMemoryCandidateInput.invalidatedBySourceClaimIds,
-      ...(antiMemoryCandidateInput.invalidatedBySourceClaimId === undefined
-        ? {}
-        : { invalidatedBySourceClaimId: antiMemoryCandidateInput.invalidatedBySourceClaimId }),
       ...(antiMemoryCandidateInput.appliesTo === undefined
         ? {}
         : { appliesTo: antiMemoryCandidateInput.appliesTo }),

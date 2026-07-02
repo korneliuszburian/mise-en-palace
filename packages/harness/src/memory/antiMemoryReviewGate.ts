@@ -70,8 +70,7 @@ function assertCandidateReviewable(
 
   if (
     candidate.sourceLineage.length === 0 &&
-    candidate.invalidatedBySourceClaimIds.length === 0 &&
-    candidate.invalidatedBySourceClaimId === undefined
+    candidate.invalidatedBySourceClaimIds.length === 0
   ) {
     throw new Error(
       `${candidateLabel} requires source lineage or invalidating source claim before promotion`
@@ -83,12 +82,7 @@ function assertCandidateReviewable(
 }
 
 const candidateSourceClaimIds = (candidate: AntiMemoryCandidate): string[] => [
-  ...new Set([
-    ...candidate.invalidatedBySourceClaimIds,
-    ...(candidate.invalidatedBySourceClaimId === undefined
-      ? []
-      : [candidate.invalidatedBySourceClaimId])
-  ])
+  ...new Set(candidate.invalidatedBySourceClaimIds)
 ];
 
 export const buildAntiMemoryReviewGateMetadata = (input: {

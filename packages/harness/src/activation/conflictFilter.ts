@@ -24,10 +24,6 @@ const sourceClaimIdsBlockedByAntiMemory = (
     for (const sourceClaimId of antiMemory.invalidatedBySourceClaimIds) {
       blocked.set(sourceClaimId, antiMemory);
     }
-
-    if (antiMemory.invalidatedBySourceClaimId !== undefined) {
-      blocked.set(antiMemory.invalidatedBySourceClaimId, antiMemory);
-    }
   }
 
   return blocked;

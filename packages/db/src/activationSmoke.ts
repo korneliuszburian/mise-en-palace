@@ -280,7 +280,6 @@ export const runActivationSmokeCheck = async (
       rejectedClaim: "Activation readiness should add a source crawler.",
       reason: "Source crawler is out of scope for M25.",
       invalidatedBySourceClaimIds: [crawlerClaim.id],
-      invalidatedBySourceClaimId: crawlerClaim.id,
       appliesTo: "M25 activation smoke",
       mayRevisitWhen: "A later source-crawler milestone is accepted.",
       summary: "Do not add crawler for M25 activation",

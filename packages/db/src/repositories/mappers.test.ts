@@ -608,7 +608,6 @@ describe("memory governance mappers", () => {
       executionRunId: "run-1",
       rejectedClaim: "Markdown files are runtime memory.",
       invalidatedBySourceClaimIds: ["source-claim-1"],
-      invalidatedBySourceClaimId: "source-claim-1",
       appliesTo: "memory governance"
     });
   });

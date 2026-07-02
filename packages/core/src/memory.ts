@@ -141,7 +141,6 @@ export interface AntiMemoryRecord extends ValidityWindow {
   rejectedClaim?: string;
   reason?: string;
   invalidatedBySourceClaimIds: SourceClaimId[];
-  invalidatedBySourceClaimId?: SourceClaimId;
   appliesTo?: string;
   mayRevisitWhen?: string;
   summary: string;
@@ -165,7 +164,6 @@ export interface AntiMemoryCandidate extends ValidityWindow {
   rejectedClaim?: string;
   reason?: string;
   invalidatedBySourceClaimIds: SourceClaimId[];
-  invalidatedBySourceClaimId?: SourceClaimId;
   appliesTo?: string;
   mayRevisitWhen?: string;
   summary: string;

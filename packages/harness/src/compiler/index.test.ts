@@ -687,8 +687,7 @@ describe("compileHarnessPlan", () => {
           [
             antiMemoryRecord({
               id: "anti-crawler",
-              invalidatedBySourceClaimIds: ["claim-crawler"],
-              invalidatedBySourceClaimId: "claim-crawler"
+              invalidatedBySourceClaimIds: ["claim-crawler"]
             })
           ]
         ),

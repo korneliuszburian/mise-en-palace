@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field
+current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice
 ```
 
 ## Compact Checkpoints
@@ -77,6 +77,7 @@ worker job authority constants: invariant worker runtime fields are centralized 
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
 execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
 maintenance enqueue wrapper: transparent enqueue helper removed; queue-port contract remains typed and tested
+anti-memory invalidation field: runtime/domain output uses plural invalidatedBySourceClaimIds; legacy singular remains input/read compatibility only
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 graph relation candidate focus: contradiction/duplicate relation focus and review questions visible through heartbeat candidate and CLI readback
 graph relation eval readback: relationReviewFocus is consumed by bounded relation-grounded QA readback
@@ -99,7 +100,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-5f9 Canonicalize Anti-Memory Invalidation Source Claim Field
+### mise-en-palace-4tj Apply Reference Implementation Recipe To One KRN Code-Quality Slice
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -111,18 +112,17 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-568-maintenance-enqueue-wrapper/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Audit follow-up: source inspection still finds both
-`invalidatedBySourceClaimId` and `invalidatedBySourceClaimIds` across
-core/schema/harness anti-memory paths. Canonicalize toward one field shape with
-tests and an explicit compatibility boundary. No MemoryCandidate/AntiMemoryCandidate
-merge, no DB schema migration unless source proves it is required, no activation
-ranking change, no worker/runtime work.
+Turn the user-provided reference implementation / clone-workflow material into a
+bounded KRN pattern-brain source-to-decision, then apply it to one real KRN
+code-quality slice. Do not build a generic skill zoo, dashboard, broad agent
+system, new server, or markdown-only recipe pile. The output must show whether
+using a local exemplar reduced review burden or implementation drift.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

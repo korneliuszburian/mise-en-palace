@@ -156,7 +156,6 @@ const createPersistedAntiMemoryCandidate = (
   assignIfDefined(candidate, "feedbackDeltaId", input.feedbackDeltaId);
   assignIfDefined(candidate, "rejectedClaim", input.rejectedClaim);
   assignIfDefined(candidate, "reason", input.reason);
-  assignIfDefined(candidate, "invalidatedBySourceClaimId", input.invalidatedBySourceClaimId);
   assignIfDefined(candidate, "appliesTo", input.appliesTo);
   assignIfDefined(candidate, "mayRevisitWhen", input.mayRevisitWhen);
   assignIfDefined(candidate, "validUntil", input.validUntil);
@@ -1929,7 +1928,6 @@ describe("runCli", () => {
       rejectedClaim: "Persisted plan output should hide activation exclusions.",
       reason: "Exclusions must be visible in M25.05 output.",
       invalidatedBySourceClaimIds: [rejectedClaim.id],
-      invalidatedBySourceClaimId: rejectedClaim.id,
       summary: "Do not hide activation exclusions",
       body: "Persisted plan output must show explicit exclusions.",
       owner: "kernel",
@@ -3891,7 +3889,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "reason: Files can be export/audit/seed/source bank, not Memory Core"
     );
-    expect(result.stdout).toContain("invalidatedBySourceClaimId: source-claim-1");
+    expect(result.stdout).toContain("invalidatedBySourceClaimIds: source-claim-1");
     expect(result.stdout).toContain("No MemoryRecord created");
   });
 
@@ -4046,7 +4044,6 @@ describe("runCli", () => {
       proposedBy: "cli",
       rejectedClaim: "Markdown files are KRN runtime memory",
       reason: "Files can be export/audit/seed/source bank, not Memory Core",
-      invalidatedBySourceClaimId: "source-claim-1",
       invalidatedBySourceClaimIds: ["source-claim-1"],
       sourceLineage: [{ sourceId: "source-claim-1" }],
       owner: "operator",

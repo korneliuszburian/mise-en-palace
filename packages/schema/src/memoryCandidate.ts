@@ -59,6 +59,35 @@ const isExplicitUserPreference = (value: {
   isUserPreference: boolean;
 }): boolean => value.kind === "preference" && value.isUserPreference;
 
+const canonicalInvalidatedSourceClaimIds = (input: {
+  invalidatedBySourceClaimId?: string | undefined;
+  invalidatedBySourceClaimIds: string[];
+}): string[] => [
+  ...new Set([
+    ...input.invalidatedBySourceClaimIds,
+    ...(input.invalidatedBySourceClaimId === undefined
+      ? []
+      : [input.invalidatedBySourceClaimId])
+  ])
+];
+
+const withoutLegacyInvalidatedSourceClaimId = <
+  TInput extends {
+    invalidatedBySourceClaimId?: string | undefined;
+    invalidatedBySourceClaimIds: string[];
+  }
+>(input: TInput): Omit<TInput, "invalidatedBySourceClaimId"> => {
+  const {
+    invalidatedBySourceClaimId: _legacyInvalidatedBySourceClaimId,
+    ...rest
+  } = input;
+
+  return {
+    ...rest,
+    invalidatedBySourceClaimIds: canonicalInvalidatedSourceClaimIds(input)
+  };
+};
+
 export const MemoryCandidateInputSchema = z
   .object({
     projectId: OptionalTextSchema,
@@ -179,7 +208,8 @@ export const AntiMemoryInputSchema = z
         path: ["invalidatedBySourceClaimId"]
       });
     }
-  });
+  })
+  .transform(withoutLegacyInvalidatedSourceClaimId);
 
 export const AntiMemoryCandidateInputSchema = z
   .object({
@@ -224,7 +254,8 @@ export const AntiMemoryCandidateInputSchema = z
         path: ["invalidatedBySourceClaimId"]
       });
     }
-  });
+  })
+  .transform(withoutLegacyInvalidatedSourceClaimId);
 
 export type MemoryCandidateInput = z.infer<typeof MemoryCandidateInputSchema>;
 export type MemoryPromotionInput = z.infer<typeof MemoryPromotionInputSchema>;

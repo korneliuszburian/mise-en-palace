@@ -716,8 +716,8 @@ describe("schema parse boundaries", () => {
     ).toMatchObject({
       rejectedClaim: "Markdown files are runtime memory",
       reason: "Files can be audit/source/export, but Memory Core is store-backed",
-      invalidatedBySourceClaimIds: [],
-        metadata: {}
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      metadata: {}
       });
 
     expect(() =>

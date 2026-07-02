@@ -189,7 +189,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       rejectedClaim: "Markdown files are KRN runtime memory.",
       reason: "Runtime Memory Core is store-backed; markdown is audit/source/export material.",
       invalidatedBySourceClaimIds: [sourceClaim.id],
-      invalidatedBySourceClaimId: sourceClaim.id,
       appliesTo: "memory governance",
       mayRevisitWhen: "Project memory no longer uses the brain store.",
       summary: "Markdown is not runtime memory",

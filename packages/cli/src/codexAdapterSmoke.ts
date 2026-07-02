@@ -362,7 +362,6 @@ export const runCodexAdapterSmokeCheck = async (
       rejectedClaim: "Codex adapter smoke should invoke Codex to prove the adapter.",
       reason: "M26 must render instructions and expectations without actual Codex execution.",
       invalidatedBySourceClaimIds: [invokeCodexClaim.id],
-      invalidatedBySourceClaimId: invokeCodexClaim.id,
       appliesTo: "M26 Codex adapter smoke",
       mayRevisitWhen: "A later execution milestone is accepted.",
       summary: "Do not invoke Codex for M26 adapter smoke",

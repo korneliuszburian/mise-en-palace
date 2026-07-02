@@ -207,7 +207,6 @@ interface AntiMemoryFields {
   rejectedClaim?: string;
   reason?: string;
   invalidatedBySourceClaimIds: string[];
-  invalidatedBySourceClaimId?: string;
   appliesTo?: string;
   mayRevisitWhen?: string;
   summary: string;
@@ -249,10 +248,14 @@ const antiMemoryFields = (
 ): AntiMemoryFields => ({
   ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
   ...(row.reason === null ? {} : { reason: row.reason }),
-  invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
-  ...(row.invalidatedBySourceClaimId === null
-    ? {}
-    : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
+  invalidatedBySourceClaimIds: [
+    ...new Set([
+      ...stringListOrEmpty(row.invalidatedBySourceClaimIds),
+      ...(row.invalidatedBySourceClaimId === null
+        ? []
+        : [row.invalidatedBySourceClaimId])
+    ])
+  ],
   ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
   ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
   summary: row.summary,

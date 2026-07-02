@@ -103,7 +103,6 @@ interface AntiMemoryCandidateInvariantInput {
   owner: string;
   confidence: number;
   invalidatedBySourceClaimIds?: readonly string[];
-  invalidatedBySourceClaimId?: string;
   sourceLineage: readonly { sourceId: string }[];
   validFrom?: string;
   validUntil?: string;
@@ -207,7 +206,6 @@ const invalidatingSourceClaimCount = (
 const hasAntiMemoryInvalidationEvidence = (
   input: AntiMemoryCandidateInvariantInput
 ): boolean => (
-  hasText(input.invalidatedBySourceClaimId) ||
   invalidatingSourceClaimCount(input) > 0 ||
   sourceLineageIsPresent(input.sourceLineage)
 );
@@ -360,9 +358,6 @@ const applyAntiMemoryCandidateSourceContext = (
     row.reason = input.reason;
   }
 
-  if (input.invalidatedBySourceClaimId !== undefined) {
-    row.invalidatedBySourceClaimId = input.invalidatedBySourceClaimId;
-  }
 };
 
 const applyAntiMemoryCandidateScope = (
@@ -885,9 +880,6 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               : { rejectedClaim: candidateRow.rejectedClaim }),
             ...(candidateRow.reason === null ? {} : { reason: candidateRow.reason }),
             invalidatedBySourceClaimIds: candidateRow.invalidatedBySourceClaimIds,
-            ...(candidateRow.invalidatedBySourceClaimId === null
-              ? {}
-              : { invalidatedBySourceClaimId: candidateRow.invalidatedBySourceClaimId }),
             ...(candidateRow.appliesTo === null ? {} : { appliesTo: candidateRow.appliesTo }),
             ...(candidateRow.mayRevisitWhen === null
               ? {}
@@ -983,9 +975,6 @@ export class DrizzleMemoryRepository implements MemoryRepository {
             : { rejectedClaim: input.rejectedClaim }),
           ...(input.reason === undefined ? {} : { reason: input.reason }),
           invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
-          ...(input.invalidatedBySourceClaimId === undefined
-            ? {}
-            : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
           ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
           ...(input.mayRevisitWhen === undefined
             ? {}

@@ -51,7 +51,6 @@ const createPersistedAntiMemoryCandidate = (
   assignIfDefined(candidate, "feedbackDeltaId", input.feedbackDeltaId);
   assignIfDefined(candidate, "rejectedClaim", input.rejectedClaim);
   assignIfDefined(candidate, "reason", input.reason);
-  assignIfDefined(candidate, "invalidatedBySourceClaimId", input.invalidatedBySourceClaimId);
   assignIfDefined(candidate, "appliesTo", input.appliesTo);
   assignIfDefined(candidate, "mayRevisitWhen", input.mayRevisitWhen);
   assignIfDefined(candidate, "validUntil", input.validUntil);

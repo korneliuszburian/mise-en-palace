@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field
+current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field is active.
-The audit backlog still has a focused memory-domain cleanup: source inspection
-finds both `invalidatedBySourceClaimId` and `invalidatedBySourceClaimIds` in
-core/schema/harness anti-memory paths.
+mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality
+slice is active. The current product gap is turning user-provided
+reference-implementation / clone-workflow material into a KRN pattern-brain
+mechanism that improves real code, not a markdown-only instruction pile.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-568 complete: removed the transparent
-`enqueueMaintenanceJob` pass-through while keeping typed enqueue request/result
-and `MaintenanceJobQueueRepository` contracts.
+mise-en-palace-5f9 complete: canonicalized anti-memory invalidating source-claim
+runtime output to plural `invalidatedBySourceClaimIds`, kept singular only as
+legacy CLI/schema input and DB row read compatibility, and avoided DB migration.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-568-maintenance-enqueue-wrapper/REPORT.md
-Next: `mise-en-palace-5f9` canonicalizes the anti-memory invalidation
-source-claim field shape if source inspection confirms the dual-field drift.
+docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
+Next: `mise-en-palace-4tj` source-to-decisions the reference implementation /
+clone-workflow material and applies it to one bounded KRN code-quality slice.
 ```
 
 ## 2. Product Thesis

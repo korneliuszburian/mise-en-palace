@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field.
+current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,13 +39,13 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-568 complete: removed the transparent
-`enqueueMaintenanceJob` pass-through while keeping typed enqueue request/result
-and `MaintenanceJobQueueRepository` contracts.
+mise-en-palace-5f9 complete: canonicalized anti-memory invalidating source-claim
+runtime output to plural `invalidatedBySourceClaimIds`, kept singular only as
+legacy CLI/schema input and DB row read compatibility, and avoided DB migration.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-568-maintenance-enqueue-wrapper/REPORT.md
-Next: `mise-en-palace-5f9` canonicalizes the anti-memory invalidation
-source-claim field shape if source inspection confirms the dual-field drift.
+docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
+Next: `mise-en-palace-4tj` source-to-decisions the reference implementation /
+clone-workflow material and applies it to one bounded KRN code-quality slice.
 ```
 
 ## Direction
