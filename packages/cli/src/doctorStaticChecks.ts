@@ -1,5 +1,22 @@
 import path from "node:path";
 
+import {
+  createCodexHookExpectationProjection,
+  createExecutionBrief,
+  renderExecutionBriefText
+} from "@krn/codex-adapter";
+import {
+  DrizzleWorkerJobRepository
+} from "@krn/db/adapters";
+import {
+  outboxEvents,
+  workerJobs,
+  workerJobStatus
+} from "@krn/db/schema";
+import {
+  maintenanceJobRuntimeContract
+} from "@krn/workers";
+
 import type {
   DoctorCheck,
   DoctorOutcome,
@@ -26,6 +43,11 @@ const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
 
   return exists.some(Boolean);
 };
+
+const hasFunction = (
+  target: unknown
+): target is (...args: readonly never[]) => unknown =>
+  typeof target === "function";
 
 const passOrWarning = (condition: boolean): DoctorSeverity =>
   condition ? "pass" : "warning";
@@ -87,18 +109,6 @@ const hasMcpServer = async (
 
 export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
-  const adapterIndexText = await readOptionalText(
-    packagePath(repoRoot, "codex-adapter", "src", "index.ts")
-  );
-  const renderExecutionBriefText = await readOptionalText(
-    packagePath(repoRoot, "codex-adapter", "src", "renderExecutionBrief.ts")
-  );
-  const renderHookExpectationsText = await readOptionalText(
-    packagePath(repoRoot, "codex-adapter", "src", "renderHookExpectations.ts")
-  );
-  const contractsText = await readOptionalText(
-    packagePath(repoRoot, "codex-adapter", "src", "contracts.ts")
-  );
   const cliText = [
     await readOptionalText(packagePath(repoRoot, "cli", "src", "parseArgs.ts")),
     await readOptionalText(packagePath(repoRoot, "cli", "src", "runCli.ts")),
@@ -108,19 +118,14 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
     packagePath(repoRoot, "codex-adapter", "src")
   );
   const rendererPresent =
-    includesAll(adapterIndexText, ["./renderExecutionBrief"]) &&
-    includesAll(renderExecutionBriefText, [
-      "createExecutionBrief",
-      "renderExecutionBriefText"
-    ]);
+    hasFunction(createExecutionBrief) &&
+    hasFunction(renderExecutionBriefText);
   const executionBriefSmokeStatus = readScriptStatus(
     packageJson,
     "db:smoke:codex-adapter",
     "krn db smoke codex-adapter"
   );
-  const hookProjectionPresent =
-    includesAll(contractsText, ["CodexHookExpectationProjection"]) &&
-    includesAll(renderHookExpectationsText, ["createCodexHookExpectationProjection"]);
+  const hookProjectionPresent = hasFunction(createCodexHookExpectationProjection);
   const codexRunnerPresent = await hasCodexRunner(repoRoot, cliText, adapterText);
   const mcpServerPresent = await hasMcpServer(repoRoot, cliText, adapterText);
 
@@ -208,35 +213,35 @@ const hasBroadWorkerDaemon = async (
   ]) ||
   includesAny(workerRepositoryText, ["requiresBackgroundLoop: true"]);
 
+const workerRepositoryMethods = [
+  "enqueueWorkerJob",
+  "listQueuedWorkerJobs",
+  "markWorkerJobRunning",
+  "markWorkerJobSucceeded",
+  "markWorkerJobSkipped",
+  "markWorkerJobFailed",
+  "cleanupTestWorkerJobs"
+] as const;
+
+const workerJobSchemaPresent = (): boolean =>
+  workerJobs !== undefined &&
+  outboxEvents !== undefined &&
+  workerJobStatus.enumValues.includes("skipped");
+
+const workerJobRepositoryPresent = (): boolean =>
+  workerRepositoryMethods.every((methodName) =>
+    hasFunction(DrizzleWorkerJobRepository.prototype[methodName])
+  );
+
 export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const dependencyText = await readDependencyText(repoRoot);
-  const schemaText = await readOptionalText(
-    packagePath(repoRoot, "db", "src", "schema", "events.ts")
-  );
-  const repositoryText = await readOptionalText(
-    packagePath(repoRoot, "db", "src", "repositories", "DrizzleWorkerJobRepository.ts")
-  );
   const workersText = await readTreeText(packagePath(repoRoot, "workers", "src"));
   const workerRepositoryText = await readTreeText(
     packagePath(repoRoot, "db", "src", "repositories")
   );
-  const schemaPresent = includesAll(schemaText, [
-    "workerJobs",
-    "outboxEvents",
-    "workerJobStatus",
-    "skipped"
-  ]);
-  const repositoryPresent = includesAll(repositoryText, [
-    "DrizzleWorkerJobRepository",
-    "enqueueWorkerJob",
-    "listQueuedWorkerJobs",
-    "markWorkerJobRunning",
-    "markWorkerJobSucceeded",
-    "markWorkerJobSkipped",
-    "markWorkerJobFailed",
-    "cleanupTestWorkerJobs"
-  ]);
+  const schemaPresent = workerJobSchemaPresent();
+  const repositoryPresent = workerJobRepositoryPresent();
   const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
   const workerJobSmokeStatus = readScriptStatus(
     packageJson,
@@ -247,7 +252,7 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
     repoRoot,
     workersText,
     workerRepositoryText
-  );
+  ) || Boolean(maintenanceJobRuntimeContract.requiresBackgroundLoop);
 
   return [
     {
