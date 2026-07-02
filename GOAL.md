@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice.
+current task: mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,13 +39,15 @@ the product goal.
 Latest slice:
 
 ```txt
-mise-en-palace-5f9 complete: canonicalized anti-memory invalidating source-claim
-runtime output to plural `invalidatedBySourceClaimIds`, kept singular only as
-legacy CLI/schema input and DB row read compatibility, and avoided DB migration.
+mise-en-palace-4tj complete: applied the reference implementation / clone-workflow
+pattern to retained-pattern plan metadata parsing, rejected invalid reviewability
+and prose nextAction drift, reused canonical BrainKnowledgeReviewability and
+BrainKnowledgeNextAction types, and captured persisted plan/evidence/observe/
+reflect proof.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
-Next: `mise-en-palace-4tj` source-to-decisions the reference implementation /
-clone-workflow material and applies it to one bounded KRN code-quality slice.
+docs/reviews/controlled-dogfood/2026-07-02-4tj-reference-implementation-recipe/REPORT.md
+Next: `mise-en-palace-3dy` removes remaining allowed-value drift by canonicalizing
+brain-knowledge reviewability/nextAction value sources for parser consumers.
 ```
 
 ## Direction

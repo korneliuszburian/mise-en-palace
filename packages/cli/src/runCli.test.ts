@@ -1577,7 +1577,7 @@ describe("runCli", () => {
                 patternId: "ts-boundary-unknown-first-result-state",
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
-                nextAction: "Use before editing TypeScript IO boundaries.",
+                nextAction: "use",
                 doesNotProve: "This pattern does not prove implementation correctness."
               }
             ],

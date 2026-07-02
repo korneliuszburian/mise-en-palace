@@ -1,3 +1,8 @@
+import type {
+  BrainKnowledgeNextAction,
+  BrainKnowledgeReviewability
+} from "@krn/harness";
+
 export type RetainedPatternPlanSelectionStatus =
   | "selected"
   | "rejected_or_deferred"
@@ -7,8 +12,8 @@ export interface RetainedPatternPlanItem {
   id: string;
   patternId: string;
   title: string;
-  reviewability: string;
-  nextAction: string;
+  reviewability: BrainKnowledgeReviewability;
+  nextAction: BrainKnowledgeNextAction;
   doesNotProve: string;
 }
 
@@ -32,21 +37,60 @@ export const retainedPatternPlanSelectionMetadataKey = "retainedPatternSelection
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const stringField = (
-  record: Record<string, unknown>,
-  field: string
-): string | undefined => {
-  const value = record[field];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+type FieldParsers<T extends object> = {
+  [Key in keyof T]-?: (record: Record<string, unknown>) => T[Key] | undefined;
 };
 
-const stringArrayField = (
-  record: Record<string, unknown>,
-  field: string
-): string[] | undefined => {
-  const value = record[field];
+type RetainedPatternPlanItemFields = Omit<RetainedPatternPlanItem, "patternId">;
 
+type RetainedPatternPlanSelectionMetadataFields = Pick<
+  RetainedPatternPlanSelection,
+  "kind" | "status" | "query" | "source" | "selectedPatternIds" | "reason" | "doesNotProve"
+>;
+
+const selectionStatuses = new Set<RetainedPatternPlanSelectionStatus>([
+  "selected",
+  "rejected_or_deferred",
+  "unavailable"
+]);
+
+const selectionSources = new Set<RetainedPatternPlanSelection["source"]>([
+  "brain_knowledge_catalog"
+]);
+
+const planItemReviewabilities = new Set<BrainKnowledgeReviewability>([
+  "ready",
+  "needs_more_evidence",
+  "too_vague",
+  "duplicate",
+  "not_useful",
+  "unknown"
+]);
+
+const planItemNextActions = new Set<BrainKnowledgeNextAction>([
+  "use",
+  "review",
+  "promote",
+  "demote",
+  "invalidate",
+  "add_evidence",
+  "reject",
+  "defer",
+  "unknown"
+]);
+
+const parseNonEmptyString = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value : undefined;
+
+const parseSetValue = <TValue extends string>(
+  value: unknown,
+  allowedValues: ReadonlySet<TValue>
+): TValue | undefined =>
+  typeof value === "string" && allowedValues.has(value as TValue)
+    ? value as TValue
+    : undefined;
+
+const parseStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -56,6 +100,43 @@ const stringArrayField = (
   return strings.length === value.length ? strings : undefined;
 };
 
+const parseObjectFields = <T extends object>(
+  record: Record<string, unknown>,
+  parsers: FieldParsers<T>
+): T | undefined => {
+  const entries = (Object.keys(parsers) as Array<keyof T>).map((key) => [
+    key,
+    parsers[key](record)
+  ] as const);
+
+  if (entries.some(([, value]) => value === undefined)) {
+    return undefined;
+  }
+
+  return Object.fromEntries(entries) as T;
+};
+
+const planItemFieldParsers: FieldParsers<RetainedPatternPlanItemFields> = {
+  id: (record) => parseNonEmptyString(record["id"]),
+  title: (record) => parseNonEmptyString(record["title"]),
+  reviewability: (record) => parseSetValue(record["reviewability"], planItemReviewabilities),
+  nextAction: (record) => parseSetValue(record["nextAction"], planItemNextActions),
+  doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
+};
+
+const selectionMetadataFieldParsers: FieldParsers<RetainedPatternPlanSelectionMetadataFields> = {
+  kind: (record) =>
+    record["kind"] === "krn.retainedPatternPlanSelection.v1"
+      ? "krn.retainedPatternPlanSelection.v1"
+      : undefined,
+  status: (record) => parseSetValue(record["status"], selectionStatuses),
+  query: (record) => parseNonEmptyString(record["query"]),
+  source: (record) => parseSetValue(record["source"], selectionSources),
+  selectedPatternIds: (record) => parseStringArray(record["selectedPatternIds"]),
+  reason: (record) => parseNonEmptyString(record["reason"]),
+  doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
+};
+
 const patternIdFromCardId = (id: string): string =>
   id.startsWith("pattern:") ? id.slice("pattern:".length) : id;
 
@@ -63,29 +144,15 @@ const planItemFromRecord = (
   record: Record<string, unknown>,
   patternId: string | undefined
 ): RetainedPatternPlanItem | undefined => {
-  const id = stringField(record, "id");
-  const title = stringField(record, "title");
-  const reviewability = stringField(record, "reviewability");
-  const nextAction = stringField(record, "nextAction");
-  const doesNotProve = stringField(record, "doesNotProve");
+  const requiredFields = parseObjectFields(record, planItemFieldParsers);
 
-  if (
-    id === undefined ||
-    title === undefined ||
-    reviewability === undefined ||
-    nextAction === undefined ||
-    doesNotProve === undefined
-  ) {
+  if (requiredFields === undefined) {
     return undefined;
   }
 
   return {
-    id,
-    patternId: patternId ?? patternIdFromCardId(id),
-    title,
-    reviewability,
-    nextAction,
-    doesNotProve
+    ...requiredFields,
+    patternId: patternId ?? patternIdFromCardId(requiredFields.id)
   };
 };
 
@@ -108,8 +175,8 @@ const proofFromRecord = (
   }
 
   return {
-    proves: stringArrayField(value, "proves") ?? [],
-    doesNotProve: stringArrayField(value, "doesNotProve") ?? []
+    proves: parseStringArray(value["proves"]) ?? [],
+    doesNotProve: parseStringArray(value["doesNotProve"]) ?? []
   };
 };
 
@@ -183,7 +250,7 @@ const planItemFromMetadata = (value: unknown): RetainedPatternPlanItem | undefin
     return undefined;
   }
 
-  const patternId = stringField(value, "patternId");
+  const patternId = parseNonEmptyString(value["patternId"]);
 
   return patternId === undefined ? undefined : planItemFromRecord(value, patternId);
 };
@@ -197,44 +264,25 @@ export const retainedPatternSelectionFromMetadata = (
     return undefined;
   }
 
-  const kind = stringField(value, "kind");
-  const status = stringField(value, "status");
-  const query = stringField(value, "query");
-  const source = stringField(value, "source");
-  const reason = stringField(value, "reason");
-  const doesNotProve = stringField(value, "doesNotProve");
-  const selectedPatternIds = stringArrayField(value, "selectedPatternIds");
+  const requiredFields = parseObjectFields(value, selectionMetadataFieldParsers);
   const selectedPatternsValue = value.selectedPatterns;
-  const selectedPatterns = Array.isArray(selectedPatternsValue)
-    ? selectedPatternsValue.flatMap((item) => {
-      const parsed = planItemFromMetadata(item);
+  if (requiredFields === undefined || !Array.isArray(selectedPatternsValue)) {
+    return undefined;
+  }
 
-      return parsed === undefined ? [] : [parsed];
-    })
-    : undefined;
+  const selectedPatterns = selectedPatternsValue.flatMap((item) => {
+    const parsed = planItemFromMetadata(item);
 
-  if (
-    kind !== "krn.retainedPatternPlanSelection.v1" ||
-    (status !== "selected" && status !== "rejected_or_deferred" && status !== "unavailable") ||
-    query === undefined ||
-    source !== "brain_knowledge_catalog" ||
-    reason === undefined ||
-    doesNotProve === undefined ||
-    selectedPatternIds === undefined ||
-    selectedPatterns === undefined
-  ) {
+    return parsed === undefined ? [] : [parsed];
+  });
+
+  if (selectedPatterns.length !== selectedPatternsValue.length) {
     return undefined;
   }
 
   return {
-    kind,
-    status,
-    query,
-    source,
-    selectedPatternIds,
+    ...requiredFields,
     selectedPatterns,
-    reason,
-    doesNotProve,
     proof: proofFromRecord(value.proof)
   };
 };

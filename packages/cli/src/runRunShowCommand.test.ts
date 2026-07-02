@@ -71,7 +71,7 @@ const aggregate: HarnessRunAggregate = {
           patternId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
-          nextAction: "Apply to CLI/JSON/file/env boundaries before implementation.",
+          nextAction: "use",
           doesNotProve:
             "This retained pattern does not prove the implementation used unknown-first validation correctly."
         }],
@@ -499,7 +499,7 @@ describe("runRunShowCommand", () => {
           patternId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
-          nextAction: "Apply to CLI/JSON/file/env boundaries before implementation.",
+          nextAction: "use",
           doesNotProve:
             "This retained pattern does not prove the implementation used unknown-first validation correctly."
         }]

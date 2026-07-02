@@ -2,8 +2,7 @@
 
 Status: active compact root plan. Date: 2026-07-02.
 
-Root `PLAN.md` is the compact product source of truth. Detailed history stays in `PLANS.md`.
-Current-task contracts live in `PLANS.md`.
+Root `PLAN.md` is compact product truth. Detailed history stays in `PLANS.md`.
 
 ## Product State
 
@@ -13,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice
+current task: mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers
 ```
 
 ## Compact Checkpoints
@@ -91,6 +90,7 @@ reference implementation recipe boundary: user-provided clone-workflow sources r
 TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable local reference implementation recipe with helped usefulness feedback
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
+reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -100,7 +100,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-4tj Apply Reference Implementation Recipe To One KRN Code-Quality Slice
+### mise-en-palace-3dy Canonicalize Brain-Knowledge Vocabulary Values For Parser Consumers
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -112,17 +112,18 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-4tj-reference-implementation-recipe/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Turn the user-provided reference implementation / clone-workflow material into a
-bounded KRN pattern-brain source-to-decision, then apply it to one real KRN
-code-quality slice. Do not build a generic skill zoo, dashboard, broad agent
-system, new server, or markdown-only recipe pile. The output must show whether
-using a local exemplar reduced review burden or implementation drift.
+Source inspection from 4tj proved retained-pattern plan parsing now uses
+canonical BrainKnowledgeReviewability and BrainKnowledgeNextAction types, but
+allowed-value sets are still locally duplicated. Remove that remaining drift at
+the smallest parser-consumer boundary. Do not build a broad parser framework,
+new runtime, dashboard, API, MCP, DB schema, or unrelated review-domain
+consolidation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

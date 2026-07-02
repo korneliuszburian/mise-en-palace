@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice
+current task: mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,25 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-4tj Apply reference implementation recipe to one KRN code-quality slice is active.
-The current product gap is turning user-provided reference-implementation /
-clone-workflow material into a KRN pattern-brain mechanism that improves real
-code, not a markdown-only instruction pile.
+mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers is active.
+The current product gap is removing the remaining retained-pattern parser
+vocabulary drift exposed by 4tj: parser consumers should use one canonical
+brain-knowledge reviewability/nextAction value source instead of copied literal
+sets.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-5f9 complete: canonicalized anti-memory invalidating source-claim
-runtime output to plural `invalidatedBySourceClaimIds`, kept singular only as
-legacy CLI/schema input and DB row read compatibility, and avoided DB migration.
+mise-en-palace-4tj complete: applied the reference implementation / clone-workflow
+pattern to retained-pattern plan metadata parsing, rejected invalid reviewability
+and prose nextAction drift, reused canonical BrainKnowledgeReviewability and
+BrainKnowledgeNextAction types, and captured persisted plan/evidence/observe/
+reflect proof.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-5f9-anti-memory-invalidation-field/REPORT.md
-Next: `mise-en-palace-4tj` source-to-decisions the reference implementation /
-clone-workflow material and applies it to one bounded KRN code-quality slice.
+docs/reviews/controlled-dogfood/2026-07-02-4tj-reference-implementation-recipe/REPORT.md
+Next: `mise-en-palace-3dy` canonicalizes brain-knowledge reviewability/
+nextAction value sources for parser consumers.
 ```
 
 ## 2. Product Thesis
