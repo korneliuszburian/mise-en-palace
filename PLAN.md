@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers
+current task: mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values
 ```
 
 ## Compact Checkpoints
@@ -91,6 +91,7 @@ TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable loc
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 reference implementation recipe application: retained parser exemplar tightened retained-pattern plan metadata parsing and rejected invalid vocabulary drift
+brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -100,7 +101,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-3dy Canonicalize Brain-Knowledge Vocabulary Values For Parser Consumers
+### mise-en-palace-9sg Canonicalize Remaining Brain-Knowledge CLI Filter Vocabulary Values
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -112,18 +113,17 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-4tj-reference-implementation-recipe/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-3dy-brain-knowledge-vocabulary-values/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Source inspection from 4tj proved retained-pattern plan parsing now uses
-canonical BrainKnowledgeReviewability and BrainKnowledgeNextAction types, but
-allowed-value sets are still locally duplicated. Remove that remaining drift at
-the smallest parser-consumer boundary. Do not build a broad parser framework,
-new runtime, dashboard, API, MCP, DB schema, or unrelated review-domain
-consolidation.
+3dy canonicalized BrainKnowledge reviewability/nextAction values. Source
+inspection still shows local CLI filter arrays for kind/status/usefulness
+outcome. Canonicalize those where source inspection proves sharing is safe. Do
+not build a parser framework, runtime, dashboard, API, MCP, DB schema, or
+unrelated vocabulary rewrite.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

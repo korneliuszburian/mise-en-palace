@@ -2,6 +2,10 @@ import type {
   BrainKnowledgeNextAction,
   BrainKnowledgeReviewability
 } from "@krn/harness";
+import {
+  brainKnowledgeNextActionValues,
+  brainKnowledgeReviewabilityValues
+} from "@krn/harness";
 
 export type RetainedPatternPlanSelectionStatus =
   | "selected"
@@ -58,26 +62,13 @@ const selectionSources = new Set<RetainedPatternPlanSelection["source"]>([
   "brain_knowledge_catalog"
 ]);
 
-const planItemReviewabilities = new Set<BrainKnowledgeReviewability>([
-  "ready",
-  "needs_more_evidence",
-  "too_vague",
-  "duplicate",
-  "not_useful",
-  "unknown"
-]);
+const planItemReviewabilities = new Set<BrainKnowledgeReviewability>(
+  brainKnowledgeReviewabilityValues
+);
 
-const planItemNextActions = new Set<BrainKnowledgeNextAction>([
-  "use",
-  "review",
-  "promote",
-  "demote",
-  "invalidate",
-  "add_evidence",
-  "reject",
-  "defer",
-  "unknown"
-]);
+const planItemNextActions = new Set<BrainKnowledgeNextAction>(
+  brainKnowledgeNextActionValues
+);
 
 const parseNonEmptyString = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim().length > 0 ? value : undefined;

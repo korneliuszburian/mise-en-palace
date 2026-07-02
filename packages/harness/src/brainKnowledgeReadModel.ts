@@ -23,13 +23,16 @@ export type BrainKnowledgeStatus =
 
 export type BrainKnowledgeConfidence = "high" | "medium" | "low" | "unknown";
 
-export type BrainKnowledgeReviewability =
-  | "ready"
-  | "needs_more_evidence"
-  | "too_vague"
-  | "duplicate"
-  | "not_useful"
-  | "unknown";
+export const brainKnowledgeReviewabilityValues = [
+  "ready",
+  "needs_more_evidence",
+  "too_vague",
+  "duplicate",
+  "not_useful",
+  "unknown"
+] as const;
+
+export type BrainKnowledgeReviewability = typeof brainKnowledgeReviewabilityValues[number];
 
 export type BrainKnowledgeTemporal =
   | {
@@ -59,16 +62,19 @@ export type BrainKnowledgeDissent =
       kind: "unknown";
     };
 
-export type BrainKnowledgeNextAction =
-  | "use"
-  | "review"
-  | "promote"
-  | "demote"
-  | "invalidate"
-  | "add_evidence"
-  | "reject"
-  | "defer"
-  | "unknown";
+export const brainKnowledgeNextActionValues = [
+  "use",
+  "review",
+  "promote",
+  "demote",
+  "invalidate",
+  "add_evidence",
+  "reject",
+  "defer",
+  "unknown"
+] as const;
+
+export type BrainKnowledgeNextAction = typeof brainKnowledgeNextActionValues[number];
 
 export type BrainKnowledgeUsefulnessOutcome =
   | "helped"
@@ -193,26 +199,13 @@ const knowledgeConfidences = new Set<BrainKnowledgeConfidence>([
   "unknown"
 ]);
 
-const knowledgeReviewabilities = new Set<BrainKnowledgeReviewability>([
-  "ready",
-  "needs_more_evidence",
-  "too_vague",
-  "duplicate",
-  "not_useful",
-  "unknown"
-]);
+const knowledgeReviewabilities = new Set<BrainKnowledgeReviewability>(
+  brainKnowledgeReviewabilityValues
+);
 
-const knowledgeNextActions = new Set<BrainKnowledgeNextAction>([
-  "use",
-  "review",
-  "promote",
-  "demote",
-  "invalidate",
-  "add_evidence",
-  "reject",
-  "defer",
-  "unknown"
-]);
+const knowledgeNextActions = new Set<BrainKnowledgeNextAction>(
+  brainKnowledgeNextActionValues
+);
 
 const knowledgeUsefulnessOutcomes = new Set<BrainKnowledgeUsefulnessOutcome>([
   "helped",

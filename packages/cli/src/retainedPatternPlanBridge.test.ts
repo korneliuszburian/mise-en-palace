@@ -9,7 +9,7 @@ const validPatternCard = {
   id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
   title: "Brain knowledge parser TypeScript exemplar",
   reviewability: "ready",
-  nextAction: "use",
+  nextAction: "review",
   doesNotProve: "This exemplar does not prove broad TypeScript quality."
 };
 
@@ -94,7 +94,7 @@ describe("retainedPatternPlanBridge", () => {
       selectedPatterns: [{
         patternId: "ts-boundary-brain-knowledge-parser-exemplar",
         reviewability: "ready",
-        nextAction: "use"
+        nextAction: "review"
       }]
     });
   });

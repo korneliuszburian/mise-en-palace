@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers
+current task: mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values
 latest pushed commit: see git history
 ```
 
@@ -24,25 +24,23 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-3dy Canonicalize brain-knowledge vocabulary values for parser consumers is active.
-The current product gap is removing the remaining retained-pattern parser
-vocabulary drift exposed by 4tj: parser consumers should use one canonical
-brain-knowledge reviewability/nextAction value source instead of copied literal
-sets.
+mise-en-palace-9sg Canonicalize remaining brain-knowledge CLI filter vocabulary values is active.
+The current product gap is removing the next local CLI filter vocabulary drift:
+BrainKnowledge kind/status/usefulness filters should reuse canonical value
+sources where source inspection proves sharing is safe.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-4tj complete: applied the reference implementation / clone-workflow
-pattern to retained-pattern plan metadata parsing, rejected invalid reviewability
-and prose nextAction drift, reused canonical BrainKnowledgeReviewability and
-BrainKnowledgeNextAction types, and captured persisted plan/evidence/observe/
-reflect proof.
+mise-en-palace-3dy complete: exported canonical BrainKnowledge reviewability and
+nextAction value tuples, derived the public types from those values, reused them
+in retained-pattern plan metadata and CLI reviewability parsing, and captured
+persisted plan/evidence/observe/reflect proof.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-4tj-reference-implementation-recipe/REPORT.md
-Next: `mise-en-palace-3dy` canonicalizes brain-knowledge reviewability/
-nextAction value sources for parser consumers.
+docs/reviews/controlled-dogfood/2026-07-02-3dy-brain-knowledge-vocabulary-values/REPORT.md
+Next: `mise-en-palace-9sg` canonicalizes remaining brain-knowledge CLI filter
+vocabulary values where source inspection proves sharing is safe.
 ```
 
 ## 2. Product Thesis

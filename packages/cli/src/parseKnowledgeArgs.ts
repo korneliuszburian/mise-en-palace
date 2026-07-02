@@ -5,6 +5,9 @@ import type {
   BrainKnowledgeUsefulnessOutcomeFilter
 } from "@krn/harness";
 import {
+  brainKnowledgeReviewabilityValues
+} from "@krn/harness";
+import {
   optionValue
 } from "./parseArgHelpers.js";
 import type {
@@ -49,15 +52,6 @@ const knowledgeStatuses = [
   "superseded",
   "unknown"
 ] as const satisfies readonly BrainKnowledgeStatus[];
-
-const knowledgeReviewabilities = [
-  "ready",
-  "needs_more_evidence",
-  "too_vague",
-  "duplicate",
-  "not_useful",
-  "unknown"
-] as const satisfies readonly BrainKnowledgeReviewability[];
 
 const knowledgeUsefulnessOutcomes = [
   "helped",
@@ -255,7 +249,7 @@ const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
       args,
       index,
       "--reviewability",
-      knowledgeReviewabilities,
+      brainKnowledgeReviewabilityValues,
       "reviewability"
     );
 
