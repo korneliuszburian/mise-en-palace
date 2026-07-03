@@ -98,7 +98,7 @@ export interface PatternUsefulnessOutcomeFeedback {
   doesNotProve: string;
 }
 
-const sourceUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
+const sourceUsefulnessOutcomes = new Set<string>([
   "selected",
   "used",
   "helped",
@@ -109,9 +109,9 @@ const sourceUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
 ]);
 
 export const isSourceUsefulnessOutcome = (
-  value: string
+  value: unknown
 ): value is SourceUsefulnessOutcome =>
-  sourceUsefulnessOutcomes.has(value as SourceUsefulnessOutcome);
+  typeof value === "string" && sourceUsefulnessOutcomes.has(value);
 
 const sourceUsefulnessOutcomeField = (
   input: Record<string, unknown>
@@ -119,7 +119,7 @@ const sourceUsefulnessOutcomeField = (
   const value = readMetadataString(input, "outcome");
 
   return value !== undefined && isSourceUsefulnessOutcome(value)
-    ? value as SourceUsefulnessOutcome
+    ? value
     : "unknown";
 };
 
