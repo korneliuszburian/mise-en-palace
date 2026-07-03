@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: dogfood brain search for code-quality next-task selection
+current task: choose next highest-ROI kernel vertical from Beads
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-dogfood brain search for code-quality next-task selection.
+choose next highest-ROI kernel vertical from Beads.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -55,8 +55,12 @@ support without CI mutation or a broad audit command.
 `mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI. They
 removed decorative CapabilityPlan binding vocabulary and stale active
 policy-gate evidence while preserving kind-based skill routing. `mise-en-palace-b3wa`
-is in progress. It should carry retained-pattern targetFit and recommended-use
-evidence through plan/run readback for code-quality planning.
+is closed with green CI. It carries retained-pattern targetFit and
+recommended-use evidence through plan/run readback for code-quality planning.
+`mise-en-palace-sfcb` is locally closed pending push/CI. It proves that a
+source graph relation can change selected source-search support while
+preserving caveats and not treating raw relation metadata as validated decision
+support.
 ```
 
 ## 2. Product Thesis

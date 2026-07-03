@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: dogfood brain search for code-quality next-task selection.
+current task: choose next highest-ROI kernel vertical from Beads.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -46,8 +46,11 @@ SourceDecisionEdge support without CI mutation or a broad audit command.
 `mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI:
 decorative CapabilityPlan binding vocabulary and stale active policy-gate
 evidence were removed without changing skill routing. `mise-en-palace-b3wa` is
-the active slice: carry retained-pattern targetFit and recommended-use evidence
-through plan/run readback for code-quality planning.
+closed with green CI: retained-pattern targetFit and recommended-use evidence
+now flow through plan/run readback for code-quality planning. `mise-en-palace-sfcb`
+is locally closed pending push/CI: source-search JSON now proves one
+invalidates SourceClaimEdge changes selected support while preserving graph and
+decision-support caveats.
 
 Latest slice:
 

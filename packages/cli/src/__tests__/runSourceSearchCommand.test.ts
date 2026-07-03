@@ -1023,6 +1023,13 @@ describe("runSourceSearchCommand", () => {
     const answerPackage = objectValue(output.answerPackage, "answerPackage");
     const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
     const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+    const relationSupport = arrayValue(answerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+    const sourceDecisionSupport = arrayValue(
+      answerPackage.sourceDecisionSupport,
+      "sourceDecisionSupport"
+    );
+    const graphReadback = objectValue(answerPackage.graphReadback, "graphReadback");
     const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
     const excludedStaleClaim = excludedCandidates
       .map((candidate) => objectValue(candidate, "excluded candidate"))
@@ -1030,6 +1037,16 @@ describe("runSourceSearchCommand", () => {
 
     expect(supportingClaims).toHaveLength(1);
     expect(firstClaim.sourceClaimId).toBe(currentClaimId);
+    expect(firstClaim.sourceDecisionSupportState).toBe("missing");
+    expect(firstClaim.sourceDecisionSupportCaveat).toContain("has no SourceDecisionEdge support");
+    expect(relationSupport).toHaveLength(1);
+    expect(relation.sourceClaimId).toBe(currentClaimId);
+    expect(relation.relatedSourceClaimId).toBe(staleClaimId);
+    expect(relation.kind).toBe("invalidates");
+    expect(relation.sourceDecisionRef).toBe("source-decision:temporal-claim-graph");
+    expect(sourceDecisionSupport).toEqual([]);
+    expect(graphReadback.graphAware).toBe(true);
+    expect(graphReadback.invalidationEdges).toBe(1);
     expect(excludedStaleClaim?.reason).toContain("Source graph rank-down");
     expect(excludedStaleClaim?.graphScore).toBeLessThan(0);
   });

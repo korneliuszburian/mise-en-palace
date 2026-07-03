@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: dogfood brain search for code-quality next-task selection
+current task: choose next highest-ROI kernel vertical from Beads
 ```
 
 ## Compact Checkpoints
@@ -118,6 +118,7 @@ source-graph rank-down: invalidates/expires/supersedes SourceClaimEdges from acc
 source decision gaps readback: read-only `krn source decision gaps` exposes accepted SourceClaims missing SourceDecisionEdge support without CI mutation
 capability plan binding cleanup: decorative bindingKinds/policy_gate/tool_boundary vocabulary removed from active capability requirements
 brain code-quality pattern dogfood: retained pattern selection exposes targetFit summary and recommended use in plan/run readback
+source graph relation ranking proof: invalidates SourceClaimEdge changes selected support, graphReadback, and decision-support caveat in source-search JSON
 ```
 
 ## Active Task
@@ -132,8 +133,8 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-b3wa` in progress; then choose next highest-ROI
-kernel vertical.
+Current queue: `mise-en-palace-sfcb` locally closed pending push/CI; then
+choose next highest-ROI kernel vertical.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
@@ -152,7 +153,7 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 
 ```txt
 1. pattern/research brain continuously applied to code quality
-2. source/graph relation ranking quality beyond explicit project readback
+2. source/graph relation ranking quality beyond one focused proof
 3. product UI/API/MCP after usefulness/security gates
 ```
 
