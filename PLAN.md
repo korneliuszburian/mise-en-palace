@@ -148,7 +148,7 @@ activation context reuse case.
 `mise-en-palace-y6ib` brain-search readback split is closed: selectedKnowledge/readback formatting moved out of the command runner.
 `mise-en-palace-2ksv` second-opinion retry artifact hardening is closed:
 invalid verdicts and raw envelopes remain inspectable without becoming approval.
-Next implementation candidate is `mise-en-palace-h1b4` run-show projection/readback split.
+`mise-en-palace-h1b4` run-show split is closed: projection/readback formatting moved out of the command runner; next selection uses Beads ready work.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
