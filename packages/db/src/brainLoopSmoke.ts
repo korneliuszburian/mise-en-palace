@@ -6,6 +6,7 @@ import {
   applyActivationFilters,
   applyContextROI,
   assembleContext,
+  compileHarnessPlan,
   persistActivationTrace,
   promoteMemoryCandidateThroughGate,
   retrieveActivationCandidates
@@ -55,6 +56,11 @@ export interface BrainLoopSmokeReport {
   includedMemoryDecisionCount: number;
   contextItemCount: number;
   memoryApplicationId: string;
+  nextRunTaskContractId: string;
+  nextRunRetrievalRunId: string;
+  nextRunContextAssemblyId: string;
+  nextRunMemoryInclusionCount: number;
+  nextRunIncludedMemoryDecisionCount: number;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -62,11 +68,22 @@ export interface BrainLoopSmokeReport {
 
 const now = smokeFixtureClocks.brainLoop.now;
 
+const stringMetadataValue = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" ? value : undefined;
+};
+
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput
 ): Promise<BrainLoopSmokeReport> => {
   let feedbackDeltaId: string | undefined;
   let retrievalRunId: string | undefined;
+  let nextRetrievalRunId: string | undefined;
+  let nextContextAssemblyId: string | undefined;
   const scaffold = await createSmokeHarnessScaffold({
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder,
@@ -77,11 +94,14 @@ export const runBrainLoopSmokeCheck = async (
     cleanupRows: (cleanupInput) => cleanupBrainLoopSmokeRows({
       ...cleanupInput,
       feedbackDeltaId,
+      nextRetrievalRunId,
       retrievalRunId
     }),
     countMarkerRows: (markerInput) => countBrainLoopSmokeMarkerRows({
       ...markerInput,
       feedbackDeltaId,
+      nextContextAssemblyId,
+      nextRetrievalRunId,
       retrievalRunId
     }),
     rawIntent: `brain loop smoke ${input.smokeId}`,
@@ -101,6 +121,7 @@ export const runBrainLoopSmokeCheck = async (
     client,
     db,
     marker,
+    workspace,
     workspaceSlug,
     projectSlug,
     project,
@@ -355,6 +376,66 @@ export const runBrainLoopSmokeCheck = async (
         smokeId: marker
       }
     });
+    const nextCompile = await compileHarnessPlan({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      operatorIntent: {
+        source: "cli",
+        rawIntent: `next brain loop recall ${marker}`,
+        metadata: {
+          smokeId: marker,
+          previousMemoryRecordId: memoryRecord.id
+        }
+      },
+      taskContract: {
+        title: "Reuse reviewed DB-backed brain loop memory",
+        objective: "Automatically recall reviewed DB-backed brain loop memory in the next planning activation.",
+        constraints: ["use store-backed Memory Core", "do not create a worker runtime"],
+        nonGoals: ["no dashboard", "no activation scoring rewrite"],
+        acceptance: ["next planning activation includes or explicitly excludes the reviewed MemoryRecord"],
+        metadata: {
+          smokeId: marker,
+          previousMemoryRecordId: memoryRecord.id
+        }
+      },
+      tokenBudget: 360,
+      metadata: {
+        smokeId: marker,
+        previousMemoryRecordId: memoryRecord.id,
+        proof: "automatic_memory_recall_next_compile"
+      }
+    }, {
+      harnessRunRepository,
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
+      now: () => now,
+      createId: (prefix) => `${prefix}-${marker}-next`
+    });
+    nextContextAssemblyId = nextCompile.contextAssembly.id;
+    nextRetrievalRunId = stringMetadataValue(
+      nextCompile.contextAssembly.metadata,
+      "retrievalRunId"
+    );
+    const nextRunRetrievalRunId = requireSmokeReadbackValue(
+      nextRetrievalRunId,
+      "next run retrievalRunId",
+      "Brain loop next-run recall did not persist retrieval metadata"
+    );
+    const nextRunMemoryInclusions = nextCompile.contextAssembly.inclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
+    );
+    const nextRunMemoryExclusions = nextCompile.contextAssembly.exclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
+    );
+    const nextRunActivationDecisions = await retrievalRepository.listActivationDecisionsForRun(
+      nextRunRetrievalRunId
+    );
+    const nextRunIncludedMemoryDecisionCount = nextRunActivationDecisions.filter((decision) =>
+      decision.decision === "included" &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === memoryRecord.id
+    ).length;
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
@@ -414,6 +495,13 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "memory application count sanity",
         passed: (memoryApplicationCountRows[0]?.count ?? 0) === 1
+      },
+      { label: "next run context assembly", passed: nextCompile.contextAssembly.id === nextContextAssemblyId },
+      { label: "next run retrieved active memory", passed: nextRunMemoryInclusions.length + nextRunMemoryExclusions.length === 1 },
+      { label: "next run included memory", passed: nextRunMemoryInclusions.length === 1 },
+      {
+        label: "next run activation decision",
+        passed: nextRunIncludedMemoryDecisionCount === 1
       }
     ], readbackError);
 
@@ -457,6 +545,11 @@ export const runBrainLoopSmokeCheck = async (
       includedMemoryDecisionCount,
       contextItemCount: contextAssembly.inclusions.length,
       memoryApplicationId: memoryApplication.id,
+      nextRunTaskContractId: nextCompile.taskContract.id,
+      nextRunRetrievalRunId,
+      nextRunContextAssemblyId: nextCompile.contextAssembly.id,
+      nextRunMemoryInclusionCount: nextRunMemoryInclusions.length,
+      nextRunIncludedMemoryDecisionCount,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

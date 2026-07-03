@@ -268,11 +268,14 @@ export interface HarnessCompilerSmokeRowInput extends SmokeBaseMarkerInput {
 
 export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
   feedbackDeltaId: string | undefined;
+  nextContextAssemblyId: string | undefined;
+  nextRetrievalRunId: string | undefined;
   retrievalRunId: string | undefined;
 }
 
 export interface BrainLoopSmokeCleanupInput extends SmokeCleanupInput {
   feedbackDeltaId: string | undefined;
+  nextRetrievalRunId: string | undefined;
   retrievalRunId: string | undefined;
 }
 
@@ -695,6 +698,11 @@ export const countBrainLoopSmokeMarkerRows = async (
 ): Promise<number> => sumSmokeCountTasks([
   () => countMemoryGovernanceSmokeMarkerRows(input),
   countOptionalSmokeContextSelectionRows(input.db, input.contextAssemblyId),
+  countOptionalSmokeContextSelectionRows(input.db, input.nextContextAssemblyId),
+  optionalSmokeCount(
+    input.nextRetrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
   () => countSmokeRows(input.db, evidenceBundles, sql`${evidenceBundles.metadata}->>'smokeId' = ${input.marker}`),
   () => countSmokeRows(input.db, reviewAssessments, sql`${reviewAssessments.metadata}->>'smokeId' = ${input.marker}`),
   () => countSmokeRows(input.db, feedbackDeltas, sql`${feedbackDeltas.metadata}->>'smokeId' = ${input.marker}`),
@@ -982,6 +990,12 @@ export const cleanupBrainLoopSmokeRows = async (
   }
 
   await cleanupMemoryGovernanceSmokeRows(input);
+
+  if (input.nextRetrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.nextRetrievalRunId));
+  }
 };
 
 export const cleanupSourceGraphSmokeRows = async (

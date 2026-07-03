@@ -107,7 +107,7 @@ pattern/research brain: hooks and acquisition escalation retained with consumer/
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
-shared brain vertical loop proof: first real DB-backed plan/evidence/observe/reflect/memory-application loop completed; automatic memory recall not proven
+shared brain vertical loop proof: DB-backed plan/evidence/observe/reflect/memory-application loop plus next-run automatic MemoryRecord recall proven
 retained pattern + memory cooperation: one persisted next-task plan selected the promoted SBV MemoryRecord and retained TypeScript catalog patterns together
 source decision edge linkage: one operator-facing SourceDecision adoption and SourceDecisionEdge link persisted and read back against a concrete harness_run
 source-search project selector: explicit project readback can surface the c79a SourceClaim with linked SourceDecisionEdge support without requiring a ProjectKernel
@@ -150,9 +150,9 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-h1b4/ij82/otyu` split and CI-gated DB-backed run-show smoke.
 `mise-en-palace-m9yb/w4px` refreshed the post-refactor queue and applied retained `ts-boundary-unknown-first-result-state` to brain-search JSON readback.
 `mise-en-palace-7hoy` added duplicate SourceClaimEdge selection proof beyond invalidation rank-down.
-`mise-en-palace-fx89/or40/283u/9qwr/xffw/opfh/h5g3/tva6/kdr7/7i9x/h2vl/f1d8/03ti/bsmn/s6q6/35j9/vsav/1tp1/hd7a/hxb8/d1ck/egmj/5rti` refreshed code-quality boundary work, removed typed escape hatches, extracted source-search readbacks, and used Claude review to select `a1r4`; deferred human decision: `plnv`.
+`mise-en-palace-fx89/or40/283u/9qwr/xffw/opfh/h5g3/tva6/kdr7/7i9x/h2vl/f1d8/03ti/bsmn/s6q6/35j9/vsav/1tp1/hd7a/hxb8/d1ck/egmj/5rti/a1r4` removed typed escape hatches, extracted source-search readbacks, selected next priority by Claude review, and proved next-run automatic memory recall; deferred human decision: `plnv`.
 
-Boundary: manual reuse was proven; automatic memory recall was not. Do not claim product readiness or retrieval quality from this slice.
+Boundary: one DB-backed automatic memory recall path is proven. Do not claim product readiness, ranking quality, autonomous reflection quality, worker runtime, or multi-repo usefulness.
 
 ## Recent Completed Streams
 
