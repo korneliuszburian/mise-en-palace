@@ -16,12 +16,12 @@ import {
 
 import {
   runCli
-} from "./runCli.js";
+} from "../runCli.js";
 
 const now = "2026-06-25T09:20:00.000Z";
-const fixturePath = "../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json";
+const fixturePath = "../../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json";
 const evidenceRefs = [
-  "packages/cli/src/evidenceCaptureGoldenBehavior.test.ts",
+  "packages/cli/src/__tests__/evidenceCaptureGoldenBehavior.test.ts",
   "tests/fixtures/golden-tasks/evidence-capture-behavior.json"
 ] as const;
 
