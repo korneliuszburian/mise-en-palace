@@ -1,10 +1,8 @@
 import type {
   SourceClaim,
-  SourceClaimEdge,
-  SourceDecisionEdge
+  SourceClaimEdge
 } from "@krn/core";
 import {
-  isDecisionGradeSourceSupportType,
   readSourceRelationMetadataReadback
 } from "@krn/core";
 import type {
@@ -14,6 +12,16 @@ import type {
 import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  groupSourceDecisionSupportByClaimId,
+  sourceClaimIdFor,
+  sourceClaimIdsForCandidates,
+  sourceDecisionSupportReadbackFor
+} from "./sourceSearchDecisionSupport.js";
+import type {
+  SourceSearchDecisionSupport,
+  SourceSearchDecisionSupportState
+} from "./sourceSearchDecisionSupport.js";
 
 type SearchReviewability =
   | "ready"
@@ -30,10 +38,6 @@ type SourceSearchAnswerUsefulness =
 type SourceSearchCandidateStatus =
   | "included"
   | "excluded";
-
-type SourceSearchDecisionSupportState =
-  | "linked"
-  | "missing";
 
 interface ReviewabilityResult {
   reviewability: SearchReviewability;
@@ -89,18 +93,6 @@ interface SourceSearchRelationSupport {
   validUntil?: string;
   invalidatedAt?: string;
   createdAt: SourceClaimEdge["createdAt"];
-}
-
-interface SourceSearchDecisionSupport {
-  sourceClaimId: SourceDecisionEdge["sourceClaimId"];
-  sourceDecisionEdgeId: SourceDecisionEdge["id"];
-  targetType: SourceDecisionEdge["targetType"];
-  targetId: SourceDecisionEdge["targetId"];
-  supportType: SourceDecisionEdge["supportType"];
-  confidence: SourceDecisionEdge["confidence"];
-  notes: SourceDecisionEdge["notes"];
-  doesNotProve: string;
-  createdAt: SourceDecisionEdge["createdAt"];
 }
 
 type SourceSearchSourceClaimDocumentLinkKind =
@@ -403,13 +395,6 @@ const candidateToOutput = (
   };
 };
 
-const sourceClaimIdFor = (
-  candidate: RankedActivationCandidate
-): SourceClaim["id"] | undefined =>
-  candidate.subjectType === "source_claim"
-    ? (candidate.sourceClaimId ?? candidate.subjectId) as SourceClaim["id"]
-    : undefined;
-
 interface SourceClaimDocumentLinkInput {
   sourceClaimId: SourceClaim["id"];
   sourceArtifactId?: string;
@@ -658,15 +643,6 @@ const buildGraphReadback = (input: {
   };
 };
 
-const sourceClaimIdsForCandidates = (
-  candidates: readonly RankedActivationCandidate[]
-): readonly SourceClaim["id"][] =>
-  [...new Set(candidates.flatMap((candidate) => {
-    const sourceClaimId = sourceClaimIdFor(candidate);
-
-    return sourceClaimId === undefined ? [] : [sourceClaimId];
-  }))];
-
 export const buildRelationSupport = async (input: {
   included: readonly RankedActivationCandidate[];
   sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
@@ -679,165 +655,6 @@ export const buildRelationSupport = async (input: {
   }));
 
   return edgeGroups.flat();
-};
-
-const sourceDecisionSupportFromEdge = (
-  edge: SourceDecisionEdge
-): SourceSearchDecisionSupport => ({
-  sourceClaimId: edge.sourceClaimId,
-  sourceDecisionEdgeId: edge.id,
-  targetType: edge.targetType,
-  targetId: edge.targetId,
-  supportType: edge.supportType,
-  confidence: edge.confidence,
-  notes: edge.notes,
-  doesNotProve:
-    metadataString(edge.metadata, "doesNotProve") ??
-    "SourceDecisionEdge support does not prove source truth, target correctness, eval promotion, or Memory Core mutation.",
-  createdAt: edge.createdAt
-});
-
-export const buildSourceDecisionSupport = async (input: {
-  candidates: readonly RankedActivationCandidate[];
-  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceDecisionEdgesForClaim">;
-}): Promise<SourceSearchDecisionSupport[]> => {
-  const listSourceDecisionEdgesForClaim = input.sourceRepository.listSourceDecisionEdgesForClaim;
-
-  if (listSourceDecisionEdgesForClaim === undefined) {
-    return [];
-  }
-
-  const sourceClaimIds = sourceClaimIdsForCandidates(input.candidates);
-  const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) =>
-    (await input.sourceRepository.listSourceDecisionEdgesForClaim?.(sourceClaimId) ?? [])
-      .map(sourceDecisionSupportFromEdge)
-  ));
-
-  return edgeGroups.flat();
-};
-
-export const sourceDecisionSupportForCandidates = (
-  candidates: readonly RankedActivationCandidate[],
-  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
-): readonly SourceSearchDecisionSupport[] => {
-  const sourceClaimIds = new Set(sourceClaimIdsForCandidates(candidates));
-
-  return sourceDecisionSupport.filter((support) => sourceClaimIds.has(support.sourceClaimId));
-};
-
-const groupSourceDecisionSupportByClaimId = (
-  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
-): ReadonlyMap<SourceClaim["id"], readonly SourceSearchDecisionSupport[]> => {
-  const supportByClaimId = new Map<SourceClaim["id"], SourceSearchDecisionSupport[]>();
-
-  for (const support of sourceDecisionSupport) {
-    supportByClaimId.set(support.sourceClaimId, [
-      ...(supportByClaimId.get(support.sourceClaimId) ?? []),
-      support
-    ]);
-  }
-
-  return supportByClaimId;
-};
-
-const sourceDecisionSupportReadbackFor = (
-  sourceClaimId: SourceClaim["id"] | undefined,
-  decisionSupportBySourceClaimId:
-    | ReadonlyMap<SourceClaim["id"], readonly SourceSearchDecisionSupport[]>
-    | undefined
-): {
-  state: SourceSearchDecisionSupportState | undefined;
-  edgeIds: readonly string[] | undefined;
-  caveat: string | undefined;
-} => {
-  if (sourceClaimId === undefined) {
-    return {
-      state: undefined,
-      edgeIds: undefined,
-      caveat: undefined
-    };
-  }
-
-  const support = decisionSupportBySourceClaimId?.get(sourceClaimId) ?? [];
-
-  if (support.length > 0) {
-    return {
-      state: "linked",
-      edgeIds: support.map((item) => item.sourceDecisionEdgeId),
-      caveat: undefined
-    };
-  }
-
-  return {
-    state: "missing",
-    edgeIds: [],
-    caveat:
-      `Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback; treat it as accepted claim evidence, not decision-linked authority.`
-  };
-};
-
-const sourceDecisionEdgeConfidenceScores: Record<SourceDecisionEdge["confidence"], number> = {
-  low: 8,
-  medium: 15,
-  high: 20
-};
-
-const decisionGradeSourceDecisionEdgeBonus = 5;
-
-const sourceDecisionSupportScore = (
-  support: readonly SourceSearchDecisionSupport[]
-): number => Math.max(0, ...support.map((item) =>
-  sourceDecisionEdgeConfidenceScores[item.confidence] +
-  (isDecisionGradeSourceSupportType(item.supportType)
-    ? decisionGradeSourceDecisionEdgeBonus
-    : 0)
-));
-
-export const applySourceDecisionSupportBoost = (
-  candidates: readonly RankedActivationCandidate[],
-  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
-): readonly RankedActivationCandidate[] => {
-  const decisionSupportBySourceClaimId = groupSourceDecisionSupportByClaimId(sourceDecisionSupport);
-
-  return candidates.map((candidate) => {
-    const sourceClaimId = sourceClaimIdFor(candidate);
-
-    if (
-      candidate.exclusion !== undefined ||
-      candidate.subjectType !== "source_claim" ||
-      sourceClaimId === undefined
-    ) {
-      return candidate;
-    }
-
-    const support = decisionSupportBySourceClaimId.get(sourceClaimId) ?? [];
-
-    if (support.length === 0) {
-      return candidate;
-    }
-
-    const score = sourceDecisionSupportScore(support);
-    const graphScore = candidate.graphScore + score;
-
-    return {
-      ...candidate,
-      graphScore,
-      totalScore: candidate.totalScore + score,
-      reason: `${candidate.reason} Decision-linked source support: SourceDecisionEdge readback exists.`,
-      expectedUse: `${candidate.expectedUse} Prefer over accepted-only SourceClaims when relevance is otherwise comparable.`,
-      metadata: {
-        ...candidate.metadata,
-        sourceDecisionSupportBoost: {
-          score,
-          sourceDecisionEdgeIds: support.map((item) => item.sourceDecisionEdgeId),
-          confidence: support.map((item) => item.confidence),
-          supportTypes: support.map((item) => item.supportType),
-          doesNotProve:
-            "SourceDecisionEdge ranking boost does not prove source truth, target correctness, or broad retrieval quality."
-        }
-      }
-    };
-  });
 };
 
 const buildAnswerPackage = (input: {
@@ -1185,4 +1002,3 @@ export const formatSearchJson = (input: SourceSearchRenderInput): string => {
 
   return JSON.stringify(output, null, 2);
 };
-

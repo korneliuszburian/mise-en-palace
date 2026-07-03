@@ -24,14 +24,16 @@ import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
 import {
-  applySourceDecisionSupportBoost,
   buildRelationSupport,
   buildSourceClaimDocumentLinks,
-  buildSourceDecisionSupport,
   formatSearchJson,
-  formatSearchResult,
-  sourceDecisionSupportForCandidates
+  formatSearchResult
 } from "./sourceSearchReadback.js";
+import {
+  applySourceDecisionSupportBoost,
+  buildSourceDecisionSupport,
+  sourceDecisionSupportForCandidates
+} from "./sourceSearchDecisionSupport.js";
 export {
   buildSourceSearchMissingEvidence,
   buildSourceSearchQueryShapeDiagnostics,
