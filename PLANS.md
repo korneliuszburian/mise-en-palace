@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI parse test typecheck widening slice
+current task: CLI helper test typecheck widening slice
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI parse test typecheck widening slice is active.
-The scoped CLI test typecheck gate now includes parser tests.
-Parser tests and targeted command-group fixture batches are now in the clean subset.
+CLI helper test typecheck widening slice is active.
+The scoped CLI test typecheck gate now includes a small helper test group.
+Helper, parser, and targeted command-group fixture batches are now in the clean subset.
 ```
 
 Latest outcome:
 
 ```txt
-CLI parse test typecheck widening slice: CLI `parse*.test.ts` files and
-`parseMemoryConfidence.test.ts` now satisfy the scoped strict
-`typecheck:tests:clean` gate.
+CLI helper test typecheck widening slice: `cliCommandRegistry`, `cliFileBoundary`,
+`databaseRuntime`, `projectResolutionFormat`, and `retainedPatternSelection`
+tests now satisfy the scoped strict `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-parse-test-typecheck-widening.md
+docs/runs/2026-07-03-cli-helper-test-typecheck-widening.md
 CI: pending for this slice.
-CI result: KRN CI 28645296144 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 

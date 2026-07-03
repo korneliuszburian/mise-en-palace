@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import type {
-  ProjectRecord
+  ProjectRecord,
+  SourceChunkRecord,
+  SourceRepository
 } from "@krn/harness/repositories/internal";
 
 const mocks = vi.hoisted(() => {
@@ -18,6 +20,7 @@ const mocks = vi.hoisted(() => {
     getProjectByRepoPath: vi.fn(),
     listRepoInstallationsForProject: vi.fn()
   };
+  const sourceRepository: Partial<Pick<SourceRepository, "createSourceChunk">> = {};
 
   return {
     client,
@@ -25,7 +28,7 @@ const mocks = vi.hoisted(() => {
     postgres: vi.fn(() => client),
     projectRepository,
     harnessRunRepository: {},
-    sourceRepository: {},
+    sourceRepository,
     retrievalRepository: {},
     memoryRepository: {},
     observationRepository: {}
@@ -118,8 +121,14 @@ describe("createDatabaseRuntime", () => {
   it("exposes source chunk persistence through the CLI database runtime", async () => {
     const { createDatabaseRuntime } = await import("../databaseRuntime.js");
     const sourceChunk = {
-      id: "source-chunk-1"
-    };
+      id: "source-chunk-1",
+      sourceArtifactId: "source-artifact-1",
+      ordinal: 1,
+      content: "chunk",
+      contentHash: "sha256:chunk",
+      metadata: {},
+      createdAt: now
+    } satisfies SourceChunkRecord;
     const createSourceChunk = vi.fn(async () => sourceChunk);
     mocks.sourceRepository.createSourceChunk = createSourceChunk;
 

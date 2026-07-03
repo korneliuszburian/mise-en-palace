@@ -2,7 +2,10 @@
   "extends": "./tsconfig.json",
   "include": [
     "src/__tests__/brain.test.ts",
+    "src/__tests__/cliCommandRegistry.test.ts",
+    "src/__tests__/cliFileBoundary.test.ts",
     "src/__tests__/codex.test.ts",
+    "src/__tests__/databaseRuntime.test.ts",
     "src/__tests__/db.test.ts",
     "src/__tests__/doctor.test.ts",
     "src/__tests__/evidence.test.ts",
@@ -25,7 +28,9 @@
     "src/__tests__/parseReviewArgs.test.ts",
     "src/__tests__/parseRunArgs.test.ts",
     "src/__tests__/parseSourceArgs.test.ts",
+    "src/__tests__/projectResolutionFormat.test.ts",
     "src/__tests__/reflect.test.ts",
+    "src/__tests__/retainedPatternSelection.test.ts",
     "src/__tests__/source.test.ts"
   ],
   "exclude": []
