@@ -6,7 +6,8 @@
   "scripts": {
     "krn": "tsx src/index.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "typecheck:tests:clean": "tsc -p tsconfig.tests.clean.json"
   },
   "dependencies": {
     "@krn/codex-adapter": "workspace:*",

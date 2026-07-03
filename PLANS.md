@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI root test topology drained; next bounded issue selection pending
+current task: scoped CLI test typecheck gate for cleaned test subset
 latest pushed commit: see git history
 ```
 
@@ -24,19 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI root test topology drained; next bounded issue selection pending.
-Inspect/create the next bounded audit-derived issue.
+scoped CLI test typecheck gate for cleaned test subset is active.
+Scoped CLI test typecheck gate is active for the first cleaned CLI test subset.
+Broader CLI test fixture-shape debt is tracked as a bounded Beads follow-up.
 ```
 
 Latest outcome:
 
 ```txt
-CLI root test topology drain: CLI package tests now live under
-packages/cli/src/__tests__ and packages/cli/src/*.test.ts is drained to zero.
+Scoped CLI test typecheck gate: `eval:brain-battle:smoke` now runs
+`pnpm --filter @krn/cli typecheck:tests:clean` for the first strict subset.
 Report:
-docs/runs/2026-07-03-cli-root-test-topology-drain.md
-CI: KRN CI 28629440375 passed for the final run-show proof-reference move.
-Next: inspect/create next bounded audit-derived issue.
+docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md
+CI: pending for this slice.
+Next: expand only after fixing the next CLI test fixture-shape batch without casts.
 ```
 
 ## 2. Product Thesis

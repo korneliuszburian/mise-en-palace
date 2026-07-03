@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/__tests__/brain.test.ts",
+    "src/__tests__/db.test.ts",
+    "src/__tests__/doctor.test.ts",
+    "src/__tests__/heartbeat.test.ts"
+  ],
+  "exclude": []
+}

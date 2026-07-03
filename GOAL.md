@@ -27,21 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CLI root test topology drained; next bounded issue selection pending.
+current task: scoped CLI test typecheck gate for cleaned test subset.
 ```
 
-Current task state: CLI package tests now live under
-`packages/cli/src/__tests__/`, and root-level `packages/cli/src/*.test.ts`
-has been drained to zero. KRN CI `28629440375` passed for the final run-show
-proof-reference move.
+Current task state: `eval:brain-battle:smoke` now runs a scoped strict
+TypeScript gate for the first cleaned CLI test subset. This does not prove full
+CLI test typecheck; broader fixture-shape debt is tracked in Beads.
 
 Latest slice:
 
 ```txt
-CLI root test topology drained.
+Scoped CLI test typecheck gate.
 Report:
-docs/runs/2026-07-03-cli-root-test-topology-drain.md
-Next: inspect/create next bounded audit-derived slice.
+docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md
+Next: expand only after fixing the next fixture-shape batch without casts.
 ```
 
 ## Direction

@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI root test topology drained; next bounded issue selection pending
+current task: scoped CLI test typecheck gate for cleaned test subset
 ```
 
 ## Compact Checkpoints
@@ -99,6 +99,7 @@ evidence metadata parser boundary: retained parser exemplar applied to EvidenceB
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
+CLI scoped test typecheck: active smoke now runs strict `tsc` for the first clean CLI test subset
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
@@ -110,21 +111,20 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CLI Root Test Topology Drain
+### CLI Scoped Test Typecheck Gate
 
-Goal: remove CLI root-level colocated test clutter without changing runtime behavior.
+Goal: add an active strict TypeScript gate for the first CLI test subset that is clean enough to typecheck.
 
 Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-03-cli-root-test-topology-drain.md`.
+Latest report: `docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md`.
 
 Task boundary:
 
 ```txt
-packages/cli/src/*.test.ts is drained to 0.
-packages/cli/src/__tests__/**/*.test.ts now owns CLI package tests.
-KRN CI 28629440375 passed for the final run-show proof-reference move.
-Next work is selected from Beads or created from bounded audit evidence.
+packages/cli/tsconfig.tests.clean.json covers the first strict subset.
+eval:brain-battle:smoke runs pnpm --filter @krn/cli typecheck:tests:clean.
+This is not full CLI test typecheck; broader fixture-shape debt is tracked in Beads.
 ```
 
 ## Recent Completed Streams
