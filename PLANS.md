@@ -39,8 +39,9 @@ CLI source-search/claim-edges test typecheck widening slice:
 satisfy the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-source-search-test-typecheck-widening.md
-CI: pending for this slice.
-Next: push this bounded batch and verify CI.
+CI: KRN CI 28647632246 passed for this slice.
+Next: close the Beads issue and select the next bounded CLI command test
+typecheck batch.
 ```
 
 ## 2. Product Thesis
