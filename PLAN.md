@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: remove decorative capability bindings, then continue highest-ROI kernel vertical
+current task: dogfood brain search for code-quality next-task selection
 ```
 
 ## Compact Checkpoints
@@ -117,6 +117,7 @@ source-search decision-edge confidence ranking: SourceDecisionEdge confidence an
 source-graph rank-down: invalidates/expires/supersedes SourceClaimEdges from accepted claims lower stale source-search candidates before ContextROI
 source decision gaps readback: read-only `krn source decision gaps` exposes accepted SourceClaims missing SourceDecisionEdge support without CI mutation
 capability plan binding cleanup: decorative bindingKinds/policy_gate/tool_boundary vocabulary removed from active capability requirements
+brain code-quality pattern dogfood: retained pattern selection exposes targetFit summary and recommended use in plan/run readback
 ```
 
 ## Active Task
@@ -131,7 +132,7 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-wfdw` in progress; then choose next highest-ROI
+Current queue: `mise-en-palace-b3wa` in progress; then choose next highest-ROI
 kernel vertical.
 Deferred human decision: `mise-en-palace-plnv`.
 

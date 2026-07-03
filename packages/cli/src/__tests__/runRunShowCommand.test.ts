@@ -72,9 +72,25 @@ const aggregate: HarnessRunAggregate = {
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
           nextAction: "use",
+          targetFit: "target_specific",
+          targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
             "This retained pattern does not prove the implementation used unknown-first validation correctly."
         }],
+        targetFitSummary: {
+          verdict: "target_specific_selected_knowledge",
+          targetSpecific: 1,
+          genericGuardrail: 0,
+          adjacentPattern: 0,
+          noise: 0,
+          unknown: 0,
+          recommendedUse:
+            "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
+          doesNotProve:
+            "Target-specific selectedKnowledge does not prove source truth, ranking quality, or product readiness."
+        },
+        recommendedNextAction:
+          "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
         reason: "Retained brain knowledge matched the pre-coding plan query.",
         doesNotProve:
           "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
@@ -368,8 +384,10 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Retained pattern selection: selected");
     expect(result.stdout).toContain("Retained pattern query: unknown first");
     expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Retained pattern targetFit: target_specific_selected_knowledge");
+    expect(result.stdout).toContain("Retained pattern recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready"
+      "pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
     );
     expect(result.stdout).toContain(
       "Retained pattern does not prove: Selected retained patterns do not prove implementation correctness"
@@ -500,9 +518,25 @@ describe("runRunShowCommand", () => {
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
           nextAction: "use",
+          targetFit: "target_specific",
+          targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
             "This retained pattern does not prove the implementation used unknown-first validation correctly."
-        }]
+        }],
+        targetFitSummary: {
+          verdict: "target_specific_selected_knowledge",
+          targetSpecific: 1,
+          genericGuardrail: 0,
+          adjacentPattern: 0,
+          noise: 0,
+          unknown: 0,
+          recommendedUse:
+            "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
+          doesNotProve:
+            "Target-specific selectedKnowledge does not prove source truth, ranking quality, or product readiness."
+        },
+        recommendedNextAction:
+          "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails."
       },
       context: {
         inclusionDetails: [{

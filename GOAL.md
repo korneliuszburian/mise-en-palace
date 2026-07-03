@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: remove decorative capability bindings, then continue highest-ROI kernel vertical.
+current task: dogfood brain search for code-quality next-task selection.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -43,8 +43,11 @@ source search can read an explicit project, prefer decision-linked accepted
 SourceClaims before ContextROI, weight SourceDecisionEdge confidence, and rank
 down stale source-graph candidates, and report accepted SourceClaims missing
 SourceDecisionEdge support without CI mutation or a broad audit command.
-`mise-en-palace-wfdw` is the active slice: remove decorative capability binding
-vocabulary from active CapabilityPlan output without changing skill routing.
+`mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI:
+decorative CapabilityPlan binding vocabulary and stale active policy-gate
+evidence were removed without changing skill routing. `mise-en-palace-b3wa` is
+the active slice: carry retained-pattern targetFit and recommended-use evidence
+through plan/run readback for code-quality planning.
 
 Latest slice:
 

@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: remove decorative capability bindings, then continue highest-ROI kernel vertical
+current task: dogfood brain search for code-quality next-task selection
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-remove decorative capability bindings, then continue highest-ROI kernel vertical.
+dogfood brain search for code-quality next-task selection.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -52,9 +52,11 @@ candidates without deleting claims or creating a graph platform.
 `mise-en-palace-p3t1` is closed with green CI. It proves a read-only source
 decision gap command can surface accepted SourceClaims missing SourceDecisionEdge
 support without CI mutation or a broad audit command.
-`mise-en-palace-wfdw` is in progress. It should remove decorative
-CapabilityPlan binding vocabulary such as policy/tool authority while preserving
-kind-based skill routing.
+`mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI. They
+removed decorative CapabilityPlan binding vocabulary and stale active
+policy-gate evidence while preserving kind-based skill routing. `mise-en-palace-b3wa`
+is in progress. It should carry retained-pattern targetFit and recommended-use
+evidence through plan/run readback for code-quality planning.
 ```
 
 ## 2. Product Thesis
