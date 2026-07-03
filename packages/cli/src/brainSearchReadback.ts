@@ -18,6 +18,9 @@ export interface JsonRecord {
   readonly [key: string]: unknown;
 }
 
+const isJsonRecord = (value: unknown): value is JsonRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 export interface BrainSearchPreviewResource {
   kind: "krn.brainSearch.preview.v1";
   access: "read_only";
@@ -99,19 +102,17 @@ type BrainSearchRecommendationResource = Pick<
 export const parseJsonObject = (text: string, label: string): JsonRecord => {
   const parsed: unknown = JSON.parse(text);
 
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+  if (!isJsonRecord(parsed)) {
     throw new Error(`${label} JSON output must be an object`);
   }
 
-  return parsed as JsonRecord;
+  return parsed;
 };
 
 const recordValue = (
   value: unknown
 ): JsonRecord | undefined =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-    ? value as JsonRecord
-    : undefined;
+  isJsonRecord(value) ? value : undefined;
 
 const stringValue = (value: unknown, fallback: string): string =>
   typeof value === "string" ? value : fallback;
