@@ -37,6 +37,7 @@ now satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-test-typecheck-memory-batch.md
 CI: pending for this slice.
+CI result: KRN CI 28645049703 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 
