@@ -29,8 +29,10 @@ export interface SourceGraphSmokeReport {
   sourceArtifactId: string;
   sourceClaimId: string;
   temporalSourceClaimId: string;
+  duplicateSourceClaimId: string;
   readBackSourceClaimId: string;
   sourceClaimEdgeId: string;
+  duplicateSourceClaimEdgeId: string;
   sourceDecisionId: string;
   sourceDecisionEdgeId: string;
   sourceRejectionId: string;
@@ -40,6 +42,9 @@ export interface SourceGraphSmokeReport {
   rankedDownSourceClaimId: string;
   sourceGraphRankDownCount: number;
   sourceGraphRankDownEdgeKinds: string[];
+  influencedSourceClaimId: string;
+  sourceGraphInfluenceCount: number;
+  sourceGraphInfluenceEdgeKinds: string[];
   runDecisionEdgeCount: number;
   rejectionCount: number;
   outboxEventCount: number;
@@ -51,12 +56,26 @@ interface SourceGraphRankDownMetadata {
   edgeKinds: string[];
 }
 
+interface SourceGraphInfluenceMetadata {
+  edgeKinds: string[];
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isSourceGraphRankDownMetadata = (
   value: unknown
 ): value is SourceGraphRankDownMetadata => {
+  if (!isRecord(value) || !Array.isArray(value.edgeKinds)) {
+    return false;
+  }
+
+  return value.edgeKinds.every((edgeKind) => typeof edgeKind === "string");
+};
+
+const isSourceGraphInfluenceMetadata = (
+  value: unknown
+): value is SourceGraphInfluenceMetadata => {
   if (!isRecord(value) || !Array.isArray(value.edgeKinds)) {
     return false;
   }
@@ -166,6 +185,23 @@ export const runSourceGraphSmokeCheck = async (
         smokeId: marker
       }
     });
+    const duplicateSourceClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      executionRunId: executionRun.id,
+      claim: "Source graph smoke has adjacent duplicate relation evidence.",
+      mechanism: "A duplicate SourceClaimEdge keeps relation evidence reviewable without merging source truth.",
+      krnImplication: "KRN can surface adjacent graph context while preserving proof boundaries.",
+      doesNotProve: "This duplicate relation does not prove the claims are true duplicates.",
+      trustTier: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "B-02 duplicate source graph smoke",
+      falsifier: "Duplicate source claim edge influence is absent from activation readback.",
+      revisitWhen: "Source graph influence semantics change.",
+      status: "proposed",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const readBackClaim = await sourceRepository.getSourceClaimById(sourceClaim.id);
     const sourceDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,
@@ -193,6 +229,19 @@ export const runSourceGraphSmokeCheck = async (
         smokeId: marker
       }
     });
+    await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: duplicateSourceClaim.id,
+      status: "adopt",
+      decision: "Adopt duplicate source graph claim before relation influence.",
+      rationale:
+        "Duplicate SourceClaimEdge influence requires accepted endpoint claims before activation can surface graph context.",
+      falsifier: "Duplicate source claim edge cannot link accepted endpoint claims.",
+      consumer: "B-02 duplicate source graph smoke",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const sourceClaimEdge = await sourceRepository.createSourceClaimEdge({
       fromSourceClaimId: sourceClaim.id,
       toSourceClaimId: staleSourceClaim.id,
@@ -203,6 +252,18 @@ export const runSourceGraphSmokeCheck = async (
         scope: "source graph repository readback",
         evidenceRef: executionRun.id,
         doesNotProve: "This temporal edge does not prove source truth or broad source graph ranking quality."
+      }
+    });
+    const duplicateSourceClaimEdge = await sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: sourceClaim.id,
+      toSourceClaimId: duplicateSourceClaim.id,
+      kind: "duplicates",
+      metadata: {
+        smokeId: marker,
+        consumer: "B-02 duplicate source graph smoke",
+        scope: "source graph activation readback",
+        evidenceRef: executionRun.id,
+        doesNotProve: "This duplicate edge does not prove source truth or broad source graph ranking quality."
       }
     });
     const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
@@ -261,6 +322,17 @@ export const runSourceGraphSmokeCheck = async (
       ? rankedDownCandidate.metadata.sourceClaimEdgeRankDown
       : undefined;
     const sourceGraphRankDownEdgeKinds = sourceGraphRankDown?.edgeKinds ?? [];
+    const influencedCandidate = activationReadback.candidates.find((candidate) =>
+      candidate.subjectType === "source_claim" &&
+      candidate.subjectId === duplicateSourceClaim.id &&
+      isSourceGraphInfluenceMetadata(candidate.metadata.sourceClaimEdgeInfluence)
+    );
+    const sourceGraphInfluence = isSourceGraphInfluenceMetadata(
+      influencedCandidate?.metadata.sourceClaimEdgeInfluence
+    )
+      ? influencedCandidate.metadata.sourceClaimEdgeInfluence
+      : undefined;
+    const sourceGraphInfluenceEdgeKinds = sourceGraphInfluence?.edgeKinds ?? [];
     const rejectionRows = await db
       .select()
       .from(sourceRejections)
@@ -298,8 +370,22 @@ export const runSourceGraphSmokeCheck = async (
         )
       },
       {
+        label: "source claim duplicate edge listed",
+        passed: sourceClaimEdgesForClaim.some(
+          (edge) =>
+            edge.id === duplicateSourceClaimEdge.id &&
+            edge.kind === "duplicates" &&
+            edge.fromSourceClaimId === sourceClaim.id &&
+            edge.toSourceClaimId === duplicateSourceClaim.id
+        )
+      },
+      {
         label: "activation source graph rank-down readback",
         passed: sourceGraphRankDownEdgeKinds.includes("invalidates")
+      },
+      {
+        label: "activation source graph influence readback",
+        passed: sourceGraphInfluenceEdgeKinds.includes("duplicates")
       },
       { label: "source rejection row count", passed: rejectionRows.length === 1 },
       {
@@ -324,8 +410,10 @@ export const runSourceGraphSmokeCheck = async (
       sourceArtifactId: sourceArtifact.id,
       sourceClaimId: sourceClaim.id,
       temporalSourceClaimId: staleSourceClaim.id,
+      duplicateSourceClaimId: duplicateSourceClaim.id,
       readBackSourceClaimId: persistedSourceClaim.id,
       sourceClaimEdgeId: sourceClaimEdge.id,
+      duplicateSourceClaimEdgeId: duplicateSourceClaimEdge.id,
       sourceDecisionId: sourceDecision.id,
       sourceDecisionEdgeId: sourceDecisionEdge.id,
       sourceRejectionId: sourceRejection.id,
@@ -335,6 +423,9 @@ export const runSourceGraphSmokeCheck = async (
       rankedDownSourceClaimId: rankedDownCandidate?.subjectId ?? "missing",
       sourceGraphRankDownCount: rankedDownCandidate === undefined ? 0 : 1,
       sourceGraphRankDownEdgeKinds,
+      influencedSourceClaimId: influencedCandidate?.subjectId ?? "missing",
+      sourceGraphInfluenceCount: influencedCandidate === undefined ? 0 : 1,
+      sourceGraphInfluenceEdgeKinds,
       runDecisionEdgeCount: runDecisionEdges.length,
       rejectionCount: rejectionRows.length,
       outboxEventCount: outboxRows[0]?.count ?? 0,

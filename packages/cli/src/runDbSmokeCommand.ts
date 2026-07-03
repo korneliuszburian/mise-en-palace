@@ -270,10 +270,12 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Source artifact: ${report.sourceArtifactId}`,
       `Source claim: ${report.sourceClaimId}`,
       `Temporal source claim: ${report.temporalSourceClaimId}`,
+      `Duplicate source claim: ${report.duplicateSourceClaimId}`,
       `Source claim readback: ${
         report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
       }`,
       `Source claim edge: ${report.sourceClaimEdgeId}`,
+      `Duplicate source claim edge: ${report.duplicateSourceClaimEdgeId}`,
       `Source decision: ${report.sourceDecisionId}`,
       `Source decision edge: ${report.sourceDecisionEdgeId}`,
       `Source rejection: ${report.sourceRejectionId}`,
@@ -283,6 +285,9 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Ranked-down source claim: ${report.rankedDownSourceClaimId}`,
       `Source graph rank-downs: ${report.sourceGraphRankDownCount}`,
       `Source graph rank-down edge kinds: ${report.sourceGraphRankDownEdgeKinds.join(", ")}`,
+      `Influenced source claim: ${report.influencedSourceClaimId}`,
+      `Source graph influences: ${report.sourceGraphInfluenceCount}`,
+      `Source graph influence edge kinds: ${report.sourceGraphInfluenceEdgeKinds.join(", ")}`,
       `Run source decision edges: ${report.runDecisionEdgeCount}`,
       `Source rejections: ${report.rejectionCount}`,
       `Outbox events: ${report.outboxEventCount}`,
