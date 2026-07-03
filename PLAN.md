@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose the next highest-ROI kernel vertical after store-backed SBV reuse and graph relation consensus closure
+current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs
 ```
 
 ## Compact Checkpoints
@@ -109,6 +109,7 @@ brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime p
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
 shared brain vertical loop proof: first real DB-backed plan/evidence/observe/reflect/memory-application loop completed; automatic memory recall not proven
+retained pattern + memory cooperation: one persisted next-task plan selected the promoted SBV MemoryRecord and retained TypeScript catalog patterns together
 ```
 
 ## Active Task
@@ -120,10 +121,11 @@ plan/evidence/observe/reflect, memory candidate promotion, second-opinion
 review, and explicit memory application.
 
 Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
-`mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`.
+`mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
+`mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-b18l` active, then `mise-en-palace-1c5x`,
-then `mise-en-palace-royf`. Deferred human decision: `mise-en-palace-plnv`.
+Current queue: choose next highest-ROI kernel vertical. Deferred human decision:
+`mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
 product readiness or retrieval quality from this slice.
@@ -140,10 +142,9 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 ## Remaining Product Gaps
 
 ```txt
-1. retained-pattern catalog recall gap after store-backed memory reuse
-2. pattern/research brain continuously applied to code quality
-3. source/graph relation decision linkage beyond candidate-only readback
-4. product UI/API/MCP after usefulness/security gates
+1. pattern/research brain continuously applied to code quality
+2. source/graph relation decision linkage beyond candidate-only readback
+3. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

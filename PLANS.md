@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose the next highest-ROI kernel vertical after store-backed SBV reuse and graph relation consensus closure
+current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs
 latest pushed commit: see git history
 ```
 
@@ -25,12 +25,16 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-choose the next highest-ROI kernel vertical after store-backed SBV reuse and graph relation consensus closure.
+choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
 heartbeat consensus readback for one duplicate relation candidate. Retained
 catalog selection is proven for this relation task, not as global recall quality.
+`mise-en-palace-n4i7` proved one persisted next-task plan can include both the
+promoted SBV MemoryRecord and retained TypeScript pattern catalog selection.
+This does not prove ranking quality, retained-pattern completeness, or unrelated
+automatic recall.
 ```
 
 ## 2. Product Thesis

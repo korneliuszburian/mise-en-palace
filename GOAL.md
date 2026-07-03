@@ -27,15 +27,17 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: choose the next highest-ROI kernel vertical after store-backed SBV reuse and graph relation consensus closure.
+current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
-`mise-en-palace-b18l`, `mise-en-palace-1c5x`, and `mise-en-palace-royf` are
-closed or locally implemented pending final push/CI. Store-backed memory reuse
-now works when the MemoryCandidate preserves run project lineage. The graph
-relation consensus pattern was selected and used for candidate-only heartbeat
-readback. Next queue item: choose the next highest-ROI kernel vertical.
+`mise-en-palace-b18l`, `mise-en-palace-1c5x`, `mise-en-palace-royf`, and
+`mise-en-palace-n4i7` are closed or locally implemented pending final push/CI.
+Store-backed memory reuse now works when the MemoryCandidate preserves run
+project lineage. The graph relation consensus pattern was selected and used for
+candidate-only heartbeat readback. A persisted next-task plan selected both the
+store-backed SBV MemoryRecord and retained TypeScript pattern catalog readback.
+Next queue item: choose the next highest-ROI kernel vertical.
 
 Latest slice:
 
