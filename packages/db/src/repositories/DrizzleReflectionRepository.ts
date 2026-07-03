@@ -109,7 +109,7 @@ const sourceSupportTypes = new Set<string>([
   "implementation-boundary"
 ]);
 
-const reflectionFindingKinds = new Set<ReflectionFinding["kind"]>([
+const reflectionFindingKinds = new Set<string>([
   "candidate_signal",
   "contradiction",
   "gap",
@@ -118,14 +118,14 @@ const reflectionFindingKinds = new Set<ReflectionFinding["kind"]>([
   "policy_signal"
 ]);
 
-const reflectionSeverities = new Set<ReflectionFinding["severity"]>([
+const reflectionSeverities = new Set<string>([
   "low",
   "medium",
   "high",
   "critical"
 ]);
 
-const reflectionCandidateLinkTargetTypes = new Set<ReflectionCandidateLink["targetType"]>([
+const reflectionCandidateLinkTargetTypes = new Set<string>([
   "memory_candidate",
   "source_claim_candidate",
   "anti_memory_candidate",
@@ -134,16 +134,21 @@ const reflectionCandidateLinkTargetTypes = new Set<ReflectionCandidateLink["targ
 ]);
 
 const isReflectionFindingKind = (value: unknown): value is ReflectionFinding["kind"] =>
-  typeof value === "string" && reflectionFindingKinds.has(value as ReflectionFinding["kind"]);
+  typeof value === "string" && reflectionFindingKinds.has(value);
 
 const isReflectionSeverity = (value: unknown): value is ReflectionFinding["severity"] =>
-  typeof value === "string" && reflectionSeverities.has(value as ReflectionFinding["severity"]);
+  typeof value === "string" && reflectionSeverities.has(value);
 
 const isReflectionCandidateLinkTargetType = (
   value: unknown
 ): value is ReflectionCandidateLink["targetType"] =>
   typeof value === "string" &&
-  reflectionCandidateLinkTargetTypes.has(value as ReflectionCandidateLink["targetType"]);
+  reflectionCandidateLinkTargetTypes.has(value);
+
+const isReflectionCandidateEvidenceProvenance = (
+  value: string
+): value is ReflectionCandidateEvidence["provenance"] =>
+  reflectionCandidateEvidenceProvenances.has(value);
 
 const isReflectionMemoryKind = (
   value: unknown
@@ -189,14 +194,14 @@ const reflectionCandidateEvidenceOrUndefined = (
 
   if (
     provenance === undefined ||
-    !reflectionCandidateEvidenceProvenances.has(provenance) ||
+    !isReflectionCandidateEvidenceProvenance(provenance) ||
     doesNotProve === undefined
   ) {
     return undefined;
   }
 
   return {
-    provenance: provenance as ReflectionCandidateEvidence["provenance"],
+    provenance,
     evidenceRefs: stringListOrEmpty(value.evidenceRefs),
     doesNotProve
   };
