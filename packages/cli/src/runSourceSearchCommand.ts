@@ -25,7 +25,9 @@ import type {
 } from "./commandRuntimeSupport.js";
 import {
   buildRelationSupport,
-  buildSourceClaimDocumentLinks,
+  buildSourceClaimDocumentLinks
+} from "./sourceSearchGraphReadback.js";
+import {
   formatSearchJson,
   formatSearchResult
 } from "./sourceSearchReadback.js";

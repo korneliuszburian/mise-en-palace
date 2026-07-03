@@ -1,27 +1,30 @@
 import type {
-  SourceClaim,
-  SourceClaimEdge
-} from "@krn/core";
-import {
-  readSourceRelationMetadataReadback
+  SourceClaim
 } from "@krn/core";
 import type {
   RetrieveActivationCandidatesResult,
   RankedActivationCandidate
 } from "@krn/harness";
+import {
+  buildGraphReadback
+} from "./sourceSearchGraphReadback.js";
 import type {
-  DatabaseRuntime
-} from "./databaseRuntime.js";
+  SourceSearchGraphReadback,
+  SourceSearchRelationSupport,
+  SourceSearchSourceClaimDocumentLink
+} from "./sourceSearchGraphReadback.js";
 import {
   groupSourceDecisionSupportByClaimId,
   sourceClaimIdFor,
-  sourceClaimIdsForCandidates,
   sourceDecisionSupportReadbackFor
 } from "./sourceSearchDecisionSupport.js";
 import type {
   SourceSearchDecisionSupport,
   SourceSearchDecisionSupportState
 } from "./sourceSearchDecisionSupport.js";
+import {
+  sourceSearchMetadataString
+} from "./sourceSearchMetadata.js";
 
 type SearchReviewability =
   | "ready"
@@ -74,57 +77,6 @@ interface SourceSearchAnswerCandidate {
   sourceDecisionSupportState: SourceSearchDecisionSupportState | undefined;
   sourceDecisionSupportEdgeIds: readonly string[] | undefined;
   sourceDecisionSupportCaveat: string | undefined;
-}
-
-type SourceSearchRelationDirection = "outgoing" | "incoming";
-
-interface SourceSearchRelationSupport {
-  sourceClaimId: SourceClaim["id"];
-  edgeId: SourceClaimEdge["id"];
-  direction: SourceSearchRelationDirection;
-  relatedSourceClaimId: SourceClaim["id"];
-  kind: SourceClaimEdge["kind"];
-  consumer?: string;
-  doesNotProve?: string;
-  evidenceRef?: string;
-  sourceDecisionRef?: string;
-  sourceRanges?: readonly string[];
-  validFrom?: string;
-  validUntil?: string;
-  invalidatedAt?: string;
-  createdAt: SourceClaimEdge["createdAt"];
-}
-
-type SourceSearchSourceClaimDocumentLinkKind =
-  | "source_claim"
-  | "source_chunk"
-  | "source_artifact";
-
-interface SourceSearchSourceClaimDocumentLink {
-  sourceClaimId: SourceClaim["id"];
-  sourceArtifactId?: string;
-  sourceChunkId?: string;
-  linkedSearchDocumentCount: number;
-  linkedSearchDocumentIds: readonly string[];
-  linkKinds: readonly SourceSearchSourceClaimDocumentLinkKind[];
-  caveat?: string;
-}
-
-interface SourceSearchGraphRelationKindCount {
-  kind: SourceClaimEdge["kind"];
-  count: number;
-}
-
-interface SourceSearchGraphReadback {
-  claimNodes: number;
-  relationEdges: number;
-  relationKinds: readonly SourceSearchGraphRelationKindCount[];
-  temporalEdges: number;
-  contradictionEdges: number;
-  duplicateEdges: number;
-  invalidationEdges: number;
-  graphAware: boolean;
-  caveats: readonly string[];
 }
 
 interface SourceSearchAnswerPackage {
@@ -346,13 +298,13 @@ const candidateToOutput = (
   >
 ): SourceSearchAnswerCandidate => {
   const reviewability = reviewabilityFor(candidate);
-  const claim = metadataString(candidate.metadata, "claim");
-  const mechanism = metadataString(candidate.metadata, "mechanism");
-  const krnImplication = metadataString(candidate.metadata, "krnImplication");
-  const consumer = metadataString(candidate.metadata, "consumer");
-  const falsifier = metadataString(candidate.metadata, "falsifier");
-  const sourceArtifactId = metadataString(candidate.metadata, "sourceArtifactId");
-  const sourceChunkId = metadataString(candidate.metadata, "sourceChunkId");
+  const claim = sourceSearchMetadataString(candidate.metadata, "claim");
+  const mechanism = sourceSearchMetadataString(candidate.metadata, "mechanism");
+  const krnImplication = sourceSearchMetadataString(candidate.metadata, "krnImplication");
+  const consumer = sourceSearchMetadataString(candidate.metadata, "consumer");
+  const falsifier = sourceSearchMetadataString(candidate.metadata, "falsifier");
+  const sourceArtifactId = sourceSearchMetadataString(candidate.metadata, "sourceArtifactId");
+  const sourceChunkId = sourceSearchMetadataString(candidate.metadata, "sourceChunkId");
   const sourceClaimId =
     candidate.subjectType === "source_claim"
       ? sourceClaimIdFor(candidate)
@@ -393,268 +345,6 @@ const candidateToOutput = (
     sourceDecisionSupportEdgeIds: decisionSupportReadback.edgeIds,
     sourceDecisionSupportCaveat: decisionSupportReadback.caveat
   };
-};
-
-interface SourceClaimDocumentLinkInput {
-  sourceClaimId: SourceClaim["id"];
-  sourceArtifactId?: string;
-  sourceChunkId?: string;
-}
-
-const uniqueStrings = (values: readonly string[]): readonly string[] => [...new Set(values)];
-
-const sourceClaimDocumentLinkInputFor = (
-  candidate: RankedActivationCandidate
-): SourceClaimDocumentLinkInput | undefined => {
-  const sourceClaimId = sourceClaimIdFor(candidate);
-
-  if (sourceClaimId === undefined) {
-    return undefined;
-  }
-
-  const sourceArtifactId = metadataString(candidate.metadata, "sourceArtifactId");
-  const sourceChunkId = metadataString(candidate.metadata, "sourceChunkId");
-
-  return {
-    sourceClaimId,
-    ...(sourceArtifactId === undefined ? {} : { sourceArtifactId }),
-    ...(sourceChunkId === undefined ? {} : { sourceChunkId })
-  };
-};
-
-const linkKindsForDocument = (
-  input: SourceClaimDocumentLinkInput,
-  document: {
-    sourceClaimId?: string;
-    sourceChunkId?: string;
-    sourceArtifactId?: string;
-  }
-): SourceSearchSourceClaimDocumentLinkKind[] => {
-  const kinds: SourceSearchSourceClaimDocumentLinkKind[] = [];
-
-  if (document.sourceClaimId === input.sourceClaimId) {
-    kinds.push("source_claim");
-  }
-
-  if (input.sourceChunkId !== undefined && document.sourceChunkId === input.sourceChunkId) {
-    kinds.push("source_chunk");
-  }
-
-  if (input.sourceArtifactId !== undefined && document.sourceArtifactId === input.sourceArtifactId) {
-    kinds.push("source_artifact");
-  }
-
-  return kinds;
-};
-
-export const buildSourceClaimDocumentLinks = async (input: {
-  included: readonly RankedActivationCandidate[];
-  projectId: string;
-  retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>;
-}): Promise<SourceSearchSourceClaimDocumentLink[]> => {
-  const linkInputs = [...new Map(input.included.flatMap((candidate) => {
-    const linkInput = sourceClaimDocumentLinkInputFor(candidate);
-
-    return linkInput === undefined ? [] : [[linkInput.sourceClaimId, linkInput] as const];
-  })).values()];
-
-  if (linkInputs.length === 0) {
-    return [];
-  }
-
-  if (input.retrievalRepository.listSearchDocumentsForSourceLinks === undefined) {
-    return linkInputs.map((linkInput) => ({
-      sourceClaimId: linkInput.sourceClaimId,
-      ...(linkInput.sourceArtifactId === undefined ? {} : { sourceArtifactId: linkInput.sourceArtifactId }),
-      ...(linkInput.sourceChunkId === undefined ? {} : { sourceChunkId: linkInput.sourceChunkId }),
-      linkedSearchDocumentCount: 0,
-      linkedSearchDocumentIds: [],
-      linkKinds: [],
-      caveat: "artifact-linked SearchDocument lookup is unavailable on this retrieval repository"
-    }));
-  }
-
-  const linkedDocuments = await input.retrievalRepository.listSearchDocumentsForSourceLinks({
-    projectId: input.projectId,
-    sourceClaimIds: uniqueStrings(linkInputs.map((linkInput) => linkInput.sourceClaimId)),
-    sourceArtifactIds: uniqueStrings(linkInputs.flatMap((linkInput) =>
-      linkInput.sourceArtifactId === undefined ? [] : [linkInput.sourceArtifactId]
-    )),
-    sourceChunkIds: uniqueStrings(linkInputs.flatMap((linkInput) =>
-      linkInput.sourceChunkId === undefined ? [] : [linkInput.sourceChunkId]
-    )),
-    limit: Math.max(20, linkInputs.length * 5)
-  });
-
-  return linkInputs.map((linkInput) => {
-    const linkedIds: string[] = [];
-    const linkKinds = new Set<SourceSearchSourceClaimDocumentLinkKind>();
-
-    for (const document of linkedDocuments) {
-      const documentLinkKinds = linkKindsForDocument(linkInput, document);
-
-      if (documentLinkKinds.length > 0) {
-        linkedIds.push(document.id);
-        for (const kind of documentLinkKinds) {
-          linkKinds.add(kind);
-        }
-      }
-    }
-
-    return {
-      sourceClaimId: linkInput.sourceClaimId,
-      ...(linkInput.sourceArtifactId === undefined ? {} : { sourceArtifactId: linkInput.sourceArtifactId }),
-      ...(linkInput.sourceChunkId === undefined ? {} : { sourceChunkId: linkInput.sourceChunkId }),
-      linkedSearchDocumentCount: linkedIds.length,
-      linkedSearchDocumentIds: linkedIds,
-      linkKinds: [...linkKinds],
-      ...(linkedIds.length === 0
-        ? { caveat: "no active SearchDocument is linked by source claim, source chunk, or source artifact" }
-        : {})
-    };
-  });
-};
-
-const relationDirectionFor = (
-  sourceClaimId: SourceClaim["id"],
-  edge: SourceClaimEdge
-): SourceSearchRelationDirection =>
-  edge.fromSourceClaimId === sourceClaimId ? "outgoing" : "incoming";
-
-const relatedSourceClaimIdFor = (
-  sourceClaimId: SourceClaim["id"],
-  edge: SourceClaimEdge
-): SourceClaim["id"] =>
-  (edge.fromSourceClaimId === sourceClaimId
-    ? edge.toSourceClaimId
-    : edge.fromSourceClaimId) as SourceClaim["id"];
-
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
-const relationSupportFromEdge = (
-  sourceClaimId: SourceClaim["id"],
-  edge: SourceClaimEdge
-): SourceSearchRelationSupport => {
-  const metadata = readSourceRelationMetadataReadback(edge.metadata);
-  const support: SourceSearchRelationSupport = {
-    sourceClaimId,
-    edgeId: edge.id,
-    direction: relationDirectionFor(sourceClaimId, edge),
-    relatedSourceClaimId: relatedSourceClaimIdFor(sourceClaimId, edge),
-    kind: edge.kind,
-    createdAt: edge.createdAt
-  };
-
-  if (metadata.consumer !== undefined) {
-    support.consumer = metadata.consumer;
-  }
-
-  if (metadata.doesNotProve !== undefined) {
-    support.doesNotProve = metadata.doesNotProve;
-  }
-
-  if (metadata.evidenceRef !== undefined) {
-    support.evidenceRef = metadata.evidenceRef;
-  }
-
-  if (metadata.sourceDecisionRef !== undefined) {
-    support.sourceDecisionRef = metadata.sourceDecisionRef;
-  }
-
-  if (metadata.sourceRanges.length > 0) {
-    support.sourceRanges = metadata.sourceRanges;
-  }
-
-  if (metadata.validFrom !== undefined) {
-    support.validFrom = metadata.validFrom;
-  }
-
-  if (metadata.validUntil !== undefined) {
-    support.validUntil = metadata.validUntil;
-  }
-
-  if (metadata.invalidatedAt !== undefined) {
-    support.invalidatedAt = metadata.invalidatedAt;
-  }
-
-  return support;
-};
-
-const buildRelationKindCounts = (
-  relationSupport: readonly SourceSearchRelationSupport[]
-): readonly SourceSearchGraphRelationKindCount[] => {
-  const counts = new Map<SourceClaimEdge["kind"], number>();
-
-  for (const relation of relationSupport) {
-    counts.set(relation.kind, (counts.get(relation.kind) ?? 0) + 1);
-  }
-
-  return [...counts.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([kind, count]) => ({ kind, count }));
-};
-
-const hasTemporalMetadata = (relation: SourceSearchRelationSupport): boolean =>
-  relation.validFrom !== undefined ||
-  relation.validUntil !== undefined ||
-  relation.invalidatedAt !== undefined ||
-  relation.kind === "supersedes" ||
-  relation.kind === "invalidates" ||
-  relation.kind === "expires";
-
-const buildGraphReadback = (input: {
-  supportingClaims: readonly SourceSearchAnswerCandidate[];
-  relationSupport: readonly SourceSearchRelationSupport[];
-}): SourceSearchGraphReadback => {
-  const contradictionEdges = input.relationSupport.filter(
-    (relation) => relation.kind === "contradicts"
-  ).length;
-  const duplicateEdges = input.relationSupport.filter(
-    (relation) => relation.kind === "duplicates"
-  ).length;
-  const invalidationEdges = input.relationSupport.filter((relation) =>
-    relation.kind === "invalidates" ||
-    relation.kind === "expires" ||
-    relation.kind === "supersedes"
-  ).length;
-  const temporalEdges = input.relationSupport.filter(hasTemporalMetadata).length;
-
-  return {
-    claimNodes: input.supportingClaims.length,
-    relationEdges: input.relationSupport.length,
-    relationKinds: buildRelationKindCounts(input.relationSupport),
-    temporalEdges,
-    contradictionEdges,
-    duplicateEdges,
-    invalidationEdges,
-    graphAware: input.relationSupport.length > 0,
-    caveats: [
-      "graph readback summarizes existing SourceClaimEdge rows only",
-      "entity extraction is not available in this bounded readback",
-      "relation support does not prove source truth, edge correctness, or ranking quality"
-    ]
-  };
-};
-
-export const buildRelationSupport = async (input: {
-  included: readonly RankedActivationCandidate[];
-  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
-}): Promise<SourceSearchRelationSupport[]> => {
-  const sourceClaimIds = sourceClaimIdsForCandidates(input.included);
-  const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) => {
-    const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId);
-
-    return edges.map((edge) => relationSupportFromEdge(sourceClaimId, edge));
-  }));
-
-  return edgeGroups.flat();
 };
 
 const buildAnswerPackage = (input: {
