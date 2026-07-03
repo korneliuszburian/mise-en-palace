@@ -314,8 +314,49 @@ const resolveReadOnlyRuntime = async (
   });
 };
 
-const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+type MetadataRecordParseResult =
+  | {
+    status: "record";
+    value: Record<string, unknown>;
+  }
+  | {
+    status: "invalid";
+    reason: "missing" | "not_object" | "array";
+  };
+
+const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
+  if (value === undefined || value === null) {
+    return {
+      status: "invalid",
+      reason: "missing"
+    };
+  }
+
+  if (Array.isArray(value)) {
+    return {
+      status: "invalid",
+      reason: "array"
+    };
+  }
+
+  if (typeof value !== "object") {
+    return {
+      status: "invalid",
+      reason: "not_object"
+    };
+  }
+
+  return {
+    status: "record",
+    value: value as Record<string, unknown>
+  };
+};
+
+const metadataRecordValue = (value: unknown): Record<string, unknown> | undefined => {
+  const result = parseMetadataRecord(value);
+
+  return result.status === "record" ? result.value : undefined;
+};
 
 const isProjectResolutionKind = (value: string): value is ProjectResolutionKind => {
   switch (value) {
@@ -331,9 +372,9 @@ const isProjectResolutionKind = (value: string): value is ProjectResolutionKind 
 const projectResolutionFromMetadata = (
   metadata: Record<string, unknown>
 ): ProjectResolution | undefined => {
-  const value = metadata.projectResolution;
+  const value = metadataRecordValue(metadata.projectResolution);
 
-  if (!isMetadataRecord(value)) {
+  if (value === undefined) {
     return undefined;
   }
 
@@ -363,9 +404,9 @@ const projectResolutionFromMetadata = (
 const changedFileClassification = (
   bundle: HarnessRunAggregate["evidenceBundles"][number]
 ): RunReadbackChangedFilesResource["classification"] => {
-  const group = bundle.metadata.changedFileClassification;
+  const group = metadataRecordValue(bundle.metadata.changedFileClassification);
 
-  if (!isMetadataRecord(group)) {
+  if (group === undefined) {
     return {
       source: "not_recorded",
       intended: [],
@@ -387,9 +428,9 @@ const metadataArrayLength = (
   groupKey: string,
   key: string
 ): string => {
-  const group = metadata[groupKey];
+  const group = metadataRecordValue(metadata[groupKey]);
 
-  if (!isMetadataRecord(group)) {
+  if (group === undefined) {
     return "unknown";
   }
 
@@ -522,9 +563,9 @@ const contextExclusionResource = (
 const sourceClaimEdgeInfluenceFromMetadata = (
   metadata: Record<string, unknown>
 ): RunReadbackSourceClaimEdgeInfluenceResource | undefined => {
-  const value = metadata.sourceClaimEdgeInfluence;
+  const value = metadataRecordValue(metadata.sourceClaimEdgeInfluence);
 
-  if (!isMetadataRecord(value)) {
+  if (value === undefined) {
     return undefined;
   }
 

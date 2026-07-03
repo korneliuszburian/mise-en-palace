@@ -462,6 +462,100 @@ describe("runRunShowCommand", () => {
     expect(closed).toBe(true);
   });
 
+  it("degrades malformed metadata to explicit readback fallbacks", async () => {
+    const malformedAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      executionRun: {
+        ...aggregate.executionRun,
+        metadata: {
+          projectResolution: {
+            kind: "deleted_project",
+            reason: 42,
+            doesNotProve: false
+          }
+        }
+      },
+      evidenceBundles: aggregate.evidenceBundles.map((bundle) => ({
+        ...bundle,
+        metadata: {
+          ...bundle.metadata,
+          changedFileClassification: "not-a-record"
+        }
+      })),
+      feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => ({
+        ...feedback,
+        memoryCandidates: feedback.memoryCandidates.map((candidate) => ({
+          ...candidate,
+          metadata: {
+            reviewability: "ship_it",
+            reviewabilityReasons: "missing-array"
+          }
+        })),
+        sourceDecisions: feedback.sourceDecisions.map((decision) => ({
+          ...decision,
+          metadata: {
+            reviewability: ["ready"],
+            reviewabilityReasons: "missing-array"
+          }
+        }))
+      }))
+    };
+
+    const result = await runRunShowCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      runId: "run-1",
+      format: "json",
+      createDatabaseRuntime: async () => ({
+        harnessRunRepository: {
+          async getHarnessRunByExecutionRunId(runId: string) {
+            return runId === "run-1" ? malformedAggregate : undefined;
+          }
+        },
+        async close() {}
+      })
+    });
+
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(isRunReadbackResource(parsed)).toBe(true);
+
+    if (!isRunReadbackResource(parsed)) {
+      throw new Error("run show json did not render a run readback resource");
+    }
+
+    expect(parsed.run.projectResolution).toBeUndefined();
+    expect(parsed.evidenceBundles[0]?.changedFiles.classification).toEqual({
+      source: "not_recorded",
+      intended: [],
+      unrelated: [],
+      unknown: ["packages/cli/src/runRunShowCommand.ts"]
+    });
+    expect(parsed.feedbackDeltas[0]?.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "memory-candidate-1",
+          reviewability: "unknown",
+          reviewabilityReasons: [
+            "Reviewability reasons were not present in candidate metadata."
+          ]
+        }),
+        expect.objectContaining({
+          id: "source-decision-candidate-1",
+          reviewability: "unknown",
+          reviewabilityReasons: [
+            "Reviewability reasons were not present in candidate metadata."
+          ]
+        })
+      ])
+    );
+    expect(result.stdout).not.toContain("ship_it");
+    expect(result.stdout).not.toContain("missing-array");
+  });
+
   it("renders read-only typed json for external consumers", async () => {
     let closed = false;
     const result = await runRunShowCommand({

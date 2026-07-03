@@ -58,9 +58,9 @@ support without CI mutation or a broad audit command.
 cleanup, retained-pattern targetFit readback, source-graph relation proof,
 behavior-smoke legacy naming, eval-manifest API scoping, and retained skill
 surface audit. Post-cleanup Beads state was empty except deferred
-`mise-en-palace-plnv`; the next queue is reseeded with `mise-en-palace-gfzi`,
-`mise-en-palace-oez2`, and `mise-en-palace-ieec`. `mise-en-palace-gfzi` is a
-decision brief only, not worker implementation.
+`mise-en-palace-plnv`; the next queue is `mise-en-palace-oez2`, then
+`mise-en-palace-ieec`. `mise-en-palace-gfzi` recorded a worker package decision
+brief only, not worker implementation.
 ```
 
 ## 2. Product Thesis
