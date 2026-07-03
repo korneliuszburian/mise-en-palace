@@ -1147,6 +1147,110 @@ describe("runSourceSearchCommand", () => {
     expect(graphReadback.invalidationEdges).toBe(0);
   });
 
+  it("lets positive SourceClaimEdge support influence source-search selection", async () => {
+    const lexicalOnlyClaimId = "f25a9541-97f2-4c47-8458-b18f84864ce9" as SourceClaim["id"];
+    const supportSeedClaimId = "4cb34f5e-8b3d-4027-9017-93a8d885e76e" as SourceClaim["id"];
+    const supportPeerClaimId = "6093b365-b4d6-44a7-89e7-e4b17361859e" as SourceClaim["id"];
+    const supportQuery = "positive relation quality";
+    const lexicalOnlyClaim = sourceClaim({
+      id: lexicalOnlyClaimId,
+      claim: "Positive relation quality should not be inferred without graph support.",
+      mechanism: "This claim matches the query but has no SourceClaimEdge.",
+      krnImplication: "Use as the no-edge baseline competitor.",
+      falsifier: "A positive support edge changes selection even when this claim has no relation support."
+    });
+    const supportSeedClaim = sourceClaim({
+      id: supportSeedClaimId,
+      claim: "Positive relation quality should surface support relation seed evidence.",
+      mechanism: "A SourceClaimEdge marks this source as the support relation seed.",
+      krnImplication: "Prefer edge-connected source context when positive graph support is visible.",
+      falsifier: "A supports SourceClaimEdge does not change source-search selection."
+    });
+    const supportPeerClaim = sourceClaim({
+      id: supportPeerClaimId,
+      claim: "Positive relation quality should keep the supported peer visible as graph context.",
+      mechanism: "A SourceClaimEdge links this peer claim to the support relation seed.",
+      krnImplication: "Use only as relation support, not as source truth by itself.",
+      falsifier: "Positive relation support is absent from source-search readback."
+    });
+    const claims = [
+      lexicalOnlyClaim,
+      supportSeedClaim,
+      supportPeerClaim
+    ];
+    const baseRuntime = {
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: supportQuery,
+        limit: 10,
+        maxInclusions: 1,
+        json: true
+      } as const
+    };
+    const baseline = await runSourceSearchCommand({
+      ...baseRuntime,
+      createDatabaseRuntime: runtime({
+        claims,
+        documents: []
+      })
+    });
+    const edgeAware = await runSourceSearchCommand({
+      ...baseRuntime,
+      createDatabaseRuntime: runtime({
+        claims,
+        documents: [],
+        edges: [
+          sourceClaimEdge({
+            id: "7082ca98-d4e0-4efa-9eca-cd657db2ef6d" as SourceClaimEdge["id"],
+            fromSourceClaimId: supportSeedClaimId,
+            toSourceClaimId: supportPeerClaimId,
+            kind: "supports",
+            metadata: {
+              consumer: "source-search positive relation ranking proof",
+              doesNotProve: "This edge does not prove support truth or broad graph retrieval quality."
+            }
+          })
+        ]
+      })
+    });
+    const baselineOutput = parseJsonObject(baseline.stdout);
+    const baselineAnswerPackage = objectValue(baselineOutput.answerPackage, "baseline answerPackage");
+    const baselineSupportingClaims = arrayValue(baselineAnswerPackage.supportingClaims, "baseline supportingClaims");
+    const baselineFirstClaim = objectValue(baselineSupportingClaims[0], "baseline first claim");
+    const edgeOutput = parseJsonObject(edgeAware.stdout);
+    const edgeAnswerPackage = objectValue(edgeOutput.answerPackage, "edge answerPackage");
+    const edgeSupportingClaims = arrayValue(edgeAnswerPackage.supportingClaims, "edge supportingClaims");
+    const edgeFirstClaim = objectValue(edgeSupportingClaims[0], "edge first claim");
+    const relationSupport = arrayValue(edgeAnswerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+    const graphReadback = objectValue(edgeAnswerPackage.graphReadback, "graphReadback");
+    const relationKinds = arrayValue(graphReadback.relationKinds, "relationKinds")
+      .map((item) => objectValue(item, "relation kind count"));
+
+    expect(baselineFirstClaim.sourceClaimId).toBe(lexicalOnlyClaimId);
+    expect(edgeFirstClaim.sourceClaimId).toBe(supportPeerClaimId);
+    expect(edgeFirstClaim.graphScore).toBeGreaterThan(0);
+    expect(String(edgeFirstClaim.reason)).toContain("Edge-aware source graph context: supports.");
+    expect(edgeFirstClaim.sourceDecisionSupportState).toBe("missing");
+    expect(String(edgeFirstClaim.sourceDecisionSupportCaveat)).toContain("has no SourceDecisionEdge support");
+    expect(relationSupport).toHaveLength(1);
+    expect(relation.kind).toBe("supports");
+    expect(relation.direction).toBe("incoming");
+    expect(relation.relatedSourceClaimId).toBe(supportSeedClaimId);
+    expect(relationKinds).toContainEqual({
+      kind: "supports",
+      count: 1
+    });
+    expect(graphReadback.relationEdges).toBe(1);
+    expect(graphReadback.invalidationEdges).toBe(0);
+  });
+
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
     const result = await runSourceSearchCommand({
       cwd: "/repo",
