@@ -838,6 +838,69 @@ describe("runSourceSearchCommand", () => {
     expect(firstClaim.sourceDecisionSupportCaveat).toBeUndefined();
   });
 
+  it("prioritizes decision-linked SourceClaims over accepted-only peers", async () => {
+    const unlinkedSourceClaimId = "13e1965e-d872-4de8-bf82-0da352ea6a41" as SourceClaim["id"];
+    const linkedSourceClaimId = "c38d1740-a049-4514-b2b0-0d53525fa615" as SourceClaim["id"];
+    const unlinkedClaim = sourceClaim({
+      id: unlinkedSourceClaimId,
+      claim: "Source search should prefer decision linked source claim evidence for bounded kernel work.",
+      mechanism: "The claim is accepted but has no SourceDecisionEdge readback.",
+      krnImplication: "Accepted-only claims remain useful but should not outrank linked decision support.",
+      falsifier: "A max-inclusions=1 search selects this accepted-only claim over a linked peer."
+    });
+    const linkedClaim = sourceClaim({
+      id: linkedSourceClaimId,
+      claim: "Source search should prefer decision linked source claim evidence for bounded kernel work.",
+      mechanism: "The claim is accepted and has SourceDecisionEdge readback.",
+      krnImplication: "Decision-linked claims are better operator evidence when relevance is otherwise equal.",
+      falsifier: "A max-inclusions=1 search fails to select the decision-linked peer."
+    });
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "source search prefer decision linked source claim evidence bounded kernel work",
+        limit: 10,
+        maxInclusions: 1,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          unlinkedClaim,
+          linkedClaim
+        ],
+        documents: [],
+        decisionEdges: [
+          sourceDecisionEdge({
+            sourceClaimId: linkedSourceClaimId
+          })
+        ]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+    const sourceDecisionSupport = arrayValue(
+      answerPackage.sourceDecisionSupport,
+      "sourceDecisionSupport"
+    );
+
+    expect(supportingClaims).toHaveLength(1);
+    expect(firstClaim.sourceClaimId).toBe(linkedSourceClaimId);
+    expect(firstClaim.sourceDecisionSupportState).toBe("linked");
+    expect(String(firstClaim.reason)).toContain("Decision-linked source support");
+    expect(sourceDecisionSupport).toHaveLength(1);
+    expect(objectValue(sourceDecisionSupport[0], "decision support").sourceClaimId).toBe(
+      linkedSourceClaimId
+    );
+  });
+
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
     const result = await runSourceSearchCommand({
       cwd: "/repo",

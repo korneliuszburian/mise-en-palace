@@ -55,6 +55,7 @@ const defaultProjectSlug = "mise-en-palace";
 const defaultLimit = 20;
 const defaultMaxInclusions = 6;
 const defaultSourceClaimScanFloor = 30;
+const decisionLinkedSourceClaimGraphScore = 15;
 
 type SearchReviewability =
   | "ready"
@@ -699,10 +700,10 @@ const buildGraphReadback = (input: {
   };
 };
 
-const sourceClaimIdsForIncluded = (
-  included: readonly RankedActivationCandidate[]
+const sourceClaimIdsForCandidates = (
+  candidates: readonly RankedActivationCandidate[]
 ): readonly SourceClaim["id"][] =>
-  [...new Set(included.flatMap((candidate) => {
+  [...new Set(candidates.flatMap((candidate) => {
     const sourceClaimId = sourceClaimIdFor(candidate);
 
     return sourceClaimId === undefined ? [] : [sourceClaimId];
@@ -712,7 +713,7 @@ const buildRelationSupport = async (input: {
   included: readonly RankedActivationCandidate[];
   sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
 }): Promise<SourceSearchRelationSupport[]> => {
-  const sourceClaimIds = sourceClaimIdsForIncluded(input.included);
+  const sourceClaimIds = sourceClaimIdsForCandidates(input.included);
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) => {
     const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId);
 
@@ -739,7 +740,7 @@ const sourceDecisionSupportFromEdge = (
 });
 
 const buildSourceDecisionSupport = async (input: {
-  included: readonly RankedActivationCandidate[];
+  candidates: readonly RankedActivationCandidate[];
   sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceDecisionEdgesForClaim">;
 }): Promise<SourceSearchDecisionSupport[]> => {
   const listSourceDecisionEdgesForClaim = input.sourceRepository.listSourceDecisionEdgesForClaim;
@@ -748,13 +749,22 @@ const buildSourceDecisionSupport = async (input: {
     return [];
   }
 
-  const sourceClaimIds = sourceClaimIdsForIncluded(input.included);
+  const sourceClaimIds = sourceClaimIdsForCandidates(input.candidates);
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) =>
     (await input.sourceRepository.listSourceDecisionEdgesForClaim?.(sourceClaimId) ?? [])
       .map(sourceDecisionSupportFromEdge)
   ));
 
   return edgeGroups.flat();
+};
+
+const sourceDecisionSupportForCandidates = (
+  candidates: readonly RankedActivationCandidate[],
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
+): readonly SourceSearchDecisionSupport[] => {
+  const sourceClaimIds = new Set(sourceClaimIdsForCandidates(candidates));
+
+  return sourceDecisionSupport.filter((support) => sourceClaimIds.has(support.sourceClaimId));
 };
 
 const groupSourceDecisionSupportByClaimId = (
@@ -806,6 +816,50 @@ const sourceDecisionSupportReadbackFor = (
     caveat:
       `Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback; treat it as accepted claim evidence, not decision-linked authority.`
   };
+};
+
+const applySourceDecisionSupportBoost = (
+  candidates: readonly RankedActivationCandidate[],
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
+): readonly RankedActivationCandidate[] => {
+  const decisionSupportBySourceClaimId = groupSourceDecisionSupportByClaimId(sourceDecisionSupport);
+
+  return candidates.map((candidate) => {
+    const sourceClaimId = sourceClaimIdFor(candidate);
+
+    if (
+      candidate.exclusion !== undefined ||
+      candidate.subjectType !== "source_claim" ||
+      sourceClaimId === undefined
+    ) {
+      return candidate;
+    }
+
+    const support = decisionSupportBySourceClaimId.get(sourceClaimId) ?? [];
+
+    if (support.length === 0) {
+      return candidate;
+    }
+
+    const graphScore = candidate.graphScore + decisionLinkedSourceClaimGraphScore;
+
+    return {
+      ...candidate,
+      graphScore,
+      totalScore: candidate.totalScore + decisionLinkedSourceClaimGraphScore,
+      reason: `${candidate.reason} Decision-linked source support: SourceDecisionEdge readback exists.`,
+      expectedUse: `${candidate.expectedUse} Prefer over accepted-only SourceClaims when relevance is otherwise comparable.`,
+      metadata: {
+        ...candidate.metadata,
+        sourceDecisionSupportBoost: {
+          score: decisionLinkedSourceClaimGraphScore,
+          sourceDecisionEdgeIds: support.map((item) => item.sourceDecisionEdgeId),
+          doesNotProve:
+            "SourceDecisionEdge ranking boost does not prove source truth, target correctness, or broad retrieval quality."
+        }
+      }
+    };
+  });
 };
 
 const buildAnswerPackage = (input: {
@@ -1266,7 +1320,18 @@ export const runSourceSearchCommand = async (
       }
     });
     const authoritySafe = applySourceClaimAuthorityFilter(retrieved.candidates);
-    const bounded = applyContextROI(authoritySafe, {
+    const sourceDecisionSupportCandidates = authoritySafe.filter(
+      (candidate) => candidate.exclusion === undefined
+    );
+    const availableSourceDecisionSupport = await buildSourceDecisionSupport({
+      candidates: sourceDecisionSupportCandidates,
+      sourceRepository: databaseRuntime.sourceRepository
+    });
+    const decisionLinked = applySourceDecisionSupportBoost(
+      authoritySafe,
+      availableSourceDecisionSupport
+    );
+    const bounded = applyContextROI(decisionLinked, {
       maxInclusions,
       minimumDiverseKinds: ["source", "search"]
     });
@@ -1275,10 +1340,10 @@ export const runSourceSearchCommand = async (
       included,
       sourceRepository: databaseRuntime.sourceRepository
     });
-    const sourceDecisionSupport = await buildSourceDecisionSupport({
+    const sourceDecisionSupport = sourceDecisionSupportForCandidates(
       included,
-      sourceRepository: databaseRuntime.sourceRepository
-    });
+      availableSourceDecisionSupport
+    );
     const sourceClaimDocumentLinks = await buildSourceClaimDocumentLinks({
       included,
       projectId: databaseRuntime.projectId,

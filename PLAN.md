@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: close source-search explicit project readback, then choose the next highest-ROI kernel vertical
+current task: decision-linked source-search ranking, then choose the next highest-ROI kernel vertical
 ```
 
 ## Compact Checkpoints
@@ -112,11 +112,12 @@ shared brain vertical loop proof: first real DB-backed plan/evidence/observe/ref
 retained pattern + memory cooperation: one persisted next-task plan selected the promoted SBV MemoryRecord and retained TypeScript catalog patterns together
 source decision edge linkage: one operator-facing SourceDecision adoption and SourceDecisionEdge link persisted and read back against a concrete harness_run
 source-search project selector: explicit project readback can surface the c79a SourceClaim with linked SourceDecisionEdge support without requiring a ProjectKernel
+source-search decision-linked ranking: linked SourceDecisionEdge support now nudges accepted SourceClaims ahead of accepted-only peers before ContextROI
 ```
 
 ## Active Task
 
-Status: complete; overnight queue active.
+Status: active; overnight queue active.
 
 Result: one real CLI help task and one related help task ran through persisted
 plan/evidence/observe/reflect, memory candidate promotion, second-opinion
@@ -126,8 +127,8 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-543l` locally closed pending commit/push/CI,
-then choose next highest-ROI kernel vertical.
+Current queue: `mise-en-palace-zx0o` in progress; after commit/push/CI, choose
+the next highest-ROI kernel vertical.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

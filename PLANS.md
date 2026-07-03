@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: close source-search explicit project readback, then choose the next highest-ROI kernel vertical
+current task: decision-linked source-search ranking, then choose the next highest-ROI kernel vertical
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-close source-search explicit project readback, then choose the next highest-ROI kernel vertical.
+decision-linked source-search ranking, then choose the next highest-ROI kernel vertical.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -35,16 +35,14 @@ catalog selection is proven for this relation task, not as global recall quality
 promoted SBV MemoryRecord and retained TypeScript pattern catalog selection.
 This does not prove ranking quality, retained-pattern completeness, or unrelated
 automatic recall.
-`mise-en-palace-c79a` is implemented and pushed; CI rerun is pending after
-active-plan invariant repair. It proves one operator-facing SourceDecision
-adoption and one persisted SourceDecisionEdge readback against a concrete
-harness run. It does not prove source truth, graph ranking quality, or
-source-search project ergonomics.
-`mise-en-palace-543l` is locally closed pending commit, push, and CI. It proves
-explicit-project source search can inspect the c79a project without a
-ProjectKernel and expose linked SourceDecisionEdge support for the included
-SourceClaim. It does not prove ranking quality or ProjectKernel lifecycle
-correctness.
+`mise-en-palace-c79a` and `mise-en-palace-543l` are closed with green CI. They
+prove one operator-facing SourceDecision adoption, one persisted
+SourceDecisionEdge readback against a concrete harness run, and explicit-project
+source search without requiring a ProjectKernel. They do not prove source truth,
+graph ranking quality, or ProjectKernel lifecycle correctness.
+`mise-en-palace-zx0o` is in progress. It should prove that source search prefers
+decision-linked accepted SourceClaims over accepted-only peers before ContextROI
+when inclusion budget is tight.
 ```
 
 ## 2. Product Thesis
