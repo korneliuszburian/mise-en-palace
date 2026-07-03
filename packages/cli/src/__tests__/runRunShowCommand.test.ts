@@ -339,11 +339,11 @@ const aggregate: HarnessRunAggregate = {
   runEvents: []
 };
 
+const isRecord = (input: unknown): input is Record<string, unknown> =>
+  typeof input === "object" && input !== null && !Array.isArray(input);
+
 const isRunReadbackResource = (input: unknown): input is RunReadbackResource =>
-  typeof input === "object" &&
-  input !== null &&
-  !Array.isArray(input) &&
-  (input as Record<string, unknown>).kind === "krn.run.readback.v1";
+  isRecord(input) && input.kind === "krn.run.readback.v1";
 
 describe("runRunShowCommand", () => {
   it("renders persisted run evidence without mutating state", async () => {

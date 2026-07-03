@@ -251,6 +251,9 @@ type MetadataRecordParseResult =
     reason: "missing" | "not_object" | "array";
   };
 
+const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
   if (value === undefined || value === null) {
     return {
@@ -266,7 +269,7 @@ const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
     };
   }
 
-  if (typeof value !== "object") {
+  if (!isMetadataRecord(value)) {
     return {
       status: "invalid",
       reason: "not_object"
@@ -275,7 +278,7 @@ const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
 
   return {
     status: "record",
-    value: value as Record<string, unknown>
+    value
   };
 };
 
