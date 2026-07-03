@@ -5,6 +5,7 @@
     "src/__tests__/cliCommandRegistry.test.ts",
     "src/__tests__/cliFileBoundary.test.ts",
     "src/__tests__/codex.test.ts",
+    "src/__tests__/codexAdapterSmoke.test.ts",
     "src/__tests__/databaseRuntime.test.ts",
     "src/__tests__/db.test.ts",
     "src/__tests__/doctor.test.ts",
@@ -31,7 +32,12 @@
     "src/__tests__/projectResolutionFormat.test.ts",
     "src/__tests__/reflect.test.ts",
     "src/__tests__/retainedPatternSelection.test.ts",
-    "src/__tests__/source.test.ts"
+    "src/__tests__/runDbReadinessCommand.test.ts",
+    "src/__tests__/runDoctorCommand.test.ts",
+    "src/__tests__/source.test.ts",
+    "src/__tests__/targetRepoHarnessSmoke.test.ts",
+    "src/__tests__/targetRepoTestingSkill.test.ts",
+    "src/__tests__/workerJobSmoke.test.ts"
   ],
   "exclude": []
 }
