@@ -61,12 +61,24 @@ delete or demote
   action: delete the repo-local skill or move the guidance into docs
 ```
 
-## Accepted Skills
+## Current Skill Register
 
-| Skill | Finding condensed | Evidence | What it does not prove |
-|---|---|---|---|
-| `target-repo-testing` | Target repos are living checkouts and observation-only target trials must not patch target files after verification failure. | `docs/reviews/controlled-dogfood/2026-06-27-headless-wilq-seo-target-trial/REPORT.md`; `docs/runbooks/target-repo-testing.md`. | Does not prove arbitrary target safety or V02-01 second-operator usability. |
-| `second-opinion-claude` | Large slices need independent challenge without turning review into a broad multi-agent runtime or chat-pasted audit prompt. | `docs/KRN_SOURCES.md#claude-code-headless-review`; `.agents/skills/second-opinion-claude/SKILL.md`. | Does not prove Claude is right, CI is green, or that model review replaces local verification. |
+Default decision: preserve operational kernel skills. Delete or demote only when
+usage evidence shows that a skill is decorative, duplicates another skill, or
+claims authority without a reviewable workflow.
+
+| Skill | Class | Decision | Evidence | What it does not prove |
+|---|---|---|---|---|
+| `activation-engine` | operational kernel skill | keep | Routes activation, retrieval, exclusion, owner-file recall, context ROI, and abstention work. Guarded by `skillInvariants`. | Does not prove current activation ranking is correct. |
+| `beads` | operational kernel skill | keep | Routes durable task tracking and handoff work through `bd`; referenced by `AGENTS.md`. | Does not prove a Beads issue is true or complete without code evidence. |
+| `brain-store-schema` | operational kernel skill | keep | Routes Drizzle/Postgres schema, migration, repository, and SQL-boundary work. Guarded by `skillInvariants`. | Does not prove every table is live or every smoke is meaningful. |
+| `codex-adapter-plan` | operational kernel skill | keep | Routes Codex-brief rendering and non-mutating adapter-boundary work. Guarded by `skillInvariants`. | Does not prove Codex follows the rendered brief. |
+| `evidence-review-loop` | operational kernel skill | keep | Routes command provenance, proof/non-proof, feedback, observe-before-reflect, and memory/source candidate discipline. Guarded by `skillInvariants`. | Does not prove evidence rows are sufficient for product readiness. |
+| `handoff-compact` | operational kernel skill | keep | Routes compact continuation state after compaction, pause, transfer, commit, push, or CI. Guarded by `skillInvariants`. | Does not replace Beads, CI, or source evidence. |
+| `second-opinion-claude` | governed review skill | keep and validate | Runs non-interactive Claude with a validated verdict JSON and diff freshness. Guarded by deterministic validator examples and `skillInvariants`. | Does not prove Claude is right or replace local verification. |
+| `source-to-decision` | operational kernel skill | keep | Routes source mechanism, KRN implication, decision/rejection, consumer, falsifier, and usefulness closure. Guarded by `skillInvariants`. | Does not make external sources true. |
+| `target-repo-testing` | operational kernel skill | keep | Routes target-repo mode, dirty state, write authority, evidence, and handoff boundaries. Guarded by `skillInvariants` and `docs/runbooks/target-repo-testing.md`. | Does not prove arbitrary target safety or V02-01 second-operator usability. |
+| `typescript-type-safety` | operational kernel skill | keep | Routes unknown-first boundaries, public types, casts, validators, JSON/env/CLI inputs, and typecheck discipline. Guarded by `skillInvariants`. | Does not prove runtime correctness outside typed boundaries. |
 
 ## Skill Criteria
 
