@@ -63,6 +63,9 @@ not treating raw relation metadata as validated decision support.
 `mise-en-palace-qtfv` is locally closed pending push/CI. It keeps
 `eval:krn:smoke` as the active deterministic behavior/docs gate and marks
 `eval:brain-battle:smoke` as legacy compatibility only.
+`mise-en-palace-wuqx` is locally closed pending push/CI. It keeps the eval
+proof-boundary manifest as docs-lint/test evidence and removes any implication
+that it is public harness runtime API.
 ```
 
 ## 2. Product Thesis

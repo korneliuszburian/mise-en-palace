@@ -52,7 +52,9 @@ is closed with green CI: source-search JSON proves one invalidates
 SourceClaimEdge changes selected support while preserving graph and
 decision-support caveats. `mise-en-palace-qtfv` is locally closed pending
 push/CI: `eval:krn:smoke` remains the active deterministic behavior/docs gate
-and `eval:brain-battle:smoke` is legacy compatibility only.
+and `eval:brain-battle:smoke` is legacy compatibility only. `mise-en-palace-wuqx`
+is locally closed pending push/CI: the eval proof-boundary manifest remains
+docs-lint/test evidence, not public harness runtime API.
 
 Latest slice:
 

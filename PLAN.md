@@ -120,6 +120,7 @@ capability plan binding cleanup: decorative bindingKinds/policy_gate/tool_bounda
 brain code-quality pattern dogfood: retained pattern selection exposes targetFit summary and recommended use in plan/run readback
 source graph relation ranking proof: invalidates SourceClaimEdge changes selected support, graphReadback, and decision-support caveat in source-search JSON
 behavior smoke naming: eval:krn:smoke is the active deterministic behavior/docs gate; eval:brain-battle:smoke is a legacy compatibility alias only
+eval proof-boundary manifest scope: manifest remains docs-lint/test evidence, not public harness runtime API
 ```
 
 ## Active Task
@@ -134,7 +135,7 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-qtfv` locally closed pending push/CI; then
+Current queue: `mise-en-palace-wuqx` locally closed pending push/CI; then
 choose next highest-ROI kernel vertical.
 Deferred human decision: `mise-en-palace-plnv`.
 

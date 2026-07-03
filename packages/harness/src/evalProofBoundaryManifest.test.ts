@@ -12,6 +12,7 @@ import {
 
 const packageJsonPath = new URL("../../../package.json", import.meta.url);
 const ciPath = new URL("../../../.github/workflows/ci.yml", import.meta.url);
+const harnessIndexPath = new URL("./index.ts", import.meta.url);
 
 const readRootFile = (path: URL): string => readFileSync(path, "utf8");
 
@@ -52,6 +53,12 @@ describe("eval proof boundary manifest", () => {
         expect(entry.command).toContain(entry.scriptName);
       }
     }
+  });
+
+  it("keeps the proof-boundary manifest out of the public harness export surface", () => {
+    const harnessIndex = readRootFile(harnessIndexPath);
+
+    expect(harnessIndex).not.toContain("evalProofBoundaryManifest");
   });
 
   it("keeps CI commands aligned with CI-scoped proof gates", () => {

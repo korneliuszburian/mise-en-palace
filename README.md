@@ -136,6 +136,7 @@ git diff --check
 Do not claim DB runtime truth unless DB commands were run in the current
 environment.
 
-Gate proof boundaries are canonicalized in
-`packages/harness/src/evalProofBoundaryManifest.ts`; no verification command
-should be described as proving more than that manifest allows.
+Gate proof boundaries are checked by the harness docs-lint manifest in
+`packages/harness/src/evalProofBoundaryManifest.ts`. It is not a public
+`@krn/harness` runtime API, and no verification command should be described as
+proving more than that manifest allows.
