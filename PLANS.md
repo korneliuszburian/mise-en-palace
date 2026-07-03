@@ -38,6 +38,7 @@ satisfy the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-smoke-readiness-test-typecheck-widening.md
 CI: pending for this slice.
+CI result: KRN CI 28645849670 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 
