@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs.
+current task: close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -37,7 +37,10 @@ Store-backed memory reuse now works when the MemoryCandidate preserves run
 project lineage. The graph relation consensus pattern was selected and used for
 candidate-only heartbeat readback. A persisted next-task plan selected both the
 store-backed SBV MemoryRecord and retained TypeScript pattern catalog readback.
-Next queue item: choose the next highest-ROI kernel vertical.
+`mise-en-palace-c79a` is locally implemented pending second-opinion, commit,
+push, and CI: one operator-facing SourceDecision adoption and SourceDecisionEdge
+link persisted and read back against a concrete harness run. Next queue item:
+choose the next highest-ROI kernel vertical.
 
 Latest slice:
 

@@ -37,6 +37,13 @@ export const SourceClaimStatusSchema = z.enum([
 
 export const SourceClaimCreateStatusSchema = z.enum(["proposed"]);
 
+export const SourceDecisionStatusSchema = z.enum([
+  "adopt",
+  "reject",
+  "defer",
+  "lab_test"
+]);
+
 export const SourceDecisionTargetTypeSchema = z.enum([
   "harness_run",
   "task_contract",
@@ -99,6 +106,17 @@ export const SourceDecisionEdgeInputSchema = z.object({
   metadata: MetadataSchema
 });
 
+export const SourceDecisionInputSchema = z.object({
+  projectId: RequiredTextSchema.optional(),
+  sourceClaimId: RequiredTextSchema.optional(),
+  status: SourceDecisionStatusSchema,
+  decision: RequiredTextSchema,
+  rationale: RequiredTextSchema,
+  falsifier: RequiredTextSchema,
+  consumer: RequiredTextSchema,
+  metadata: MetadataSchema
+});
+
 export const SourceRejectionInputSchema = z.object({
   projectId: RequiredTextSchema.optional(),
   executionRunId: RequiredTextSchema.optional(),
@@ -115,6 +133,7 @@ export const SourceRejectionInputSchema = z.object({
 
 export type SourceArtifactInput = z.infer<typeof SourceArtifactInputSchema>;
 export type SourceClaimInput = z.infer<typeof SourceClaimInputSchema>;
+export type SourceDecisionInput = z.infer<typeof SourceDecisionInputSchema>;
 export type SourceDecisionEdgeInput = z.infer<typeof SourceDecisionEdgeInputSchema>;
 export type SourceRejectionInput = z.infer<typeof SourceRejectionInputSchema>;
 
@@ -128,6 +147,10 @@ export function parseSourceClaimInput(input: unknown): SourceClaimInput {
 
 export function parseSourceDecisionEdgeInput(input: unknown): SourceDecisionEdgeInput {
   return SourceDecisionEdgeInputSchema.parse(input);
+}
+
+export function parseSourceDecisionInput(input: unknown): SourceDecisionInput {
+  return SourceDecisionInputSchema.parse(input);
 }
 
 export function parseSourceRejectionInput(input: unknown): SourceRejectionInput {

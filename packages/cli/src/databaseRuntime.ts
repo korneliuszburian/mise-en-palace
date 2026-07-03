@@ -100,6 +100,7 @@ export interface DatabaseRuntime {
   > & Partial<Pick<
     SourceRepository,
     | "createSourceChunk"
+    | "createSourceDecision"
     | "listSourceDecisionEdgesForClaim"
   >>;
   retrievalRepository?: Pick<
@@ -495,6 +496,7 @@ export const createDatabaseRuntime = async (
     getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
     listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
     createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
+    createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
     listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
     createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
     getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),

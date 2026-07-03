@@ -47,6 +47,7 @@ import {
   formatSourceClaimEdgesUsage,
   formatSourceSearchUsage,
   formatSourceClaimRejectUsage,
+  formatSourceDecisionAdoptUsage,
   formatSourceDecisionLinkUsage
 } from "./parseSourceArgs.js";
 import type {
@@ -138,6 +139,7 @@ const helpRenderers = {
   sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
   sourceSearchHelp: formatSourceSearchUsage,
   sourceArtifactPreviewHelp: formatSourceArtifactPreviewUsage,
+  sourceDecisionAdoptHelp: formatSourceDecisionAdoptUsage,
   sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
   knowledgeCardsHelp: formatKnowledgeUsage,

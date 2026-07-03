@@ -24,6 +24,9 @@ import {
   runSourceDecisionLinkCommand
 } from "./runSourceDecisionLinkCommand.js";
 import {
+  runSourceDecisionAdoptCommand
+} from "./runSourceDecisionAdoptCommand.js";
+import {
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
 
@@ -34,6 +37,7 @@ type SourceCliCommand = Extract<
   | { kind: "sourceClaimEdges" }
   | { kind: "sourceSearch" }
   | { kind: "sourceDecisionLink" }
+  | { kind: "sourceDecisionAdopt" }
   | { kind: "sourceClaimReject" }
 >;
 
@@ -91,6 +95,7 @@ const isSourceCliCommand = (command: CliCommand): command is SourceCliCommand =>
   command.kind === "sourceClaimEdges" ||
   command.kind === "sourceSearch" ||
   command.kind === "sourceDecisionLink" ||
+  command.kind === "sourceDecisionAdopt" ||
   command.kind === "sourceClaimReject"
 );
 
@@ -100,6 +105,7 @@ const sourceFallbackMessages = {
   sourceClaimEdges: "Unknown source claim edges error",
   sourceSearch: "Unknown source search error",
   sourceDecisionLink: "Unknown source decision link error",
+  sourceDecisionAdopt: "Unknown source decision adopt error",
   sourceClaimReject: "Unknown source claim reject error"
 } satisfies Record<SourceCliCommand["kind"], string>;
 
@@ -141,6 +147,13 @@ const runSelectedSourceCommand = async (
 
   if (command.kind === "sourceDecisionLink") {
     return runSourceDecisionLinkCommand({
+      ...standardSourceInput(context),
+      command
+    });
+  }
+
+  if (command.kind === "sourceDecisionAdopt") {
+    return runSourceDecisionAdoptCommand({
       ...standardSourceInput(context),
       command
     });

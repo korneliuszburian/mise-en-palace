@@ -417,6 +417,9 @@ export type CliCommand =
       kind: "sourceDecisionLinkHelp";
     }
   | {
+      kind: "sourceDecisionAdoptHelp";
+    }
+  | {
       kind: "sourceDecisionLink";
       persist: boolean;
       sourceClaimId?: string;
@@ -425,6 +428,16 @@ export type CliCommand =
       supportType?: string;
       confidence?: string;
       notes?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "sourceDecisionAdopt";
+      persist: boolean;
+      sourceClaimId?: string;
+      decision?: string;
+      rationale?: string;
+      falsifier?: string;
+      consumer?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -491,6 +504,7 @@ const usage = [
   "krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>] [--json]",
   "krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
+  "krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",

@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs
+current task: close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical
 latest pushed commit: see git history
 ```
 
@@ -35,6 +35,11 @@ catalog selection is proven for this relation task, not as global recall quality
 promoted SBV MemoryRecord and retained TypeScript pattern catalog selection.
 This does not prove ranking quality, retained-pattern completeness, or unrelated
 automatic recall.
+`mise-en-palace-c79a` is locally implemented pending second-opinion, commit,
+push, and CI. It proves one operator-facing SourceDecision adoption and one
+persisted SourceDecisionEdge readback against a concrete harness run. It does
+not prove source truth, graph ranking quality, or source-search project
+ergonomics.
 ```
 
 ## 2. Product Thesis
@@ -207,7 +212,7 @@ backlog detail.
 ## 15. Progress
 
 ```txt
-Active slice: root ledger cap and active doc surface reduction.
+Active slice: persisted SourceDecisionEdge linkage readback.
 Historical IMR/product outcomes: archived, not embedded in root context.
 Next selection: use Beads ready work after this slice verifies.
 ```

@@ -116,6 +116,22 @@ export const formatSourceDecisionLinkUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+export const formatSourceDecisionAdoptUsage = (): string =>
+  [
+    "Usage: krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
+    "",
+    "Required:",
+    "--source-claim-id",
+    "--decision",
+    "--rationale",
+    "--falsifier",
+    "--consumer",
+    "",
+    "Optional:",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
 export const formatSourceClaimRejectUsage = (): string =>
   [
     "Usage: krn source claim reject --title \"...\" --rejected-because <reason> [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
@@ -191,6 +207,7 @@ type SourceSearchCommand = Extract<CliCommand, { kind: "sourceSearch" }>;
 type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
 type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
 type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
+type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
 
 type SourceTokenParseResult = CliTokenParseResult;
 
@@ -231,9 +248,18 @@ const sourceDecisionLinkStringOptions = {
   "--notes": "notes"
 } as const;
 
+const sourceDecisionAdoptStringOptions = {
+  "--source-claim-id": "sourceClaimId",
+  "--decision": "decision",
+  "--rationale": "rationale",
+  "--falsifier": "falsifier",
+  "--consumer": "consumer"
+} as const;
+
 type SourceClaimAddStringKey = typeof sourceClaimAddStringOptions[keyof typeof sourceClaimAddStringOptions];
 type SourceClaimRejectStringKey = typeof sourceClaimRejectStringOptions[keyof typeof sourceClaimRejectStringOptions];
 type SourceDecisionLinkStringKey = typeof sourceDecisionLinkStringOptions[keyof typeof sourceDecisionLinkStringOptions];
+type SourceDecisionAdoptStringKey = typeof sourceDecisionAdoptStringOptions[keyof typeof sourceDecisionAdoptStringOptions];
 
 const sourceHelp = (): SourceTokenParseResult => ({
   kind: "help"
@@ -248,6 +274,20 @@ const sourceError = (error: string): SourceTokenParseResult => ({
   kind: "error",
   error
 });
+
+const hasText = (value: string | undefined): boolean =>
+  value !== undefined && value.trim().length > 0;
+
+const hasSourceDecisionAdoptRequiredFields = (
+  sourceCommand: SourceDecisionAdoptCommand
+): boolean =>
+  [
+    sourceCommand.sourceClaimId,
+    sourceCommand.decision,
+    sourceCommand.rationale,
+    sourceCommand.falsifier,
+    sourceCommand.consumer
+  ].every(hasText);
 
 const sourceArtifactPreviewStringOptions = {
   "--claim": "claim",
@@ -765,6 +805,19 @@ const parseSourceDecisionLinkToken = (
     }
   });
 
+const parseSourceDecisionAdoptToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceDecisionAdoptCommand
+): SourceTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, sourceCommand, {
+    fallbackUsage: formatSourceDecisionAdoptUsage(),
+    optionMap: sourceDecisionAdoptStringOptions,
+    assignOption: (key, value) => {
+      sourceCommand[key as SourceDecisionAdoptStringKey] = value;
+    }
+  });
+
 const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -1008,6 +1061,52 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
   };
 };
 
+const parseSourceDecisionAdoptArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceDecisionAdoptHelp"
+      }
+    };
+  }
+
+  const sourceCommand: Extract<CliCommand, { kind: "sourceDecisionAdopt" }> = {
+    kind: "sourceDecisionAdopt",
+    persist: false,
+    metadata: {}
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const parsed = parseSourceDecisionAdoptToken(rest, index, sourceCommand);
+
+    if (parsed.kind === "help") {
+      return {
+        command: {
+          kind: "sourceDecisionAdoptHelp"
+        }
+      };
+    }
+
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  if (!hasSourceDecisionAdoptRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceDecisionAdoptUsage()
+    };
+  }
+
+  return {
+    command: sourceCommand
+  };
+};
+
 export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] === "search") {
     return parseSourceSearchArgs(rest);
@@ -1031,6 +1130,10 @@ export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
 
   if (rest[0] === "decision" && rest[1] === "link") {
     return parseSourceDecisionLinkArgs(rest);
+  }
+
+  if (rest[0] === "decision" && rest[1] === "adopt") {
+    return parseSourceDecisionAdoptArgs(rest);
   }
 
   return {

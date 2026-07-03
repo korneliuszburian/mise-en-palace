@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs
+current task: close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical
 ```
 
 ## Compact Checkpoints
@@ -110,6 +110,7 @@ mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
 shared brain vertical loop proof: first real DB-backed plan/evidence/observe/reflect/memory-application loop completed; automatic memory recall not proven
 retained pattern + memory cooperation: one persisted next-task plan selected the promoted SBV MemoryRecord and retained TypeScript catalog patterns together
+source decision edge linkage: one operator-facing SourceDecision adoption and SourceDecisionEdge link persisted and read back against a concrete harness_run
 ```
 
 ## Active Task
@@ -124,8 +125,9 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: choose next highest-ROI kernel vertical. Deferred human decision:
-`mise-en-palace-plnv`.
+Current queue: `mise-en-palace-c79a` locally implemented pending
+second-opinion/commit/push/CI, then choose next highest-ROI kernel vertical.
+Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
 product readiness or retrieval quality from this slice.
@@ -143,7 +145,7 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 
 ```txt
 1. pattern/research brain continuously applied to code quality
-2. source/graph relation decision linkage beyond candidate-only readback
+2. source/graph relation ranking/search ergonomics beyond one persisted decision-edge readback
 3. product UI/API/MCP after usefulness/security gates
 ```
 
