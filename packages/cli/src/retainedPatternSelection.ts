@@ -69,36 +69,51 @@ type RetainedPatternPlanSelectionMetadataFields = Pick<
   "kind" | "status" | "query" | "source" | "selectedPatternIds" | "reason" | "doesNotProve"
 >;
 
-const selectionStatuses = new Set<RetainedPatternPlanSelectionStatus>([
+const selectionStatuses = new Set<string>([
   "selected",
   "rejected_or_deferred",
   "unavailable"
 ]);
 
-const selectionSources = new Set<RetainedPatternPlanSelection["source"]>([
+const selectionSources = new Set<string>([
   "brain_knowledge_catalog"
 ]);
 
-const planItemReviewabilities = new Set<BrainKnowledgeReviewability>(
+const planItemReviewabilities = new Set<string>(
   brainKnowledgeReviewabilityValues
 );
 
-const planItemNextActions = new Set<BrainKnowledgeNextAction>(
+const planItemNextActions = new Set<string>(
   brainKnowledgeNextActionValues
 );
 
-const planItemTargetFits = new Set<TargetFit>(targetFitValues);
+const planItemTargetFits = new Set<string>(targetFitValues);
 
 const parseNonEmptyString = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim().length > 0 ? value : undefined;
 
-const parseSetValue = <TValue extends string>(
-  value: unknown,
-  allowedValues: ReadonlySet<TValue>
-): TValue | undefined =>
-  typeof value === "string" && allowedValues.has(value as TValue)
-    ? value as TValue
-    : undefined;
+const isSelectionStatus = (
+  value: unknown
+): value is RetainedPatternPlanSelectionStatus =>
+  typeof value === "string" && selectionStatuses.has(value);
+
+const isSelectionSource = (
+  value: unknown
+): value is RetainedPatternPlanSelection["source"] =>
+  typeof value === "string" && selectionSources.has(value);
+
+const isPlanItemReviewability = (
+  value: unknown
+): value is BrainKnowledgeReviewability =>
+  typeof value === "string" && planItemReviewabilities.has(value);
+
+const isPlanItemNextAction = (
+  value: unknown
+): value is BrainKnowledgeNextAction =>
+  typeof value === "string" && planItemNextActions.has(value);
+
+const isPlanItemTargetFit = (value: unknown): value is TargetFit =>
+  typeof value === "string" && planItemTargetFits.has(value);
 
 const parseStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {
@@ -129,8 +144,10 @@ const parseObjectFields = <T extends object>(
 const planItemFieldParsers: FieldParsers<RetainedPatternPlanItemFields> = {
   id: (record) => parseNonEmptyString(record["id"]),
   title: (record) => parseNonEmptyString(record["title"]),
-  reviewability: (record) => parseSetValue(record["reviewability"], planItemReviewabilities),
-  nextAction: (record) => parseSetValue(record["nextAction"], planItemNextActions),
+  reviewability: (record) =>
+    isPlanItemReviewability(record["reviewability"]) ? record["reviewability"] : undefined,
+  nextAction: (record) =>
+    isPlanItemNextAction(record["nextAction"]) ? record["nextAction"] : undefined,
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
@@ -139,9 +156,11 @@ const selectionMetadataFieldParsers: FieldParsers<RetainedPatternPlanSelectionMe
     record["kind"] === "krn.retainedPatternPlanSelection.v1"
       ? "krn.retainedPatternPlanSelection.v1"
       : undefined,
-  status: (record) => parseSetValue(record["status"], selectionStatuses),
+  status: (record) =>
+    isSelectionStatus(record["status"]) ? record["status"] : undefined,
   query: (record) => parseNonEmptyString(record["query"]),
-  source: (record) => parseSetValue(record["source"], selectionSources),
+  source: (record) =>
+    isSelectionSource(record["source"]) ? record["source"] : undefined,
   selectedPatternIds: (record) => parseStringArray(record["selectedPatternIds"]),
   reason: (record) => parseNonEmptyString(record["reason"]),
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
@@ -177,7 +196,7 @@ const planItemFromRecord = (
   return {
     ...requiredFields,
     patternId: patternId ?? patternIdFromCardId(requiredFields.id),
-    targetFit: parseSetValue(record["targetFit"], planItemTargetFits) ?? "unknown",
+    targetFit: isPlanItemTargetFit(record["targetFit"]) ? record["targetFit"] : "unknown",
     targetFitReasons: parseStringArray(record["targetFitReasons"]) ?? [
       "target-fit metadata was not present on this retained pattern item."
     ]
