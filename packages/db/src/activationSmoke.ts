@@ -78,14 +78,17 @@ const countByDecision = (
   decision: string
 ): number => decisions.filter((item) => item.decision === decision).length;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
 const rawEvidenceRecallTriggerCount = (
   metadata: unknown
 ): number => {
-  if (metadata === null || typeof metadata !== "object") {
+  if (!isRecord(metadata)) {
     return 0;
   }
 
-  const count = (metadata as Record<string, unknown>).rawEvidenceRecallTriggerCount;
+  const count = metadata.rawEvidenceRecallTriggerCount;
 
   return typeof count === "number" ? count : 0;
 };
@@ -100,17 +103,17 @@ const hasMergedSearchSignal = (metadata: Record<string, unknown>): boolean => {
 const observationPrefixItemCount = (
   metadata: unknown
 ): number => {
-  if (metadata === null || typeof metadata !== "object") {
+  if (!isRecord(metadata)) {
     return 0;
   }
 
-  const prefix = (metadata as Record<string, unknown>).observationPrefixSnapshot;
+  const prefix = metadata.observationPrefixSnapshot;
 
-  if (prefix === null || typeof prefix !== "object") {
+  if (!isRecord(prefix)) {
     return 0;
   }
 
-  const count = (prefix as Record<string, unknown>).itemCount;
+  const count = prefix.itemCount;
 
   return typeof count === "number" ? count : 0;
 };
