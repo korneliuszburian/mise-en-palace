@@ -29,7 +29,7 @@
     "eval:behavior:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate sourceMapInvariants typescriptBoundaryInvariants && pnpm --filter @krn/cli typecheck:tests:clean && pnpm --filter @krn/cli test -- runRunShowCommand evidenceCaptureGoldenBehavior && pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
     "docs:lint": "pnpm --filter @krn/harness test -- activePlanInvariants contextHygieneInvariants skillInvariants behaviorGateMatrixInvariants",
     "eval:krn:smoke": "pnpm eval:behavior:smoke && pnpm docs:lint",
-    "eval:brain-battle:smoke": "pnpm eval:krn:smoke",
+    "eval:brain-battle:smoke": "echo 'eval:brain-battle:smoke is a legacy compatibility alias; use eval:krn:smoke for deterministic behavior/docs smoke.' && pnpm eval:krn:smoke",
     "krn": "pnpm --filter @krn/cli krn",
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",

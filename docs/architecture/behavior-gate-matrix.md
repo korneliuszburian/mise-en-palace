@@ -107,6 +107,12 @@ PLAN pattern-gate visibility, and matrix guard/proof boundaries through
 
 It is docs/proof-boundary lint, not behavior proof.
 
+## Legacy Alias
+
+`pnpm eval:brain-battle:smoke` is a compatibility alias only. Active proof
+routing should use `pnpm eval:krn:smoke`, which names the deterministic
+behavior smoke plus docs lint it actually runs.
+
 ## Promptfoo Boundary
 
 Promptfoo remains a portable integration smoke/result adapter, not behavior

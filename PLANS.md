@@ -57,10 +57,12 @@ removed decorative CapabilityPlan binding vocabulary and stale active
 policy-gate evidence while preserving kind-based skill routing. `mise-en-palace-b3wa`
 is closed with green CI. It carries retained-pattern targetFit and
 recommended-use evidence through plan/run readback for code-quality planning.
-`mise-en-palace-sfcb` is locally closed pending push/CI. It proves that a
-source graph relation can change selected source-search support while
-preserving caveats and not treating raw relation metadata as validated decision
-support.
+`mise-en-palace-sfcb` is closed with green CI. It proves that a source graph
+relation can change selected source-search support while preserving caveats and
+not treating raw relation metadata as validated decision support.
+`mise-en-palace-qtfv` is locally closed pending push/CI. It keeps
+`eval:krn:smoke` as the active deterministic behavior/docs gate and marks
+`eval:brain-battle:smoke` as legacy compatibility only.
 ```
 
 ## 2. Product Thesis

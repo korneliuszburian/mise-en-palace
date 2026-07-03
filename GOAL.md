@@ -48,9 +48,11 @@ decorative CapabilityPlan binding vocabulary and stale active policy-gate
 evidence were removed without changing skill routing. `mise-en-palace-b3wa` is
 closed with green CI: retained-pattern targetFit and recommended-use evidence
 now flow through plan/run readback for code-quality planning. `mise-en-palace-sfcb`
-is locally closed pending push/CI: source-search JSON now proves one
-invalidates SourceClaimEdge changes selected support while preserving graph and
-decision-support caveats.
+is closed with green CI: source-search JSON proves one invalidates
+SourceClaimEdge changes selected support while preserving graph and
+decision-support caveats. `mise-en-palace-qtfv` is locally closed pending
+push/CI: `eval:krn:smoke` remains the active deterministic behavior/docs gate
+and `eval:brain-battle:smoke` is legacy compatibility only.
 
 Latest slice:
 

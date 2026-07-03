@@ -88,6 +88,23 @@ const sectionBody = (body: string, heading: string): string => {
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
 
+const packageScripts = (): Record<string, string> => {
+  const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    Array.isArray(parsed) ||
+    typeof (parsed as { scripts?: unknown }).scripts !== "object" ||
+    (parsed as { scripts?: unknown }).scripts === null ||
+    Array.isArray((parsed as { scripts?: unknown }).scripts)
+  ) {
+    throw new Error("package.json scripts must be an object");
+  }
+
+  return (parsed as { scripts: Record<string, string> }).scripts;
+};
+
 describe("KRN behavior gate matrix invariants", () => {
   it("keeps implemented checks tied to a guard, evidence, and proof boundary", () => {
     const findings = matrixRows().flatMap((row) => {
@@ -157,6 +174,24 @@ describe("KRN behavior gate matrix invariants", () => {
       "matrix guard/proof boundaries"
     ]) {
       expect(docsLintText).toContain(phrase);
+    }
+  });
+
+  it("keeps the old brain-battle command as a compatibility alias only", () => {
+    const scripts = packageScripts();
+    const legacyAlias = scripts["eval:brain-battle:smoke"];
+
+    expect(scripts["eval:krn:smoke"]).toBe("pnpm eval:behavior:smoke && pnpm docs:lint");
+    expect(legacyAlias).toContain("legacy compatibility alias");
+    expect(legacyAlias).toContain("use eval:krn:smoke");
+    expect(legacyAlias).toContain("pnpm eval:krn:smoke");
+
+    for (const [name, command] of Object.entries(scripts)) {
+      if (name === "eval:brain-battle:smoke") {
+        continue;
+      }
+
+      expect(`${name}: ${command}`).not.toContain("eval:brain-battle:smoke");
     }
   });
 
