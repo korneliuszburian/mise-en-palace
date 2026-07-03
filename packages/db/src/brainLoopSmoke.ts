@@ -383,8 +383,7 @@ export const runBrainLoopSmokeCheck = async (
         source: "cli",
         rawIntent: `next brain loop recall ${marker}`,
         metadata: {
-          smokeId: marker,
-          previousMemoryRecordId: memoryRecord.id
+          smokeId: marker
         }
       },
       taskContract: {
@@ -394,14 +393,12 @@ export const runBrainLoopSmokeCheck = async (
         nonGoals: ["no dashboard", "no activation scoring rewrite"],
         acceptance: ["next planning activation includes or explicitly excludes the reviewed MemoryRecord"],
         metadata: {
-          smokeId: marker,
-          previousMemoryRecordId: memoryRecord.id
+          smokeId: marker
         }
       },
       tokenBudget: 360,
       metadata: {
         smokeId: marker,
-        previousMemoryRecordId: memoryRecord.id,
         proof: "automatic_memory_recall_next_compile"
       }
     }, {
