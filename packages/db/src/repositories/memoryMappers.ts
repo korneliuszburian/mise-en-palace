@@ -31,7 +31,7 @@ type MemoryCandidateRow = InferSelectModel<typeof memoryCandidates>;
 type AntiMemoryCandidateRow = InferSelectModel<typeof antiMemoryCandidates>;
 type AntiMemoryRecordRow = InferSelectModel<typeof antiMemoryRecords>;
 
-const memoryRecordKinds = new Set<MemoryCandidate["kind"]>([
+const memoryRecordKinds = new Set<string>([
   "fact",
   "preference",
   "constraint",
@@ -40,7 +40,7 @@ const memoryRecordKinds = new Set<MemoryCandidate["kind"]>([
   "risk"
 ]);
 
-const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
+const memoryCandidateStatuses = new Set<string>([
   "proposed",
   "candidate",
   "accepted",
@@ -67,13 +67,13 @@ const hasStringFields = (
 ): boolean => fields.every((field) => typeof item[field] === "string");
 
 const isMemoryRecordKind = (value: unknown): value is MemoryCandidate["kind"] =>
-  typeof value === "string" && memoryRecordKinds.has(value as MemoryCandidate["kind"]);
+  typeof value === "string" && memoryRecordKinds.has(value);
 
 const isMemoryCandidateStatus = (
   value: unknown
 ): value is MemoryCandidate["status"] =>
   typeof value === "string" &&
-  memoryCandidateStatuses.has(value as MemoryCandidate["status"]);
+  memoryCandidateStatuses.has(value);
 
 type MemoryCandidateJson = Record<string, unknown> &
   Record<typeof requiredMemoryCandidateStringFields[number], string> & {

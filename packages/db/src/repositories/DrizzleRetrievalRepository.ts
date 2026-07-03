@@ -60,7 +60,7 @@ import {
   mapSearchDocument
 } from "./mappers.js";
 
-const contextExclusionReasons = new Set([
+const contextExclusionReasonValues = [
   "stale",
   "invalidated",
   "low_trust",
@@ -70,13 +70,20 @@ const contextExclusionReasons = new Set([
   "irrelevant",
   "unsafe",
   "superseded"
-] as const);
+] as const;
 
-type ContextExclusionReason = typeof contextExclusionReasons extends Set<infer T> ? T : never;
+type ContextExclusionReason = typeof contextExclusionReasonValues[number];
+
+const contextExclusionReasons = new Set<string>(contextExclusionReasonValues);
+
+const isContextExclusionReason = (
+  reason: string
+): reason is ContextExclusionReason =>
+  contextExclusionReasons.has(reason);
 
 const toContextExclusionReason = (reason: string): ContextExclusionReason => {
-  if (contextExclusionReasons.has(reason as ContextExclusionReason)) {
-    return reason as ContextExclusionReason;
+  if (isContextExclusionReason(reason)) {
+    return reason;
   }
 
   return "irrelevant";

@@ -21,17 +21,25 @@ type WorkerJobRow = InferSelectModel<typeof workerJobs>;
 const workerJobTypeSet = new Set<string>(workerJobTypes);
 const workerJobLifecycleStatusSet = new Set<string>(workerJobLifecycleStatuses);
 
+const isWorkerJobType = (value: string): value is WorkerJobType =>
+  workerJobTypeSet.has(value);
+
+const isWorkerJobLifecycleStatus = (
+  value: string
+): value is WorkerJobLifecycleStatus =>
+  workerJobLifecycleStatusSet.has(value);
+
 const toWorkerJobType = (value: string): WorkerJobType => {
-  if (workerJobTypeSet.has(value)) {
-    return value as WorkerJobType;
+  if (isWorkerJobType(value)) {
+    return value;
   }
 
   throw new Error(`Unsupported worker job type: ${value}`);
 };
 
 const toWorkerJobLifecycleStatus = (value: string): WorkerJobLifecycleStatus => {
-  if (workerJobLifecycleStatusSet.has(value)) {
-    return value as WorkerJobLifecycleStatus;
+  if (isWorkerJobLifecycleStatus(value)) {
+    return value;
   }
 
   throw new Error(`Unsupported worker job status: ${value}`);
