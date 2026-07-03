@@ -24,6 +24,14 @@ import {
 import {
   canonicalCandidateKey
 } from "./candidateIdentity.js";
+import {
+  defaultSourceClaimEdgeGraphScore,
+  defaultSourceClaimEdgeRankDownScore,
+  isSourceClaimEdgeRankDownKind,
+  sourceClaimEdgeInfluenceDoesNotProve,
+  sourceClaimEdgeInfluenceScore,
+  sourceClaimEdgeRankDownDoesNotProve
+} from "./sourceClaimEdgeScoring.js";
 
 const confidenceToTrustTier = (confidence: number): ActivationCandidate["trustTier"] => {
   if (confidence >= 85) {
@@ -206,27 +214,6 @@ export interface SourceClaimEdgeInfluenceInput {
   graphScore?: number;
 }
 
-const defaultSourceClaimEdgeGraphScore = 10;
-const defaultSourceClaimEdgeRankDownScore = 60;
-
-const sourceClaimEdgeKindWeight: Record<SourceClaimEdge["kind"], number> = {
-  supports: 1,
-  contradicts: 1,
-  qualifies: 0.75,
-  depends_on: 0.75,
-  duplicates: 0.75,
-  supersedes: 1,
-  narrows: 0.75,
-  invalidates: 1,
-  expires: 1
-};
-
-const rankDownSourceClaimEdgeKinds = new Set<SourceClaimEdge["kind"]>([
-  "invalidates",
-  "expires",
-  "supersedes"
-]);
-
 const connectedSourceClaimIdFor = (
   edge: SourceClaimEdge,
   seedSourceClaimIds: ReadonlySet<SourceClaim["id"]>
@@ -264,7 +251,7 @@ export const applySourceClaimEdgeInfluence = (
     const seedSourceClaimId = edge.fromSourceClaimId === connectedSourceClaimId
       ? edge.toSourceClaimId
       : edge.fromSourceClaimId;
-    const weightedGraphScore = Math.round(baseGraphScore * sourceClaimEdgeKindWeight[edge.kind]);
+    const weightedGraphScore = sourceClaimEdgeInfluenceScore(edge.kind, baseGraphScore);
 
     influenceBySourceClaimId.set(connectedSourceClaimId, {
       edgeIds: [...(existing?.edgeIds ?? []), edge.id],
@@ -296,7 +283,7 @@ export const applySourceClaimEdgeInfluence = (
           edgeIds: [...new Set(influence.edgeIds)],
           edgeKinds: [...new Set(influence.edgeKinds)],
           seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
-          doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+          doesNotProve: sourceClaimEdgeInfluenceDoesNotProve
         }
       }
     };
@@ -322,7 +309,7 @@ export const applySourceClaimEdgeRankDown = (
   }>();
 
   for (const edge of input.edges) {
-    if (!rankDownSourceClaimEdgeKinds.has(edge.kind)) {
+    if (!isSourceClaimEdgeRankDownKind(edge.kind)) {
       continue;
     }
 
@@ -365,8 +352,7 @@ export const applySourceClaimEdgeRankDown = (
           edgeKinds: [...new Set(rankDown.edgeKinds)],
           governingSourceClaimIds: [...new Set(rankDown.governingSourceClaimIds)],
           graphPenalty,
-          doesNotProve:
-            "SourceClaimEdge rank-down does not prove source truth, edge correctness, or broad graph retrieval quality."
+          doesNotProve: sourceClaimEdgeRankDownDoesNotProve
         }
       }
     };
