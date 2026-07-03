@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: execute the reseeded post-cleanup kernel queue from Beads
+current task: execute the post-CLI-wave kernel queue from Beads
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-execute the reseeded post-cleanup kernel queue from Beads.
+execute the post-CLI-wave kernel queue from Beads.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -61,11 +61,14 @@ surface audit. Post-cleanup Beads state was empty except deferred
 `mise-en-palace-plnv`; `mise-en-palace-gfzi` recorded a worker package decision
 brief only, not worker implementation. `mise-en-palace-oez2` hardened run-show
 metadata parsing. `mise-en-palace-ieec` replaced active vague fixture/proof
-vocabulary. `mise-en-palace-yjs7` reseeds the next queue after a
+vocabulary. `mise-en-palace-yjs7` reseeded the next queue after a
 second-opinion-claude block. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
 `mise-en-palace-u6ux` were closed by current-code evidence as already solved or
-stale. `mise-en-palace-z406` is closed; `mise-en-palace-be1t` is the active
-runtime-contract cleanup slice.
+stale. `mise-en-palace-z406` and `mise-en-palace-be1t` are closed with pushed
+CLI boundary/runtime cleanup. `mise-en-palace-9uyc` records the post-CLI-wave
+roadmap and created the next queue: `mise-en-palace-75za`,
+`mise-en-palace-wgei`, `mise-en-palace-y6ib`, `mise-en-palace-h1b4`, and
+`mise-en-palace-ww5l`. `mise-en-palace-plnv` remains deferred.
 ```
 
 ## 2. Product Thesis

@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: execute the reseeded post-cleanup kernel queue from Beads
+current task: execute the post-CLI-wave kernel queue from Beads
 ```
 
 ## Compact Checkpoints
@@ -126,20 +126,23 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 ## Active Task
 
-Status: active; overnight queue active.
+Status: active; overnight queue refreshed after CLI boundary/runtime wave.
 
-Result: post-cleanup queue was empty after `mise-en-palace-ieec`, so
-second-opinion-claude blocked the roadmap slice until a durable next-task output
-and stale-claim rejection artifact existed.
+Result: heartbeat preview boundary extraction and shared command runtime
+contracts are closed and pushed. A follow-up second-opinion-claude review
+blocked the roadmap selection until six candidate areas were explicitly ruled
+in or out with current repo evidence.
 
 Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
-`mise-en-palace-oez2`, and `mise-en-palace-ieec`.
+`mise-en-palace-oez2`, `mise-en-palace-ieec`, `mise-en-palace-yjs7`,
+`mise-en-palace-z406`, and `mise-en-palace-be1t`.
 
-Current queue: `mise-en-palace-yjs7` records the post-parser/naming kernel
-roadmap. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
-`mise-en-palace-u6ux` were closed by current-code evidence as already solved or
-stale. `mise-en-palace-z406` is closed; `mise-en-palace-be1t` is the active
-runtime-contract cleanup slice.
+Current queue: `mise-en-palace-9uyc` records the post-CLI-wave kernel roadmap.
+Next implementation candidates are `mise-en-palace-75za` source-search command
+boundary split, `mise-en-palace-wgei` source artifact preview boundary split,
+`mise-en-palace-y6ib` brain-search readback boundary split,
+`mise-en-palace-h1b4` run-show projection/readback split, and
+`mise-en-palace-ww5l` source artifact behavior eval proof.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
