@@ -100,7 +100,7 @@ const isDiffRisk = (value: unknown): value is EvidenceContract["diffRisk"] =>
   value === "low" || value === "medium" || value === "high";
 
 export const normalizeSmokeSlugPart = (value: string): string => {
-  const normalized = value
+  const smokeSlugPart = value
     .toLowerCase()
     .split(/[^a-z0-9]+/u)
     .filter((part) => part.length > 0)
@@ -108,7 +108,7 @@ export const normalizeSmokeSlugPart = (value: string): string => {
     .slice(0, 48)
     .replace(/-$/u, "");
 
-  return normalized.length === 0 ? "local" : normalized;
+  return smokeSlugPart.length === 0 ? "local" : smokeSlugPart;
 };
 
 const countRows = async (rowsPromise: Promise<CountRow[]>): Promise<number> => {

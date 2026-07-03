@@ -186,10 +186,10 @@ const normalizeTargetPath = (targetPath: string): string =>
   targetPath.trim().replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/\/+$/, "").toLowerCase();
 
 const targetPathBasename = (targetPath: string): string => {
-  const normalized = normalizeTargetPath(targetPath);
-  const parts = normalized.split("/");
+  const targetPathKey = normalizeTargetPath(targetPath);
+  const parts = targetPathKey.split("/");
 
-  return parts[parts.length - 1] ?? normalized;
+  return parts[parts.length - 1] ?? targetPathKey;
 };
 
 const isAgentGuidancePath = (targetPath: string): boolean => {

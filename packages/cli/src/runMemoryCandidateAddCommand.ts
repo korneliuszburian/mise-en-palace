@@ -62,7 +62,7 @@ const sourceLineage = (command: MemoryCandidateAddCommand): { sourceId: string }
 const formatPreview = (
   command: MemoryCandidateAddCommand,
   candidate: ReturnType<typeof parseMemoryCandidateInput>,
-  normalizedKind: string
+  canonicalMemoryKind: string
 ): string =>
   [
     "KRN Memory Candidate Add",
@@ -71,7 +71,7 @@ const formatPreview = (
     "",
     "Memory candidate preview:",
     `kind: ${candidate.kind}`,
-    ...(command.memoryKind === normalizedKind ? [] : [`inputKind: ${command.memoryKind}`]),
+    ...(command.memoryKind === canonicalMemoryKind ? [] : [`inputKind: ${command.memoryKind}`]),
     `status: ${candidate.status}`,
     `summary: ${candidate.summary}`,
     `confidence: ${candidate.confidence}`,
@@ -138,9 +138,9 @@ export const runMemoryCandidateAddCommand = async (
   runtime: MemoryCandidateAddCommandRuntime
 ): Promise<MemoryCandidateAddCommandResult> => {
   const command = runtime.command;
-  const normalizedKind = normalizeKind(command.memoryKind);
+  const canonicalMemoryKind = normalizeKind(command.memoryKind);
 
-  if (normalizedKind !== undefined && !MemoryRecordKindSchema.safeParse(normalizedKind).success) {
+  if (canonicalMemoryKind !== undefined && !MemoryRecordKindSchema.safeParse(canonicalMemoryKind).success) {
     throw new Error(`Unsupported memory kind: ${command.memoryKind}`);
   }
 
@@ -153,7 +153,7 @@ export const runMemoryCandidateAddCommand = async (
     executionRunId: command.runId,
     feedbackDeltaId: command.feedbackDeltaId,
     proposedBy: command.proposedBy ?? "cli",
-    kind: normalizedKind,
+    kind: canonicalMemoryKind,
     summary: command.content,
     body: command.content,
     owner: command.owner ?? "operator",
@@ -166,13 +166,13 @@ export const runMemoryCandidateAddCommand = async (
     metadata: {
       ...command.metadata,
       ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
-      ...(command.memoryKind === normalizedKind ? {} : { inputKind: command.memoryKind })
+      ...(command.memoryKind === canonicalMemoryKind ? {} : { inputKind: command.memoryKind })
     }
   });
 
   if (!command.persist) {
     return {
-      stdout: formatPreview(command, candidateInput, normalizedKind ?? "")
+      stdout: formatPreview(command, candidateInput, canonicalMemoryKind ?? "")
     };
   }
 

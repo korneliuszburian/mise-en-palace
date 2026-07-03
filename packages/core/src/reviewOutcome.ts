@@ -45,18 +45,18 @@ export const isNormalizedReviewRisk = (value: string): value is NormalizedReview
 export const normalizeReviewOutcome = (
   value: string | undefined
 ): NormalizedReviewOutcome | undefined => {
-  const normalized = value?.trim();
-  return normalized !== undefined && isNormalizedReviewOutcome(normalized)
-    ? normalized
+  const trimmedOutcome = value?.trim();
+  return trimmedOutcome !== undefined && isNormalizedReviewOutcome(trimmedOutcome)
+    ? trimmedOutcome
     : undefined;
 };
 
 export const normalizeReviewRisk = (
   value: string | undefined
 ): NormalizedReviewRisk | undefined => {
-  const normalized = value?.trim();
-  return normalized !== undefined && isNormalizedReviewRisk(normalized)
-    ? normalized
+  const trimmedRisk = value?.trim();
+  return trimmedRisk !== undefined && isNormalizedReviewRisk(trimmedRisk)
+    ? trimmedRisk
     : undefined;
 };
 
