@@ -5,10 +5,10 @@ import type {
 
 import {
   runRunShowCommand
-} from "./runRunShowCommand.js";
+} from "../runRunShowCommand.js";
 import type {
   RunReadbackResource
-} from "./runRunShowCommand.js";
+} from "../runRunShowCommand.js";
 
 const now = "2026-06-25T14:40:00.000Z";
 

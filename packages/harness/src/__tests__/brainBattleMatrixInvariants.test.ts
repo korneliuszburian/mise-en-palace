@@ -165,7 +165,7 @@ describe("KRN brain-battle eval matrix invariants", () => {
     expect(runReadbackRow).toBeDefined();
     expect(runReadbackRow?.check).toContain("candidate reviewability metadata");
     expect(runReadbackRow?.guard).toContain("reviewability labels and reasons");
-    expect(runReadbackRow?.evidence).toContain("packages/cli/src/runRunShowCommand.test.ts");
+    expect(runReadbackRow?.evidence).toContain("packages/cli/src/__tests__/runRunShowCommand.test.ts");
     expect(runReadbackRow?.evidence).toContain(
       "docs/reviews/controlled-dogfood/2026-06-28-v207-best-pattern-intake-applied-proof/REPORT.md"
     );
