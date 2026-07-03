@@ -70,6 +70,8 @@ roadmap and created the next queue: `mise-en-palace-75za`,
 `mise-en-palace-wgei`, `mise-en-palace-y6ib`, `mise-en-palace-h1b4`, and
 `mise-en-palace-ww5l`. `mise-en-palace-75za` is closed and has moved
 source-search readback/format/ranking helpers out of the command runner.
+`mise-en-palace-wgei` is closed and has moved source artifact preview
+persistence/readback/JSON helpers out of the command runner.
 `mise-en-palace-plnv` remains deferred.
 ```
 

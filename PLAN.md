@@ -140,8 +140,9 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 Current queue: `mise-en-palace-9uyc` records the post-CLI-wave kernel roadmap.
 `mise-en-palace-75za` source-search command boundary split is closed:
 source-search readback/format/ranking helpers moved out of the command runner.
-Next implementation candidates are `mise-en-palace-wgei` source artifact preview boundary split,
-`mise-en-palace-y6ib` brain-search readback boundary split,
+`mise-en-palace-wgei` source artifact preview boundary split is closed:
+DB persistence/readback helpers moved out of the command runner.
+Next implementation candidates are `mise-en-palace-y6ib` brain-search readback boundary split,
 `mise-en-palace-h1b4` run-show projection/readback split, and
 `mise-en-palace-ww5l` source artifact behavior eval proof.
 Deferred human decision: `mise-en-palace-plnv`.
