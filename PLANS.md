@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI evidence test fixture typecheck batch
+current task: CLI source test fixture typecheck batch
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI evidence test fixture typecheck batch is active.
-The scoped CLI test typecheck gate now includes the evidence command test batch.
-Broader CLI test fixture-shape debt remains tracked as bounded Beads follow-up work.
+CLI source test fixture typecheck batch is active.
+The scoped CLI test typecheck gate now includes the source command test batch.
+Remaining CLI memory fixture-shape debt remains tracked as bounded Beads follow-up work.
 ```
 
 Latest outcome:
 
 ```txt
-CLI evidence test fixture typecheck batch: `packages/cli/src/__tests__/evidence.test.ts`
+CLI source test fixture typecheck batch: `packages/cli/src/__tests__/source.test.ts`
 now satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-test-typecheck-evidence-batch.md
+docs/runs/2026-07-03-cli-test-typecheck-source-batch.md
 CI: pending for this slice.
-CI result: KRN CI 28644394077 passed for this slice.
-Next: pick the next smallest failing fixture batch by strict `tsc` output.
+Next: finish the remaining memory fixture batch by strict `tsc` output.
 ```
 
 ## 2. Product Thesis

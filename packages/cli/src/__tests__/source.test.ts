@@ -13,6 +13,7 @@ import type {
 } from "@krn/harness/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
+import type { DatabaseRuntime } from "../databaseRuntime.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -36,6 +37,9 @@ const unusedMemoryRepository = {
   async getMemoryRecordById(_id: string): Promise<never> {
     throw new Error("getMemoryRecordById should not be called");
   },
+  async listMemoryRecordsForProject(): Promise<never> {
+    throw new Error("listMemoryRecordsForProject should not be called");
+  },
   async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
     throw new Error("recordMemoryApplication should not be called");
   },
@@ -55,6 +59,62 @@ const unusedMemoryRepository = {
     throw new Error("rejectAntiMemoryCandidate should not be called");
   }
 };
+
+const unusedSourceRepository = {
+  async createSourceArtifact(): Promise<never> {
+    throw new Error("createSourceArtifact should not be called");
+  },
+  async createSourceClaim(): Promise<never> {
+    throw new Error("createSourceClaim should not be called");
+  },
+  async getSourceClaimById(): Promise<never> {
+    throw new Error("getSourceClaimById should not be called");
+  },
+  async listClaimsForProject(): Promise<never> {
+    throw new Error("listClaimsForProject should not be called");
+  },
+  async createSourceClaimEdge(): Promise<never> {
+    throw new Error("createSourceClaimEdge should not be called");
+  },
+  async listSourceClaimEdgesForClaim(): Promise<never> {
+    throw new Error("listSourceClaimEdgesForClaim should not be called");
+  },
+  async createSourceDecisionEdge(): Promise<never> {
+    throw new Error("createSourceDecisionEdge should not be called");
+  },
+  async getSourceDecisionEdgeById(): Promise<never> {
+    throw new Error("getSourceDecisionEdgeById should not be called");
+  },
+  async createSourceRejection(): Promise<never> {
+    throw new Error("createSourceRejection should not be called");
+  }
+} satisfies DatabaseRuntime["sourceRepository"];
+
+type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
+type SourceHarnessRunRepository =
+  NoStoreCompilerDependencies["harnessRunRepository"] &
+  DatabaseRuntime["harnessRunRepository"];
+
+const createSourceHarnessRunRepository = (
+  dependencies: NoStoreCompilerDependencies
+): SourceHarnessRunRepository => ({
+  ...dependencies.harnessRunRepository,
+  async createExecutionRun(): Promise<never> {
+    throw new Error("createExecutionRun should not be called");
+  },
+  async getHarnessRunByExecutionRunId(): Promise<never> {
+    throw new Error("getHarnessRunByExecutionRunId should not be called");
+  },
+  async createEvidenceBundle(): Promise<never> {
+    throw new Error("createEvidenceBundle should not be called");
+  },
+  async createReviewAssessment(): Promise<never> {
+    throw new Error("createReviewAssessment should not be called");
+  },
+  async createFeedbackDelta(): Promise<never> {
+    throw new Error("createFeedbackDelta should not be called");
+  }
+});
 
 describe("runCli", () => {
   it("prints source claim add help", async () => {
@@ -186,10 +246,11 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact(input) {
               return {
                 id: "source-artifact-1",
-                projectId: input.projectId,
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
                 kind: input.kind,
                 trustTier: input.trustTier,
                 uri: input.uri,
@@ -220,7 +281,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
@@ -356,6 +417,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -410,7 +472,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
@@ -467,6 +529,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -494,7 +557,7 @@ describe("runCli", () => {
               throw new Error("createSourceDecisionEdge should not be called for rejected claim");
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
@@ -543,6 +606,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -570,7 +634,7 @@ describe("runCli", () => {
               throw new Error("createSourceDecisionEdge should not be called for proposed claim");
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
@@ -689,6 +753,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -704,10 +769,10 @@ describe("runCli", () => {
             async createSourceRejection(input) {
               return {
                 id: "source-rejection-1",
-                projectId: input.projectId,
-                executionRunId: input.executionRunId,
-                sourceArtifactId: input.sourceArtifactId,
-                sourceClaimId: input.sourceClaimId,
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+                ...(input.sourceArtifactId === undefined ? {} : { sourceArtifactId: input.sourceArtifactId }),
+                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
                 title: input.title,
                 attemptedClaim: input.attemptedClaim,
                 rejectedBecause: input.rejectedBecause,
@@ -719,7 +784,8 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+          memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
           }
