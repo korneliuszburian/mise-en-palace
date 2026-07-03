@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
 
-import { commandResultDoesNotProve } from "@krn/core";
 import type { ObservationItem } from "@krn/core";
-import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
 
-import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -25,95 +22,6 @@ describe("runCli", () => {
   });
 
   it("guards self-hosting evidence provenance through reflect", async () => {
-    const dependencies = createNoStoreCompilerDependencies({
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
-    const aggregate: HarnessRunAggregate = {
-      operatorIntent: {
-        id: "operator-intent-1",
-        workspaceId: "workspace-1",
-        projectId: "project-1",
-        source: "cli",
-        rawIntent: "self-hosting evidence provenance",
-        metadata: {},
-        createdAt: now
-      },
-      taskContract: {
-        id: "task-contract-1",
-        operatorIntentId: "operator-intent-1",
-        projectId: "project-1",
-        title: "self-hosting evidence provenance",
-        objective: "Represent plan/evidence/observe/reflect without false command proof.",
-        constraints: ["no MemoryRecord mutation"],
-        nonGoals: ["no automatic candidate rows"],
-        acceptance: ["explicit command provenance is preserved"],
-        status: "active",
-        metadata: {},
-        createdAt: now,
-        updatedAt: now
-      },
-      harnessPlan: {
-        id: "harness-plan-1",
-        taskContractId: "task-contract-1",
-        version: 1,
-        status: "ready",
-        summary: "self-hosting provenance plan",
-        metadata: {},
-        createdAt: now,
-        updatedAt: now
-      },
-      executionRun: {
-        id: "execution-run-1",
-        harnessPlanId: "harness-plan-1",
-        adapter: "codex",
-        status: "succeeded",
-        metadata: {},
-        createdAt: now,
-        updatedAt: now
-      },
-      evidenceBundles: [{
-        id: "evidence-bundle-1",
-        executionRunId: "execution-run-1",
-        status: "captured",
-        changedFiles: ["packages/cli/src/parseEvidenceArgs.ts"],
-        commands: [
-          {
-            command: "pnpm typecheck",
-            status: "passed",
-            provenance: "operator_reported",
-            assertedBy: "operator",
-            doesNotProve: commandResultDoesNotProve
-          },
-          {
-            command: "pnpm test",
-            status: "passed",
-            provenance: "captured_output_file",
-            outputRef: ".local-lab/p7-self-hosting/03-test.txt",
-            doesNotProve: commandResultDoesNotProve
-          }
-        ],
-        diffRisk: "medium",
-        reviewBurden: "Review persisted command provenance only.",
-        rollbackPath: "git revert <commit>",
-        metadata: {},
-        createdAt: now,
-        updatedAt: now
-      }],
-      reviewAssessments: [],
-      feedbackDeltas: [],
-      runEvents: [{
-        id: "run-event-1",
-        executionRunId: "execution-run-1",
-        sequence: 1,
-        type: "krn.plan.persisted",
-        severity: "info",
-        message: "Self-hosting plan persisted",
-        payload: {},
-        occurredAt: now
-      }]
-    };
-    const observedBodies: string[] = [];
     const observationItem: ObservationItem = {
       id: "observation-item-1",
       groupId: "observation-group-1",
@@ -203,7 +111,7 @@ describe("runCli", () => {
               return {
                 id: "reflection-record-1",
                 scope: input.scope,
-                status: input.status,
+                status: input.status ?? "candidate",
                 summary: input.summary,
                 input: input.input,
                 output: input.output,
