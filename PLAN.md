@@ -103,7 +103,7 @@ CLI scoped test typecheck: active smoke runs strict `tsc`; run-show, selected co
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
-pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
+pattern/research brain: helped usefulness feedback now biases retained-pattern planning before unfiltered catalog fallback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
@@ -150,7 +150,7 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-h1b4/ij82/otyu` split and CI-gated DB-backed run-show smoke.
 `mise-en-palace-m9yb/w4px` refreshed the post-refactor queue and applied retained `ts-boundary-unknown-first-result-state` to brain-search JSON readback.
 `mise-en-palace-7hoy` added duplicate SourceClaimEdge selection proof beyond invalidation rank-down.
-`mise-en-palace-fx89/or40/283u/9qwr/xffw/opfh/h5g3/tva6/kdr7/7i9x/h2vl/f1d8/03ti/bsmn/s6q6/35j9/vsav/1tp1/hd7a/hxb8/d1ck/egmj/5rti/a1r4` removed typed escape hatches, extracted source-search readbacks, selected next priority by Claude review, and proved next-run automatic memory recall; deferred human decision: `plnv`.
+`mise-en-palace-fx89/or40/283u/9qwr/xffw/opfh/h5g3/tva6/kdr7/7i9x/h2vl/f1d8/03ti/bsmn/s6q6/35j9/vsav/1tp1/hd7a/hxb8/d1ck/egmj/5rti/a1r4/42bp` removed typed escape hatches, extracted source-search readbacks, selected next priority by Claude review, proved next-run automatic memory recall, and made helped retained patterns plan-first; deferred human decision: `plnv`.
 
 Boundary: one DB-backed automatic memory recall path is proven. Do not claim product readiness, ranking quality, autonomous reflection quality, worker runtime, or multi-repo usefulness.
 
@@ -166,7 +166,7 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 ## Remaining Product Gaps
 
 ```txt
-1. pattern/research brain continuously applied to code quality
+1. pattern/research brain quality beyond helped-feedback planning bias
 2. source/graph relation ranking quality across broader corpora
 3. product UI/API/MCP after usefulness/security gates
 ```

@@ -550,6 +550,66 @@ const formatPersistedIdentityLines = (
       ]
 );
 
+const helpedRetainedPatternReason =
+  "Retained brain knowledge with helped usefulness feedback matched the pre-coding plan query.";
+
+const withRetainedPatternSelectionReason = (
+  selection: RetainedPatternPlanSelection,
+  reason: string
+): RetainedPatternPlanSelection => ({
+  ...selection,
+  reason
+});
+
+const retainedPatternUsefulnessPasses = ["helped", undefined] as const;
+
+type RetainedPatternUsefulnessPass = (typeof retainedPatternUsefulnessPasses)[number];
+
+const retainedPatternFilter = (
+  query: string,
+  usefulnessOutcome: RetainedPatternUsefulnessPass
+) => ({
+  text: query,
+  ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome })
+});
+
+const readRetainedPatternSelection = async (
+  query: string,
+  runtime: PlanCommandRuntime,
+  usefulnessOutcome: RetainedPatternUsefulnessPass
+): Promise<RetainedPatternPlanSelection> => {
+  const result = await runKnowledgeCardsCommand({
+    ...(runtime.cwd === undefined ? {} : { cwd: runtime.cwd }),
+    cardFiles: [],
+    patternFiles: [],
+    catalogFiles: [defaultBrainKnowledgeCatalogFile],
+    filter: retainedPatternFilter(query, usefulnessOutcome),
+    format: "json",
+    limit: 5
+  });
+  const selection = retainedPatternSelectionFromKnowledgeJson(query, result.stdout);
+
+  return usefulnessOutcome === "helped" && selection.status === "selected"
+    ? withRetainedPatternSelectionReason(selection, helpedRetainedPatternReason)
+    : selection;
+};
+
+const firstSelectedRetainedPattern = async (
+  queries: readonly string[],
+  runtime: PlanCommandRuntime,
+  usefulnessOutcome: RetainedPatternUsefulnessPass
+): Promise<RetainedPatternPlanSelection | undefined> => {
+  for (const query of queries) {
+    const selection = await readRetainedPatternSelection(query, runtime, usefulnessOutcome);
+
+    if (selection.status === "selected") {
+      return selection;
+    }
+  }
+
+  return undefined;
+};
+
 const buildRetainedPatternSelection = async (
   task: string,
   runtime: PlanCommandRuntime
@@ -562,21 +622,10 @@ const buildRetainedPatternSelection = async (
   }))];
 
   try {
-    for (const query of queries) {
-      const result = await runKnowledgeCardsCommand({
-        ...(runtime.cwd === undefined ? {} : { cwd: runtime.cwd }),
-        cardFiles: [],
-        patternFiles: [],
-        catalogFiles: [defaultBrainKnowledgeCatalogFile],
-        filter: {
-          text: query
-        },
-        format: "json",
-        limit: 5
-      });
-      const selection = retainedPatternSelectionFromKnowledgeJson(query, result.stdout);
+    for (const usefulnessOutcome of retainedPatternUsefulnessPasses) {
+      const selection = await firstSelectedRetainedPattern(queries, runtime, usefulnessOutcome);
 
-      if (selection.status === "selected") {
+      if (selection !== undefined) {
         return selection;
       }
     }
