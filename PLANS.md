@@ -74,6 +74,9 @@ source-search readback/format/ranking helpers out of the command runner.
 persistence/readback/JSON helpers out of the command runner.
 `mise-en-palace-ww5l` is closed and has added a deterministic source artifact
 preview extraction -> source activation context reuse case to `eval:krn:smoke`.
+`mise-en-palace-y6ib` is closed and has moved brain-search selectedKnowledge,
+target-fit, source-search caveat, activation-utility, and text/JSON readback
+assembly out of the command runner.
 `mise-en-palace-plnv` remains deferred.
 ```
 
