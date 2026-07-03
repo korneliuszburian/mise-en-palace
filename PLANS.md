@@ -68,7 +68,9 @@ stale. `mise-en-palace-z406` and `mise-en-palace-be1t` are closed with pushed
 CLI boundary/runtime cleanup. `mise-en-palace-9uyc` records the post-CLI-wave
 roadmap and created the next queue: `mise-en-palace-75za`,
 `mise-en-palace-wgei`, `mise-en-palace-y6ib`, `mise-en-palace-h1b4`, and
-`mise-en-palace-ww5l`. `mise-en-palace-plnv` remains deferred.
+`mise-en-palace-ww5l`. `mise-en-palace-75za` is closed and has moved
+source-search readback/format/ranking helpers out of the command runner.
+`mise-en-palace-plnv` remains deferred.
 ```
 
 ## 2. Product Thesis
