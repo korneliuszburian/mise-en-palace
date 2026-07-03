@@ -1,4 +1,7 @@
 import { eq, sql } from "drizzle-orm";
+import {
+  retrieveActivationCandidates
+} from "@krn/harness";
 
 import {
   assertSmokeReadbackChecks,
@@ -33,12 +36,33 @@ export interface SourceGraphSmokeReport {
   sourceRejectionId: string;
   runClaimCount: number;
   sourceClaimEdgeCount: number;
+  activationCandidateCount: number;
+  rankedDownSourceClaimId: string;
+  sourceGraphRankDownCount: number;
+  sourceGraphRankDownEdgeKinds: string[];
   runDecisionEdgeCount: number;
   rejectionCount: number;
   outboxEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
+
+interface SourceGraphRankDownMetadata {
+  edgeKinds: string[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isSourceGraphRankDownMetadata = (
+  value: unknown
+): value is SourceGraphRankDownMetadata => {
+  if (!isRecord(value) || !Array.isArray(value.edgeKinds)) {
+    return false;
+  }
+
+  return value.edgeKinds.every((edgeKind) => typeof edgeKind === "string");
+};
 
 export const runSourceGraphSmokeCheck = async (
   input: SourceGraphSmokeInput
@@ -76,8 +100,11 @@ export const runSourceGraphSmokeCheck = async (
 
     const {
       executionRun,
+      memoryRepository,
       project,
       retrievalRunId: compiledRetrievalRunId,
+      result,
+      retrievalRepository,
       sourceRepository
     } = await createCompiledSmokeExecution({
       acceptance: "read back source graph records and clean smoke rows",
@@ -175,7 +202,7 @@ export const runSourceGraphSmokeCheck = async (
         consumer: "B-01 temporal source graph smoke",
         scope: "source graph repository readback",
         evidenceRef: executionRun.id,
-        doesNotProve: "This temporal edge does not prove activation uses invalidation yet."
+        doesNotProve: "This temporal edge does not prove source truth or broad source graph ranking quality."
       }
     });
     const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
@@ -209,6 +236,31 @@ export const runSourceGraphSmokeCheck = async (
     const sourceClaimEdgesForClaim = await sourceRepository.listSourceClaimEdgesForClaim(
       sourceClaim.id
     );
+    const activationReadback = await retrieveActivationCandidates({
+      taskContract: result.taskContract,
+      limits: {
+        memory: 0,
+        source: 10,
+        search: 0,
+        antiMemory: 0
+      },
+      repositories: {
+        memoryRepository,
+        sourceRepository,
+        retrievalRepository
+      }
+    });
+    const rankedDownCandidate = activationReadback.candidates.find((candidate) =>
+      candidate.subjectType === "source_claim" &&
+      candidate.subjectId === staleSourceClaim.id &&
+      isSourceGraphRankDownMetadata(candidate.metadata.sourceClaimEdgeRankDown)
+    );
+    const sourceGraphRankDown = isSourceGraphRankDownMetadata(
+      rankedDownCandidate?.metadata.sourceClaimEdgeRankDown
+    )
+      ? rankedDownCandidate.metadata.sourceClaimEdgeRankDown
+      : undefined;
+    const sourceGraphRankDownEdgeKinds = sourceGraphRankDown?.edgeKinds ?? [];
     const rejectionRows = await db
       .select()
       .from(sourceRejections)
@@ -245,6 +297,10 @@ export const runSourceGraphSmokeCheck = async (
             edge.toSourceClaimId === staleSourceClaim.id
         )
       },
+      {
+        label: "activation source graph rank-down readback",
+        passed: sourceGraphRankDownEdgeKinds.includes("invalidates")
+      },
       { label: "source rejection row count", passed: rejectionRows.length === 1 },
       {
         label: "source rejection readback",
@@ -275,6 +331,10 @@ export const runSourceGraphSmokeCheck = async (
       sourceRejectionId: sourceRejection.id,
       runClaimCount: runClaims.length,
       sourceClaimEdgeCount: sourceClaimEdgesForClaim.length,
+      activationCandidateCount: activationReadback.candidates.length,
+      rankedDownSourceClaimId: rankedDownCandidate?.subjectId ?? "missing",
+      sourceGraphRankDownCount: rankedDownCandidate === undefined ? 0 : 1,
+      sourceGraphRankDownEdgeKinds,
       runDecisionEdgeCount: runDecisionEdges.length,
       rejectionCount: rejectionRows.length,
       outboxEventCount: outboxRows[0]?.count ?? 0,

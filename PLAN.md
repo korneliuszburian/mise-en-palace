@@ -117,7 +117,7 @@ source-graph rank-down: invalidates/expires/supersedes SourceClaimEdges from acc
 source decision gaps readback: read-only `krn source decision gaps` exposes accepted SourceClaims missing SourceDecisionEdge support without CI mutation
 capability plan binding cleanup: decorative bindingKinds/policy_gate/tool_boundary vocabulary removed from active capability requirements
 brain code-quality pattern dogfood: retained pattern selection exposes targetFit summary and recommended use in plan/run readback
-source graph relation ranking proof: invalidates SourceClaimEdge changes selected support, graphReadback, and decision-support caveat in source-search JSON
+source graph relation ranking proof: invalidates SourceClaimEdge changes selected support and is now DB-smoke visible in activation rank-down readback
 behavior smoke naming: eval:krn:smoke is the active deterministic behavior/docs gate; eval:brain-battle:smoke is a legacy compatibility alias only
 eval proof-boundary manifest scope: manifest remains docs-lint/test evidence, not public harness runtime API
 skill surface audit: retained repo-local skills stay operational guidance; active matrix cannot cite missing skill files
@@ -167,7 +167,7 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 
 ```txt
 1. pattern/research brain continuously applied to code quality
-2. source/graph relation ranking quality beyond one focused proof
+2. source/graph relation ranking quality across broader corpora
 3. product UI/API/MCP after usefulness/security gates
 ```
 
