@@ -128,17 +128,17 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 Status: active; overnight queue active.
 
-Result: one real CLI help task and one related help task ran through persisted
-plan/evidence/observe/reflect, memory candidate promotion, second-opinion
-review, and explicit memory application.
+Result: post-cleanup queue was empty after `mise-en-palace-ieec`, so
+second-opinion-claude blocked the roadmap slice until a durable next-task output
+and stale-claim rejection artifact existed.
 
-Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
-`mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
-`mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
+Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
+`mise-en-palace-oez2`, and `mise-en-palace-ieec`.
 
-Current queue: `mise-en-palace-ieec` completes the vague placeholder naming
-audit. Then synthesize the next highest-ROI kernel task from Beads and current
-code evidence.
+Current queue: `mise-en-palace-yjs7` records the post-parser/naming kernel
+roadmap. Next implementation target is `mise-en-palace-lr94`
+(`codexAdapterSmoke.ts` ceremony reduction), followed by
+`mise-en-palace-dwsz` (strict CLI test typecheck) unless Beads priority changes.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

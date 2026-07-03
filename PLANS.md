@@ -60,7 +60,10 @@ behavior-smoke legacy naming, eval-manifest API scoping, and retained skill
 surface audit. Post-cleanup Beads state was empty except deferred
 `mise-en-palace-plnv`; `mise-en-palace-gfzi` recorded a worker package decision
 brief only, not worker implementation. `mise-en-palace-oez2` hardened run-show
-metadata parsing. `mise-en-palace-ieec` is the current naming audit slice.
+metadata parsing. `mise-en-palace-ieec` replaced active vague fixture/proof
+vocabulary. `mise-en-palace-yjs7` reseeds the next queue after a
+second-opinion-claude block: `mise-en-palace-lr94`, `mise-en-palace-dwsz`,
+`mise-en-palace-z406`, `mise-en-palace-be1t`, and `mise-en-palace-u6ux`.
 ```
 
 ## 2. Product Thesis
