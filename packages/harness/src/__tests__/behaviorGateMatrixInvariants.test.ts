@@ -178,6 +178,19 @@ describe("KRN behavior gate matrix invariants", () => {
     }
   });
 
+  it("does not cite deleted policy gate surfaces as implemented evidence", () => {
+    const activeProofSurfaces = [
+      readFileSync(matrixPath, "utf8"),
+      readFileSync(cliSurfacesPath, "utf8")
+    ];
+
+    for (const activeProofSurface of activeProofSurfaces) {
+      expect(activeProofSurface).not.toContain("packages/core/src/policy.ts");
+      expect(activeProofSurface).not.toContain("PolicyGateId");
+      expect(activeProofSurface).not.toContain("PolicyGate");
+    }
+  });
+
   it("keeps run readback matrix coverage tied to candidate reviewability metadata", () => {
     const runReadbackRow = matrixRows().find((row) =>
       row.check.includes("Run readback distinguishes proof from non-proof")
