@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { AntiMemoryCandidate } from "@krn/core";
+import type {
+  AntiMemoryCandidate,
+  MemoryCandidate
+} from "@krn/core";
+import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
 import type {
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
@@ -96,15 +100,66 @@ type MemoryHarnessRunRepository =
   NoStoreCompilerDependencies["harnessRunRepository"] &
   DatabaseRuntime["harnessRunRepository"];
 
+const memoryHarnessRunAggregate = (projectId: string): HarnessRunAggregate => ({
+  operatorIntent: {
+    id: "intent-1",
+    workspaceId: "workspace-1",
+    projectId,
+    source: "cli",
+    rawIntent: "memory candidate add",
+    metadata: {},
+    createdAt: now
+  },
+  taskContract: {
+    id: "task-1",
+    operatorIntentId: "intent-1",
+    projectId,
+    title: "Capture memory candidate",
+    objective: "Persist a reviewed memory candidate.",
+    constraints: [],
+    nonGoals: [],
+    acceptance: [],
+    status: "active",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  harnessPlan: {
+    id: "harness-plan-1",
+    taskContractId: "task-1",
+    version: 1,
+    status: "ready",
+    summary: "Memory candidate plan",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  executionRun: {
+    id: "execution-run-1",
+    harnessPlanId: "harness-plan-1",
+    adapter: "codex",
+    status: "running",
+    startedAt: now,
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  },
+  evidenceBundles: [],
+  reviewAssessments: [],
+  feedbackDeltas: [],
+  runEvents: []
+});
+
 const createMemoryHarnessRunRepository = (
-  dependencies: NoStoreCompilerDependencies
+  dependencies: NoStoreCompilerDependencies,
+  runProjectId?: string
 ): MemoryHarnessRunRepository => ({
   ...dependencies.harnessRunRepository,
   async createExecutionRun(): Promise<never> {
     throw new Error("createExecutionRun should not be called");
   },
-  async getHarnessRunByExecutionRunId(): Promise<never> {
-    throw new Error("getHarnessRunByExecutionRunId should not be called");
+  async getHarnessRunByExecutionRunId() {
+    return runProjectId === undefined ? undefined : memoryHarnessRunAggregate(runProjectId);
   },
   async createEvidenceBundle(): Promise<never> {
     throw new Error("createEvidenceBundle should not be called");
@@ -158,6 +213,33 @@ const createPersistedAntiMemoryCandidate = (
 
   return candidate;
 };
+
+const createPersistedMemoryCandidate = (
+  input: CreateMemoryCandidateInput
+): MemoryCandidate => ({
+  id: "memory-candidate-1",
+  projectId: input.projectId,
+  ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+  ...(input.feedbackDeltaId === undefined ? {} : { feedbackDeltaId: input.feedbackDeltaId }),
+  proposedBy: input.proposedBy,
+  kind: input.kind,
+  status: input.status ?? "proposed",
+  summary: input.summary,
+  body: input.body,
+  owner: input.owner,
+  confidence: input.confidence,
+  applicationGuidance: input.applicationGuidance,
+  ...(input.invalidationRule === undefined
+    ? {}
+    : { invalidationRule: input.invalidationRule }),
+  sourceClaimIds: input.sourceClaimIds ?? [],
+  sourceLineage: input.sourceLineage,
+  isUserPreference: input.isUserPreference,
+  validFrom: now,
+  metadata: input.metadata ?? {},
+  createdAt: now,
+  updatedAt: now
+});
 
 describe("runCli", () => {
   it("previews memory candidate add without DB writes", async () => {
@@ -355,32 +437,10 @@ describe("runCli", () => {
             async createMemoryCandidate(input) {
               capturedCandidate = input;
 
-              return {
-                id: "memory-candidate-1",
-                projectId: input.projectId,
-                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-                proposedBy: input.proposedBy,
-                kind: input.kind,
-                status: input.status ?? "proposed",
-                summary: input.summary,
-                body: input.body,
-                owner: input.owner,
-                confidence: input.confidence,
-                applicationGuidance: input.applicationGuidance,
-                ...(input.invalidationRule === undefined
-                  ? {}
-                  : { invalidationRule: input.invalidationRule }),
-                sourceClaimIds: input.sourceClaimIds ?? [],
-                sourceLineage: input.sourceLineage,
-                isUserPreference: input.isUserPreference,
-                validFrom: now,
-                metadata: input.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
+              return createPersistedMemoryCandidate(input);
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "run-project-1"),
           async close() {
             return undefined;
           }
@@ -395,7 +455,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("candidateEvidenceProvenance: operator_reported");
     expect(result.stdout).toContain("candidateEvidenceRefs: raw-evidence:run-event-1");
     expect(capturedCandidate).toMatchObject({
-      projectId: "project-1",
+      projectId: "run-project-1",
       executionRunId: "execution-run-1",
       proposedBy: "cli",
       kind: "constraint",
@@ -408,6 +468,69 @@ describe("runCli", () => {
           doesNotProve: "This does not prove the candidate is approved Memory Core truth."
         }
       }
+    });
+  });
+
+  it("falls back to runtime project when memory candidate add run lookup is unavailable", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedCandidate: CreateMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "add",
+        "--run-id",
+        "execution-run-missing",
+        "--kind",
+        "constraint",
+        "--content",
+        "Use bounded Postgres memory project scope",
+        "--source-lineage",
+        "evidence-bundle-1",
+        "--confidence",
+        "high",
+        "--application-guidance",
+        "Use when a persisted run cannot be resolved during memory candidate capture",
+        "--invalidation-rule",
+        "Revisit when run lookup becomes mandatory",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async createMemoryCandidate(input) {
+              capturedCandidate = input;
+
+              return createPersistedMemoryCandidate(input);
+            }
+          },
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(capturedCandidate).toMatchObject({
+      projectId: "project-1",
+      executionRunId: "execution-run-missing",
+      sourceLineage: [{ sourceId: "evidence-bundle-1" }]
     });
   });
 

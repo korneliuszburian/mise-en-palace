@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: overnight kernel queue active after Shared Brain Vertical Loop proof
+current task: graph relation consensus decision-closure loop after store-backed SBV reuse proof
 ```
 
 ## Compact Checkpoints
@@ -140,9 +140,9 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 ## Remaining Product Gaps
 
 ```txt
-1. shared brain kernel vertical loop
-2. pattern/research brain continuously applied to code quality
-3. graph/ingest/heartbeat/consensus vertical loops
+1. graph relation consensus decision-closure loop (`mise-en-palace-royf`)
+2. retained-pattern catalog recall gap after store-backed memory reuse
+3. pattern/research brain continuously applied to code quality
 4. product UI/API/MCP after usefulness/security gates
 ```
 

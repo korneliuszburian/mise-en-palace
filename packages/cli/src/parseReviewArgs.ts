@@ -202,6 +202,14 @@ const reviewOptionHandlers: Record<ReviewOptionName, ReviewOptionHandler> = {
 };
 
 export const parseReviewArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "--help" || rest[0] === "-h") {
+    return {
+      command: {
+        kind: "reviewAssessHelp"
+      }
+    };
+  }
+
   if (rest[0] !== "assess") {
     return {
       error: formatReviewAssessUsage()

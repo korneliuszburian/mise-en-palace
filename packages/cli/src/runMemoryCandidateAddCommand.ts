@@ -119,6 +119,21 @@ const formatPersisted = (
         ])
   ].join("\n");
 
+const projectIdForMemoryCandidate = async (
+  databaseRuntime: Awaited<ReturnType<CreateMemoryCommandDatabaseRuntime>>,
+  executionRunId: string | undefined
+): Promise<string> => {
+  if (executionRunId === undefined) {
+    return databaseRuntime.projectId;
+  }
+
+  const run = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
+    executionRunId
+  );
+
+  return run?.taskContract.projectId ?? run?.operatorIntent.projectId ?? databaseRuntime.projectId;
+};
+
 export const runMemoryCandidateAddCommand = async (
   runtime: MemoryCandidateAddCommandRuntime
 ): Promise<MemoryCandidateAddCommandResult> => {
@@ -177,8 +192,12 @@ export const runMemoryCandidateAddCommand = async (
       await assertSourceClaimExists(databaseRuntime, sourceClaimId);
     }
 
+    const projectId = await projectIdForMemoryCandidate(
+      databaseRuntime,
+      candidateInput.executionRunId
+    );
     const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
-      projectId: databaseRuntime.projectId,
+      projectId,
       ...(candidateInput.executionRunId === undefined
         ? {}
         : { executionRunId: candidateInput.executionRunId }),

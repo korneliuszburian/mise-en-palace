@@ -184,6 +184,14 @@ describe("runCli", () => {
       {
         args: ["memory", "candidate", "add", "-h"],
         usage: "Usage: krn memory candidate add"
+      },
+      {
+        args: ["review", "--help"],
+        usage: "Usage: krn review assess"
+      },
+      {
+        args: ["review", "-h"],
+        usage: "Usage: krn review assess"
       }
     ] as const;
 
@@ -217,10 +225,6 @@ describe("runCli", () => {
       {
         args: ["memory", "--help"],
         usage: "Usage: krn memory candidate add"
-      },
-      {
-        args: ["review", "--help"],
-        usage: "Usage: krn review assess"
       }
     ] as const;
 
@@ -250,6 +254,10 @@ describe("runCli", () => {
       {
         args: ["reflect", "--scope"],
         usage: "--scope requires a value"
+      },
+      {
+        args: ["review", "--bogus"],
+        usage: "Usage: krn review assess"
       }
     ] as const;
 

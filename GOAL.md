@@ -27,13 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: overnight kernel queue active after Shared Brain Vertical Loop proof.
+current task: graph relation consensus decision-closure loop after store-backed SBV reuse proof.
 ```
 
-Current task state: `mise-en-palace-pvtf` and `mise-en-palace-glor` are closed.
-Manual memory reuse was proven; automatic memory recall was not. Overnight
-queue starts with `mise-en-palace-b18l`, `mise-en-palace-1c5x`, and
-`mise-en-palace-royf`.
+Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
+`mise-en-palace-b18l`, and `mise-en-palace-1c5x` are closed or locally
+implemented pending final push/CI. Store-backed memory reuse now works when the
+MemoryCandidate preserves run project lineage; retained-pattern catalog
+selection remains a separate non-proof. Next queue item: `mise-en-palace-royf`.
 
 Latest slice:
 

@@ -27,6 +27,9 @@ import {
   formatReflectUsage
 } from "./parseReflectArgs.js";
 import {
+  formatReviewAssessUsage
+} from "./parseReviewArgs.js";
+import {
   formatHeartbeatUsage
 } from "./parseHeartbeatArgs.js";
 import {
@@ -130,6 +133,7 @@ const helpRenderers = {
   observeRunHelp: formatObserveUsage,
   planHelp: formatPlanUsage,
   reflectHelp: formatReflectUsage,
+  reviewAssessHelp: formatReviewAssessUsage,
   sourceClaimAddHelp: formatSourceClaimAddUsage,
   sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
   sourceSearchHelp: formatSourceSearchUsage,

@@ -143,6 +143,9 @@ export type CliCommand =
       metadata: Record<string, string>;
     }
   | {
+      kind: "reviewAssessHelp";
+    }
+  | {
       kind: "runShowHelp";
     }
   | {

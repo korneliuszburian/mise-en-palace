@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: overnight kernel queue active after Shared Brain Vertical Loop proof
+current task: graph relation consensus decision-closure loop after store-backed SBV reuse proof
 latest pushed commit: see git history
 ```
 
@@ -25,11 +25,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-overnight kernel queue active after Shared Brain Vertical Loop proof.
-Queue starts with `mise-en-palace-b18l`, `mise-en-palace-1c5x`, and
-`mise-en-palace-royf`.
-Audit cleanup residuals, `mise-en-palace-pvtf`, and `mise-en-palace-glor` are
-closed.
+graph relation consensus decision-closure loop after store-backed SBV reuse proof.
+`mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
+MemoryRecord reuse after fixing run project lineage for memory candidates.
+Retained-pattern catalog selection still returned `rejected_or_deferred`, so it
+is not proof of catalog recall. Next queue item: `mise-en-palace-royf`.
 ```
 
 ## 2. Product Thesis
