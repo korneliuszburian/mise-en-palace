@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: execute the reseeded post-cleanup kernel queue from Beads.
+current task: execute the post-CLI-wave kernel queue from Beads.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -60,9 +60,10 @@ Vector retrieval now requires embedding model scope, orphaned CapabilityPlan
 binding types are removed, and the first reuse-or-reject loop proof is locally
 implemented with second-opinion triage. The governed second-opinion workflow is
 documented in `docs/runbooks/second-opinion-claude.md`.
-Post-cleanup second-opinion roadmap review produced one valid finding: empty
-ready/open queues need a durable decision record before continuing. Beads is now
-reseeded with focused kernel tasks; `mise-en-palace-plnv` remains deferred until
+Post-CLI-wave roadmap review produced one valid finding: the next-task selection
+needs explicit current-repo evidence. Beads is now reseeded with focused kernel
+tasks; source-search and source-artifact preview command runners are split back
+to orchestration-focused modules; `mise-en-palace-plnv` remains deferred until
 the worker package branch decision is explicit.
 ```
 
