@@ -66,4 +66,17 @@ describe("doctorStaticChecks", () => {
     expect(source).not.toContain("appendFile");
     expect(source).not.toContain("rm(");
   });
+
+  it("does not scan package source trees for static proof", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const source = await readFile(
+      path.join(repoRoot, "packages", "cli", "src", "doctorStaticChecks.ts"),
+      "utf8"
+    );
+
+    expect(source).not.toContain("readTreeText");
+    expect(source).not.toContain("packagePath(repoRoot, \"cli\", \"src\"");
+    expect(source).not.toContain("packagePath(repoRoot, \"codex-adapter\", \"src\"");
+    expect(source).not.toContain("packagePath(repoRoot, \"workers\", \"src\"");
+  });
 });

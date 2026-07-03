@@ -35,8 +35,7 @@ import {
 } from "./cliFileBoundary.js";
 import {
   readOptionalText,
-  readScriptStatus,
-  readTreeText
+  readScriptStatus
 } from "./doctorCheckHelpers.js";
 import {
   parseArgs
@@ -47,9 +46,6 @@ import {
 import {
   runTargetRepoHarnessSmokeCheck
 } from "./targetRepoHarnessSmoke.js";
-
-const includesAny = (text: string, fragments: readonly string[]): boolean =>
-  fragments.some((fragment) => text.includes(fragment));
 
 const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
   const exists = await Promise.all(paths.map((targetPath) => pathExists(targetPath)));
@@ -78,58 +74,23 @@ const packagePath = (
 ): string => path.join(repoRoot, "packages", packageName, ...segments);
 
 const hasCodexRunner = async (
-  repoRoot: string,
-  cliText: string,
-  adapterText: string
-): Promise<boolean> =>
-  await pathExistsAny([
+  repoRoot: string
+): Promise<boolean> => await pathExistsAny([
     path.join(repoRoot, "packages", "codex-runner"),
     path.join(repoRoot, "packages", "codex-executor"),
     path.join(repoRoot, "packages", "codex-execution")
-  ]) ||
-  includesAny(cliText, [
-    "runCodexExecution",
-    "invokeCodex(",
-    "codex execute",
-    "codex run",
-    "codex exec"
-  ]) ||
-  includesAny(adapterText, [
-    "spawn(\"codex\"",
-    "spawn('codex'",
-    "exec(\"codex\"",
-    "exec('codex'"
   ]);
 
 const hasMcpServer = async (
-  repoRoot: string,
-  cliText: string,
-  adapterText: string
-): Promise<boolean> =>
-  await pathExistsAny([
+  repoRoot: string
+): Promise<boolean> => await pathExistsAny([
     path.join(repoRoot, "packages", "mcp-server"),
     path.join(repoRoot, "packages", "krn-mcp-server"),
     path.join(repoRoot, "packages", "mcp")
-  ]) ||
-  includesAny(cliText, [
-    "createMcpServer",
-    "startMcpServer"
-  ]) ||
-  includesAny(adapterText, [
-    "createMcpServer",
-    "startMcpServer"
   ]);
 
 export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
-  const cliText = [
-    await readOptionalText(packagePath(repoRoot, "cli", "src", "parseArgs.ts")),
-    await readOptionalText(packagePath(repoRoot, "cli", "src", "runCli.ts")),
-    await readOptionalText(packagePath(repoRoot, "cli", "src", "runCodexBriefCommand.ts"))
-  ].join("\n");
-  const adapterText = await readTreeText(
-    packagePath(repoRoot, "codex-adapter", "src")
-  );
   const rendererPresent =
     hasFunction(createExecutionBrief) &&
     hasFunction(renderExecutionBriefText);
@@ -139,8 +100,8 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
     "krn db smoke codex-adapter"
   );
   const hookProjectionPresent = hasFunction(createCodexHookExpectationProjection);
-  const codexRunnerPresent = await hasCodexRunner(repoRoot, cliText, adapterText);
-  const mcpServerPresent = await hasMcpServer(repoRoot, cliText, adapterText);
+  const codexRunnerPresent = await hasCodexRunner(repoRoot);
+  const mcpServerPresent = await hasMcpServer(repoRoot);
 
   return [
     {
@@ -196,7 +157,7 @@ const readDependencyText = async (repoRoot: string): Promise<string> => {
 };
 
 const hasRedisOrKafkaDependency = (dependencyText: string): boolean =>
-  includesAny(dependencyText, [
+  [
     "\"redis\"",
     "redis@",
     "ioredis",
@@ -204,27 +165,15 @@ const hasRedisOrKafkaDependency = (dependencyText: string): boolean =>
     "\"kafka\"",
     "kafka@",
     "kafkajs"
-  ]);
+  ].some((fragment) => dependencyText.includes(fragment));
 
 const hasBroadWorkerDaemon = async (
-  repoRoot: string,
-  workersText: string,
-  workerRepositoryText: string
-): Promise<boolean> =>
-  await pathExistsAny([
+  repoRoot: string
+): Promise<boolean> => await pathExistsAny([
     path.join(repoRoot, "packages", "worker-daemon"),
     path.join(repoRoot, "packages", "workers-daemon"),
     path.join(repoRoot, "packages", "job-runner")
-  ]) ||
-  includesAny(workersText, [
-    "setInterval",
-    "while (",
-    "for (;;)",
-    "spawn(",
-    "exec(",
-    "requiresBackgroundLoop: true"
-  ]) ||
-  includesAny(workerRepositoryText, ["requiresBackgroundLoop: true"]);
+  ]);
 
 const workerRepositoryMethods = [
   "enqueueWorkerJob",
@@ -249,10 +198,6 @@ const workerJobRepositoryPresent = (): boolean =>
 export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const dependencyText = await readDependencyText(repoRoot);
-  const workersText = await readTreeText(packagePath(repoRoot, "workers", "src"));
-  const workerRepositoryText = await readTreeText(
-    packagePath(repoRoot, "db", "src", "repositories")
-  );
   const schemaPresent = workerJobSchemaPresent();
   const repositoryPresent = workerJobRepositoryPresent();
   const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
@@ -262,9 +207,7 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
     "krn db smoke worker-jobs"
   );
   const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
-    repoRoot,
-    workersText,
-    workerRepositoryText
+    repoRoot
   ) || Boolean(maintenanceJobRuntimeContract.requiresBackgroundLoop);
 
   return [
