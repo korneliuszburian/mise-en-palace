@@ -236,12 +236,26 @@ EOF
 
 prompt_bytes=$(wc -c < "$output_file" | tr -d " ")
 if (( prompt_bytes > prompt_max_bytes )); then
-  {
-    head -c "$(( prompt_max_bytes - 1024 ))" "$output_file"
-    printf '\n\n## Prompt Size Cap\n\nContext pack exceeded SECOND_OPINION_PROMPT_MAX_BYTES=%s and was truncated. Treat the diff/untracked sections as possibly incomplete and flag as an evidence gap if the missing tail is load-bearing. Narrow the slice or raise the cap and rebuild.\n' \
-      "$prompt_max_bytes"
-  } > "${output_file}.capped"
-  mv "${output_file}.capped" "$output_file"
+  # UTF-8-safe truncation: cut on a byte budget, back off to a valid char
+  # boundary (errors="ignore" drops any partial multi-byte sequence), then
+  # append the notice. The JSON-contract and "Return JSON only" instructions
+  # live in the header at the top, so they always survive a tail truncation.
+  python3 - "$output_file" "$prompt_max_bytes" <<'PY'
+import sys
+from pathlib import Path
+
+path, cap = Path(sys.argv[1]), int(sys.argv[2])
+notice = (
+    "\n\n## Prompt Size Cap\n\n"
+    "Context pack exceeded SECOND_OPINION_PROMPT_MAX_BYTES=%s and was "
+    "truncated. Treat the diff/untracked sections as possibly incomplete and "
+    "flag as an evidence gap if the missing tail is load-bearing. Narrow the "
+    "slice or raise the cap and rebuild.\n" % cap
+)
+keep = max(0, cap - len(notice.encode("utf-8")))
+body = path.read_bytes()[:keep].decode("utf-8", errors="ignore")
+path.write_bytes((body + notice).encode("utf-8"))
+PY
   prompt_bytes=$(wc -c < "$output_file" | tr -d " ")
 fi
 
