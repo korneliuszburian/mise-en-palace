@@ -136,11 +136,9 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-24p7` records the post-cleanup queue decision.
-Then continue with the reseeded Beads tasks: worker package branch decision
-brief (`mise-en-palace-gfzi`), run-show metadata parser hardening
-(`mise-en-palace-oez2`), and vague placeholder naming audit
-(`mise-en-palace-ieec`).
+Current queue: `mise-en-palace-gfzi` records the worker package branch decision
+brief. Then continue with run-show metadata parser hardening
+(`mise-en-palace-oez2`) and vague placeholder naming audit (`mise-en-palace-ieec`).
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
