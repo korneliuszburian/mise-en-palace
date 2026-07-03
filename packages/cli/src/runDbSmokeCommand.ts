@@ -26,6 +26,9 @@ import {
 import {
   findRepoRoot
 } from "./cliFileBoundary.js";
+import {
+  runRunShowDbSmokeCheck
+} from "./runShowDbSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -40,6 +43,7 @@ export interface DbSmokeRuntime {
     | "retrievalSubstrate"
     | "activation"
     | "brainLoop"
+    | "runShow"
     | "heartbeatWorkerAuthority"
     | "codexAdapter"
     | "workerJobs"
@@ -116,6 +120,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Brain Loop Smoke",
     skippedLine: "Brain loop smoke: skipped (database not configured)",
     failureLabel: "Brain loop smoke"
+  },
+  runShow: {
+    title: "KRN Run Show Smoke",
+    skippedLine: "Run show smoke: skipped (database not configured)",
+    failureLabel: "Run show smoke"
   },
   heartbeatWorkerAuthority: {
     title: "KRN Heartbeat Worker Authority Smoke",
@@ -458,6 +467,34 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runShowSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runRunShowDbSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("run-show-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Run Show Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Text readback: ${report.textReadbackMatched ? "matched" : "mismatch"}`,
+      `JSON readback: ${report.jsonReadbackMatched ? "matched" : "mismatch"}`,
+      `Readback kind: ${report.readbackKind}`,
+      `Readback mutation: ${report.readbackMutation}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Run show smoke")
+    ]
+  );
+};
+
 const runHeartbeatWorkerAuthoritySmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -635,6 +672,7 @@ const dbSmokeTargetHandlers = {
   retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
   activation: runActivationSmokeTarget,
   brainLoop: runBrainLoopSmokeTarget,
+  runShow: runShowSmokeTarget,
   heartbeatWorkerAuthority: runHeartbeatWorkerAuthoritySmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,
   workerJobs: runWorkerJobsSmokeTarget,

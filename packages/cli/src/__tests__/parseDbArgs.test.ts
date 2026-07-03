@@ -45,6 +45,12 @@ describe("parseDbArgs", () => {
         target: "brainLoop"
       }
     });
+    expect(parseDbArgs(["smoke", "run-show"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "runShow"
+      }
+    });
     expect(parseDbArgs(["smoke", "heartbeat-worker-authority"])).toEqual({
       command: {
         kind: "dbSmoke",

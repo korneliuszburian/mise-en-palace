@@ -1,6 +1,11 @@
 export * from "../activationReadiness.js";
 export * from "../activationSmoke.js";
 export * from "../brainLoopSmoke.js";
+export {
+  cleanupHarnessCompilerSmokeRows,
+  createCompiledSmokeExecution,
+  createHarnessCompilerSmokeRuntime
+} from "../dbSmokeSupport.js";
 export * from "../harnessEvidenceSmoke.js";
 export * from "../heartbeatWorkerAuthoritySmoke.js";
 export * from "../harnessPersistenceReadiness.js";

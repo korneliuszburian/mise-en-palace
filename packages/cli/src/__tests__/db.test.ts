@@ -67,6 +67,29 @@ describe("runCli", () => {
     );
   });
 
+  it("prints missing DB guidance for run-show smoke", async () => {
+    const result = await runCli(["db", "smoke", "run-show"], {
+      env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("KRN Run Show Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Run show smoke: skipped (database not configured)");
+  });
+
+  it("exposes the run-show smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = await readRootPackageJson(repoRoot);
+
+    expect(packageJson.scripts?.["db:smoke:run-show"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke run-show"
+    );
+  });
+
   it("exposes the target repo init-connect smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const packageJson = await readRootPackageJson(repoRoot);
