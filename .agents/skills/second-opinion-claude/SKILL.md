@@ -32,6 +32,11 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
    non-goals, and exact review questions. Do not paste the whole repo,
    historical ledgers, or raw audit archives.
 
+   For an already committed range, set `SECOND_OPINION_CONTEXT_BASE` to the
+   base commit before building the pack and set the same value as
+   `SECOND_OPINION_BASE` when running the review. This avoids hand-written
+   post-commit prompts with stale or empty diffs.
+
 2. Run Claude Code headless with budget caps:
 
    ```bash
@@ -138,6 +143,7 @@ All optional; defaults shown.
 | `SECOND_OPINION_TIMEOUT_SECONDS` | `120` | local wall-clock timeout; overrun writes `error_timeout` |
 | `SECOND_OPINION_MODEL` | local Claude Code model | override model for premium slices |
 | `SECOND_OPINION_BASE` | `origin/main` | freshness base for `diff_sha256` |
+| `SECOND_OPINION_CONTEXT_BASE` | `HEAD` | diff base used by `build_context_pack.sh`; set to the pre-slice commit for committed reviews |
 | `SECOND_OPINION_DIFF_MAX_BYTES` | `60000` | per-diff byte cap |
 | `SECOND_OPINION_UNTRACKED_MAX_BYTES` | `20000` | per-untracked-file byte cap |
 | `SECOND_OPINION_PROMPT_MAX_BYTES` | `120000` | whole-prompt cap; overrun truncates with a notice |

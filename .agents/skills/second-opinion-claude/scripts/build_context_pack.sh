@@ -13,7 +13,12 @@ output_dir=$(dirname "$output_file")
 mkdir -p "$output_dir"
 
 status=$(git status --short --branch)
-diff_stat=$(git diff HEAD --stat -- \
+diff_base=${SECOND_OPINION_CONTEXT_BASE:-HEAD}
+diff_range=(HEAD)
+if [[ "$diff_base" != "HEAD" ]]; then
+  diff_range=("${diff_base}...HEAD")
+fi
+diff_stat=$(git diff "${diff_range[@]}" --stat -- \
   ":(exclude).beads/**" \
   ":(exclude).local-lab/**" \
   ":(exclude)docs/materials/**" || true)
@@ -63,7 +68,7 @@ is_denied_untracked_path() {
   return 1
 }
 
-git diff HEAD -- . \
+git diff "${diff_range[@]}" -- . \
   ":(exclude).beads/**" \
   ":(exclude).local-lab/**" \
   ":(exclude)docs/materials/**" \
@@ -167,6 +172,12 @@ Required verdict shape:
 
 Rules:
 - Every finding must have a non-empty evidence_ref.
+- The top-level object must contain exactly the keys shown above.
+- Do not add answers, next_tasks, recommendations, categories, claim fields, or any other keys.
+- Use verdict values exactly: approve, approve_with_fixes, or block. Never use approved.
+- Use finding severity values exactly: LOW, MEDIUM, HIGH, or CRITICAL. Do not emit severity=none.
+- Put useful non-finding observations in non_blocking_notes.
+- Put suggested future work in evidence_gaps only when verification is missing; otherwise omit it.
 - approve requires findings=[].
 - approve_with_fixes requires at least one finding.
 - block requires findings or evidence_gaps and another_loop_required=true.
@@ -199,6 +210,12 @@ $status
 
 \`\`\`txt
 $head_commit
+\`\`\`
+
+## Diff Base
+
+\`\`\`txt
+$diff_base
 \`\`\`
 
 ## Diff Stat
