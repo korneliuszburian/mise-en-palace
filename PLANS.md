@@ -36,7 +36,7 @@ Scoped CLI test typecheck gate: `eval:brain-battle:smoke` now runs
 `pnpm --filter @krn/cli typecheck:tests:clean` for the first strict subset.
 Report:
 docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md
-CI: pending for this slice.
+CI: KRN CI 28642851743 passed for scoped CLI test typecheck gate.
 Next: expand only after fixing the next CLI test fixture-shape batch without casts.
 ```
 
