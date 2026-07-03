@@ -4,6 +4,8 @@ import type {
 
 const defaultPlanUsage = "Usage: krn plan --task \"...\"";
 
+export const formatPlanUsage = (): string => `${defaultPlanUsage}\n`;
+
 const parsedOptionValue = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim();
 
@@ -114,6 +116,14 @@ export const parsePlanArgs = (
   rest: readonly string[],
   usage = defaultPlanUsage
 ): ParseArgsResult => {
+  if (rest[0] === "--help" || rest[0] === "-h") {
+    return {
+      command: {
+        kind: "planHelp"
+      }
+    };
+  }
+
   const state: PlanArgsState = {
     persist: false
   };

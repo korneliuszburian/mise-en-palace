@@ -12,8 +12,20 @@ import {
   formatDbUsage
 } from "./parseDbArgs.js";
 import {
+  formatEvidenceCaptureUsage
+} from "./parseEvidenceArgs.js";
+import {
   formatKnowledgeUsage
 } from "./parseKnowledgeArgs.js";
+import {
+  formatObserveUsage
+} from "./parseObserveArgs.js";
+import {
+  formatPlanUsage
+} from "./parsePlanArgs.js";
+import {
+  formatReflectUsage
+} from "./parseReflectArgs.js";
 import {
   formatHeartbeatUsage
 } from "./parseHeartbeatArgs.js";
@@ -114,6 +126,10 @@ type LegacyHelpCommandKind = Exclude<HelpCommandKind, RegisteredHelpCommandKind>
 const helpRenderers = {
   brainSearchHelp: formatBrainSearchUsage,
   dbHelp: formatDbUsage,
+  evidenceCaptureHelp: formatEvidenceCaptureUsage,
+  observeRunHelp: formatObserveUsage,
+  planHelp: formatPlanUsage,
+  reflectHelp: formatReflectUsage,
   sourceClaimAddHelp: formatSourceClaimAddUsage,
   sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
   sourceSearchHelp: formatSourceSearchUsage,

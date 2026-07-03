@@ -26,6 +26,8 @@ const evidenceUsage = [
   "Note: evidence capture records operator/captured evidence; it does not run commands."
 ].join("\n");
 
+export const formatEvidenceCaptureUsage = (): string => `${evidenceUsage}\n`;
+
 const evidenceStatuses = ["passed", "failed", "skipped", "missing", "not_run"] as const;
 const targetModes = ["observation-only", "headless-repair", "real-second-operator", "unknown"] as const;
 const targetDirtyStates = ["clean", "dirty", "unknown"] as const;

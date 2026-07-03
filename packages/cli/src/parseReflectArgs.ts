@@ -10,6 +10,8 @@ import {
 const reflectUsage = "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]";
 const topicUsage = "Usage: krn reflect --scope topic:<name> --project <id> [--persist]";
 
+export const formatReflectUsage = (): string => `${reflectUsage}\n`;
+
 type ReflectScope = Extract<CliCommand, { kind: "reflect" }>["scope"];
 
 type ReflectParseState = {
@@ -173,6 +175,14 @@ const parseReflectScope = (
 };
 
 export const parseReflectArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "--help" || rest[0] === "-h") {
+    return {
+      command: {
+        kind: "reflectHelp"
+      }
+    };
+  }
+
   const state: ReflectParseState = {
     persist: false,
     scopeValue: undefined,

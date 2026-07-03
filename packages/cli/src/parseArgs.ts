@@ -87,6 +87,9 @@ export type CliCommand =
       projectId?: string;
     }
   | {
+      kind: "planHelp";
+    }
+  | {
       kind: "doctor";
     }
   | {
@@ -121,6 +124,9 @@ export type CliCommand =
       targetEvidence?: TargetEvidenceInput;
       sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
       patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
+    }
+  | {
+      kind: "evidenceCaptureHelp";
     }
   | {
       kind: "reviewAssess";
@@ -202,6 +208,9 @@ export type CliCommand =
       persist: boolean;
     }
   | {
+      kind: "observeRunHelp";
+    }
+  | {
       kind: "reflect";
       scope:
         | {
@@ -218,6 +227,9 @@ export type CliCommand =
             projectId: string;
           };
       persist: boolean;
+    }
+  | {
+      kind: "reflectHelp";
     }
   | {
       kind: "codexBrief";
@@ -497,6 +509,11 @@ export const formatUsage = (): string => `${usage}\n`;
 
 type TopLevelCommandParser = (rest: readonly string[]) => ParseArgsResult;
 
+const isEvidenceHelpRequest = (rest: readonly string[]): boolean =>
+  rest[0] === "--help" ||
+  rest[0] === "-h" ||
+  (rest[0] === "capture" && (rest[1] === "--help" || rest[1] === "-h"));
+
 const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
   brain: (rest) =>
     rest[0] === "knowledge"
@@ -505,7 +522,14 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
   doctor: parseDoctorArgs,
   init: parseInitArgs,
   db: parseDbArgs,
-  evidence: parseEvidenceArgs,
+  evidence: (rest) =>
+    isEvidenceHelpRequest(rest)
+      ? {
+          command: {
+            kind: "evidenceCaptureHelp"
+          }
+        }
+      : parseEvidenceArgs(rest),
   review: parseReviewArgs,
   knowledge: parseKnowledgeArgs,
   heartbeat: parseHeartbeatArgs,

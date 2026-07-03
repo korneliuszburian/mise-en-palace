@@ -9,6 +9,8 @@ import {
 const observeUsage = "Usage: krn observe --run <id>|--run-id <id> [--project <id>] [--persist]";
 const observeRunOptions = ["--run-id", "--run"] as const;
 
+export const formatObserveUsage = (): string => `${observeUsage}\n`;
+
 type ObserveParseState = {
   persist: boolean;
   runId: string | undefined;
@@ -83,6 +85,14 @@ const parseObserveOption = (
 };
 
 export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "--help" || rest[0] === "-h") {
+    return {
+      command: {
+        kind: "observeRunHelp"
+      }
+    };
+  }
+
   const state: ObserveParseState = {
     persist: false,
     runId: undefined,

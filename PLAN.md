@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: First end-to-end Shared Brain Vertical Loop proof
+current task: First end-to-end Shared Brain Vertical Loop proof completed; next Beads selection pending
 ```
 
 ## Compact Checkpoints
@@ -108,24 +108,27 @@ pattern/research brain: hooks and acquisition escalation retained with consumer/
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
+shared brain vertical loop proof: first real DB-backed plan/evidence/observe/reflect/memory-application loop completed; automatic memory recall not proven
 ```
 
 ## Active Task
 
 ### First End-To-End Loop Proof
 
-Goal: run one real task through KRN, then a second related task that reuses or
-explicitly rejects the promoted knowledge.
+Status: complete pending Beads close/push.
 
-Hard boundary: prove reuse-or-reject, not product readiness. Do not broaden into
-dashboard/API/MCP, worker daemon, global audit, or benchmark platform.
+Result: one real CLI help task and one related help task ran through persisted
+plan/evidence/observe/reflect, memory candidate promotion, second-opinion
+review, and explicit memory application.
 
 Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`,
 `mise-en-palace-zc21`, `mise-en-palace-u62r`, `mise-en-palace-ee9n`.
 
-Active Bead: `mise-en-palace-pvtf`.
+Closing Bead: `mise-en-palace-pvtf`.
+Follow-up Bead: `mise-en-palace-glor`.
 
-Boundary: closed loop requires second-task reuse or explicit rejection.
+Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
+product readiness or retrieval quality from this slice.
 
 ## Recent Completed Streams
 

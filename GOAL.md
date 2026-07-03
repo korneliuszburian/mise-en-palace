@@ -31,7 +31,8 @@ current task: First end-to-end Shared Brain Vertical Loop proof.
 ```
 
 Current task state: audit cleanup residuals `mise-en-palace-u62r` and
-`mise-en-palace-ee9n` are closed; active Bead is `mise-en-palace-pvtf`.
+`mise-en-palace-ee9n` are closed; `mise-en-palace-pvtf` is complete pending
+commit/push/CI check.
 
 Latest slice:
 
@@ -39,8 +40,9 @@ Latest slice:
 Audit cleanup wave closed and pushed.
 Claude Code headless second-opinion workflow added and locally tested.
 Vector retrieval now requires embedding model scope, orphaned CapabilityPlan
-binding types are removed, and the next slice is the first reuse-or-reject loop
-proof.
+binding types are removed, and the first reuse-or-reject loop proof is locally
+implemented with second-opinion triage. Manual memory reuse was proven;
+automatic memory recall was not.
 ```
 
 ## Direction
