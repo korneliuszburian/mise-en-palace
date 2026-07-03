@@ -38,6 +38,7 @@ CLI doctor test typecheck widening slice: `doctorDbChecks`, `doctorReadiness`,
 Report:
 docs/runs/2026-07-03-cli-doctor-test-typecheck-widening.md
 CI: pending for this slice.
+CI result: KRN CI 28646103963 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 
