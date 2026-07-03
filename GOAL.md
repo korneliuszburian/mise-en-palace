@@ -27,12 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: Shared Brain Vertical Loop proof completed; next Beads selection pending.
+current task: overnight kernel queue active after Shared Brain Vertical Loop proof.
 ```
 
-Current task state: audit cleanup residuals `mise-en-palace-u62r` and
-`mise-en-palace-ee9n` are closed; `mise-en-palace-pvtf` is complete pending
-commit/push/CI check.
+Current task state: `mise-en-palace-pvtf` and `mise-en-palace-glor` are closed.
+Manual memory reuse was proven; automatic memory recall was not. Overnight
+queue starts with `mise-en-palace-b18l`, `mise-en-palace-1c5x`, and
+`mise-en-palace-royf`.
 
 Latest slice:
 
@@ -41,8 +42,8 @@ Audit cleanup wave closed and pushed.
 Claude Code headless second-opinion workflow added and locally tested.
 Vector retrieval now requires embedding model scope, orphaned CapabilityPlan
 binding types are removed, and the first reuse-or-reject loop proof is locally
-implemented with second-opinion triage. Manual memory reuse was proven;
-automatic memory recall was not.
+implemented with second-opinion triage. The governed second-opinion workflow is
+documented in `docs/runbooks/second-opinion-claude.md`.
 ```
 
 ## Direction

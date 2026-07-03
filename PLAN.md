@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Shared Brain Vertical Loop proof completed; next Beads selection pending
+current task: overnight kernel queue active after Shared Brain Vertical Loop proof
 ```
 
 ## Compact Checkpoints
@@ -113,17 +113,17 @@ shared brain vertical loop proof: first real DB-backed plan/evidence/observe/ref
 
 ## Active Task
 
-Status: complete; CI invariant repair in progress.
+Status: complete; overnight queue active.
 
 Result: one real CLI help task and one related help task ran through persisted
 plan/evidence/observe/reflect, memory candidate promotion, second-opinion
 review, and explicit memory application.
 
-Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`,
-`mise-en-palace-zc21`, `mise-en-palace-u62r`, `mise-en-palace-ee9n`.
+Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
+`mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`.
 
-Closing Bead: `mise-en-palace-pvtf`.
-Follow-up Bead: `mise-en-palace-glor`.
+Current queue: `mise-en-palace-b18l` active, then `mise-en-palace-1c5x`,
+then `mise-en-palace-royf`. Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
 product readiness or retrieval quality from this slice.

@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Shared Brain Vertical Loop proof completed; next Beads selection pending
+current task: overnight kernel queue active after Shared Brain Vertical Loop proof
 latest pushed commit: see git history
 ```
 
@@ -25,8 +25,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-Shared Brain Vertical Loop proof completed; next Beads selection pending.
-Audit cleanup residuals and `mise-en-palace-pvtf` are closed.
+overnight kernel queue active after Shared Brain Vertical Loop proof.
+Queue starts with `mise-en-palace-b18l`, `mise-en-palace-1c5x`, and
+`mise-en-palace-royf`.
+Audit cleanup residuals, `mise-en-palace-pvtf`, and `mise-en-palace-glor` are
+closed.
 ```
 
 ## 2. Product Thesis
@@ -85,7 +88,7 @@ Source-to-decision:
 
 ### First End-To-End Shared Brain Vertical Loop Proof
 
-Status: in_progress
+Status: complete
 
 Goal: run one real operator task through KRN, promote or reject the produced
 knowledge, then run a second related task that reuses or explicitly rejects it.
@@ -96,7 +99,7 @@ proof that KRN is more than Codex running twice.
 Architectural rationale: product truth now comes from the typed loop and
 evidence/review feedback, not another cleanup audit.
 
-Evidence source: active Bead `mise-en-palace-pvtf`, root GOAL direction, and
+Evidence source: closed Bead `mise-en-palace-pvtf`, root GOAL direction, and
 Claude second-opinion priority synthesis.
 
 Official/external sources: none required beyond existing KRN loop sources.
@@ -131,7 +134,7 @@ closed brain loop.
 Rollback: revert the checkpoint commit only if verification exposes a real
 regression.
 
-Condensation expectation: preserve this task state and archive path only.
+Condensation expectation: preserve proof/non-proof boundary only.
 
 Next-task synthesis rule: choose the highest-ROI cleanup that removes
 non-executing surface or improves product behavior; do not add another ledger.
