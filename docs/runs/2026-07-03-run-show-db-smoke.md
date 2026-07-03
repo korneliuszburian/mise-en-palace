@@ -17,6 +17,14 @@ readback, and cleans marker rows.
 - `pnpm -C packages/cli typecheck`
 - `pnpm -C packages/db typecheck`
 
+Second opinion:
+
+- `second-opinion-claude` returned `approve_with_fixes` LOW.
+- Accepted finding F1: error-path cleanup could leave marker rows if readback
+  mismatch threw before the success cleanup call.
+- Fix: `runShowDbSmoke.ts` now runs cleanup in `finally` unless success cleanup
+  already completed.
+
 ## Boundary
 
 Proves run-show can read a DB-backed persisted run through the real CLI command

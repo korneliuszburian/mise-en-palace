@@ -68,8 +68,9 @@ export const runRunShowDbSmokeCheck = async (
       workspacePrefix: "krn-run-show-smoke",
       projectSlug: "run-show",
       taskPrefix: "run show readback smoke"
-    });
+  });
   let retrievalRunId: string | undefined;
+  let cleanedUp = false;
 
   const cleanup = (): Promise<number> => cleanupHarnessCompilerSmokeRows({
     db,
@@ -137,6 +138,7 @@ export const runRunShowDbSmokeCheck = async (
     }
 
     const remainingMarkerCount = await cleanup();
+    cleanedUp = true;
 
     return {
       workspaceSlug,
@@ -150,6 +152,12 @@ export const runRunShowDbSmokeCheck = async (
       cleanedUp: remainingMarkerCount === 0
     };
   } finally {
-    await client.end();
+    try {
+      if (!cleanedUp) {
+        await cleanup();
+      }
+    } finally {
+      await client.end();
+    }
   }
 };
