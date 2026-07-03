@@ -1,7 +1,6 @@
 # KRN Active Plan
 
 Status: active compact root plan. Date: 2026-07-03.
-
 Root `PLAN.md` is compact product truth. Detailed history stays in Beads,
 archived ledgers, and archived reports.
 
@@ -148,14 +147,12 @@ activation context reuse case.
 `mise-en-palace-y6ib` brain-search readback split is closed: selectedKnowledge/readback formatting moved out of the command runner.
 `mise-en-palace-2ksv` second-opinion retry artifact hardening is closed:
 invalid verdicts and raw envelopes remain inspectable without becoming approval.
-`mise-en-palace-h1b4` run-show split is closed; `mise-en-palace-ij82/otyu` add and CI-gate DB-backed run-show smoke; next selection uses Beads ready work.
-`mise-en-palace-m9yb` refreshed the post-refactor queue with governed Claude review.
-`mise-en-palace-w4px` applied retained pattern brain to one real code-quality slice: `pattern:ts-boundary-unknown-first-result-state` repaired brain-search JSON readback.
-Next ready queue: `mise-en-palace-7hoy` extends source graph relation ranking beyond one proof; `mise-en-palace-ww2s` audits active-code placeholder vocabulary.
-Deferred human decision: `mise-en-palace-plnv`.
+`mise-en-palace-h1b4/ij82/otyu` split and CI-gated DB-backed run-show smoke.
+`mise-en-palace-m9yb/w4px` refreshed the post-refactor queue and applied retained `ts-boundary-unknown-first-result-state` to brain-search JSON readback.
+`mise-en-palace-7hoy` added duplicate SourceClaimEdge selection proof beyond invalidation rank-down.
+Next ready queue: `mise-en-palace-ww2s` placeholder vocabulary audit; deferred human decision: `mise-en-palace-plnv`.
 
-Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
-product readiness or retrieval quality from this slice.
+Boundary: manual reuse was proven; automatic memory recall was not. Do not claim product readiness or retrieval quality from this slice.
 
 ## Recent Completed Streams
 

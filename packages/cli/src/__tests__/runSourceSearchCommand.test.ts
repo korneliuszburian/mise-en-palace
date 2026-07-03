@@ -1051,6 +1051,102 @@ describe("runSourceSearchCommand", () => {
     expect(excludedStaleClaim?.graphScore).toBeLessThan(0);
   });
 
+  it("lets duplicate SourceClaimEdge influence change source-search selection", async () => {
+    const lexicalOnlyClaimId = "0dfdb50b-73cb-4a1a-9e89-c146a2580f80" as SourceClaim["id"];
+    const duplicateSeedClaimId = "f78adfcb-caa0-41cb-a0db-70fcf0d829ac" as SourceClaim["id"];
+    const duplicatePeerClaimId = "a376b335-d76b-40e7-82ec-928acb99fb80" as SourceClaim["id"];
+    const duplicateQuery = "duplicate relation quality";
+    const lexicalOnlyClaim = sourceClaim({
+      id: lexicalOnlyClaimId,
+      claim: "Duplicate relation quality should not be inferred without graph support.",
+      mechanism: "This claim matches the query but has no SourceClaimEdge.",
+      krnImplication: "Use as the no-edge baseline competitor.",
+      falsifier: "A duplicate edge changes selection even when this claim has no relation support."
+    });
+    const duplicateSeedClaim = sourceClaim({
+      id: duplicateSeedClaimId,
+      claim: "Duplicate relation quality should surface the reviewed duplicate source relation.",
+      mechanism: "A SourceClaimEdge marks this source as a duplicate relation seed.",
+      krnImplication: "Prefer edge-connected source context when the graph relation is visible.",
+      falsifier: "A duplicate SourceClaimEdge does not change source-search selection."
+    });
+    const duplicatePeerClaim = sourceClaim({
+      id: duplicatePeerClaimId,
+      claim: "Duplicate relation quality should keep the peer claim visible as graph context.",
+      mechanism: "A SourceClaimEdge links this peer claim to the duplicate relation seed.",
+      krnImplication: "Use only as relation support, not as source truth by itself.",
+      falsifier: "Duplicate relation support is absent from source-search readback."
+    });
+    const claims = [
+      lexicalOnlyClaim,
+      duplicateSeedClaim,
+      duplicatePeerClaim
+    ];
+    const baseRuntime = {
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: duplicateQuery,
+        limit: 10,
+        maxInclusions: 1,
+        json: true
+      } as const
+    };
+    const baseline = await runSourceSearchCommand({
+      ...baseRuntime,
+      createDatabaseRuntime: runtime({
+        claims,
+        documents: []
+      })
+    });
+    const edgeAware = await runSourceSearchCommand({
+      ...baseRuntime,
+      createDatabaseRuntime: runtime({
+        claims,
+        documents: [],
+        edges: [
+          sourceClaimEdge({
+            id: "58719d9b-f5be-49a5-8a4f-a1eac6873430" as SourceClaimEdge["id"],
+            fromSourceClaimId: duplicateSeedClaimId,
+            toSourceClaimId: duplicatePeerClaimId,
+            kind: "duplicates",
+            metadata: {
+              consumer: "source-search duplicate relation ranking proof",
+              doesNotProve: "This edge does not prove duplicate truth or broad graph retrieval quality."
+            }
+          })
+        ]
+      })
+    });
+    const baselineOutput = parseJsonObject(baseline.stdout);
+    const baselineAnswerPackage = objectValue(baselineOutput.answerPackage, "baseline answerPackage");
+    const baselineSupportingClaims = arrayValue(baselineAnswerPackage.supportingClaims, "baseline supportingClaims");
+    const baselineFirstClaim = objectValue(baselineSupportingClaims[0], "baseline first claim");
+    const edgeOutput = parseJsonObject(edgeAware.stdout);
+    const edgeAnswerPackage = objectValue(edgeOutput.answerPackage, "edge answerPackage");
+    const edgeSupportingClaims = arrayValue(edgeAnswerPackage.supportingClaims, "edge supportingClaims");
+    const edgeFirstClaim = objectValue(edgeSupportingClaims[0], "edge first claim");
+    const relationSupport = arrayValue(edgeAnswerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+    const graphReadback = objectValue(edgeAnswerPackage.graphReadback, "graphReadback");
+
+    expect(baselineFirstClaim.sourceClaimId).toBe(lexicalOnlyClaimId);
+    expect(edgeFirstClaim.sourceClaimId).toBe(duplicatePeerClaimId);
+    expect(edgeFirstClaim.graphScore).toBeGreaterThan(0);
+    expect(String(edgeFirstClaim.reason)).toContain("Edge-aware source graph context: duplicates.");
+    expect(relationSupport).toHaveLength(1);
+    expect(relation.kind).toBe("duplicates");
+    expect(relation.direction).toBe("incoming");
+    expect(relation.relatedSourceClaimId).toBe(duplicateSeedClaimId);
+    expect(graphReadback.duplicateEdges).toBe(1);
+    expect(graphReadback.invalidationEdges).toBe(0);
+  });
+
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
     const result = await runSourceSearchCommand({
       cwd: "/repo",
