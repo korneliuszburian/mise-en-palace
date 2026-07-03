@@ -19,6 +19,7 @@ import type {
 } from "@krn/harness/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
+import type { DatabaseRuntime } from "../databaseRuntime.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -42,6 +43,9 @@ const unusedMemoryRepository = {
   async getMemoryRecordById(_id: string): Promise<never> {
     throw new Error("getMemoryRecordById should not be called");
   },
+  async listMemoryRecordsForProject(): Promise<never> {
+    throw new Error("listMemoryRecordsForProject should not be called");
+  },
   async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
     throw new Error("recordMemoryApplication should not be called");
   },
@@ -62,6 +66,36 @@ const unusedMemoryRepository = {
   }
 };
 
+const unusedSourceRepository = {
+  async createSourceArtifact(): Promise<never> {
+    throw new Error("createSourceArtifact should not be called");
+  },
+  async createSourceClaim(): Promise<never> {
+    throw new Error("createSourceClaim should not be called");
+  },
+  async getSourceClaimById(): Promise<never> {
+    throw new Error("getSourceClaimById should not be called");
+  },
+  async listClaimsForProject(): Promise<never> {
+    throw new Error("listClaimsForProject should not be called");
+  },
+  async createSourceClaimEdge(): Promise<never> {
+    throw new Error("createSourceClaimEdge should not be called");
+  },
+  async listSourceClaimEdgesForClaim(): Promise<never> {
+    throw new Error("listSourceClaimEdgesForClaim should not be called");
+  },
+  async createSourceDecisionEdge(): Promise<never> {
+    throw new Error("createSourceDecisionEdge should not be called");
+  },
+  async getSourceDecisionEdgeById(): Promise<never> {
+    throw new Error("getSourceDecisionEdgeById should not be called");
+  },
+  async createSourceRejection(): Promise<never> {
+    throw new Error("createSourceRejection should not be called");
+  }
+} satisfies DatabaseRuntime["sourceRepository"];
+
 interface EvidencePersistenceCapture {
   commands?: CreateEvidenceBundleInput["commands"];
   evidenceBundle?: CreateEvidenceBundleInput;
@@ -71,6 +105,9 @@ interface EvidencePersistenceCapture {
 }
 
 type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
+type EvidenceHarnessRunRepository =
+  NoStoreCompilerDependencies["harnessRunRepository"] &
+  DatabaseRuntime["harnessRunRepository"];
 
 const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   operatorIntent: {
@@ -143,7 +180,7 @@ const createCapturingEvidenceHarnessRunRepository = (
   dependencies: NoStoreCompilerDependencies,
   aggregate: HarnessRunAggregate,
   capture: EvidencePersistenceCapture
-): NoStoreCompilerDependencies["harnessRunRepository"] => ({
+): EvidenceHarnessRunRepository => ({
   ...dependencies.harnessRunRepository,
   async createExecutionRun(_input: CreateExecutionRunInput) {
     return aggregate.executionRun;
@@ -633,6 +670,7 @@ describe("runCli", () => {
             harnessRunRepository
           },
           harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
@@ -794,6 +832,9 @@ describe("runCli", () => {
     };
     const harnessRunRepository = {
       ...dependencies.harnessRunRepository,
+      async createExecutionRun(_input: CreateExecutionRunInput) {
+        return aggregate.executionRun;
+      },
       async getHarnessRunByExecutionRunId() {
         return aggregate;
       },
@@ -878,6 +919,7 @@ describe("runCli", () => {
             harnessRunRepository
           },
           harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
           memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
