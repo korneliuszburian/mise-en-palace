@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose next highest-ROI kernel vertical from Beads
+current task: execute the reseeded post-cleanup kernel queue from Beads
 ```
 
 ## Compact Checkpoints
@@ -136,8 +136,11 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-8152` locally closed pending push/CI; then
-choose next highest-ROI kernel vertical.
+Current queue: `mise-en-palace-24p7` records the post-cleanup queue decision.
+Then continue with the reseeded Beads tasks: worker package branch decision
+brief (`mise-en-palace-gfzi`), run-show metadata parser hardening
+(`mise-en-palace-oez2`), and vague placeholder naming audit
+(`mise-en-palace-ieec`).
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

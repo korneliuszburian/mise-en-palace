@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: choose next highest-ROI kernel vertical from Beads.
+current task: execute the reseeded post-cleanup kernel queue from Beads.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -45,19 +45,11 @@ down stale source-graph candidates, and report accepted SourceClaims missing
 SourceDecisionEdge support without CI mutation or a broad audit command.
 `mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI:
 decorative CapabilityPlan binding vocabulary and stale active policy-gate
-evidence were removed without changing skill routing. `mise-en-palace-b3wa` is
-closed with green CI: retained-pattern targetFit and recommended-use evidence
-now flow through plan/run readback for code-quality planning. `mise-en-palace-sfcb`
-is closed with green CI: source-search JSON proves one invalidates
-SourceClaimEdge changes selected support while preserving graph and
-decision-support caveats. `mise-en-palace-qtfv` is locally closed pending
-push/CI: `eval:krn:smoke` remains the active deterministic behavior/docs gate
-and `eval:brain-battle:smoke` is legacy compatibility only. `mise-en-palace-wuqx`
-is locally closed pending push/CI: the eval proof-boundary manifest remains
-docs-lint/test evidence, not public harness runtime API.
-`mise-en-palace-8152` is locally closed pending push/CI: retained skills were
-kept as operational guidance, no broad purge was made, and stale active matrix
-evidence for a missing skill was removed.
+evidence were removed without changing skill routing. `mise-en-palace-b3wa`,
+`mise-en-palace-sfcb`, `mise-en-palace-qtfv`, `mise-en-palace-wuqx`, and
+`mise-en-palace-8152` are closed with green CI: retained-pattern targetFit
+readback, source-graph relation ranking proof, behavior-smoke legacy naming,
+eval-manifest API scoping, and retained skill surface audit are complete.
 
 Latest slice:
 
@@ -68,6 +60,10 @@ Vector retrieval now requires embedding model scope, orphaned CapabilityPlan
 binding types are removed, and the first reuse-or-reject loop proof is locally
 implemented with second-opinion triage. The governed second-opinion workflow is
 documented in `docs/runbooks/second-opinion-claude.md`.
+Post-cleanup second-opinion roadmap review produced one valid finding: empty
+ready/open queues need a durable decision record before continuing. Beads is now
+reseeded with focused kernel tasks; `mise-en-palace-plnv` remains deferred until
+the worker package branch decision is explicit.
 ```
 
 ## Direction

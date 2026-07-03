@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: choose next highest-ROI kernel vertical from Beads
+current task: execute the reseeded post-cleanup kernel queue from Beads
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-choose next highest-ROI kernel vertical from Beads.
+execute the reseeded post-cleanup kernel queue from Beads.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -52,23 +52,14 @@ candidates without deleting claims or creating a graph platform.
 `mise-en-palace-p3t1` is closed with green CI. It proves a read-only source
 decision gap command can surface accepted SourceClaims missing SourceDecisionEdge
 support without CI mutation or a broad audit command.
-`mise-en-palace-wfdw` and `mise-en-palace-2ild` are closed with green CI. They
-removed decorative CapabilityPlan binding vocabulary and stale active
-policy-gate evidence while preserving kind-based skill routing. `mise-en-palace-b3wa`
-is closed with green CI. It carries retained-pattern targetFit and
-recommended-use evidence through plan/run readback for code-quality planning.
-`mise-en-palace-sfcb` is closed with green CI. It proves that a source graph
-relation can change selected source-search support while preserving caveats and
-not treating raw relation metadata as validated decision support.
-`mise-en-palace-qtfv` is locally closed pending push/CI. It keeps
-`eval:krn:smoke` as the active deterministic behavior/docs gate and marks
-`eval:brain-battle:smoke` as legacy compatibility only.
-`mise-en-palace-wuqx` is locally closed pending push/CI. It keeps the eval
-proof-boundary manifest as docs-lint/test evidence and removes any implication
-that it is public harness runtime API.
-`mise-en-palace-8152` is locally closed pending push/CI. It classified retained
-repo-local skills by operational consumer, avoided broad skill purge, and
-removed stale active evidence for a missing skill file.
+`mise-en-palace-wfdw`, `mise-en-palace-2ild`, `mise-en-palace-b3wa`,
+`mise-en-palace-sfcb`, `mise-en-palace-qtfv`, `mise-en-palace-wuqx`, and
+`mise-en-palace-8152` are closed with green CI. They cover capability/policy
+cleanup, retained-pattern targetFit readback, source-graph relation proof,
+behavior-smoke legacy naming, eval-manifest API scoping, and retained skill
+surface audit. Post-cleanup Beads state was empty except deferred
+`mise-en-palace-plnv`; the next queue is reseeded with `mise-en-palace-24p7`,
+`mise-en-palace-gfzi`, `mise-en-palace-oez2`, and `mise-en-palace-ieec`.
 ```
 
 ## 2. Product Thesis
