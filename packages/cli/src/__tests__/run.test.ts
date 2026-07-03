@@ -7,13 +7,16 @@ import {
   now
 } from "./helpers/testRuntime.js";
 
+const runTestCli = (args: readonly string[]) =>
+  runCli(args, {
+    env: {},
+    now: () => now,
+    createId: (prefix) => `${prefix}-1`
+  });
+
 describe("runCli", () => {
   it("rejects the removed public audit command", async () => {
-    const result = await runCli(["audit", "repo"], {
-      env: {},
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
+    const result = await runTestCli(["audit", "repo"]);
 
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toBe("");
@@ -22,11 +25,7 @@ describe("runCli", () => {
   });
 
   it("prints run show DB requirements in help", async () => {
-    const result = await runCli(["run", "--help"], {
-      env: {},
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
+    const result = await runTestCli(["run", "--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -36,11 +35,7 @@ describe("runCli", () => {
   });
 
   it("explains how to unblock run show without database config", async () => {
-    const result = await runCli(["run", "show", "--run-id", "execution-run-1"], {
-      env: {},
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
+    const result = await runTestCli(["run", "show", "--run-id", "execution-run-1"]);
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
@@ -54,11 +49,7 @@ describe("runCli", () => {
   });
 
   it("groups public, governed admin, and internal dev commands in help", async () => {
-    const result = await runCli(["--help"], {
-      env: {},
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
+    const result = await runTestCli(["--help"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -72,8 +63,16 @@ describe("runCli", () => {
     expect(result.stdout).not.toContain("krn audit");
   });
 
-  it("prints top-level command help without treating usage as an error", async () => {
+  it("prints supported top-level command help without treating usage as an error", async () => {
     const commands = [
+      {
+        args: ["--help"],
+        usage: "Public operator commands:"
+      },
+      {
+        args: ["-h"],
+        usage: "Public operator commands:"
+      },
       {
         args: ["plan", "--help"],
         usage: "Usage: krn plan --task"
@@ -99,6 +98,54 @@ describe("runCli", () => {
         usage: "Usage: krn evidence capture"
       },
       {
+        args: ["run", "--help"],
+        usage: "Usage: krn run show"
+      },
+      {
+        args: ["run", "-h"],
+        usage: "Usage: krn run show"
+      },
+      {
+        args: ["db", "--help"],
+        usage: "Usage: krn db readiness|smoke"
+      },
+      {
+        args: ["db", "-h"],
+        usage: "Usage: krn db readiness|smoke"
+      },
+      {
+        args: ["brain", "--help"],
+        usage: "Usage: krn brain search"
+      },
+      {
+        args: ["brain", "-h"],
+        usage: "Usage: krn brain search"
+      },
+      {
+        args: ["brain", "search", "--help"],
+        usage: "Usage: krn brain search"
+      },
+      {
+        args: ["brain", "search", "-h"],
+        usage: "Usage: krn brain search"
+      },
+      {
+        args: ["knowledge", "--help"],
+        usage: "Usage: krn brain knowledge"
+      },
+      {
+        args: ["knowledge", "-h"],
+        usage: "Usage: krn brain knowledge"
+      },
+      {
+        args: ["heartbeat", "--help"],
+        usage: "Usage: krn heartbeat preview"
+      },
+      {
+        args: ["heartbeat", "-h"],
+        usage: "Usage: krn heartbeat preview"
+      },
+      {
         args: ["observe", "--help"],
         usage: "Usage: krn observe --run"
       },
@@ -113,19 +160,76 @@ describe("runCli", () => {
       {
         args: ["reflect", "-h"],
         usage: "Usage: krn reflect --scope"
+      },
+      {
+        args: ["source", "search", "--help"],
+        usage: "Usage: krn source search"
+      },
+      {
+        args: ["source", "search", "-h"],
+        usage: "Usage: krn source search"
+      },
+      {
+        args: ["source", "artifact", "preview", "--help"],
+        usage: "Usage: krn source artifact preview"
+      },
+      {
+        args: ["source", "artifact", "preview", "-h"],
+        usage: "Usage: krn source artifact preview"
+      },
+      {
+        args: ["memory", "candidate", "add", "--help"],
+        usage: "Usage: krn memory candidate add"
+      },
+      {
+        args: ["memory", "candidate", "add", "-h"],
+        usage: "Usage: krn memory candidate add"
       }
     ] as const;
 
     for (const command of commands) {
-      const result = await runCli(command.args, {
-        env: {},
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`
-      });
+      const result = await runTestCli(command.args);
 
       expect(result.exitCode).toBe(0);
       expect(result.stderr).toBe("");
       expect(result.stdout).toContain(command.usage);
+    }
+  });
+
+  it("keeps unsupported top-level help paths explicit instead of silently widening help", async () => {
+    const commands = [
+      {
+        args: ["init", "--help"],
+        usage: "Usage: krn init --dry-run"
+      },
+      {
+        args: ["doctor", "--help"],
+        usage: "Usage: krn doctor"
+      },
+      {
+        args: ["codex", "--help"],
+        usage: "Usage: krn codex brief"
+      },
+      {
+        args: ["source", "--help"],
+        usage: "Usage: krn source artifact preview"
+      },
+      {
+        args: ["memory", "--help"],
+        usage: "Usage: krn memory candidate add"
+      },
+      {
+        args: ["review", "--help"],
+        usage: "Usage: krn review assess"
+      }
+    ] as const;
+
+    for (const command of commands) {
+      const result = await runTestCli(command.args);
+
+      expect(result.exitCode).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain(command.usage);
     }
   });
 
@@ -150,11 +254,7 @@ describe("runCli", () => {
     ] as const;
 
     for (const command of commands) {
-      const result = await runCli(command.args, {
-        env: {},
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`
-      });
+      const result = await runTestCli(command.args);
 
       expect(result.exitCode).toBe(2);
       expect(result.stdout).toBe("");
