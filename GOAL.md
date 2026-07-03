@@ -27,20 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: Second-opinion skill checkpoint and next bounded task selection.
+current task: First end-to-end Shared Brain Vertical Loop proof.
 ```
 
-Current task state: repo-local `second-opinion-claude` skill implemented and
-verified locally; commit/push this checkpoint, then select the next bounded
-task from Beads.
+Current task state: audit cleanup residuals `mise-en-palace-u62r` and
+`mise-en-palace-ee9n` are closed; active Bead is `mise-en-palace-pvtf`.
 
 Latest slice:
 
 ```txt
 Audit cleanup wave closed and pushed.
 Claude Code headless second-opinion workflow added and locally tested.
-Next: use it on bounded post-slice review only when it has a clear budget and
-review question; choose next implementation from Beads.
+Vector retrieval now requires embedding model scope, orphaned CapabilityPlan
+binding types are removed, and the next slice is the first reuse-or-reject loop
+proof.
 ```
 
 ## Direction

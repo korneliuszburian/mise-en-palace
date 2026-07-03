@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Second-opinion skill checkpoint and next bounded task selection
+current task: First end-to-end Shared Brain Vertical Loop proof
 latest pushed commit: see git history
 ```
 
@@ -25,9 +25,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-Second-opinion skill checkpoint and next bounded task selection is active.
-The `second-opinion-claude` skill is locally verified; commit/push this
-checkpoint before selecting the next Beads task.
+First end-to-end Shared Brain Vertical Loop proof is active.
+Audit cleanup residuals are closed; `mise-en-palace-pvtf` is the active proof
+slice.
 ```
 
 ## 2. Product Thesis
@@ -84,46 +84,50 @@ Source-to-decision:
 
 ## Active Task
 
-### Second-Opinion Skill Checkpoint
+### First End-To-End Shared Brain Vertical Loop Proof
 
 Status: in_progress
 
-Goal: commit and push the verified repo-local skill for compact,
-cost-controlled Claude Code review after larger KRN slices.
+Goal: run one real operator task through KRN, promote or reject the produced
+knowledge, then run a second related task that reuses or explicitly rejects it.
 
-Product rationale: independent challenge is useful only if it stays bounded,
-cheap, and tied to current diff evidence.
+Product rationale: reuse-or-reject on a second task is the first meaningful
+proof that KRN is more than Codex running twice.
 
-Architectural rationale: KRN skills should carry repeated workflows without
-expanding `AGENTS.md`, root plans, or a broad subagent/runtime surface.
+Architectural rationale: product truth now comes from the typed loop and
+evidence/review feedback, not another cleanup audit.
 
-Evidence source: Claude Code headless docs, CLI reference docs, and local smoke
-of the wrapper.
+Evidence source: active Bead `mise-en-palace-pvtf`, root GOAL direction, and
+Claude second-opinion priority synthesis.
 
-Official/external sources: `docs/KRN_SOURCES.md#claude-code-headless-review`.
+Official/external sources: none required beyond existing KRN loop sources.
 
-Inputs required: current git diff, Beads state, and one bounded context pack.
+Inputs required: a real operator task, a second related task, and captured
+evidence/review output.
 
-Files likely touched: checkpoint commit only.
+Files likely touched: task-dependent implementation, evidence/review surfaces,
+and compact run report only if it records proof/non-proof.
 
-Allowed writes: one skill, one wrapper, compact source/architecture/root state.
+Allowed writes: bounded implementation, evidence/review artifacts, Beads/root
+state, and focused tests required by the task.
 
 Forbidden writes: broad historical report rewrites, dashboard/API/MCP, worker
-daemon, runtime DB schema, package deletion, or broad review automation.
+daemon, global audit, benchmark platform, or broad review automation.
 
-Output requirements: pushed commit and clear proof/non-proof.
+Output requirements: two related task runs with reuse-or-reject evidence and
+clear proof/non-proof.
 
-Definition of Done: origin contains the verified skill checkpoint.
+Definition of Done: the second related task either uses the promoted knowledge
+or explicitly rejects it with a recorded reason.
 
-Verification commands: `git status`, `git pull --rebase`, `git push`, and CI
-status if available.
+Verification commands: task-specific focused tests, relevant KRN readback
+commands, `git diff --check`, and second-opinion-claude if the slice is large.
 
-Acceptance criteria: future larger slices can produce a bounded review prompt,
-receive structured Claude feedback, keep Codex responsible for final triage,
-and the checkpoint is on origin.
+Acceptance criteria: one real task produces reviewable knowledge, and a second
+related task either reuses that knowledge or rejects it with a recorded reason.
 
-Risk: headless review can burn model budget or timeout unless context packs stay
-small and the wrapper records non-success outcomes.
+Risk: without the second related task, the run proves only execution, not a
+closed brain loop.
 
 Rollback: revert the checkpoint commit only if verification exposes a real
 regression.

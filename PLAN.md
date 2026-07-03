@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Second-opinion skill checkpoint and next bounded task selection
+current task: First end-to-end Shared Brain Vertical Loop proof
 ```
 
 ## Compact Checkpoints
@@ -112,19 +112,20 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Second-Opinion Skill Checkpoint
+### First End-To-End Loop Proof
 
-Goal: commit and push the verified `second-opinion-claude` skill, then choose
-the next bounded implementation task from Beads.
+Goal: run one real task through KRN, then a second related task that reuses or
+explicitly rejects the promoted knowledge.
 
-Hard boundary: Claude review is evidence, not authority; keep it read-only by
-default, budget-capped, and driven by compact context packs.
+Hard boundary: prove reuse-or-reject, not product readiness. Do not broaden into
+dashboard/API/MCP, worker daemon, global audit, or benchmark platform.
 
 Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`,
-`mise-en-palace-zc21`.
+`mise-en-palace-zc21`, `mise-en-palace-u62r`, `mise-en-palace-ee9n`.
 
-Boundary: checkpoint only. Do not broaden into a subagent runtime, dashboard,
-or long audit ledger.
+Active Bead: `mise-en-palace-pvtf`.
+
+Boundary: closed loop requires second-task reuse or explicit rejection.
 
 ## Recent Completed Streams
 
