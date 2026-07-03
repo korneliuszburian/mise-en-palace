@@ -36,7 +36,7 @@ CLI codex test fixture typecheck batch: `packages/cli/src/__tests__/codex.test.t
 now satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-test-typecheck-codex-batch.md
-CI: pending for this slice.
+CI: KRN CI 28643235453 passed for codex test fixture typecheck batch.
 Next: pick the next smallest failing fixture batch by strict `tsc` output.
 ```
 
