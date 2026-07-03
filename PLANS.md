@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: decision-linked source-search ranking, then choose the next highest-ROI kernel vertical
+current task: decision-edge confidence ranking, then source-graph rank-down
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-decision-linked source-search ranking, then choose the next highest-ROI kernel vertical.
+decision-edge confidence ranking, then source-graph rank-down.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -40,9 +40,12 @@ prove one operator-facing SourceDecision adoption, one persisted
 SourceDecisionEdge readback against a concrete harness run, and explicit-project
 source search without requiring a ProjectKernel. They do not prove source truth,
 graph ranking quality, or ProjectKernel lifecycle correctness.
-`mise-en-palace-zx0o` is in progress. It should prove that source search prefers
-decision-linked accepted SourceClaims over accepted-only peers before ContextROI
-when inclusion budget is tight.
+`mise-en-palace-zx0o` is closed with green CI. It proves that source search
+prefers decision-linked accepted SourceClaims over accepted-only peers before
+ContextROI when inclusion budget is tight.
+`mise-en-palace-a878` is in progress. It should prove that source search weights
+SourceDecisionEdge confidence and decision-grade support type without broadening
+global activation ranking.
 ```
 
 ## 2. Product Thesis

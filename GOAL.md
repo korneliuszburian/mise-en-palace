@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: decision-linked source-search ranking, then choose the next highest-ROI kernel vertical.
+current task: decision-edge confidence ranking, then source-graph rank-down.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -37,11 +37,11 @@ Store-backed memory reuse now works when the MemoryCandidate preserves run
 project lineage. The graph relation consensus pattern was selected and used for
 candidate-only heartbeat readback. A persisted next-task plan selected both the
 store-backed SBV MemoryRecord and retained TypeScript pattern catalog readback.
-`mise-en-palace-c79a` and `mise-en-palace-543l` are closed with green CI:
-source search can read an explicit project and expose the c79a SourceClaim with
-linked SourceDecisionEdge support. `mise-en-palace-zx0o` is the active slice:
-source search should prefer decision-linked accepted SourceClaims over
-accepted-only peers before ContextROI.
+`mise-en-palace-c79a`, `mise-en-palace-543l`, and `mise-en-palace-zx0o` are
+closed with green CI: source search can read an explicit project and prefer
+decision-linked accepted SourceClaims before ContextROI. `mise-en-palace-a878`
+is the active slice: source search should weight SourceDecisionEdge confidence
+and decision-grade support type without broadening global activation ranking.
 
 Latest slice:
 

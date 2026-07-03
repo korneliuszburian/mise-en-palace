@@ -5,6 +5,7 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
+  isDecisionGradeSourceSupportType,
   readSourceRelationMetadataReadback
 } from "@krn/core";
 import {
@@ -55,7 +56,14 @@ const defaultProjectSlug = "mise-en-palace";
 const defaultLimit = 20;
 const defaultMaxInclusions = 6;
 const defaultSourceClaimScanFloor = 30;
-const decisionLinkedSourceClaimGraphScore = 15;
+
+const sourceDecisionEdgeConfidenceScores: Record<SourceDecisionEdge["confidence"], number> = {
+  low: 8,
+  medium: 15,
+  high: 20
+};
+
+const decisionGradeSourceDecisionEdgeBonus = 5;
 
 type SearchReviewability =
   | "ready"
@@ -818,6 +826,15 @@ const sourceDecisionSupportReadbackFor = (
   };
 };
 
+const sourceDecisionSupportScore = (
+  support: readonly SourceSearchDecisionSupport[]
+): number => Math.max(0, ...support.map((item) =>
+  sourceDecisionEdgeConfidenceScores[item.confidence] +
+  (isDecisionGradeSourceSupportType(item.supportType)
+    ? decisionGradeSourceDecisionEdgeBonus
+    : 0)
+));
+
 const applySourceDecisionSupportBoost = (
   candidates: readonly RankedActivationCandidate[],
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
@@ -841,19 +858,22 @@ const applySourceDecisionSupportBoost = (
       return candidate;
     }
 
-    const graphScore = candidate.graphScore + decisionLinkedSourceClaimGraphScore;
+    const score = sourceDecisionSupportScore(support);
+    const graphScore = candidate.graphScore + score;
 
     return {
       ...candidate,
       graphScore,
-      totalScore: candidate.totalScore + decisionLinkedSourceClaimGraphScore,
+      totalScore: candidate.totalScore + score,
       reason: `${candidate.reason} Decision-linked source support: SourceDecisionEdge readback exists.`,
       expectedUse: `${candidate.expectedUse} Prefer over accepted-only SourceClaims when relevance is otherwise comparable.`,
       metadata: {
         ...candidate.metadata,
         sourceDecisionSupportBoost: {
-          score: decisionLinkedSourceClaimGraphScore,
+          score,
           sourceDecisionEdgeIds: support.map((item) => item.sourceDecisionEdgeId),
+          confidence: support.map((item) => item.confidence),
+          supportTypes: support.map((item) => item.supportType),
           doesNotProve:
             "SourceDecisionEdge ranking boost does not prove source truth, target correctness, or broad retrieval quality."
         }

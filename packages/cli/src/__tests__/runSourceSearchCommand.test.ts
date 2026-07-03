@@ -901,6 +901,74 @@ describe("runSourceSearchCommand", () => {
     );
   });
 
+  it("weights SourceDecisionEdge confidence when choosing linked SourceClaims", async () => {
+    const lowConfidenceClaimId = "cf703560-3a2b-42a7-8949-2867e9529e67" as SourceClaim["id"];
+    const highConfidenceClaimId = "916adabc-c8a3-4e08-bb55-f11443b739fe" as SourceClaim["id"];
+    const sharedClaim = "Source search should rank decision linked evidence by decision-edge confidence.";
+    const lowConfidenceClaim = sourceClaim({
+      id: lowConfidenceClaimId,
+      claim: sharedClaim,
+      mechanism: "The claim has low-confidence SourceDecisionEdge readback.",
+      krnImplication: "Low-confidence linked claims stay eligible but should not outrank stronger decision support.",
+      falsifier: "A max-inclusions=1 search selects the low-confidence linked claim."
+    });
+    const highConfidenceClaim = sourceClaim({
+      id: highConfidenceClaimId,
+      claim: sharedClaim,
+      mechanism: "The claim has high-confidence SourceDecisionEdge readback.",
+      krnImplication: "High-confidence linked claims should be preferred when relevance is otherwise equal.",
+      falsifier: "A max-inclusions=1 search fails to select the high-confidence linked claim."
+    });
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "source search rank decision linked evidence decision-edge confidence",
+        limit: 10,
+        maxInclusions: 1,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          lowConfidenceClaim,
+          highConfidenceClaim
+        ],
+        documents: [],
+        decisionEdges: [
+          sourceDecisionEdge({
+            id: "4e64e3cf-f925-423b-a95c-65b6959e8cdd" as SourceDecisionEdge["id"],
+            sourceClaimId: lowConfidenceClaimId,
+            confidence: "low"
+          }),
+          sourceDecisionEdge({
+            id: "ea41a2c6-aa14-4d2d-9a62-23b1862a5762" as SourceDecisionEdge["id"],
+            sourceClaimId: highConfidenceClaimId,
+            confidence: "high"
+          })
+        ]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+    const sourceDecisionSupport = arrayValue(
+      answerPackage.sourceDecisionSupport,
+      "sourceDecisionSupport"
+    );
+
+    expect(supportingClaims).toHaveLength(1);
+    expect(firstClaim.sourceClaimId).toBe(highConfidenceClaimId);
+    expect(firstClaim.sourceDecisionSupportState).toBe("linked");
+    expect(sourceDecisionSupport).toHaveLength(1);
+    expect(objectValue(sourceDecisionSupport[0], "decision support").confidence).toBe("high");
+  });
+
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
     const result = await runSourceSearchCommand({
       cwd: "/repo",
