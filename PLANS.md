@@ -37,8 +37,9 @@ CLI run-show test typecheck widening slice: `runRunShowCommand.test.ts` now
 satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-run-show-test-typecheck-widening.md
-CI: pending for this slice.
-Next: close the Beads issue after CI proves this slice.
+CI: KRN CI 28646663138 passed for this slice.
+Next: close the Beads issue and select the next bounded CLI test typecheck
+batch.
 ```
 
 ## 2. Product Thesis
