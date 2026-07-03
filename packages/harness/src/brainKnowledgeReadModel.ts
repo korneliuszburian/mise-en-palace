@@ -182,38 +182,64 @@ type NormalizedBrainKnowledgeSearchFilter = {
   textTokens: string[];
 };
 
-const knowledgeKinds = new Set<BrainKnowledgeKind>(brainKnowledgeKindValues);
+const knowledgeKinds = new Set<string>(brainKnowledgeKindValues);
 
-const knowledgeStatuses = new Set<BrainKnowledgeStatus>(brainKnowledgeStatusValues);
+const knowledgeStatuses = new Set<string>(brainKnowledgeStatusValues);
 
-const knowledgeConfidences = new Set<BrainKnowledgeConfidence>([
+const knowledgeConfidences = new Set<string>([
   "high",
   "medium",
   "low",
   "unknown"
 ]);
 
-const knowledgeReviewabilities = new Set<BrainKnowledgeReviewability>(
+const knowledgeReviewabilities = new Set<string>(
   brainKnowledgeReviewabilityValues
 );
 
-const knowledgeNextActions = new Set<BrainKnowledgeNextAction>(
+const knowledgeNextActions = new Set<string>(
   brainKnowledgeNextActionValues
 );
 
-const knowledgeUsefulnessOutcomes = new Set<BrainKnowledgeUsefulnessOutcome>(
+const knowledgeUsefulnessOutcomes = new Set<string>(
   brainKnowledgeUsefulnessOutcomeValues
 );
 
-const patternAdoptionStatuses = new Set<RetainedPatternAdoptionStatus>([
+const patternAdoptionStatuses = new Set<string>([
   "adopt_now",
   "lab",
   "later",
   "reject"
 ]);
 
+const isBrainKnowledgeKind = (value: unknown): value is BrainKnowledgeKind =>
+  typeof value === "string" && knowledgeKinds.has(value);
+
+const isBrainKnowledgeStatus = (value: unknown): value is BrainKnowledgeStatus =>
+  typeof value === "string" && knowledgeStatuses.has(value);
+
+const isBrainKnowledgeConfidence = (value: unknown): value is BrainKnowledgeConfidence =>
+  typeof value === "string" && knowledgeConfidences.has(value);
+
+const isBrainKnowledgeReviewability = (value: unknown): value is BrainKnowledgeReviewability =>
+  typeof value === "string" && knowledgeReviewabilities.has(value);
+
+const isBrainKnowledgeNextAction = (value: unknown): value is BrainKnowledgeNextAction =>
+  typeof value === "string" && knowledgeNextActions.has(value);
+
+const isBrainKnowledgeUsefulnessOutcome = (
+  value: unknown
+): value is BrainKnowledgeUsefulnessOutcome =>
+  typeof value === "string" && knowledgeUsefulnessOutcomes.has(value);
+
+const isRetainedPatternAdoptionStatus = (
+  value: unknown
+): value is RetainedPatternAdoptionStatus =>
+  typeof value === "string" && patternAdoptionStatuses.has(value);
+
 const evidenceBoundaryFieldParsers: FieldParsers<BrainKnowledgeEvidenceBoundaryFields> = {
-  reviewability: (record) => parseSetValue(record["reviewability"], knowledgeReviewabilities),
+  reviewability: (record) =>
+    isBrainKnowledgeReviewability(record["reviewability"]) ? record["reviewability"] : undefined,
   sourceRefs: (record) => parseNonEmptyStringArray(record["sourceRefs"]),
   evidenceRefs: (record) => parseNonEmptyStringArray(record["evidenceRefs"]),
   consumers: (record) => parseNonEmptyStringArray(record["consumers"]),
@@ -223,25 +249,30 @@ const evidenceBoundaryFieldParsers: FieldParsers<BrainKnowledgeEvidenceBoundaryF
 
 const brainKnowledgeReadModelFieldParsers: FieldParsers<BrainKnowledgeReadModelRequiredFields> = {
   id: (record) => parseNonEmptyString(record["id"]),
-  kind: (record) => parseSetValue(record["kind"], knowledgeKinds),
-  status: (record) => parseSetValue(record["status"], knowledgeStatuses),
+  kind: (record) => isBrainKnowledgeKind(record["kind"]) ? record["kind"] : undefined,
+  status: (record) => isBrainKnowledgeStatus(record["status"]) ? record["status"] : undefined,
   title: (record) => parseNonEmptyString(record["title"]),
   summary: (record) => parseNonEmptyString(record["summary"]),
-  confidence: (record) => parseSetValue(record["confidence"], knowledgeConfidences),
+  confidence: (record) =>
+    isBrainKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
   ...evidenceBoundaryFieldParsers,
   temporal: (record) => parseTemporal(record["temporal"]),
   dissent: (record) => parseDissent(record["dissent"]),
-  nextAction: (record) => parseSetValue(record["nextAction"], knowledgeNextActions)
+  nextAction: (record) =>
+    isBrainKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
 };
 
 const retainedPatternDecisionFieldParsers: FieldParsers<RetainedPatternDecisionRequiredFields> = {
   patternId: (record) => parseNonEmptyString(record["patternId"]),
   name: (record) => parseNonEmptyString(record["name"]),
-  adoptionStatus: (record) => parseSetValue(record["adoptionStatus"], patternAdoptionStatuses),
-  confidence: (record) => parseSetValue(record["confidence"], knowledgeConfidences),
+  adoptionStatus: (record) =>
+    isRetainedPatternAdoptionStatus(record["adoptionStatus"]) ? record["adoptionStatus"] : undefined,
+  confidence: (record) =>
+    isBrainKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
   decision: (record) => parseNonEmptyString(record["decision"]),
   ...evidenceBoundaryFieldParsers,
-  nextAction: (record) => parseSetValue(record["nextAction"], knowledgeNextActions)
+  nextAction: (record) =>
+    isBrainKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
 };
 
 export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeReadModel | undefined {
@@ -268,7 +299,9 @@ export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnow
   }
 
   const cardId = parseNonEmptyString(value["cardId"]);
-  const outcome = parseSetValue(value["outcome"], knowledgeUsefulnessOutcomes);
+  const outcome = isBrainKnowledgeUsefulnessOutcome(value["outcome"])
+    ? value["outcome"]
+    : undefined;
   const summary = parseNonEmptyString(value["summary"]);
   const evidenceRefs = parseNonEmptyStringArray(value["evidenceRefs"]);
   const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
@@ -525,10 +558,6 @@ function statusFromPatternAdoption(status: RetainedPatternAdoptionStatus): Brain
     case "reject":
       return "rejected";
   }
-}
-
-function parseSetValue<T extends string>(value: unknown, allowed: ReadonlySet<T>): T | undefined {
-  return typeof value === "string" && allowed.has(value as T) ? value as T : undefined;
 }
 
 function parseTemporal(value: unknown): BrainKnowledgeTemporal | undefined {
