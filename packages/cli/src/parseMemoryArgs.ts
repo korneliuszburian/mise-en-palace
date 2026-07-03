@@ -6,6 +6,7 @@ import {
   type CliTokenParseResult,
   type PersistedMetadataCommand,
   type PersistedMetadataTokenConfig,
+  mapStringOptionAssignment,
   optionMatches,
   optionValue,
   parsePersistedMetadataToken
@@ -233,17 +234,6 @@ type MemoryCandidatePromoteStringKey = typeof memoryCandidatePromoteStringOption
 type MemoryRejectStringKey = typeof memoryRejectStringOptions[keyof typeof memoryRejectStringOptions];
 type MemoryRecordApplyStringKey = typeof memoryRecordApplyStringOptions[keyof typeof memoryRecordApplyStringOptions];
 type MemoryAntiPromoteStringKey = typeof memoryAntiPromoteStringOptions[keyof typeof memoryAntiPromoteStringOptions];
-
-const mapStringOptionAssignment = <
-  TCommand,
-  TKey extends string
->(
-  assigners: Record<TKey, (command: TCommand, value: string) => void>,
-  command: TCommand
-) =>
-  (key: TKey, value: string): void => {
-    assigners[key](command, value);
-  };
 
 const memoryNext = (nextIndex: number): MemoryTokenParseResult => ({
   kind: "next",

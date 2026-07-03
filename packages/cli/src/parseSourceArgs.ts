@@ -8,6 +8,7 @@ import type {
 import {
   type CliOptionParseResult,
   type CliTokenParseResult,
+  mapStringOptionAssignment,
   optionMatches,
   optionValue,
   parseMappedStringOption,
@@ -945,9 +946,47 @@ const parseSourceClaimAddToken = (
   parsePersistedMetadataToken(rest, index, sourceCommand, {
     fallbackUsage: formatSourceClaimAddUsage(),
     optionMap: sourceClaimAddStringOptions,
-    assignOption: (key, value) => {
-      sourceCommand[key as SourceClaimAddStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<SourceClaimAddCommand, SourceClaimAddStringKey>({
+      title: (command, value) => {
+        command.title = value;
+      },
+      claim: (command, value) => {
+        command.claim = value;
+      },
+      mechanism: (command, value) => {
+        command.mechanism = value;
+      },
+      doesNotProve: (command, value) => {
+        command.doesNotProve = value;
+      },
+      supportType: (command, value) => {
+        command.supportType = value;
+      },
+      trustTier: (command, value) => {
+        command.trustTier = value;
+      },
+      consumer: (command, value) => {
+        command.consumer = value;
+      },
+      uri: (command, value) => {
+        command.uri = value;
+      },
+      type: (command, value) => {
+        command.type = value;
+      },
+      runId: (command, value) => {
+        command.runId = value;
+      },
+      falsifier: (command, value) => {
+        command.falsifier = value;
+      },
+      revisitWhen: (command, value) => {
+        command.revisitWhen = value;
+      },
+      krnImplication: (command, value) => {
+        command.krnImplication = value;
+      }
+    }, sourceCommand)
   });
 
 const parseSourceClaimEdgesToken = (
@@ -994,9 +1033,35 @@ const parseSourceClaimRejectToken = (
   parsePersistedMetadataToken(rest, index, sourceCommand, {
     fallbackUsage: formatSourceClaimRejectUsage(),
     optionMap: sourceClaimRejectStringOptions,
-    assignOption: (key, value) => {
-      sourceCommand[key as SourceClaimRejectStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<SourceClaimRejectCommand, SourceClaimRejectStringKey>({
+      title: (command, value) => {
+        command.title = value;
+      },
+      attemptedClaim: (command, value) => {
+        command.attemptedClaim = value;
+      },
+      rejectedBecause: (command, value) => {
+        command.rejectedBecause = value;
+      },
+      reason: (command, value) => {
+        command.reason = value;
+      },
+      doesNotProve: (command, value) => {
+        command.doesNotProve = value;
+      },
+      consumer: (command, value) => {
+        command.consumer = value;
+      },
+      runId: (command, value) => {
+        command.runId = value;
+      },
+      sourceArtifactId: (command, value) => {
+        command.sourceArtifactId = value;
+      },
+      sourceClaimId: (command, value) => {
+        command.sourceClaimId = value;
+      }
+    }, sourceCommand)
   });
 
 const parseSourceDecisionLinkToken = (
@@ -1007,9 +1072,26 @@ const parseSourceDecisionLinkToken = (
   parsePersistedMetadataToken(rest, index, sourceCommand, {
     fallbackUsage: formatSourceDecisionLinkUsage(),
     optionMap: sourceDecisionLinkStringOptions,
-    assignOption: (key, value) => {
-      sourceCommand[key as SourceDecisionLinkStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<SourceDecisionLinkCommand, SourceDecisionLinkStringKey>({
+      sourceClaimId: (command, value) => {
+        command.sourceClaimId = value;
+      },
+      targetType: (command, value) => {
+        command.targetType = value;
+      },
+      targetId: (command, value) => {
+        command.targetId = value;
+      },
+      supportType: (command, value) => {
+        command.supportType = value;
+      },
+      confidence: (command, value) => {
+        command.confidence = value;
+      },
+      notes: (command, value) => {
+        command.notes = value;
+      }
+    }, sourceCommand)
   });
 
 const parseSourceDecisionAdoptToken = (
@@ -1020,9 +1102,23 @@ const parseSourceDecisionAdoptToken = (
   parsePersistedMetadataToken(rest, index, sourceCommand, {
     fallbackUsage: formatSourceDecisionAdoptUsage(),
     optionMap: sourceDecisionAdoptStringOptions,
-    assignOption: (key, value) => {
-      sourceCommand[key as SourceDecisionAdoptStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<SourceDecisionAdoptCommand, SourceDecisionAdoptStringKey>({
+      sourceClaimId: (command, value) => {
+        command.sourceClaimId = value;
+      },
+      decision: (command, value) => {
+        command.decision = value;
+      },
+      rationale: (command, value) => {
+        command.rationale = value;
+      },
+      falsifier: (command, value) => {
+        command.falsifier = value;
+      },
+      consumer: (command, value) => {
+        command.consumer = value;
+      }
+    }, sourceCommand)
   });
 
 const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {

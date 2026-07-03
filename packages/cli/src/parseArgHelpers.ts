@@ -206,6 +206,17 @@ export const parseMappedStringOption = <TOption extends string, TKey extends str
   };
 };
 
+export const mapStringOptionAssignment = <
+  TCommand,
+  TKey extends string
+>(
+  assigners: Record<TKey, (command: TCommand, value: string) => void>,
+  command: TCommand
+) =>
+  (key: TKey, value: string): void => {
+    assigners[key](command, value);
+  };
+
 const parseMetadataOption = (
   rest: readonly string[],
   index: number,
