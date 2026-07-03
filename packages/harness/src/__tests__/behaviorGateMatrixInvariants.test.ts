@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync
+} from "node:fs";
 
 import {
   describe,
@@ -19,6 +22,7 @@ const promptfooBoundaryPath = new URL(
   "../../../../docs/architecture/promptfoo-adapter-boundary.md",
   import.meta.url
 );
+const repoRoot = new URL("../../../../", import.meta.url);
 
 interface MatrixRow {
   check: string;
@@ -87,6 +91,9 @@ const sectionBody = (body: string, heading: string): string => {
 
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
+
+const markdownCodeSpans = (value: string): readonly string[] =>
+  [...value.matchAll(/`([^`]+)`/gu)].map((match) => match[1] ?? "");
 
 const packageScripts = (): Record<string, string> => {
   const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, "utf8"));
@@ -175,6 +182,21 @@ describe("KRN behavior gate matrix invariants", () => {
     ]) {
       expect(docsLintText).toContain(phrase);
     }
+  });
+
+  it("does not cite missing repo-local skill files as active evidence", () => {
+    const missingSkillRefs = matrixRows().flatMap((row) =>
+      markdownCodeSpans(row.evidence)
+        .filter((reference) =>
+          reference.startsWith(".agents/skills/") &&
+          reference.endsWith("/SKILL.md") &&
+          !reference.includes("*")
+        )
+        .filter((reference) => !existsSync(new URL(reference, repoRoot)))
+        .map((reference) => `${row.check}: ${reference}`)
+    );
+
+    expect(missingSkillRefs).toEqual([]);
   });
 
   it("keeps the old brain-battle command as a compatibility alias only", () => {

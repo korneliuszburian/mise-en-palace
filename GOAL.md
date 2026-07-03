@@ -55,6 +55,9 @@ push/CI: `eval:krn:smoke` remains the active deterministic behavior/docs gate
 and `eval:brain-battle:smoke` is legacy compatibility only. `mise-en-palace-wuqx`
 is locally closed pending push/CI: the eval proof-boundary manifest remains
 docs-lint/test evidence, not public harness runtime API.
+`mise-en-palace-8152` is locally closed pending push/CI: retained skills were
+kept as operational guidance, no broad purge was made, and stale active matrix
+evidence for a missing skill was removed.
 
 Latest slice:
 

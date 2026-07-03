@@ -66,6 +66,9 @@ not treating raw relation metadata as validated decision support.
 `mise-en-palace-wuqx` is locally closed pending push/CI. It keeps the eval
 proof-boundary manifest as docs-lint/test evidence and removes any implication
 that it is public harness runtime API.
+`mise-en-palace-8152` is locally closed pending push/CI. It classified retained
+repo-local skills by operational consumer, avoided broad skill purge, and
+removed stale active evidence for a missing skill file.
 ```
 
 ## 2. Product Thesis
