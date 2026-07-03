@@ -167,3 +167,8 @@ If Vitest hits a temporary-directory write error, use
 CLI boundary tests rely on outside-workspace temporary directories.
 
 After each bounded slice, commit, push, and confirm CI with the full SHA.
+
+Second-opinion workflow: for larger migration, audit-hardening, or
+authority-boundary slices, use `docs/runbooks/second-opinion-claude.md` after
+local evidence exists. Claude is a read-only reviewer; Codex owns triage,
+fixes, Beads state, commit, push, and CI.

@@ -81,6 +81,8 @@ bounded product surface, or unblock the next vertical slice.
   `second-opinion-claude` workflow with a compact context pack, triage the
   result, fix or file follow-ups, and continue without operator routing unless
   the finding requires a product, budget, or explicit human tradeoff decision.
+  Use `docs/runbooks/second-opinion-claude.md` for the exact commands, exit
+  semantics, and triage moves.
 - For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
   target-workflow, security, operator-UX, or research/paper/course-driven slice,
   apply:
