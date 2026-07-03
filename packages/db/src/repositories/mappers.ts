@@ -180,7 +180,7 @@ const mapRetrievalSubjectFields = (
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
-const operatorIntentSources = new Set<OperatorIntentSource>([
+const operatorIntentSources: ReadonlySet<string> = new Set([
   "goal",
   "cli",
   "api",
@@ -188,55 +188,68 @@ const operatorIntentSources = new Set<OperatorIntentSource>([
   "operator"
 ]);
 
-const diffRisks = new Set<DiffRisk>(["low", "medium", "high"]);
-const evidenceCommandStatusSet = new Set<EvidenceCommandStatus>(evidenceCommandStatuses);
-const evidenceCommandProvenances = new Set<EvidenceCommandProvenance>([
+const diffRisks: ReadonlySet<string> = new Set(["low", "medium", "high"]);
+const evidenceCommandStatusSet: ReadonlySet<string> = new Set(evidenceCommandStatuses);
+const evidenceCommandProvenances: ReadonlySet<string> = new Set([
   "default_template",
   "operator_reported",
   "captured_output_file",
   "command_runner",
   "external_log"
 ]);
-const sourceDecisionStatuses = new Set<SourceDecision["status"]>([
+const sourceDecisionStatuses: ReadonlySet<string> = new Set([
   "adopt",
   "reject",
   "defer",
   "lab_test"
 ]);
-const sourceTrustTierSet = new Set<SourceTrustTier>(sourceTrustTiers);
+const sourceTrustTierSet: ReadonlySet<string> = new Set(sourceTrustTiers);
+
+const isOperatorIntentSource = (value: unknown): value is OperatorIntentSource =>
+  typeof value === "string" && operatorIntentSources.has(value);
+
+const isDiffRisk = (value: unknown): value is DiffRisk =>
+  typeof value === "string" && diffRisks.has(value);
+
+const isEvidenceCommandStatus = (value: unknown): value is EvidenceCommandStatus =>
+  typeof value === "string" && evidenceCommandStatusSet.has(value);
+
+const isEvidenceCommandProvenance = (
+  value: unknown
+): value is EvidenceCommandProvenance =>
+  typeof value === "string" && evidenceCommandProvenances.has(value);
+
+const isSourceDecisionStatus = (value: unknown): value is SourceDecision["status"] =>
+  typeof value === "string" && sourceDecisionStatuses.has(value);
 
 const asOperatorIntentSource = (value: string): OperatorIntentSource => {
-  if (operatorIntentSources.has(value as OperatorIntentSource)) {
-    return value as OperatorIntentSource;
+  if (isOperatorIntentSource(value)) {
+    return value;
   }
 
   throw new Error(`Unknown operator intent source: ${value}`);
 };
 
 const asDiffRisk = (value: string): DiffRisk => {
-  if (diffRisks.has(value as DiffRisk)) {
-    return value as DiffRisk;
+  if (isDiffRisk(value)) {
+    return value;
   }
 
   throw new Error(`Unknown evidence diff risk: ${value}`);
 };
 
 const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
-  typeof value === "string" && sourceTrustTierSet.has(value as SourceTrustTier);
+  typeof value === "string" && sourceTrustTierSet.has(value);
 
 const evidenceCommandStatusOrUndefined = (
   value: unknown
 ): EvidenceCommandStatus | undefined =>
-  typeof value === "string" && evidenceCommandStatusSet.has(value as EvidenceCommandStatus)
-    ? value as EvidenceCommandStatus
-    : undefined;
+  isEvidenceCommandStatus(value) ? value : undefined;
 
 const evidenceCommandProvenanceOrUndefined = (
   value: unknown
 ): EvidenceCommandProvenance | undefined =>
-  typeof value === "string" && evidenceCommandProvenances.has(value as EvidenceCommandProvenance)
-    ? value as EvidenceCommandProvenance
-    : undefined;
+  isEvidenceCommandProvenance(value) ? value : undefined;
 
 const optionalEvidenceCommandFields = (
   item: Record<string, unknown>
@@ -315,9 +328,7 @@ const hasStringFields = <K extends string>(
 const sourceDecisionStatusOrUndefined = (
   value: unknown
 ): SourceDecision["status"] | undefined =>
-  typeof value === "string" && sourceDecisionStatuses.has(value as SourceDecision["status"])
-    ? value as SourceDecision["status"]
-    : undefined;
+  isSourceDecisionStatus(value) ? value : undefined;
 
 const sourceDecisionStringFields = [
   "id",

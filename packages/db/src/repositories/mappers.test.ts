@@ -70,6 +70,45 @@ const evalCandidate: EvalCandidateProposal = {
   createdAt: createdAt.toISOString()
 };
 
+describe("DB mapper enum narrowing", () => {
+  it("rejects unknown operator intent sources instead of casting them into domain values", () => {
+    const mapOperatorIntent = mapper("mapOperatorIntent");
+
+    expect(() =>
+      mapOperatorIntent({
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: null,
+        source: "spreadsheet",
+        rawIntent: "Run the kernel.",
+        normalizedIntent: null,
+        metadata: {},
+        createdAt
+      })
+    ).toThrow("Unknown operator intent source: spreadsheet");
+  });
+
+  it("rejects unknown evidence diff risks instead of casting them into domain values", () => {
+    const mapEvidenceBundle = mapper("mapEvidenceBundle");
+
+    expect(() =>
+      mapEvidenceBundle({
+        id: "evidence-bundle-1",
+        executionRunId: "execution-run-1",
+        status: "captured",
+        changedFiles: [],
+        commands: [],
+        diffRisk: "catastrophic",
+        reviewBurden: "Review command provenance.",
+        rollbackPath: "git revert <commit>",
+        metadata: {},
+        createdAt,
+        updatedAt
+      })
+    ).toThrow("Unknown evidence diff risk: catastrophic");
+  });
+});
+
 describe("mapFeedbackDelta", () => {
   it("preserves persisted memory, source, and eval candidates", () => {
     const result = mapFeedbackDelta({

@@ -150,7 +150,7 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-h1b4/ij82/otyu` split and CI-gated DB-backed run-show smoke.
 `mise-en-palace-m9yb/w4px` refreshed the post-refactor queue and applied retained `ts-boundary-unknown-first-result-state` to brain-search JSON readback.
 `mise-en-palace-7hoy` added duplicate SourceClaimEdge selection proof beyond invalidation rank-down.
-`mise-en-palace-fusx/fx89/9v8s/jjfa/or40` retained feedback, refreshed the queue, fixed catalog feedback invariants, verified vector/capability cleanup, and hardened run-show metadata narrowing; deferred human decision: `plnv`.
+`mise-en-palace-fusx/fx89/9v8s/jjfa/or40/283u` retained feedback, refreshed the queue, fixed catalog feedback invariants, verified vector/capability cleanup, and hardened run-show plus DB mapper narrowing; deferred human decision: `plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim product readiness or retrieval quality from this slice.
 
