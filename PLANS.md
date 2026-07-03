@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: scoped CLI test typecheck gate for cleaned test subset
+current task: CLI codex test fixture typecheck batch
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-scoped CLI test typecheck gate for cleaned test subset is active.
-Scoped CLI test typecheck gate is active for the first cleaned CLI test subset.
-Broader CLI test fixture-shape debt is tracked as a bounded Beads follow-up.
+CLI codex test fixture typecheck batch is active.
+The scoped CLI test typecheck gate now includes the codex command test batch.
+Broader CLI test fixture-shape debt remains tracked as bounded Beads follow-up work.
 ```
 
 Latest outcome:
 
 ```txt
-Scoped CLI test typecheck gate: `eval:brain-battle:smoke` now runs
-`pnpm --filter @krn/cli typecheck:tests:clean` for the first strict subset.
+CLI codex test fixture typecheck batch: `packages/cli/src/__tests__/codex.test.ts`
+now satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md
-CI: KRN CI 28642851743 passed for scoped CLI test typecheck gate.
-Next: expand only after fixing the next CLI test fixture-shape batch without casts.
+docs/runs/2026-07-03-cli-test-typecheck-codex-batch.md
+CI: pending for this slice.
+Next: pick the next smallest failing fixture batch by strict `tsc` output.
 ```
 
 ## 2. Product Thesis

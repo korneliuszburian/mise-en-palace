@@ -16,6 +16,7 @@ import type {
 import {
   deriveCodexAdapterReadiness
 } from "../doctorReadiness.js";
+import type { DatabaseRuntime } from "../databaseRuntime.js";
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
 import { runCli } from "../runCli.js";
 
@@ -39,6 +40,9 @@ const unusedMemoryRepository = {
   },
   async getMemoryRecordById(_id: string): Promise<never> {
     throw new Error("getMemoryRecordById should not be called");
+  },
+  async listMemoryRecordsForProject(): Promise<never> {
+    throw new Error("listMemoryRecordsForProject should not be called");
   },
   async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
     throw new Error("recordMemoryApplication should not be called");
@@ -74,8 +78,7 @@ describe("runCli", () => {
         source: "cli",
         rawIntent: "render Codex execution brief",
         metadata: {},
-        createdAt: now,
-        updatedAt: now
+        createdAt: now
       },
       taskContract: {
         id: "task-contract-1",
@@ -191,8 +194,46 @@ describe("runCli", () => {
       },
       async getHarnessRunByExecutionRunId(runId: string) {
         return runId === "execution-run-1" ? aggregate : undefined;
+      },
+      async createEvidenceBundle(): Promise<never> {
+        throw new Error("createEvidenceBundle should not be called");
+      },
+      async createReviewAssessment(): Promise<never> {
+        throw new Error("createReviewAssessment should not be called");
+      },
+      async createFeedbackDelta(): Promise<never> {
+        throw new Error("createFeedbackDelta should not be called");
       }
     };
+    const sourceRepository = {
+      async createSourceArtifact(): Promise<never> {
+        throw new Error("createSourceArtifact should not be called");
+      },
+      async createSourceClaim(): Promise<never> {
+        throw new Error("createSourceClaim should not be called");
+      },
+      async getSourceClaimById(): Promise<never> {
+        throw new Error("getSourceClaimById should not be called");
+      },
+      async listClaimsForProject(): Promise<never> {
+        throw new Error("listClaimsForProject should not be called");
+      },
+      async createSourceClaimEdge(): Promise<never> {
+        throw new Error("createSourceClaimEdge should not be called");
+      },
+      async listSourceClaimEdgesForClaim(): Promise<never> {
+        throw new Error("listSourceClaimEdgesForClaim should not be called");
+      },
+      async createSourceDecisionEdge(): Promise<never> {
+        throw new Error("createSourceDecisionEdge should not be called");
+      },
+      async getSourceDecisionEdgeById(): Promise<never> {
+        throw new Error("getSourceDecisionEdgeById should not be called");
+      },
+      async createSourceRejection(): Promise<never> {
+        throw new Error("createSourceRejection should not be called");
+      }
+    } satisfies DatabaseRuntime["sourceRepository"];
     const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -207,6 +248,7 @@ describe("runCli", () => {
           harnessRunRepository
         },
         harnessRunRepository,
+        sourceRepository,
         memoryRepository: unusedMemoryRepository,
         async close() {
           return undefined;

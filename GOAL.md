@@ -27,20 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: scoped CLI test typecheck gate for cleaned test subset.
+current task: CLI codex test fixture typecheck batch.
 ```
 
-Current task state: `eval:brain-battle:smoke` now runs a scoped strict
-TypeScript gate for the first cleaned CLI test subset. This does not prove full
-CLI test typecheck; broader fixture-shape debt is tracked in Beads.
+Current task state: the scoped CLI test typecheck gate now includes the codex
+command test batch. This does not prove full CLI test typecheck; broader
+fixture-shape debt remains tracked in Beads.
 
 Latest slice:
 
 ```txt
-Scoped CLI test typecheck gate.
+CLI codex test fixture typecheck batch.
 Report:
-docs/runs/2026-07-03-cli-scoped-test-typecheck-gate.md
-Next: expand only after fixing the next fixture-shape batch without casts.
+docs/runs/2026-07-03-cli-test-typecheck-codex-batch.md
+Next: pick the next smallest failing fixture batch by strict `tsc` output.
 ```
 
 ## Direction
