@@ -6,6 +6,8 @@ import {
   it
 } from "vitest";
 
+import { parseBrainKnowledgeUsefulnessFeedbackList } from "./brainKnowledgeReadModel";
+
 const readRootFile = (path: string): string =>
   readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 
@@ -179,6 +181,37 @@ describe("Brain knowledge read model invariants", () => {
     expect(usefulnessFeedbackFiles).toContain(
       "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json"
     );
+  });
+
+  it("keeps catalog usefulness feedback files present and parser-valid", () => {
+    const catalog = readJsonRootFile("docs/brain-knowledge/catalog.json");
+
+    if (!isRecord(catalog)) {
+      throw new Error("Brain knowledge catalog must be an object.");
+    }
+
+    const usefulnessFeedbackFiles = catalog["usefulnessFeedbackFiles"];
+
+    expect(Array.isArray(usefulnessFeedbackFiles)).toBe(true);
+
+    if (!Array.isArray(usefulnessFeedbackFiles)) {
+      return;
+    }
+
+    for (const file of usefulnessFeedbackFiles) {
+      expect(typeof file).toBe("string");
+
+      if (typeof file !== "string") {
+        continue;
+      }
+
+      const parsed = parseBrainKnowledgeUsefulnessFeedbackList(
+        readJsonRootFile(`docs/brain-knowledge/${file}`)
+      );
+
+      expect(parsed, file).not.toBeUndefined();
+      expect(parsed?.length, file).toBeGreaterThan(0);
+    }
   });
 
   it("keeps the local static web preview artifact command repeatable and read-only", () => {
