@@ -149,6 +149,9 @@ activation context reuse case.
 `mise-en-palace-2ksv` second-opinion retry artifact hardening is closed:
 invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-h1b4` run-show split is closed; `mise-en-palace-ij82/otyu` add and CI-gate DB-backed run-show smoke; next selection uses Beads ready work.
+`mise-en-palace-m9yb` refreshed the post-refactor queue with governed Claude review.
+Next ready P1: `mise-en-palace-w4px` applies retained pattern brain to one real code-quality slice.
+Queued P2: `mise-en-palace-7hoy` extends source graph relation ranking beyond one proof; `mise-en-palace-ww2s` audits active-code placeholder vocabulary.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
