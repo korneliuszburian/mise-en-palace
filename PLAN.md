@@ -1,6 +1,6 @@
 # KRN Active Plan
 
-Status: active compact root plan. Date: 2026-07-02.
+Status: active compact root plan. Date: 2026-07-03.
 
 Root `PLAN.md` is compact product truth. Detailed history stays in `PLANS.md`.
 
@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending
+current task: CLI root test topology drained; next bounded issue selection pending
 ```
 
 ## Compact Checkpoints
@@ -111,20 +111,21 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Source Decision Edge Authority
+### CLI Root Test Topology Drain
 
-Goal: prevent proposed SourceClaims from becoming decision-grade edge support.
+Goal: remove CLI root-level colocated test clutter without changing runtime behavior.
 
-Hard boundary: no dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server; no broad source taxonomy or CLI redesign.
+Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-02-source-decision-edge-authority.md`.
+Latest report: `docs/runs/2026-07-03-cli-root-test-topology-drain.md`.
 
 Task boundary:
 
 ```txt
-SourceDecisionEdge and SourceClaimEdge support require accepted SourceClaims.
-Proposed SourceClaims remain review candidates, not decision-support authority.
-KRN CI 28621751037 passed. Next work is selected from Beads or created from bounded audit evidence.
+packages/cli/src/*.test.ts is drained to 0.
+packages/cli/src/__tests__/**/*.test.ts now owns CLI package tests.
+KRN CI 28629440375 passed for the final run-show proof-reference move.
+Next work is selected from Beads or created from bounded audit evidence.
 ```
 
 ## Recent Completed Streams
