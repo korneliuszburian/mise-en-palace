@@ -24,7 +24,20 @@ helper functions for compatibility with current tests and CLI callers.
 pnpm --filter @krn/cli test -- runSourceSearchCommand
 pnpm -C packages/cli typecheck
 pnpm quality:fallow:ci
+pnpm --filter @krn/harness test -- contextHygieneInvariants
+git diff --check
 ```
+
+CI run `28686887251` passed for commit
+`02cd5e9d9c2cff56fc5cc5d0179ce68ccdf9617e`.
+
+## Second Opinion
+
+`second-opinion-claude` reviewed the candidate+answer extraction range against
+base `113080dee94fe95f45b64e78624ad440f20d9715`.
+
+Verdict: `approve`, risk `LOW`, no findings. The only evidence gap was pending
+CI, resolved by the passing run above.
 
 ## Non-Proof
 
