@@ -22,9 +22,11 @@ rtk pnpm db:smoke:source-graph
 Observed DB smoke readback:
 
 ```txt
-Activation source candidates: 2
+Activation source candidates: 3
 Source graph rank-downs: 1
 Source graph rank-down edge kinds: invalidates
+Source graph influences: 1
+Source graph influence edge kinds: duplicates
 Cleanup remaining marker count: 0
 Source graph smoke: passed
 ```
