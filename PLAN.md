@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI reflect test fixture typecheck batch
+current task: CLI observe test fixture typecheck batch
 ```
 
 ## Compact Checkpoints
@@ -99,7 +99,7 @@ evidence metadata parser boundary: retained parser exemplar applied to EvidenceB
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
-CLI scoped test typecheck: active smoke runs strict `tsc`; codex/reflect fixtures joined the clean subset
+CLI scoped test typecheck: active smoke runs strict `tsc`; codex/reflect/observe fixtures joined the clean subset
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
@@ -111,19 +111,19 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CLI Reflect Test Fixture Typecheck Batch
+### CLI Observe Test Fixture Typecheck Batch
 
-Goal: expand the scoped strict TypeScript gate with the reflect command test batch.
+Goal: expand the scoped strict TypeScript gate with the observe command test batch.
 
 Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-03-cli-test-typecheck-reflect-batch.md`.
+Latest report: `docs/runs/2026-07-03-cli-test-typecheck-observe-batch.md`.
 
 Task boundary:
 
 ```txt
-packages/cli/tsconfig.tests.clean.json now includes reflect.test.ts.
-The reflect test fixture matches runtime interfaces without casts or assertion changes.
+packages/cli/tsconfig.tests.clean.json now includes observe.test.ts.
+The observe test fixture matches runtime interfaces without casts or assertion changes.
 This is not full CLI test typecheck; remaining fixture-shape debt is tracked in Beads.
 ```
 

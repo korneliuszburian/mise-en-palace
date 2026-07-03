@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI reflect test fixture typecheck batch
+current task: CLI observe test fixture typecheck batch
 latest pushed commit: see git history
 ```
 
@@ -24,19 +24,19 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI reflect test fixture typecheck batch is active.
-The scoped CLI test typecheck gate now includes the reflect command test batch.
+CLI observe test fixture typecheck batch is active.
+The scoped CLI test typecheck gate now includes the observe command test batch.
 Broader CLI test fixture-shape debt remains tracked as bounded Beads follow-up work.
 ```
 
 Latest outcome:
 
 ```txt
-CLI reflect test fixture typecheck batch: `packages/cli/src/__tests__/reflect.test.ts`
+CLI observe test fixture typecheck batch: `packages/cli/src/__tests__/observe.test.ts`
 now satisfies the scoped strict `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-test-typecheck-reflect-batch.md
-CI: KRN CI 28643585560 passed for reflect test fixture typecheck batch.
+docs/runs/2026-07-03-cli-test-typecheck-observe-batch.md
+CI: pending for this slice.
 Next: pick the next smallest failing fixture batch by strict `tsc` output.
 ```
 

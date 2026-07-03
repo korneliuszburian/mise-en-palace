@@ -1,13 +1,70 @@
 import { describe, expect, it } from "vitest";
 
 import { commandResultDoesNotProve } from "@krn/core";
-import type { ObservationItem } from "@krn/core";
+import type {
+  ObservationGroup,
+  ObservationItem
+} from "@krn/core";
+import type {
+  CreateObservationGroupInput,
+  CreateObservationItemInput
+} from "@krn/db/adapters";
 import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+
+const observationGroupFromInput = (
+  input: CreateObservationGroupInput
+): ObservationGroup => ({
+  id: "observation-group-1",
+  ...(input.scope.projectId !== undefined ? { projectId: input.scope.projectId } : {}),
+  ...(input.scope.executionRunId !== undefined ? { executionRunId: input.scope.executionRunId } : {}),
+  scope: input.scope,
+  title: input.title,
+  summary: input.summary,
+  source: input.source,
+  metadata: input.metadata ?? {},
+  createdAt: now,
+  updatedAt: now
+});
+
+const observationItemFromInput = (
+  groupId: string,
+  input: CreateObservationItemInput,
+  index: number
+): ObservationItem => ({
+  id: `observation-item-${index + 1}`,
+  groupId,
+  scope: input.scope ?? {
+    projectId: "project-1",
+    executionRunId: "execution-run-1"
+  },
+  kind: input.kind,
+  status: input.status ?? "candidate",
+  priority: input.priority ?? "medium",
+  confidence: input.confidence ?? "medium",
+  provenanceKind: input.provenanceKind,
+  subject: input.subject,
+  summary: input.summary,
+  body: input.body,
+  temporalScope: input.temporalScope,
+  sourceRanges: (input.sourceRanges ?? []).map((sourceRange, sourceRangeIndex) => ({
+    id: `observation-source-range-${index + 1}-${sourceRangeIndex + 1}`,
+    sourceType: sourceRange.sourceType,
+    sourceId: sourceRange.sourceId,
+    locator: sourceRange.locator,
+    ...(sourceRange.excerpt !== undefined ? { excerpt: sourceRange.excerpt } : {}),
+    capturedAt: sourceRange.capturedAt
+  })),
+  entityLinks: input.entityLinks ?? [],
+  claimLinks: input.claimLinks ?? [],
+  metadata: input.metadata ?? {},
+  createdAt: now,
+  updatedAt: now
+});
 
 describe("runCli", () => {
   it("persists deterministic observations for a run without mutating memory", async () => {
@@ -75,31 +132,15 @@ describe("runCli", () => {
     let createdGroupTitle: string | undefined;
     let createdItemCount = 0;
     const observationRepository = {
-      async createGroup(input: { title: string }) {
+      async createGroup(input: CreateObservationGroupInput) {
         createdGroupTitle = input.title;
 
-        return {
-          id: "observation-group-1",
-          projectId: "project-1",
-          executionRunId: "execution-run-1",
-          scope: {
-            projectId: "project-1",
-            executionRunId: "execution-run-1"
-          },
-          title: input.title,
-          summary: "summary",
-          source: "krn observe",
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
+        return observationGroupFromInput(input);
       },
-      async addItems(_groupId: string, inputs: readonly unknown[]) {
+      async addItems(groupId: string, inputs: CreateObservationItemInput[]) {
         createdItemCount = inputs.length;
 
-        return inputs.map((_input, index) => ({
-          id: `observation-item-${index + 1}`
-        }));
+        return inputs.map((input, index) => observationItemFromInput(groupId, input, index));
       }
     };
 
@@ -234,26 +275,13 @@ describe("runCli", () => {
               workspaceId: "workspace-1",
               projectId: input.projectId,
               observationRepository: {
-                async createGroup(input: { scope: { projectId?: string }; title: string }) {
+                async createGroup(input: CreateObservationGroupInput) {
                   createdGroupProjectId = input.scope.projectId;
 
-                  return {
-                    id: "observation-group-1",
-                    projectId: input.scope.projectId,
-                    executionRunId: "execution-run-1",
-                    scope: input.scope,
-                    title: input.title,
-                    summary: "summary",
-                    source: "krn observe",
-                    metadata: {},
-                    createdAt: now,
-                    updatedAt: now
-                  };
+                  return observationGroupFromInput(input);
                 },
-                async addItems(_groupId: string, inputs: readonly unknown[]) {
-                  return inputs.map((_input, index) => ({
-                    id: `observation-item-${index + 1}`
-                  }));
+                async addItems(groupId: string, inputs: CreateObservationItemInput[]) {
+                  return inputs.map((input, index) => observationItemFromInput(groupId, input, index));
                 }
               }
             };
@@ -446,41 +474,6 @@ describe("runCli", () => {
       }]
     };
     const observedBodies: string[] = [];
-    const observationItem: ObservationItem = {
-      id: "observation-item-1",
-      groupId: "observation-group-1",
-      scope: {
-        projectId: "project-1",
-        executionRunId: "execution-run-1",
-        taskContractId: "task-contract-1"
-      },
-      kind: "fact",
-      status: "candidate",
-      priority: "medium",
-      confidence: "medium",
-      provenanceKind: "evidence_bundle",
-      subject: "evidence_bundle",
-      summary: "Evidence bundle contains explicit command provenance.",
-      body:
-        "{\"commands\":[{\"command\":\"pnpm typecheck\",\"provenance\":\"operator_reported\"},{\"command\":\"pnpm test\",\"provenance\":\"captured_output_file\"}]}",
-      temporalScope: {
-        observedAt: now,
-        eventTime: now,
-        ingestedAt: now
-      },
-      sourceRanges: [{
-        id: "observation-source-range-1",
-        sourceType: "evidence_bundle",
-        sourceId: "evidence-bundle-1",
-        locator: "evidence_bundles.id:evidence-bundle-1",
-        capturedAt: now
-      }],
-      entityLinks: [],
-      claimLinks: [],
-      metadata: {},
-      createdAt: now,
-      updatedAt: now
-    };
 
     const observeResult = await runCli(
       ["observe", "--run", "execution-run-1", "--persist"],
@@ -504,29 +497,13 @@ describe("runCli", () => {
               workspaceId: "workspace-1",
               projectId: input.projectId,
               observationRepository: {
-                async createGroup(groupInput: { title: string }) {
-                  return {
-                    id: "observation-group-1",
-                    projectId: input.projectId,
-                    executionRunId: "execution-run-1",
-                    scope: {
-                      projectId: input.projectId,
-                      executionRunId: "execution-run-1"
-                    },
-                    title: groupInput.title,
-                    summary: "summary",
-                    source: "krn observe",
-                    metadata: {},
-                    createdAt: now,
-                    updatedAt: now
-                  };
+                async createGroup(groupInput: CreateObservationGroupInput) {
+                  return observationGroupFromInput(groupInput);
                 },
-                async addItems(_groupId: string, inputs: readonly { body: string }[]) {
+                async addItems(groupId: string, inputs: CreateObservationItemInput[]) {
                   observedBodies.push(...inputs.map((item) => item.body));
 
-                  return inputs.map((_item, index) => ({
-                    id: `observation-item-${index + 1}`
-                  }));
+                  return inputs.map((item, index) => observationItemFromInput(groupId, item, index));
                 }
               }
             };
