@@ -27,19 +27,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CLI small command test typecheck widening slice.
+current task: CLI run-show test typecheck widening slice.
 ```
 
-Current task state: the scoped CLI test typecheck gate now includes a small
-run/review/evidence golden command test batch. This does not prove full CLI
-test typecheck; it widens the clean subset without runtime assertion changes.
+Current task state: the scoped CLI test typecheck gate now includes the
+run-show command test. This does not prove full CLI test typecheck; it widens
+the clean subset without runtime or assertion changes.
 
 Latest slice:
 
 ```txt
-CLI small command test typecheck widening slice.
+CLI run-show test typecheck widening slice.
 Report:
-docs/runs/2026-07-03-cli-small-command-test-typecheck-widening.md
+docs/runs/2026-07-03-cli-run-show-test-typecheck-widening.md
 Next: close the Beads issue after CI proves this slice.
 ```
 

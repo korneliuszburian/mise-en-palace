@@ -41,6 +41,7 @@
     "src/__tests__/runDbReadinessCommand.test.ts",
     "src/__tests__/runDoctorCommand.test.ts",
     "src/__tests__/run.test.ts",
+    "src/__tests__/runRunShowCommand.test.ts",
     "src/__tests__/source.test.ts",
     "src/__tests__/targetRepoHarnessSmoke.test.ts",
     "src/__tests__/targetRepoTestingSkill.test.ts",
