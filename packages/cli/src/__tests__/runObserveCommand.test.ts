@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type {
+  ObservationSourceRange
+} from "@krn/core";
+import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories";
 import type {
@@ -14,6 +17,18 @@ import {
 } from "../runObserveCommand.js";
 
 const now = "2026-06-23T12:00:00.000Z";
+
+const toObservationSourceRanges = (
+  itemIndex: number,
+  ranges: CreateObservationItemInput["sourceRanges"] = []
+): ObservationSourceRange[] => ranges.map((range, rangeIndex) => ({
+  id: `observation-source-range-${itemIndex + 1}-${rangeIndex + 1}`,
+  sourceType: range.sourceType,
+  sourceId: range.sourceId,
+  locator: range.locator,
+  ...(range.excerpt === undefined ? {} : { excerpt: range.excerpt }),
+  capturedAt: range.capturedAt
+}));
 
 interface AggregateInput {
   operatorProjectId?: string;
@@ -119,9 +134,10 @@ const createRuntime = (input: {
           input.onAddItems?.(items);
 
           return items.map((item, index) => ({
+            ...item,
             id: `observation-item-${index + 1}`,
             groupId: "observation-group-1",
-            scope: {
+            scope: item.scope ?? {
               projectId: "project-1",
               executionRunId: "execution-run-1",
               taskContractId: "task-contract-1"
@@ -129,12 +145,12 @@ const createRuntime = (input: {
             status: item.status ?? "candidate",
             priority: item.priority ?? "medium",
             confidence: item.confidence ?? "medium",
+            sourceRanges: toObservationSourceRanges(index, item.sourceRanges),
             entityLinks: item.entityLinks ?? [],
             claimLinks: item.claimLinks ?? [],
             metadata: item.metadata ?? {},
             createdAt: now,
-            updatedAt: now,
-            ...item
+            updatedAt: now
           }));
         }
       }

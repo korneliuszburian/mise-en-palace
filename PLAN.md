@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI run-show test typecheck widening slice
+current task: CLI init/observe/reflect command test typecheck widening slice
 ```
 
 ## Compact Checkpoints
@@ -111,21 +111,17 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CLI Evidence Test Fixture Typecheck Batch
+### CLI Init/Observe/Reflect Command Test Typecheck Batch
 
-Goal: expand the scoped strict TypeScript gate with the evidence command test batch.
+Goal: add init/observe/reflect command tests to the scoped strict TypeScript
+gate.
 
 Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-03-cli-run-show-test-typecheck-widening.md`.
+Latest report: `docs/runs/2026-07-03-cli-init-observe-reflect-test-typecheck-widening.md`.
 
-Task boundary:
-
-```txt
-packages/cli/tsconfig.tests.clean.json now includes evidence.test.ts.
-The evidence test fixture matches runtime interfaces without casts or assertion changes.
-This is not full CLI test typecheck; run-show, selected command, helper, parser, smoke/readiness, doctor, and targeted fixture batches are now in the clean subset.
-```
+Boundary: no full CLI test typecheck, runtime rewrite, or assertion changes;
+the observe fixture now returns full `ObservationItem` source ranges.
 
 ## Recent Completed Streams
 
