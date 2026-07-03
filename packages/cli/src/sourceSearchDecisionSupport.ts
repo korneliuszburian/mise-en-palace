@@ -15,8 +15,7 @@ import type {
 
 export type SourceSearchDecisionSupportState =
   | "linked"
-  | "missing"
-  | "unavailable";
+  | "missing";
 
 export interface SourceSearchDecisionSupport {
   sourceClaimId: SourceClaim["id"];
@@ -33,14 +32,14 @@ export interface SourceSearchDecisionSupport {
 export const sourceClaimIdFor = (
   candidate: RankedActivationCandidate
 ): SourceClaim["id"] | undefined => (
-  candidate.subjectType === "source_claim" && typeof candidate.subjectId === "string"
+  candidate.subjectType === "source_claim"
     ? (candidate.sourceClaimId ?? candidate.subjectId) as SourceClaim["id"]
     : undefined
 );
 
 export const sourceClaimIdsForCandidates = (
   candidates: readonly RankedActivationCandidate[]
-): SourceClaim["id"][] => [
+): readonly SourceClaim["id"][] => [
   ...new Set(candidates.flatMap((candidate) => {
     const sourceClaimId = sourceClaimIdFor(candidate);
 
