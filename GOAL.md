@@ -75,10 +75,10 @@ bounded product surface, or unblock the next vertical slice.
 - Do not mark this continuous goal complete after one slice.
 - After each slice: verify, capture evidence, commit, push, check CI, compact
   root state, and continue.
-- After each larger migration or audit-hardening slice: include a compact
-  handoff and a second-opinion prompt that forces another advanced AI to inspect
-  the current state, challenge the direction, find remaining gaps, and propose
-  the next bounded slice.
+- After each larger migration or audit-hardening slice: run the repo-local
+  `second-opinion-claude` workflow with a compact context pack, triage the
+  result, fix or file follow-ups, and continue without operator routing unless
+  the finding requires a product, budget, or explicit human tradeoff decision.
 - For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
   target-workflow, security, operator-UX, or research/paper/course-driven slice,
   apply:

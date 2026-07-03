@@ -44,13 +44,19 @@ For git history:
 For complex KRN implementation work, keep root `PLAN.md` current as the living
 ExecPlan.
 
-For larger migration or audit-hardening slices, the final response must include:
+For larger migration or audit-hardening slices, Codex must own the second-opinion
+loop:
 
 - compact handoff of current repo state, changed files, verification, proof and
   non-proof;
-- a second-opinion prompt asking another advanced AI to inspect the current
-  diff/state, challenge the migration direction, find remaining naming/layout
-  or quality gaps, and propose the next bounded slice.
+- run `.agents/skills/second-opinion-claude` when available with a compact
+  context pack and budget caps;
+- triage Claude's output into must-fix, evidence-gap, rejected-with-evidence,
+  or follow-up Beads work;
+- continue implementation without waiting for the operator unless the finding
+  requires a product decision, budget decision, or explicit human tradeoff.
+
+Do not hand the operator a second-opinion prompt as the default path.
 
 If the next step requires broad historical rereads, stop and re-scope.
 

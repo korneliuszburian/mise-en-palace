@@ -47,6 +47,10 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
    - `follow_up`: create or update a Beads issue.
    - `rejected`: keep only with local code/test evidence.
 
+   Codex owns this triage. Do not hand the operator a prompt or ask them to
+   route the review unless the finding requires a product decision, budget
+   decision, or explicit human tradeoff.
+
 4. Continue only when useful:
 
    - For one-shot review, stop after one JSON result.
