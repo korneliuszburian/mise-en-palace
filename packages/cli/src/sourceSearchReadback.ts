@@ -1,10 +1,14 @@
 import type {
-  SourceClaim
-} from "@krn/core";
-import type {
   RetrieveActivationCandidatesResult,
   RankedActivationCandidate
 } from "@krn/harness";
+import {
+  formatSourceSearchCandidate,
+  sourceSearchCandidateToOutput
+} from "./sourceSearchCandidateReadback.js";
+import type {
+  SourceSearchAnswerCandidate
+} from "./sourceSearchCandidateReadback.js";
 import {
   buildGraphReadback
 } from "./sourceSearchGraphReadback.js";
@@ -14,22 +18,11 @@ import type {
   SourceSearchSourceClaimDocumentLink
 } from "./sourceSearchGraphReadback.js";
 import {
-  groupSourceDecisionSupportByClaimId,
-  sourceClaimIdFor,
-  sourceDecisionSupportReadbackFor
+  groupSourceDecisionSupportByClaimId
 } from "./sourceSearchDecisionSupport.js";
 import type {
-  SourceSearchDecisionSupport,
-  SourceSearchDecisionSupportState
+  SourceSearchDecisionSupport
 } from "./sourceSearchDecisionSupport.js";
-import {
-  sourceSearchMetadataString
-} from "./sourceSearchMetadata.js";
-
-type SearchReviewability =
-  | "ready"
-  | "needs_more_evidence"
-  | "unknown";
 
 type SourceSearchAnswerUsefulness =
   | "useful"
@@ -37,47 +30,6 @@ type SourceSearchAnswerUsefulness =
   | "partly_useful_missing_claim"
   | "not_useful"
   | "unknown";
-
-type SourceSearchCandidateStatus =
-  | "included"
-  | "excluded";
-
-interface ReviewabilityResult {
-  reviewability: SearchReviewability;
-  reasons: readonly string[];
-}
-
-interface SourceSearchAnswerCandidate {
-  label: string;
-  subjectType: RankedActivationCandidate["subjectType"];
-  subjectId: string;
-  status: SourceSearchCandidateStatus;
-  kind: RankedActivationCandidate["kind"];
-  trustTier: RankedActivationCandidate["trustTier"];
-  totalScore: number;
-  lexicalScore: number;
-  graphScore: number;
-  contextRoiScore: number;
-  reason: string;
-  expectedUse: string;
-  reviewability: SearchReviewability;
-  reviewabilityReasons: readonly string[];
-  searchDocumentId: string | undefined;
-  sourceClaimId: string | undefined;
-  sourceArtifactId: string | undefined;
-  sourceChunkId: string | undefined;
-  claim: string | undefined;
-  mechanism: string | undefined;
-  krnImplication: string | undefined;
-  consumer: string | undefined;
-  falsifier: string | undefined;
-  doesNotProve: string | undefined;
-  exclusionReason: string | undefined;
-  exclusionExplanation: string | undefined;
-  sourceDecisionSupportState: SourceSearchDecisionSupportState | undefined;
-  sourceDecisionSupportEdgeIds: readonly string[] | undefined;
-  sourceDecisionSupportCaveat: string | undefined;
-}
 
 interface SourceSearchAnswerPackage {
   answer: string;
@@ -211,142 +163,6 @@ export const buildSourceSearchQueryShapeDiagnostics = (input: {
   return [];
 };
 
-const reviewabilityFor = (candidate: RankedActivationCandidate): ReviewabilityResult => {
-  if (candidate.subjectType === "source_claim") {
-    const reasons = [
-      candidate.hasMechanism === false
-        ? "SourceClaim is missing mechanism."
-        : "SourceClaim has mechanism.",
-      candidate.doesNotProve === undefined || candidate.doesNotProve.trim().length === 0
-        ? "SourceClaim is missing doesNotProve."
-        : "SourceClaim has doesNotProve boundary."
-    ];
-
-    return {
-      reviewability: reasons.some((reason) => reason.includes("missing"))
-        ? "needs_more_evidence"
-        : "ready",
-      reasons
-    };
-  }
-
-  if (candidate.subjectType === "search_document") {
-    return {
-      reviewability: candidate.searchDocumentId === undefined ? "needs_more_evidence" : "ready",
-      reasons: [
-        candidate.searchDocumentId === undefined
-          ? "Search candidate has no SearchDocument id."
-          : "SearchDocument row matched the query.",
-        "SearchDocument readback is reviewable only as retrieval evidence."
-      ]
-    };
-  }
-
-  return {
-    reviewability: "unknown",
-    reasons: ["Candidate kind is outside the V341 SourceClaim/SearchDocument preview scope."]
-  };
-};
-
-const formatCandidate = (
-  candidate: RankedActivationCandidate,
-  status: "included" | "excluded"
-): string[] => {
-  const reviewability = reviewabilityFor(candidate);
-
-  return [
-    `- ${candidate.subjectType}:${candidate.subjectId}`,
-    `  status: ${status}`,
-    `  kind: ${candidate.kind}`,
-    `  trustTier: ${candidate.trustTier}`,
-    `  totalScore: ${candidate.totalScore}`,
-    `  lexicalScore: ${candidate.lexicalScore}`,
-    `  graphScore: ${candidate.graphScore}`,
-    `  contextRoiScore: ${candidate.contextRoiScore}`,
-    `  reason: ${candidate.reason}`,
-    `  expectedUse: ${candidate.expectedUse}`,
-    `  reviewability: ${reviewability.reviewability}`,
-    "  reviewability reasons:",
-    ...reviewability.reasons.map((reason) => `  - ${reason}`),
-    ...(candidate.searchDocumentId === undefined
-      ? []
-      : [`  searchDocumentId: ${candidate.searchDocumentId}`]),
-    ...(candidate.sourceClaimId === undefined
-      ? []
-      : [`  sourceClaimId: ${candidate.sourceClaimId}`]),
-    ...(candidate.doesNotProve === undefined
-      ? []
-      : [`  doesNotProve: ${candidate.doesNotProve}`]),
-    ...(candidate.exclusion === undefined
-      ? []
-      : [
-          `  exclusionReason: ${candidate.exclusion.reason}`,
-          `  exclusionExplanation: ${candidate.exclusion.explanation}`
-        ])
-  ];
-};
-
-const candidateLabel = (candidate: RankedActivationCandidate): string =>
-  `${candidate.subjectType}:${candidate.subjectId}`;
-
-const candidateToOutput = (
-  candidate: RankedActivationCandidate,
-  status: SourceSearchCandidateStatus,
-  decisionSupportBySourceClaimId?: ReadonlyMap<
-    SourceClaim["id"],
-    readonly SourceSearchDecisionSupport[]
-  >
-): SourceSearchAnswerCandidate => {
-  const reviewability = reviewabilityFor(candidate);
-  const claim = sourceSearchMetadataString(candidate.metadata, "claim");
-  const mechanism = sourceSearchMetadataString(candidate.metadata, "mechanism");
-  const krnImplication = sourceSearchMetadataString(candidate.metadata, "krnImplication");
-  const consumer = sourceSearchMetadataString(candidate.metadata, "consumer");
-  const falsifier = sourceSearchMetadataString(candidate.metadata, "falsifier");
-  const sourceArtifactId = sourceSearchMetadataString(candidate.metadata, "sourceArtifactId");
-  const sourceChunkId = sourceSearchMetadataString(candidate.metadata, "sourceChunkId");
-  const sourceClaimId =
-    candidate.subjectType === "source_claim"
-      ? sourceClaimIdFor(candidate)
-      : candidate.sourceClaimId;
-  const decisionSupportReadback = sourceDecisionSupportReadbackFor(
-    candidate.subjectType === "source_claim" ? sourceClaimId : undefined,
-    decisionSupportBySourceClaimId
-  );
-
-  return {
-    label: candidateLabel(candidate),
-    subjectType: candidate.subjectType,
-    subjectId: candidate.subjectId,
-    status,
-    kind: candidate.kind,
-    trustTier: candidate.trustTier,
-    totalScore: candidate.totalScore,
-    lexicalScore: candidate.lexicalScore,
-    graphScore: candidate.graphScore,
-    contextRoiScore: candidate.contextRoiScore,
-    reason: candidate.reason,
-    expectedUse: candidate.expectedUse,
-    reviewability: reviewability.reviewability,
-    reviewabilityReasons: reviewability.reasons,
-    searchDocumentId: candidate.searchDocumentId,
-    sourceClaimId,
-    sourceArtifactId,
-    sourceChunkId,
-    claim,
-    mechanism,
-    krnImplication,
-    consumer,
-    falsifier,
-    doesNotProve: candidate.doesNotProve,
-    exclusionReason: candidate.exclusion?.reason,
-    exclusionExplanation: candidate.exclusion?.explanation,
-    sourceDecisionSupportState: decisionSupportReadback.state,
-    sourceDecisionSupportEdgeIds: decisionSupportReadback.edgeIds,
-    sourceDecisionSupportCaveat: decisionSupportReadback.caveat
-  };
-};
-
 const buildAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
@@ -359,7 +175,7 @@ const buildAnswerPackage = (input: {
     input.sourceDecisionSupport
   );
   const included = input.included.map((candidate) =>
-    candidateToOutput(candidate, "included", decisionSupportBySourceClaimId)
+    sourceSearchCandidateToOutput(candidate, "included", decisionSupportBySourceClaimId)
   );
   const supportingClaims = included.filter(
     (candidate) => candidate.subjectType === "source_claim"
@@ -612,12 +428,12 @@ export const formatSearchResult = (input: SourceSearchRenderInput): string => {
     "Included candidates:",
     ...(readback.included.length === 0
       ? ["- none"]
-      : readback.included.flatMap((candidate) => formatCandidate(candidate, "included"))),
+      : readback.included.flatMap((candidate) => formatSourceSearchCandidate(candidate, "included"))),
     "",
     "Excluded candidates:",
     ...(readback.excluded.length === 0
       ? ["- none"]
-      : readback.excluded.flatMap((candidate) => formatCandidate(candidate, "excluded"))),
+      : readback.excluded.flatMap((candidate) => formatSourceSearchCandidate(candidate, "excluded"))),
     "",
     "No-match guidance:",
     ...readback.noMatchGuidance.map((item) => `- ${item}`),
@@ -663,9 +479,9 @@ export const formatSearchJson = (input: SourceSearchRenderInput): string => {
     },
     answerPackage: readback.answerPackage,
     includedCandidates: readback.included.map((candidate) =>
-      candidateToOutput(candidate, "included", readback.decisionSupportBySourceClaimId)
+      sourceSearchCandidateToOutput(candidate, "included", readback.decisionSupportBySourceClaimId)
     ),
-    excludedCandidates: readback.excluded.map((candidate) => candidateToOutput(candidate, "excluded")),
+    excludedCandidates: readback.excluded.map((candidate) => sourceSearchCandidateToOutput(candidate, "excluded")),
     noMatchGuidance: readback.noMatchGuidance,
     proof: {
       proves: [
