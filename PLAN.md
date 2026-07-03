@@ -103,7 +103,7 @@ CLI scoped test typecheck: active smoke runs strict `tsc`; run-show, selected co
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
-pattern/research brain: helped usefulness feedback now biases retained-pattern planning before unfiltered catalog fallback
+pattern/research brain: helped usefulness feedback now biases retained-pattern planning and dogfood feedback readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete
@@ -136,7 +136,7 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 `mise-en-palace-oez2`, `mise-en-palace-ieec`, `mise-en-palace-yjs7`,
 `mise-en-palace-z406`, and `mise-en-palace-be1t`.
 
-Current queue: `mise-en-palace-uetf` dogfoods helped retained-pattern selection through evidence feedback; `mise-en-palace-3vqp` assesses activation hybrid retrieval without speculative embedding work.
+Current queue: `mise-en-palace-uetf` dogfoods helped retained-pattern selection through evidence feedback; next `mise-en-palace-3vqp` assesses activation hybrid retrieval without speculative embedding work.
 `mise-en-palace-75za` source-search command boundary split is closed:
 source-search readback/format/ranking helpers moved out of the command runner.
 `mise-en-palace-wgei` source artifact preview boundary split is closed:

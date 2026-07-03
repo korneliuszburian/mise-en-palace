@@ -18,6 +18,8 @@ const brainKnowledgeTaskNoiseTerms = new Set([
   "changes",
   "classify",
   "current",
+  "dogfood",
+  "feedback",
   "for",
   "in",
   "is",
