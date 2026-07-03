@@ -38,6 +38,7 @@ tests now satisfy the scoped strict `typecheck:tests:clean` gate.
 Report:
 docs/runs/2026-07-03-cli-helper-test-typecheck-widening.md
 CI: pending for this slice.
+CI result: KRN CI 28645582341 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 
