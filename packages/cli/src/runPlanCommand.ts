@@ -586,7 +586,7 @@ const buildRetainedPatternSelection = async (
       JSON.stringify({
         cards: [],
         proof: {
-          proves: ["brain knowledge catalog readback was executed with primary and normalized queries"],
+          proves: ["brain knowledge catalog readback was executed with primary and compacted bridge queries"],
           doesNotProve: ["brain knowledge catalog completeness", "pattern relevance"]
         }
       })

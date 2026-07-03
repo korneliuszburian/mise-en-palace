@@ -269,7 +269,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
   ].join("\n") + "\n";
 
 const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource): string => {
-  const data = JSON.stringify(resource).replace(/</gu, "\\u003c");
+  const serializedResource = JSON.stringify(resource).replace(/</gu, "\\u003c");
 
   return `<!doctype html>
 <html lang="en">
@@ -442,7 +442,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
       </ul>
     </section>
   </main>
-  <script id="krn-data" type="application/json">${data}</script>
+  <script id="krn-data" type="application/json">${serializedResource}</script>
   <script>
     const cards = Array.from(document.querySelectorAll("[data-card]"));
     const search = document.getElementById("search");
