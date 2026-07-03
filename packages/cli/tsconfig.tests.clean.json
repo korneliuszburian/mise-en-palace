@@ -7,6 +7,7 @@
     "src/__tests__/doctor.test.ts",
     "src/__tests__/evidence.test.ts",
     "src/__tests__/heartbeat.test.ts",
+    "src/__tests__/memory.test.ts",
     "src/__tests__/observe.test.ts",
     "src/__tests__/reflect.test.ts",
     "src/__tests__/source.test.ts"

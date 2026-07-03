@@ -14,6 +14,7 @@ import type {
 } from "@krn/harness/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
+import type { DatabaseRuntime } from "../databaseRuntime.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -37,6 +38,9 @@ const unusedMemoryRepository = {
   async getMemoryRecordById(_id: string): Promise<never> {
     throw new Error("getMemoryRecordById should not be called");
   },
+  async listMemoryRecordsForProject(): Promise<never> {
+    throw new Error("listMemoryRecordsForProject should not be called");
+  },
   async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
     throw new Error("recordMemoryApplication should not be called");
   },
@@ -56,6 +60,62 @@ const unusedMemoryRepository = {
     throw new Error("rejectAntiMemoryCandidate should not be called");
   }
 };
+
+const unusedSourceRepository = {
+  async createSourceArtifact(): Promise<never> {
+    throw new Error("createSourceArtifact should not be called");
+  },
+  async createSourceClaim(): Promise<never> {
+    throw new Error("createSourceClaim should not be called");
+  },
+  async getSourceClaimById(): Promise<never> {
+    throw new Error("getSourceClaimById should not be called");
+  },
+  async listClaimsForProject(): Promise<never> {
+    throw new Error("listClaimsForProject should not be called");
+  },
+  async createSourceClaimEdge(): Promise<never> {
+    throw new Error("createSourceClaimEdge should not be called");
+  },
+  async listSourceClaimEdgesForClaim(): Promise<never> {
+    throw new Error("listSourceClaimEdgesForClaim should not be called");
+  },
+  async createSourceDecisionEdge(): Promise<never> {
+    throw new Error("createSourceDecisionEdge should not be called");
+  },
+  async getSourceDecisionEdgeById(): Promise<never> {
+    throw new Error("getSourceDecisionEdgeById should not be called");
+  },
+  async createSourceRejection(): Promise<never> {
+    throw new Error("createSourceRejection should not be called");
+  }
+} satisfies DatabaseRuntime["sourceRepository"];
+
+type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
+type MemoryHarnessRunRepository =
+  NoStoreCompilerDependencies["harnessRunRepository"] &
+  DatabaseRuntime["harnessRunRepository"];
+
+const createMemoryHarnessRunRepository = (
+  dependencies: NoStoreCompilerDependencies
+): MemoryHarnessRunRepository => ({
+  ...dependencies.harnessRunRepository,
+  async createExecutionRun(): Promise<never> {
+    throw new Error("createExecutionRun should not be called");
+  },
+  async getHarnessRunByExecutionRunId(): Promise<never> {
+    throw new Error("getHarnessRunByExecutionRunId should not be called");
+  },
+  async createEvidenceBundle(): Promise<never> {
+    throw new Error("createEvidenceBundle should not be called");
+  },
+  async createReviewAssessment(): Promise<never> {
+    throw new Error("createReviewAssessment should not be called");
+  },
+  async createFeedbackDelta(): Promise<never> {
+    throw new Error("createFeedbackDelta should not be called");
+  }
+});
 
 const assignIfDefined = <T extends object, K extends keyof T>(
   target: T,
@@ -259,6 +319,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -290,13 +351,14 @@ describe("runCli", () => {
             }
           },
           memoryRepository: {
+            ...unusedMemoryRepository,
             async createMemoryCandidate(input) {
               capturedCandidate = input;
 
               return {
                 id: "memory-candidate-1",
                 projectId: input.projectId,
-                executionRunId: input.executionRunId,
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
                 proposedBy: input.proposedBy,
                 kind: input.kind,
                 status: input.status ?? "proposed",
@@ -305,7 +367,9 @@ describe("runCli", () => {
                 owner: input.owner,
                 confidence: input.confidence,
                 applicationGuidance: input.applicationGuidance,
-                invalidationRule: input.invalidationRule,
+                ...(input.invalidationRule === undefined
+                  ? {}
+                  : { invalidationRule: input.invalidationRule }),
                 sourceClaimIds: input.sourceClaimIds ?? [],
                 sourceLineage: input.sourceLineage,
                 isUserPreference: input.isUserPreference,
@@ -316,7 +380,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -480,6 +544,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -511,6 +576,7 @@ describe("runCli", () => {
             }
           },
           memoryRepository: {
+            ...unusedMemoryRepository,
             async createMemoryCandidate() {
               throw new Error("createMemoryCandidate should not be called");
             },
@@ -561,6 +627,7 @@ describe("runCli", () => {
                 invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
                 sourceLineage: [{ sourceId: "source-claim-1" }],
                 isUserPreference: false,
+                validFrom: now,
                 positiveFeedbackCount: 0,
                 negativeFeedbackCount: 0,
                 metadata: {},
@@ -572,7 +639,7 @@ describe("runCli", () => {
               throw new Error("rejectMemoryCandidate should not be called");
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -639,6 +706,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -656,6 +724,7 @@ describe("runCli", () => {
             }
           },
           memoryRepository: {
+            ...unusedMemoryRepository,
             async createMemoryCandidate() {
               throw new Error("createMemoryCandidate should not be called");
             },
@@ -694,7 +763,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -815,6 +884,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -849,6 +919,7 @@ describe("runCli", () => {
                 invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
                 sourceLineage: [{ sourceId: "source-claim-1" }],
                 isUserPreference: false,
+                validFrom: now,
                 positiveFeedbackCount: 0,
                 negativeFeedbackCount: 0,
                 metadata: {},
@@ -862,10 +933,10 @@ describe("runCli", () => {
               return {
                 id: "memory-application-1",
                 memoryRecordId: input.memoryRecordId,
-                executionRunId: input.executionRunId,
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
                 expectedUse: input.expectedUse,
-                outcome: input.outcome,
-                notes: input.notes,
+                ...(input.outcome === undefined ? {} : { outcome: input.outcome }),
+                ...(input.notes === undefined ? {} : { notes: input.notes }),
                 metadata: input.metadata ?? {},
                 createdAt: now
               };
@@ -874,7 +945,7 @@ describe("runCli", () => {
               throw new Error("createMemoryFeedbackEvent should not be called");
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -941,6 +1012,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -975,6 +1047,7 @@ describe("runCli", () => {
                 invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
                 sourceLineage: [{ sourceId: "source-claim-1" }],
                 isUserPreference: false,
+                validFrom: now,
                 positiveFeedbackCount: 0,
                 negativeFeedbackCount: 0,
                 metadata: {},
@@ -1000,12 +1073,12 @@ describe("runCli", () => {
               return {
                 id: "memory-feedback-event-1",
                 memoryRecordId: input.memoryRecordId,
-                executionRunId: input.executionRunId,
-                eventType: input.eventType,
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+                ...(input.eventType === undefined ? {} : { eventType: input.eventType }),
                 direction: input.direction,
                 note: input.note,
-                reason: input.reason,
-                evidenceRef: input.evidenceRef,
+                ...(input.reason === undefined ? {} : { reason: input.reason }),
+                ...(input.evidenceRef === undefined ? {} : { evidenceRef: input.evidenceRef }),
                 metadata: input.metadata ?? {},
                 createdAt: now
               };
@@ -1016,7 +1089,7 @@ describe("runCli", () => {
               return createPersistedAntiMemoryCandidate(input);
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -1193,6 +1266,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -1231,7 +1305,7 @@ describe("runCli", () => {
               return createPersistedAntiMemoryCandidate(input);
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }
@@ -1297,6 +1371,7 @@ describe("runCli", () => {
           projectId: "project-1",
           compilerDependencies: dependencies,
           sourceRepository: {
+            ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
@@ -1381,7 +1456,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: dependencies.harnessRunRepository,
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
           async close() {
             return undefined;
           }

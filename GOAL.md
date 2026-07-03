@@ -27,20 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CLI source test fixture typecheck batch.
+current task: CLI memory test fixture typecheck batch.
 ```
 
-Current task state: the scoped CLI test typecheck gate now includes the source
-command test batch. This does not prove full CLI test typecheck; remaining
-memory fixture-shape debt stays tracked in Beads.
+Current task state: the scoped CLI test typecheck gate now includes the memory
+command test batch. This does not prove full CLI test typecheck; the clean
+subset now covers the targeted command-group fixture-shape batches.
 
 Latest slice:
 
 ```txt
-CLI source test fixture typecheck batch.
+CLI memory test fixture typecheck batch.
 Report:
-docs/runs/2026-07-03-cli-test-typecheck-source-batch.md
-Next: finish the remaining memory fixture batch by strict `tsc` output.
+docs/runs/2026-07-03-cli-test-typecheck-memory-batch.md
+Next: close the Beads issue after CI proves this slice.
 ```
 
 ## Direction
