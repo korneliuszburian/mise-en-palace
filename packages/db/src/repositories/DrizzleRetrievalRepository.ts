@@ -110,6 +110,19 @@ const vectorScoreExpression = (embedding: readonly number[]): SQL<number> => {
   return sql<number>`floor(greatest(0, (1 - (${embeddings.embedding} <=> ${queryVector}::vector)) * 1000))::int`;
 };
 
+const requireEmbeddingModelId = (
+  embeddingModelId: string | undefined,
+  operation: "searchVector" | "searchHybrid"
+): string => {
+  if (embeddingModelId === undefined || embeddingModelId.trim().length === 0) {
+    throw new Error(
+      `${operation} embeddingModelId is required to avoid mixed-model vector comparison`
+    );
+  }
+
+  return embeddingModelId;
+};
+
 const weightedScore = (
   input: {
     lexicalScore?: number;
@@ -401,6 +414,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   }
 
   async searchVector(input: SearchVectorInput): Promise<SearchDocumentSearchResult[]> {
+    const embeddingModelId = requireEmbeddingModelId(input.embeddingModelId, "searchVector");
     const vectorScore = vectorScoreExpression(input.embedding);
     const rows = await this.db
       .select({
@@ -414,9 +428,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
           eq(embeddings.validityStatus, "active"),
           eq(searchDocuments.validityStatus, "active"),
           input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId),
-          input.embeddingModelId === undefined
-            ? undefined
-            : eq(embeddings.embeddingModelId, input.embeddingModelId)
+          eq(embeddings.embeddingModelId, embeddingModelId)
         )
       )
       .orderBy(desc(vectorScore))
@@ -430,6 +442,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   }
 
   async searchHybrid(input: SearchHybridInput): Promise<SearchDocumentSearchResult[]> {
+    const embeddingModelId = requireEmbeddingModelId(input.embeddingModelId, "searchHybrid");
     const lexicalWeight = input.lexicalWeight ?? 1;
     const vectorWeight = input.vectorWeight ?? 1;
     const limit = input.limit ?? 10;
@@ -441,9 +454,9 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
       }),
       this.searchVector({
         embedding: input.embedding,
+        embeddingModelId,
         limit: limit * 2,
-        ...optionalColumn("projectId", input.projectId),
-        ...optionalColumn("embeddingModelId", input.embeddingModelId)
+        ...optionalColumn("projectId", input.projectId)
       })
     ]);
     return mergeSearchResults(lexicalResults, vectorResults)

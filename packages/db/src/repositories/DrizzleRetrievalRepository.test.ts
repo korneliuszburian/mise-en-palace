@@ -30,9 +30,33 @@ describe("DrizzleRetrievalRepository", () => {
     const repository = new DrizzleRetrievalRepository({} as never);
 
     await expect(repository.searchVector({
+      embeddingModelId: "embedding-model-1",
       embedding: [Number.NaN],
       limit: 1
     })).rejects.toThrow("searchVector embedding must contain 1536 finite numbers");
+  });
+
+  it("requires vector search to name an embedding model scope", async () => {
+    const repository = new DrizzleRetrievalRepository({} as never);
+
+    await expect(repository.searchVector({
+      embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
+      limit: 1
+    } as never)).rejects.toThrow(
+      "searchVector embeddingModelId is required to avoid mixed-model vector comparison"
+    );
+  });
+
+  it("requires hybrid search to name an embedding model scope", async () => {
+    const repository = new DrizzleRetrievalRepository({} as never);
+
+    await expect(repository.searchHybrid({
+      query: "source graph",
+      embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
+      limit: 1
+    } as never)).rejects.toThrow(
+      "searchHybrid embeddingModelId is required to avoid mixed-model vector comparison"
+    );
   });
 
   it("accepts finite embeddings with the configured pgvector dimensions", async () => {
@@ -53,6 +77,7 @@ describe("DrizzleRetrievalRepository", () => {
     const repository = new DrizzleRetrievalRepository(db as never);
 
     await expect(repository.searchVector({
+      embeddingModelId: "embedding-model-1",
       embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
       limit: 1
     })).resolves.toEqual([]);

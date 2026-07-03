@@ -54,7 +54,7 @@ export interface SearchLexicalInput {
 export interface SearchVectorInput {
   projectId?: ProjectId;
   embedding: readonly number[];
-  embeddingModelId?: EmbeddingModelId;
+  embeddingModelId: EmbeddingModelId;
   limit?: number;
 }
 
