@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI doctor test typecheck widening slice
+current task: CLI small command test typecheck widening slice
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI doctor test typecheck widening slice is active.
-The scoped CLI test typecheck gate now includes doctor readiness/check tests.
-Doctor, smoke/readiness, helper, parser, and targeted command-group fixture batches are now in the clean subset.
+CLI small command test typecheck widening slice is active.
+The scoped CLI test typecheck gate now includes a small run/review/evidence
+golden command test batch.
+Selected command, doctor, smoke/readiness, helper, parser, and targeted
+fixture batches are now in the clean subset.
 ```
 
 Latest outcome:
 
 ```txt
-CLI doctor test typecheck widening slice: `doctorDbChecks`, `doctorReadiness`,
-`doctorRepoChecks`, and `doctorStaticChecks` now satisfy the scoped strict
+CLI small command test typecheck widening slice: `run.test.ts`, `review.test.ts`,
+and `evidenceCaptureGoldenBehavior.test.ts` now satisfy the scoped strict
 `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-doctor-test-typecheck-widening.md
+docs/runs/2026-07-03-cli-small-command-test-typecheck-widening.md
 CI: pending for this slice.
-CI result: KRN CI 28646103963 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 

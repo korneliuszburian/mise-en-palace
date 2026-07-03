@@ -5,11 +5,17 @@ import {
   it
 } from "vitest";
 import type {
+  GoldenTask
+} from "@krn/core";
+import type {
   GoldenBehaviorProof
 } from "@krn/harness";
 import {
   runGoldenTaskFixtures
 } from "@krn/harness";
+import type {
+  GoldenTaskFixture
+} from "@krn/schema";
 import {
   parseGoldenTaskFixtures
 } from "@krn/schema";
@@ -44,6 +50,20 @@ const proof = (
   evidenceRefs,
   doesNotProve:
     "This CLI behavior proof does not prove Memory Brain product readiness, activation quality, DB persistence, or reflection quality."
+});
+
+const toGoldenTask = (task: GoldenTaskFixture): GoldenTask => ({
+  id: task.id,
+  ...(task.projectId === undefined ? {} : { projectId: task.projectId }),
+  status: task.status,
+  title: task.title,
+  description: task.description,
+  owner: task.owner,
+  domains: task.domains,
+  cases: task.cases,
+  metadata: task.metadata,
+  createdAt: task.createdAt,
+  updatedAt: task.updatedAt
 });
 
 interface CliExecutionForTest {
@@ -115,7 +135,7 @@ const targetEvidenceExpectation: OutputExpectation = {
 
 describe("evidence capture golden behavior", () => {
   it("guards dirty-context capture behavior with real CLI execution", async () => {
-    const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture());
+    const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture()).map(toGoldenTask);
     const classifiedResult = await runCli([
       "evidence",
       "capture",
