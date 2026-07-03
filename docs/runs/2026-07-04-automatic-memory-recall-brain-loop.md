@@ -29,6 +29,15 @@ Cleanup remaining marker count: 0
 Brain loop smoke: passed
 ```
 
+Second opinion:
+
+- First Claude review found that `previousMemoryRecordId` in next-run metadata
+  weakened the automatic-recall claim.
+- Fix commit `527b3d16` removed that ID hint from operator intent, task
+  contract, and top-level compile metadata.
+- Follow-up Claude review approved the fix, LOW risk.
+- GitHub Actions run `28687663318` passed for `527b3d16`.
+
 ## Non-Proof
 
 This proves one DB-backed next-planning recall path for a reviewed MemoryRecord.
