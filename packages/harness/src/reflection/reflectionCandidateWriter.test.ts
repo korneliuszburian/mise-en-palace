@@ -159,7 +159,7 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
     }],
     evalCandidates: [{
       title: "Reflection candidate-only regression",
-      scenario: "A reflection output contains a tempting final memory claim.",
+      scenario: "A reflection output contains a tempting direct memory claim.",
       expectedSignal: "Writer creates candidates only.",
       sourceEvidence: ["observation-1"],
       evidence: {

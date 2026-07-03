@@ -154,7 +154,7 @@ describe("renderExecutionBrief", () => {
       capabilityPlan,
       evidenceContract,
       nextAction: "Implement the smallest missing doctor check.",
-      goalReference: "Goal: final harness spine",
+      goalReference: "Goal: canonical harness spine",
       execPlanReference: "PLAN.md Milestone 14"
     });
 
@@ -204,7 +204,7 @@ describe("renderExecutionBrief", () => {
       capabilityPlan,
       evidenceContract,
       nextAction: "Implement the smallest missing doctor check.",
-      goalReference: "Goal: final harness spine",
+      goalReference: "Goal: canonical harness spine",
       execPlanReference: "PLAN.md Milestone 14"
     });
     const rendered = renderExecutionBriefText(brief);
@@ -252,7 +252,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
     expect(rendered).toContain("- MCP resources exist.");
-    expect(rendered).toContain("Goal: final harness spine");
+    expect(rendered).toContain("Goal: canonical harness spine");
     expect(rendered).toContain("PLAN.md Milestone 14");
   });
 
@@ -382,7 +382,7 @@ describe("renderExecutionBrief", () => {
         {
           kind: "review_capture",
           priority: "required",
-          reason: "Review output must become candidates, not final truth.",
+          reason: "Review output must become candidates, not direct authority.",
           requiredEvidence: ["feedback delta"]
         }
       ]

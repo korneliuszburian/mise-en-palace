@@ -220,7 +220,7 @@ describe("brain heartbeat preview", () => {
           ],
           consumer: "heartbeat preview and future bounded eval/golden candidates",
           falsifier:
-            "Heartbeat preview drops activationUtilityEvidence or mutates final truth.",
+            "Heartbeat preview drops activationUtilityEvidence or mutates direct authority.",
           doesNotProve:
             "This candidate does not prove source truth, ranking quality, semantic-aware Thompson sampling, autonomous worker execution, or Memory Core mutation safety."
         }

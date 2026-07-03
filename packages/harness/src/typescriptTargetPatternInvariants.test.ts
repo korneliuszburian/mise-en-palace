@@ -10,15 +10,15 @@ const readRootFile = (path: string): string =>
   readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 
 const repairedTargetFiles = [
-  "tests/fixtures/target-repos/normalized-weak-typescript/src/config.ts",
-  "tests/fixtures/target-repos/normalized-weak-typescript/src/userService.ts",
-  "tests/fixtures/target-repos/normalized-weak-typescript/tests/userService.test.ts"
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/src/config.ts",
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/src/userService.ts",
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/tests/userService.test.ts"
 ] as const;
 
 const weakScenarioFiles = [
-  "tests/fixtures/target-repos/normalized-weak-typescript/scenarios/weak-json-boundary/files/src/config.ts",
-  "tests/fixtures/target-repos/normalized-weak-typescript/scenarios/weak-json-boundary/files/src/userService.ts",
-  "tests/fixtures/target-repos/normalized-weak-typescript/scenarios/weak-json-boundary/files/tests/userService.test.ts"
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/config.ts",
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/userService.ts",
+  "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/tests/userService.test.ts"
 ] as const;
 
 describe("TypeScript target pattern invariants", () => {
@@ -42,7 +42,7 @@ describe("TypeScript target pattern invariants", () => {
     expect(weakScenario).not.toContain("CreateUserResult");
   });
 
-  it("keeps the repaired normalized target aligned with the retained pattern", () => {
+  it("keeps the repaired TypeScript target aligned with the retained pattern", () => {
     const repairedTarget = repairedTargetFiles.map(readRootFile).join("\n");
 
     expect(repairedTarget).toContain("parseJsonConfig(raw: string): unknown");

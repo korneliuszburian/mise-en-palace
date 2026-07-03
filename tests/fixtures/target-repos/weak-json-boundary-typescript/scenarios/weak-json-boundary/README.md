@@ -16,11 +16,11 @@ relying on git history.
 ## Smoke
 
 ```sh
-node tests/fixtures/target-repos/normalized-weak-typescript/scripts/materialize-scenario.mjs \
+node tests/fixtures/target-repos/weak-json-boundary-typescript/scripts/materialize-scenario.mjs \
   weak-json-boundary \
-  .local-lab/target-substrates/normalized-weak-typescript-weak-json-boundary
+  .local-lab/target-substrates/weak-json-boundary-typescript-baseline
 
-pnpm --dir .local-lab/target-substrates/normalized-weak-typescript-weak-json-boundary test
+pnpm --dir .local-lab/target-substrates/weak-json-boundary-typescript-baseline test
 ```
 
 Passing the smoke proves only that the weak baseline is reproducible and

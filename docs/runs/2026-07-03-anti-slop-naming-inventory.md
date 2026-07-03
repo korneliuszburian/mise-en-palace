@@ -13,6 +13,7 @@ domain meaning and the blast radius is bounded.
 | `final_truth_target` | `non_candidate_target` | Reflection does not detect "final truth"; it blocks outputs targeting non-candidate authority objects such as `memory_record`. | Core reflection contract and focused harness/core tests. |
 | `final_truth_metadata` | `forbidden_authority_metadata` | The violation is forbidden authority-writing metadata, not a final truth concept. | Core reflection contract and focused harness/core tests. |
 | "final MemoryRecord target" wording | "direct MemoryRecord target/authority" wording | Keeps proof text aligned with the real mechanism. | Golden behavior/readback tests only. |
+| `tests/fixtures/target-repos/normalized-weak-typescript` | `tests/fixtures/target-repos/weak-json-boundary-typescript` | The fixture is not "normalized"; it is a controlled weak JSON/input-boundary TypeScript target plus repaired state. | Fixture path, package name, scenario README, and active invariant test paths. |
 
 ## Kept
 
@@ -24,6 +25,8 @@ domain meaning and the blast radius is bounded.
 | `defaultBranch` | keep | Standard repository concept and DB field. |
 | `defaultWorkspaceSlug` / `defaultProjectSlug` | keep for now | Repeated CLI fallback constants; naming is clear enough. Duplication may be addressed by a future CLI runtime helper, not a naming-only sweep. |
 | `source-claim-new` test IDs | keep | Fixture IDs, not operator-facing semantics. |
+| `NormalizedEvidenceCommand` / `NormalizedReviewOutcome` | keep | These are canonicalized protocol/domain values, not placeholder names. Rename would be API churn without behavior improvement. |
+| `unknown` enum values | keep | These are explicit readback fallback states and TypeScript boundary vocabulary. |
 
 ## Follow-Up Candidates
 

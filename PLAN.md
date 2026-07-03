@@ -136,8 +136,9 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-oez2` hardens run-show metadata parser readback.
-Then continue with vague placeholder naming audit (`mise-en-palace-ieec`).
+Current queue: `mise-en-palace-ieec` completes the vague placeholder naming
+audit. Then synthesize the next highest-ROI kernel task from Beads and current
+code evidence.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

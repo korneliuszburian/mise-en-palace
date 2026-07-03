@@ -488,7 +488,7 @@ export const runCodexAdapterSmokeCheck = async (
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-readback`,
       nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: "GOAL.md active KRN final harness spine",
+      goalReference: "GOAL.md active KRN canonical harness spine",
       execPlanReference: "GOAL.md M26.05",
       missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });

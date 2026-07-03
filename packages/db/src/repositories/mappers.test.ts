@@ -89,13 +89,13 @@ describe("mapFeedbackDelta", () => {
     expect(result.evalCandidates).toEqual([evalCandidate]);
   });
 
-  it("normalizes legacy proposal eval candidates without importing final lifecycle status", () => {
+  it("normalizes legacy proposal eval candidates without importing accepted lifecycle status", () => {
     const legacyCandidate = {
       id: "eval-candidate-legacy",
       projectId: "project-1",
       title: "Legacy feedback proposal",
       scenario: "A persisted feedback delta lacks eval candidate status.",
-      expectedSignal: "Readback treats it as a proposal, not final truth.",
+      expectedSignal: "Readback treats it as a proposal, not direct authority.",
       sourceEvidence: ["source-1"],
       metadata: {},
       createdAt: createdAt.toISOString()

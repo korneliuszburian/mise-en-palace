@@ -1,4 +1,4 @@
-# Normalized Weak TypeScript Target
+# Weak JSON Boundary TypeScript Target
 
 This is a KRN-owned controlled target substrate.
 
@@ -30,7 +30,7 @@ Forbidden writes:
 Rollback:
 
 ```sh
-git restore tests/fixtures/target-repos/normalized-weak-typescript
+git restore tests/fixtures/target-repos/weak-json-boundary-typescript
 ```
 
 ## Owner Files

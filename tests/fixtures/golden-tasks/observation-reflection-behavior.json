@@ -42,7 +42,7 @@
         "expectedBehavior": {
           "outcome": "reject",
           "subject": "reflection_output:memory_record_target",
-          "rationale": "Reflection may propose MemoryCandidate rows, but must not target MemoryRecord or SourceDecision final truth.",
+          "rationale": "Reflection may propose MemoryCandidate rows, but must not target MemoryRecord or SourceDecision direct authority.",
           "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
         },
         "protectedFailureModes": [
@@ -50,7 +50,7 @@
             "id": "failure-mode-reflection-001-a",
             "domain": "reflection",
             "severity": "blocking",
-            "title": "reflection mutates final truth",
+            "title": "reflection mutates direct authority",
             "mustNot": "Reflection candidate generation must not be ready when candidateLinks target memory_record.",
             "detection": "buildReflectionCandidateGenerationPlan returns ready for memory_record target."
           }

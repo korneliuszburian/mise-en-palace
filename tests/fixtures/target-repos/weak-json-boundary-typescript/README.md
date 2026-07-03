@@ -1,4 +1,4 @@
-# Normalized Weak TypeScript Fixture
+# Weak JSON Boundary TypeScript Fixture
 
 Small controlled target repo for KRN product-readiness trials.
 
@@ -35,7 +35,7 @@ The first KRN repair should prefer:
 - narrow unions for success/error result states;
 - explicit proof/non-proof notes;
 - focused tests for invalid input;
-- minimal final-pattern code.
+- minimal production-shaped code.
 
 ## Verification
 

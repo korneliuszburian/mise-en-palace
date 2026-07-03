@@ -86,7 +86,7 @@ export const runCodexBriefCommand = async (
       includeTaskContractInCapabilityPlan: true,
       createdAt: runtime.now(),
       createId: runtime.createId,
-      goalReference: "GOAL.md active KRN final harness spine",
+      goalReference: "GOAL.md active KRN canonical harness spine",
       execPlanReference: "GOAL.md M26.03",
       nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`

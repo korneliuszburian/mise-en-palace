@@ -718,7 +718,7 @@ const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
     capabilityPlan: result.capabilityPlan,
     evidenceContract: result.evidenceContract,
     nextAction: result.nextAction,
-    goalReference: "GOAL.md active KRN final harness spine",
+    goalReference: "GOAL.md active KRN canonical harness spine",
     execPlanReference: "PLAN.md Milestone 13"
   });
 
