@@ -14,7 +14,8 @@
     "usefulness-feedback/v375-codex-hook-guardrail-pattern.json",
     "usefulness-feedback/v377-brain-qa-pattern-coverage-gap.json",
     "usefulness-feedback/imr-21-cost-aware-acquisition-escalation.json",
-    "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json"
+    "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json",
+    "usefulness-feedback/post-refactor-kernel-slices.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",
