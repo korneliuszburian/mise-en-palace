@@ -120,7 +120,8 @@ COND-04 decision:
 
 source_id: `packages/cli/src/parseArgs.ts`,
 `packages/cli/src/parseDbArgs.ts`, `packages/cli/src/runCli.ts`,
-`packages/cli/src/runCli.test.ts`, `package.json`
+`packages/cli/src/__tests__/run.test.ts`,
+`packages/cli/src/__tests__/db.test.ts`, `package.json`
 trust_tier: high live source.
 mechanism: the parser keeps `db` as a top-level command family, top-level help
 and DB help label it as internal/dev, tests reject the removed `audit` command,

@@ -10,6 +10,10 @@ const matrixPath = new URL(
   "../../../../docs/architecture/brain-battle-eval-matrix.md",
   import.meta.url
 );
+const cliSurfacesPath = new URL(
+  "../../../../docs/architecture/cli-surfaces.md",
+  import.meta.url
+);
 const packageJsonPath = new URL("../../../../package.json", import.meta.url);
 const promptfooBoundaryPath = new URL(
   "../../../../docs/architecture/promptfoo-adapter-boundary.md",
@@ -76,6 +80,9 @@ const matrixRows = (): MatrixRow[] => {
 
 const hasSubstantiveText = (value: string): boolean =>
   value.trim().length > 0 && value.trim().toLowerCase() !== "none.";
+
+const staleRootCliTestPathPattern =
+  /packages\/cli\/src\/(?!__tests__\/)[^`\s|;]+\.test\.ts/u;
 
 const sectionBody = (body: string, heading: string): string => {
   const start = body.indexOf(heading);
@@ -154,6 +161,24 @@ describe("KRN brain-battle eval matrix invariants", () => {
       "matrix guard/proof boundaries"
     ]) {
       expect(normalizedCurrentSmoke).toContain(phrase);
+    }
+  });
+
+  it("keeps active CLI proof routing on current package-local test paths", () => {
+    const packageJson = readFileSync(packageJsonPath, "utf8");
+    const matrix = readFileSync(matrixPath, "utf8");
+    const cliSurfaces = readFileSync(cliSurfacesPath, "utf8");
+    const currentCliSmokeFilter = "runRunShowCommand evidenceCaptureGoldenBehavior";
+    const staleCliSmokeFilter = [
+      "runRunShowCommand",
+      "runCli"
+    ].join(" ");
+
+    expect(packageJson).toContain(`pnpm --filter @krn/cli test -- ${currentCliSmokeFilter}`);
+    expect(packageJson).not.toContain(`pnpm --filter @krn/cli test -- ${staleCliSmokeFilter}`);
+
+    for (const activeProofSurface of [matrix, cliSurfaces]) {
+      expect(activeProofSurface).not.toMatch(staleRootCliTestPathPattern);
     }
   });
 
