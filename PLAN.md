@@ -136,9 +136,10 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 `mise-en-palace-oez2`, and `mise-en-palace-ieec`.
 
 Current queue: `mise-en-palace-yjs7` records the post-parser/naming kernel
-roadmap. Next implementation target is `mise-en-palace-lr94`
-(`codexAdapterSmoke.ts` ceremony reduction), followed by
-`mise-en-palace-dwsz` (strict CLI test typecheck) unless Beads priority changes.
+roadmap. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
+`mise-en-palace-u6ux` were closed by current-code evidence as already solved or
+stale. `mise-en-palace-z406` is the active implementation slice; next ready
+task is `mise-en-palace-be1t` unless Beads priority changes.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

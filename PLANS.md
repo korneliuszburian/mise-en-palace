@@ -62,8 +62,10 @@ surface audit. Post-cleanup Beads state was empty except deferred
 brief only, not worker implementation. `mise-en-palace-oez2` hardened run-show
 metadata parsing. `mise-en-palace-ieec` replaced active vague fixture/proof
 vocabulary. `mise-en-palace-yjs7` reseeds the next queue after a
-second-opinion-claude block: `mise-en-palace-lr94`, `mise-en-palace-dwsz`,
-`mise-en-palace-z406`, `mise-en-palace-be1t`, and `mise-en-palace-u6ux`.
+second-opinion-claude block. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
+`mise-en-palace-u6ux` were closed by current-code evidence as already solved or
+stale. `mise-en-palace-z406` is the active implementation slice; next ready
+task is `mise-en-palace-be1t`.
 ```
 
 ## 2. Product Thesis
