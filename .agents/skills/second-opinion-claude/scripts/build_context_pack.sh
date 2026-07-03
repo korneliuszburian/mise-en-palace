@@ -17,6 +17,8 @@ diff_stat=$(git diff --stat || true)
 untracked_files=$(git ls-files --others --exclude-standard)
 diff_max_bytes=${SECOND_OPINION_DIFF_MAX_BYTES:-60000}
 untracked_max_bytes=${SECOND_OPINION_UNTRACKED_MAX_BYTES:-20000}
+acceptance_criteria=${SECOND_OPINION_ACCEPTANCE_CRITERIA:-"not provided; flag as an evidence gap if this prevents review"}
+verification_evidence=${SECOND_OPINION_VERIFICATION_EVIDENCE:-"not provided; request exact verification if needed"}
 head_commit=$(git log -1 --oneline || true)
 beads_ready=$(bd ready 2>/dev/null || true)
 diff_file=$(mktemp)
@@ -27,6 +29,26 @@ cleanup() {
 }
 
 trap cleanup EXIT
+
+is_denied_untracked_path() {
+  local file=$1
+  local base
+  base=$(basename "$file")
+
+  case "$file" in
+    .env|.env.*|*/.env|*/.env.*|secrets/*|*/secrets/*|*.key|*.pem|*.p12|*id_rsa*)
+      return 0
+      ;;
+  esac
+
+  case "$base" in
+    id_rsa|id_rsa.*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
 
 git diff -- . \
   ":(exclude).beads/**" \
@@ -51,6 +73,14 @@ while IFS= read -r file; do
   [[ "$file" == .beads/* ]] && continue
 
   if [[ ! -f "$file" ]]; then
+    continue
+  fi
+
+  if is_denied_untracked_path "$file"; then
+    {
+      printf '\n### %s\n\n' "$file"
+      printf 'File omitted: path matches second-opinion secret denylist.\n'
+    } >> "$untracked_body_file"
     continue
   fi
 
@@ -79,13 +109,71 @@ done <<< "$untracked_files"
 cat > "$output_file" <<EOF
 # KRN Second Opinion Context Pack
 
-You are reviewing a KRN implementation slice. Be strict, concrete, and evidence
-driven. Do not praise the work. Find correctness risks, proof overclaims,
-missing verification, stale docs, or cleanup that became speculative.
+You are a governed, read-only reviewer for a KRN implementation slice.
+
+Try to FALSIFY "done". Do not praise the work. Do not rewrite the solution.
+Find correctness risks, proof overclaims, missing verification, stale docs, or
+cleanup that became speculative. Use only the context below. Do not ask for
+tools, repository access, or broad rereads.
+
+Return JSON only. No prose, no Markdown, no code fences.
+
+Required verdict shape:
+
+\`\`\`json
+{
+  "review_version": "1",
+  "verdict": "approve | approve_with_fixes | block",
+  "risk_class": "LOW | MEDIUM | HIGH | CRITICAL",
+  "diff_sha256": "validator injects this; return an empty string",
+  "summary": "<=300 chars",
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "LOW|MEDIUM|HIGH|CRITICAL",
+      "evidence_ref": "file:line | test | missing-test:x | log:line | fn()",
+      "reason": "...",
+      "minimal_fix": "..."
+    }
+  ],
+  "evidence_gaps": [
+    {
+      "what": "...",
+      "verification_requested": "..."
+    }
+  ],
+  "another_loop_required": false,
+  "non_blocking_notes": [
+    {
+      "note": "...",
+      "why_non_blocking": "..."
+    }
+  ]
+}
+\`\`\`
+
+Rules:
+- Every finding must have a non-empty evidence_ref.
+- approve requires findings=[].
+- block requires findings or evidence_gaps and another_loop_required=true.
+- If acceptance criteria or verification evidence is missing, put it in evidence_gaps.
+- Prefer minimal fixes over broad rewrites.
 
 ## Slice Objective
 
 $slice_title
+
+## Acceptance Criteria
+
+\`\`\`txt
+$acceptance_criteria
+\`\`\`
+
+## Verification Evidence Already Run
+
+\`\`\`txt
+$verification_evidence
+\`\`\`
 
 ## Repo State
 
@@ -129,16 +217,7 @@ $beads_ready
 
 ## Reviewer Task
 
-Return:
-- verdict: approve | approve_with_fixes | block
-- must_fix findings ordered by severity, with file/path evidence
-- evidence gaps and exact verification requested
-- false claims or overclaims in the slice report
-- rejected suggestions if the current code already disproves them
-- next bounded slice
-- proof and non-proof boundary
-
-Do not ask for broad rewrites unless the diff proves they are required.
+Return the governed verdict JSON only.
 EOF
 
 printf '%s\n' "$output_file"

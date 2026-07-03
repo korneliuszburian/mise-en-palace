@@ -33,12 +33,21 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
      .local-lab/second-opinion/slice-title/claude.json
    ```
 
-   The wrapper disables Claude tools by default and has a local timeout. Set
+   Output is a validated verdict JSON, not a Claude SDK envelope. The wrapper
+   disables Claude tools by default, has a local timeout, injects the current
+   `diff_sha256`, and exits `2` for a valid blocking verdict. Set
    `SECOND_OPINION_MODEL` only when the slice warrants the limited premium
    model. Default to the local Claude Code model configuration for cheap smoke
-   checks.
+   checks. Set `SECOND_OPINION_BASE` when the freshness base is not `origin/main`.
    If the local timeout fires, the wrapper writes a JSON timeout artifact and
    exits non-zero; treat that as an evidence gap, not as a review verdict.
+
+   Re-check a committed verdict:
+
+   ```bash
+   rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
+     .local-lab/second-opinion/slice-title/claude.json --base origin/main
+   ```
 
 3. Triage the result:
 
@@ -57,24 +66,29 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
    - For back-and-forth, run a second compact prompt containing only the
      previous finding, the applied fix or rejection evidence, and the remaining
      question. Do not start open-ended debate loops.
+   - Run at most two fix/review loops before requiring a human product or budget
+     decision.
 
 5. Close the slice only after Codex has made the final call, local verification
    passed, Beads state is updated, and the final handoff records what Claude did
    and did not prove.
 
-## Prompt Contract
+## Verdict Contract
 
-Ask Claude for this shape. Keep it explicit even if the output is prose:
+The verdict schema lives at `schemas/review.schema.json`. Examples live in
+`examples/approve.review.json` and `examples/block.review.json`.
+
+Required shape:
 
 ```txt
-Return:
-- verdict: approve | approve_with_fixes | block
-- must_fix findings ordered by severity, with file/path evidence
-- evidence gaps and exact verification requested
-- false claims or overclaims in the slice report
-- rejected suggestions if the current code already disproves them
-- next bounded slice
-- proof and non-proof boundary
+review_version: "1"
+verdict: approve | approve_with_fixes | block
+risk_class: LOW | MEDIUM | HIGH | CRITICAL
+diff_sha256: injected by validate_review.py finalize
+summary: <=300 chars
+findings[].evidence_ref: required
+evidence_gaps[].verification_requested: required
+another_loop_required: block requires true
 ```
 
 Required context:
@@ -101,6 +115,9 @@ review questions:
   invalid review input.
 - Treat `error_timeout` output as a prompt-size/budget tuning issue before
   trusting the review loop.
+- Treat validator failure or non-JSON model output as no verdict, not as
+  approval.
+- Reject a verdict whose `diff_sha256` does not match the current diff.
 - Do not send secrets, `.env`, private tokens, full DB dumps, or huge ledgers.
 - Do not treat a closed Beads issue, passing CI, or Claude approval as proof by
   itself.
@@ -116,6 +133,10 @@ For skill changes:
 ```bash
 rtk bash -n .agents/skills/second-opinion-claude/scripts/build_context_pack.sh
 rtk bash -n .agents/skills/second-opinion-claude/scripts/run_review.sh
+rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/skills/second-opinion-claude/examples/approve.review.json
+rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/skills/second-opinion-claude/examples/block.review.json
 rtk .agents/skills/second-opinion-claude/scripts/build_context_pack.sh \
   "second-opinion smoke" .local-lab/second-opinion/smoke/prompt.md
 rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \

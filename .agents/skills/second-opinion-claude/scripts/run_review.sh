@@ -8,6 +8,7 @@ fi
 
 prompt_file=$1
 output_file=$2
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 if [[ ! -f "$prompt_file" ]]; then
   echo "prompt file not found: $prompt_file" >&2
@@ -24,11 +25,12 @@ mkdir -p "$(dirname "$output_file")"
 max_turns=${SECOND_OPINION_MAX_TURNS:-1}
 max_budget=${SECOND_OPINION_MAX_BUDGET_USD:-0.50}
 timeout_seconds=${SECOND_OPINION_TIMEOUT_SECONDS:-120}
+base=${SECOND_OPINION_BASE:-origin/main}
 model_args=()
-tmp_output=$(mktemp)
+tmp_envelope=$(mktemp)
 
 cleanup() {
-  rm -f "$tmp_output"
+  rm -f "$tmp_envelope"
 }
 
 trap cleanup EXIT
@@ -39,7 +41,7 @@ fi
 
 if timeout "$timeout_seconds" claude \
     --bare \
-    --print "Use the prompt from stdin as the complete review task. Do not use tools. Return the requested review only." \
+    --print \
     --tools "" \
     --output-format json \
     --max-turns "$max_turns" \
@@ -47,8 +49,18 @@ if timeout "$timeout_seconds" claude \
     --no-session-persistence \
     "${model_args[@]}" \
     < "$prompt_file" \
-    > "$tmp_output"; then
-  mv "$tmp_output" "$output_file"
+    > "$tmp_envelope"; then
+  set +e
+  "$script_dir/validate_review.py" finalize "$tmp_envelope" "$base" "$output_file"
+  status=$?
+  set -e
+  if [[ "$status" -ne 0 && ! -s "$output_file" ]]; then
+    cat > "$output_file" <<EOF
+{"type":"result","subtype":"error_validation","is_error":true,"exit_status":$status,"prompt_file":"$prompt_file"}
+EOF
+  fi
+  printf '%s\n' "$output_file"
+  exit "$status"
 else
   status=$?
 
@@ -56,8 +68,10 @@ else
     cat > "$output_file" <<EOF
 {"type":"result","subtype":"error_timeout","is_error":true,"timeout_seconds":$timeout_seconds,"prompt_file":"$prompt_file"}
 EOF
-  elif [[ -s "$tmp_output" ]]; then
-    mv "$tmp_output" "$output_file"
+  elif [[ -s "$tmp_envelope" ]]; then
+    cat > "$output_file" <<EOF
+{"type":"result","subtype":"error_exit","is_error":true,"exit_status":$status,"prompt_file":"$prompt_file","envelope_file":"not_persisted"}
+EOF
   else
     cat > "$output_file" <<EOF
 {"type":"result","subtype":"error_exit","is_error":true,"exit_status":$status,"prompt_file":"$prompt_file"}
