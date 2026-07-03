@@ -1,6 +1,6 @@
 # KRN Continuous Brain Growth Active Ledger
 
-Status: compact active ledger. Date: 2026-07-02.
+Status: compact active ledger. Date: 2026-07-03.
 
 Root `GOAL.md` is the continuous objective. Root `PLAN.md` is the compact
 product source of truth. This file keeps only current state, recent outcomes,
@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending
+current task: CLI root test topology drained; next bounded issue selection pending
 latest pushed commit: see git history
 ```
 
@@ -24,18 +24,18 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-accepted-only SourceDecisionEdge support complete; next bounded issue selection pending.
+CLI root test topology drained; next bounded issue selection pending.
 Inspect/create the next bounded audit-derived issue.
 ```
 
 Latest outcome:
 
 ```txt
-mise-en-palace-b89r implementation: SourceDecisionEdge and SourceClaimEdge
-support now require accepted SourceClaims.
+CLI root test topology drain: CLI package tests now live under
+packages/cli/src/__tests__ and packages/cli/src/*.test.ts is drained to zero.
 Report:
-docs/runs/2026-07-02-source-decision-edge-authority.md
-CI: KRN CI 28621751037 passed.
+docs/runs/2026-07-03-cli-root-test-topology-drain.md
+CI: KRN CI 28629440375 passed for the final run-show proof-reference move.
 Next: inspect/create next bounded audit-derived issue.
 ```
 

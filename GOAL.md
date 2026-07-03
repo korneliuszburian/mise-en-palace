@@ -27,19 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: accepted-only SourceDecisionEdge support complete; next bounded issue selection pending.
+current task: CLI root test topology drained; next bounded issue selection pending.
 ```
 
-Current task state: SourceDecisionEdge and SourceClaimEdge support now require
-accepted SourceClaims, and `krn source decision link --persist` rejects proposed
-claims before creating decision-support edges. KRN CI `28621751037` passed.
+Current task state: CLI package tests now live under
+`packages/cli/src/__tests__/`, and root-level `packages/cli/src/*.test.ts`
+has been drained to zero. KRN CI `28629440375` passed for the final run-show
+proof-reference move.
 
 Latest slice:
 
 ```txt
-accepted-only SourceDecisionEdge support implemented.
+CLI root test topology drained.
 Report:
-docs/runs/2026-07-02-source-decision-edge-authority.md
+docs/runs/2026-07-03-cli-root-test-topology-drain.md
 Next: inspect/create next bounded audit-derived slice.
 ```
 
