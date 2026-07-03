@@ -38,6 +38,7 @@ CLI parse test typecheck widening slice: CLI `parse*.test.ts` files and
 Report:
 docs/runs/2026-07-03-cli-parse-test-typecheck-widening.md
 CI: pending for this slice.
+CI result: KRN CI 28645296144 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 
