@@ -191,14 +191,14 @@ const task: GoldenTask = {
       expectedBehavior: {
         outcome: "reject",
         subject: "reflection_output:memory_record_target",
-        rationale: "Reflection must not target MemoryRecord final truth.",
+        rationale: "Reflection must not target direct MemoryRecord authority.",
         evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
-        id: "failure-mode-real-gate-reflection-final-truth",
+        id: "failure-mode-real-gate-reflection-direct-authority",
         domain: "reflection",
         severity: "blocking",
-        title: "reflection mutates final truth",
+        title: "reflection mutates direct authority",
         mustNot: "Reflection candidate generation must not accept memory_record targets.",
         detection: "buildReflectionCandidateGenerationPlan returns ready."
       }],
@@ -352,7 +352,7 @@ describe("KRN behavior golden gate", () => {
       "Real activation behavior abstained on stale memory and produced stale exclusion.",
       "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
       "Real context assembly rejected selected observation prefix item without source ranges.",
-      "Real reflection behavior blocked final MemoryRecord target generation.",
+      "Real reflection behavior blocked direct MemoryRecord target generation.",
       "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
       "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files.",
       "Real target owner-file recall surfaced a bounded owner file below tests/ without selecting static KRN owner files.",

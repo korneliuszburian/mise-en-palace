@@ -239,8 +239,8 @@ const forbiddenMetadataKeys = new Set([
 ]);
 
 export type ReflectionOutputContractViolationReason =
-  | "final_truth_target"
-  | "final_truth_metadata";
+  | "non_candidate_target"
+  | "forbidden_authority_metadata";
 
 export interface ReflectionOutputContractViolation {
   path: string;
@@ -316,7 +316,7 @@ const collectForbiddenMetadata = (
     if (forbiddenMetadataKeys.has(normalizedKey(key))) {
       violations.push({
         path: nextPath.join("."),
-        reason: "final_truth_metadata",
+        reason: "forbidden_authority_metadata",
         value: key
       });
     }
@@ -611,7 +611,7 @@ export const assessReflectionOutputContract = (output: {
     if (!candidateTargetSet.has(link.targetType)) {
       violations.push({
         path: `candidateLinks.${index}.targetType`,
-        reason: "final_truth_target",
+        reason: "non_candidate_target",
         value: link.targetType
       });
     }

@@ -335,7 +335,7 @@ const runAntiMemoryBlock = (now: string): GoldenBehaviorProof => {
   );
 };
 
-const runReflectionFinalTruthBlock = (now: string): GoldenBehaviorProof => {
+const runReflectionNonCandidateTargetBlock = (now: string): GoldenBehaviorProof => {
   const assessment = assessReflectionOutputContract({
     candidateLinks: [{
       targetType: "memory_record"
@@ -348,7 +348,7 @@ const runReflectionFinalTruthBlock = (now: string): GoldenBehaviorProof => {
     !assessment.candidateOnly &&
     assessment.violations.some((violation) =>
       violation.path === "candidateLinks.0.targetType" &&
-      violation.reason === "final_truth_target" &&
+      violation.reason === "non_candidate_target" &&
       violation.value === "memory_record"
     );
 
@@ -356,8 +356,8 @@ const runReflectionFinalTruthBlock = (now: string): GoldenBehaviorProof => {
     "golden-case-reflection-001-a",
     passed ? "passed" : "failed",
     passed
-      ? "Real reflection behavior blocked final MemoryRecord target generation."
-      : "Real reflection behavior did not block final MemoryRecord target generation."
+      ? "Real reflection behavior blocked direct MemoryRecord target generation."
+      : "Real reflection behavior did not block direct MemoryRecord target generation."
   );
 };
 
@@ -813,7 +813,7 @@ const runRelationGroundedQaReadback = (now: string): GoldenBehaviorProof => {
 const proofFactories = {
   "golden-case-memory-smoke-001": runStaleMemoryAbstention,
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
-  "golden-case-reflection-001-a": runReflectionFinalTruthBlock,
+  "golden-case-reflection-001-a": runReflectionNonCandidateTargetBlock,
   "golden-case-memory-005-a": runRawRecallExactProof,
   "golden-case-context-roi-001-a": runContextRoiBoundary,
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,

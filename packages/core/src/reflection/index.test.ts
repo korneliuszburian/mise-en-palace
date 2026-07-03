@@ -180,7 +180,7 @@ describe("reflection contracts", () => {
     expect(isReflectionOutputCandidateOnly(output)).toBe(true);
   });
 
-  it("rejects outputs that link to final truth targets", () => {
+  it("rejects outputs that link to non-candidate targets", () => {
     const assessment = assessReflectionOutputContract({
       ...output,
       candidateLinks: [{
@@ -195,7 +195,7 @@ describe("reflection contracts", () => {
       candidateOnly: false,
       violations: [{
         path: "candidateLinks.0.targetType",
-        reason: "final_truth_target",
+        reason: "non_candidate_target",
         value: "memory_record"
       }]
     });
@@ -231,18 +231,18 @@ describe("reflection contracts", () => {
     expect(assessment.violations).toEqual([
       {
         path: "metadata.createActiveMemory",
-        reason: "final_truth_metadata",
+        reason: "forbidden_authority_metadata",
         value: "createActiveMemory"
       },
       {
         path: "metadata.nested.source_decision",
-        reason: "final_truth_metadata",
+        reason: "forbidden_authority_metadata",
         value: "source_decision"
       }
     ]);
   });
 
-  it("builds a deterministic candidate generation plan without final truth writes", () => {
+  it("builds a deterministic candidate generation plan without authority writes", () => {
     const plan = buildReflectionCandidateGenerationPlan(output);
 
     expect(plan).toEqual({
@@ -269,7 +269,7 @@ describe("reflection contracts", () => {
 
     expect(plan.status).toBe("blocked");
     expect(plan.blockedReasons).toEqual([
-      "metadata.createActiveMemory:final_truth_metadata"
+      "metadata.createActiveMemory:forbidden_authority_metadata"
     ]);
   });
 

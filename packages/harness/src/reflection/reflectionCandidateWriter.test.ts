@@ -322,7 +322,7 @@ describe("reflection candidate writer", () => {
     ]);
   });
 
-  it("blocks final-truth reflection outputs without writing candidates", async () => {
+  it("blocks non-candidate reflection outputs without writing candidates", async () => {
     let createMemoryCandidateCalled = false;
     const result = await writeReflectionCandidates({
       reflectionRecord: reflectionRecord({
@@ -353,7 +353,7 @@ describe("reflection candidate writer", () => {
     if (result.status !== "blocked") {
       throw new Error("expected blocked reflection candidate writer result");
     }
-    expect(result.blockedReasons).toEqual(["candidateLinks.0.targetType:final_truth_target"]);
+    expect(result.blockedReasons).toEqual(["candidateLinks.0.targetType:non_candidate_target"]);
     expect("memoryCandidates" in result).toBe(false);
     expect("antiMemoryCandidates" in result).toBe(false);
     expect("sourceClaims" in result).toBe(false);

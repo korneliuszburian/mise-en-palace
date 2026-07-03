@@ -46,7 +46,7 @@ const sourceClaim = (
   claim: "Reflection input uses source claims.",
   mechanism: "Source claims provide mechanism context.",
   krnImplication: "Reflection can propose candidates with source context.",
-  doesNotProve: "This does not approve final truth.",
+  doesNotProve: "This does not approve direct MemoryRecord authority.",
   trustTier: "project-decision",
   supportType: "mechanism",
   consumer: "reflection",

@@ -191,7 +191,7 @@ describe("golden observation and reflection behavior cases", () => {
     });
   });
 
-  it("keeps reflection candidate-only and blocks final truth targets", () => {
+  it("keeps reflection candidate-only and blocks non-candidate targets", () => {
     expect(buildReflectionCandidateGenerationPlan(reflectionOutput({}))).toMatchObject({
       status: "ready",
       counts: {
@@ -207,7 +207,7 @@ describe("golden observation and reflection behavior cases", () => {
       }]
     }))).toMatchObject({
       status: "blocked",
-      blockedReasons: ["candidateLinks.0.targetType:final_truth_target"]
+      blockedReasons: ["candidateLinks.0.targetType:non_candidate_target"]
     });
   });
 
