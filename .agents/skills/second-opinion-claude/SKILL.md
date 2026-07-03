@@ -50,8 +50,11 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
    Set `SECOND_OPINION_MODEL` only when the slice warrants the limited premium
    model. Default to the local Claude Code model configuration for cheap smoke
    checks. Set `SECOND_OPINION_BASE` when the freshness base is not `origin/main`.
-   If the local timeout fires, the wrapper writes a JSON timeout artifact and
-   exits non-zero; treat that as an evidence gap, not as a review verdict.
+   If validation fails, the wrapper writes `error_validation`; schema-shaped
+   rejected verdicts are preserved under `invalid_verdict`, and the raw Claude
+   envelope is copied beside the output as `*.envelope.json`. If the local
+   timeout fires, the wrapper writes a JSON timeout artifact and exits non-zero;
+   treat that as an evidence gap, not as a review verdict.
 
    Re-check a committed verdict:
 
@@ -154,7 +157,7 @@ All optional; defaults shown.
 - Treat `error_timeout` output as a prompt-size/budget tuning issue before
   trusting the review loop.
 - Treat validator failure or non-JSON model output as no verdict, not as
-  approval.
+  approval. Inspect `invalid_verdict` / `*.envelope.json` before retrying.
 - Reject a verdict whose `diff_sha256` does not match the current diff.
 - Do not send secrets, `.env`, private tokens, full DB dumps, or huge ledgers.
 - Do not treat a closed Beads issue, passing CI, or Claude approval as proof by
@@ -175,6 +178,10 @@ rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
   .agents/skills/second-opinion-claude/examples/approve.review.json
 rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
   .agents/skills/second-opinion-claude/examples/block.review.json
+! rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/skills/second-opinion-claude/examples/invalid-extra-key.review.json
+! rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/skills/second-opinion-claude/examples/invalid-review-version.review.json
 rtk .agents/skills/second-opinion-claude/scripts/build_context_pack.sh \
   "second-opinion smoke" .local-lab/second-opinion/smoke/prompt.md
 rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \

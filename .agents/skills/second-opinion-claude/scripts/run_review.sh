@@ -27,6 +27,7 @@ timeout_seconds=${SECOND_OPINION_TIMEOUT_SECONDS:-120}
 base=${SECOND_OPINION_BASE:-origin/main}
 model_args=()
 tmp_envelope=$(mktemp)
+invalid_envelope_file="${output_file%.json}.envelope.json"
 
 cleanup() {
   rm -f "$tmp_envelope"
@@ -52,9 +53,12 @@ if timeout "$timeout_seconds" claude \
   "$script_dir/validate_review.py" finalize "$tmp_envelope" "$base" "$output_file"
   status=$?
   set -e
+  if [[ "$status" -ne 0 ]]; then
+    cp "$tmp_envelope" "$invalid_envelope_file"
+  fi
   if [[ "$status" -ne 0 && ! -s "$output_file" ]]; then
     cat > "$output_file" <<EOF
-{"type":"result","subtype":"error_validation","is_error":true,"exit_status":$status,"prompt_file":"$prompt_file"}
+{"type":"result","subtype":"error_validation","is_error":true,"exit_status":$status,"prompt_file":"$prompt_file","envelope_file":"$invalid_envelope_file"}
 EOF
   fi
   printf '%s\n' "$output_file"

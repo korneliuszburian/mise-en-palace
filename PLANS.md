@@ -77,6 +77,8 @@ preview extraction -> source activation context reuse case to `eval:krn:smoke`.
 `mise-en-palace-y6ib` is closed and has moved brain-search selectedKnowledge,
 target-fit, source-search caveat, activation-utility, and text/JSON readback
 assembly out of the command runner.
+`mise-en-palace-2ksv` is closed and now preserves schema-invalid second-opinion
+verdicts plus raw Claude envelopes as explicit validation artifacts.
 `mise-en-palace-plnv` remains deferred.
 ```
 

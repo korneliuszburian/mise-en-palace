@@ -38,6 +38,16 @@ def dump_json(path: Path, value: dict[str, Any]) -> None:
         handle.write("\n")
 
 
+def dump_invalid_verdict(path: Path, verdict: dict[str, Any], error: str) -> None:
+    dump_json(path, {
+        "type": "result",
+        "subtype": "error_validation",
+        "is_error": True,
+        "validation_error": error,
+        "invalid_verdict": verdict
+    })
+
+
 def fenced_json_candidates(text: str) -> list[str]:
     return re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL)
 
@@ -286,7 +296,12 @@ def validate_verdict(verdict: dict[str, Any], *, base: str | None = None) -> int
 def finalize(args: argparse.Namespace) -> int:
     verdict = verdict_from_envelope(Path(args.envelope_json))
     verdict["diff_sha256"] = diff_sha256(args.base)
-    exit_code = validate_verdict(verdict, base=args.base)
+    try:
+        exit_code = validate_verdict(verdict, base=args.base)
+    except ReviewError as exc:
+        dump_invalid_verdict(Path(args.out_json), verdict, str(exc))
+        raise
+
     dump_json(Path(args.out_json), verdict)
     print(f"valid review verdict: {verdict['verdict']} risk={verdict['risk_class']}")
     return exit_code

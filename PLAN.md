@@ -146,9 +146,9 @@ DB persistence/readback helpers moved out of the command runner.
 `eval:krn:smoke` now includes a deterministic preview extraction -> source
 activation context reuse case.
 `mise-en-palace-y6ib` brain-search readback split is closed: selectedKnowledge/readback formatting moved out of the command runner.
-Next implementation candidates are `mise-en-palace-h1b4` run-show
-projection/readback split and `mise-en-palace-2ksv` second-opinion retry
-validation artifact hardening.
+`mise-en-palace-2ksv` second-opinion retry artifact hardening is closed:
+invalid verdicts and raw envelopes remain inspectable without becoming approval.
+Next implementation candidate is `mise-en-palace-h1b4` run-show projection/readback split.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
