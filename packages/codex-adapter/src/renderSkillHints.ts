@@ -13,7 +13,7 @@ const skillByRequirement = {
   db_migration: "brain-store-schema",
   review_capture: "evidence-review-loop",
   evidence_capture: "evidence-review-loop",
-  policy_gate: "activation-engine"
+  context_abstention: "activation-engine"
 } as const satisfies Record<CapabilityPlan["requirements"][number]["kind"], string>;
 
 export const skillRoutingPatternRef = "pattern:codex-skill-progressive-disclosure-routing";

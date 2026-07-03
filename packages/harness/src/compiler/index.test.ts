@@ -598,7 +598,7 @@ describe("compileHarnessPlan", () => {
     ]));
   });
 
-  it("hardens capability requirements with priority and binding kinds outside TaskContract", async () => {
+  it("hardens capability requirements with priority and evidence outside TaskContract", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),
       memoryRepository: new FakeMemoryRepository([memoryRecord({ id: "memory-high" })]),
@@ -611,15 +611,11 @@ describe("compileHarnessPlan", () => {
     expect(result.capabilityPlan.requirements).not.toHaveLength(0);
     expect(result.capabilityPlan.requirements.every((requirement) =>
       requirement.priority === "required" &&
-      requirement.bindingKinds.length > 0 &&
       requirement.requiredEvidence.length > 0
     )).toBe(true);
-    expect(result.capabilityPlan.requirements.find((requirement) =>
-      requirement.kind === "source_grounding"
-    )?.bindingKinds).toEqual(expect.arrayContaining(["skill", "policy_gate"]));
-    expect(result.capabilityPlan.requirements.find((requirement) =>
-      requirement.kind === "type_safety"
-    )?.bindingKinds).toEqual(expect.arrayContaining(["skill", "rule"]));
+    expect(result.capabilityPlan.requirements.map((requirement) => requirement.kind)).toEqual(
+      expect.arrayContaining(["source_grounding", "type_safety", "test_boundary"])
+    );
     expect("requiredSkills" in result.taskContract).toBe(false);
   });
 
@@ -691,7 +687,6 @@ describe("compileHarnessPlan", () => {
     );
 
     expect(typeSafety).toMatchObject({
-      bindingKinds: expect.arrayContaining(["skill", "rule"]),
       requiredEvidence: expect.arrayContaining([
         "pnpm typecheck",
         "unknown-first boundary check",
@@ -700,14 +695,12 @@ describe("compileHarnessPlan", () => {
     });
     expect(typeSafety?.reason).toContain("TypeScript boundary");
     expect(reviewCapture).toMatchObject({
-      bindingKinds: expect.arrayContaining(["skill", "policy_gate"]),
       requiredEvidence: expect.arrayContaining([
         "review-risk notes",
         "diff risk summary"
       ])
     });
     expect(evidenceCapture).toMatchObject({
-      bindingKinds: expect.arrayContaining(["skill", "tool_boundary"]),
       requiredEvidence: expect.arrayContaining(["changed files summary", "git diff --check"])
     });
     expect("requiredSkills" in result.taskContract).toBe(false);

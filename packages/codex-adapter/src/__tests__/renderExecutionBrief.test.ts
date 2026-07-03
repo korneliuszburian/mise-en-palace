@@ -103,21 +103,18 @@ const capabilityPlan: CapabilityPlan = {
     {
       kind: "type_safety",
       priority: "required",
-      bindingKinds: ["skill", "rule"],
       reason: "Preserve strict TypeScript boundaries.",
       requiredEvidence: ["pnpm typecheck"]
     },
     {
       kind: "evidence_capture",
       priority: "required",
-      bindingKinds: ["skill", "tool_boundary"],
       reason: "Keep execution reviewable.",
       requiredEvidence: ["git diff --check"]
     },
     {
-      kind: "policy_gate",
+      kind: "context_abstention",
       priority: "required",
-      bindingKinds: ["policy_gate", "tool_boundary"],
       reason: "Weak context must abstain instead of expanding context.",
       requiredEvidence: ["context abstention"]
     }
@@ -361,35 +358,30 @@ describe("renderExecutionBrief", () => {
         {
           kind: "schema_design",
           priority: "required",
-          bindingKinds: ["skill", "rule"],
           reason: "Memory schema changes require brain-store schema discipline.",
           requiredEvidence: ["schema/domain tests"]
         },
         {
           kind: "db_migration",
           priority: "required",
-          bindingKinds: ["skill", "policy_gate"],
           reason: "Memory persistence changes require DB readiness proof.",
           requiredEvidence: ["pnpm db:ready"]
         },
         {
           kind: "source_grounding",
           priority: "required",
-          bindingKinds: ["skill", "policy_gate"],
           reason: "Architecture decisions require source-to-decision evidence.",
           requiredEvidence: ["source claim"]
         },
         {
           kind: "evidence_capture",
           priority: "required",
-          bindingKinds: ["skill", "tool_boundary"],
           reason: "Audit work requires reviewable evidence.",
           requiredEvidence: ["audit slice"]
         },
         {
           kind: "review_capture",
           priority: "required",
-          bindingKinds: ["skill", "policy_gate"],
           reason: "Review output must become candidates, not final truth.",
           requiredEvidence: ["feedback delta"]
         }

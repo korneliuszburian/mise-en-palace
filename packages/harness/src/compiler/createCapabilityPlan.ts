@@ -1,8 +1,6 @@
 import type {
-  CapabilityBindingKind,
   CapabilityPlan,
   CapabilityRequirement,
-  CapabilityRequirementKind,
   HarnessPlan,
   TaskContract
 } from "@krn/core";
@@ -15,23 +13,11 @@ export interface CreateCapabilityPlanInput {
   createId(prefix: string): string;
 }
 
-const bindingKindsByRequirement = {
-  source_grounding: ["skill", "policy_gate"],
-  type_safety: ["skill", "rule"],
-  schema_design: ["skill", "rule"],
-  test_boundary: ["skill", "rule"],
-  db_migration: ["skill", "policy_gate"],
-  review_capture: ["skill", "policy_gate"],
-  evidence_capture: ["skill", "tool_boundary"],
-  policy_gate: ["policy_gate", "tool_boundary"]
-} as const satisfies Record<CapabilityRequirementKind, readonly CapabilityBindingKind[]>;
-
 const requirement = (
-  input: Omit<CapabilityRequirement, "priority" | "bindingKinds">
+  input: Omit<CapabilityRequirement, "priority">
 ): CapabilityRequirement => ({
   ...input,
-  priority: "required",
-  bindingKinds: [...bindingKindsByRequirement[input.kind]]
+  priority: "required"
 });
 
 const textTerms = (
@@ -61,7 +47,7 @@ const hasAnyTerm = (terms: ReadonlySet<string>, candidates: readonly string[]): 
 
 const pushRequirement = (
   requirements: CapabilityRequirement[],
-  next: Omit<CapabilityRequirement, "priority" | "bindingKinds">
+  next: Omit<CapabilityRequirement, "priority">
 ): void => {
   if (requirements.some((item) => item.kind === next.kind)) {
     return;
@@ -72,7 +58,7 @@ const pushRequirement = (
 
 const replaceRequirement = (
   requirements: CapabilityRequirement[],
-  next: Omit<CapabilityRequirement, "priority" | "bindingKinds">
+  next: Omit<CapabilityRequirement, "priority">
 ): void => {
   const index = requirements.findIndex((item) => item.kind === next.kind);
   const updated = requirement(next);
@@ -116,7 +102,7 @@ export const createCapabilityPlan = (input: CreateCapabilityPlanInput): Capabili
 
   if (!input.hasContext) {
     pushRequirement(requirements, {
-      kind: "policy_gate",
+      kind: "context_abstention",
       reason: "Weak context requires an abstention path instead of broad rereads.",
       requiredEvidence: ["context abstention", "context exclusions"]
     });

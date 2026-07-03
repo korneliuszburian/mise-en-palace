@@ -85,7 +85,6 @@ const capabilityPlan: CapabilityPlan = {
   requirements: [{
     kind: "evidence_capture",
     priority: "required",
-    bindingKinds: ["skill", "tool_boundary"],
     reason: "Brief behavior must remain reviewable.",
     requiredEvidence: ["codex brief golden behavior"]
   }],

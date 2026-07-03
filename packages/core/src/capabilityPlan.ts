@@ -12,20 +12,13 @@ export type CapabilityRequirementKind =
   | "db_migration"
   | "review_capture"
   | "evidence_capture"
-  | "policy_gate";
+  | "context_abstention";
 
 export type CapabilityRequirementPriority = "required" | "recommended";
-
-export type CapabilityBindingKind =
-  | "skill"
-  | "rule"
-  | "policy_gate"
-  | "tool_boundary";
 
 export interface CapabilityRequirement {
   kind: CapabilityRequirementKind;
   priority: CapabilityRequirementPriority;
-  bindingKinds: CapabilityBindingKind[];
   reason: string;
   requiredEvidence: string[];
 }
