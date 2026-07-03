@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type {
+  SourceClaimStatus
+} from "@krn/core";
+
+import type {
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
@@ -442,8 +446,8 @@ describe("runCli", () => {
             async createSourceDecision(input) {
               return {
                 id: "source-decision-1",
-                projectId: input.projectId,
-                sourceClaimId: input.sourceClaimId,
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
                 status: input.status,
                 decision: input.decision,
                 rationale: input.rationale,
@@ -532,8 +536,8 @@ describe("runCli", () => {
             async createSourceDecision(input) {
               return {
                 id: "source-decision-1",
-                projectId: input.projectId,
-                sourceClaimId: input.sourceClaimId,
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
                 status: input.status,
                 decision: input.decision,
                 rationale: input.rationale,
@@ -599,8 +603,8 @@ describe("runCli", () => {
             async createSourceDecision(input) {
               return {
                 id: "source-decision-1",
-                projectId: input.projectId,
-                sourceClaimId: input.sourceClaimId,
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
                 status: input.status,
                 decision: input.decision,
                 rationale: input.rationale,
@@ -651,7 +655,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    let sourceClaimStatus = "proposed";
+    let sourceClaimStatus: SourceClaimStatus = "proposed";
     const createDatabaseRuntime = async (): Promise<DatabaseRuntime> => ({
       workspaceId: "workspace-1",
       projectId: "project-1",
@@ -663,8 +667,8 @@ describe("runCli", () => {
 
           return {
             id: "source-decision-1",
-            projectId: input.projectId,
-            sourceClaimId: input.sourceClaimId,
+            ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+            ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
             status: input.status,
             decision: input.decision,
             rationale: input.rationale,

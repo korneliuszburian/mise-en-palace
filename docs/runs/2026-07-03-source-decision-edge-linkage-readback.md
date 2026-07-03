@@ -67,6 +67,8 @@ Verification:
 pnpm --filter @krn/cli test -- source: passed (348 tests)
 pnpm --filter @krn/core test -- source: passed
 pnpm -w typecheck: passed
+pnpm --filter @krn/cli typecheck:tests:clean: passed
+pnpm eval:krn:smoke: passed after CI typing repair
 ```
 
 Second-opinion Claude:
