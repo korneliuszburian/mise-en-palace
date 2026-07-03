@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-choose the next highest-ROI kernel vertical after store-backed memory, graph relation consensus, and retained-pattern catalog cooperation proofs.
+close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -35,11 +35,11 @@ catalog selection is proven for this relation task, not as global recall quality
 promoted SBV MemoryRecord and retained TypeScript pattern catalog selection.
 This does not prove ranking quality, retained-pattern completeness, or unrelated
 automatic recall.
-`mise-en-palace-c79a` is locally implemented pending second-opinion, commit,
-push, and CI. It proves one operator-facing SourceDecision adoption and one
-persisted SourceDecisionEdge readback against a concrete harness run. It does
-not prove source truth, graph ranking quality, or source-search project
-ergonomics.
+`mise-en-palace-c79a` is implemented and pushed; CI rerun is pending after
+active-plan invariant repair. It proves one operator-facing SourceDecision
+adoption and one persisted SourceDecisionEdge readback against a concrete
+harness run. It does not prove source truth, graph ranking quality, or
+source-search project ergonomics.
 ```
 
 ## 2. Product Thesis

@@ -125,8 +125,8 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-c79a` locally implemented pending
-second-opinion/commit/push/CI, then choose next highest-ROI kernel vertical.
+Current queue: `mise-en-palace-c79a` implemented and pushed; CI rerun pending
+after active-plan invariant repair, then choose next highest-ROI kernel vertical.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

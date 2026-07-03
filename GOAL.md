@@ -37,10 +37,10 @@ Store-backed memory reuse now works when the MemoryCandidate preserves run
 project lineage. The graph relation consensus pattern was selected and used for
 candidate-only heartbeat readback. A persisted next-task plan selected both the
 store-backed SBV MemoryRecord and retained TypeScript pattern catalog readback.
-`mise-en-palace-c79a` is locally implemented pending second-opinion, commit,
-push, and CI: one operator-facing SourceDecision adoption and SourceDecisionEdge
-link persisted and read back against a concrete harness run. Next queue item:
-choose the next highest-ROI kernel vertical.
+`mise-en-palace-c79a` is implemented and pushed; CI rerun is pending after an
+active-plan invariant repair. One operator-facing SourceDecision adoption and
+SourceDecisionEdge link persisted and read back against a concrete harness run.
+Next queue item: choose the next highest-ROI kernel vertical.
 
 Latest slice:
 
