@@ -1,0 +1,235 @@
+import {
+  describe,
+  expect,
+  it
+} from "vitest";
+
+import type {
+  SourceClaim,
+  SourceDecisionEdge
+} from "@krn/core";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "../databaseRuntime.js";
+import {
+  runSourceDecisionGapsCommand
+} from "../runSourceDecisionGapsCommand.js";
+import type {
+  CreateSourceDecisionGapsDatabaseRuntime
+} from "../runSourceDecisionGapsCommand.js";
+
+const now = "2026-07-03T19:00:00.000Z";
+const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
+const missingClaimId = "8beef0cc-6251-4c09-a3b8-b97383b4f234" as SourceClaim["id"];
+const linkedClaimId = "470d0876-8d18-468e-b8d2-f4715cd83354" as SourceClaim["id"];
+
+const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
+  id: missingClaimId,
+  sourceArtifactId: "f6db868a-4c82-406a-8371-9ab7d8594fc5" as SourceClaim["sourceArtifactId"],
+  claim: "Accepted SourceClaims should expose missing SourceDecisionEdge readback.",
+  mechanism: "A read-only project scan can compare accepted claims to decision edges.",
+  krnImplication: "Operators can find decision-link gaps without mutating Beads or CI.",
+  doesNotProve: "This does not prove the claim is false.",
+  trustTier: "project-decision",
+  supportType: "implementation-boundary",
+  consumer: "source decision gap detector",
+  falsifier: "The accepted claim with no edge is absent from gap output.",
+  status: "accepted",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
+const sourceDecisionEdge = (
+  overrides: Partial<SourceDecisionEdge> = {}
+): SourceDecisionEdge => ({
+  id: "12317af1-4090-4c1c-8f07-203180b59792" as SourceDecisionEdge["id"],
+  sourceClaimId: linkedClaimId,
+  targetType: "harness_run",
+  targetId: "run-1",
+  supportType: "implementation-boundary",
+  confidence: "high",
+  notes: "Linked decision support exists.",
+  metadata: {},
+  createdAt: now,
+  ...overrides
+});
+
+interface RuntimeInput {
+  claims?: readonly SourceClaim[];
+  decisionEdges?: readonly SourceDecisionEdge[];
+  onRuntimeInput?(input: DatabaseRuntimeInput): void;
+  onClose?(): void;
+}
+
+const runtime = (input: RuntimeInput = {}): CreateSourceDecisionGapsDatabaseRuntime => {
+  const claims = input.claims ?? [
+    sourceClaim(),
+    sourceClaim({
+      id: linkedClaimId,
+      claim: "Linked SourceClaim should not appear as a gap."
+    })
+  ];
+  const decisionEdges = input.decisionEdges ?? [sourceDecisionEdge()];
+
+  return async (runtimeInput) => {
+    input.onRuntimeInput?.(runtimeInput);
+
+    return {
+      workspaceId: "workspace-1",
+      projectId,
+      compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+      harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+      memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+      retrievalRepository: {} as NonNullable<DatabaseRuntime["retrievalRepository"]>,
+      sourceRepository: {
+        async createSourceArtifact() {
+          throw new Error("createSourceArtifact should not be called");
+        },
+        async createSourceChunk() {
+          throw new Error("createSourceChunk should not be called");
+        },
+        async createSourceClaim() {
+          throw new Error("createSourceClaim should not be called");
+        },
+        async getSourceClaimById() {
+          throw new Error("getSourceClaimById should not be called");
+        },
+        async listClaimsForProject(_projectId, limit) {
+          return claims.slice(0, limit);
+        },
+        async listSourceClaimsForRun() {
+          throw new Error("listSourceClaimsForRun should not be called");
+        },
+        async createSourceDecision() {
+          throw new Error("createSourceDecision should not be called");
+        },
+        async createSourceClaimEdge() {
+          throw new Error("createSourceClaimEdge should not be called");
+        },
+        async listSourceClaimEdgesForClaim() {
+          throw new Error("listSourceClaimEdgesForClaim should not be called");
+        },
+        async createSourceDecisionEdge() {
+          throw new Error("createSourceDecisionEdge should not be called");
+        },
+        async getSourceDecisionEdgeById() {
+          throw new Error("getSourceDecisionEdgeById should not be called");
+        },
+        async listSourceDecisionEdgesForClaim(sourceClaimId) {
+          return decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimId);
+        },
+        async listSourceDecisionEdgesForRun() {
+          throw new Error("listSourceDecisionEdgesForRun should not be called");
+        },
+        async createSourceRejection() {
+          throw new Error("createSourceRejection should not be called");
+        }
+      },
+      async close() {
+        input.onClose?.();
+      }
+    };
+  };
+};
+
+const parseJsonObject = (text: string): Record<string, unknown> => {
+  const parsed: unknown = JSON.parse(text);
+
+  expect(typeof parsed).toBe("object");
+  expect(parsed).not.toBeNull();
+  expect(Array.isArray(parsed)).toBe(false);
+
+  return parsed as Record<string, unknown>;
+};
+
+const arrayValue = (
+  value: unknown,
+  label: string
+): readonly unknown[] => {
+  expect(Array.isArray(value), label).toBe(true);
+
+  return value as readonly unknown[];
+};
+
+const objectValue = (
+  value: unknown,
+  label: string
+): Record<string, unknown> => {
+  expect(typeof value, label).toBe("object");
+  expect(value, label).not.toBeNull();
+  expect(Array.isArray(value), label).toBe(false);
+
+  return value as Record<string, unknown>;
+};
+
+describe("runSourceDecisionGapsCommand", () => {
+  it("reports accepted SourceClaims missing SourceDecisionEdge support without writes", async () => {
+    let runtimeInput: DatabaseRuntimeInput | undefined;
+    let closed = false;
+    const result = await runSourceDecisionGapsCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceDecisionGaps",
+        projectId: "project-explicit",
+        limit: 10,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        onRuntimeInput(input) {
+          runtimeInput = input;
+        },
+        onClose() {
+          closed = true;
+        }
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const gaps = arrayValue(output.missingDecisionEdgeClaims, "missingDecisionEdgeClaims");
+    const firstGap = objectValue(gaps[0], "first gap");
+
+    expect(output.kind).toBe("source_decision_gaps");
+    expect(output.projectId).toBe(projectId);
+    expect(output.dbWrites).toBe("none");
+    expect(output.mutation).toBe("none");
+    expect(output.acceptedSourceClaimCount).toBe(2);
+    expect(output.linkedSourceClaimCount).toBe(1);
+    expect(output.missingDecisionEdgeCount).toBe(1);
+    expect(firstGap.sourceClaimId).toBe(missingClaimId);
+    expect(firstGap.caveat).toContain("has no SourceDecisionEdge support");
+    expect(runtimeInput?.projectId).toBe("project-explicit");
+    expect(runtimeInput?.requireProjectKernelForExplicitProject).toBe(false);
+    expect(closed).toBe(true);
+  });
+
+  it("renders an empty text report when every accepted SourceClaim is linked", async () => {
+    const result = await runSourceDecisionGapsCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceDecisionGaps"
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          sourceClaim({
+            id: linkedClaimId
+          })
+        ],
+        decisionEdges: [sourceDecisionEdge()]
+      })
+    });
+
+    expect(result.stdout).toContain("KRN Source Decision Gaps");
+    expect(result.stdout).toContain("missingDecisionEdgeClaims: 0");
+    expect(result.stdout).toContain("- none");
+  });
+});

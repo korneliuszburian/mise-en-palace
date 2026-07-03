@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: source-graph rank-down, then orphan source-decision detector
+current task: orphan source-decision detector, then choose next highest-ROI kernel vertical
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-source-graph rank-down, then orphan source-decision detector.
+orphan source-decision detector, then choose next highest-ROI kernel vertical.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -46,9 +46,12 @@ ContextROI when inclusion budget is tight.
 `mise-en-palace-a878` is closed with green CI. It proves that source search
 weights SourceDecisionEdge confidence and decision-grade support type without
 broadening global activation ranking.
-`mise-en-palace-bllf` is in progress. It should prove that invalidating,
+`mise-en-palace-bllf` is closed with green CI. It proves that invalidating,
 expiring, or superseding source graph edges rank down stale source-search
 candidates without deleting claims or creating a graph platform.
+`mise-en-palace-p3t1` is in progress. It should prove a read-only source
+decision gap command can surface accepted SourceClaims missing SourceDecisionEdge
+support without CI mutation or a broad audit command.
 ```
 
 ## 2. Product Thesis

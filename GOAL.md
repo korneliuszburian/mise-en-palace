@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: source-graph rank-down, then orphan source-decision detector.
+current task: orphan source-decision detector, then choose next highest-ROI kernel vertical.
 ```
 
 Current task state: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
@@ -37,12 +37,13 @@ Store-backed memory reuse now works when the MemoryCandidate preserves run
 project lineage. The graph relation consensus pattern was selected and used for
 candidate-only heartbeat readback. A persisted next-task plan selected both the
 store-backed SBV MemoryRecord and retained TypeScript pattern catalog readback.
-`mise-en-palace-c79a`, `mise-en-palace-543l`, `mise-en-palace-zx0o`, and
-`mise-en-palace-a878` are closed with green CI: source search can read an
-explicit project, prefer decision-linked accepted SourceClaims before
-ContextROI, and weight SourceDecisionEdge confidence. `mise-en-palace-bllf` is
-the active slice: invalidating/expiring/superseding source graph edges should
-rank down stale source-search candidates without creating a graph platform.
+`mise-en-palace-c79a`, `mise-en-palace-543l`, `mise-en-palace-zx0o`,
+`mise-en-palace-a878`, and `mise-en-palace-bllf` are closed with green CI:
+source search can read an explicit project, prefer decision-linked accepted
+SourceClaims before ContextROI, weight SourceDecisionEdge confidence, and rank
+down stale source-graph candidates. `mise-en-palace-p3t1` is the active slice:
+provide read-only source-decision gap readback without CI mutation or a broad
+audit command.
 
 Latest slice:
 

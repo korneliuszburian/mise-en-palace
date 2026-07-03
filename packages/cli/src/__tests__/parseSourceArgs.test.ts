@@ -345,6 +345,22 @@ describe("parseSourceArgs", () => {
         }
       }
     });
+    expect(parseSourceArgs([
+      "decision",
+      "gaps",
+      "--project",
+      "project-1",
+      "--limit",
+      "25",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "sourceDecisionGaps",
+        projectId: "project-1",
+        limit: 25,
+        json: true
+      }
+    });
   });
 
   it("parses source command help and rejects unsupported shapes", () => {
@@ -371,6 +387,11 @@ describe("parseSourceArgs", () => {
     expect(parseSourceArgs(["decision", "link", "--help"])).toEqual({
       command: {
         kind: "sourceDecisionLinkHelp"
+      }
+    });
+    expect(parseSourceArgs(["decision", "gaps", "--help"])).toEqual({
+      command: {
+        kind: "sourceDecisionGapsHelp"
       }
     });
     expect(parseSourceArgs(["artifact", "preview", "--help"])).toEqual({

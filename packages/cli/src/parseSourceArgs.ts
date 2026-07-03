@@ -64,6 +64,18 @@ export const formatSourceSearchUsage = (): string =>
     "Note: read-only Postgres readback over persisted SourceClaim/SearchDocument candidates. It does not crawl, embed, mutate Memory Core, or prove product search quality."
   ].join("\n") + "\n";
 
+export const formatSourceDecisionGapsUsage = (): string =>
+  [
+    "Usage: krn source decision gaps [--project <project-id>] [--limit <n>] [--json]",
+    "",
+    "Optional:",
+    "--project <project-id>",
+    "--limit <positive-integer>",
+    "--json",
+    "",
+    "Note: read-only Postgres readback for accepted SourceClaims missing SourceDecisionEdge support. It does not mutate Beads, CI, Memory Core, or source status."
+  ].join("\n") + "\n";
+
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
     "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
@@ -256,6 +268,33 @@ const sourceDecisionAdoptStringOptions = {
   "--falsifier": "falsifier",
   "--consumer": "consumer"
 } as const;
+
+const parseProjectOption = (
+  rest: readonly string[],
+  index: number,
+  usage: string
+): { projectId: string; nextIndex: number } | { error: string } => {
+  const valueResult = optionValue(rest, index, "--project");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? usage
+    };
+  }
+
+  const projectId = valueResult.value.trim();
+
+  if (projectId.length === 0) {
+    return {
+      error: "--project requires a non-empty project id"
+    };
+  }
+
+  return {
+    projectId,
+    nextIndex: valueResult.nextIndex
+  };
+};
 
 type SourceClaimAddStringKey = typeof sourceClaimAddStringOptions[keyof typeof sourceClaimAddStringOptions];
 type SourceClaimRejectStringKey = typeof sourceClaimRejectStringOptions[keyof typeof sourceClaimRejectStringOptions];
@@ -640,27 +679,19 @@ const parseSourceSearchProjectOption = (
     };
   }
 
-  const valueResult = optionValue(rest, index, "--project");
+  const parsed = parseProjectOption(rest, index, formatSourceSearchUsage());
 
-  if (valueResult.error !== undefined || valueResult.value === undefined) {
+  if ("error" in parsed) {
     return {
-      error: valueResult.error ?? formatSourceSearchUsage()
+      error: parsed.error
     };
   }
 
-  const projectId = valueResult.value.trim();
-
-  if (projectId.length === 0) {
-    return {
-      error: "--project requires a non-empty project id"
-    };
-  }
-
-  sourceCommand.projectId = projectId;
+  sourceCommand.projectId = parsed.projectId;
 
   return {
     matched: true,
-    nextIndex: valueResult.nextIndex
+    nextIndex: parsed.nextIndex
   };
 };
 
@@ -731,6 +762,144 @@ const parseSourceSearchOption = (
 
   return {
     matched: false
+  };
+};
+
+type SourceDecisionGapsOptionParser = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: Extract<CliCommand, { kind: "sourceDecisionGaps" }>
+) => SourceOptionParseResult;
+
+const parseSourceDecisionGapsProjectOption: SourceDecisionGapsOptionParser = (
+  rest,
+  index,
+  arg,
+  sourceCommand
+) => {
+  if (!optionMatches(arg, "--project")) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = parseProjectOption(rest, index, formatSourceDecisionGapsUsage());
+
+  if ("error" in parsed) {
+    return {
+      error: parsed.error
+    };
+  }
+
+  sourceCommand.projectId = parsed.projectId;
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+const parseSourceDecisionGapsLimitOption: SourceDecisionGapsOptionParser = (
+  rest,
+  index,
+  arg,
+  sourceCommand
+) => {
+  if (!optionMatches(arg, "--limit")) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = parsePositiveIntegerOption(
+    rest,
+    index,
+    "--limit",
+    formatSourceDecisionGapsUsage()
+  );
+
+  if (parsed.error !== undefined || parsed.value === undefined) {
+    return {
+      error: parsed.error ?? formatSourceDecisionGapsUsage()
+    };
+  }
+
+  sourceCommand.limit = parsed.value;
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+const parseSourceDecisionGapsJsonOption: SourceDecisionGapsOptionParser = (
+  _rest,
+  index,
+  arg,
+  sourceCommand
+) => {
+  if (!optionMatches(arg, "--json")) {
+    return {
+      matched: false
+    };
+  }
+
+  sourceCommand.json = true;
+
+  return {
+    matched: true,
+    nextIndex: index
+  };
+};
+
+const sourceDecisionGapsOptionParsers: readonly SourceDecisionGapsOptionParser[] = [
+  parseSourceDecisionGapsProjectOption,
+  parseSourceDecisionGapsLimitOption,
+  parseSourceDecisionGapsJsonOption
+];
+
+const parseSourceDecisionGapsToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: Extract<CliCommand, { kind: "sourceDecisionGaps" }>
+): SourceTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return {
+      kind: "error",
+      error: formatSourceDecisionGapsUsage()
+    };
+  }
+
+  if (optionMatches(arg, "--help") || optionMatches(arg, "-h")) {
+    return {
+      kind: "help"
+    };
+  }
+
+  for (const parseOption of sourceDecisionGapsOptionParsers) {
+    const parsed = parseOption(rest, index, arg, sourceCommand);
+
+    if ("error" in parsed) {
+      return {
+        kind: "error",
+        error: parsed.error
+      };
+    }
+
+    if (parsed.matched) {
+      return {
+        kind: "next",
+        nextIndex: parsed.nextIndex
+      };
+    }
+  }
+
+  return {
+    kind: "error",
+    error: formatSourceDecisionGapsUsage()
   };
 };
 
@@ -1145,6 +1314,44 @@ const parseSourceDecisionAdoptArgs = (rest: readonly string[]): ParseArgsResult 
   };
 };
 
+const parseSourceDecisionGapsArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceDecisionGapsHelp"
+      }
+    };
+  }
+
+  const sourceCommand: Extract<CliCommand, { kind: "sourceDecisionGaps" }> = {
+    kind: "sourceDecisionGaps"
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const parsed = parseSourceDecisionGapsToken(rest, index, sourceCommand);
+
+    if (parsed.kind === "help") {
+      return {
+        command: {
+          kind: "sourceDecisionGapsHelp"
+        }
+      };
+    }
+
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  return {
+    command: sourceCommand
+  };
+};
+
 export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] === "search") {
     return parseSourceSearchArgs(rest);
@@ -1172,6 +1379,10 @@ export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
 
   if (rest[0] === "decision" && rest[1] === "adopt") {
     return parseSourceDecisionAdoptArgs(rest);
+  }
+
+  if (rest[0] === "decision" && rest[1] === "gaps") {
+    return parseSourceDecisionGapsArgs(rest);
   }
 
   return {

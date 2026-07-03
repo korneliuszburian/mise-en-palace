@@ -421,6 +421,9 @@ export type CliCommand =
       kind: "sourceDecisionAdoptHelp";
     }
   | {
+      kind: "sourceDecisionGapsHelp";
+    }
+  | {
       kind: "sourceDecisionLink";
       persist: boolean;
       sourceClaimId?: string;
@@ -440,6 +443,12 @@ export type CliCommand =
       falsifier?: string;
       consumer?: string;
       metadata: Record<string, string>;
+    }
+  | {
+      kind: "sourceDecisionGaps";
+      projectId?: string;
+      limit?: number;
+      json?: boolean;
     }
   | {
       kind: "sourceClaimRejectHelp";
