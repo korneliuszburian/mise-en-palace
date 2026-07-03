@@ -175,8 +175,11 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
           async listClaimsForProject(_projectId, limit) {
             return fixtures.claims.slice(0, limit);
           },
-          async listSourceClaimEdgesForClaim() {
-            return [];
+          async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+            return fixtures.edges.filter((edge) =>
+              edge.fromSourceClaimId === sourceClaimIdForReadback ||
+              edge.toSourceClaimId === sourceClaimIdForReadback
+            );
           }
         },
         retrievalRepository: {
@@ -967,6 +970,68 @@ describe("runSourceSearchCommand", () => {
     expect(firstClaim.sourceDecisionSupportState).toBe("linked");
     expect(sourceDecisionSupport).toHaveLength(1);
     expect(objectValue(sourceDecisionSupport[0], "decision support").confidence).toBe("high");
+  });
+
+  it("ranks down source claims invalidated by accepted graph relations", async () => {
+    const currentClaimId = "ca3f5b36-f68c-445d-831b-5db6d3e601d3" as SourceClaim["id"];
+    const staleClaimId = "ea072f26-8977-4c80-a42c-375a6f7310cf" as SourceClaim["id"];
+    const currentClaim = sourceClaim({
+      id: currentClaimId,
+      claim: "Current source-search readback should precede stale crawler claims.",
+      mechanism: "Accepted graph relation evidence invalidates the stale crawler-first claim.",
+      krnImplication: "Prefer current source-search evidence before building crawler surfaces.",
+      falsifier: "The invalidated stale claim is selected first."
+    });
+    const staleClaim = sourceClaim({
+      id: staleClaimId,
+      claim: "KRN should build crawler surfaces before proving source-search readback.",
+      mechanism: "The claim matched crawler query terms before graph invalidation evidence existed.",
+      krnImplication: "This stale claim should rank below the current invalidating claim.",
+      falsifier: "The stale claim remains first after an invalidates SourceClaimEdge."
+    });
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "source-search readback crawler surfaces graph invalidation",
+        limit: 10,
+        maxInclusions: 1,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          staleClaim,
+          currentClaim
+        ],
+        documents: [],
+        edges: [
+          sourceClaimEdge({
+            id: "7a46180f-0809-40db-9ead-0ef098988230" as SourceClaimEdge["id"],
+            fromSourceClaimId: currentClaimId,
+            toSourceClaimId: staleClaimId,
+            kind: "invalidates"
+          })
+        ]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+    const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
+    const excludedStaleClaim = excludedCandidates
+      .map((candidate) => objectValue(candidate, "excluded candidate"))
+      .find((candidate) => candidate.sourceClaimId === staleClaimId);
+
+    expect(supportingClaims).toHaveLength(1);
+    expect(firstClaim.sourceClaimId).toBe(currentClaimId);
+    expect(excludedStaleClaim?.reason).toContain("Source graph rank-down");
+    expect(excludedStaleClaim?.graphScore).toBeLessThan(0);
   });
 
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {

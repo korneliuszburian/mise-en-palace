@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: decision-edge confidence ranking, then source-graph rank-down
+current task: source-graph rank-down, then orphan source-decision detector
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-decision-edge confidence ranking, then source-graph rank-down.
+source-graph rank-down, then orphan source-decision detector.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -43,9 +43,12 @@ graph ranking quality, or ProjectKernel lifecycle correctness.
 `mise-en-palace-zx0o` is closed with green CI. It proves that source search
 prefers decision-linked accepted SourceClaims over accepted-only peers before
 ContextROI when inclusion budget is tight.
-`mise-en-palace-a878` is in progress. It should prove that source search weights
-SourceDecisionEdge confidence and decision-grade support type without broadening
-global activation ranking.
+`mise-en-palace-a878` is closed with green CI. It proves that source search
+weights SourceDecisionEdge confidence and decision-grade support type without
+broadening global activation ranking.
+`mise-en-palace-bllf` is in progress. It should prove that invalidating,
+expiring, or superseding source graph edges rank down stale source-search
+candidates without deleting claims or creating a graph platform.
 ```
 
 ## 2. Product Thesis

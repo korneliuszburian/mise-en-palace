@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: decision-edge confidence ranking, then source-graph rank-down
+current task: source-graph rank-down, then orphan source-decision detector
 ```
 
 ## Compact Checkpoints
@@ -114,6 +114,7 @@ source decision edge linkage: one operator-facing SourceDecision adoption and So
 source-search project selector: explicit project readback can surface the c79a SourceClaim with linked SourceDecisionEdge support without requiring a ProjectKernel
 source-search decision-linked ranking: linked SourceDecisionEdge support now nudges accepted SourceClaims ahead of accepted-only peers before ContextROI
 source-search decision-edge confidence ranking: SourceDecisionEdge confidence and decision-grade support type shape the local source-search boost
+source-graph rank-down: invalidates/expires/supersedes SourceClaimEdges from accepted claims lower stale source-search candidates before ContextROI
 ```
 
 ## Active Task
@@ -128,8 +129,8 @@ Latest closed Beads: `mise-en-palace-pvtf`, `mise-en-palace-glor`,
 `mise-en-palace-jqc8`, `mise-en-palace-xiwd`, `mise-en-palace-71rh`,
 `mise-en-palace-1c5x`, `mise-en-palace-royf`, `mise-en-palace-n4i7`.
 
-Current queue: `mise-en-palace-a878` in progress; next ready tasks are
-`mise-en-palace-bllf` and `mise-en-palace-p3t1`.
+Current queue: `mise-en-palace-bllf` in progress; next ready task is
+`mise-en-palace-p3t1`.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

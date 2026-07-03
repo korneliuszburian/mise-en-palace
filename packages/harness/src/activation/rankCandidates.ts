@@ -207,6 +207,7 @@ export interface SourceClaimEdgeInfluenceInput {
 }
 
 const defaultSourceClaimEdgeGraphScore = 10;
+const defaultSourceClaimEdgeRankDownScore = 60;
 
 const sourceClaimEdgeKindWeight: Record<SourceClaimEdge["kind"], number> = {
   supports: 1,
@@ -219,6 +220,12 @@ const sourceClaimEdgeKindWeight: Record<SourceClaimEdge["kind"], number> = {
   invalidates: 1,
   expires: 1
 };
+
+const rankDownSourceClaimEdgeKinds = new Set<SourceClaimEdge["kind"]>([
+  "invalidates",
+  "expires",
+  "supersedes"
+]);
 
 const connectedSourceClaimIdFor = (
   edge: SourceClaimEdge,
@@ -290,6 +297,76 @@ export const applySourceClaimEdgeInfluence = (
           edgeKinds: [...new Set(influence.edgeKinds)],
           seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
           doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }
+    };
+  });
+};
+
+export interface SourceClaimEdgeRankDownInput {
+  edges: readonly SourceClaimEdge[];
+  sourceClaims: readonly Pick<SourceClaim, "id" | "status">[];
+  graphPenalty?: number;
+}
+
+export const applySourceClaimEdgeRankDown = (
+  candidates: readonly ActivationCandidate[],
+  input: SourceClaimEdgeRankDownInput
+): ActivationCandidate[] => {
+  const sourceClaimStatusById = new Map(input.sourceClaims.map((claim) => [claim.id, claim.status]));
+  const graphPenalty = input.graphPenalty ?? defaultSourceClaimEdgeRankDownScore;
+  const rankDownBySourceClaimId = new Map<SourceClaim["id"], {
+    edgeIds: string[];
+    edgeKinds: SourceClaimEdge["kind"][];
+    governingSourceClaimIds: SourceClaim["id"][];
+  }>();
+
+  for (const edge of input.edges) {
+    if (!rankDownSourceClaimEdgeKinds.has(edge.kind)) {
+      continue;
+    }
+
+    if (sourceClaimStatusById.get(edge.fromSourceClaimId) !== "accepted") {
+      continue;
+    }
+
+    const existing = rankDownBySourceClaimId.get(edge.toSourceClaimId);
+
+    rankDownBySourceClaimId.set(edge.toSourceClaimId, {
+      edgeIds: [...(existing?.edgeIds ?? []), edge.id],
+      edgeKinds: [...(existing?.edgeKinds ?? []), edge.kind],
+      governingSourceClaimIds: [
+        ...(existing?.governingSourceClaimIds ?? []),
+        edge.fromSourceClaimId
+      ]
+    });
+  }
+
+  return candidates.map((candidate) => {
+    if (candidate.subjectType !== "source_claim") {
+      return candidate;
+    }
+
+    const rankDown = rankDownBySourceClaimId.get(candidate.subjectId);
+
+    if (rankDown === undefined) {
+      return candidate;
+    }
+
+    return {
+      ...candidate,
+      graphScore: (candidate.graphScore ?? 0) - graphPenalty,
+      reason: `${candidate.reason} Source graph rank-down: ${rankDown.edgeKinds.join(", ")} edge from accepted claim.`,
+      expectedUse: `${candidate.expectedUse} Treat as lower-priority source evidence until the graph relation is reviewed.`,
+      metadata: {
+        ...candidate.metadata,
+        sourceClaimEdgeRankDown: {
+          edgeIds: [...new Set(rankDown.edgeIds)],
+          edgeKinds: [...new Set(rankDown.edgeKinds)],
+          governingSourceClaimIds: [...new Set(rankDown.governingSourceClaimIds)],
+          graphPenalty,
+          doesNotProve:
+            "SourceClaimEdge rank-down does not prove source truth, edge correctness, or broad graph retrieval quality."
         }
       }
     };

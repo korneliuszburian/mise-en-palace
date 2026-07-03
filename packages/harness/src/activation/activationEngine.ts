@@ -32,6 +32,7 @@ import type {
 } from "./ownerFileRecall.js";
 import {
   applySourceClaimEdgeInfluence,
+  applySourceClaimEdgeRankDown,
   mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
@@ -486,10 +487,16 @@ export const retrieveActivationCandidates = async (
   );
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
-    applySourceClaimEdgeInfluence(sourceClaims.map(toSourceClaimCandidate), {
-      edges: sourceClaimEdges,
-      seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
-    }),
+    applySourceClaimEdgeRankDown(
+      applySourceClaimEdgeInfluence(sourceClaims.map(toSourceClaimCandidate), {
+        edges: sourceClaimEdges,
+        seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
+      }),
+      {
+        edges: sourceClaimEdges,
+        sourceClaims
+      }
+    ),
     sourceQuery
   );
   const searchCandidates = rankCandidates(searchResults.map(toSearchCandidate), sourceQuery);

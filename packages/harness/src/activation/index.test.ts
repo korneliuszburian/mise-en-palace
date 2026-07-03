@@ -17,6 +17,7 @@ import {
 import {
   applyContextROI,
   applySourceClaimEdgeInfluence,
+  applySourceClaimEdgeRankDown,
   applyActivationFilters,
   applyTemporalFilter,
   applyTrustFilter,
@@ -474,6 +475,96 @@ describe("activation engine", () => {
         }
       }
     });
+  });
+
+  it("ranks down source claims invalidated by accepted source graph edges", () => {
+    const activeClaim = sourceClaim({
+      id: "claim-active-invalidator",
+      claim: "Current source graph evidence invalidates the stale KRN crawler claim.",
+      mechanism: "An accepted SourceClaimEdge can mark a connected claim stale.",
+      krnImplication: "Prefer the current graph evidence over stale accepted claims."
+    });
+    const staleClaim = sourceClaim({
+      id: "claim-stale-invalidated",
+      claim: "KRN should build a crawler before proving source-search readback.",
+      mechanism: "This older claim matched query terms before the graph relation existed.",
+      krnImplication: "This should rank below the accepted invalidating claim."
+    });
+    const proposedInvalidator = sourceClaim({
+      id: "claim-proposed-invalidator",
+      claim: "A proposed invalidator should not change source ranking.",
+      mechanism: "Proposed claims are review candidates, not authority.",
+      krnImplication: "Do not let proposed graph edges demote accepted source claims.",
+      status: "proposed"
+    });
+    const invalidatesEdge: SourceClaimEdge = {
+      id: "edge-invalidates-stale",
+      fromSourceClaimId: activeClaim.id,
+      toSourceClaimId: staleClaim.id,
+      kind: "invalidates",
+      metadata: {
+        consumer: "source graph ranking",
+        doesNotProve: "This edge does not prove source truth."
+      },
+      createdAt: now
+    };
+    const proposedEdge: SourceClaimEdge = {
+      id: "edge-proposed-invalidates-active",
+      fromSourceClaimId: proposedInvalidator.id,
+      toSourceClaimId: activeClaim.id,
+      kind: "invalidates",
+      metadata: {
+        consumer: "source graph ranking",
+        doesNotProve: "This edge does not prove source truth."
+      },
+      createdAt: now
+    };
+    const ranked = rankCandidates(
+      applySourceClaimEdgeRankDown([
+        {
+          ...toSourceClaimCandidate(activeClaim),
+          lexicalScore: 40
+        },
+        {
+          ...toSourceClaimCandidate(staleClaim),
+          lexicalScore: 45
+        },
+        {
+          ...toSourceClaimCandidate(proposedInvalidator),
+          lexicalScore: 50
+        }
+      ], {
+        edges: [
+          invalidatesEdge,
+          proposedEdge
+        ],
+        sourceClaims: [
+          activeClaim,
+          staleClaim,
+          proposedInvalidator
+        ],
+        graphPenalty: 30
+      }),
+      buildSourceQuery(task)
+    );
+    const activeRank = ranked.find((candidate) => candidate.subjectId === activeClaim.id);
+    const staleRank = ranked.find((candidate) => candidate.subjectId === staleClaim.id);
+
+    expect(activeRank?.graphScore).toBe(0);
+    expect(staleRank).toMatchObject({
+      graphScore: -30,
+      metadata: {
+        sourceClaimEdgeRankDown: {
+          edgeIds: ["edge-invalidates-stale"],
+          edgeKinds: ["invalidates"],
+          governingSourceClaimIds: ["claim-active-invalidator"],
+          graphPenalty: 30
+        }
+      }
+    });
+    expect(ranked.map((candidate) => candidate.subjectId).indexOf(activeClaim.id)).toBeLessThan(
+      ranked.map((candidate) => candidate.subjectId).indexOf(staleClaim.id)
+    );
   });
 
   it("uses edge-selected source context to ground a tiny graph-brain QA answer", () => {
