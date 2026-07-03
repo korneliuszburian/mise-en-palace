@@ -28,8 +28,9 @@ operators. It is not product-ready and not widened internal alpha.
 
 The current durable boundary is:
 
-- compact root `GOAL.md` and `PLAN.md` for active execution truth;
-- `PLANS.md` for detailed continuous execution history and next-task synthesis;
+- compact root `GOAL.md`, `PLAN.md`, and `PLANS.md` for active execution truth;
+- Beads, archived ledgers, and archived reports for detailed completed history
+  and next-task synthesis;
 - source-to-decision and pattern-intake gates for retained patterns;
 - repo-local skills for repeated execution workflows;
 - typed harness spine from operator intent through feedback/candidate outputs;

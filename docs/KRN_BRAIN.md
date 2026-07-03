@@ -221,7 +221,7 @@ KRN Brain
 |
 +-- Eval and golden behavior
 |   +-- GoldenTask fixtures
-|   +-- brain-battle invariants
+|   +-- behavior gate invariants
 |   +-- Promptfoo adapter smoke
 |   +-- proof-boundary manifest
 |
@@ -740,7 +740,7 @@ strict TypeScript workspace
 Postgres/pgvector-oriented schema and DB smokes
 core Memory/Source/Evidence/Activation contracts
 Codex brief renderer
-GoldenTask and brain-battle invariant tests
+GoldenTask and behavior gate invariant tests
 Promptfoo bounded smoke
 Fallow quality gate
 source-to-decision retained patterns
@@ -876,8 +876,8 @@ The target brain is credible only when these become true:
 5. Source decisions require mechanism, KRN implication, consumer, and falsifier.
 6. Pattern/recipe reuse has local verification and drift falsifiers.
 7. DB runtime truth is separated from static type/schema truth.
-8. Promptfoo/Fallow/brain-battle/DB smokes report what they prove and do not
-   prove under one verification manifest.
+8. Promptfoo/Fallow/KRN behavior/docs/DB smokes report what they prove and do
+   not prove under one verification manifest.
 9. CLI/readback surfaces reduce review burden instead of exposing every internal
    noun.
 10. Root active context stays compact enough that Codex does not need broad

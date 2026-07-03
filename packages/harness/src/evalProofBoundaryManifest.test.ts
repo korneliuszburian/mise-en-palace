@@ -8,7 +8,6 @@ import {
 
 import {
   evalProofBoundaryManifest,
-  renderEvalProofBoundaryReadback
 } from "./evalProofBoundaryManifest.js";
 
 const packageJsonPath = new URL("../../../package.json", import.meta.url);
@@ -66,7 +65,6 @@ describe("eval proof boundary manifest", () => {
   });
 
   it("keeps promptfoo and alpha verify scoped as non-authoritative", () => {
-    const promptfoo = evalProofBoundaryManifest.find((entry) => entry.id === "promptfoo-smoke");
     const alphaVerify = evalProofBoundaryManifest.find((entry) =>
       entry.id === "alpha-verify-fast"
     );
@@ -74,29 +72,12 @@ describe("eval proof boundary manifest", () => {
       entry.id === "alpha-verify-full"
     );
 
-    expect(promptfoo?.proves.join(" ")).toContain("integration evidence");
-    expect(promptfoo?.doesNotProve.join(" ")).toContain("KRN behavior passed");
-    expect(promptfoo?.doesNotProve.join(" ")).toContain("GoldenTask behavior proof exists");
-
     expect(alphaVerify?.doesNotProve.join(" ")).toContain("Fallow changed-file audit passed");
-    expect(alphaVerify?.doesNotProve.join(" ")).toContain("Promptfoo smoke passed");
     expect(alphaVerify?.doesNotProve.join(" ")).toContain("DB runtime truth exists");
 
     expect(alphaVerifyFull?.requiredFor).toContain("product-loop");
     expect(alphaVerifyFull?.proves.join(" ")).toContain("DB brain-loop smoke");
     expect(alphaVerifyFull?.doesNotProve.join(" ")).toContain("worker runtime execution exists");
     expect(alphaVerifyFull?.doesNotProve.join(" ")).toContain("KRN is product-ready");
-  });
-
-  it("renders a compact operator readback without changing proof authority", () => {
-    const readback = renderEvalProofBoundaryReadback();
-
-    expect(readback).toContain("# Evaluation Proof Boundary Manifest");
-    expect(readback).toContain("| Gate | Command | Required For | Proves | Does Not Prove |");
-
-    for (const entry of evalProofBoundaryManifest) {
-      expect(readback).toContain(entry.id);
-      expect(readback).toContain(entry.command);
-    }
   });
 });

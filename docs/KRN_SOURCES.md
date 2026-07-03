@@ -43,6 +43,30 @@ cannot be falsified locally, keep it out of active KRN guidance.
   into chat or root plans instead of loading a targeted skill.
 - Does not prove: that many skills are useful by default.
 
+### Matt Pocock Skills
+
+- URL: https://github.com/mattpocock/skills
+- Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: adopt.
+- Mechanism: small, adaptable, composable skills encode software-engineering
+  feedback loops, shared language, issue-tracker routing, TDD, debugging,
+  architecture review, and handoff instead of a single process monolith.
+- KRN implication: KRN skills should encode repeated kernel-building
+  disciplines and later brain-backed Codex workflows; they must not become a
+  decorative skill zoo or alternate runtime authority.
+- Decision: keep operational repo-local skills only when they have a clear
+  trigger, workflow, forbidden behavior, verification, consumer, and removal
+  condition. Treat future brain skills as consumers of KRN memory/source/eval
+  readbacks, not as prompt packs.
+- Consumer: `docs/architecture/skill-first-krn.md`,
+  `.agents/skills/*/SKILL.md`, and skill invariants.
+- Falsifier: a retained skill cannot reduce repeated work, cannot name its
+  KRN consumer, or claims brain/runtime authority without an executing
+  memory/source/eval path.
+- Does not prove: Matt Pocock's skill topology should be copied wholesale,
+  every KRN workflow deserves a skill, or skills are product readiness.
+
 ### Subagents
 
 - URL: https://developers.openai.com/codex/subagents

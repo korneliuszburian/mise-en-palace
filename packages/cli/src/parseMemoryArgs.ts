@@ -155,6 +155,7 @@ type MemoryCandidateRejectCommand = Extract<CliCommand, { kind: "memoryCandidate
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 type MemoryAntiPromoteCommand = Extract<CliCommand, { kind: "memoryAntiPromote" }>;
 type MemoryAntiRejectCommand = Extract<CliCommand, { kind: "memoryAntiReject" }>;
+type MemoryRejectCommand = MemoryCandidateRejectCommand | MemoryAntiRejectCommand;
 
 type MemoryDraftCommand = PersistedMetadataCommand & {
   sourceLineageIds: string[];
@@ -203,7 +204,7 @@ const memoryCandidatePromoteStringOptions = {
   "--untrusted-source-review-ref": "untrustedSourceReviewRef"
 } as const;
 
-const memoryCandidateRejectStringOptions = {
+const memoryRejectStringOptions = {
   "--candidate-id": "candidateId",
   "--reviewer": "reviewer",
   "--reason": "reason"
@@ -226,19 +227,23 @@ const memoryAntiPromoteStringOptions = {
   "--evidence-reviewed-ref": "evidenceReviewedRef"
 } as const;
 
-const memoryAntiRejectStringOptions = {
-  "--candidate-id": "candidateId",
-  "--reviewer": "reviewer",
-  "--reason": "reason"
-} as const;
-
 type MemoryCandidateAddStringKey = typeof memoryCandidateAddStringOptions[keyof typeof memoryCandidateAddStringOptions];
 type MemoryAntiAddStringKey = typeof memoryAntiAddStringOptions[keyof typeof memoryAntiAddStringOptions];
 type MemoryCandidatePromoteStringKey = typeof memoryCandidatePromoteStringOptions[keyof typeof memoryCandidatePromoteStringOptions];
-type MemoryCandidateRejectStringKey = typeof memoryCandidateRejectStringOptions[keyof typeof memoryCandidateRejectStringOptions];
+type MemoryRejectStringKey = typeof memoryRejectStringOptions[keyof typeof memoryRejectStringOptions];
 type MemoryRecordApplyStringKey = typeof memoryRecordApplyStringOptions[keyof typeof memoryRecordApplyStringOptions];
 type MemoryAntiPromoteStringKey = typeof memoryAntiPromoteStringOptions[keyof typeof memoryAntiPromoteStringOptions];
-type MemoryAntiRejectStringKey = typeof memoryAntiRejectStringOptions[keyof typeof memoryAntiRejectStringOptions];
+
+const mapStringOptionAssignment = <
+  TCommand,
+  TKey extends string
+>(
+  assigners: Record<TKey, (command: TCommand, value: string) => void>,
+  command: TCommand
+) =>
+  (key: TKey, value: string): void => {
+    assigners[key](command, value);
+  };
 
 const memoryNext = (nextIndex: number): MemoryTokenParseResult => ({
   kind: "next",
@@ -307,9 +312,44 @@ const parseMemoryCandidateAddToken = (
   parseDraftToken(rest, index, memoryCommand, {
     fallbackUsage: formatMemoryCandidateAddUsage(),
     optionMap: memoryCandidateAddStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryCandidateAddStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<MemoryCandidateAddCommand, MemoryCandidateAddStringKey>({
+      runId: (command, value) => {
+        command.runId = value;
+      },
+      feedbackDeltaId: (command, value) => {
+        command.feedbackDeltaId = value;
+      },
+      memoryKind: (command, value) => {
+        command.memoryKind = value;
+      },
+      content: (command, value) => {
+        command.content = value;
+      },
+      confidence: (command, value) => {
+        command.confidence = value;
+      },
+      applicationGuidance: (command, value) => {
+        command.applicationGuidance = value;
+      },
+      sourceClaimId: (command, value) => {
+        command.sourceClaimId = value;
+      },
+      invalidationRule: (command, value) => {
+        command.invalidationRule = value;
+      },
+      candidateEvidenceProvenance: (command, value) => {
+        command.candidateEvidenceProvenance = value;
+      },
+      candidateEvidenceDoesNotProve: (command, value) => {
+        command.candidateEvidenceDoesNotProve = value;
+      },
+      owner: (command, value) => {
+        command.owner = value;
+      },
+      proposedBy: (command, value) => {
+        command.proposedBy = value;
+      }
+    }, memoryCommand)
   });
 
 const parseMemoryAntiAddToken = (
@@ -320,9 +360,44 @@ const parseMemoryAntiAddToken = (
   parseDraftToken(rest, index, memoryCommand, {
     fallbackUsage: formatMemoryAntiAddUsage(),
     optionMap: memoryAntiAddStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryAntiAddStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<MemoryAntiAddCommand, MemoryAntiAddStringKey>({
+      runId: (command, value) => {
+        command.runId = value;
+      },
+      rejectedClaim: (command, value) => {
+        command.rejectedClaim = value;
+      },
+      reason: (command, value) => {
+        command.reason = value;
+      },
+      invalidatedBySourceClaimId: (command, value) => {
+        command.invalidatedBySourceClaimId = value;
+      },
+      appliesTo: (command, value) => {
+        command.appliesTo = value;
+      },
+      mayRevisitWhen: (command, value) => {
+        command.mayRevisitWhen = value;
+      },
+      owner: (command, value) => {
+        command.owner = value;
+      },
+      proposedBy: (command, value) => {
+        command.proposedBy = value;
+      },
+      confidence: (command, value) => {
+        command.confidence = value;
+      },
+      key: (command, value) => {
+        command.key = value;
+      },
+      candidateEvidenceProvenance: (command, value) => {
+        command.candidateEvidenceProvenance = value;
+      },
+      candidateEvidenceDoesNotProve: (command, value) => {
+        command.candidateEvidenceDoesNotProve = value;
+      }
+    }, memoryCommand)
   });
 
 const parseMemoryCandidatePromoteToken = (
@@ -333,9 +408,45 @@ const parseMemoryCandidatePromoteToken = (
   parsePersistedMetadataToken(rest, index, memoryCommand, {
     fallbackUsage: formatMemoryCandidatePromoteUsage(),
     optionMap: memoryCandidatePromoteStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryCandidatePromoteStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<MemoryCandidatePromoteCommand, MemoryCandidatePromoteStringKey>({
+      candidateId: (command, value) => {
+        command.candidateId = value;
+      },
+      reviewer: (command, value) => {
+        command.reviewer = value;
+      },
+      decision: (command, value) => {
+        command.decision = value;
+      },
+      evidenceReviewedRef: (command, value) => {
+        command.evidenceReviewedRef = value;
+      },
+      untrustedSourceReviewRef: (command, value) => {
+        command.untrustedSourceReviewRef = value;
+      }
+    }, memoryCommand)
+  });
+
+const parseMemoryRejectToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryRejectCommand,
+  fallbackUsage: string
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage,
+    optionMap: memoryRejectStringOptions,
+    assignOption: mapStringOptionAssignment<MemoryRejectCommand, MemoryRejectStringKey>({
+      candidateId: (command, value) => {
+        command.candidateId = value;
+      },
+      reviewer: (command, value) => {
+        command.reviewer = value;
+      },
+      reason: (command, value) => {
+        command.reason = value;
+      }
+    }, memoryCommand)
   });
 
 const parseMemoryCandidateRejectToken = (
@@ -343,13 +454,7 @@ const parseMemoryCandidateRejectToken = (
   index: number,
   memoryCommand: MemoryCandidateRejectCommand
 ): MemoryTokenParseResult =>
-  parsePersistedMetadataToken(rest, index, memoryCommand, {
-    fallbackUsage: formatMemoryCandidateRejectUsage(),
-    optionMap: memoryCandidateRejectStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryCandidateRejectStringKey] = value;
-    }
-  });
+  parseMemoryRejectToken(rest, index, memoryCommand, formatMemoryCandidateRejectUsage());
 
 const parseMemoryRecordApplyToken = (
   rest: readonly string[],
@@ -359,9 +464,29 @@ const parseMemoryRecordApplyToken = (
   parsePersistedMetadataToken(rest, index, memoryCommand, {
     fallbackUsage: formatMemoryRecordApplyUsage(),
     optionMap: memoryRecordApplyStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryRecordApplyStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<MemoryRecordApplyCommand, MemoryRecordApplyStringKey>({
+      runId: (command, value) => {
+        command.runId = value;
+      },
+      memoryId: (command, value) => {
+        command.memoryId = value;
+      },
+      outcome: (command, value) => {
+        command.outcome = value;
+      },
+      notes: (command, value) => {
+        command.notes = value;
+      },
+      expectedUse: (command, value) => {
+        command.expectedUse = value;
+      },
+      taskContractId: (command, value) => {
+        command.taskContractId = value;
+      },
+      contextAssemblyId: (command, value) => {
+        command.contextAssemblyId = value;
+      }
+    }, memoryCommand)
   });
 
 const parseMemoryAntiPromoteToken = (
@@ -372,9 +497,20 @@ const parseMemoryAntiPromoteToken = (
   parsePersistedMetadataToken(rest, index, memoryCommand, {
     fallbackUsage: formatMemoryAntiPromoteUsage(),
     optionMap: memoryAntiPromoteStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryAntiPromoteStringKey] = value;
-    }
+    assignOption: mapStringOptionAssignment<MemoryAntiPromoteCommand, MemoryAntiPromoteStringKey>({
+      candidateId: (command, value) => {
+        command.candidateId = value;
+      },
+      reviewer: (command, value) => {
+        command.reviewer = value;
+      },
+      decision: (command, value) => {
+        command.decision = value;
+      },
+      evidenceReviewedRef: (command, value) => {
+        command.evidenceReviewedRef = value;
+      }
+    }, memoryCommand)
   });
 
 const parseMemoryAntiRejectToken = (
@@ -382,13 +518,7 @@ const parseMemoryAntiRejectToken = (
   index: number,
   memoryCommand: MemoryAntiRejectCommand
 ): MemoryTokenParseResult =>
-  parsePersistedMetadataToken(rest, index, memoryCommand, {
-    fallbackUsage: formatMemoryAntiRejectUsage(),
-    optionMap: memoryAntiRejectStringOptions,
-    assignOption: (key, value) => {
-      memoryCommand[key as MemoryAntiRejectStringKey] = value;
-    }
-  });
+  parseMemoryRejectToken(rest, index, memoryCommand, formatMemoryAntiRejectUsage());
 
 const parseMemoryTokenLoop = (
   rest: readonly string[],

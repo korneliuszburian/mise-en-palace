@@ -205,12 +205,8 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("workerAuthority:");
     expect(result.stdout).toContain("jobType: expire_stale_memory");
     expect(result.stdout).toContain("memoryCoreGate: must_create_reviewed_invalidation_candidate");
-    expect(result.stdout).toContain(
-      "memoryCoreGateEnforcement: declaration_only_not_runtime_enforced"
-    );
     expect(result.stdout).toContain("status: passed");
     expect(result.stdout).toContain("idempotencyKey: expire_stale_memory:{projectId}:{olderThan}");
-    expect(result.stdout).toContain("idempotencyEnforcement: key_pattern_only_not_enforced");
     expect(result.stdout).toContain("memory_candidates");
     expect(result.stdout).toContain("Missing fields: relationEvidenceRefs.");
     expect(result.stdout).toContain("relationReviewFocus: relation_evidence");
@@ -372,10 +368,8 @@ describe("runHeartbeatPreviewCommand", () => {
             workerAuthority: {
               jobType: "expire_stale_memory",
               memoryCoreGate: "must_create_reviewed_invalidation_candidate",
-              memoryCoreGateEnforcement: "declaration_only_not_runtime_enforced",
               status: "passed",
               idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
-              idempotencyEnforcement: "key_pattern_only_not_enforced",
               allowedWrites: [
                 "worker_jobs",
                 "outbox_events",

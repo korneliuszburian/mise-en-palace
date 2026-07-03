@@ -17,6 +17,7 @@ import type {
   memoryRecords
 } from "../schema/index.js";
 import {
+  isRecord,
   metadataOrEmpty,
   optionalIsoTimestamp,
   stringListOrEmpty,
@@ -47,9 +48,6 @@ const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
   "applied",
   "superseded"
 ]);
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const requiredMemoryCandidateStringFields = [
   "id",

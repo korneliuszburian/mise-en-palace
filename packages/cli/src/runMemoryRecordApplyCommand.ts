@@ -1,7 +1,7 @@
 import {
   parseMemoryApplicationInput,
   parseMemoryFeedbackEventInput
-} from "@krn/schema";
+} from "@krn/core";
 import type {
   AntiMemoryCandidate,
   MemoryApplication,

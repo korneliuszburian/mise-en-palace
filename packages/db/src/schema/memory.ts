@@ -146,15 +146,6 @@ export const memoryCandidateStatus = pgEnum("memory_candidate_status", [
   "superseded"
 ]);
 
-export const memoryEdgeKind = pgEnum("memory_edge_kind", [
-  "supports",
-  "contradicts",
-  "supersedes",
-  "depends_on",
-  "duplicates",
-  "qualifies"
-]);
-
 export const memoryFeedbackDirection = pgEnum("memory_feedback_direction", [
   "positive",
   "negative",
@@ -174,12 +165,6 @@ export const memoryFeedbackEventType = pgEnum("memory_feedback_event_type", [
   "invalidated",
   "corrected",
   "stale_detected"
-]);
-
-export const memoryActivationDecision = pgEnum("memory_activation_decision", [
-  "included",
-  "excluded",
-  "abstained"
 ]);
 
 export const memoryRecords = pgTable(
@@ -263,32 +248,6 @@ export const memoryRecordVersions = pgTable(
     check(
       "memory_record_versions_temporal_invalidation_strategy",
       memoryTemporalStrategy(table.validFrom, table.validUntil, table.invalidationRule)
-    )
-  ]
-);
-
-export const memoryEdges = pgTable(
-  "memory_edges",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    fromMemoryRecordId: uuid("from_memory_record_id")
-      .notNull()
-      .references(() => memoryRecords.id, { onDelete: "cascade" }),
-    toMemoryRecordId: uuid("to_memory_record_id")
-      .notNull()
-      .references(() => memoryRecords.id, { onDelete: "cascade" }),
-    kind: memoryEdgeKind("kind").notNull(),
-    strength: integer("strength").notNull().default(0),
-    metadata: metadataColumn(),
-    createdAt: createdAtColumn()
-  },
-  (table) => [
-    index("memory_edges_from_idx").on(table.fromMemoryRecordId),
-    index("memory_edges_to_idx").on(table.toMemoryRecordId),
-    index("memory_edges_kind_idx").on(table.kind),
-    check(
-      "memory_edges_strength_range",
-      sql`${table.strength} >= 0 AND ${table.strength} <= 100`
     )
   ]
 );
@@ -449,32 +408,5 @@ export const antiMemoryRecords = pgTable(
       "anti_memory_records_temporal_window",
       temporalWindow(table.validFrom, table.validUntil)
     )
-  ]
-);
-
-export const memoryActivationTraces = pgTable(
-  "memory_activation_traces",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    contextAssemblyId: uuid("context_assembly_id")
-      .notNull()
-      .references(() => contextAssemblies.id, { onDelete: "cascade" }),
-    memoryRecordId: uuid("memory_record_id").references(() => memoryRecords.id, {
-      onDelete: "set null"
-    }),
-    antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
-      onDelete: "set null"
-    }),
-    decision: memoryActivationDecision("decision").notNull(),
-    reason: text("reason").notNull(),
-    score: integer("score"),
-    metadata: metadataColumn(),
-    createdAt: createdAtColumn()
-  },
-  (table) => [
-    index("memory_activation_traces_context_assembly_id_idx").on(table.contextAssemblyId),
-    index("memory_activation_traces_memory_record_id_idx").on(table.memoryRecordId),
-    index("memory_activation_traces_anti_memory_record_id_idx").on(table.antiMemoryRecordId),
-    index("memory_activation_traces_decision_idx").on(table.decision)
   ]
 );

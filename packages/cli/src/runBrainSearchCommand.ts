@@ -9,9 +9,16 @@ import type {
   ActivationUtilityLabReadback
 } from "@krn/harness";
 import {
-  brainKnowledgeQueryTokens,
   compactBrainKnowledgeBridgeQuery
 } from "./brainKnowledgeQuery.js";
+import {
+  classifyTargetFit,
+  summarizeTargetFit
+} from "@krn/core";
+import type {
+  TargetFit,
+  TargetFitSummary
+} from "@krn/core";
 import {
   runKnowledgeCardsCommand
 } from "./runKnowledgeCardsCommand.js";
@@ -61,7 +68,7 @@ interface BrainSearchPreviewResource {
     returnedCards: number;
     cardIds: readonly string[];
     selectedKnowledge: readonly BrainSearchKnowledgePacket[];
-    targetFitSummary: BrainSearchSelectedKnowledgeTargetFitSummary;
+    targetFitSummary: TargetFitSummary;
     doesNotProve: readonly string[];
   };
   sourceSearch: {
@@ -100,7 +107,7 @@ interface BrainSearchKnowledgePacket {
   title: string;
   summary: string;
   source: "catalog_file" | "source_search";
-  targetFit: BrainSearchKnowledgeTargetFit;
+  targetFit: TargetFit;
   targetFitReasons: readonly string[];
   reviewability: "ready" | "needs_more_evidence";
   reviewabilityReasons: readonly string[];
@@ -108,30 +115,6 @@ interface BrainSearchKnowledgePacket {
   falsifier: string;
   doesNotProve: string;
   nextAction: string;
-}
-
-type BrainSearchKnowledgeTargetFit =
-  | "target_specific"
-  | "generic_guardrail"
-  | "adjacent_pattern"
-  | "noise"
-  | "unknown";
-
-type BrainSearchSelectedKnowledgeTargetFitVerdict =
-  | "target_specific_selected_knowledge"
-  | "generic_only_selected_knowledge"
-  | "adjacent_or_unknown_selected_knowledge"
-  | "no_selected_knowledge";
-
-interface BrainSearchSelectedKnowledgeTargetFitSummary {
-  verdict: BrainSearchSelectedKnowledgeTargetFitVerdict;
-  targetSpecific: number;
-  genericGuardrail: number;
-  adjacentPattern: number;
-  noise: number;
-  unknown: number;
-  recommendedUse: string;
-  doesNotProve: string;
 }
 
 type BrainSearchRecommendationResource = Pick<
@@ -207,53 +190,6 @@ const activationUtilityAnswerUsefulness = (
   }
 };
 
-const targetFitGenericQueryTokens = new Set([
-  "brain",
-  "gate",
-  "quality",
-  "krn",
-  "knowledge",
-  "pattern",
-  "patterns"
-]);
-
-const targetFitGenericGuardrailTokens = new Set([
-  "boundary",
-  "consumer",
-  "falsifier",
-  "gate",
-  "governed",
-  "guardrail",
-  "must",
-  "proof",
-  "retained",
-  "should"
-]);
-
-const targetFitAdjacentPatternTokens = new Set([
-  "activation",
-  "artifact",
-  "candidate",
-  "claim",
-  "evidence",
-  "graph",
-  "heartbeat",
-  "ingest",
-  "memory",
-  "readback",
-  "relation",
-  "search",
-  "source"
-]);
-
-const targetFitDistinctiveQueryTokens = (query: string): readonly string[] =>
-  brainKnowledgeQueryTokens(query).filter(
-    (token) => token.length >= 4 && !targetFitGenericQueryTokens.has(token)
-  );
-
-const targetFitTextTokens = (text: string): ReadonlySet<string> =>
-  new Set(brainKnowledgeQueryTokens(text));
-
 const linkedSearchDocumentCount = (
   sourceClaimDocumentLinks: readonly unknown[]
 ): number =>
@@ -298,86 +234,16 @@ const packetTargetFitText = (packet: BrainSearchKnowledgePacket): string =>
     packet.nextAction
   ].join(" ");
 
-const targetFitForPacket = (
-  query: string,
-  packet: BrainSearchKnowledgePacket
-): Pick<BrainSearchKnowledgePacket, "targetFit" | "targetFitReasons"> => {
-  const distinctiveQueryTokens = targetFitDistinctiveQueryTokens(query);
-  const packetTokens = targetFitTextTokens(packetTargetFitText(packet));
-
-  if (packetTokens.size === 0) {
-    return {
-      targetFit: "unknown",
-      targetFitReasons: ["selectedKnowledge packet has no classifiable text."]
-    };
-  }
-
-  if (distinctiveQueryTokens.length === 0) {
-    return {
-      targetFit: "unknown",
-      targetFitReasons: ["query has no distinctive target token after generic term filtering."]
-    };
-  }
-
-  const distinctiveMatches = distinctiveQueryTokens.filter((token) => packetTokens.has(token));
-
-  if (distinctiveMatches.length > 0) {
-    return {
-      targetFit: "target_specific",
-      targetFitReasons: [
-        `matched distinctive query token(s): ${distinctiveMatches.join(", ")}.`
-      ]
-    };
-  }
-
-  const allQueryTokenMatches = brainKnowledgeQueryTokens(query).filter(
-    (token) => token.length >= 4 && packetTokens.has(token)
-  );
-  const guardrailMatches = [...targetFitGenericGuardrailTokens].filter((token) =>
-    packetTokens.has(token)
-  );
-
-  if (guardrailMatches.length > 0) {
-    return {
-      targetFit: "generic_guardrail",
-      targetFitReasons: [
-        "no distinctive query token matched.",
-        `generic guardrail token(s): ${guardrailMatches.join(", ")}.`
-      ]
-    };
-  }
-
-  const adjacentMatches = [...targetFitAdjacentPatternTokens].filter((token) =>
-    packetTokens.has(token)
-  );
-
-  if (allQueryTokenMatches.length > 0 || adjacentMatches.length > 0) {
-    return {
-      targetFit: "adjacent_pattern",
-      targetFitReasons: [
-        "no distinctive query token matched.",
-        ...(allQueryTokenMatches.length === 0
-          ? []
-          : [`generic query token overlap: ${allQueryTokenMatches.join(", ")}.`]),
-        ...(adjacentMatches.length === 0
-          ? []
-          : [`adjacent pattern token(s): ${adjacentMatches.join(", ")}.`])
-      ]
-    };
-  }
-
-  return {
-    targetFit: "noise",
-    targetFitReasons: ["no distinctive, generic, or adjacent query/pattern signal matched."]
-  };
-};
-
 const withTargetFit = (
   query: string,
   packet: BrainSearchKnowledgePacket
 ): BrainSearchKnowledgePacket => ({
   ...packet,
-  ...targetFitForPacket(query, packet)
+  ...classifyTargetFit({
+    query,
+    text: packetTargetFitText(packet),
+    emptyTextReason: "selectedKnowledge packet has no classifiable text."
+  })
 });
 
 const proofDoesNotProve = (value: unknown): readonly string[] => {
@@ -578,80 +444,12 @@ const selectedKnowledgePackets = (input: {
     : sourcePackets.filter((packet) => packet.reviewability === "ready");
 };
 
-const selectedKnowledgeTargetFitSummary = (
-  packets: readonly BrainSearchKnowledgePacket[]
-): BrainSearchSelectedKnowledgeTargetFitSummary => {
-  const targetSpecific = packets.filter((packet) => packet.targetFit === "target_specific").length;
-  const genericGuardrail = packets.filter((packet) => packet.targetFit === "generic_guardrail").length;
-  const adjacentPattern = packets.filter((packet) => packet.targetFit === "adjacent_pattern").length;
-  const noise = packets.filter((packet) => packet.targetFit === "noise").length;
-  const unknown = packets.filter((packet) => packet.targetFit === "unknown").length;
-
-  if (packets.length === 0) {
-    return {
-      verdict: "no_selected_knowledge",
-      targetSpecific,
-      genericGuardrail,
-      adjacentPattern,
-      noise,
-      unknown,
-      recommendedUse:
-        "Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first.",
-      doesNotProve:
-        "No selectedKnowledge packets does not prove the query has no relevant KRN knowledge."
-    };
-  }
-
-  if (targetSpecific > 0) {
-    return {
-      verdict: "target_specific_selected_knowledge",
-      targetSpecific,
-      genericGuardrail,
-      adjacentPattern,
-      noise,
-      unknown,
-      recommendedUse:
-        "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
-      doesNotProve:
-        "Target-specific selectedKnowledge does not prove source truth, ranking quality, or product readiness."
-    };
-  }
-
-  if (genericGuardrail > 0 && genericGuardrail === packets.length) {
-    return {
-      verdict: "generic_only_selected_knowledge",
-      targetSpecific,
-      genericGuardrail,
-      adjacentPattern,
-      noise,
-      unknown,
-      recommendedUse:
-        "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
-      doesNotProve:
-        "Generic-only selectedKnowledge does not prove target-specific context was selected."
-    };
-  }
-
-  return {
-    verdict: "adjacent_or_unknown_selected_knowledge",
-    targetSpecific,
-    genericGuardrail,
-    adjacentPattern,
-    noise,
-    unknown,
-    recommendedUse:
-      "Review selectedKnowledge targetFit before treating selected knowledge as sufficient; prefer target-specific source evidence.",
-    doesNotProve:
-      "Adjacent, noisy, or unknown selectedKnowledge does not prove target-specific context was selected."
-  };
-};
-
 const sourceEvidenceCount = (
   sourceSearch: BrainSearchPreviewResource["sourceSearch"]
 ): number => sourceSearch.supportingClaims + sourceSearch.supportingDocuments;
 
 const nonTargetSpecificRecommendation = (
-  targetFit: BrainSearchSelectedKnowledgeTargetFitSummary
+  targetFit: TargetFitSummary
 ): string | undefined => {
   if (
     targetFit.verdict === "generic_only_selected_knowledge" ||
@@ -756,7 +554,7 @@ const buildResource = (
     linkedSearchDocuments,
     relationSupport: relationSupport.length
   });
-  const targetFitSummary = selectedKnowledgeTargetFitSummary(selectedKnowledge);
+  const targetFitSummary = summarizeTargetFit(selectedKnowledge);
   const resource: BrainSearchPreviewResource = {
     kind: "krn.brainSearch.preview.v1",
     access: "read_only",

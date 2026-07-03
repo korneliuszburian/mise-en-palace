@@ -3,6 +3,7 @@
   "ignorePatterns": [
     ".local-lab/**",
     "docs/materials/**",
+    "packages/schema/**",
     "tests/fixtures/**",
     "**/*.typecheck.ts"
   ],

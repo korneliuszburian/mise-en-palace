@@ -101,63 +101,6 @@ export interface CapabilityPlan {
   harnessPlanId: HarnessPlanId;
   requirements: CapabilityRequirement[];
   toolBoundaries: string[];
-  policyGateIds: string[];
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }
-
-const isBlank = (value: string): boolean => value.trim().length === 0;
-
-export const validateCapabilityBindings = (
-  bindings: readonly CapabilityBinding[]
-): string[] => {
-  const findings: string[] = [];
-
-  for (const binding of bindings) {
-    if (isBlank(binding.id)) {
-      findings.push("binding:id is required");
-    }
-
-    const bindingId = isBlank(binding.id) ? "binding" : binding.id;
-
-    if (isBlank(binding.name)) {
-      findings.push(`${bindingId}:name is required`);
-    }
-
-    if (isBlank(binding.reason)) {
-      findings.push(`${bindingId}:reason is required`);
-    }
-
-    if (binding.requiredEvidence.length === 0) {
-      findings.push(`${bindingId}:requiredEvidence is required`);
-    }
-  }
-
-  return findings;
-};
-
-export const assessCapabilityBindingCandidatePromotion = (
-  candidate: CapabilityBindingCandidate
-): string[] => {
-  const findings = validateCapabilityBindings([candidate.binding]);
-  const candidateId = isBlank(candidate.id) ? "binding-candidate" : candidate.id;
-
-  if (candidate.status !== "approved" || candidate.review === undefined) {
-    findings.push(`${candidateId}:review is required before promotion`);
-    return findings;
-  }
-
-  if (isBlank(candidate.review.reviewer)) {
-    findings.push(`${candidateId}:reviewer is required`);
-  }
-
-  if (candidate.review.decision !== "approved") {
-    findings.push(`${candidateId}:approved review decision is required`);
-  }
-
-  if (isBlank(candidate.review.evidenceReviewedRef)) {
-    findings.push(`${candidateId}:evidenceReviewedRef is required`);
-  }
-
-  return findings;
-};

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   sourceTrustTiers
-} from "@krn/core";
+} from "../source.js";
 import {
   MetadataSchema,
   RequiredTextSchema

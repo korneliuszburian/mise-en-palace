@@ -45,7 +45,7 @@ const brainKnowledgeTaskNoiseTerms = new Set([
   "work"
 ]);
 
-export const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
+const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
   [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
 
 const compactBrainKnowledgeBridgeTokens = (query: string): readonly string[] =>

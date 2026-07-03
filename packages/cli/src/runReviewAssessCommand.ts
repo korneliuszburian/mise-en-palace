@@ -13,6 +13,14 @@ import {
 import {
   createReviewAssessDatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  noStorePreviewLabel,
+  persistenceLine,
+  postgresPersistedLabel
+} from "./commandRuntimeSupport.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 import type {
   ReviewAssessDatabaseRuntime,
   ReviewAssessDatabaseRuntimeInput
@@ -23,10 +31,7 @@ import type {
 
 type ReviewAssessCommand = Extract<CliCommand, { kind: "reviewAssess" }>;
 
-export interface ReviewAssessCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface ReviewAssessCommandRuntime extends BaseCommandRuntime {
   command: ReviewAssessCommand;
   createDatabaseRuntime?: CreateReviewAssessDatabaseRuntime;
 }
@@ -118,7 +123,7 @@ const formatPreview = (
 ): string =>
   [
     "KRN Review Assess",
-    "Persistence: disabled (no-store preview; use --persist to write)",
+    persistenceLine(noStorePreviewLabel),
     "DB writes: none",
     "",
     "Review assessment preview:",
@@ -143,7 +148,7 @@ const formatPersisted = (
 ): string =>
   [
     "KRN Review Assess",
-    "Persistence: enabled (Postgres, explicit --persist)",
+    persistenceLine(postgresPersistedLabel),
     "",
     "Persisted IDs:",
     `reviewAssessment: ${reviewAssessmentId}`,

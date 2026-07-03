@@ -36,7 +36,8 @@ describe("KRN context hygiene invariants", () => {
     expect(kernel).toContain("controlled-internal-alpha");
     expect(kernel).toContain("not product-ready");
     expect(kernel).toContain("not widened internal alpha");
-    expect(kernel).toContain("compact root `GOAL.md` and `PLAN.md`");
+    expect(kernel).toContain("compact root `GOAL.md`, `PLAN.md`, and `PLANS.md`");
+    expect(kernel).toContain("archived ledgers");
     expect(kernel).toContain("PLANS.md");
     expect(kernel).toContain("source-to-decision and pattern-intake gates");
     expect(kernel).toContain("typed harness spine");
@@ -51,12 +52,13 @@ describe("KRN context hygiene invariants", () => {
 
     expect(readme).toContain("Root `PLAN.md` is the active compact product plan.");
     expect(readme).toContain("Root `GOAL.md` is the compact");
-    expect(readme).toContain("Root `PLANS.md` carries detailed continuous execution");
+    expect(readme).toContain("Root `PLANS.md` carries the compact execution contract");
+    expect(readme).toContain("archived ledgers");
     expect(readme).toContain("controlled-internal-alpha for technical operators");
     expect(readme).toContain("product-ready: no");
     expect(readme).toContain("widened internal alpha: no");
     expect(readme).toContain("The current work loop is continuous and evidence-driven");
-    expect(readme).toContain("append next task to PLANS.md");
+    expect(readme).toContain("update Beads and compact root state");
     expect(readme).toContain("The legacy audit/anti-slop direction remains closed.");
 
     expect(readme).not.toContain("The current reset direction is");
@@ -71,7 +73,8 @@ describe("KRN context hygiene invariants", () => {
     expect(lineCount(goal)).toBeLessThanOrEqual(200);
     expect(lineCount(plan)).toBeLessThanOrEqual(170);
     expect(goal).toContain("Detailed completed history, evidence, outcomes, and next-task synthesis live in");
-    expect(plan).toContain("Detailed history stays in `PLANS.md`.");
+    expect(plan).toContain("Detailed history stays in Beads");
+    expect(plan).toContain("archived ledgers");
 
     const activeTruth = `${goal}\n${plan}`;
 

@@ -130,35 +130,37 @@ export const ActivationAbstentionReasonSchema = z.enum([
   "unsafe_context"
 ]);
 
-export const SearchDocumentInputSchema = z
-  .object({
-    projectId: OptionalIdSchema,
-    subjectType: RetrievalSubjectTypeSchema,
-    subjectId: RequiredTextSchema,
-    sourceArtifactId: OptionalIdSchema,
-    sourceChunkId: OptionalIdSchema,
-    sourceClaimId: OptionalIdSchema,
-    memoryRecordId: OptionalIdSchema,
-    antiMemoryRecordId: OptionalIdSchema,
-    evidenceBundleId: OptionalIdSchema,
-    reviewAssessmentId: OptionalIdSchema,
-    sourceDecisionId: OptionalIdSchema,
-    runEventId: OptionalIdSchema,
-    trustTier: RetrievalTrustTierSchema.default("medium"),
-    validityStatus: RetrievalValidityStatusSchema.default("active"),
-    language: RequiredTextSchema.default("english"),
-    title: RequiredTextSchema,
-    body: RequiredTextSchema,
-    searchText: OptionalTextSchema,
-    metadataFilters: MetadataSchema,
-    validFrom: OptionalTextSchema,
-    validUntil: OptionalTextSchema,
-    metadata: MetadataSchema
-  })
-  .transform((value) => ({
+const SearchDocumentInputShapeSchema = z.object({
+  projectId: OptionalIdSchema,
+  subjectType: RetrievalSubjectTypeSchema,
+  subjectId: RequiredTextSchema,
+  sourceArtifactId: OptionalIdSchema,
+  sourceChunkId: OptionalIdSchema,
+  sourceClaimId: OptionalIdSchema,
+  memoryRecordId: OptionalIdSchema,
+  antiMemoryRecordId: OptionalIdSchema,
+  evidenceBundleId: OptionalIdSchema,
+  reviewAssessmentId: OptionalIdSchema,
+  sourceDecisionId: OptionalIdSchema,
+  runEventId: OptionalIdSchema,
+  trustTier: RetrievalTrustTierSchema.default("medium"),
+  validityStatus: RetrievalValidityStatusSchema.default("active"),
+  language: RequiredTextSchema.default("english"),
+  title: RequiredTextSchema,
+  body: RequiredTextSchema,
+  searchText: OptionalTextSchema,
+  metadataFilters: MetadataSchema,
+  validFrom: OptionalTextSchema,
+  validUntil: OptionalTextSchema,
+  metadata: MetadataSchema
+});
+
+export const SearchDocumentInputSchema = SearchDocumentInputShapeSchema.transform(
+  (value: z.infer<typeof SearchDocumentInputShapeSchema>) => ({
     ...value,
     searchText: value.searchText ?? `${value.title}\n${value.body}`
-  }));
+  })
+);
 
 export const RetrievalRunInputSchema = z.object({
   projectId: OptionalIdSchema,

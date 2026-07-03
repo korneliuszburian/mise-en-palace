@@ -26,25 +26,26 @@
     "db:smoke:init-connect": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke init-connect",
     "db:smoke:target-repo-harness": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke target-repo-harness",
     "db:smoke:source-graph": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke source-graph",
-    "eval:brain-battle:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate activePlanInvariants contextHygieneInvariants sourceMapInvariants skillInvariants patternChainInvariants brainBattleMatrixInvariants typescriptBoundaryInvariants && pnpm --filter @krn/cli typecheck:tests:clean && pnpm --filter @krn/cli test -- runRunShowCommand evidenceCaptureGoldenBehavior && pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
-    "eval:promptfoo:smoke": "mkdir -p .local-lab/promptfoo && promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml --output .local-lab/promptfoo/krn-golden-smoke-results.jsonl",
+    "eval:behavior:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate sourceMapInvariants typescriptBoundaryInvariants && pnpm --filter @krn/cli typecheck:tests:clean && pnpm --filter @krn/cli test -- runRunShowCommand evidenceCaptureGoldenBehavior && pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
+    "docs:lint": "pnpm --filter @krn/harness test -- activePlanInvariants contextHygieneInvariants skillInvariants behaviorGateMatrixInvariants",
+    "eval:krn:smoke": "pnpm eval:behavior:smoke && pnpm docs:lint",
+    "eval:brain-battle:smoke": "pnpm eval:krn:smoke",
     "krn": "pnpm --filter @krn/cli krn",
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",
     "beads:doctor": "bd doctor",
     "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts brain knowledge --catalog-file docs/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
-    "quality:fallow": "mkdir -p .local-lab/fallow && fallow --format compact --output-file .local-lab/fallow/full.compact.txt",
+    "quality:fallow": "mkdir -p .local-lab/fallow && fallow --skip health --format compact --output-file .local-lab/fallow/dead-dupes.compact.txt && fallow health --report-only --format compact --output-file .local-lab/fallow/health.compact.txt",
     "quality:fallow:ci": "fallow audit --format compact",
     "alpha:verify": "pnpm alpha:verify:fast",
     "alpha:verify:fast": "pnpm typecheck && pnpm test && pnpm krn doctor",
-    "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:brain-battle:smoke && pnpm eval:promptfoo:smoke && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:brain-loop && git diff --check",
+    "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:krn:smoke && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:brain-loop && git diff --check",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck"
   },
   "devDependencies": {
     "@beads/bd": "^1.0.4",
     "fallow": "^2.103.0",
-    "promptfoo": "^0.121.17",
     "typescript": "5.9.3"
   }
 }

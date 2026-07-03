@@ -10,7 +10,7 @@
     "GOAL.md#continuation-after-compact",
     "PLAN.md#verification-policy",
     "PLANS.md#condensation-rules",
-    "docs/architecture/brain-battle-eval-matrix.md#classification"
+    "docs/architecture/behavior-gate-matrix.md#classification"
   ],
   "evidenceRefs": [
     "docs/reviews/controlled-dogfood/2026-06-28-v255-active-ledger-condensation/REPORT.md",

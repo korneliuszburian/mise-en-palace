@@ -2,7 +2,8 @@
 
 Status: active compact root plan. Date: 2026-07-03.
 
-Root `PLAN.md` is compact product truth. Detailed history stays in `PLANS.md`.
+Root `PLAN.md` is compact product truth. Detailed history stays in Beads,
+archived ledgers, and archived reports.
 
 ## Product State
 
@@ -12,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI source-search/claim-edges test typecheck widening slice
+current task: Cleanup wave checkpoint and next bounded task selection
 ```
 
 ## Compact Checkpoints
@@ -111,17 +112,18 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CLI Source-Search/Claim-Edges Test Typecheck Batch
+### Cleanup Wave Checkpoint
 
-Goal: add source-search and source-claim-edges command tests to the scoped
-strict TypeScript gate.
+Goal: commit and push the verified cleanup wave before taking another bounded
+task.
 
-Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
+Hard boundary: do not start P0 worker cleanup without the recorded human
+decision; do not add another markdown audit ledger.
 
-Latest report: `docs/runs/2026-07-03-cli-source-search-test-typecheck-widening.md`.
+Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`.
 
-Boundary: no full CLI test typecheck, source artifact preview, runtime rewrite,
-or assertion changes; this fixes test fixture shapes only.
+Boundary: checkpoint only. Next implementation task is selected from Beads after
+push/CI state is known.
 
 ## Recent Completed Streams
 
@@ -155,7 +157,7 @@ Use the narrowest relevant verification.
 ```txt
 docs/plan-only: git diff --check
 source: pnpm typecheck, pnpm test, git diff --check
-DB/eval-affecting: pnpm db:ready, pnpm db:smoke, pnpm eval:promptfoo:smoke when relevant
+DB/eval-affecting: pnpm db:ready, pnpm db:smoke
 ```
 
 If Vitest hits a temporary-directory write error, use

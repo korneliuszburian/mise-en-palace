@@ -123,7 +123,6 @@ const capabilityPlan: CapabilityPlan = {
     }
   ],
   toolBoundaries: ["Do not invoke Codex from the renderer."],
-  policyGateIds: [],
   metadata: {},
   createdAt
 };
@@ -218,7 +217,7 @@ describe("renderExecutionBrief", () => {
     );
     expect(rendered).toContain(`Format Version: ${executionBriefFormatVersion}`);
     expect(rendered).toContain("Brief Profile:");
-    expect(rendered).toContain("reserved_omitted=mcp_resource_refs, subagent_probe_hints");
+    expect(rendered).toContain("- required=title, format_version, objective");
     expect(rendered).toContain("Non-goals:");
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
@@ -299,8 +298,7 @@ describe("renderExecutionBrief", () => {
       itemCount: 1,
       emptyBehavior: "omit_when_empty"
     });
-    expect(rendered).toContain("reserved_rendered=mcp_resource_refs, subagent_probe_hints");
-    expect(rendered).toContain("reserved_omitted=none");
+    expect(rendered).toContain("- required=title, format_version, objective");
     expect(rendered).toContain("MCP Resource Refs:");
     expect(rendered).toContain("- run-ledger | access=future_reference");
     expect(rendered).toContain("Subagent Probe Hints:");

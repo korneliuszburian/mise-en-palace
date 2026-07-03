@@ -1,15 +1,9 @@
 import type {
-  ActivationDecisionId,
   ContextAssemblyId,
-  EmbeddingId,
-  EmbeddingModelId,
   ExecutionRunId,
   OperatorIntentId,
   ProjectId,
   RepoInstallationId,
-  RetrievalCandidateId,
-  RetrievalRunId,
-  SearchDocumentId,
   SourceArtifactId,
   SourceChunkId,
   SourceTrustTier,
@@ -17,6 +11,13 @@ import type {
   WorkspaceId
 } from "@krn/core";
 import type { IsoTimestamp } from "@krn/core";
+
+export type SearchDocumentId = string;
+export type EmbeddingModelId = string;
+export type EmbeddingId = string;
+export type RetrievalRunId = string;
+export type RetrievalCandidateId = string;
+export type ActivationDecisionId = string;
 
 export interface RepositoryMetadata {
   metadata?: Record<string, unknown>;

@@ -7,7 +7,7 @@ import {
 } from "vitest";
 
 const matrixPath = new URL(
-  "../../../../docs/architecture/brain-battle-eval-matrix.md",
+  "../../../../docs/architecture/behavior-gate-matrix.md",
   import.meta.url
 );
 const cliSurfacesPath = new URL(
@@ -17,14 +17,6 @@ const cliSurfacesPath = new URL(
 const packageJsonPath = new URL("../../../../package.json", import.meta.url);
 const promptfooBoundaryPath = new URL(
   "../../../../docs/architecture/promptfoo-adapter-boundary.md",
-  import.meta.url
-);
-const promptfooFixturePath = new URL(
-  "../../../../tests/fixtures/promptfoo/krn-golden-smoke.yaml",
-  import.meta.url
-);
-const promptfooProviderPath = new URL(
-  "../../../../tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs",
   import.meta.url
 );
 
@@ -63,7 +55,7 @@ const matrixRows = (): MatrixRow[] => {
     }
 
     if (cells.length !== 5) {
-      throw new Error(`Invalid brain-battle matrix row cell count: ${line}`);
+      throw new Error(`Invalid behavior gate matrix row cell count: ${line}`);
     }
 
     rows.push({
@@ -96,7 +88,7 @@ const sectionBody = (body: string, heading: string): string => {
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
 
-describe("KRN brain-battle eval matrix invariants", () => {
+describe("KRN behavior gate matrix invariants", () => {
   it("keeps implemented checks tied to a guard, evidence, and proof boundary", () => {
     const findings = matrixRows().flatMap((row) => {
       const issues: string[] = [];
@@ -129,38 +121,42 @@ describe("KRN brain-battle eval matrix invariants", () => {
     expect(findings).toEqual([]);
   });
 
-  it("keeps the current smoke description aligned with invariant guard filters", () => {
+  it("keeps behavior smoke and docs lint descriptions aligned with guard filters", () => {
     const matrix = readFileSync(matrixPath, "utf8");
     const packageJson = readFileSync(packageJsonPath, "utf8");
-    const currentSmoke = sectionBody(matrix, "## Current Smoke");
-    const normalizedCurrentSmoke = currentSmoke.replace(/\s+/gu, " ");
+    const behaviorSmoke = sectionBody(matrix, "## Behavior Smoke");
+    const docsLint = sectionBody(matrix, "## Docs Lint");
+    const behaviorSmokeText = behaviorSmoke.replace(/\s+/gu, " ");
+    const docsLintText = docsLint.replace(/\s+/gu, " ");
+
+    for (const filter of [
+      "goldenKrnBehaviorGate",
+      "sourceMapInvariants",
+      "typescriptBoundaryInvariants"
+    ]) {
+      expect(packageJson).toContain(filter);
+      expect(behaviorSmokeText).toContain(filter);
+    }
 
     for (const filter of [
       "activePlanInvariants",
       "contextHygieneInvariants",
-      "sourceMapInvariants",
       "skillInvariants",
-      "patternChainInvariants",
-      "brainBattleMatrixInvariants",
-      "typescriptBoundaryInvariants"
+      "behaviorGateMatrixInvariants"
     ]) {
       expect(packageJson).toContain(filter);
+      expect(docsLintText).toContain(filter);
     }
 
     for (const phrase of [
       "active plan freshness",
       "active context hygiene",
-      "source-map source-to-decision mapping",
-      "source location scheme",
-      "pattern-intake output contract",
       "repo-local skill routability",
       "source-to-decision skill contract",
-      "active pattern-chain regression guard",
       "root PLAN pattern-gate visibility",
-      "TypeScript boundary hygiene",
       "matrix guard/proof boundaries"
     ]) {
-      expect(normalizedCurrentSmoke).toContain(phrase);
+      expect(docsLintText).toContain(phrase);
     }
   });
 
@@ -198,15 +194,11 @@ describe("KRN brain-battle eval matrix invariants", () => {
     expect(runReadbackRow?.doesNotProve).toContain("promotion readiness");
   });
 
-  it("keeps Promptfoo bounded as an integration smoke adapter", () => {
+  it("keeps Promptfoo bounded as a non-authority adapter", () => {
     const packageJson = readFileSync(packageJsonPath, "utf8");
     const boundary = readFileSync(promptfooBoundaryPath, "utf8");
-    const fixture = readFileSync(promptfooFixturePath, "utf8");
-    const provider = readFileSync(promptfooProviderPath, "utf8");
 
-    expect(packageJson).toContain("eval:promptfoo:smoke");
-    expect(packageJson).toContain("promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml");
-    expect(packageJson).toContain(".local-lab/promptfoo/krn-golden-smoke-results.jsonl");
+    expect(packageJson).not.toContain("eval:promptfoo:smoke");
 
     expect(boundary).toContain("bounded runner/result adapter");
     expect(boundary).toContain("not a\nKRN behavior proof authority");
@@ -214,13 +206,5 @@ describe("KRN brain-battle eval matrix invariants", () => {
     expect(boundary).toContain("promptfoo_integration_smoke");
     expect(boundary).toContain("Only `krn_behavior_execution` can satisfy GoldenTask behavior proof today.");
     expect(boundary).toContain("imply Memory Brain product readiness");
-
-    expect(fixture).toContain("KRN official Promptfoo integration smoke");
-    expect(fixture).toContain("share: false");
-    expect(fixture).toContain("write: false");
-    expect(fixture).toContain("integrationSmoke=passed");
-
-    expect(provider).toContain("doesNotExecuteKrnBehavior=true");
-    expect(provider).toContain("KRN Promptfoo integration smoke");
   });
 });

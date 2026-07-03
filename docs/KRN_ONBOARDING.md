@@ -17,14 +17,15 @@ technical operators, not product-ready and not widened internal alpha.
 Current durable surfaces include:
 
 - compact root `GOAL.md` / `PLAN.md` active truth;
-- detailed continuous execution in `PLANS.md`;
+- compact execution contract in `PLANS.md`;
+- detailed completed history in Beads, archived ledgers, and archived reports;
 - kernel contract and raw source quarantine;
 - source-to-decision and pattern-intake gates;
 - repo-local skills for repeated KRN workflows;
 - store-backed memory/source/evidence/review primitives;
 - DB-backed replay and smoke paths;
 - target-repo testing guidance;
-- brain-battle/golden behavior guards;
+- KRN behavior/docs and golden behavior guards;
 - TypeScript boundary and skill invariants.
 
 External second-operator proof remains blocked/deferred until real operator
@@ -52,7 +53,7 @@ apply the relevant skill and pattern gate
 make one bounded repair or guard
 run focused verification plus typecheck/test when source changes
 capture evidence or record proof/non-proof boundaries
-append outcome and next task to PLANS.md
+update Beads and compact root state
 commit, push, and check CI when relevant
 ```
 

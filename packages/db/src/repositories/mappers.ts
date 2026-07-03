@@ -26,7 +26,9 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
-  normalizeEvidenceCommand
+  evidenceCommandStatuses,
+  normalizeEvidenceCommand,
+  sourceTrustTiers
 } from "@krn/core";
 import type {
   ActivationDecisionRecord,
@@ -71,6 +73,7 @@ import type {
   workspaces
 } from "../schema/index.js";
 import {
+  isRecord,
   metadataOrEmpty,
   numberOrUndefined,
   stringOrUndefined,
@@ -186,13 +189,7 @@ const operatorIntentSources = new Set<OperatorIntentSource>([
 ]);
 
 const diffRisks = new Set<DiffRisk>(["low", "medium", "high"]);
-const evidenceCommandStatuses = new Set<EvidenceCommandStatus>([
-  "passed",
-  "failed",
-  "skipped",
-  "missing",
-  "not_run"
-]);
+const evidenceCommandStatusSet = new Set<EvidenceCommandStatus>(evidenceCommandStatuses);
 const evidenceCommandProvenances = new Set<EvidenceCommandProvenance>([
   "default_template",
   "operator_reported",
@@ -206,22 +203,7 @@ const sourceDecisionStatuses = new Set<SourceDecision["status"]>([
   "defer",
   "lab_test"
 ]);
-const sourceTrustTiers = new Set<SourceTrustTier>([
-  "high",
-  "medium",
-  "low",
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-]);
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+const sourceTrustTierSet = new Set<SourceTrustTier>(sourceTrustTiers);
 
 const asOperatorIntentSource = (value: string): OperatorIntentSource => {
   if (operatorIntentSources.has(value as OperatorIntentSource)) {
@@ -240,12 +222,12 @@ const asDiffRisk = (value: string): DiffRisk => {
 };
 
 const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
-  typeof value === "string" && sourceTrustTiers.has(value as SourceTrustTier);
+  typeof value === "string" && sourceTrustTierSet.has(value as SourceTrustTier);
 
 const evidenceCommandStatusOrUndefined = (
   value: unknown
 ): EvidenceCommandStatus | undefined =>
-  typeof value === "string" && evidenceCommandStatuses.has(value as EvidenceCommandStatus)
+  typeof value === "string" && evidenceCommandStatusSet.has(value as EvidenceCommandStatus)
     ? value as EvidenceCommandStatus
     : undefined;
 

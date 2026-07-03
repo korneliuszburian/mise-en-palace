@@ -46,13 +46,8 @@ jobs:
       - name: Fallow quality gate
         run: pnpm quality:fallow:ci
 
-      - name: Brain-battle smoke
-        run: pnpm eval:brain-battle:smoke
-
-      - name: Promptfoo smoke
-        run: |
-          pnpm exec promptfoo --version
-          pnpm eval:promptfoo:smoke
+      - name: KRN behavior and docs smoke
+        run: pnpm eval:krn:smoke
 
       - name: Diff check
         run: git diff --check
@@ -103,6 +98,15 @@ jobs:
 
       - name: DB smoke
         run: pnpm db:smoke
+
+      - name: DB brain loop smoke
+        run: pnpm db:smoke:brain-loop
+
+      - name: DB worker jobs smoke
+        run: pnpm db:smoke:worker-jobs
+
+      - name: DB source graph smoke
+        run: pnpm db:smoke:source-graph
 
       - name: Diff check
         run: git diff --check

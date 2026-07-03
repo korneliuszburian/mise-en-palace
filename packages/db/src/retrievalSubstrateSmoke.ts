@@ -28,6 +28,8 @@ export interface RetrievalSubstrateSmokeReport {
   sourceDecisionId: string;
   searchDocumentCount: number;
   lexicalResultCount: number;
+  vectorResultCount: number;
+  hybridResultCount: number;
   embeddingModelId: string;
   embeddingId: string;
   retrievalRunId: string;
@@ -39,8 +41,8 @@ export interface RetrievalSubstrateSmokeReport {
   cleanedUp: boolean;
 }
 
-const deterministicSmokeVector = (): number[] =>
-  Array.from({ length: 1536 }, (_, index) => (index === 0 ? 1 : 0));
+const deterministicSmokeVector = (hotIndex: number): number[] =>
+  Array.from({ length: 1536 }, (_, index) => (index === hotIndex ? 1 : 0));
 
 export const runRetrievalSubstrateSmokeCheck = async (
   input: RetrievalSubstrateSmokeInput
@@ -261,13 +263,49 @@ export const runRetrievalSubstrateSmokeCheck = async (
       subjectType: "search_document",
       subjectId: sourceDocument.id,
       searchDocumentId: sourceDocument.id,
-      embedding: deterministicSmokeVector(),
+      embedding: deterministicSmokeVector(0),
       contentHash: `retrieval-smoke-${marker}`,
       trustTier: "project-decision",
       metadata: {
         smokeId: marker
       }
     });
+    await retrievalRepository.createEmbedding({
+      projectId: project.id,
+      embeddingModelId: embeddingModel.id,
+      subjectType: "search_document",
+      subjectId: memoryDocument.id,
+      searchDocumentId: memoryDocument.id,
+      embedding: deterministicSmokeVector(1),
+      contentHash: `retrieval-smoke-distractor-${marker}`,
+      trustTier: "project-decision",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const vectorResults = await retrievalRepository.searchVector({
+      projectId: project.id,
+      embeddingModelId: embeddingModel.id,
+      embedding: deterministicSmokeVector(0),
+      limit: 5
+    });
+
+    if (vectorResults[0]?.id !== sourceDocument.id) {
+      throw new Error("Retrieval substrate smoke vector search did not rank source document first");
+    }
+
+    const hybridResults = await retrievalRepository.searchHybrid({
+      projectId: project.id,
+      embeddingModelId: embeddingModel.id,
+      query: "source graph postgres edge tables",
+      embedding: deterministicSmokeVector(0),
+      limit: 5
+    });
+
+    if (!hybridResults.some((result) => result.id === sourceDocument.id)) {
+      throw new Error("Retrieval substrate smoke hybrid search did not include source document");
+    }
+
     const retrievalRun = await retrievalRepository.createRetrievalRun({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -379,6 +417,8 @@ export const runRetrievalSubstrateSmokeCheck = async (
       evidenceDocument,
       decisionDocument
     ].length;
+    const vectorResultCount = vectorResults.length;
+    const hybridResultCount = hybridResults.length;
     const retrievalCandidateCount = candidates.length;
     const activationDecisionCount = activationRecords.length;
     const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
@@ -387,6 +427,8 @@ export const runRetrievalSubstrateSmokeCheck = async (
       [
         { label: "search documents", passed: searchDocumentCount === 4 },
         { label: "lexical results", passed: lexicalResults.length > 0 },
+        { label: "vector results", passed: vectorResultCount > 0 },
+        { label: "hybrid results", passed: hybridResultCount > 0 },
         { label: "retrieval candidates", passed: retrievalCandidateCount === 2 },
         { label: "activation decisions", passed: activationDecisionCount === 2 },
         { label: "context items", passed: contextItemCount === 1 },
@@ -407,6 +449,8 @@ export const runRetrievalSubstrateSmokeCheck = async (
       sourceDecisionId: sourceDecision.id,
       searchDocumentCount,
       lexicalResultCount: lexicalResults.length,
+      vectorResultCount,
+      hybridResultCount,
       embeddingModelId: embeddingModel.id,
       embeddingId: embedding.id,
       retrievalRunId: retrievalRun.id,

@@ -227,7 +227,7 @@ const task: GoldenTask = {
       }],
       sourceRefs: [
         "tests/fixtures/target-repos/typescript-basic/AGENTS.md",
-        "docs/architecture/brain-battle-eval-matrix.md"
+        "docs/architecture/behavior-gate-matrix.md"
       ],
       metadata: {}
     },
@@ -253,7 +253,7 @@ const task: GoldenTask = {
       }],
       sourceRefs: [
         "tests/fixtures/target-repos/typescript-basic/tests/readiness.test.ts",
-        "docs/architecture/brain-battle-eval-matrix.md"
+        "docs/architecture/behavior-gate-matrix.md"
       ],
       metadata: {}
     },
@@ -304,7 +304,7 @@ const task: GoldenTask = {
       }],
       sourceRefs: [
         "packages/core/src/source.ts",
-        "docs/architecture/brain-battle-eval-matrix.md"
+        "docs/architecture/behavior-gate-matrix.md"
       ],
       metadata: {}
     }

@@ -205,7 +205,6 @@ export const createCapabilityPlan = (input: CreateCapabilityPlanInput): Capabili
       "Do not write runtime markdown memory.",
       "Do not spawn agents from the compiler."
     ],
-    policyGateIds: input.hasContext ? [] : ["weak-context-abstention"],
     metadata: {
       harnessPlanStatus: input.harnessPlan.status
     },

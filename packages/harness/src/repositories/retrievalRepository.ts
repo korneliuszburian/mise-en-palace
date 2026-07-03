@@ -4,11 +4,8 @@ import type {
   ContextExclusion,
   ContextInclusion,
   ContextAssemblyId,
-  EmbeddingModelId,
   ExecutionRunId,
   ProjectId,
-  RetrievalCandidateId,
-  RetrievalRunId,
   SourceTrustTier,
   TaskContractId
 } from "@krn/core";
@@ -18,7 +15,10 @@ import type {
   EmbeddingModelRecord,
   EmbeddingModelStatus,
   EmbeddingRecord,
+  EmbeddingModelId,
   EmbeddingSubjectFields,
+  RetrievalCandidateId,
+  RetrievalRunId,
   RetrievalCandidateFields,
   RetrievalCandidateRecord,
   RetrievalCandidateStatus,
@@ -49,6 +49,19 @@ export interface SearchLexicalInput {
   projectId?: ProjectId;
   query: string;
   limit?: number;
+}
+
+export interface SearchVectorInput {
+  projectId?: ProjectId;
+  embedding: readonly number[];
+  embeddingModelId?: EmbeddingModelId;
+  limit?: number;
+}
+
+export interface SearchHybridInput extends SearchVectorInput {
+  query: string;
+  lexicalWeight?: number;
+  vectorWeight?: number;
 }
 
 export interface CreateEmbeddingModelInput {
@@ -224,6 +237,8 @@ export interface CleanupTestRetrievalRecordsResult {
 export interface RetrievalRepository {
   createSearchDocument(input: CreateSearchDocumentInput): Promise<SearchDocumentRecord>;
   searchLexical(input: SearchLexicalInput): Promise<SearchDocumentSearchResult[]>;
+  searchVector(input: SearchVectorInput): Promise<SearchDocumentSearchResult[]>;
+  searchHybrid(input: SearchHybridInput): Promise<SearchDocumentSearchResult[]>;
   createEmbeddingModel(input: CreateEmbeddingModelInput): Promise<EmbeddingModelRecord>;
   createEmbedding(input: CreateEmbeddingInput): Promise<EmbeddingRecord>;
   createRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord>;

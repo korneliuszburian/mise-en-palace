@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Local scratchpads for isolated agent research; includes reviewer-layer-autonomy-research.
 .local-lab/
 
 # Beads / Dolt files (added by bd init)

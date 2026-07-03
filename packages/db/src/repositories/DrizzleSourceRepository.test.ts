@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SourceDecision } from "@krn/core";
 
 import {
   DrizzleSourceRepository,
@@ -6,6 +7,7 @@ import {
   assertSourceClaimGovernance,
   assertSourceDecisionEdgeGovernance,
   assertSourceDecisionGovernance,
+  throwOnBlockingSourceDecisionSignals,
   assertSourceDecisionSourceClaimCanSupport,
   assessSourceClaimOverride,
   rankSourceTrustTier,
@@ -161,6 +163,44 @@ describe("DrizzleSourceRepository", () => {
     expect(sourceClaimStatusForDecisionStatus("reject")).toBe("rejected");
     expect(sourceClaimStatusForDecisionStatus("defer")).toBeUndefined();
     expect(sourceClaimStatusForDecisionStatus("lab_test")).toBeUndefined();
+  });
+
+  it("blocks source decisions if linked source claims are rejected", () => {
+    const sourceDecision = {
+      id: "source-decision-1",
+      status: "adopt",
+      decision: "Adopt source claim",
+      rationale: "The source claim is valid for this test",
+      falsifier: "Rejected claim should fail",
+      consumer: "Kernel guardrail",
+      metadata: {},
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z"
+    } as SourceDecision;
+
+    expect(() => throwOnBlockingSourceDecisionSignals(sourceDecision, "rejected")).toThrow(
+      "SourceDecision blocked by review signals"
+    );
+    expect(() => throwOnBlockingSourceDecisionSignals(sourceDecision, "deprecated")).toThrow(
+      "SourceDecision blocked by review signals"
+    );
+  });
+
+  it("allows accepted source claims as SourceDecision inputs", () => {
+    const sourceDecision = {
+      id: "source-decision-2",
+      status: "adopt",
+      sourceClaimId: "source-claim-1",
+      decision: "Adopt source claim",
+      rationale: "The source claim is valid for this test",
+      falsifier: "Accepted claim should pass",
+      consumer: "Kernel guardrail",
+      metadata: {},
+      createdAt: "2026-06-01T00:00:00.000Z",
+      updatedAt: "2026-06-01T00:00:00.000Z"
+    } as SourceDecision;
+
+    expect(() => throwOnBlockingSourceDecisionSignals(sourceDecision, "accepted")).not.toThrow();
   });
 
   it("ranks source trust tiers deterministically", () => {

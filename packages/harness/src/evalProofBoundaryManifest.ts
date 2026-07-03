@@ -69,36 +69,19 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
-    id: "brain-battle-smoke",
-    command: "pnpm eval:brain-battle:smoke",
-    scriptName: "eval:brain-battle:smoke",
-    owner: "deterministic KRN invariant matrix",
+    id: "krn-smoke",
+    command: "pnpm eval:krn:smoke",
+    scriptName: "eval:krn:smoke",
+    owner: "deterministic KRN behavior and docs guard matrix",
     requiredFor: ["ci-fast", "handoff"],
     proves: [
-      "active plan, context hygiene, source-map, skill, pattern-chain, brain-battle, TypeScript-boundary, CLI run-readback, and Codex brief golden invariants pass",
+      "behavior smoke and docs lint guards pass for active plan, context hygiene, source-map, skills, behavior-gate matrix, TypeScript-boundary, CLI run-readback, and Codex brief golden invariants",
       "implemented matrix rows keep proof/non-proof boundaries"
     ],
     doesNotProve: [
       "LLM outputs are correct",
       "source or memory quality is sufficient at scale",
       "DB runtime truth exists",
-      "KRN is product-ready"
-    ]
-  },
-  {
-    id: "promptfoo-smoke",
-    command: "pnpm eval:promptfoo:smoke",
-    scriptName: "eval:promptfoo:smoke",
-    owner: "Promptfoo adapter boundary",
-    requiredFor: ["ci-fast"],
-    proves: [
-      "Promptfoo can run the local smoke fixture",
-      "runner/config/provider/result mapping emits integration evidence"
-    ],
-    doesNotProve: [
-      "KRN behavior passed",
-      "Memory Core mutated correctly",
-      "GoldenTask behavior proof exists",
       "KRN is product-ready"
     ]
   },
@@ -181,8 +164,7 @@ export const evalProofBoundaryManifest = [
     ],
     doesNotProve: [
       "Fallow changed-file audit passed",
-      "Promptfoo smoke passed",
-      "brain-battle smoke passed",
+      "KRN behavior/docs smoke passed",
       "DB runtime truth exists",
       "KRN is product-ready"
     ]
@@ -194,7 +176,7 @@ export const evalProofBoundaryManifest = [
     owner: "local full alpha verification gate",
     requiredFor: ["db-runtime", "product-loop", "handoff"],
     proves: [
-      "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, brain-battle smoke, Promptfoo smoke, DB readiness, Drizzle check, baseline DB smoke, DB brain-loop smoke, and diff check completed in the current shell",
+      "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, KRN behavior/docs smoke, DB readiness, Drizzle check, baseline DB smoke, DB brain-loop smoke, and diff check completed in the current shell",
       "the local full gate aggregated the current deterministic static, eval-adapter, DB-runtime, and product-loop smoke boundaries"
     ],
     doesNotProve: [
@@ -220,22 +202,3 @@ export const evalProofBoundaryManifest = [
     ]
   }
 ] as const satisfies readonly EvalProofBoundaryEntry[];
-
-export const renderEvalProofBoundaryReadback = (
-  entries: readonly EvalProofBoundaryEntry[] = evalProofBoundaryManifest
-): string => {
-  const lines = [
-    "# Evaluation Proof Boundary Manifest",
-    "",
-    "| Gate | Command | Required For | Proves | Does Not Prove |",
-    "| --- | --- | --- | --- | --- |"
-  ];
-
-  for (const entry of entries) {
-    lines.push(
-      `| ${entry.id} | \`${entry.command}\` | ${entry.requiredFor.join(", ")} | ${entry.proves.join("; ")} | ${entry.doesNotProve.join("; ")} |`
-    );
-  }
-
-  return `${lines.join("\n")}\n`;
-};

@@ -1,10 +1,10 @@
 import { z } from "zod";
 import type {
   EvidenceCommand
-} from "@krn/core";
+} from "../evidenceBundle.js";
 import {
   normalizeEvidenceCommand
-} from "@krn/core";
+} from "../evidenceBundle.js";
 import {
   MetadataSchema,
   OptionalTextSchema,
@@ -81,7 +81,11 @@ const normalizeEvidenceCommandInput = (command: EvidenceCommandInput) => {
   return normalizeEvidenceCommand(evidenceCommand);
 };
 
-export const EvidenceCommandSchema = EvidenceCommandInputSchema.superRefine((value, context) => {
+export const EvidenceCommandSchema = EvidenceCommandInputSchema.superRefine(
+  (
+    value: z.infer<typeof EvidenceCommandInputSchema>,
+    context: z.RefinementCtx
+  ) => {
   if (
     value.kind !== undefined &&
     value.provenance !== undefined &&
@@ -102,14 +106,24 @@ const EvidenceChangedFileClassificationMetadataSchema = z.object({
   unrelated: TextListSchema,
   unknown: TextListSchema,
   unmatchedIntendedFiles: TextListSchema
-});
+  }
+);
 
 const EvidenceDirtyContextMetadataSchema = z.object({
   hasUnrelatedFiles: z.boolean(),
   unrelatedFileCount: z.number().int().nonnegative()
 });
 
-export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine((value, context) => {
+type EvidenceCaptureMetadataInput = z.infer<typeof MetadataSchema> & {
+  command?: unknown;
+  runId?: unknown;
+  intendedFiles?: unknown;
+  changedFileClassification?: unknown;
+  dirtyContext?: unknown;
+};
+
+export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine(
+  (value: EvidenceCaptureMetadataInput, context: z.RefinementCtx) => {
   const command = value.command;
   if (command !== undefined) {
     const result = RequiredTextSchema.safeParse(command);
@@ -172,7 +186,7 @@ export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine((value, 
       });
     }
   }
-}).transform((value) => {
+}).transform((value: EvidenceCaptureMetadataInput) => {
   const metadata: Record<string, unknown> = { ...value };
 
   if (value.command !== undefined) {
@@ -197,7 +211,8 @@ export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine((value, 
   }
 
   return metadata;
-});
+  }
+);
 
 export const EvidenceCaptureInputSchema = z.object({
   executionRunId: OptionalTextSchema,

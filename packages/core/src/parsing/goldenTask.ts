@@ -70,8 +70,7 @@ export const ProtectedFailureModeSchema = z.object({
   detection: RequiredTextSchema
 });
 
-export const GoldenCaseSchema = z
-  .object({
+const GoldenCaseShapeSchema = z.object({
     id: RequiredTextSchema,
     title: RequiredTextSchema,
     input: z.object({}).catchall(z.unknown()).default({}),
@@ -79,13 +78,17 @@ export const GoldenCaseSchema = z
     protectedFailureModes: z.array(ProtectedFailureModeSchema).min(1),
     sourceRefs: NonEmptyTextListSchema,
     metadata: MetadataSchema
-  })
-  .superRefine((value, context) => {
+});
+
+export const GoldenCaseSchema = GoldenCaseShapeSchema.superRefine(
+  (
+    value: z.infer<typeof GoldenCaseShapeSchema>,
+    context: z.RefinementCtx
+  ) => {
     rejectForbiddenMetadata(value.metadata, context);
   });
 
-export const GoldenTaskSchema = z
-  .object({
+const GoldenTaskShapeSchema = z.object({
     id: RequiredTextSchema,
     projectId: OptionalTextSchema,
     status: GoldenTaskStatusSchema,
@@ -97,8 +100,10 @@ export const GoldenTaskSchema = z
     metadata: MetadataSchema,
     createdAt: RequiredTextSchema,
     updatedAt: RequiredTextSchema
-  })
-  .superRefine((value, context) => {
+});
+
+export const GoldenTaskSchema = GoldenTaskShapeSchema.superRefine(
+  (value: z.infer<typeof GoldenTaskShapeSchema>, context: z.RefinementCtx) => {
     rejectForbiddenMetadata(value.metadata, context);
   });
 

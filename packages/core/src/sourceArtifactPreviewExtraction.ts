@@ -7,6 +7,14 @@ export interface SourceArtifactPreviewChunk {
   preview: string;
 }
 
+export interface SourceArtifactPreviewChunkBuildInput {
+  lines: readonly string[];
+  chunkSize: number;
+  limit: number;
+  contentHash(content: string): string;
+  maxPreviewCharacters: number;
+}
+
 type ExtractionEntityKind = "markdown_heading" | "inline_code";
 type ExtractionRelationKind = "scoped_by_heading";
 
@@ -57,6 +65,62 @@ interface ClaimCollections {
 }
 
 const maxCandidatesPerKind = 8;
+
+export const sourceArtifactLines = (content: string): string[] => {
+  const lines = content.replace(/\r\n/gu, "\n").replace(/\r/gu, "\n").split("\n");
+
+  return lines.at(-1) === "" ? lines.slice(0, -1) : lines;
+};
+
+const sourceArtifactPreviewText = (
+  lines: readonly string[],
+  maxPreviewCharacters: number
+): string => {
+  const joined = lines.join("\n").trim();
+
+  if (joined.length <= maxPreviewCharacters) {
+    return joined.length === 0 ? "<empty chunk>" : joined;
+  }
+
+  return `${joined.slice(0, maxPreviewCharacters)}...`;
+};
+
+export const buildSourceArtifactPreviewChunks = (
+  input: SourceArtifactPreviewChunkBuildInput
+): SourceArtifactPreviewChunk[] => {
+  if (input.lines.length === 0) {
+    return [{
+      ordinal: 1,
+      startLine: 1,
+      endLine: 1,
+      content: "",
+      contentHash: input.contentHash(""),
+      preview: "<empty file>"
+    }];
+  }
+
+  const chunks: SourceArtifactPreviewChunk[] = [];
+
+  for (
+    let startIndex = 0, ordinal = 1;
+    startIndex < input.lines.length && chunks.length < input.limit;
+    startIndex += input.chunkSize, ordinal += 1
+  ) {
+    const chunk = input.lines.slice(startIndex, startIndex + input.chunkSize);
+    const content = chunk.join("\n");
+
+    chunks.push({
+      ordinal,
+      startLine: startIndex + 1,
+      endLine: startIndex + chunk.length,
+      content,
+      contentHash: input.contentHash(content),
+      preview: sourceArtifactPreviewText(chunk, input.maxPreviewCharacters)
+    });
+  }
+
+  return chunks;
+};
 
 const sourceRangeForLine = (lineNumber: number): string =>
   `lines ${lineNumber}-${lineNumber}`;

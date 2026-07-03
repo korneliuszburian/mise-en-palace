@@ -26,7 +26,9 @@ import type {
   RetrievalRunRecord,
   SearchDocumentRecord,
   SearchDocumentSearchResult,
+  SearchHybridInput,
   SearchLexicalInput,
+  SearchVectorInput,
   StartRetrievalRunInput,
   StoreContextSelectionInput
 } from "@krn/harness/repositories/internal";
@@ -42,6 +44,9 @@ import {
   retrievalRuns,
   searchDocuments
 } from "../schema/index.js";
+import {
+  DEFAULT_EMBEDDING_DIMENSIONS
+} from "../sql/pgvector.js";
 import {
   fromIsoTimestamp,
   requireReturnedRow
@@ -80,6 +85,87 @@ const toContextExclusionReason = (reason: string): ContextExclusionReason => {
 const uniqueNonEmptyStrings = (values: readonly string[] | undefined): string[] => [
   ...new Set((values ?? []).filter((value) => value.trim().length > 0))
 ];
+
+const assertEmbeddingVector = (embedding: readonly number[], label: string): void => {
+  if (embedding.length !== DEFAULT_EMBEDDING_DIMENSIONS) {
+    throw new Error(
+      `${label} must contain ${DEFAULT_EMBEDDING_DIMENSIONS} finite numbers`
+    );
+  }
+
+  if (!embedding.every(Number.isFinite)) {
+    throw new Error(`${label} must contain only finite numbers`);
+  }
+};
+
+const vectorLiteral = (embedding: readonly number[], label: string): string => {
+  assertEmbeddingVector(embedding, label);
+
+  return `[${embedding.join(",")}]`;
+};
+
+const vectorScoreExpression = (embedding: readonly number[]): SQL<number> => {
+  const queryVector = vectorLiteral(embedding, "searchVector embedding");
+
+  return sql<number>`floor(greatest(0, (1 - (${embeddings.embedding} <=> ${queryVector}::vector)) * 1000))::int`;
+};
+
+const weightedScore = (
+  input: {
+    lexicalScore?: number;
+    vectorScore?: number;
+    lexicalWeight: number;
+    vectorWeight: number;
+  }
+): number =>
+  Math.round(
+    (input.lexicalScore ?? 0) * input.lexicalWeight +
+      (input.vectorScore ?? 0) * input.vectorWeight
+  );
+
+const mergeSearchResults = (
+  lexicalResults: readonly SearchDocumentSearchResult[],
+  vectorResults: readonly SearchDocumentSearchResult[]
+): SearchDocumentSearchResult[] => {
+  const merged = new Map<string, SearchDocumentSearchResult>();
+
+  for (const result of lexicalResults) {
+    merged.set(result.id, result);
+  }
+
+  for (const result of vectorResults) {
+    const existing = merged.get(result.id);
+
+    merged.set(result.id, {
+      ...(existing ?? result),
+      lexicalScore: existing?.lexicalScore ?? 0,
+      vectorScore: result.vectorScore ?? 0
+    });
+  }
+
+  return [...merged.values()];
+};
+
+const compareSearchResultsByWeight = (
+  lexicalWeight: number,
+  vectorWeight: number
+) =>
+  (
+    left: SearchDocumentSearchResult,
+    right: SearchDocumentSearchResult
+  ): number =>
+    weightedScore({
+      lexicalScore: right.lexicalScore,
+      vectorScore: right.vectorScore ?? 0,
+      lexicalWeight,
+      vectorWeight
+    }) -
+    weightedScore({
+      lexicalScore: left.lexicalScore,
+      vectorScore: left.vectorScore ?? 0,
+      lexicalWeight,
+      vectorWeight
+    });
 
 const retrievalRunCompletionMetadata = (
   input: CompleteRetrievalRunInput
@@ -218,20 +304,24 @@ const searchDocumentInsertValues = (
 
 const embeddingInsertValues = (
   input: CreateEmbeddingInput
-): EmbeddingInsertRow => ({
-  ...optionalColumn("projectId", input.projectId),
-  embeddingModelId: input.embeddingModelId,
-  ...retrievalSubjectLinkColumns(input),
-  ...optionalColumn("searchDocumentId", input.searchDocumentId),
-  embedding: input.embedding,
-  contentHash: input.contentHash,
-  trustTier: input.trustTier ?? "medium",
-  validityStatus: input.validityStatus ?? "active",
-  metadataFilters: input.metadataFilters ?? {},
-  ...optionalTimestampColumn("validFrom", input.validFrom),
-  ...optionalTimestampColumn("validUntil", input.validUntil),
-  metadata: input.metadata ?? {}
-});
+): EmbeddingInsertRow => {
+  assertEmbeddingVector(input.embedding, "createEmbedding embedding");
+
+  return {
+    ...optionalColumn("projectId", input.projectId),
+    embeddingModelId: input.embeddingModelId,
+    ...retrievalSubjectLinkColumns(input),
+    ...optionalColumn("searchDocumentId", input.searchDocumentId),
+    embedding: input.embedding,
+    contentHash: input.contentHash,
+    trustTier: input.trustTier ?? "medium",
+    validityStatus: input.validityStatus ?? "active",
+    metadataFilters: input.metadataFilters ?? {},
+    ...optionalTimestampColumn("validFrom", input.validFrom),
+    ...optionalTimestampColumn("validUntil", input.validUntil),
+    metadata: input.metadata ?? {}
+  };
+};
 
 const retrievalCandidateInsertValues = (
   input: AddRetrievalCandidateInput
@@ -308,6 +398,57 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
       ...mapSearchDocument(row.document),
       lexicalScore: row.lexicalScore ?? 0
     }));
+  }
+
+  async searchVector(input: SearchVectorInput): Promise<SearchDocumentSearchResult[]> {
+    const vectorScore = vectorScoreExpression(input.embedding);
+    const rows = await this.db
+      .select({
+        document: searchDocuments,
+        vectorScore
+      })
+      .from(embeddings)
+      .innerJoin(searchDocuments, eq(embeddings.searchDocumentId, searchDocuments.id))
+      .where(
+        and(
+          eq(embeddings.validityStatus, "active"),
+          eq(searchDocuments.validityStatus, "active"),
+          input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId),
+          input.embeddingModelId === undefined
+            ? undefined
+            : eq(embeddings.embeddingModelId, input.embeddingModelId)
+        )
+      )
+      .orderBy(desc(vectorScore))
+      .limit(input.limit ?? 10);
+
+    return rows.map((row) => ({
+      ...mapSearchDocument(row.document),
+      lexicalScore: 0,
+      vectorScore: row.vectorScore ?? 0
+    }));
+  }
+
+  async searchHybrid(input: SearchHybridInput): Promise<SearchDocumentSearchResult[]> {
+    const lexicalWeight = input.lexicalWeight ?? 1;
+    const vectorWeight = input.vectorWeight ?? 1;
+    const limit = input.limit ?? 10;
+    const [lexicalResults, vectorResults] = await Promise.all([
+      this.searchLexical({
+        query: input.query,
+        limit: limit * 2,
+        ...optionalColumn("projectId", input.projectId)
+      }),
+      this.searchVector({
+        embedding: input.embedding,
+        limit: limit * 2,
+        ...optionalColumn("projectId", input.projectId),
+        ...optionalColumn("embeddingModelId", input.embeddingModelId)
+      })
+    ]);
+    return mergeSearchResults(lexicalResults, vectorResults)
+      .sort(compareSearchResultsByWeight(lexicalWeight, vectorWeight))
+      .slice(0, limit);
   }
 
   async listSearchDocumentsForSourceLinks(

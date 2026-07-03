@@ -15,10 +15,10 @@ import {
 } from "@krn/harness";
 import type {
   GoldenTaskFixture
-} from "@krn/schema";
+} from "@krn/core";
 import {
   parseGoldenTaskFixtures
-} from "@krn/schema";
+} from "@krn/core";
 
 import {
   runCli

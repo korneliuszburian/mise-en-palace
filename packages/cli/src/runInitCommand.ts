@@ -324,14 +324,14 @@ const fingerprintForRepo = (repoPath: string, packageNameValue: string): string 
   `sha256:${createHash("sha256").update(`${repoPath}\n${packageNameValue}`).digest("hex").slice(0, 16)}`;
 
 const normalizeSlugPart = (value: string): string => {
-  const normalized = value
+  const slugPart = value
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 
-  return normalized.length === 0 ? "target-repo" : normalized;
+  return slugPart.length === 0 ? "target-repo" : slugPart;
 };
 
 const resolveRepoPath = async (cwd: string, repo: string): Promise<string> => {

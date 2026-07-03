@@ -32,8 +32,6 @@ export interface WorkerJobSmokeInput {
 
 export interface WorkerJobSmokeReport {
   authorityValidatedCount: number;
-  idempotencyEnforcement: string;
-  memoryCoreGateEnforcement: string;
   enqueuedJobCount: number;
   queuedReadbackCount: number;
   runningTransitionCount: number;
@@ -51,8 +49,6 @@ interface CountRow {
 
 interface WorkerJobEnforcementBoundaryReadback {
   authorityValidatedCount: number;
-  idempotencyEnforcement: string;
-  memoryCoreGateEnforcement: string;
 }
 
 export interface WorkerJobSmokeTransitionPlan {
@@ -145,29 +141,11 @@ const requireStatus = (
   }
 };
 
-const requireSingleBoundary = (values: readonly string[], label: string): string => {
-  const uniqueValues = Array.from(new Set(values));
-
-  if (uniqueValues.length !== 1) {
-    throw new Error(`Worker job smoke expected one shared ${label} boundary`);
-  }
-
-  return uniqueValues[0] ?? "unknown";
-};
-
 const workerJobEnforcementBoundaryReadback = (): WorkerJobEnforcementBoundaryReadback => {
   const descriptions = workerJobTypes.map((jobType) => describeMaintenanceJob(jobType));
 
   return {
-    authorityValidatedCount: descriptions.length,
-    idempotencyEnforcement: requireSingleBoundary(
-      descriptions.map((description) => description.idempotencyEnforcement),
-      "idempotency enforcement"
-    ),
-    memoryCoreGateEnforcement: requireSingleBoundary(
-      descriptions.map((description) => description.memoryCoreGateEnforcement),
-      "memory core gate enforcement"
-    )
+    authorityValidatedCount: descriptions.length
   };
 };
 
@@ -273,8 +251,6 @@ export const runWorkerJobSmokeCheck = async (
 
     return {
       authorityValidatedCount: enforcementBoundary.authorityValidatedCount,
-      idempotencyEnforcement: enforcementBoundary.idempotencyEnforcement,
-      memoryCoreGateEnforcement: enforcementBoundary.memoryCoreGateEnforcement,
       enqueuedJobCount: enqueuedJobs.length,
       queuedReadbackCount,
       runningTransitionCount,

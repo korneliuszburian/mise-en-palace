@@ -10,7 +10,12 @@ import type {
   SourceClaimEdgeId,
   SourceClaimEdgeKind,
   SourceLineageRef,
-  SourceRelationReviewFocus
+  SourceRelationReviewFocus,
+  TargetFitSummary
+} from "@krn/core";
+import {
+  genericOnlyTargetFitSummary,
+  parseTargetFitSummary
 } from "@krn/core";
 import {
   buildBrainHeartbeatPreview
@@ -286,21 +291,14 @@ const hasUsefulSourceEvidence = (sourceSearch: JsonRecord): boolean =>
 
 const targetFitSummaryFromBrainSearch = (
   readback: JsonRecord
-): JsonRecord | undefined =>
-  recordValue(recordValue(readback["knowledgeCards"])?.["targetFitSummary"]);
-
-const genericOnlyTargetFitSummary = (
-  targetFitSummary: JsonRecord | undefined
-): JsonRecord | undefined =>
-  stringValue(targetFitSummary?.["verdict"]) === "generic_only_selected_knowledge"
-    ? targetFitSummary
-    : undefined;
+): TargetFitSummary | undefined =>
+  parseTargetFitSummary(recordValue(readback["knowledgeCards"])?.["targetFitSummary"]);
 
 const genericOnlyTargetFitMissingEvidence = (
   input: {
     query: string;
     sourceSearch: JsonRecord;
-    targetFitSummary: JsonRecord | undefined;
+    targetFitSummary: TargetFitSummary | undefined;
   }
 ): readonly string[] => {
   const targetFitSummary = genericOnlyTargetFitSummary(input.targetFitSummary);
@@ -317,7 +315,7 @@ const genericOnlyTargetFitMissingEvidence = (
 const genericOnlyTargetFitDiagnostics = (
   input: {
     sourceSearch: JsonRecord;
-    targetFitSummary: JsonRecord | undefined;
+    targetFitSummary: TargetFitSummary | undefined;
   }
 ): readonly string[] => {
   const targetFitSummary = genericOnlyTargetFitSummary(input.targetFitSummary);
@@ -328,15 +326,15 @@ const genericOnlyTargetFitDiagnostics = (
 
   return [
     "targetFitSummary: generic_only_selected_knowledge",
-    `targetSpecific: ${numberValue(targetFitSummary["targetSpecific"])}`,
-    `genericGuardrail: ${numberValue(targetFitSummary["genericGuardrail"])}`,
+    `targetSpecific: ${targetFitSummary.targetSpecific}`,
+    `genericGuardrail: ${targetFitSummary.genericGuardrail}`,
     `sourceSearch answerUsefulness: ${stringValue(input.sourceSearch["answerUsefulness"]) ?? "unknown"}`,
     `source evidence count: ${sourceEvidenceCount(input.sourceSearch)}`
   ];
 };
 
 const genericOnlyTargetFitRecommendedFollowUp = (
-  targetFitSummary: JsonRecord | undefined
+  targetFitSummary: TargetFitSummary | undefined
 ): readonly string[] => {
   const genericOnlySummary = genericOnlyTargetFitSummary(targetFitSummary);
 
@@ -346,7 +344,7 @@ const genericOnlyTargetFitRecommendedFollowUp = (
 
   return [
     "Create or review target-specific SourceClaim evidence before treating generic selectedKnowledge as sufficient.",
-    ...optionalTextAsList(genericOnlySummary["recommendedUse"])
+    ...optionalTextAsList(genericOnlySummary.recommendedUse)
   ];
 };
 
@@ -471,7 +469,7 @@ const brainSearchAcquisitionRequestFromSourceSearch = (
     falsifier: defaultAcquisitionFalsifier,
     doesNotProve: joinedDoesNotProve([
       ...stringArrayValue(input.sourceSearch["doesNotProve"]),
-      ...optionalTextAsList(targetFitSummary?.["doesNotProve"]),
+      ...optionalTextAsList(targetFitSummary?.doesNotProve),
       ...optionalTextAsList(activationUtilityEvidence?.doesNotProve),
       ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
     ])
@@ -1068,10 +1066,8 @@ const formatWorkerAuthority = (
     "  workerAuthority:",
     `  - jobType: ${authority.jobType}`,
     `  - memoryCoreGate: ${authority.memoryCoreGate}`,
-    `  - memoryCoreGateEnforcement: ${authority.memoryCoreGateEnforcement}`,
     `  - status: ${authority.status}`,
     `  - idempotencyKey: ${authority.idempotencyKey}`,
-    `  - idempotencyEnforcement: ${authority.idempotencyEnforcement}`,
     "  - allowedWrites:",
     ...formatList(authority.allowedWrites),
     "  - forbiddenWrites:",

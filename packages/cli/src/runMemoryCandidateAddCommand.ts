@@ -1,7 +1,7 @@
 import {
   MemoryRecordKindSchema,
   parseMemoryCandidateInput
-} from "@krn/schema";
+} from "@krn/core";
 import type {
   ReflectionCandidateEvidence
 } from "@krn/core";
@@ -11,6 +11,14 @@ import {
   createMemoryCommandDatabaseRuntime,
   toSourceLineageRefs
 } from "./memoryCommandSupport.js";
+import {
+  noStorePreviewLabel,
+  persistenceLine,
+  postgresPersistedLabel
+} from "./commandRuntimeSupport.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 import type {
   CreateMemoryCommandDatabaseRuntime
 } from "./memoryCommandSupport.js";
@@ -23,10 +31,7 @@ import {
 
 type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
 
-export interface MemoryCandidateAddCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface MemoryCandidateAddCommandRuntime extends BaseCommandRuntime {
   command: MemoryCandidateAddCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
@@ -61,7 +66,7 @@ const formatPreview = (
 ): string =>
   [
     "KRN Memory Candidate Add",
-    "Persistence: disabled (no-store preview; use --persist to write)",
+    persistenceLine(noStorePreviewLabel),
     "DB writes: none",
     "",
     "Memory candidate preview:",
@@ -94,7 +99,7 @@ const formatPersisted = (
 ): string =>
   [
     "KRN Memory Candidate Add",
-    "Persistence: enabled (Postgres, explicit --persist)",
+    persistenceLine(postgresPersistedLabel),
     "",
     "Persisted IDs:",
     `memoryCandidate: ${memoryCandidateId}`,

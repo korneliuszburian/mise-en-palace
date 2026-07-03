@@ -50,6 +50,16 @@ describe("golden task contract", () => {
     expect(validateGoldenTaskContract(goldenTask({}))).toEqual([]);
   });
 
+  test("does not require live pipeline ids because GoldenTask is fixture-only", () => {
+    const task = goldenTask({});
+
+    delete task.projectId;
+
+    expect("taskContractId" in task).toBe(false);
+    expect("harnessPlanId" in task).toBe(false);
+    expect(validateGoldenTaskContract(task)).toEqual([]);
+  });
+
   test("rejects artifact-theater cases without behavior expectations", () => {
     expect(validateGoldenTaskContract(goldenTask({
       cases: [{

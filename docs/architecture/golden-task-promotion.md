@@ -2,9 +2,13 @@
 
 Status: active D-00 policy.
 
-GoldenTasks are regression proofs for KRN behavior that already failed or
-proved useful in dogfood. They are not a broad benchmark suite and they are not
-Promptfoo truth.
+GoldenTasks are offline behavior fixtures for KRN behavior that already failed
+or proved useful in dogfood. The fixture record is not a live pipeline row and
+does not prove TaskContract, HarnessPlan, ExecutionRun, or product-loop linkage
+by itself. A GoldenTask becomes behavior proof only when a deterministic runner
+supplies accepted `krn_behavior_execution` proof for its cases.
+
+They are not a broad benchmark suite and they are not Promptfoo truth.
 
 ## Promotion Rule
 
@@ -34,6 +38,10 @@ Every promoted case must include:
 - protected failure mode;
 - deterministic runner or package test that executes real KRN behavior;
 - does-not-prove statement in the proof path.
+
+GoldenTask records may carry an optional `projectId` for fixture scoping. They
+must not be described as plan-pipeline authority unless the proof path records
+the adjacent TaskContract/HarnessPlan/ExecutionRun evidence explicitly.
 
 ## Proof Boundary
 

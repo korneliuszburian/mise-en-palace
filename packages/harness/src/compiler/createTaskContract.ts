@@ -16,13 +16,13 @@ export interface TaskContractDraft {
 }
 
 const summarizeIntent = (rawIntent: string): string => {
-  const normalized = rawIntent.trim().replace(/\s+/g, " ");
+  const compactIntent = rawIntent.trim().replace(/\s+/g, " ");
 
-  if (normalized.length <= 80) {
-    return normalized;
+  if (compactIntent.length <= 80) {
+    return compactIntent;
   }
 
-  return `${normalized.slice(0, 77)}...`;
+  return `${compactIntent.slice(0, 77)}...`;
 };
 
 export const createTaskContractInput = (

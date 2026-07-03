@@ -82,17 +82,6 @@ export const maintenanceJobRuntimeContract = {
 
 export type MaintenanceJobRuntimeContract = typeof maintenanceJobRuntimeContract;
 
-export const workerJobEnforcementBoundary = {
-  idempotency: "key_pattern_only_not_enforced",
-  memoryCoreGate: "declaration_only_not_runtime_enforced"
-} as const;
-
-export type WorkerJobIdempotencyEnforcement =
-  typeof workerJobEnforcementBoundary["idempotency"];
-
-export type WorkerJobMemoryCoreGateEnforcement =
-  typeof workerJobEnforcementBoundary["memoryCoreGate"];
-
 export interface MaintenanceJobDescription {
   jobType: MaintenanceJobType;
   label: string;
@@ -102,13 +91,11 @@ export interface MaintenanceJobDescription {
   requiresBackgroundLoop: MaintenanceJobRuntimeContract["requiresBackgroundLoop"];
   inputSchema: string;
   idempotencyKey: string;
-  idempotencyEnforcement: WorkerJobIdempotencyEnforcement;
   outputEvent: MaintenanceJobRuntimeContract["outputEvent"];
   failureState: MaintenanceJobRuntimeContract["failureState"];
   allowedWrites: readonly WorkerJobAllowedWrite[];
   forbiddenWrites: readonly WorkerJobForbiddenWrite[];
   memoryCoreGate: WorkerJobMemoryCoreGate;
-  memoryCoreGateEnforcement: WorkerJobMemoryCoreGateEnforcement;
 }
 
 export interface WorkerJobWriteAuthorityViolation {
@@ -129,10 +116,8 @@ export interface WorkerJobWriteAuthorityAssessment {
 export interface WorkerJobAuthorityReadback {
   jobType: MaintenanceJobType;
   memoryCoreGate: WorkerJobMemoryCoreGate;
-  memoryCoreGateEnforcement: WorkerJobMemoryCoreGateEnforcement;
   status: WorkerJobWriteAuthorityAssessment["status"];
   idempotencyKey: string;
-  idempotencyEnforcement: WorkerJobIdempotencyEnforcement;
   allowedWrites: readonly WorkerJobAllowedWrite[];
   forbiddenWrites: readonly WorkerJobForbiddenWrite[];
   doesNotProve: string;
@@ -263,11 +248,9 @@ export const describeMaintenanceJob = (
     ...maintenanceJobRuntimeContract,
     inputSchema: authority.inputSchema,
     idempotencyKey: authority.idempotencyKey,
-    idempotencyEnforcement: workerJobEnforcementBoundary.idempotency,
     allowedWrites: authority.allowedWrites,
     forbiddenWrites: authority.forbiddenWrites,
-    memoryCoreGate: authority.memoryCoreGate,
-    memoryCoreGateEnforcement: workerJobEnforcementBoundary.memoryCoreGate
+    memoryCoreGate: authority.memoryCoreGate
   };
 
   assertMaintenanceJobWriteAuthority(description);
@@ -345,10 +328,8 @@ export const buildMaintenanceJobAuthorityReadback = (
   return {
     jobType,
     memoryCoreGate: description.memoryCoreGate,
-    memoryCoreGateEnforcement: description.memoryCoreGateEnforcement,
     status: assessment.status,
     idempotencyKey: description.idempotencyKey,
-    idempotencyEnforcement: description.idempotencyEnforcement,
     allowedWrites: description.allowedWrites,
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:

@@ -12,6 +12,7 @@ import type {
   SourceRejection
 } from "@krn/core";
 import {
+  assessSourceDecisionReviewSignals,
   isDecisionGradeSourceSupportType
 } from "@krn/core";
 import type {
@@ -77,6 +78,20 @@ const assertDecisionGradeSupportType = (
 ): void => {
   if (!isDecisionGradeSourceSupportType(supportType)) {
     throw new Error(`${label} supportType cannot be decorative`);
+  }
+};
+
+export const throwOnBlockingSourceDecisionSignals = (
+  sourceDecision: SourceDecision,
+  sourceClaimStatus: SourceClaim["status"]
+): void => {
+  const signals = assessSourceDecisionReviewSignals(sourceDecision, { sourceClaimStatus });
+  const blockingSignals = signals.filter((signal) => signal.severity === "blocking");
+
+  if (blockingSignals.length > 0) {
+    const reasons = blockingSignals.map((signal) => signal.reason).join("; ");
+
+    throw new Error(`SourceDecision blocked by review signals: ${reasons}`);
   }
 };
 
@@ -296,6 +311,16 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceDecisionGovernance(input);
 
     return this.db.transaction(async (tx) => {
+      const sourceClaimRow = input.sourceClaimId === undefined
+        ? undefined
+        : requireReturnedRow(
+          await tx
+            .select()
+            .from(sourceClaims)
+            .where(eq(sourceClaims.id, input.sourceClaimId))
+            .limit(1),
+          "getSourceClaimForSourceDecision"
+        );
       const sourceClaimStatus = sourceClaimStatusForDecisionStatus(input.status);
       const row = requireReturnedRow(
         await tx
@@ -313,6 +338,14 @@ export class DrizzleSourceRepository implements SourceRepository {
           .returning(),
         "createSourceDecision"
       );
+      const sourceDecision = mapSourceDecision(row);
+
+      if (sourceClaimRow !== undefined) {
+        throwOnBlockingSourceDecisionSignals(
+          sourceDecision,
+          mapSourceClaim(sourceClaimRow).status
+        );
+      }
 
       if (input.sourceClaimId !== undefined && sourceClaimStatus !== undefined) {
         requireReturnedRow(

@@ -10,6 +10,7 @@ import {
 } from "vitest";
 
 const skillsRoot = new URL("../../../../.agents/skills/", import.meta.url);
+const root = new URL("../../../../", import.meta.url);
 
 interface SkillFile {
   directoryName: string;
@@ -31,6 +32,31 @@ const frontmatterValue = (body: string, key: string): string | undefined => {
 };
 
 describe("KRN skill invariants", () => {
+  it("keeps the skill-first architecture source-backed and consumer-gated", () => {
+    const skillFirst = readFileSync(
+      new URL("docs/architecture/skill-first-krn.md", root),
+      "utf8"
+    );
+    const sources = readFileSync(new URL("docs/KRN_SOURCES.md", root), "utf8");
+
+    expect(sources).toContain("### Matt Pocock Skills");
+    expect(sources).toContain("small, adaptable, composable skills");
+    expect(sources).toContain("future brain skills as consumers of KRN memory/source/eval");
+    expect(sources).toContain("Falsifier: a retained skill cannot reduce repeated work");
+
+    expect(skillFirst).toContain("adopts the mechanism from Codex skills and Matt Pocock's public skills");
+    expect(skillFirst).toContain("reject wholesale topology copying");
+    expect(skillFirst).toContain("operational kernel skill");
+    expect(skillFirst).toContain("future brain skill");
+    expect(skillFirst).toContain("docs-only guidance");
+    expect(skillFirst).toContain("delete or demote");
+    expect(skillFirst).toContain("claims authority without an executing consumer");
+    expect(skillFirst).toContain("Codex with KRN brain skill");
+    expect(skillFirst).toContain("accepted source decisions");
+    expect(skillFirst).toContain("reviewed memory records");
+    expect(skillFirst).toContain("proof/non-proof boundaries");
+  });
+
   it("keeps repo-local skills routable and verifiable", () => {
     const findings = skillFiles().flatMap((skill) => {
       const name = frontmatterValue(skill.body, "name");
@@ -133,20 +159,6 @@ describe("KRN skill invariants", () => {
     expect(sourceToDecision).toContain(
       "reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown"
     );
-  });
-
-  it("keeps target infra ADR decisions tied to a consumer before falsifier", () => {
-    const targetInfraAdr = readFileSync(
-      new URL("target-infra-adr/SKILL.md", skillsRoot),
-      "utf8"
-    );
-
-    expect(targetInfraAdr).toContain(
-      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
-    );
-    expect(targetInfraAdr).toContain("explicit adoption, rejection, consumer, and falsifier");
-    expect(targetInfraAdr).toContain("consumer:");
-    expect(targetInfraAdr).toContain("falsifier:");
   });
 
   it("keeps evidence review loop tied to command provenance and proof boundaries", () => {

@@ -13,6 +13,14 @@ import {
 } from "@krn/harness";
 
 import {
+  persistenceLine,
+  previewOnlyPersistenceLabel,
+  writePersistenceLabel
+} from "./commandRuntimeSupport.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
+import {
   createReflectDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -45,10 +53,7 @@ export type CreateReflectDatabaseRuntime = (
   input: ReflectDatabaseRuntimeInput
 ) => Promise<ReflectDatabaseRuntime>;
 
-export interface ReflectCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface ReflectCommandRuntime extends BaseCommandRuntime {
   command: ReflectCliCommand;
   createReflectDatabaseRuntime?: CreateReflectDatabaseRuntime;
 }
@@ -58,11 +63,6 @@ export interface ReflectCommandResult {
 }
 
 const reflectionLimit = 100;
-
-const persistenceLabel = (persist: boolean): string =>
-  persist
-    ? "enabled (Postgres, explicit --persist)"
-    : "disabled (preview only; use --persist to write reflection record)";
 
 const includesTopic = (value: string, topic: string): boolean =>
   value.toLowerCase().includes(topic.toLowerCase());
@@ -287,7 +287,10 @@ export const runReflectCommand = async (
     const lines = [
       "KRN Reflect",
       `Generated at: ${generatedAt}`,
-      `Persistence: ${persistenceLabel(runtime.command.persist)}`,
+      persistenceLine(writePersistenceLabel(
+        runtime.command.persist,
+        previewOnlyPersistenceLabel("write reflection record")
+      )),
       `Scope: ${scopeLabel(runtime.command.scope)}`,
       `Project ID: ${resolved.projectId}`,
       `Observations selected: ${reflectionInput.observationItemIds.length}`,

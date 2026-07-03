@@ -193,20 +193,12 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
   const diagnosticSections = profile.sections
     .filter((section) => section.kind === "diagnostic")
     .map((section) => section.id);
-  const renderedReservedSections = profile.sections
-    .filter((section) => section.kind === "reserved" && section.rendered)
-    .map((section) => section.id);
-  const omittedReservedSections = profile.sections
-    .filter((section) => section.kind === "reserved" && !section.rendered)
-    .map((section) => section.id);
 
   return [
     "Brief Profile:",
     `- profile=${profile.profile} | format=${profile.formatVersion}`,
     `- required=${renderJoinedValues(requiredSections)}`,
     `- diagnostic=${renderJoinedValues(diagnosticSections)}`,
-    `- reserved_rendered=${renderJoinedValues(renderedReservedSections)}`,
-    `- reserved_omitted=${renderJoinedValues(omittedReservedSections)}`,
     `- does_not_prove=${profile.doesNotProve.join(" | ")}`
   ];
 };

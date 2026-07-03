@@ -6,6 +6,11 @@ import {
   buildObserverInput
 } from "@krn/harness";
 import {
+  persistenceLine,
+  previewOnlyPersistenceLabel,
+  writePersistenceLabel
+} from "./commandRuntimeSupport.js";
+import {
   createObserveDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -34,11 +39,6 @@ export interface ObserveCommandRuntime {
 export interface ObserveCommandResult {
   stdout: string;
 }
-
-const persistenceLabel = (persist: boolean): string =>
-  persist
-    ? "enabled (Postgres, explicit --persist)"
-    : "disabled (preview only; use --persist to write observations)";
 
 const sourceTypeToProvenance = (
   sourceType: ObservationSourceRangeType
@@ -127,7 +127,10 @@ export const runObserveCommand = async (
     const lines = [
       "KRN Observe Run",
       `Generated at: ${observerInput.generatedAt}`,
-      `Persistence: ${persistenceLabel(runtime.command.persist)}`,
+      persistenceLine(writePersistenceLabel(
+        runtime.command.persist,
+        previewOnlyPersistenceLabel("write observations")
+      )),
       `Run ID: ${aggregate.executionRun.id}`,
       `Project ID: ${projectRuntime.projectId}`,
       `Observer input items: ${observerInput.items.length}`,

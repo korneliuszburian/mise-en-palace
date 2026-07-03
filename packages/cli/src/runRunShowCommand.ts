@@ -314,43 +314,46 @@ const resolveReadOnlyRuntime = async (
   });
 };
 
-const projectResolutionKinds = new Set<ProjectResolutionKind>([
-  "explicit_project",
-  "connected_repo_path",
-  "workspace_project_slug"
-]);
+const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isProjectResolutionKind = (value: string): value is ProjectResolutionKind => {
+  switch (value) {
+    case "explicit_project":
+    case "connected_repo_path":
+    case "workspace_project_slug":
+      return true;
+    default:
+      return false;
+  }
+};
 
 const projectResolutionFromMetadata = (
   metadata: Record<string, unknown>
 ): ProjectResolution | undefined => {
   const value = metadata.projectResolution;
 
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value)
-  ) {
+  if (!isMetadataRecord(value)) {
     return undefined;
   }
 
-  const record = value as Record<string, unknown>;
-  const kind = readMetadataString(record, "kind");
-  const reason = readMetadataString(record, "reason");
-  const doesNotProve = readMetadataString(record, "doesNotProve");
+  const kind = readMetadataString(value, "kind");
+  const reason = readMetadataString(value, "reason");
+  const doesNotProve = readMetadataString(value, "doesNotProve");
 
   if (
     kind === undefined ||
-    !projectResolutionKinds.has(kind as ProjectResolutionKind) ||
+    !isProjectResolutionKind(kind) ||
     reason === undefined ||
     doesNotProve === undefined
   ) {
     return undefined;
   }
 
-  const repoPathHint = readMetadataString(record, "repoPathHint");
+  const repoPathHint = readMetadataString(value, "repoPathHint");
 
   return {
-    kind: kind as ProjectResolutionKind,
+    kind,
     reason,
     doesNotProve,
     ...(repoPathHint === undefined ? {} : { repoPathHint })
@@ -362,11 +365,7 @@ const changedFileClassification = (
 ): RunReadbackChangedFilesResource["classification"] => {
   const group = bundle.metadata.changedFileClassification;
 
-  if (
-    typeof group !== "object" ||
-    group === null ||
-    Array.isArray(group)
-  ) {
+  if (!isMetadataRecord(group)) {
     return {
       source: "not_recorded",
       intended: [],
@@ -375,13 +374,11 @@ const changedFileClassification = (
     };
   }
 
-  const record = group as Record<string, unknown>;
-
   return {
     source: "metadata",
-    intended: readMetadataStringList(record, "intended"),
-    unrelated: readMetadataStringList(record, "unrelated"),
-    unknown: readMetadataStringList(record, "unknown")
+    intended: readMetadataStringList(group, "intended"),
+    unrelated: readMetadataStringList(group, "unrelated"),
+    unknown: readMetadataStringList(group, "unknown")
   };
 };
 
@@ -392,25 +389,21 @@ const metadataArrayLength = (
 ): string => {
   const group = metadata[groupKey];
 
-  if (
-    typeof group !== "object" ||
-    group === null ||
-    Array.isArray(group)
-  ) {
+  if (!isMetadataRecord(group)) {
     return "unknown";
   }
 
-  const value = (group as Record<string, unknown>)[key];
+  const value = group[key];
 
   return Array.isArray(value) ? String(value.length) : "unknown";
 };
 
 const renderCommand = (command: EvidenceCommand): string[] => {
-  const normalized = normalizeEvidenceCommand(command) as NormalizedEvidenceCommand;
+  const commandReadback = normalizeEvidenceCommand(command);
 
   return [
-    `- ${normalized.command}: ${normalized.status} | provenance=${normalized.provenance}`,
-    `  doesNotProve: ${normalized.doesNotProve}`
+    `- ${commandReadback.command}: ${commandReadback.status} | provenance=${commandReadback.provenance}`,
+    `  doesNotProve: ${commandReadback.doesNotProve}`
   ];
 };
 
@@ -494,13 +487,13 @@ const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): strin
 };
 
 const commandResource = (command: EvidenceCommand): RunReadbackCommandResource => {
-  const normalized = normalizeEvidenceCommand(command) as NormalizedEvidenceCommand;
+  const commandReadback = normalizeEvidenceCommand(command);
 
   return {
-    command: normalized.command,
-    status: normalized.status,
-    provenance: normalized.provenance,
-    doesNotProve: normalized.doesNotProve
+    command: commandReadback.command,
+    status: commandReadback.status,
+    provenance: commandReadback.provenance,
+    doesNotProve: commandReadback.doesNotProve
   };
 };
 
@@ -531,19 +524,14 @@ const sourceClaimEdgeInfluenceFromMetadata = (
 ): RunReadbackSourceClaimEdgeInfluenceResource | undefined => {
   const value = metadata.sourceClaimEdgeInfluence;
 
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    Array.isArray(value)
-  ) {
+  if (!isMetadataRecord(value)) {
     return undefined;
   }
 
-  const record = value as Record<string, unknown>;
-  const edgeIds = readMetadataStringList(record, "edgeIds");
-  const edgeKinds = readMetadataStringList(record, "edgeKinds");
-  const seedSourceClaimIds = readMetadataStringList(record, "seedSourceClaimIds");
-  const doesNotProve = readMetadataString(record, "doesNotProve");
+  const edgeIds = readMetadataStringList(value, "edgeIds");
+  const edgeKinds = readMetadataStringList(value, "edgeKinds");
+  const seedSourceClaimIds = readMetadataStringList(value, "seedSourceClaimIds");
+  const doesNotProve = readMetadataString(value, "doesNotProve");
 
   if (
     edgeIds.length === 0 ||
@@ -655,22 +643,27 @@ const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
 ): string[] => readMetadataStringList(metadata, "reviewabilityReasons");
 
-const candidateReviewabilityLabels = new Set<CandidateReviewability>([
-  "ready",
-  "needs_more_evidence",
-  "too_vague",
-  "duplicate",
-  "not_useful",
-  "unknown"
-]);
+const isCandidateReviewability = (value: string): value is CandidateReviewability => {
+  switch (value) {
+    case "ready":
+    case "needs_more_evidence":
+    case "too_vague":
+    case "duplicate":
+    case "not_useful":
+    case "unknown":
+      return true;
+    default:
+      return false;
+  }
+};
 
 const candidateReviewability = (
   metadata: Record<string, unknown>
 ): CandidateReviewability => {
   const value = readMetadataString(metadata, "reviewability");
 
-  return value !== undefined && candidateReviewabilityLabels.has(value as CandidateReviewability)
-    ? value as CandidateReviewability
+  return value !== undefined && isCandidateReviewability(value)
+    ? value
     : "unknown";
 };
 

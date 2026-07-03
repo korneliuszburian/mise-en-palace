@@ -15,7 +15,6 @@
     "@krn/db": "workspace:*",
     "@krn/harness": "workspace:*",
     "@krn/workers": "workspace:*",
-    "@krn/schema": "workspace:*",
     "postgres": "^3.4.9"
   },
   "devDependencies": {

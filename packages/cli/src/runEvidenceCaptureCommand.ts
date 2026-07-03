@@ -31,6 +31,13 @@ import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import {
+  postgresPersistedLabel,
+  persistenceLine
+} from "./commandRuntimeSupport.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
+import {
   findRepoRoot
 } from "./cliFileBoundary.js";
 import type {
@@ -39,11 +46,8 @@ import type {
 
 const execFileAsync = promisify(execFile);
 
-export interface EvidenceCaptureRuntime {
-  env: Record<string, string | undefined>;
+export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   cwd: string;
-  now(): string;
-  createId(prefix: string): string;
   persist: boolean;
   runId?: string;
   intendedFiles?: readonly string[];
@@ -362,18 +366,18 @@ const defaultCommands = (): EvidenceCommand[] => [
 ];
 
 const renderCommand = (command: EvidenceCommand): string => {
-  const normalized = normalizeEvidenceCommand(command);
+  const evidenceCommand = normalizeEvidenceCommand(command);
 
   return [
-    `${normalized.command}: ${normalized.status}`,
-    `provenance=${normalized.provenance}`,
-    ...("exitCode" in normalized && normalized.exitCode !== undefined
-      ? [`exitCode=${normalized.exitCode}`]
+    `${evidenceCommand.command}: ${evidenceCommand.status}`,
+    `provenance=${evidenceCommand.provenance}`,
+    ...("exitCode" in evidenceCommand && evidenceCommand.exitCode !== undefined
+      ? [`exitCode=${evidenceCommand.exitCode}`]
       : []),
-    ...("outputRef" in normalized && normalized.outputRef !== undefined
-      ? [`output=${normalized.outputRef}`]
+    ...("outputRef" in evidenceCommand && evidenceCommand.outputRef !== undefined
+      ? [`output=${evidenceCommand.outputRef}`]
       : []),
-    `doesNotProve=${normalized.doesNotProve}`
+    `doesNotProve=${evidenceCommand.doesNotProve}`
   ].join(" | ");
 };
 
@@ -384,9 +388,7 @@ const normalizeCommands = (commands: readonly EvidenceCommand[]): NormalizedEvid
   commands.map(normalizeEvidenceCommand);
 
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
-  runtime.persist
-    ? "enabled (Postgres, explicit --persist)"
-    : "disabled (explicit printed-only preview; use --persist to write)";
+  runtime.persist ? postgresPersistedLabel : "disabled (explicit printed-only preview; use --persist to write)";
 
 const commandInputHint =
   "Command evidence input: use --verification \"pnpm typecheck=passed\" for operator-reported outcomes.";
@@ -900,7 +902,7 @@ export const runEvidenceCaptureCommand = async (
   const lines = [
     "KRN Evidence Capture",
     `Captured at: ${runtime.now()}`,
-    `Persistence: ${persistenceLabel(runtime)}`,
+    persistenceLine(persistenceLabel(runtime)),
     ...(runtime.runId === undefined ? [] : [`Run ID: ${runtime.runId}`]),
     commandInputHint,
     commandExecutionNotice,

@@ -62,15 +62,12 @@ export type ConflictResolution = "exclude_all" | "prefer_trusted" | "defer";
 export interface ContextBudget {
   maxItems?: number;
   maxTokens?: number;
-  reservedTokens?: number;
 }
 
 export interface ActivationPolicy {
   id?: string;
   minimumTrustTier: SourceTrustTier;
   budget: ContextBudget;
-  allowStale: boolean;
-  requireSourceDoesNotProve: boolean;
   metadata?: Record<string, unknown>;
 }
 

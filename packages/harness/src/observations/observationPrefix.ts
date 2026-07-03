@@ -5,39 +5,19 @@ import type {
   ObservationPriority,
   ObservationStatus,
   ProjectId,
-  TaskContract
+  TaskContract,
+  ContextObservationPrefix,
+  ContextObservationPrefixExclusion,
+  ContextObservationPrefixExclusionReason,
+  ContextObservationPrefixItem,
+  ContextObservationPrefixWarning
 } from "@krn/core";
 
-export type ObservationPrefixExclusionReason =
-  | "project_mismatch"
-  | "invalidated"
-  | "stale"
-  | "low_relevance"
-  | "anti_memory"
-  | "budget_exceeded";
-
-export interface ObservationPrefixItem {
-  observationId: string;
-  kind: ObservationItem["kind"];
-  confidence: ObservationConfidence;
-  priority: ObservationPriority;
-  summary: string;
-  sourceRangeCount: number;
-  reason: string;
-  score: number;
-}
-
-export interface ObservationPrefixExclusion {
-  observationId: string;
-  reason: ObservationPrefixExclusionReason;
-  explanation: string;
-}
-
-export interface ObservationPrefixWarning {
-  observationId: string;
-  warning: "contested" | "conflict" | "gap";
-  summary: string;
-}
+export type ObservationPrefixExclusionReason = ContextObservationPrefixExclusionReason;
+export type ObservationPrefixItem = ContextObservationPrefixItem;
+export type ObservationPrefixExclusion = ContextObservationPrefixExclusion;
+export type ObservationPrefixWarning = ContextObservationPrefixWarning;
+export type ObservationPrefix = ContextObservationPrefix;
 
 export interface SelectObservationPrefixInput {
   task: TaskContract;
@@ -46,15 +26,6 @@ export interface SelectObservationPrefixInput {
   antiMemoryRecords?: readonly AntiMemoryRecord[];
   maxItems?: number;
   now: string;
-}
-
-export interface ObservationPrefix {
-  projectId: ProjectId;
-  taskContractId: string;
-  text: string;
-  items: ObservationPrefixItem[];
-  exclusions: ObservationPrefixExclusion[];
-  warnings: ObservationPrefixWarning[];
 }
 
 interface ObservationPrefixCandidate {
@@ -409,6 +380,9 @@ export const selectObservationPrefix = (
     projectId: input.projectId,
     taskContractId: input.task.id,
     text: prefixText(items),
+    itemCount: items.length,
+    warningCount: warnings.length,
+    exclusionCount: exclusions.length,
     items,
     exclusions,
     warnings

@@ -13,7 +13,10 @@ import type {
   SourceClaim
 } from "@krn/core";
 import type {
+  CreateEvidenceBundleInput,
+  CreateFeedbackDeltaInput,
   CreateExecutionRunInput,
+  CreateReviewAssessmentInput,
   SearchDocumentSearchResult
 } from "@krn/harness/repositories/internal";
 import type {
@@ -24,6 +27,10 @@ import {
   runPersistedPlanWithCapturedMetadata,
   unusedMemoryRepository
 } from "./helpers/testRuntime.js";
+
+const shouldNotBeCalled = (method: string): never => {
+  throw new Error(`Plan test runtime method should not be called: ${method}`);
+};
 
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
@@ -110,9 +117,41 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
             }
           };
-
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
+            }
+          };
           return {
             workspaceId: "workspace-1",
             projectId: "project-1",
@@ -121,6 +160,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -170,9 +210,41 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
             }
           };
-
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
+            }
+          };
           return {
             workspaceId: "workspace-1",
             projectId: "project-1",
@@ -181,6 +253,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -307,9 +380,41 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
             }
           };
-
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
+            }
+          };
           return {
             workspaceId: "workspace-connected",
             projectId: "project-connected",
@@ -358,6 +463,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -429,9 +535,41 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
             }
           };
-
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
+            }
+          };
           return {
             workspaceId: "workspace-target-1",
             projectId: "project-target-1",
@@ -480,6 +618,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -558,9 +697,41 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
             }
           };
-
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
+            }
+          };
           return {
             workspaceId: "workspace-target-1",
             projectId: "project-target-1",
@@ -596,6 +767,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -751,6 +923,39 @@ describe("runCli", () => {
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
+            }
+          };
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
             }
           };
 
@@ -784,6 +989,7 @@ describe("runCli", () => {
               }
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
@@ -869,6 +1075,42 @@ describe("runCli", () => {
                 createdAt: now,
                 updatedAt: now
               };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            },
+            async createEvidenceBundle(_input: CreateEvidenceBundleInput): Promise<never> {
+              return shouldNotBeCalled("createEvidenceBundle");
+            },
+            async createReviewAssessment(_input: CreateReviewAssessmentInput): Promise<never> {
+              return shouldNotBeCalled("createReviewAssessment");
+            },
+            async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
+              return shouldNotBeCalled("createFeedbackDelta");
+            }
+          };
+          const sourceRepository = {
+            ...dependencies.sourceRepository,
+            async createSourceArtifact() {
+              return shouldNotBeCalled("createSourceArtifact");
+            },
+            async createSourceClaim() {
+              return shouldNotBeCalled("createSourceClaim");
+            },
+            async getSourceClaimById() {
+              return shouldNotBeCalled("getSourceClaimById");
+            },
+            async createSourceClaimEdge() {
+              return shouldNotBeCalled("createSourceClaimEdge");
+            },
+            async createSourceDecisionEdge() {
+              return shouldNotBeCalled("createSourceDecisionEdge");
+            },
+            async getSourceDecisionEdgeById() {
+              return shouldNotBeCalled("getSourceDecisionEdgeById");
+            },
+            async createSourceRejection() {
+              return shouldNotBeCalled("createSourceRejection");
             }
           };
 
@@ -902,6 +1144,7 @@ describe("runCli", () => {
               }
             },
             harnessRunRepository,
+            sourceRepository,
             memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;

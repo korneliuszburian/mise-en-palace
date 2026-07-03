@@ -25,9 +25,7 @@ describe("activation domain contracts", () => {
     const policy: ActivationPolicy = {
       id: "policy-1",
       minimumTrustTier: "medium",
-      budget,
-      allowStale: false,
-      requireSourceDoesNotProve: true
+      budget
     };
     const trust: TrustAssessment = {
       accepted: true,

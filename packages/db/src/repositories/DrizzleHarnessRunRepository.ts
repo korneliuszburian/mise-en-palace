@@ -21,7 +21,7 @@ import {
 } from "@krn/core";
 import {
   parseEvidenceCaptureInput
-} from "@krn/schema";
+} from "@krn/core";
 import type {
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,

@@ -6,8 +6,6 @@ export const formatWorkerJobSmokeReportLines = (
   report: WorkerJobSmokeReport
 ): string[] => [
   `Authority validated jobs: ${report.authorityValidatedCount}`,
-  `Idempotency enforcement: ${report.idempotencyEnforcement}`,
-  `Memory Core gate enforcement: ${report.memoryCoreGateEnforcement}`,
   `Worker jobs enqueued: ${report.enqueuedJobCount}`,
   `Queued jobs read back: ${report.queuedReadbackCount}`,
   `Running transitions: ${report.runningTransitionCount}`,

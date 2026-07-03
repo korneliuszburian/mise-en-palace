@@ -10,6 +10,13 @@ import type { IsoTimestamp } from "./time.js";
 
 export type EvidenceBundleStatus = "draft" | "captured" | "verified" | "rejected";
 export type EvidenceCommandStatus = "passed" | "failed" | "skipped" | "missing" | "not_run";
+export const evidenceCommandStatuses = [
+  "passed",
+  "failed",
+  "skipped",
+  "missing",
+  "not_run"
+] as const satisfies readonly EvidenceCommandStatus[];
 export type EvidenceCommandProvenance =
   | "default_template"
   | "operator_reported"
@@ -17,7 +24,6 @@ export type EvidenceCommandProvenance =
   | "command_runner"
   | "external_log";
 export type DiffRisk = "low" | "medium" | "high";
-export type ReviewBurdenScore = "low" | "medium" | "high";
 export type TargetEvidenceMode =
   | "observation_only"
   | "headless_repair"
@@ -182,14 +188,6 @@ export interface EvidenceBundleMetadataReadback {
   sourceRefs: string[];
 }
 
-export interface EvidenceReviewRiskScore {
-  diffRisk: DiffRisk;
-  reviewBurden: ReviewBurdenScore;
-  reasons: string[];
-}
-
-const isBlank = (value: string): boolean => value.trim().length === 0;
-
 export const defaultTemplateCommandDoesNotProve =
   "This command row does not prove the command executed; it is default template evidence only.";
 
@@ -221,9 +219,9 @@ const createTokenNormalizer = <TValue extends string>(
   const allowedValues = new Set<string>(values);
 
   return (value) => {
-    const normalized = normalizeToken(value);
+    const token = normalizeToken(value);
 
-    return allowedValues.has(normalized) ? normalized as TValue : fallback;
+    return allowedValues.has(token) ? token as TValue : fallback;
   };
 };
 
@@ -294,10 +292,10 @@ const normalizedStringList = (values: readonly string[] | undefined): string[] =
     .filter((value) => value.length > 0))
 ];
 
-const normalizedOptionalString = (value: string | undefined): string | undefined => {
-  const normalized = value?.trim();
+const trimmedOptionalString = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
 
-  return normalized === undefined || normalized.length === 0 ? undefined : normalized;
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -311,7 +309,7 @@ export const parseEvidenceBundleMetadataReadback = (
   }
 
   const metadata = input as EvidenceBundleMetadata;
-  const diffSummary = normalizedOptionalString(readMetadataString(metadata, "diffSummary"));
+  const diffSummary = trimmedOptionalString(readMetadataString(metadata, "diffSummary"));
 
   return {
     ...(diffSummary === undefined ? {} : { diffSummary }),
@@ -326,8 +324,8 @@ export const normalizeTargetEvidence = (
   const ownedChanges = normalizeTargetChangeOwnership(input.ownedChanges);
   const allowedWrites = normalizedStringList(input.allowedWrites);
   const forbiddenWrites = normalizedStringList(input.forbiddenWrites);
-  const handoffArtifact = normalizedOptionalString(input.handoffArtifact);
-  const targetOwnerDecision = normalizedOptionalString(input.targetOwnerDecision);
+  const handoffArtifact = trimmedOptionalString(input.handoffArtifact);
+  const targetOwnerDecision = trimmedOptionalString(input.targetOwnerDecision);
 
   return {
     targetRepo: input.targetRepo.trim(),
@@ -575,184 +573,4 @@ export const normalizeEvidenceCommand = (
   }
 
   return normalizeDefaultTemplateCommand(command);
-};
-
-const hasRequiredCommand = (
-  bundle: EvidenceBundle,
-  requiredCommand: string
-): boolean =>
-  bundle.commands.some((command) => command.command === requiredCommand);
-
-const requiredCommandPassed = (
-  bundle: EvidenceBundle,
-  requiredCommand: string
-): boolean =>
-  bundle.commands.some((command) =>
-    command.command === requiredCommand && command.status === "passed"
-  );
-
-const clampRisk = (score: number): DiffRisk => {
-  if (score >= 2) {
-    return "high";
-  }
-
-  if (score >= 1) {
-    return "medium";
-  }
-
-  return "low";
-};
-
-const docsOnly = (changedFiles: readonly string[]): boolean =>
-  changedFiles.length > 0 && changedFiles.every((file) =>
-    file.startsWith("docs/") ||
-    file === "README.md" ||
-    file === "PLAN.md" ||
-    file === "GOAL.md" ||
-    file === "AGENTS.md"
-  );
-
-const commandFailed = (bundle: EvidenceBundle, command: string): boolean =>
-  bundle.commands.some((entry) => entry.command === command && entry.status === "failed");
-
-const commandSkippedOrMissing = (bundle: EvidenceBundle, command: string): boolean =>
-  !hasRequiredCommand(bundle, command) ||
-  bundle.commands.some((entry) =>
-    entry.command === command &&
-    (entry.status === "skipped" || entry.status === "missing" || entry.status === "not_run")
-  );
-
-const requiredCommandsPassed = (bundle: EvidenceBundle): boolean =>
-  ["pnpm typecheck", "pnpm test"].every((command) => requiredCommandPassed(bundle, command));
-
-const touchesDatabaseOrMigration = (changedFiles: readonly string[]): boolean =>
-  changedFiles.some((file) =>
-    file.startsWith("packages/db/") ||
-    file.includes("/migrations/") ||
-    file.includes("/schema/")
-  );
-
-const touchesCoreDomain = (changedFiles: readonly string[]): boolean =>
-  changedFiles.some((file) => file.startsWith("packages/core/src/"));
-
-const hasConcreteRollbackCommand = (rollbackPath: string): boolean => {
-  const normalized = rollbackPath.toLowerCase();
-
-  return (
-    normalized.includes("git revert") ||
-    normalized.includes("git restore") ||
-    normalized.includes("git checkout") ||
-    normalized.includes("rollback") ||
-    normalized.includes("restore from") ||
-    normalized.includes("re-run")
-  );
-};
-
-export const assessEvidenceBundleCompleteness = (
-  bundle: EvidenceBundle
-): string[] => {
-  const findings: string[] = [];
-  const metadata = parseEvidenceBundleMetadataReadback(bundle.metadata);
-
-  if (isBlank(bundle.executionRunId)) {
-    findings.push("executionRunId is required");
-  }
-
-  if (bundle.changedFiles.length === 0) {
-    findings.push("changedFiles are required");
-  }
-
-  for (const command of ["pnpm typecheck", "pnpm test"] as const) {
-    if (!hasRequiredCommand(bundle, command)) {
-      findings.push(`${command} evidence is required`);
-    } else if (!requiredCommandPassed(bundle, command)) {
-      findings.push(`${command} evidence must pass`);
-    }
-  }
-
-  if (metadata.diffSummary === undefined) {
-    findings.push("diffSummary is required");
-  }
-
-  if (metadata.sourceRefs.length === 0) {
-    findings.push("sourceRefs are required");
-  }
-
-  if (isBlank(bundle.reviewBurden)) {
-    findings.push("reviewBurden is required");
-  }
-
-  if (isBlank(bundle.rollbackPath)) {
-    findings.push("rollbackPath is required");
-  }
-
-  return findings;
-};
-
-export const assessEvidenceBundleRollbackPath = (
-  bundle: EvidenceBundle
-): string[] => {
-  if (docsOnly(bundle.changedFiles)) {
-    return [];
-  }
-
-  if (isBlank(bundle.rollbackPath)) {
-    return ["rollbackPath is required for non-doc changes"];
-  }
-
-  if (!hasConcreteRollbackCommand(bundle.rollbackPath)) {
-    return ["rollbackPath must include a concrete revert or recovery command"];
-  }
-
-  return [];
-};
-
-export const scoreEvidenceBundleReviewRisk = (
-  bundle: EvidenceBundle
-): EvidenceReviewRiskScore => {
-  let diffRiskScore = 0;
-  let reviewBurdenScore = 0;
-  const reasons: string[] = [];
-
-  if (docsOnly(bundle.changedFiles)) {
-    reasons.push("docs-only diff");
-  }
-
-  if (bundle.changedFiles.length > 5) {
-    diffRiskScore += 1;
-    reviewBurdenScore += 1;
-    reasons.push(`broad diff touches ${bundle.changedFiles.length} files`);
-  }
-
-  if (touchesDatabaseOrMigration(bundle.changedFiles)) {
-    diffRiskScore += 2;
-    reviewBurdenScore += 2;
-    reasons.push("database or migration files changed");
-  } else if (touchesCoreDomain(bundle.changedFiles)) {
-    diffRiskScore += 1;
-    reviewBurdenScore += 1;
-    reasons.push("core domain files changed");
-  }
-
-  for (const command of ["pnpm typecheck", "pnpm test"] as const) {
-    if (commandFailed(bundle, command)) {
-      diffRiskScore += 2;
-      reviewBurdenScore += 2;
-      reasons.push(`required command failed: ${command}`);
-    } else if (commandSkippedOrMissing(bundle, command)) {
-      diffRiskScore += 1;
-      reviewBurdenScore += 1;
-      reasons.push(`required command missing or skipped: ${command}`);
-    }
-  }
-
-  if (requiredCommandsPassed(bundle)) {
-    reasons.push("required commands passed");
-  }
-
-  return {
-    diffRisk: clampRisk(diffRiskScore),
-    reviewBurden: clampRisk(reviewBurdenScore),
-    reasons
-  };
 };

@@ -1,7 +1,7 @@
 import {
   parseAntiMemoryCandidateInput,
   parseAntiMemoryInput
-} from "@krn/schema";
+} from "@krn/core";
 import type {
   ReflectionCandidateEvidence
 } from "@krn/core";

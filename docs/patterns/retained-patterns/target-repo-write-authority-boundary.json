@@ -7,7 +7,7 @@
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",
   "sourceRefs": [
     ".agents/skills/target-repo-testing/SKILL.md",
-    "docs/architecture/brain-battle-eval-matrix.md#classification",
+    "docs/architecture/behavior-gate-matrix.md#classification",
     "PLAN.md#hard-non-goals"
   ],
   "evidenceRefs": [

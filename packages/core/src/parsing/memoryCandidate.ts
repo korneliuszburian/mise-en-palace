@@ -88,28 +88,29 @@ const withoutLegacyInvalidatedSourceClaimId = <
   };
 };
 
-export const MemoryCandidateInputSchema = z
-  .object({
-    projectId: OptionalTextSchema,
-    executionRunId: OptionalTextSchema,
-    feedbackDeltaId: OptionalTextSchema,
-    proposedBy: RequiredTextSchema,
-    kind: MemoryRecordKindSchema,
-    status: MemoryCandidateCreateStatusSchema.default("proposed"),
-    summary: RequiredTextSchema,
-    body: RequiredTextSchema,
-    owner: RequiredTextSchema,
-    confidence: z.number().int().min(0).max(100),
-    applicationGuidance: RequiredTextSchema,
-    invalidationRule: OptionalTextSchema,
-    sourceClaimIds: TextListSchema,
-    sourceLineage: z.array(SourceLineageItemSchema).default([]),
-    isUserPreference: z.boolean().default(false),
-    validFrom: OptionalTextSchema,
-    validUntil: OptionalTextSchema,
-    metadata: MetadataSchema
-  })
-  .superRefine((value, context) => {
+const MemoryCandidateInputShapeSchema = z.object({
+  projectId: OptionalTextSchema,
+  executionRunId: OptionalTextSchema,
+  feedbackDeltaId: OptionalTextSchema,
+  proposedBy: RequiredTextSchema,
+  kind: MemoryRecordKindSchema,
+  status: MemoryCandidateCreateStatusSchema.default("proposed"),
+  summary: RequiredTextSchema,
+  body: RequiredTextSchema,
+  owner: RequiredTextSchema,
+  confidence: z.number().int().min(0).max(100),
+  applicationGuidance: RequiredTextSchema,
+  invalidationRule: OptionalTextSchema,
+  sourceClaimIds: TextListSchema,
+  sourceLineage: z.array(SourceLineageItemSchema).default([]),
+  isUserPreference: z.boolean().default(false),
+  validFrom: OptionalTextSchema,
+  validUntil: OptionalTextSchema,
+  metadata: MetadataSchema
+});
+
+export const MemoryCandidateInputSchema = MemoryCandidateInputShapeSchema
+  .superRefine((value: z.infer<typeof MemoryCandidateInputShapeSchema>, context: z.RefinementCtx) => {
     if (!value.executionRunId && !value.feedbackDeltaId && !isExplicitUserPreference(value)) {
       context.addIssue({
         code: "custom",
@@ -139,15 +140,16 @@ export const MemoryCandidateInputSchema = z
     }
   });
 
-export const MemoryPromotionInputSchema = z
-  .object({
-    candidateId: RequiredTextSchema,
-    reviewer: RequiredTextSchema,
-    decision: MemoryPromotionDecisionSchema,
-    rejectionReason: OptionalTextSchema,
-    metadata: MetadataSchema
-  })
-  .superRefine((value, context) => {
+const MemoryPromotionInputShapeSchema = z.object({
+  candidateId: RequiredTextSchema,
+  reviewer: RequiredTextSchema,
+  decision: MemoryPromotionDecisionSchema,
+  rejectionReason: OptionalTextSchema,
+  metadata: MetadataSchema
+});
+
+export const MemoryPromotionInputSchema = MemoryPromotionInputShapeSchema.superRefine(
+  (value: z.infer<typeof MemoryPromotionInputShapeSchema>, context: z.RefinementCtx) => {
     if (value.decision === "rejected" && !value.rejectionReason) {
       context.addIssue({
         code: "custom",
@@ -180,23 +182,24 @@ export const MemoryFeedbackEventInputSchema = z.object({
   metadata: MetadataSchema
 });
 
-export const AntiMemoryInputSchema = z
-  .object({
-    projectId: OptionalTextSchema,
-    executionRunId: RequiredTextSchema,
-    key: OptionalTextSchema,
-    rejectedClaim: RequiredTextSchema,
-    reason: RequiredTextSchema,
-    invalidatedBySourceClaimId: OptionalTextSchema,
-    invalidatedBySourceClaimIds: TextListSchema,
-    appliesTo: OptionalTextSchema,
-    mayRevisitWhen: OptionalTextSchema,
-    owner: RequiredTextSchema,
-    confidence: z.number().int().min(0).max(100),
-    sourceLineage: z.array(SourceLineageItemSchema).default([]),
-    metadata: MetadataSchema
-  })
-  .superRefine((value, context) => {
+const AntiMemoryInputShapeSchema = z.object({
+  projectId: OptionalTextSchema,
+  executionRunId: RequiredTextSchema,
+  key: OptionalTextSchema,
+  rejectedClaim: RequiredTextSchema,
+  reason: RequiredTextSchema,
+  invalidatedBySourceClaimId: OptionalTextSchema,
+  invalidatedBySourceClaimIds: TextListSchema,
+  appliesTo: OptionalTextSchema,
+  mayRevisitWhen: OptionalTextSchema,
+  owner: RequiredTextSchema,
+  confidence: z.number().int().min(0).max(100),
+  sourceLineage: z.array(SourceLineageItemSchema).default([]),
+  metadata: MetadataSchema
+});
+
+export const AntiMemoryInputSchema = AntiMemoryInputShapeSchema
+  .superRefine((value: z.infer<typeof AntiMemoryInputShapeSchema>, context: z.RefinementCtx) => {
     if (
       !value.invalidatedBySourceClaimId &&
       value.invalidatedBySourceClaimIds.length === 0 &&
@@ -211,30 +214,31 @@ export const AntiMemoryInputSchema = z
   })
   .transform(withoutLegacyInvalidatedSourceClaimId);
 
-export const AntiMemoryCandidateInputSchema = z
-  .object({
-    projectId: OptionalTextSchema,
-    executionRunId: OptionalTextSchema,
-    feedbackDeltaId: OptionalTextSchema,
-    proposedBy: RequiredTextSchema,
-    key: RequiredTextSchema,
-    status: MemoryCandidateCreateStatusSchema.default("candidate"),
-    rejectedClaim: OptionalTextSchema,
-    reason: OptionalTextSchema,
-    invalidatedBySourceClaimId: OptionalTextSchema,
-    invalidatedBySourceClaimIds: TextListSchema,
-    appliesTo: OptionalTextSchema,
-    mayRevisitWhen: OptionalTextSchema,
-    summary: RequiredTextSchema,
-    body: RequiredTextSchema,
-    owner: RequiredTextSchema,
-    confidence: z.number().int().min(0).max(100),
-    sourceLineage: z.array(SourceLineageItemSchema).default([]),
-    validFrom: OptionalTextSchema,
-    validUntil: OptionalTextSchema,
-    metadata: MetadataSchema
-  })
-  .superRefine((value, context) => {
+const AntiMemoryCandidateInputShapeSchema = z.object({
+  projectId: OptionalTextSchema,
+  executionRunId: OptionalTextSchema,
+  feedbackDeltaId: OptionalTextSchema,
+  proposedBy: RequiredTextSchema,
+  key: RequiredTextSchema,
+  status: MemoryCandidateCreateStatusSchema.default("candidate"),
+  rejectedClaim: OptionalTextSchema,
+  reason: OptionalTextSchema,
+  invalidatedBySourceClaimId: OptionalTextSchema,
+  invalidatedBySourceClaimIds: TextListSchema,
+  appliesTo: OptionalTextSchema,
+  mayRevisitWhen: OptionalTextSchema,
+  summary: RequiredTextSchema,
+  body: RequiredTextSchema,
+  owner: RequiredTextSchema,
+  confidence: z.number().int().min(0).max(100),
+  sourceLineage: z.array(SourceLineageItemSchema).default([]),
+  validFrom: OptionalTextSchema,
+  validUntil: OptionalTextSchema,
+  metadata: MetadataSchema
+});
+
+export const AntiMemoryCandidateInputSchema = AntiMemoryCandidateInputShapeSchema
+  .superRefine((value: z.infer<typeof AntiMemoryCandidateInputShapeSchema>, context: z.RefinementCtx) => {
     if (!value.executionRunId && !value.feedbackDeltaId) {
       context.addIssue({
         code: "custom",

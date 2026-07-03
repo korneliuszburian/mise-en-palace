@@ -144,17 +144,7 @@ const observationPrefixMetadata = (input: AssembleContextInput): {
   }
 
   return {
-    prefix: {
-      projectId: prefix.projectId,
-      taskContractId: prefix.taskContractId,
-      text: prefix.text,
-      itemCount: prefix.items.length,
-      warningCount: prefix.warnings.length,
-      exclusionCount: prefix.exclusions.length,
-      items: prefix.items,
-      warnings: prefix.warnings,
-      exclusions: prefix.exclusions
-    }
+    prefix
   };
 };
 

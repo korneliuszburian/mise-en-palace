@@ -7,8 +7,6 @@ describe("worker job smoke report formatting", () => {
     expect(
       formatWorkerJobSmokeReportLines({
         authorityValidatedCount: 6,
-        idempotencyEnforcement: "key_pattern_only_not_enforced",
-        memoryCoreGateEnforcement: "declaration_only_not_runtime_enforced",
         enqueuedJobCount: 6,
         queuedReadbackCount: 6,
         runningTransitionCount: 6,
@@ -21,8 +19,6 @@ describe("worker job smoke report formatting", () => {
       })
     ).toEqual([
       "Authority validated jobs: 6",
-      "Idempotency enforcement: key_pattern_only_not_enforced",
-      "Memory Core gate enforcement: declaration_only_not_runtime_enforced",
       "Worker jobs enqueued: 6",
       "Queued jobs read back: 6",
       "Running transitions: 6",

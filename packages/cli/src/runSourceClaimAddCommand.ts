@@ -3,10 +3,18 @@ import {
   SourceArtifactKindSchema,
   parseSourceArtifactInput,
   parseSourceClaimInput
-} from "@krn/schema";
+} from "@krn/core";
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  noStorePreviewLabel,
+  persistenceLine,
+  postgresPersistedLabel
+} from "./commandRuntimeSupport.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
@@ -17,10 +25,7 @@ import type {
 
 export type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
 
-export interface SourceClaimAddCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface SourceClaimAddCommandRuntime extends BaseCommandRuntime {
   command: SourceClaimAddCommand;
   createDatabaseRuntime?: CreateSourceClaimAddDatabaseRuntime;
 }
@@ -81,7 +86,7 @@ const formatPreview = (
 ): string =>
   [
     "KRN Source Claim Add",
-    "Persistence: disabled (no-store preview; use --persist to write)",
+    persistenceLine(noStorePreviewLabel),
     "DB writes: none",
     "",
     "Source artifact preview:",
@@ -106,7 +111,7 @@ const formatPersisted = (
 ): string =>
   [
     "KRN Source Claim Add",
-    "Persistence: enabled (Postgres, explicit --persist)",
+    persistenceLine(postgresPersistedLabel),
     "",
     "Persisted IDs:",
     `sourceArtifact: ${sourceArtifactId}`,

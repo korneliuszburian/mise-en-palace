@@ -77,6 +77,9 @@ describe("runKnowledgeCardsCommand", () => {
     const proof = parsed["proof"];
 
     expect(Array.isArray(cards)).toBe(true);
+    if (!Array.isArray(cards)) {
+      throw new Error("brain knowledge JSON output cards must be an array");
+    }
     expect(cards).toHaveLength(1);
     expect(isRecord(cards[0]) ? cards[0]["id"] : undefined).toBe(
       "pattern:ts-boundary-unknown-first-result-state"
@@ -1100,7 +1103,11 @@ function executeKnowledgePreviewHtml(html: string): KnowledgePreviewSmoke {
     };
   });
 
-  const controls: Record<string, FakeControl> = {
+  const controls: Record<string, FakeControl> & {
+    count: FakeControl;
+    empty: FakeControl;
+    search: FakeControl;
+  } = {
     search: fakeControl(),
     kindFilter: fakeControl(),
     statusFilter: fakeControl(),
@@ -1109,7 +1116,7 @@ function executeKnowledgePreviewHtml(html: string): KnowledgePreviewSmoke {
     nextActionFilter: fakeControl(),
     count: fakeControl(),
     empty: fakeControl()
-  };
+  } satisfies Record<string, FakeControl>;
 
   runInNewContext(script, {
     document: {

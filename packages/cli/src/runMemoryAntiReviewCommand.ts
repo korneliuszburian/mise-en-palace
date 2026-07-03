@@ -1,6 +1,6 @@
 import {
   parseMemoryPromotionInput
-} from "@krn/schema";
+} from "@krn/core";
 import {
   promoteAntiMemoryCandidateThroughGate
 } from "@krn/harness";

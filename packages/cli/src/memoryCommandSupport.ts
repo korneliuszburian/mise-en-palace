@@ -5,7 +5,7 @@ import type {
 } from "@krn/core";
 import {
   parseMemoryPromotionInput
-} from "@krn/schema";
+} from "@krn/core";
 
 import {
   createDatabaseRuntime

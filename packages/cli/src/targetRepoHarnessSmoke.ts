@@ -319,9 +319,9 @@ const commandsAreWeakDefaultNotRun = (
   evidenceBundle: EvidenceReadbackBundle | undefined
 ): boolean =>
   evidenceBundle?.commands.every((command) => {
-    const normalized = normalizeEvidenceCommand(command);
+    const evidenceCommand = normalizeEvidenceCommand(command);
 
-    return normalized.status === "not_run" && normalized.provenance === "default_template";
+    return evidenceCommand.status === "not_run" && evidenceCommand.provenance === "default_template";
   }) ?? false;
 
 const feedbackDeltaHasNoMutations = (

@@ -90,7 +90,6 @@ const capabilityPlan: CapabilityPlan = {
     requiredEvidence: ["codex brief golden behavior"]
   }],
   toolBoundaries: ["Renderer must not execute Codex."],
-  policyGateIds: [],
   metadata: {},
   createdAt: now
 };
@@ -110,7 +109,7 @@ const expectedRenderedBriefFragments = [
   "Constraints:",
   `Format Version: ${executionBriefFormatVersion}`,
   "Brief Profile:",
-  "reserved_omitted=mcp_resource_refs, subagent_probe_hints",
+  "- required=title",
   "- do not mutate core state",
   "Acceptance:",
   "- brief exposes review contract fields",

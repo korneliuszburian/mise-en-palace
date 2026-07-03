@@ -25,7 +25,7 @@ import {
   parseHarnessCompileInput,
   parseOperatorIntentInput,
   parseTaskContractInput
-} from "@krn/schema";
+} from "@krn/core";
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";

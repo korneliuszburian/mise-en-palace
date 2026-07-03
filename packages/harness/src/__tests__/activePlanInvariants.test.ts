@@ -35,16 +35,16 @@ const sectionBody = (body: string, heading: string): string => {
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
 
-const latestOutcomeBody = (body: string): string => {
-  const finalResponseStart = body.indexOf("\n## 21. Final Response Format For Codex Runs");
-  const searchable = finalResponseStart === -1 ? body : body.slice(0, finalResponseStart);
-  const lastOutcomeStart = searchable.lastIndexOf("\n## Outcome ");
+const sourceDecisionRecordBody = (body: string): string => {
+  const recordStart = body.indexOf("\n## Source-To-Decision Record");
 
-  if (lastOutcomeStart === -1) {
-    throw new Error("Could not find latest PLANS outcome");
+  if (recordStart === -1) {
+    throw new Error("Could not find PLANS source-to-decision record");
   }
 
-  return searchable.slice(lastOutcomeStart);
+  const nextHeading = body.indexOf("\n## ", recordStart + 1);
+
+  return body.slice(recordStart, nextHeading === -1 ? undefined : nextHeading);
 };
 
 const expectFieldLines = (body: string, fields: string[]): void => {
@@ -358,17 +358,17 @@ describe("KRN active plan invariants", () => {
     );
   });
 
-  it("keeps the latest PLANS outcome tied to a reviewable source-to-decision record", () => {
+  it("keeps PLANS tied to a reviewable source-to-decision record", () => {
     const plans = readRootFile("PLANS.md");
-    const latestOutcome = latestOutcomeBody(plans);
+    const sourceDecisionRecord = sourceDecisionRecordBody(plans);
 
-    expect(latestOutcome).toContain("Source-to-decision:");
-    expect(latestOutcome).toContain("- Source:");
-    expect(latestOutcome).toContain("- Mechanism:");
-    expect(latestOutcome).toContain("- KRN implication:");
-    expect(latestOutcome).toContain("- Decision:");
-    expect(latestOutcome).toContain("- Does not prove:");
-    expect(latestOutcome).toContain("- Consumer:");
-    expect(latestOutcome).toContain("- Falsifier:");
+    expect(sourceDecisionRecord).toContain("Source-to-decision:");
+    expect(sourceDecisionRecord).toContain("- Source:");
+    expect(sourceDecisionRecord).toContain("- Mechanism:");
+    expect(sourceDecisionRecord).toContain("- KRN implication:");
+    expect(sourceDecisionRecord).toContain("- Decision:");
+    expect(sourceDecisionRecord).toContain("- Does not prove:");
+    expect(sourceDecisionRecord).toContain("- Consumer:");
+    expect(sourceDecisionRecord).toContain("- Falsifier:");
   });
 });

@@ -9,10 +9,10 @@ feedback.
 ## Current Objective
 
 Use root `PLAN.md` as the compact product source of truth and root `PLANS.md`
-as the compact execution ledger.
+as the compact execution contract.
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
-`PLANS.md` and archived reports.
+Beads, archived ledgers, and archived reports.
 
 Current active stream:
 
@@ -27,21 +27,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CLI source-search/claim-edges test typecheck widening slice.
+current task: Cleanup wave checkpoint and next bounded task selection.
 ```
 
-Current task state: the scoped CLI test typecheck gate now includes the
-source-search and source-claim-edges command tests. This does not prove full
-CLI test typecheck; it widens the clean subset without runtime or assertion
-changes.
+Current task state: full Fallow cleanup slice closed; the next bounded cleanup
+task should be selected from Beads after this checkpoint is committed.
 
 Latest slice:
 
 ```txt
-CLI source-search/claim-edges test typecheck widening slice.
-Report:
-docs/runs/2026-07-03-cli-source-search-test-typecheck-widening.md
-Next: commit, push, and verify CI for this bounded batch.
+Full Fallow audit and allowlist pruning slice closed.
+Beads: mise-en-palace-awmd.
+Next: commit/push the cleanup wave, check CI, then continue to the next bounded
+cleanup.
 ```
 
 ## Direction
@@ -70,7 +68,7 @@ bounded product surface, or unblock the next vertical slice.
   continuing Beads-tracked work.
 - Claim or create a Beads issue before source edits when the work is durable.
 - Do not use Beads to replace KRN product truth: `GOAL.md`, `PLAN.md`, and
-  `PLANS.md` remain authoritative.
+  `PLANS.md` remain authoritative for active state only.
 - Do not create a parallel roadmap.
 - Do not reopen archived plans as active context.
 - Do not mark this continuous goal complete after one slice.

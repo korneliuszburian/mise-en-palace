@@ -25,8 +25,9 @@ evidence for a slice.
 ## Current Truth
 
 Root `PLAN.md` is the active compact product plan. Root `GOAL.md` is the compact
-execution contract. Root `PLANS.md` carries detailed continuous execution
-history, outcomes, and next-task synthesis.
+execution contract. Root `PLANS.md` carries the compact execution contract.
+Detailed continuous execution history, outcomes, and next-task synthesis live in
+Beads, archived ledgers, and archived reports.
 
 Current status:
 
@@ -43,7 +44,7 @@ controlled scenario
   -> finding
   -> condensation decision
   -> rule / skill / guard / eval / memory candidate / source decision / repair
-  -> append next task to PLANS.md
+  -> update Beads and compact root state
   -> continue
 ```
 
@@ -108,7 +109,8 @@ pnpm alpha:verify
 ```
 
 `pnpm alpha:verify` is the fast local gate: typecheck, tests, and `krn doctor`.
-It does not prove Fallow, Promptfoo, brain-battle, or DB runtime truth.
+It does not prove Fallow, Promptfoo, KRN behavior/docs smoke, or DB runtime
+truth.
 
 Full local verification, when local DB env is configured:
 
@@ -123,9 +125,7 @@ pnpm typecheck
 pnpm test
 pnpm krn doctor
 pnpm quality:fallow:ci
-pnpm eval:brain-battle:smoke
-pnpm exec promptfoo --version
-pnpm eval:promptfoo:smoke
+pnpm eval:krn:smoke
 pnpm db:ready
 pnpm --filter @krn/db db:check
 pnpm db:smoke

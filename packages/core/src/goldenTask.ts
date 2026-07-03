@@ -56,6 +56,14 @@ export interface GoldenCase {
   metadata: Record<string, unknown>;
 }
 
+/**
+ * Offline behavior fixture contract.
+ *
+ * A GoldenTask is not a live pipeline row and does not claim linkage to
+ * TaskContract, HarnessPlan, or ExecutionRun by itself. It constrains KRN
+ * behavior only when a runner supplies accepted `krn_behavior_execution` proof
+ * for its cases.
+ */
 export interface GoldenTask {
   id: GoldenTaskId;
   projectId?: ProjectId;

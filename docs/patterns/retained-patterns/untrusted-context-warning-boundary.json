@@ -8,7 +8,7 @@
   "sourceRefs": [
     "docs/architecture/security-trust-boundaries.md#current-trust-boundary-map",
     "packages/codex-adapter/src/renderExecutionBrief.ts",
-    "docs/architecture/brain-battle-eval-matrix.md#classification"
+    "docs/architecture/behavior-gate-matrix.md#classification"
   ],
   "evidenceRefs": [
     "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
