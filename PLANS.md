@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI smoke/readiness test typecheck widening slice
+current task: CLI doctor test typecheck widening slice
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI smoke/readiness test typecheck widening slice is active.
-The scoped CLI test typecheck gate now includes a small smoke/readiness test group.
-Smoke/readiness, helper, parser, and targeted command-group fixture batches are now in the clean subset.
+CLI doctor test typecheck widening slice is active.
+The scoped CLI test typecheck gate now includes doctor readiness/check tests.
+Doctor, smoke/readiness, helper, parser, and targeted command-group fixture batches are now in the clean subset.
 ```
 
 Latest outcome:
 
 ```txt
-CLI smoke/readiness test typecheck widening slice: `codexAdapterSmoke`,
-`workerJobSmoke`, target repo smoke/skill, and run readiness smoke tests now
-satisfy the scoped strict `typecheck:tests:clean` gate.
+CLI doctor test typecheck widening slice: `doctorDbChecks`, `doctorReadiness`,
+`doctorRepoChecks`, and `doctorStaticChecks` now satisfy the scoped strict
+`typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-smoke-readiness-test-typecheck-widening.md
+docs/runs/2026-07-03-cli-doctor-test-typecheck-widening.md
 CI: pending for this slice.
-CI result: KRN CI 28645849670 passed for this slice.
 Next: close the Beads issue after CI proves this slice.
 ```
 

@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI smoke/readiness test typecheck widening slice
+current task: CLI doctor test typecheck widening slice
 ```
 
 ## Compact Checkpoints
@@ -99,7 +99,7 @@ evidence metadata parser boundary: retained parser exemplar applied to EvidenceB
 retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 brain knowledge vocabulary values: reviewability/nextAction now share exported runtime value tuples
 brain knowledge CLI filter values: kind/status/usefulness filters now share exported read-model value tuples
-CLI scoped test typecheck: active smoke runs strict `tsc`; command fixture, parser, helper, and small smoke/readiness tests joined the clean subset
+CLI scoped test typecheck: active smoke runs strict `tsc`; command fixture, parser, helper, smoke/readiness, and doctor check tests joined the clean subset
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
@@ -117,14 +117,14 @@ Goal: expand the scoped strict TypeScript gate with the evidence command test ba
 
 Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-03-cli-smoke-readiness-test-typecheck-widening.md`.
+Latest report: `docs/runs/2026-07-03-cli-doctor-test-typecheck-widening.md`.
 
 Task boundary:
 
 ```txt
 packages/cli/tsconfig.tests.clean.json now includes evidence.test.ts.
 The evidence test fixture matches runtime interfaces without casts or assertion changes.
-This is not full CLI test typecheck; helper, parser, smoke/readiness, and targeted command-group fixture batches are now in the clean subset.
+This is not full CLI test typecheck; helper, parser, smoke/readiness, doctor, and targeted command-group fixture batches are now in the clean subset.
 ```
 
 ## Recent Completed Streams
