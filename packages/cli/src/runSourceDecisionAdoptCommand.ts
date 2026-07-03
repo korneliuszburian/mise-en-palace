@@ -11,13 +11,13 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
 
-export interface SourceDecisionAdoptCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface SourceDecisionAdoptCommandRuntime extends BaseCommandRuntime {
   command: SourceDecisionAdoptCommand;
   createDatabaseRuntime?: CreateSourceDecisionAdoptDatabaseRuntime;
 }

@@ -32,6 +32,9 @@ import {
   loadKnowledgeAcquisitionRequests
 } from "./heartbeatPreviewReadback.js";
 import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
+import type {
   CliCommand
 } from "./parseArgs.js";
 
@@ -55,11 +58,8 @@ export type CreateHeartbeatPreviewDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<HeartbeatPreviewDatabaseRuntime>;
 
-export interface HeartbeatPreviewCommandRuntime {
+export interface HeartbeatPreviewCommandRuntime extends BaseCommandRuntime {
   cwd: string;
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
   command: HeartbeatPreviewCommand;
   createDatabaseRuntime?: CreateHeartbeatPreviewDatabaseRuntime;
 }

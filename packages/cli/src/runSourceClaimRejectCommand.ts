@@ -11,13 +11,13 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
 
-export interface SourceClaimRejectCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface SourceClaimRejectCommandRuntime extends BaseCommandRuntime {
   command: SourceClaimRejectCommand;
   createDatabaseRuntime?: CreateSourceClaimRejectDatabaseRuntime;
 }

@@ -9,11 +9,11 @@ import {
   formatRetainedPatternSelectionLines,
   retainedPatternSelectionFromMetadata
 } from "./retainedPatternSelection.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
-export interface CodexBriefCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface CodexBriefCommandRuntime extends BaseCommandRuntime {
   runId: string;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }

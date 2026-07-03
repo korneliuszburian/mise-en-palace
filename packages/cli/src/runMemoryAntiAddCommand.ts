@@ -20,13 +20,13 @@ import type {
 import {
   parseMemoryConfidence
 } from "./parseMemoryConfidence.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
 
-export interface MemoryAntiAddCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface MemoryAntiAddCommandRuntime extends BaseCommandRuntime {
   command: MemoryAntiAddCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }

@@ -16,6 +16,9 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 type MemoryCandidatePromoteCommand = Extract<
   CliCommand,
@@ -29,10 +32,7 @@ type MemoryCandidateReviewCommand =
   | MemoryCandidatePromoteCommand
   | MemoryCandidateRejectCommand;
 
-export interface MemoryCandidateReviewCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface MemoryCandidateReviewCommandRuntime extends BaseCommandRuntime {
   command: MemoryCandidateReviewCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }

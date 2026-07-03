@@ -58,11 +58,11 @@ import {
 import type {
   RetainedPatternPlanSelection
 } from "./retainedPatternSelection.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
-export interface RunShowCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface RunShowCommandRuntime extends BaseCommandRuntime {
   runId: string;
   format: RunReadbackOutputFormat;
   createDatabaseRuntime?: CreateRunShowDatabaseRuntime;

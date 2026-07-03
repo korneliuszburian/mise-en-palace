@@ -64,8 +64,8 @@ metadata parsing. `mise-en-palace-ieec` replaced active vague fixture/proof
 vocabulary. `mise-en-palace-yjs7` reseeds the next queue after a
 second-opinion-claude block. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
 `mise-en-palace-u6ux` were closed by current-code evidence as already solved or
-stale. `mise-en-palace-z406` is the active implementation slice; next ready
-task is `mise-en-palace-be1t`.
+stale. `mise-en-palace-z406` is closed; `mise-en-palace-be1t` is the active
+runtime-contract cleanup slice.
 ```
 
 ## 2. Product Thesis

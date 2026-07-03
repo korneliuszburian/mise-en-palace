@@ -19,13 +19,13 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 
-export interface MemoryRecordApplyCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface MemoryRecordApplyCommandRuntime extends BaseCommandRuntime {
   command: MemoryRecordApplyCommand;
   createDatabaseRuntime?: CreateMemoryRecordApplyDatabaseRuntime;
 }

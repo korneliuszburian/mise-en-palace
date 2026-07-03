@@ -14,15 +14,15 @@ import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
 } from "./databaseRuntime.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type CreateMemoryCommandDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-export interface MemoryCommandDatabaseRuntimeInput {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface MemoryCommandDatabaseRuntimeInput extends BaseCommandRuntime {
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
 

@@ -138,8 +138,8 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 Current queue: `mise-en-palace-yjs7` records the post-parser/naming kernel
 roadmap. `mise-en-palace-lr94`, `mise-en-palace-dwsz`, and
 `mise-en-palace-u6ux` were closed by current-code evidence as already solved or
-stale. `mise-en-palace-z406` is the active implementation slice; next ready
-task is `mise-en-palace-be1t` unless Beads priority changes.
+stale. `mise-en-palace-z406` is closed; `mise-en-palace-be1t` is the active
+runtime-contract cleanup slice.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim

@@ -64,12 +64,12 @@ import type {
 import {
   runKnowledgeCardsCommand
 } from "./runKnowledgeCardsCommand.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
-export interface PlanCommandRuntime {
-  env: Record<string, string | undefined>;
+export interface PlanCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
-  now(): string;
-  createId(prefix: string): string;
   persist: boolean;
   projectId?: string;
   createDatabaseRuntime?: CreateDatabaseRuntime;

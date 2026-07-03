@@ -31,14 +31,14 @@ import type {
 import {
   findRepoRoot
 } from "./cliFileBoundary.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type SourceSearchCommand = Extract<CliCommand, { kind: "sourceSearch" }>;
 
-export interface SourceSearchCommandRuntime {
+export interface SourceSearchCommandRuntime extends BaseCommandRuntime {
   cwd: string;
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
   command: SourceSearchCommand;
   createDatabaseRuntime?: CreateSourceSearchDatabaseRuntime;
 }

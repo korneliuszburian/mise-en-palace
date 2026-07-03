@@ -34,14 +34,14 @@ import type {
   SourceSearchCommandRuntime,
   SourceSearchCommandResult
 } from "./runSourceSearchCommand.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type BrainSearchCommand = Extract<CliCommand, { kind: "brainSearch" }>;
 
-export interface BrainSearchCommandRuntime {
+export interface BrainSearchCommandRuntime extends BaseCommandRuntime {
   cwd: string;
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
   command: BrainSearchCommand;
   createDatabaseRuntime?: CreateSourceSearchDatabaseRuntime;
   runKnowledgeCards?: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;

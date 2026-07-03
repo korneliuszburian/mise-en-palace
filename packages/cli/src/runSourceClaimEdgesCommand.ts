@@ -15,13 +15,13 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import type {
+  BaseCommandRuntime
+} from "./commandRuntimeSupport.js";
 
 export type SourceClaimEdgesCommand = Extract<CliCommand, { kind: "sourceClaimEdges" }>;
 
-export interface SourceClaimEdgesCommandRuntime {
-  env: Record<string, string | undefined>;
-  now(): string;
-  createId(prefix: string): string;
+export interface SourceClaimEdgesCommandRuntime extends BaseCommandRuntime {
   command: SourceClaimEdgesCommand;
   createDatabaseRuntime?: CreateSourceClaimEdgesDatabaseRuntime;
 }
