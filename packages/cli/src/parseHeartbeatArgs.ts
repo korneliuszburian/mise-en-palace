@@ -77,6 +77,11 @@ type HeartbeatCandidateKind =
   | "knowledge_acquisition"
   | "consensus_evaluation";
 
+type NonEmptyHeartbeatCandidateKinds = readonly [
+  HeartbeatCandidateKind,
+  ...HeartbeatCandidateKind[]
+];
+
 type HeartbeatCandidateReviewCommand = {
   candidateId: string;
   decision: HeartbeatReviewDecision;
@@ -384,11 +389,17 @@ const buildCandidateReview = (
   };
 };
 
+const nonEmptyCandidateKinds = (
+  candidateKinds: readonly HeartbeatCandidateKind[]
+): NonEmptyHeartbeatCandidateKinds | undefined => {
+  const [first, ...rest] = candidateKinds;
+
+  return first === undefined ? undefined : [first, ...rest];
+};
+
 const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResult => {
   const candidateReview = buildCandidateReview(state);
-  const candidateKinds = state.candidateKinds.length === 0
-    ? undefined
-    : state.candidateKinds as [HeartbeatCandidateKind, ...HeartbeatCandidateKind[]];
+  const candidateKinds = nonEmptyCandidateKinds(state.candidateKinds);
 
   return {
     command: {
