@@ -1230,6 +1230,8 @@ export const runSourceSearchCommand = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
+    ...(runtime.command.projectId === undefined ? {} : { projectId: runtime.command.projectId }),
+    requireProjectKernelForExplicitProject: false,
     repoPathHint: await findRepoRoot(runtime.cwd),
     now: runtime.now,
     createId: runtime.createId

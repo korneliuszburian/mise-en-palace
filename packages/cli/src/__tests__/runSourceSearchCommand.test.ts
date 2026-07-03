@@ -13,7 +13,8 @@ import type {
   SearchDocumentSearchResult
 } from "@krn/harness/repositories/internal";
 import type {
-  DatabaseRuntime
+  DatabaseRuntime,
+  DatabaseRuntimeInput
 } from "../databaseRuntime.js";
 import {
   classifySourceSearchAnswerUsefulness,
@@ -118,6 +119,7 @@ interface SourceSearchRuntimeInput {
   linkedDocuments?: readonly SearchDocumentSearchResult[];
   edges?: readonly SourceClaimEdge[];
   decisionEdges?: readonly SourceDecisionEdge[];
+  onRuntimeInput?(input: DatabaseRuntimeInput): void;
   onSearchQuery?(query: string): void;
   onClose?(): void;
 }
@@ -128,6 +130,7 @@ interface SourceSearchRuntimeFixtures {
   linkedDocuments: SearchDocumentSearchResult[];
   edges: readonly SourceClaimEdge[];
   decisionEdges: readonly SourceDecisionEdge[];
+  onRuntimeInput?: (input: DatabaseRuntimeInput) => void;
   onSearchQuery?: (query: string) => void;
   onClose?: () => void;
 }
@@ -141,6 +144,7 @@ const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRunt
     linkedDocuments: [...(input.linkedDocuments ?? documents)],
     edges: input.edges ?? [],
     decisionEdges: input.decisionEdges ?? [],
+    ...(input.onRuntimeInput === undefined ? {} : { onRuntimeInput: input.onRuntimeInput }),
     ...(input.onSearchQuery === undefined ? {} : { onSearchQuery: input.onSearchQuery }),
     ...(input.onClose === undefined ? {} : { onClose: input.onClose })
   };
@@ -149,106 +153,110 @@ const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRunt
 const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRuntime => {
   const fixtures = runtimeFixtures(input);
 
-  return async () => ({
-    workspaceId: "workspace-1",
-    projectId,
-    compilerDependencies: {
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`,
-      harnessRunRepository: {} as DatabaseRuntime["compilerDependencies"]["harnessRunRepository"],
-      memoryRepository: {
-        async listActiveMemory() {
-          return [];
+  return async (runtimeInput) => {
+    fixtures.onRuntimeInput?.(runtimeInput);
+
+    return {
+      workspaceId: "workspace-1",
+      projectId,
+      compilerDependencies: {
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        harnessRunRepository: {} as DatabaseRuntime["compilerDependencies"]["harnessRunRepository"],
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
         },
-        async listAntiMemoryForProject() {
-          return [];
+        sourceRepository: {
+          async listClaimsForProject(_projectId, limit) {
+            return fixtures.claims.slice(0, limit);
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical(searchInput) {
+            fixtures.onSearchQuery?.(searchInput.query);
+
+            return fixtures.documents;
+          },
+          async startRetrievalRun() {
+            throw new Error("startRetrievalRun should not be called");
+          },
+          async completeRetrievalRun() {
+            throw new Error("completeRetrievalRun should not be called");
+          },
+          async addCandidate() {
+            throw new Error("addCandidate should not be called");
+          },
+          async recordActivationDecision() {
+            throw new Error("recordActivationDecision should not be called");
+          },
+          async storeContextSelection() {
+            throw new Error("storeContextSelection should not be called");
+          }
         }
       },
+      harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+      memoryRepository: {} as DatabaseRuntime["memoryRepository"],
       sourceRepository: {
-        async listClaimsForProject(_projectId, limit) {
-          return fixtures.claims.slice(0, limit);
+        async createSourceArtifact() {
+          throw new Error("createSourceArtifact should not be called");
         },
-        async listSourceClaimEdgesForClaim() {
-          return [];
+        async createSourceClaim() {
+          throw new Error("createSourceClaim should not be called");
+        },
+        async listClaimsForProject() {
+          throw new Error("listClaimsForProject should not be called");
+        },
+        async getSourceClaimById() {
+          throw new Error("getSourceClaimById should not be called");
+        },
+        async createSourceClaimEdge() {
+          throw new Error("createSourceClaimEdge should not be called");
+        },
+        async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+          return fixtures.edges.filter((edge) =>
+            edge.fromSourceClaimId === sourceClaimIdForReadback ||
+            edge.toSourceClaimId === sourceClaimIdForReadback
+          );
+        },
+        async createSourceDecisionEdge() {
+          throw new Error("createSourceDecisionEdge should not be called");
+        },
+        async getSourceDecisionEdgeById() {
+          throw new Error("getSourceDecisionEdgeById should not be called");
+        },
+        async listSourceDecisionEdgesForClaim(sourceClaimIdForReadback) {
+          return fixtures.decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimIdForReadback);
+        },
+        async createSourceRejection() {
+          throw new Error("createSourceRejection should not be called");
         }
       },
       retrievalRepository: {
+        async createSearchDocument() {
+          throw new Error("createSearchDocument should not be called");
+        },
         async searchLexical(searchInput) {
           fixtures.onSearchQuery?.(searchInput.query);
 
           return fixtures.documents;
         },
-        async startRetrievalRun() {
-          throw new Error("startRetrievalRun should not be called");
-        },
-        async completeRetrievalRun() {
-          throw new Error("completeRetrievalRun should not be called");
-        },
-        async addCandidate() {
-          throw new Error("addCandidate should not be called");
-        },
-        async recordActivationDecision() {
-          throw new Error("recordActivationDecision should not be called");
-        },
-        async storeContextSelection() {
-          throw new Error("storeContextSelection should not be called");
+        async listSearchDocumentsForSourceLinks() {
+          return fixtures.linkedDocuments;
         }
+      },
+      async close() {
+        fixtures.onClose?.();
       }
-    },
-    harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
-    memoryRepository: {} as DatabaseRuntime["memoryRepository"],
-    sourceRepository: {
-      async createSourceArtifact() {
-        throw new Error("createSourceArtifact should not be called");
-      },
-      async createSourceClaim() {
-        throw new Error("createSourceClaim should not be called");
-      },
-      async listClaimsForProject() {
-        throw new Error("listClaimsForProject should not be called");
-      },
-      async getSourceClaimById() {
-        throw new Error("getSourceClaimById should not be called");
-      },
-      async createSourceClaimEdge() {
-        throw new Error("createSourceClaimEdge should not be called");
-      },
-      async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
-        return fixtures.edges.filter((edge) =>
-          edge.fromSourceClaimId === sourceClaimIdForReadback ||
-          edge.toSourceClaimId === sourceClaimIdForReadback
-        );
-      },
-      async createSourceDecisionEdge() {
-        throw new Error("createSourceDecisionEdge should not be called");
-      },
-      async getSourceDecisionEdgeById() {
-        throw new Error("getSourceDecisionEdgeById should not be called");
-      },
-      async listSourceDecisionEdgesForClaim(sourceClaimIdForReadback) {
-        return fixtures.decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimIdForReadback);
-      },
-      async createSourceRejection() {
-        throw new Error("createSourceRejection should not be called");
-      }
-    },
-    retrievalRepository: {
-      async createSearchDocument() {
-        throw new Error("createSearchDocument should not be called");
-      },
-      async searchLexical(searchInput) {
-        fixtures.onSearchQuery?.(searchInput.query);
-
-        return fixtures.documents;
-      },
-      async listSearchDocumentsForSourceLinks() {
-        return fixtures.linkedDocuments;
-      }
-    },
-    async close() {
-      fixtures.onClose?.();
-    }
-  });
+    };
+  };
 };
 
 const parseJsonObject = (text: string): Record<string, unknown> => {
@@ -282,6 +290,35 @@ const arrayValue = (
 };
 
 describe("runSourceSearchCommand", () => {
+  it("passes explicit source search project to the database runtime resolver", async () => {
+    let runtimeInput: DatabaseRuntimeInput | undefined;
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "bounded ingest loop",
+        projectId: "project-explicit",
+        limit: 5,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        onRuntimeInput(input) {
+          runtimeInput = input;
+        }
+      })
+    });
+
+    expect(result.stdout).toContain("\"kind\": \"source_search_answer_package\"");
+    expect(runtimeInput?.projectId).toBe("project-explicit");
+    expect(runtimeInput?.requireProjectKernelForExplicitProject).toBe(false);
+  });
+
   it("builds missing evidence from visible answer package support", () => {
     expect(buildSourceSearchMissingEvidence({
       supportingClaimCount: 1,

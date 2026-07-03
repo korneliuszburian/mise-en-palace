@@ -47,6 +47,7 @@ export interface DatabaseRuntimeInput {
   projectSlug: string;
   projectId?: string;
   repoPathHint?: string;
+  requireProjectKernelForExplicitProject?: boolean;
   now(): string;
   createId(prefix: string): string;
 }
@@ -472,7 +473,14 @@ export const createDatabaseRuntime = async (
     runtimeProject.shouldLoadProjectScopedMetadata
   );
 
-  if (runtimeProject.explicitProjectId !== undefined && projectKernel === undefined) {
+  const requireProjectKernelForExplicitProject =
+    input.requireProjectKernelForExplicitProject ?? true;
+
+  if (
+    requireProjectKernelForExplicitProject &&
+    runtimeProject.explicitProjectId !== undefined &&
+    projectKernel === undefined
+  ) {
     await client.end();
     throw new Error(`ProjectKernel not found for --project ${runtimeProject.explicitProjectId}`);
   }

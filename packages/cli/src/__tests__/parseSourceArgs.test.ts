@@ -251,6 +251,8 @@ describe("parseSourceArgs", () => {
       "search",
       "--query",
       " krn-source-artifact-preview 991034dc0684e887 ",
+      "--project",
+      "project-explicit",
       "--limit",
       "12",
       "--max-inclusions=3",
@@ -259,6 +261,7 @@ describe("parseSourceArgs", () => {
       command: {
         kind: "sourceSearch",
         query: "krn-source-artifact-preview 991034dc0684e887",
+        projectId: "project-explicit",
         limit: 12,
         maxInclusions: 3,
         json: true
@@ -398,6 +401,9 @@ describe("parseSourceArgs", () => {
     });
     expect(parseSourceArgs(["search", "--query", ""])).toEqual({
       error: "--query requires non-empty text"
+    });
+    expect(parseSourceArgs(["search", "--project", ""])).toEqual({
+      error: "--project requires a non-empty project id"
     });
     expect(parseSourceArgs(["search", "--limit", "0"])).toEqual({
       error: "--limit must be a positive integer"

@@ -50,12 +50,13 @@ export const formatSourceClaimEdgesUsage = (): string =>
 
 export const formatSourceSearchUsage = (): string =>
   [
-    "Usage: krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>] [--json]",
+    "Usage: krn source search --query \"...\" [--project <project-id>] [--limit <n>] [--max-inclusions <n>] [--json]",
     "",
     "Required:",
     "--query",
     "",
     "Optional:",
+    "--project <project-id>",
     "--limit <positive-integer>",
     "--max-inclusions <positive-integer>",
     "--json",
@@ -627,6 +628,42 @@ const parseSourceSearchQueryOption = (
   };
 };
 
+const parseSourceSearchProjectOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceSearchCommand
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--project")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--project");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? formatSourceSearchUsage()
+    };
+  }
+
+  const projectId = valueResult.value.trim();
+
+  if (projectId.length === 0) {
+    return {
+      error: "--project requires a non-empty project id"
+    };
+  }
+
+  sourceCommand.projectId = projectId;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
 const parseSourceSearchPositiveIntegerOption = (
   rest: readonly string[],
   index: number,
@@ -674,6 +711,7 @@ type SourceSearchOptionParser = (
 
 const sourceSearchOptionParsers: readonly SourceSearchOptionParser[] = [
   parseSourceSearchQueryOption,
+  parseSourceSearchProjectOption,
   parseSourceSearchPositiveIntegerOption
 ];
 

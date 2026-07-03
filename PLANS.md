@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical
+current task: close source-search explicit project readback, then choose the next highest-ROI kernel vertical
 latest pushed commit: see git history
 ```
 
@@ -25,7 +25,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-close persisted source decision edge linkage readback, then choose the next highest-ROI kernel vertical.
+close source-search explicit project readback, then choose the next highest-ROI kernel vertical.
 `mise-en-palace-b18l` is closed. `mise-en-palace-1c5x` proved store-backed
 MemoryRecord reuse after fixing run project lineage for memory candidates.
 `mise-en-palace-royf` proved retained-pattern selection and candidate-only
@@ -40,6 +40,11 @@ active-plan invariant repair. It proves one operator-facing SourceDecision
 adoption and one persisted SourceDecisionEdge readback against a concrete
 harness run. It does not prove source truth, graph ranking quality, or
 source-search project ergonomics.
+`mise-en-palace-543l` is locally closed pending commit, push, and CI. It proves
+explicit-project source search can inspect the c79a project without a
+ProjectKernel and expose linked SourceDecisionEdge support for the included
+SourceClaim. It does not prove ranking quality or ProjectKernel lifecycle
+correctness.
 ```
 
 ## 2. Product Thesis
@@ -212,7 +217,7 @@ backlog detail.
 ## 15. Progress
 
 ```txt
-Active slice: persisted SourceDecisionEdge linkage readback.
+Active slice: source-search explicit project readback.
 Historical IMR/product outcomes: archived, not embedded in root context.
 Next selection: use Beads ready work after this slice verifies.
 ```

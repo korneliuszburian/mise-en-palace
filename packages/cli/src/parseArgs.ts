@@ -356,6 +356,7 @@ export type CliCommand =
   | {
       kind: "sourceSearch";
       query?: string;
+      projectId?: string;
       limit?: number;
       maxInclusions?: number;
       json?: boolean;
@@ -501,7 +502,7 @@ const usage = [
   "Governed admin commands:",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
   "krn source claim edges --source-claim-id <id>",
-  "krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>] [--json]",
+  "krn source search --query \"...\" [--project <project-id>] [--limit <n>] [--max-inclusions <n>] [--json]",
   "krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
