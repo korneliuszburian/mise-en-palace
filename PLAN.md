@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: First end-to-end Shared Brain Vertical Loop proof completed; next Beads selection pending
+current task: Shared Brain Vertical Loop proof completed; next Beads selection pending
 ```
 
 ## Compact Checkpoints
@@ -113,9 +113,7 @@ shared brain vertical loop proof: first real DB-backed plan/evidence/observe/ref
 
 ## Active Task
 
-### First End-To-End Loop Proof
-
-Status: complete pending Beads close/push.
+Status: complete; CI invariant repair in progress.
 
 Result: one real CLI help task and one related help task ran through persisted
 plan/evidence/observe/reflect, memory candidate promotion, second-opinion
@@ -149,8 +147,7 @@ Audit-hardening closure: all 7pb3 children closed; final handoff and second-opin
 ```
 
 ## Pattern Gate
-For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
-target-workflow, security, operator-UX, or research/paper/course-driven work:
+For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript, target-workflow, security, operator-UX, or research/paper/course-driven work:
 
 ```txt
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier

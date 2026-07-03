@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: First end-to-end Shared Brain Vertical Loop proof
+current task: Shared Brain Vertical Loop proof completed; next Beads selection pending
 latest pushed commit: see git history
 ```
 
@@ -25,9 +25,8 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-First end-to-end Shared Brain Vertical Loop proof is active.
-Audit cleanup residuals are closed; `mise-en-palace-pvtf` is the active proof
-slice.
+Shared Brain Vertical Loop proof completed; next Beads selection pending.
+Audit cleanup residuals and `mise-en-palace-pvtf` are closed.
 ```
 
 ## 2. Product Thesis
