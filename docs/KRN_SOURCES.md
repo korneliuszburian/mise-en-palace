@@ -83,6 +83,31 @@ cannot be falsified locally, keep it out of active KRN guidance.
   TypeScript boundary problems that a read-only critic could catch.
 - Does not prove: that broad swarms improve KRN early.
 
+### Claude Code Headless Review
+
+- URLs:
+  - https://code.claude.com/docs/en/headless
+  - https://code.claude.com/docs/en/cli-reference
+- Trust tier: high.
+- Source class: official docs.
+- Decision kind: lab_test.
+- Mechanism: Claude Code supports non-interactive `--print` mode, structured
+  JSON output, bare mode, budget caps, turn caps, and resumable sessions; KRN
+  treats workflow fit as lab-test evidence, not authority.
+- KRN implication: completed implementation slices can request bounded
+  second-opinion review without adding a dashboard, multi-agent runtime, or
+  broad automation surface.
+- Decision: add a repo-local `second-opinion-claude` operational skill with
+  explicit context packs, read-only review posture, budget caps, and Codex-owned
+  triage.
+- Consumer: `.agents/skills/second-opinion-claude/SKILL.md` and larger KRN
+  migration/audit-hardening handoffs.
+- Falsifier: the review loop burns budget without finding actionable issues,
+  encourages broad rewrites, or replaces local tests and source evidence with
+  model authority.
+- Does not prove: Claude's review is correct, CI passed, product readiness, or
+  that back-and-forth model debate should run without a human budget decision.
+
 ### Hooks
 
 - URL: https://developers.openai.com/codex/hooks

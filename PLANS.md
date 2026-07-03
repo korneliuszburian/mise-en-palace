@@ -15,7 +15,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Cleanup wave checkpoint and next bounded task selection
+current task: Second-opinion skill checkpoint and next bounded task selection
 latest pushed commit: see git history
 ```
 
@@ -25,9 +25,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-Cleanup wave checkpoint and next bounded task selection is active.
-The Fallow cleanup slice is closed; commit/push before selecting another
-bounded task.
+Second-opinion skill checkpoint and next bounded task selection is active.
+The `second-opinion-claude` skill is locally verified; commit/push this
+checkpoint before selecting the next Beads task.
 ```
 
 ## 2. Product Thesis
@@ -66,61 +66,64 @@ source -> mechanism -> KRN implication -> decision/rejection -> consumer -> fals
 
 Source-to-decision:
 
-- Source: repository health audit finding that Fallow runs changed-file-only in
-  CI and `usedClassMembers` can preserve zombie repository writer methods.
-- Mechanism: run the full Fallow audit, prune specific source-writer allowlist
-  entries, and keep only allowlist entries backed by an executing consumer.
-- KRN implication: dead-code evidence becomes harder to mask behind historical
-  allowlists.
-- Decision: Fallow findings are review evidence; the named source writer
-  allowlist removals were rejected because current code has live consumers.
-- Does not prove: the whole repository has no dead code, or that all DB tables
-  have a live product path.
-- Consumer: CI quality gate, cleanup Beads, and future dead-code deletion
-  decisions.
-- Falsifier: full Fallow stays green while a removed allowlist entry is still
-  needed by a live repository implementation.
+- Source: Claude Code headless and CLI reference docs.
+- Mechanism: non-interactive `--print`, JSON output, bare mode, budget caps,
+  turn caps, and resumable sessions support bounded model review without
+  granting edit authority.
+- KRN implication: larger completed slices can receive independent challenge
+  through compact context packs instead of pasted audit prompts or a broad
+  multi-agent runtime.
+- Decision: add a repo-local `second-opinion-claude` operational skill and
+  wrapper scripts.
+- Does not prove: Claude is correct, CI passed, product readiness, or that
+  review loops should run without budget control.
+- Consumer: `.agents/skills/second-opinion-claude/SKILL.md`, root handoffs, and
+  larger migration/audit-hardening slice closure.
+- Falsifier: the workflow burns budget without actionable findings, encourages
+  broad rewrites, or replaces local verification.
 
 ## Active Task
 
-### Cleanup Wave Checkpoint
+### Second-Opinion Skill Checkpoint
 
 Status: in_progress
 
-Goal: commit and push the verified cleanup wave.
+Goal: commit and push the verified repo-local skill for compact,
+cost-controlled Claude Code review after larger KRN slices.
 
-Product rationale: do not keep a large verified cleanup wave stranded locally.
+Product rationale: independent challenge is useful only if it stays bounded,
+cheap, and tied to current diff evidence.
 
-Architectural rationale: Beads/root state, committed code, and remote CI should
-line up before the next implementation slice.
+Architectural rationale: KRN skills should carry repeated workflows without
+expanding `AGENTS.md`, root plans, or a broad subagent/runtime surface.
 
-Evidence source: completed Beads and local verification.
+Evidence source: Claude Code headless docs, CLI reference docs, and local smoke
+of the wrapper.
 
-Official/external sources: none required for this cleanup slice.
+Official/external sources: `docs/KRN_SOURCES.md#claude-code-headless-review`.
 
-Inputs required: current git diff and Beads state.
+Inputs required: current git diff, Beads state, and one bounded context pack.
 
-Files likely touched: root active state only unless verification exposes a
-blocking issue.
+Files likely touched: checkpoint commit only.
 
-Allowed writes: compact root state, commit, push.
+Allowed writes: one skill, one wrapper, compact source/architecture/root state.
 
 Forbidden writes: broad historical report rewrites, dashboard/API/MCP, worker
-daemon, runtime DB schema, package deletion, or broad rewrite.
+daemon, runtime DB schema, package deletion, or broad review automation.
 
-Output requirements: pushed cleanup commit and CI/run status.
+Output requirements: pushed commit and clear proof/non-proof.
 
-Definition of Done: commit exists on origin and next task is selected from
-Beads.
+Definition of Done: origin contains the verified skill checkpoint.
 
-Verification commands: `pnpm typecheck`, `pnpm test`, `pnpm quality:fallow:ci`,
-`pnpm eval:krn:smoke`, and `git diff --check` unless a command is explicitly
-deferred with reason.
+Verification commands: `git status`, `git pull --rebase`, `git push`, and CI
+status if available.
 
-Acceptance criteria: remote branch contains the cleanup wave.
+Acceptance criteria: future larger slices can produce a bounded review prompt,
+receive structured Claude feedback, keep Codex responsible for final triage,
+and the checkpoint is on origin.
 
-Risk: broad workspace verification may expose integration fallout from the
-cleanup wave.
+Risk: headless review can burn model budget or timeout unless context packs stay
+small and the wrapper records non-success outcomes.
 
 Rollback: revert the checkpoint commit only if verification exposes a real
 regression.

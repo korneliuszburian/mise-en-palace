@@ -27,19 +27,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: Cleanup wave checkpoint and next bounded task selection.
+current task: Second-opinion skill checkpoint and next bounded task selection.
 ```
 
-Current task state: full Fallow cleanup slice closed; the next bounded cleanup
-task should be selected from Beads after this checkpoint is committed.
+Current task state: repo-local `second-opinion-claude` skill implemented and
+verified locally; commit/push this checkpoint, then select the next bounded
+task from Beads.
 
 Latest slice:
 
 ```txt
-Full Fallow audit and allowlist pruning slice closed.
-Beads: mise-en-palace-awmd.
-Next: commit/push the cleanup wave, check CI, then continue to the next bounded
-cleanup.
+Audit cleanup wave closed and pushed.
+Claude Code headless second-opinion workflow added and locally tested.
+Next: use it on bounded post-slice review only when it has a clear budget and
+review question; choose next implementation from Beads.
 ```
 
 ## Direction

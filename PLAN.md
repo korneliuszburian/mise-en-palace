@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: Cleanup wave checkpoint and next bounded task selection
+current task: Second-opinion skill checkpoint and next bounded task selection
 ```
 
 ## Compact Checkpoints
@@ -112,18 +112,19 @@ product-ready brain: not complete
 
 ## Active Task
 
-### Cleanup Wave Checkpoint
+### Second-Opinion Skill Checkpoint
 
-Goal: commit and push the verified cleanup wave before taking another bounded
-task.
+Goal: commit and push the verified `second-opinion-claude` skill, then choose
+the next bounded implementation task from Beads.
 
-Hard boundary: do not start P0 worker cleanup without the recorded human
-decision; do not add another markdown audit ledger.
+Hard boundary: Claude review is evidence, not authority; keep it read-only by
+default, budget-capped, and driven by compact context packs.
 
-Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`.
+Latest closed Beads: `mise-en-palace-p26d`, `mise-en-palace-awmd`,
+`mise-en-palace-zc21`.
 
-Boundary: checkpoint only. Next implementation task is selected from Beads after
-push/CI state is known.
+Boundary: checkpoint only. Do not broaden into a subagent runtime, dashboard,
+or long audit ledger.
 
 ## Recent Completed Streams
 

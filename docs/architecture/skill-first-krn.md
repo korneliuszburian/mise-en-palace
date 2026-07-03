@@ -66,6 +66,7 @@ delete or demote
 | Skill | Finding condensed | Evidence | What it does not prove |
 |---|---|---|---|
 | `target-repo-testing` | Target repos are living checkouts and observation-only target trials must not patch target files after verification failure. | `docs/reviews/controlled-dogfood/2026-06-27-headless-wilq-seo-target-trial/REPORT.md`; `docs/runbooks/target-repo-testing.md`. | Does not prove arbitrary target safety or V02-01 second-operator usability. |
+| `second-opinion-claude` | Large slices need independent challenge without turning review into a broad multi-agent runtime or chat-pasted audit prompt. | `docs/KRN_SOURCES.md#claude-code-headless-review`; `.agents/skills/second-opinion-claude/SKILL.md`. | Does not prove Claude is right, CI is green, or that model review replaces local verification. |
 
 ## Skill Criteria
 
