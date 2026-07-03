@@ -21,6 +21,9 @@ import {
   buildSourceSearchMissingEvidence,
   runSourceSearchCommand
 } from "../runSourceSearchCommand.js";
+import type {
+  CreateSourceSearchDatabaseRuntime
+} from "../runSourceSearchCommand.js";
 
 const now = "2026-06-29T12:00:00.000Z";
 const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
@@ -46,11 +49,9 @@ const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
   ...overrides
 });
 
-const searchDocument = (
-  overrides: Partial<SearchDocumentSearchResult> = {}
-): SearchDocumentSearchResult => ({
+const searchDocument = (): SearchDocumentSearchResult => ({
   id: searchDocumentId,
-  projectId: projectId as SearchDocumentSearchResult["projectId"],
+  projectId,
   subjectType: "source_artifact",
   subjectId: "f6db868a-4c82-406a-8371-9ab7d8594fc5",
   sourceArtifactId: "f6db868a-4c82-406a-8371-9ab7d8594fc5",
@@ -66,8 +67,7 @@ const searchDocument = (
   metadata: {},
   createdAt: now,
   updatedAt: now,
-  lexicalScore: 100,
-  ...overrides
+  lexicalScore: 100
 });
 
 const sourceClaimEdge = (
@@ -124,8 +124,8 @@ interface SourceSearchRuntimeInput {
 
 interface SourceSearchRuntimeFixtures {
   claims: readonly SourceClaim[];
-  documents: readonly SearchDocumentSearchResult[];
-  linkedDocuments: readonly SearchDocumentSearchResult[];
+  documents: SearchDocumentSearchResult[];
+  linkedDocuments: SearchDocumentSearchResult[];
   edges: readonly SourceClaimEdge[];
   decisionEdges: readonly SourceDecisionEdge[];
   onSearchQuery?: (query: string) => void;
@@ -133,12 +133,12 @@ interface SourceSearchRuntimeFixtures {
 }
 
 const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRuntimeFixtures => {
-  const documents = input.documents ?? [searchDocument()];
+  const documents = [...(input.documents ?? [searchDocument()])];
 
   return {
     claims: input.claims ?? [sourceClaim()],
     documents,
-    linkedDocuments: input.linkedDocuments ?? documents,
+    linkedDocuments: [...(input.linkedDocuments ?? documents)],
     edges: input.edges ?? [],
     decisionEdges: input.decisionEdges ?? [],
     ...(input.onSearchQuery === undefined ? {} : { onSearchQuery: input.onSearchQuery }),
@@ -146,7 +146,7 @@ const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRunt
   };
 };
 
-const runtime = (input?: SourceSearchRuntimeInput): SourceSearchCommand["createDatabaseRuntime"] => {
+const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRuntime => {
   const fixtures = runtimeFixtures(input);
 
   return async () => ({
@@ -204,6 +204,9 @@ const runtime = (input?: SourceSearchRuntimeInput): SourceSearchCommand["createD
       async createSourceClaim() {
         throw new Error("createSourceClaim should not be called");
       },
+      async listClaimsForProject() {
+        throw new Error("listClaimsForProject should not be called");
+      },
       async getSourceClaimById() {
         throw new Error("getSourceClaimById should not be called");
       },
@@ -247,8 +250,6 @@ const runtime = (input?: SourceSearchRuntimeInput): SourceSearchCommand["createD
     }
   });
 };
-
-type SourceSearchCommand = Parameters<typeof runSourceSearchCommand>[0];
 
 const parseJsonObject = (text: string): Record<string, unknown> => {
   const parsed: unknown = JSON.parse(text);

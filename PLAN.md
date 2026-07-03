@@ -12,7 +12,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI init/observe/reflect command test typecheck widening slice
+current task: CLI source-search/claim-edges test typecheck widening slice
 ```
 
 ## Compact Checkpoints
@@ -111,17 +111,17 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CLI Init/Observe/Reflect Command Test Typecheck Batch
+### CLI Source-Search/Claim-Edges Test Typecheck Batch
 
-Goal: add init/observe/reflect command tests to the scoped strict TypeScript
-gate.
+Goal: add source-search and source-claim-edges command tests to the scoped
+strict TypeScript gate.
 
 Hard boundary: no runtime CLI rewrite, dashboard/API/MCP/worker daemon/crawler/broad eval/DB schema/product server, or historical-ledger rewrite.
 
-Latest report: `docs/runs/2026-07-03-cli-init-observe-reflect-test-typecheck-widening.md`.
+Latest report: `docs/runs/2026-07-03-cli-source-search-test-typecheck-widening.md`.
 
-Boundary: no full CLI test typecheck, runtime rewrite, or assertion changes;
-the observe fixture now returns full `ObservationItem` source ranges.
+Boundary: no full CLI test typecheck, source artifact preview, runtime rewrite,
+or assertion changes; this fixes test fixture shapes only.
 
 ## Recent Completed Streams
 

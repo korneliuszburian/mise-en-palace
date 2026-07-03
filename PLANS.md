@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CLI init/observe/reflect command test typecheck widening slice
+current task: CLI source-search/claim-edges test typecheck widening slice
 latest pushed commit: see git history
 ```
 
@@ -24,24 +24,23 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CLI init/observe/reflect command test typecheck widening slice is active.
-The scoped CLI test typecheck gate now includes the init, observe, and reflect
-command tests. Run-show, selected command, doctor, smoke/readiness, helper,
-parser, and targeted fixture batches are now in the clean subset.
+CLI source-search/claim-edges test typecheck widening slice is active.
+The scoped CLI test typecheck gate now includes source-search and
+source-claim-edges command tests. Run-show, selected command, doctor,
+smoke/readiness, helper, parser, and targeted fixture batches are now in the
+clean subset.
 ```
 
 Latest outcome:
 
 ```txt
-CLI init/observe/reflect command test typecheck widening slice:
-`runInitCommand.test.ts`, `runObserveCommand.test.ts`, and
-`runReflectCommand.test.ts` now satisfy the scoped strict
-`typecheck:tests:clean` gate.
+CLI source-search/claim-edges test typecheck widening slice:
+`runSourceSearchCommand.test.ts` and `runSourceClaimEdgesCommand.test.ts` now
+satisfy the scoped strict `typecheck:tests:clean` gate.
 Report:
-docs/runs/2026-07-03-cli-init-observe-reflect-test-typecheck-widening.md
-CI: KRN CI 28647187250 passed for this slice.
-Next: close the Beads issue and select the next bounded CLI command test
-typecheck batch.
+docs/runs/2026-07-03-cli-source-search-test-typecheck-widening.md
+CI: pending for this slice.
+Next: push this bounded batch and verify CI.
 ```
 
 ## 2. Product Thesis

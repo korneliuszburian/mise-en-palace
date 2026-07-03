@@ -45,6 +45,8 @@
     "src/__tests__/runReflectCommand.test.ts",
     "src/__tests__/run.test.ts",
     "src/__tests__/runRunShowCommand.test.ts",
+    "src/__tests__/runSourceClaimEdgesCommand.test.ts",
+    "src/__tests__/runSourceSearchCommand.test.ts",
     "src/__tests__/source.test.ts",
     "src/__tests__/targetRepoHarnessSmoke.test.ts",
     "src/__tests__/targetRepoTestingSkill.test.ts",

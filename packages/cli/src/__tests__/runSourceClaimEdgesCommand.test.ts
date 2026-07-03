@@ -102,6 +102,9 @@ describe("runSourceClaimEdgesCommand", () => {
           async createSourceClaim() {
             throw new Error("createSourceClaim should not be called");
           },
+          async listClaimsForProject() {
+            throw new Error("listClaimsForProject should not be called");
+          },
           async getSourceClaimById(id) {
             if (id === sourceClaimId) {
               return sourceClaim;
@@ -187,6 +190,9 @@ describe("runSourceClaimEdgesCommand", () => {
           },
           async createSourceClaim() {
             throw new Error("createSourceClaim should not be called");
+          },
+          async listClaimsForProject() {
+            throw new Error("listClaimsForProject should not be called");
           },
           async getSourceClaimById() {
             return undefined;
