@@ -55,7 +55,7 @@ interface MemoryReviewWithOptionalRejectionReason {
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
-const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidenceProvenance>([
+const candidateEvidenceProvenances = new Set<string>([
   "default_template",
   "operator_reported",
   "captured_output_file",
@@ -77,7 +77,7 @@ const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidenceProvenan
 const isCandidateEvidenceProvenance = (
   value: string
 ): value is ReflectionCandidateEvidenceProvenance =>
-  candidateEvidenceProvenances.has(value as ReflectionCandidateEvidenceProvenance);
+  candidateEvidenceProvenances.has(value);
 
 export const buildReflectionCandidateEvidence = (
   input: CandidateEvidenceInput

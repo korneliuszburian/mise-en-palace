@@ -1,4 +1,5 @@
 import type {
+  CliCommand,
   ParseArgsResult
 } from "./parseArgs.js";
 
@@ -16,21 +17,23 @@ const dbUsage = [
 
 export const formatDbUsage = (): string => `${dbUsage}\n`;
 
-const dbSmokeTargets = {
-  "harness-plan": "harnessPlan",
-  "harness-evidence": "harnessEvidence",
-  "source-graph": "sourceGraph",
-  "memory-governance": "memoryGovernance",
-  "retrieval-substrate": "retrievalSubstrate",
-  activation: "activation",
-  "brain-loop": "brainLoop",
-  "run-show": "runShow",
-  "heartbeat-worker-authority": "heartbeatWorkerAuthority",
-  "codex-adapter": "codexAdapter",
-  "worker-jobs": "workerJobs",
-  "init-connect": "initConnect",
-  "target-repo-harness": "targetRepoHarness"
-} as const;
+type DbSmokeTarget = Extract<CliCommand, { kind: "dbSmoke" }>["target"];
+
+const dbSmokeTargets = new Map<string, DbSmokeTarget>([
+  ["harness-plan", "harnessPlan"],
+  ["harness-evidence", "harnessEvidence"],
+  ["source-graph", "sourceGraph"],
+  ["memory-governance", "memoryGovernance"],
+  ["retrieval-substrate", "retrievalSubstrate"],
+  ["activation", "activation"],
+  ["brain-loop", "brainLoop"],
+  ["run-show", "runShow"],
+  ["heartbeat-worker-authority", "heartbeatWorkerAuthority"],
+  ["codex-adapter", "codexAdapter"],
+  ["worker-jobs", "workerJobs"],
+  ["init-connect", "initConnect"],
+  ["target-repo-harness", "targetRepoHarness"]
+]);
 
 export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h")) {
@@ -59,7 +62,10 @@ export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
   }
 
   if (rest.length === 2 && rest[0] === "smoke") {
-    const target = dbSmokeTargets[rest[1] as keyof typeof dbSmokeTargets];
+    const requestedTarget = rest[1];
+    const target = requestedTarget === undefined
+      ? undefined
+      : dbSmokeTargets.get(requestedTarget);
 
     if (target !== undefined) {
       return {
