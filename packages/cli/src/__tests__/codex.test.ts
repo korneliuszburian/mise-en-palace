@@ -1,28 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 
-import {
-  runCli
-} from "../runCli.js";
-import {
-  createNoStoreCompilerDependencies
-} from "../noStoreRepositories.js";
-import {
-  commandResultDoesNotProve
-} from "@krn/core";
-import type {
-  AntiMemoryCandidate,
-  AntiMemoryRecord,
-  MemoryRecord,
-  ObservationItem,
-  SourceClaim
-} from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput,
-  CreateEvidenceBundleInput,
   CreateExecutionRunInput,
-  CreateFeedbackDeltaInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   InvalidateMemoryRecordInput,
@@ -31,24 +11,13 @@ import type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
-  CreateReviewAssessmentInput,
-  HarnessRunAggregate,
-  SearchDocumentSearchResult
+  HarnessRunAggregate
 } from "@krn/harness/repositories/internal";
-import type {
-  DatabaseRuntimeInput
-} from "../databaseRuntime.js";
 import {
-  deriveBrainStoreReadiness,
-  deriveHarnessPersistenceReadiness,
-  deriveActivationReadiness,
-  deriveCodexAdapterReadiness,
-  deriveMemoryGovernanceReadiness,
-  deriveRetrievalSubstrateReadiness,
-  deriveSourceGraphReadiness,
-  deriveTargetRepoReadiness,
-  deriveWorkerJobReadiness
+  deriveCodexAdapterReadiness
 } from "../doctorReadiness.js";
+import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
+import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
