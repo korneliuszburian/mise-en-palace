@@ -307,6 +307,32 @@ const task: GoldenTask = {
         "docs/architecture/behavior-gate-matrix.md"
       ],
       metadata: {}
+    },
+    {
+      id: "golden-case-source-artifact-preview-reuse-001-a",
+      title: "source artifact preview claim can shape later activation context",
+      input: {
+        task: "Use source artifact preview evidence before building crawler work."
+      },
+      expectedBehavior: {
+        outcome: "include",
+        subject: "source_claim:source-claim-artifact-preview-reuse",
+        rationale: "A reviewable source artifact preview claim should be reusable as bounded source activation context.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-source-artifact-preview-reuse",
+        domain: "source",
+        severity: "blocking",
+        title: "source artifact preview claim cannot shape later context",
+        mustNot: "A ready source artifact preview claim must not disappear before source activation readback.",
+        detection: "ContextAssembly omits source-claim-artifact-preview-reuse or extraction produces no ready claim."
+      }],
+      sourceRefs: [
+        "packages/core/src/sourceArtifactPreviewExtraction.ts",
+        "packages/harness/src/activation/contextRoi.ts"
+      ],
+      metadata: {}
     }
   ],
   metadata: {},
@@ -324,8 +350,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 12,
-      passedCaseCount: 12,
+      caseCount: 13,
+      passedCaseCount: 13,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -339,6 +365,7 @@ describe("KRN behavior golden gate", () => {
       "golden-case-memory-smoke-002",
       "golden-case-observation-prefix-001-a",
       "golden-case-reflection-001-a",
+      "golden-case-source-artifact-preview-reuse-001-a",
       "golden-case-source-decorative-rejection-001-a",
       "golden-case-target-fixture-battle-001-a",
       "golden-case-target-owner-file-below-roots-001-a",
@@ -353,6 +380,7 @@ describe("KRN behavior golden gate", () => {
       "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
       "Real context assembly rejected selected observation prefix item without source ranges.",
       "Real reflection behavior blocked direct MemoryRecord target generation.",
+      "Real source artifact preview extraction produced a reviewable claim that shaped later source activation context.",
       "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
       "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files.",
       "Real target owner-file recall surfaced a bounded owner file below tests/ without selecting static KRN owner files.",

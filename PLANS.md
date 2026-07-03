@@ -72,6 +72,8 @@ roadmap and created the next queue: `mise-en-palace-75za`,
 source-search readback/format/ranking helpers out of the command runner.
 `mise-en-palace-wgei` is closed and has moved source artifact preview
 persistence/readback/JSON helpers out of the command runner.
+`mise-en-palace-ww5l` is closed and has added a deterministic source artifact
+preview extraction -> source activation context reuse case to `eval:krn:smoke`.
 `mise-en-palace-plnv` remains deferred.
 ```
 
@@ -245,7 +247,7 @@ backlog detail.
 ## 15. Progress
 
 ```txt
-Active slice: source-search explicit project readback.
+Active slice: post-CLI-wave kernel queue from Beads.
 Historical IMR/product outcomes: archived, not embedded in root context.
 Next selection: use Beads ready work after this slice verifies.
 ```

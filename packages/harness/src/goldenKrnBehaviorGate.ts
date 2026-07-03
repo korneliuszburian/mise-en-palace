@@ -3,6 +3,7 @@ import type {
   GoldenTask,
   MemoryRecord,
   ObservationItem,
+  ExtractionClaimCandidate,
   SourceClaim,
   SourceClaimEdge,
   TaskContract
@@ -10,7 +11,10 @@ import type {
 import {
   assessSourceClaimReviewSignals,
   assessReflectionOutputContract,
-  normalizeEvidenceCommand
+  buildSourceArtifactPreviewChunks,
+  extractLocalSourceCandidates,
+  normalizeEvidenceCommand,
+  sourceArtifactLines
 } from "@krn/core";
 
 import {
@@ -42,6 +46,9 @@ import type {
   TargetActivationTrustExclusion,
   TargetActivationReadModel
 } from "./activation/ownerFileRecall.js";
+import type {
+  ActivationCandidate
+} from "./activation/types.js";
 
 export interface RunKrnBehaviorGoldenGateInput {
   tasks: readonly GoldenTask[];
@@ -709,6 +716,125 @@ const runDecorativeSourceRejection = (_now: string): GoldenBehaviorProof => {
   );
 };
 
+const sourceArtifactPreviewHash = (content: string): string =>
+  `golden-hash:${content.length}:${content.slice(0, 12)}`;
+
+interface SourceArtifactPreviewReuseCandidate {
+  claimCandidate: ExtractionClaimCandidate | undefined;
+  relationCount: number;
+  activationCandidate: ActivationCandidate | undefined;
+}
+
+const buildSourceArtifactPreviewReuseCandidate = (): SourceArtifactPreviewReuseCandidate => {
+  const artifact = [
+    "# Source Artifact Preview Reuse",
+    "",
+    "KRN should prove one bounded local ingest loop before building a crawler.",
+    "",
+    "This source artifact preview evidence supports later source search readback."
+  ].join("\n");
+  const chunks = buildSourceArtifactPreviewChunks({
+    lines: sourceArtifactLines(artifact),
+    chunkSize: 20,
+    limit: 2,
+    contentHash: sourceArtifactPreviewHash,
+    maxPreviewCharacters: 240
+  });
+  const extraction = extractLocalSourceCandidates(chunks);
+  const claimCandidate = extraction.claims.find((candidate) =>
+    candidate.text.includes("bounded local ingest loop")
+  );
+
+  if (claimCandidate === undefined) {
+    return {
+      claimCandidate,
+      relationCount: extraction.relations.length,
+      activationCandidate: undefined
+    };
+  }
+
+  return {
+    claimCandidate,
+    relationCount: extraction.relations.length,
+    activationCandidate: toSourceClaimCandidate(sourceClaim({
+      id: "source-claim-artifact-preview-reuse",
+      claim: claimCandidate.text,
+      mechanism: "A local source artifact preview can become a reviewable SourceClaim candidate with a source range.",
+      krnImplication: "Reuse the previewed local ingest-loop claim as bounded source activation context before crawler work.",
+      doesNotProve: "This does not prove crawler readiness, source truth, DB persistence, embeddings, or ranking quality.",
+      supportType: "implementation-boundary",
+      consumer: "source artifact preview reuse behavior gate",
+      metadata: {
+        source: "source_artifact_preview",
+        extractionCandidateId: claimCandidate.id,
+        extractionCandidateSourceRange: claimCandidate.sourceRange
+      }
+    }))
+  };
+};
+
+const assembleSourceArtifactPreviewReuseContext = (
+  now: string,
+  activationCandidate: ActivationCandidate
+) => assembleContext({
+  id: "context-real-gate-source-artifact-preview-reuse",
+  harnessPlanId: "plan-real-gate",
+  candidates: applyContextROI(
+    applyActivationFilters({
+      candidates: rankCandidates(
+        [activationCandidate],
+        buildSourceQuery(taskContract(
+          now,
+          "Use bounded local ingest-loop evidence before building crawler work."
+        ))
+      ),
+      antiMemoryRecords: [],
+      minimumTrustTier: "low",
+      now
+    }).candidates,
+    {
+      maxInclusions: 1,
+      minimumScore: 0,
+      minimumDiverseKinds: ["source"]
+    }
+  ),
+  createdAt: now
+});
+
+const provesSourceArtifactPreviewReuse = (now: string): boolean => {
+  const reuseCandidate = buildSourceArtifactPreviewReuseCandidate();
+
+  if (reuseCandidate.claimCandidate?.reviewability !== "ready") {
+    return false;
+  }
+
+  if (reuseCandidate.relationCount <= 0 || reuseCandidate.activationCandidate === undefined) {
+    return false;
+  }
+
+  const context = assembleSourceArtifactPreviewReuseContext(
+    now,
+    reuseCandidate.activationCandidate
+  );
+
+  return context.status === "assembled" && context.inclusions.some((inclusion) =>
+    inclusion.subjectType === "source_claim" &&
+    inclusion.subjectId === "source-claim-artifact-preview-reuse"
+  );
+};
+
+const runSourceArtifactPreviewReuse = (now: string): GoldenBehaviorProof => {
+  const passed = provesSourceArtifactPreviewReuse(now);
+
+  return proof(
+    "golden-case-source-artifact-preview-reuse-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real source artifact preview extraction produced a reviewable claim that shaped later source activation context."
+      : "Real source artifact preview extraction did not produce a reviewable reusable source activation claim."
+  );
+};
+
 const runRelationGroundedQaReadback = (now: string): GoldenBehaviorProof => {
   const seed = sourceClaim({
     id: "source-claim-graph-qa-seed",
@@ -822,6 +948,7 @@ const proofFactories = {
   "golden-case-target-owner-file-below-roots-001-a": runTargetOwnerFileBelowRoots,
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
   "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection,
+  "golden-case-source-artifact-preview-reuse-001-a": runSourceArtifactPreviewReuse,
   "golden-case-graph-qa-001-a": runRelationGroundedQaReadback
 } as const;
 

@@ -142,9 +142,11 @@ Current queue: `mise-en-palace-9uyc` records the post-CLI-wave kernel roadmap.
 source-search readback/format/ranking helpers moved out of the command runner.
 `mise-en-palace-wgei` source artifact preview boundary split is closed:
 DB persistence/readback helpers moved out of the command runner.
+`mise-en-palace-ww5l` source artifact behavior eval proof is closed:
+`eval:krn:smoke` now includes a deterministic preview extraction -> source
+activation context reuse case.
 Next implementation candidates are `mise-en-palace-y6ib` brain-search readback boundary split,
-`mise-en-palace-h1b4` run-show projection/readback split, and
-`mise-en-palace-ww5l` source artifact behavior eval proof.
+and `mise-en-palace-h1b4` run-show projection/readback split.
 Deferred human decision: `mise-en-palace-plnv`.
 
 Boundary: manual reuse was proven; automatic memory recall was not. Do not claim
