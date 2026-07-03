@@ -13,14 +13,27 @@ output_dir=$(dirname "$output_file")
 mkdir -p "$output_dir"
 
 status=$(git status --short --branch)
-diff_stat=$(git diff --stat || true)
+diff_stat=$(git diff HEAD --stat -- \
+  ":(exclude).beads/**" \
+  ":(exclude).local-lab/**" \
+  ":(exclude)docs/materials/**" || true)
 untracked_files=$(git ls-files --others --exclude-standard)
 diff_max_bytes=${SECOND_OPINION_DIFF_MAX_BYTES:-60000}
 untracked_max_bytes=${SECOND_OPINION_UNTRACKED_MAX_BYTES:-20000}
+prompt_max_bytes=${SECOND_OPINION_PROMPT_MAX_BYTES:-120000}
 acceptance_criteria=${SECOND_OPINION_ACCEPTANCE_CRITERIA:-"not provided; flag as an evidence gap if this prevents review"}
 verification_evidence=${SECOND_OPINION_VERIFICATION_EVIDENCE:-"not provided; request exact verification if needed"}
 head_commit=$(git log -1 --oneline || true)
-beads_ready=$(bd ready 2>/dev/null || true)
+if command -v bd >/dev/null 2>&1; then
+  beads_err=$(mktemp)
+  beads_ready=$(bd ready 2>"$beads_err" || true)
+  if [[ -z "$beads_ready" && -s "$beads_err" ]]; then
+    beads_ready="Beads snapshot unavailable: $(head -1 "$beads_err")"
+  fi
+  rm -f "$beads_err"
+else
+  beads_ready="Beads snapshot unavailable: bd CLI not found on PATH"
+fi
 diff_file=$(mktemp)
 untracked_body_file=$(mktemp)
 
@@ -50,7 +63,7 @@ is_denied_untracked_path() {
   return 1
 }
 
-git diff -- . \
+git diff HEAD -- . \
   ":(exclude).beads/**" \
   ":(exclude).local-lab/**" \
   ":(exclude)docs/materials/**" \
@@ -155,6 +168,7 @@ Required verdict shape:
 Rules:
 - Every finding must have a non-empty evidence_ref.
 - approve requires findings=[].
+- approve_with_fixes requires at least one finding.
 - block requires findings or evidence_gaps and another_loop_required=true.
 - If acceptance criteria or verification evidence is missing, put it in evidence_gaps.
 - Prefer minimal fixes over broad rewrites.
@@ -220,4 +234,15 @@ $beads_ready
 Return the governed verdict JSON only.
 EOF
 
-printf '%s\n' "$output_file"
+prompt_bytes=$(wc -c < "$output_file" | tr -d " ")
+if (( prompt_bytes > prompt_max_bytes )); then
+  {
+    head -c "$(( prompt_max_bytes - 1024 ))" "$output_file"
+    printf '\n\n## Prompt Size Cap\n\nContext pack exceeded SECOND_OPINION_PROMPT_MAX_BYTES=%s and was truncated. Treat the diff/untracked sections as possibly incomplete and flag as an evidence gap if the missing tail is load-bearing. Narrow the slice or raise the cap and rebuild.\n' \
+      "$prompt_max_bytes"
+  } > "${output_file}.capped"
+  mv "${output_file}.capped" "$output_file"
+  prompt_bytes=$(wc -c < "$output_file" | tr -d " ")
+fi
+
+printf '%s bytes -> %s\n' "$prompt_bytes" "$output_file"

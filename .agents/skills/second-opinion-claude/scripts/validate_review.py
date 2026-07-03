@@ -266,6 +266,9 @@ def validate_verdict(verdict: dict[str, Any], *, base: str | None = None) -> int
     if verdict_value == "approve" and findings:
         raise ReviewError("approve verdict must not include findings")
 
+    if verdict_value == "approve_with_fixes" and not findings:
+        raise ReviewError("approve_with_fixes requires at least one finding")
+
     if verdict_value == "block":
         if not findings and not evidence_gaps:
             raise ReviewError("block verdict requires findings or evidence_gaps")

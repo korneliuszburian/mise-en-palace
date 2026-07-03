@@ -9,3 +9,7 @@ dist/
 .dolt/
 *.db
 .beads-credential-key
+
+# Python bytecode (e.g. from skill validators)
+__pycache__/
+*.pyc

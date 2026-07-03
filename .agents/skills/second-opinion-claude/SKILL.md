@@ -8,6 +8,15 @@ description: Use when a KRN implementation slice is ready for independent second
 Use this skill after a slice has local evidence, not as a substitute for tests
 or engineering judgment. Claude is a reviewer, not the source of truth.
 
+## Trigger
+
+- After a large refactor, authority-boundary change, or cleanup wave.
+- Before closing Beads work that needs challenge, proof/non-proof review, and
+  next-slice synthesis.
+- When local evidence exists but an independent, read-only falsifier should
+  stress "done" before merge or closure.
+- Skip for trivial edits where local tests and review are enough.
+
 ## Workflow
 
 1. Build a compact context pack:
@@ -27,7 +36,6 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
 
    ```bash
    SECOND_OPINION_MAX_BUDGET_USD=0.50 \
-   SECOND_OPINION_MAX_TURNS=1 \
    rtk .agents/skills/second-opinion-claude/scripts/run_review.sh \
      .local-lab/second-opinion/slice-title/prompt.md \
      .local-lab/second-opinion/slice-title/claude.json
@@ -35,8 +43,11 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
 
    Output is a validated verdict JSON, not a Claude SDK envelope. The wrapper
    disables Claude tools by default, has a local timeout, injects the current
-   `diff_sha256`, and exits `2` for a valid blocking verdict. Set
-   `SECOND_OPINION_MODEL` only when the slice warrants the limited premium
+   `diff_sha256`, and exits `2` for a valid blocking verdict. Exit `0` means
+   `approve` or `approve_with_fixes`; exit `2` means a valid `block` verdict
+   (JSON present, not an error). Any other non-zero exit, or a JSON with
+   `is_error: true`, is an error artifact — inspect the JSON, not just `$?`.
+   Set `SECOND_OPINION_MODEL` only when the slice warrants the limited premium
    model. Default to the local Claude Code model configuration for cheap smoke
    checks. Set `SECOND_OPINION_BASE` when the freshness base is not `origin/main`.
    If the local timeout fires, the wrapper writes a JSON timeout artifact and
@@ -49,12 +60,19 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
      .local-lab/second-opinion/slice-title/claude.json --base origin/main
    ```
 
-3. Triage the result:
+3. Triage the result. For each finding or blocker choose exactly one move:
 
-   - `must_fix`: implement before closure, then verify.
-   - `evidence_gap`: run focused proof or record explicit non-proof.
-   - `follow_up`: create or update a Beads issue.
-   - `rejected`: keep only with local code/test evidence.
+   - `accept_and_fix`: apply the minimal fix, verify, re-review only that point.
+   - `counterargue_with_evidence`: reject only with file/test/log proof; record
+     the proof as explicit non-proof of the finding.
+   - `request_tie_breaker`: escalate to a human for HIGH/CRITICAL risk, or after
+     two fix/review loops.
+
+   Map the move onto routing: `must_fix` (accept_and_fix) implements before
+   closure; `evidence_gap` (accept_and_fix or counterargue) runs focused proof
+   or records non-proof; `follow_up` opens or updates a Beads issue; `rejected`
+   (counterargue_with_evidence) keeps only with local code/test evidence. Never
+   resolve a finding by opinion.
 
    Codex owns this triage. Do not hand the operator a prompt or ask them to
    route the review unless the finding requires a product decision, budget
@@ -89,6 +107,9 @@ summary: <=300 chars
 findings[].evidence_ref: required
 evidence_gaps[].verification_requested: required
 another_loop_required: block requires true
+non_blocking_notes[]: required (may be empty)
+approve: findings must be empty
+approve_with_fixes: requires >=1 finding
 ```
 
 Required context:
@@ -104,10 +125,27 @@ known non-goals:
 review questions:
 ```
 
+## Environment
+
+All optional; defaults shown.
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `SECOND_OPINION_MAX_BUDGET_USD` | `0.50` | `--max-budget-usd` cap on the review call |
+| `SECOND_OPINION_TIMEOUT_SECONDS` | `120` | local wall-clock timeout; overrun writes `error_timeout` |
+| `SECOND_OPINION_MODEL` | local Claude Code model | override model for premium slices |
+| `SECOND_OPINION_BASE` | `origin/main` | freshness base for `diff_sha256` |
+| `SECOND_OPINION_DIFF_MAX_BYTES` | `60000` | per-diff byte cap |
+| `SECOND_OPINION_UNTRACKED_MAX_BYTES` | `20000` | per-untracked-file byte cap |
+| `SECOND_OPINION_PROMPT_MAX_BYTES` | `120000` | whole-prompt cap; overrun truncates with a notice |
+| `SECOND_OPINION_ACCEPTANCE_CRITERIA` | gap placeholder | injected into the pack |
+| `SECOND_OPINION_VERIFICATION_EVIDENCE` | gap placeholder | injected into the pack |
+
 ## Guardrails
 
-- Prefer `--bare`, explicit prompt context, JSON output, `--max-turns`, and
-  `--max-budget-usd`.
+- Prefer `--bare`, explicit prompt context, JSON output, and `--max-budget-usd`.
+  The reviewer is single-turn by construction (`--tools ""` ⇒ one bounded
+  response); the real bounds are budget and the local timeout, not a turns cap.
 - Keep Claude read-only by default. Do not let the reviewer edit files.
 - Disable tools for ordinary review; add repo access only in a separate,
   explicitly budgeted experiment.
@@ -141,8 +179,10 @@ rtk .agents/skills/second-opinion-claude/scripts/build_context_pack.sh \
   "second-opinion smoke" .local-lab/second-opinion/smoke/prompt.md
 rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \
   .local-lab/second-opinion/smoke/prompt.md
-rtk /home/krn/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  .agents/skills/second-opinion-claude
+# Optional codex skill-creator structural check (needs pyyaml); non-fatal if absent.
+q="${CODEX_QUICK_VALIDATE:-/home/krn/.codex/skills/.system/skill-creator/scripts/quick_validate.py}"
+[[ -x "$q" ]] && rtk "$q" .agents/skills/second-opinion-claude 2>/dev/null \
+  || echo "skip quick_validate (absent or missing pyyaml; set CODEX_QUICK_VALIDATE)"
 rtk pnpm --filter @krn/harness test -- skillInvariants
 ```
 

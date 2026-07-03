@@ -22,7 +22,6 @@ fi
 
 mkdir -p "$(dirname "$output_file")"
 
-max_turns=${SECOND_OPINION_MAX_TURNS:-1}
 max_budget=${SECOND_OPINION_MAX_BUDGET_USD:-0.50}
 timeout_seconds=${SECOND_OPINION_TIMEOUT_SECONDS:-120}
 base=${SECOND_OPINION_BASE:-origin/main}
@@ -44,7 +43,6 @@ if timeout "$timeout_seconds" claude \
     --print \
     --tools "" \
     --output-format json \
-    --max-turns "$max_turns" \
     --max-budget-usd "$max_budget" \
     --no-session-persistence \
     "${model_args[@]}" \
@@ -80,5 +78,3 @@ EOF
 
   exit "$status"
 fi
-
-printf '%s\n' "$output_file"
