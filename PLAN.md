@@ -136,7 +136,7 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 `mise-en-palace-oez2`, `mise-en-palace-ieec`, `mise-en-palace-yjs7`,
 `mise-en-palace-z406`, and `mise-en-palace-be1t`.
 
-Current queue: `mise-en-palace-uetf` dogfoods helped retained-pattern selection through evidence feedback; next `mise-en-palace-3vqp` assesses activation hybrid retrieval without speculative embedding work.
+Current queue: `mise-en-palace-3vqp` records activation hybrid retrieval as deferred until query embedding/model-scope input exists.
 `mise-en-palace-75za` source-search command boundary split is closed:
 source-search readback/format/ranking helpers moved out of the command runner.
 `mise-en-palace-wgei` source artifact preview boundary split is closed:
