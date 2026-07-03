@@ -103,7 +103,7 @@ CLI scoped test typecheck: active smoke runs strict `tsc`; run-show, selected co
 reference recipe code-quality repair: repeated persisted-plan metadata capture boilerplate collapsed to one local runCli test helper
 evidence enum normalization: TargetEvidence enum normalizers share one local typed helper
 evidence metadata readback typing: known EvidenceBundle metadata keys are named but remain unknown until parser validation
-pattern/research brain: helped usefulness feedback now biases retained-pattern planning and dogfood feedback readback
+pattern/research brain: helped usefulness feedback biases planning; brain-search now retries multiple compact mechanism queries
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 product-ready brain: not complete

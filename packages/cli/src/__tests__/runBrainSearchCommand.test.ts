@@ -396,6 +396,106 @@ describe("runBrainSearchCommand", () => {
     });
   });
 
+  it("tries later compact mechanism windows after an early compact miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T02:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query:
+          "prove retained reference implementation recipe pattern through local code exemplar",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "reference implementation recipe") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:reference-implementation-recipe-clone-boundary",
+                title: "Reference implementation recipe boundary",
+                summary: "Clone a local exemplar shape only as a bounded implementation recipe.",
+                consumers: ["future local exemplar work"],
+                falsifier: "A future slice treats the recipe as runtime clone automation.",
+                doesNotProve: "This does not prove broad implementation quality.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toContain("prove reference implementation recipe");
+    expect(knowledgeQueries).toContain("reference implementation recipe");
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: expect.arrayContaining([
+        "prove retained reference implementation recipe pattern through local code exemplar",
+        "prove reference implementation recipe",
+        "reference implementation recipe"
+      ]),
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:reference-implementation-recipe-clone-boundary"
+        }]
+      }
+    });
+  });
+
   it("derives store-backed selected knowledge from source claims in store-only brain search", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",

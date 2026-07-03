@@ -2,7 +2,7 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 import {
-  compactBrainKnowledgeBridgeQuery
+  compactBrainKnowledgeBridgeQueries
 } from "./brainKnowledgeQuery.js";
 import {
   buildBrainSearchPreviewResource,
@@ -108,30 +108,28 @@ const runBrainKnowledgeReadback = async (
     };
   }
 
-  const compactQuery = compactBrainKnowledgeBridgeQuery(input.query);
+  const compactQueries = compactBrainKnowledgeBridgeQueries(input.query);
+  const attemptedQueries = [input.query, ...compactQueries];
 
-  if (compactQuery === undefined) {
-    return {
-      result: primaryResult,
-      queries: [input.query]
-    };
+  for (const compactQuery of compactQueries) {
+    const compactResult = await runCatalogKnowledgeReadback({
+      ...input,
+      query: compactQuery
+    });
+    const compactJson = parseJsonObject(compactResult.stdout, "brain knowledge compact retry");
+
+    if (returnedBrainKnowledgeCardCount(compactJson) > 0) {
+      return {
+        result: compactResult,
+        queries: attemptedQueries
+      };
+    }
   }
 
-  const compactResult = await runCatalogKnowledgeReadback({
-    ...input,
-    query: compactQuery
-  });
-  const compactJson = parseJsonObject(compactResult.stdout, "brain knowledge compact retry");
-
-  return returnedBrainKnowledgeCardCount(compactJson) > 0
-    ? {
-      result: compactResult,
-      queries: [input.query, compactQuery]
-    }
-    : {
-      result: primaryResult,
-      queries: [input.query, compactQuery]
-    };
+  return {
+    result: primaryResult,
+    queries: attemptedQueries
+  };
 };
 
 export const runBrainSearchCommand = async (
