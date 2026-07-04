@@ -2,7 +2,7 @@ import type {
   GoldenTask
 } from "@krn/core";
 import {
-  validateGoldenTaskContract
+  validateGoldenTaskFixture
 } from "@krn/core";
 
 export type GoldenBehaviorProofStatus = "passed" | "failed";
@@ -38,7 +38,7 @@ export interface GoldenRunReport {
   failedCaseCount: number;
   missingProofCaseIds: string[];
   failedProofCaseIds: string[];
-  contractFindings: string[];
+  fixtureFindings: string[];
   caseResults: GoldenCaseRunResult[];
 }
 
@@ -76,8 +76,8 @@ export const runGoldenTaskFixtures = (
   input: RunGoldenTaskFixturesInput
 ): GoldenRunReport => {
   const proofByCaseId = new Map(input.proofs.map((proof) => [proof.caseId, proof]));
-  const contractFindings = input.tasks.flatMap((task) =>
-    validateGoldenTaskContract(task).map((finding) => `${task.id}: ${finding}`)
+  const fixtureFindings = input.tasks.flatMap((task) =>
+    validateGoldenTaskFixture(task).map((finding) => `${task.id}: ${finding}`)
   );
   const cases = input.tasks.flatMap((task) => task.cases);
   const caseResults = cases.map((goldenCase): GoldenCaseRunResult => {
@@ -120,7 +120,7 @@ export const runGoldenTaskFixtures = (
 
   return {
     status:
-      contractFindings.length === 0 &&
+      fixtureFindings.length === 0 &&
       missingProofCaseIds.length === 0 &&
       failedProofCaseIds.length === 0
         ? "passed"
@@ -135,7 +135,7 @@ export const runGoldenTaskFixtures = (
     failedCaseCount,
     missingProofCaseIds,
     failedProofCaseIds,
-    contractFindings,
+    fixtureFindings,
     caseResults
   };
 };

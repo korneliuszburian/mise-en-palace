@@ -65,7 +65,7 @@ describe("golden task runner", () => {
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: [],
-      contractFindings: [],
+      fixtureFindings: [],
       caseResults: [{
         caseId: "golden-case-1",
         status: "passed",
@@ -89,7 +89,7 @@ describe("golden task runner", () => {
     })]);
   });
 
-  it("fails when a fixture is shape-valid but contract-invalid", () => {
+  it("fails when a fixture is shape-valid but fixture-invalid", () => {
     const report = runGoldenTaskFixtures({
       tasks: [task({
         cases: [{
@@ -104,14 +104,14 @@ describe("golden task runner", () => {
         caseId: "golden-case-1",
         status: "passed",
         provenance: "krn_behavior_execution",
-        summary: "This proof should not override contract failure.",
+        summary: "This proof should not override fixture validation failure.",
         evidenceRefs: ["test"],
-        doesNotProve: "This does not prove the GoldenTask contract is valid."
+        doesNotProve: "This does not prove the GoldenTask fixture is valid."
       }]
     });
 
     expect(report.status).toBe("failed");
-    expect(report.contractFindings).toEqual([
+    expect(report.fixtureFindings).toEqual([
       "golden-task-1: case golden-case-1 expectedBehavior.evidenceRefs are required"
     ]);
   });

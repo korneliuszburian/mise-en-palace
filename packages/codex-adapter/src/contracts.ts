@@ -12,7 +12,7 @@ export type CodexAdapterPlanStatus = "draft" | "ready" | "superseded";
 
 export type CodexSkillBindingPriority = "required" | "recommended";
 
-export type CodexSkillBindingSource = "capability_plan" | "operator" | "policy";
+export type CodexSkillBindingSource = "capability_plan" | "operator";
 
 export interface CodexSkillBindingHint {
   skillName: string;

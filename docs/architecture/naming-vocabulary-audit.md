@@ -143,8 +143,8 @@ supporting surface, or reduced/deprecated boundary in the primitive ledger.
 | `heartbeat` as the name for maintenance candidate review | rename/downscope after worker decision | `packages/workers/src/*HeartbeatPreview.ts`; `packages/cli/src/runHeartbeatPreviewCommand.ts`; `packages/workers/README.md` | It sounds like an autonomous runtime loop while the README explicitly lists "no worker daemon", "no background loop", and "no job executor". |
 | `golden` as behavior gate vocabulary | rename in a bounded compatibility slice | `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/core/src/goldenTask.ts`; `package.json` | It suggests canonical truth. The active route is `eval:krn:smoke`, and the behavior matrix calls this deterministic behavior/docs smoke rather than truth. |
 | `brain-battle` | delete alias after compatibility window | `package.json`; `docs/architecture/primitive-ledger.md`; `docs/architecture/behavior-gate-matrix.md` | It is already described as a "legacy compatibility alias"; keeping it forever preserves old eval-theater language. |
-| `policy` in Codex adapter skill binding source | inspect before rename | `packages/codex-adapter/src/contracts.ts`; `docs/architecture/primitive-ledger.md` | Phantom policy gates are already marked deprecated; any remaining `policy` source should prove a live policy consumer or become `constraint`/`operator_constraint`. |
-| `Contract` suffix where the object is only validated shape | inspect before rename | `packages/core/src/goldenTask.ts:validateGoldenTaskContract`; `packages/codex-adapter/src/renderExecutionBrief.ts` headings | `Contract` should mean an execution or review obligation, not any parsed object. |
+| `policy` in Codex adapter skill binding source | fixed by `mise-en-palace-woql` | `packages/codex-adapter/src/contracts.ts`; `packages/codex-adapter/src/renderSkillHints.ts` | The unused `policy` binding source was removed; skill hints are currently emitted from `capability_plan` only. |
+| `Contract` suffix where the object is only validated shape | fixed for GoldenTask fixture validation by `mise-en-palace-woql` | `packages/core/src/goldenTask.ts:validateGoldenTaskFixture`; `packages/harness/src/goldenRunner.ts:fixtureFindings`; `packages/codex-adapter/src/renderExecutionBrief.ts` headings | GoldenTask validation is now named as fixture validation. `TaskContract` and `EvidenceContract` remain because they are execution/review obligations rendered into Codex briefs. |
 
 ### Not Currently A Problem
 
@@ -212,10 +212,15 @@ Acceptance:
 
 ### Cluster D: policy/contract residue inspection (`mise-en-palace-woql`)
 
-Problem: phantom policy gates were deprecated, but small naming residues remain.
+Problem: phantom policy gates were deprecated, but small naming residues
+remained.
 
-Proposed direction: inspect remaining `policy` and `Contract` exported names and
-rename only those that imply enforcement without a live enforcer.
+Resolution: `mise-en-palace-woql` removed the unused `policy` value from
+`CodexSkillBindingSource` and renamed GoldenTask validation/readback from
+contract language to fixture language. Retained `TaskContract`,
+`EvidenceContract`, `MemoryReviewGate`, activation/context gates, and pattern
+gate wording remain because they name execution obligations, deterministic
+enforcement, or bounded workflow gates with active consumers.
 
 Tracking: `mise-en-palace-woql`.
 

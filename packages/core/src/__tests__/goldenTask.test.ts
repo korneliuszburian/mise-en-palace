@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  validateGoldenTaskContract,
+  validateGoldenTaskFixture,
   type GoldenTask
 } from "../goldenTask.js";
 
@@ -45,9 +45,9 @@ const goldenTask = (overrides: Partial<GoldenTask>): GoldenTask => ({
   ...overrides
 });
 
-describe("golden task contract", () => {
+describe("golden task fixture", () => {
   test("accepts a task with expected behavior and protected failure modes", () => {
-    expect(validateGoldenTaskContract(goldenTask({}))).toEqual([]);
+    expect(validateGoldenTaskFixture(goldenTask({}))).toEqual([]);
   });
 
   test("does not require live pipeline ids because GoldenTask is fixture-only", () => {
@@ -57,11 +57,11 @@ describe("golden task contract", () => {
 
     expect("taskContractId" in task).toBe(false);
     expect("harnessPlanId" in task).toBe(false);
-    expect(validateGoldenTaskContract(task)).toEqual([]);
+    expect(validateGoldenTaskFixture(task)).toEqual([]);
   });
 
   test("rejects artifact-theater cases without behavior expectations", () => {
-    expect(validateGoldenTaskContract(goldenTask({
+    expect(validateGoldenTaskFixture(goldenTask({
       cases: [{
         id: "golden-case-1",
         title: "shape-only fixture",
@@ -86,7 +86,7 @@ describe("golden task contract", () => {
   });
 
   test("rejects case and failure-mode fields that cannot protect behavior", () => {
-    expect(validateGoldenTaskContract(goldenTask({
+    expect(validateGoldenTaskFixture(goldenTask({
       cases: [{
         ...goldenTask({}).cases[0]!,
         title: " ",
@@ -108,19 +108,19 @@ describe("golden task contract", () => {
   });
 
   test("rejects private reasoning metadata", () => {
-    expect(validateGoldenTaskContract(goldenTask({
+    expect(validateGoldenTaskFixture(goldenTask({
       metadata: {
         chainOfThought: "hidden reasoning must not be stored"
       }
     }))).toEqual(["metadata.chainOfThought is forbidden"]);
 
-    expect(validateGoldenTaskContract(goldenTask({
+    expect(validateGoldenTaskFixture(goldenTask({
       metadata: {
         reasoningTrace: "hidden reasoning must not be stored"
       }
     }))).toEqual(["metadata.reasoningTrace is forbidden"]);
 
-    expect(validateGoldenTaskContract(goldenTask({
+    expect(validateGoldenTaskFixture(goldenTask({
       metadata: {
         reasoning_trace: "hidden reasoning must not be stored"
       }

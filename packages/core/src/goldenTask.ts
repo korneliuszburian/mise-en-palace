@@ -175,7 +175,7 @@ const validateCase = (goldenCase: GoldenCase): string[] => {
   return findings;
 };
 
-export const validateGoldenTaskContract = (task: GoldenTask): string[] => {
+export const validateGoldenTaskFixture = (task: GoldenTask): string[] => {
   const findings: string[] = [];
 
   if (isBlank(task.title)) {
