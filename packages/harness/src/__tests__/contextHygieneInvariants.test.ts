@@ -38,6 +38,7 @@ describe("KRN context hygiene invariants", () => {
     expect(kernel).toContain("not widened internal alpha");
     expect(kernel).toContain("compact root `GOAL.md`, `PLAN.md`, and `PLANS.md`");
     expect(kernel).toContain("archived ledgers");
+    expect(kernel).toContain("docs/architecture/primitive-ledger.md");
     expect(kernel).toContain("PLANS.md");
     expect(kernel).toContain("source-to-decision and pattern-intake gates");
     expect(kernel).toContain("typed harness spine");
@@ -45,6 +46,38 @@ describe("KRN context hygiene invariants", () => {
 
     expect(kernel).not.toContain("## Current Bootstrap Boundary");
     expect(kernel).not.toContain("Commit 0/1");
+  });
+
+  it("keeps primitive ledger explicit about live, reduced, rejected, and deprecated surfaces", () => {
+    const ledger = readRootFile("docs/architecture/primitive-ledger.md");
+
+    expect(ledger).toContain("This ledger is docs guidance, not behavior proof.");
+
+    for (const primitive of [
+      "select: activation retrieval, ranking, filtering",
+      "apply: compile plan, assemble context, record memory application",
+      "verify: evidence, review, feedback, context, activation readback",
+      "forget: hurt/stale feedback and anti-memory exclusion"
+    ]) {
+      expect(ledger).toContain(`| ${primitive} | live |`);
+    }
+
+    for (const surface of [
+      "| Broad dashboard/API/MCP/product surface | rejected |",
+      "| Worker daemon / scheduler / leases / retry runtime | reduced |",
+      "| Promptfoo or LLM-as-judge as behavior authority | reduced |",
+      "| `eval:brain-battle:smoke` naming as primary proof route | deprecated |",
+      "| File-backed runtime markdown memory | rejected |",
+      "| `@krn/schema` package boundary | deprecated |",
+      "| Phantom policy gate surface | deprecated |",
+      "| Historical docs/materials as active context | deprecated |"
+    ]) {
+      expect(ledger).toContain(surface);
+    }
+
+    expect(ledger).toContain("broad extractor churn is rejected without new evidence");
+    expect(ledger).toContain("active route is `pnpm eval:krn:smoke`");
+    expect(ledger).toContain("Do not recreate a duplicate schema package");
   });
 
   it("keeps README current truth aligned with continuous controlled-internal-alpha work", () => {

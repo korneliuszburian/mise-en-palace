@@ -42,6 +42,8 @@ The current durable boundary is:
 - compact root `GOAL.md`, `PLAN.md`, and `PLANS.md` for active execution truth;
 - Beads, archived ledgers, and archived reports for detailed completed history
   and next-task synthesis;
+- `docs/architecture/primitive-ledger.md` for the compact live-vs-reduced
+  primitive boundary;
 - source-to-decision and pattern-intake gates for retained patterns;
 - repo-local skills for repeated execution workflows;
 - typed harness spine from operator intent through feedback/candidate outputs;
