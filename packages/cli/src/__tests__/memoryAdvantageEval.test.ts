@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  classifySourceContribution,
   runMemoryAdvantageEval,
   loadMemoryAdvantageEvalFixture,
   parseMemoryAdvantageEvalFixture
@@ -96,7 +97,11 @@ describe("runMemoryAdvantageEval", () => {
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
       executionContractCaseCount: 3,
-      interdependentSessionCaseCount: 2
+      interdependentSessionCaseCount: 2,
+      sourceDisabledAblationCaseCount: 17,
+      sourceRequiredCaseCount: 15,
+      sourceZeroDeltaCaseCount: 0,
+      sourcePruneCandidateCount: 0
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
@@ -228,6 +233,22 @@ describe("runMemoryAdvantageEval", () => {
         },
         supportingClaims: 1,
         supportingDocuments: 1
+      },
+      "source_contribution": {
+        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        sourceDisabled: {
+          result: "miss",
+          selectedKnowledgeIds: ["pattern:second-opinion-after-large-slice"],
+          selectedMemoryIds: ["pattern:second-opinion-after-large-slice"],
+          selectedContextSize: {
+            bytes: expect.any(Number),
+            approximateTokens: expect.any(Number),
+            method: "utf8_bytes_div_4"
+          }
+        },
+        contribution: "source_required_for_hit",
+        zeroDeltaSourceClaimIds: [],
+        pruneCandidateSourceClaimIds: []
       },
       "krn_plan_brief": {
         baselineClass: "no_memory_no_source",
@@ -540,6 +561,7 @@ describe("runMemoryAdvantageEval", () => {
     expect(noAdvantageCases.every((testCase) =>
       testCase["baseline_simple_retrieval"].result === "top_match_selected" &&
       testCase["krn_memory"].result === "hit" &&
+      testCase["source_contribution"].contribution === "source_required_for_hit" &&
       testCase["krn_plan_brief"].result === "hit" &&
       testCase.advantageDelta.simpleRetrievalAlreadySufficient
     )).toBe(true);
@@ -676,6 +698,16 @@ describe("runMemoryAdvantageEval", () => {
             reason: "stale memory contradicted by later governed second-opinion operating rule"
           }
         ]
+      },
+      "source_contribution": {
+        selectedSourceClaimIds: [],
+        sourceDisabled: {
+          result: "miss",
+          selectedKnowledgeIds: []
+        },
+        contribution: "no_source_selected",
+        zeroDeltaSourceClaimIds: [],
+        pruneCandidateSourceClaimIds: []
       },
       "krn_plan_brief": {
         result: "miss",
@@ -1013,6 +1045,44 @@ describe("runMemoryAdvantageEval", () => {
       "that Codex would implement the reported execution contract without a separate execution-output evidence-shape gate"
     );
     expect(result.proof.doesNotProve).toContain("arbitrary Codex output quality");
+  });
+
+  it("classifies source contribution ablation signals", () => {
+    expect(classifySourceContribution({
+      selectedSource: true,
+      krnHit: true,
+      sourceDisabledHit: false,
+      sourceDisabledUseful: false,
+      advantageWin: true
+    })).toBe("source_required_for_hit");
+    expect(classifySourceContribution({
+      selectedSource: true,
+      krnHit: true,
+      sourceDisabledHit: true,
+      sourceDisabledUseful: true,
+      advantageWin: true
+    })).toBe("memory_only_sufficient");
+    expect(classifySourceContribution({
+      selectedSource: true,
+      krnHit: true,
+      sourceDisabledHit: true,
+      sourceDisabledUseful: true,
+      advantageWin: false
+    })).toBe("source_zero_delta");
+    expect(classifySourceContribution({
+      selectedSource: true,
+      krnHit: false,
+      sourceDisabledHit: false,
+      sourceDisabledUseful: true,
+      advantageWin: false
+    })).toBe("source_noise");
+    expect(classifySourceContribution({
+      selectedSource: false,
+      krnHit: true,
+      sourceDisabledHit: true,
+      sourceDisabledUseful: true,
+      advantageWin: true
+    })).toBe("no_source_selected");
   });
 
   it("rejects execution-contract fixture drift before evaluation", () => {

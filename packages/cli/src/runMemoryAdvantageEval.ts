@@ -66,6 +66,12 @@ type MemoryAdvantageFalsificationClass =
   | "retrieval_not_needed"
   | "breaks_interdependent_advantage";
 type MemoryAdvantageDelta = "win" | "neutral" | "loss";
+export type SourceContributionClass =
+  | "source_required_for_hit"
+  | "memory_only_sufficient"
+  | "source_zero_delta"
+  | "source_noise"
+  | "no_source_selected";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -224,6 +230,7 @@ interface MemoryAdvantageCaseReadback {
     readonly exclusions: readonly MemoryAdvantageMemoryExclusionReadback[];
     readonly sourceExclusions: readonly MemoryAdvantageSourceClaimExclusionReadback[];
   };
+  readonly "source_contribution": SourceContributionReadback;
   readonly "krn_plan_brief": PlanBriefReadback;
   readonly "coding_task_decision"?: CodingTaskDecisionReadback;
   readonly "execution_contract_decision"?: ExecutionContractDecisionReadback;
@@ -323,6 +330,21 @@ interface ReviewedFeedbackEffectReadback {
   readonly proofStatus: "pass" | "fail";
 }
 
+interface SourceContributionReadback {
+  readonly selectedSourceClaimIds: readonly string[];
+  readonly sourceDisabled: {
+    readonly result: "hit" | "miss";
+    readonly selectedKnowledgeIds: readonly string[];
+    readonly selectedMemoryIds: readonly string[];
+    readonly selectedContextSize: ApproximateSelectedContextSize;
+  };
+  readonly contribution: SourceContributionClass;
+  readonly zeroDeltaSourceClaimIds: readonly string[];
+  readonly pruneCandidateSourceClaimIds: readonly string[];
+  readonly proof: string;
+  readonly doesNotProve: string;
+}
+
 export interface MemoryAdvantageEvalResult {
   readonly kind: "krn.memoryAdvantage.eval.v1";
   readonly fixtureVersion: "1";
@@ -352,6 +374,10 @@ export interface MemoryAdvantageEvalResult {
     readonly totalRenderedBriefBytes: number;
     readonly codingTaskCaseCount: number;
     readonly executionContractCaseCount: number;
+    readonly sourceDisabledAblationCaseCount: number;
+    readonly sourceRequiredCaseCount: number;
+    readonly sourceZeroDeltaCaseCount: number;
+    readonly sourcePruneCandidateCount: number;
   };
   readonly cases: readonly MemoryAdvantageCaseReadback[];
   readonly proof: {
@@ -1559,6 +1585,96 @@ const buildAdvantageDelta = (
   };
 };
 
+export interface SourceContributionSignals {
+  readonly selectedSource: boolean;
+  readonly krnHit: boolean;
+  readonly sourceDisabledHit: boolean;
+  readonly sourceDisabledUseful: boolean;
+  readonly advantageWin: boolean;
+}
+
+const sourceContributionRules = [
+  {
+    contribution: "source_required_for_hit",
+    matches: (signals: SourceContributionSignals) =>
+      signals.selectedSource && signals.krnHit && !signals.sourceDisabledHit
+  },
+  {
+    contribution: "memory_only_sufficient",
+    matches: (signals: SourceContributionSignals) =>
+      signals.selectedSource && signals.krnHit && signals.sourceDisabledHit && signals.advantageWin
+  },
+  {
+    contribution: "source_zero_delta",
+    matches: (signals: SourceContributionSignals) =>
+      signals.selectedSource && signals.krnHit && signals.sourceDisabledHit && !signals.advantageWin
+  },
+  {
+    contribution: "source_noise",
+    matches: (signals: SourceContributionSignals) =>
+      signals.selectedSource && !signals.krnHit && signals.sourceDisabledUseful
+  }
+] satisfies readonly {
+  readonly contribution: SourceContributionClass;
+  readonly matches: (signals: SourceContributionSignals) => boolean;
+}[];
+
+export const classifySourceContribution = (
+  signals: SourceContributionSignals
+): SourceContributionClass =>
+  sourceContributionRules.find((rule) => rule.matches(signals))?.contribution ?? "no_source_selected";
+
+const sourceContributionClass = (
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
+  sourceDisabled: BrainSearchPreviewReadback,
+  sourceDisabledResult: "hit" | "miss",
+  advantageDelta: MemoryAdvantageCaseReadback["advantageDelta"]
+): SourceContributionClass => {
+  const signals: SourceContributionSignals = {
+    selectedSource: krnMemory.selectedSourceClaimIds.length > 0,
+    krnHit: krnMemory.result === "hit",
+    sourceDisabledHit: sourceDisabledResult === "hit",
+    sourceDisabledUseful:
+      sourceDisabled.answerUsefulness === "useful" &&
+      sourceDisabled.selectedKnowledgeIds.length > 0,
+    advantageWin: advantageDelta.result === "win"
+  };
+
+  return classifySourceContribution(signals);
+};
+
+const buildSourceContribution = (
+  testCase: MemoryAdvantageCaseFixture,
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
+  sourceDisabled: BrainSearchPreviewReadback,
+  advantageDelta: MemoryAdvantageCaseReadback["advantageDelta"]
+): SourceContributionReadback => {
+  const sourceDisabledResult = isKrnHit(sourceDisabled, testCase) ? "hit" : "miss";
+  const contribution = sourceContributionClass(krnMemory, sourceDisabled, sourceDisabledResult, advantageDelta);
+  const zeroDeltaSourceClaimIds = contribution === "source_zero_delta"
+    ? krnMemory.selectedSourceClaimIds
+    : [];
+  const pruneCandidateSourceClaimIds =
+    contribution === "source_zero_delta" || contribution === "source_noise"
+      ? krnMemory.selectedSourceClaimIds
+      : [];
+
+  return {
+    selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
+    sourceDisabled: {
+      result: sourceDisabledResult,
+      selectedKnowledgeIds: sourceDisabled.selectedKnowledgeIds,
+      selectedMemoryIds: selectedMemoryIds(sourceDisabled.selectedKnowledgeIds),
+      selectedContextSize: approximateSelectedContextSize(sourceDisabled)
+    },
+    contribution,
+    zeroDeltaSourceClaimIds,
+    pruneCandidateSourceClaimIds,
+    proof: "Source contribution is measured by rerunning the case with SourceClaim/SearchDocument inputs disabled while keeping memory cards available.",
+    doesNotProve: "This ablation does not prove source truth, optimal ranking, latency cost, or that a zero-delta source should be deleted automatically."
+  };
+};
+
 const expectedMemoryRecordId = (
   expectedSelectedKnowledgeId: string
 ): string | undefined =>
@@ -1797,6 +1913,17 @@ const evaluateCase = async (
     "krn",
     false
   );
+  const sourceDisabled = await runCaseVariant(
+    testCase,
+    [
+      ...testCase.priorSession.memoryCards,
+      ...testCase.priorSession.distractorMemoryCards,
+      ...testCase.priorSession.excludedMemoryCards
+    ],
+    [],
+    "source-disabled",
+    false
+  );
   const krnPlanBrief = await compilePlanBriefReadback(
     testCase,
     [
@@ -1843,6 +1970,8 @@ const evaluateCase = async (
   } as const;
   const codingTaskDecision = buildCodingTaskDecision(testCase, simpleRetrieval, krnMemoryReadback);
   const executionContractDecision = buildExecutionContractDecision(testCase, simpleRetrieval, krnMemoryReadback);
+  const advantageDelta = buildAdvantageDelta(testCase, simpleRetrieval, krnMemoryReadback);
+  const sourceContribution = buildSourceContribution(testCase, krnMemoryReadback, sourceDisabled, advantageDelta);
   const status = caseStatus(
     testCase,
     baseline,
@@ -1864,7 +1993,7 @@ const evaluateCase = async (
     baselineFailureRationale: testCase.baselineFailureRationale,
     ...(testCase.negativeClass === undefined ? {} : { negativeClass: testCase.negativeClass }),
     ...(testCase.falsificationClass === undefined ? {} : { falsificationClass: testCase.falsificationClass }),
-    advantageDelta: buildAdvantageDelta(testCase, simpleRetrieval, krnMemoryReadback),
+    advantageDelta,
     status,
     expectedKrnResult: testCase.expectedKrnResult,
     baselineClass,
@@ -1886,6 +2015,7 @@ const evaluateCase = async (
     "baseline_simple_retrieval": simpleRetrieval,
     "baseline_plan_brief": baselinePlanBrief,
     "krn_memory": krnMemoryReadback,
+    "source_contribution": sourceContribution,
     "krn_plan_brief": krnPlanBrief,
     ...(codingTaskDecision === undefined ? {} : { "coding_task_decision": codingTaskDecision }),
     ...(executionContractDecision === undefined
@@ -1982,7 +2112,18 @@ export const runMemoryAdvantageEval = async (
       codingTaskCaseCount: cases.filter((testCase) => testCase["coding_task_decision"] !== undefined).length,
       executionContractCaseCount: cases.filter((testCase) =>
         testCase["execution_contract_decision"] !== undefined
-      ).length
+      ).length,
+      sourceDisabledAblationCaseCount: cases.length,
+      sourceRequiredCaseCount: cases.filter((testCase) =>
+        testCase["source_contribution"].contribution === "source_required_for_hit"
+      ).length,
+      sourceZeroDeltaCaseCount: cases.filter((testCase) =>
+        testCase["source_contribution"].contribution === "source_zero_delta"
+      ).length,
+      sourcePruneCandidateCount: cases.reduce(
+        (sum, testCase) => sum + testCase["source_contribution"].pruneCandidateSourceClaimIds.length,
+        0
+      )
     },
     cases,
     proof: {
@@ -2006,6 +2147,7 @@ export const runMemoryAdvantageEval = async (
         "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",
         "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryCards or excludedSourceClaims",
         "execution-contract cases can report baseline and KRN contract choices mechanically derived from selected memory/source ids",
+        "source contribution readback reruns each case with SourceClaim/SearchDocument inputs disabled and reports required, zero-delta, and source prune candidate classes",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
