@@ -14,14 +14,14 @@ import {
 import type { SourceDecision } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 import {
-  normalizeReviewOutcome,
-  normalizeReviewRisk,
+  parseReviewOutcome,
+  parseReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
 } from "./reviewOutcome.js";
 import type {
-  NormalizedReviewOutcome,
-  NormalizedReviewOutcomeSummary
+  ReviewOutcome,
+  ReviewOutcomeSummary
 } from "./reviewOutcome.js";
 
 export type FeedbackDeltaCreateStatus = "candidate";
@@ -192,7 +192,7 @@ const metadataCandidateRefs = (
     }];
   });
 
-const outcomeFromStatus = (status: FeedbackDeltaStatus): NormalizedReviewOutcome => {
+const outcomeFromStatus = (status: FeedbackDeltaStatus): ReviewOutcome => {
   if (status === "accepted" || status === "applied") {
     return "accepted";
   }
@@ -204,22 +204,22 @@ const outcomeFromStatus = (status: FeedbackDeltaStatus): NormalizedReviewOutcome
   return "pending";
 };
 
-export const normalizeFeedbackDelta = (
+export const summarizeFeedbackDeltaReview = (
   feedback: FeedbackDelta
-): NormalizedReviewOutcomeSummary => {
+): ReviewOutcomeSummary => {
   const correctionLabels = reviewStringListMetadata(feedback.metadata, "correctionLabels");
 
   return {
     outcome:
-      normalizeReviewOutcome(reviewStringMetadata(feedback.metadata, "outcome")) ??
+      parseReviewOutcome(reviewStringMetadata(feedback.metadata, "outcome")) ??
       outcomeFromStatus(feedback.status),
     reviewBurden:
-      normalizeReviewRisk(reviewStringMetadata(feedback.metadata, "reviewBurden")) ??
-      normalizeReviewRisk(reviewStringMetadata(feedback.metadata, "burden")) ??
+      parseReviewRisk(reviewStringMetadata(feedback.metadata, "reviewBurden")) ??
+      parseReviewRisk(reviewStringMetadata(feedback.metadata, "burden")) ??
       "low",
     diffRisk:
-      normalizeReviewRisk(reviewStringMetadata(feedback.metadata, "diffRisk")) ??
-      normalizeReviewRisk(reviewStringMetadata(feedback.metadata, "risk")) ??
+      parseReviewRisk(reviewStringMetadata(feedback.metadata, "diffRisk")) ??
+      parseReviewRisk(reviewStringMetadata(feedback.metadata, "risk")) ??
       "low",
     correctionLabels: correctionLabels.length > 0 ? correctionLabels : ["feedback_delta"]
   };

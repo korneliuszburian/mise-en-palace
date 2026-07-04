@@ -1,14 +1,14 @@
 import type {
-  NormalizedReviewOutcome,
-  NormalizedReviewRisk,
+  ReviewOutcome,
   ReviewAssessmentStatus,
-  ReviewFinding
+  ReviewFinding,
+  ReviewRisk
 } from "@krn/core";
 import {
-  isNormalizedReviewRisk,
+  isReviewRisk,
   isReviewAssessmentStatus,
-  normalizeReviewOutcome,
-  normalizeReviewRisk
+  parseReviewOutcome,
+  parseReviewRisk
 } from "@krn/core";
 import {
   createReviewAssessDatabaseRuntime
@@ -67,8 +67,8 @@ const parseReviewStatus = (value: string | undefined): ReviewAssessmentStatus =>
   return status;
 };
 
-const parseOutcome = (value: string | undefined, status: ReviewAssessmentStatus): NormalizedReviewOutcome => {
-  const outcome = normalizeReviewOutcome(value ?? status);
+const parseOutcome = (value: string | undefined, status: ReviewAssessmentStatus): ReviewOutcome => {
+  const outcome = parseReviewOutcome(value ?? status);
 
   if (outcome === undefined) {
     throw new Error("--outcome must be accepted, changes_requested, rejected, pending, or needs_changes");
@@ -80,8 +80,8 @@ const parseOutcome = (value: string | undefined, status: ReviewAssessmentStatus)
 const parseRisk = (
   value: string | undefined,
   label: string
-): NormalizedReviewRisk => {
-  const risk = normalizeReviewRisk(value ?? "low");
+): ReviewRisk => {
+  const risk = parseReviewRisk(value ?? "low");
 
   if (risk === undefined) {
     throw new Error(`${label} must be low, medium, or high`);
@@ -100,7 +100,7 @@ const parseFinding = (input: string): ReviewFinding => {
   const severity = input.slice(0, separatorIndex).trim();
   const message = input.slice(separatorIndex + 1).trim();
 
-  if (!isNormalizedReviewRisk(severity)) {
+  if (!isReviewRisk(severity)) {
     throw new Error("--finding severity must be low, medium, or high");
   }
 
@@ -141,9 +141,9 @@ const formatPersisted = (
   reviewAssessmentId: string,
   feedbackDeltaId: string,
   status: ReviewAssessmentStatus,
-  outcome: NormalizedReviewOutcome,
-  reviewBurden: NormalizedReviewRisk,
-  diffRisk: NormalizedReviewRisk,
+  outcome: ReviewOutcome,
+  reviewBurden: ReviewRisk,
+  diffRisk: ReviewRisk,
   correctionLabels: readonly string[]
 ): string =>
   [

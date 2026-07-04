@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import {
-  normalizeFeedbackDelta,
   sourceUsefulnessOutcomesFromMetadata,
+  summarizeFeedbackDeltaReview,
   summarizeFeedbackCandidateProposals,
   type FeedbackDeltaCreateStatus,
   type FeedbackDeltaLifecycleStatus,
@@ -36,8 +36,8 @@ describe("review outcome domain", () => {
     >();
   });
 
-  test("normalizes feedback outcome burden risk and correction labels", () => {
-    expect(normalizeFeedbackDelta(feedback({}))).toEqual({
+  test("summarizes feedback outcome burden risk and correction labels", () => {
+    expect(summarizeFeedbackDeltaReview(feedback({}))).toEqual({
       outcome: "needs_changes",
       reviewBurden: "medium",
       diffRisk: "high",
@@ -46,7 +46,7 @@ describe("review outcome domain", () => {
   });
 
   test("falls back to stable feedback labels when metadata is absent", () => {
-    expect(normalizeFeedbackDelta(feedback({
+    expect(summarizeFeedbackDeltaReview(feedback({
       status: "accepted",
       metadata: {}
     }))).toEqual({

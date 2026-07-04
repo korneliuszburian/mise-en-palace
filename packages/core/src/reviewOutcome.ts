@@ -7,7 +7,7 @@ export const reviewAssessmentStatuses = [
 
 export type ReviewAssessmentStatus = typeof reviewAssessmentStatuses[number];
 
-export const normalizedReviewOutcomes = [
+export const reviewOutcomes = [
   "accepted",
   "changes_requested",
   "rejected",
@@ -15,47 +15,47 @@ export const normalizedReviewOutcomes = [
   "needs_changes"
 ] as const;
 
-export type NormalizedReviewOutcome = typeof normalizedReviewOutcomes[number];
+export type ReviewOutcome = typeof reviewOutcomes[number];
 
-export const normalizedReviewRisks = ["low", "medium", "high"] as const;
+export const reviewRisks = ["low", "medium", "high"] as const;
 
-export type NormalizedReviewRisk = typeof normalizedReviewRisks[number];
-export type NormalizedReviewBurden = NormalizedReviewRisk;
+export type ReviewRisk = typeof reviewRisks[number];
+export type ReviewBurden = ReviewRisk;
 
-export interface NormalizedReviewOutcomeSummary {
-  outcome: NormalizedReviewOutcome;
-  reviewBurden: NormalizedReviewBurden;
-  diffRisk: NormalizedReviewRisk;
+export interface ReviewOutcomeSummary {
+  outcome: ReviewOutcome;
+  reviewBurden: ReviewBurden;
+  diffRisk: ReviewRisk;
   correctionLabels: string[];
 }
 
 const reviewAssessmentStatusSet = new Set<string>(reviewAssessmentStatuses);
-const normalizedReviewOutcomeSet = new Set<string>(normalizedReviewOutcomes);
-const normalizedReviewRiskSet = new Set<string>(normalizedReviewRisks);
+const reviewOutcomeSet = new Set<string>(reviewOutcomes);
+const reviewRiskSet = new Set<string>(reviewRisks);
 
 export const isReviewAssessmentStatus = (value: string): value is ReviewAssessmentStatus =>
   reviewAssessmentStatusSet.has(value);
 
-export const isNormalizedReviewOutcome = (value: string): value is NormalizedReviewOutcome =>
-  normalizedReviewOutcomeSet.has(value);
+export const isReviewOutcome = (value: string): value is ReviewOutcome =>
+  reviewOutcomeSet.has(value);
 
-export const isNormalizedReviewRisk = (value: string): value is NormalizedReviewRisk =>
-  normalizedReviewRiskSet.has(value);
+export const isReviewRisk = (value: string): value is ReviewRisk =>
+  reviewRiskSet.has(value);
 
-export const normalizeReviewOutcome = (
+export const parseReviewOutcome = (
   value: string | undefined
-): NormalizedReviewOutcome | undefined => {
+): ReviewOutcome | undefined => {
   const trimmedOutcome = value?.trim();
-  return trimmedOutcome !== undefined && isNormalizedReviewOutcome(trimmedOutcome)
+  return trimmedOutcome !== undefined && isReviewOutcome(trimmedOutcome)
     ? trimmedOutcome
     : undefined;
 };
 
-export const normalizeReviewRisk = (
+export const parseReviewRisk = (
   value: string | undefined
-): NormalizedReviewRisk | undefined => {
+): ReviewRisk | undefined => {
   const trimmedRisk = value?.trim();
-  return trimmedRisk !== undefined && isNormalizedReviewRisk(trimmedRisk)
+  return trimmedRisk !== undefined && isReviewRisk(trimmedRisk)
     ? trimmedRisk
     : undefined;
 };

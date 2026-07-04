@@ -178,8 +178,8 @@ supporting surface, or reduced/deprecated boundary in the primitive ledger.
 
 | Vocabulary | Decision | Evidence | Reason |
 | --- | --- | --- | --- |
-| `normalized` / `normalize` | source-only public audit, no broad rename | `packages/core/src/reviewOutcome.ts`; `packages/cli/src/runEvidenceCaptureCommand.ts`; DB mappers | Current known hits are mostly local parsing/standardization helpers. `mise-en-palace-m59a` will check exported/API vocabulary and keep local helper uses when the transformation is mechanically clear. |
-| `final` / `new` | source-only public audit, no broad rename | source grep | Current hits are mostly ordinary control-flow/prose. `mise-en-palace-m59a` will audit exported/package/CLI readback names only, not historical docs or local loop variables. |
+| `normalized` / `normalize` | public review API fixed by `mise-en-palace-m59a`; local helper uses retained | `packages/core/src/reviewOutcome.ts`; `packages/core/src/feedbackDelta.ts`; `packages/cli/src/runReviewAssessCommand.ts`; source grep | Exported review vocabulary now uses `ReviewOutcome`, `ReviewRisk`, `parseReviewOutcome`, `parseReviewRisk`, and `summarizeFeedbackDeltaReview`. Remaining hits are local parsing/standardization helpers or prose with clear transformation scope. |
+| `final` / `new` | retained after public-source audit | source grep | Current hits are ordinary lifecycle prose, local control-flow names, fixture wording, or standard constructors such as `new Set` / `new Date`. No exported package symbol or CLI/readback heading was found where the modifier hides a domain boundary. |
 | `candidate` | keep | Memory/source/eval/review flows | It is a real lifecycle state in KRN, not decoration. |
 | `gate` | keep when enforced | `MemoryReviewGate`, activation filters, invariants | Gate is acceptable only when backed by deterministic enforcement or explicit invariant. |
 
@@ -264,19 +264,22 @@ Acceptance:
 - Misleading residues are renamed to `constraint`, `shape`, `input`, or
   `requirement` as appropriate.
 
-### Cluster E: public vague modifier audit (`mise-en-palace-m59a`)
+### Cluster E: public vague modifier audit (`mise-en-palace-m59a`, closed)
 
 Problem: local helper words such as `normalized`, `final`, `new`, `current`,
 and `latest` are acceptable in tiny scopes, but the same words become
 misleading when exported or shown to operators without a concrete lifecycle or
 transformation axis.
 
-Proposed direction: source-only audit exported package symbols, CLI/readback
-headings, and active docs. Rename only proven-public misleading cases. Keep
-local parse/mapper/control-flow helpers when their scope and transformation are
+Decision: source-only audit exported package symbols, CLI/readback headings, and
+active docs. Rename only proven-public misleading cases. Keep local
+parse/mapper/control-flow helpers when their scope and transformation are
 obvious.
 
-Tracking: `mise-en-palace-m59a`, blocked by this naming-standard slice.
+Result: renamed the exported review outcome API from vague `Normalized*` /
+`normalize*` vocabulary to concrete review outcome/risk and parse/summarize
+vocabulary. No broad sweep was done for local helpers, constructors, fixtures,
+or historical prose.
 
 Acceptance:
 

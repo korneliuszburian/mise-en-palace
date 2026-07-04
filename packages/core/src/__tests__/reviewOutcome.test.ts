@@ -5,11 +5,11 @@ import {
 } from "vitest";
 
 import {
-  isNormalizedReviewOutcome,
-  isNormalizedReviewRisk,
+  isReviewOutcome,
+  isReviewRisk,
   isReviewAssessmentStatus,
-  normalizeReviewOutcome,
-  normalizeReviewRisk,
+  parseReviewOutcome,
+  parseReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
 } from "../reviewOutcome.js";
@@ -18,17 +18,17 @@ describe("review outcome vocabulary", () => {
   test("normalizes shared review outcomes and risk values", () => {
     expect(isReviewAssessmentStatus("changes_requested")).toBe(true);
     expect(isReviewAssessmentStatus("needs_changes")).toBe(false);
-    expect(isNormalizedReviewOutcome("needs_changes")).toBe(true);
-    expect(isNormalizedReviewOutcome("great")).toBe(false);
-    expect(isNormalizedReviewRisk("high")).toBe(true);
-    expect(isNormalizedReviewRisk("critical")).toBe(false);
-    expect(normalizeReviewOutcome(" changes_requested ")).toBe("changes_requested");
-    expect(normalizeReviewOutcome("great")).toBeUndefined();
-    expect(normalizeReviewRisk(" medium ")).toBe("medium");
-    expect(normalizeReviewRisk("critical")).toBeUndefined();
+    expect(isReviewOutcome("needs_changes")).toBe(true);
+    expect(isReviewOutcome("great")).toBe(false);
+    expect(isReviewRisk("high")).toBe(true);
+    expect(isReviewRisk("critical")).toBe(false);
+    expect(parseReviewOutcome(" changes_requested ")).toBe("changes_requested");
+    expect(parseReviewOutcome("great")).toBeUndefined();
+    expect(parseReviewRisk(" medium ")).toBe("medium");
+    expect(parseReviewRisk("critical")).toBeUndefined();
   });
 
-  test("reads normalized string and string-list metadata", () => {
+  test("reads trimmed string and string-list metadata", () => {
     const metadata = {
       outcome: " needs_changes ",
       correctionLabels: [" rollback ", "", 42, "source_grounding"]
