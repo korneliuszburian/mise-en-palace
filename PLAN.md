@@ -27,6 +27,7 @@ DB-backed multi-session memory advantage: brain-search smoke now persists Sessio
 DB-backed plan/brief memory advantage: target repo harness smoke proves baseline brief misses the MemoryRecord and grounded Codex brief renders it
 plan/brief memory eval comparator: eval:memory-advantage now reports no-memory plan/brief misses and KRN memory/source rendered-brief hits
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
+coding-task memory decision: eval:memory-advantage now derives one implementation decision from selected memory/source ids, proving a baseline cast-JSON decision can be replaced by source-backed unknown-first parser guidance without LLM execution
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable
@@ -136,7 +137,6 @@ Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-sessi
 Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
 Latest closed Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
 Latest closed Bead: `mise-en-palace-fg6o` naming hygiene; ready queue empty after relation-linked eval and naming cleanup.
-Corrected planning duplicates: `lheq/hiz6/1bgy/mklo` closed as duplicate or premature after checking closed memory-eval Beads.
 `mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.

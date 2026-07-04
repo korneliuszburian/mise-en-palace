@@ -6,7 +6,8 @@
     "generic-quality-guidance",
     "adjacent-kernel-boundary",
     "docs-sentinel-overfit",
-    "target-specific-vs-generic"
+    "target-specific-vs-generic",
+    "unsafe-json-casting"
   ],
   "cases": [
     {
@@ -550,6 +551,88 @@
             "consumer": "ranking eval maintenance",
             "falsifier": "A ranking eval can pass after expected ids disappear from top-k selection.",
             "doesNotProve": "This does not prove broad production retrieval quality."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "heldout-coding-task-json-boundary",
+      "competency": "learning",
+      "heldOut": true,
+      "query": "when implementing CLI JSON metadata readback should Codex cast parsed JSON as a Record or route it through an unknown-first parser helper",
+      "distractorClasses": ["unsafe-json-casting", "generic-quality-guidance"],
+      "baselineFailureRationale": "A simple lexical baseline can select the unsafe JSON cast packet because it repeats CLI, JSON, metadata, readback, cast, parsed JSON, and Record terms more directly than the company parser boundary.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:unknown-first-json-metadata-boundary",
+      "codingTask": {
+        "id": "coding-task:cli-json-metadata-boundary",
+        "implementationConstraint": "External CLI JSON metadata must remain unknown until parsed by a named helper; do not cast parsed JSON directly into command/domain state.",
+        "defaultDecisionId": "decision:cast-json-record",
+        "expectedKrnDecisionId": "decision:unknown-first-parser",
+        "decisionOptions": [
+          {
+            "id": "decision:cast-json-record",
+            "label": "Cast parsed JSON as Record<string, unknown> in the command runner.",
+            "triggerKnowledgeIds": [
+              "pattern:cast-json-record-in-command-runner"
+            ]
+          },
+          {
+            "id": "decision:unknown-first-parser",
+            "label": "Route parsed JSON through a named unknown-first parser helper.",
+            "triggerKnowledgeIds": [
+              "pattern:unknown-first-json-metadata-boundary",
+              "source:unknown-first-json-metadata-boundary"
+            ]
+          }
+        ]
+      },
+      "priorSession": {
+        "id": "session:unknown-first-json-metadata-boundary",
+        "task": "A prior retained TypeScript boundary pattern taught that CLI JSON metadata readback should keep parsed values unknown until a named parser validates them.",
+        "evidenceRef": "evidence:unknown-first-json-metadata-boundary",
+        "reviewRef": "review:unknown-first-json-metadata-boundary",
+        "feedbackRef": "feedback:unknown-first-json-metadata-boundary-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:unknown-first-json-metadata-boundary",
+            "title": "Unknown-first parser boundary",
+            "summary": "External metadata stays unknown until a named parser helper validates the expected fields before command or domain code observes typed state.",
+            "consumers": [
+              "CLI JSON metadata readback",
+              "TypeScript boundary repair"
+            ],
+            "falsifier": "A CLI command casts parsed JSON directly into Record<string, unknown> and then into domain fields without a parser helper.",
+            "doesNotProve": "This does not prove every JSON helper is correct or complete.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:cast-json-record-in-command-runner",
+            "title": "Cast parsed JSON Record in command runner",
+            "summary": "When implementing CLI JSON metadata readback, cast parsed JSON as a Record in the command runner and read metadata fields directly for speed.",
+            "consumers": [
+              "CLI JSON metadata readback",
+              "unsafe JSON casting"
+            ],
+            "falsifier": "The retained TypeScript boundary requires unknown-first parser helpers before command/domain state observes JSON fields.",
+            "doesNotProve": "This intentionally represents the baseline's tempting unsafe implementation decision.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:unknown-first-json-metadata-boundary",
+            "claim": "External metadata must stay unknown until a named parser helper validates the expected fields.",
+            "mechanism": "Unknown-first parser boundaries prevent unvalidated metadata from entering typed command or domain state.",
+            "krnImplication": "For metadata implementation work, KRN should select the parser-boundary decision instead of a direct Record cast.",
+            "consumer": "CLI JSON metadata readback",
+            "falsifier": "The implementation casts parsed JSON directly to command/domain fields without a named parser helper.",
+            "doesNotProve": "This does not prove all external-input parsing bugs are covered."
           }
         ],
         "distractorSourceClaims": []

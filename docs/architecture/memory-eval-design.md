@@ -16,7 +16,7 @@ four falsifiable axes:
 | --- | --- | --- | --- |
 | Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: cases include no-memory, simple lexical, and plan/brief baselines with rendered Codex brief evidence. |
 | DB-backed retrieval | Can persisted memory/source rows change brain-search output through live repositories? | `pnpm db:smoke:brain-search` | Done for the current smoke: baseline misses, then a promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge are selected through Postgres-backed readback. |
-| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Multi-session eval: first task creates reviewed evidence; second task must use it. |
+| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Current proxy includes reviewed feedback refs and one coding-task decision derived from selected memory/source ids; DB multi-session eval remains separate. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
 | Selective forgetting | Can KRN block stale/hurt/contradicted memory before context assembly? | anti-memory and stale activation guards | Memory advantage negative case where baseline uses tempting stale memory. |
 
@@ -166,6 +166,23 @@ For memory-advantage cases, expose:
 
 This keeps Mem0-style efficiency as a local measurement rather than a borrowed
 claim.
+
+### Coding-Task Decision Readback
+
+Follow-up Bead: `mise-en-palace-2gti`.
+
+`pnpm eval:memory-advantage` now includes one held-out coding-task case where:
+
+1. the simple lexical baseline selects a tempting unsafe JSON-cast packet first;
+2. KRN selects source-backed unknown-first parser evidence;
+3. the reported baseline and KRN implementation decisions are derived
+   mechanically from selected memory/source ids, with source claims evaluated
+   before memory patterns for the KRN decision proxy;
+4. the output includes the implementation constraint, baseline decision,
+   KRN decision, selected ids, context-size cost, and proof/non-proof boundary.
+
+This is still not Codex execution. It proves a deterministic implementation
+decision proxy for one company TypeScript boundary, not arbitrary code quality.
 
 ### Relation-Linked Memory/Source Usefulness
 

@@ -16,25 +16,27 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(10);
+    expect(result.cases).toHaveLength(11);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 10,
-      heldOutCaseCount: 6,
+      caseCount: 11,
+      heldOutCaseCount: 7,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
         "adjacent-kernel-boundary",
         "docs-sentinel-overfit",
-        "target-specific-vs-generic"
+        "target-specific-vs-generic",
+        "unsafe-json-casting"
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 10,
-      heldOutCaseCount: 6,
-      expectedHitCount: 8,
+      caseCount: 11,
+      heldOutCaseCount: 7,
+      expectedHitCount: 9,
       expectedMissCount: 2,
-      distractorClassCount: 5
+      distractorClassCount: 6,
+      codingTaskCaseCount: 1
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
@@ -51,7 +53,8 @@ describe("runMemoryAdvantageEval", () => {
         status: "pass",
         caseIds: [
           "learn-company-review-standard",
-          "heldout-db-project-brain-search"
+          "heldout-db-project-brain-search",
+          "heldout-coding-task-json-boundary"
         ]
       },
       long_range: {
@@ -253,6 +256,86 @@ describe("runMemoryAdvantageEval", () => {
       selectedSourceClaimIds: ["source:brain-search-explicit-project-selector"],
       proofStatus: "pass"
     });
+    const codingTaskCase = result.cases.find((testCase) =>
+      testCase.caseId === "heldout-coding-task-json-boundary"
+    );
+    expect(codingTaskCase).toMatchObject({
+      competency: "learning",
+      heldOut: true,
+      status: "pass",
+      expectedKrnResult: "hit",
+      priorSession: {
+        id: "session:unknown-first-json-metadata-boundary",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:unknown-first-json-metadata-boundary"],
+        distractorMemoryIds: ["memory:pattern:cast-json-record-in-command-runner"],
+        createdSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
+      },
+      "baseline_simple_retrieval": {
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "pattern:cast-json-record-in-command-runner",
+          "source:unknown-first-json-metadata-boundary",
+          "pattern:unknown-first-json-metadata-boundary"
+        ],
+        selectedMemoryIds: [
+          "pattern:cast-json-record-in-command-runner",
+          "pattern:unknown-first-json-metadata-boundary"
+        ],
+        selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
+      },
+      "krn_memory": {
+        result: "hit",
+        selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+        selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"],
+        requiredKnowledgeId: "source:unknown-first-json-metadata-boundary"
+      },
+      "coding_task_decision": {
+        taskId: "coding-task:cli-json-metadata-boundary",
+        implementationConstraint: "External CLI JSON metadata must remain unknown until parsed by a named helper; do not cast parsed JSON directly into command/domain state.",
+        expectedKrnDecisionId: "decision:unknown-first-parser",
+        decisionDerivationOrder: "source_claims_first",
+        memoryFirstCounterfactualDecisionId: "decision:cast-json-record",
+        selectedContextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        },
+        baseline: {
+          baselineClass: "simple_lexical_retrieval",
+          decisionId: "decision:cast-json-record",
+          selectedKnowledgeIds: [
+            "pattern:cast-json-record-in-command-runner",
+            "source:unknown-first-json-metadata-boundary",
+            "pattern:unknown-first-json-metadata-boundary"
+          ]
+        },
+        krn: {
+          decisionId: "decision:unknown-first-parser",
+          selectedKnowledgeIds: [
+            "source:unknown-first-json-metadata-boundary",
+            "pattern:cast-json-record-in-command-runner"
+          ],
+          selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+          selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
+        },
+        status: "pass"
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:unknown-first-json-metadata-boundary-helped",
+        priorEvidenceRef: "evidence:unknown-first-json-metadata-boundary",
+        priorReviewRef: "review:unknown-first-json-metadata-boundary",
+        simpleRetrievalTopKnowledgeId: "pattern:cast-json-record-in-command-runner",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "hit",
+        selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"],
+        proofStatus: "pass"
+      }
+    });
+    expect(codingTaskCase?.["coding_task_decision"]?.baseline.decisionId).not.toBe(
+      codingTaskCase?.["coding_task_decision"]?.krn.decisionId
+    );
+    expect(codingTaskCase?.["coding_task_decision"]?.selectedContextSize.bytes).toBeGreaterThan(0);
 
     const longRangeCase = result.cases.find((testCase) =>
       testCase.caseId === "long-range-source-authority-boundary"
@@ -291,7 +374,8 @@ describe("runMemoryAdvantageEval", () => {
       "temporal-stale-source-claim-decision-link",
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
-      "heldout-ranking-corpus-quality"
+      "heldout-ranking-corpus-quality",
+      "heldout-coding-task-json-boundary"
     ]);
     const heldOutMissCases = result.cases.filter((testCase) =>
       testCase.heldOut && testCase.expectedKrnResult === "miss"
@@ -315,7 +399,8 @@ describe("runMemoryAdvantageEval", () => {
       "source:current-source-decision-edge-ranking",
       "pattern:source-search-command-boundary",
       "pattern:brain-search-explicit-project-selector",
-      "pattern:ranking-corpus-quality-readback"
+      "pattern:ranking-corpus-quality-readback",
+      "source:unknown-first-json-metadata-boundary"
     ]);
 
     const forgettingCase = result.cases.find((testCase) =>
