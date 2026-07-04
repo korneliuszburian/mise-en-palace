@@ -135,6 +135,9 @@ foil:
 - `temporal_stale_source_claim`: a stale source claim remains visible to the
   simple retrieval foil, while KRN selects the current replacement claim and
   reports the stale source exclusion reason.
+- `runtime_memory_source_contradiction`: an active-looking memory carries
+  runtime contradiction metadata against an accepted SourceClaim; no
+  `excludedMemoryCards` or `excludedSourceClaims` shortcut is set on the case.
 
 The `adversarial_unsupported_memory` case is memory-vs-memory: an unsafe
 remembered rule is excluded while the safer denylist memory remains available.
@@ -143,7 +146,7 @@ secret-review-context held-out case.
 
 This proves only controlled local exclusion behavior. It does not yet cover:
 
-- runtime discovery of arbitrary memory/source contradictions.
+- arbitrary contradiction discovery without explicit runtime relation metadata.
 
 The expected behavior is abstention or explicit exclusion, not a confident
 answer.

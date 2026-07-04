@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -13,29 +14,36 @@ const fixturePath = fileURLToPath(
 describe("runMemoryAdvantageEval", () => {
   it("proves controlled memory competencies over a no-memory baseline", async () => {
     const result = await runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
+    const rawFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+      readonly cases: readonly {
+        readonly id: string;
+        readonly priorSession: Record<string, unknown>;
+      }[];
+    };
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(11);
+    expect(result.cases).toHaveLength(12);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 11,
-      heldOutCaseCount: 7,
+      caseCount: 12,
+      heldOutCaseCount: 8,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
         "adjacent-kernel-boundary",
         "docs-sentinel-overfit",
         "target-specific-vs-generic",
-        "unsafe-json-casting"
+        "unsafe-json-casting",
+        "runtime-contradiction"
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 11,
-      heldOutCaseCount: 7,
-      expectedHitCount: 9,
+      caseCount: 12,
+      heldOutCaseCount: 8,
+      expectedHitCount: 10,
       expectedMissCount: 2,
-      distractorClassCount: 6,
+      distractorClassCount: 7,
       codingTaskCaseCount: 1
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
@@ -70,7 +78,8 @@ describe("runMemoryAdvantageEval", () => {
           "forget-obsolete-no-second-opinion-rule",
           "adversarial-unsupported-secret-scan-rule",
           "adversarial-memory-source-conflict-secret-review",
-          "temporal-stale-source-claim-decision-link"
+          "temporal-stale-source-claim-decision-link",
+          "runtime-memory-source-contradiction-review-context"
         ]
       }
     });
@@ -372,6 +381,7 @@ describe("runMemoryAdvantageEval", () => {
     expect(heldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "adversarial-memory-source-conflict-secret-review",
       "temporal-stale-source-claim-decision-link",
+      "runtime-memory-source-contradiction-review-context",
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality",
@@ -397,6 +407,7 @@ describe("runMemoryAdvantageEval", () => {
     )).toEqual([
       "source:secret-review-context-denylist",
       "source:current-source-decision-edge-ranking",
+      "source:runtime-secret-context-denylist",
       "pattern:source-search-command-boundary",
       "pattern:brain-search-explicit-project-selector",
       "pattern:ranking-corpus-quality-readback",
@@ -689,6 +700,62 @@ describe("runMemoryAdvantageEval", () => {
     });
     expect(temporalStaleSourceCase?.["krn_memory"].selectedSourceClaimIds).not.toContain(
       "source:old-crawler-first-without-decision-edge"
+    );
+    const runtimeContradictionRawCase = rawFixture.cases.find((testCase) =>
+      testCase.id === "runtime-memory-source-contradiction-review-context"
+    );
+    expect(runtimeContradictionRawCase?.priorSession).not.toHaveProperty("excludedMemoryCards");
+    expect(runtimeContradictionRawCase?.priorSession).not.toHaveProperty("excludedSourceClaims");
+    const runtimeContradictionCase = result.cases.find((testCase) =>
+      testCase.caseId === "runtime-memory-source-contradiction-review-context"
+    );
+    expect(runtimeContradictionCase).toMatchObject({
+      competency: "forgetting",
+      heldOut: true,
+      status: "pass",
+      expectedKrnResult: "hit",
+      negativeClass: "runtime_memory_source_contradiction",
+      priorSession: {
+        id: "session:runtime-memory-source-contradiction",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:paste-secrets-from-old-memory-runtime-conflict"],
+        excludedMemoryIds: ["memory:pattern:paste-secrets-from-old-memory-runtime-conflict"],
+        createdSourceClaimIds: ["source:runtime-secret-context-denylist"]
+      },
+      "baseline_simple_retrieval": {
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "pattern:paste-secrets-from-old-memory-runtime-conflict",
+          "source:runtime-secret-context-denylist"
+        ],
+        selectedMemoryIds: ["pattern:paste-secrets-from-old-memory-runtime-conflict"],
+        selectedSourceClaimIds: ["source:runtime-secret-context-denylist"]
+      },
+      "krn_memory": {
+        result: "hit",
+        selectedSourceClaimIds: ["source:runtime-secret-context-denylist"],
+        requiredKnowledgeId: "source:runtime-secret-context-denylist",
+        exclusions: [
+          {
+            memoryId: "memory:pattern:paste-secrets-from-old-memory-runtime-conflict",
+            reason: "contradicts_source_claim source:runtime-secret-context-denylist: accepted source evidence forbids sending secret-bearing file bodies to review context"
+          }
+        ]
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:runtime-memory-source-contradiction-helped",
+        priorEvidenceRef: "evidence:runtime-memory-source-contradiction",
+        priorReviewRef: "review:runtime-memory-source-contradiction",
+        simpleRetrievalResult: "distractor_selected",
+        simpleRetrievalTopKnowledgeId: "pattern:paste-secrets-from-old-memory-runtime-conflict",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "hit",
+        selectedSourceClaimIds: ["source:runtime-secret-context-denylist"],
+        proofStatus: "pass"
+      }
+    });
+    expect(runtimeContradictionCase?.["krn_memory"].selectedMemoryIds).not.toContain(
+      "pattern:paste-secrets-from-old-memory-runtime-conflict"
     );
     expect(result.proof.proves).toContain(
       "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"

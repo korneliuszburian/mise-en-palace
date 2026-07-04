@@ -58,7 +58,8 @@ type MemoryAdvantageNegativeClass =
   | "stale_memory"
   | "adversarial_unsupported_memory"
   | "adversarial_memory_source_conflict"
-  | "temporal_stale_source_claim";
+  | "temporal_stale_source_claim"
+  | "runtime_memory_source_contradiction";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -66,7 +67,16 @@ type SimpleRetrievalResult =
   | "top_match_selected"
   | "distractor_selected"
   | "miss";
-type MemoryAdvantageCardFixture = EvalKnowledgeCardFixture;
+interface MemoryAdvantageRuntimeMemoryExclusionFixture {
+  readonly relation: "contradicts_source_claim";
+  readonly sourceClaimId: string;
+  readonly reason: string;
+}
+
+interface MemoryAdvantageCardFixture extends EvalKnowledgeCardFixture {
+  readonly runtimeExclusion?: MemoryAdvantageRuntimeMemoryExclusionFixture;
+}
+
 type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
 type MemoryAdvantageCatalogCardFixture =
   MemoryAdvantageCardFixture | MemoryAdvantageExcludedMemoryFixture;
@@ -314,7 +324,8 @@ const memoryNegativeClasses = [
   "stale_memory",
   "adversarial_unsupported_memory",
   "adversarial_memory_source_conflict",
-  "temporal_stale_source_claim"
+  "temporal_stale_source_claim",
+  "runtime_memory_source_contradiction"
 ] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
@@ -355,6 +366,56 @@ const parseExcludedMemoryCards = (
   });
 };
 
+const parseRuntimeMemoryExclusion = (
+  value: unknown,
+  label: string
+): MemoryAdvantageRuntimeMemoryExclusionFixture | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw new Error(`${label}.runtimeExclusion must be an object`);
+  }
+
+  const relation = requiredString(value, "relation", `${label}.runtimeExclusion`);
+
+  if (relation !== "contradicts_source_claim") {
+    throw new Error(`${label}.runtimeExclusion.relation must be contradicts_source_claim`);
+  }
+
+  return {
+    relation,
+    sourceClaimId: requiredString(value, "sourceClaimId", `${label}.runtimeExclusion`),
+    reason: requiredString(value, "reason", `${label}.runtimeExclusion`)
+  };
+};
+
+const parseMemoryAdvantageCards = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageCardFixture[] => {
+  const cards = parseEvalKnowledgeCards(record, key, label);
+  const rawCards = recordArray(record, key, label);
+
+  return cards.map((card, index) => {
+    const rawCard = rawCards[index];
+    if (rawCard === undefined) {
+      throw new Error(`${label}.${key}[${index}] must be present`);
+    }
+
+    const runtimeExclusion = parseRuntimeMemoryExclusion(rawCard["runtimeExclusion"], `${label}.${key}[${index}]`);
+
+    return runtimeExclusion === undefined
+      ? card
+      : {
+          ...card,
+          runtimeExclusion
+        };
+  });
+};
+
 const parseExcludedSourceClaims = (
   record: Record<string, unknown>,
   key: string,
@@ -381,7 +442,7 @@ const parseOptionalEvalKnowledgeCards = (
   key: string,
   label: string
 ): readonly MemoryAdvantageCardFixture[] =>
-  record[key] === undefined ? [] : parseEvalKnowledgeCards(record, key, label);
+  record[key] === undefined ? [] : parseMemoryAdvantageCards(record, key, label);
 
 const parseOptionalEvalSourceClaims = (
   record: Record<string, unknown>,
@@ -389,6 +450,13 @@ const parseOptionalEvalSourceClaims = (
   label: string
 ): readonly MemoryAdvantageSourceClaimFixture[] =>
   record[key] === undefined ? [] : parseEvalSourceClaims(record, key, label);
+
+const parseOptionalExcludedMemoryCards = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageExcludedMemoryFixture[] =>
+  record[key] === undefined ? [] : parseExcludedMemoryCards(record, key, label);
 
 const parseOptionalExcludedSourceClaims = (
   record: Record<string, unknown>,
@@ -451,7 +519,7 @@ const parseCase = (
     throw new Error(`${label}.priorSession must be an object`);
   }
 
-  const memoryCards = parseEvalKnowledgeCards(priorSession, "memoryCards", `${label}.priorSession`);
+  const memoryCards = parseMemoryAdvantageCards(priorSession, "memoryCards", `${label}.priorSession`);
   const sourceClaims = parseEvalSourceClaims(priorSession, "sourceClaims", `${label}.priorSession`);
 
   const negativeClass = value["negativeClass"] === undefined
@@ -475,7 +543,11 @@ const parseCase = (
       feedbackRef: requiredString(priorSession, "feedbackRef", `${label}.priorSession`),
       applicationOutcome: requiredString(priorSession, "applicationOutcome", `${label}.priorSession`),
       memoryCards,
-      excludedMemoryCards: parseExcludedMemoryCards(priorSession, "excludedMemoryCards", `${label}.priorSession`),
+      excludedMemoryCards: parseOptionalExcludedMemoryCards(
+        priorSession,
+        "excludedMemoryCards",
+        `${label}.priorSession`
+      ),
       distractorMemoryCards: parseOptionalEvalKnowledgeCards(
         priorSession,
         "distractorMemoryCards",
@@ -734,10 +806,17 @@ const isExcludedMemoryCard = (
 ): card is MemoryAdvantageExcludedMemoryFixture =>
   "exclusionReason" in card;
 
+const hasRuntimeExclusion = (
+  card: MemoryAdvantageCardFixture
+): boolean =>
+  card.runtimeExclusion !== undefined;
+
 const selectableMemoryCards = (
   cards: readonly MemoryAdvantageCatalogCardFixture[]
 ): readonly MemoryAdvantageCardFixture[] =>
-  cards.filter((card): card is MemoryAdvantageCardFixture => !isExcludedMemoryCard(card));
+  cards.filter((card): card is MemoryAdvantageCardFixture =>
+    !isExcludedMemoryCard(card) && !hasRuntimeExclusion(card)
+  );
 
 const throwingRepositoryMethod = (method: string): never => {
   throw new Error(`${method} should not be called by memory advantage eval`);
@@ -967,11 +1046,28 @@ const isKrnHit = (
 
 const buildMemoryExclusions = (
   testCase: MemoryAdvantageCaseFixture
-): readonly MemoryAdvantageMemoryExclusionReadback[] =>
-  testCase.priorSession.excludedMemoryCards.map((card) => ({
+): readonly MemoryAdvantageMemoryExclusionReadback[] => {
+  const explicitExclusions = testCase.priorSession.excludedMemoryCards.map((card) => ({
     memoryId: `memory:${card.id}`,
     reason: card.exclusionReason
   }));
+  const runtimeExclusions = [
+    ...testCase.priorSession.memoryCards,
+    ...testCase.priorSession.distractorMemoryCards
+  ].flatMap((card) =>
+    card.runtimeExclusion === undefined
+      ? []
+      : [{
+          memoryId: `memory:${card.id}`,
+          reason: `${card.runtimeExclusion.relation} ${card.runtimeExclusion.sourceClaimId}: ${card.runtimeExclusion.reason}`
+        }]
+  );
+
+  return [
+    ...explicitExclusions,
+    ...runtimeExclusions
+  ];
+};
 
 const buildSourceClaimExclusions = (
   testCase: MemoryAdvantageCaseFixture
@@ -1592,6 +1688,7 @@ export const runMemoryAdvantageEval = async (
         "coding-task cases can derive baseline and KRN implementation decisions mechanically from selected memory/source ids",
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",
+        "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryCards or excludedSourceClaims",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
@@ -1599,6 +1696,7 @@ export const runMemoryAdvantageEval = async (
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
         "that simple lexical retrieval is a strong baseline; it is a local foil for governed memory/source packaging",
         "runtime stale-memory or stale-source detection for arbitrary production MemoryRecord or SourceClaim rows",
+        "arbitrary contradiction discovery without explicit runtime relation metadata",
         "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four",
         "card or source-claim content payload size; selected-context size measures selection identifier overhead only",
         "automatic Memory Core promotion from evidence or feedback",
