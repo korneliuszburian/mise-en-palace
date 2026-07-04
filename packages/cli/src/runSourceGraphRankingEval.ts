@@ -44,9 +44,11 @@ interface SourceGraphRankingQuery {
   readonly relationLinkedExpected: boolean;
   readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly corpusSplit: SourceGraphRankingCorpusSplit;
+  readonly expectedRelationDirections: readonly SourceGraphRankingRelationDirection[];
 }
 
 type SourceGraphRankingCorpusSplit = "main" | "held_out";
+type SourceGraphRankingRelationDirection = "incoming" | "outgoing";
 
 interface SourceGraphFlatComparison {
   readonly includedHitIds: readonly string[];
@@ -54,6 +56,8 @@ interface SourceGraphFlatComparison {
   readonly expectedHitRelationSupport: number;
   readonly relationKinds: readonly SourceClaimEdge["kind"][];
   readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
+  readonly relationDirections: readonly SourceGraphRankingRelationDirection[];
+  readonly expectedHitRelationDirections: readonly SourceGraphRankingRelationDirection[];
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
   readonly weakness: "missing_expected_relation_support";
@@ -71,14 +75,7 @@ export interface SourceGraphRankingEvalFixture {
   readonly queries: readonly SourceGraphRankingQuery[];
 }
 
-export interface SourceGraphRankingEvalCaseResult {
-  readonly id: string;
-  readonly corpusSplit: SourceGraphRankingCorpusSplit;
-  readonly query: string;
-  readonly expectedHitIds: readonly string[];
-  readonly baselineFailureRationale: string;
-  readonly relationLinkedExpected: boolean;
-  readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
+interface SourceGraphQueryRun {
   readonly includedHitIds: readonly string[];
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
@@ -87,9 +84,22 @@ export interface SourceGraphRankingEvalCaseResult {
   readonly expectedHitRelationSupport: number;
   readonly relationKinds: readonly SourceClaimEdge["kind"][];
   readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
+  readonly relationDirections: readonly SourceGraphRankingRelationDirection[];
+  readonly expectedHitRelationDirections: readonly SourceGraphRankingRelationDirection[];
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
+}
+
+export interface SourceGraphRankingEvalCaseResult extends SourceGraphQueryRun {
+  readonly id: string;
+  readonly corpusSplit: SourceGraphRankingCorpusSplit;
+  readonly query: string;
+  readonly expectedHitIds: readonly string[];
+  readonly baselineFailureRationale: string;
+  readonly relationLinkedExpected: boolean;
+  readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
+  readonly expectedRelationDirections: readonly SourceGraphRankingRelationDirection[];
   readonly flatComparison?: SourceGraphFlatComparison;
 }
 
@@ -131,6 +141,12 @@ export interface SourceGraphRankingEvalResult {
     readonly heldOutNdcgAtK: number;
     readonly heldOutRelationShapeCaseCount: number;
     readonly heldOutRelationShapeKinds: readonly SourceClaimEdge["kind"][];
+    readonly relationDirectionCaseCount: number;
+    readonly relationDirectionCoveredCases: number;
+    readonly relationDirections: readonly SourceGraphRankingRelationDirection[];
+    readonly observedRelationDirections: readonly SourceGraphRankingRelationDirection[];
+    readonly heldOutRelationDirections: readonly SourceGraphRankingRelationDirection[];
+    readonly heldOutObservedRelationDirections: readonly SourceGraphRankingRelationDirection[];
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -239,6 +255,34 @@ const parseRelationKindArray = (
   return value.map((item, index) => parseRelationKind(item, `${label}[${index}]`));
 };
 
+const parseRelationDirection = (
+  value: unknown,
+  label: string
+): SourceGraphRankingRelationDirection => {
+  const direction = stringValue(value, label);
+
+  if (direction !== "incoming" && direction !== "outgoing") {
+    throw new Error(`${label} must be incoming or outgoing`);
+  }
+
+  return direction;
+};
+
+const parseRelationDirectionArray = (
+  value: unknown,
+  label: string
+): readonly SourceGraphRankingRelationDirection[] => {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  return value.map((item, index) => parseRelationDirection(item, `${label}[${index}]`));
+};
+
 const parseRow = (
   tuple: readonly unknown[],
   index: number
@@ -265,6 +309,11 @@ const requiredRelationShapeKinds = [
   "invalidates",
   "supports"
 ] as const satisfies readonly SourceClaimEdge["kind"][];
+
+const requiredRelationDirections = [
+  "incoming",
+  "outgoing"
+] as const satisfies readonly SourceGraphRankingRelationDirection[];
 
 const parseRelationKind = (
   value: unknown,
@@ -297,9 +346,14 @@ const parseQuery = (
     : booleanValue(tuple[4], `queries[${index}][4]`);
   const expectedRelationKinds = parseRelationKindArray(tuple[5], `queries[${index}][5]`);
   const corpusSplit = parseCorpusSplit(tuple[6], `queries[${index}][6]`);
+  const expectedRelationDirections = parseRelationDirectionArray(tuple[7], `queries[${index}][7]`);
 
   if (expectedRelationKinds.length > 0 && !relationLinkedExpected) {
     throw new Error(`queries[${index}] expectedRelationKinds require relationLinkedExpected=true`);
+  }
+
+  if (expectedRelationDirections.length > 0 && !relationLinkedExpected) {
+    throw new Error(`queries[${index}] expectedRelationDirections require relationLinkedExpected=true`);
   }
 
   return {
@@ -309,7 +363,8 @@ const parseQuery = (
     baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`),
     relationLinkedExpected,
     expectedRelationKinds,
-    corpusSplit
+    corpusSplit,
+    expectedRelationDirections
   };
 };
 
@@ -321,8 +376,8 @@ const parseQueryTuples = (
   }
 
   return value.map((item, index) => {
-    if (!Array.isArray(item) || (item.length < 4 || item.length > 7)) {
-      throw new Error(`queries[${index}] must be a 4-, 5-, 6-, or 7-item tuple`);
+    if (!Array.isArray(item) || (item.length < 4 || item.length > 8)) {
+      throw new Error(`queries[${index}] must be a 4-, 5-, 6-, 7-, or 8-item tuple`);
     }
 
     return parseQuery(item, index);
@@ -639,6 +694,19 @@ const uniqueRelationKinds = (
 ): readonly SourceClaimEdge["kind"][] =>
   Array.from(new Set(kinds)).sort();
 
+const relationDirectionFromReadback = (
+  value: unknown
+): SourceGraphRankingRelationDirection | undefined => {
+  const direction = optionalString(value);
+
+  return direction === "incoming" || direction === "outgoing" ? direction : undefined;
+};
+
+const uniqueRelationDirections = (
+  directions: readonly SourceGraphRankingRelationDirection[]
+): readonly SourceGraphRankingRelationDirection[] =>
+  Array.from(new Set(directions)).sort();
+
 const candidateHitId = (candidate: Record<string, unknown>): string | undefined => {
   const sourceClaimId = optionalString(candidate["sourceClaimId"]);
   const searchDocumentId = optionalString(candidate["searchDocumentId"]);
@@ -652,20 +720,6 @@ const candidateHitId = (candidate: Record<string, unknown>): string | undefined 
 
 const sourceClaimIdFromHitId = (hitId: string): string | undefined =>
   hitId.startsWith("source_claim:") ? hitId.slice("source_claim:".length) : undefined;
-
-interface SourceGraphQueryRun {
-  readonly includedHitIds: readonly string[];
-  readonly supportingClaims: number;
-  readonly supportingDocuments: number;
-  readonly sourceClaimDocumentLinks: number;
-  readonly relationSupport: number;
-  readonly expectedHitRelationSupport: number;
-  readonly relationKinds: readonly SourceClaimEdge["kind"][];
-  readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
-  readonly sourceDecisionSupport: number;
-  readonly hitAtK: boolean;
-  readonly ndcgAtK: number;
-}
 
 const runQueryPath = async (
   fixture: SourceGraphRankingEvalFixture,
@@ -719,6 +773,19 @@ const runQueryPath = async (
       ? [kind]
       : [];
   }));
+  const relationDirections = uniqueRelationDirections(relationSupport.flatMap((support) => {
+    const direction = relationDirectionFromReadback(support["direction"]);
+
+    return direction === undefined ? [] : [direction];
+  }));
+  const expectedHitRelationDirections = uniqueRelationDirections(relationSupport.flatMap((support) => {
+    const sourceClaimId = optionalString(support["sourceClaimId"]);
+    const direction = relationDirectionFromReadback(support["direction"]);
+
+    return sourceClaimId !== undefined && expectedSourceClaimIds.has(sourceClaimId) && direction !== undefined
+      ? [direction]
+      : [];
+  }));
 
   return {
     includedHitIds,
@@ -736,6 +803,8 @@ const runQueryPath = async (
     }).length,
     relationKinds,
     expectedHitRelationKinds,
+    relationDirections,
+    expectedHitRelationDirections,
     sourceDecisionSupport: recordArray(answerPackage["sourceDecisionSupport"], `${queryCase.id}.sourceDecisionSupport`).length,
     hitAtK: includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id)),
     ndcgAtK: roundRankingMetric(ndcgAtK(includedHitIds, expectedHitIds, fixture.topK))
@@ -773,6 +842,7 @@ const evaluateQuery = async (
     baselineFailureRationale: queryCase.baselineFailureRationale,
     relationLinkedExpected: queryCase.relationLinkedExpected,
     expectedRelationKinds: queryCase.expectedRelationKinds,
+    expectedRelationDirections: queryCase.expectedRelationDirections,
     ...linked
   };
 
@@ -788,6 +858,8 @@ const evaluateQuery = async (
       expectedHitRelationSupport: flat.expectedHitRelationSupport,
       relationKinds: flat.relationKinds,
       expectedHitRelationKinds: flat.expectedHitRelationKinds,
+      relationDirections: flat.relationDirections,
+      expectedHitRelationDirections: flat.expectedHitRelationDirections,
       hitAtK: flat.hitAtK,
       ndcgAtK: flat.ndcgAtK,
       weakness
@@ -832,8 +904,35 @@ export const runSourceGraphRankingEval = async (
   const heldOutRelationShapeKinds = uniqueRelationKinds(heldOutRelationShapeCases.flatMap((testCase) =>
     testCase.expectedRelationKinds
   ));
+  const relationDirectionCases = cases.filter((testCase) => testCase.expectedRelationDirections.length > 0);
+  const heldOutRelationDirectionCases = heldOutCases.filter((testCase) =>
+    testCase.expectedRelationDirections.length > 0
+  );
+  const relationDirectionCoveredCases = relationDirectionCases.filter((testCase) =>
+    testCase.expectedRelationDirections.every((direction) =>
+      testCase.expectedHitRelationDirections.includes(direction)
+    )
+  );
+  const relationDirections = uniqueRelationDirections(relationDirectionCases.flatMap((testCase) =>
+    testCase.expectedRelationDirections
+  ));
+  const observedRelationDirections = uniqueRelationDirections(relationDirectionCases.flatMap((testCase) =>
+    testCase.expectedHitRelationDirections
+  ));
+  const heldOutRelationDirections = uniqueRelationDirections(heldOutCases.flatMap((testCase) =>
+    testCase.expectedRelationDirections
+  ));
+  const heldOutObservedRelationDirections = uniqueRelationDirections(heldOutRelationDirectionCases.flatMap((testCase) =>
+    testCase.expectedHitRelationDirections
+  ));
   const hasRequiredRelationShapeKinds = requiredRelationShapeKinds.every((kind) =>
     relationShapeKinds.includes(kind)
+  );
+  const hasRequiredRelationDirections = requiredRelationDirections.every((direction) =>
+    relationDirections.includes(direction) &&
+    observedRelationDirections.includes(direction) &&
+    heldOutRelationDirections.includes(direction) &&
+    heldOutObservedRelationDirections.includes(direction)
   );
   const hasHeldOutRelationCorpus = heldOutCases.length > 0 && heldOutRelationShapeKinds.length >= 2;
   const status =
@@ -843,6 +942,9 @@ export const runSourceGraphRankingEval = async (
     relationLinkedCases.length > 0 &&
     flatBaselineWeakerCases.length === relationLinkedCases.length &&
     relationShapeCoveredCases.length === relationShapeCases.length &&
+    relationDirectionCoveredCases.length === relationDirectionCases.length &&
+    relationDirectionCases.length >= requiredRelationDirections.length &&
+    hasRequiredRelationDirections &&
     hasRequiredRelationShapeKinds
       ? "pass"
       : "fail";
@@ -897,7 +999,13 @@ export const runSourceGraphRankingEval = async (
       heldOutHitRateAtK: averageRankingMetric(heldOutCases, "hitAtK"),
       heldOutNdcgAtK: averageRankingMetric(heldOutCases, "ndcgAtK"),
       heldOutRelationShapeCaseCount: heldOutRelationShapeCases.length,
-      heldOutRelationShapeKinds
+      heldOutRelationShapeKinds,
+      relationDirectionCaseCount: relationDirectionCases.length,
+      relationDirectionCoveredCases: relationDirectionCoveredCases.length,
+      relationDirections,
+      observedRelationDirections,
+      heldOutRelationDirections,
+      heldOutObservedRelationDirections
     },
     cases,
     proof: {
@@ -907,6 +1015,7 @@ export const runSourceGraphRankingEval = async (
         "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback",
         `relation-shape cases report expected and observed SourceClaimEdge kinds for ${requiredRelationShapeKinds.join(", ")} readback`,
         "held-out relation corpus split reports held-out query count, hit-rate/NDCG, relation-shape kinds, and flat comparison",
+        "relation-direction cases report expected and observed incoming/outgoing SourceClaimEdge directions for expected hits",
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],

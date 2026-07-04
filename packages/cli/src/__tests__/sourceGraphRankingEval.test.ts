@@ -48,7 +48,13 @@ describe("runSourceGraphRankingEval", () => {
         heldOutHitRateAtK: 1,
         heldOutNdcgAtK: 1,
         heldOutRelationShapeCaseCount: 2,
-        heldOutRelationShapeKinds: ["depends_on", "qualifies"]
+        heldOutRelationShapeKinds: ["depends_on", "qualifies"],
+        relationDirectionCaseCount: 2,
+        relationDirectionCoveredCases: 2,
+        relationDirections: ["incoming", "outgoing"],
+        observedRelationDirections: ["incoming", "outgoing"],
+        heldOutRelationDirections: ["incoming", "outgoing"],
+        heldOutObservedRelationDirections: ["incoming", "outgoing"]
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
@@ -132,11 +138,14 @@ describe("runSourceGraphRankingEval", () => {
       corpusSplit: "held_out",
       relationLinkedExpected: true,
       expectedRelationKinds: ["qualifies"],
+      expectedRelationDirections: ["incoming"],
       expectedHitRelationSupport: 1,
       expectedHitRelationKinds: ["qualifies"],
+      expectedHitRelationDirections: ["incoming"],
       flatComparison: {
         expectedHitRelationSupport: 0,
         expectedHitRelationKinds: [],
+        expectedHitRelationDirections: [],
         weakness: "missing_expected_relation_support"
       }
     });
@@ -146,11 +155,14 @@ describe("runSourceGraphRankingEval", () => {
       corpusSplit: "held_out",
       relationLinkedExpected: true,
       expectedRelationKinds: ["depends_on"],
+      expectedRelationDirections: ["outgoing"],
       expectedHitRelationSupport: 1,
       expectedHitRelationKinds: ["depends_on"],
+      expectedHitRelationDirections: ["outgoing"],
       flatComparison: {
         expectedHitRelationSupport: 0,
         expectedHitRelationKinds: [],
+        expectedHitRelationDirections: [],
         weakness: "missing_expected_relation_support"
       }
     });
@@ -166,6 +178,9 @@ describe("runSourceGraphRankingEval", () => {
     );
     expect(result.proof.proves).toContain(
       "held-out relation corpus split reports held-out query count, hit-rate/NDCG, relation-shape kinds, and flat comparison"
+    );
+    expect(result.proof.proves).toContain(
+      "relation-direction cases report expected and observed incoming/outgoing SourceClaimEdge directions for expected hits"
     );
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "source truth",
@@ -318,6 +333,174 @@ describe("runSourceGraphRankingEval", () => {
     expect(result.metrics.relationShapeCaseCount).toBe(1);
     expect(result.metrics.relationShapeCoveredCases).toBe(1);
     expect(result.metrics.relationShapeKinds).toEqual(["supports"]);
+    expect(result.status).toBe("fail");
+  });
+
+  it("fails when relation direction coverage is incomplete", async () => {
+    const result = await runSourceGraphRankingEval(parseSourceGraphRankingEvalFixture({
+      version: "1",
+      corpusName: "negative-relation-direction-partial",
+      distractorClasses: ["partial-relation-direction-coverage"],
+      topK: 6,
+      minimumHitRateAtK: 1,
+      minimumNdcgAtK: 1,
+      rows: Array.from({ length: 20 }, (_unused, index) => [
+        `claim-${index}`,
+        index === 0 ? "supportsanchor directionedge" :
+          index === 2 ? "duplicatesanchor directionedge" :
+            index === 4 ? "invalidatesanchor directionedge" :
+              index === 7 ? "incominganchor directionedge" :
+              `controlanchor${index}`,
+        `Fixture claim ${index}.`
+      ]),
+      relations: [
+        ["claim-0", "claim-1", "supports"],
+        ["claim-2", "claim-3", "duplicates"],
+        ["claim-4", "claim-5", "invalidates"],
+        ["claim-6", "claim-7", "narrows"]
+      ],
+      queries: [
+        // Direction readback is relative to the expected source-claim hit. This
+        // relation starts at claim-0, so claim-0 must observe it as outgoing.
+        [
+          "query-supports-wrong-direction",
+          "supportsanchor directionedge",
+          ["source_claim:claim-0"],
+          "The supports relation kind is present, but the expected direction is intentionally wrong.",
+          true,
+          ["supports"],
+          "held_out",
+          ["incoming"]
+        ],
+        [
+          "query-duplicates-heldout",
+          "duplicatesanchor directionedge",
+          ["source_claim:claim-2"],
+          "The duplicates held-out query supplies the second held-out relation kind.",
+          true,
+          ["duplicates"],
+          "held_out",
+          ["outgoing"]
+        ],
+        [
+          "query-invalidates-main",
+          "invalidatesanchor directionedge",
+          ["source_claim:claim-4"],
+          "The invalidates query completes required relation-shape coverage.",
+          true,
+          ["invalidates"]
+        ],
+        // Symmetric polarity check: this relation points into claim-7, so
+        // claim-7 must observe it as incoming, not outgoing.
+        [
+          "query-narrows-wrong-direction",
+          "incominganchor directionedge",
+          ["source_claim:claim-7"],
+          "The narrows relation kind is present, but the expected direction is intentionally wrong in the opposite polarity.",
+          true,
+          ["narrows"],
+          "main",
+          ["outgoing"]
+        ],
+        ...Array.from({ length: 11 }, (_unused, index) => [
+          `query-${index}`,
+          `controlanchor${index + 8}`,
+          [`source_claim:claim-${index + 8}`],
+          `Control source ${index + 8} should remain selectable.`
+        ])
+      ]
+    }));
+
+    expect(result.metrics.hitRateAtK).toBe(1);
+    expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(1);
+    expect(result.metrics.flatBaselineWeakerCases).toBe(4);
+    expect(result.metrics.relationShapeCoveredCases).toBe(4);
+    expect(result.metrics.relationShapeKinds).toEqual(["duplicates", "invalidates", "narrows", "supports"]);
+    expect(result.metrics.heldOutRelationShapeKinds).toEqual(["duplicates", "supports"]);
+    expect(result.metrics.relationDirectionCaseCount).toBe(3);
+    expect(result.metrics.relationDirectionCoveredCases).toBe(1);
+    expect(result.cases.find((testCase) =>
+      testCase.id === "query-supports-wrong-direction"
+    )).toMatchObject({
+      expectedRelationDirections: ["incoming"],
+      expectedHitRelationDirections: ["outgoing"]
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "query-narrows-wrong-direction"
+    )).toMatchObject({
+      expectedRelationDirections: ["outgoing"],
+      expectedHitRelationDirections: ["incoming"]
+    });
+    expect(result.status).toBe("fail");
+  });
+
+  it("fails when relation direction declarations are absent", async () => {
+    const result = await runSourceGraphRankingEval(parseSourceGraphRankingEvalFixture({
+      version: "1",
+      corpusName: "negative-relation-direction-absent",
+      distractorClasses: ["missing-relation-direction-declarations"],
+      topK: 6,
+      minimumHitRateAtK: 1,
+      minimumNdcgAtK: 1,
+      rows: Array.from({ length: 20 }, (_unused, index) => [
+        `claim-${index}`,
+        index === 0 ? "supportsanchor nodirection" :
+          index === 2 ? "duplicatesanchor nodirection" :
+            index === 4 ? "invalidatesanchor nodirection" :
+              `controlanchor${index}`,
+        `Fixture claim ${index}.`
+      ]),
+      relations: [
+        ["claim-0", "claim-1", "supports"],
+        ["claim-2", "claim-3", "duplicates"],
+        ["claim-4", "claim-5", "invalidates"]
+      ],
+      queries: [
+        [
+          "query-supports-heldout",
+          "supportsanchor nodirection",
+          ["source_claim:claim-0"],
+          "The supports relation kind is present, but no direction expectation is declared.",
+          true,
+          ["supports"],
+          "held_out"
+        ],
+        [
+          "query-duplicates-heldout",
+          "duplicatesanchor nodirection",
+          ["source_claim:claim-2"],
+          "The duplicates relation kind supplies the second held-out relation shape without direction coverage.",
+          true,
+          ["duplicates"],
+          "held_out"
+        ],
+        [
+          "query-invalidates-main",
+          "invalidatesanchor nodirection",
+          ["source_claim:claim-4"],
+          "The invalidates query completes required relation-shape coverage.",
+          true,
+          ["invalidates"]
+        ],
+        ...Array.from({ length: 12 }, (_unused, index) => [
+          `query-${index}`,
+          `controlanchor${index + 6}`,
+          [`source_claim:claim-${index + 6}`],
+          `Control source ${index + 6} should remain selectable.`
+        ])
+      ]
+    }));
+
+    expect(result.metrics.hitRateAtK).toBe(1);
+    expect(result.metrics.flatBaselineWeakerCases).toBe(3);
+    expect(result.metrics.relationShapeCoveredCases).toBe(3);
+    expect(result.metrics.heldOutRelationShapeKinds).toEqual(["duplicates", "supports"]);
+    expect(result.metrics.relationDirectionCaseCount).toBe(0);
+    expect(result.metrics.relationDirectionCoveredCases).toBe(0);
+    expect(result.metrics.relationDirections).toEqual([]);
+    expect(result.metrics.observedRelationDirections).toEqual([]);
+    expect(result.metrics.heldOutRelationDirections).toEqual([]);
+    expect(result.metrics.heldOutObservedRelationDirections).toEqual([]);
     expect(result.status).toBe("fail");
   });
 });

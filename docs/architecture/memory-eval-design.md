@@ -225,12 +225,14 @@ The current relation-shape slices cover:
 - held-out split: `depends_on` and `qualifies`.
 
 The eval reports held-out query count, held-out hit-rate/NDCG, held-out relation
-kinds, and the flat no-relation comparison for those cases.
+kinds, expected/observed relation directions for one incoming and one outgoing
+held-out case, and the flat no-relation comparison for those cases.
 
 This targets A-MEM-style relation usefulness as a local falsifier. It proves
-review/readback advantage for controlled source graph relation-shape cases, not
-source truth, autonomous memory evolution, graph database need, crawler/API/MCP
-readiness, broad corpus closure, or production ranking quality.
+review/readback advantage for controlled source graph relation-shape and
+direction cases, not source truth, autonomous memory evolution, graph database
+need, crawler/API/MCP readiness, broad corpus closure, or production ranking
+quality.
 
 ## Rejections
 
