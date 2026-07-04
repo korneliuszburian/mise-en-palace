@@ -16,6 +16,10 @@ Adopt this naming bar for new and changed KRN surfaces:
   executor.
 - Names must not imply enforcement, autonomy, truth, finality, or broad product
   proof unless the code enforces it.
+- Public/API vocabulary must not use vague modifier words (`final`, `new`,
+  `normalized`, `current`, `latest`) unless the name states a real lifecycle
+  state, transformation, or comparison axis. Local helper names may keep those
+  words when their scope is small and the transformation is mechanically clear.
 - Skills are allowed when they encode a repeated workflow with progressive
   disclosure. A skill without a workflow, verification, or consumer is
   documentation, not architecture.
@@ -62,6 +66,30 @@ renames, or changing stable CLI names without migration cost analysis.
 consumer: naming follow-up Beads.
 falsifier: the longer replacement is harder to scan and does not remove a
 specific false authority claim.
+
+### placeholder-free public vocabulary
+
+source_id: `rust-api-placeholder-free-names`
+title: Rust API Guidelines checklist, naming
+url: `https://rust-lang.github.io/api-guidelines/checklist.html`
+trust_tier: high
+source_class: official docs
+mechanism: public API names should avoid placeholder words and keep consistent
+word order so callers can predict what a name means before reading the
+implementation.
+krn_implication: KRN exported package names, CLI headings, active docs, and
+operator-facing readbacks should reject vague modifiers such as `final`, `new`,
+`normalized`, `current`, or `latest` unless the modifier names a concrete
+lifecycle state, transformation, or comparison axis.
+decision_kind: adopt
+decision: add a source-only follow-up audit for exported/public vague
+modifiers; do not rename local helper variables or historical prose by regex.
+does_not_prove: this does not prove Rust casing or crate conventions apply to
+TypeScript, and it does not justify changing stable public names without a
+consumer-pain proof.
+consumer: `mise-en-palace-m59a` and future public/API review.
+falsifier: a proposed rename removes a vague word but makes the public name
+less predictive, or the vague word is purely local to a parse/mapper helper.
 
 ### progressive-disclosure skills
 
@@ -150,14 +178,14 @@ supporting surface, or reduced/deprecated boundary in the primitive ledger.
 
 | Vocabulary | Decision | Evidence | Reason |
 | --- | --- | --- | --- |
-| `normalized` / `normalize` | no broad task | `packages/core/src/reviewOutcome.ts`; `packages/cli/src/runEvidenceCaptureCommand.ts` | Current source hits are local parsing/standardization helpers, not exported product vocabulary. |
-| `final` / `new` | no broad task | source grep | Hits are ordinary control-flow or prose, not a clear API smell. |
+| `normalized` / `normalize` | source-only public audit, no broad rename | `packages/core/src/reviewOutcome.ts`; `packages/cli/src/runEvidenceCaptureCommand.ts`; DB mappers | Current known hits are mostly local parsing/standardization helpers. `mise-en-palace-m59a` will check exported/API vocabulary and keep local helper uses when the transformation is mechanically clear. |
+| `final` / `new` | source-only public audit, no broad rename | source grep | Current hits are mostly ordinary control-flow/prose. `mise-en-palace-m59a` will audit exported/package/CLI readback names only, not historical docs or local loop variables. |
 | `candidate` | keep | Memory/source/eval/review flows | It is a real lifecycle state in KRN, not decoration. |
 | `gate` | keep when enforced | `MemoryReviewGate`, activation filters, invariants | Gate is acceptable only when backed by deterministic enforcement or explicit invariant. |
 
 ## Follow-Up Rename Clusters
 
-### Cluster A: worker heartbeat vocabulary (`mise-en-palace-igw8`)
+### Cluster A: worker heartbeat vocabulary (`mise-en-palace-igw8`, closed)
 
 Problem: `heartbeat` implies autonomous periodic execution, while current code
 is candidate-only maintenance preview/readback.
@@ -167,8 +195,10 @@ contract/readback-only, rename exported runtime-facing terms toward
 `maintenanceCandidatePreview` or `maintenanceReviewPreview`. Keep CLI alias if
 operator compatibility matters.
 
-Tracking: rename work is `mise-en-palace-igw8`, blocked by
-`mise-en-palace-jttl`.
+Tracking: rename work was `mise-en-palace-igw8`, blocked by
+`mise-en-palace-jttl`. Both are closed; canonical active wording now uses
+maintenance candidate preview while legacy heartbeat aliases remain for
+compatibility where needed.
 
 Acceptance:
 
@@ -177,7 +207,7 @@ Acceptance:
   mutation.
 - Existing `doesNotProve` boundaries remain visible.
 
-### Cluster B: behavior fixture vocabulary (`mise-en-palace-7tsq`)
+### Cluster B: behavior fixture vocabulary (`mise-en-palace-7tsq`, closed)
 
 Problem: `golden` suggests canonical truth, while current behavior is a
 deterministic fixture gate.
@@ -193,9 +223,11 @@ Acceptance:
 - Behavior matrix names deterministic fixture proof, not source truth.
 - Public fixture IDs either stay compatible or are migrated with explicit tests.
 
-Tracking: `mise-en-palace-7tsq`.
+Tracking: `mise-en-palace-7tsq`, closed. Active routing keeps
+deterministic behavior fixture/gate wording; compatibility fixture IDs were
+handled in the bounded slice.
 
-### Cluster C: legacy eval alias removal (`mise-en-palace-yq2p`)
+### Cluster C: legacy eval alias removal (`mise-en-palace-yq2p`, closed)
 
 Problem: the active proof route is `eval:krn:smoke`; the old smoke route was
 already deprecated as a compatibility alias.
@@ -203,14 +235,15 @@ already deprecated as a compatibility alias.
 Resolution: after a green compatibility CI window, delete the alias and active
 references outside historical docs.
 
-Tracking: `mise-en-palace-yq2p`.
+Tracking: `mise-en-palace-yq2p`, closed. Active scripts use
+`eval:krn:smoke`; historical docs remain historical.
 
 Acceptance:
 
 - No active script or active architecture doc recommends the old smoke route.
 - `eval:krn:smoke` remains the only active deterministic behavior/docs gate.
 
-### Cluster D: policy/contract residue inspection (`mise-en-palace-woql`)
+### Cluster D: policy/contract residue inspection (`mise-en-palace-woql`, closed)
 
 Problem: phantom policy gates were deprecated, but small naming residues
 remained.
@@ -230,6 +263,26 @@ Acceptance:
   consumer.
 - Misleading residues are renamed to `constraint`, `shape`, `input`, or
   `requirement` as appropriate.
+
+### Cluster E: public vague modifier audit (`mise-en-palace-m59a`)
+
+Problem: local helper words such as `normalized`, `final`, `new`, `current`,
+and `latest` are acceptable in tiny scopes, but the same words become
+misleading when exported or shown to operators without a concrete lifecycle or
+transformation axis.
+
+Proposed direction: source-only audit exported package symbols, CLI/readback
+headings, and active docs. Rename only proven-public misleading cases. Keep
+local parse/mapper/control-flow helpers when their scope and transformation are
+obvious.
+
+Tracking: `mise-en-palace-m59a`, blocked by this naming-standard slice.
+
+Acceptance:
+
+- Each changed public name cites consumer pain and replacement semantics.
+- Local helper names may be retained with evidence.
+- No repo-wide regex rename or historical docs churn.
 
 ## Rejected Work
 
