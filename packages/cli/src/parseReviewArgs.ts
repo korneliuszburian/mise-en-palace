@@ -5,7 +5,7 @@ import type {
 import {
   metadataEntry,
   optionValue
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 
 export const formatReviewAssessUsage = (): string =>
   [

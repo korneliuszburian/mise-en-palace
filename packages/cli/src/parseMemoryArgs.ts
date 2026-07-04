@@ -10,7 +10,7 @@ import {
   optionMatches,
   optionValue,
   parsePersistedMetadataToken
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 
 export const formatMemoryCandidateAddUsage = (): string =>
   [

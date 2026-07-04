@@ -11,7 +11,7 @@ import {
 } from "@krn/core";
 import {
   optionValue
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 import type {
   ParseArgsResult
 } from "./parseArgs.js";

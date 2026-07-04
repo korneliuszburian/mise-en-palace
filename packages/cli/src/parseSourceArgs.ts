@@ -13,7 +13,7 @@ import {
   optionValue,
   parseMappedStringOption,
   parsePersistedMetadataToken
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 
 export const formatSourceClaimAddUsage = (): string =>
   [

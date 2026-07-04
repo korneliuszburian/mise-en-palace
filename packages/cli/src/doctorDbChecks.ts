@@ -26,7 +26,7 @@ import {
   readOptionalText,
   readScriptStatus,
   readTreeText
-} from "./doctorCheckHelpers.js";
+} from "./doctorReadinessSupport.js";
 
 const findCheckStatus = (
   checks: readonly DoctorCheck[],

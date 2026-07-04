@@ -4,7 +4,7 @@ import type {
 import {
   optionMatches,
   parsedOptionValue
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 
 const observeUsage = "Usage: krn observe --run <id>|--run-id <id> [--project <id>] [--persist]";
 const observeRunOptions = ["--run-id", "--run"] as const;

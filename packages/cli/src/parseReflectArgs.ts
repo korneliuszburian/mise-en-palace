@@ -5,7 +5,7 @@ import type {
 import {
   optionMatches,
   parsedOptionValue
-} from "./parseArgHelpers.js";
+} from "./parseCliOptions.js";
 
 const reflectUsage = "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]";
 const topicUsage = "Usage: krn reflect --scope topic:<name> --project <id> [--persist]";

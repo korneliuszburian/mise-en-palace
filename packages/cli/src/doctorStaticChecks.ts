@@ -36,7 +36,7 @@ import {
 import {
   readOptionalText,
   readScriptStatus
-} from "./doctorCheckHelpers.js";
+} from "./doctorReadinessSupport.js";
 import {
   parseArgs
 } from "./parseArgs.js";
