@@ -61,6 +61,13 @@ export interface BrainLoopSmokeReport {
   nextRunContextAssemblyId: string;
   nextRunMemoryInclusionCount: number;
   nextRunIncludedMemoryDecisionCount: number;
+  downgradedMemoryNegativeFeedbackCount: number;
+  downgradedMemoryApplicationCount: number;
+  downgradedRunTaskContractId: string;
+  downgradedRunRetrievalRunId: string;
+  downgradedRunContextAssemblyId: string;
+  downgradedRunMemoryExclusionCount: number;
+  downgradedRunExcludedMemoryDecisionCount: number;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -80,6 +87,8 @@ const stringMetadataValue = (
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput
 ): Promise<BrainLoopSmokeReport> => {
+  let downgradedContextAssemblyId: string | undefined;
+  let downgradedRetrievalRunId: string | undefined;
   let feedbackDeltaId: string | undefined;
   let retrievalRunId: string | undefined;
   let nextRetrievalRunId: string | undefined;
@@ -93,12 +102,15 @@ export const runBrainLoopSmokeCheck = async (
     projectSlug: "brain-loop",
     cleanupRows: (cleanupInput) => cleanupBrainLoopSmokeRows({
       ...cleanupInput,
+      downgradedRetrievalRunId,
       feedbackDeltaId,
       nextRetrievalRunId,
       retrievalRunId
     }),
     countMarkerRows: (markerInput) => countBrainLoopSmokeMarkerRows({
       ...markerInput,
+      downgradedContextAssemblyId,
+      downgradedRetrievalRunId,
       feedbackDeltaId,
       nextContextAssemblyId,
       nextRetrievalRunId,
@@ -433,6 +445,90 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
+    const downgradedMemoryApplications: (typeof memoryApplication)[] = [];
+
+    for (const attempt of [1, 2, 3]) {
+      downgradedMemoryApplications.push(await memoryRepository.recordMemoryApplication({
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        taskContractId: taskContract.id,
+        contextAssemblyId: nextCompile.contextAssembly.id,
+        expectedUse: "Verify negative application feedback downgrades future activation.",
+        outcome: "hurt",
+        notes: `DB-backed brain loop smoke downgrade feedback ${attempt}.`,
+        metadata: {
+          smokeId: marker,
+          feedbackLoop: "downgrade",
+          attempt
+        }
+      }));
+    }
+    const downgradedMemoryRecord = requireSmokeReadbackValue(
+      await memoryRepository.getMemoryRecordById(memoryRecord.id),
+      "downgraded memory record readback",
+      "Brain loop smoke did not persist negative memory feedback"
+    );
+    const downgradedCompile = await compileHarnessPlan({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      operatorIntent: {
+        source: "cli",
+        rawIntent: `downgrade brain loop recall ${marker}`,
+        metadata: {
+          smokeId: marker
+        }
+      },
+      taskContract: {
+        title: "Reject downgraded DB-backed brain loop memory",
+        objective: "Show negative application feedback prevents hurt memory from re-entering activation context.",
+        constraints: ["use store-backed Memory Core", "do not create a worker runtime"],
+        nonGoals: ["no dashboard", "no activation scoring rewrite"],
+        acceptance: ["downgraded planning activation excludes the reviewed MemoryRecord"],
+        metadata: {
+          smokeId: marker,
+          proof: "memory_feedback_downgrade"
+        }
+      },
+      tokenBudget: 360,
+      metadata: {
+        smokeId: marker,
+        proof: "automatic_memory_downgrade_next_compile"
+      }
+    }, {
+      harnessRunRepository,
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
+      now: () => now,
+      createId: (prefix) => `${prefix}-${marker}-downgraded`
+    });
+    downgradedContextAssemblyId = downgradedCompile.contextAssembly.id;
+    downgradedRetrievalRunId = stringMetadataValue(
+      downgradedCompile.contextAssembly.metadata,
+      "retrievalRunId"
+    );
+    const downgradedRunRetrievalRunId = requireSmokeReadbackValue(
+      downgradedRetrievalRunId,
+      "downgraded run retrievalRunId",
+      "Brain loop downgraded run did not persist retrieval metadata"
+    );
+    const downgradedRunMemoryInclusions = downgradedCompile.contextAssembly.inclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
+    );
+    const downgradedRunMemoryExclusions = downgradedCompile.contextAssembly.exclusions.filter((item) =>
+      item.subjectType === "memory_record" &&
+      item.subjectId === memoryRecord.id &&
+      item.reason === "unsafe"
+    );
+    const downgradedRunActivationDecisions = await retrievalRepository.listActivationDecisionsForRun(
+      downgradedRunRetrievalRunId
+    );
+    const downgradedRunExcludedMemoryDecisionCount = downgradedRunActivationDecisions.filter((decision) =>
+      decision.decision === "excluded" &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === memoryRecord.id &&
+      decision.reason === "unsafe"
+    ).length;
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
@@ -499,6 +595,22 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "next run activation decision",
         passed: nextRunIncludedMemoryDecisionCount === 1
+      },
+      {
+        label: "downgraded memory negative feedback",
+        passed: downgradedMemoryRecord.negativeFeedbackCount === 3
+      },
+      {
+        label: "downgraded memory applications",
+        passed: downgradedMemoryApplications.length === 3
+      },
+      {
+        label: "downgraded run excludes memory",
+        passed: downgradedRunMemoryInclusions.length === 0 && downgradedRunMemoryExclusions.length === 1
+      },
+      {
+        label: "downgraded run activation decision",
+        passed: downgradedRunExcludedMemoryDecisionCount === 1
       }
     ], readbackError);
 
@@ -547,6 +659,13 @@ export const runBrainLoopSmokeCheck = async (
       nextRunContextAssemblyId: nextCompile.contextAssembly.id,
       nextRunMemoryInclusionCount: nextRunMemoryInclusions.length,
       nextRunIncludedMemoryDecisionCount,
+      downgradedMemoryNegativeFeedbackCount: downgradedMemoryRecord.negativeFeedbackCount,
+      downgradedMemoryApplicationCount: downgradedMemoryApplications.length,
+      downgradedRunTaskContractId: downgradedCompile.taskContract.id,
+      downgradedRunRetrievalRunId,
+      downgradedRunContextAssemblyId: downgradedCompile.contextAssembly.id,
+      downgradedRunMemoryExclusionCount: downgradedRunMemoryExclusions.length,
+      downgradedRunExcludedMemoryDecisionCount,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

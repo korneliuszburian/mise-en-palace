@@ -480,6 +480,13 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Next-run context assembly: ${report.nextRunContextAssemblyId}`,
       `Next-run memory inclusions: ${report.nextRunMemoryInclusionCount}`,
       `Next-run included memory decisions: ${report.nextRunIncludedMemoryDecisionCount}`,
+      `Downgraded memory negative feedback count: ${report.downgradedMemoryNegativeFeedbackCount}`,
+      `Downgraded memory applications: ${report.downgradedMemoryApplicationCount}`,
+      `Downgraded-run task contract: ${report.downgradedRunTaskContractId}`,
+      `Downgraded-run retrieval run: ${report.downgradedRunRetrievalRunId}`,
+      `Downgraded-run context assembly: ${report.downgradedRunContextAssemblyId}`,
+      `Downgraded-run memory exclusions: ${report.downgradedRunMemoryExclusionCount}`,
+      `Downgraded-run excluded memory decisions: ${report.downgradedRunExcludedMemoryDecisionCount}`,
       `Run events: ${report.runEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Brain loop smoke")

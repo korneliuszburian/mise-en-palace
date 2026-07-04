@@ -267,6 +267,8 @@ export interface HarnessCompilerSmokeRowInput extends SmokeBaseMarkerInput {
 }
 
 export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
+  downgradedContextAssemblyId: string | undefined;
+  downgradedRetrievalRunId: string | undefined;
   feedbackDeltaId: string | undefined;
   nextContextAssemblyId: string | undefined;
   nextRetrievalRunId: string | undefined;
@@ -274,6 +276,7 @@ export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
 }
 
 export interface BrainLoopSmokeCleanupInput extends SmokeCleanupInput {
+  downgradedRetrievalRunId: string | undefined;
   feedbackDeltaId: string | undefined;
   nextRetrievalRunId: string | undefined;
   retrievalRunId: string | undefined;
@@ -699,8 +702,13 @@ export const countBrainLoopSmokeMarkerRows = async (
   () => countMemoryGovernanceSmokeMarkerRows(input),
   countOptionalSmokeContextSelectionRows(input.db, input.contextAssemblyId),
   countOptionalSmokeContextSelectionRows(input.db, input.nextContextAssemblyId),
+  countOptionalSmokeContextSelectionRows(input.db, input.downgradedContextAssemblyId),
   optionalSmokeCount(
     input.nextRetrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
+  optionalSmokeCount(
+    input.downgradedRetrievalRunId,
     (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
   ),
   () => countSmokeRows(input.db, evidenceBundles, sql`${evidenceBundles.metadata}->>'smokeId' = ${input.marker}`),
@@ -995,6 +1003,12 @@ export const cleanupBrainLoopSmokeRows = async (
     await input.db
       .delete(retrievalRuns)
       .where(eq(retrievalRuns.id, input.nextRetrievalRunId));
+  }
+
+  if (input.downgradedRetrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.downgradedRetrievalRunId));
   }
 };
 
