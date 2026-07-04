@@ -16,19 +16,50 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(4);
+    expect(result.cases).toHaveLength(7);
+    expect(result.corpus).toMatchObject({
+      name: "company-pattern-memory-advantage-heldout",
+      caseCount: 7,
+      heldOutCaseCount: 3,
+      distractorClasses: [
+        "obsolete-operating-rule",
+        "generic-quality-guidance",
+        "adjacent-kernel-boundary",
+        "docs-sentinel-overfit",
+        "target-specific-vs-generic"
+      ]
+    });
+    expect(result.metrics).toMatchObject({
+      caseCount: 7,
+      heldOutCaseCount: 3,
+      expectedHitCount: 6,
+      expectedMissCount: 1,
+      distractorClassCount: 5
+    });
+    expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
+    expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
+    expect(result.metrics.totalRenderedBriefBytes).toBeGreaterThan(0);
     expect(result.competencies).toMatchObject({
       retrieval: {
         status: "pass",
-        caseIds: ["retrieve-second-opinion-procedure"]
+        caseIds: [
+          "retrieve-second-opinion-procedure",
+          "heldout-source-search-command-boundary"
+        ]
       },
       learning: {
         status: "pass",
-        caseIds: ["learn-company-review-standard"]
+        caseIds: [
+          "learn-company-review-standard",
+          "heldout-db-project-brain-search"
+        ]
       },
       long_range: {
         status: "pass",
-        caseIds: ["long-range-source-authority-boundary"]
+        caseIds: [
+          "long-range-source-authority-boundary",
+          "heldout-ranking-corpus-quality"
+        ]
       },
       forgetting: {
         status: "pass",
@@ -197,6 +228,29 @@ describe("runMemoryAdvantageEval", () => {
       "source:accepted-source-claims-only"
     );
 
+    const heldOutCases = result.cases.filter((testCase) => testCase.heldOut);
+    expect(heldOutCases.map((testCase) => testCase.caseId)).toEqual([
+      "heldout-source-search-command-boundary",
+      "heldout-db-project-brain-search",
+      "heldout-ranking-corpus-quality"
+    ]);
+    expect(heldOutCases.every((testCase) =>
+      testCase.baselineFailureRationale.length > 0
+    )).toBe(true);
+    expect(heldOutCases.every((testCase) =>
+      testCase["baseline_no_memory"].result === "miss" &&
+      testCase["baseline_simple_retrieval"].result === "distractor_selected" &&
+      testCase["krn_memory"].result === "hit" &&
+      testCase["krn_plan_brief"].result === "hit"
+    )).toBe(true);
+    expect(heldOutCases.map((testCase) =>
+      testCase["krn_memory"].requiredKnowledgeId
+    )).toEqual([
+      "pattern:source-search-command-boundary",
+      "pattern:brain-search-explicit-project-selector",
+      "pattern:ranking-corpus-quality-readback"
+    ]);
+
     const forgettingCase = result.cases.find((testCase) =>
       testCase.caseId === "forget-obsolete-no-second-opinion-rule"
     );
@@ -269,6 +323,9 @@ describe("runMemoryAdvantageEval", () => {
         requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule"
       }
     });
+    expect(result.proof.proves).toContain(
+      "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"
+    );
     expect(result.proof.proves).toContain(
       "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
     );

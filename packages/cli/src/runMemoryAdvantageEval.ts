@@ -69,7 +69,10 @@ type MemoryAdvantageCatalogCardFixture =
 interface MemoryAdvantageCaseFixture {
   readonly id: string;
   readonly competency: MemoryAdvantageCompetency;
+  readonly heldOut: boolean;
   readonly query: string;
+  readonly distractorClasses: readonly string[];
+  readonly baselineFailureRationale: string;
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly expectedSelectedKnowledgeId: string;
@@ -95,13 +98,18 @@ interface MemoryAdvantageExcludedMemoryFixture extends MemoryAdvantageCardFixtur
 
 export interface MemoryAdvantageEvalFixture {
   readonly version: "1";
+  readonly corpusName: string;
+  readonly distractorClasses: readonly string[];
   readonly cases: readonly MemoryAdvantageCaseFixture[];
 }
 
 interface MemoryAdvantageCaseReadback {
   readonly caseId: string;
   readonly competency: MemoryAdvantageCompetency;
+  readonly heldOut: boolean;
   readonly query: string;
+  readonly distractorClasses: readonly string[];
+  readonly baselineFailureRationale: string;
   readonly status: "pass" | "fail";
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly baselineClass: MemoryAdvantageBaselineClass;
@@ -182,10 +190,26 @@ export interface MemoryAdvantageEvalResult {
   readonly kind: "krn.memoryAdvantage.eval.v1";
   readonly fixtureVersion: "1";
   readonly status: "pass" | "fail";
+  readonly corpus: {
+    readonly name: string;
+    readonly caseCount: number;
+    readonly heldOutCaseCount: number;
+    readonly distractorClasses: readonly string[];
+  };
   readonly competencies: Record<MemoryAdvantageCompetency, {
     readonly status: "pass" | "fail";
     readonly caseIds: readonly string[];
   }>;
+  readonly metrics: {
+    readonly caseCount: number;
+    readonly heldOutCaseCount: number;
+    readonly expectedHitCount: number;
+    readonly expectedMissCount: number;
+    readonly distractorClassCount: number;
+    readonly totalKrnMemoryContextBytes: number;
+    readonly totalKrnPlanBriefContextBytes: number;
+    readonly totalRenderedBriefBytes: number;
+  };
   readonly cases: readonly MemoryAdvantageCaseReadback[];
   readonly proof: {
     readonly proves: readonly string[];
@@ -291,7 +315,10 @@ const parseCase = (
   const parsedCase: MemoryAdvantageCaseFixture = {
     id: requiredString(value, "id", label),
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
+    heldOut: value["heldOut"] === true,
     query: requiredString(value, "query", label),
+    distractorClasses: requiredStringArray(value, "distractorClasses", label),
+    baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
     priorSession: {
       id: requiredString(priorSession, "id", `${label}.priorSession`),
       task: requiredString(priorSession, "task", `${label}.priorSession`),
@@ -342,6 +369,8 @@ export const parseMemoryAdvantageEvalFixture = (
 
   return {
     version,
+    corpusName: requiredString(value, "corpusName", "fixture"),
+    distractorClasses: requiredStringArray(value, "distractorClasses", "fixture"),
     cases
   };
 };
@@ -1107,7 +1136,10 @@ const evaluateCase = async (
   return {
     caseId: testCase.id,
     competency: testCase.competency,
+    heldOut: testCase.heldOut,
     query: testCase.query,
+    distractorClasses: testCase.distractorClasses,
+    baselineFailureRationale: testCase.baselineFailureRationale,
     status,
     expectedKrnResult: testCase.expectedKrnResult,
     baselineClass,
@@ -1191,11 +1223,41 @@ export const runMemoryAdvantageEval = async (
     kind: "krn.memoryAdvantage.eval.v1",
     fixtureVersion: fixture.version,
     status,
+    corpus: {
+      name: fixture.corpusName,
+      caseCount: cases.length,
+      heldOutCaseCount: cases.filter((testCase) => testCase.heldOut).length,
+      distractorClasses: fixture.distractorClasses
+    },
     competencies,
+    metrics: {
+      caseCount: cases.length,
+      heldOutCaseCount: cases.filter((testCase) => testCase.heldOut).length,
+      expectedHitCount: cases.filter((testCase) =>
+        testCase.expectedKrnResult === "hit"
+      ).length,
+      expectedMissCount: cases.filter((testCase) =>
+        testCase.expectedKrnResult === "miss"
+      ).length,
+      distractorClassCount: fixture.distractorClasses.length,
+      totalKrnMemoryContextBytes: cases.reduce(
+        (sum, testCase) => sum + testCase["krn_memory"].selectedContextSize.bytes,
+        0
+      ),
+      totalKrnPlanBriefContextBytes: cases.reduce(
+        (sum, testCase) => sum + testCase["krn_plan_brief"].contextSize.bytes,
+        0
+      ),
+      totalRenderedBriefBytes: cases.reduce(
+        (sum, testCase) => sum + testCase["krn_plan_brief"].renderedBriefSize.bytes,
+        0
+      )
+    },
     cases,
     proof: {
       proves: [
         "the fixture query is unsupported when no KRN memory or source evidence is available",
+        "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies",
         "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator",
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",

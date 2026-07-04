@@ -1,10 +1,21 @@
 {
   "version": "1",
+  "corpusName": "company-pattern-memory-advantage-heldout",
+  "distractorClasses": [
+    "obsolete-operating-rule",
+    "generic-quality-guidance",
+    "adjacent-kernel-boundary",
+    "docs-sentinel-overfit",
+    "target-specific-vs-generic"
+  ],
   "cases": [
     {
       "id": "retrieve-second-opinion-procedure",
       "competency": "retrieval",
+      "heldOut": false,
       "query": "after a larger KRN kernel migration slice should Codex ask Claude for second opinion or just close the work",
+      "distractorClasses": ["obsolete-operating-rule"],
+      "baselineFailureRationale": "A simple lexical baseline can over-select an obsolete local-tests-only closure rule because it shares migration and closeout wording.",
       "expectedKrnResult": "hit",
       "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice",
       "priorSession": {
@@ -59,7 +70,10 @@
     {
       "id": "learn-company-review-standard",
       "competency": "learning",
+      "heldOut": false,
       "query": "when a slice changes KRN memory eval behavior what company review standard should Codex apply before closing",
+      "distractorClasses": ["generic-quality-guidance"],
+      "baselineFailureRationale": "A generic review checklist can match eval and closing vocabulary without the learned second-opinion reconciliation requirement.",
       "expectedKrnResult": "hit",
       "expectedSelectedKnowledgeId": "pattern:company-review-standard-after-eval-change",
       "priorSession": {
@@ -100,7 +114,10 @@
     {
       "id": "long-range-source-authority-boundary",
       "competency": "long_range",
+      "heldOut": false,
       "query": "months after the source authority fixes what rule should Codex remember about accepted SourceClaims in activation context",
+      "distractorClasses": ["adjacent-kernel-boundary"],
+      "baselineFailureRationale": "A generic source authority packet can mention accepted claims while missing the activation/source-search lifecycle boundary.",
       "expectedKrnResult": "hit",
       "expectedSelectedKnowledgeId": "source:accepted-source-claims-only",
       "priorSession": {
@@ -141,7 +158,10 @@
     {
       "id": "forget-obsolete-no-second-opinion-rule",
       "competency": "forgetting",
+      "heldOut": false,
       "query": "for a larger KRN migration should Codex follow the old no second opinion rule from before the governed reviewer existed",
+      "distractorClasses": ["obsolete-operating-rule"],
+      "baselineFailureRationale": "A simple lexical baseline can select the obsolete no-second-opinion rule because the query repeats its terms.",
       "expectedKrnResult": "miss",
       "expectedSelectedKnowledgeId": "pattern:obsolete-no-second-opinion-rule",
       "priorSession": {
@@ -181,6 +201,191 @@
           }
         ],
         "sourceClaims": []
+      }
+    },
+    {
+      "id": "heldout-source-search-command-boundary",
+      "competency": "retrieval",
+      "heldOut": true,
+      "query": "after source search boundary cleanup where should formatting and ranking readback live instead of the command runner",
+      "distractorClasses": ["adjacent-kernel-boundary", "generic-quality-guidance"],
+      "baselineFailureRationale": "A generic CLI cleanup packet can match command runner wording but misses the source-search readback boundary and delegated helper shape.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:source-search-command-boundary",
+      "priorSession": {
+        "id": "session:source-search-command-boundary",
+        "task": "Split source-search readback, formatting, and ranking helpers out of the CLI command runner while preserving behavior.",
+        "evidenceRef": "evidence:source-search-command-boundary",
+        "reviewRef": "review:source-search-command-boundary",
+        "feedbackRef": "feedback:source-search-command-boundary-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:source-search-command-boundary",
+            "title": "Source search command delegates readback helpers",
+            "summary": "The source-search command runner should orchestrate I/O while source-search readback, formatting, and ranking helper logic lives outside the command file.",
+            "consumers": [
+              "source-search CLI maintenance",
+              "command boundary cleanup"
+            ],
+            "falsifier": "A source-search feature adds ranking or JSON readback logic back into the command runner.",
+            "doesNotProve": "This does not prove every CLI command runner is already thin.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:generic-cli-cleanup",
+            "title": "Generic CLI cleanup",
+            "summary": "Command runner cleanup should improve naming, formatting, ranking, readback, and helper placement whenever the command file looks large.",
+            "consumers": [
+              "generic CLI cleanup"
+            ],
+            "falsifier": "The task is specifically about source-search readback boundaries and needs the retained source-search helper pattern.",
+            "doesNotProve": "This does not identify the source-search command boundary.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:source-search-command-boundary",
+            "claim": "Source-search command runners should delegate readback, formatting, and ranking helper behavior outside the command runner.",
+            "mechanism": "Moving helper logic out of the command file keeps CLI orchestration separate from source-search domain readback and makes future behavior tests narrower.",
+            "krnImplication": "A future source-search change should reuse the helper boundary instead of reintroducing command-runner domain logic.",
+            "consumer": "source-search CLI maintenance",
+            "falsifier": "A future source-search behavior change implements readback/ranking directly inside the command runner.",
+            "doesNotProve": "This does not prove source-search ranking quality."
+          }
+        ],
+        "distractorSourceClaims": [
+          {
+            "sourceClaimId": "source:generic-command-boundary",
+            "claim": "Large CLI command runners should eventually be smaller.",
+            "mechanism": "Generic command-size cleanup can reduce local file complexity.",
+            "krnImplication": "Some CLI files may deserve extraction later, but this does not identify the source-search boundary.",
+            "consumer": "generic CLI cleanup",
+            "falsifier": "The task asks where source-search readback and ranking behavior belongs.",
+            "doesNotProve": "This does not prove any specific source-search helper is the right consumer."
+          }
+        ]
+      }
+    },
+    {
+      "id": "heldout-db-project-brain-search",
+      "competency": "learning",
+      "heldOut": true,
+      "query": "for DB backed brain search in a non default project what selector must the operator pass",
+      "distractorClasses": ["target-specific-vs-generic"],
+      "baselineFailureRationale": "A generic DB runtime packet can mention projects but miss the explicit brain-search project selector needed for non-default project recall.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:brain-search-explicit-project-selector",
+      "priorSession": {
+        "id": "session:brain-search-project-selector",
+        "task": "Add an explicit project selector for DB-backed brain search so non-default project memory/source readbacks resolve correctly.",
+        "evidenceRef": "evidence:brain-search-project-selector",
+        "reviewRef": "review:brain-search-project-selector",
+        "feedbackRef": "feedback:brain-search-project-selector-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:brain-search-explicit-project-selector",
+            "title": "Brain search explicit DB project selector",
+            "summary": "DB-backed brain search should accept an explicit project selector and propagate it into both memory readback and nested source-search composition for non-default projects.",
+            "consumers": [
+              "brain search DB mode",
+              "target project recall"
+            ],
+            "falsifier": "A non-default DB project brain search reads memory from the default local project.",
+            "doesNotProve": "This does not prove cross-repo product readiness.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:generic-db-runtime-project",
+            "title": "Generic DB runtime project",
+            "summary": "Database runtime commands often carry workspace and project identifiers for repository operations.",
+            "consumers": [
+              "generic DB runtime"
+            ],
+            "falsifier": "The task asks for the operator-facing brain search selector in non-default project recall.",
+            "doesNotProve": "This does not specify brain-search source composition.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:brain-search-explicit-project-selector",
+            "claim": "DB-backed brain search needs an explicit project selector for non-default project recall.",
+            "mechanism": "The selector is propagated into store-only MemoryRecord readback and nested source-search command composition.",
+            "krnImplication": "Future target-specific memory runs should pass the intended project instead of relying on the default local project.",
+            "consumer": "brain search DB mode",
+            "falsifier": "A non-default brain search query returns default-project memory or source support.",
+            "doesNotProve": "This does not prove arbitrary multi-repo usefulness."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "heldout-ranking-corpus-quality",
+      "competency": "long_range",
+      "heldOut": true,
+      "query": "how should KRN prove ranking eval quality without relying on docs prose sentinel checks",
+      "distractorClasses": ["docs-sentinel-overfit", "generic-quality-guidance"],
+      "baselineFailureRationale": "A docs-lint packet can match ranking and proof wording but misses corpus names, distractor classes, expected ids, and NDCG readback.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:ranking-corpus-quality-readback",
+      "priorSession": {
+        "id": "session:ranking-corpus-quality",
+        "task": "Broaden deterministic brain/source ranking corpora with named corpus readback, distractor classes, baseline rationale, expected-id counts, and NDCG/hit-rate metrics.",
+        "evidenceRef": "evidence:ranking-corpus-quality",
+        "reviewRef": "review:ranking-corpus-quality",
+        "feedbackRef": "feedback:ranking-corpus-quality-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:ranking-corpus-quality-readback",
+            "title": "Ranking corpus quality readback",
+            "summary": "Ranking evals should report named corpus size, distractor classes, expected ids, baseline failure rationale, and NDCG or hit-rate readback instead of passing as docs-prose sentinels.",
+            "consumers": [
+              "brain ranking eval",
+              "source graph ranking eval"
+            ],
+            "falsifier": "A ranking eval passes by checking prose exists in docs while no expected ids or distractor classes are evaluated.",
+            "doesNotProve": "This does not prove production semantic ranking quality.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:docs-lint-proof-boundary",
+            "title": "Docs lint proof boundary",
+            "summary": "Docs lint and active plan invariants can protect proof-boundary wording and stop stale claims from drifting.",
+            "consumers": [
+              "docs lint",
+              "active plan hygiene"
+            ],
+            "falsifier": "The task asks how to prove ranking quality through expected ids and distractor corpora.",
+            "doesNotProve": "This does not prove ranking eval behavior.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:ranking-corpus-quality-readback",
+            "claim": "KRN ranking eval quality should be backed by named corpora, distractor classes, expected ids, baseline rationale, and NDCG/hit-rate readback rather than docs sentinels.",
+            "mechanism": "The deterministic eval fixture makes expected-id loss and distractor confusion visible in JSON output.",
+            "krnImplication": "Future ranking changes should extend corpus/readback evidence instead of adding prose-only invariant checks.",
+            "consumer": "ranking eval maintenance",
+            "falsifier": "A ranking eval can pass after expected ids disappear from top-k selection.",
+            "doesNotProve": "This does not prove broad production retrieval quality."
+          }
+        ],
+        "distractorSourceClaims": []
       }
     }
   ]
