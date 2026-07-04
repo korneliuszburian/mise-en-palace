@@ -15,6 +15,17 @@ execution is required.
 
 `rg` consumer evidence:
 
+```sh
+rtk rg -n "from \"@krn/workers\"|@krn/workers|buildBrainHeartbeatPreview|buildMaintenanceCandidatePreview|buildMemoryStalenessHeartbeatPreview|buildSourceRelationHeartbeatPreview|buildKnowledgeAcquisitionHeartbeatPreview|buildConsensusCandidateEvaluationPreview|enqueueMaintenanceJob|describeMaintenanceJob|buildMaintenanceJobWriteBoundaryReadback" packages --glob '!**/*.test.ts'
+rtk rg -n "workers stay|worker Memory Core|worker idempotency|plnv|worker daemon|worker contract|@krn/workers" PLAN.md GOAL.md PLANS.md README.md docs/KRN_KERNEL.md docs/architecture docs/runs/2026-07-04-post-dogfood-kernel-roadmap-synthesis.md
+```
+
+The first command found package consumers in CLI readback, DB smokes, DB
+repository job-type ownership, and the workers package itself. It did not find a
+production executor, daemon, scheduler, poller, or background loop consumer. The
+second command checked active planning/architecture surfaces for the worker
+runtime boundary and deferred `plnv` framing.
+
 - `packages/cli/src/runHeartbeatPreviewCommand.ts` consumes
   `buildBrainHeartbeatPreview` for operator readback.
 - `packages/cli/src/heartbeatPreviewReadback.ts` and
@@ -79,10 +90,24 @@ Proves:
 - current worker consumers are readback/contract/storage consumers;
 - current write-boundary tables are declared and tested;
 - the selected branch is keep contract/readback;
-- no executor option has a current memory/retrieval product-loop consumer.
+- no executor product-loop consumer was found in the audited package and active
+  planning/architecture surfaces.
 
 Does not prove:
 
 - workers will never be needed;
+- every future or hidden product loop has no worker-executor need;
 - worker execution, scheduler readiness, throughput, or idempotency enforcement;
 - candidate truth or Memory Core mutation safety outside declared boundaries.
+
+## Verification
+
+- `rtk pnpm --filter @krn/workers test`: passed, 6 files / 43 tests.
+- `rtk pnpm -C packages/workers typecheck`: passed.
+- `rtk pnpm --filter @krn/harness test -- activePlanInvariants contextHygieneInvariants`:
+  passed, 33 files / 204 tests.
+- `rtk pnpm run typecheck`: passed.
+- `rtk pnpm quality:fallow:ci`: passed on changed files.
+- `rtk git diff --check`: passed.
+- GitHub Actions run `28703597625` for commit `132158ff` passed both jobs:
+  DB readiness/smoke and Typecheck/tests/eval smoke.
