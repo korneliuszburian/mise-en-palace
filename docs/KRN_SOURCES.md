@@ -393,6 +393,49 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Does not prove: that KRN should copy MemGPT implementation details, train a
   memory manager now, or skip review-gated memory promotion.
 
+### A-MEM Agentic Memory For LLM Agents
+
+- URL: https://arxiv.org/abs/2502.12110
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: agentic memory can create atomic notes with structured
+  attributes, then dynamically link related memories and evolve older memory
+  representations as new evidence arrives.
+- KRN implication: KRN should test whether explicit memory/source relation
+  links improve later recall over flat lexical retrieval before building a
+  broader graph-memory platform.
+- Decision: add a bounded eval candidate for relation-linked memory/source
+  usefulness; do not add autonomous memory evolution or unreviewed Memory Core
+  rewrites from this paper alone.
+- Consumer: `docs/architecture/memory-eval-design.md`, source graph ranking
+  eval follow-ups, and future memory/source relation usefulness Beads.
+- Falsifier: a relation-linked memory/source fixture cannot improve selection,
+  explanation, or exclusion compared with flat memory/source packets.
+- Does not prove: that KRN needs agent-generated memory rewrites, a graph
+  database, autonomous memory evolution, or A-MEM's architecture.
+
+### Letta Memory Blocks
+
+- URL: https://www.letta.com/blog/memory-blocks/
+- Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: lab_test.
+- Mechanism: memory blocks organize agent context into discrete functional
+  context units that can be attached to the active prompt instead of dumping
+  undifferentiated history.
+- KRN implication: KRN should keep selected memory/source/context packets
+  functionally typed and size-visible, while preserving review-gated durable
+  memory writes.
+- Decision: use memory blocks as a context-management pressure test only; do
+  not add tool-editable always-in-context memory blocks as KRN Memory Core.
+- Consumer: activation/context assembly readback, memory advantage context-size
+  metrics, and future operator-facing context packet review.
+- Falsifier: KRN claims memory improvement by pinning broad always-on context or
+  allowing tools to edit durable memory without MemoryReviewGate.
+- Does not prove: Letta's runtime model should be copied, memory blocks are
+  sufficient for source truth, or KRN needs a separate agent runtime.
+
 ### Reflexion
 
 - URL: https://arxiv.org/abs/2303.11366
