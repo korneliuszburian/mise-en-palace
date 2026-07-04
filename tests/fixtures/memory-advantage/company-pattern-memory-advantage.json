@@ -29,6 +29,20 @@
           }
         ],
         "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:close-large-migration-from-local-tests",
+            "title": "Close larger KRN migration from local tests only",
+            "summary": "For a larger KRN kernel migration slice, Codex should close the work from local tests and skip asking Claude for second opinion when the diff looks straightforward.",
+            "consumers": [
+              "large slice closure",
+              "obsolete local-only closure"
+            ],
+            "falsifier": "The governed second-opinion skill is available and the slice is a larger KRN migration or audit-hardening change.",
+            "doesNotProve": "This tempting distractor intentionally lacks governed source support for the current operating loop.",
+            "nextAction": "defer"
+          }
+        ],
         "sourceClaims": [
           {
             "sourceClaimId": "source:second-opinion-after-large-slice",

@@ -14,7 +14,7 @@ four falsifiable axes:
 
 | Axis | Local question | Current surface | Next eval candidate |
 | --- | --- | --- | --- |
-| Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Add negative distractors and simple-retrieval baseline. |
+| Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: one case includes a tempting distractor and a simple lexical retrieval baseline. |
 | Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Multi-session eval: first task creates reviewed evidence; second task must use it. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
 | Selective forgetting | Can KRN block stale/hurt/contradicted memory before context assembly? | anti-memory and stale activation guards | Memory advantage negative case where baseline uses tempting stale memory. |
@@ -63,6 +63,18 @@ named case groups:
 - `forgetting`: stale or hurt memory is excluded before context assembly.
 
 This targets MemoryAgentBench without claiming benchmark equivalence.
+
+### Distractor And Simple Retrieval Baseline
+
+Follow-up Bead: `mise-en-palace-3f1e`.
+
+`pnpm eval:memory-advantage` now reports a `baseline_simple_retrieval`
+readback for each case. The retrieval case includes a tempting local-only
+distractor that the simple lexical baseline selects first, while KRN still
+selects the governed memory/source id through the brain/source command path.
+
+This proves only a local foil against no-memory and naive lexical selection. It
+does not prove production retrieval quality or arbitrary Codex superiority.
 
 ### Temporal And Adversarial Recall
 

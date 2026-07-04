@@ -52,7 +52,9 @@ describe("runMemoryAdvantageEval", () => {
         applicationOutcome: "helped",
         createdMemoryIds: ["memory:pattern:second-opinion-after-large-slice"],
         excludedMemoryIds: [],
-        createdSourceClaimIds: ["source:second-opinion-after-large-slice"]
+        distractorMemoryIds: ["memory:pattern:close-large-migration-from-local-tests"],
+        createdSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        distractorSourceClaimIds: []
       },
       "baseline_no_memory": {
         baselineClass: "no_memory_no_source",
@@ -64,6 +66,25 @@ describe("runMemoryAdvantageEval", () => {
         selectedContextSize: {
           bytes: 0,
           approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        }
+      },
+      "baseline_simple_retrieval": {
+        baselineClass: "simple_lexical_retrieval",
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "pattern:close-large-migration-from-local-tests",
+          "source:second-opinion-after-large-slice",
+          "pattern:second-opinion-after-large-slice"
+        ],
+        selectedMemoryIds: [
+          "pattern:close-large-migration-from-local-tests",
+          "pattern:second-opinion-after-large-slice"
+        ],
+        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        selectedContextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
           method: "utf8_bytes_div_4"
         }
       },
@@ -93,6 +114,9 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(retrievalCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:second-opinion-after-large-slice"
+    );
+    expect(retrievalCase?.["baseline_simple_retrieval"].selectedKnowledgeIds[0]).toBe(
+      "pattern:close-large-migration-from-local-tests"
     );
     expect(retrievalCase?.["krn_memory"].selectedContextSize.bytes).toBeGreaterThan(0);
     expect(retrievalCase?.["krn_memory"].selectedContextSize.approximateTokens).toBeGreaterThan(0);
@@ -129,7 +153,9 @@ describe("runMemoryAdvantageEval", () => {
         applicationOutcome: "hurt",
         createdMemoryIds: ["memory:pattern:routine-dependency-pin-cleanup"],
         excludedMemoryIds: ["memory:pattern:obsolete-no-second-opinion-rule"],
-        createdSourceClaimIds: []
+        distractorMemoryIds: [],
+        createdSourceClaimIds: [],
+        distractorSourceClaimIds: []
       },
       "baseline_no_memory": {
         result: "miss",
@@ -140,6 +166,18 @@ describe("runMemoryAdvantageEval", () => {
         selectedContextSize: {
           bytes: 0,
           approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        }
+      },
+      "baseline_simple_retrieval": {
+        baselineClass: "simple_lexical_retrieval",
+        result: "top_match_selected",
+        selectedKnowledgeIds: ["pattern:obsolete-no-second-opinion-rule"],
+        selectedMemoryIds: ["pattern:obsolete-no-second-opinion-rule"],
+        selectedSourceClaimIds: [],
+        selectedContextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
           method: "utf8_bytes_div_4"
         }
       },
@@ -170,7 +208,10 @@ describe("runMemoryAdvantageEval", () => {
       "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
     );
     expect(result.proof.proves).toContain(
-      "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths"
+      "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator"
+    );
+    expect(result.proof.proves).toContain(
+      "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"
     );
     expect(result.proof.proves).toContain(
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
@@ -183,6 +224,9 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(result.proof.doesNotProve).toContain(
       "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
+    );
+    expect(result.proof.doesNotProve).toContain(
+      "that simple lexical retrieval is a strong baseline; it is a local foil for governed memory/source packaging"
     );
     expect(result.proof.doesNotProve).toContain(
       "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows"
