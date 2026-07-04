@@ -32,7 +32,7 @@ CI-invoked guard in `docs/architecture/behavior-gate-matrix.md`; a `rejected`,
 | Broad dashboard/API/MCP/product surface | rejected | `docs/KRN_KERNEL.md`; root active plans | Do not build before live kernel primitives need it. |
 | Worker daemon / scheduler / leases / retry runtime | reduced | `packages/workers/src/jobTypes.ts`; current worker readback smokes | Keep as contract/readback unless a product loop requires real execution. |
 | Promptfoo or LLM-as-judge as behavior authority | reduced | `docs/architecture/promptfoo-adapter-boundary.md`; behavior matrix | Adapter smoke only; not KRN behavior proof authority. |
-| `eval:brain-battle:smoke` naming as primary proof route | deprecated | `package.json`; behavior matrix legacy alias section | Keep compatibility alias; active route is `pnpm eval:krn:smoke`. |
+| Old eval alias naming | removed | `package.json`; behavior matrix proof route section | Use `pnpm eval:krn:smoke` as the active deterministic behavior/docs gate. |
 | File-backed runtime markdown memory | rejected | `docs/KRN_KERNEL.md` runtime truth | Markdown may be source/export/audit/seed/backup, not runtime project memory. |
 | `@krn/schema` package boundary | deprecated | cleanup wave removal; no current workspace package | Do not recreate a duplicate schema package without a live consumer and drift proof. |
 | Phantom policy gate surface | deprecated | cleanup wave removal; behavior matrix policy-gate invariant | Do not cite policy gates as implemented evidence without an enforcing runtime. |

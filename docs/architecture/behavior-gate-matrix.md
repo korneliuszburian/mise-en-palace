@@ -120,9 +120,9 @@ It is docs/proof-boundary lint, not behavior proof.
 
 ## Legacy Alias
 
-`pnpm eval:brain-battle:smoke` is a compatibility alias only. Active proof
-routing should use `pnpm eval:krn:smoke`, which names the deterministic
-behavior smoke plus docs lint it actually runs.
+`pnpm eval:krn:smoke` is the active proof route. The old eval alias was removed
+after a green compatibility window so active scripts no longer preserve
+eval-theater vocabulary.
 
 ## Promptfoo Boundary
 

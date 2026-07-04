@@ -66,7 +66,7 @@ describe("KRN context hygiene invariants", () => {
       "| Broad dashboard/API/MCP/product surface | rejected |",
       "| Worker daemon / scheduler / leases / retry runtime | reduced |",
       "| Promptfoo or LLM-as-judge as behavior authority | reduced |",
-      "| `eval:brain-battle:smoke` naming as primary proof route | deprecated |",
+      "| Old eval alias naming | removed |",
       "| File-backed runtime markdown memory | rejected |",
       "| `@krn/schema` package boundary | deprecated |",
       "| Phantom policy gate surface | deprecated |",
@@ -76,7 +76,7 @@ describe("KRN context hygiene invariants", () => {
     }
 
     expect(ledger).toContain("broad extractor churn is rejected without new evidence");
-    expect(ledger).toContain("active route is `pnpm eval:krn:smoke`");
+    expect(ledger).toContain("Use `pnpm eval:krn:smoke` as the active deterministic behavior/docs gate.");
     expect(ledger).toContain("Do not recreate a duplicate schema package");
   });
 

@@ -142,7 +142,7 @@ supporting surface, or reduced/deprecated boundary in the primitive ledger.
 | --- | --- | --- | --- |
 | `heartbeat` as the name for maintenance candidate review | rename/downscope after worker decision | `packages/workers/src/*HeartbeatPreview.ts`; `packages/cli/src/runHeartbeatPreviewCommand.ts`; `packages/workers/README.md` | It sounds like an autonomous runtime loop while the README explicitly lists "no worker daemon", "no background loop", and "no job executor". |
 | `golden` as behavior gate vocabulary | rename in a bounded compatibility slice | `packages/harness/src/krnBehaviorGate.ts`; `packages/core/src/behaviorFixture.ts`; `package.json` | It suggests canonical truth. The active route is `eval:krn:smoke`, and the behavior matrix calls this deterministic behavior/docs smoke rather than truth. |
-| `brain-battle` | delete alias after compatibility window | `package.json`; `docs/architecture/primitive-ledger.md`; `docs/architecture/behavior-gate-matrix.md` | It is already described as a "legacy compatibility alias"; keeping it forever preserves old eval-theater language. |
+| Old active eval alias | fixed by `mise-en-palace-yq2p` | `package.json`; `docs/architecture/primitive-ledger.md`; `docs/architecture/behavior-gate-matrix.md` | The old alias was removed; active verification routes through `eval:krn:smoke`. |
 | `policy` in Codex adapter skill binding source | fixed by `mise-en-palace-woql` | `packages/codex-adapter/src/contracts.ts`; `packages/codex-adapter/src/renderSkillHints.ts` | The unused `policy` binding source was removed; skill hints are currently emitted from `capability_plan` only. |
 | `Contract` suffix where the object is only validated shape | fixed for BehaviorFixture validation by `mise-en-palace-woql` | `packages/core/src/behaviorFixture.ts:validateBehaviorFixture`; `packages/harness/src/behaviorFixtureRunner.ts:fixtureFindings`; `packages/codex-adapter/src/renderExecutionBrief.ts` headings | BehaviorFixture validation is now named as fixture validation. `TaskContract` and `EvidenceContract` remain because they are execution/review obligations rendered into Codex briefs. |
 
@@ -195,19 +195,19 @@ Acceptance:
 
 Tracking: `mise-en-palace-7tsq`.
 
-### Cluster C: legacy brain-battle alias removal (`mise-en-palace-yq2p`)
+### Cluster C: legacy eval alias removal (`mise-en-palace-yq2p`)
 
-Problem: the active proof route is `eval:krn:smoke`; `eval:brain-battle:smoke`
-is already deprecated as a compatibility alias.
+Problem: the active proof route is `eval:krn:smoke`; the old smoke route was
+already deprecated as a compatibility alias.
 
-Proposed direction: after one more green CI window, delete the alias and active
+Resolution: after a green compatibility CI window, delete the alias and active
 references outside historical docs.
 
 Tracking: `mise-en-palace-yq2p`.
 
 Acceptance:
 
-- No active script or active architecture doc recommends `eval:brain-battle:smoke`.
+- No active script or active architecture doc recommends the old smoke route.
 - `eval:krn:smoke` remains the only active deterministic behavior/docs gate.
 
 ### Cluster D: policy/contract residue inspection (`mise-en-palace-woql`)

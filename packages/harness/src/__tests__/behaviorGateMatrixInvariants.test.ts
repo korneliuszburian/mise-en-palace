@@ -249,20 +249,13 @@ describe("KRN behavior gate matrix invariants", () => {
     expect(missingSkillRefs).toEqual([]);
   });
 
-  it("keeps the old brain-battle command as a compatibility alias only", () => {
+  it("keeps KRN smoke as the only active behavior proof route", () => {
     const scripts = packageScripts();
-    const legacyAlias = scripts["eval:brain-battle:smoke"];
 
     expect(scripts["eval:krn:smoke"]).toBe("pnpm eval:behavior:smoke && pnpm docs:lint");
-    expect(legacyAlias).toContain("legacy compatibility alias");
-    expect(legacyAlias).toContain("use eval:krn:smoke");
-    expect(legacyAlias).toContain("pnpm eval:krn:smoke");
+    expect(scripts["eval:brain-battle:smoke"]).toBeUndefined();
 
     for (const [name, command] of Object.entries(scripts)) {
-      if (name === "eval:brain-battle:smoke") {
-        continue;
-      }
-
       expect(`${name}: ${command}`).not.toContain("eval:brain-battle:smoke");
     }
   });
