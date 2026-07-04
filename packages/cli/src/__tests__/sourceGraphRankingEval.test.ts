@@ -21,8 +21,9 @@ describe("runSourceGraphRankingEval", () => {
       topK: 6,
       corpus: {
         name: "source-graph-kernel-quality-corpus",
-        rowCount: 23,
-        queryCount: 18,
+        rowCount: 25,
+        queryCount: 20,
+        heldOutQueryCount: 2,
         distractorClasses: [
           "adjacent-governance-source",
           "stale-relation-edge",
@@ -32,21 +33,26 @@ describe("runSourceGraphRankingEval", () => {
         ]
       },
       metrics: {
-        queryCount: 18,
-        corpusRows: 23,
+        queryCount: 20,
+        corpusRows: 25,
         hitRateAtK: 1,
-        expectedHitIdCount: 18,
+        expectedHitIdCount: 20,
         distractorClassCount: 5,
-        relationLinkedCaseCount: 4,
-        flatBaselineWeakerCases: 4,
-        flatBaselineMissingExpectedRelationSupportCases: 4,
-        relationShapeCaseCount: 3,
-        relationShapeCoveredCases: 3,
-        relationShapeKinds: ["duplicates", "invalidates", "supports"]
+        relationLinkedCaseCount: 6,
+        flatBaselineWeakerCases: 6,
+        flatBaselineMissingExpectedRelationSupportCases: 6,
+        relationShapeCaseCount: 5,
+        relationShapeCoveredCases: 5,
+        relationShapeKinds: ["depends_on", "duplicates", "invalidates", "qualifies", "supports"],
+        heldOutQueryCount: 2,
+        heldOutHitRateAtK: 1,
+        heldOutNdcgAtK: 1,
+        heldOutRelationShapeCaseCount: 2,
+        heldOutRelationShapeKinds: ["depends_on", "qualifies"]
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
-    expect(result.metrics.answerRelationReadbackCases).toBe(18);
+    expect(result.metrics.answerRelationReadbackCases).toBe(result.metrics.queryCount);
     expect(result.metrics.expectedHitRelationReadbackCases).toBeGreaterThan(0);
     expect(result.metrics.expectedHitRelationReadbackCases).toBeLessThan(result.metrics.queryCount);
     expect(result.metrics.searchDocumentLinkReadbackCases).toBe(result.metrics.queryCount);
@@ -120,6 +126,34 @@ describe("runSourceGraphRankingEval", () => {
         weakness: "missing_expected_relation_support"
       }
     });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "heldout-skill-context-qualifies"
+    )).toMatchObject({
+      corpusSplit: "held_out",
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["qualifies"],
+      expectedHitRelationSupport: 1,
+      expectedHitRelationKinds: ["qualifies"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "heldout-contract-output-depends"
+    )).toMatchObject({
+      corpusSplit: "held_out",
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["depends_on"],
+      expectedHitRelationSupport: 1,
+      expectedHitRelationKinds: ["depends_on"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
     expect(result.proof.doesNotProve).toContain("proxy labels are not production retrieval truth");
     expect(result.proof.proves).toContain(
       "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale"
@@ -129,6 +163,9 @@ describe("runSourceGraphRankingEval", () => {
     );
     expect(result.proof.proves).toContain(
       "relation-shape cases report expected and observed SourceClaimEdge kinds for duplicates, invalidates, supports readback"
+    );
+    expect(result.proof.proves).toContain(
+      "held-out relation corpus split reports held-out query count, hit-rate/NDCG, relation-shape kinds, and flat comparison"
     );
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "source truth",

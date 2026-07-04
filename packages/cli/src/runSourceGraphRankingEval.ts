@@ -43,7 +43,10 @@ interface SourceGraphRankingQuery {
   readonly baselineFailureRationale: string;
   readonly relationLinkedExpected: boolean;
   readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
+  readonly corpusSplit: SourceGraphRankingCorpusSplit;
 }
+
+type SourceGraphRankingCorpusSplit = "main" | "held_out";
 
 interface SourceGraphFlatComparison {
   readonly includedHitIds: readonly string[];
@@ -70,6 +73,7 @@ export interface SourceGraphRankingEvalFixture {
 
 export interface SourceGraphRankingEvalCaseResult {
   readonly id: string;
+  readonly corpusSplit: SourceGraphRankingCorpusSplit;
   readonly query: string;
   readonly expectedHitIds: readonly string[];
   readonly baselineFailureRationale: string;
@@ -98,6 +102,7 @@ export interface SourceGraphRankingEvalResult {
     readonly name: string;
     readonly rowCount: number;
     readonly queryCount: number;
+    readonly heldOutQueryCount: number;
     readonly distractorClasses: readonly string[];
   };
   readonly thresholds: {
@@ -121,6 +126,11 @@ export interface SourceGraphRankingEvalResult {
     readonly relationShapeCaseCount: number;
     readonly relationShapeCoveredCases: number;
     readonly relationShapeKinds: readonly SourceClaimEdge["kind"][];
+    readonly heldOutQueryCount: number;
+    readonly heldOutHitRateAtK: number;
+    readonly heldOutNdcgAtK: number;
+    readonly heldOutRelationShapeCaseCount: number;
+    readonly heldOutRelationShapeKinds: readonly SourceClaimEdge["kind"][];
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -166,6 +176,23 @@ const booleanValue = (
   }
 
   return value;
+};
+
+const parseCorpusSplit = (
+  value: unknown,
+  label: string
+): SourceGraphRankingCorpusSplit => {
+  if (value === undefined) {
+    return "main";
+  }
+
+  const split = stringValue(value, label);
+
+  if (split !== "main" && split !== "held_out") {
+    throw new Error(`${label} must be main or held_out`);
+  }
+
+  return split;
 };
 
 const tupleArray = (
@@ -269,6 +296,7 @@ const parseQuery = (
     ? false
     : booleanValue(tuple[4], `queries[${index}][4]`);
   const expectedRelationKinds = parseRelationKindArray(tuple[5], `queries[${index}][5]`);
+  const corpusSplit = parseCorpusSplit(tuple[6], `queries[${index}][6]`);
 
   if (expectedRelationKinds.length > 0 && !relationLinkedExpected) {
     throw new Error(`queries[${index}] expectedRelationKinds require relationLinkedExpected=true`);
@@ -280,7 +308,8 @@ const parseQuery = (
     expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`),
     baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`),
     relationLinkedExpected,
-    expectedRelationKinds
+    expectedRelationKinds,
+    corpusSplit
   };
 };
 
@@ -292,8 +321,8 @@ const parseQueryTuples = (
   }
 
   return value.map((item, index) => {
-    if (!Array.isArray(item) || (item.length < 4 || item.length > 6)) {
-      throw new Error(`queries[${index}] must be a 4-, 5-, or 6-item tuple`);
+    if (!Array.isArray(item) || (item.length < 4 || item.length > 7)) {
+      throw new Error(`queries[${index}] must be a 4-, 5-, 6-, or 7-item tuple`);
     }
 
     return parseQuery(item, index);
@@ -738,6 +767,7 @@ const evaluateQuery = async (
   const weakness = flat === undefined ? undefined : flatWeakness(linked, flat);
   const result = {
     id: queryCase.id,
+    corpusSplit: queryCase.corpusSplit,
     query: queryCase.query,
     expectedHitIds: queryCase.expectedHitIds,
     baselineFailureRationale: queryCase.baselineFailureRationale,
@@ -765,6 +795,21 @@ const evaluateQuery = async (
   };
 };
 
+const averageRankingMetric = (
+  cases: readonly SourceGraphRankingEvalCaseResult[],
+  metric: "hitAtK" | "ndcgAtK"
+): number => {
+  if (cases.length === 0) {
+    return 0;
+  }
+
+  const sum = cases.reduce((total, testCase) =>
+    total + (metric === "hitAtK" ? Number(testCase.hitAtK) : testCase.ndcgAtK), 0
+  );
+
+  return roundRankingMetric(sum / cases.length);
+};
+
 export const runSourceGraphRankingEval = async (
   fixture: SourceGraphRankingEvalFixture
 ): Promise<SourceGraphRankingEvalResult> => {
@@ -782,12 +827,19 @@ export const runSourceGraphRankingEval = async (
   const relationShapeKinds = uniqueRelationKinds(relationShapeCases.flatMap((testCase) =>
     testCase.expectedRelationKinds
   ));
+  const heldOutCases = cases.filter((testCase) => testCase.corpusSplit === "held_out");
+  const heldOutRelationShapeCases = heldOutCases.filter((testCase) => testCase.expectedRelationKinds.length > 0);
+  const heldOutRelationShapeKinds = uniqueRelationKinds(heldOutRelationShapeCases.flatMap((testCase) =>
+    testCase.expectedRelationKinds
+  ));
   const hasRequiredRelationShapeKinds = requiredRelationShapeKinds.every((kind) =>
     relationShapeKinds.includes(kind)
   );
+  const hasHeldOutRelationCorpus = heldOutCases.length > 0 && heldOutRelationShapeKinds.length >= 2;
   const status =
     hitRateAtK >= fixture.minimumHitRateAtK &&
     ndcgAtK >= fixture.minimumNdcgAtK &&
+    hasHeldOutRelationCorpus &&
     relationLinkedCases.length > 0 &&
     flatBaselineWeakerCases.length === relationLinkedCases.length &&
     relationShapeCoveredCases.length === relationShapeCases.length &&
@@ -804,6 +856,7 @@ export const runSourceGraphRankingEval = async (
       name: fixture.corpusName,
       rowCount: fixture.rows.length,
       queryCount: fixture.queries.length,
+      heldOutQueryCount: heldOutCases.length,
       distractorClasses: fixture.distractorClasses
     },
     thresholds: {
@@ -839,7 +892,12 @@ export const runSourceGraphRankingEval = async (
       ).length,
       relationShapeCaseCount: relationShapeCases.length,
       relationShapeCoveredCases: relationShapeCoveredCases.length,
-      relationShapeKinds
+      relationShapeKinds,
+      heldOutQueryCount: heldOutCases.length,
+      heldOutHitRateAtK: averageRankingMetric(heldOutCases, "hitAtK"),
+      heldOutNdcgAtK: averageRankingMetric(heldOutCases, "ndcgAtK"),
+      heldOutRelationShapeCaseCount: heldOutRelationShapeCases.length,
+      heldOutRelationShapeKinds
     },
     cases,
     proof: {
@@ -848,6 +906,7 @@ export const runSourceGraphRankingEval = async (
         "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale",
         "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback",
         `relation-shape cases report expected and observed SourceClaimEdge kinds for ${requiredRelationShapeKinds.join(", ")} readback`,
+        "held-out relation corpus split reports held-out query count, hit-rate/NDCG, relation-shape kinds, and flat comparison",
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],

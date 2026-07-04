@@ -34,7 +34,9 @@
     ["claim-context-roi", "context roi selected exclusions broad dump abstention", "ContextROI should select bounded context and preserve explicit exclusions."],
     ["claim-codex-brief", "codex brief proof boundary evidence contract", "Codex briefs should carry constraints, evidence contracts, and proof boundaries."],
     ["claim-docs-lint", "behavior matrix docs lint proof boundary", "Docs lint should protect active proof boundaries without pretending to be behavior proof."],
-    ["claim-pgvector", "postgres pgvector retrieval substrate lexical vector hybrid", "The retrieval substrate should distinguish lexical, vector, and hybrid readback limits."]
+    ["claim-pgvector", "postgres pgvector retrieval substrate lexical vector hybrid", "The retrieval substrate should distinguish lexical, vector, and hybrid readback limits."],
+    ["claim-heldout-skill-context", "heldout governed skill prompt context pack evidence ref", "A governed skill context pack should include compact objective, acceptance criteria, verification evidence, and evidence refs."],
+    ["claim-heldout-contract-output", "heldout execution contract evidence shape output gate", "Execution-contract output should require evidence-shape readback before claiming Codex followed KRN context."]
   ],
   "relations": [
     ["claim-graph-relation", "claim-source-decision", "narrows"],
@@ -44,7 +46,9 @@
     ["claim-vector-scope", "claim-pgvector", "narrows"],
     ["claim-relation-supports", "claim-source-decision", "supports"],
     ["claim-relation-duplicates", "claim-decision-link", "duplicates"],
-    ["claim-relation-invalidates", "claim-graph-relation", "invalidates"]
+    ["claim-relation-invalidates", "claim-graph-relation", "invalidates"],
+    ["claim-second-opinion", "claim-heldout-skill-context", "qualifies"],
+    ["claim-heldout-contract-output", "claim-codex-brief", "depends_on"]
   ],
   "queries": [
     ["memory-feedback", "hurt stale activation feedback", ["source_claim:claim-memory-feedback"], "A generic memory row can match feedback wording while missing hurt-to-exclusion semantics."],
@@ -64,6 +68,8 @@
     ["source-artifact", "source artifact preview activation context", ["source_claim:claim-source-artifact"], "Source artifact extraction can be confused with proven source-search activation reuse."],
     ["heartbeat-acquisition", "heartbeat acquisition missing evidence candidate", ["source_claim:claim-heartbeat-acquisition"], "Heartbeat acquisition wording can look executable despite candidate-only missing-evidence status."],
     ["typescript-boundary", "unknown first json parse result state", ["source_claim:claim-typescript-boundary"], "TypeScript strictness rows can match JSON wording without unknown-first boundary evidence."],
-    ["pgvector", "postgres pgvector lexical vector hybrid", ["source_claim:claim-pgvector"], "Lexical/vector retrieval rows can match pgvector wording without proving live pgvector quality."]
+    ["pgvector", "postgres pgvector lexical vector hybrid", ["source_claim:claim-pgvector"], "Lexical/vector retrieval rows can match pgvector wording without proving live pgvector quality."],
+    ["heldout-skill-context-qualifies", "heldout governed skill context pack evidence ref", ["source_claim:claim-heldout-skill-context"], "A flat source row can match held-out skill context wording, but it cannot show incoming qualifies relation support from the second-opinion source.", true, ["qualifies"], "held_out"],
+    ["heldout-contract-output-depends", "heldout execution contract evidence shape output gate", ["source_claim:claim-heldout-contract-output"], "A flat source row can match held-out execution-contract wording, but it cannot show outgoing depends_on relation support to the Codex brief evidence gate.", true, ["depends_on"], "held_out"]
   ]
 }

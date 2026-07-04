@@ -219,9 +219,13 @@ the same source-search query shape twice:
    but SourceClaimEdge support is withheld;
 3. the eval passes only when each linked case records a weaker flat comparison.
 
-The current relation-shape slice covers `supports`, `duplicates`, and
-`invalidates` SourceClaimEdge readback by reporting both expected and observed
-relation kinds for the expected hit.
+The current relation-shape slices cover:
+
+- main corpus: `supports`, `duplicates`, and `invalidates`;
+- held-out split: `depends_on` and `qualifies`.
+
+The eval reports held-out query count, held-out hit-rate/NDCG, held-out relation
+kinds, and the flat no-relation comparison for those cases.
 
 This targets A-MEM-style relation usefulness as a local falsifier. It proves
 review/readback advantage for controlled source graph relation-shape cases, not
