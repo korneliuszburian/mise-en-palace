@@ -132,12 +132,11 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 ## Active Task
 
-Status: active; overnight queue refreshed after CLI boundary/runtime wave. Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-session brain-search smoke are closed and pushed; latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
-Current active Bead: `mise-en-palace-27gm` falsify memory advantage claim.
-Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
-Latest closed Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
-Latest closed Bead: `mise-en-palace-fg6o` naming hygiene; ready queue empty after relation-linked eval and naming cleanup.
-`mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
+Status: active; post-refactor kernel queue is moving through memory advantage proof before worker/runtime expansion. Result so far: schema deletion, pgvector validation, cleanup wave, firm-pattern memory challenge set, and DB-backed brain-search replay are pushed or in verification.
+Current active Bead: `mise-en-palace-hgk2` DB-backed memory advantage challenge replay.
+Latest closed Bead: `mise-en-palace-l7ti` firm-pattern memory challenge set.
+Next ready Beads after `hgk2`: `mise-en-palace-5ydu` coding-decision proof, `mise-en-palace-cxlq` source graph relation ranking corpus, `mise-en-palace-o67w` evidence-backed naming cleanup, `mise-en-palace-35qi` worker package branch decision.
+Worker/runtime expansion stays rejected until a named product loop needs execution; second-opinion-claude runs after larger slices and its verdict is advisory under local evidence.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
 `mise-en-palace-75za` source-search command boundary split is closed:

@@ -22,6 +22,11 @@ export interface BrainSearchDbSmokeInput {
 export interface BrainSearchDbSmokeReport {
   smokeId: string;
   projectId: string;
+  challengeCaseId: string;
+  challengeStandardId: string;
+  challengeExpectedDecision: string;
+  challengeBaselineFailureMode: string;
+  challengeFalsifier: string;
   query: string;
   sessionATaskContractId: string;
   sessionAHarnessPlanId: string;
@@ -52,6 +57,8 @@ export interface BrainSearchDbSmokeReport {
   groundedLinkedSearchDocumentCount: number;
   groundedSourceDecisionSupportCount: number;
   groundedRecommendedNextAction: string;
+  groundedSourceContribution: string;
+  limitationClassification: string;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -162,6 +169,26 @@ const createSmokeId = (smokeId: string) => (prefix: string): string =>
   `${prefix}-${smokeId}`;
 
 const smokeSource = "krn db smoke brain-search";
+
+const firmPatternChallenge = {
+  id: "firm-pattern-store-backed-memory-no-markdown",
+  standardId: "standard:store-backed-memory",
+  expectedDecision: "Use store-backed memory/source evidence; do not create runtime markdown memory files.",
+  baselineFailureMode:
+    "Simple retrieval can select a tempting MEMORY.md shortcut because it repeats memory and runtime wording.",
+  falsifier: "A KRN slice adds runtime MEMORY.md or file-backed memory as the product memory path.",
+  query:
+    "for KRN runtime memory should Codex create MEMORY.md files or use store backed memory source evidence",
+  selectedKnowledgeId: "source:store-backed-memory-no-markdown",
+  claim:
+    "KRN runtime memory must be store-backed; markdown is allowed only as docs, source, seed, export, backup, or audit trail.",
+  mechanism:
+    "Store-backed memory gives typed activation, review gates, source lineage, feedback, and forgetting; markdown notes cannot enforce those lifecycle controls.",
+  implication:
+    "When asked whether to create runtime MEMORY.md files, KRN should select the store-backed memory decision.",
+  consumer: "runtime memory design",
+  doesNotProve: "This does not prove every markdown source is useless."
+} as const;
 
 const markerMetadataTables = [
   "retrieval_runs",
@@ -281,7 +308,7 @@ export const runBrainSearchDbSmokeCheck = async (
   const client = postgres(input.databaseUrl, { max: 1 });
   const createId = createSmokeId(input.smokeId);
   const smokeToken = input.smokeId.replace(/[^a-zA-Z0-9]/gu, "").toLowerCase();
-  const query = `ezbmbrainsearchdogfood${smokeToken}`;
+  const query = `${firmPatternChallenge.query} db smoke marker ${smokeToken}`;
   let runtime: Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
 
   try {
@@ -331,18 +358,21 @@ export const runBrainSearchDbSmokeCheck = async (
       projectId,
       operatorIntent: {
         source: "cli",
-        rawIntent: `teach KRN memory from reviewed evidence ${query}`,
+        rawIntent: `teach KRN memory from reviewed firm-pattern evidence ${query}`,
         metadata: {
           ...metadata,
+          challengeCaseId: firmPatternChallenge.id,
+          challengeStandardId: firmPatternChallenge.standardId,
           session: "A"
         }
       },
       taskContract: {
-        title: "Teach DB-backed brain search from reviewed evidence",
+        title: "Teach DB-backed brain search from reviewed firm-pattern evidence",
         objective:
-          "Persist reviewed source and memory evidence so a later brain-search run can retrieve it from live repositories.",
+          `Persist the ${firmPatternChallenge.standardId} decision so a later brain-search run can retrieve it from live repositories.`,
         constraints: [
           "use DB-backed source and memory repositories",
+          "prove the store-backed memory decision beats the markdown runtime-memory shortcut",
           "keep the proof isolated to this smoke project"
         ],
         nonGoals: [
@@ -351,16 +381,21 @@ export const runBrainSearchDbSmokeCheck = async (
         ],
         acceptance: [
           "Session B store-only brain search selects the Session A MemoryRecord",
-          "Session B source-search support remains decision-linked"
+          "Session B source-search support remains decision-linked",
+          "Session B readback states the firm-pattern expected decision and falsifier"
         ],
         metadata: {
           ...metadata,
+          challengeCaseId: firmPatternChallenge.id,
+          challengeExpectedDecision: firmPatternChallenge.expectedDecision,
+          challengeFalsifier: firmPatternChallenge.falsifier,
           session: "A"
         }
       },
       tokenBudget: 360,
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
         proof: "db_backed_multi_session_memory_advantage_session_a"
       }
     }, runtime.compilerDependencies);
@@ -409,6 +444,8 @@ export const runBrainSearchDbSmokeCheck = async (
       },
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        baselineFailureMode: firmPatternChallenge.baselineFailureMode,
         session: "A",
         doesNotProve:
           "Session A evidence capture does not prove Session B will retrieve or use memory."
@@ -422,6 +459,8 @@ export const runBrainSearchDbSmokeCheck = async (
       findings: [],
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        expectedDecision: firmPatternChallenge.expectedDecision,
         session: "A",
         reviewBurden: "low"
       }
@@ -434,6 +473,7 @@ export const runBrainSearchDbSmokeCheck = async (
       evalCandidates: [],
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
         session: "A",
         memoryRecordMutation: "candidate_only_until_promotion"
       }
@@ -449,29 +489,35 @@ export const runBrainSearchDbSmokeCheck = async (
     });
     const sourceClaim = await runtime.sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
-      claim: `KRN brain search can use ${query} as source-backed selected knowledge.`,
-      mechanism:
-        "A persisted SourceClaim, SourceDecisionEdge, and SearchDocument are read through live source search before brain-search readback chooses selectedKnowledge.",
-      krnImplication:
-        "Brain usefulness proof must include store-backed source/search rows before claiming source-grounded nextAction=use.",
+      claim: `${firmPatternChallenge.claim} Marker: ${query}.`,
+      mechanism: firmPatternChallenge.mechanism,
+      krnImplication: firmPatternChallenge.implication,
       doesNotProve:
-        "This fixed DB smoke does not prove broad ranking quality, source truth, or product readiness.",
+        firmPatternChallenge.doesNotProve,
       trustTier: "project-decision",
       supportType: "implementation-boundary",
-      consumer: "ezbm brain usefulness dogfood",
-      falsifier: "The grounded run has no SourceClaim or SourceDecisionEdge support.",
-      metadata
+      consumer: firmPatternChallenge.consumer,
+      falsifier: firmPatternChallenge.falsifier,
+      metadata: {
+        ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        selectedKnowledgeId: firmPatternChallenge.selectedKnowledgeId
+      }
     });
     const sourceDecision = await runtime.sourceRepository.createSourceDecision?.({
       projectId,
       sourceClaimId: sourceClaim.id,
       status: "adopt",
-      decision: "Use DB-backed source rows for the brain usefulness smoke.",
+      decision: firmPatternChallenge.expectedDecision,
       rationale:
-        "The claim has mechanism, implication, consumer, falsifier, and non-proof boundary.",
-      falsifier: "Source search cannot read back decision support for the smoke claim.",
-      consumer: "ezbm brain usefulness dogfood",
-      metadata
+        "The firm-pattern claim has mechanism, implication, consumer, falsifier, and non-proof boundary.",
+      falsifier: firmPatternChallenge.falsifier,
+      consumer: firmPatternChallenge.consumer,
+      metadata: {
+        ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        standardId: firmPatternChallenge.standardId
+      }
     });
 
     if (sourceDecision === undefined) {
@@ -484,8 +530,12 @@ export const runBrainSearchDbSmokeCheck = async (
       targetId: `brain-search-dogfood-${input.smokeId}`,
       supportType: "implementation-boundary",
       confidence: "high",
-      notes: "Decision-linked support for the brain-search DB dogfood smoke.",
-      metadata
+      notes: "Decision-linked support for the store-backed memory firm-pattern DB replay.",
+      metadata: {
+        ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        sourceDecisionId: sourceDecision.id
+      }
     });
     const searchDocument = await runtime.retrievalRepository?.createSearchDocument({
       projectId,
@@ -496,13 +546,17 @@ export const runBrainSearchDbSmokeCheck = async (
       trustTier: "project-decision",
       title: "Brain search DB dogfood SearchDocument",
       body:
-        `SearchDocument for ${query}. The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,
+        `SearchDocument for ${query}. ${firmPatternChallenge.expectedDecision} The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,
       searchText:
-        `${query} source claim source decision edge selected knowledge`,
+        `${query} ${firmPatternChallenge.standardId} ${firmPatternChallenge.expectedDecision} source claim source decision edge selected knowledge`,
       metadataFilters: {
         smokeId: input.smokeId
       },
-      metadata
+      metadata: {
+        ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        sourceDecisionId: sourceDecision.id
+      }
     });
 
     if (searchDocument === undefined) {
@@ -514,13 +568,13 @@ export const runBrainSearchDbSmokeCheck = async (
       feedbackDeltaId: sessionAFeedbackDelta.id,
       proposedBy: "krn db smoke brain-search",
       kind: "pattern",
-      summary: `Use DB memory for ${query}`,
+      summary: "Use store-backed memory instead of runtime markdown memory",
       body:
-        `When the operator asks about ${query}, the persisted memory should be selected before claiming KRN has DB-backed memory advantage.`,
-      owner: "ezbm brain usefulness dogfood",
+        `When the operator asks whether KRN runtime memory should use MEMORY.md files or store-backed memory/source evidence, select ${firmPatternChallenge.expectedDecision}`,
+      owner: firmPatternChallenge.consumer,
       confidence: 95,
       applicationGuidance:
-        "Use this persisted MemoryRecord as the memory side of the DB-backed brain-search advantage proof.",
+        "Use this persisted MemoryRecord as the memory side of the DB-backed firm-pattern advantage proof.",
       invalidationRule:
         "Invalidate if store-only brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
       sourceLineage: [
@@ -534,6 +588,10 @@ export const runBrainSearchDbSmokeCheck = async (
       validFrom: input.now,
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
+        challengeStandardId: firmPatternChallenge.standardId,
+        expectedDecision: firmPatternChallenge.expectedDecision,
+        baselineFailureMode: firmPatternChallenge.baselineFailureMode,
         sessionAEvidenceBundleId: sessionAEvidenceBundle.id,
         sessionAReviewAssessmentId: sessionAReviewAssessment.id,
         sessionAFeedbackDeltaId: sessionAFeedbackDelta.id,
@@ -549,6 +607,7 @@ export const runBrainSearchDbSmokeCheck = async (
       recordKey: `brain-search-memory-${input.smokeId}`,
       metadata: {
         ...metadata,
+        challengeCaseId: firmPatternChallenge.id,
         sessionAExecutionRunId: sessionAExecutionRun.id,
         sessionAFeedbackDeltaId: sessionAFeedbackDelta.id
       }
@@ -618,6 +677,11 @@ export const runBrainSearchDbSmokeCheck = async (
     return {
       smokeId: input.smokeId,
       projectId,
+      challengeCaseId: firmPatternChallenge.id,
+      challengeStandardId: firmPatternChallenge.standardId,
+      challengeExpectedDecision: firmPatternChallenge.expectedDecision,
+      challengeBaselineFailureMode: firmPatternChallenge.baselineFailureMode,
+      challengeFalsifier: firmPatternChallenge.falsifier,
       query,
       sessionATaskContractId: sessionACompile.taskContract.id,
       sessionAHarnessPlanId: sessionACompile.harnessPlan.id,
@@ -648,6 +712,10 @@ export const runBrainSearchDbSmokeCheck = async (
       groundedLinkedSearchDocumentCount,
       groundedSourceDecisionSupportCount,
       groundedRecommendedNextAction: stringValue(grounded.recommendedNextAction),
+      groundedSourceContribution:
+        "accepted_source_claim_with_linked_search_document_and_source_decision_edge",
+      limitationClassification:
+        "single_firm_pattern_db_replay_not_broad_ranking_or_codex_output_quality",
       remainingMarkerCount,
       cleanedUp: remainingMarkerCountBeforeCleanup > 0 && remainingMarkerCount === 0
     };

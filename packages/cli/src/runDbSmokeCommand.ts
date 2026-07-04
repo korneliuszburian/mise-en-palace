@@ -528,6 +528,11 @@ const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
     [
       `Project: ${report.projectId}`,
       `Smoke id: ${report.smokeId}`,
+      `Challenge case: ${report.challengeCaseId}`,
+      `Challenge standard: ${report.challengeStandardId}`,
+      `Challenge expected decision: ${report.challengeExpectedDecision}`,
+      `Challenge baseline failure mode: ${report.challengeBaselineFailureMode}`,
+      `Challenge falsifier: ${report.challengeFalsifier}`,
       `Query: ${report.query}`,
       `Session A task contract: ${report.sessionATaskContractId}`,
       `Session A harness plan: ${report.sessionAHarnessPlanId}`,
@@ -558,6 +563,8 @@ const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
       `Grounded linked search documents: ${report.groundedLinkedSearchDocumentCount}`,
       `Grounded source decision support: ${report.groundedSourceDecisionSupportCount}`,
       `Grounded recommended next action: ${report.groundedRecommendedNextAction}`,
+      `Grounded source contribution: ${report.groundedSourceContribution}`,
+      `Limitation classification: ${report.limitationClassification}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Brain search smoke")
     ]
