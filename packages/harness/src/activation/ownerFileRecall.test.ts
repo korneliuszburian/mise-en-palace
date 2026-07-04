@@ -36,6 +36,48 @@ const taskContract = (objective: string): TaskContract => ({
   updatedAt: "2026-06-25T00:00:00.000Z"
 });
 
+const repoBoundaryReadModel = (repoInstallationId: string): TargetActivationReadModel => ({
+  projectKernelId: `kernel-${repoInstallationId}`,
+  repoInstallationIds: [repoInstallationId],
+  localPathHints: [`/tmp/${repoInstallationId}`],
+  sourceSeeds: [
+    {
+      path: "src",
+      kind: "source_root",
+      reason: "implementation owner-file root"
+    }
+  ],
+  ownerFiles: [
+    {
+      path: "src/index.ts",
+      root: "src",
+      kind: "implementation_entry",
+      reason: "implementation readiness owner file"
+    }
+  ],
+  trustExclusions: [
+    {
+      pathPattern: ".env*",
+      reason: "secret-shaped files must stay out of context"
+    }
+  ]
+});
+
+const requiredTargetCandidate = (
+  candidates: ReturnType<typeof buildOwnerFileRecallCandidates>,
+  targetReadModelKind: string
+) => {
+  const candidate = candidates.find((item) =>
+    item.metadata.targetReadModelKind === targetReadModelKind
+  );
+
+  if (candidate === undefined) {
+    throw new Error(`missing target read-model candidate ${targetReadModelKind}`);
+  }
+
+  return candidate;
+};
+
 describe("owner-file recall", () => {
   it("surfaces DB readiness owner files as typed search candidates", () => {
     const candidates = buildOwnerFileRecallCandidates(
@@ -370,6 +412,32 @@ describe("owner-file recall", () => {
         })
       ])
     );
+  });
+
+  it("keeps identical target paths distinct across repo read models", () => {
+    const task = taskContract("Repair source owner file readiness");
+    const repoA = buildOwnerFileRecallCandidates(task, {
+      targetReadModel: repoBoundaryReadModel("repo-installation-a")
+    });
+    const repoB = buildOwnerFileRecallCandidates(task, {
+      targetReadModel: repoBoundaryReadModel("repo-installation-b")
+    });
+    const repoAOwner = requiredTargetCandidate(repoA, "owner_file");
+    const repoBOwner = requiredTargetCandidate(repoB, "owner_file");
+    const repoATrust = requiredTargetCandidate(repoA, "trust_exclusions");
+    const repoBTrust = requiredTargetCandidate(repoB, "trust_exclusions");
+
+    expect(repoAOwner.reason).toBe(repoBOwner.reason);
+    expect(repoAOwner.subjectId).not.toBe(repoBOwner.subjectId);
+    expect(repoATrust.subjectId).not.toBe(repoBTrust.subjectId);
+    expect(repoAOwner.expectedUse).toContain("repo-installation-a");
+    expect(repoBOwner.expectedUse).toContain("repo-installation-b");
+    expect(repoAOwner.metadata).toMatchObject({
+      repoInstallationIds: ["repo-installation-a"]
+    });
+    expect(repoBOwner.metadata).toMatchObject({
+      repoInstallationIds: ["repo-installation-b"]
+    });
   });
 
   it("prioritizes explicit owner files over covered source seeds and adjacent agent guidance", () => {

@@ -113,6 +113,21 @@ const candidatePathId = (path: string): string =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
+const targetBoundaryKey = (readModel: TargetActivationReadModel): string =>
+  [
+    readModel.projectKernelId ?? "no-kernel",
+    ...readModel.repoInstallationIds,
+    ...readModel.localPathHints
+  ].join("|");
+
+const targetBoundaryLabel = (readModel: TargetActivationReadModel): string => {
+  const repoIds = readModel.repoInstallationIds.join(", ");
+
+  return repoIds.length === 0
+    ? "target repo"
+    : `target repo installation ${repoIds}`;
+};
+
 const deterministicUuid = (key: string): string => {
   let hash = 0x811c9dc5;
 
@@ -133,6 +148,21 @@ const deterministicUuid = (key: string): string => {
     `8${hex.slice(17, 20)}`,
     hex.slice(20, 32)
   ].join("-");
+};
+
+const deterministicSlugHash = (key: string): string =>
+  deterministicUuid(key).replace(/-/g, "").slice(0, 12);
+
+const targetBoundarySlug = (readModel: TargetActivationReadModel): string => {
+  const boundaryKey = targetBoundaryKey(readModel);
+  const readableBoundary = candidatePathId(
+    readModel.repoInstallationIds[0] ??
+    readModel.projectKernelId ??
+    readModel.localPathHints[0] ??
+    "target-repo"
+  ).slice(0, 48);
+
+  return `${readableBoundary}-${deterministicSlugHash(boundaryKey)}`;
 };
 
 const matchingTermCount = (
@@ -220,11 +250,14 @@ const toTargetSeedCandidate = (
   matchCount: number,
   readModel: TargetActivationReadModel
 ): ActivationCandidate => {
+  const boundaryKey = targetBoundaryKey(readModel);
+  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryLabel = targetBoundaryLabel(readModel);
   const candidateSlug = candidatePathId(seed.path);
-  const subjectId = deterministicUuid(`target-source-seed:${seed.path}`);
+  const subjectId = deterministicUuid(`target-source-seed:${boundaryKey}:${seed.path}`);
 
   return {
-    id: `target-source-seed:${candidateSlug}`,
+    id: `target-source-seed:${boundarySlug}:${candidateSlug}`,
     kind: "search",
     subjectType: "search_document",
     subjectId,
@@ -236,7 +269,7 @@ const toTargetSeedCandidate = (
     ].join(" "),
     trustTier: "project-decision",
     reason: `Target source seed: ${seed.path}`,
-    expectedUse: `Inspect target repo path ${seed.path} when the task needs ${seed.reason}.`,
+    expectedUse: `Inspect ${boundaryLabel} path ${seed.path} when the task needs ${seed.reason}.`,
     tokenEstimate: 40,
     lexicalScore: matchCount * 30,
     metadata: {
@@ -267,11 +300,14 @@ const toTargetOwnerFileCandidate = (
   matchCount: number,
   readModel: TargetActivationReadModel
 ): ActivationCandidate => {
+  const boundaryKey = targetBoundaryKey(readModel);
+  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryLabel = targetBoundaryLabel(readModel);
   const candidateSlug = candidatePathId(ownerFile.path);
-  const subjectId = deterministicUuid(`target-owner-file:${ownerFile.path}`);
+  const subjectId = deterministicUuid(`target-owner-file:${boundaryKey}:${ownerFile.path}`);
 
   return {
-    id: `target-owner-file:${candidateSlug}`,
+    id: `target-owner-file:${boundarySlug}:${candidateSlug}`,
     kind: "search",
     subjectType: "search_document",
     subjectId,
@@ -284,7 +320,7 @@ const toTargetOwnerFileCandidate = (
     ].join(" "),
     trustTier: "project-decision",
     reason: `Target owner file: ${ownerFile.path}`,
-    expectedUse: `Inspect target owner file ${ownerFile.path} for ${ownerFile.reason}.`,
+    expectedUse: `Inspect ${boundaryLabel} owner file ${ownerFile.path} for ${ownerFile.reason}.`,
     tokenEstimate: 56,
     lexicalScore: Math.max(45, matchCount * 45),
     contextRoiScore: 100,
@@ -309,12 +345,15 @@ const toTargetTrustExclusionCandidate = (
   }
 
   const patterns = readModel.trustExclusions.map((exclusion) => exclusion.pathPattern);
+  const boundaryKey = targetBoundaryKey(readModel);
+  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryLabel = targetBoundaryLabel(readModel);
 
   return {
-    id: "target-trust-exclusions",
+    id: `target-trust-exclusions:${boundarySlug}`,
     kind: "search",
     subjectType: "search_document",
-    subjectId: deterministicUuid("target-trust-exclusions"),
+    subjectId: deterministicUuid(`target-trust-exclusions:${boundaryKey}`),
     text: [
       "target trust exclusions redaction untrusted generated secret runtime",
       ...readModel.trustExclusions.map((exclusion) =>
@@ -323,7 +362,7 @@ const toTargetTrustExclusionCandidate = (
     ].join(" "),
     trustTier: "project-decision",
     reason: "Target trust exclusions for project-scoped planning",
-    expectedUse: `Exclude or redact target paths before using target context: ${patterns.join(", ")}.`,
+    expectedUse: `Exclude or redact ${boundaryLabel} paths before using target context: ${patterns.join(", ")}.`,
     tokenEstimate: 64,
     lexicalScore: 80,
     metadata: {

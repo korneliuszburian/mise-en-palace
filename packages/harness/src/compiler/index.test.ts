@@ -40,6 +40,9 @@ import {
   createRetrievalCandidateRecord,
   createRetrievalRunRecord
 } from "../testSupport/retrievalRows.js";
+import type {
+  TargetActivationReadModel
+} from "../activation/index.js";
 import {
   compileHarnessPlan
 } from "./index.js";
@@ -414,6 +417,88 @@ const compileInput = {
   tokenBudget: 180,
   metadata: {}
 };
+
+interface CrossRepoCompileScenario {
+  projectId: string;
+  repoInstallationId: string;
+  localPathHint: string;
+}
+
+const crossRepoScenarios: readonly CrossRepoCompileScenario[] = [
+  {
+    projectId: "project-react-tooling",
+    repoInstallationId: "repo-installation-react-tooling",
+    localPathHint: "/work/react-tooling"
+  },
+  {
+    projectId: "project-node-service",
+    repoInstallationId: "repo-installation-node-service",
+    localPathHint: "/work/node-service"
+  },
+  {
+    projectId: "project-python-worker",
+    repoInstallationId: "repo-installation-python-worker",
+    localPathHint: "/work/python-worker"
+  }
+];
+
+const crossRepoTargetReadModel = (
+  scenario: CrossRepoCompileScenario
+): TargetActivationReadModel => ({
+  projectKernelId: `kernel-${scenario.projectId}`,
+  repoInstallationIds: [scenario.repoInstallationId],
+  localPathHints: [scenario.localPathHint],
+  sourceSeeds: [
+    {
+      path: "src",
+      kind: "source_root",
+      reason: "implementation owner-file root"
+    },
+    {
+      path: "tests",
+      kind: "test_root",
+      reason: "behavior proof owner-file root"
+    }
+  ],
+  ownerFiles: [
+    {
+      path: "src/index.ts",
+      root: "src",
+      kind: "implementation_entry",
+      reason: "implementation readiness owner file"
+    },
+    {
+      path: "tests/readiness.test.ts",
+      root: "tests",
+      kind: "behavior_test",
+      reason: "readiness behavior proof owner file"
+    }
+  ],
+  trustExclusions: [
+    {
+      pathPattern: ".env*",
+      reason: "secret-shaped files must stay out of context"
+    }
+  ]
+});
+
+const contextDecisionFingerprint = (context: ContextAssembly): {
+  status: ContextAssembly["status"];
+  inclusionReasons: readonly string[];
+  exclusionReasons: readonly string[];
+} => ({
+  status: context.status,
+  inclusionReasons: context.inclusions.map((inclusion) => inclusion.reason).sort(),
+  exclusionReasons: context.exclusions.map((exclusion) => exclusion.reason).sort()
+});
+
+const repoInstallationIdsFromContext = (context: ContextAssembly): readonly string[] =>
+  Array.from(new Set(context.inclusions.flatMap((inclusion) => {
+    const match = /target repo installation ([^ ]+)/.exec(inclusion.expectedUse);
+    const repoInstallationId = match?.[1];
+
+    return repoInstallationId === undefined ? [] : [repoInstallationId.replace(/,$/, "")];
+  }))).sort();
 
 describe("compileHarnessPlan", () => {
   it("flows a golden fixture through the compiler", async () => {
@@ -1192,6 +1277,113 @@ describe("compileHarnessPlan", () => {
         })
       ])
     );
+  });
+
+  it("keeps equivalent target plans stable across three repo contexts without leaking repo boundaries", async () => {
+    const compiled = await Promise.all(crossRepoScenarios.map(async (scenario) => {
+      const retrievalRepository = new FakeRetrievalRepository();
+      const result = await compileHarnessPlan(
+        {
+          ...compileInput,
+          projectId: scenario.projectId,
+          tokenBudget: 500,
+          taskContract: {
+            ...compileInput.taskContract,
+            title: "Repair target readiness owner files",
+            objective: "Repair target readiness owner files in src and tests without reading secret-shaped files.",
+            constraints: ["do not build a crawler", "preserve repo boundary"],
+            acceptance: ["owner-file context is stable across target repos"]
+          },
+          targetReadModel: crossRepoTargetReadModel(scenario)
+        },
+        {
+          harnessRunRepository: new FakeHarnessRunRepository(),
+          memoryRepository: new FakeMemoryRepository([]),
+          sourceRepository: new FakeSourceRepository([]),
+          retrievalRepository,
+          now: () => now,
+          createId: (prefix) => `${prefix}-${scenario.projectId}`
+        }
+      );
+
+      return { result, retrievalRepository, scenario };
+    }));
+    const fingerprints = compiled.map(({ result }) =>
+      contextDecisionFingerprint(result.contextAssembly)
+    );
+    const ownerFileSubjectIdsByRepo = compiled.map(({ result }) =>
+      result.contextAssembly.inclusions
+        .filter((inclusion) => inclusion.reason.startsWith("Target owner file:"))
+        .map((inclusion) => inclusion.subjectId)
+        .sort()
+    );
+
+    expect(fingerprints).toEqual([
+      fingerprints[0],
+      fingerprints[0],
+      fingerprints[0]
+    ]);
+    expect(fingerprints[0]).toEqual({
+      status: "assembled",
+      inclusionReasons: [
+        "Target owner file: src/index.ts",
+        "Target owner file: tests/readiness.test.ts",
+        "Target trust exclusions for project-scoped planning"
+      ],
+      exclusionReasons: []
+    });
+    expect(new Set(ownerFileSubjectIdsByRepo.flat()).size).toBe(
+      ownerFileSubjectIdsByRepo.flat().length
+    );
+
+    for (const { result, retrievalRepository, scenario } of compiled) {
+      expect(result.taskContract.projectId).toBe(scenario.projectId);
+      expect(repoInstallationIdsFromContext(result.contextAssembly)).toEqual([
+        scenario.repoInstallationId
+      ]);
+      expect(result.contextAssembly.inclusions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            reason: "Target owner file: src/index.ts",
+            expectedUse: expect.stringContaining(scenario.repoInstallationId)
+          }),
+          expect.objectContaining({
+            reason: "Target owner file: tests/readiness.test.ts",
+            expectedUse: expect.stringContaining(scenario.repoInstallationId)
+          }),
+          expect.objectContaining({
+            reason: "Target trust exclusions for project-scoped planning",
+            expectedUse: expect.stringContaining(scenario.repoInstallationId)
+          })
+        ])
+      );
+      expect(retrievalRepository.startedRunMetadata).toMatchObject({
+        targetReadModel: {
+          repoInstallationIds: [scenario.repoInstallationId],
+          sourceSeedCount: 2,
+          ownerFileCount: 2,
+          trustExclusionCount: 1,
+          ownerFileRecall: {
+            status: "owner_files_available",
+            reason: "target_read_model_provided_owner_files",
+            sourceSeedPaths: ["src", "tests"],
+            ownerFilePaths: ["src/index.ts", "tests/readiness.test.ts"]
+          }
+        }
+      });
+      expect(retrievalRepository.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: "search",
+            status: "included",
+            metadata: expect.objectContaining({
+              source: "target_project_read_model",
+              repoInstallationIds: [scenario.repoInstallationId]
+            })
+          })
+        ])
+      );
+    }
   });
 
   it("creates evidence expectations for reviewable engineering work", async () => {
