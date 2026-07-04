@@ -5,7 +5,8 @@
     "adjacent-governance-source",
     "stale-relation-edge",
     "lexical-vector-ambiguity",
-    "target-specific-vs-generic"
+    "target-specific-vs-generic",
+    "flat-relationless-baseline"
   ],
   "topK": 6,
   "minimumHitRateAtK": 1,
@@ -44,7 +45,7 @@
     ["pattern-usefulness", "pattern usefulness evidenceRef helped", ["source_claim:claim-pattern-usefulness"], "A generic pattern row can mention usefulness without evidenceRef and non-proof requirements."],
     ["source-decision", "mechanism consumer falsifier source decision", ["source_claim:claim-source-decision"], "A source decision row can match source vocabulary while missing mechanism, consumer, and falsifier."],
     ["decision-link", "accepted sourceclaim sourcedecisionedge support", ["source_claim:claim-decision-link"], "Accepted SourceClaim wording can look governed without visible SourceDecisionEdge support."],
-    ["graph-relation", "temporal source graph relation edge", ["source_claim:claim-graph-relation"], "Relation-edge wording can be mistaken for source truth instead of graph readback."],
+    ["graph-relation", "temporal source graph relation edge", ["source_claim:claim-graph-relation"], "Relation-edge wording can be mistaken for source truth instead of graph readback; the flat no-relation path can select the claim but cannot explain the adjacent SourceClaimEdge support.", true],
     ["graph-invalidation", "invalidates stale graph edge supersedes", ["source_claim:claim-graph-invalidation"], "Stale relation rows can remain highly lexical unless invalidating edges rank them down."],
     ["document-link", "source claim document link artifact chunk", ["source_claim:claim-search-document-link"], "A source artifact row can match document wording without explicit SearchDocument linkage."],
     ["vector-scope", "searchHybrid embedding model mixed vector", ["source_claim:claim-vector-scope"], "A pgvector row can match retrieval words while missing embedding model scope."],

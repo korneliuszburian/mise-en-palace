@@ -41,6 +41,16 @@ interface SourceGraphRankingQuery {
   readonly query: string;
   readonly expectedHitIds: readonly string[];
   readonly baselineFailureRationale: string;
+  readonly relationLinkedExpected: boolean;
+}
+
+interface SourceGraphFlatComparison {
+  readonly includedHitIds: readonly string[];
+  readonly relationSupport: number;
+  readonly expectedHitRelationSupport: number;
+  readonly hitAtK: boolean;
+  readonly ndcgAtK: number;
+  readonly weakness: "missing_expected_relation_support";
 }
 
 export interface SourceGraphRankingEvalFixture {
@@ -60,6 +70,7 @@ export interface SourceGraphRankingEvalCaseResult {
   readonly query: string;
   readonly expectedHitIds: readonly string[];
   readonly baselineFailureRationale: string;
+  readonly relationLinkedExpected: boolean;
   readonly includedHitIds: readonly string[];
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
@@ -69,6 +80,7 @@ export interface SourceGraphRankingEvalCaseResult {
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
+  readonly flatComparison?: SourceGraphFlatComparison;
 }
 
 export interface SourceGraphRankingEvalResult {
@@ -97,6 +109,9 @@ export interface SourceGraphRankingEvalResult {
     readonly sourceDecisionSupportCases: number;
     readonly expectedHitIdCount: number;
     readonly distractorClassCount: number;
+    readonly relationLinkedCaseCount: number;
+    readonly flatBaselineWeakerCases: number;
+    readonly flatBaselineMissingExpectedRelationSupportCases: number;
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -128,6 +143,17 @@ const numberValue = (
 ): number => {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error(`${label} must be a finite number`);
+  }
+
+  return value;
+};
+
+const booleanValue = (
+  value: unknown,
+  label: string
+): boolean => {
+  if (typeof value !== "boolean") {
+    throw new Error(`${label} must be a boolean`);
   }
 
   return value;
@@ -212,8 +238,27 @@ const parseQuery = (
   id: stringValue(tuple[0], `queries[${index}][0]`),
   query: stringValue(tuple[1], `queries[${index}][1]`),
   expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`),
-  baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`)
+  baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`),
+  relationLinkedExpected: tuple[4] === undefined
+    ? false
+    : booleanValue(tuple[4], `queries[${index}][4]`)
 });
+
+const parseQueryTuples = (
+  value: unknown
+): readonly SourceGraphRankingQuery[] => {
+  if (!Array.isArray(value)) {
+    throw new Error("queries must be an array");
+  }
+
+  return value.map((item, index) => {
+    if (!Array.isArray(item) || (item.length !== 4 && item.length !== 5)) {
+      throw new Error(`queries[${index}] must be a 4-item or 5-item tuple`);
+    }
+
+    return parseQuery(item, index);
+  });
+};
 
 export const parseSourceGraphRankingEvalFixture = (
   value: unknown
@@ -227,7 +272,7 @@ export const parseSourceGraphRankingEvalFixture = (
   }
 
   const rows = tupleArray(value["rows"], "rows", 3).map(parseRow);
-  const queries = tupleArray(value["queries"], "queries", 4).map(parseQuery);
+  const queries = parseQueryTuples(value["queries"]);
 
   if (rows.length < 20) {
     throw new Error("source graph ranking eval fixture must contain at least 20 corpus rows");
@@ -360,14 +405,17 @@ const relationEdge = (
 
 const createRuntime = (
   fixture: SourceGraphRankingEvalFixture,
-  query: string
+  query: string,
+  options: { readonly includeRelations: boolean }
 ) => {
   const claims = fixture.rows.map(rowClaim);
   const documents = fixture.rows
     .map((row) => rowDocument(row, query))
     .sort((left, right) => right.lexicalScore - left.lexicalScore);
   const decisionEdges = fixture.rows.map(rowDecisionEdge);
-  const relationEdges = fixture.relations.map(relationEdge);
+  const relationEdges = options.includeRelations
+    ? fixture.relations.map(relationEdge)
+    : [];
 
   return async (): Promise<DatabaseRuntime> => ({
     workspaceId: "workspace-source-graph-ranking",
@@ -521,10 +569,23 @@ const candidateHitId = (candidate: Record<string, unknown>): string | undefined 
 const sourceClaimIdFromHitId = (hitId: string): string | undefined =>
   hitId.startsWith("source_claim:") ? hitId.slice("source_claim:".length) : undefined;
 
-const evaluateQuery = async (
+interface SourceGraphQueryRun {
+  readonly includedHitIds: readonly string[];
+  readonly supportingClaims: number;
+  readonly supportingDocuments: number;
+  readonly sourceClaimDocumentLinks: number;
+  readonly relationSupport: number;
+  readonly expectedHitRelationSupport: number;
+  readonly sourceDecisionSupport: number;
+  readonly hitAtK: boolean;
+  readonly ndcgAtK: number;
+}
+
+const runQueryPath = async (
   fixture: SourceGraphRankingEvalFixture,
-  queryCase: SourceGraphRankingQuery
-): Promise<SourceGraphRankingEvalCaseResult> => {
+  queryCase: SourceGraphRankingQuery,
+  options: { readonly includeRelations: boolean }
+): Promise<SourceGraphQueryRun> => {
   const result = await runSourceSearchCommand({
     cwd: process.cwd(),
     env: {
@@ -539,7 +600,7 @@ const evaluateQuery = async (
       limit: 20,
       maxInclusions: fixture.topK
     },
-    createDatabaseRuntime: createRuntime(fixture, queryCase.query)
+    createDatabaseRuntime: createRuntime(fixture, queryCase.query, options)
   });
   const output = parseJsonObject(result.stdout, queryCase.id);
   const answerPackage = parseJsonObject(
@@ -561,10 +622,6 @@ const evaluateQuery = async (
   const relationSupport = recordArray(answerPackage["relationSupport"], `${queryCase.id}.relationSupport`);
 
   return {
-    id: queryCase.id,
-    query: queryCase.query,
-    expectedHitIds: queryCase.expectedHitIds,
-    baselineFailureRationale: queryCase.baselineFailureRationale,
     includedHitIds,
     supportingClaims: recordArray(answerPackage["supportingClaims"], `${queryCase.id}.supportingClaims`).length,
     supportingDocuments: recordArray(answerPackage["supportingDocuments"], `${queryCase.id}.supportingDocuments`).length,
@@ -584,15 +641,70 @@ const evaluateQuery = async (
   };
 };
 
+const flatWeakness = (
+  linked: SourceGraphQueryRun,
+  flat: SourceGraphQueryRun
+): SourceGraphFlatComparison["weakness"] | undefined => {
+  if (
+    linked.expectedHitRelationSupport > 0 &&
+    flat.expectedHitRelationSupport === 0
+  ) {
+    return "missing_expected_relation_support";
+  }
+
+  return undefined;
+};
+
+const evaluateQuery = async (
+  fixture: SourceGraphRankingEvalFixture,
+  queryCase: SourceGraphRankingQuery
+): Promise<SourceGraphRankingEvalCaseResult> => {
+  const linked = await runQueryPath(fixture, queryCase, { includeRelations: true });
+  const flat = queryCase.relationLinkedExpected
+    ? await runQueryPath(fixture, queryCase, { includeRelations: false })
+    : undefined;
+  const weakness = flat === undefined ? undefined : flatWeakness(linked, flat);
+  const result = {
+    id: queryCase.id,
+    query: queryCase.query,
+    expectedHitIds: queryCase.expectedHitIds,
+    baselineFailureRationale: queryCase.baselineFailureRationale,
+    relationLinkedExpected: queryCase.relationLinkedExpected,
+    ...linked
+  };
+
+  if (flat === undefined || weakness === undefined) {
+    return result;
+  }
+
+  return {
+    ...result,
+    flatComparison: {
+      includedHitIds: flat.includedHitIds,
+      relationSupport: flat.relationSupport,
+      expectedHitRelationSupport: flat.expectedHitRelationSupport,
+      hitAtK: flat.hitAtK,
+      ndcgAtK: flat.ndcgAtK,
+      weakness
+    }
+  };
+};
+
 export const runSourceGraphRankingEval = async (
   fixture: SourceGraphRankingEvalFixture
 ): Promise<SourceGraphRankingEvalResult> => {
   const cases = await Promise.all(fixture.queries.map((query) => evaluateQuery(fixture, query)));
   const hitRateAtK = cases.filter((testCase) => testCase.hitAtK).length / cases.length;
   const ndcgAtK = cases.reduce((sum, testCase) => sum + testCase.ndcgAtK, 0) / cases.length;
+  const relationLinkedCases = cases.filter((testCase) => testCase.relationLinkedExpected);
+  const flatBaselineWeakerCases = relationLinkedCases.filter((testCase) =>
+    testCase.flatComparison !== undefined
+  );
   const status =
     hitRateAtK >= fixture.minimumHitRateAtK &&
-    ndcgAtK >= fixture.minimumNdcgAtK
+    ndcgAtK >= fixture.minimumNdcgAtK &&
+    relationLinkedCases.length > 0 &&
+    flatBaselineWeakerCases.length === relationLinkedCases.length
       ? "pass"
       : "fail";
 
@@ -632,13 +744,19 @@ export const runSourceGraphRankingEval = async (
         (sum, testCase) => sum + testCase.expectedHitIds.length,
         0
       ),
-      distractorClassCount: fixture.distractorClasses.length
+      distractorClassCount: fixture.distractorClasses.length,
+      relationLinkedCaseCount: relationLinkedCases.length,
+      flatBaselineWeakerCases: flatBaselineWeakerCases.length,
+      flatBaselineMissingExpectedRelationSupportCases: flatBaselineWeakerCases.filter((testCase) =>
+        testCase.flatComparison?.weakness === "missing_expected_relation_support"
+      ).length
     },
     cases,
     proof: {
       proves: [
-          "source search selected expected proxy-labeled source graph rows for the fixture query set",
+        "source search selected expected proxy-labeled source graph rows for the fixture query set",
         "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale",
+        "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback",
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],
@@ -647,6 +765,9 @@ export const runSourceGraphRankingEval = async (
         "source truth",
         "broad semantic ranking quality",
         "live pgvector retrieval quality",
+        "graph database need",
+        "autonomous memory evolution",
+        "API or MCP readiness",
         "crawler readiness",
         "product readiness"
       ]

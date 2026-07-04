@@ -27,7 +27,7 @@ four falsifiable axes:
 | `docs/KRN_SOURCES.md#memoryagentbench` | adopt | Four memory-agent competencies: retrieval, test-time learning, long-range understanding, selective forgetting. | Future memory eval fixtures and KRN behavior cases. | The suite can pass while missing one competency. |
 | `docs/KRN_SOURCES.md#memoryarena` | adopt | Interdependent multi-session tasks where earlier feedback must shape later action. | Follow-up multi-session memory eval Bead. | A case can be solved from one prompt or preselected context. |
 | `docs/KRN_SOURCES.md#mem0` | lab_test | Extract/consolidate/retrieve salient facts; compare memory against baseline and cost. | Memory-advantage readback and future cost metrics. | Claims advantage without selected evidence ids or cost/readback overhead. |
-| `docs/KRN_SOURCES.md#a-mem-agentic-memory-for-llm-agents` | lab_test | Atomic notes plus dynamic links and memory evolution as a relation-usefulness hypothesis. | Future relation-linked memory/source eval candidate. | Linked memory/source relations cannot improve selection or explanation over flat packets. |
+| `docs/KRN_SOURCES.md#a-mem-agentic-memory-for-llm-agents` | lab_test | Atomic notes plus dynamic links and memory evolution as a relation-usefulness hypothesis. | `pnpm eval:source-graph-ranking` relation-linked case. | Linked memory/source relations cannot improve selection or explanation over flat packets. |
 | `docs/KRN_SOURCES.md#letta-memory-blocks` | lab_test | Functional context units as pressure test for typed, size-visible context packets. | Activation/context readback and memory advantage context-size metrics. | KRN improves only by pinning broad always-on context or tool-editable durable memory. |
 | `docs/KRN_SOURCES.md#locomo` | adopt | Single-hop, multi-hop, temporal, adversarial recall split. | Temporal/source-grounded and adversarial negative fixtures. | Suite only tests positive single-hop recall. |
 | `docs/KRN_SOURCES.md#memory-in-the-age-of-ai-agents` | adopt | Separate factual, experiential, and working memory lifecycles. | Kernel layer naming and eval routing. | One undifferentiated "brain memory" store returns. |
@@ -146,6 +146,24 @@ For memory-advantage cases, expose:
 
 This keeps Mem0-style efficiency as a local measurement rather than a borrowed
 claim.
+
+### Relation-Linked Memory/Source Usefulness
+
+Follow-up Bead: `mise-en-palace-pz6l`.
+
+`pnpm eval:source-graph-ranking` now includes a relation-linked case that runs
+the same source-search query twice:
+
+1. linked path: SourceClaimEdge support is available and expected relation
+   support must be visible in readback;
+2. flat path: the same SourceClaim rows and SearchDocument links are available,
+   but SourceClaimEdge support is withheld;
+3. the eval passes only when the linked case records a weaker flat comparison.
+
+This targets A-MEM-style relation usefulness as a local falsifier. It proves
+review/readback advantage for one controlled source graph case, not source
+truth, autonomous memory evolution, graph database need, crawler/API/MCP
+readiness, or production ranking quality.
 
 ## Rejections
 

@@ -27,7 +27,8 @@ describe("runSourceGraphRankingEval", () => {
           "adjacent-governance-source",
           "stale-relation-edge",
           "lexical-vector-ambiguity",
-          "target-specific-vs-generic"
+          "target-specific-vs-generic",
+          "flat-relationless-baseline"
         ]
       },
       metrics: {
@@ -35,7 +36,10 @@ describe("runSourceGraphRankingEval", () => {
         corpusRows: 20,
         hitRateAtK: 1,
         expectedHitIdCount: 15,
-        distractorClassCount: 4
+        distractorClassCount: 5,
+        relationLinkedCaseCount: 1,
+        flatBaselineWeakerCases: 1,
+        flatBaselineMissingExpectedRelationSupportCases: 1
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
@@ -51,14 +55,33 @@ describe("runSourceGraphRankingEval", () => {
     expect(result.cases.find((testCase) =>
       testCase.id === "heartbeat-acquisition"
     )?.expectedHitRelationSupport).toBe(0);
+    const relationLinkedCase = result.cases.find((testCase) =>
+      testCase.id === "graph-relation"
+    );
+    expect(relationLinkedCase).toMatchObject({
+      relationLinkedExpected: true,
+      expectedHitRelationSupport: 2,
+      flatComparison: {
+        relationSupport: 0,
+        expectedHitRelationSupport: 0,
+        hitAtK: true,
+        weakness: "missing_expected_relation_support"
+      }
+    });
     expect(result.proof.doesNotProve).toContain("proxy labels are not production retrieval truth");
     expect(result.proof.proves).toContain(
       "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale"
+    );
+    expect(result.proof.proves).toContain(
+      "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback"
     );
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "source truth",
       "broad semantic ranking quality",
       "live pgvector retrieval quality",
+      "graph database need",
+      "autonomous memory evolution",
+      "API or MCP readiness",
       "crawler readiness",
       "product readiness"
     ]));
@@ -116,5 +139,46 @@ describe("runSourceGraphRankingEval", () => {
     expect(result.status).toBe("fail");
     expect(result.metrics.hitRateAtK).toBe(0);
     expect(result.cases.every((testCase) => !testCase.hitAtK)).toBe(true);
+  });
+
+  it("fails when a relation-linked case has no relation-support advantage over the flat path", async () => {
+    const result = await runSourceGraphRankingEval(parseSourceGraphRankingEvalFixture({
+      version: "1",
+      corpusName: "negative-relation-linked-flat-equivalent",
+      distractorClasses: ["missing-relation-support-advantage"],
+      topK: 6,
+      minimumHitRateAtK: 1,
+      minimumNdcgAtK: 1,
+      rows: Array.from({ length: 20 }, (_unused, index) => [
+        `claim-${index}`,
+        index === 0 ? "relationanchor0" : `controlanchor${index}`,
+        `Fixture claim ${index}.`
+      ]),
+      relations: [],
+      queries: [
+        [
+          "query-relation-linked",
+          "relationanchor0",
+          ["source_claim:claim-0"],
+          "Relation-linked query intentionally has no SourceClaimEdge support.",
+          true
+        ],
+        ...Array.from({ length: 14 }, (_unused, index) => [
+          `query-${index}`,
+          `controlanchor${index + 1}`,
+          [`source_claim:claim-${index + 1}`],
+          `Control source ${index + 1} should remain selectable.`
+        ])
+      ]
+    }));
+
+    expect(result.status).toBe("fail");
+    expect(result.metrics.hitRateAtK).toBe(1);
+    expect(result.metrics.relationLinkedCaseCount).toBe(1);
+    expect(result.metrics.flatBaselineWeakerCases).toBe(0);
+    expect(result.metrics.flatBaselineMissingExpectedRelationSupportCases).toBe(0);
+    expect(result.cases.find((testCase) =>
+      testCase.id === "query-relation-linked"
+    )?.flatComparison).toBeUndefined();
   });
 });
