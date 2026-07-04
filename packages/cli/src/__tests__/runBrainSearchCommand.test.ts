@@ -1257,4 +1257,146 @@ describe("runBrainSearchCommand", () => {
     expect(result.stdout).toContain("selectedKnowledge: useful");
     expect(result.stdout).toContain("sourceLinkGraph: useful");
   });
+
+  it("keeps the fixed brain grounding mini-gate source-backed and decision-linked", async () => {
+    const cases = [
+      {
+        query: "workers are candidate maintenance contracts not codex exec",
+        claimId: "claim-workers-boundary",
+        claim: "Workers are candidate maintenance contracts, not Codex execution.",
+        mechanism: "Heartbeat previews produce candidate-only maintenance work and do not execute code.",
+        krnImplication: "Brain answers about workers must not imply runtime enforcement before plnv.",
+        consumer: "worker boundary planning",
+        falsifier: "A worker answer claims scheduler or executor behavior without plnv."
+      },
+      {
+        query: "naming standard no vanity rename helper extraction rule",
+        claimId: "claim-naming-boundary",
+        claim: "KRN naming changes require evidence and must not become vanity sweeps.",
+        mechanism: "The code vocabulary standard accepts renames only when they reduce review cost or reveal authority boundaries.",
+        krnImplication: "Brain answers about naming should preserve the anti-vanity gate.",
+        consumer: "naming-standard implementation",
+        falsifier: "A naming task renames broadly without evidence_ref and rollback risk."
+      },
+      {
+        query: "source-to-decision retention gate consumer falsifier",
+        claimId: "claim-source-decision",
+        claim: "Retained sources must map source to mechanism, KRN implication, decision, consumer, and falsifier.",
+        mechanism: "The source-to-decision gate rejects decorative sources without consumers and falsifiers.",
+        krnImplication: "Brain answers should cite governed source decisions before treating external material as useful.",
+        consumer: "pattern intake",
+        falsifier: "A retained source is used in a slice without a consumer or falsifier."
+      },
+      {
+        query: "typescript boundary unknown first result state",
+        claimId: "claim-ts-boundary",
+        claim: "External TypeScript inputs stay unknown until a parser or guard narrows them.",
+        mechanism: "Unknown-first readback keeps JSON/env/file boundaries from becoming trusted domain objects.",
+        krnImplication: "Brain answers about TypeScript repairs should route through parser evidence, not casts.",
+        consumer: "TypeScript boundary repair",
+        falsifier: "A JSON boundary repair adds unchecked casts instead of parser narrowing."
+      }
+    ] as const;
+
+    for (const entry of cases) {
+      const result = await runBrainSearchCommand({
+        cwd: "/repo",
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => "2026-07-04T12:00:00.000Z",
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "brainSearch",
+          query: entry.query,
+          catalogFiles: [],
+          storeOnly: true,
+          limit: 8,
+          maxInclusions: 4,
+          format: "json"
+        },
+        async runKnowledgeCards() {
+          throw new Error("grounding mini-gate should use store/source evidence");
+        },
+        async runSourceSearch(runtime) {
+          expect(runtime.command.query).toBe(entry.query);
+
+          return {
+            stdout: JSON.stringify({
+              answerPackage: {
+                answerUsefulness: "useful",
+                supportingClaims: [{
+                  label: `source_claim:${entry.claimId}`,
+                  subjectId: entry.claimId,
+                  sourceClaimId: entry.claimId,
+                  claim: entry.claim,
+                  mechanism: entry.mechanism,
+                  krnImplication: entry.krnImplication,
+                  consumer: entry.consumer,
+                  falsifier: entry.falsifier,
+                  doesNotProve: "This does not prove broad brain quality.",
+                  sourceDecisionSupportState: "linked"
+                }],
+                supportingDocuments: [{
+                  label: `search_document:${entry.claimId}`,
+                  title: `${entry.claimId} source document`
+                }],
+                sourceDecisionSupport: [{
+                  sourceDecisionEdgeId: `decision-edge-${entry.claimId}`,
+                  sourceClaimId: entry.claimId,
+                  confidence: "high"
+                }],
+                sourceClaimDocumentLinks: [{
+                  sourceClaimId: entry.claimId,
+                  linkedSearchDocumentCount: 1,
+                  linkedSearchDocumentIds: [`doc-${entry.claimId}`],
+                  linkKinds: ["same_source_artifact"]
+                }],
+                relationSupport: [],
+                graphReadback: {
+                  claimNodes: 1,
+                  relationEdges: 0,
+                  temporalEdges: 0,
+                  contradictionEdges: 0,
+                  duplicateEdges: 0,
+                  invalidationEdges: 0,
+                  graphAware: false,
+                  caveats: []
+                },
+                missingEvidence: []
+              },
+              includedCandidates: [],
+              proof: {
+                doesNotProve: ["source truth", "broad brain quality"]
+              }
+            })
+          };
+        }
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        query: entry.query,
+        brainKnowledgeReadback: "store_only",
+        knowledgeCards: {
+          selectedKnowledge: [{
+            id: entry.claimId,
+            source: "source_search",
+            reviewability: "ready",
+            nextAction: "use"
+          }]
+        },
+        sourceSearch: {
+          answerUsefulness: "useful",
+          supportingClaims: 1,
+          supportingDocuments: 1,
+          sourceDecisionSupport: 1,
+          sourceClaimDocumentLinks: 1,
+          missingEvidence: []
+        }
+      });
+      expect(JSON.stringify(parsed)).toContain("brain search combined both readbacks without mutating KRN state");
+      expect(JSON.stringify(parsed)).not.toContain("governed SourceClaim evidence");
+    }
+  });
 });
