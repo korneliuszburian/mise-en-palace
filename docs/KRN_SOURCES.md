@@ -495,6 +495,165 @@ cannot be falsified locally, keep it out of active KRN guidance.
   transfer to KRN, that "Oxford" is the paper affiliation, or that autonomous
   retrieval should bypass source/review gates.
 
+### MemoryAgentBench
+
+- URL: https://arxiv.org/abs/2507.05257
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: memory-agent evaluation should cover accurate retrieval,
+  test-time learning, long-range understanding, and selective forgetting in
+  incremental multi-turn settings rather than only static long-context recall.
+- KRN implication: KRN memory evals need separate cases for recall, learning
+  from run feedback, long-range source/evidence carryover, and forgetting or
+  anti-memory behavior.
+- Decision: extend the memory-advantage eval roadmap around these four
+  competencies; do not treat one company-pattern hit as full memory quality.
+- Consumer: `docs/architecture/memory-eval-design.md`, future memory eval
+  fixtures, and future KRN behavior gate cases.
+- Falsifier: KRN can pass `pnpm eval:memory-advantage` while lacking a local
+  eval for retrieval, test-time learning, long-range carryover, or selective
+  forgetting.
+- Does not prove: KRN has mastered these competencies, MemoryAgentBench
+  transfers directly to coding-agent work, or a broad benchmark platform should
+  be built now.
+
+### MemoryArena
+
+- URLs:
+  - https://arxiv.org/abs/2602.16313
+  - https://memoryarena.github.io/
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: agent memory should be evaluated in interdependent multi-session
+  loops where earlier actions and feedback must be distilled into memory and
+  used to guide later tasks.
+- KRN implication: KRN needs an eval lane where a prior slice creates reviewed
+  memory/source evidence and a later slice succeeds only if that evidence is
+  selected and applied through the kernel path.
+- Decision: create a bounded multi-session coding-pattern eval candidate after
+  the current single-slice memory-advantage proof, using local company-pattern
+  tasks and explicit baseline comparison.
+- Consumer: `docs/architecture/memory-eval-design.md`, a follow-up Beads eval
+  task, and future memory-advantage fixtures.
+- Falsifier: a KRN memory eval can be solved from a single prompt or preseeded
+  selected context without relying on prior run feedback or persisted evidence.
+- Does not prove: MemoryArena task domains map one-to-one to KRN, KRN needs a
+  full external benchmark gym, or memory alone guarantees better coding-agent
+  decisions.
+
+### Mem0
+
+- URL: https://arxiv.org/abs/2504.19413
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: long-term memory can outperform full-context and simple RAG when
+  salient facts are extracted, consolidated, retrieved, and optionally
+  represented with graph relations, while tracking latency and token cost.
+- KRN implication: KRN evals should measure memory usefulness against a
+  no-memory baseline and a broad-context or simple-retrieval baseline, with
+  selected evidence ids and token/readback cost kept visible.
+- Decision: lab-test cost-aware memory advantage metrics before adding broad
+  memory automation; keep graph memory as a hypothesis tied to source claims
+  and decision edges, not a new platform.
+- Consumer: `docs/architecture/memory-eval-design.md`, memory-advantage eval
+  readback, and future graph/source eval candidates.
+- Falsifier: KRN claims memory advantage without showing selected evidence ids,
+  baseline comparison, or cost/readback overhead for the selected context.
+- Does not prove: Mem0 architecture should be copied, graph memory always helps
+  KRN, LLM-as-judge metrics are sufficient, or token savings transfer to Codex
+  without local measurement.
+
+### LoCoMo
+
+- URL: https://snap-research.github.io/locomo/
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: long-term memory evaluation separates single-hop, multi-hop,
+  temporal, commonsense/world-knowledge, and adversarial recall, and shows that
+  temporal reasoning and hallucination remain hard even for long-context and
+  RAG approaches.
+- KRN implication: KRN source/memory evals need temporal and adversarial cases,
+  not only positive recall cases where the correct memory is easy to retrieve.
+- Decision: add temporal/source-grounded and adversarial negative cases to the
+  memory eval roadmap before claiming broad memory advantage.
+- Consumer: `docs/architecture/memory-eval-design.md`, future memory/source
+  fixtures, and anti-memory/staleness behavior gates.
+- Falsifier: a memory eval suite contains only positive single-hop recall and
+  still claims useful long-term agent memory.
+- Does not prove: LoCoMo's conversational setup is the right product workload
+  for KRN or that current KRN retrieval handles temporal reasoning well.
+
+### Memory In The Age Of AI Agents
+
+- URL: https://arxiv.org/abs/2512.13564
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: agent memory should be distinguished from RAG and context
+  engineering, with factual, experiential, and working memory managed through
+  formation, evolution, and retrieval over time.
+- KRN implication: KRN should keep Memory Core, observations/evidence,
+  activation working sets, and source-grounded claims as separate layers with
+  different review gates and evals.
+- Decision: use this taxonomy to reject one-bucket "brain memory" design and
+  to route future eval cases by memory function and lifecycle.
+- Consumer: `docs/architecture/memory-eval-design.md`,
+  `docs/KRN_KERNEL.md`, and future memory/source eval Beads.
+- Falsifier: a future KRN design merges evidence, working context, source
+  claims, and durable memory into one undifferentiated store while still
+  claiming governed memory.
+- Does not prove: the survey's taxonomy is complete, every category needs a
+  package, or KRN should build multimodal/multi-agent memory now.
+
+### Memory For Autonomous LLM Agents
+
+- URL: https://arxiv.org/abs/2603.07670
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: agent memory can be modeled as a write-manage-read loop coupled
+  to perception and action, with practical risks around contradiction handling,
+  latency budgets, privacy governance, and learned forgetting.
+- KRN implication: KRN's kernel verbs should stay centered on selected writes,
+  managed review/forgetting, and read-time activation, with evals that expose
+  contradiction, stale memory, and cost boundaries.
+- Decision: use write-manage-read as the memory-eval organizing frame and keep
+  worker automation deferred until a product loop proves background management
+  is needed.
+- Consumer: `docs/architecture/memory-eval-design.md`, primitive ledger
+  wording, and future worker decision work.
+- Falsifier: KRN adds memory write automation or worker execution without a
+  local eval showing read/write/manage benefit and bounded cost or trust risk.
+- Does not prove: autonomous memory mechanisms are safe, KRN needs a worker
+  daemon now, or survey-level claims transfer without local tests.
+
+### MIRIX
+
+- URL: https://arxiv.org/abs/2507.07957
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: defer.
+- Mechanism: separating memory into core, episodic, semantic, procedural,
+  resource, and knowledge-vault types can improve long-term recall and
+  multimodal personalization when paired with coordinated update/retrieval.
+- KRN implication: memory-type separation is useful as a pressure test for
+  KRN's layer model, but KRN should not add a multi-agent memory subsystem or
+  multimodal capture before text/code memory advantage is proven locally.
+- Decision: defer MIRIX-style multi-memory expansion; use it only to check that
+  KRN names memory layers by function instead of stuffing everything into one
+  store.
+- Consumer: `docs/architecture/memory-eval-design.md` and future worker/memory
+  architecture decisions.
+- Falsifier: KRN introduces multi-agent memory roles, screen capture, or
+  multimodal memory without a local text/code memory advantage gap that demands
+  it.
+- Does not prove: MIRIX results transfer to KRN, multimodal memory is needed
+  now, or multiple memory types require multiple packages.
+
 ## Agent Memory Practitioner Sources
 
 ### Mastra Observational Memory
