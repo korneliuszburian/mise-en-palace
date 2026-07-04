@@ -212,6 +212,42 @@ describe("runMemoryAdvantageEval", () => {
     expect(learningCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:company-review-standard-after-eval-change"
     );
+    expect(learningCase?.["reviewed_feedback_effect"]).toMatchObject({
+      priorFeedbackRef: "feedback:memory-eval-review-standard-helped",
+      priorEvidenceRef: "evidence:memory-eval-review-standard",
+      priorReviewRef: "review:memory-eval-review-standard",
+      applicationOutcome: "helped",
+      laterTaskQuery: "when a slice changes KRN memory eval behavior what company review standard should Codex apply before closing",
+      requiredKnowledgeId: "pattern:company-review-standard-after-eval-change",
+      baselineNoMemoryResult: "miss",
+      simpleRetrievalResult: "top_match_selected",
+      simpleRetrievalTopKnowledgeId: "pattern:company-review-standard-after-eval-change",
+      simpleRetrievalWeakerThanKrn: false,
+      krnResult: "hit",
+      selectedMemoryIds: ["pattern:company-review-standard-after-eval-change"],
+      selectedSourceClaimIds: ["source:company-review-standard-after-eval-change"],
+      proofStatus: "pass"
+    });
+    expect(learningCase?.["reviewed_feedback_effect"].selectedContextSize.bytes).toBeGreaterThan(0);
+    expect(learningCase?.["reviewed_feedback_effect"].planBriefContextSize.bytes).toBeGreaterThan(0);
+
+    const heldOutLearningCase = result.cases.find((testCase) =>
+      testCase.caseId === "heldout-db-project-brain-search"
+    );
+    expect(heldOutLearningCase?.["reviewed_feedback_effect"]).toMatchObject({
+      priorFeedbackRef: "feedback:brain-search-project-selector-helped",
+      priorEvidenceRef: "evidence:brain-search-project-selector",
+      priorReviewRef: "review:brain-search-project-selector",
+      requiredKnowledgeId: "pattern:brain-search-explicit-project-selector",
+      baselineNoMemoryResult: "miss",
+      simpleRetrievalResult: "distractor_selected",
+      simpleRetrievalTopKnowledgeId: "source:brain-search-explicit-project-selector",
+      simpleRetrievalWeakerThanKrn: true,
+      krnResult: "hit",
+      selectedMemoryIds: ["pattern:brain-search-explicit-project-selector"],
+      selectedSourceClaimIds: ["source:brain-search-explicit-project-selector"],
+      proofStatus: "pass"
+    });
 
     const longRangeCase = result.cases.find((testCase) =>
       testCase.caseId === "long-range-source-authority-boundary"
@@ -227,6 +263,20 @@ describe("runMemoryAdvantageEval", () => {
     expect(longRangeCase?.["krn_plan_brief"].renderedSourceClaimIds).toContain(
       "source:accepted-source-claims-only"
     );
+    expect(longRangeCase?.["reviewed_feedback_effect"]).toMatchObject({
+      priorFeedbackRef: "feedback:source-authority-boundary-helped",
+      priorEvidenceRef: "evidence:source-authority-boundary",
+      priorReviewRef: "review:source-authority-boundary",
+      requiredKnowledgeId: "source:accepted-source-claims-only",
+      baselineNoMemoryResult: "miss",
+      simpleRetrievalResult: "top_match_selected",
+      simpleRetrievalTopKnowledgeId: "source:accepted-source-claims-only",
+      simpleRetrievalWeakerThanKrn: false,
+      krnResult: "hit",
+      selectedMemoryIds: [],
+      selectedSourceClaimIds: ["source:accepted-source-claims-only"],
+      proofStatus: "pass"
+    });
 
     const heldOutCases = result.cases.filter((testCase) => testCase.heldOut);
     expect(heldOutCases.map((testCase) => testCase.caseId)).toEqual([
@@ -321,6 +371,19 @@ describe("runMemoryAdvantageEval", () => {
       "krn_plan_brief": {
         result: "miss",
         requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule"
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:obsolete-second-opinion-rule-hurt",
+        applicationOutcome: "hurt",
+        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        baselineNoMemoryResult: "miss",
+        simpleRetrievalResult: "top_match_selected",
+        simpleRetrievalTopKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "miss",
+        selectedMemoryIds: [],
+        selectedSourceClaimIds: [],
+        proofStatus: "pass"
       }
     });
     expect(result.proof.proves).toContain(
@@ -328,6 +391,9 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(result.proof.proves).toContain(
       "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
+    );
+    expect(result.proof.proves).toContain(
+      "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost"
     );
     expect(result.proof.proves).toContain(
       "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator"

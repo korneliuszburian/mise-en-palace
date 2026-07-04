@@ -160,6 +160,7 @@ interface MemoryAdvantageCaseReadback {
     readonly exclusions: readonly MemoryAdvantageMemoryExclusionReadback[];
   };
   readonly "krn_plan_brief": PlanBriefReadback;
+  readonly "reviewed_feedback_effect": ReviewedFeedbackEffectReadback;
 }
 
 interface PlanBriefReadback {
@@ -184,6 +185,25 @@ interface ApproximateSelectedContextSize {
   readonly bytes: number;
   readonly approximateTokens: number;
   readonly method: "utf8_bytes_div_4";
+}
+
+interface ReviewedFeedbackEffectReadback {
+  readonly priorFeedbackRef: string;
+  readonly priorEvidenceRef: string;
+  readonly priorReviewRef: string;
+  readonly applicationOutcome: string;
+  readonly laterTaskQuery: string;
+  readonly requiredKnowledgeId: string;
+  readonly baselineNoMemoryResult: "miss" | "unexpected_hit";
+  readonly simpleRetrievalResult: SimpleRetrievalResult;
+  readonly simpleRetrievalTopKnowledgeId: string | null;
+  readonly simpleRetrievalWeakerThanKrn: boolean;
+  readonly krnResult: "hit" | "miss";
+  readonly selectedMemoryIds: readonly string[];
+  readonly selectedSourceClaimIds: readonly string[];
+  readonly selectedContextSize: ApproximateSelectedContextSize;
+  readonly planBriefContextSize: ApproximateSelectedContextSize;
+  readonly proofStatus: "pass" | "fail";
 }
 
 export interface MemoryAdvantageEvalResult {
@@ -883,6 +903,60 @@ const runSimpleRetrievalBaseline = (
   };
 };
 
+const isSimpleRetrievalWeakerThanKrn = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnResult: "hit" | "miss"
+): boolean => {
+  if (testCase.expectedKrnResult === "hit") {
+    return krnResult === "hit" && simpleRetrieval.result !== "top_match_selected";
+  }
+
+  return krnResult === "miss" && simpleRetrieval.result === "top_match_selected";
+};
+
+const buildReviewedFeedbackEffect = (
+  testCase: MemoryAdvantageCaseFixture,
+  baselineNoMemory: MemoryAdvantageCaseReadback["baseline_no_memory"],
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
+  krnPlanBrief: PlanBriefReadback
+): ReviewedFeedbackEffectReadback => {
+  const simpleRetrievalWeakerThanKrn = isSimpleRetrievalWeakerThanKrn(
+    testCase,
+    simpleRetrieval,
+    krnMemory.result
+  );
+  const krnMatchesExpected = testCase.expectedKrnResult === "hit"
+    ? krnMemory.result === "hit"
+    : krnMemory.result === "miss";
+  const proofStatus =
+    baselineNoMemory.result === "miss" &&
+    krnMatchesExpected &&
+    (simpleRetrievalWeakerThanKrn || baselineNoMemory.selectedKnowledgeIds.length === 0)
+      ? "pass"
+      : "fail";
+
+  return {
+    priorFeedbackRef: testCase.priorSession.feedbackRef,
+    priorEvidenceRef: testCase.priorSession.evidenceRef,
+    priorReviewRef: testCase.priorSession.reviewRef,
+    applicationOutcome: testCase.priorSession.applicationOutcome,
+    laterTaskQuery: testCase.query,
+    requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
+    baselineNoMemoryResult: baselineNoMemory.result,
+    simpleRetrievalResult: simpleRetrieval.result,
+    simpleRetrievalTopKnowledgeId: simpleRetrieval.selectedKnowledgeIds[0] ?? null,
+    simpleRetrievalWeakerThanKrn,
+    krnResult: krnMemory.result,
+    selectedMemoryIds: krnMemory.selectedMemoryIds,
+    selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
+    selectedContextSize: krnMemory.selectedContextSize,
+    planBriefContextSize: krnPlanBrief.contextSize,
+    proofStatus
+  };
+};
+
 const expectedMemoryRecordId = (
   expectedSelectedKnowledgeId: string
 ): string | undefined =>
@@ -1132,6 +1206,30 @@ const evaluateCase = async (
   const status = caseStatus(testCase, baseline, krnMemory, baselinePlanBrief, krnPlanBrief, exclusions);
   const baselineSelectedMemoryIds = selectedMemoryIds(baseline.selectedKnowledgeIds);
   const krnSelectedMemoryIds = selectedMemoryIds(krnMemory.selectedKnowledgeIds);
+  const baselineNoMemory = {
+    baselineClass,
+    result: baselineMiss ? "miss" : "unexpected_hit",
+    answerUsefulness: baseline.answerUsefulness,
+    selectedKnowledgeIds: baseline.selectedKnowledgeIds,
+    selectedMemoryIds: baselineSelectedMemoryIds,
+    selectedSourceClaimIds: baseline.selectedSourceClaimIds,
+    selectedContextSize: approximateSelectedContextSize(baseline),
+    missingEvidence: baseline.missingEvidence
+  } as const;
+  const krnMemoryReadback = {
+    result: krnHit ? "hit" : "miss",
+    answerUsefulness: krnMemory.answerUsefulness,
+    selectedKnowledgeIds: krnMemory.selectedKnowledgeIds,
+    selectedMemoryIds: krnSelectedMemoryIds,
+    selectedSources: krnMemory.selectedSources,
+    selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
+    selectedContextSize: approximateSelectedContextSize(krnMemory),
+    writtenKnowledgeIds: krnMemory.writtenKnowledgeIds,
+    requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
+    supportingClaims: krnMemory.supportingClaims,
+    supportingDocuments: krnMemory.supportingDocuments,
+    exclusions
+  } as const;
 
   return {
     caseId: testCase.id,
@@ -1156,33 +1254,18 @@ const evaluateCase = async (
       createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId),
       distractorSourceClaimIds: testCase.priorSession.distractorSourceClaims.map((claim) => claim.sourceClaimId)
     },
-    "baseline_no_memory": {
-      baselineClass,
-      result: baselineMiss ? "miss" : "unexpected_hit",
-      answerUsefulness: baseline.answerUsefulness,
-      selectedKnowledgeIds: baseline.selectedKnowledgeIds,
-      selectedMemoryIds: baselineSelectedMemoryIds,
-      selectedSourceClaimIds: baseline.selectedSourceClaimIds,
-      selectedContextSize: approximateSelectedContextSize(baseline),
-      missingEvidence: baseline.missingEvidence
-    },
+    "baseline_no_memory": baselineNoMemory,
     "baseline_simple_retrieval": simpleRetrieval,
     "baseline_plan_brief": baselinePlanBrief,
-    "krn_memory": {
-      result: krnHit ? "hit" : "miss",
-      answerUsefulness: krnMemory.answerUsefulness,
-      selectedKnowledgeIds: krnMemory.selectedKnowledgeIds,
-      selectedMemoryIds: krnSelectedMemoryIds,
-      selectedSources: krnMemory.selectedSources,
-      selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
-      selectedContextSize: approximateSelectedContextSize(krnMemory),
-      writtenKnowledgeIds: krnMemory.writtenKnowledgeIds,
-      requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
-      supportingClaims: krnMemory.supportingClaims,
-      supportingDocuments: krnMemory.supportingDocuments,
-      exclusions
-    },
-    "krn_plan_brief": krnPlanBrief
+    "krn_memory": krnMemoryReadback,
+    "krn_plan_brief": krnPlanBrief,
+    "reviewed_feedback_effect": buildReviewedFeedbackEffect(
+      testCase,
+      baselineNoMemory,
+      simpleRetrieval,
+      krnMemoryReadback,
+      krnPlanBrief
+    )
   };
 };
 
@@ -1265,6 +1348,7 @@ export const runMemoryAdvantageEval = async (
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
         "the expected memory/source id is present in rendered Codex brief context for hit cases",
+        "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost",
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason",
         "the memory-advantage fixture output is deterministic enough for regression checks"

@@ -1,7 +1,6 @@
 # KRN Active Plan
 Status: active compact root plan. Date: 2026-07-03. Root `PLAN.md` is compact product truth.
 Detailed history stays in Beads, archived ledgers, and archived reports.
-
 ## Product State
 
 ```txt
@@ -27,6 +26,7 @@ DB-backed memory advantage smoke: baseline misses before seeded evidence; ground
 DB-backed multi-session memory advantage: brain-search smoke now persists Session A evidence/review/feedback and Session B selects its promoted MemoryRecord plus accepted source support
 DB-backed plan/brief memory advantage: target repo harness smoke proves baseline brief misses the MemoryRecord and grounded Codex brief renders it
 plan/brief memory eval comparator: eval:memory-advantage now reports no-memory plan/brief misses and KRN memory/source rendered-brief hits
+reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs beside later task selection, baseline outcome, KRN outcome, selected memory/source ids, and context-size cost
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable

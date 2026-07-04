@@ -143,6 +143,9 @@ For memory-advantage cases, expose:
 - approximate selected-context token/readback size;
 - baseline class compared (`no_memory`, `simple_retrieval`, or
   `broad_context`).
+- reviewed feedback effect readback: prior feedback/review/evidence refs,
+  later task query, baseline outcome, KRN outcome, selected memory/source ids,
+  and context-size cost.
 
 This keeps Mem0-style efficiency as a local measurement rather than a borrowed
 claim.
