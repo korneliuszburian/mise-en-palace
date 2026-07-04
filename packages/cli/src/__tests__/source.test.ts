@@ -17,6 +17,7 @@ import type {
 } from "@krn/harness/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
+import { findRepoRoot } from "../cliFileBoundary.js";
 import type { DatabaseRuntime } from "../databaseRuntime.js";
 import { runCli } from "../runCli.js";
 
@@ -210,6 +211,7 @@ describe("runCli", () => {
   });
 
   it("persists source claim add and prints persisted IDs", async () => {
+    const expectedRepoPathHint = await findRepoRoot(process.cwd());
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -311,7 +313,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceClaim: source-claim-1");
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
-    expect(capturedRepoPathHint).toContain("mise-en-palace");
+    expect(capturedRepoPathHint).toBe(expectedRepoPathHint);
   });
 
   it("prints source decision link help", async () => {
