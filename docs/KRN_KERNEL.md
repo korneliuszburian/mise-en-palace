@@ -21,6 +21,17 @@ Codex executes. KRN supplies:
 Do not build more context. Build the machinery that selects, applies, verifies,
 and forgets context.
 
+## Live Primitive Map
+
+The kernel law maps to live primitives:
+
+| Verb | Live primitive | Current proof |
+| --- | --- | --- |
+| select | `packages/harness/src/activation/activationEngine.ts:retrieveActivationCandidates`, `packages/harness/src/activation/rankCandidates.ts:rankCandidates`, `packages/harness/src/activation/activationFilters.ts:applyActivationFilters` | DB brain-loop smoke persists activation decisions and next-run recall. |
+| apply | `packages/harness/src/compiler/compileHarnessPlan.ts:compileHarnessPlan`, `packages/harness/src/activation/assembleContext.ts:assembleContext`, `packages/db/src/repositories/DrizzleMemoryRepository.ts:recordMemoryApplication` | DB brain-loop smoke records memory application after included context. |
+| verify | `packages/db/src/brainLoopSmoke.ts:runBrainLoopSmokeCheck`, `packages/db/src/repositories/DrizzleHarnessRunRepository.ts:createEvidenceBundle`, `packages/db/src/repositories/DrizzleHarnessRunRepository.ts:createReviewAssessment`, `packages/db/src/repositories/DrizzleHarnessRunRepository.ts:createFeedbackDelta` | DB brain-loop smoke reads back evidence, review, feedback, context, activation, and cleanup. |
+| forget | `packages/core/src/memory.ts:assessMemoryRecordReviewSignals`, `packages/db/src/repositories/DrizzleMemoryRepository.ts:recordMemoryApplication`, `packages/harness/src/activation/activationFilters.ts:applyActivationFilters` | DB brain-loop smoke records repeated hurt feedback, then the next activation excludes the downgraded memory. |
+
 ## Current Product Boundary
 
 This repo is a controlled-internal-alpha KRN harness workspace for technical

@@ -168,6 +168,24 @@ describe("KRN active plan invariants", () => {
     expect(plans).toContain("Surface Consumer Matrix");
   });
 
+  it("keeps the kernel law mapped to live primitives", () => {
+    const kernel = readRootFile("docs/KRN_KERNEL.md");
+    const primitiveMap = sectionBody(kernel, "## Live Primitive Map");
+
+    for (const verb of ["select", "apply", "verify", "forget"]) {
+      expect(primitiveMap).toMatch(new RegExp(`\\| ${verb} \\|`, "u"));
+    }
+
+    expect(primitiveMap).toContain(
+      "packages/harness/src/activation/activationEngine.ts:retrieveActivationCandidates"
+    );
+    expect(primitiveMap).toContain("packages/harness/src/compiler/compileHarnessPlan.ts:compileHarnessPlan");
+    expect(primitiveMap).toContain("packages/db/src/brainLoopSmoke.ts:runBrainLoopSmokeCheck");
+    expect(primitiveMap).toContain("packages/core/src/memory.ts:assessMemoryRecordReviewSignals");
+    expect(primitiveMap).toContain("repeated hurt feedback");
+    expect(primitiveMap).toContain("excludes the downgraded memory");
+  });
+
   it("keeps stale pasted objectives subordinate to root active state", () => {
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");
