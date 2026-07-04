@@ -207,6 +207,51 @@ This decision does not prove workers will never be needed. It proves only that
 the current repo should keep workers as typed contracts and Postgres lifecycle
 proof until a concrete runtime executor slice has a stronger falsifier.
 
+## Post-Cleanup Re-Evaluation: 2026-07-04
+
+Decision status: defer remains accepted.
+
+Current source-to-decision record:
+
+```yaml
+source_id: post-cleanup-worker-authority-recheck
+source: packages/workers/README.md, packages/workers/src/jobTypes.ts,
+  packages/db/src/workerJobSmoke.ts, docs/architecture/package-surfaces.md,
+  docs/architecture/primitive-ledger.md
+trust_tier: high
+source_class: repo-local evidence
+mechanism: workers expose typed job descriptions, queue-port contracts,
+  declared allowed/forbidden writes, Memory Core gate labels, and DB lifecycle
+  smokes; the README and package-surface classification still state no daemon,
+  no background loop, and no job executor.
+krn_implication: the package should stay a worker-contract/readback surface
+  until one job type has a concrete self-hosting bottleneck that needs
+  execution. Naming and docs should say declared authority, not runtime
+  enforcement.
+decision_kind: adopt
+decision: downscope current worker authority language to declared contracts and
+  readback. Do not implement a daemon, scheduler, lease system, retry runtime,
+  or executor in this slice.
+does_not_prove: worker execution, scheduler readiness, production throughput,
+  idempotent enqueue deduplication, candidate truth, review correctness, or
+  Memory Core mutation safety outside declared job boundaries.
+consumer: `mise-en-palace-jttl`, follow-up `mise-en-palace-igw8`, future
+  worker runtime ADR if a job-execution bottleneck appears.
+falsifier: a current KRN product loop cannot keep memory/source/eval state
+  current through governed commands, DB smokes, and reviewed candidate paths
+  without automatically executing one named worker job type.
+```
+
+Implementation routing:
+
+- `mise-en-palace-igw8` owns the follow-up rename from heartbeat vocabulary to
+  maintenance candidate/review preview vocabulary after this worker decision.
+- Any future executor work must be a new ADR-backed slice for one named job
+  type, starting with a one-shot/manual executor proof over Postgres
+  `worker_jobs` and `outbox_events`.
+- Active docs and readbacks should prefer "declared worker authority" or
+  "validated declaration" over "enforcement" unless a runtime enforcer exists.
+
 ## E-02 Re-evaluation: 2026-06-25
 
 Decision status: defer remains accepted.

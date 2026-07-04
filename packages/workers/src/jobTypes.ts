@@ -333,6 +333,6 @@ export const buildMaintenanceJobAuthorityReadback = (
     allowedWrites: description.allowedWrites,
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:
-      "Validated worker write authority does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime gate enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+      "Declared worker write authority does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime authority gating, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
   };
 };

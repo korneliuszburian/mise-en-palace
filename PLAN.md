@@ -70,7 +70,7 @@ product loop source authority: MemoryReviewGate requires SourceDecision-accepted
 source authority lifecycle: non-accepted SourceClaims are unsafe; accepted SourceClaims expose decision-linked or missing-link readback
 eval proof-boundary manifest: verification gates have typed proves/doesNotProve readback
 alpha verify full gate: alpha:verify remains fast; alpha:verify:full aggregates static, eval-adapter, DB-runtime, and DB-backed brain-loop proof lanes
-worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
+worker Memory Core write authority: worker write declarations are validated and visible in DB smoke readback, but not runtime-enforced
 heartbeat worker authority readback: memory-staleness candidates expose validated expire_stale_memory authority
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
 review/doctor outcome ownership: review objects use reviewOutcome vocabulary; audited doctor checks carry typed outcome/severity before string fallback

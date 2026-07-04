@@ -48,7 +48,7 @@ interface CountRow {
   count: number;
 }
 
-interface WorkerJobEnforcementBoundaryReadback {
+interface WorkerJobAuthorityBoundaryReadback {
   authorityValidatedCount: number;
 }
 
@@ -156,7 +156,7 @@ const requireStatus = (
   }
 };
 
-const workerJobEnforcementBoundaryReadback = (): WorkerJobEnforcementBoundaryReadback => {
+const workerJobAuthorityBoundaryReadback = (): WorkerJobAuthorityBoundaryReadback => {
   const descriptions = workerJobTypes.map((jobType) => describeMaintenanceJob(jobType));
 
   return {
@@ -183,7 +183,7 @@ export const runWorkerJobSmokeCheck = async (
     await deleteMarkerRows(client, marker);
 
     const enqueuedJobs: WorkerJobRecord[] = [];
-    const enforcementBoundary = workerJobEnforcementBoundaryReadback();
+    const authorityBoundary = workerJobAuthorityBoundaryReadback();
 
     for (const [index, jobType] of workerJobTypes.entries()) {
       const job = await repository.enqueueWorkerJob({
@@ -264,7 +264,7 @@ export const runWorkerJobSmokeCheck = async (
     cleanedUp = cleanup.deletedCount === enqueuedJobs.length && remainingMarkerCount === 0;
 
     return {
-      authorityValidatedCount: enforcementBoundary.authorityValidatedCount,
+      authorityValidatedCount: authorityBoundary.authorityValidatedCount,
       enqueuedJobCount: enqueuedJobs.length,
       queuedReadbackCount,
       runningTransitionCount,
