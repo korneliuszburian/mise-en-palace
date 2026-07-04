@@ -798,6 +798,266 @@
         ],
         "distractorSourceClaims": []
       }
+    },
+    {
+      "id": "neutral-short-context-second-opinion",
+      "competency": "retrieval",
+      "heldOut": true,
+      "falsificationClass": "short_context_no_advantage",
+      "query": "KRN larger migration governed Claude second opinion diff freshness triage",
+      "distractorClasses": ["obsolete-operating-rule"],
+      "baselineFailureRationale": "This short query is intentionally easy: simple lexical retrieval should already rank the current governed second-opinion rule first, so KRN must not claim unique advantage.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:neutral-governed-second-opinion",
+      "priorSession": {
+        "id": "session:neutral-short-context-second-opinion",
+        "task": "A prior short-context planning note recorded the governed second-opinion rule using exact operator vocabulary.",
+        "evidenceRef": "evidence:neutral-short-context-second-opinion",
+        "reviewRef": "review:neutral-short-context-second-opinion",
+        "feedbackRef": "feedback:neutral-short-context-second-opinion-neutral",
+        "applicationOutcome": "neutral",
+        "memoryCards": [
+          {
+            "id": "pattern:neutral-governed-second-opinion",
+            "title": "Governed Claude second opinion for larger migration",
+            "summary": "KRN larger migration work uses governed Claude second opinion with diff freshness, verification evidence, and Codex-owned triage.",
+            "consumers": [
+              "larger migration closeout",
+              "second opinion triage"
+            ],
+            "falsifier": "A larger migration closes without governed Claude review or diff freshness.",
+            "doesNotProve": "This neutral case does not prove KRN beats simple retrieval.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:neutral-local-tests-only",
+            "title": "Local tests only for tiny cleanup",
+            "summary": "Tiny dependency cleanup can close from local tests when it does not change KRN kernel behavior.",
+            "consumers": [
+              "tiny cleanup"
+            ],
+            "falsifier": "The work is a larger migration or audit-hardening slice.",
+            "doesNotProve": "This does not apply to larger migration work.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:neutral-governed-second-opinion",
+            "claim": "KRN larger migration work uses governed Claude second opinion with diff freshness, verification evidence, and Codex-owned triage.",
+            "mechanism": "The second-opinion wrapper validates JSON verdicts against the current diff before Codex routes findings.",
+            "krnImplication": "This query should retrieve the governed review rule, but simple lexical retrieval should already find it.",
+            "consumer": "larger migration closeout",
+            "falsifier": "The review output is stale against the diff or routed back to the operator by default.",
+            "doesNotProve": "This does not prove KRN beats a simple lexical baseline for short, exact queries."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "neutral-single-turn-typecheck",
+      "competency": "learning",
+      "heldOut": true,
+      "falsificationClass": "single_turn_no_memory_needed",
+      "query": "TypeScript source change run typecheck before completion",
+      "distractorClasses": ["generic-quality-guidance"],
+      "baselineFailureRationale": "This is intentionally generic and single-turn: a simple lexical baseline should rank the obvious typecheck rule first, so KRN adds little advantage.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:neutral-run-typecheck",
+      "priorSession": {
+        "id": "session:neutral-single-turn-typecheck",
+        "task": "A prior TypeScript cleanup recorded the ordinary rule that TS source edits require typecheck evidence.",
+        "evidenceRef": "evidence:neutral-single-turn-typecheck",
+        "reviewRef": "review:neutral-single-turn-typecheck",
+        "feedbackRef": "feedback:neutral-single-turn-typecheck-neutral",
+        "applicationOutcome": "neutral",
+        "memoryCards": [
+          {
+            "id": "pattern:neutral-run-typecheck",
+            "title": "Run typecheck before completing TypeScript source changes",
+            "summary": "For TypeScript source changes, Codex should run typecheck before claiming completion.",
+            "consumers": [
+              "TypeScript source change"
+            ],
+            "falsifier": "A TypeScript source change closes without typecheck evidence.",
+            "doesNotProve": "This neutral case does not require long-term company memory.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:neutral-docs-lint-only",
+            "title": "Run docs lint for documentation-only edits",
+            "summary": "For documentation-only edits, docs lint can be the narrow verification gate.",
+            "consumers": [
+              "documentation-only edit"
+            ],
+            "falsifier": "The change touches TypeScript source.",
+            "doesNotProve": "This does not cover TypeScript source changes.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:neutral-run-typecheck",
+            "claim": "TypeScript source changes require typecheck evidence before completion.",
+            "mechanism": "Strict TypeScript boundaries are only meaningful when the compiler gate runs after source edits.",
+            "krnImplication": "KRN should surface typecheck evidence for TypeScript source work, but this obvious query should not be counted as strong memory advantage.",
+            "consumer": "TypeScript source change",
+            "falsifier": "A TypeScript source change closes without typecheck evidence.",
+            "doesNotProve": "This does not prove memory advantage over a simple lexical baseline."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "neutral-retrieval-not-needed-docs",
+      "competency": "retrieval",
+      "heldOut": true,
+      "falsificationClass": "retrieval_not_needed",
+      "query": "documentation only edit run docs lint",
+      "distractorClasses": ["generic-quality-guidance"],
+      "baselineFailureRationale": "This question is deliberately obvious from the query itself and the matching card; KRN should not claim a meaningful memory advantage.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:neutral-docs-lint",
+      "priorSession": {
+        "id": "session:neutral-retrieval-not-needed-docs",
+        "task": "A docs-only cleanup recorded the normal verification gate.",
+        "evidenceRef": "evidence:neutral-retrieval-not-needed-docs",
+        "reviewRef": "review:neutral-retrieval-not-needed-docs",
+        "feedbackRef": "feedback:neutral-retrieval-not-needed-docs-neutral",
+        "applicationOutcome": "neutral",
+        "memoryCards": [
+          {
+            "id": "pattern:neutral-docs-lint",
+            "title": "Documentation-only edit runs docs lint",
+            "summary": "For a documentation only edit, Codex should run docs lint and diff check before closing.",
+            "consumers": [
+              "documentation only edit"
+            ],
+            "falsifier": "A docs-only edit changes source behavior or skips docs lint.",
+            "doesNotProve": "This neutral case is easy retrieval, not evidence of breakthrough memory.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:neutral-typecheck-source",
+            "title": "TypeScript source edit runs typecheck",
+            "summary": "TypeScript source edits require typecheck evidence before closure.",
+            "consumers": [
+              "TypeScript source edit"
+            ],
+            "falsifier": "The edit is documentation only.",
+            "doesNotProve": "This does not cover documentation-only changes.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:neutral-docs-lint",
+            "claim": "Documentation-only edits should run docs lint and diff check before closing.",
+            "mechanism": "The verification gate should match the touched surface instead of running every broad command.",
+            "krnImplication": "This easy docs-lint query should be marked as no-advantage when simple retrieval also selects it.",
+            "consumer": "documentation only edit",
+            "falsifier": "The edit touches runtime source or skips docs lint.",
+            "doesNotProve": "This does not prove KRN improves complex implementation work."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "neutral-breaks-codex-output-evidence-advantage",
+      "competency": "learning",
+      "heldOut": true,
+      "interdependentSession": true,
+      "falsificationClass": "breaks_interdependent_advantage",
+      "query": "final Codex output must include evidence refs verification changed files doesNotProve",
+      "distractorClasses": ["generic-quality-guidance", "docs-sentinel-overfit"],
+      "baselineFailureRationale": "This intentionally breaks the earlier interdependent advantage shape: the query already names evidence refs, verification, changed files, and doesNotProve, so simple retrieval should rank the correct evidence-shaped rule first.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:neutral-codex-output-evidence-shape-required",
+      "executionContract": {
+        "id": "execution-contract:neutral-codex-output-evidence-shape",
+        "objective": "Write a final Codex output that claims KRN context use and already has the required evidence-shape terms in the task.",
+        "defaultContractId": "contract:neutral-summary-only-claim",
+        "expectedKrnContractId": "contract:neutral-evidence-shaped-claim",
+        "contractOptions": [
+          {
+            "id": "contract:neutral-summary-only-claim",
+            "label": "Final output may claim KRN context use from a concise summary only.",
+            "triggerKnowledgeIds": [
+              "pattern:neutral-summary-only-claim"
+            ]
+          },
+          {
+            "id": "contract:neutral-evidence-shaped-claim",
+            "label": "Final output must include evidence refs, verification, changed files, and doesNotProve.",
+            "triggerKnowledgeIds": [
+              "pattern:neutral-codex-output-evidence-shape-required",
+              "source:neutral-codex-output-evidence-shape-required"
+            ]
+          }
+        ],
+        "proof": "This case proves the earlier interdependent advantage is query-sensitive: when the user already names the evidence-shape requirements, simple retrieval can select the same contract.",
+        "doesNotProve": "This does not prove live Codex obeys the contract or that every interdependent case is neutral."
+      },
+      "priorSession": {
+        "id": "session:neutral-codex-output-evidence-shape",
+        "task": "A prior review recorded the evidence-shaped KRN context claim requirement in exact wording.",
+        "evidenceRef": "evidence:neutral-codex-output-evidence-shape",
+        "reviewRef": "review:neutral-codex-output-evidence-shape",
+        "feedbackRef": "feedback:neutral-codex-output-evidence-shape-neutral",
+        "applicationOutcome": "neutral",
+        "memoryCards": [
+          {
+            "id": "pattern:neutral-codex-output-evidence-shape-required",
+            "title": "Final Codex output requires evidence refs verification changed files doesNotProve",
+            "summary": "A final Codex output claiming KRN context use must include evidence refs, verification, changed files, and doesNotProve.",
+            "consumers": [
+              "final Codex output",
+              "execution-output evidence gate"
+            ],
+            "falsifier": "A KRN context claim is accepted without evidence refs, verification, changed files, or doesNotProve.",
+            "doesNotProve": "This neutral case is intentionally easy for simple lexical retrieval.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:neutral-summary-only-claim",
+            "title": "Concise summary is enough for KRN context claim",
+            "summary": "A final output can claim KRN context use when it gives a concise summary.",
+            "consumers": [
+              "final Codex output"
+            ],
+            "falsifier": "The evidence-shape gate requires evidence refs, verification, changed files, and doesNotProve.",
+            "doesNotProve": "This is a deliberately weak distractor.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:neutral-codex-output-evidence-shape-required",
+            "claim": "Final Codex output claiming KRN context use must include evidence refs, verification, changed files, and doesNotProve.",
+            "mechanism": "The evidence-shape gate validates those fields before treating the output as reviewed KRN evidence.",
+            "krnImplication": "This task should select the evidence-shaped contract, but simple retrieval should also find it because the query already names the fields.",
+            "consumer": "execution-output evidence gate",
+            "falsifier": "The gate accepts a KRN-context claim missing evidence refs, verification, changed files, or doesNotProve.",
+            "doesNotProve": "This does not prove the broader interdependent memory advantage claim."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
     }
   ]
 }

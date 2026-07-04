@@ -27,6 +27,7 @@ plan/brief memory eval comparator: eval:memory-advantage now reports no-memory p
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
 coding-task memory decision: eval:memory-advantage now derives one implementation decision from selected memory/source ids, proving a baseline cast-JSON decision can be replaced by source-backed unknown-first parser guidance without LLM execution
 execution-contract comparator: eval:memory-advantage reports baseline vs KRN contracts, and eval:codex-output-comparator checks baseline missing evidence vs KRN evidence-shaped output contracts
+memory advantage falsification: eval:memory-advantage now reports 11 wins, 4 neutral/no-advantage cases, and one broken-prior-advantage case instead of treating every KRN hit as broad superiority
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
@@ -131,9 +132,8 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 ## Active Task
 
-Status: active; overnight queue refreshed after CLI boundary/runtime wave.
-
-Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-session brain-search smoke are closed and pushed; latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
+Status: active; overnight queue refreshed after CLI boundary/runtime wave. Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-session brain-search smoke are closed and pushed; latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
+Current active Bead: `mise-en-palace-27gm` falsify memory advantage claim.
 Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
 Latest closed Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
 Latest closed Bead: `mise-en-palace-fg6o` naming hygiene; ready queue empty after relation-linked eval and naming cleanup.

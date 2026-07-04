@@ -148,6 +148,10 @@ const buildComparatorCase = (
     return undefined;
   }
 
+  if (testCase.advantageDelta.result !== "win") {
+    return undefined;
+  }
+
   const baselineFindings = validateClaimedCodexOutputEvidence(baselineOutput(
     testCase.caseId,
     decision.baseline.contractId

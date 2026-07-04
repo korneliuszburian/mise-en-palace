@@ -60,6 +60,12 @@ type MemoryAdvantageNegativeClass =
   | "adversarial_memory_source_conflict"
   | "temporal_stale_source_claim"
   | "runtime_memory_source_contradiction";
+type MemoryAdvantageFalsificationClass =
+  | "short_context_no_advantage"
+  | "single_turn_no_memory_needed"
+  | "retrieval_not_needed"
+  | "breaks_interdependent_advantage";
+type MemoryAdvantageDelta = "win" | "neutral" | "loss";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -90,6 +96,7 @@ interface MemoryAdvantageCaseFixture {
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
   readonly negativeClass?: MemoryAdvantageNegativeClass;
+  readonly falsificationClass?: MemoryAdvantageFalsificationClass;
   readonly codingTask?: MemoryAdvantageCodingTaskFixture;
   readonly executionContract?: MemoryAdvantageExecutionContractFixture;
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
@@ -160,6 +167,12 @@ interface MemoryAdvantageCaseReadback {
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
   readonly negativeClass?: MemoryAdvantageNegativeClass;
+  readonly falsificationClass?: MemoryAdvantageFalsificationClass;
+  readonly advantageDelta: {
+    readonly result: MemoryAdvantageDelta;
+    readonly reason: string;
+    readonly simpleRetrievalAlreadySufficient: boolean;
+  };
   readonly status: "pass" | "fail";
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly baselineClass: MemoryAdvantageBaselineClass;
@@ -329,6 +342,9 @@ export interface MemoryAdvantageEvalResult {
     readonly heldOutCaseCount: number;
     readonly expectedHitCount: number;
     readonly expectedMissCount: number;
+    readonly advantageWinCount: number;
+    readonly noAdvantageCaseCount: number;
+    readonly brokenPriorAdvantageCaseCount: number;
     readonly distractorClassCount: number;
     readonly interdependentSessionCaseCount: number;
     readonly totalKrnMemoryContextBytes: number;
@@ -366,6 +382,12 @@ const memoryNegativeClasses = [
   "adversarial_memory_source_conflict",
   "temporal_stale_source_claim",
   "runtime_memory_source_contradiction"
+] as const;
+const memoryFalsificationClasses = [
+  "short_context_no_advantage",
+  "single_turn_no_memory_needed",
+  "retrieval_not_needed",
+  "breaks_interdependent_advantage"
 ] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
@@ -651,6 +673,9 @@ const parseCase = (
   const negativeClass = value["negativeClass"] === undefined
     ? undefined
     : requiredEnum(value, "negativeClass", label, memoryNegativeClasses);
+  const falsificationClass = value["falsificationClass"] === undefined
+    ? undefined
+    : requiredEnum(value, "falsificationClass", label, memoryFalsificationClasses);
   const codingTask = parseCodingTask(value["codingTask"], label);
   const executionContract = parseExecutionContract(value["executionContract"], label);
   const parsedCase: MemoryAdvantageCaseFixture = {
@@ -662,6 +687,7 @@ const parseCase = (
     distractorClasses: requiredStringArray(value, "distractorClasses", label),
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
     ...(negativeClass === undefined ? {} : { negativeClass }),
+    ...(falsificationClass === undefined ? {} : { falsificationClass }),
     ...(codingTask === undefined ? {} : { codingTask }),
     ...(executionContract === undefined ? {} : { executionContract }),
     priorSession: {
@@ -1382,8 +1408,11 @@ const buildExecutionContractDecision = (
     executionContract.contractOptions,
     krnSelectedKnowledgeIds
   );
-  const status = baselineContractId !== krnContractId &&
-    krnContractId === executionContract.expectedKrnContractId
+  const contractMatchesExpected = krnContractId === executionContract.expectedKrnContractId;
+  const expectedDeltaSatisfied = testCase.falsificationClass === "breaks_interdependent_advantage"
+    ? baselineContractId === krnContractId
+    : baselineContractId !== krnContractId;
+  const status = expectedDeltaSatisfied && contractMatchesExpected
     ? "pass"
     : "fail";
 
@@ -1463,6 +1492,70 @@ const buildReviewedFeedbackEffect = (
     selectedContextSize: krnMemory.selectedContextSize,
     planBriefContextSize: krnPlanBrief.contextSize,
     proofStatus
+  };
+};
+
+const expectedKrnReadbackResult = (
+  expectedKrnResult: ExpectedKrnResult
+): "hit" | "miss" =>
+  expectedKrnResult === "hit" ? "hit" : "miss";
+
+const simpleRetrievalAlreadySufficient = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): boolean =>
+  simpleRetrieval.result === "top_match_selected" &&
+  krnMemory.result === expectedKrnReadbackResult(testCase.expectedKrnResult);
+
+const isKrnAdvantageWin = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): boolean =>
+  (testCase.expectedKrnResult === "hit" &&
+    krnMemory.result === "hit" &&
+    simpleRetrieval.result !== "top_match_selected") ||
+  (testCase.expectedKrnResult === "miss" &&
+    krnMemory.result === "miss" &&
+    simpleRetrieval.result === "top_match_selected");
+
+const advantageDeltaResult = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): MemoryAdvantageDelta => {
+  if (testCase.falsificationClass !== undefined && simpleRetrievalAlreadySufficient(testCase, simpleRetrieval, krnMemory)) {
+    return "neutral";
+  }
+
+  return isKrnAdvantageWin(testCase, simpleRetrieval, krnMemory) ? "win" : "loss";
+};
+
+const advantageDeltaReason = (
+  result: MemoryAdvantageDelta,
+  falsificationClass: MemoryAdvantageFalsificationClass | undefined
+): string => {
+  const reasons: Record<MemoryAdvantageDelta, string> = {
+    win: "KRN selected or refused the expected knowledge where simple lexical retrieval did not",
+    neutral: `${falsificationClass ?? "neutral"}: simple lexical retrieval already selected the expected knowledge id`,
+    loss: "KRN did not outperform the simple lexical baseline for the declared expectation"
+  };
+
+  return reasons[result];
+};
+
+const buildAdvantageDelta = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): MemoryAdvantageCaseReadback["advantageDelta"] => {
+  const result = advantageDeltaResult(testCase, simpleRetrieval, krnMemory);
+
+  return {
+    result,
+    reason: advantageDeltaReason(result, testCase.falsificationClass),
+    simpleRetrievalAlreadySufficient: simpleRetrievalAlreadySufficient(testCase, simpleRetrieval, krnMemory)
   };
 };
 
@@ -1770,6 +1863,8 @@ const evaluateCase = async (
     distractorClasses: testCase.distractorClasses,
     baselineFailureRationale: testCase.baselineFailureRationale,
     ...(testCase.negativeClass === undefined ? {} : { negativeClass: testCase.negativeClass }),
+    ...(testCase.falsificationClass === undefined ? {} : { falsificationClass: testCase.falsificationClass }),
+    advantageDelta: buildAdvantageDelta(testCase, simpleRetrieval, krnMemoryReadback),
     status,
     expectedKrnResult: testCase.expectedKrnResult,
     baselineClass,
@@ -1859,6 +1954,15 @@ export const runMemoryAdvantageEval = async (
       expectedMissCount: cases.filter((testCase) =>
         testCase.expectedKrnResult === "miss"
       ).length,
+      advantageWinCount: cases.filter((testCase) =>
+        testCase.advantageDelta.result === "win"
+      ).length,
+      noAdvantageCaseCount: cases.filter((testCase) =>
+        testCase.advantageDelta.result === "neutral"
+      ).length,
+      brokenPriorAdvantageCaseCount: cases.filter((testCase) =>
+        testCase.falsificationClass === "breaks_interdependent_advantage"
+      ).length,
       distractorClassCount: fixture.distractorClasses.length,
       interdependentSessionCaseCount: cases.filter((testCase) =>
         testCase.interdependentSession
@@ -1888,6 +1992,8 @@ export const runMemoryAdvantageEval = async (
         "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator",
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "at least one interdependent multi-session case marks that Session B depends on Session A evidence or feedback",
+        "falsification cases report neutral no-advantage deltas when simple lexical retrieval already selects the expected knowledge",
+        "at least one interdependent-style case can break the earlier memory-advantage shape by showing the baseline selects the same evidence-shaped contract",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
@@ -1904,6 +2010,7 @@ export const runMemoryAdvantageEval = async (
       ],
       doesNotProve: [
         "arbitrary task superiority over vanilla Codex",
+        "that every positive KRN hit demonstrates advantage over the simple lexical baseline; neutral cases are reported separately",
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
         "that simple lexical retrieval is a strong baseline; it is a local foil for governed memory/source packaging",
         "runtime stale-memory or stale-source detection for arbitrary production MemoryRecord or SourceClaim rows",

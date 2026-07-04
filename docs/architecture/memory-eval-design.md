@@ -65,6 +65,24 @@ multi-session case:
 This targets MemoryArena-style memorization plus action without importing the
 external task gym.
 
+`pnpm eval:memory-advantage` also includes falsification cases so the eval can
+bound its own advantage claim:
+
+1. a short exact second-opinion query where simple lexical retrieval already
+   selects the expected rule;
+2. a single-turn TypeScript/typecheck query where no long-range company memory
+   is needed;
+3. a documentation-only docs-lint query where retrieval is intentionally easy;
+4. an interdependent-style Codex-output evidence-shape query that breaks the
+   earlier advantage shape because the prompt already names evidence refs,
+   verification, changed files, and `doesNotProve`.
+
+The current readback reports 17 cases: 11 advantage wins, 4 neutral/no-advantage
+cases, and 1 case that breaks the prior interdependent advantage shape. Neutral
+cases are not failures; they are evidence that KRN must not claim broad
+superiority when the simple lexical baseline already selects the same expected
+knowledge or contract.
+
 ### Memory Competency Matrix
 
 Follow-up Bead: `mise-en-palace-87w0`, blocked by `mise-en-palace-jmfl`.
@@ -213,9 +231,10 @@ decision:
 4. the readback includes selected ids, selected-context size, and explicit
    proof/non-proof text.
 
-`pnpm eval:memory-advantage` now reports two execution-contract cases: the
-unknown-first JSON metadata boundary and the interdependent Codex-output
-evidence-shape boundary.
+`pnpm eval:memory-advantage` now reports three execution-contract cases: the
+unknown-first JSON metadata boundary, the interdependent Codex-output
+evidence-shape boundary, and one neutral interdependent-style falsification
+case where the baseline and KRN select the same evidence-shaped contract.
 
 `pnpm eval:codex-output-comparator` consumes those execution-contract cases and
 reports the deterministic Codex-vs-KRN comparison:
@@ -228,10 +247,15 @@ reports the deterministic Codex-vs-KRN comparison:
 5. KRN valid evidence shape, selected-context size, exclusions, and
    proof/non-proof readback.
 
+The comparator intentionally consumes only execution-contract cases whose
+`advantageDelta` is `win`; neutral falsification cases stay in the
+memory-advantage eval as boundary evidence instead of being counted as changed
+Codex-vs-KRN contracts.
+
 This proves only that selected KRN memory/source can change deterministic
 execution-contract choices in controlled company-pattern cases. It does not
-prove Codex implemented those contracts, arbitrary code quality, or product
-readiness.
+prove every KRN hit is an advantage, Codex implemented those contracts,
+arbitrary code quality, or product readiness.
 
 ### Relation-Linked Memory/Source Usefulness
 

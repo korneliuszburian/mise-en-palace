@@ -70,11 +70,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(13);
+    expect(result.cases).toHaveLength(17);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 13,
-      heldOutCaseCount: 9,
+      caseCount: 17,
+      heldOutCaseCount: 13,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -86,14 +86,17 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 13,
-      heldOutCaseCount: 9,
-      expectedHitCount: 11,
+      caseCount: 17,
+      heldOutCaseCount: 13,
+      expectedHitCount: 15,
       expectedMissCount: 2,
+      advantageWinCount: 11,
+      noAdvantageCaseCount: 4,
+      brokenPriorAdvantageCaseCount: 1,
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
-      executionContractCaseCount: 2,
-      interdependentSessionCaseCount: 1
+      executionContractCaseCount: 3,
+      interdependentSessionCaseCount: 2
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
@@ -103,7 +106,9 @@ describe("runMemoryAdvantageEval", () => {
         status: "pass",
         caseIds: [
           "retrieve-second-opinion-procedure",
-          "heldout-source-search-command-boundary"
+          "heldout-source-search-command-boundary",
+          "neutral-short-context-second-opinion",
+          "neutral-retrieval-not-needed-docs"
         ]
       },
       learning: {
@@ -112,7 +117,9 @@ describe("runMemoryAdvantageEval", () => {
           "learn-company-review-standard",
           "heldout-db-project-brain-search",
           "heldout-coding-task-json-boundary",
-          "heldout-multi-session-codex-output-evidence"
+          "heldout-multi-session-codex-output-evidence",
+          "neutral-single-turn-typecheck",
+          "neutral-breaks-codex-output-evidence-advantage"
         ]
       },
       long_range: {
@@ -480,7 +487,11 @@ describe("runMemoryAdvantageEval", () => {
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality",
       "heldout-coding-task-json-boundary",
-      "heldout-multi-session-codex-output-evidence"
+      "heldout-multi-session-codex-output-evidence",
+      "neutral-short-context-second-opinion",
+      "neutral-single-turn-typecheck",
+      "neutral-retrieval-not-needed-docs",
+      "neutral-breaks-codex-output-evidence-advantage"
     ]);
     expect(nonHeldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "retrieve-second-opinion-procedure",
@@ -496,13 +507,16 @@ describe("runMemoryAdvantageEval", () => {
     expect(heldOutHitCases.every((testCase) =>
       testCase.baselineFailureRationale.length > 0
     )).toBe(true);
-    expect(heldOutHitCases.every((testCase) =>
+    const advantageWinningHeldOutHitCases = heldOutHitCases.filter((testCase) =>
+      testCase.advantageDelta.result === "win"
+    );
+    expect(advantageWinningHeldOutHitCases.every((testCase) =>
       testCase["baseline_no_memory"].result === "miss" &&
       testCase["baseline_simple_retrieval"].result === "distractor_selected" &&
       testCase["krn_memory"].result === "hit" &&
       testCase["krn_plan_brief"].result === "hit"
     )).toBe(true);
-    expect(heldOutHitCases.map((testCase) =>
+    expect(advantageWinningHeldOutHitCases.map((testCase) =>
       testCase["krn_memory"].requiredKnowledgeId
     )).toEqual([
       "source:secret-review-context-denylist",
@@ -514,6 +528,21 @@ describe("runMemoryAdvantageEval", () => {
       "source:unknown-first-json-metadata-boundary",
       "source:codex-output-evidence-shape-required"
     ]);
+    const noAdvantageCases = result.cases.filter((testCase) =>
+      testCase.advantageDelta.result === "neutral"
+    );
+    expect(noAdvantageCases.map((testCase) => testCase.caseId)).toEqual([
+      "neutral-short-context-second-opinion",
+      "neutral-single-turn-typecheck",
+      "neutral-retrieval-not-needed-docs",
+      "neutral-breaks-codex-output-evidence-advantage"
+    ]);
+    expect(noAdvantageCases.every((testCase) =>
+      testCase["baseline_simple_retrieval"].result === "top_match_selected" &&
+      testCase["krn_memory"].result === "hit" &&
+      testCase["krn_plan_brief"].result === "hit" &&
+      testCase.advantageDelta.simpleRetrievalAlreadySufficient
+    )).toBe(true);
 
     const interdependentCase = result.cases.find((testCase) =>
       testCase.caseId === "heldout-multi-session-codex-output-evidence"
