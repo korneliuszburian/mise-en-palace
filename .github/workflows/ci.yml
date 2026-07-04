@@ -102,6 +102,9 @@ jobs:
       - name: DB brain loop smoke
         run: pnpm db:smoke:brain-loop
 
+      - name: DB brain search smoke
+        run: pnpm db:smoke:brain-search
+
       - name: DB run show smoke
         run: pnpm db:smoke:run-show
 

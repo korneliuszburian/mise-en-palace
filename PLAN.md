@@ -134,8 +134,8 @@ contracts are closed and pushed. A follow-up second-opinion-claude review
 blocked the roadmap selection until six candidate areas were explicitly ruled
 in or out with current repo evidence.
 
-Latest closed Beads: `mise-en-palace-24p7/gfzi/oez2/ieec/yjs7/z406/be1t/fhku/1ex4/td3u/s5n3/pb2f/8mjf/48hq/i3su/q4ym/2u9k`.
-Current queue: `mise-en-palace-ezbm` is the next P1: promote the brain usefulness mini-gate from CLI fixture to DB-backed dogfood smoke. `mise-en-palace-6bdg` depends on it for retained-pattern usefulness tied to execution evidence; `mise-en-palace-d09u` is the P2 source artifact preview ownership decision. `6aw2` remains deferred until naming drift repeats.
+Latest closed Beads: `mise-en-palace-24p7/gfzi/oez2/ieec/yjs7/z406/be1t/fhku/1ex4/td3u/s5n3/pb2f/8mjf/48hq/i3su/q4ym/2u9k/17o8/ezbm`.
+Current queue: `mise-en-palace-6bdg` is next after `ezbm`: tie retained-pattern usefulness to execution evidence. `mise-en-palace-d09u` is the P2 source artifact preview ownership decision. `6aw2` remains deferred until naming drift repeats.
 `mise-en-palace-sefh/td3u` frame KRN as governed RAG/memory/source/review; workers stay candidate contracts until `plnv`, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
@@ -154,6 +154,7 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-7hoy` added duplicate SourceClaimEdge selection proof beyond invalidation rank-down.
 `mise-en-palace-fx89/or40/283u/9qwr/xffw/opfh/h5g3/tva6/kdr7/7i9x/h2vl/f1d8/03ti/bsmn/s6q6/35j9/vsav/1tp1/hd7a/hxb8/d1ck/egmj/5rti/a1r4/42bp` removed typed escape hatches, extracted source-search readbacks, selected next priority by Claude review, proved next-run automatic memory recall, and made helped retained patterns plan-first; deferred human decision: `plnv`.
 `mise-en-palace-jbat` extends the DB brain-loop proof: helped memory recalls once, then repeated hurt feedback downgrades it and the next activation excludes it.
+`mise-en-palace-ezbm` adds `pnpm db:smoke:brain-search`: an isolated DB-backed brain/source smoke proves a weak marker baseline can become source-backed selectedKnowledge with SourceClaim, linked SearchDocument, and SourceDecisionEdge support.
 
 Boundary: one DB-backed automatic memory recall path is proven. Do not claim product readiness, ranking quality, autonomous reflection quality, worker runtime, or multi-repo usefulness.
 

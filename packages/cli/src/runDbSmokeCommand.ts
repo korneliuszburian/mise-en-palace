@@ -29,6 +29,9 @@ import {
 import {
   runRunShowDbSmokeCheck
 } from "./runShowDbSmoke.js";
+import {
+  runBrainSearchDbSmokeCheck
+} from "./runBrainSearchDbSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -43,6 +46,7 @@ export interface DbSmokeRuntime {
     | "retrievalSubstrate"
     | "activation"
     | "brainLoop"
+    | "brainSearch"
     | "runShow"
     | "heartbeatWorkerAuthority"
     | "codexAdapter"
@@ -120,6 +124,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Brain Loop Smoke",
     skippedLine: "Brain loop smoke: skipped (database not configured)",
     failureLabel: "Brain loop smoke"
+  },
+  brainSearch: {
+    title: "KRN Brain Search Smoke",
+    skippedLine: "Brain search smoke: skipped (database not configured)",
+    failureLabel: "Brain search smoke"
   },
   runShow: {
     title: "KRN Run Show Smoke",
@@ -494,6 +503,47 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runBrainSearchDbSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    repoRoot: context.repoRoot,
+    smokeId: runtime.createId("brain-search-smoke"),
+    now: "2026-07-04T00:00:00.000Z"
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Brain Search Smoke",
+    report.cleanedUp,
+    [
+      `Project: ${report.projectId}`,
+      `Query: ${report.query}`,
+      `Source artifact: ${report.sourceArtifactId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Source decision: ${report.sourceDecisionId}`,
+      `Source decision edge: ${report.sourceDecisionEdgeId}`,
+      `Search document: ${report.searchDocumentId}`,
+      `Baseline smoke SourceClaim selected: ${report.baselineSmokeSourceClaimSelected ? "yes" : "no"}`,
+      `Baseline selectedKnowledge: ${report.baselineSelectedKnowledgeCount}`,
+      `Baseline supporting claims: ${report.baselineSupportingClaimCount}`,
+      `Baseline supporting documents: ${report.baselineSupportingDocumentCount}`,
+      `Baseline source decision support: ${report.baselineSourceDecisionSupportCount}`,
+      `Grounded smoke SourceClaim selected: ${report.groundedSmokeSourceClaimSelected ? "yes" : "no"}`,
+      `Grounded selectedKnowledge: ${report.groundedSelectedKnowledgeCount}`,
+      `Grounded supporting claims: ${report.groundedSupportingClaimCount}`,
+      `Grounded supporting documents: ${report.groundedSupportingDocumentCount}`,
+      `Grounded linked search documents: ${report.groundedLinkedSearchDocumentCount}`,
+      `Grounded source decision support: ${report.groundedSourceDecisionSupportCount}`,
+      `Grounded recommended next action: ${report.groundedRecommendedNextAction}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Brain search smoke")
+    ]
+  );
+};
+
 const runShowSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -699,6 +749,7 @@ const dbSmokeTargetHandlers = {
   retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
   activation: runActivationSmokeTarget,
   brainLoop: runBrainLoopSmokeTarget,
+  brainSearch: runBrainSearchSmokeTarget,
   runShow: runShowSmokeTarget,
   heartbeatWorkerAuthority: runHeartbeatWorkerAuthoritySmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,

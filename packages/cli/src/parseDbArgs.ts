@@ -5,7 +5,7 @@ import type {
 
 const dbUsage = [
   "Usage: krn db readiness|smoke",
-  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|run-show|heartbeat-worker-authority|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
+  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|heartbeat-worker-authority|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "",
   "Internal/dev commands:",
   "krn db readiness",
@@ -27,6 +27,7 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["retrieval-substrate", "retrievalSubstrate"],
   ["activation", "activation"],
   ["brain-loop", "brainLoop"],
+  ["brain-search", "brainSearch"],
   ["run-show", "runShow"],
   ["heartbeat-worker-authority", "heartbeatWorkerAuthority"],
   ["codex-adapter", "codexAdapter"],

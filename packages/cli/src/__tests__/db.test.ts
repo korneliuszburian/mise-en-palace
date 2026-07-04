@@ -255,6 +255,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Brain loop smoke: skipped (database not configured)");
   });
 
+  it("reports brain search smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "brain-search"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Brain Search Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Brain search smoke: skipped (database not configured)");
+  });
+
   it("reports worker job smoke missing configuration", async () => {
     const result = await runCli(["db", "smoke", "worker-jobs"], {
       env: {},
