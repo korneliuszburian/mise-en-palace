@@ -11,6 +11,8 @@ KRN code should be boring, explicit, and hard to overread.
 - A name must not imply persistence, promotion, approval, extraction, or model
   inference unless the implementation really performs that action.
 - A helper name should describe the smallest true operation.
+- A rename must pay rent: reduce demonstrable review cost, remove duplicated
+  domain language, reveal an authority boundary, or make a bug easier to catch.
 - Domain terms must preserve KRN's governance boundary:
   `Observation` is staging, `Reflection` proposes, `Candidate` awaits review,
   and `MemoryRecord` is approved Memory Core.
@@ -127,6 +129,61 @@ Names must not smuggle authority across those package boundaries.
 - Tests should name behavior, not implementation details.
 - Do not add an abstraction until it removes real duplication or protects a
   real boundary.
+
+## Anti-Vanity Naming Gate
+
+Do not run naming sweeps. Rename only when current-state evidence proves that a
+name is making KRN harder to audit or easier to overclaim.
+
+Accepted evidence:
+
+- a reviewer or second-opinion finding misread the code because of the name;
+- a source/brain search query failed or selected the wrong concept because the
+  retained vocabulary was missing or misleading;
+- two live concepts use parallel names for the same authority boundary;
+- a file name such as `common`, `helper`, `utils`, `final`, `new`,
+  `normalized`, or `legacy` hides a concrete domain boundary;
+- a name implies runtime enforcement, persistence, truth, or model behavior that
+  does not exist;
+- a rename is already required by a behavior-preserving extraction or package
+  ownership move.
+
+Rejected evidence:
+
+- the name is aesthetically annoying but locally precise;
+- the term is a persisted DB column or public contract and the replacement does
+  not justify migration/API churn;
+- the occurrence is a fixture id, historical doc, compatibility alias, or test
+  scenario label;
+- the proposed replacement is longer but not more domain-specific;
+- the rename only makes a broad audit grep cleaner.
+
+Token guidance:
+
+- `normalized` is allowed only for canonicalizing existing structured data into
+  a stable protocol shape. Do not use it for “fixed”, “approved”, or “cleaned”.
+- `final` is allowed only for output-stage wording such as final response
+  contracts. Do not use it for authority or truth.
+- `new` is allowed in fixture ids or lifecycle labels only when the contrast is
+  explicit. Prefer the domain state otherwise.
+- `legacy` is allowed for compatibility paths that are intentionally preserved
+  and tested. Remove it when it becomes an excuse to keep dead behavior.
+- `helper`, `utils`, and `common` require a local convention or a tighter file
+  name. Prefer the boundary they serve: parser, mapper, readback, repository
+  row guard, fixture runtime, or source decision support.
+
+Every naming Bead must include:
+
+```txt
+evidence_ref:
+old name:
+new name:
+mechanism:
+why not churn:
+files likely touched:
+verification:
+rollback risk:
+```
 
 ## Review Checklist
 

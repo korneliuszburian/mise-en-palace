@@ -67,6 +67,83 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Does not prove: Matt Pocock's skill topology should be copied wholesale,
   every KRN workflow deserves a skill, or skills are product readiness.
 
+### Matt Pocock Shared Language
+
+- URL: https://github.com/mattpocock/skills
+- Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: adopt.
+- Mechanism: the skills README treats shared project language as a way to make
+  variables, functions, and files consistent and easier for agents to navigate.
+- KRN implication: KRN naming should encode the governed brain model and package
+  authority boundaries, not decorative AI/control-plane vocabulary.
+- Decision: keep `docs/standards/code-vocabulary.md` as the active naming
+  contract and reject broad vanity rename sweeps. Rename only when evidence
+  shows review cost, duplicated domain language, hidden authority, failed
+  retrieval, or unsafe boundary confusion.
+- Consumer: `docs/standards/code-vocabulary.md`,
+  `docs/runbooks/krn-brain-layer-model.md`, and future naming Beads.
+- Falsifier: a future naming slice changes many names without evidence refs, or
+  keeps names such as `helper`, `common`, `final`, `new`, or `normalized` when
+  they obscure the domain boundary they serve.
+- Does not prove: every current KRN name is correct, or Matt Pocock's docs
+  should override local evidence and tests.
+
+### Google TypeScript Naming
+
+- URL: https://google.github.io/styleguide/tsguide.html#naming
+- Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: adopt.
+- Mechanism: identifiers should be descriptive and clear to a new reader, with
+  consistent casing and limited abbreviations.
+- KRN implication: KRN should prefer names that reveal the domain responsibility
+  and review boundary to a reader who has not been in the audit thread.
+- Decision: avoid vague catch-all names (`common`, `utils`, `helper`) unless
+  they are backed by a precise local convention; prefer package/domain nouns.
+- Consumer: `docs/standards/code-vocabulary.md` and future bounded rename
+  issues.
+- Falsifier: a new exported type, file, or helper can be understood only by
+  reading several call sites because the name hides the domain concept.
+- Does not prove: Google casing/file rules should be copied wholesale.
+
+### TypeScript Contributor Style
+
+- URL: https://github.com/microsoft/TypeScript/wiki/Coding-guidelines
+- Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: adopt.
+- Mechanism: a large TypeScript codebase keeps coding guidelines close to its
+  contribution workflow and treats diagnostic/message naming as part of review.
+- KRN implication: KRN naming rules belong in the active code vocabulary
+  standard and should be enforced by review/Beads, not buried in historical
+  ledgers.
+- Decision: route naming decisions through source-to-decision and bounded Beads;
+  do not leave naming as an operator preference or one-off chat instruction.
+- Consumer: `docs/standards/code-vocabulary.md`, Beads descriptions, and
+  second-opinion review prompts.
+- Falsifier: naming rules are repeatedly re-explained in chat because the repo
+  standard is missing or too vague to apply.
+- Does not prove: every TypeScript contributor rule is relevant to KRN.
+
+### Angular Style Guide Naming
+
+- URL: https://angular.dev/style-guide
+- Trust tier: medium.
+- Source class: official docs.
+- Decision kind: lab_test.
+- Mechanism: Angular guidance emphasizes organizing code by feature area and
+  giving methods meaningful names rather than hiding behavior under lifecycle
+  or generic containers.
+- KRN implication: KRN can use the same mechanism for CLI and kernel files:
+  name files by the feature boundary they own, not by generic staging words.
+- Decision: use this only as supporting evidence for feature-boundary file
+  names; do not import Angular-specific file or suffix conventions.
+- Consumer: future CLI/kernel file-boundary rename issues.
+- Falsifier: a KRN file is renamed to match a framework convention while losing
+  local package authority meaning.
+- Does not prove: Angular naming or folder topology fits KRN packages.
+
 ### Subagents
 
 - URL: https://developers.openai.com/codex/subagents
