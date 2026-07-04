@@ -713,6 +713,91 @@
         ],
         "distractorSourceClaims": []
       }
+    },
+    {
+      "id": "heldout-multi-session-codex-output-evidence",
+      "competency": "learning",
+      "heldOut": true,
+      "interdependentSession": true,
+      "query": "after prior review can a final Codex answer just say it used KRN context in a concise summary",
+      "distractorClasses": ["generic-quality-guidance", "docs-sentinel-overfit"],
+      "baselineFailureRationale": "A simple lexical baseline can select a summary-only final-output rule because it repeats final answer, concise summary, and KRN context wording without requiring evidence refs, verification, changed files, and non-proof.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:codex-output-evidence-shape-required",
+      "executionContract": {
+        "id": "execution-contract:codex-output-evidence-shape",
+        "objective": "Write a final Codex output that claims it used KRN context after a governed review loop.",
+        "defaultContractId": "contract:summary-only-krn-context-claim",
+        "expectedKrnContractId": "contract:evidence-shaped-krn-context-claim",
+        "contractOptions": [
+          {
+            "id": "contract:summary-only-krn-context-claim",
+            "label": "Final output may claim KRN context use when it gives a concise summary.",
+            "triggerKnowledgeIds": [
+              "pattern:summary-only-krn-context-claim"
+            ]
+          },
+          {
+            "id": "contract:evidence-shaped-krn-context-claim",
+            "label": "Final output may claim KRN context use only when it includes evidence refs, verification, changed files, and doesNotProve.",
+            "triggerKnowledgeIds": [
+              "pattern:codex-output-evidence-shape-required",
+              "source:codex-output-evidence-shape-required"
+            ]
+          }
+        ],
+        "proof": "The later output contract depends on Session A review evidence that found missing evidence-shape coverage and forced the gate to reject incomplete KRN-context claims.",
+        "doesNotProve": "This does not prove live Codex obeyed the contract, only that KRN memory/source changes the deterministic final-output contract."
+      },
+      "priorSession": {
+        "id": "session:codex-output-evidence-shape-review",
+        "task": "A prior f2fw slice added a Codex-output evidence-shape gate after Claude found missing evidence refs and non-proof coverage.",
+        "evidenceRef": "evidence:codex-output-evidence-shape-review",
+        "reviewRef": "review:claude-f2fw-r1-r2",
+        "feedbackRef": "feedback:codex-output-evidence-shape-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:codex-output-evidence-shape-required",
+            "title": "Codex output evidence shape required",
+            "summary": "When Codex claims it used KRN context, the output must carry evidence refs, verification evidence, changed files, and an explicit doesNotProve boundary.",
+            "consumers": [
+              "final Codex output",
+              "execution-output evidence gate"
+            ],
+            "falsifier": "A final output claims it used KRN context while omitting evidence refs, verification, changed files, or doesNotProve.",
+            "doesNotProve": "This does not prove Codex followed the rendered brief or that the output is correct.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:summary-only-krn-context-claim",
+            "title": "Summary-only KRN context claim",
+            "summary": "A final Codex output may claim it followed KRN context when it gives a concise summary, even if evidence refs and doesNotProve are absent.",
+            "consumers": [
+              "final Codex output",
+              "generic closeout"
+            ],
+            "falsifier": "The f2fw evidence-shape gate rejects KRN-context claims without evidence refs and non-proof.",
+            "doesNotProve": "This intentionally represents a weak baseline closeout rule.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:codex-output-evidence-shape-required",
+            "claim": "A Codex output that claims KRN context use must include evidence refs, verification, changed files, and doesNotProve.",
+            "mechanism": "The behavior gate validates claimed output shape and rejects KRN-context claims missing evidence fields before the run can be treated as reviewed evidence.",
+            "krnImplication": "Future final-output and comparator work should require evidence-shaped KRN-context claims instead of summary-only claims.",
+            "consumer": "execution-output evidence gate",
+            "falsifier": "The behavior gate accepts claimsKrnContextUse=true while evidence refs, verification, changedFiles, or doesNotProve are missing.",
+            "doesNotProve": "This does not prove live Codex execution, prompt adherence, output correctness, or product readiness."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
     }
   ]
 }

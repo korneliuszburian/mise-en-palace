@@ -16,7 +16,7 @@ four falsifiable axes:
 | --- | --- | --- | --- |
 | Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: cases include no-memory, simple lexical, and plan/brief baselines with rendered Codex brief evidence. |
 | DB-backed retrieval | Can persisted memory/source rows change brain-search output through live repositories? | `pnpm db:smoke:brain-search` | Done for the current smoke: baseline misses, then a promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge are selected through Postgres-backed readback. |
-| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Current proxy includes reviewed feedback refs and one coding-task decision derived from selected memory/source ids; DB multi-session eval remains separate. |
+| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback, `pnpm eval:memory-advantage` | Current proxy includes reviewed feedback refs, one coding-task decision, and one interdependent Session A -> Session B execution-contract case derived from selected memory/source ids. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
 | Selective forgetting | Can KRN block stale/hurt/contradicted memory before context assembly? | anti-memory and stale activation guards | Memory advantage negative case where baseline uses tempting stale memory. |
 
@@ -49,6 +49,18 @@ Create a deterministic eval where:
 3. Session B asks a related coding task that a no-memory baseline misses.
 4. The eval reports selected memory/source ids, application outcome, and
    proof/non-proof boundaries.
+
+`pnpm eval:memory-advantage` now includes one held-out interdependent
+multi-session case:
+
+1. Session A records Codex-output evidence-shape review evidence and helped
+   feedback;
+2. Session B asks whether a final Codex answer can just claim KRN context use
+   in a concise summary;
+3. the simple lexical baseline selects a summary-only distractor first;
+4. KRN selects the source-backed evidence-shape requirement and changes the
+   execution contract to require evidence refs, verification, changed files, and
+   non-proof.
 
 This targets MemoryArena-style memorization plus action without importing the
 external task gym.
@@ -201,9 +213,13 @@ decision:
 4. the readback includes selected ids, selected-context size, and explicit
    proof/non-proof text.
 
-This proves only that selected KRN memory/source can change a deterministic
-execution-contract choice in one controlled company-pattern case. It does not
-prove Codex implemented that contract, arbitrary code quality, or product
+`pnpm eval:memory-advantage` now reports two execution-contract cases: the
+unknown-first JSON metadata boundary and the interdependent Codex-output
+evidence-shape boundary.
+
+This proves only that selected KRN memory/source can change deterministic
+execution-contract choices in controlled company-pattern cases. It does not
+prove Codex implemented those contracts, arbitrary code quality, or product
 readiness.
 
 ### Relation-Linked Memory/Source Usefulness

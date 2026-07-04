@@ -85,6 +85,7 @@ interface MemoryAdvantageCaseFixture {
   readonly id: string;
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
+  readonly interdependentSession?: boolean;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -154,6 +155,7 @@ interface MemoryAdvantageCaseReadback {
   readonly caseId: string;
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
+  readonly interdependentSession: boolean;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -328,6 +330,7 @@ export interface MemoryAdvantageEvalResult {
     readonly expectedHitCount: number;
     readonly expectedMissCount: number;
     readonly distractorClassCount: number;
+    readonly interdependentSessionCaseCount: number;
     readonly totalKrnMemoryContextBytes: number;
     readonly totalKrnPlanBriefContextBytes: number;
     readonly totalRenderedBriefBytes: number;
@@ -387,15 +390,8 @@ const parseExcludedMemoryCards = (
   label: string
 ): readonly MemoryAdvantageExcludedMemoryFixture[] => {
   const cards = parseEvalKnowledgeCards(record, key, label);
-  const rawCards = recordArray(record, key, label);
 
-  return cards.map((card, index) => {
-    const rawCard = rawCards[index];
-
-    if (rawCard === undefined) {
-      throw new Error(`${label}.${key}[${index}] must be an object`);
-    }
-
+  return mapParsedCardsWithRaw(record, key, label, cards, "must be an object", (card, rawCard, index) => {
     return {
       ...card,
       exclusionReason: requiredString(rawCard, "exclusionReason", `${label}.${key}[${index}]`)
@@ -434,14 +430,8 @@ const parseMemoryAdvantageCards = (
   label: string
 ): readonly MemoryAdvantageCardFixture[] => {
   const cards = parseEvalKnowledgeCards(record, key, label);
-  const rawCards = recordArray(record, key, label);
 
-  return cards.map((card, index) => {
-    const rawCard = rawCards[index];
-    if (rawCard === undefined) {
-      throw new Error(`${label}.${key}[${index}] must be present`);
-    }
-
+  return mapParsedCardsWithRaw(record, key, label, cards, "must be present", (card, rawCard, index) => {
     const runtimeExclusion = parseRuntimeMemoryExclusion(rawCard["runtimeExclusion"], `${label}.${key}[${index}]`);
 
     return runtimeExclusion === undefined
@@ -450,6 +440,27 @@ const parseMemoryAdvantageCards = (
           ...card,
           runtimeExclusion
         };
+  });
+};
+
+const mapParsedCardsWithRaw = <TCard extends EvalKnowledgeCardFixture, TResult>(
+  record: Record<string, unknown>,
+  key: string,
+  label: string,
+  cards: readonly TCard[],
+  missingMessage: string,
+  mapCard: (card: TCard, rawCard: Record<string, unknown>, index: number) => TResult
+): readonly TResult[] => {
+  const rawCards = recordArray(record, key, label);
+
+  return cards.map((card, index) => {
+    const rawCard = rawCards[index];
+
+    if (rawCard === undefined) {
+      throw new Error(`${label}.${key}[${index}] ${missingMessage}`);
+    }
+
+    return mapCard(card, rawCard, index);
   });
 };
 
@@ -606,6 +617,23 @@ const assertNoMemoryCardLifecycleConflict = (
   }
 };
 
+const assertInterdependentSessionCase = (
+  testCase: MemoryAdvantageCaseFixture,
+  label: string
+): void => {
+  if (testCase.interdependentSession !== true) {
+    return;
+  }
+
+  if (!testCase.heldOut) {
+    throw new Error(`${label}.interdependentSession cases must be held out`);
+  }
+
+  if (testCase.executionContract === undefined) {
+    throw new Error(`${label}.interdependentSession cases must declare executionContract`);
+  }
+};
+
 const parseCase = (
   value: Record<string, unknown>,
   index: number
@@ -629,6 +657,7 @@ const parseCase = (
     id: requiredString(value, "id", label),
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
     heldOut: value["heldOut"] === true,
+    ...(value["interdependentSession"] === true ? { interdependentSession: true } : {}),
     query: requiredString(value, "query", label),
     distractorClasses: requiredStringArray(value, "distractorClasses", label),
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
@@ -670,6 +699,7 @@ const parseCase = (
   };
 
   assertNoMemoryCardLifecycleConflict(parsedCase.priorSession, label);
+  assertInterdependentSessionCase(parsedCase, label);
   return parsedCase;
 };
 
@@ -1735,6 +1765,7 @@ const evaluateCase = async (
     caseId: testCase.id,
     competency: testCase.competency,
     heldOut: testCase.heldOut,
+    interdependentSession: testCase.interdependentSession === true,
     query: testCase.query,
     distractorClasses: testCase.distractorClasses,
     baselineFailureRationale: testCase.baselineFailureRationale,
@@ -1829,6 +1860,9 @@ export const runMemoryAdvantageEval = async (
         testCase.expectedKrnResult === "miss"
       ).length,
       distractorClassCount: fixture.distractorClasses.length,
+      interdependentSessionCaseCount: cases.filter((testCase) =>
+        testCase.interdependentSession
+      ).length,
       totalKrnMemoryContextBytes: cases.reduce(
         (sum, testCase) => sum + testCase["krn_memory"].selectedContextSize.bytes,
         0
@@ -1853,6 +1887,7 @@ export const runMemoryAdvantageEval = async (
         "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies",
         "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator",
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
+        "at least one interdependent multi-session case marks that Session B depends on Session A evidence or feedback",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",

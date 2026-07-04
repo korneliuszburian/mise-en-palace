@@ -42,6 +42,22 @@ const expectExecutionContractFixtureError = (
   expect(() => parseMemoryAdvantageEvalFixture(malformedContractFixture)).toThrow(expectedMessage);
 };
 
+const expectInterdependentFixtureError = (
+  mutate: (testCase: Record<string, unknown>) => void,
+  expectedMessage: string
+): void => {
+  const malformedFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+    cases: Array<Record<string, unknown>>;
+  };
+  const malformedCase = mutableFixtureCase(
+    malformedFixture,
+    "heldout-multi-session-codex-output-evidence"
+  );
+  mutate(malformedCase);
+
+  expect(() => parseMemoryAdvantageEvalFixture(malformedFixture)).toThrow(expectedMessage);
+};
+
 describe("runMemoryAdvantageEval", () => {
   it("proves controlled memory competencies over a no-memory baseline", async () => {
     const result = await runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
@@ -54,11 +70,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(12);
+    expect(result.cases).toHaveLength(13);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 12,
-      heldOutCaseCount: 8,
+      caseCount: 13,
+      heldOutCaseCount: 9,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -70,13 +86,14 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 12,
-      heldOutCaseCount: 8,
-      expectedHitCount: 10,
+      caseCount: 13,
+      heldOutCaseCount: 9,
+      expectedHitCount: 11,
       expectedMissCount: 2,
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
-      executionContractCaseCount: 1
+      executionContractCaseCount: 2,
+      interdependentSessionCaseCount: 1
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
@@ -94,7 +111,8 @@ describe("runMemoryAdvantageEval", () => {
         caseIds: [
           "learn-company-review-standard",
           "heldout-db-project-brain-search",
-          "heldout-coding-task-json-boundary"
+          "heldout-coding-task-json-boundary",
+          "heldout-multi-session-codex-output-evidence"
         ]
       },
       long_range: {
@@ -451,6 +469,9 @@ describe("runMemoryAdvantageEval", () => {
     const heldOutHitCases = result.cases.filter((testCase) =>
       testCase.heldOut && testCase.expectedKrnResult === "hit"
     );
+    const nonHeldOutHitCases = result.cases.filter((testCase) =>
+      !testCase.heldOut && testCase.expectedKrnResult === "hit"
+    );
     expect(heldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "adversarial-memory-source-conflict-secret-review",
       "temporal-stale-source-claim-decision-link",
@@ -458,7 +479,13 @@ describe("runMemoryAdvantageEval", () => {
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality",
-      "heldout-coding-task-json-boundary"
+      "heldout-coding-task-json-boundary",
+      "heldout-multi-session-codex-output-evidence"
+    ]);
+    expect(nonHeldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
+      "retrieve-second-opinion-procedure",
+      "learn-company-review-standard",
+      "long-range-source-authority-boundary"
     ]);
     const heldOutMissCases = result.cases.filter((testCase) =>
       testCase.heldOut && testCase.expectedKrnResult === "miss"
@@ -484,8 +511,74 @@ describe("runMemoryAdvantageEval", () => {
       "pattern:source-search-command-boundary",
       "pattern:brain-search-explicit-project-selector",
       "pattern:ranking-corpus-quality-readback",
-      "source:unknown-first-json-metadata-boundary"
+      "source:unknown-first-json-metadata-boundary",
+      "source:codex-output-evidence-shape-required"
     ]);
+
+    const interdependentCase = result.cases.find((testCase) =>
+      testCase.caseId === "heldout-multi-session-codex-output-evidence"
+    );
+    expect(interdependentCase).toMatchObject({
+      competency: "learning",
+      heldOut: true,
+      interdependentSession: true,
+      status: "pass",
+      expectedKrnResult: "hit",
+      priorSession: {
+        id: "session:codex-output-evidence-shape-review",
+        evidenceRef: "evidence:codex-output-evidence-shape-review",
+        reviewRef: "review:claude-f2fw-r1-r2",
+        feedbackRef: "feedback:codex-output-evidence-shape-helped",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:codex-output-evidence-shape-required"],
+        distractorMemoryIds: ["memory:pattern:summary-only-krn-context-claim"],
+        createdSourceClaimIds: ["source:codex-output-evidence-shape-required"]
+      },
+      "baseline_no_memory": {
+        result: "miss"
+      },
+      "baseline_simple_retrieval": {
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "pattern:summary-only-krn-context-claim",
+          "source:codex-output-evidence-shape-required",
+          "pattern:codex-output-evidence-shape-required"
+        ]
+      },
+      "krn_memory": {
+        result: "hit",
+        requiredKnowledgeId: "source:codex-output-evidence-shape-required",
+        selectedKnowledgeIds: ["source:codex-output-evidence-shape-required"],
+        selectedSourceClaimIds: ["source:codex-output-evidence-shape-required"]
+      },
+      "execution_contract_decision": {
+        contractId: "execution-contract:codex-output-evidence-shape",
+        expectedKrnContractId: "contract:evidence-shaped-krn-context-claim",
+        baseline: {
+          contractId: "contract:summary-only-krn-context-claim"
+        },
+        krn: {
+          contractId: "contract:evidence-shaped-krn-context-claim",
+          selectedSourceClaimIds: ["source:codex-output-evidence-shape-required"]
+        },
+        status: "pass"
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:codex-output-evidence-shape-helped",
+        priorEvidenceRef: "evidence:codex-output-evidence-shape-review",
+        priorReviewRef: "review:claude-f2fw-r1-r2",
+        requiredKnowledgeId: "source:codex-output-evidence-shape-required",
+        baselineNoMemoryResult: "miss",
+        simpleRetrievalResult: "distractor_selected",
+        simpleRetrievalTopKnowledgeId: "pattern:summary-only-krn-context-claim",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "hit",
+        proofStatus: "pass"
+      }
+    });
+    expect(interdependentCase?.["execution_contract_decision"]?.baseline.contractId).not.toBe(
+      interdependentCase?.["execution_contract_decision"]?.krn.contractId
+    );
 
     const forgettingCase = result.cases.find((testCase) =>
       testCase.caseId === "forget-obsolete-no-second-opinion-rule"
@@ -837,6 +930,9 @@ describe("runMemoryAdvantageEval", () => {
       "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
     );
     expect(result.proof.proves).toContain(
+      "at least one interdependent multi-session case marks that Session B depends on Session A evidence or feedback"
+    );
+    expect(result.proof.proves).toContain(
       "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost"
     );
     expect(result.proof.proves).toContain(
@@ -910,5 +1006,17 @@ describe("runMemoryAdvantageEval", () => {
       ...executionContract,
       defaultContractId: "contract:unknown-first-parser"
     }), "cases[11].executionContract default and expected KRN contracts must differ");
+  });
+
+  it("rejects interdependent-session fixture drift before evaluation", () => {
+    expectInterdependentFixtureError((testCase) => {
+      testCase["heldOut"] = false;
+    }, "cases[12].interdependentSession cases must be held out");
+    expectInterdependentFixtureError((testCase) => {
+      delete testCase["executionContract"];
+    }, "cases[12].interdependentSession cases must declare executionContract");
+    expectInterdependentFixtureError((testCase) => {
+      delete testCase["priorSession"];
+    }, "cases[12].priorSession must be an object");
   });
 });
