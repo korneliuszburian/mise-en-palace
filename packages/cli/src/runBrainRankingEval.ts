@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
 
+import {
+  isCliEntrypoint,
+  writeJsonEvalResult
+} from "./evalMain.js";
 import {
   runBrainSearchCommand
 } from "./runBrainSearchCommand.js";
@@ -509,17 +512,11 @@ export const runBrainRankingEval = async (
   };
 };
 
-const main = async (): Promise<void> => {
+const main = async (): Promise<BrainRankingEvalResult> => {
   const fixturePath = process.argv[2] ?? "tests/fixtures/brain-ranking/brain-ranking-eval.json";
-  const result = await runBrainRankingEval(loadBrainRankingEvalFixture(fixturePath));
-
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-
-  if (result.status !== "pass") {
-    process.exitCode = 1;
-  }
+  return runBrainRankingEval(loadBrainRankingEvalFixture(fixturePath));
 };
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  await main();
+if (isCliEntrypoint(import.meta.url)) {
+  await writeJsonEvalResult(main);
 }

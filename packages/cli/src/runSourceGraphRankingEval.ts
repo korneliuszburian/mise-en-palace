@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
 
 import type {
   SourceClaim,
@@ -13,6 +12,10 @@ import type {
 import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  isCliEntrypoint,
+  writeJsonEvalResult
+} from "./evalMain.js";
 import {
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
@@ -637,17 +640,11 @@ export const runSourceGraphRankingEval = async (
   };
 };
 
-const main = async (): Promise<void> => {
+const main = async (): Promise<SourceGraphRankingEvalResult> => {
   const fixturePath = process.argv[2] ?? "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json";
-  const result = await runSourceGraphRankingEval(loadSourceGraphRankingEvalFixture(fixturePath));
-
-  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-
-  if (result.status !== "pass") {
-    process.exitCode = 1;
-  }
+  return runSourceGraphRankingEval(loadSourceGraphRankingEvalFixture(fixturePath));
 };
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  await main();
+if (isCliEntrypoint(import.meta.url)) {
+  await writeJsonEvalResult(main);
 }
