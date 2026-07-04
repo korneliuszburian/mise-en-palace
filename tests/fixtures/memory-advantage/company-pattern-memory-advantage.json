@@ -313,6 +313,64 @@
       }
     },
     {
+      "id": "temporal-stale-source-claim-decision-link",
+      "competency": "forgetting",
+      "heldOut": true,
+      "query": "for source search ranking should Codex trust the old crawler-first SourceClaim without decision edge or the current SourceDecisionEdge linked claim",
+      "distractorClasses": ["obsolete-operating-rule", "adjacent-kernel-boundary"],
+      "baselineFailureRationale": "A simple lexical baseline can select the stale crawler-first SourceClaim because it repeats old, crawler-first, SourceClaim, without decision edge, and trust terms.",
+      "negativeClass": "temporal_stale_source_claim",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:current-source-decision-edge-ranking",
+      "priorSession": {
+        "id": "session:temporal-stale-source-claim-decision-link",
+        "task": "A stale crawler-first SourceClaim was superseded by a current SourceDecisionEdge-linked source-search ranking rule.",
+        "evidenceRef": "evidence:temporal-stale-source-claim-decision-link",
+        "reviewRef": "review:temporal-stale-source-claim-decision-link",
+        "feedbackRef": "feedback:temporal-stale-source-claim-decision-link-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:source-decision-edge-ranking-current",
+            "title": "Current source decision edge ranking",
+            "summary": "Source search ranking should prefer current accepted SourceClaims with SourceDecisionEdge support over stale crawler-first claims without decision edge support.",
+            "consumers": [
+              "source search ranking",
+              "source authority"
+            ],
+            "falsifier": "A stale crawler-first SourceClaim without decision edge support ranks ahead of the current linked claim.",
+            "doesNotProve": "This does not prove production source ranking quality.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:current-source-decision-edge-ranking",
+            "claim": "Current source-search ranking should prefer accepted SourceClaims with SourceDecisionEdge support over stale crawler-first claims.",
+            "mechanism": "SourceDecisionEdge support marks the current claim as decision-linked evidence while stale crawler-first claims remain excluded from KRN authority.",
+            "krnImplication": "When a task asks whether to trust an old crawler-first SourceClaim or the current decision-linked claim, KRN should select the current SourceClaim.",
+            "consumer": "source search ranking",
+            "falsifier": "The stale crawler-first SourceClaim is selected as KRN authority ahead of the current decision-linked claim.",
+            "doesNotProve": "This does not prove the current SourceClaim is true outside this fixture."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:old-crawler-first-without-decision-edge",
+            "claim": "Trust the old crawler-first SourceClaim without decision edge support when source search ranking has ambiguous evidence.",
+            "mechanism": "The old crawler-first SourceClaim repeated source search ranking terms before SourceDecisionEdge support existed.",
+            "krnImplication": "This stale source claim should not be selected as KRN authority once the current SourceDecisionEdge linked claim exists.",
+            "consumer": "source search ranking",
+            "falsifier": "The current SourceDecisionEdge linked claim supersedes this old crawler-first source claim.",
+            "doesNotProve": "This intentionally represents a stale temporal source claim.",
+            "exclusionReason": "temporal stale source claim superseded by current SourceDecisionEdge-linked evidence"
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
       "id": "heldout-source-search-command-boundary",
       "competency": "retrieval",
       "heldOut": true,

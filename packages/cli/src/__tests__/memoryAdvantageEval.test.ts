@@ -16,11 +16,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(9);
+    expect(result.cases).toHaveLength(10);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 9,
-      heldOutCaseCount: 5,
+      caseCount: 10,
+      heldOutCaseCount: 6,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -30,9 +30,9 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 9,
-      heldOutCaseCount: 5,
-      expectedHitCount: 7,
+      caseCount: 10,
+      heldOutCaseCount: 6,
+      expectedHitCount: 8,
       expectedMissCount: 2,
       distractorClassCount: 5
     });
@@ -66,7 +66,8 @@ describe("runMemoryAdvantageEval", () => {
         caseIds: [
           "forget-obsolete-no-second-opinion-rule",
           "adversarial-unsupported-secret-scan-rule",
-          "adversarial-memory-source-conflict-secret-review"
+          "adversarial-memory-source-conflict-secret-review",
+          "temporal-stale-source-claim-decision-link"
         ]
       }
     });
@@ -287,6 +288,7 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(heldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "adversarial-memory-source-conflict-secret-review",
+      "temporal-stale-source-claim-decision-link",
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality"
@@ -310,6 +312,7 @@ describe("runMemoryAdvantageEval", () => {
       testCase["krn_memory"].requiredKnowledgeId
     )).toEqual([
       "source:secret-review-context-denylist",
+      "source:current-source-decision-edge-ranking",
       "pattern:source-search-command-boundary",
       "pattern:brain-search-explicit-project-selector",
       "pattern:ranking-corpus-quality-readback"
@@ -531,6 +534,77 @@ describe("runMemoryAdvantageEval", () => {
     expect(adversarialSourceConflictCase?.["krn_memory"].selectedMemoryIds).not.toContain(
       "pattern:paste-secret-env-files-for-review-source-conflict"
     );
+    const temporalStaleSourceCase = result.cases.find((testCase) =>
+      testCase.caseId === "temporal-stale-source-claim-decision-link"
+    );
+    expect(temporalStaleSourceCase).toMatchObject({
+      competency: "forgetting",
+      heldOut: true,
+      status: "pass",
+      expectedKrnResult: "hit",
+      negativeClass: "temporal_stale_source_claim",
+      priorSession: {
+        id: "session:temporal-stale-source-claim-decision-link",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        excludedMemoryIds: [],
+        createdSourceClaimIds: ["source:current-source-decision-edge-ranking"],
+        excludedSourceClaimIds: ["source:old-crawler-first-without-decision-edge"]
+      },
+      "baseline_simple_retrieval": {
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "source:old-crawler-first-without-decision-edge",
+          "source:current-source-decision-edge-ranking",
+          "pattern:source-decision-edge-ranking-current"
+        ],
+        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedSourceClaimIds: [
+          "source:old-crawler-first-without-decision-edge",
+          "source:current-source-decision-edge-ranking"
+        ]
+      },
+      "krn_memory": {
+        result: "hit",
+        selectedKnowledgeIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
+        requiredKnowledgeId: "source:current-source-decision-edge-ranking",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        exclusions: [],
+        sourceExclusions: [
+          {
+            sourceClaimId: "source:old-crawler-first-without-decision-edge",
+            reason: "temporal stale source claim superseded by current SourceDecisionEdge-linked evidence"
+          }
+        ]
+      },
+      "krn_plan_brief": {
+        result: "hit",
+        requiredKnowledgeId: "source:current-source-decision-edge-ranking",
+        selectedMemoryRecordIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
+        renderedMemoryRecordIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        renderedSourceClaimIds: ["source:current-source-decision-edge-ranking"]
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:temporal-stale-source-claim-decision-link-helped",
+        priorEvidenceRef: "evidence:temporal-stale-source-claim-decision-link",
+        priorReviewRef: "review:temporal-stale-source-claim-decision-link",
+        baselineNoMemoryResult: "miss",
+        simpleRetrievalResult: "distractor_selected",
+        simpleRetrievalTopKnowledgeId: "source:old-crawler-first-without-decision-edge",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "hit",
+        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
+        proofStatus: "pass"
+      }
+    });
+    expect(temporalStaleSourceCase?.["krn_memory"].selectedSourceClaimIds).not.toContain(
+      "source:old-crawler-first-without-decision-edge"
+    );
     expect(result.proof.proves).toContain(
       "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"
     );
@@ -553,7 +627,7 @@ describe("runMemoryAdvantageEval", () => {
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
     );
     expect(result.proof.proves).toContain(
-      "negative memory cases can name their stale or adversarial class and surface explicit excluded ids with reasons"
+      "negative memory/source cases can name their stale or adversarial class and surface explicit excluded ids with reasons"
     );
     expect(result.proof.proves).toContain(
       "baseline class and approximate selected-context readback size are reported for each case"
@@ -562,7 +636,7 @@ describe("runMemoryAdvantageEval", () => {
       "the expected memory/source id is present in rendered Codex brief context for hit cases"
     );
     expect(result.proof.proves).toContain(
-      "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason"
+      "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason"
     );
     expect(result.proof.doesNotProve).toContain(
       "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
@@ -571,7 +645,7 @@ describe("runMemoryAdvantageEval", () => {
       "that simple lexical retrieval is a strong baseline; it is a local foil for governed memory/source packaging"
     );
     expect(result.proof.doesNotProve).toContain(
-      "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows"
+      "runtime stale-memory or stale-source detection for arbitrary production MemoryRecord or SourceClaim rows"
     );
     expect(result.proof.doesNotProve).toContain(
       "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four"

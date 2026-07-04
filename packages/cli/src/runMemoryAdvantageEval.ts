@@ -57,7 +57,8 @@ type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forg
 type MemoryAdvantageNegativeClass =
   | "stale_memory"
   | "adversarial_unsupported_memory"
-  | "adversarial_memory_source_conflict";
+  | "adversarial_memory_source_conflict"
+  | "temporal_stale_source_claim";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -94,10 +95,15 @@ interface MemoryAdvantagePriorSessionFixture {
   readonly excludedMemoryCards: readonly MemoryAdvantageExcludedMemoryFixture[];
   readonly distractorMemoryCards: readonly MemoryAdvantageCardFixture[];
   readonly sourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
+  readonly excludedSourceClaims: readonly MemoryAdvantageExcludedSourceClaimFixture[];
   readonly distractorSourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
 }
 
 interface MemoryAdvantageExcludedMemoryFixture extends MemoryAdvantageCardFixture {
+  readonly exclusionReason: string;
+}
+
+interface MemoryAdvantageExcludedSourceClaimFixture extends MemoryAdvantageSourceClaimFixture {
   readonly exclusionReason: string;
 }
 
@@ -130,6 +136,7 @@ interface MemoryAdvantageCaseReadback {
     readonly excludedMemoryIds: readonly string[];
     readonly distractorMemoryIds: readonly string[];
     readonly createdSourceClaimIds: readonly string[];
+    readonly excludedSourceClaimIds: readonly string[];
     readonly distractorSourceClaimIds: readonly string[];
   };
   readonly "baseline_no_memory": {
@@ -164,6 +171,7 @@ interface MemoryAdvantageCaseReadback {
     readonly supportingClaims: number;
     readonly supportingDocuments: number;
     readonly exclusions: readonly MemoryAdvantageMemoryExclusionReadback[];
+    readonly sourceExclusions: readonly MemoryAdvantageSourceClaimExclusionReadback[];
   };
   readonly "krn_plan_brief": PlanBriefReadback;
   readonly "reviewed_feedback_effect": ReviewedFeedbackEffectReadback;
@@ -184,6 +192,11 @@ interface PlanBriefReadback {
 
 interface MemoryAdvantageMemoryExclusionReadback {
   readonly memoryId: string;
+  readonly reason: string;
+}
+
+interface MemoryAdvantageSourceClaimExclusionReadback {
+  readonly sourceClaimId: string;
   readonly reason: string;
 }
 
@@ -262,7 +275,8 @@ const memoryCompetencies = ["retrieval", "learning", "long_range", "forgetting"]
 const memoryNegativeClasses = [
   "stale_memory",
   "adversarial_unsupported_memory",
-  "adversarial_memory_source_conflict"
+  "adversarial_memory_source_conflict",
+  "temporal_stale_source_claim"
 ] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
@@ -303,6 +317,27 @@ const parseExcludedMemoryCards = (
   });
 };
 
+const parseExcludedSourceClaims = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageExcludedSourceClaimFixture[] => {
+  const claims = parseEvalSourceClaims(record, key, label);
+  const rawClaims = recordArray(record, key, label);
+
+  return claims.map((claim, index) => {
+    const rawClaim = rawClaims[index];
+    if (rawClaim === undefined) {
+      throw new Error(`${label}.${key}[${index}] must be present`);
+    }
+
+    return {
+      ...claim,
+      exclusionReason: requiredString(rawClaim, "exclusionReason", `${label}.${key}[${index}]`)
+    };
+  });
+};
+
 const parseOptionalEvalKnowledgeCards = (
   record: Record<string, unknown>,
   key: string,
@@ -316,6 +351,13 @@ const parseOptionalEvalSourceClaims = (
   label: string
 ): readonly MemoryAdvantageSourceClaimFixture[] =>
   record[key] === undefined ? [] : parseEvalSourceClaims(record, key, label);
+
+const parseOptionalExcludedSourceClaims = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageExcludedSourceClaimFixture[] =>
+  record[key] === undefined ? [] : parseExcludedSourceClaims(record, key, label);
 
 const assertNoMemoryCardLifecycleConflict = (
   priorSession: MemoryAdvantagePriorSessionFixture,
@@ -369,6 +411,11 @@ const parseCase = (
         `${label}.priorSession`
       ),
       sourceClaims,
+      excludedSourceClaims: parseOptionalExcludedSourceClaims(
+        priorSession,
+        "excludedSourceClaims",
+        `${label}.priorSession`
+      ),
       distractorSourceClaims: parseOptionalEvalSourceClaims(
         priorSession,
         "distractorSourceClaims",
@@ -522,6 +569,9 @@ const assertLexicalOverlap = (
   const hasClaimOverlap = testCase.priorSession.sourceClaims.some((claim) =>
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
   );
+  const hasExcludedClaimOverlap = testCase.priorSession.excludedSourceClaims.some((claim) =>
+    tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
+  );
 
   if (testCase.expectedKrnResult === "hit" && (!(hasCardOverlap || hasExcludedCardOverlap) || !hasClaimOverlap)) {
     throw new Error(
@@ -529,8 +579,8 @@ const assertLexicalOverlap = (
     );
   }
 
-  if (testCase.expectedKrnResult === "miss" && !hasExcludedCardOverlap) {
-    throw new Error(`${testCase.id} must have lexical overlap with an excluded memory card`);
+  if (testCase.expectedKrnResult === "miss" && !(hasExcludedCardOverlap || hasExcludedClaimOverlap)) {
+    throw new Error(`${testCase.id} must have lexical overlap with an excluded memory card or source claim`);
   }
 };
 
@@ -852,6 +902,14 @@ const buildMemoryExclusions = (
     reason: card.exclusionReason
   }));
 
+const buildSourceClaimExclusions = (
+  testCase: MemoryAdvantageCaseFixture
+): readonly MemoryAdvantageSourceClaimExclusionReadback[] =>
+  testCase.priorSession.excludedSourceClaims.map((claim) => ({
+    sourceClaimId: claim.sourceClaimId,
+    reason: claim.exclusionReason
+  }));
+
 interface SimpleRetrievalCandidate {
   readonly id: string;
   readonly kind: "memory" | "source_claim";
@@ -872,6 +930,7 @@ const simpleRetrievalCandidates = (
   }));
   const sourceClaimCandidates = [
     ...testCase.priorSession.sourceClaims,
+    ...testCase.priorSession.excludedSourceClaims,
     ...testCase.priorSession.distractorSourceClaims
   ].map((claim): SimpleRetrievalCandidate => ({
     id: claim.sourceClaimId,
@@ -1174,9 +1233,9 @@ const caseStatus = (
   krnMemory: BrainSearchPreviewReadback,
   baselinePlanBrief: PlanBriefReadback,
   krnPlanBrief: PlanBriefReadback,
-  exclusions: readonly MemoryAdvantageMemoryExclusionReadback[]
+  hasExplicitExclusion: boolean
 ): "pass" | "fail" => {
-  const canProveExpectedMiss = testCase.expectedKrnResult === "hit" || exclusions.length > 0;
+  const canProveExpectedMiss = testCase.expectedKrnResult === "hit" || hasExplicitExclusion;
   const planBriefSatisfied = testCase.expectedKrnResult === "hit"
     ? baselinePlanBrief.result === "miss" && krnPlanBrief.result === "hit"
     : baselinePlanBrief.result === "miss" && krnPlanBrief.result === "miss";
@@ -1226,7 +1285,15 @@ const evaluateCase = async (
   const baselineMiss = isBaselineMiss(baseline);
   const krnHit = isKrnHit(krnMemory, testCase);
   const exclusions = buildMemoryExclusions(testCase);
-  const status = caseStatus(testCase, baseline, krnMemory, baselinePlanBrief, krnPlanBrief, exclusions);
+  const sourceExclusions = buildSourceClaimExclusions(testCase);
+  const status = caseStatus(
+    testCase,
+    baseline,
+    krnMemory,
+    baselinePlanBrief,
+    krnPlanBrief,
+    exclusions.length > 0 || sourceExclusions.length > 0
+  );
   const baselineSelectedMemoryIds = selectedMemoryIds(baseline.selectedKnowledgeIds);
   const krnSelectedMemoryIds = selectedMemoryIds(krnMemory.selectedKnowledgeIds);
   const baselineNoMemory = {
@@ -1251,7 +1318,8 @@ const evaluateCase = async (
     requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
     supportingClaims: krnMemory.supportingClaims,
     supportingDocuments: krnMemory.supportingDocuments,
-    exclusions
+    exclusions,
+    sourceExclusions
   } as const;
 
   return {
@@ -1276,6 +1344,7 @@ const evaluateCase = async (
       excludedMemoryIds: exclusions.map((exclusion) => exclusion.memoryId),
       distractorMemoryIds: testCase.priorSession.distractorMemoryCards.map((card) => `memory:${card.id}`),
       createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId),
+      excludedSourceClaimIds: sourceExclusions.map((exclusion) => exclusion.sourceClaimId),
       distractorSourceClaimIds: testCase.priorSession.distractorSourceClaims.map((claim) => claim.sourceClaimId)
     },
     "baseline_no_memory": baselineNoMemory,
@@ -1370,19 +1439,19 @@ export const runMemoryAdvantageEval = async (
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
-        "negative memory cases can name their stale or adversarial class and surface explicit excluded ids with reasons",
+        "negative memory/source cases can name their stale or adversarial class and surface explicit excluded ids with reasons",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
         "the expected memory/source id is present in rendered Codex brief context for hit cases",
         "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost",
         "baseline class and approximate selected-context readback size are reported for each case",
-        "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason",
+        "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
         "arbitrary task superiority over vanilla Codex",
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
         "that simple lexical retrieval is a strong baseline; it is a local foil for governed memory/source packaging",
-        "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows",
+        "runtime stale-memory or stale-source detection for arbitrary production MemoryRecord or SourceClaim rows",
         "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four",
         "card or source-claim content payload size; selected-context size measures selection identifier overhead only",
         "automatic Memory Core promotion from evidence or feedback",
