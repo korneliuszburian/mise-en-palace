@@ -2,6 +2,7 @@
   "version": "1",
   "topK": 5,
   "minimumHitRateAtK": 1,
+  "minimumRecallAtK": 1,
   "minimumNdcgAtK": 1,
   "cases": [
     {

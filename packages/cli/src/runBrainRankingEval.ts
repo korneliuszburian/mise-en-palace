@@ -41,6 +41,7 @@ export interface BrainRankingEvalFixture {
   readonly version: "1";
   readonly topK: number;
   readonly minimumHitRateAtK: number;
+  readonly minimumRecallAtK: number;
   readonly minimumNdcgAtK: number;
   readonly cases: readonly BrainRankingCaseFixture[];
 }
@@ -56,6 +57,7 @@ export interface BrainRankingEvalCaseResult {
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
   readonly hitAtK: boolean;
+  readonly recallAtK: number;
   readonly ndcgAtK: number;
 }
 
@@ -66,11 +68,13 @@ export interface BrainRankingEvalResult {
   readonly topK: number;
   readonly thresholds: {
     readonly minimumHitRateAtK: number;
+    readonly minimumRecallAtK: number;
     readonly minimumNdcgAtK: number;
   };
   readonly metrics: {
     readonly caseCount: number;
     readonly hitRateAtK: number;
+    readonly recallAtK: number;
     readonly ndcgAtK: number;
     readonly catalogBackedCases: number;
     readonly sourceBackedCases: number;
@@ -257,6 +261,7 @@ export const parseBrainRankingEvalFixture = (
     version,
     topK: requiredFiniteNumber(value, "topK", "fixture"),
     minimumHitRateAtK: requiredFiniteNumber(value, "minimumHitRateAtK", "fixture"),
+    minimumRecallAtK: requiredFiniteNumber(value, "minimumRecallAtK", "fixture"),
     minimumNdcgAtK: requiredFiniteNumber(value, "minimumNdcgAtK", "fixture"),
     cases
   };
@@ -416,8 +421,14 @@ const evaluateCase = async (
   const selectedKnowledge = preview.selectedKnowledge;
   const selectedIds = selectedKnowledge.map((packet) => packet.id);
   const expectedIds = new Set(testCase.expectedSelectedKnowledgeIds);
+  const selectedTopK = selectedIds.slice(0, topK);
+  const matchedExpectedIds = new Set(selectedTopK.filter((id) => expectedIds.has(id)));
   const ideal = idealDcg(expectedIds.size, topK);
   const ndcgAtK = ideal === 0 ? 0 : dcg(selectedIds, expectedIds, topK) / ideal;
+  const recallAtK =
+    expectedIds.size === 0
+      ? 0
+      : matchedExpectedIds.size / expectedIds.size;
 
   return {
     id: testCase.id,
@@ -429,7 +440,8 @@ const evaluateCase = async (
     answerUsefulness: preview.sourceSearch.answerUsefulness,
     supportingClaims: preview.sourceSearch.supportingClaims,
     supportingDocuments: preview.sourceSearch.supportingDocuments,
-    hitAtK: selectedIds.slice(0, topK).some((id) => expectedIds.has(id)),
+    hitAtK: selectedTopK.some((id) => expectedIds.has(id)),
+    recallAtK: roundMetric(recallAtK),
     ndcgAtK: roundMetric(ndcgAtK)
   };
 };
@@ -441,9 +453,11 @@ export const runBrainRankingEval = async (
     fixture.cases.map((testCase) => evaluateCase(testCase, fixture.topK))
   );
   const hitRateAtK = cases.filter((testCase) => testCase.hitAtK).length / cases.length;
+  const recallAtK = cases.reduce((sum, testCase) => sum + testCase.recallAtK, 0) / cases.length;
   const ndcgAtK = cases.reduce((sum, testCase) => sum + testCase.ndcgAtK, 0) / cases.length;
   const status =
     hitRateAtK >= fixture.minimumHitRateAtK &&
+    recallAtK >= fixture.minimumRecallAtK &&
     ndcgAtK >= fixture.minimumNdcgAtK
       ? "pass"
       : "fail";
@@ -455,11 +469,13 @@ export const runBrainRankingEval = async (
     topK: fixture.topK,
     thresholds: {
       minimumHitRateAtK: fixture.minimumHitRateAtK,
+      minimumRecallAtK: fixture.minimumRecallAtK,
       minimumNdcgAtK: fixture.minimumNdcgAtK
     },
     metrics: {
       caseCount: cases.length,
       hitRateAtK: roundMetric(hitRateAtK),
+      recallAtK: roundMetric(recallAtK),
       ndcgAtK: roundMetric(ndcgAtK),
       catalogBackedCases: cases.filter((testCase) =>
         testCase.selectedSources.includes("catalog_file")
@@ -477,6 +493,7 @@ export const runBrainRankingEval = async (
     proof: {
       proves: [
         "brain search selected expected proxy-labeled knowledge packets for the fixture query set",
+        "brain search reports recall@k over expected proxy-labeled selectedKnowledge ids",
         "catalog-backed and source-backed brain-search readbacks were exercised without DB mutation",
         "future changes that drop expected selectedKnowledge from top-k will fail this eval"
       ],
