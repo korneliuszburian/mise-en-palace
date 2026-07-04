@@ -1,18 +1,18 @@
-# GoldenTask Promotion Lane
+# Behavior Fixture Promotion Lane
 
 Status: active D-00 policy.
 
-GoldenTasks are offline behavior fixtures for KRN behavior that already failed
+Behavior fixtures are offline records for KRN behavior that already failed
 or proved useful in dogfood. The fixture record is not a live pipeline row and
 does not prove TaskContract, HarnessPlan, ExecutionRun, or product-loop linkage
-by itself. A GoldenTask becomes behavior proof only when a deterministic runner
+by itself. A behavior fixture becomes behavior proof only when a deterministic runner
 supplies accepted `krn_behavior_execution` proof for its cases.
 
 They are not a broad benchmark suite and they are not Promptfoo truth.
 
 ## Promotion Rule
 
-A dogfood finding may become a GoldenTask only when it meets at least one rule:
+A dogfood finding may become a behavior fixture only when it meets at least one rule:
 
 1. the same failure repeats in two dogfood runs;
 2. one critical invariant protects Memory Core, source truth, evidence
@@ -39,27 +39,30 @@ Every promoted case must include:
 - deterministic runner or package test that executes real KRN behavior;
 - does-not-prove statement in the proof path.
 
-GoldenTask records may carry an optional `projectId` for fixture scoping. They
+Behavior fixture records may carry an optional `projectId` for fixture scoping. They
 must not be described as plan-pipeline authority unless the proof path records
 the adjacent TaskContract/HarnessPlan/ExecutionRun evidence explicitly.
 
 ## Proof Boundary
 
-Accepted GoldenTask proof is `krn_behavior_execution`.
+Accepted BehaviorFixture proof is `krn_behavior_execution`.
 
 Promptfoo may be used later as a runner/result adapter, but Promptfoo output
 does not become KRN behavior proof unless a KRN behavior consumer maps the
-result to a GoldenTask or EvalCandidate with explicit limits.
+result to a behavior fixture or EvalCandidate with explicit limits.
 
 ## Current D-00 Case
 
 D-00 promotes the Codex brief contract hardening dogfood into the first
-non-evidence GoldenTask case:
+non-evidence behavior fixture case:
 
 ```txt
 golden-task-codex-brief-001
 golden-case-codex-brief-001-a
 ```
+
+Those IDs intentionally keep their legacy prefixes for fixture compatibility;
+the active contract name is BehaviorFixture.
 
 The protected invariant is:
 

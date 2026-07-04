@@ -154,7 +154,7 @@ Non-goals:
 
 Verification:
 - codex adapter tests;
-- golden behavior proof if the brief contract changes.
+- behavior fixture proof if the brief contract changes.
 
 Outcome:
 - `ExecutionBrief` now carries `untrustedContextWarnings`.

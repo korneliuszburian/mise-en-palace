@@ -4,8 +4,8 @@ import * as harnessRootExports from "./index.js";
 
 describe("harness root package surface", () => {
   it("keeps promptfoo helpers out of the root export surface", () => {
-    expect(typeof harnessRootExports.runGoldenTaskFixtures).toBe("function");
-    expect("exportGoldenTasksToPromptfooSnapshot" in harnessRootExports).toBe(false);
-    expect("mapPromptfooJsonlRowsToGoldenBehaviorProofs" in harnessRootExports).toBe(false);
+    expect(typeof harnessRootExports.runBehaviorFixtures).toBe("function");
+    expect("exportBehaviorFixturesToPromptfooSnapshot" in harnessRootExports).toBe(false);
+    expect("mapPromptfooJsonlRowsToBehaviorFixtureProofs" in harnessRootExports).toBe(false);
   });
 });

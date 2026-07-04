@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import type {
   CapabilityPlan,
   ContextAssembly,
-  GoldenTask,
+  BehaviorFixture,
   HarnessPlan,
   TaskContract
 } from "@krn/core";
 import {
-  runGoldenTaskFixtures
+  runBehaviorFixtures
 } from "@krn/harness";
 import type {
   EvidenceContract
@@ -23,8 +23,8 @@ import {
 
 const now = "2026-06-25T14:20:00.000Z";
 const evidenceRefs = [
-  "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
-  "tests/fixtures/golden-tasks/codex-brief-behavior.json"
+  "packages/codex-adapter/src/__tests__/codexBriefBehavior.test.ts",
+  "tests/fixtures/behavior-fixtures/codex-brief-behavior.json"
 ] as const;
 
 const taskContract: TaskContract = {
@@ -47,7 +47,7 @@ const harnessPlan: HarnessPlan = {
   taskContractId: taskContract.id,
   version: 1,
   status: "ready",
-  summary: "Codex brief golden behavior plan",
+  summary: "Codex brief behavior fixture plan",
   nextAction: "Render the bounded execution brief.",
   metadata: {},
   createdAt: now,
@@ -86,7 +86,7 @@ const capabilityPlan: CapabilityPlan = {
     kind: "evidence_capture",
     priority: "required",
     reason: "Brief behavior must remain reviewable.",
-    requiredEvidence: ["codex brief golden behavior"]
+    requiredEvidence: ["codex brief behavior fixture"]
   }],
   toolBoundaries: ["Renderer must not execute Codex."],
   metadata: {},
@@ -95,7 +95,7 @@ const capabilityPlan: CapabilityPlan = {
 
 const evidenceContract: EvidenceContract = {
   commands: [{
-    command: "pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
+    command: "pnpm --filter @krn/codex-adapter test -- codexBriefBehavior",
     required: true
   }],
   diffRisk: "medium",
@@ -133,7 +133,7 @@ const includesAllFragments = (
   fragments: readonly string[]
 ): boolean => fragments.every((fragment) => rendered.includes(fragment));
 
-const task: GoldenTask = {
+const task: BehaviorFixture = {
   id: "golden-task-codex-brief-001",
   projectId: "project-1",
   status: "draft",
@@ -172,7 +172,7 @@ const task: GoldenTask = {
   updatedAt: now
 };
 
-describe("codex brief golden behavior", () => {
+describe("codex brief behavior fixture", () => {
   it("guards the dogfood-derived execution brief review contract", () => {
     const brief = createExecutionBrief({
       taskContract,
@@ -188,7 +188,7 @@ describe("codex brief golden behavior", () => {
     const passed = includesAllFragments(rendered, expectedRenderedBriefFragments) &&
       !rendered.includes("MCP Resource Refs:") &&
       !rendered.includes("Subagent Probe Hints:");
-    const report = runGoldenTaskFixtures({
+    const report = runBehaviorFixtures({
       tasks: [task],
       proofs: [{
         caseId: "golden-case-codex-brief-001-a",

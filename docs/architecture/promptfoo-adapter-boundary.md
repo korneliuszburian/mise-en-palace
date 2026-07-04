@@ -19,7 +19,7 @@ Promptfoo may:
 
 Promptfoo must not:
 
-- mark GoldenTask behavior cases as passed by itself;
+- mark BehaviorFixture cases as passed by itself;
 - mutate Memory Core;
 - promote eval candidates;
 - become a broad eval platform;
@@ -31,8 +31,8 @@ Promptfoo must not:
 Promptfoo rows that should influence KRN must become one of:
 
 ```txt
-GoldenBehaviorProof(provenance=promptfoo_integration_smoke)
-  -> rejected by runGoldenTaskFixtures as behavior proof
+BehaviorFixtureProof(provenance=promptfoo_integration_smoke)
+  -> rejected by runBehaviorFixtures as behavior proof
 
 EvalCandidateProposal
   -> status=candidate
@@ -40,16 +40,16 @@ EvalCandidateProposal
   -> sourceEvidence includes Promptfoo JSONL output
 ```
 
-Only `krn_behavior_execution` can satisfy GoldenTask behavior proof today.
+Only `krn_behavior_execution` can satisfy BehaviorFixture proof today.
 
 ## Current Proof
 
 D-01 hardens:
 
 ```txt
-packages/harness/src/goldenPromptfooResult.ts
-packages/harness/src/goldenPromptfooResult.test.ts
+packages/harness/src/behaviorFixtureRunner.ts
+packages/harness/src/behaviorFixtureRunner.test.ts
 ```
 
-The tests prove Promptfoo rows can become reviewable eval proposals while still
-being rejected as GoldenTask behavior proof.
+The tests prove Promptfoo-style integration smoke provenance is rejected as
+BehaviorFixture proof.

@@ -1,35 +1,35 @@
 import type {
-  GoldenTask
+  BehaviorFixture
 } from "@krn/core";
 import {
-  validateGoldenTaskFixture
+  validateBehaviorFixture
 } from "@krn/core";
 
-export type GoldenBehaviorProofStatus = "passed" | "failed";
+export type BehaviorFixtureProofStatus = "passed" | "failed";
 
-export type GoldenBehaviorProofProvenance =
+export type BehaviorFixtureProofProvenance =
   | "krn_behavior_execution"
   | "promptfoo_integration_smoke";
 
-export interface GoldenBehaviorProof {
+export interface BehaviorFixtureProof {
   caseId: string;
-  status: GoldenBehaviorProofStatus;
-  provenance: GoldenBehaviorProofProvenance;
+  status: BehaviorFixtureProofStatus;
+  provenance: BehaviorFixtureProofProvenance;
   summary: string;
   evidenceRefs: readonly string[];
   doesNotProve: string;
 }
 
-export type GoldenCaseRunStatus = "passed" | "failed" | "missing";
+export type BehaviorFixtureCaseRunStatus = "passed" | "failed" | "missing";
 
-export interface GoldenCaseRunResult {
+export interface BehaviorFixtureCaseRunResult {
   caseId: string;
-  status: GoldenCaseRunStatus;
+  status: BehaviorFixtureCaseRunStatus;
   summary: string;
   evidenceRefs: string[];
 }
 
-export interface GoldenRunReport {
+export interface BehaviorFixtureRunReport {
   status: "passed" | "failed";
   taskCount: number;
   caseCount: number;
@@ -39,62 +39,62 @@ export interface GoldenRunReport {
   missingProofCaseIds: string[];
   failedProofCaseIds: string[];
   fixtureFindings: string[];
-  caseResults: GoldenCaseRunResult[];
+  caseResults: BehaviorFixtureCaseRunResult[];
 }
 
-export interface RunGoldenTaskFixturesInput {
-  tasks: readonly GoldenTask[];
-  proofs: readonly GoldenBehaviorProof[];
+export interface RunBehaviorFixturesInput {
+  tasks: readonly BehaviorFixture[];
+  proofs: readonly BehaviorFixtureProof[];
 }
 
 const byId = <T extends { caseId: string }>(left: T, right: T): number =>
   left.caseId.localeCompare(right.caseId);
 
-const acceptableBehaviorProofProvenances = new Set<GoldenBehaviorProofProvenance>([
+const acceptableBehaviorProofProvenances = new Set<BehaviorFixtureProofProvenance>([
   "krn_behavior_execution"
 ]);
 
-const proofHasAcceptedBehaviorProvenance = (proof: GoldenBehaviorProof): boolean =>
+const proofHasAcceptedBehaviorProvenance = (proof: BehaviorFixtureProof): boolean =>
   acceptableBehaviorProofProvenances.has(proof.provenance);
 
-const proofIsPassing = (proof: GoldenBehaviorProof): boolean =>
+const proofIsPassing = (proof: BehaviorFixtureProof): boolean =>
   proof.status === "passed" &&
   proofHasAcceptedBehaviorProvenance(proof) &&
   proof.summary.trim().length > 0 &&
   proof.evidenceRefs.length > 0 &&
   proof.doesNotProve.trim().length > 0;
 
-const failedProofSummary = (proof: GoldenBehaviorProof): string => {
+const failedProofSummary = (proof: BehaviorFixtureProof): string => {
   if (!proofHasAcceptedBehaviorProvenance(proof)) {
-    return `Proof provenance ${proof.provenance} is not accepted as GoldenTask behavior proof: ${proof.doesNotProve}`;
+    return `Proof provenance ${proof.provenance} is not accepted as BehaviorFixture proof: ${proof.doesNotProve}`;
   }
 
   return proof.summary;
 };
 
-export const runGoldenTaskFixtures = (
-  input: RunGoldenTaskFixturesInput
-): GoldenRunReport => {
+export const runBehaviorFixtures = (
+  input: RunBehaviorFixturesInput
+): BehaviorFixtureRunReport => {
   const proofByCaseId = new Map(input.proofs.map((proof) => [proof.caseId, proof]));
   const fixtureFindings = input.tasks.flatMap((task) =>
-    validateGoldenTaskFixture(task).map((finding) => `${task.id}: ${finding}`)
+    validateBehaviorFixture(task).map((finding) => `${task.id}: ${finding}`)
   );
   const cases = input.tasks.flatMap((task) => task.cases);
-  const caseResults = cases.map((goldenCase): GoldenCaseRunResult => {
-    const proof = proofByCaseId.get(goldenCase.id);
+  const caseResults = cases.map((behaviorCase): BehaviorFixtureCaseRunResult => {
+    const proof = proofByCaseId.get(behaviorCase.id);
 
     if (proof === undefined) {
       return {
-        caseId: goldenCase.id,
+        caseId: behaviorCase.id,
         status: "missing",
-        summary: "No behavior proof was provided for this golden case.",
+        summary: "No behavior proof was provided for this behavior fixture case.",
         evidenceRefs: []
       };
     }
 
     if (!proofIsPassing(proof)) {
       return {
-        caseId: goldenCase.id,
+        caseId: behaviorCase.id,
         status: "failed",
         summary: failedProofSummary(proof),
         evidenceRefs: [...proof.evidenceRefs]
@@ -102,7 +102,7 @@ export const runGoldenTaskFixtures = (
     }
 
     return {
-      caseId: goldenCase.id,
+      caseId: behaviorCase.id,
       status: "passed",
       summary: proof.summary,
       evidenceRefs: [...proof.evidenceRefs]
@@ -128,7 +128,7 @@ export const runGoldenTaskFixtures = (
     taskCount: input.tasks.length,
     caseCount: cases.length,
     protectedFailureModeCount: cases.reduce(
-      (count, goldenCase) => count + goldenCase.protectedFailureModes.length,
+      (count, behaviorCase) => count + behaviorCase.protectedFailureModes.length,
       0
     ),
     passedCaseCount,

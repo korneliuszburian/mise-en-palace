@@ -114,7 +114,7 @@
           "rationale": "Retained pattern usefulness must remain reviewable as evidence-backed feedback, not an automatic learning claim.",
           "evidenceRefs": [
             "packages/cli/src/runEvidenceCaptureCommand.ts",
-            "packages/cli/src/__tests__/evidenceCaptureGoldenBehavior.test.ts"
+            "packages/cli/src/__tests__/evidenceCaptureBehavior.test.ts"
           ]
         },
         "protectedFailureModes": [

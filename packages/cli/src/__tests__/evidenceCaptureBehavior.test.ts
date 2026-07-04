@@ -5,19 +5,19 @@ import {
   it
 } from "vitest";
 import type {
-  GoldenTask
+  BehaviorFixture
 } from "@krn/core";
 import type {
-  GoldenBehaviorProof
+  BehaviorFixtureProof
 } from "@krn/harness";
 import {
-  runGoldenTaskFixtures
+  runBehaviorFixtures
 } from "@krn/harness";
 import type {
-  GoldenTaskFixture
+  BehaviorFixtureInput
 } from "@krn/core";
 import {
-  parseGoldenTaskFixtures
+  parseBehaviorFixtures
 } from "@krn/core";
 
 import {
@@ -25,10 +25,10 @@ import {
 } from "../runCli.js";
 
 const now = "2026-06-25T09:20:00.000Z";
-const fixturePath = "../../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json";
+const fixturePath = "../../../../tests/fixtures/behavior-fixtures/evidence-capture-behavior.json";
 const evidenceRefs = [
-  "packages/cli/src/__tests__/evidenceCaptureGoldenBehavior.test.ts",
-  "tests/fixtures/golden-tasks/evidence-capture-behavior.json"
+  "packages/cli/src/__tests__/evidenceCaptureBehavior.test.ts",
+  "tests/fixtures/behavior-fixtures/evidence-capture-behavior.json"
 ] as const;
 
 const readEvidenceCaptureFixture = (): unknown => {
@@ -42,7 +42,7 @@ const proof = (
   caseId: string,
   passed: boolean,
   summary: string
-): GoldenBehaviorProof => ({
+): BehaviorFixtureProof => ({
   caseId,
   status: passed ? "passed" : "failed",
   provenance: "krn_behavior_execution",
@@ -52,7 +52,7 @@ const proof = (
     "This CLI behavior proof does not prove Memory Brain product readiness, activation quality, DB persistence, or reflection quality."
 });
 
-const toGoldenTask = (task: GoldenTaskFixture): GoldenTask => ({
+const toBehaviorFixture = (task: BehaviorFixtureInput): BehaviorFixture => ({
   id: task.id,
   ...(task.projectId === undefined ? {} : { projectId: task.projectId }),
   status: task.status,
@@ -149,9 +149,9 @@ const patternUsefulnessExpectation: OutputExpectation = {
   ]
 };
 
-describe("evidence capture golden behavior", () => {
+describe("evidence capture behavior fixture", () => {
   it("guards dirty-context capture behavior with real CLI execution", async () => {
-    const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture()).map(toGoldenTask);
+    const tasks = parseBehaviorFixtures(readEvidenceCaptureFixture()).map(toBehaviorFixture);
     const classifiedResult = await runCli([
       "evidence",
       "capture",
@@ -241,7 +241,7 @@ describe("evidence capture golden behavior", () => {
       patternUsefulnessResult,
       patternUsefulnessExpectation
     );
-    const report = runGoldenTaskFixtures({
+    const report = runBehaviorFixtures({
       tasks,
       proofs: [
         proof(

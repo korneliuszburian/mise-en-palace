@@ -59,19 +59,19 @@ const memoryRecord = (overrides: Partial<MemoryRecord>): MemoryRecord => ({
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const goldenFixtureCaseIds = (value: unknown): string[] => {
+const behaviorFixtureCaseIdsFromFixture = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((goldenTask) => {
-    if (!isJsonObject(goldenTask) || !Array.isArray(goldenTask.cases)) {
+  return value.flatMap((behaviorFixture) => {
+    if (!isJsonObject(behaviorFixture) || !Array.isArray(behaviorFixture.cases)) {
       return [];
     }
 
-    return goldenTask.cases.flatMap((goldenCase) =>
-      isJsonObject(goldenCase) && typeof goldenCase.id === "string"
-        ? [goldenCase.id]
+    return behaviorFixture.cases.flatMap((behaviorCase) =>
+      isJsonObject(behaviorCase) && typeof behaviorCase.id === "string"
+        ? [behaviorCase.id]
         : []
     );
   }).sort();
@@ -79,7 +79,7 @@ const goldenFixtureCaseIds = (value: unknown): string[] => {
 
 const boundaryCaseIds = (): string[] => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/boundary-behavior.json",
+    "../../../tests/fixtures/behavior-fixtures/boundary-behavior.json",
     import.meta.url
   );
 
@@ -89,7 +89,7 @@ const boundaryCaseIds = (): string[] => {
 
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return goldenFixtureCaseIds(parsed);
+  return behaviorFixtureCaseIdsFromFixture(parsed);
 };
 
 describe("golden boundary behavior cases", () => {

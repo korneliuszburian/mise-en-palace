@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type {
-  GoldenTask
+  BehaviorFixture
 } from "@krn/core";
 
 import {
-  runKrnBehaviorGoldenGate
-} from "../goldenKrnBehaviorGate.js";
+  runKrnBehaviorGate
+} from "../krnBehaviorGate.js";
 
 const now = "2026-06-23T10:00:00.000Z";
 
-const task: GoldenTask = {
+const task: BehaviorFixture = {
   id: "golden-task-real-behavior-gate",
   projectId: "project-1",
   status: "active",
@@ -28,7 +28,7 @@ const task: GoldenTask = {
         outcome: "abstain",
         subject: "context_assembly",
         rationale: "Stale memory must become exclusion evidence, not confident context.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-stale-memory",
@@ -51,7 +51,7 @@ const task: GoldenTask = {
         outcome: "exclude",
         subject: "memory_record:memory-stale-pattern",
         rationale: "Active anti-memory must block the matching memory key.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-anti-memory",
@@ -74,7 +74,7 @@ const task: GoldenTask = {
         outcome: "flag",
         subject: "source_claim:source-claim-exact-proof",
         rationale: "Exact-proof source claims may enter context only with raw evidence recall triggers.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-exact-proof",
@@ -97,7 +97,7 @@ const task: GoldenTask = {
         outcome: "exclude",
         subject: "context_assembly:context-roi",
         rationale: "Context assembly should include only bounded high-value context and keep over-budget exclusions explicit.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-context-roi",
@@ -107,7 +107,7 @@ const task: GoldenTask = {
         mustNot: "ContextAssembly must not include every candidate when ContextROI budget is one item.",
         detection: "ContextAssembly has more than one inclusion or omits over_budget exclusions."
       }],
-      sourceRefs: ["tests/fixtures/golden-tasks/boundary-behavior.json"],
+      sourceRefs: ["tests/fixtures/behavior-fixtures/boundary-behavior.json"],
       metadata: {}
     },
     {
@@ -120,7 +120,7 @@ const task: GoldenTask = {
         outcome: "reject",
         subject: "observation_prefix:observation-unsourced-prefix",
         rationale: "Selected observation prefix items must carry source ranges before context assembly accepts them.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-observation-prefix-source-range",
@@ -143,7 +143,7 @@ const task: GoldenTask = {
         outcome: "flag",
         subject: "evidence_command:provenance",
         rationale: "Weak default command rows must remain distinguishable from operator-reported passed evidence.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-evidence-provenance",
@@ -166,7 +166,7 @@ const task: GoldenTask = {
         outcome: "flag",
         subject: "graph_qa:relation_grounded_answer",
         rationale: "A tiny graph QA proof must show the no-relation baseline, edge-aware context, grounded answer, and proof boundary.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-graph-qa-readback",
@@ -192,7 +192,7 @@ const task: GoldenTask = {
         outcome: "reject",
         subject: "reflection_output:memory_record_target",
         rationale: "Reflection must not target direct MemoryRecord authority.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-reflection-direct-authority",
@@ -215,7 +215,7 @@ const task: GoldenTask = {
         outcome: "flag",
         subject: "target_fixture:typescript-basic",
         rationale: "Target fixture planning must surface target docs/src/tests source seeds and generated or secret-shaped trust exclusions.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-target-fixture-battle",
@@ -241,7 +241,7 @@ const task: GoldenTask = {
         outcome: "include",
         subject: "target_owner_file:tests/readiness.test.ts",
         rationale: "When the target read model provides bounded owner files, KRN should surface the exact owner file below the named root instead of stopping at `tests/`.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-target-owner-file-below-roots",
@@ -267,7 +267,7 @@ const task: GoldenTask = {
         outcome: "flag",
         subject: "target_read_model:trust_exclusions",
         rationale: "Target-repo planning must surface project-scoped source seeds and trust exclusions instead of selecting static KRN owner files.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-target-trust-exclusions",
@@ -292,7 +292,7 @@ const task: GoldenTask = {
         outcome: "reject",
         subject: "source_claim:source-claim-decorative",
         rationale: "Source claims must carry source-to-decision fields and decision-grade support before they can guide KRN behavior.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-decorative-source",
@@ -318,7 +318,7 @@ const task: GoldenTask = {
         outcome: "include",
         subject: "source_claim:source-claim-artifact-preview-reuse",
         rationale: "A reviewable source artifact preview claim should be reusable as bounded source activation context.",
-        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
       },
       protectedFailureModes: [{
         id: "failure-mode-real-gate-source-artifact-preview-reuse",
@@ -340,9 +340,9 @@ const task: GoldenTask = {
   updatedAt: now
 };
 
-describe("KRN behavior golden gate", () => {
-  it("generates passing GoldenTask proofs by executing real KRN behavior", () => {
-    const report = runKrnBehaviorGoldenGate({
+describe("KRN deterministic behavior gate", () => {
+  it("generates passing BehaviorFixture proofs by executing real KRN behavior", () => {
+    const report = runKrnBehaviorGate({
       tasks: [task],
       now
     });

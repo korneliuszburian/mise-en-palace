@@ -139,27 +139,27 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const goldenFixtureCaseIds = (value: unknown): string[] => {
+const behaviorFixtureCaseIdsFromFixture = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((goldenTask) => {
-    if (!isJsonObject(goldenTask) || !Array.isArray(goldenTask.cases)) {
+  return value.flatMap((behaviorFixture) => {
+    if (!isJsonObject(behaviorFixture) || !Array.isArray(behaviorFixture.cases)) {
       return [];
     }
 
-    return goldenTask.cases.flatMap((goldenCase) =>
-      isJsonObject(goldenCase) && typeof goldenCase.id === "string"
-        ? [goldenCase.id]
+    return behaviorFixture.cases.flatMap((behaviorCase) =>
+      isJsonObject(behaviorCase) && typeof behaviorCase.id === "string"
+        ? [behaviorCase.id]
         : []
     );
   }).sort();
 };
 
-const goldenCaseIds = (): string[] => {
+const behaviorFixtureCaseIds = (): string[] => {
   const fixtureUrl = new URL(
-    "../../../tests/fixtures/golden-tasks/observation-reflection-behavior.json",
+    "../../../tests/fixtures/behavior-fixtures/observation-reflection-behavior.json",
     import.meta.url
   );
 
@@ -169,12 +169,12 @@ const goldenCaseIds = (): string[] => {
 
   const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return goldenFixtureCaseIds(parsed);
+  return behaviorFixtureCaseIdsFromFixture(parsed);
 };
 
 describe("golden observation and reflection behavior cases", () => {
   it("declares MM-63 observation/reflection/anti-memory cases as fixtures", () => {
-    expect(goldenCaseIds()).toEqual([
+    expect(behaviorFixtureCaseIds()).toEqual([
       "golden-case-anti-memory-001-a",
       "golden-case-gap-001-a",
       "golden-case-observation-001-a",

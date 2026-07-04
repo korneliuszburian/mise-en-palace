@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  validateGoldenTaskFixture,
-  type GoldenTask
-} from "../goldenTask.js";
+  validateBehaviorFixture,
+  type BehaviorFixture
+} from "../behaviorFixture.js";
 
 const now = "2026-06-23T09:10:00.000Z";
 
-const goldenTask = (overrides: Partial<GoldenTask>): GoldenTask => ({
+const behaviorFixture = (overrides: Partial<BehaviorFixture>): BehaviorFixture => ({
   id: "golden-task-1",
   projectId: "project-1",
   status: "draft",
@@ -45,23 +45,23 @@ const goldenTask = (overrides: Partial<GoldenTask>): GoldenTask => ({
   ...overrides
 });
 
-describe("golden task fixture", () => {
+describe("behavior fixture", () => {
   test("accepts a task with expected behavior and protected failure modes", () => {
-    expect(validateGoldenTaskFixture(goldenTask({}))).toEqual([]);
+    expect(validateBehaviorFixture(behaviorFixture({}))).toEqual([]);
   });
 
-  test("does not require live pipeline ids because GoldenTask is fixture-only", () => {
-    const task = goldenTask({});
+  test("does not require live pipeline ids because BehaviorFixture is fixture-only", () => {
+    const task = behaviorFixture({});
 
     delete task.projectId;
 
     expect("taskContractId" in task).toBe(false);
     expect("harnessPlanId" in task).toBe(false);
-    expect(validateGoldenTaskFixture(task)).toEqual([]);
+    expect(validateBehaviorFixture(task)).toEqual([]);
   });
 
   test("rejects artifact-theater cases without behavior expectations", () => {
-    expect(validateGoldenTaskFixture(goldenTask({
+    expect(validateBehaviorFixture(behaviorFixture({
       cases: [{
         id: "golden-case-1",
         title: "shape-only fixture",
@@ -86,9 +86,9 @@ describe("golden task fixture", () => {
   });
 
   test("rejects case and failure-mode fields that cannot protect behavior", () => {
-    expect(validateGoldenTaskFixture(goldenTask({
+    expect(validateBehaviorFixture(behaviorFixture({
       cases: [{
-        ...goldenTask({}).cases[0]!,
+        ...behaviorFixture({}).cases[0]!,
         title: " ",
         protectedFailureModes: [{
           id: "failure-mode-1",
@@ -108,19 +108,19 @@ describe("golden task fixture", () => {
   });
 
   test("rejects private reasoning metadata", () => {
-    expect(validateGoldenTaskFixture(goldenTask({
+    expect(validateBehaviorFixture(behaviorFixture({
       metadata: {
         chainOfThought: "hidden reasoning must not be stored"
       }
     }))).toEqual(["metadata.chainOfThought is forbidden"]);
 
-    expect(validateGoldenTaskFixture(goldenTask({
+    expect(validateBehaviorFixture(behaviorFixture({
       metadata: {
         reasoningTrace: "hidden reasoning must not be stored"
       }
     }))).toEqual(["metadata.reasoningTrace is forbidden"]);
 
-    expect(validateGoldenTaskFixture(goldenTask({
+    expect(validateBehaviorFixture(behaviorFixture({
       metadata: {
         reasoning_trace: "hidden reasoning must not be stored"
       }

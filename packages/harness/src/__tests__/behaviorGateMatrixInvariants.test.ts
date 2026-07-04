@@ -169,7 +169,7 @@ describe("KRN behavior gate matrix invariants", () => {
     const docsLintText = docsLint.replace(/\s+/gu, " ");
 
     for (const filter of [
-      "goldenKrnBehaviorGate",
+      "krnBehaviorGate",
       "sourceMapInvariants",
       "typescriptBoundaryInvariants"
     ]) {
@@ -271,7 +271,7 @@ describe("KRN behavior gate matrix invariants", () => {
     const packageJson = readFileSync(packageJsonPath, "utf8");
     const matrix = readFileSync(matrixPath, "utf8");
     const cliSurfaces = readFileSync(cliSurfacesPath, "utf8");
-    const currentCliSmokeFilter = "runRunShowCommand evidenceCaptureGoldenBehavior";
+    const currentCliSmokeFilter = "runRunShowCommand evidenceCaptureBehavior";
     const staleCliSmokeFilter = [
       "runRunShowCommand",
       "runCli"
@@ -324,7 +324,7 @@ describe("KRN behavior gate matrix invariants", () => {
     expect(boundary).toContain("not a\nKRN behavior proof authority");
     expect(boundary).toContain("prove runner/config/provider/result mapping");
     expect(boundary).toContain("promptfoo_integration_smoke");
-    expect(boundary).toContain("Only `krn_behavior_execution` can satisfy GoldenTask behavior proof today.");
+    expect(boundary).toContain("Only `krn_behavior_execution` can satisfy BehaviorFixture proof today.");
     expect(boundary).toContain("imply Memory Brain product readiness");
   });
 });

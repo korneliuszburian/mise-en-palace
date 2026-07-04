@@ -138,7 +138,7 @@ Explicit subpaths after C1-02:
 
 Risk:
 
-- Promptfoo adapter helpers sit beside canonical golden behavior primitives.
+- Promptfoo adapter helpers sit beside canonical behavior fixture primitives.
 - repository ports are exported as a broad package surface.
 
 C1-02 decision:
@@ -149,7 +149,7 @@ C1-02 decision:
   canonical behavior authority.
 - repository ports move out of the root package surface to
   `@krn/harness/repositories`.
-- root continues to expose canonical GoldenTask behavior proof helpers and
+- root continues to expose canonical BehaviorFixture proof helpers and
   MemoryReviewGate.
 
 Does not prove:
@@ -244,7 +244,7 @@ source_id: `packages/core/src/index.ts`,
 `packages/core/src/observations/index.ts`
 trust_tier: high live source.
 mechanism: the root exports core domain contracts for capability planning,
-activation, context assembly, evidence, execution runs, feedback, golden tasks,
+activation, context assembly, evidence, execution runs, feedback, behavior fixtures,
 memory, policy, review, source, task contracts, IDs, and time; the nested
 observations barrel exports observation domain contracts, policy, and
 validation.

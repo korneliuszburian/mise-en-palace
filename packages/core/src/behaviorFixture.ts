@@ -6,9 +6,9 @@ import type {
 } from "./ids.js";
 import type { IsoTimestamp } from "./time.js";
 
-export type GoldenTaskStatus = "draft" | "active" | "deprecated";
+export type BehaviorFixtureStatus = "draft" | "active" | "deprecated";
 
-export type GoldenBehaviorDomain =
+export type BehaviorFixtureDomain =
   | "memory"
   | "context"
   | "source"
@@ -39,14 +39,14 @@ export interface ExpectedBehavior {
 
 export interface ProtectedFailureMode {
   id: ProtectedFailureModeId;
-  domain: GoldenBehaviorDomain;
+  domain: BehaviorFixtureDomain;
   severity: ProtectedFailureSeverity;
   title: string;
   mustNot: string;
   detection: string;
 }
 
-export interface GoldenCase {
+export interface BehaviorFixtureCase {
   id: GoldenCaseId;
   title: string;
   input: Record<string, unknown>;
@@ -59,20 +59,20 @@ export interface GoldenCase {
 /**
  * Offline behavior fixture contract.
  *
- * A GoldenTask is not a live pipeline row and does not claim linkage to
+ * A BehaviorFixture is not a live pipeline row and does not claim linkage to
  * TaskContract, HarnessPlan, or ExecutionRun by itself. It constrains KRN
  * behavior only when a runner supplies accepted `krn_behavior_execution` proof
  * for its cases.
  */
-export interface GoldenTask {
+export interface BehaviorFixture {
   id: GoldenTaskId;
   projectId?: ProjectId;
-  status: GoldenTaskStatus;
+  status: BehaviorFixtureStatus;
   title: string;
   description: string;
   owner: string;
-  domains: GoldenBehaviorDomain[];
-  cases: GoldenCase[];
+  domains: BehaviorFixtureDomain[];
+  cases: BehaviorFixtureCase[];
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
@@ -143,39 +143,39 @@ const validateFailureMode = (
 ];
 
 const validateCaseRequiredCollections = (
-  goldenCase: GoldenCase,
+  behaviorCase: BehaviorFixtureCase,
   prefix: string
 ): string[] => [
   ...requiredCaseFinding(
-    goldenCase.protectedFailureModes.length === 0,
+    behaviorCase.protectedFailureModes.length === 0,
     `${prefix} protectedFailureModes are required`
   ),
   ...requiredCaseFinding(
-    goldenCase.sourceRefs.length === 0,
+    behaviorCase.sourceRefs.length === 0,
     `${prefix} sourceRefs are required`
   )
 ];
 
-const validateCase = (goldenCase: GoldenCase): string[] => {
+const validateCase = (behaviorCase: BehaviorFixtureCase): string[] => {
   const findings: string[] = [];
-  const prefix = `case ${goldenCase.id}`;
+  const prefix = `case ${behaviorCase.id}`;
 
-  if (isBlank(goldenCase.title)) {
+  if (isBlank(behaviorCase.title)) {
     findings.push(`${prefix} title is required`);
   }
 
-  findings.push(...validateExpectedBehavior(goldenCase.expectedBehavior, prefix));
-  findings.push(...validateCaseRequiredCollections(goldenCase, prefix));
-  findings.push(...validateMetadata(goldenCase.metadata, `${prefix}.metadata`));
+  findings.push(...validateExpectedBehavior(behaviorCase.expectedBehavior, prefix));
+  findings.push(...validateCaseRequiredCollections(behaviorCase, prefix));
+  findings.push(...validateMetadata(behaviorCase.metadata, `${prefix}.metadata`));
 
-  for (const failureMode of goldenCase.protectedFailureModes) {
+  for (const failureMode of behaviorCase.protectedFailureModes) {
     findings.push(...validateFailureMode(failureMode, prefix));
   }
 
   return findings;
 };
 
-export const validateGoldenTaskFixture = (task: GoldenTask): string[] => {
+export const validateBehaviorFixture = (task: BehaviorFixture): string[] => {
   const findings: string[] = [];
 
   if (isBlank(task.title)) {

@@ -268,7 +268,7 @@
           "outcome": "reject",
           "subject": "observation_prefix:observation-unsourced-prefix",
           "rationale": "Selected observation prefix items must carry source ranges before context assembly accepts them.",
-          "evidenceRefs": ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+          "evidenceRefs": ["packages/harness/src/krnBehaviorGate.ts"]
         },
         "protectedFailureModes": [
           {
@@ -293,7 +293,7 @@
           "outcome": "flag",
           "subject": "evidence_command:provenance",
           "rationale": "Weak default command rows must remain distinguishable from operator-reported passed evidence.",
-          "evidenceRefs": ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+          "evidenceRefs": ["packages/harness/src/krnBehaviorGate.ts"]
         },
         "protectedFailureModes": [
           {

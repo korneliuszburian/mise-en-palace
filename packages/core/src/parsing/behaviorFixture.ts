@@ -20,13 +20,13 @@ const rejectForbiddenMetadata = (
 ): void => {
   rejectForbiddenMetadataKeys(value, context, {
     keys: forbiddenMetadataKeys,
-    message: "golden task metadata cannot store private reasoning"
+    message: "behavior fixture metadata cannot store private reasoning"
   });
 };
 
-export const GoldenTaskStatusSchema = z.enum(["draft", "active", "deprecated"]);
+export const BehaviorFixtureStatusSchema = z.enum(["draft", "active", "deprecated"]);
 
-export const GoldenBehaviorDomainSchema = z.enum([
+export const BehaviorFixtureDomainSchema = z.enum([
   "memory",
   "context",
   "source",
@@ -63,14 +63,14 @@ export const ExpectedBehaviorSchema = z.object({
 
 export const ProtectedFailureModeSchema = z.object({
   id: RequiredTextSchema,
-  domain: GoldenBehaviorDomainSchema,
+  domain: BehaviorFixtureDomainSchema,
   severity: ProtectedFailureSeveritySchema,
   title: RequiredTextSchema,
   mustNot: RequiredTextSchema,
   detection: RequiredTextSchema
 });
 
-const GoldenCaseShapeSchema = z.object({
+const BehaviorFixtureCaseShapeSchema = z.object({
     id: RequiredTextSchema,
     title: RequiredTextSchema,
     input: z.object({}).catchall(z.unknown()).default({}),
@@ -80,51 +80,51 @@ const GoldenCaseShapeSchema = z.object({
     metadata: MetadataSchema
 });
 
-export const GoldenCaseSchema = GoldenCaseShapeSchema.superRefine(
+export const BehaviorFixtureCaseSchema = BehaviorFixtureCaseShapeSchema.superRefine(
   (
-    value: z.infer<typeof GoldenCaseShapeSchema>,
+    value: z.infer<typeof BehaviorFixtureCaseShapeSchema>,
     context: z.RefinementCtx
   ) => {
     rejectForbiddenMetadata(value.metadata, context);
   });
 
-const GoldenTaskShapeSchema = z.object({
+const BehaviorFixtureShapeSchema = z.object({
     id: RequiredTextSchema,
     projectId: OptionalTextSchema,
-    status: GoldenTaskStatusSchema,
+    status: BehaviorFixtureStatusSchema,
     title: RequiredTextSchema,
     description: RequiredTextSchema,
     owner: RequiredTextSchema,
-    domains: z.array(GoldenBehaviorDomainSchema).min(1),
-    cases: z.array(GoldenCaseSchema).min(1),
+    domains: z.array(BehaviorFixtureDomainSchema).min(1),
+    cases: z.array(BehaviorFixtureCaseSchema).min(1),
     metadata: MetadataSchema,
     createdAt: RequiredTextSchema,
     updatedAt: RequiredTextSchema
 });
 
-export const GoldenTaskSchema = GoldenTaskShapeSchema.superRefine(
-  (value: z.infer<typeof GoldenTaskShapeSchema>, context: z.RefinementCtx) => {
+export const BehaviorFixtureSchema = BehaviorFixtureShapeSchema.superRefine(
+  (value: z.infer<typeof BehaviorFixtureShapeSchema>, context: z.RefinementCtx) => {
     rejectForbiddenMetadata(value.metadata, context);
   });
 
-export type GoldenTaskFixture = z.infer<typeof GoldenTaskSchema>;
+export type BehaviorFixtureInput = z.infer<typeof BehaviorFixtureSchema>;
 
 const byId = <T extends { id: string }>(left: T, right: T): number =>
   left.id.localeCompare(right.id);
 
-const sortGoldenTask = (task: GoldenTaskFixture): GoldenTaskFixture => ({
+const sortBehaviorFixture = (task: BehaviorFixtureInput): BehaviorFixtureInput => ({
   ...task,
   cases: [...task.cases]
     .sort(byId)
-    .map((goldenCase) => ({
-      ...goldenCase,
-      protectedFailureModes: [...goldenCase.protectedFailureModes].sort(byId)
+    .map((behaviorCase) => ({
+      ...behaviorCase,
+      protectedFailureModes: [...behaviorCase.protectedFailureModes].sort(byId)
     }))
 });
 
-export const parseGoldenTaskFixtures = (input: unknown): GoldenTaskFixture[] =>
-  z.array(GoldenTaskSchema)
+export const parseBehaviorFixtures = (input: unknown): BehaviorFixtureInput[] =>
+  z.array(BehaviorFixtureSchema)
     .min(1)
     .parse(input)
-    .map(sortGoldenTask)
+    .map(sortBehaviorFixture)
     .sort(byId);

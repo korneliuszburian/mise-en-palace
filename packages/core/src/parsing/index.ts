@@ -1,5 +1,5 @@
 export * from "./evidenceCapture.js";
-export * from "./goldenTask.js";
+export * from "./behaviorFixture.js";
 export * from "./harnessCompile.js";
 export * from "./memoryCandidate.js";
 export * from "./operatorIntent.js";

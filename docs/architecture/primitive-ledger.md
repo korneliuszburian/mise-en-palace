@@ -20,7 +20,7 @@ CI-invoked guard in `docs/architecture/behavior-gate-matrix.md`; a `rejected`,
 | Surface | Status | Governing evidence | Boundary |
 | --- | --- | --- | --- |
 | Codex execution brief renderer | live | `packages/codex-adapter/src/renderExecutionBrief.ts`; `pnpm eval:krn:smoke` | Renders constraints and proof boundaries; does not prove Codex obeys them. |
-| Source artifact preview extraction | live, narrow | `packages/core/src/sourceArtifactPreviewExtraction.ts`; GoldenGate source artifact reuse case | Narrow source-to-claim extraction only; broad extractor churn is rejected without new evidence. |
+| Source artifact preview extraction | live, narrow | `packages/core/src/sourceArtifactPreviewExtraction.ts`; KRN behavior gate source artifact reuse case | Narrow source-to-claim extraction only; broad extractor churn is rejected without new evidence. |
 | Brain ranking proxy eval | live, proxy | `pnpm eval:brain-ranking`; `tests/fixtures/brain-ranking/brain-ranking-eval.json` | Proxy labels are not broad ranking truth. |
 | Source graph ranking proxy eval | live, proxy | `pnpm eval:source-graph-ranking`; `tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json` | Proxy labels are not source truth or live pgvector quality. |
 | Governed second-opinion Claude reviewer | live, advisory | `.agents/skills/second-opinion-claude/SKILL.md` | Reviewer output is advisory; validator and local evidence govern closure. |

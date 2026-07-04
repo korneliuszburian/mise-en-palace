@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type {
-  GoldenTask
+  BehaviorFixture
 } from "@krn/core";
 
 import {
-  runGoldenTaskFixtures
-} from "./goldenRunner.js";
+  runBehaviorFixtures
+} from "./behaviorFixtureRunner.js";
 
-const task = (overrides: Partial<GoldenTask> = {}): GoldenTask => ({
+const task = (overrides: Partial<BehaviorFixture> = {}): BehaviorFixture => ({
   id: "golden-task-1",
   projectId: "project-1",
   status: "draft",
@@ -23,7 +23,7 @@ const task = (overrides: Partial<GoldenTask> = {}): GoldenTask => ({
       outcome: "abstain",
       subject: "context_assembly",
       rationale: "Stale memory must not become confident context.",
-      evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"]
+      evidenceRefs: ["packages/harness/src/activation/memoryBehaviorFixture.test.ts"]
     },
     protectedFailureModes: [{
       id: "failure-mode-1",
@@ -42,16 +42,16 @@ const task = (overrides: Partial<GoldenTask> = {}): GoldenTask => ({
   ...overrides
 });
 
-describe("golden task runner", () => {
-  it("emits a pass report when every golden case has behavior proof", () => {
-    const report = runGoldenTaskFixtures({
+describe("behavior fixture runner", () => {
+  it("emits a pass report when every behavior fixture case has behavior proof", () => {
+    const report = runBehaviorFixtures({
       tasks: [task()],
       proofs: [{
         caseId: "golden-case-1",
         status: "passed",
         provenance: "krn_behavior_execution",
         summary: "Fixture-backed behavior test passed.",
-        evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"],
+        evidenceRefs: ["packages/harness/src/activation/memoryBehaviorFixture.test.ts"],
         doesNotProve: "This does not prove Promptfoo smoke executes KRN behavior."
       }]
     });
@@ -69,14 +69,14 @@ describe("golden task runner", () => {
       caseResults: [{
         caseId: "golden-case-1",
         status: "passed",
-        evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"],
+        evidenceRefs: ["packages/harness/src/activation/memoryBehaviorFixture.test.ts"],
         summary: "Fixture-backed behavior test passed."
       }]
     });
   });
 
-  it("fails when a golden case has no behavior proof", () => {
-    const report = runGoldenTaskFixtures({
+  it("fails when a behavior fixture case has no behavior proof", () => {
+    const report = runBehaviorFixtures({
       tasks: [task()],
       proofs: []
     });
@@ -90,7 +90,7 @@ describe("golden task runner", () => {
   });
 
   it("fails when a fixture is shape-valid but fixture-invalid", () => {
-    const report = runGoldenTaskFixtures({
+    const report = runBehaviorFixtures({
       tasks: [task({
         cases: [{
           ...task().cases[0]!,
@@ -106,7 +106,7 @@ describe("golden task runner", () => {
         provenance: "krn_behavior_execution",
         summary: "This proof should not override fixture validation failure.",
         evidenceRefs: ["test"],
-        doesNotProve: "This does not prove the GoldenTask fixture is valid."
+        doesNotProve: "This does not prove the BehaviorFixture is valid."
       }]
     });
 
@@ -116,8 +116,8 @@ describe("golden task runner", () => {
     ]);
   });
 
-  it("rejects Promptfoo integration smoke as GoldenTask behavior proof", () => {
-    const report = runGoldenTaskFixtures({
+  it("rejects Promptfoo integration smoke as BehaviorFixture proof", () => {
+    const report = runBehaviorFixtures({
       tasks: [task()],
       proofs: [{
         caseId: "golden-case-1",
@@ -134,7 +134,7 @@ describe("golden task runner", () => {
       failedProofCaseIds: ["golden-case-1"]
     });
     expect(report.caseResults[0]?.summary).toBe(
-      "Proof provenance promptfoo_integration_smoke is not accepted as GoldenTask behavior proof: Promptfoo smoke proves runner wiring only."
+      "Proof provenance promptfoo_integration_smoke is not accepted as BehaviorFixture proof: Promptfoo smoke proves runner wiring only."
     );
   });
 });
