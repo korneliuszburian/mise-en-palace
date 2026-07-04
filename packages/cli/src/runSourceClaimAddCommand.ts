@@ -12,6 +12,9 @@ import {
   persistenceLine,
   postgresPersistedLabel
 } from "./commandRuntimeSupport.js";
+import {
+  findRepoRoot
+} from "./cliFileBoundary.js";
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
@@ -26,6 +29,7 @@ import type {
 export type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
 
 export interface SourceClaimAddCommandRuntime extends BaseCommandRuntime {
+  cwd: string;
   command: SourceClaimAddCommand;
   createDatabaseRuntime?: CreateSourceClaimAddDatabaseRuntime;
 }
@@ -172,6 +176,7 @@ export const runSourceClaimAddCommand = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
+    repoPathHint: await findRepoRoot(runtime.cwd),
     now: runtime.now,
     createId: runtime.createId
   });

@@ -214,6 +214,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let capturedRepoPathHint: string | undefined;
     const result = await runCli(
       [
         "source",
@@ -245,52 +246,60 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: dependencies,
-          sourceRepository: {
-            ...unusedSourceRepository,
-            async createSourceArtifact(input) {
-              return {
-                id: "source-artifact-1",
-                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-                kind: input.kind,
-                trustTier: input.trustTier,
-                uri: input.uri,
-                title: input.title,
-                contentHash: input.contentHash,
-                capturedAt: now,
-                metadata: input.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
+        createDatabaseRuntime: async (input) => {
+          capturedRepoPathHint = input.repoPathHint;
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: dependencies,
+            sourceRepository: {
+              ...unusedSourceRepository,
+              async createSourceArtifact(sourceArtifactInput) {
+                return {
+                  id: "source-artifact-1",
+                  ...(sourceArtifactInput.projectId === undefined
+                    ? {}
+                    : { projectId: sourceArtifactInput.projectId }),
+                  kind: sourceArtifactInput.kind,
+                  trustTier: sourceArtifactInput.trustTier,
+                  uri: sourceArtifactInput.uri,
+                  title: sourceArtifactInput.title,
+                  contentHash: sourceArtifactInput.contentHash,
+                  capturedAt: now,
+                  metadata: sourceArtifactInput.metadata ?? {},
+                  createdAt: now,
+                  updatedAt: now
+                };
+              },
+              async createSourceClaim(sourceClaimInput) {
+                return {
+                  id: "source-claim-1",
+                  sourceArtifactId: sourceClaimInput.sourceArtifactId,
+                  ...(sourceClaimInput.executionRunId === undefined
+                    ? {}
+                    : { executionRunId: sourceClaimInput.executionRunId }),
+                  claim: sourceClaimInput.claim,
+                  mechanism: sourceClaimInput.mechanism,
+                  krnImplication: sourceClaimInput.krnImplication,
+                  doesNotProve: sourceClaimInput.doesNotProve,
+                  trustTier: sourceClaimInput.trustTier,
+                  supportType: sourceClaimInput.supportType,
+                  consumer: sourceClaimInput.consumer,
+                  status: sourceClaimInput.status ?? "proposed",
+                  metadata: sourceClaimInput.metadata ?? {},
+                  createdAt: now,
+                  updatedAt: now
+                };
+              }
             },
-            async createSourceClaim(input) {
-              return {
-                id: "source-claim-1",
-                sourceArtifactId: input.sourceArtifactId,
-                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-                claim: input.claim,
-                mechanism: input.mechanism,
-                krnImplication: input.krnImplication,
-                doesNotProve: input.doesNotProve,
-                trustTier: input.trustTier,
-                supportType: input.supportType,
-                consumer: input.consumer,
-                status: input.status ?? "proposed",
-                metadata: input.metadata ?? {},
-                createdAt: now,
-                updatedAt: now
-              };
+            harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
             }
-          },
-          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
-          memoryRepository: unusedMemoryRepository,
-          async close() {
-            return undefined;
-          }
-        })
+          };
+        }
       }
     );
 
@@ -302,6 +311,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceClaim: source-claim-1");
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
+    expect(capturedRepoPathHint).toContain("mise-en-palace");
   });
 
   it("prints source decision link help", async () => {

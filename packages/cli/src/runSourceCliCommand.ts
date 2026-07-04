@@ -122,6 +122,7 @@ const runSelectedSourceCommand = async (
   if (command.kind === "sourceClaimAdd") {
     return runSourceClaimAddCommand({
       ...standardSourceInput(context),
+      cwd: context.cwd,
       command
     });
   }
