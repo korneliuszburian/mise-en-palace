@@ -100,6 +100,37 @@
           "docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md"
         ],
         "metadata": {}
+      },
+      {
+        "id": "golden-case-evidence-pattern-usefulness-001-d",
+        "title": "retained pattern usefulness remains tied to evidence refs",
+        "input": {
+          "command": "krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --pattern-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|packages/cli/src/runEvidenceCaptureCommand.ts|Does not prove future pattern recall quality\"",
+          "gitStatus": "package cwd changed implementation file with explicit pattern usefulness feedback"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "evidence_capture:pattern_usefulness_evidence_ref",
+          "rationale": "Retained pattern usefulness must remain reviewable as evidence-backed feedback, not an automatic learning claim.",
+          "evidenceRefs": [
+            "packages/cli/src/runEvidenceCaptureCommand.ts",
+            "packages/cli/src/__tests__/evidenceCaptureGoldenBehavior.test.ts"
+          ]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-evidence-pattern-usefulness-001-d",
+            "domain": "capability",
+            "severity": "blocking",
+            "title": "pattern usefulness is recorded without evidence refs or non-proof boundary",
+            "mustNot": "Evidence capture must not render retained pattern usefulness as helped feedback unless the pattern id, evidence ref, reason, and does-not-prove boundary are visible.",
+            "detection": "CLI output omits patternUsefulnessOutcomes, the retained pattern id, evidenceRef, or doesNotProve."
+          }
+        ],
+        "sourceRefs": [
+          "packages/cli/src/runEvidenceCaptureCommand.ts"
+        ],
+        "metadata": {}
       }
     ],
     "metadata": {},

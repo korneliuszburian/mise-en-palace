@@ -133,6 +133,22 @@ const targetEvidenceExpectation: OutputExpectation = {
   ]
 };
 
+const patternUsefulnessExpectation: OutputExpectation = {
+  includes: [
+    "Changed files:\nintended:",
+    "- M packages/cli/src/runEvidenceCaptureCommand.ts",
+    "pnpm typecheck: passed | provenance=operator_reported",
+    "patternUsefulnessOutcomes:",
+    "outcome=helped pattern=ts-boundary-unknown-first-result-state",
+    "reason: Pattern selected the unknown-first parser shape",
+    "evidenceRef: packages/cli/src/runEvidenceCaptureCommand.ts",
+    "doesNotProve: Does not prove future pattern recall quality"
+  ],
+  excludes: [
+    "Memory mutation: applied"
+  ]
+};
+
 describe("evidence capture golden behavior", () => {
   it("guards dirty-context capture behavior with real CLI execution", async () => {
     const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture()).map(toGoldenTask);
@@ -198,12 +214,33 @@ describe("evidence capture golden behavior", () => {
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => ""
     });
+    const patternUsefulnessResult = await runCli([
+      "evidence",
+      "capture",
+      "--intended-file",
+      "packages/cli/src/runEvidenceCaptureCommand.ts",
+      "--verification",
+      "pnpm typecheck=passed",
+      "--pattern-usefulness",
+      "pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|packages/cli/src/runEvidenceCaptureCommand.ts|Does not prove future pattern recall quality"
+    ], {
+      env: {},
+      cwd: process.cwd(),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => " M src/runEvidenceCaptureCommand.ts\n"
+    });
     const classifiedOutput = classifiedResult.stdout;
     const unclassifiedOutput = unclassifiedResult.stdout;
     const targetEvidenceOutput = targetEvidenceResult.stdout;
+    const patternUsefulnessOutput = patternUsefulnessResult.stdout;
     const classifiedPassed = cliOutputMatches(classifiedResult, classifiedExpectation);
     const unclassifiedPassed = cliOutputMatches(unclassifiedResult, unclassifiedExpectation);
     const targetEvidencePassed = cliOutputMatches(targetEvidenceResult, targetEvidenceExpectation);
+    const patternUsefulnessPassed = cliOutputMatches(
+      patternUsefulnessResult,
+      patternUsefulnessExpectation
+    );
     const report = runGoldenTaskFixtures({
       tasks,
       proofs: [
@@ -227,13 +264,20 @@ describe("evidence capture golden behavior", () => {
           targetEvidencePassed
             ? "Real CLI evidence capture rendered target repo mode, dirty state, ownership, target changed files, command proof, and target does-not-prove boundaries separately from KRN changed files."
             : targetEvidenceOutput
+        ),
+        proof(
+          "golden-case-evidence-pattern-usefulness-001-d",
+          patternUsefulnessPassed,
+          patternUsefulnessPassed
+            ? "Real CLI evidence capture rendered retained pattern usefulness with pattern id, evidence ref, reason, and does-not-prove boundary."
+            : patternUsefulnessOutput
         )
       ]
     });
 
     expect(report.status).toBe("passed");
-    expect(report.caseCount).toBe(3);
-    expect(report.passedCaseCount).toBe(3);
+    expect(report.caseCount).toBe(4);
+    expect(report.passedCaseCount).toBe(4);
     expect(report.failedCaseCount).toBe(0);
     expect(report.missingProofCaseIds).toEqual([]);
     expect(report.failedProofCaseIds).toEqual([]);
