@@ -30,17 +30,28 @@ describe("runMemoryAdvantageEval", () => {
         requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
         selectedKnowledgeIds: ["pattern:second-opinion-after-large-slice"],
         selectedSources: ["catalog_file"],
+        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
         supportingClaims: 1,
         supportingDocuments: 1
       }
     });
-    expect(result.cases[0]?.["baseline_no_memory"].missingEvidence).toContain(
-      "governed company-pattern memory/source evidence"
+    expect(result.cases[0]?.["baseline_no_memory"].missingEvidence).toEqual([
+      "governed SourceClaim evidence in the answer package for this query",
+      "included SearchDocument evidence in the answer package for this query"
+    ]);
+    expect(result.cases[0]?.["krn_memory"].selectedKnowledgeIds).toContain(
+      "pattern:second-opinion-after-large-slice"
+    );
+    expect(result.cases[0]?.["krn_memory"].selectedSourceClaimIds).toContain(
+      "source:second-opinion-after-large-slice"
     );
     expect(result.proof.proves).toContain(
-      "fixture-provided company-pattern memory/source context processed through brain search makes the same query useful"
+      "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths"
     );
-    expect(result.proof.doesNotProve).toContain("KRN retrieval or selection quality");
+    expect(result.proof.doesNotProve).toContain(
+      "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
+    );
+    expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");
     expect(result.proof.doesNotProve).toContain("arbitrary task superiority over vanilla Codex");
   });
 });

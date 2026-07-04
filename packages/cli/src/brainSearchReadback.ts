@@ -39,6 +39,7 @@ export interface BrainSearchPreviewResource {
   sourceSearch: {
     answerUsefulness: string;
     supportingClaims: number;
+    supportingClaimIds: readonly string[];
     supportingDocuments: number;
     sourceClaimDocumentLinks: number;
     linkedSearchDocuments: number;
@@ -163,6 +164,19 @@ const sourceClaimDocumentLinkCaveats = (
     const caveat = link === undefined ? undefined : nonEmptyStringValue(link["caveat"]);
 
     return caveat === undefined ? [] : [caveat];
+  });
+
+const sourceClaimIds = (
+  supportingClaims: readonly unknown[]
+): readonly string[] =>
+  supportingClaims.flatMap((claim) => {
+    const record = recordValue(claim);
+
+    if (record === undefined) {
+      return [];
+    }
+
+    return optionalStringArray(sourceSearchKnowledgeId(record));
   });
 
 const firstDefinedString = (values: readonly (string | undefined)[]): string =>
@@ -532,6 +546,7 @@ export const buildBrainSearchPreviewResource = (
     sourceSearch: {
       answerUsefulness,
       supportingClaims: supportingClaims.length,
+      supportingClaimIds: sourceClaimIds(supportingClaims),
       supportingDocuments: supportingDocuments.length,
       sourceClaimDocumentLinks: sourceClaimDocumentLinks.length,
       linkedSearchDocuments,

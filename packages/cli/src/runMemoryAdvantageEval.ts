@@ -1,5 +1,20 @@
 import { readFileSync } from "node:fs";
+import {
+  mkdtemp,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
+import type {
+  MemoryRecord,
+  SourceClaim
+} from "@krn/core";
+import type {
+  SearchDocumentRecord,
+  SearchDocumentSearchResult
+} from "@krn/harness/repositories/internal";
 import {
   isCliEntrypoint,
   writeJsonEvalResult
@@ -24,6 +39,9 @@ import {
 import type {
   BrainSearchCommand
 } from "./runBrainSearchCommand.js";
+import type {
+  DatabaseRuntime
+} from "./databaseRuntime.js";
 
 type MemoryAdvantageCardFixture = EvalKnowledgeCardFixture;
 type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
@@ -55,6 +73,7 @@ interface MemoryAdvantageCaseReadback {
     readonly answerUsefulness: string;
     readonly selectedKnowledgeIds: readonly string[];
     readonly selectedSources: readonly string[];
+    readonly selectedSourceClaimIds: readonly string[];
     readonly requiredKnowledgeId: string;
     readonly supportingClaims: number;
     readonly supportingDocuments: number;
@@ -75,11 +94,15 @@ export interface MemoryAdvantageEvalResult {
 interface BrainSearchPreviewReadback {
   readonly selectedKnowledgeIds: readonly string[];
   readonly selectedSources: readonly string[];
+  readonly selectedSourceClaimIds: readonly string[];
   readonly answerUsefulness: string;
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
   readonly missingEvidence: readonly string[];
 }
+
+const now = "2026-07-04T00:00:00.000Z";
+const projectId = "project:memory-advantage";
 
 const parseCase = (
   value: Record<string, unknown>,
@@ -129,55 +152,6 @@ export const loadMemoryAdvantageEvalFixture = (
   return parseMemoryAdvantageEvalFixture(parsed);
 };
 
-const knowledgePayload = (
-  cards: readonly MemoryAdvantageCardFixture[]
-): string =>
-  JSON.stringify({
-    kind: "krn.brainKnowledge.cards.preview.v1",
-    returnedCards: cards.length,
-    totalCards: cards.length,
-    cards,
-    proof: {
-      doesNotProve: ["company-pattern catalog completeness", "LLM output quality"]
-    }
-  });
-
-const sourceSearchPayload = (
-  sourceClaims: readonly MemoryAdvantageSourceClaimFixture[]
-): string =>
-  JSON.stringify({
-    kind: "source_search_answer_package",
-    answerPackage: {
-      answerUsefulness: sourceClaims.length > 0 ? "useful" : "not_useful",
-      supportingClaims: sourceClaims,
-      supportingDocuments: sourceClaims.length > 0 ? [{ label: "company-pattern-source" }] : [],
-      sourceClaimDocumentLinks: [],
-      relationSupport: [],
-      sourceDecisionSupport: sourceClaims.map((claim) => ({
-        sourceDecisionEdgeId: `decision-edge:${claim.sourceClaimId}`,
-        sourceClaimId: claim.sourceClaimId,
-        confidence: "high"
-      })),
-      graphReadback: {
-        claimNodes: sourceClaims.length,
-        relationEdges: 0,
-        temporalEdges: 0,
-        contradictionEdges: 0,
-        duplicateEdges: 0,
-        invalidationEdges: 0,
-        graphAware: sourceClaims.length > 0,
-        caveats: []
-      },
-      missingEvidence: sourceClaims.length > 0 ? [] : ["governed company-pattern memory/source evidence"]
-    },
-    includedCandidates: sourceClaims.map((claim) => ({
-      subjectId: claim.sourceClaimId
-    })),
-    proof: {
-      doesNotProve: ["source truth", "arbitrary task superiority"]
-    }
-  });
-
 const parseBrainSearchPreview = (
   stdout: string,
   label: string
@@ -191,6 +165,11 @@ const parseBrainSearchPreview = (
     selectedSources: preview.selectedKnowledge.map((packet, index) =>
       requiredString(packet, "source", `${label}.selectedKnowledge[${index}]`)
     ),
+    selectedSourceClaimIds: requiredStringArray(
+      preview.sourceSearch,
+      "supportingClaimIds",
+      `${label}.sourceSearch`
+    ),
     answerUsefulness: requiredString(preview.sourceSearch, "answerUsefulness", `${label}.sourceSearch`),
     supportingClaims: requiredFiniteNumber(preview.sourceSearch, "supportingClaims", `${label}.sourceSearch`),
     supportingDocuments: requiredFiniteNumber(
@@ -202,51 +181,325 @@ const parseBrainSearchPreview = (
   };
 };
 
+const tokenScore = (query: string, text: string): number => {
+  const queryTerms = new Set(
+    query.toLowerCase().split(/[^a-z0-9]+/u).filter((term) => term.length >= 4)
+  );
+  const textTerms = new Set(
+    text.toLowerCase().split(/[^a-z0-9]+/u).filter((term) => term.length >= 4)
+  );
+  let hits = 0;
+
+  for (const term of queryTerms) {
+    if (textTerms.has(term)) {
+      hits += 1;
+    }
+  }
+
+  return hits * 20;
+};
+
+const assertLexicalOverlap = (
+  testCase: MemoryAdvantageCaseFixture
+): void => {
+  const query = testCase.query;
+  const hasCardOverlap = testCase.memoryCards.some((card) =>
+    tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
+  );
+  const hasClaimOverlap = testCase.sourceClaims.some((claim) =>
+    tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
+  );
+
+  if (!hasCardOverlap || !hasClaimOverlap) {
+    throw new Error(`${testCase.id} must have lexical overlap with memory card and source claim text`);
+  }
+};
+
+const sourceClaimFromFixture = (
+  fixture: MemoryAdvantageSourceClaimFixture
+): SourceClaim => ({
+  id: fixture.sourceClaimId,
+  sourceArtifactId: `artifact:${fixture.sourceClaimId}`,
+  claim: fixture.claim,
+  mechanism: fixture.mechanism,
+  krnImplication: fixture.krnImplication,
+  doesNotProve: fixture.doesNotProve,
+  trustTier: "project-decision",
+  supportType: "decision",
+  consumer: fixture.consumer,
+  falsifier: fixture.falsifier,
+  status: "accepted",
+  metadata: {
+    eval: "memory-advantage"
+  },
+  createdAt: now,
+  updatedAt: now
+});
+
+const searchDocumentFromClaim = (
+  claim: SourceClaim
+): SearchDocumentRecord => ({
+  id: `search:${claim.id}`,
+  projectId,
+  subjectType: "source_artifact",
+  subjectId: claim.sourceArtifactId,
+  sourceArtifactId: claim.sourceArtifactId,
+  trustTier: claim.trustTier,
+  validityStatus: "active",
+  language: "en",
+  title: claim.claim,
+  body: [claim.claim, claim.mechanism, claim.krnImplication].join(" "),
+  searchText: [claim.claim, claim.mechanism, claim.krnImplication, claim.consumer].join(" "),
+  metadataFilters: {},
+  validFrom: now,
+  metadata: {
+    eval: "memory-advantage"
+  },
+  createdAt: now,
+  updatedAt: now
+});
+
+const memoryRecordFromCard = (
+  card: MemoryAdvantageCardFixture
+): MemoryRecord => ({
+  id: `memory:${card.id}`,
+  projectId,
+  key: card.id,
+  kind: "pattern",
+  status: "active",
+  summary: card.title,
+  body: card.summary,
+  owner: "memory-advantage-eval",
+  confidence: 95,
+  applicationGuidance: card.nextAction,
+  sourceLineage: card.consumers.map((consumer) => ({
+    sourceId: consumer,
+    note: "memory advantage eval fixture"
+  })),
+  isUserPreference: false,
+  validFrom: now,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: {
+    eval: "memory-advantage",
+    doesNotProve: card.doesNotProve,
+    falsifier: card.falsifier
+  },
+  createdAt: now,
+  updatedAt: now
+});
+
+const throwingRepositoryMethod = (method: string): never => {
+  throw new Error(`${method} should not be called by memory advantage eval`);
+};
+
+const createMemoryAdvantageRuntime = (
+  cards: readonly MemoryAdvantageCardFixture[],
+  sourceClaims: readonly MemoryAdvantageSourceClaimFixture[]
+): DatabaseRuntime => {
+  const claims = sourceClaims.map(sourceClaimFromFixture);
+  const documents = claims.map(searchDocumentFromClaim);
+  const memories = cards.map(memoryRecordFromCard);
+  const searchLexical = async (input: { query: string; limit?: number }) =>
+    documents
+      .map((document): SearchDocumentSearchResult => ({
+        ...document,
+        lexicalScore: tokenScore(input.query, document.searchText)
+      }))
+      .filter((document) => document.lexicalScore > 0)
+      .sort((left, right) => right.lexicalScore - left.lexicalScore)
+      .slice(0, input.limit ?? documents.length);
+
+  return {
+    workspaceId: "workspace:memory-advantage",
+    projectId,
+    compilerDependencies: {
+      harnessRunRepository: {
+        createOperatorIntent: async () => throwingRepositoryMethod("createOperatorIntent"),
+        createTaskContract: async () => throwingRepositoryMethod("createTaskContract"),
+        createHarnessPlan: async () => throwingRepositoryMethod("createHarnessPlan"),
+        createContextAssembly: async () => throwingRepositoryMethod("createContextAssembly")
+      },
+      memoryRepository: {
+        listActiveMemory: async () => memories,
+        listAntiMemoryForProject: async () => []
+      },
+      sourceRepository: {
+        listClaimsForProject: async () => claims,
+        listSourceClaimEdgesForClaim: async () => []
+      },
+      retrievalRepository: {
+        searchLexical,
+        startRetrievalRun: async () => throwingRepositoryMethod("startRetrievalRun"),
+        completeRetrievalRun: async () => throwingRepositoryMethod("completeRetrievalRun"),
+        addCandidate: async () => throwingRepositoryMethod("addCandidate"),
+        recordActivationDecision: async () => throwingRepositoryMethod("recordActivationDecision"),
+        storeContextSelection: async () => throwingRepositoryMethod("storeContextSelection")
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-memory-advantage-store`
+    },
+    harnessRunRepository: {
+      createExecutionRun: async () => throwingRepositoryMethod("createExecutionRun"),
+      getHarnessRunByExecutionRunId: async () => throwingRepositoryMethod("getHarnessRunByExecutionRunId"),
+      createEvidenceBundle: async () => throwingRepositoryMethod("createEvidenceBundle"),
+      createReviewAssessment: async () => throwingRepositoryMethod("createReviewAssessment"),
+      createFeedbackDelta: async () => throwingRepositoryMethod("createFeedbackDelta")
+    },
+    sourceRepository: {
+      createSourceArtifact: async () => throwingRepositoryMethod("createSourceArtifact"),
+      createSourceClaim: async () => throwingRepositoryMethod("createSourceClaim"),
+      getSourceClaimById: async (id) => claims.find((claim) => claim.id === id),
+      listClaimsForProject: async () => claims,
+      createSourceClaimEdge: async () => throwingRepositoryMethod("createSourceClaimEdge"),
+      listSourceClaimEdgesForClaim: async () => [],
+      createSourceDecisionEdge: async () => throwingRepositoryMethod("createSourceDecisionEdge"),
+      getSourceDecisionEdgeById: async () => undefined,
+      createSourceRejection: async () => throwingRepositoryMethod("createSourceRejection"),
+      listSourceDecisionEdgesForClaim: async (sourceClaimId) =>
+        claims.some((claim) => claim.id === sourceClaimId)
+          ? [{
+              id: `decision-edge:${sourceClaimId}`,
+              sourceClaimId,
+              targetType: "eval_candidate",
+              targetId: "eval:memory-advantage",
+              supportType: "decision",
+              confidence: "high",
+              notes: "Memory advantage eval fixture links accepted source evidence to the eval candidate.",
+              metadata: {
+                eval: "memory-advantage"
+              },
+              createdAt: now,
+              updatedAt: now
+            }]
+          : []
+    },
+    retrievalRepository: {
+      createSearchDocument: async () => throwingRepositoryMethod("createSearchDocument"),
+      searchLexical,
+      listSearchDocumentsForSourceLinks: async (input) =>
+        documents.filter((document) =>
+          input.sourceClaimIds === undefined ||
+          (document.sourceClaimId !== undefined && input.sourceClaimIds.includes(document.sourceClaimId))
+        )
+    },
+    memoryRepository: {
+      createMemoryCandidate: async () => throwingRepositoryMethod("createMemoryCandidate"),
+      getMemoryCandidateById: async () => throwingRepositoryMethod("getMemoryCandidateById"),
+      promoteReviewedMemoryCandidate: async () => throwingRepositoryMethod("promoteReviewedMemoryCandidate"),
+      rejectMemoryCandidate: async () => throwingRepositoryMethod("rejectMemoryCandidate"),
+      getMemoryRecordById: async (id) => memories.find((memory) => memory.id === id),
+      listMemoryRecordsForProject: async () => memories,
+      invalidateMemoryRecord: async () => throwingRepositoryMethod("invalidateMemoryRecord"),
+      recordMemoryApplication: async () => throwingRepositoryMethod("recordMemoryApplication"),
+      createMemoryFeedbackEvent: async () => throwingRepositoryMethod("createMemoryFeedbackEvent"),
+      createAntiMemoryCandidate: async () => throwingRepositoryMethod("createAntiMemoryCandidate"),
+      getAntiMemoryCandidateById: async () => throwingRepositoryMethod("getAntiMemoryCandidateById"),
+      promoteReviewedAntiMemoryCandidate: async () => throwingRepositoryMethod("promoteReviewedAntiMemoryCandidate"),
+      rejectAntiMemoryCandidate: async () => throwingRepositoryMethod("rejectAntiMemoryCandidate")
+    },
+    close: async () => undefined
+  };
+};
+
+const writeKnowledgeCatalog = async (
+  cards: readonly MemoryAdvantageCardFixture[]
+): Promise<{ readonly root: string; readonly catalogFile: string }> => {
+  const root = await mkdtemp(join(tmpdir(), "krn-memory-advantage-"));
+  const catalogFile = join(root, "catalog.json");
+  const readModelCards = cards.map((card) => ({
+    id: card.id,
+    kind: "pattern",
+    status: "active",
+    title: card.title,
+    summary: card.summary,
+    confidence: "high",
+    reviewability: "ready",
+    sourceRefs: card.consumers,
+    evidenceRefs: [`fixture:${card.id}`],
+    consumers: card.consumers,
+    falsifier: card.falsifier,
+    doesNotProve: card.doesNotProve,
+    temporal: {
+      kind: "current",
+      observedAt: "2026-07-04"
+    },
+    dissent: {
+      kind: "none"
+    },
+    nextAction: card.nextAction
+  }));
+  const cardFiles = await Promise.all(readModelCards.map(async (card, index) => {
+    const cardFile = `card-${index + 1}.json`;
+
+    await writeFile(join(root, cardFile), JSON.stringify(card, null, 2), "utf8");
+    return cardFile;
+  }));
+
+  await writeFile(catalogFile, JSON.stringify({
+    cardFiles,
+    patternFiles: [],
+    usefulnessFeedbackFiles: []
+  }, null, 2), "utf8");
+
+  return {
+    root,
+    catalogFile
+  };
+};
+
 const runCaseVariant = async (
   testCase: MemoryAdvantageCaseFixture,
   cards: readonly MemoryAdvantageCardFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
-  idSuffix: string
+  idSuffix: string,
+  storeOnly: boolean
 ): Promise<BrainSearchPreviewReadback> => {
+  const knowledgeStore = storeOnly ? undefined : await writeKnowledgeCatalog(cards);
   const command: BrainSearchCommand = {
     kind: "brainSearch",
     query: testCase.query,
-    catalogFiles: [],
-    storeOnly: false,
+    catalogFiles: knowledgeStore === undefined ? [] : [knowledgeStore.catalogFile],
+    storeOnly,
     limit: 5,
     maxInclusions: 5,
     format: "json"
   };
-  const result = await runBrainSearchCommand({
-    cwd: process.cwd(),
-    env: {},
-    now: () => "2026-07-04T00:00:00.000Z",
-    createId: (prefix) => `${prefix}-memory-advantage-${idSuffix}`,
-    command,
-    async runKnowledgeCards() {
-      return {
-        stdout: knowledgePayload(cards)
-      };
-    },
-    async runSourceSearch() {
-      return {
-        stdout: sourceSearchPayload(sourceClaims)
-      };
-    }
-  });
 
-  return parseBrainSearchPreview(result.stdout, `${testCase.id}.${idSuffix}`);
+  try {
+    const result = await runBrainSearchCommand({
+      cwd: process.cwd(),
+      env: {
+        KRN_DATABASE_URL: "memory-advantage://store"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-memory-advantage-${idSuffix}`,
+      command,
+      createDatabaseRuntime: async () => createMemoryAdvantageRuntime(cards, sourceClaims)
+    });
+
+    return parseBrainSearchPreview(result.stdout, `${testCase.id}.${idSuffix}`);
+  } finally {
+    if (knowledgeStore !== undefined) {
+      await rm(knowledgeStore.root, {
+        recursive: true,
+        force: true
+      });
+    }
+  }
 };
 
 const evaluateCase = async (
   testCase: MemoryAdvantageCaseFixture
 ): Promise<MemoryAdvantageCaseReadback> => {
-  const baseline = await runCaseVariant(testCase, [], [], "baseline");
+  assertLexicalOverlap(testCase);
+  const baseline = await runCaseVariant(testCase, [], [], "baseline", true);
   const krnMemory = await runCaseVariant(
     testCase,
     testCase.memoryCards,
     testCase.sourceClaims,
-    "krn"
+    "krn",
+    false
   );
   const baselineMiss =
     baseline.answerUsefulness === "not_useful" && baseline.selectedKnowledgeIds.length === 0;
@@ -268,6 +521,7 @@ const evaluateCase = async (
       answerUsefulness: krnMemory.answerUsefulness,
       selectedKnowledgeIds: krnMemory.selectedKnowledgeIds,
       selectedSources: krnMemory.selectedSources,
+      selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
       requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
       supportingClaims: krnMemory.supportingClaims,
       supportingDocuments: krnMemory.supportingDocuments
@@ -294,13 +548,14 @@ export const runMemoryAdvantageEval = async (
     proof: {
       proves: [
         "the fixture query is unsupported when no KRN memory or source evidence is available",
-        "fixture-provided company-pattern memory/source context processed through brain search makes the same query useful",
+        "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths",
         "the expected memory/source id is present in selectedKnowledge",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
         "arbitrary task superiority over vanilla Codex",
-        "KRN retrieval or selection quality",
+        "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
+        "live Postgres runtime behavior",
         "LLM output quality",
         "source truth",
         "broad memory retrieval quality",
