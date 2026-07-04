@@ -706,12 +706,14 @@ describe("runBrainSearchCommand", () => {
         query: "second opinion after large slice",
         catalogFiles: [],
         storeOnly: true,
+        projectId: "project-explicit",
         limit: 6,
         format: "json"
       },
       async createDatabaseRuntime(input: DatabaseRuntimeInput): Promise<DatabaseRuntime> {
         expect(input.databaseUrl).toBe("postgres://krn:krn@localhost:54329/krn");
         expect(input.projectSlug.trim().length).toBeGreaterThan(0);
+        expect(input.projectId).toBe("project-explicit");
         expect(input.requireProjectKernelForExplicitProject).toBe(false);
 
         return {
@@ -734,7 +736,9 @@ describe("runBrainSearchCommand", () => {
       async runKnowledgeCards() {
         throw new Error("store-only brain search should not read file catalogs");
       },
-      async runSourceSearch() {
+      async runSourceSearch(runtime) {
+        expect(runtime.command.projectId).toBe("project-explicit");
+
         return {
           stdout: JSON.stringify({
             answerPackage: {

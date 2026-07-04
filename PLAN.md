@@ -130,12 +130,12 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 Status: active; overnight queue refreshed after CLI boundary/runtime wave.
 
 Result: post-refactor cleanup and memory-eval proxy work are closed and pushed.
-The current slice is DB-backed memory advantage: prove the brain can select
-persisted MemoryRecord and source evidence through live repositories, not only
-fixture/in-memory eval stores.
+Latest slice closed explicit brain-search DB project targeting after the
+DB-backed memory advantage smoke.
 
 Latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
-Current Bead: `mise-en-palace-yb62` P1 DB-backed memory advantage proof.
+Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
+Current queue: inspect `bd ready` after this commit; no operator routing needed unless the queue requires a product/budget tradeoff.
 `mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.

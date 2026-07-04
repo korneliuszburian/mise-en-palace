@@ -63,6 +63,7 @@ export type CliCommand =
       query: string;
       catalogFiles: readonly string[];
       storeOnly: boolean;
+      projectId?: string;
       limit?: number;
       maxInclusions?: number;
       format: "text" | "json";

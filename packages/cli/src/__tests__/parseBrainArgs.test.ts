@@ -36,6 +36,8 @@ describe("parseBrainArgs", () => {
       "--query",
       "source-to-decision",
       "--store-only",
+      "--project",
+      "project-explicit",
       "--json"
     ])).toEqual({
       command: {
@@ -43,9 +45,22 @@ describe("parseBrainArgs", () => {
         query: "source-to-decision",
         catalogFiles: [],
         storeOnly: true,
+        projectId: "project-explicit",
         format: "json"
       }
     });
+  });
+
+  it("rejects an empty brain search project id", () => {
+    const result = parseBrainArgs([
+      "search",
+      "--query",
+      "source-to-decision",
+      "--project",
+      ""
+    ]);
+
+    expect(result.error).toContain("--project requires a non-empty project id");
   });
 
   it("rejects store-only with catalog files", () => {

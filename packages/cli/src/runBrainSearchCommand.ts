@@ -186,6 +186,9 @@ const runStoreMemoryReadback = async (
       databaseUrl,
       workspaceSlug: defaultWorkspaceSlug,
       projectSlug: defaultProjectSlug,
+      ...(input.runtime.command.projectId === undefined
+        ? {}
+        : { projectId: input.runtime.command.projectId }),
       requireProjectKernelForExplicitProject: false,
       repoPathHint: await findRepoRoot(input.runtime.cwd),
       now: input.runtime.now,
@@ -349,6 +352,9 @@ export const runBrainSearchCommand = async (
         kind: "sourceSearch",
         query,
         json: true,
+        ...(runtime.command.projectId === undefined
+          ? {}
+          : { projectId: runtime.command.projectId }),
         ...(runtime.command.limit === undefined ? {} : { limit: runtime.command.limit }),
         ...(runtime.command.maxInclusions === undefined
           ? {}

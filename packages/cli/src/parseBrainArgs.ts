@@ -6,14 +6,14 @@ import type {
 } from "./parseArgs.js";
 
 const brainSearchUsage = [
-  "Usage: krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
+  "Usage: krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
   "Usage: krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
   "krn brain search --query \"source-to-decision\" --catalog-file docs/brain-knowledge/catalog.json --json",
   "krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text unknown-first",
-  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback and uses the default local/mise-en-palace DB project when KRN_DATABASE_URL is configured. It does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback and uses --project or the default local/mise-en-palace DB project when KRN_DATABASE_URL is configured. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;
@@ -50,6 +50,7 @@ type BrainSearchParseState = {
   query: string | undefined;
   catalogFiles: string[];
   storeOnly: boolean;
+  projectId: string | undefined;
   limit: number | undefined;
   maxInclusions: number | undefined;
   format: "text" | "json";
@@ -151,6 +152,26 @@ const brainSearchOptionHandlers: Record<string, BrainSearchOptionHandler> = {
     assignStringOption(args, index, "--catalog-file", (value) => {
       state.catalogFiles.push(value);
     }),
+  "--project": (args, index, state) => {
+    const parsed = parseRequiredValue(args, index, "--project");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (parsed.value.length === 0) {
+      return {
+        ok: false,
+        error: `--project requires a non-empty project id\n${formatBrainSearchUsage()}`
+      };
+    }
+    state.projectId = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
   "--store-only": (_args, index, state) => {
     state.storeOnly = true;
 
@@ -225,6 +246,7 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
     query: undefined,
     catalogFiles: [],
     storeOnly: false,
+    projectId: undefined,
     limit: undefined,
     maxInclusions: undefined,
     format: "text"
@@ -261,6 +283,7 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
       catalogFiles: state.catalogFiles,
       storeOnly: state.storeOnly,
       format: state.format,
+      ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
       ...(state.limit === undefined ? {} : { limit: state.limit }),
       ...(state.maxInclusions === undefined ? {} : { maxInclusions: state.maxInclusions })
     }
