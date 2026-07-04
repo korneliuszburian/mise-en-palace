@@ -60,6 +60,22 @@ const expectInterdependentFixtureError = (
   expect(() => parseMemoryAdvantageEvalFixture(malformedFixture)).toThrow(expectedMessage);
 };
 
+const expectCompanyPatternChallengeFixtureError = (
+  mutate: (testCase: Record<string, unknown>) => void,
+  expectedMessage: string
+): void => {
+  const malformedFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+    cases: Array<Record<string, unknown>>;
+  };
+  const malformedCase = mutableFixtureCase(
+    malformedFixture,
+    "neutral-single-turn-typecheck"
+  );
+  mutate(malformedCase);
+
+  expect(() => parseMemoryAdvantageEvalFixture(malformedFixture)).toThrow(expectedMessage);
+};
+
 describe("runMemoryAdvantageEval", () => {
   it("proves controlled memory competencies over a no-memory baseline", async () => {
     const result = await runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
@@ -72,11 +88,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(17);
+    expect(result.cases).toHaveLength(23);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 17,
-      heldOutCaseCount: 13,
+      caseCount: 23,
+      heldOutCaseCount: 19,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -88,19 +104,21 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 17,
-      heldOutCaseCount: 13,
-      expectedHitCount: 15,
+      caseCount: 23,
+      heldOutCaseCount: 19,
+      expectedHitCount: 21,
       expectedMissCount: 2,
-      advantageWinCount: 11,
+      advantageWinCount: 17,
       noAdvantageCaseCount: 4,
       brokenPriorAdvantageCaseCount: 1,
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
       executionContractCaseCount: 3,
+      companyPatternChallengeCaseCount: 7,
+      companyPatternChallengeWinCount: 6,
       interdependentSessionCaseCount: 2,
-      sourceDisabledAblationCaseCount: 17,
-      sourceRequiredCaseCount: 15,
+      sourceDisabledAblationCaseCount: 23,
+      sourceRequiredCaseCount: 21,
       sourceZeroDeltaCaseCount: 0,
       sourcePruneCandidateCount: 0
     });
@@ -114,7 +132,9 @@ describe("runMemoryAdvantageEval", () => {
           "retrieve-second-opinion-procedure",
           "heldout-source-search-command-boundary",
           "neutral-short-context-second-opinion",
-          "neutral-retrieval-not-needed-docs"
+          "neutral-retrieval-not-needed-docs",
+          "firm-pattern-source-to-decision-chain",
+          "firm-pattern-no-decorative-skills"
         ]
       },
       learning: {
@@ -125,14 +145,18 @@ describe("runMemoryAdvantageEval", () => {
           "heldout-coding-task-json-boundary",
           "heldout-multi-session-codex-output-evidence",
           "neutral-single-turn-typecheck",
-          "neutral-breaks-codex-output-evidence-advantage"
+          "neutral-breaks-codex-output-evidence-advantage",
+          "firm-pattern-narrow-verification-not-every-command"
         ]
       },
       long_range: {
         status: "pass",
         caseIds: [
           "long-range-source-authority-boundary",
-          "heldout-ranking-corpus-quality"
+          "heldout-ranking-corpus-quality",
+          "firm-pattern-store-backed-memory-no-markdown",
+          "firm-pattern-no-guard-only-treadmill",
+          "firm-pattern-no-worker-daemon-without-product-loop"
         ]
       },
       forgetting: {
@@ -513,7 +537,13 @@ describe("runMemoryAdvantageEval", () => {
       "neutral-short-context-second-opinion",
       "neutral-single-turn-typecheck",
       "neutral-retrieval-not-needed-docs",
-      "neutral-breaks-codex-output-evidence-advantage"
+      "neutral-breaks-codex-output-evidence-advantage",
+      "firm-pattern-store-backed-memory-no-markdown",
+      "firm-pattern-source-to-decision-chain",
+      "firm-pattern-narrow-verification-not-every-command",
+      "firm-pattern-no-guard-only-treadmill",
+      "firm-pattern-no-worker-daemon-without-product-loop",
+      "firm-pattern-no-decorative-skills"
     ]);
     expect(nonHeldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "retrieve-second-opinion-procedure",
@@ -548,8 +578,49 @@ describe("runMemoryAdvantageEval", () => {
       "pattern:brain-search-explicit-project-selector",
       "pattern:ranking-corpus-quality-readback",
       "source:unknown-first-json-metadata-boundary",
-      "source:codex-output-evidence-shape-required"
+      "source:codex-output-evidence-shape-required",
+      "source:store-backed-memory-no-markdown",
+      "source:source-to-decision-chain-required",
+      "source:narrow-verification-policy",
+      "source:no-guard-only-treadmill",
+      "source:no-worker-daemon-without-product-loop",
+      "source:no-decorative-skills"
     ]);
+    const firmPatternChallengeCases = result.cases.filter((testCase) =>
+      testCase.companyPatternChallenge !== undefined
+    );
+    expect(firmPatternChallengeCases).toHaveLength(7);
+    expect(firmPatternChallengeCases.map((testCase) => testCase.caseId)).toEqual([
+      "neutral-single-turn-typecheck",
+      "firm-pattern-store-backed-memory-no-markdown",
+      "firm-pattern-source-to-decision-chain",
+      "firm-pattern-narrow-verification-not-every-command",
+      "firm-pattern-no-guard-only-treadmill",
+      "firm-pattern-no-worker-daemon-without-product-loop",
+      "firm-pattern-no-decorative-skills"
+    ]);
+    expect(firmPatternChallengeCases.every((testCase) =>
+      testCase["baseline_no_memory"].result === "miss" &&
+      testCase["krn_memory"].result === "hit" &&
+      testCase.companyPatternChallenge?.standardId.startsWith("standard:") === true &&
+      testCase.companyPatternChallenge.expectedDecision.length > 0 &&
+      testCase.companyPatternChallenge.baselineFailureMode.length > 0 &&
+      testCase.companyPatternChallenge.falsifier.length > 0
+    )).toBe(true);
+    const firmPatternChallengeWins = firmPatternChallengeCases.filter((testCase) =>
+      testCase.advantageDelta.result === "win"
+    );
+    expect(firmPatternChallengeWins).toHaveLength(6);
+    expect(firmPatternChallengeWins.every((testCase) =>
+      testCase["baseline_simple_retrieval"].result === "distractor_selected"
+    )).toBe(true);
+    const firmPatternNeutralCase = firmPatternChallengeCases.find((testCase) =>
+      testCase.caseId === "neutral-single-turn-typecheck"
+    );
+    expect(firmPatternNeutralCase?.advantageDelta).toMatchObject({
+      result: "neutral",
+      simpleRetrievalAlreadySufficient: true
+    });
     const noAdvantageCases = result.cases.filter((testCase) =>
       testCase.advantageDelta.result === "neutral"
     );
@@ -1026,6 +1097,9 @@ describe("runMemoryAdvantageEval", () => {
       "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"
     );
     expect(result.proof.proves).toContain(
+      "firm-pattern challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence"
+    );
+    expect(result.proof.proves).toContain(
       "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief"
     );
     expect(result.proof.proves).toContain(
@@ -1150,5 +1224,27 @@ describe("runMemoryAdvantageEval", () => {
     expectInterdependentFixtureError((testCase) => {
       delete testCase["priorSession"];
     }, "cases[12].priorSession must be an object");
+  });
+
+  it("rejects company-pattern challenge fixture drift before evaluation", () => {
+    expectCompanyPatternChallengeFixtureError((testCase) => {
+      testCase["companyPatternChallenge"] = "not-object";
+    }, "cases[14].companyPatternChallenge must be an object");
+    expectCompanyPatternChallengeFixtureError((testCase) => {
+      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+      delete challenge["standardId"];
+    }, "cases[14].companyPatternChallenge.standardId must be a non-empty string");
+    expectCompanyPatternChallengeFixtureError((testCase) => {
+      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+      delete challenge["expectedDecision"];
+    }, "cases[14].companyPatternChallenge.expectedDecision must be a non-empty string");
+    expectCompanyPatternChallengeFixtureError((testCase) => {
+      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+      delete challenge["baselineFailureMode"];
+    }, "cases[14].companyPatternChallenge.baselineFailureMode must be a non-empty string");
+    expectCompanyPatternChallengeFixtureError((testCase) => {
+      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+      delete challenge["falsifier"];
+    }, "cases[14].companyPatternChallenge.falsifier must be a non-empty string");
   });
 });

@@ -20,19 +20,19 @@ describe("runCodexOutputComparatorEval", () => {
     expect(result.status).toBe("pass");
     expect(result.sourceEvalKind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.metrics).toMatchObject({
-      comparisonCount: 34,
-      sourcePromptCount: 17,
-      passedCaseCount: 34,
+      comparisonCount: 46,
+      sourcePromptCount: 23,
+      passedCaseCount: 46,
       failedCaseCount: 0,
-      baselineMissingEvidenceCount: 34,
-      krnValidEvidenceShapeCount: 34,
-      contentChangedCount: 26,
+      baselineMissingEvidenceCount: 46,
+      krnValidEvidenceShapeCount: 46,
+      contentChangedCount: 38,
       executionContractComparisonCount: 3,
       executionContractChangedCount: 2,
-      advantageWinPromptCount: 11,
+      advantageWinPromptCount: 17,
       neutralPromptCount: 4,
       lossPromptCount: 2,
-      comparisonWinCount: 22,
+      comparisonWinCount: 34,
       comparisonNeutralCount: 8,
       comparisonLossCount: 4
     });

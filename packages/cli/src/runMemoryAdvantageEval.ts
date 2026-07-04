@@ -109,6 +109,7 @@ interface MemoryAdvantageCaseFixture {
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
   readonly interdependentSession?: boolean;
+  readonly companyPatternChallenge: CompanyPatternChallengeFixture | undefined;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -119,6 +120,13 @@ interface MemoryAdvantageCaseFixture {
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly expectedSelectedKnowledgeId: string;
+}
+
+interface CompanyPatternChallengeFixture {
+  readonly standardId: string;
+  readonly expectedDecision: string;
+  readonly baselineFailureMode: string;
+  readonly falsifier: string;
 }
 
 interface MemoryAdvantageDecisionOptionFixture {
@@ -180,6 +188,7 @@ interface MemoryAdvantageCaseReadback {
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
   readonly interdependentSession: boolean;
+  readonly companyPatternChallenge: CompanyPatternChallengeFixture | undefined;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -394,6 +403,8 @@ export interface MemoryAdvantageEvalResult {
     readonly totalRenderedBriefBytes: number;
     readonly codingTaskCaseCount: number;
     readonly executionContractCaseCount: number;
+    readonly companyPatternChallengeCaseCount: number;
+    readonly companyPatternChallengeWinCount: number;
     readonly sourceDisabledAblationCaseCount: number;
     readonly sourceRequiredCaseCount: number;
     readonly sourceZeroDeltaCaseCount: number;
@@ -673,6 +684,26 @@ const parseExecutionContract = (
   };
 };
 
+const parseCompanyPatternChallenge = (
+  value: unknown,
+  label: string
+): CompanyPatternChallengeFixture | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw new Error(`${label}.companyPatternChallenge must be an object`);
+  }
+
+  return {
+    standardId: requiredString(value, "standardId", `${label}.companyPatternChallenge`),
+    expectedDecision: requiredString(value, "expectedDecision", `${label}.companyPatternChallenge`),
+    baselineFailureMode: requiredString(value, "baselineFailureMode", `${label}.companyPatternChallenge`),
+    falsifier: requiredString(value, "falsifier", `${label}.companyPatternChallenge`)
+  };
+};
+
 const assertNoMemoryCardLifecycleConflict = (
   priorSession: MemoryAdvantagePriorSessionFixture,
   label: string
@@ -722,6 +753,7 @@ const parseCase = (
   const falsificationClass = value["falsificationClass"] === undefined
     ? undefined
     : requiredEnum(value, "falsificationClass", label, memoryFalsificationClasses);
+  const companyPatternChallenge = parseCompanyPatternChallenge(value["companyPatternChallenge"], label);
   const codingTask = parseCodingTask(value["codingTask"], label);
   const executionContract = parseExecutionContract(value["executionContract"], label);
   const parsedCase: MemoryAdvantageCaseFixture = {
@@ -729,6 +761,7 @@ const parseCase = (
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
     heldOut: value["heldOut"] === true,
     ...(value["interdependentSession"] === true ? { interdependentSession: true } : {}),
+    companyPatternChallenge,
     query: requiredString(value, "query", label),
     distractorClasses: requiredStringArray(value, "distractorClasses", label),
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
@@ -2101,6 +2134,7 @@ const evaluateCase = async (
     competency: testCase.competency,
     heldOut: testCase.heldOut,
     interdependentSession: testCase.interdependentSession === true,
+    companyPatternChallenge: testCase.companyPatternChallenge,
     query: testCase.query,
     distractorClasses: testCase.distractorClasses,
     baselineFailureRationale: testCase.baselineFailureRationale,
@@ -2226,6 +2260,12 @@ export const runMemoryAdvantageEval = async (
       executionContractCaseCount: cases.filter((testCase) =>
         testCase["execution_contract_decision"] !== undefined
       ).length,
+      companyPatternChallengeCaseCount: cases.filter((testCase) =>
+        testCase.companyPatternChallenge !== undefined
+      ).length,
+      companyPatternChallengeWinCount: cases.filter((testCase) =>
+        testCase.companyPatternChallenge !== undefined && testCase.advantageDelta.result === "win"
+      ).length,
       sourceDisabledAblationCaseCount: cases.length,
       sourceRequiredCaseCount: cases.filter((testCase) =>
         testCase["source_contribution"].contribution === "source_required_for_hit"
@@ -2250,6 +2290,7 @@ export const runMemoryAdvantageEval = async (
         "non-winning advantage deltas carry limitation classifications with deterministic simple-retrieval, KRN, and expected-result proof tuples",
         "at least one interdependent-style case can break the earlier memory-advantage shape by showing the baseline selects the same evidence-shaped contract",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
+        "firm-pattern challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
         "negative memory/source cases can name their stale or adversarial class and surface explicit excluded ids with reasons",

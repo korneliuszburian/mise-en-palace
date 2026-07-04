@@ -863,6 +863,12 @@
       "competency": "learning",
       "heldOut": true,
       "falsificationClass": "single_turn_no_memory_needed",
+      "companyPatternChallenge": {
+        "standardId": "standard:typecheck-source-change",
+        "expectedDecision": "Run typecheck before completing TypeScript source changes.",
+        "baselineFailureMode": "This obvious source-change standard should be baseline-sufficient rather than counted as a memory advantage win.",
+        "falsifier": "A TypeScript source change closes without typecheck evidence."
+      },
       "query": "TypeScript source change run typecheck before completion",
       "distractorClasses": ["generic-quality-guidance"],
       "baselineFailureRationale": "This is intentionally generic and single-turn: a simple lexical baseline should rank the obvious typecheck rule first, so KRN adds little advantage.",
@@ -1054,6 +1060,429 @@
             "consumer": "execution-output evidence gate",
             "falsifier": "The gate accepts a KRN-context claim missing evidence refs, verification, changed files, or doesNotProve.",
             "doesNotProve": "This does not prove the broader interdependent memory advantage claim."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-store-backed-memory-no-markdown",
+      "competency": "long_range",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:store-backed-memory",
+        "expectedDecision": "Use store-backed memory/source evidence; do not create runtime markdown memory files.",
+        "baselineFailureMode": "Simple retrieval can select a tempting MEMORY.md shortcut because it repeats memory and runtime wording.",
+        "falsifier": "A KRN slice adds runtime MEMORY.md or file-backed memory as the product memory path."
+      },
+      "query": "for KRN runtime memory should Codex create MEMORY.md files or use store backed memory source evidence",
+      "distractorClasses": ["obsolete-operating-rule", "generic-quality-guidance"],
+      "baselineFailureRationale": "The lexical baseline can prefer the MEMORY.md shortcut because it repeats runtime memory, files, and quick recall terms more directly than the store-backed authority rule.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:store-backed-memory-no-markdown",
+      "priorSession": {
+        "id": "session:store-backed-memory-no-markdown",
+        "task": "A prior kernel decision rejected runtime markdown memory and retained store-backed memory/source evidence as the only product memory path.",
+        "evidenceRef": "evidence:store-backed-memory-no-markdown",
+        "reviewRef": "review:store-backed-memory-no-markdown",
+        "feedbackRef": "feedback:store-backed-memory-no-markdown-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:store-backed-memory-no-markdown",
+            "title": "Store-backed memory, not runtime markdown",
+            "summary": "KRN runtime memory must be service or store backed; markdown can be docs, source, seed, export, or audit trail only.",
+            "consumers": ["runtime memory design", "kernel product boundary"],
+            "falsifier": "A product path treats MEMORY.md or markdown files as active runtime memory.",
+            "doesNotProve": "This does not prove the DB memory ranking is globally optimal.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:runtime-memory-md-shortcut",
+            "title": "Create MEMORY.md runtime memory files",
+            "summary": "For runtime memory, Codex can create MEMORY.md files with project notes because markdown files are quick and easy to inspect.",
+            "consumers": ["runtime memory design", "obsolete markdown shortcut"],
+            "falsifier": "KRN kernel law says runtime memory must be store-backed and markdown is only docs/source/export/audit/seed.",
+            "doesNotProve": "This intentionally represents a tempting non-product shortcut.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:store-backed-memory-no-markdown",
+            "claim": "KRN runtime memory must be store-backed; markdown is allowed only as docs, source, seed, export, backup, or audit trail.",
+            "mechanism": "Store-backed memory gives typed activation, review gates, source lineage, feedback, and forgetting; markdown notes cannot enforce those lifecycle controls.",
+            "krnImplication": "When asked whether to create runtime MEMORY.md files, KRN should select the store-backed memory decision.",
+            "consumer": "runtime memory design",
+            "falsifier": "A runtime product path reads markdown files as authoritative active memory.",
+            "doesNotProve": "This does not prove every markdown source is useless."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:obsolete-memory-md-runtime-shortcut",
+            "claim": "For KRN runtime memory, create MEMORY.md files and use markdown files as active memory because runtime memory files are fast.",
+            "mechanism": "The obsolete shortcut treats markdown files as runtime memory and skips store-backed memory/source lifecycle review.",
+            "krnImplication": "This source claim must stay excluded because KRN runtime memory requires store-backed memory and source evidence.",
+            "consumer": "runtime memory design",
+            "falsifier": "The active kernel contract says markdown is docs/source/export/audit/seed only, not product memory.",
+            "doesNotProve": "This intentionally represents stale source evidence.",
+            "exclusionReason": "obsolete markdown runtime memory shortcut"
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-source-to-decision-chain",
+      "competency": "retrieval",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:source-to-decision-chain",
+        "expectedDecision": "Retain a source only after mechanism, KRN implication, decision or rejection, consumer, and falsifier are explicit.",
+        "baselineFailureMode": "Simple retrieval can select generic citation advice that lacks the full decision chain.",
+        "falsifier": "A paper/course/source is retained because it sounds relevant but lacks consumer and falsifier."
+      },
+      "query": "when adding a paper or course source to KRN what source mechanism implication decision consumer falsifier chain is required",
+      "distractorClasses": ["generic-quality-guidance", "docs-sentinel-overfit"],
+      "baselineFailureRationale": "The lexical baseline can pick generic cite-the-source guidance because it repeats paper, source, and decision wording without requiring the complete KRN chain.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:source-to-decision-chain-required",
+      "priorSession": {
+        "id": "session:source-to-decision-chain-required",
+        "task": "A prior source-intake decision retained the full source to mechanism to KRN implication to decision/rejection to consumer to falsifier chain.",
+        "evidenceRef": "evidence:source-to-decision-chain-required",
+        "reviewRef": "review:source-to-decision-chain-required",
+        "feedbackRef": "feedback:source-to-decision-chain-required-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:source-to-decision-chain-required",
+            "title": "Source-to-decision chain required",
+            "summary": "Retained KRN sources need source, mechanism, KRN implication, decision or rejection, consumer, and falsifier before shaping implementation.",
+            "consumers": ["pattern intake", "source governance"],
+            "falsifier": "A retained source has no mechanism, consumer, or falsifier.",
+            "doesNotProve": "This does not prove the source claim is true.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:generic-cite-interesting-source",
+            "title": "Cite interesting sources broadly",
+            "summary": "When a paper or course looks useful, cite it and summarize the interesting source so future agents can read it later.",
+            "consumers": ["generic research note"],
+            "falsifier": "KRN requires the source to decision chain before implementation retention.",
+            "doesNotProve": "This intentionally lacks a KRN consumer and falsifier.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:source-to-decision-chain-required",
+            "claim": "KRN retained sources require source, mechanism, KRN implication, decision or rejection, consumer, and falsifier.",
+            "mechanism": "The chain prevents interesting-but-unused research from becoming architecture authority without an implementation consumer and falsifier.",
+            "krnImplication": "Paper and course intake should create decision-grade source evidence or reject the source explicitly.",
+            "consumer": "pattern intake",
+            "falsifier": "A retained source shapes code while missing mechanism, consumer, or falsifier.",
+            "doesNotProve": "This does not prove the retained source is correct."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:generic-source-summary-only",
+            "claim": "When adding a paper or course source to KRN, summarize the source and decision later without mechanism implication consumer falsifier chain.",
+            "mechanism": "Generic source summary keeps interesting research text but omits the source mechanism KRN implication decision consumer falsifier chain.",
+            "krnImplication": "This must be excluded because KRN source retention needs the full chain before the source can shape implementation.",
+            "consumer": "generic research note",
+            "falsifier": "The retained source has mechanism, KRN implication, decision, consumer, and falsifier before use.",
+            "doesNotProve": "This intentionally represents decorative source retention.",
+            "exclusionReason": "missing source-to-decision chain"
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-narrow-verification-not-every-command",
+      "competency": "learning",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:narrow-verification",
+        "expectedDecision": "Run the narrowest relevant verification for the touched surface, then broader gates only when the slice warrants it.",
+        "baselineFailureMode": "Simple retrieval can select the old run-everything rule because it repeats verification and package command terms.",
+        "falsifier": "Every tiny slice runs all package scripts by default and stalls product progress without added evidence."
+      },
+      "query": "after a small bounded KRN slice should Codex run every package json command or the narrowest relevant verification",
+      "distractorClasses": ["obsolete-operating-rule", "generic-quality-guidance"],
+      "baselineFailureRationale": "A broad verification checklist can dominate lexical matching because it repeats package scripts, every command, and verification terms.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:narrow-verification-policy",
+      "priorSession": {
+        "id": "session:narrow-verification-policy",
+        "task": "A prior operating-loop review established that KRN should avoid running every package command after small slices and instead select the narrowest relevant verification.",
+        "evidenceRef": "evidence:narrow-verification-policy",
+        "reviewRef": "review:narrow-verification-policy",
+        "feedbackRef": "feedback:narrow-verification-policy-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:narrow-verification-policy",
+            "title": "Narrow verification before broad gates",
+            "summary": "For bounded slices, run focused tests and typecheck/Fallow according to touched surface; reserve full broad gates for larger or risky changes.",
+            "consumers": ["slice verification", "development velocity"],
+            "falsifier": "A tiny docs or fixture slice runs every package script without changing proof strength.",
+            "doesNotProve": "This does not allow skipping required gates for source behavior changes.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:run-every-package-command",
+            "title": "Run every package command after every slice",
+            "summary": "After any KRN slice, run every package.json command, all DB smokes, every eval, and all docs checks before continuing.",
+            "consumers": ["obsolete verification treadmill"],
+            "falsifier": "The active verification policy says to use the narrowest relevant verification and avoid guard-only treadmill work.",
+            "doesNotProve": "This intentionally represents over-broad verification.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:narrow-verification-policy",
+            "claim": "KRN slices should use the narrowest relevant verification for the touched surface and reserve broad gates for larger or risky changes.",
+            "mechanism": "Focused verification preserves development throughput while still producing evidence tied to the changed behavior.",
+            "krnImplication": "For small bounded slices, KRN should choose focused tests plus typecheck/Fallow when applicable instead of every package command.",
+            "consumer": "slice verification",
+            "falsifier": "A behavior-changing source slice skips its relevant focused tests or typecheck.",
+            "doesNotProve": "This does not prove broad gates are never useful."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:obsolete-run-every-package-command",
+            "claim": "After a small bounded KRN slice, run every package json command, all DB smokes, every eval, and all verification commands.",
+            "mechanism": "The obsolete policy treats every small slice as broad release verification and ignores touched-surface evidence.",
+            "krnImplication": "This must stay excluded because KRN should run the narrowest relevant verification for the touched surface.",
+            "consumer": "slice verification",
+            "falsifier": "A small bounded slice uses focused verification without losing proof strength.",
+            "doesNotProve": "This intentionally represents a verification treadmill.",
+            "exclusionReason": "over-broad verification policy"
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-no-guard-only-treadmill",
+      "competency": "long_range",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:no-guard-only-treadmill",
+        "expectedDecision": "Choose tasks that close usefulness loops, improve bounded product surfaces, or unblock vertical slices.",
+        "baselineFailureMode": "Simple retrieval can select a proof-hygiene task because it repeats invariant and guard vocabulary.",
+        "falsifier": "The next queue is dominated by docs sentinels or guard checks that do not improve memory/source usefulness."
+      },
+      "query": "when KRN has no ready issues should the next task be another guard invariant or a usefulness loop",
+      "distractorClasses": ["docs-sentinel-overfit", "generic-quality-guidance"],
+      "baselineFailureRationale": "Docs-sentinel and invariant wording can look attractive to lexical retrieval, but the current direction rejects guard-only treadmill work.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:no-guard-only-treadmill",
+      "priorSession": {
+        "id": "session:no-guard-only-treadmill",
+        "task": "A roadmap review established that next tasks must close usefulness loops, improve bounded product surfaces, or unblock vertical slices.",
+        "evidenceRef": "evidence:no-guard-only-treadmill",
+        "reviewRef": "review:no-guard-only-treadmill",
+        "feedbackRef": "feedback:no-guard-only-treadmill-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:no-guard-only-treadmill",
+            "title": "Avoid guard-only treadmill tasks",
+            "summary": "When the queue is empty, select work that improves memory/source usefulness or unblocks the next vertical slice, not another docs sentinel or invariant by default.",
+            "consumers": ["next-task selection", "kernel roadmap"],
+            "falsifier": "Ready work is dominated by docs-lint or invariant tasks while memory/source usefulness gaps remain.",
+            "doesNotProve": "This does not mean quality gates are useless.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:add-another-active-plan-invariant",
+            "title": "Add another active plan invariant",
+            "summary": "When KRN has no ready issues, add another invariant checking active plan wording so stale claims are caught earlier.",
+            "consumers": ["docs sentinel", "guard treadmill"],
+            "falsifier": "The active plan says avoid guard-only treadmill work unless it unblocks a vertical product slice.",
+            "doesNotProve": "This intentionally represents low-ROI proof hygiene.",
+            "nextAction": "defer"
+          },
+          {
+            "id": "pattern:generic-proof-hygiene",
+            "title": "Generic proof hygiene task",
+            "summary": "When unsure what to do next, improve proof wording and docs hygiene before selecting another usefulness loop.",
+            "consumers": ["proof hygiene", "docs sentinel"],
+            "falsifier": "A memory/source usefulness loop remains unproven and should outrank generic proof wording.",
+            "doesNotProve": "This intentionally represents a second low-ROI distractor.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:no-guard-only-treadmill",
+            "claim": "KRN next-task selection should avoid guard-only treadmill work and prefer usefulness loops, bounded product surfaces, or vertical-slice blockers.",
+            "mechanism": "The planning rule keeps development pointed at select/apply/verify/forget machinery rather than accumulating proof scaffolding.",
+            "krnImplication": "When Beads is empty, KRN should synthesize memory/source usefulness work before adding another docs sentinel.",
+            "consumer": "next-task selection",
+            "falsifier": "A queue refresh selects only invariant/doc-lint tasks while memory/source usefulness gaps remain.",
+            "doesNotProve": "This does not prove every guard task is bad."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:add-another-guard-invariant",
+            "claim": "When KRN has no ready issues, add another guard invariant or docs sentinel task even if it does not close a usefulness loop.",
+            "mechanism": "The guard-only approach optimizes for invariant count and proof wording instead of memory/source usefulness loops.",
+            "krnImplication": "This must stay excluded because next-task selection should prefer usefulness loops or vertical-slice blockers.",
+            "consumer": "next-task selection",
+            "falsifier": "The next queue selects memory/source usefulness work while guard-only tasks remain lower priority.",
+            "doesNotProve": "This intentionally represents guard treadmill work.",
+            "exclusionReason": "guard-only treadmill work"
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-no-worker-daemon-without-product-loop",
+      "competency": "long_range",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:no-worker-daemon-without-loop",
+        "expectedDecision": "Keep workers as contract/readback unless a named product loop requires execution.",
+        "baselineFailureMode": "Simple retrieval can select daemon work because worker, runtime, scheduler, and execution terms look like progress.",
+        "falsifier": "A worker daemon/scheduler is built before a named memory/source product loop needs runtime execution."
+      },
+      "query": "should KRN build a worker daemon scheduler now or keep workers contract readback until a named product loop needs execution",
+      "distractorClasses": ["adjacent-kernel-boundary", "generic-quality-guidance"],
+      "baselineFailureRationale": "The lexical baseline can over-select the daemon plan because it repeats worker, daemon, scheduler, runtime, and execution terms.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:no-worker-daemon-without-product-loop",
+      "priorSession": {
+        "id": "session:no-worker-daemon-without-product-loop",
+        "task": "A prior worker-package review kept workers as contract/readback and rejected daemon runtime until a named product loop needs execution.",
+        "evidenceRef": "evidence:no-worker-daemon-without-product-loop",
+        "reviewRef": "review:no-worker-daemon-without-product-loop",
+        "feedbackRef": "feedback:no-worker-daemon-without-product-loop-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:no-worker-daemon-without-product-loop",
+            "title": "No worker daemon without named product loop",
+            "summary": "Keep workers as contract/readback until a named memory/source product loop requires background execution; do not build scheduler/daemon machinery by default.",
+            "consumers": ["worker package direction", "kernel runtime boundary"],
+            "falsifier": "A worker daemon or scheduler is implemented without a named product loop consumer.",
+            "doesNotProve": "This does not prove a future executor will never be needed.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:build-worker-daemon-now",
+            "title": "Build worker daemon scheduler now",
+            "summary": "KRN should build a worker daemon, scheduler, leases, retries, and execution loop now so the worker package becomes a real runtime.",
+            "consumers": ["speculative worker runtime"],
+            "falsifier": "No named product loop currently requires background execution.",
+            "doesNotProve": "This intentionally represents speculative runtime surface.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:no-worker-daemon-without-product-loop",
+            "claim": "Workers should remain contract/readback until a named memory/source product loop requires background execution.",
+            "mechanism": "Avoiding daemon/scheduler machinery keeps KRN focused on useful select/apply/verify/forget loops rather than speculative runtime surface.",
+            "krnImplication": "Worker tasks should decide or downscope the package before implementing runtime execution.",
+            "consumer": "worker package direction",
+            "falsifier": "A worker executor is built without a named product loop consumer and verification path.",
+            "doesNotProve": "This does not reject all future worker execution."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "firm-pattern-no-decorative-skills",
+      "competency": "retrieval",
+      "heldOut": true,
+      "companyPatternChallenge": {
+        "standardId": "standard:no-decorative-skills",
+        "expectedDecision": "Keep skills only when they provide operational advantage or retained brain behavior; treat non-load-bearing skills as docs.",
+        "baselineFailureMode": "Simple retrieval can select skill-zoo expansion because it repeats skills, brain, and operational vocabulary.",
+        "falsifier": "A new skill is added without a repeated workflow, script, validator, or measurable operator advantage."
+      },
+      "query": "for KRN skills should Codex add more operational brain skills or keep only skills with real workflow advantage",
+      "distractorClasses": ["generic-quality-guidance", "docs-sentinel-overfit"],
+      "baselineFailureRationale": "A generic skill expansion packet can match brain and operational skill wording while missing the repeated-workflow and validator requirement.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:no-decorative-skills",
+      "priorSession": {
+        "id": "session:no-decorative-skills",
+        "task": "A skill-surface audit kept repo-local skills as operational guidance only when they support repeated kernel workflows and rejected decorative skill expansion.",
+        "evidenceRef": "evidence:no-decorative-skills",
+        "reviewRef": "review:no-decorative-skills",
+        "feedbackRef": "feedback:no-decorative-skills-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:no-decorative-skills",
+            "title": "Skills need operational advantage",
+            "summary": "KRN skills should encode repeated workflows, scripts, validators, or retained brain behavior; non-load-bearing skill vocabulary stays documentation, not architecture.",
+            "consumers": ["skill surface", "kernel operating loop"],
+            "falsifier": "A new skill is added for a one-off idea with no repeated workflow or validation path.",
+            "doesNotProve": "This does not reject useful operational skills.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:add-more-brain-skills",
+            "title": "Add more brain skills for every kernel concept",
+            "summary": "KRN should add more operational brain skills for every important kernel concept so Codex has a large skill zoo available.",
+            "consumers": ["decorative skill expansion"],
+            "falsifier": "A skill must carry a repeated workflow, script, validator, or retained brain advantage.",
+            "doesNotProve": "This intentionally represents decorative skill sprawl.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:no-decorative-skills",
+            "claim": "KRN skills should remain when they provide repeated workflow advantage, scripts, validators, or retained brain behavior; decorative skills are documentation only.",
+            "mechanism": "Treating skills as operational tools prevents prompt scaffolding from becoming fake architecture.",
+            "krnImplication": "Future skill work should improve an existing skill or add one only for a repeated workflow with validation.",
+            "consumer": "skill surface",
+            "falsifier": "A skill is retained with no repeated workflow, script, validator, or measurable operator advantage.",
+            "doesNotProve": "This does not prove the current skill set is perfect."
+          }
+        ],
+        "excludedSourceClaims": [
+          {
+            "sourceClaimId": "source:add-decorative-brain-skill-zoo",
+            "claim": "Codex should add more operational brain skills and not keep only skills with real workflow advantage.",
+            "mechanism": "Decorative brain skill expansion repeats Codex, operational brain, keep only, real workflow, and advantage terms while still lacking a validator or repeated workflow.",
+            "krnImplication": "This must stay excluded because KRN skills should keep only real workflow advantage instead of adding more decorative brain skills.",
+            "consumer": "skill surface",
+            "falsifier": "A retained skill has a repeated workflow, script, validator, or measurable operator advantage.",
+            "doesNotProve": "This intentionally represents decorative skill sprawl.",
+            "exclusionReason": "decorative skill expansion"
           }
         ],
         "distractorSourceClaims": []

@@ -77,9 +77,13 @@ bound its own advantage claim:
    earlier advantage shape because the prompt already names evidence refs,
    verification, changed files, and `doesNotProve`.
 
-The current readback reports 17 cases: 11 advantage wins, 4 neutral/no-advantage
-cases, and 1 case that breaks the prior interdependent advantage shape. Neutral
-cases are not failures; they are evidence that KRN must not claim broad
+The current readback reports 23 cases: 17 advantage wins, 4
+neutral/no-advantage cases, and 1 case that breaks the prior interdependent
+advantage shape. Seven held-out firm-pattern challenges explicitly state the
+remembered standard, expected decision, baseline failure mode, and falsifier:
+six currently beat the simple lexical baseline, and one obvious TypeScript
+typecheck standard is intentionally classified as baseline-sufficient neutral.
+Neutral cases are not failures; they are evidence that KRN must not claim broad
 superiority when the simple lexical baseline already selects the same expected
 knowledge or contract. Each neutral or broken-prior delta carries an
 `advantageDelta.limitation` classification so the eval can separate bounded
@@ -130,6 +134,28 @@ and Codex brief renderer against the same in-memory memory/source fixture:
 This proves plan/brief consumer-surface advantage for controlled
 company-pattern cases. It does not prove arbitrary Codex output quality,
 production ranking quality, or broad retrieval quality.
+
+### Firm-Pattern Challenge Set
+
+`pnpm eval:memory-advantage` now includes seven held-out firm-pattern challenge
+cases:
+
+1. TypeScript source changes require typecheck evidence (neutral because the
+   query is intentionally obvious);
+2. store-backed memory, not runtime markdown memory;
+3. source-to-decision chain before retaining research/course/paper sources;
+4. narrow touched-surface verification instead of running every package command;
+5. no guard-only treadmill when a usefulness loop remains;
+6. no worker daemon without a named product loop;
+7. no decorative skill expansion without repeated workflow advantage.
+
+Each challenge includes `companyPatternChallenge.standardId`,
+`expectedDecision`, `baselineFailureMode`, and `falsifier`. The simple lexical
+baseline is given a tempting excluded memory/source shortcut, while KRN must
+select accepted memory/source evidence through the existing brain/source command
+paths. This proves only bounded company-pattern recall, one baseline-sufficient
+neutral firm-pattern case, and rejection of named distractors; it does not prove
+broad natural-language superiority.
 
 ### DB-Backed Brain-Search Memory Advantage
 
@@ -240,7 +266,7 @@ case where the baseline and KRN select the same evidence-shaped contract.
 
 The same eval now includes source contribution readback. Each case is rerun
 with SourceClaim/SearchDocument inputs disabled while keeping memory cards
-available. Current readback reports 17 source-disabled ablations: 15 cases lose
+available. Current readback reports 23 source-disabled ablations: 21 cases lose
 their KRN hit without source evidence, 2 cases select no source evidence, and 0
 source prune candidates are observed in the current corpus.
 Focused unit coverage keeps the prune-candidate policy live for zero-delta and
@@ -263,11 +289,11 @@ reports a deterministic Codex-vs-KRN sweep:
    changed files, proof/non-proof readback, and selected memory/source ids when
    retrieval contributed context.
 
-Current readback reports 34 comparison cases over 17 source prompts, including
-22 win comparisons, 8 neutral comparisons, and 4 loss comparisons. Neutral
+Current readback reports 46 comparison cases over 23 source prompts, including
+34 win comparisons, 8 neutral comparisons, and 4 loss comparisons. Neutral
 cases remain visible with `baseline_already_sufficient` labels instead of being
 treated as KRN wins. It also separates broad selected-content deltas from real
-execution-contract deltas: 26 comparisons change selected content/proxy state,
+execution-contract deltas: 38 comparisons change selected content/proxy state,
 while 3 comparisons have execution-contract source data and 2 of those change
 the execution contract.
 
