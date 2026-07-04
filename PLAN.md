@@ -1,5 +1,4 @@
 # KRN Active Plan
-
 Status: active compact root plan. Date: 2026-07-03. Root `PLAN.md` is compact product truth.
 Detailed history stays in Beads, archived ledgers, and archived reports.
 
@@ -134,8 +133,8 @@ contracts are closed and pushed. A follow-up second-opinion-claude review
 blocked the roadmap selection until six candidate areas were explicitly ruled
 in or out with current repo evidence.
 
-Latest closed Beads: `mise-en-palace-24p7/gfzi/oez2/ieec/yjs7/z406/be1t/fhku/1ex4/td3u/s5n3/pb2f/8mjf/48hq/i3su/q4ym/2u9k/17o8/ezbm/6bdg/d09u`.
-Current queue: select the next ready Bead after `d09u`; `6aw2` remains deferred until naming drift repeats.
+Latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
+Current queue: `mise-en-palace-myf7` P1 brain ranking eval, then `djl0` P1 source/graph ranking eval; `q71d` P2 and `5mso` P3 are follow-up proof-boundary hygiene.
 `mise-en-palace-sefh/td3u` frame KRN as governed RAG/memory/source/review; workers stay candidate contracts until `plnv`, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
@@ -157,6 +156,7 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-ezbm` adds `pnpm db:smoke:brain-search`: an isolated DB-backed brain/source smoke proves a weak marker baseline can become source-backed selectedKnowledge with SourceClaim, linked SearchDocument, and SourceDecisionEdge support.
 `mise-en-palace-6bdg` extends `eval:behavior:smoke`: retained pattern usefulness now has a golden evidence-capture case requiring pattern id, helped outcome, reason, evidenceRef, and doesNotProve boundary before counting as helped feedback.
 `mise-en-palace-d09u` rejects further source artifact preview extraction by code evidence: pure extraction is already in `@krn/core`; remaining CLI files own view/readback/persistence concerns.
+`mise-en-palace-ymiz` used second-opinion-claude to refill the empty queue with ranking-quality and proof-boundary Beads.
 
 Boundary: one DB-backed automatic memory recall path is proven. Do not claim product readiness, ranking quality, autonomous reflection quality, worker runtime, or multi-repo usefulness.
 
