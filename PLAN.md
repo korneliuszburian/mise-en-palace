@@ -21,8 +21,9 @@ candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
 brain-search selected knowledge: usable pattern packet in preview output
-brain-search store-only: source/search evidence can be read without file catalog
-brain-search store-only selected knowledge: source/search evidence yields reviewable packets
+brain-search store-only: source/search and DB MemoryRecord evidence can be read without file catalog
+brain-search store-only selected knowledge: DB memory and source/search evidence yield reviewable packets
+DB-backed memory advantage smoke: baseline misses before seeded evidence; grounded run selects promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge support
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable
@@ -128,13 +129,13 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 Status: active; overnight queue refreshed after CLI boundary/runtime wave.
 
-Result: heartbeat preview boundary extraction and shared command runtime
-contracts are closed and pushed. A follow-up second-opinion-claude review
-blocked the roadmap selection until six candidate areas were explicitly ruled
-in or out with current repo evidence.
+Result: post-refactor cleanup and memory-eval proxy work are closed and pushed.
+The current slice is DB-backed memory advantage: prove the brain can select
+persisted MemoryRecord and source evidence through live repositories, not only
+fixture/in-memory eval stores.
 
 Latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
-Current queue: `mise-en-palace-myf7` P1 brain ranking eval, then `djl0` P1 source/graph ranking eval; `q71d` P2 and `5mso` P3 are follow-up proof-boundary hygiene.
+Current Bead: `mise-en-palace-yb62` P1 DB-backed memory advantage proof.
 `mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
@@ -156,8 +157,6 @@ invalid verdicts and raw envelopes remain inspectable without becoming approval.
 `mise-en-palace-ezbm` adds `pnpm db:smoke:brain-search`: an isolated DB-backed brain/source smoke proves a weak marker baseline can become source-backed selectedKnowledge with SourceClaim, linked SearchDocument, and SourceDecisionEdge support.
 `mise-en-palace-6bdg` extends `eval:behavior:smoke`: retained pattern usefulness now has a golden evidence-capture case requiring pattern id, helped outcome, reason, evidenceRef, and doesNotProve boundary before counting as helped feedback.
 `mise-en-palace-d09u` rejects further source artifact preview extraction by code evidence: pure extraction is already in `@krn/core`; remaining CLI files own view/readback/persistence concerns.
-`mise-en-palace-ymiz` used second-opinion-claude to refill the empty queue with ranking-quality and proof-boundary Beads.
-
 Boundary: one DB-backed automatic memory recall path is proven. Do not claim product readiness, ranking quality, autonomous reflection quality, worker runtime, or multi-repo usefulness.
 
 ## Recent Completed Streams

@@ -13,7 +13,7 @@ const brainSearchUsage = [
   "krn brain search --query \"unknown-first TypeScript boundary\"",
   "krn brain search --query \"source-to-decision\" --catalog-file docs/brain-knowledge/catalog.json --json",
   "krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text unknown-first",
-  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback. It does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback and uses the default local/mise-en-palace DB project when KRN_DATABASE_URL is configured. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;

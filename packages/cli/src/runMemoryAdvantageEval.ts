@@ -628,6 +628,7 @@ const createMemoryAdvantageRuntime = (
       rejectMemoryCandidate: async () => throwingRepositoryMethod("rejectMemoryCandidate"),
       getMemoryRecordById: async (id) => memories.find((memory) => memory.id === id),
       listMemoryRecordsForProject: async () => memories,
+      listActiveMemory: async () => memories.filter((memory) => memory.status === "active"),
       invalidateMemoryRecord: async () => throwingRepositoryMethod("invalidateMemoryRecord"),
       recordMemoryApplication: async () => throwingRepositoryMethod("recordMemoryApplication"),
       createMemoryFeedbackEvent: async () => throwingRepositoryMethod("createMemoryFeedbackEvent"),

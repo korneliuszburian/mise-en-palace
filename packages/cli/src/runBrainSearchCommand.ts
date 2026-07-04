@@ -1,4 +1,10 @@
 import type {
+  MemoryRecord
+} from "@krn/core";
+import type {
+  BrainKnowledgeReadModel
+} from "@krn/harness";
+import type {
   CliCommand
 } from "./parseArgs.js";
 import {
@@ -28,6 +34,12 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
+import {
+  createDatabaseRuntime
+} from "./databaseRuntime.js";
+import {
+  findRepoRoot
+} from "./cliFileBoundary.js";
 
 export type BrainSearchCommand = Extract<CliCommand, { kind: "brainSearch" }>;
 
@@ -49,7 +61,189 @@ type BrainKnowledgeReadback = {
 };
 
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
+const defaultWorkspaceSlug = "local";
+const defaultProjectSlug = "mise-en-palace";
 const maxBrainSearchCompactQueryRetries = 6;
+
+const memoryConfidence = (confidence: number): BrainKnowledgeReadModel["confidence"] => {
+  if (confidence >= 80) {
+    return "high";
+  }
+
+  if (confidence >= 50) {
+    return "medium";
+  }
+
+  return confidence > 0 ? "low" : "unknown";
+};
+
+const memoryStatus = (status: MemoryRecord["status"]): BrainKnowledgeReadModel["status"] => {
+  switch (status) {
+    case "active":
+      return "active";
+    case "stale":
+      return "stale";
+    case "superseded":
+      return "superseded";
+    case "deprecated":
+    case "invalidated":
+      return "rejected";
+  }
+};
+
+const metadataString = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+};
+
+const sourceLineageEvidenceRefs = (
+  memory: MemoryRecord
+): string[] =>
+  memory.sourceLineage.flatMap((source) =>
+    source.note === undefined || source.note.trim().length === 0
+      ? []
+      : [source.note]
+  );
+
+const memoryRecordToKnowledgeCard = (
+  memory: MemoryRecord
+): BrainKnowledgeReadModel => {
+  const evidenceRefs = sourceLineageEvidenceRefs(memory);
+
+  return {
+    id: memory.id,
+    kind: "memory",
+    status: memoryStatus(memory.status),
+    title: memory.summary,
+    summary: `${memory.body}\n\nApplication guidance: ${memory.applicationGuidance}`,
+    confidence: memoryConfidence(memory.confidence),
+    reviewability: "ready",
+    sourceRefs: memory.sourceLineage.map((source) => source.sourceId),
+    evidenceRefs: evidenceRefs.length > 0 ? evidenceRefs : [`memory:${memory.id}`],
+    consumers: [memory.owner],
+    falsifier:
+      metadataString(memory.metadata, "falsifier") ??
+      memory.invalidationRule ??
+      "The memory no longer matches the operator task or is invalidated by newer source evidence.",
+    doesNotProve:
+      metadataString(memory.metadata, "doesNotProve") ??
+      "DB-backed MemoryRecord selection does not prove source truth, Codex used it, or broad memory ranking quality.",
+    temporal: memory.validUntil === undefined
+      ? {
+          kind: "current",
+          observedAt: memory.validFrom
+        }
+      : {
+          kind: "historical",
+          validFrom: memory.validFrom,
+          validUntil: memory.validUntil
+        },
+    dissent: {
+      kind: "none"
+    },
+    nextAction: "use"
+  };
+};
+
+const skippedStoreOnlyReadback = (reason?: string): BrainKnowledgeReadback => ({
+  result: {
+    stdout: JSON.stringify({
+      totalCards: 0,
+      returnedCards: 0,
+      cards: [],
+      proof: {
+        doesNotProve: [
+          "brain knowledge catalog readback was explicitly skipped by --store-only",
+          ...(reason === undefined ? [] : [reason])
+        ]
+      }
+    })
+  },
+  queries: []
+});
+
+const runStoreMemoryReadback = async (
+  input: {
+    runtime: BrainSearchCommandRuntime;
+    query: string;
+  }
+): Promise<BrainKnowledgeReadback> => {
+  const databaseUrl = input.runtime.env.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    return skippedStoreOnlyReadback();
+  }
+
+  const createRuntime = input.runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  let databaseRuntime: Awaited<ReturnType<typeof createRuntime>> | undefined;
+
+  try {
+    databaseRuntime = await createRuntime({
+      databaseUrl,
+      workspaceSlug: defaultWorkspaceSlug,
+      projectSlug: defaultProjectSlug,
+      requireProjectKernelForExplicitProject: false,
+      repoPathHint: await findRepoRoot(input.runtime.cwd),
+      now: input.runtime.now,
+      createId: input.runtime.createId
+    });
+    const limit = input.runtime.command.limit ?? 20;
+
+    if (typeof databaseRuntime.memoryRepository.listActiveMemory !== "function") {
+      return skippedStoreOnlyReadback(
+        "DB memory-store readback was unavailable because the runtime did not expose active MemoryRecord listing."
+      );
+    }
+
+    const records = await databaseRuntime.memoryRepository.listActiveMemory(
+      databaseRuntime.projectId,
+      limit
+    );
+    const cards = records.map(memoryRecordToKnowledgeCard);
+
+    return {
+      result: {
+        stdout: JSON.stringify({
+          kind: "krn.brainKnowledge.cards.preview.v1",
+          access: "read_only",
+          mutation: "none",
+          source: "memory_store",
+          filter: {
+            text: input.query
+          },
+          totalCards: cards.length,
+          returnedCards: cards.length,
+          cards,
+          proof: {
+            proves: [
+              "store-only brain search read active MemoryRecord rows from the configured DB project",
+              "MemoryRecords were converted to BrainKnowledgeReadModel packets before brain-search selection"
+            ],
+            doesNotProve: [
+              "DB-backed memory selection proves source truth",
+              "Codex used the selected memory",
+              "memory ranking quality is broad or production-ready",
+              "catalog-file brain knowledge was consulted"
+            ]
+          }
+        })
+      },
+      queries: [input.query]
+    };
+  } catch (error) {
+    return skippedStoreOnlyReadback(
+      `DB memory-store readback was unavailable: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`
+    );
+  } finally {
+    await databaseRuntime?.close();
+  }
+};
 
 const runCatalogKnowledgeReadback = async (
   input: {
@@ -79,24 +273,16 @@ const runBrainKnowledgeReadback = async (
     runKnowledge: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
     catalogFiles: readonly string[];
     query: string;
+    readStoreMemory: boolean;
   }
 ): Promise<BrainKnowledgeReadback> => {
   if (input.runtime.command.storeOnly) {
-    return {
-      result: {
-        stdout: JSON.stringify({
-          totalCards: 0,
-          returnedCards: 0,
-          cards: [],
-          proof: {
-            doesNotProve: [
-              "brain knowledge catalog readback was explicitly skipped by --store-only"
-            ]
-          }
+    return input.readStoreMemory
+      ? runStoreMemoryReadback({
+          runtime: input.runtime,
+          query: input.query
         })
-      },
-      queries: []
-    };
+      : skippedStoreOnlyReadback();
   }
 
   const primaryResult = await runCatalogKnowledgeReadback(input);
@@ -149,7 +335,8 @@ export const runBrainSearchCommand = async (
     runtime,
     runKnowledge,
     catalogFiles,
-    query
+    query,
+    readStoreMemory: runtime.runSourceSearch === undefined || runtime.createDatabaseRuntime !== undefined
   });
   const [knowledgeResult, sourceResult] = await Promise.all([
     knowledgeResultPromise,

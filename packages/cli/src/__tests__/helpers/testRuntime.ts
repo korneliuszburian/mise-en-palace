@@ -57,6 +57,9 @@ export const unusedMemoryRepository = {
   async listMemoryRecordsForProject(_projectId: string): Promise<never> {
     throw new Error("listMemoryRecordsForProject should not be called");
   },
+  async listActiveMemory(_projectId: string): Promise<never> {
+    throw new Error("listActiveMemory should not be called");
+  },
   async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
     throw new Error("recordMemoryApplication should not be called");
   },

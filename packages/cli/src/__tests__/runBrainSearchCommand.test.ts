@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import type {
+  MemoryRecord
+} from "@krn/core";
 import {
   runBrainSearchCommand
 } from "../runBrainSearchCommand.js";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "../databaseRuntime.js";
 
 describe("runBrainSearchCommand", () => {
   it("combines brain knowledge and source search into a read-only brain preview", async () => {
@@ -654,6 +661,208 @@ describe("runBrainSearchCommand", () => {
       }
     });
     expect(JSON.stringify(parsed)).toContain("store-backed source/search evidence");
+    expect(JSON.stringify(parsed)).not.toContain("memory_store");
+  });
+
+  it("derives store-backed selected knowledge from DB MemoryRecords in store-only brain search", async () => {
+    const memoryRecord: MemoryRecord = {
+      id: "memory-record-1",
+      projectId: "project-1",
+      key: "memory:second-opinion-loop",
+      kind: "pattern",
+      status: "active",
+      summary: "Use governed second-opinion after larger slices",
+      body: "KRN should run second-opinion review after larger migration or authority slices.",
+      owner: "kernel-development",
+      confidence: 95,
+      applicationGuidance:
+        "Use this memory when the task asks how to close a large KRN slice.",
+      invalidationRule:
+        "Invalidate when second-opinion-claude stops producing governed verdict JSON.",
+      sourceLineage: [{
+        sourceId: "source-claim-1",
+        note: "source-claim:source-claim-1"
+      }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {
+        falsifier: "A larger slice closes without second-opinion review.",
+        doesNotProve: "This memory does not prove Claude found every bug."
+      },
+      validFrom: "2026-07-04T00:00:00.000Z",
+      createdAt: "2026-07-04T00:00:00.000Z",
+      updatedAt: "2026-07-04T00:00:00.000Z"
+    };
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T00:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "second opinion after large slice",
+        catalogFiles: [],
+        storeOnly: true,
+        limit: 6,
+        format: "json"
+      },
+      async createDatabaseRuntime(input: DatabaseRuntimeInput): Promise<DatabaseRuntime> {
+        expect(input.databaseUrl).toBe("postgres://krn:krn@localhost:54329/krn");
+        expect(input.projectSlug.trim().length).toBeGreaterThan(0);
+        expect(input.requireProjectKernelForExplicitProject).toBe(false);
+
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+          harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+          sourceRepository: {} as DatabaseRuntime["sourceRepository"],
+          memoryRepository: {
+            async listActiveMemory(projectId, limit) {
+              expect(projectId).toBe("project-1");
+              expect(limit).toBe(6);
+
+              return [memoryRecord];
+            }
+          } as DatabaseRuntime["memoryRepository"],
+          async close() {}
+        };
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "source-claim-1",
+                claim: "Second-opinion review should challenge larger KRN slices.",
+                mechanism: "A governed source claim names mechanism, implication, consumer, and falsifier.",
+                krnImplication: "Brain search should keep source support visible next to selected memory.",
+                consumer: "kernel-development",
+                falsifier: "The source-search packet is hidden when MemoryRecord readback succeeds.",
+                doesNotProve: "This does not prove source truth."
+              }],
+              supportingDocuments: [],
+              sourceDecisionSupport: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      brainKnowledgeQueries: ["second opinion after large slice"],
+      knowledgeCards: {
+        returnedCards: 1,
+        cardIds: ["memory-record-1"],
+        selectedKnowledge: [{
+          id: "memory-record-1",
+          source: "memory_store",
+          reviewability: "ready",
+          consumers: ["kernel-development"],
+          falsifier: "A larger slice closes without second-opinion review.",
+          doesNotProve: "This memory does not prove Claude found every bug.",
+          nextAction: "use"
+        }, {
+          id: "source-claim-1",
+          source: "source_search",
+          reviewability: "ready"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1
+      }
+    });
+  });
+
+  it("keeps store-only brain search resilient when DB memory readback is unavailable", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T00:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "configured db is unavailable",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async createDatabaseRuntime() {
+        throw new Error("database unavailable");
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [],
+        doesNotProve: [
+          "brain knowledge catalog readback was explicitly skipped by --store-only",
+          "DB memory-store readback was unavailable: database unavailable"
+        ]
+      }
+    });
+    expect(JSON.stringify(parsed)).not.toContain("memory_store");
   });
 
   it("classifies selected knowledge target fit without changing store-only selection", async () => {

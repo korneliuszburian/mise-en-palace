@@ -72,7 +72,7 @@ export interface BrainSearchKnowledgePacket {
   id: string;
   title: string;
   summary: string;
-  source: "catalog_file" | "source_search";
+  source: "catalog_file" | "memory_store" | "source_search";
   targetFit: TargetFit;
   targetFitReasons: readonly string[];
   reviewability: "ready" | "needs_more_evidence";
@@ -263,7 +263,8 @@ const reviewabilityFromReasons = (
 
 const knowledgePackets = (
   cards: readonly unknown[],
-  query: string
+  query: string,
+  source: BrainSearchKnowledgePacket["source"] = "catalog_file"
 ): readonly BrainSearchKnowledgePacket[] =>
   cards.flatMap((card) => {
     const record = recordValue(card);
@@ -281,7 +282,7 @@ const knowledgePackets = (
     const falsifier = nonEmptyStringValue(record["falsifier"]);
     const doesNotProve = nonEmptyStringValue(record["doesNotProve"]);
     const reviewabilityReasons = reviewabilityReasonsFor([
-      { name: "catalog id", value: id },
+      { name: "knowledge id", value: id },
       { name: "consumer", value: consumers },
       { name: "falsifier", value: falsifier },
       { name: "doesNotProve", value: doesNotProve }
@@ -291,7 +292,7 @@ const knowledgePackets = (
       id,
       title: stringValue(record["title"], ""),
       summary: stringValue(record["summary"], ""),
-      source: "catalog_file",
+      source,
       targetFit: "unknown",
       targetFitReasons: [],
       reviewability: reviewabilityFromReasons(reviewabilityReasons),
@@ -404,7 +405,11 @@ const selectedKnowledgePackets = (input: {
   const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
   if (input.brainKnowledgeReadback === "store_only") {
-    return sourcePackets;
+    const storePackets = knowledgePackets(input.cards, input.query, "memory_store");
+
+    return storePackets.length > 0
+      ? [...storePackets, ...sourcePackets]
+      : sourcePackets;
   }
 
   const catalogPackets = knowledgePackets(input.cards, input.query);
@@ -436,6 +441,18 @@ const storeOnlyRecommendation = (
 ): string | undefined => {
   if (resource.brainKnowledgeReadback !== "store_only") {
     return undefined;
+  }
+
+  const hasStoreMemory = resource.knowledgeCards.selectedKnowledge.some(
+    (packet) => packet.source === "memory_store"
+  );
+
+  if (hasStoreMemory && sourceEvidenceCount(resource.sourceSearch) > 0) {
+    return "Use the store-backed memory with source-search evidence; treat this as controlled KRN context, not broad product truth.";
+  }
+
+  if (hasStoreMemory) {
+    return "Use the store-backed memory cautiously; add source-search evidence before claiming source-grounded implementation authority.";
   }
 
   return sourceEvidenceCount(resource.sourceSearch) > 0

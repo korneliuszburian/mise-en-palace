@@ -15,6 +15,7 @@ four falsifiable axes:
 | Axis | Local question | Current surface | Next eval candidate |
 | --- | --- | --- | --- |
 | Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: one case includes a tempting distractor and a simple lexical retrieval baseline. |
+| DB-backed retrieval | Can persisted memory/source rows change brain-search output through live repositories? | `pnpm db:smoke:brain-search` | Done for the current smoke: baseline misses, then a promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge are selected through Postgres-backed readback. |
 | Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Multi-session eval: first task creates reviewed evidence; second task must use it. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
 | Selective forgetting | Can KRN block stale/hurt/contradicted memory before context assembly? | anti-memory and stale activation guards | Memory advantage negative case where baseline uses tempting stale memory. |
@@ -75,6 +76,25 @@ selects the governed memory/source id through the brain/source command path.
 
 This proves only a local foil against no-memory and naive lexical selection. It
 does not prove production retrieval quality or arbitrary Codex superiority.
+
+### DB-Backed Brain-Search Memory Advantage
+
+Follow-up Bead: `mise-en-palace-yb62`.
+
+`pnpm db:smoke:brain-search` now seeds an isolated project through the live DB
+repositories:
+
+1. baseline `brain search --store-only` runs before seeded memory/source rows
+   and selects no knowledge;
+2. the smoke creates accepted SourceClaim evidence with SearchDocument and
+   SourceDecisionEdge support;
+3. a MemoryCandidate is promoted into a MemoryRecord linked to that source;
+4. grounded `brain search --store-only` selects both the MemoryRecord packet and
+   source-search packet.
+
+This is the first live Postgres memory/source advantage path. It remains one
+controlled smoke and does not prove broad ranking quality, source truth, Codex
+usage, or product readiness.
 
 ### Temporal And Adversarial Recall
 

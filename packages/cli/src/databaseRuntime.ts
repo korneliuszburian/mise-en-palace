@@ -128,7 +128,10 @@ export interface DatabaseRuntime {
     | "getAntiMemoryCandidateById"
     | "promoteReviewedAntiMemoryCandidate"
     | "rejectAntiMemoryCandidate"
-  >;
+  > & Partial<Pick<
+    MemoryRepository,
+    "listActiveMemory"
+  >>;
   observationRepository?: {
     createGroup(input: CreateObservationGroupInput): Promise<ObservationGroup>;
     addItems(

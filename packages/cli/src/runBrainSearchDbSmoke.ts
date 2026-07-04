@@ -24,13 +24,19 @@ export interface BrainSearchDbSmokeReport {
   sourceDecisionId: string;
   sourceDecisionEdgeId: string;
   searchDocumentId: string;
+  memoryCandidateId: string;
+  memoryRecordId: string;
   baselineSmokeSourceClaimSelected: boolean;
+  baselineSmokeMemorySelected: boolean;
   baselineSelectedKnowledgeCount: number;
+  baselineSelectedKnowledgePackets: readonly string[];
   baselineSupportingClaimCount: number;
   baselineSupportingDocumentCount: number;
   baselineSourceDecisionSupportCount: number;
   groundedSmokeSourceClaimSelected: boolean;
+  groundedSmokeMemorySelected: boolean;
   groundedSelectedKnowledgeCount: number;
+  groundedSelectedKnowledgePackets: readonly string[];
   groundedSupportingClaimCount: number;
   groundedSupportingDocumentCount: number;
   groundedLinkedSearchDocumentCount: number;
@@ -74,6 +80,23 @@ const selectedKnowledgeIds = (json: BrainSearchJson): readonly string[] =>
         const id = record === undefined ? undefined : record["id"];
 
         return typeof id === "string" ? [id] : [];
+      })
+    : [];
+
+const selectedKnowledgePackets = (json: BrainSearchJson): readonly string[] =>
+  Array.isArray(json.knowledgeCards?.selectedKnowledge)
+    ? json.knowledgeCards.selectedKnowledge.flatMap((item) => {
+        const record = objectValue(item);
+
+        if (record === undefined) {
+          return [];
+        }
+        const id = record["id"];
+        const source = record["source"];
+
+        return typeof id === "string"
+          ? [`${typeof source === "string" ? source : "unknown"}:${id}`]
+          : [];
       })
     : [];
 
@@ -150,6 +173,24 @@ const cleanupMarkerRows = async (
       or metadata->>'source' = ${smokeSource}
   `;
   await client`
+    delete from memory_record_versions
+    where memory_record_id in (
+      select id from memory_records
+      where metadata->>'smokeId' = ${smokeId}
+        or metadata->>'source' = ${smokeSource}
+    )
+  `;
+  await client`
+    delete from memory_records
+    where metadata->>'smokeId' = ${smokeId}
+      or metadata->>'source' = ${smokeSource}
+  `;
+  await client`
+    delete from memory_candidates
+    where metadata->>'smokeId' = ${smokeId}
+      or metadata->>'source' = ${smokeSource}
+  `;
+  await client`
     delete from source_decisions
     where metadata->>'smokeId' = ${smokeId}
       or metadata->>'source' = ${smokeSource}
@@ -188,11 +229,21 @@ const countMarkerRows = async (
         (select count(*)::int from source_decisions where metadata->>'smokeId' = ${smokeId}) +
         (select count(*)::int from source_decision_edges where metadata->>'smokeId' = ${smokeId}) +
         (select count(*)::int from search_documents where metadata->>'smokeId' = ${smokeId}) +
+        (select count(*)::int from memory_candidates where metadata->>'smokeId' = ${smokeId}) +
+        (select count(*)::int from memory_records where metadata->>'smokeId' = ${smokeId}) +
+        (select count(*)::int from memory_record_versions where memory_record_id in (
+          select id from memory_records where metadata->>'smokeId' = ${smokeId}
+        )) +
         (select count(*)::int from source_artifacts where metadata->>'source' = ${smokeSource}) +
         (select count(*)::int from source_claims where metadata->>'source' = ${smokeSource}) +
         (select count(*)::int from source_decisions where metadata->>'source' = ${smokeSource}) +
         (select count(*)::int from source_decision_edges where metadata->>'source' = ${smokeSource}) +
-        (select count(*)::int from search_documents where metadata->>'source' = ${smokeSource})
+        (select count(*)::int from search_documents where metadata->>'source' = ${smokeSource}) +
+        (select count(*)::int from memory_candidates where metadata->>'source' = ${smokeSource}) +
+        (select count(*)::int from memory_records where metadata->>'source' = ${smokeSource}) +
+        (select count(*)::int from memory_record_versions where memory_record_id in (
+          select id from memory_records where metadata->>'source' = ${smokeSource}
+        ))
       ) as count
   `;
 
@@ -318,6 +369,42 @@ export const runBrainSearchDbSmokeCheck = async (
     if (searchDocument === undefined) {
       throw new Error("SearchDocument creation is unavailable for brain-search DB smoke");
     }
+    const memoryCandidate = await runtime.memoryRepository.createMemoryCandidate({
+      projectId,
+      proposedBy: "krn db smoke brain-search",
+      kind: "pattern",
+      summary: `Use DB memory for ${query}`,
+      body:
+        `When the operator asks about ${query}, the persisted memory should be selected before claiming KRN has DB-backed memory advantage.`,
+      owner: "ezbm brain usefulness dogfood",
+      confidence: 95,
+      applicationGuidance:
+        "Use this persisted MemoryRecord as the memory side of the DB-backed brain-search advantage proof.",
+      invalidationRule:
+        "Invalidate if store-only brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
+      sourceLineage: [
+        {
+          sourceId: sourceClaim.id,
+          note: `source-claim:${sourceClaim.id}`
+        }
+      ],
+      sourceClaimIds: [sourceClaim.id],
+      isUserPreference: false,
+      validFrom: input.now,
+      metadata: {
+        ...metadata,
+        falsifier: "The grounded run does not include this MemoryRecord in selectedKnowledge.",
+        doesNotProve:
+          "This DB smoke does not prove broad memory ranking quality, source truth, or Codex behavior outside this controlled project."
+      }
+    });
+    const memoryRecord = await runtime.memoryRepository.promoteReviewedMemoryCandidate({
+      candidateId: memoryCandidate.id,
+      reviewer: "krn db smoke brain-search",
+      decision: "accepted",
+      recordKey: `brain-search-memory-${input.smokeId}`,
+      metadata
+    });
 
     await runtime.close();
     runtime = undefined;
@@ -348,7 +435,9 @@ export const runBrainSearchDbSmokeCheck = async (
     const groundedSourceDecisionSupportCount = sourceDecisionSupportCount(grounded);
 
     const baselineSmokeSourceClaimSelected = selectedKnowledgeIds(baseline).includes(sourceClaim.id);
+    const baselineSmokeMemorySelected = selectedKnowledgeIds(baseline).includes(memoryRecord.id);
     const groundedSmokeSourceClaimSelected = selectedKnowledgeIds(grounded).includes(sourceClaim.id);
+    const groundedSmokeMemorySelected = selectedKnowledgeIds(grounded).includes(memoryRecord.id);
 
     if (baselineSelectedKnowledgeCount !== 0) {
       throw new Error("Brain-search DB smoke baseline unexpectedly selected knowledge");
@@ -358,8 +447,16 @@ export const runBrainSearchDbSmokeCheck = async (
       throw new Error("Brain-search DB smoke baseline unexpectedly selected smoke SourceClaim");
     }
 
+    if (baselineSmokeMemorySelected) {
+      throw new Error("Brain-search DB smoke baseline unexpectedly selected smoke MemoryRecord");
+    }
+
     if (groundedSelectedKnowledgeCount === 0) {
       throw new Error("Brain-search DB smoke grounded run selected no knowledge");
+    }
+
+    if (!groundedSmokeMemorySelected) {
+      throw new Error("Brain-search DB smoke grounded run did not select the smoke MemoryRecord");
     }
 
     if (!groundedSmokeSourceClaimSelected) {
@@ -388,13 +485,19 @@ export const runBrainSearchDbSmokeCheck = async (
       sourceDecisionId: sourceDecision.id,
       sourceDecisionEdgeId: sourceDecisionEdge.id,
       searchDocumentId: searchDocument.id,
+      memoryCandidateId: memoryCandidate.id,
+      memoryRecordId: memoryRecord.id,
       baselineSmokeSourceClaimSelected,
+      baselineSmokeMemorySelected,
       baselineSelectedKnowledgeCount,
+      baselineSelectedKnowledgePackets: selectedKnowledgePackets(baseline),
       baselineSupportingClaimCount: supportingClaimCount(baseline),
       baselineSupportingDocumentCount: supportingDocumentCount(baseline),
       baselineSourceDecisionSupportCount: sourceDecisionSupportCount(baseline),
       groundedSmokeSourceClaimSelected,
+      groundedSmokeMemorySelected,
       groundedSelectedKnowledgeCount,
+      groundedSelectedKnowledgePackets: selectedKnowledgePackets(grounded),
       groundedSupportingClaimCount,
       groundedSupportingDocumentCount,
       groundedLinkedSearchDocumentCount,
