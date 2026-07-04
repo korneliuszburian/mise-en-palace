@@ -3,7 +3,8 @@ import type {
   SourceClaimEdge
 } from "@krn/core";
 import {
-  readSourceRelationMetadataReadback
+  readSourceRelationMetadataReadback,
+  relatedSourceClaimIdForEdge
 } from "@krn/core";
 import type {
   RankedActivationCandidate
@@ -201,59 +202,45 @@ const relationDirectionFor = (
 ): SourceSearchRelationDirection =>
   edge.fromSourceClaimId === sourceClaimId ? "outgoing" : "incoming";
 
-const relatedSourceClaimIdFor = (
-  sourceClaimId: SourceClaim["id"],
-  edge: SourceClaimEdge
-): SourceClaim["id"] =>
-  (edge.fromSourceClaimId === sourceClaimId
-    ? edge.toSourceClaimId
-    : edge.fromSourceClaimId) as SourceClaim["id"];
+const relationMetadataEntries = (
+  metadata: ReturnType<typeof readSourceRelationMetadataReadback>
+): ReadonlyArray<readonly [keyof SourceSearchRelationSupport, string | readonly string[] | undefined]> => [
+  ["consumer", metadata.consumer],
+  ["doesNotProve", metadata.doesNotProve],
+  ["evidenceRef", metadata.evidenceRef],
+  ["sourceDecisionRef", metadata.sourceDecisionRef],
+  ["sourceRanges", metadata.sourceRanges.length === 0 ? undefined : metadata.sourceRanges],
+  ["validFrom", metadata.validFrom],
+  ["validUntil", metadata.validUntil],
+  ["invalidatedAt", metadata.invalidatedAt]
+];
+
+const relationMetadataReadback = (
+  metadata: ReturnType<typeof readSourceRelationMetadataReadback>
+): Partial<SourceSearchRelationSupport> =>
+  Object.fromEntries(relationMetadataEntries(metadata).filter(([, value]) =>
+    value !== undefined)) as Partial<SourceSearchRelationSupport>;
 
 const relationSupportFromEdge = (
   sourceClaimId: SourceClaim["id"],
   edge: SourceClaimEdge
-): SourceSearchRelationSupport => {
+): SourceSearchRelationSupport | undefined => {
   const metadata = readSourceRelationMetadataReadback(edge.metadata);
+  const relatedSourceClaimId = relatedSourceClaimIdForEdge(sourceClaimId, edge);
+
+  if (relatedSourceClaimId === undefined) {
+    return undefined;
+  }
+
   const support: SourceSearchRelationSupport = {
     sourceClaimId,
     edgeId: edge.id,
     direction: relationDirectionFor(sourceClaimId, edge),
-    relatedSourceClaimId: relatedSourceClaimIdFor(sourceClaimId, edge),
+    relatedSourceClaimId,
     kind: edge.kind,
-    createdAt: edge.createdAt
+    createdAt: edge.createdAt,
+    ...relationMetadataReadback(metadata)
   };
-
-  if (metadata.consumer !== undefined) {
-    support.consumer = metadata.consumer;
-  }
-
-  if (metadata.doesNotProve !== undefined) {
-    support.doesNotProve = metadata.doesNotProve;
-  }
-
-  if (metadata.evidenceRef !== undefined) {
-    support.evidenceRef = metadata.evidenceRef;
-  }
-
-  if (metadata.sourceDecisionRef !== undefined) {
-    support.sourceDecisionRef = metadata.sourceDecisionRef;
-  }
-
-  if (metadata.sourceRanges.length > 0) {
-    support.sourceRanges = metadata.sourceRanges;
-  }
-
-  if (metadata.validFrom !== undefined) {
-    support.validFrom = metadata.validFrom;
-  }
-
-  if (metadata.validUntil !== undefined) {
-    support.validUntil = metadata.validUntil;
-  }
-
-  if (metadata.invalidatedAt !== undefined) {
-    support.invalidatedAt = metadata.invalidatedAt;
-  }
 
   return support;
 };
@@ -322,7 +309,11 @@ export const buildRelationSupport = async (input: {
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) => {
     const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId);
 
-    return edges.map((edge) => relationSupportFromEdge(sourceClaimId, edge));
+    return edges.flatMap((edge) => {
+      const support = relationSupportFromEdge(sourceClaimId, edge);
+
+      return support === undefined ? [] : [support];
+    });
   }));
 
   return edgeGroups.flat();

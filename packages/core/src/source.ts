@@ -219,6 +219,21 @@ export interface SourceClaimEdge {
   createdAt: IsoTimestamp;
 }
 
+export const relatedSourceClaimIdForEdge = (
+  sourceClaimId: SourceClaimId,
+  edge: Pick<SourceClaimEdge, "fromSourceClaimId" | "toSourceClaimId">
+): SourceClaimId | undefined => {
+  if (edge.fromSourceClaimId === sourceClaimId) {
+    return edge.toSourceClaimId;
+  }
+
+  if (edge.toSourceClaimId === sourceClaimId) {
+    return edge.fromSourceClaimId;
+  }
+
+  return undefined;
+};
+
 export interface SourceRelationMetadataReadback {
   consumer?: string;
   doesNotProve?: string;

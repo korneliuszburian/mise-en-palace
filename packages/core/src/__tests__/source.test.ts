@@ -9,6 +9,7 @@ import {
   classifySourceTrustTier,
   rankSourceTrustTier,
   readSourceRelationMetadataReadback,
+  relatedSourceClaimIdForEdge,
   sourceKinds,
   sourceSupportRelations,
   sourceSupportTypes,
@@ -115,6 +116,21 @@ describe("source review signals", () => {
       missingProofBoundaryFields: ["consumer", "doesNotProve"],
       sourceRanges: ["docs/source.md:1-2"]
     });
+  });
+
+  test("reads the opposite SourceClaim endpoint from a SourceClaimEdge", () => {
+    expect(relatedSourceClaimIdForEdge("source-claim-1", {
+      fromSourceClaimId: "source-claim-1",
+      toSourceClaimId: "source-claim-2"
+    })).toBe("source-claim-2");
+    expect(relatedSourceClaimIdForEdge("source-claim-2", {
+      fromSourceClaimId: "source-claim-1",
+      toSourceClaimId: "source-claim-2"
+    })).toBe("source-claim-1");
+    expect(relatedSourceClaimIdForEdge("source-claim-3", {
+      fromSourceClaimId: "source-claim-1",
+      toSourceClaimId: "source-claim-2"
+    })).toBeUndefined();
   });
 
   test("separates source claim create status from review lifecycle states", () => {

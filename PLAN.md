@@ -132,11 +132,11 @@ contracts are closed and pushed. A follow-up second-opinion-claude review
 blocked the roadmap selection until six candidate areas were explicitly ruled
 in or out with current repo evidence.
 
-Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
-`mise-en-palace-oez2`, `mise-en-palace-ieec`, `mise-en-palace-yjs7`,
-`mise-en-palace-z406`, and `mise-en-palace-be1t`.
+Latest closed Beads: `mise-en-palace-24p7/gfzi/oez2/ieec/yjs7/z406/be1t`.
 
-Current queue: `mise-en-palace-8vug` keeps no-id owner-file search candidates out of source-search document support.
+Current queue: `mise-en-palace-td3u` researches and bounds the KRN naming standard before any rename sweep.
+`mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
+`mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
 `mise-en-palace-75za` source-search command boundary split is closed:
 source-search readback/format/ranking helpers moved out of the command runner.
 `mise-en-palace-wgei` source artifact preview boundary split is closed:

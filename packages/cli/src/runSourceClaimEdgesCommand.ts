@@ -3,7 +3,8 @@ import type {
   SourceClaimEdge
 } from "@krn/core";
 import {
-  readSourceRelationMetadataReadback
+  readSourceRelationMetadataReadback,
+  relatedSourceClaimIdForEdge
 } from "@krn/core";
 import {
   createDatabaseRuntime
@@ -47,14 +48,6 @@ interface SourceClaimEdgeReadback {
   edge: SourceClaimEdge;
   relatedSourceClaim?: SourceClaim;
 }
-
-const relatedSourceClaimIdFor = (
-  sourceClaimId: SourceClaim["id"],
-  edge: SourceClaimEdge
-): SourceClaim["id"] =>
-  (edge.fromSourceClaimId === sourceClaimId
-    ? edge.toSourceClaimId
-    : edge.fromSourceClaimId) as SourceClaim["id"];
 
 const optionalValueLine = (
   key: string,
@@ -110,7 +103,7 @@ const formatEdge = (
   readback: SourceClaimEdgeReadback
 ): string[] => {
   const edge = readback.edge;
-  const relatedSourceClaimId = relatedSourceClaimIdFor(sourceClaimId, edge);
+  const relatedSourceClaimId = relatedSourceClaimIdForEdge(sourceClaimId, edge);
 
   return [
     `- sourceClaimEdge: ${edge.id}`,
@@ -120,7 +113,7 @@ const formatEdge = (
     `  kind: ${edge.kind}`,
     ...sourceRelationMetadataLines(edge),
     "  edgeInfluencedSourceContext:",
-    `    relatedSourceClaimId: ${relatedSourceClaimId}`,
+    `    relatedSourceClaimId: ${relatedSourceClaimId ?? "inconsistent-edge-endpoints"}`,
     ...relatedSourceClaimReadbackLines(readback)
   ];
 };
@@ -193,8 +186,14 @@ export const runSourceClaimEdgesCommand = async (
       typedSourceClaimId
     );
     const edgeReadbacks = await Promise.all(edges.map(async (edge): Promise<SourceClaimEdgeReadback> => {
+      const relatedSourceClaimId = relatedSourceClaimIdForEdge(typedSourceClaimId, edge);
+
+      if (relatedSourceClaimId === undefined) {
+        return { edge };
+      }
+
       const relatedSourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(
-        relatedSourceClaimIdFor(typedSourceClaimId, edge)
+        relatedSourceClaimId
       );
 
       return relatedSourceClaim === undefined
