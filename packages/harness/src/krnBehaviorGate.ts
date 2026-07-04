@@ -251,6 +251,56 @@ const observationItem = (now: string, overrides: Partial<ObservationItem>): Obse
   ...overrides
 });
 
+interface ClaimedCodexOutputEvidence {
+  readonly summary?: unknown;
+  readonly claimsKrnContextUse?: unknown;
+  readonly evidenceRefs?: unknown;
+  readonly verification?: unknown;
+  readonly changedFiles?: unknown;
+  readonly doesNotProve?: unknown;
+}
+
+const nonEmptyStringArray = (
+  value: unknown
+): readonly string[] | undefined =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every((item) => typeof item === "string" && item.trim().length > 0)
+    ? value
+    : undefined;
+
+const validateClaimedCodexOutputEvidence = (
+  output: ClaimedCodexOutputEvidence
+): readonly string[] => {
+  const findings: string[] = [];
+
+  if (typeof output.summary !== "string" || output.summary.trim().length === 0) {
+    findings.push("summary is required");
+  }
+
+  if (output.claimsKrnContextUse !== true) {
+    findings.push("claimsKrnContextUse=true is required for KRN-followed output claims");
+  }
+
+  if (nonEmptyStringArray(output.evidenceRefs) === undefined) {
+    findings.push("evidenceRefs are required for claimed KRN output evidence");
+  }
+
+  if (nonEmptyStringArray(output.verification) === undefined) {
+    findings.push("verification evidence is required for claimed KRN output evidence");
+  }
+
+  if (nonEmptyStringArray(output.changedFiles) === undefined) {
+    findings.push("changedFiles are required for claimed KRN output evidence");
+  }
+
+  if (typeof output.doesNotProve !== "string" || output.doesNotProve.trim().length === 0) {
+    findings.push("doesNotProve is required for claimed KRN output evidence");
+  }
+
+  return findings;
+};
+
 const proof = (
   caseId: string,
   status: BehaviorFixtureProof["status"],
@@ -518,6 +568,84 @@ const runEvidenceCommandProvenance = (_now: string): BehaviorFixtureProof => {
     passed
       ? "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence."
       : "Real EvidenceBundle behavior did not preserve command provenance distinction."
+  );
+};
+
+const runCodexOutputEvidenceShape = (_now: string): BehaviorFixtureProof => {
+  const reviewedOutput = validateClaimedCodexOutputEvidence({
+    summary: "Implemented the bounded KRN source-search repair from selected context.",
+    claimsKrnContextUse: true,
+    evidenceRefs: [
+      "source_claim:claim-codex-brief-contract",
+      "memory_record:memory-context-primary"
+    ],
+    verification: [
+      "pnpm --filter @krn/harness test -- krnBehaviorGate=passed"
+    ],
+    changedFiles: [
+      "packages/harness/src/krnBehaviorGate.ts"
+    ],
+    doesNotProve: "This output evidence shape does not prove Codex followed every rendered brief section."
+  });
+  const ungroundedOutput = validateClaimedCodexOutputEvidence({
+    summary: "Implemented the task by following KRN context.",
+    claimsKrnContextUse: true,
+    verification: [
+      "pnpm test=passed"
+    ],
+    changedFiles: [
+      "packages/harness/src/krnBehaviorGate.ts"
+    ],
+    doesNotProve: "This missing-evidence example intentionally lacks evidence refs."
+  });
+  const overclaimedOutput = validateClaimedCodexOutputEvidence({
+    summary: "Implemented the task by following KRN context.",
+    claimsKrnContextUse: true,
+    evidenceRefs: [
+      "source_claim:claim-codex-brief-contract"
+    ],
+    verification: [
+      "pnpm test=passed"
+    ],
+    changedFiles: [
+      "packages/harness/src/krnBehaviorGate.ts"
+    ]
+  });
+  const unverifiedOutput = validateClaimedCodexOutputEvidence({
+    summary: "Implemented the task by following KRN context.",
+    claimsKrnContextUse: true,
+    evidenceRefs: [
+      "source_claim:claim-codex-brief-contract"
+    ],
+    changedFiles: [
+      "packages/harness/src/krnBehaviorGate.ts"
+    ],
+    doesNotProve: "This missing-verification example intentionally lacks command evidence."
+  });
+  const unscopedChangeOutput = validateClaimedCodexOutputEvidence({
+    summary: "Implemented the task by following KRN context.",
+    claimsKrnContextUse: true,
+    evidenceRefs: [
+      "source_claim:claim-codex-brief-contract"
+    ],
+    verification: [
+      "pnpm test=passed"
+    ],
+    doesNotProve: "This missing-change-list example intentionally lacks changed files."
+  });
+  const passed =
+    reviewedOutput.length === 0 &&
+    ungroundedOutput.includes("evidenceRefs are required for claimed KRN output evidence") &&
+    overclaimedOutput.includes("doesNotProve is required for claimed KRN output evidence") &&
+    unverifiedOutput.includes("verification evidence is required for claimed KRN output evidence") &&
+    unscopedChangeOutput.includes("changedFiles are required for claimed KRN output evidence");
+
+  return proof(
+    "golden-case-codex-output-evidence-shape-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real Codex-output evidence-shape gate accepted reviewed evidence refs and rejected KRN-context claims missing evidence refs, verification, changed files, or non-proof."
+      : "Codex-output evidence-shape gate did not enforce evidence refs, verification, changed files, and non-proof for claimed KRN context use."
   );
 };
 
@@ -949,7 +1077,8 @@ const proofFactories = {
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
   "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection,
   "golden-case-source-artifact-preview-reuse-001-a": runSourceArtifactPreviewReuse,
-  "golden-case-graph-qa-001-a": runRelationGroundedQaReadback
+  "golden-case-graph-qa-001-a": runRelationGroundedQaReadback,
+  "golden-case-codex-output-evidence-shape-001-a": runCodexOutputEvidenceShape
 } as const;
 
 type SupportedCaseId = keyof typeof proofFactories;

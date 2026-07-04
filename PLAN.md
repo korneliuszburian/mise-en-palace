@@ -83,7 +83,7 @@ worker job type ownership: invariant runtime fields stay centralized; DB active 
 source relation metadata readback: SourceClaimEdge metadata parsing now shares one typed source-domain helper across CLI and worker surfaces
 retrieval ID branding: retrieval-owned persisted IDs carry soft branded aliases through harness repository contracts
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
-execution brief profile readback: Codex-facing ExecutionBrief keeps krn.executionBrief.v1, classifies sections, and omits empty MCP/subagent reserved headings
+execution brief/output evidence boundary: Codex-facing ExecutionBrief keeps krn.executionBrief.v1, and claimed KRN-context-following output must carry evidence refs, verification, changed files, and explicit non-proof
 maintenance enqueue wrapper: transparent enqueue helper removed; queue-port contract remains typed and tested
 anti-memory invalidation field: runtime/domain output uses plural invalidatedBySourceClaimIds; legacy singular remains input/read compatibility only
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status

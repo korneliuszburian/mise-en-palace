@@ -157,6 +157,32 @@ const task: BehaviorFixture = {
       metadata: {}
     },
     {
+      id: "golden-case-codex-output-evidence-shape-001-a",
+      title: "claimed Codex output carries evidence shape",
+      input: {
+        output: "Codex claims it followed selected KRN context."
+      },
+      expectedBehavior: {
+        outcome: "reject",
+        subject: "codex_output:evidence_shape",
+        rationale: "A run output that claims it followed KRN context must carry evidence refs, verification evidence, changed files, and explicit non-proof.",
+        evidenceRefs: ["packages/harness/src/krnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-codex-output-evidence-shape",
+        domain: "capability",
+        severity: "blocking",
+        title: "Codex output claims KRN context without evidence",
+        mustNot: "Claimed Codex output must not say it followed KRN context without evidence refs and doesNotProve.",
+        detection: "Codex-output evidence-shape validation rejects claimsKrnContextUse=true when evidenceRefs or doesNotProve are missing."
+      }],
+      sourceRefs: [
+        "packages/codex-adapter/src/renderExecutionBrief.ts",
+        "docs/architecture/behavior-gate-matrix.md"
+      ],
+      metadata: {}
+    },
+    {
       id: "golden-case-graph-qa-001-a",
       title: "relation-grounded QA readback preserves answer delta",
       input: {
@@ -350,13 +376,14 @@ describe("KRN deterministic behavior gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 13,
-      passedCaseCount: 13,
+      caseCount: 14,
+      passedCaseCount: 14,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
     });
     expect(report.caseResults.map((result) => result.caseId)).toEqual([
+      "golden-case-codex-output-evidence-shape-001-a",
       "golden-case-context-roi-001-a",
       "golden-case-evidence-001-a",
       "golden-case-graph-qa-001-a",
@@ -372,6 +399,7 @@ describe("KRN deterministic behavior gate", () => {
       "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
+      "Real Codex-output evidence-shape gate accepted reviewed evidence refs and rejected KRN-context claims missing evidence refs, verification, changed files, or non-proof.",
       "Real ContextROI behavior kept a small packet with expectedUse and explicit over_budget exclusions.",
       "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence.",
       "Real relation-grounded QA readback showed baseline insufficient and edge-aware context grounded the answer.",
