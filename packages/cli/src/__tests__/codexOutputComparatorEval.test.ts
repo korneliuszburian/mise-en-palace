@@ -20,12 +20,21 @@ describe("runCodexOutputComparatorEval", () => {
     expect(result.status).toBe("pass");
     expect(result.sourceEvalKind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.metrics).toMatchObject({
-      caseCount: 2,
-      passedCaseCount: 2,
+      comparisonCount: 34,
+      sourcePromptCount: 17,
+      passedCaseCount: 34,
       failedCaseCount: 0,
-      baselineMissingEvidenceCount: 2,
-      krnValidEvidenceShapeCount: 2,
-      contractChangedCount: 2
+      baselineMissingEvidenceCount: 34,
+      krnValidEvidenceShapeCount: 34,
+      contentChangedCount: 26,
+      executionContractComparisonCount: 3,
+      executionContractChangedCount: 2,
+      advantageWinPromptCount: 11,
+      neutralPromptCount: 4,
+      lossPromptCount: 2,
+      comparisonWinCount: 22,
+      comparisonNeutralCount: 8,
+      comparisonLossCount: 4
     });
     expect(result.metrics.totalSelectedContextBytes).toBeGreaterThan(0);
     expect(result.proof.proves).toContain(
@@ -34,10 +43,18 @@ describe("runCodexOutputComparatorEval", () => {
     expect(result.proof.doesNotProve).toContain("live Codex execution");
 
     const interdependentCase = result.cases.find((testCase) =>
-      testCase.caseId === "heldout-multi-session-codex-output-evidence"
+      testCase.comparisonId === "heldout-multi-session-codex-output-evidence:simple_retrieval"
     );
     expect(interdependentCase).toMatchObject({
+      caseId: "heldout-multi-session-codex-output-evidence",
+      baselineKind: "simple_retrieval",
       status: "pass",
+      usefulnessLabel: "krn_improves_over_simple_retrieval",
+      contentDelta: "contract_changed",
+      contractSource: "execution_contract",
+      advantageDelta: {
+        result: "win"
+      },
       baseline: {
         contractId: "contract:summary-only-krn-context-claim",
         evidenceShape: "missing_evidence",
@@ -75,5 +92,53 @@ describe("runCodexOutputComparatorEval", () => {
     expect(interdependentCase?.krn.validationFindings).toEqual([]);
     expect(interdependentCase?.selectedContextSize.bytes).toBeGreaterThan(0);
     expect(interdependentCase?.doesNotProve).toContain("live Codex");
+
+    const neutralInterdependentCase = result.cases.find((testCase) =>
+      testCase.comparisonId === "neutral-breaks-codex-output-evidence-advantage:simple_retrieval"
+    );
+    expect(neutralInterdependentCase).toMatchObject({
+      caseId: "neutral-breaks-codex-output-evidence-advantage",
+      baselineKind: "simple_retrieval",
+      status: "pass",
+      usefulnessLabel: "baseline_already_sufficient",
+      contentDelta: "baseline_sufficient",
+      contractSource: "execution_contract",
+      advantageDelta: {
+        result: "neutral",
+        simpleRetrievalAlreadySufficient: true
+      },
+      baseline: {
+        contractId: "contract:neutral-evidence-shaped-claim",
+        selectedKnowledgeIds: [
+          "pattern:neutral-codex-output-evidence-shape-required",
+          "source:neutral-codex-output-evidence-shape-required",
+          "pattern:neutral-summary-only-claim"
+        ]
+      },
+      krn: {
+        contractId: "contract:neutral-evidence-shaped-claim",
+        selectedSourceClaimIds: ["source:neutral-codex-output-evidence-shape-required"]
+      }
+    });
+    expect(result.cases.filter((testCase) =>
+      testCase.usefulnessLabel === "baseline_already_sufficient"
+    )).toHaveLength(4);
+    expect(result.cases.filter((testCase) =>
+      testCase.usefulnessLabel === "krn_refuses_harmful_retrieval"
+    )).toHaveLength(4);
+    expect(result.cases.filter((testCase) =>
+      testCase.usefulnessLabel === "loss_reported"
+    )).toHaveLength(4);
+
+    const lossCase = result.cases.find((testCase) =>
+      testCase.comparisonId === "learn-company-review-standard:no_memory"
+    );
+    expect(lossCase).toMatchObject({
+      usefulnessLabel: "loss_reported",
+      contentDelta: "selection_changed",
+      advantageDelta: {
+        result: "loss"
+      }
+    });
   });
 });

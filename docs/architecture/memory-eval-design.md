@@ -236,26 +236,33 @@ unknown-first JSON metadata boundary, the interdependent Codex-output
 evidence-shape boundary, and one neutral interdependent-style falsification
 case where the baseline and KRN select the same evidence-shaped contract.
 
-`pnpm eval:codex-output-comparator` consumes those execution-contract cases and
-reports the deterministic Codex-vs-KRN comparison:
+`pnpm eval:codex-output-comparator` consumes the memory-advantage eval and
+reports a deterministic Codex-vs-KRN sweep:
 
-1. the baseline contract selected by simple retrieval;
-2. the KRN-grounded contract selected by source-first memory/source ids;
-3. expected output evidence shape;
-4. baseline missing-evidence failure through the shared Codex-output evidence
+1. each memory-advantage prompt is compared in two variants:
+   no-memory baseline and simple-retrieval baseline;
+2. each comparison reports baseline-selected ids, KRN-selected ids,
+   explicit usefulness label, content delta, selected-context size, exclusions,
+   and expected output evidence shape;
+3. execution-contract cases still report baseline and KRN contract ids;
+4. baseline outputs fail through the shared Codex-output evidence
    validator;
-5. KRN valid evidence shape, selected-context size, exclusions, and
-   proof/non-proof readback.
+5. KRN-grounded outputs carry prior-session evidence refs, verification,
+   changed files, proof/non-proof readback, and selected memory/source ids when
+   retrieval contributed context.
 
-The comparator intentionally consumes only execution-contract cases whose
-`advantageDelta` is `win`; neutral falsification cases stay in the
-memory-advantage eval as boundary evidence instead of being counted as changed
-Codex-vs-KRN contracts.
+Current readback reports 34 comparison cases over 17 source prompts, including
+22 win comparisons, 8 neutral comparisons, and 4 loss comparisons. Neutral
+cases remain visible with `baseline_already_sufficient` labels instead of being
+treated as KRN wins. It also separates broad selected-content deltas from real
+execution-contract deltas: 26 comparisons change selected content/proxy state,
+while 3 comparisons have execution-contract source data and 2 of those change
+the execution contract.
 
 This proves only that selected KRN memory/source can change deterministic
-execution-contract choices in controlled company-pattern cases. It does not
-prove every KRN hit is an advantage, Codex implemented those contracts,
-arbitrary code quality, or product readiness.
+output contracts or selected evidence shape in controlled company-pattern
+cases. It does not prove every KRN hit is an advantage, Codex implemented those
+contracts, arbitrary code quality, or product readiness.
 
 ### Relation-Linked Memory/Source Usefulness
 

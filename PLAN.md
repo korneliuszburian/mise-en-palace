@@ -26,7 +26,7 @@ DB-backed plan/brief memory advantage: target repo harness smoke proves baseline
 plan/brief memory eval comparator: eval:memory-advantage now reports no-memory plan/brief misses and KRN memory/source rendered-brief hits
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
 coding-task memory decision: eval:memory-advantage now derives one implementation decision from selected memory/source ids, proving a baseline cast-JSON decision can be replaced by source-backed unknown-first parser guidance without LLM execution
-execution-contract comparator: eval:memory-advantage reports baseline vs KRN contracts, and eval:codex-output-comparator checks baseline missing evidence vs KRN evidence-shaped output contracts
+Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
 memory advantage falsification: eval:memory-advantage now reports 11 wins, 4 neutral/no-advantage cases, and one broken-prior-advantage case instead of treating every KRN hit as broad superiority
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
 store-backed pattern gate: source/search packets shaped one retained paper intake
