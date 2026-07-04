@@ -166,6 +166,34 @@ describe("maintenance worker skeleton", () => {
     expect(skippedRecord.status).toBe("skipped");
   });
 
+  test("requires embedding model scope for embed job payloads", () => {
+    const sourceChunkJob: MaintenanceJob<"embed_source_chunk"> = {
+      jobType: "embed_source_chunk",
+      payload: {
+        sourceChunkId: "source-chunk-1",
+        reason: "refresh source chunk embedding",
+        embeddingModelId: "text-embedding-3-small"
+      }
+    };
+    const memoryRecordJob: MaintenanceJob<"embed_memory_record"> = {
+      jobType: "embed_memory_record",
+      payload: {
+        memoryRecordId: "memory-1",
+        reason: "refresh stale memory embedding",
+        embeddingModelId: "text-embedding-3-small"
+      }
+    };
+
+    expect(sourceChunkJob.payload.embeddingModelId).toBe("text-embedding-3-small");
+    expect(memoryRecordJob.payload.embeddingModelId).toBe("text-embedding-3-small");
+    expect(describeMaintenanceJob("embed_source_chunk").idempotencyKey).toContain(
+      "{embeddingModelId}"
+    );
+    expect(describeMaintenanceJob("embed_memory_record").idempotencyKey).toContain(
+      "{embeddingModelId}"
+    );
+  });
+
   test("describes write authority before any worker runtime exists", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 

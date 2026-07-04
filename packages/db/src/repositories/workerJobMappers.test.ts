@@ -15,7 +15,8 @@ describe("worker job mappers", () => {
         status: "queued",
         payload: {
           memoryRecordId: "memory-1",
-          reason: "refresh stale memory embedding"
+          reason: "refresh stale memory embedding",
+          embeddingModelId: "text-embedding-3-small"
         },
         attempts: 0,
         maxAttempts: 3,
@@ -32,7 +33,8 @@ describe("worker job mappers", () => {
       status: "queued",
       payload: {
         memoryRecordId: "memory-1",
-        reason: "refresh stale memory embedding"
+        reason: "refresh stale memory embedding",
+        embeddingModelId: "text-embedding-3-small"
       },
       attempts: 0,
       maxAttempts: 3,

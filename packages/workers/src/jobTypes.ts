@@ -27,13 +27,13 @@ export const parseMaintenanceJobType = (value: unknown): MaintenanceJobType | un
 export interface EmbedSourceChunkPayload {
   sourceChunkId: SourceChunkId;
   reason: string;
-  embeddingModelId?: string;
+  embeddingModelId: string;
 }
 
 export interface EmbedMemoryRecordPayload {
   memoryRecordId: MemoryRecordId;
   reason: string;
-  embeddingModelId?: string;
+  embeddingModelId: string;
 }
 
 export interface CompactMemoryPayload {

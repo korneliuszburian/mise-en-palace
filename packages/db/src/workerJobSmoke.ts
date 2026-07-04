@@ -20,6 +20,7 @@ import {
   smokeFixtureClocks
 } from "./smokeFixtureClocks.js";
 import type {
+  EnqueueWorkerJobInput,
   WorkerJobRecord,
   WorkerJobType
 } from "./repositories/workerJobTypes.js";
@@ -88,11 +89,11 @@ const deleteMarkerRows = async (client: Sql, marker: string): Promise<void> => {
   `;
 };
 
-const payloadForJobType = (
+const enqueueInputForJobType = (
   jobType: WorkerJobType,
   marker: string,
   sequence: number
-): Record<string, unknown> => {
+): EnqueueWorkerJobInput => {
   const basePayload = {
     smoke: true,
     smokeId: marker,
@@ -103,29 +104,43 @@ const payloadForJobType = (
 
   if (jobType === "embed_source_chunk") {
     return {
-      ...basePayload,
-      sourceChunkId: `source-chunk-${marker}`
+      jobType,
+      payload: {
+        ...basePayload,
+        sourceChunkId: `source-chunk-${marker}`,
+        embeddingModelId: "text-embedding-3-small"
+      }
     };
   }
 
   if (jobType === "embed_memory_record") {
     return {
-      ...basePayload,
-      memoryRecordId: `memory-record-${marker}`
+      jobType,
+      payload: {
+        ...basePayload,
+        memoryRecordId: `memory-record-${marker}`,
+        embeddingModelId: "text-embedding-3-small"
+      }
     };
   }
 
   if (jobType === "expire_stale_memory") {
     return {
-      ...basePayload,
-      projectId: `project-${marker}`,
-      olderThan: smokeFixtureClocks.workerJobs.olderThan
+      jobType,
+      payload: {
+        ...basePayload,
+        projectId: `project-${marker}`,
+        olderThan: smokeFixtureClocks.workerJobs.olderThan
+      }
     };
   }
 
   return {
-    ...basePayload,
-    projectId: `project-${marker}`
+    jobType,
+    payload: {
+      ...basePayload,
+      projectId: `project-${marker}`
+    }
   };
 };
 
@@ -172,8 +187,7 @@ export const runWorkerJobSmokeCheck = async (
 
     for (const [index, jobType] of workerJobTypes.entries()) {
       const job = await repository.enqueueWorkerJob({
-        jobType,
-        payload: payloadForJobType(jobType, marker, index + 1),
+        ...enqueueInputForJobType(jobType, marker, index + 1),
         runAfter: smokeFixtureClocks.workerJobs.runAfter
       });
 

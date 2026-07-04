@@ -25,6 +25,10 @@ import type {
 
 const now = (): Date => new Date();
 
+const workerJobPayloadJson = (
+  payload: EnqueueWorkerJobInput["payload"]
+): Record<string, unknown> => ({ ...payload });
+
 export class DrizzleWorkerJobRepository implements WorkerJobRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -34,7 +38,7 @@ export class DrizzleWorkerJobRepository implements WorkerJobRepository {
         .insert(workerJobs)
         .values({
           jobType: input.jobType,
-          payload: input.payload,
+          payload: workerJobPayloadJson(input.payload),
           ...(input.runAfter === undefined
             ? {}
             : { runAfter: fromIsoTimestamp(input.runAfter) }),

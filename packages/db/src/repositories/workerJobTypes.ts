@@ -4,6 +4,7 @@ import {
   workerJobStatuses
 } from "@krn/workers";
 import type {
+  MaintenanceJob,
   MaintenanceJobType,
   WorkerJobStatus
 } from "@krn/workers";
@@ -16,12 +17,17 @@ export const workerJobLifecycleStatuses = workerJobStatuses;
 
 export type WorkerJobLifecycleStatus = WorkerJobStatus;
 
-export interface EnqueueWorkerJobInput {
-  jobType: WorkerJobType;
-  payload: Record<string, unknown>;
+interface EnqueueWorkerJobInputBase {
   runAfter?: IsoTimestamp;
   maxAttempts?: number;
 }
+
+export type EnqueueWorkerJobInput<TType extends WorkerJobType = WorkerJobType> = {
+  [K in TType]: EnqueueWorkerJobInputBase & {
+    jobType: K;
+    payload: MaintenanceJob<K>["payload"];
+  };
+}[TType];
 
 export interface MarkWorkerJobRunningInput {
   lockedAt?: IsoTimestamp;
