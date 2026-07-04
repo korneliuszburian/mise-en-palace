@@ -1,0 +1,52 @@
+{
+  "version": "1",
+  "topK": 6,
+  "minimumHitRateAtK": 1,
+  "minimumNdcgAtK": 0.95,
+  "rows": [
+    ["claim-memory-feedback", "memory feedback helped hurt stale activation downgrade", "Memory feedback outcomes should guide future activation without direct Memory Core mutation."],
+    ["claim-pattern-usefulness", "pattern usefulness evidenceRef helped retained pattern", "Pattern usefulness needs evidenceRef, outcome, reason, and non-proof before helped feedback."],
+    ["claim-source-decision", "source decision mechanism consumer falsifier retention gate", "Source decisions require mechanism, KRN implication, consumer, falsifier, and non-proof."],
+    ["claim-decision-link", "accepted sourceclaim sourcedecisionedge linked support missing caveat", "Accepted claims need visible SourceDecisionEdge support or a missing-link caveat."],
+    ["claim-graph-relation", "source graph relation edge temporal readback", "SourceClaimEdge relation support is graph readback, not source truth."],
+    ["claim-graph-invalidation", "invalidates expires supersedes stale graph edge", "Invalidating graph edges should rank down stale source-search candidates."],
+    ["claim-search-document-link", "source claim document link searchdocument artifact chunk", "SourceClaim document links should expose SearchDocument refs by claim, artifact, or chunk."],
+    ["claim-vector-scope", "embedding model searchVector searchHybrid mixed model", "Vector and hybrid search must be scoped by embedding model to avoid mixed-model retrieval."],
+    ["claim-second-opinion", "second opinion claude governed verdict diff hash", "Second-opinion review must be governed JSON with diff freshness and evidence refs."],
+    ["claim-target-owner", "target repo owner file recall read model", "Target owner-file recall should use explicit target read-model evidence."],
+    ["claim-brain-ranking", "brain ranking proxy labels ndcg hitrate topk", "Brain ranking eval should use proxy labels and avoid claiming broad semantic truth."],
+    ["claim-source-artifact", "source artifact preview extraction activation context reuse", "Source artifact preview extraction can shape bounded activation context."],
+    ["claim-heartbeat-acquisition", "heartbeat acquisition missing evidence candidate only", "Heartbeat acquisition should remain candidate-only and surface missing evidence."],
+    ["claim-worker-boundary", "worker memory core authority declaration runtime executor", "Worker authority declarations are not runtime enforcement without an executor."],
+    ["claim-cli-boundary", "cli command runner orchestration readback helper split", "CLI command runners should orchestrate and delegate readback/domain helpers."],
+    ["claim-typescript-boundary", "unknown first json parse type boundary result state", "External JSON inputs should enter as unknown and narrow near the boundary."],
+    ["claim-context-roi", "context roi selected exclusions broad dump abstention", "ContextROI should select bounded context and preserve explicit exclusions."],
+    ["claim-codex-brief", "codex brief proof boundary evidence contract", "Codex briefs should carry constraints, evidence contracts, and proof boundaries."],
+    ["claim-docs-lint", "behavior matrix docs lint proof boundary", "Docs lint should protect active proof boundaries without pretending to be behavior proof."],
+    ["claim-pgvector", "postgres pgvector retrieval substrate lexical vector hybrid", "The retrieval substrate should distinguish lexical, vector, and hybrid readback limits."]
+  ],
+  "relations": [
+    ["claim-graph-relation", "claim-source-decision", "narrows"],
+    ["claim-graph-invalidation", "claim-graph-relation", "invalidates"],
+    ["claim-search-document-link", "claim-source-artifact", "narrows"],
+    ["claim-brain-ranking", "claim-source-decision", "depends_on"],
+    ["claim-vector-scope", "claim-pgvector", "narrows"]
+  ],
+  "queries": [
+    ["memory-feedback", "hurt stale activation feedback", ["source_claim:claim-memory-feedback"]],
+    ["pattern-usefulness", "pattern usefulness evidenceRef helped", ["source_claim:claim-pattern-usefulness"]],
+    ["source-decision", "mechanism consumer falsifier source decision", ["source_claim:claim-source-decision"]],
+    ["decision-link", "accepted sourceclaim sourcedecisionedge support", ["source_claim:claim-decision-link"]],
+    ["graph-relation", "temporal source graph relation edge", ["source_claim:claim-graph-relation"]],
+    ["graph-invalidation", "invalidates stale graph edge supersedes", ["source_claim:claim-graph-invalidation"]],
+    ["document-link", "source claim document link artifact chunk", ["source_claim:claim-search-document-link"]],
+    ["vector-scope", "searchHybrid embedding model mixed vector", ["source_claim:claim-vector-scope"]],
+    ["second-opinion", "claude governed verdict diff hash", ["source_claim:claim-second-opinion"]],
+    ["target-owner", "target repo owner file read model", ["source_claim:claim-target-owner"]],
+    ["brain-ranking", "brain ranking ndcg topk proxy labels", ["source_claim:claim-brain-ranking"]],
+    ["source-artifact", "source artifact preview activation context", ["source_claim:claim-source-artifact"]],
+    ["heartbeat-acquisition", "heartbeat acquisition missing evidence candidate", ["source_claim:claim-heartbeat-acquisition"]],
+    ["typescript-boundary", "unknown first json parse result state", ["source_claim:claim-typescript-boundary"]],
+    ["pgvector", "postgres pgvector lexical vector hybrid", ["source_claim:claim-pgvector"]]
+  ]
+}

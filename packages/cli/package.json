@@ -6,6 +6,7 @@
   "scripts": {
     "krn": "tsx src/index.ts",
     "eval:brain-ranking": "tsx src/runBrainRankingEval.ts ../../tests/fixtures/brain-ranking/brain-ranking-eval.json",
+    "eval:source-graph-ranking": "tsx src/runSourceGraphRankingEval.ts ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "typecheck:tests:clean": "tsc -p tsconfig.tests.clean.json"
