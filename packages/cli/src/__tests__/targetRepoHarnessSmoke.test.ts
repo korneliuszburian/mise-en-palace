@@ -16,7 +16,14 @@ describe("targetRepoHarnessSmoke", () => {
       trustExclusionPatterns: [".env*", ".git/", "node_modules/", ".muke/", ".supersearch/runtime/", "dist/", "build/"],
       executionRunId: "execution-run-1",
       readBackExecutionRunId: "execution-run-1",
+      baselineCodexBriefRendered: true,
+      baselineMemoryIncluded: false,
+      baselineContextBytes: 1000,
+      baselineApproximateTokens: 250,
       codexBriefRendered: true,
+      codexBriefMemoryRendered: true,
+      groundedContextBytes: 1200,
+      groundedApproximateTokens: 300,
       evidenceBundleId: "evidence-bundle-1",
       evidenceReadbackMatched: true,
       commandProofBoundary: "weak_default_not_run",
@@ -29,6 +36,7 @@ describe("targetRepoHarnessSmoke", () => {
       memoryApplicationId: "memory-application-1",
       memoryUsefulnessOutcome: "helped",
       memoryUsefulnessReadbackMatched: true,
+      memoryRecordDrift: "none",
       memoryPositiveFeedbackCount: 1,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: true,
@@ -45,7 +53,14 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Target trust exclusions: .env*, .git/, node_modules/, .muke/, .supersearch/runtime/, dist/, build/");
     expect(output).toContain("Execution run: execution-run-1");
     expect(output).toContain("Readback: matched");
+    expect(output).toContain("Baseline Codex brief rendered: yes");
+    expect(output).toContain("Baseline memory included: no");
+    expect(output).toContain("Baseline context bytes: 1000");
+    expect(output).toContain("Baseline approximate tokens: 250");
     expect(output).toContain("Codex brief rendered: yes");
+    expect(output).toContain("Codex brief memory rendered: yes");
+    expect(output).toContain("Grounded context bytes: 1200");
+    expect(output).toContain("Grounded approximate tokens: 300");
     expect(output).toContain("Evidence bundle: evidence-bundle-1");
     expect(output).toContain("Evidence readback: matched");
     expect(output).toContain("Command proof boundary: weak_default_not_run");
@@ -58,6 +73,7 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Memory application: memory-application-1");
     expect(output).toContain("Memory usefulness outcome: helped");
     expect(output).toContain("Memory usefulness readback: matched");
+    expect(output).toContain("Memory record drift: none");
     expect(output).toContain("Memory positive feedback count: 1");
     expect(output).toContain("Automatic MemoryRecord mutation: none");
     expect(output).toContain("Target project linked: yes");

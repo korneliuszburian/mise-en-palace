@@ -52,7 +52,14 @@ export interface TargetRepoHarnessSmokeReport {
   trustExclusionPatterns: readonly string[];
   executionRunId: string;
   readBackExecutionRunId: string;
+  baselineCodexBriefRendered: boolean;
+  baselineMemoryIncluded: boolean;
+  baselineContextBytes: number;
+  baselineApproximateTokens: number;
   codexBriefRendered: boolean;
+  codexBriefMemoryRendered: boolean;
+  groundedContextBytes: number;
+  groundedApproximateTokens: number;
   evidenceBundleId: string;
   evidenceReadbackMatched: boolean;
   commandProofBoundary: "weak_default_not_run";
@@ -65,6 +72,7 @@ export interface TargetRepoHarnessSmokeReport {
   memoryApplicationId: string;
   memoryUsefulnessOutcome: "helped";
   memoryUsefulnessReadbackMatched: boolean;
+  memoryRecordDrift: "none";
   memoryPositiveFeedbackCount: number;
   automaticMemoryRecordMutation: "none";
   targetProjectLinked: boolean;
@@ -92,6 +100,9 @@ interface TargetPlanReadbackProof {
   codexBriefRendered: boolean;
   targetProjectLinked: boolean;
   memoryIncluded: boolean;
+  memoryRendered: boolean;
+  contextBytes: number;
+  approximateTokens: number;
 }
 
 interface TargetEvidenceReadbackProof {
@@ -196,7 +207,7 @@ const targetFixtureOwnerFiles = [
 const countMarkerRows = async (
   client: Sql,
   marker: string,
-  retrievalRunId: string | undefined
+  retrievalRunIds: readonly string[]
 ): Promise<number> => {
   let count = await sumCountRows([
     client<CountRow[]>`select count(*)::int as count from workspaces where metadata->>'fixtureMarker' = ${marker}`,
@@ -206,11 +217,13 @@ const countMarkerRows = async (
     countRunEventsBySmokeId(client, marker),
     client<CountRow[]>`select count(*)::int as count from memory_applications where metadata->>'smokeId' = ${marker}`,
     countMemoryRecordsBySmokeId(client, marker),
+    client<CountRow[]>`select count(*)::int as count from source_decision_edges where metadata->>'smokeId' = ${marker}`,
+    client<CountRow[]>`select count(*)::int as count from source_decisions where metadata->>'smokeId' = ${marker}`,
     countSourceClaimsBySmokeId(client, marker),
     countSourceArtifactsBySmokeId(client, marker)
   ]);
 
-  if (retrievalRunId !== undefined) {
+  for (const retrievalRunId of retrievalRunIds) {
     count += await sumCountRows([countRetrievalRunById(client, retrievalRunId)]);
   }
 
@@ -220,21 +233,26 @@ const countMarkerRows = async (
 const cleanupMarkerRows = async (
   client: Sql,
   marker: string,
-  retrievalRunId: string | undefined
+  retrievalRunIds: readonly string[]
 ): Promise<number> => {
   await client`delete from memory_applications where metadata->>'smokeId' = ${marker}`;
   await client`delete from memory_records where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_decision_edges where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_decisions where metadata->>'smokeId' = ${marker}`;
+  await client`delete from outbox_events where payload->>'sourceClaimId' in (
+    select id::text from source_claims where metadata->>'smokeId' = ${marker}
+  )`;
   await client`delete from source_claims where metadata->>'smokeId' = ${marker}`;
   await client`delete from source_artifacts where metadata->>'smokeId' = ${marker}`;
   await client`delete from run_events where payload->>'smokeId' = ${marker}`;
 
-  if (retrievalRunId !== undefined) {
+  for (const retrievalRunId of retrievalRunIds) {
     await client`delete from retrieval_runs where id = ${retrievalRunId}`;
   }
 
   await client`delete from workspaces where metadata->>'fixtureMarker' = ${marker}`;
 
-  return countMarkerRows(client, marker, retrievalRunId);
+  return countMarkerRows(client, marker, retrievalRunIds);
 };
 
 const createTargetFixtureProject = async (
@@ -266,19 +284,21 @@ const createTargetFixtureProject = async (
   return { workspace, project };
 };
 
-const assertTargetPlanReadback = (
+const targetPlanReadbackProof = (
   input: {
     aggregate: HarnessRunAggregate;
     executionRunId: string;
     projectId: string;
     memoryRecordId: string;
     renderedBrief: string;
+    missingContextMessage: string;
+    memoryRendered: boolean;
   }
 ): TargetPlanReadbackProof => {
   const contextAssembly = input.aggregate.contextAssembly;
 
   if (contextAssembly === undefined) {
-    throw new Error("Target repo harness smoke failed to read back persisted run");
+    throw new Error(input.missingContextMessage);
   }
 
   const codexBriefRendered =
@@ -291,23 +311,81 @@ const assertTargetPlanReadback = (
     inclusion.subjectType === "memory_record" &&
     inclusion.subjectId === input.memoryRecordId
   );
-  const proofChecks = [
-    input.aggregate.executionRun.id === input.executionRunId,
+  const contextBytes = Buffer.byteLength(input.renderedBrief, "utf8");
+
+  return {
+    contextAssemblyId: contextAssembly.id,
     codexBriefRendered,
     targetProjectLinked,
-    memoryIncluded
+    memoryIncluded,
+    memoryRendered: input.memoryRendered,
+    contextBytes,
+    approximateTokens: Math.ceil(contextBytes / 4)
+  };
+};
+
+const assertTargetPlanReadback = (
+  input: {
+    aggregate: HarnessRunAggregate;
+    executionRunId: string;
+    projectId: string;
+    memoryRecordId: string;
+    renderedBrief: string;
+  }
+): TargetPlanReadbackProof => {
+  const proof = targetPlanReadbackProof({
+    ...input,
+    missingContextMessage: "Target repo harness smoke failed to read back persisted run",
+    // Grounded proof is a strict hit: the brief must expose the typed context row and the id.
+    memoryRendered: input.renderedBrief.includes(`memory_record:${input.memoryRecordId}`) &&
+      input.renderedBrief.includes(input.memoryRecordId)
+  });
+  const proofChecks = [
+    input.aggregate.executionRun.id === input.executionRunId,
+    proof.codexBriefRendered,
+    proof.targetProjectLinked,
+    proof.memoryIncluded,
+    proof.memoryRendered,
+    proof.contextBytes > 0
   ];
 
   if (proofChecks.some((passed) => !passed)) {
     throw new Error("Target repo harness smoke readback did not match expected project proof");
   }
 
-  return {
-    contextAssemblyId: contextAssembly.id,
-    codexBriefRendered,
-    targetProjectLinked,
-    memoryIncluded
-  };
+  return proof;
+};
+
+const assertTargetBaselineReadback = (
+  input: {
+    aggregate: HarnessRunAggregate;
+    executionRunId: string;
+    projectId: string;
+    memoryRecordId: string;
+    renderedBrief: string;
+  }
+): TargetPlanReadbackProof => {
+  const proof = targetPlanReadbackProof({
+    ...input,
+    missingContextMessage: "Target repo harness smoke failed to read back baseline run",
+    // Baseline proof is a strict miss: a target memory id mention would weaken the baseline.
+    memoryRendered: input.renderedBrief.includes(`memory_record:${input.memoryRecordId}`) ||
+      input.renderedBrief.includes(input.memoryRecordId)
+  });
+  const proofChecks = [
+    input.aggregate.executionRun.id === input.executionRunId,
+    proof.codexBriefRendered,
+    proof.targetProjectLinked,
+    !proof.memoryIncluded,
+    !proof.memoryRendered,
+    proof.contextBytes > 0
+  ];
+
+  if (proofChecks.some((passed) => !passed)) {
+    throw new Error("Target repo harness smoke baseline did not prove memory absence");
+  }
+
+  return proof;
 };
 
 const findById = <T extends IdRecord>(
@@ -388,7 +466,14 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Target trust exclusions: ${report.trustExclusionPatterns.join(", ")}`,
   `Execution run: ${report.executionRunId}`,
   `Readback: ${matchedOrMismatch(report.readBackExecutionRunId, report.executionRunId)}`,
+  `Baseline Codex brief rendered: ${yesNo(report.baselineCodexBriefRendered)}`,
+  `Baseline memory included: ${yesNo(report.baselineMemoryIncluded)}`,
+  `Baseline context bytes: ${report.baselineContextBytes}`,
+  `Baseline approximate tokens: ${report.baselineApproximateTokens}`,
   `Codex brief rendered: ${yesNo(report.codexBriefRendered)}`,
+  `Codex brief memory rendered: ${yesNo(report.codexBriefMemoryRendered)}`,
+  `Grounded context bytes: ${report.groundedContextBytes}`,
+  `Grounded approximate tokens: ${report.groundedApproximateTokens}`,
   `Evidence bundle: ${report.evidenceBundleId}`,
   `Evidence readback: ${matchedWhen(report.evidenceReadbackMatched)}`,
   `Command proof boundary: ${report.commandProofBoundary}`,
@@ -401,6 +486,7 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Memory application: ${report.memoryApplicationId}`,
   `Memory usefulness outcome: ${report.memoryUsefulnessOutcome}`,
   `Memory usefulness readback: ${matchedWhen(report.memoryUsefulnessReadbackMatched)}`,
+  `Memory record drift: ${report.memoryRecordDrift}`,
   `Memory positive feedback count: ${report.memoryPositiveFeedbackCount}`,
   `Automatic MemoryRecord mutation: ${report.automaticMemoryRecordMutation}`,
   `Target project linked: ${yesNo(report.targetProjectLinked)}`,
@@ -436,10 +522,10 @@ export const runTargetRepoHarnessSmokeCheck = async (
   const repoPath = `${input.targetRepoPath}#${marker}`;
   const now = smokeFixtureClocks.targetRepoHarness.now;
   const { client, db } = createSmokeDatabaseRuntime(input.databaseUrl);
-  let retrievalRunId: string | undefined;
+  const retrievalRunIds: string[] = [];
 
   try {
-    await cleanupMarkerRows(client, marker, retrievalRunId);
+    await cleanupMarkerRows(client, marker, retrievalRunIds);
 
     const {
       projectRepository,
@@ -484,6 +570,65 @@ export const runTargetRepoHarnessSmokeCheck = async (
         trustExclusions: targetFixtureTrustExclusions
       }
     });
+    const createSmokeId = createSmokeIdFactory(marker);
+    const baselineResult = await compileHarnessPlan(
+      {
+        workspaceId: workspace.id,
+        projectId: project.id,
+        operatorIntent: {
+          rawIntent: "improve test script readiness",
+          source: "cli",
+          metadata: {
+            smokeId: marker,
+            phase: "baseline"
+          }
+        },
+        taskContract: {
+          title: "improve test script readiness",
+          objective: "improve test script readiness",
+          constraints: [
+            "use the target repo project scope",
+            "do not mutate fixture files"
+          ],
+          nonGoals: [
+            "do not invoke Codex",
+            "do not create dashboard"
+          ],
+          acceptance: [
+            "project-scoped plan persisted",
+            "Codex brief rendered",
+            "memory baseline miss recorded"
+          ],
+          metadata: {
+            smokeId: marker,
+            phase: "baseline"
+          }
+        },
+        tokenBudget: 420,
+        metadata: {
+          command: "db:smoke:target-repo-harness",
+          smokeId: marker,
+          phase: "baseline",
+          projectKernelId: projectKernel.id,
+          repoInstallationIds: [repoInstallation.id]
+        }
+      },
+      {
+        harnessRunRepository,
+        memoryRepository,
+        sourceRepository,
+        retrievalRepository,
+        now: () => now,
+        createId: createSmokeId
+      }
+    );
+    const baselineRetrievalRunId = metadataString(baselineResult.contextAssembly.metadata, "retrievalRunId");
+
+    if (baselineRetrievalRunId === undefined) {
+      throw new Error("Target repo harness smoke did not create a baseline retrieval run");
+    }
+
+    retrievalRunIds.push(baselineRetrievalRunId);
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -511,6 +656,19 @@ export const runTargetRepoHarnessSmokeCheck = async (
         smokeId: marker
       }
     });
+    const sourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: sourceClaim.id,
+      status: "adopt",
+      decision: "Adopt target fixture readiness memory as bounded planning support.",
+      rationale:
+        "The target repo harness smoke needs accepted source support before treating the MemoryRecord as governed context.",
+      consumer: "V03 target memory usefulness smoke",
+      falsifier: "The memory appears in plan/brief context without an accepted SourceClaim decision.",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const memoryRecord = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `target-repo-harness:${marker}:readiness-memory`,
@@ -532,7 +690,48 @@ export const runTargetRepoHarnessSmokeCheck = async (
         fixtureMemory: true
       }
     });
-    const createSmokeId = createSmokeIdFactory(marker);
+    const baselineExecutionRun = await harnessRunRepository.createExecutionRun({
+      harnessPlanId: baselineResult.harnessPlan.id,
+      adapter: "codex",
+      status: "planned",
+      initialEvent: {
+        sequence: 1,
+        type: "smoke.target_repo_harness.baseline",
+        message: "Target repo harness smoke baseline run created",
+        payload: {
+          smokeId: marker,
+          projectId: project.id,
+          memoryRecordId: memoryRecord.id
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        phase: "baseline",
+        command: "db:smoke:target-repo-harness"
+      }
+    });
+    const baselineAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(baselineExecutionRun.id);
+
+    if (baselineAggregate === undefined) {
+      throw new Error("Target repo harness smoke failed to read back baseline run");
+    }
+
+    const { renderedBrief: baselineRenderedBrief } = renderCodexBriefFromAggregate({
+      aggregate: baselineAggregate,
+      createdAt: now,
+      createId: (prefix) => `${prefix}-${marker}-baseline-readback`,
+      nextActionFallback: "Use this brief as the next Codex input.",
+      goalReference: "GOAL.md M27 target repo init-connect dogfood",
+      execPlanReference: "PLAN.md M27 Slice 09",
+      missingContextMessage: "Target repo harness smoke failed to read back baseline run"
+    });
+    const baselineProof = assertTargetBaselineReadback({
+      aggregate: baselineAggregate,
+      executionRunId: baselineExecutionRun.id,
+      projectId: project.id,
+      memoryRecordId: memoryRecord.id,
+      renderedBrief: baselineRenderedBrief
+    });
     const result = await compileHarnessPlan(
       {
         workspaceId: workspace.id,
@@ -582,11 +781,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
         createId: createSmokeId
       }
     );
-    retrievalRunId = metadataString(result.contextAssembly.metadata, "retrievalRunId");
+    const retrievalRunId = metadataString(result.contextAssembly.metadata, "retrievalRunId");
 
     if (retrievalRunId === undefined) {
       throw new Error("Target repo harness smoke did not create a retrieval run");
     }
+
+    retrievalRunIds.push(retrievalRunId);
 
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: result.harnessPlan.id,
@@ -640,6 +841,18 @@ export const runTargetRepoHarnessSmokeCheck = async (
       memoryRecordId: memoryRecord.id,
       renderedBrief
     });
+    await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: sourceClaim.id,
+      targetType: "harness_run",
+      targetId: executionRun.id,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "Accepted source support backs the memory-assisted plan/brief smoke.",
+      metadata: {
+        smokeId: marker,
+        sourceDecisionId: sourceDecision.id
+      }
+    });
     const memoryApplication = await memoryRepository.recordMemoryApplication({
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
@@ -660,6 +873,19 @@ export const runTargetRepoHarnessSmokeCheck = async (
       readBackMemoryRecord.positiveFeedbackCount < memoryRecord.positiveFeedbackCount + 1
     ) {
       throw new Error("Target repo harness smoke memory usefulness readback did not match");
+    }
+
+    const memoryRecordContentUnchanged =
+      readBackMemoryRecord.status === memoryRecord.status &&
+      readBackMemoryRecord.summary === memoryRecord.summary &&
+      readBackMemoryRecord.body === memoryRecord.body &&
+      readBackMemoryRecord.applicationGuidance === memoryRecord.applicationGuidance &&
+      readBackMemoryRecord.invalidationRule === memoryRecord.invalidationRule &&
+      JSON.stringify(readBackMemoryRecord.sourceLineage) === JSON.stringify(memoryRecord.sourceLineage) &&
+      JSON.stringify(readBackMemoryRecord.metadata) === JSON.stringify(memoryRecord.metadata);
+
+    if (!memoryRecordContentUnchanged) {
+      throw new Error("Target repo harness smoke mutated MemoryRecord content/status metadata");
     }
 
     const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
@@ -721,7 +947,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       }
     );
 
-    const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunId);
+    const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunIds);
 
     return {
       workspaceSlug,
@@ -733,7 +959,14 @@ export const runTargetRepoHarnessSmokeCheck = async (
       trustExclusionPatterns: targetFixtureTrustExclusions.map((exclusion) => exclusion.pathPattern),
       executionRunId: executionRun.id,
       readBackExecutionRunId: aggregate.executionRun.id,
+      baselineCodexBriefRendered: baselineProof.codexBriefRendered,
+      baselineMemoryIncluded: baselineProof.memoryIncluded,
+      baselineContextBytes: baselineProof.contextBytes,
+      baselineApproximateTokens: baselineProof.approximateTokens,
       codexBriefRendered: planProof.codexBriefRendered,
+      codexBriefMemoryRendered: planProof.memoryRendered,
+      groundedContextBytes: planProof.contextBytes,
+      groundedApproximateTokens: planProof.approximateTokens,
       evidenceBundleId: evidenceBundle.id,
       evidenceReadbackMatched: evidenceProof.evidenceBundleId === evidenceBundle.id,
       commandProofBoundary: "weak_default_not_run",
@@ -746,6 +979,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       memoryApplicationId: memoryApplication.id,
       memoryUsefulnessOutcome: "helped",
       memoryUsefulnessReadbackMatched: readBackMemoryRecord.id === memoryRecord.id,
+      memoryRecordDrift: "none",
       memoryPositiveFeedbackCount: readBackMemoryRecord.positiveFeedbackCount,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: planProof.targetProjectLinked,
@@ -753,7 +987,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       cleanedUp: remainingMarkerCount === 0
     };
   } catch (error) {
-    await cleanupMarkerRows(client, marker, retrievalRunId);
+    await cleanupMarkerRows(client, marker, retrievalRunIds);
     throw error;
   } finally {
     await client.end();
