@@ -54,6 +54,7 @@ import {
 } from "./noStoreRepositories.js";
 
 type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
+type MemoryAdvantageNegativeClass = "stale_memory" | "adversarial_unsupported_memory";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -73,6 +74,7 @@ interface MemoryAdvantageCaseFixture {
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
+  readonly negativeClass?: MemoryAdvantageNegativeClass;
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly expectedSelectedKnowledgeId: string;
@@ -110,6 +112,7 @@ interface MemoryAdvantageCaseReadback {
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
+  readonly negativeClass?: MemoryAdvantageNegativeClass;
   readonly status: "pass" | "fail";
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly baselineClass: MemoryAdvantageBaselineClass;
@@ -253,6 +256,7 @@ const projectId = "project:memory-advantage";
 const baselineClass: MemoryAdvantageBaselineClass = "no_memory_no_source";
 const simpleRetrievalBaselineClass: SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
 const memoryCompetencies = ["retrieval", "learning", "long_range", "forgetting"] as const;
+const memoryNegativeClasses = ["stale_memory", "adversarial_unsupported_memory"] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
 const requiredEnum = <TValue extends string>(
@@ -332,6 +336,9 @@ const parseCase = (
   const memoryCards = parseEvalKnowledgeCards(priorSession, "memoryCards", `${label}.priorSession`);
   const sourceClaims = parseEvalSourceClaims(priorSession, "sourceClaims", `${label}.priorSession`);
 
+  const negativeClass = value["negativeClass"] === undefined
+    ? undefined
+    : requiredEnum(value, "negativeClass", label, memoryNegativeClasses);
   const parsedCase: MemoryAdvantageCaseFixture = {
     id: requiredString(value, "id", label),
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
@@ -339,6 +346,7 @@ const parseCase = (
     query: requiredString(value, "query", label),
     distractorClasses: requiredStringArray(value, "distractorClasses", label),
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
+    ...(negativeClass === undefined ? {} : { negativeClass }),
     priorSession: {
       id: requiredString(priorSession, "id", `${label}.priorSession`),
       task: requiredString(priorSession, "task", `${label}.priorSession`),
@@ -1238,6 +1246,7 @@ const evaluateCase = async (
     query: testCase.query,
     distractorClasses: testCase.distractorClasses,
     baselineFailureRationale: testCase.baselineFailureRationale,
+    ...(testCase.negativeClass === undefined ? {} : { negativeClass: testCase.negativeClass }),
     status,
     expectedKrnResult: testCase.expectedKrnResult,
     baselineClass,
@@ -1346,6 +1355,7 @@ export const runMemoryAdvantageEval = async (
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
+        "negative memory cases can name their stale or adversarial class and surface explicit excluded ids with reasons",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
         "the expected memory/source id is present in rendered Codex brief context for hit cases",
         "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost",

@@ -122,9 +122,20 @@ usage, or product readiness.
 
 Follow-up Bead: `mise-en-palace-87w0`, blocked by `mise-en-palace-jmfl`.
 
-Add negative cases where:
+`pnpm eval:memory-advantage` now names negative memory cases with
+`negativeClass` and exposes excluded ids/reasons beside the simple retrieval
+foil:
 
-- an old pattern was later invalidated;
+- `stale_memory`: an old pattern was later invalidated;
+- `adversarial_unsupported_memory`: a tempting memory would cause unsafe
+  review-context behavior and is excluded before KRN can use it.
+
+The current adversarial case is memory-vs-memory: an unsafe remembered rule is
+excluded while the safer denylist memory remains available. A memory-vs-accepted
+SourceClaim conflict remains future work.
+
+This proves only controlled local exclusion behavior. It does not yet cover:
+
 - a source claim is temporally stale;
 - a tempting but unsupported memory conflicts with accepted source evidence.
 

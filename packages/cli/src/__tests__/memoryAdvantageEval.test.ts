@@ -16,11 +16,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(7);
+    expect(result.cases).toHaveLength(8);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 7,
-      heldOutCaseCount: 3,
+      caseCount: 8,
+      heldOutCaseCount: 4,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -30,10 +30,10 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 7,
-      heldOutCaseCount: 3,
+      caseCount: 8,
+      heldOutCaseCount: 4,
       expectedHitCount: 6,
-      expectedMissCount: 1,
+      expectedMissCount: 2,
       distractorClassCount: 5
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
@@ -63,7 +63,10 @@ describe("runMemoryAdvantageEval", () => {
       },
       forgetting: {
         status: "pass",
-        caseIds: ["forget-obsolete-no-second-opinion-rule"]
+        caseIds: [
+          "forget-obsolete-no-second-opinion-rule",
+          "adversarial-unsupported-secret-scan-rule"
+        ]
       }
     });
 
@@ -278,22 +281,30 @@ describe("runMemoryAdvantageEval", () => {
       proofStatus: "pass"
     });
 
-    const heldOutCases = result.cases.filter((testCase) => testCase.heldOut);
-    expect(heldOutCases.map((testCase) => testCase.caseId)).toEqual([
+    const heldOutHitCases = result.cases.filter((testCase) =>
+      testCase.heldOut && testCase.expectedKrnResult === "hit"
+    );
+    expect(heldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality"
     ]);
-    expect(heldOutCases.every((testCase) =>
+    const heldOutMissCases = result.cases.filter((testCase) =>
+      testCase.heldOut && testCase.expectedKrnResult === "miss"
+    );
+    expect(heldOutMissCases.map((testCase) => testCase.caseId)).toEqual([
+      "adversarial-unsupported-secret-scan-rule"
+    ]);
+    expect(heldOutHitCases.every((testCase) =>
       testCase.baselineFailureRationale.length > 0
     )).toBe(true);
-    expect(heldOutCases.every((testCase) =>
+    expect(heldOutHitCases.every((testCase) =>
       testCase["baseline_no_memory"].result === "miss" &&
       testCase["baseline_simple_retrieval"].result === "distractor_selected" &&
       testCase["krn_memory"].result === "hit" &&
       testCase["krn_plan_brief"].result === "hit"
     )).toBe(true);
-    expect(heldOutCases.map((testCase) =>
+    expect(heldOutHitCases.map((testCase) =>
       testCase["krn_memory"].requiredKnowledgeId
     )).toEqual([
       "pattern:source-search-command-boundary",
@@ -308,6 +319,7 @@ describe("runMemoryAdvantageEval", () => {
       competency: "forgetting",
       status: "pass",
       expectedKrnResult: "miss",
+      negativeClass: "stale_memory",
       priorSession: {
         id: "session:obsolete-second-opinion-rule",
         applicationOutcome: "hurt",
@@ -386,6 +398,60 @@ describe("runMemoryAdvantageEval", () => {
         proofStatus: "pass"
       }
     });
+    const adversarialCase = result.cases.find((testCase) =>
+      testCase.caseId === "adversarial-unsupported-secret-scan-rule"
+    );
+    expect(adversarialCase).toMatchObject({
+      competency: "forgetting",
+      heldOut: true,
+      status: "pass",
+      expectedKrnResult: "miss",
+      negativeClass: "adversarial_unsupported_memory",
+      priorSession: {
+        id: "session:adversarial-secret-context-rule",
+        applicationOutcome: "hurt",
+        createdMemoryIds: ["memory:pattern:secret-path-denylist-for-review-context"],
+        excludedMemoryIds: ["memory:pattern:paste-secret-env-files-for-review"],
+        createdSourceClaimIds: []
+      },
+      "baseline_no_memory": {
+        result: "miss",
+        selectedKnowledgeIds: []
+      },
+      "baseline_simple_retrieval": {
+        result: "top_match_selected",
+        selectedKnowledgeIds: [
+          "pattern:paste-secret-env-files-for-review",
+          "pattern:secret-path-denylist-for-review-context"
+        ],
+        selectedMemoryIds: [
+          "pattern:paste-secret-env-files-for-review",
+          "pattern:secret-path-denylist-for-review-context"
+        ]
+      },
+      "krn_memory": {
+        result: "miss",
+        selectedKnowledgeIds: [],
+        selectedMemoryIds: [],
+        selectedSourceClaimIds: [],
+        requiredKnowledgeId: "pattern:paste-secret-env-files-for-review",
+        exclusions: [
+          {
+            memoryId: "memory:pattern:paste-secret-env-files-for-review",
+            reason: "adversarial unsupported memory would send secret-bearing files into review context"
+          }
+        ]
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:adversarial-secret-context-rule-hurt",
+        baselineNoMemoryResult: "miss",
+        simpleRetrievalResult: "top_match_selected",
+        simpleRetrievalTopKnowledgeId: "pattern:paste-secret-env-files-for-review",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "miss",
+        proofStatus: "pass"
+      }
+    });
     expect(result.proof.proves).toContain(
       "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"
     );
@@ -406,6 +472,9 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(result.proof.proves).toContain(
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
+    );
+    expect(result.proof.proves).toContain(
+      "negative memory cases can name their stale or adversarial class and surface explicit excluded ids with reasons"
     );
     expect(result.proof.proves).toContain(
       "baseline class and approximate selected-context readback size are reported for each case"
