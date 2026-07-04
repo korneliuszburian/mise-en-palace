@@ -17,6 +17,8 @@ const cliSurfacesPath = new URL(
   "../../../../docs/architecture/cli-surfaces.md",
   import.meta.url
 );
+const ciWorkflowPath = new URL("../../../../.github/workflows/ci.yml", import.meta.url);
+const kernelPath = new URL("../../../../docs/KRN_KERNEL.md", import.meta.url);
 const packageJsonPath = new URL("../../../../package.json", import.meta.url);
 const promptfooBoundaryPath = new URL(
   "../../../../docs/architecture/promptfoo-adapter-boundary.md",
@@ -112,6 +114,19 @@ const packageScripts = (): Record<string, string> => {
   return (parsed as { scripts: Record<string, string> }).scripts;
 };
 
+const rowForCheckPrefix = (
+  rows: readonly MatrixRow[],
+  prefix: string
+): MatrixRow => {
+  const row = rows.find((candidate) => candidate.check.startsWith(prefix));
+
+  if (row === undefined) {
+    throw new Error(`Missing behavior gate matrix row for ${prefix}`);
+  }
+
+  return row;
+};
+
 describe("KRN behavior gate matrix invariants", () => {
   it("keeps implemented checks tied to a guard, evidence, and proof boundary", () => {
     const findings = matrixRows().flatMap((row) => {
@@ -181,6 +196,41 @@ describe("KRN behavior gate matrix invariants", () => {
       "matrix guard/proof boundaries"
     ]) {
       expect(docsLintText).toContain(phrase);
+    }
+  });
+
+  it("keeps live kernel primitives tied to active matrix rows and CI-routed guards", () => {
+    const kernel = readFileSync(kernelPath, "utf8");
+    const ciWorkflow = readFileSync(ciWorkflowPath, "utf8");
+    const scripts = packageScripts();
+    const rows = matrixRows();
+
+    for (const verb of ["select", "apply", "verify", "forget"]) {
+      expect(kernel).toContain(`| ${verb} |`);
+    }
+
+    expect(scripts["eval:krn:smoke"]).toBe("pnpm eval:behavior:smoke && pnpm docs:lint");
+    expect(scripts["db:smoke:brain-loop"]).toContain("krn db smoke brain-loop");
+    expect(ciWorkflow).toContain("pnpm eval:krn:smoke");
+    expect(ciWorkflow).toContain("pnpm db:smoke:brain-loop");
+    expect(ciWorkflow).toContain("pnpm db:smoke:source-graph");
+
+    for (const [prefix, expectedGuardPhrases] of [
+      ["Kernel select primitive", ["pnpm eval:krn:smoke", "pnpm db:smoke:brain-loop", "pnpm db:smoke:source-graph"]],
+      ["Kernel apply primitive", ["pnpm eval:krn:smoke", "pnpm db:smoke:brain-loop"]],
+      ["Kernel verify primitive", ["pnpm db:smoke:brain-loop", "pnpm eval:krn:smoke"]],
+      ["Kernel forget primitive", ["pnpm eval:krn:smoke", "pnpm db:smoke:brain-loop"]]
+    ] as const) {
+      const row = rowForCheckPrefix(rows, prefix);
+
+      expect(row.status).toBe("implemented now");
+      expect(row.evidence).toContain("docs/KRN_KERNEL.md");
+      expect(row.evidence).toContain(".github/workflows/ci.yml");
+      expect(row.doesNotProve.toLowerCase()).toContain("does not prove");
+
+      for (const phrase of expectedGuardPhrases) {
+        expect(row.guard).toContain(phrase);
+      }
     }
   });
 
