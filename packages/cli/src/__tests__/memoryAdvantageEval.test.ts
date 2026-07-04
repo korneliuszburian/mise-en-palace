@@ -16,11 +16,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(8);
+    expect(result.cases).toHaveLength(9);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 8,
-      heldOutCaseCount: 4,
+      caseCount: 9,
+      heldOutCaseCount: 5,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -30,9 +30,9 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 8,
-      heldOutCaseCount: 4,
-      expectedHitCount: 6,
+      caseCount: 9,
+      heldOutCaseCount: 5,
+      expectedHitCount: 7,
       expectedMissCount: 2,
       distractorClassCount: 5
     });
@@ -65,7 +65,8 @@ describe("runMemoryAdvantageEval", () => {
         status: "pass",
         caseIds: [
           "forget-obsolete-no-second-opinion-rule",
-          "adversarial-unsupported-secret-scan-rule"
+          "adversarial-unsupported-secret-scan-rule",
+          "adversarial-memory-source-conflict-secret-review"
         ]
       }
     });
@@ -285,6 +286,7 @@ describe("runMemoryAdvantageEval", () => {
       testCase.heldOut && testCase.expectedKrnResult === "hit"
     );
     expect(heldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
+      "adversarial-memory-source-conflict-secret-review",
       "heldout-source-search-command-boundary",
       "heldout-db-project-brain-search",
       "heldout-ranking-corpus-quality"
@@ -307,6 +309,7 @@ describe("runMemoryAdvantageEval", () => {
     expect(heldOutHitCases.map((testCase) =>
       testCase["krn_memory"].requiredKnowledgeId
     )).toEqual([
+      "source:secret-review-context-denylist",
       "pattern:source-search-command-boundary",
       "pattern:brain-search-explicit-project-selector",
       "pattern:ranking-corpus-quality-readback"
@@ -452,6 +455,82 @@ describe("runMemoryAdvantageEval", () => {
         proofStatus: "pass"
       }
     });
+    const adversarialSourceConflictCase = result.cases.find((testCase) =>
+      testCase.caseId === "adversarial-memory-source-conflict-secret-review"
+    );
+    expect(adversarialSourceConflictCase).toMatchObject({
+      competency: "forgetting",
+      heldOut: true,
+      status: "pass",
+      expectedKrnResult: "hit",
+      negativeClass: "adversarial_memory_source_conflict",
+      priorSession: {
+        id: "session:adversarial-memory-source-conflict",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
+        excludedMemoryIds: ["memory:pattern:paste-secret-env-files-for-review-source-conflict"],
+        createdSourceClaimIds: ["source:secret-review-context-denylist"]
+      },
+      "baseline_no_memory": {
+        result: "miss",
+        selectedKnowledgeIds: []
+      },
+      "baseline_simple_retrieval": {
+        result: "distractor_selected",
+        selectedKnowledgeIds: [
+          "pattern:paste-secret-env-files-for-review-source-conflict",
+          "pattern:secret-review-context-denylist-source-backed",
+          "source:secret-review-context-denylist"
+        ],
+        selectedMemoryIds: [
+          "pattern:paste-secret-env-files-for-review-source-conflict",
+          "pattern:secret-review-context-denylist-source-backed"
+        ],
+        selectedSourceClaimIds: ["source:secret-review-context-denylist"]
+      },
+      "krn_memory": {
+        result: "hit",
+        selectedKnowledgeIds: ["pattern:secret-review-context-denylist-source-backed"],
+        selectedMemoryIds: ["pattern:secret-review-context-denylist-source-backed"],
+        selectedSourceClaimIds: ["source:secret-review-context-denylist"],
+        requiredKnowledgeId: "source:secret-review-context-denylist",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        exclusions: [
+          {
+            memoryId: "memory:pattern:paste-secret-env-files-for-review-source-conflict",
+            reason: "adversarial memory conflicts with accepted source evidence for secret-path denylisting"
+          }
+        ]
+      },
+      "krn_plan_brief": {
+        result: "hit",
+        requiredKnowledgeId: "source:secret-review-context-denylist",
+        selectedMemoryRecordIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
+        selectedSourceClaimIds: ["source:secret-review-context-denylist"],
+        renderedMemoryRecordIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
+        renderedSourceClaimIds: ["source:secret-review-context-denylist"]
+      },
+      "reviewed_feedback_effect": {
+        priorFeedbackRef: "feedback:adversarial-memory-source-conflict-helped",
+        priorEvidenceRef: "evidence:adversarial-memory-source-conflict",
+        priorReviewRef: "review:adversarial-memory-source-conflict",
+        baselineNoMemoryResult: "miss",
+        simpleRetrievalResult: "distractor_selected",
+        simpleRetrievalTopKnowledgeId: "pattern:paste-secret-env-files-for-review-source-conflict",
+        simpleRetrievalWeakerThanKrn: true,
+        krnResult: "hit",
+        selectedMemoryIds: ["pattern:secret-review-context-denylist-source-backed"],
+        selectedSourceClaimIds: ["source:secret-review-context-denylist"],
+        proofStatus: "pass"
+      }
+    });
+    expect(adversarialSourceConflictCase?.["krn_memory"].selectedKnowledgeIds).not.toContain(
+      "pattern:paste-secret-env-files-for-review-source-conflict"
+    );
+    expect(adversarialSourceConflictCase?.["krn_memory"].selectedMemoryIds).not.toContain(
+      "pattern:paste-secret-env-files-for-review-source-conflict"
+    );
     expect(result.proof.proves).toContain(
       "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"
     );

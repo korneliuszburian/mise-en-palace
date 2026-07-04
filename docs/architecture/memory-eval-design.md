@@ -129,15 +129,19 @@ foil:
 - `stale_memory`: an old pattern was later invalidated;
 - `adversarial_unsupported_memory`: a tempting memory would cause unsafe
   review-context behavior and is excluded before KRN can use it.
+- `adversarial_memory_source_conflict`: a tempting memory conflicts with
+  accepted source evidence, so the source claim remains visible and the unsafe
+  memory stays excluded.
 
-The current adversarial case is memory-vs-memory: an unsafe remembered rule is
-excluded while the safer denylist memory remains available. A memory-vs-accepted
-SourceClaim conflict remains future work.
+The `adversarial_unsupported_memory` case is memory-vs-memory: an unsafe
+remembered rule is excluded while the safer denylist memory remains available.
+A memory-vs-accepted SourceClaim conflict is covered by the
+secret-review-context held-out case.
 
 This proves only controlled local exclusion behavior. It does not yet cover:
 
 - a source claim is temporally stale;
-- a tempting but unsupported memory conflicts with accepted source evidence.
+- runtime discovery of arbitrary memory/source contradictions.
 
 The expected behavior is abstention or explicit exclusion, not a confident
 answer.

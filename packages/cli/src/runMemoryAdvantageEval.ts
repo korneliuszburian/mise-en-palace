@@ -54,7 +54,10 @@ import {
 } from "./noStoreRepositories.js";
 
 type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
-type MemoryAdvantageNegativeClass = "stale_memory" | "adversarial_unsupported_memory";
+type MemoryAdvantageNegativeClass =
+  | "stale_memory"
+  | "adversarial_unsupported_memory"
+  | "adversarial_memory_source_conflict";
 type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
@@ -256,7 +259,11 @@ const projectId = "project:memory-advantage";
 const baselineClass: MemoryAdvantageBaselineClass = "no_memory_no_source";
 const simpleRetrievalBaselineClass: SimpleRetrievalBaselineClass = "simple_lexical_retrieval";
 const memoryCompetencies = ["retrieval", "learning", "long_range", "forgetting"] as const;
-const memoryNegativeClasses = ["stale_memory", "adversarial_unsupported_memory"] as const;
+const memoryNegativeClasses = [
+  "stale_memory",
+  "adversarial_unsupported_memory",
+  "adversarial_memory_source_conflict"
+] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
 const requiredEnum = <TValue extends string>(
@@ -516,8 +523,10 @@ const assertLexicalOverlap = (
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
   );
 
-  if (testCase.expectedKrnResult === "hit" && (!hasCardOverlap || !hasClaimOverlap)) {
-    throw new Error(`${testCase.id} must have lexical overlap with memory card and source claim text`);
+  if (testCase.expectedKrnResult === "hit" && (!(hasCardOverlap || hasExcludedCardOverlap) || !hasClaimOverlap)) {
+    throw new Error(
+      `${testCase.id} must have lexical overlap with a retained or excluded memory card and source claim text`
+    );
   }
 
   if (testCase.expectedKrnResult === "miss" && !hasExcludedCardOverlap) {
@@ -825,9 +834,15 @@ const isBaselineMiss = (
 const isKrnHit = (
   readback: BrainSearchPreviewReadback,
   testCase: MemoryAdvantageCaseFixture
-): boolean =>
-  readback.answerUsefulness === "useful" &&
-  readback.selectedKnowledgeIds.includes(testCase.expectedSelectedKnowledgeId);
+): boolean => {
+  if (readback.answerUsefulness !== "useful") {
+    return false;
+  }
+
+  return testCase.expectedSelectedKnowledgeId.startsWith("source:")
+    ? readback.selectedSourceClaimIds.includes(testCase.expectedSelectedKnowledgeId)
+    : readback.selectedKnowledgeIds.includes(testCase.expectedSelectedKnowledgeId);
+};
 
 const buildMemoryExclusions = (
   testCase: MemoryAdvantageCaseFixture
