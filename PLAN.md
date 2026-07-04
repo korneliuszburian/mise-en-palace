@@ -135,7 +135,7 @@ Status: active; overnight queue refreshed after CLI boundary/runtime wave.
 Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-session brain-search smoke are closed and pushed; latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
 Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
 Latest closed Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
-Latest locally verified slice pending CI closeout: `mise-en-palace-cyhk` broadened deterministic source/brain ranking corpora with named corpus readback, distractor classes, baseline failure rationale, expected-id counts, and NDCG/hit-rate metrics without docs sentinels.
+Latest closed Bead: `mise-en-palace-cyhk` ranking corpus quality, CI `28707714660` passed; current queue: `mise-en-palace-te9x` held-out memory advantage active, `fg6o/m24d` queued.
 Corrected planning duplicates: `lheq/hiz6/1bgy/mklo` closed as duplicate or premature after checking closed memory-eval Beads.
 `mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
