@@ -24,6 +24,10 @@ import {
 import type {
   BrainSearchCommand
 } from "./runBrainSearchCommand.js";
+import {
+  ndcgAtK,
+  roundRankingMetric
+} from "./rankingEvalMetrics.js";
 
 type BrainRankingCardFixture = EvalKnowledgeCardFixture;
 type BrainRankingSourceClaimFixture = EvalSourceClaimFixture;
@@ -32,6 +36,8 @@ interface BrainRankingCaseFixture {
   readonly id: string;
   readonly query: string;
   readonly storeOnly: boolean;
+  readonly distractorClasses: readonly string[];
+  readonly baselineFailureRationale: string;
   readonly expectedSelectedKnowledgeIds: readonly string[];
   readonly knowledgeCards: readonly BrainRankingCardFixture[];
   readonly sourceClaims: readonly BrainRankingSourceClaimFixture[];
@@ -39,6 +45,8 @@ interface BrainRankingCaseFixture {
 
 export interface BrainRankingEvalFixture {
   readonly version: "1";
+  readonly corpusName: string;
+  readonly distractorClasses: readonly string[];
   readonly topK: number;
   readonly minimumHitRateAtK: number;
   readonly minimumRecallAtK: number;
@@ -50,6 +58,8 @@ export interface BrainRankingEvalCaseResult {
   readonly id: string;
   readonly query: string;
   readonly expectedSelectedKnowledgeIds: readonly string[];
+  readonly distractorClasses: readonly string[];
+  readonly baselineFailureRationale: string;
   readonly selectedKnowledgeIds: readonly string[];
   readonly selectedSources: readonly string[];
   readonly targetFits: readonly string[];
@@ -66,6 +76,11 @@ export interface BrainRankingEvalResult {
   readonly fixtureVersion: "1";
   readonly status: "pass" | "fail";
   readonly topK: number;
+  readonly corpus: {
+    readonly name: string;
+    readonly caseCount: number;
+    readonly distractorClasses: readonly string[];
+  };
   readonly thresholds: {
     readonly minimumHitRateAtK: number;
     readonly minimumRecallAtK: number;
@@ -79,6 +94,8 @@ export interface BrainRankingEvalResult {
     readonly catalogBackedCases: number;
     readonly sourceBackedCases: number;
     readonly targetSpecificSelections: number;
+    readonly expectedIdCount: number;
+    readonly distractorClassCount: number;
   };
   readonly cases: readonly BrainRankingEvalCaseResult[];
   readonly proof: {
@@ -131,6 +148,8 @@ const parseCase = (
     id: requiredString(value, "id", label),
     query: requiredString(value, "query", label),
     storeOnly: optionalBoolean(value, "storeOnly"),
+    distractorClasses: requiredNonEmptyStringArray(value, "distractorClasses", label),
+    baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
     expectedSelectedKnowledgeIds: requiredNonEmptyStringArray(
       value,
       "expectedSelectedKnowledgeIds",
@@ -162,6 +181,8 @@ export const parseBrainRankingEvalFixture = (
 
   return {
     version,
+    corpusName: requiredString(value, "corpusName", "fixture"),
+    distractorClasses: requiredNonEmptyStringArray(value, "distractorClasses", "fixture"),
     topK: requiredFiniteNumber(value, "topK", "fixture"),
     minimumHitRateAtK: requiredFiniteNumber(value, "minimumHitRateAtK", "fixture"),
     minimumRecallAtK: requiredFiniteNumber(value, "minimumRecallAtK", "fixture"),
@@ -250,30 +271,6 @@ const parseBrainSearchResult = (
   };
 };
 
-const dcg = (
-  selectedIds: readonly string[],
-  expectedIds: ReadonlySet<string>,
-  topK: number
-): number =>
-  selectedIds.slice(0, topK).reduce((score, id, index) =>
-    score + (expectedIds.has(id) ? 1 / Math.log2(index + 2) : 0), 0);
-
-const idealDcg = (
-  expectedCount: number,
-  topK: number
-): number => {
-  let score = 0;
-
-  for (let index = 0; index < Math.min(expectedCount, topK); index += 1) {
-    score += 1 / Math.log2(index + 2);
-  }
-
-  return score;
-};
-
-const roundMetric = (value: number): number =>
-  Math.round(value * 10000) / 10000;
-
 const evaluateCase = async (
   testCase: BrainRankingCaseFixture,
   topK: number
@@ -310,8 +307,6 @@ const evaluateCase = async (
   const expectedIds = new Set(testCase.expectedSelectedKnowledgeIds);
   const selectedTopK = selectedIds.slice(0, topK);
   const matchedExpectedIds = new Set(selectedTopK.filter((id) => expectedIds.has(id)));
-  const ideal = idealDcg(expectedIds.size, topK);
-  const ndcgAtK = ideal === 0 ? 0 : dcg(selectedIds, expectedIds, topK) / ideal;
   const recallAtK =
     expectedIds.size === 0
       ? 0
@@ -321,6 +316,8 @@ const evaluateCase = async (
     id: testCase.id,
     query: testCase.query,
     expectedSelectedKnowledgeIds: testCase.expectedSelectedKnowledgeIds,
+    distractorClasses: testCase.distractorClasses,
+    baselineFailureRationale: testCase.baselineFailureRationale,
     selectedKnowledgeIds: selectedIds,
     selectedSources: selectedKnowledge.map((packet) => packet.source),
     targetFits: selectedKnowledge.map((packet) => packet.targetFit),
@@ -328,8 +325,8 @@ const evaluateCase = async (
     supportingClaims: preview.sourceSearch.supportingClaims,
     supportingDocuments: preview.sourceSearch.supportingDocuments,
     hitAtK: selectedTopK.some((id) => expectedIds.has(id)),
-    recallAtK: roundMetric(recallAtK),
-    ndcgAtK: roundMetric(ndcgAtK)
+    recallAtK: roundRankingMetric(recallAtK),
+    ndcgAtK: roundRankingMetric(ndcgAtK(selectedIds, expectedIds, topK))
   };
 };
 
@@ -354,6 +351,11 @@ export const runBrainRankingEval = async (
     fixtureVersion: fixture.version,
     status,
     topK: fixture.topK,
+    corpus: {
+      name: fixture.corpusName,
+      caseCount: fixture.cases.length,
+      distractorClasses: fixture.distractorClasses
+    },
     thresholds: {
       minimumHitRateAtK: fixture.minimumHitRateAtK,
       minimumRecallAtK: fixture.minimumRecallAtK,
@@ -361,9 +363,9 @@ export const runBrainRankingEval = async (
     },
     metrics: {
       caseCount: cases.length,
-      hitRateAtK: roundMetric(hitRateAtK),
-      recallAtK: roundMetric(recallAtK),
-      ndcgAtK: roundMetric(ndcgAtK),
+      hitRateAtK: roundRankingMetric(hitRateAtK),
+      recallAtK: roundRankingMetric(recallAtK),
+      ndcgAtK: roundRankingMetric(ndcgAtK),
       catalogBackedCases: cases.filter((testCase) =>
         testCase.selectedSources.includes("catalog_file")
       ).length,
@@ -372,14 +374,24 @@ export const runBrainRankingEval = async (
       ).length,
       targetSpecificSelections: cases.reduce(
         (sum, testCase) =>
-          sum + testCase.targetFits.filter((targetFit) => targetFit === "target_specific").length,
+          sum + testCase.targetFits.filter((targetFit) =>
+            targetFit === "target_specific"
+          ).length,
         0
-      )
+      ),
+      expectedIdCount: cases.reduce(
+        (sum, testCase) => sum + testCase.expectedSelectedKnowledgeIds.length,
+        0
+      ),
+      distractorClassCount: new Set(cases.flatMap((testCase) =>
+        testCase.distractorClasses
+      )).size
     },
     cases,
     proof: {
       proves: [
         "brain search selected expected proxy-labeled knowledge packets for the fixture query set",
+        "brain ranking fixture reports corpus name, corpus size, distractor classes, and per-case baseline failure rationale",
         "brain search reports recall@k over expected proxy-labeled selectedKnowledge ids",
         "catalog-backed and source-backed brain-search readbacks were exercised without DB mutation",
         "future changes that drop expected selectedKnowledge from top-k will fail this eval"

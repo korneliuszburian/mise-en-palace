@@ -1,5 +1,12 @@
 {
   "version": "1",
+  "corpusName": "company-brain-pattern-ranking",
+  "distractorClasses": [
+    "adjacent-governance-pattern",
+    "target-specific-vs-generic",
+    "catalog-vs-source",
+    "obsolete-negative-memory"
+  ],
   "topK": 5,
   "minimumHitRateAtK": 1,
   "minimumRecallAtK": 1,
@@ -8,6 +15,8 @@
     {
       "id": "helped-feedback-pattern",
       "query": "helped feedback memory application downgrade",
+      "distractorClasses": ["adjacent-governance-pattern"],
+      "baselineFailureRationale": "A generic memory feedback packet can mention helped/hurt without preserving activation downgrade semantics.",
       "expectedSelectedKnowledgeIds": ["pattern:helped-feedback-memory-application"],
       "knowledgeCards": [
         {
@@ -25,6 +34,8 @@
     {
       "id": "hurt-feedback-downgrade",
       "query": "hurt feedback activation exclusion downgrade",
+      "distractorClasses": ["obsolete-negative-memory"],
+      "baselineFailureRationale": "A naive recall can reuse hurt memory wording without excluding it before activation.",
       "expectedSelectedKnowledgeIds": ["pattern:hurt-feedback-activation-exclusion"],
       "knowledgeCards": [
         {
@@ -42,6 +53,8 @@
     {
       "id": "pattern-usefulness-evidence",
       "query": "pattern usefulness evidenceRef helped outcome",
+      "distractorClasses": ["adjacent-governance-pattern"],
+      "baselineFailureRationale": "A loose usefulness match can select helped feedback without evidenceRef and doesNotProve requirements.",
       "expectedSelectedKnowledgeIds": ["pattern:pattern-usefulness-evidence-link"],
       "knowledgeCards": [
         {
@@ -59,6 +72,8 @@
     {
       "id": "source-to-decision-retention",
       "query": "source decision mechanism consumer falsifier",
+      "distractorClasses": ["adjacent-governance-pattern"],
+      "baselineFailureRationale": "A source-decision query can match generic source vocabulary while missing consumer and falsifier.",
       "expectedSelectedKnowledgeIds": ["pattern:source-to-decision-retention-gate"],
       "knowledgeCards": [
         {
@@ -76,6 +91,8 @@
     {
       "id": "graph-relation-readback",
       "query": "source graph relation edge temporal readback",
+      "distractorClasses": ["catalog-vs-source"],
+      "baselineFailureRationale": "Graph relation terminology can be confused with source truth unless the boundary packet remains selected.",
       "expectedSelectedKnowledgeIds": ["pattern:graph-relation-readback-boundary"],
       "knowledgeCards": [
         {
@@ -103,6 +120,8 @@
     {
       "id": "decision-link-readback",
       "query": "accepted sourceclaim sourcedecisionedge support missing link",
+      "distractorClasses": ["catalog-vs-source"],
+      "baselineFailureRationale": "Accepted SourceClaim wording can outrank decision-link provenance if the missing-link caveat is not retained.",
       "expectedSelectedKnowledgeIds": ["pattern:accepted-source-decision-link-readback"],
       "knowledgeCards": [
         {
@@ -130,6 +149,8 @@
     {
       "id": "second-opinion-governed-review",
       "query": "second opinion claude governed verdict diff hash",
+      "distractorClasses": ["adjacent-governance-pattern"],
+      "baselineFailureRationale": "A review process packet can match second-opinion wording while missing governed JSON and diff freshness.",
       "expectedSelectedKnowledgeIds": ["pattern:second-opinion-governed-review"],
       "knowledgeCards": [
         {
@@ -147,6 +168,8 @@
     {
       "id": "target-repo-owner-file",
       "query": "target repo owner file recall below roots",
+      "distractorClasses": ["target-specific-vs-generic"],
+      "baselineFailureRationale": "Generic target repo planning can outrank explicit owner-file read-model evidence.",
       "expectedSelectedKnowledgeIds": ["pattern:target-owner-file-read-model"],
       "knowledgeCards": [
         {
@@ -165,6 +188,8 @@
       "id": "store-only-source-evidence",
       "query": "store only source evidence selected knowledge",
       "storeOnly": true,
+      "distractorClasses": ["catalog-vs-source"],
+      "baselineFailureRationale": "A catalog-only baseline has no card, so the case requires source-search selected knowledge.",
       "expectedSelectedKnowledgeIds": ["store-source-claim"],
       "knowledgeCards": [],
       "sourceClaims": [
@@ -183,6 +208,8 @@
       "id": "generic-guardrail-not-sufficient",
       "query": "external target quality gate ekologus",
       "storeOnly": true,
+      "distractorClasses": ["target-specific-vs-generic"],
+      "baselineFailureRationale": "Generic retained KRN guardrails mention quality gates but are not EKOLOGUS target evidence.",
       "expectedSelectedKnowledgeIds": ["ekologus-target-claim"],
       "knowledgeCards": [],
       "sourceClaims": [
@@ -205,6 +232,34 @@
           "doesNotProve": "This does not prove EKOLOGUS source evidence."
         }
       ]
+    },
+    {
+      "id": "plan-brief-memory-advantage",
+      "query": "plan brief memory advantage comparator rendered codex brief",
+      "distractorClasses": ["adjacent-governance-pattern"],
+      "baselineFailureRationale": "A local-test closure packet can mention plans and briefs but misses rendered Codex brief memory/source evidence.",
+      "expectedSelectedKnowledgeIds": ["pattern:plan-brief-memory-advantage-comparator"],
+      "knowledgeCards": [
+        {
+          "id": "pattern:plan-brief-memory-advantage-comparator",
+          "title": "Plan brief memory advantage comparator",
+          "summary": "Memory advantage eval must prove no-memory plan brief miss and KRN memory/source rendered Codex brief hit.",
+          "consumers": ["memory advantage eval"],
+          "falsifier": "The eval passes without rendered MemoryRecord or SourceClaim ids in the Codex brief readback.",
+          "doesNotProve": "This does not prove arbitrary Codex output quality.",
+          "nextAction": "use"
+        },
+        {
+          "id": "pattern:local-tests-alone-closeout",
+          "title": "Local tests alone closeout",
+          "summary": "Focused local tests can close a tiny slice but do not replace second-opinion or plan brief proof for larger kernel eval changes.",
+          "consumers": ["small maintenance slice"],
+          "falsifier": "A large memory eval slice closes from local tests without proof/non-proof or reviewer evidence.",
+          "doesNotProve": "This does not prove plan brief memory advantage.",
+          "nextAction": "avoid"
+        }
+      ],
+      "sourceClaims": []
     }
   ]
 }

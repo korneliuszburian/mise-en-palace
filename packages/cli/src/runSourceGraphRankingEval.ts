@@ -19,6 +19,10 @@ import {
 import {
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
+import {
+  ndcgAtK,
+  roundRankingMetric
+} from "./rankingEvalMetrics.js";
 
 interface SourceGraphRankingRow {
   readonly id: string;
@@ -36,10 +40,13 @@ interface SourceGraphRankingQuery {
   readonly id: string;
   readonly query: string;
   readonly expectedHitIds: readonly string[];
+  readonly baselineFailureRationale: string;
 }
 
 export interface SourceGraphRankingEvalFixture {
   readonly version: "1";
+  readonly corpusName: string;
+  readonly distractorClasses: readonly string[];
   readonly topK: number;
   readonly minimumHitRateAtK: number;
   readonly minimumNdcgAtK: number;
@@ -52,6 +59,7 @@ export interface SourceGraphRankingEvalCaseResult {
   readonly id: string;
   readonly query: string;
   readonly expectedHitIds: readonly string[];
+  readonly baselineFailureRationale: string;
   readonly includedHitIds: readonly string[];
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
@@ -68,6 +76,12 @@ export interface SourceGraphRankingEvalResult {
   readonly fixtureVersion: "1";
   readonly status: "pass" | "fail";
   readonly topK: number;
+  readonly corpus: {
+    readonly name: string;
+    readonly rowCount: number;
+    readonly queryCount: number;
+    readonly distractorClasses: readonly string[];
+  };
   readonly thresholds: {
     readonly minimumHitRateAtK: number;
     readonly minimumNdcgAtK: number;
@@ -81,6 +95,8 @@ export interface SourceGraphRankingEvalResult {
     readonly expectedHitRelationReadbackCases: number;
     readonly searchDocumentLinkReadbackCases: number;
     readonly sourceDecisionSupportCases: number;
+    readonly expectedHitIdCount: number;
+    readonly distractorClassCount: number;
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -195,7 +211,8 @@ const parseQuery = (
 ): SourceGraphRankingQuery => ({
   id: stringValue(tuple[0], `queries[${index}][0]`),
   query: stringValue(tuple[1], `queries[${index}][1]`),
-  expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`)
+  expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`),
+  baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`)
 });
 
 export const parseSourceGraphRankingEvalFixture = (
@@ -210,7 +227,7 @@ export const parseSourceGraphRankingEvalFixture = (
   }
 
   const rows = tupleArray(value["rows"], "rows", 3).map(parseRow);
-  const queries = tupleArray(value["queries"], "queries", 3).map(parseQuery);
+  const queries = tupleArray(value["queries"], "queries", 4).map(parseQuery);
 
   if (rows.length < 20) {
     throw new Error("source graph ranking eval fixture must contain at least 20 corpus rows");
@@ -222,6 +239,8 @@ export const parseSourceGraphRankingEvalFixture = (
 
   return {
     version: "1",
+    corpusName: stringValue(value["corpusName"], "corpusName"),
+    distractorClasses: parseStringArray(value["distractorClasses"], "distractorClasses"),
     topK: numberValue(value["topK"], "topK"),
     minimumHitRateAtK: numberValue(value["minimumHitRateAtK"], "minimumHitRateAtK"),
     minimumNdcgAtK: numberValue(value["minimumNdcgAtK"], "minimumNdcgAtK"),
@@ -502,30 +521,6 @@ const candidateHitId = (candidate: Record<string, unknown>): string | undefined 
 const sourceClaimIdFromHitId = (hitId: string): string | undefined =>
   hitId.startsWith("source_claim:") ? hitId.slice("source_claim:".length) : undefined;
 
-const dcg = (
-  hitIds: readonly string[],
-  expectedHitIds: ReadonlySet<string>,
-  topK: number
-): number =>
-  hitIds.slice(0, topK).reduce((score, id, index) =>
-    score + (expectedHitIds.has(id) ? 1 / Math.log2(index + 2) : 0), 0);
-
-const idealDcg = (
-  expectedCount: number,
-  topK: number
-): number => {
-  let score = 0;
-
-  for (let index = 0; index < Math.min(expectedCount, topK); index += 1) {
-    score += 1 / Math.log2(index + 2);
-  }
-
-  return score;
-};
-
-const roundMetric = (value: number): number =>
-  Math.round(value * 10000) / 10000;
-
 const evaluateQuery = async (
   fixture: SourceGraphRankingEvalFixture,
   queryCase: SourceGraphRankingQuery
@@ -564,13 +559,12 @@ const evaluateQuery = async (
     return sourceClaimId === undefined ? [] : [sourceClaimId];
   }));
   const relationSupport = recordArray(answerPackage["relationSupport"], `${queryCase.id}.relationSupport`);
-  const ideal = idealDcg(expectedHitIds.size, fixture.topK);
-  const ndcgAtK = ideal === 0 ? 0 : dcg(includedHitIds, expectedHitIds, fixture.topK) / ideal;
 
   return {
     id: queryCase.id,
     query: queryCase.query,
     expectedHitIds: queryCase.expectedHitIds,
+    baselineFailureRationale: queryCase.baselineFailureRationale,
     includedHitIds,
     supportingClaims: recordArray(answerPackage["supportingClaims"], `${queryCase.id}.supportingClaims`).length,
     supportingDocuments: recordArray(answerPackage["supportingDocuments"], `${queryCase.id}.supportingDocuments`).length,
@@ -586,7 +580,7 @@ const evaluateQuery = async (
     }).length,
     sourceDecisionSupport: recordArray(answerPackage["sourceDecisionSupport"], `${queryCase.id}.sourceDecisionSupport`).length,
     hitAtK: includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id)),
-    ndcgAtK: roundMetric(ndcgAtK)
+    ndcgAtK: roundRankingMetric(ndcgAtK(includedHitIds, expectedHitIds, fixture.topK))
   };
 };
 
@@ -607,6 +601,12 @@ export const runSourceGraphRankingEval = async (
     fixtureVersion: fixture.version,
     status,
     topK: fixture.topK,
+    corpus: {
+      name: fixture.corpusName,
+      rowCount: fixture.rows.length,
+      queryCount: fixture.queries.length,
+      distractorClasses: fixture.distractorClasses
+    },
     thresholds: {
       minimumHitRateAtK: fixture.minimumHitRateAtK,
       minimumNdcgAtK: fixture.minimumNdcgAtK
@@ -614,17 +614,31 @@ export const runSourceGraphRankingEval = async (
     metrics: {
       queryCount: cases.length,
       corpusRows: fixture.rows.length,
-      hitRateAtK: roundMetric(hitRateAtK),
-      ndcgAtK: roundMetric(ndcgAtK),
-      answerRelationReadbackCases: cases.filter((testCase) => testCase.relationSupport > 0).length,
-      expectedHitRelationReadbackCases: cases.filter((testCase) => testCase.expectedHitRelationSupport > 0).length,
-      searchDocumentLinkReadbackCases: cases.filter((testCase) => testCase.sourceClaimDocumentLinks > 0).length,
-      sourceDecisionSupportCases: cases.filter((testCase) => testCase.sourceDecisionSupport > 0).length
+      hitRateAtK: roundRankingMetric(hitRateAtK),
+      ndcgAtK: roundRankingMetric(ndcgAtK),
+      answerRelationReadbackCases: cases.filter((testCase) =>
+        testCase.relationSupport > 0
+      ).length,
+      expectedHitRelationReadbackCases: cases.filter((testCase) =>
+        testCase.expectedHitRelationSupport > 0
+      ).length,
+      searchDocumentLinkReadbackCases: cases.filter((testCase) =>
+        testCase.sourceClaimDocumentLinks > 0
+      ).length,
+      sourceDecisionSupportCases: cases.filter((testCase) =>
+        testCase.sourceDecisionSupport > 0
+      ).length,
+      expectedHitIdCount: cases.reduce(
+        (sum, testCase) => sum + testCase.expectedHitIds.length,
+        0
+      ),
+      distractorClassCount: fixture.distractorClasses.length
     },
     cases,
     proof: {
       proves: [
-        "source search selected expected proxy-labeled source graph rows for the fixture query set",
+          "source search selected expected proxy-labeled source graph rows for the fixture query set",
+        "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale",
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],
