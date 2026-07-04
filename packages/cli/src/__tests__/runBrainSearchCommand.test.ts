@@ -1258,6 +1258,174 @@ describe("runBrainSearchCommand", () => {
     expect(result.stdout).toContain("sourceLinkGraph: useful");
   });
 
+  it("contrasts weak baseline with source-grounded useful brain context", async () => {
+    const baseline = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T14:00:00.000Z",
+      createId: (prefix) => `${prefix}-baseline`,
+      command: {
+        kind: "brainSearch",
+        query: "worker boundary maintenance contract",
+        catalogFiles: [],
+        storeOnly: false,
+        limit: 4,
+        maxInclusions: 2,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            kind: "krn.brainKnowledge.cards.preview.v1",
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: [],
+              relationSupport: [],
+              sourceDecisionSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const sourceGrounded = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T14:00:00.000Z",
+      createId: (prefix) => `${prefix}-source-grounded`,
+      command: {
+        kind: "brainSearch",
+        query: "worker boundary maintenance contract",
+        catalogFiles: [],
+        storeOnly: false,
+        limit: 4,
+        maxInclusions: 2,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            kind: "krn.brainKnowledge.cards.preview.v1",
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                label: "source_claim:worker-boundary",
+                sourceClaimId: "worker-boundary",
+                claim: "Workers expose maintenance candidates, not Codex execution.",
+                mechanism: "Heartbeat previews surface reviewable maintenance work without mutating Memory Core.",
+                krnImplication: "Worker guidance should block executor/runtime claims until plnv is resolved.",
+                consumer: "worker package decision",
+                falsifier: "Brain readback claims workers execute scheduled jobs.",
+                doesNotProve: "This does not prove worker runtime behavior."
+              }],
+              supportingDocuments: [{
+                label: "search_document:worker-boundary"
+              }],
+              sourceClaimDocumentLinks: [],
+              relationSupport: [],
+              sourceDecisionSupport: [{
+                sourceDecisionEdgeId: "decision-edge-worker-boundary",
+                sourceClaimId: "worker-boundary",
+                confidence: "high"
+              }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth", "worker runtime behavior"]
+            }
+          })
+        };
+      }
+    });
+    const baselineJson: unknown = JSON.parse(baseline.stdout);
+    const sourceGroundedJson: unknown = JSON.parse(sourceGrounded.stdout);
+
+    expect(baselineJson).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: []
+      },
+      sourceSearch: {
+        answerUsefulness: "not_useful",
+        missingEvidence: ["governed SourceClaim evidence"]
+      },
+      recommendedNextAction: "Do not infer product truth; narrow the query or ingest/review source evidence first."
+    });
+    expect(sourceGroundedJson).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "worker-boundary",
+          source: "source_search",
+          reviewability: "ready",
+          nextAction: "use"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        sourceDecisionSupport: 1,
+        missingEvidence: []
+      },
+      recommendedNextAction:
+        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+    });
+  });
+
   it("keeps the fixed brain grounding mini-gate source-backed and decision-linked", async () => {
     const cases = [
       {
