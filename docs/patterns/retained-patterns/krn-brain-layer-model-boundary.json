@@ -13,9 +13,8 @@
   "evidenceRefs": [
     "docs/runs/2026-07-04-context-selection-quality-audit.md",
     "docs/runbooks/krn-brain-layer-model.md",
-    "mise-en-palace-sefh",
-    "mise-en-palace-qzai",
-    "mise-en-palace-td3u"
+    "docs/runs/2026-07-04-brain-layer-model-retention.md",
+    "PLAN.md#active-task"
   ],
   "consumers": [
     "future brain/search planning queries about workers and Codex execution boundaries",

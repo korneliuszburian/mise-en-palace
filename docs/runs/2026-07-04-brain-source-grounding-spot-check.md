@@ -30,6 +30,81 @@ Artifacts: `.local-lab/g1cg/*.json`.
 | `source-to-decision retention gate consumer falsifier` | 1 target-specific ready packet: `pattern:source-to-decision-retention-gate` | `partly_useful_missing_claim` | 0 | 1 | 0 | governed SourceClaim |
 | `typescript unknown first result state JSON parse boundary` | 1 target-specific ready packet: `pattern:ts-boundary-unknown-first-result-state` | `not_useful` | 0 | 0 | 0 | governed SourceClaim; included SearchDocument |
 
+Inline excerpts from the sampled JSON:
+
+```json
+[
+  {
+    "query": "workers are not codex exec candidate maintenance contracts plnv",
+    "selectedKnowledge": [
+      {
+        "id": "pattern:krn-brain-layer-model-boundary",
+        "targetFit": "target_specific",
+        "reviewability": "ready",
+        "nextAction": "use"
+      }
+    ],
+    "sourceSearch": {
+      "answerUsefulness": "not_useful",
+      "supportingClaims": 0,
+      "supportingDocuments": 0,
+      "sourceDecisionSupport": 0
+    }
+  },
+  {
+    "query": "naming standard no vanity rename helper extraction rule",
+    "selectedKnowledge": [
+      {
+        "id": "pattern:krn-brain-layer-model-boundary",
+        "targetFit": "target_specific",
+        "reviewability": "ready",
+        "nextAction": "use"
+      }
+    ],
+    "sourceSearch": {
+      "answerUsefulness": "not_useful",
+      "supportingClaims": 0,
+      "supportingDocuments": 0,
+      "sourceDecisionSupport": 0
+    }
+  },
+  {
+    "query": "source-to-decision retention gate consumer falsifier",
+    "selectedKnowledge": [
+      {
+        "id": "pattern:source-to-decision-retention-gate",
+        "targetFit": "target_specific",
+        "reviewability": "ready",
+        "nextAction": "use"
+      }
+    ],
+    "sourceSearch": {
+      "answerUsefulness": "partly_useful_missing_claim",
+      "supportingClaims": 0,
+      "supportingDocuments": 1,
+      "sourceDecisionSupport": 0
+    }
+  },
+  {
+    "query": "typescript unknown first result state JSON parse boundary",
+    "selectedKnowledge": [
+      {
+        "id": "pattern:ts-boundary-unknown-first-result-state",
+        "targetFit": "target_specific",
+        "reviewability": "ready",
+        "nextAction": "use"
+      }
+    ],
+    "sourceSearch": {
+      "answerUsefulness": "not_useful",
+      "supportingClaims": 0,
+      "supportingDocuments": 0,
+      "sourceDecisionSupport": 0
+    }
+  }
+]
+```
+
 ## Findings
 
 1. Brain knowledge recall is useful for these samples: all four queries return
@@ -69,3 +144,19 @@ Does not prove:
 - LLM/Codex adherence;
 - product readiness;
 - worker runtime or Memory Core write enforcement.
+
+## Second Opinion
+
+`second-opinion-claude` reviewed the `n9gz/g1cg` pair against diff base
+`2aeb0caf63a8a00a45137e28022935690bd958e7` and returned
+`approve_with_fixes` / `MEDIUM`.
+
+Accepted fixes:
+
+- CI for head commit `1b22bb0` is now verified green:
+  https://github.com/korneliuszburian/mise-en-palace/actions/runs/28690097938
+- Inline excerpts above make the spot-check table reviewable without relying on
+  `.local-lab` artifacts.
+- `PLAN.md` now points at `fhku/td3u`, not completed `g1cg`.
+- `krn-brain-layer-model-boundary` evidence refs use resolvable docs/plan paths.
+- the `n9gz` report now names `fhku` as the source-grounding successor.

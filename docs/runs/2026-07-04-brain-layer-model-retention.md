@@ -89,3 +89,7 @@ Does not prove:
 `g1cg` remains the next grounding check: sample current brain/source responses
 and verify whether factual claims resolve to SourceClaim, SearchDocument, or
 SourceClaimEdge evidence instead of raw metadata or prose.
+
+After `g1cg`, `mise-en-palace-fhku` was opened to turn the weak source
+grounding into governed SourceClaim/SearchDocument evidence plus visible
+SourceDecision support for the retained brain patterns that influence planning.
