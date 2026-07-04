@@ -228,7 +228,7 @@ const previewDoesNotProve =
   "Brain heartbeat preview does not prove memory truth, source truth, candidate usefulness, autonomous worker execution, scheduling, consensus correctness, or Memory Core mutation.";
 
 const previewProof =
-  "Brain heartbeat preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
+  "Maintenance candidate preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
 
 const reviewEvalClosureDoesNotProve =
   "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.";
@@ -460,3 +460,10 @@ export const buildBrainHeartbeatPreview = (
     forbiddenWrites
   };
 };
+
+export type MaintenanceCandidatePreview = BrainHeartbeatPreview;
+export type BuildMaintenanceCandidatePreviewInput = BuildBrainHeartbeatPreviewInput;
+
+export const buildMaintenanceCandidatePreview = (
+  input: BuildMaintenanceCandidatePreviewInput
+): MaintenanceCandidatePreview => buildBrainHeartbeatPreview(input);

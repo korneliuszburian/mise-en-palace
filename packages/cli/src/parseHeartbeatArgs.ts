@@ -4,10 +4,11 @@ import type {
 
 export const formatHeartbeatUsage = (): string =>
   [
-    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
+    "Usage: krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
-    "krn heartbeat preview",
+    "krn maintenance preview",
+    "legacy alias: krn heartbeat preview",
     "",
     "Optional:",
     "--project <project-id>",
@@ -26,7 +27,7 @@ export const formatHeartbeatUsage = (): string =>
     "--reviewer <name>",
     "--json",
     "",
-    "Note: heartbeat preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, worker runtime state, or DB schema."
+    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, worker runtime state, or DB schema."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
@@ -365,7 +366,7 @@ const validateReviewState = (state: HeartbeatParseState): string | undefined => 
     return undefined;
   }
 
-  return `Heartbeat candidate review requires ${missing.join(", ")}\n${formatHeartbeatUsage()}`;
+  return `Maintenance candidate review requires ${missing.join(", ")}\n${formatHeartbeatUsage()}`;
 };
 
 const buildCandidateReview = (
@@ -432,7 +433,7 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
 
   if (action !== "preview") {
     return {
-      error: `Unsupported heartbeat command: ${action}\n${formatHeartbeatUsage()}`
+      error: `Unsupported maintenance preview command: ${action}\n${formatHeartbeatUsage()}`
     };
   }
 
@@ -460,7 +461,7 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
 
     if (handler === undefined) {
       return {
-        error: `Unsupported heartbeat preview argument: ${arg}\n${formatHeartbeatUsage()}`
+        error: `Unsupported maintenance preview argument: ${arg}\n${formatHeartbeatUsage()}`
       };
     }
 

@@ -8,12 +8,13 @@ Current truth:
 - job types and payloads are typed;
 - enqueue contracts require one queue port to create a worker job and the
   matching `worker_job.queued` outbox event as one adapter-owned operation;
-- source-relation heartbeat preview can propose reviewable maintenance
+- source-relation maintenance candidate preview can propose reviewable maintenance
   candidates without mutating source truth or Memory Core;
-- memory-staleness heartbeat preview can propose reviewable maintenance
+- memory-staleness maintenance candidate preview can propose reviewable maintenance
   candidates without mutating Memory Core;
-- brain heartbeat preview can aggregate memory-staleness and source-relation
-  maintenance candidates without starting autonomous worker execution;
+- maintenance candidate preview can aggregate memory-staleness and
+  source-relation maintenance candidates without starting autonomous worker
+  execution;
 - consensus candidate evaluation preview can preserve support/dissent/risk
   evidence and graph relation review focus without creating autonomous truth;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.

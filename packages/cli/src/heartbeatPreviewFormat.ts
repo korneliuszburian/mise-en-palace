@@ -247,7 +247,7 @@ const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => {
 };
 
 const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
-  "Review/eval closure:",
+  "Candidate review/eval closure:",
   `decision: ${preview.reviewEvalClosure.decision}`,
   `nextAction: ${preview.reviewEvalClosure.nextAction}`,
   `summary: ${preview.reviewEvalClosure.summary}`,
@@ -262,7 +262,7 @@ const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
 ];
 
 const formatRuntimeLoop = (preview: BrainHeartbeatPreview): string[] => [
-  "Runtime loop:",
+  "Candidate routing:",
   `mode: ${preview.runtimeLoop.mode}`,
   `status: ${preview.runtimeLoop.status}`,
   `nextAction: ${preview.runtimeLoop.nextAction}`,
@@ -306,7 +306,7 @@ export const formatHeartbeatPreview = (
   input: HeartbeatPreviewOutputInput
 ): string =>
   [
-    "KRN Brain Heartbeat Preview",
+    "KRN Maintenance Candidate Preview",
     "Persistence: read-only (Postgres)",
     "DB writes: none",
     `Project: ${input.projectId}`,

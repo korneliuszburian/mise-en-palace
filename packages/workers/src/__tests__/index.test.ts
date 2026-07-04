@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessMaintenanceJobWriteAuthority,
+  buildBrainHeartbeatPreview,
+  buildMaintenanceCandidatePreview,
   buildMaintenanceJobAuthorityReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
@@ -223,6 +225,18 @@ describe("maintenance worker skeleton", () => {
         memoryCoreGate: "write_memory_candidate_only"
       })
     );
+  });
+
+  test("routes maintenance candidate preview through the legacy heartbeat builder", () => {
+    const input = {
+      now: isoNow,
+      memoryRecords: [],
+      sourceClaims: [],
+      sourceClaimEdges: [],
+      evidenceRef: "worker-test"
+    } as const;
+
+    expect(buildMaintenanceCandidatePreview(input)).toEqual(buildBrainHeartbeatPreview(input));
   });
 
   test("builds a worker authority readback for heartbeat candidates", () => {

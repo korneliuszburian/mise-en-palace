@@ -75,7 +75,7 @@ Move toward a useful KRN Brain through product-facing vertical slices:
 2. consensus/eval lane usefulness;
 3. graph brain v1;
 4. ingest v0/v1;
-5. heartbeat/dreaming candidate runtime;
+5. maintenance/dreaming candidate review runtime;
 6. pattern/research brain;
 7. real benchmarks;
 8. multi-repo shared-brain usefulness proof.

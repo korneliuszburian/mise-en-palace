@@ -177,18 +177,18 @@ describe("runHeartbeatPreviewCommand", () => {
       })
     });
 
-    expect(result.stdout).toContain("KRN Brain Heartbeat Preview");
+    expect(result.stdout).toContain("KRN Maintenance Candidate Preview");
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("DB writes: none");
     expect(result.stdout).toContain(`Project: ${projectId}`);
     expect(result.stdout).toContain("Project resolution: explicit_project (explicit project)");
-    expect(result.stdout).toContain("Review/eval closure:");
+    expect(result.stdout).toContain("Candidate review/eval closure:");
     expect(result.stdout).toContain("decision: needs_more_evidence");
     expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
     expect(result.stdout).toContain("candidateIds:");
     expect(result.stdout).toContain(`memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
     expect(result.stdout).toContain(`source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
-    expect(result.stdout).toContain("Runtime loop:");
+    expect(result.stdout).toContain("Candidate routing:");
     expect(result.stdout).toContain("mode: manual_candidate_only");
     expect(result.stdout).toContain("status: needs_candidate_evidence");
     expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
@@ -221,7 +221,7 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("Mutation boundary:");
     expect(result.stdout).toContain("mutation: none");
     expect(result.stdout).toContain("forbiddenWrites:");
-    expect(result.stdout).toContain("Brain heartbeat preview aggregates existing candidate-only maintenance previews");
+    expect(result.stdout).toContain("Maintenance candidate preview aggregates existing candidate-only maintenance previews");
     expect(closeCount).toBe(1);
   });
 

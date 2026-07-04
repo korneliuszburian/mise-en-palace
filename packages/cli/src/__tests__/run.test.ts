@@ -138,12 +138,20 @@ describe("runCli", () => {
         usage: "Usage: krn brain knowledge"
       },
       {
+        args: ["maintenance", "--help"],
+        usage: "Usage: krn maintenance preview"
+      },
+      {
+        args: ["maintenance", "-h"],
+        usage: "Usage: krn maintenance preview"
+      },
+      {
         args: ["heartbeat", "--help"],
-        usage: "Usage: krn heartbeat preview"
+        usage: "Usage: krn maintenance preview"
       },
       {
         args: ["heartbeat", "-h"],
-        usage: "Usage: krn heartbeat preview"
+        usage: "Usage: krn maintenance preview"
       },
       {
         args: ["observe", "--help"],
