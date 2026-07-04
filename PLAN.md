@@ -136,7 +136,7 @@ Latest closed Beads: `mise-en-palace-24p7`, `mise-en-palace-gfzi`,
 `mise-en-palace-oez2`, `mise-en-palace-ieec`, `mise-en-palace-yjs7`,
 `mise-en-palace-z406`, and `mise-en-palace-be1t`.
 
-Current queue: `mise-en-palace-2n9m` aligns worker embed job payloads with required embedding model scope.
+Current queue: `mise-en-palace-8vug` keeps no-id owner-file search candidates out of source-search document support.
 `mise-en-palace-75za` source-search command boundary split is closed:
 source-search readback/format/ranking helpers moved out of the command runner.
 `mise-en-palace-wgei` source artifact preview boundary split is closed:

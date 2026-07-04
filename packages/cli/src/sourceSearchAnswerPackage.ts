@@ -149,11 +149,17 @@ export const buildSourceSearchAnswerPackage = (input: {
     (candidate) => candidate.subjectType === "source_claim"
   );
   const supportingDocuments = included.filter(
-    (candidate) => candidate.subjectType === "search_document"
+    (candidate) =>
+      candidate.subjectType === "search_document" &&
+      candidate.searchDocumentId !== undefined
   );
   const neutralOrNoise = included.filter(
     (candidate) =>
-      candidate.subjectType !== "source_claim" && candidate.subjectType !== "search_document"
+      candidate.subjectType !== "source_claim" &&
+      !(
+        candidate.subjectType === "search_document" &&
+        candidate.searchDocumentId !== undefined
+      )
   );
   const linkedDocumentCount = input.sourceClaimDocumentLinks.reduce(
     (sum, link) => sum + link.linkedSearchDocumentCount,

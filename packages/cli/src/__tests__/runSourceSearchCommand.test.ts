@@ -10,6 +10,9 @@ import type {
   SourceDecisionEdge
 } from "@krn/core";
 import type {
+  RankedActivationCandidate
+} from "@krn/harness";
+import type {
   SearchDocumentSearchResult
 } from "@krn/harness/repositories/internal";
 import type {
@@ -25,6 +28,9 @@ import {
 import type {
   CreateSourceSearchDatabaseRuntime
 } from "../runSourceSearchCommand.js";
+import {
+  buildSourceSearchAnswerPackage
+} from "../sourceSearchAnswerPackage.js";
 
 const now = "2026-06-29T12:00:00.000Z";
 const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
@@ -69,6 +75,29 @@ const searchDocument = (): SearchDocumentSearchResult => ({
   createdAt: now,
   updatedAt: now,
   lexicalScore: 100
+});
+
+const includedSearchCandidate = (
+  overrides: Partial<RankedActivationCandidate> = {}
+): RankedActivationCandidate => ({
+  id: "candidate-owner-file",
+  kind: "search",
+  subjectType: "search_document",
+  subjectId: "owner-file:packages/harness/src/activation/activationEngine.ts",
+  text: "Owner-file recall for activationEngine.ts",
+  trustTier: "project-decision",
+  reason: "Owner-file recall: packages/harness/src/activation/activationEngine.ts",
+  expectedUse: "Inspect activationEngine.ts when the task touches activation retrieval.",
+  tokenEstimate: 20,
+  metadata: {},
+  lexicalScore: 60,
+  vectorScore: 0,
+  graphScore: 0,
+  temporalScore: 0,
+  contextRoiScore: 0,
+  feedbackScore: 0,
+  totalScore: 90,
+  ...overrides
 });
 
 const sourceClaimEdge = (
@@ -377,6 +406,44 @@ describe("runSourceSearchCommand", () => {
         "Answer package has no included SearchDocument evidence."
       ]
     });
+  });
+
+  it("does not count search candidates without SearchDocument id as supporting documents", () => {
+    const answerPackage = buildSourceSearchAnswerPackage({
+      query: "worker embedding model scope source chunk memory record",
+      included: [includedSearchCandidate()],
+      diagnostics: {
+        projectScoped: true,
+        inputStatus: "candidates_available",
+        memoryRecordCount: 0,
+        sourceClaimCount: 0,
+        searchResultCount: 0,
+        ownerFileCandidateCount: 1,
+        antiMemoryRecordCount: 0,
+        mergedCandidateCount: 1,
+        targetReadModelStatus: "provided",
+        sourceSeedCount: 0,
+        targetOwnerFileCount: 1,
+        trustExclusionCount: 0,
+        doesNotProve:
+          "Activation diagnostics do not prove selected context is sufficient."
+      },
+      relationSupport: [],
+      sourceDecisionSupport: [],
+      sourceClaimDocumentLinks: []
+    });
+
+    expect(answerPackage.supportingDocuments).toEqual([]);
+    expect(answerPackage.neutralOrNoise).toHaveLength(1);
+    expect(answerPackage.answerUsefulness).toBe("not_useful");
+    expect(answerPackage.answerUsefulnessReasons).toEqual([
+      "Answer package has no governed SourceClaim evidence.",
+      "Answer package has no included SearchDocument evidence."
+    ]);
+    expect(answerPackage.missingEvidence).toEqual([
+      "governed SourceClaim evidence in the answer package for this query",
+      "included SearchDocument evidence in the answer package for this query"
+    ]);
   });
 
   it("builds query-shape diagnostics without changing retrieval semantics", () => {
