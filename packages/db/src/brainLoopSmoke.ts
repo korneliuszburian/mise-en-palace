@@ -1,5 +1,6 @@
 import {
   eq,
+  inArray,
   sql
 } from "drizzle-orm";
 import {
@@ -12,6 +13,7 @@ import {
   retrieveActivationCandidates
 } from "@krn/harness";
 
+import type { KrnDatabase } from "./database.js";
 import {
   assertSmokeReadbackChecks,
   cleanupBrainLoopSmokeRows,
@@ -22,7 +24,8 @@ import {
 import {
   contextAssemblies,
   memoryApplications,
-  memoryRecordVersions
+  memoryRecordVersions,
+  retrievalRuns
 } from "./schema/index.js";
 import {
   smokeFixtureClocks
@@ -59,8 +62,11 @@ export interface BrainLoopSmokeReport {
   includedMemoryDecisionCount: number;
   contextItemCount: number;
   memoryApplicationId: string;
+  memoryOriginRepoInstallationId: string;
   nextRunTaskContractId: string;
   nextRunRetrievalRunId: string;
+  nextRunRepoInstallationIds: string[];
+  nextRunCrossRepoMemoryInclusion: boolean;
   nextRunContextAssemblyId: string;
   nextRunMemoryInclusionCount: number;
   nextRunIncludedMemoryDecisionCount: number;
@@ -68,6 +74,8 @@ export interface BrainLoopSmokeReport {
   downgradedMemoryApplicationCount: number;
   downgradedRunTaskContractId: string;
   downgradedRunRetrievalRunId: string;
+  downgradedRunRepoInstallationIds: string[];
+  downgradedRunCrossRepoMemoryExclusion: boolean;
   downgradedRunContextAssemblyId: string;
   downgradedRunMemoryExclusionCount: number;
   downgradedRunExcludedMemoryDecisionCount: number;
@@ -77,6 +85,12 @@ export interface BrainLoopSmokeReport {
 }
 
 const now = smokeFixtureClocks.brainLoop.now;
+const memoryOriginRepoInstallationId = "repo-installation-brain-loop-source";
+const nextRunRepoInstallationId = "repo-installation-brain-loop-consumer";
+const downgradedRunRepoInstallationId = "repo-installation-brain-loop-rejector";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const stringMetadataValue = (
   metadata: Record<string, unknown>,
@@ -85,6 +99,87 @@ const stringMetadataValue = (
   const value = metadata[key];
 
   return typeof value === "string" ? value : undefined;
+};
+
+const targetReadModelForRepo = (repoInstallationId: string) => ({
+  projectKernelId: "brain-loop-shared-kernel",
+  repoInstallationIds: [repoInstallationId],
+  localPathHints: [`/tmp/krn/${repoInstallationId}`],
+  sourceSeeds: [],
+  trustExclusions: []
+});
+
+const repoInstallationIdsFromMetadata = (
+  metadata: Record<string, unknown>
+): string[] => {
+  const targetReadModel = metadata["targetReadModel"];
+
+  if (!isRecord(targetReadModel)) {
+    return [];
+  }
+
+  const repoInstallationIds = targetReadModel["repoInstallationIds"];
+
+  if (!Array.isArray(repoInstallationIds)) {
+    return [];
+  }
+
+  return repoInstallationIds.filter((item): item is string => typeof item === "string");
+};
+
+const repoInstallationIdsForRetrievalRuns = async (input: {
+  db: KrnDatabase;
+  nextRunRetrievalRunId: string;
+  downgradedRunRetrievalRunId: string;
+}): Promise<{
+  nextRunRepoInstallationIds: string[];
+  downgradedRunRepoInstallationIds: string[];
+}> => {
+  const retrievalRunMetadataRows = await input.db
+    .select({
+      id: retrievalRuns.id,
+      metadata: retrievalRuns.metadata
+    })
+    .from(retrievalRuns)
+    .where(inArray(retrievalRuns.id, [
+      input.nextRunRetrievalRunId,
+      input.downgradedRunRetrievalRunId
+    ]));
+
+  const repoInstallationIdsFor = (retrievalRunId: string): string[] =>
+    repoInstallationIdsFromMetadata(
+      retrievalRunMetadataRows.find((row) => row.id === retrievalRunId)?.metadata ?? {}
+    );
+
+  return {
+    nextRunRepoInstallationIds: repoInstallationIdsFor(input.nextRunRetrievalRunId),
+    downgradedRunRepoInstallationIds: repoInstallationIdsFor(input.downgradedRunRetrievalRunId)
+  };
+};
+
+const crossRepoMemoryProof = (input: {
+  memoryRecordMetadata: Record<string, unknown>;
+  nextRunRepoInstallationIds: readonly string[];
+  nextRunMemoryInclusionCount: number;
+  downgradedRunRepoInstallationIds: readonly string[];
+  downgradedRunMemoryExclusionCount: number;
+}): {
+  nextRunCrossRepoMemoryInclusion: boolean;
+  downgradedRunCrossRepoMemoryExclusion: boolean;
+} => {
+  const memoryOriginRepoMatches =
+    stringMetadataValue(input.memoryRecordMetadata, "originRepoInstallationId") === memoryOriginRepoInstallationId;
+
+  return {
+    nextRunCrossRepoMemoryInclusion:
+      memoryOriginRepoMatches &&
+      input.nextRunRepoInstallationIds.includes(nextRunRepoInstallationId) &&
+      input.nextRunMemoryInclusionCount === 1,
+    downgradedRunCrossRepoMemoryExclusion:
+      memoryOriginRepoMatches &&
+      input.downgradedRunRepoInstallationIds.includes(downgradedRunRepoInstallationId) &&
+      input.downgradedRunMemoryExclusionCount === 1
+  };
 };
 
 const sourceDecisionTraceTargetTypes = [
@@ -356,6 +451,7 @@ export const runBrainLoopSmokeCheck = async (
       validFrom: now,
       metadata: {
         smokeId: marker,
+        originRepoInstallationId: memoryOriginRepoInstallationId,
         reflectionCandidateEvidence: {
           provenance: "evidence_bundle",
           evidenceRefs: [evidenceBundle.id, reviewAssessment.id, feedbackDelta.id],
@@ -484,6 +580,7 @@ export const runBrainLoopSmokeCheck = async (
         }
       },
       tokenBudget: 360,
+      targetReadModel: targetReadModelForRepo(nextRunRepoInstallationId),
       metadata: {
         smokeId: marker,
         proof: "automatic_memory_recall_next_compile"
@@ -565,6 +662,7 @@ export const runBrainLoopSmokeCheck = async (
         }
       },
       tokenBudget: 360,
+      targetReadModel: targetReadModelForRepo(downgradedRunRepoInstallationId),
       metadata: {
         smokeId: marker,
         proof: "automatic_memory_downgrade_next_compile"
@@ -587,6 +685,14 @@ export const runBrainLoopSmokeCheck = async (
       "downgraded run retrievalRunId",
       "Brain loop downgraded run did not persist retrieval metadata"
     );
+    const {
+      nextRunRepoInstallationIds,
+      downgradedRunRepoInstallationIds
+    } = await repoInstallationIdsForRetrievalRuns({
+      db,
+      nextRunRetrievalRunId,
+      downgradedRunRetrievalRunId
+    });
     const downgradedRunMemoryInclusions = downgradedCompile.contextAssembly.inclusions.filter((item) =>
       item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
     );
@@ -627,6 +733,16 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
+    const {
+      nextRunCrossRepoMemoryInclusion,
+      downgradedRunCrossRepoMemoryExclusion
+    } = crossRepoMemoryProof({
+      memoryRecordMetadata: memoryRecord.metadata,
+      nextRunRepoInstallationIds,
+      nextRunMemoryInclusionCount: nextRunMemoryInclusions.length,
+      downgradedRunRepoInstallationIds,
+      downgradedRunMemoryExclusionCount: downgradedRunMemoryExclusions.length
+    });
     const contextAssemblyRows = await db
       .select({
         id: contextAssemblies.id
@@ -694,11 +810,19 @@ export const runBrainLoopSmokeCheck = async (
         passed: (memoryApplicationCountRows[0]?.count ?? 0) === 1
       },
       { label: "next run context assembly", passed: nextCompile.contextAssembly.id === nextContextAssemblyId },
+      {
+        label: "next run repo boundary readback",
+        passed: nextRunRepoInstallationIds.join(",") === nextRunRepoInstallationId
+      },
       { label: "next run retrieved active memory", passed: nextRunMemoryInclusions.length + nextRunMemoryExclusions.length === 1 },
       { label: "next run included memory", passed: nextRunMemoryInclusions.length === 1 },
       {
         label: "next run activation decision",
         passed: nextRunIncludedMemoryDecisionCount === 1
+      },
+      {
+        label: "cross-repo promoted memory inclusion",
+        passed: nextRunCrossRepoMemoryInclusion
       },
       {
         label: "downgraded memory negative feedback",
@@ -713,8 +837,16 @@ export const runBrainLoopSmokeCheck = async (
         passed: downgradedRunMemoryInclusions.length === 0 && downgradedRunMemoryExclusions.length === 1
       },
       {
+        label: "downgraded run repo boundary readback",
+        passed: downgradedRunRepoInstallationIds.join(",") === downgradedRunRepoInstallationId
+      },
+      {
         label: "downgraded run activation decision",
         passed: downgradedRunExcludedMemoryDecisionCount === 1
+      },
+      {
+        label: "cross-repo downgraded memory exclusion",
+        passed: downgradedRunCrossRepoMemoryExclusion
       }
     ], readbackError);
 
@@ -761,8 +893,11 @@ export const runBrainLoopSmokeCheck = async (
       includedMemoryDecisionCount,
       contextItemCount: contextAssembly.inclusions.length,
       memoryApplicationId: memoryApplication.id,
+      memoryOriginRepoInstallationId,
       nextRunTaskContractId: nextCompile.taskContract.id,
       nextRunRetrievalRunId,
+      nextRunRepoInstallationIds,
+      nextRunCrossRepoMemoryInclusion,
       nextRunContextAssemblyId: nextCompile.contextAssembly.id,
       nextRunMemoryInclusionCount: nextRunMemoryInclusions.length,
       nextRunIncludedMemoryDecisionCount,
@@ -770,6 +905,8 @@ export const runBrainLoopSmokeCheck = async (
       downgradedMemoryApplicationCount: downgradedMemoryApplications.length,
       downgradedRunTaskContractId: downgradedCompile.taskContract.id,
       downgradedRunRetrievalRunId,
+      downgradedRunRepoInstallationIds,
+      downgradedRunCrossRepoMemoryExclusion,
       downgradedRunContextAssemblyId: downgradedCompile.contextAssembly.id,
       downgradedRunMemoryExclusionCount: downgradedRunMemoryExclusions.length,
       downgradedRunExcludedMemoryDecisionCount,
