@@ -1729,6 +1729,14 @@ export const classifySourceContribution = (
 ): SourceContributionClass =>
   sourceContributionRules.find((rule) => rule.matches(signals))?.contribution ?? "no_source_selected";
 
+export const sourcePruneCandidateIds = (
+  contribution: SourceContributionClass,
+  selectedSourceClaimIds: readonly string[]
+): readonly string[] =>
+  contribution === "source_zero_delta" || contribution === "source_noise"
+    ? selectedSourceClaimIds
+    : [];
+
 const sourceContributionClass = (
   krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
   sourceDisabled: BrainSearchPreviewReadback,
@@ -1759,10 +1767,10 @@ const buildSourceContribution = (
   const zeroDeltaSourceClaimIds = contribution === "source_zero_delta"
     ? krnMemory.selectedSourceClaimIds
     : [];
-  const pruneCandidateSourceClaimIds =
-    contribution === "source_zero_delta" || contribution === "source_noise"
-      ? krnMemory.selectedSourceClaimIds
-      : [];
+  const pruneCandidateSourceClaimIds = sourcePruneCandidateIds(
+    contribution,
+    krnMemory.selectedSourceClaimIds
+  );
 
   return {
     selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,

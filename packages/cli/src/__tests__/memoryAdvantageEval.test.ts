@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   classifySourceContribution,
+  sourcePruneCandidateIds,
   runMemoryAdvantageEval,
   loadMemoryAdvantageEvalFixture,
   parseMemoryAdvantageEvalFixture
@@ -1105,6 +1106,16 @@ describe("runMemoryAdvantageEval", () => {
       sourceDisabledUseful: true,
       advantageWin: true
     })).toBe("no_source_selected");
+  });
+
+  it("marks zero-delta and noise source contribution as prune candidates", () => {
+    const selectedSourceClaimIds = ["source:zero-delta", "source:noise"];
+
+    expect(sourcePruneCandidateIds("source_zero_delta", selectedSourceClaimIds)).toEqual(selectedSourceClaimIds);
+    expect(sourcePruneCandidateIds("source_noise", selectedSourceClaimIds)).toEqual(selectedSourceClaimIds);
+    expect(sourcePruneCandidateIds("source_required_for_hit", selectedSourceClaimIds)).toEqual([]);
+    expect(sourcePruneCandidateIds("memory_only_sufficient", selectedSourceClaimIds)).toEqual([]);
+    expect(sourcePruneCandidateIds("no_source_selected", selectedSourceClaimIds)).toEqual([]);
   });
 
   it("rejects execution-contract fixture drift before evaluation", () => {

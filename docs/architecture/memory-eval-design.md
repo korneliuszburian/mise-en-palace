@@ -243,8 +243,10 @@ with SourceClaim/SearchDocument inputs disabled while keeping memory cards
 available. Current readback reports 17 source-disabled ablations: 15 cases lose
 their KRN hit without source evidence, 2 cases select no source evidence, and 0
 source prune candidates are observed in the current corpus.
-This is an ablation signal, not proof of source truth or production ranking
-quality.
+Focused unit coverage keeps the prune-candidate policy live for zero-delta and
+noise contribution classes, so the current `0` means no current fixture case
+matches those classes rather than an unreachable code path. This is an ablation
+signal, not proof of source truth or production ranking quality.
 
 `pnpm eval:codex-output-comparator` consumes the memory-advantage eval and
 reports a deterministic Codex-vs-KRN sweep:
