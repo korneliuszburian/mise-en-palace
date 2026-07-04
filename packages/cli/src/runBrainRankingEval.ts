@@ -5,31 +5,28 @@ import {
   writeJsonEvalResult
 } from "./evalMain.js";
 import {
+  parseBrainSearchPreviewSections,
+  parseEvalKnowledgeCards,
+  parseEvalSourceClaims,
+  isRecord,
+  recordArray,
+  requiredFiniteNumber,
+  requiredNonEmptyStringArray,
+  requiredString
+} from "./evalFixtureSupport.js";
+import type {
+  EvalKnowledgeCardFixture,
+  EvalSourceClaimFixture
+} from "./evalFixtureSupport.js";
+import {
   runBrainSearchCommand
 } from "./runBrainSearchCommand.js";
 import type {
   BrainSearchCommand
 } from "./runBrainSearchCommand.js";
 
-interface BrainRankingCardFixture {
-  readonly id: string;
-  readonly title: string;
-  readonly summary: string;
-  readonly consumers: readonly string[];
-  readonly falsifier: string;
-  readonly doesNotProve: string;
-  readonly nextAction: string;
-}
-
-interface BrainRankingSourceClaimFixture {
-  readonly sourceClaimId: string;
-  readonly claim: string;
-  readonly mechanism: string;
-  readonly krnImplication: string;
-  readonly consumer: string;
-  readonly falsifier: string;
-  readonly doesNotProve: string;
-}
+type BrainRankingCardFixture = EvalKnowledgeCardFixture;
+type BrainRankingSourceClaimFixture = EvalSourceClaimFixture;
 
 interface BrainRankingCaseFixture {
   readonly id: string;
@@ -107,19 +104,6 @@ interface BrainRankingPreviewReadback {
   readonly sourceSearch: BrainRankingSourceSearchReadback;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const requiredString = (record: Record<string, unknown>, key: string, label: string): string => {
-  const value = record[key];
-
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${label}.${key} must be a non-empty string`);
-  }
-
-  return value;
-};
-
 const optionalBoolean = (
   record: Record<string, unknown>,
   key: string
@@ -137,86 +121,6 @@ const optionalBoolean = (
   return value;
 };
 
-const requiredFiniteNumber = (
-  record: Record<string, unknown>,
-  key: string,
-  label: string
-): number => {
-  const value = record[key];
-
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${label}.${key} must be a finite number`);
-  }
-
-  return value;
-};
-
-const requiredStringArray = (
-  record: Record<string, unknown>,
-  key: string,
-  label: string
-): readonly string[] => {
-  const value = record[key];
-
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new Error(`${label}.${key} must be a non-empty string array`);
-  }
-
-  return value.map((item, index) => {
-    if (typeof item !== "string" || item.trim().length === 0) {
-      throw new Error(`${label}.${key}[${index}] must be a non-empty string`);
-    }
-
-    return item;
-  });
-};
-
-const recordArray = (
-  record: Record<string, unknown>,
-  key: string,
-  label: string
-): readonly Record<string, unknown>[] => {
-  const value = record[key];
-
-  if (!Array.isArray(value)) {
-    throw new Error(`${label}.${key} must be an array`);
-  }
-
-  return value.map((item, index) => {
-    if (!isRecord(item)) {
-      throw new Error(`${label}.${key}[${index}] must be an object`);
-    }
-
-    return item;
-  });
-};
-
-const parseCard = (
-  value: Record<string, unknown>,
-  label: string
-): BrainRankingCardFixture => ({
-  id: requiredString(value, "id", label),
-  title: requiredString(value, "title", label),
-  summary: requiredString(value, "summary", label),
-  consumers: requiredStringArray(value, "consumers", label),
-  falsifier: requiredString(value, "falsifier", label),
-  doesNotProve: requiredString(value, "doesNotProve", label),
-  nextAction: requiredString(value, "nextAction", label)
-});
-
-const parseSourceClaim = (
-  value: Record<string, unknown>,
-  label: string
-): BrainRankingSourceClaimFixture => ({
-  sourceClaimId: requiredString(value, "sourceClaimId", label),
-  claim: requiredString(value, "claim", label),
-  mechanism: requiredString(value, "mechanism", label),
-  krnImplication: requiredString(value, "krnImplication", label),
-  consumer: requiredString(value, "consumer", label),
-  falsifier: requiredString(value, "falsifier", label),
-  doesNotProve: requiredString(value, "doesNotProve", label)
-});
-
 const parseCase = (
   value: Record<string, unknown>,
   index: number
@@ -227,17 +131,13 @@ const parseCase = (
     id: requiredString(value, "id", label),
     query: requiredString(value, "query", label),
     storeOnly: optionalBoolean(value, "storeOnly"),
-    expectedSelectedKnowledgeIds: requiredStringArray(
+    expectedSelectedKnowledgeIds: requiredNonEmptyStringArray(
       value,
       "expectedSelectedKnowledgeIds",
       label
     ),
-    knowledgeCards: recordArray(value, "knowledgeCards", label).map((card, cardIndex) =>
-      parseCard(card, `${label}.knowledgeCards[${cardIndex}]`)
-    ),
-    sourceClaims: recordArray(value, "sourceClaims", label).map((claim, claimIndex) =>
-      parseSourceClaim(claim, `${label}.sourceClaims[${claimIndex}]`)
-    )
+    knowledgeCards: parseEvalKnowledgeCards(value, "knowledgeCards", label),
+    sourceClaims: parseEvalSourceClaims(value, "sourceClaims", label)
   };
 };
 
@@ -329,24 +229,8 @@ const parseBrainSearchResult = (
   value: string,
   label: string
 ): BrainRankingPreviewReadback => {
-  const parsed: unknown = JSON.parse(value);
-
-  if (!isRecord(parsed) || parsed["kind"] !== "krn.brainSearch.preview.v1") {
-    throw new Error(`${label} did not return a brain search preview`);
-  }
-
-  const knowledgeCards = parsed["knowledgeCards"];
-  const sourceSearch = parsed["sourceSearch"];
-
-  if (!isRecord(knowledgeCards) || !isRecord(sourceSearch)) {
-    throw new Error(`${label} brain search preview is missing readback sections`);
-  }
-
-  const selectedKnowledge = recordArray(
-    knowledgeCards,
-    "selectedKnowledge",
-    `${label}.knowledgeCards`
-  ).map((packet, index) => ({
+  const preview = parseBrainSearchPreviewSections(value, label);
+  const selectedKnowledge = preview.selectedKnowledge.map((packet, index) => ({
     id: requiredString(packet, "id", `${label}.selectedKnowledge[${index}]`),
     source: requiredString(packet, "source", `${label}.selectedKnowledge[${index}]`),
     targetFit: requiredString(packet, "targetFit", `${label}.selectedKnowledge[${index}]`)
@@ -355,10 +239,10 @@ const parseBrainSearchResult = (
   return {
     selectedKnowledge,
     sourceSearch: {
-      answerUsefulness: requiredString(sourceSearch, "answerUsefulness", `${label}.sourceSearch`),
-      supportingClaims: requiredFiniteNumber(sourceSearch, "supportingClaims", `${label}.sourceSearch`),
+      answerUsefulness: requiredString(preview.sourceSearch, "answerUsefulness", `${label}.sourceSearch`),
+      supportingClaims: requiredFiniteNumber(preview.sourceSearch, "supportingClaims", `${label}.sourceSearch`),
       supportingDocuments: requiredFiniteNumber(
-        sourceSearch,
+        preview.sourceSearch,
         "supportingDocuments",
         `${label}.sourceSearch`
       )

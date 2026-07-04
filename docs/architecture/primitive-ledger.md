@@ -23,7 +23,8 @@ CI-invoked guard in `docs/architecture/behavior-gate-matrix.md`; a `rejected`,
 | Source artifact preview extraction | live, narrow | `packages/core/src/sourceArtifactPreviewExtraction.ts`; KRN behavior gate source artifact reuse case | Narrow source-to-claim extraction only; broad extractor churn is rejected without new evidence. |
 | Brain ranking proxy eval | live, proxy | `pnpm eval:brain-ranking`; `tests/fixtures/brain-ranking/brain-ranking-eval.json` | Proxy labels are not broad ranking truth. |
 | Source graph ranking proxy eval | live, proxy | `pnpm eval:source-graph-ranking`; `tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json` | Proxy labels are not source truth or live pgvector quality. |
-| Ranking eval determinism guard | live, proxy | `pnpm eval:determinism`; brain-ranking and source-graph-ranking fixtures | Bit-identical consecutive fixture output only; not production retrieval quality or company-pattern memory advantage. |
+| Company-pattern memory advantage eval | live, proxy | `pnpm eval:memory-advantage`; `tests/fixtures/memory-advantage/company-pattern-memory-advantage.json` | One controlled no-memory baseline miss vs KRN memory/source hit; not arbitrary task superiority or LLM output quality. |
+| Ranking eval determinism guard | live, proxy | `pnpm eval:determinism`; brain-ranking, source-graph-ranking, and memory-advantage fixtures | Bit-identical consecutive fixture output only; not production retrieval quality or arbitrary company-pattern memory advantage. |
 | Governed second-opinion Claude reviewer | live, advisory | `.agents/skills/second-opinion-claude/SKILL.md` | Reviewer output is advisory; validator and local evidence govern closure. |
 
 ## Reduced, Rejected, Or Deprecated Surfaces
