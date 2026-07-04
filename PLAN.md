@@ -133,8 +133,8 @@ blocked the roadmap selection until six candidate areas were explicitly ruled
 in or out with current repo evidence.
 
 Latest closed Beads: `mise-en-palace-24p7/gfzi/oez2/ieec/yjs7/z406/be1t`.
-
-Current queue: `mise-en-palace-td3u` researches and bounds the KRN naming standard before any rename sweep.
+Current queue: `mise-en-palace-qzai/g1cg` measure context relevance and source grounding before ranking/naming work.
+`mise-en-palace-sefh/td3u` frame KRN as governed RAG/memory/source/review; workers stay candidate contracts until `plnv`, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
 `mise-en-palace-75za` source-search command boundary split is closed:
