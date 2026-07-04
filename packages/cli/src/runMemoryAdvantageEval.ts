@@ -252,6 +252,7 @@ interface MemoryAdvantageCaseReadback {
     readonly sourceExclusions: readonly MemoryAdvantageSourceClaimExclusionReadback[];
   };
   readonly "source_contribution": SourceContributionReadback;
+  readonly "implementation_decision": ImplementationDecisionReadback;
   readonly "krn_plan_brief": PlanBriefReadback;
   readonly "coding_task_decision"?: CodingTaskDecisionReadback;
   readonly "execution_contract_decision"?: ExecutionContractDecisionReadback;
@@ -374,6 +375,17 @@ interface SourceContributionReadback {
   readonly doesNotProve: string;
 }
 
+interface ImplementationDecisionReadback {
+  readonly decision_before_memory: string;
+  readonly decision_after_krn: string;
+  readonly selectedEvidenceRefs: readonly string[];
+  readonly selectedEvidenceIds: readonly string[];
+  readonly decisionChanged: boolean;
+  readonly decisionChangeClass: "win" | "neutral" | "rejection_protection" | "regression";
+  readonly reason: string;
+  readonly doesNotProve: string;
+}
+
 export interface MemoryAdvantageEvalResult {
   readonly kind: "krn.memoryAdvantage.eval.v1";
   readonly fixtureVersion: "1";
@@ -402,6 +414,11 @@ export interface MemoryAdvantageEvalResult {
     readonly totalKrnPlanBriefContextBytes: number;
     readonly totalRenderedBriefBytes: number;
     readonly codingTaskCaseCount: number;
+    readonly implementationDecisionCaseCount: number;
+    readonly implementationDecisionWinCount: number;
+    readonly implementationDecisionNeutralCount: number;
+    readonly implementationDecisionRejectionProtectionCount: number;
+    readonly implementationDecisionRegressionCount: number;
     readonly executionContractCaseCount: number;
     readonly companyPatternChallengeCaseCount: number;
     readonly companyPatternChallengeWinCount: number;
@@ -1821,6 +1838,128 @@ const buildSourceContribution = (
   };
 };
 
+const firstOrNone = (values: readonly string[]): string =>
+  values[0] ?? "none";
+
+const decisionFromSelection = (
+  prefix: "select" | "reject" | "defer",
+  id: string
+): string => `${prefix}:${id}`;
+
+const decisionBeforeMemory = (
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"]
+): string => {
+  if (simpleRetrieval.result === "miss") {
+    return decisionFromSelection("defer", "missing-evidence");
+  }
+
+  return decisionFromSelection("select", firstOrNone(simpleRetrieval.selectedKnowledgeIds));
+};
+
+const decisionAfterKrn = (
+  testCase: MemoryAdvantageCaseFixture,
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): string => {
+  if (krnMemory.result === "hit") {
+    return decisionFromSelection("select", testCase.expectedSelectedKnowledgeId);
+  }
+
+  const rejectedMemoryId = krnMemory.exclusions[0]?.memoryId;
+  const rejectedSourceClaimId = krnMemory.sourceExclusions[0]?.sourceClaimId;
+
+  if (rejectedMemoryId !== undefined) {
+    return decisionFromSelection("reject", rejectedMemoryId);
+  }
+
+  if (rejectedSourceClaimId !== undefined) {
+    return decisionFromSelection("reject", rejectedSourceClaimId);
+  }
+
+  return decisionFromSelection("defer", "missing-evidence");
+};
+
+const selectedEvidenceIds = (
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): readonly string[] => [
+  ...krnMemory.selectedMemoryIds.map((id) => `memory:${id}`),
+  ...krnMemory.selectedSourceClaimIds,
+  ...krnMemory.exclusions.map((exclusion) => `excluded-memory:${exclusion.memoryId}`),
+  ...krnMemory.sourceExclusions.map((exclusion) => `excluded-source:${exclusion.sourceClaimId}`)
+];
+
+const decisionChangeClass = (
+  advantageDelta: MemoryAdvantageCaseReadback["advantageDelta"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
+  before: string,
+  after: string
+): ImplementationDecisionReadback["decisionChangeClass"] => {
+  if (krnMemory.exclusions.length > 0 || krnMemory.sourceExclusions.length > 0) {
+    return "rejection_protection";
+  }
+
+  if (before === after) {
+    return "neutral";
+  }
+
+  if (advantageDelta.result === "loss") {
+    return "regression";
+  }
+
+  return advantageDelta.result;
+};
+
+const decisionChangeReason = (
+  input: {
+    testCase: MemoryAdvantageCaseFixture;
+    advantageDelta: MemoryAdvantageCaseReadback["advantageDelta"];
+    before: string;
+    after: string;
+    krnMemory: MemoryAdvantageCaseReadback["krn_memory"];
+  }
+): string => {
+  if (input.krnMemory.exclusions.length > 0 || input.krnMemory.sourceExclusions.length > 0) {
+    return `KRN rejected stale or unsafe evidence before selecting authority for ${input.testCase.expectedSelectedKnowledgeId}.`;
+  }
+
+  if (input.before === input.after) {
+    return `Memory did not change the implementation decision: ${input.advantageDelta.reason}`;
+  }
+
+  return `Memory changed the implementation decision: ${input.advantageDelta.reason}`;
+};
+
+const buildImplementationDecision = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"],
+  advantageDelta: MemoryAdvantageCaseReadback["advantageDelta"]
+): ImplementationDecisionReadback => {
+  const before = decisionBeforeMemory(simpleRetrieval);
+  const after = decisionAfterKrn(testCase, krnMemory);
+
+  return {
+    decision_before_memory: before,
+    decision_after_krn: after,
+    selectedEvidenceRefs: [
+      testCase.priorSession.evidenceRef,
+      testCase.priorSession.reviewRef,
+      testCase.priorSession.feedbackRef
+    ],
+    selectedEvidenceIds: selectedEvidenceIds(krnMemory),
+    decisionChanged: before !== after,
+    decisionChangeClass: decisionChangeClass(advantageDelta, krnMemory, before, after),
+    reason: decisionChangeReason({
+      testCase,
+      advantageDelta,
+      before,
+      after,
+      krnMemory
+    }),
+    doesNotProve:
+      "This deterministic proxy does not prove live Codex would follow the decision without an execution-output evidence check."
+  };
+};
+
 const expectedMemoryRecordId = (
   expectedSelectedKnowledgeId: string
 ): string | undefined =>
@@ -2118,6 +2257,12 @@ const evaluateCase = async (
   const executionContractDecision = buildExecutionContractDecision(testCase, simpleRetrieval, krnMemoryReadback);
   const advantageDelta = buildAdvantageDelta(testCase, simpleRetrieval, krnMemoryReadback);
   const sourceContribution = buildSourceContribution(testCase, krnMemoryReadback, sourceDisabled, advantageDelta);
+  const implementationDecision = buildImplementationDecision(
+    testCase,
+    simpleRetrieval,
+    krnMemoryReadback,
+    advantageDelta
+  );
   const status = caseStatus(
     testCase,
     baseline,
@@ -2163,6 +2308,7 @@ const evaluateCase = async (
     "baseline_plan_brief": baselinePlanBrief,
     "krn_memory": krnMemoryReadback,
     "source_contribution": sourceContribution,
+    "implementation_decision": implementationDecision,
     "krn_plan_brief": krnPlanBrief,
     ...(codingTaskDecision === undefined ? {} : { "coding_task_decision": codingTaskDecision }),
     ...(executionContractDecision === undefined
@@ -2257,6 +2403,22 @@ export const runMemoryAdvantageEval = async (
         0
       ),
       codingTaskCaseCount: cases.filter((testCase) => testCase["coding_task_decision"] !== undefined).length,
+      implementationDecisionCaseCount: cases.filter((testCase) =>
+        testCase["implementation_decision"].decision_before_memory.length > 0 &&
+        testCase["implementation_decision"].decision_after_krn.length > 0
+      ).length,
+      implementationDecisionWinCount: cases.filter((testCase) =>
+        testCase["implementation_decision"].decisionChangeClass === "win"
+      ).length,
+      implementationDecisionNeutralCount: cases.filter((testCase) =>
+        testCase["implementation_decision"].decisionChangeClass === "neutral"
+      ).length,
+      implementationDecisionRejectionProtectionCount: cases.filter((testCase) =>
+        testCase["implementation_decision"].decisionChangeClass === "rejection_protection"
+      ).length,
+      implementationDecisionRegressionCount: cases.filter((testCase) =>
+        testCase["implementation_decision"].decisionChangeClass === "regression"
+      ).length,
       executionContractCaseCount: cases.filter((testCase) =>
         testCase["execution_contract_decision"] !== undefined
       ).length,
@@ -2297,6 +2459,7 @@ export const runMemoryAdvantageEval = async (
         "the expected memory/source id is present in selectedKnowledge for hit cases",
         "the expected memory/source id is present in rendered Codex brief context for hit cases",
         "reviewed feedback refs are reported beside the later task query, selected memory/source ids, baseline outcome, KRN outcome, and context-size cost",
+        "implementation-decision readback reports decision_before_memory, decision_after_krn, selected evidence refs, selected evidence ids, and a deterministic changed/neutral/rejection class for every case",
         "coding-task cases can derive baseline and KRN implementation decisions mechanically from selected memory/source ids",
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",

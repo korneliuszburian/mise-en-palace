@@ -16,7 +16,7 @@ four falsifiable axes:
 | --- | --- | --- | --- |
 | Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: cases include no-memory, simple lexical, and plan/brief baselines with rendered Codex brief evidence. |
 | DB-backed retrieval | Can persisted memory/source rows change brain-search output through live repositories? | `pnpm db:smoke:brain-search` | Done for the current smoke: baseline misses, then a promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge are selected through Postgres-backed readback. |
-| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback, `pnpm eval:memory-advantage` | Current proxy includes reviewed feedback refs, one coding-task decision, and one interdependent Session A -> Session B execution-contract case derived from selected memory/source ids. |
+| Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback, `pnpm eval:memory-advantage` | Current proxy includes reviewed feedback refs, per-case implementation-decision readback, one detailed coding-task decision, and one interdependent Session A -> Session B execution-contract case derived from selected memory/source ids. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
 | Selective forgetting | Can KRN block stale/hurt/contradicted memory before context assembly? | anti-memory and stale activation guards | Memory advantage negative case where baseline uses tempting stale memory. |
 
@@ -88,6 +88,18 @@ superiority when the simple lexical baseline already selects the same expected
 knowledge or contract. Each neutral or broken-prior delta carries an
 `advantageDelta.limitation` classification so the eval can separate bounded
 baseline parity from fixture drift or regression candidates.
+
+Every case also emits `implementation_decision` with
+`decision_before_memory`, `decision_after_krn`, selected evidence refs,
+selected evidence ids, a changed/neutral/rejection class, and a non-proof
+boundary. This turns memory hits into deterministic coding-decision readback:
+one case changes an unsafe cast-JSON decision into an unknown-first parser
+decision, one neutral case keeps the same typecheck decision, and stale/source
+conflict cases show rejection protection through excluded evidence ids. The
+current class distribution is 7 wins, 6 neutral decisions, 10
+rejection-protection decisions, and 0 regression decisions. This does not prove
+live Codex would follow the decision without a separate execution-output
+evidence check.
 
 ### Memory Competency Matrix
 

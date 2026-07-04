@@ -25,7 +25,7 @@ DB-backed multi-session memory advantage: brain-search smoke now persists Sessio
 DB-backed plan/brief memory advantage: target repo harness smoke proves baseline brief misses the MemoryRecord and grounded Codex brief renders it
 plan/brief memory eval comparator: eval:memory-advantage now reports no-memory plan/brief misses and KRN memory/source rendered-brief hits
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
-coding-task memory decision: eval:memory-advantage now derives one implementation decision from selected memory/source ids, proving a baseline cast-JSON decision can be replaced by source-backed unknown-first parser guidance without LLM execution
+coding-task memory decision: eval:memory-advantage now reports per-case `decision_before_memory`/`decision_after_krn`; win, neutral, and rejection-protection cases show memory/source evidence changing or preserving bounded implementation decisions without LLM execution
 Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
 memory advantage falsification/source ablation: eval:memory-advantage now reports 17 wins, 7 firm-pattern challenge cases with 6 wins and 1 neutral, 4 classified neutral/no-advantage cases, one classified broken-prior-advantage case, 23 source-disabled reruns, 21 source-required hits, and source prune candidate counts
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
