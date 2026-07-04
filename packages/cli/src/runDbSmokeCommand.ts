@@ -467,6 +467,8 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Feedback delta: ${report.feedbackDeltaId}`,
       `Source claim: ${report.sourceClaimId}`,
       `Source decision: ${report.sourceDecisionId}`,
+      `Source decision trace edges: ${report.sourceDecisionTraceEdgeCount}`,
+      `Source decision trace targets: ${report.sourceDecisionTraceTargetTypes.join(", ")}`,
       `Source claim status: ${report.sourceClaimStatus}`,
       `Memory candidate: ${report.memoryCandidateId}`,
       `Memory candidate reviewed status: ${report.reviewedMemoryCandidateStatus}`,

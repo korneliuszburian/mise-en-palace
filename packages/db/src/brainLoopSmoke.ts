@@ -43,6 +43,9 @@ export interface BrainLoopSmokeReport {
   feedbackDeltaId: string;
   sourceClaimId: string;
   sourceDecisionId: string;
+  sourceDecisionTraceEdgeCount: number;
+  sourceDecisionTraceEdgeIds: string[];
+  sourceDecisionTraceTargetTypes: string[];
   sourceClaimStatus: string;
   memoryCandidateId: string;
   reviewedMemoryCandidateStatus: string;
@@ -83,6 +86,54 @@ const stringMetadataValue = (
 
   return typeof value === "string" ? value : undefined;
 };
+
+const sourceDecisionTraceTargetTypes = [
+  "evidence_bundle",
+  "feedback_delta",
+  "harness_plan",
+  "review_assessment",
+  "task_contract"
+] as const;
+
+const sourceDecisionTraceRefs = (
+  targets: ReturnType<typeof sourceDecisionTraceTargets>
+): string[] => targets
+  .map((target) => `${target.targetType}:${target.targetId}`)
+  .sort();
+
+const sourceDecisionTraceTargets = (input: {
+  taskContractId: string;
+  harnessPlanId: string;
+  evidenceBundleId: string;
+  reviewAssessmentId: string;
+  feedbackDeltaId: string;
+}) => [
+  {
+    targetType: "task_contract" as const,
+    targetId: input.taskContractId,
+    notes: "Source decision is traceable to the originating TaskContract."
+  },
+  {
+    targetType: "harness_plan" as const,
+    targetId: input.harnessPlanId,
+    notes: "Source decision is traceable to the HarnessPlan compiled for the run."
+  },
+  {
+    targetType: "evidence_bundle" as const,
+    targetId: input.evidenceBundleId,
+    notes: "Source decision is traceable to reviewed execution evidence."
+  },
+  {
+    targetType: "review_assessment" as const,
+    targetId: input.reviewAssessmentId,
+    notes: "Source decision is traceable to the review assessment that accepted the evidence."
+  },
+  {
+    targetType: "feedback_delta" as const,
+    targetId: input.feedbackDeltaId,
+    notes: "Source decision is traceable to the feedback delta produced from review."
+  }
+] as const;
 
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput
@@ -261,6 +312,30 @@ export const runBrainLoopSmokeCheck = async (
       await sourceRepository.getSourceClaimById(proposedSourceClaim.id),
       "accepted source claim readback",
       "Brain loop smoke source decision did not accept the source claim"
+    );
+    const sourceDecisionTraceTargetsForRun = sourceDecisionTraceTargets({
+      taskContractId: taskContract.id,
+      harnessPlanId: harnessPlan.id,
+      evidenceBundleId: evidenceBundle.id,
+      reviewAssessmentId: reviewAssessment.id,
+      feedbackDeltaId: feedbackDelta.id
+    });
+    const sourceDecisionTraceEdges = await Promise.all(
+      sourceDecisionTraceTargetsForRun.map((target) =>
+        sourceRepository.createSourceDecisionEdge({
+          sourceClaimId: sourceClaim.id,
+          targetType: target.targetType,
+          targetId: target.targetId,
+          supportType: "implementation-boundary",
+          confidence: "high",
+          notes: target.notes,
+          metadata: {
+            smokeId: marker,
+            sourceDecisionId: sourceDecision.id,
+            provenanceTrace: "brain_loop_source_to_decision"
+          }
+        })
+      )
     );
     const memoryCandidate = await memoryRepository.createMemoryCandidate({
       projectId: project.id,
@@ -530,6 +605,18 @@ export const runBrainLoopSmokeCheck = async (
       decision.reason === "unsafe"
     ).length;
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
+    const runSourceDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
+      executionRun.id
+    );
+    const sourceDecisionTraceReadbackEdges = runSourceDecisionEdges
+      .filter((edge) => edge.metadata.sourceDecisionId === sourceDecision.id)
+      .sort((left, right) => left.targetType.localeCompare(right.targetType));
+    const readBackSourceDecisionTraceTargetTypes = sourceDecisionTraceReadbackEdges
+      .map((edge) => edge.targetType)
+      .sort();
+    const readBackSourceDecisionTraceRefs = sourceDecisionTraceReadbackEdges
+      .map((edge) => `${edge.targetType}:${edge.targetId}`)
+      .sort();
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const activationDecisions = await retrievalRepository.listActivationDecisionsForRun(
@@ -571,7 +658,24 @@ export const runBrainLoopSmokeCheck = async (
       { label: "review assessment", passed: aggregate?.reviewAssessments.length === 1 },
       { label: "feedback delta", passed: aggregate?.feedbackDeltas.length === 1 },
       { label: "source decision adopted", passed: sourceDecision.status === "adopt" },
+      {
+        label: "source decision smoke metadata",
+        passed: stringMetadataValue(sourceDecision.metadata, "smokeId") === marker
+      },
       { label: "source claim accepted", passed: sourceClaim.status === "accepted" },
+      {
+        label: "source decision provenance trace edge count",
+        passed: sourceDecisionTraceEdges.length === 5
+      },
+      {
+        label: "run source decision provenance trace readback",
+        passed: readBackSourceDecisionTraceTargetTypes.join(",") === sourceDecisionTraceTargetTypes.join(",")
+      },
+      {
+        label: "run source decision provenance trace target ids",
+        passed: readBackSourceDecisionTraceRefs.join(",") ===
+          sourceDecisionTraceRefs(sourceDecisionTraceTargetsForRun).join(",")
+      },
       { label: "memory candidate accepted", passed: reviewedCandidate?.status === "accepted" },
       { label: "memory record readback", passed: readBackMemoryRecord?.id === memoryRecord.id },
       { label: "memory review gate metadata", passed: "reviewGate" in memoryRecord.metadata },
@@ -641,6 +745,9 @@ export const runBrainLoopSmokeCheck = async (
       feedbackDeltaId: feedbackDelta.id,
       sourceClaimId: sourceClaim.id,
       sourceDecisionId: sourceDecision.id,
+      sourceDecisionTraceEdgeCount: sourceDecisionTraceReadbackEdges.length,
+      sourceDecisionTraceEdgeIds: sourceDecisionTraceReadbackEdges.map((edge) => edge.id),
+      sourceDecisionTraceTargetTypes: readBackSourceDecisionTraceTargetTypes,
       sourceClaimStatus: sourceClaim.status,
       memoryCandidateId: memoryCandidate.id,
       reviewedMemoryCandidateStatus: reviewedCandidate?.status ?? "missing",

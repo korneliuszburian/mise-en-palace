@@ -714,6 +714,8 @@ export const countBrainLoopSmokeMarkerRows = async (
   () => countSmokeRows(input.db, evidenceBundles, sql`${evidenceBundles.metadata}->>'smokeId' = ${input.marker}`),
   () => countSmokeRows(input.db, reviewAssessments, sql`${reviewAssessments.metadata}->>'smokeId' = ${input.marker}`),
   () => countSmokeRows(input.db, feedbackDeltas, sql`${feedbackDeltas.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, sourceDecisionEdges, sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, sourceDecisions, sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`),
   optionalSmokeCount(
     input.feedbackDeltaId,
     (id) => countSmokeRows(input.db, outboxEvents, sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${id}`)
@@ -996,6 +998,13 @@ export const cleanupBrainLoopSmokeRows = async (
       .delete(outboxEvents)
       .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${input.feedbackDeltaId}`);
   }
+
+  await input.db
+    .delete(sourceDecisionEdges)
+    .where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${input.marker}`);
+  await input.db
+    .delete(sourceDecisions)
+    .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`);
 
   await cleanupMemoryGovernanceSmokeRows(input);
 
