@@ -81,7 +81,9 @@ The current readback reports 17 cases: 11 advantage wins, 4 neutral/no-advantage
 cases, and 1 case that breaks the prior interdependent advantage shape. Neutral
 cases are not failures; they are evidence that KRN must not claim broad
 superiority when the simple lexical baseline already selects the same expected
-knowledge or contract.
+knowledge or contract. Each neutral or broken-prior delta carries an
+`advantageDelta.limitation` classification so the eval can separate bounded
+baseline parity from fixture drift or regression candidates.
 
 ### Memory Competency Matrix
 

@@ -27,7 +27,7 @@ plan/brief memory eval comparator: eval:memory-advantage now reports no-memory p
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
 coding-task memory decision: eval:memory-advantage now derives one implementation decision from selected memory/source ids, proving a baseline cast-JSON decision can be replaced by source-backed unknown-first parser guidance without LLM execution
 Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
-memory advantage falsification/source ablation: eval:memory-advantage now reports 11 wins, 4 neutral/no-advantage cases, one broken-prior-advantage case, 17 source-disabled reruns, 15 source-required hits, and source prune candidate counts
+memory advantage falsification/source ablation: eval:memory-advantage now reports 11 wins, 4 classified neutral/no-advantage cases, one classified broken-prior-advantage case, 17 source-disabled reruns, 15 source-required hits, and source prune candidate counts
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`

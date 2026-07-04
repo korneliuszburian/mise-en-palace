@@ -563,8 +563,27 @@ describe("runMemoryAdvantageEval", () => {
       testCase["krn_memory"].result === "hit" &&
       testCase["source_contribution"].contribution === "source_required_for_hit" &&
       testCase["krn_plan_brief"].result === "hit" &&
-      testCase.advantageDelta.simpleRetrievalAlreadySufficient
+      testCase.advantageDelta.simpleRetrievalAlreadySufficient &&
+      testCase.advantageDelta.limitation?.classification === "baseline_already_sufficient"
     )).toBe(true);
+    expect(noAdvantageCases.map((testCase) => testCase.advantageDelta.limitation?.scope)).toEqual([
+      "neutral_no_advantage",
+      "neutral_no_advantage",
+      "neutral_no_advantage",
+      "broken_prior_advantage"
+    ]);
+
+    const brokenPriorCase = noAdvantageCases.find((testCase) =>
+      testCase.falsificationClass === "breaks_interdependent_advantage"
+    );
+    expect(brokenPriorCase?.advantageDelta.limitation).toMatchObject({
+      scope: "broken_prior_advantage",
+      classification: "baseline_already_sufficient",
+      proof: "simpleRetrieval=top_match_selected; krn=hit; expected=hit"
+    });
+    expect(brokenPriorCase?.advantageDelta.limitation?.reason).toContain(
+      "breaks_interdependent_advantage"
+    );
 
     const interdependentCase = result.cases.find((testCase) =>
       testCase.caseId === "heldout-multi-session-codex-output-evidence"
@@ -998,6 +1017,9 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(result.proof.proves).toContain(
       "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator"
+    );
+    expect(result.proof.proves).toContain(
+      "non-winning advantage deltas carry limitation classifications with deterministic simple-retrieval, KRN, and expected-result proof tuples"
     );
     expect(result.proof.proves).toContain(
       "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"

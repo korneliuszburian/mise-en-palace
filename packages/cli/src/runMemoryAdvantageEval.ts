@@ -66,6 +66,17 @@ type MemoryAdvantageFalsificationClass =
   | "retrieval_not_needed"
   | "breaks_interdependent_advantage";
 type MemoryAdvantageDelta = "win" | "neutral" | "loss";
+type AdvantageLimitationClass =
+  | "baseline_already_sufficient"
+  | "inherent_parity"
+  | "retrieval_miss"
+  | "grounding_failure"
+  | "fixture_stale"
+  | "regression_candidate";
+type AdvantageLimitationScope =
+  | "neutral_no_advantage"
+  | "broken_prior_advantage"
+  | "loss";
 export type SourceContributionClass =
   | "source_required_for_hit"
   | "memory_only_sufficient"
@@ -178,6 +189,7 @@ interface MemoryAdvantageCaseReadback {
     readonly result: MemoryAdvantageDelta;
     readonly reason: string;
     readonly simpleRetrievalAlreadySufficient: boolean;
+    readonly limitation?: AdvantageLimitationReadback;
   };
   readonly status: "pass" | "fail";
   readonly expectedKrnResult: ExpectedKrnResult;
@@ -328,6 +340,14 @@ interface ReviewedFeedbackEffectReadback {
   readonly selectedContextSize: ApproximateSelectedContextSize;
   readonly planBriefContextSize: ApproximateSelectedContextSize;
   readonly proofStatus: "pass" | "fail";
+}
+
+interface AdvantageLimitationReadback {
+  readonly scope: AdvantageLimitationScope;
+  readonly classification: AdvantageLimitationClass;
+  readonly reason: string;
+  readonly proof: string;
+  readonly doesNotProve: string;
 }
 
 interface SourceContributionReadback {
@@ -1571,17 +1591,102 @@ const advantageDeltaReason = (
   return reasons[result];
 };
 
+const advantageLimitationScope = (
+  result: MemoryAdvantageDelta,
+  falsificationClass: MemoryAdvantageFalsificationClass | undefined
+): AdvantageLimitationScope | undefined => {
+  if (result === "win") {
+    return undefined;
+  }
+
+  if (falsificationClass === "breaks_interdependent_advantage") {
+    return "broken_prior_advantage";
+  }
+
+  return result === "neutral" ? "neutral_no_advantage" : "loss";
+};
+
+const classifyAdvantageLimitation = (
+  testCase: MemoryAdvantageCaseFixture,
+  result: MemoryAdvantageDelta,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): AdvantageLimitationClass => {
+  if (simpleRetrievalAlreadySufficient(testCase, simpleRetrieval, krnMemory)) {
+    return "baseline_already_sufficient";
+  }
+
+  if (krnMemory.result !== expectedKrnReadbackResult(testCase.expectedKrnResult)) {
+    return "retrieval_miss";
+  }
+
+  if (result === "loss") {
+    return "grounding_failure";
+  }
+
+  return testCase.falsificationClass === undefined
+    ? "regression_candidate"
+    : "inherent_parity";
+};
+
+const advantageLimitationReason = (
+  testCase: MemoryAdvantageCaseFixture,
+  classification: AdvantageLimitationClass
+): string => {
+  const reasons: Record<AdvantageLimitationClass, string> = {
+    baseline_already_sufficient:
+      "The simple lexical baseline already selected the expected knowledge or contract, so this case bounds the advantage claim instead of supporting it.",
+    inherent_parity:
+      "The task shape is intentionally easy enough that memory is not expected to improve the result.",
+    retrieval_miss:
+      "KRN did not select the expected result for this case, so the failure should be investigated as retrieval or fixture drift.",
+    grounding_failure:
+      "KRN selected a plausible result but did not outperform the simple lexical baseline for the declared expectation.",
+    fixture_stale:
+      "The case appears stale relative to the current fixture expectation.",
+    regression_candidate:
+      "The case lacks an explicit falsification class, so a non-win should be treated as a possible regression until triaged."
+  };
+
+  return `${testCase.falsificationClass ?? "no_falsification_class"}: ${reasons[classification]}`;
+};
+
+const buildAdvantageLimitation = (
+  testCase: MemoryAdvantageCaseFixture,
+  result: MemoryAdvantageDelta,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): AdvantageLimitationReadback | undefined => {
+  const scope = advantageLimitationScope(result, testCase.falsificationClass);
+
+  if (scope === undefined) {
+    return undefined;
+  }
+
+  const classification = classifyAdvantageLimitation(testCase, result, simpleRetrieval, krnMemory);
+
+  return {
+    scope,
+    classification,
+    reason: advantageLimitationReason(testCase, classification),
+    proof: `simpleRetrieval=${simpleRetrieval.result}; krn=${krnMemory.result}; expected=${testCase.expectedKrnResult}`,
+    doesNotProve: "This classification does not prove broad memory superiority, fixture truth, or production ranking quality."
+  };
+};
+
 const buildAdvantageDelta = (
   testCase: MemoryAdvantageCaseFixture,
   simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
   krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
 ): MemoryAdvantageCaseReadback["advantageDelta"] => {
   const result = advantageDeltaResult(testCase, simpleRetrieval, krnMemory);
+  const limitation = buildAdvantageLimitation(testCase, result, simpleRetrieval, krnMemory);
 
   return {
     result,
     reason: advantageDeltaReason(result, testCase.falsificationClass),
-    simpleRetrievalAlreadySufficient: simpleRetrievalAlreadySufficient(testCase, simpleRetrieval, krnMemory)
+    simpleRetrievalAlreadySufficient: simpleRetrievalAlreadySufficient(testCase, simpleRetrieval, krnMemory),
+    ...(limitation === undefined ? {} : { limitation })
   };
 };
 
@@ -2134,6 +2239,7 @@ export const runMemoryAdvantageEval = async (
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "at least one interdependent multi-session case marks that Session B depends on Session A evidence or feedback",
         "falsification cases report neutral no-advantage deltas when simple lexical retrieval already selects the expected knowledge",
+        "non-winning advantage deltas carry limitation classifications with deterministic simple-retrieval, KRN, and expected-result proof tuples",
         "at least one interdependent-style case can break the earlier memory-advantage shape by showing the baseline selects the same evidence-shaped contract",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
         "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
