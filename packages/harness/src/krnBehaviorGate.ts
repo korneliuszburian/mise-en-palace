@@ -251,7 +251,7 @@ const observationItem = (now: string, overrides: Partial<ObservationItem>): Obse
   ...overrides
 });
 
-interface ClaimedCodexOutputEvidence {
+export interface ClaimedCodexOutputEvidence {
   readonly summary?: unknown;
   readonly claimsKrnContextUse?: unknown;
   readonly evidenceRefs?: unknown;
@@ -269,7 +269,7 @@ const nonEmptyStringArray = (
     ? value
     : undefined;
 
-const validateClaimedCodexOutputEvidence = (
+export const validateClaimedCodexOutputEvidence = (
   output: ClaimedCodexOutputEvidence
 ): readonly string[] => {
   const findings: string[] = [];

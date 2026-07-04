@@ -217,6 +217,17 @@ decision:
 unknown-first JSON metadata boundary and the interdependent Codex-output
 evidence-shape boundary.
 
+`pnpm eval:codex-output-comparator` consumes those execution-contract cases and
+reports the deterministic Codex-vs-KRN comparison:
+
+1. the baseline contract selected by simple retrieval;
+2. the KRN-grounded contract selected by source-first memory/source ids;
+3. expected output evidence shape;
+4. baseline missing-evidence failure through the shared Codex-output evidence
+   validator;
+5. KRN valid evidence shape, selected-context size, exclusions, and
+   proof/non-proof readback.
+
 This proves only that selected KRN memory/source can change deterministic
 execution-contract choices in controlled company-pattern cases. It does not
 prove Codex implemented those contracts, arbitrary code quality, or product
