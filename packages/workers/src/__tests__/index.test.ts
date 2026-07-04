@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  assessMaintenanceJobWriteAuthority,
+  assessMaintenanceJobWriteBoundary,
   buildBrainHeartbeatPreview,
   buildMaintenanceCandidatePreview,
-  buildMaintenanceJobAuthorityReadback,
+  buildMaintenanceJobWriteBoundaryReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
   maintenanceJobRuntimeContract,
@@ -196,7 +196,7 @@ describe("maintenance worker skeleton", () => {
     );
   });
 
-  test("describes write authority before any worker runtime exists", () => {
+  test("describes write boundary before any worker runtime exists", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 
     expect(descriptions).toEqual(
@@ -239,8 +239,8 @@ describe("maintenance worker skeleton", () => {
     expect(buildMaintenanceCandidatePreview(input)).toEqual(buildBrainHeartbeatPreview(input));
   });
 
-  test("builds a worker authority readback for heartbeat candidates", () => {
-    expect(buildMaintenanceJobAuthorityReadback("expire_stale_memory")).toEqual({
+  test("builds a worker boundary readback for heartbeat candidates", () => {
+    expect(buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory")).toEqual({
       jobType: "expire_stale_memory",
       memoryCoreGate: "must_create_reviewed_invalidation_candidate",
       status: "passed",
@@ -257,18 +257,18 @@ describe("maintenance worker skeleton", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Declared worker write authority does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime authority gating, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+        "Declared worker write boundary does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
     });
   });
 
-  test("fails worker write authority when a gate allows the wrong write", () => {
+  test("fails worker write boundary when a gate allows the wrong write", () => {
     const invalidDescription = {
       ...describeMaintenanceJob("embed_source_chunk"),
       allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
       memoryCoreGate: "no_memory_core_write"
     } as const;
 
-    expect(assessMaintenanceJobWriteAuthority(invalidDescription)).toEqual({
+    expect(assessMaintenanceJobWriteBoundary(invalidDescription)).toEqual({
       jobType: "embed_source_chunk",
       memoryCoreGate: "no_memory_core_write",
       status: "failed",

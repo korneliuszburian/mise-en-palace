@@ -98,7 +98,7 @@ export interface MaintenanceJobDescription {
   memoryCoreGate: WorkerJobMemoryCoreGate;
 }
 
-export interface WorkerJobWriteAuthorityViolation {
+export interface WorkerJobWriteBoundaryViolation {
   code:
     | "disallowed_write_for_memory_core_gate"
     | "missing_required_write_for_memory_core_gate"
@@ -106,17 +106,17 @@ export interface WorkerJobWriteAuthorityViolation {
   message: string;
 }
 
-export interface WorkerJobWriteAuthorityAssessment {
+export interface WorkerJobWriteBoundaryAssessment {
   jobType: MaintenanceJobType;
   memoryCoreGate: WorkerJobMemoryCoreGate;
   status: "passed" | "failed";
-  violations: readonly WorkerJobWriteAuthorityViolation[];
+  violations: readonly WorkerJobWriteBoundaryViolation[];
 }
 
-export interface WorkerJobAuthorityReadback {
+export interface WorkerJobBoundaryReadback {
   jobType: MaintenanceJobType;
   memoryCoreGate: WorkerJobMemoryCoreGate;
-  status: WorkerJobWriteAuthorityAssessment["status"];
+  status: WorkerJobWriteBoundaryAssessment["status"];
   idempotencyKey: string;
   allowedWrites: readonly WorkerJobAllowedWrite[];
   forbiddenWrites: readonly WorkerJobForbiddenWrite[];
@@ -152,7 +152,7 @@ export type WorkerJobMemoryCoreGate =
   | "must_create_reviewed_invalidation_candidate"
   | "must_not_promote_memory_record";
 
-interface MaintenanceJobAuthority {
+interface MaintenanceJobWriteBoundary {
   inputSchema: string;
   idempotencyKey: string;
   allowedWrites: readonly WorkerJobAllowedWrite[];
@@ -200,7 +200,7 @@ const requiredWritesByMemoryCoreGate = {
   must_not_promote_memory_record: []
 } as const satisfies Record<WorkerJobMemoryCoreGate, readonly WorkerJobAllowedWrite[]>;
 
-const authorityByType: Record<MaintenanceJobType, MaintenanceJobAuthority> = {
+const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceJobWriteBoundary> = {
   embed_source_chunk: {
     inputSchema: "EmbedSourceChunkPayload",
     idempotencyKey: "embed_source_chunk:{sourceChunkId}:{embeddingModelId}",
@@ -241,26 +241,26 @@ const authorityByType: Record<MaintenanceJobType, MaintenanceJobAuthority> = {
 export const describeMaintenanceJob = (
   jobType: MaintenanceJobType
 ): MaintenanceJobDescription => {
-  const authority = authorityByType[jobType];
+  const writeBoundary = writeBoundaryByType[jobType];
   const description: MaintenanceJobDescription = {
     jobType,
     label: labels[jobType],
     ...maintenanceJobRuntimeContract,
-    inputSchema: authority.inputSchema,
-    idempotencyKey: authority.idempotencyKey,
-    allowedWrites: authority.allowedWrites,
-    forbiddenWrites: authority.forbiddenWrites,
-    memoryCoreGate: authority.memoryCoreGate
+    inputSchema: writeBoundary.inputSchema,
+    idempotencyKey: writeBoundary.idempotencyKey,
+    allowedWrites: writeBoundary.allowedWrites,
+    forbiddenWrites: writeBoundary.forbiddenWrites,
+    memoryCoreGate: writeBoundary.memoryCoreGate
   };
 
-  assertMaintenanceJobWriteAuthority(description);
+  assertMaintenanceJobWriteBoundary(description);
 
   return description;
 };
 
-export const assessMaintenanceJobWriteAuthority = (
+export const assessMaintenanceJobWriteBoundary = (
   description: MaintenanceJobDescription
-): WorkerJobWriteAuthorityAssessment => {
+): WorkerJobWriteBoundaryAssessment => {
   const allowedForGate = new Set<WorkerJobAllowedWrite>(
     allowedWritesByMemoryCoreGate[description.memoryCoreGate]
   );
@@ -268,7 +268,7 @@ export const assessMaintenanceJobWriteAuthority = (
     requiredWritesByMemoryCoreGate[description.memoryCoreGate]
   );
   const forbiddenWrites = new Set<WorkerJobForbiddenWrite>(description.forbiddenWrites);
-  const violations: WorkerJobWriteAuthorityViolation[] = [];
+  const violations: WorkerJobWriteBoundaryViolation[] = [];
 
   for (const write of description.allowedWrites) {
     if (!allowedForGate.has(write)) {
@@ -305,25 +305,25 @@ export const assessMaintenanceJobWriteAuthority = (
   };
 };
 
-export const assertMaintenanceJobWriteAuthority = (
+export const assertMaintenanceJobWriteBoundary = (
   description: MaintenanceJobDescription
 ): void => {
-  const assessment = assessMaintenanceJobWriteAuthority(description);
+  const assessment = assessMaintenanceJobWriteBoundary(description);
 
   if (assessment.status === "failed") {
     throw new Error(
-      `Invalid worker write authority for ${description.jobType}: ${assessment.violations
+      `Invalid worker write boundary for ${description.jobType}: ${assessment.violations
         .map((violation) => violation.message)
         .join(" ")}`
     );
   }
 };
 
-export const buildMaintenanceJobAuthorityReadback = (
+export const buildMaintenanceJobWriteBoundaryReadback = (
   jobType: MaintenanceJobType
-): WorkerJobAuthorityReadback => {
+): WorkerJobBoundaryReadback => {
   const description = describeMaintenanceJob(jobType);
-  const assessment = assessMaintenanceJobWriteAuthority(description);
+  const assessment = assessMaintenanceJobWriteBoundary(description);
 
   return {
     jobType,
@@ -333,6 +333,6 @@ export const buildMaintenanceJobAuthorityReadback = (
     allowedWrites: description.allowedWrites,
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:
-      "Declared worker write authority does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime authority gating, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+      "Declared worker write boundary does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
   };
 };

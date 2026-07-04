@@ -12,10 +12,10 @@ import type {
 } from "@krn/core";
 
 import {
-  buildMaintenanceJobAuthorityReadback
+  buildMaintenanceJobWriteBoundaryReadback
 } from "./jobTypes.js";
 import type {
-  WorkerJobAuthorityReadback
+  WorkerJobBoundaryReadback
 } from "./jobTypes.js";
 
 export type MemoryStalenessHeartbeatCandidateReason =
@@ -45,7 +45,7 @@ export interface MemoryStalenessHeartbeatCandidate {
   doesNotProve: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: readonly string[];
-  workerAuthority: WorkerJobAuthorityReadback;
+  workerWriteBoundary: WorkerJobBoundaryReadback;
   mutation: "none";
   forbiddenWrites: readonly [
     "memory_records",
@@ -180,7 +180,7 @@ const buildCandidate = (
     doesNotProve: previewDoesNotProve,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
-    workerAuthority: buildMaintenanceJobAuthorityReadback("expire_stale_memory"),
+    workerWriteBoundary: buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory"),
     mutation: "none",
     forbiddenWrites
   };

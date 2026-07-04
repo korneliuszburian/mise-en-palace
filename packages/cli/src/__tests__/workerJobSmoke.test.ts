@@ -6,7 +6,7 @@ describe("worker job smoke report formatting", () => {
   it("prints the transition and cleanup proof lines", () => {
     expect(
       formatWorkerJobSmokeReportLines({
-        authorityValidatedCount: 6,
+        writeBoundaryValidatedCount: 6,
         enqueuedJobCount: 6,
         queuedReadbackCount: 6,
         runningTransitionCount: 6,
@@ -18,7 +18,7 @@ describe("worker job smoke report formatting", () => {
         cleanedUp: true
       })
     ).toEqual([
-      "Authority validated jobs: 6",
+      "Write-boundary validated jobs: 6",
       "Worker jobs enqueued: 6",
       "Queued jobs read back: 6",
       "Running transitions: 6",

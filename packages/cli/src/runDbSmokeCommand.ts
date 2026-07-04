@@ -4,7 +4,7 @@ import {
   runBrainLoopSmokeCheck,
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
-  runHeartbeatWorkerAuthoritySmokeCheck,
+  runHeartbeatWorkerBoundarySmokeCheck,
   runInitConnectSmokeCheck,
   runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
@@ -48,7 +48,7 @@ export interface DbSmokeRuntime {
     | "brainLoop"
     | "brainSearch"
     | "runShow"
-    | "heartbeatWorkerAuthority"
+    | "heartbeatWorkerBoundary"
     | "codexAdapter"
     | "workerJobs"
     | "initConnect"
@@ -135,10 +135,10 @@ const dbSmokeTargetMetadata = {
     skippedLine: "Run show smoke: skipped (database not configured)",
     failureLabel: "Run show smoke"
   },
-  heartbeatWorkerAuthority: {
-    title: "KRN Heartbeat Worker Authority Smoke",
-    skippedLine: "Heartbeat worker authority smoke: skipped (database not configured)",
-    failureLabel: "Heartbeat worker authority smoke"
+  heartbeatWorkerBoundary: {
+    title: "KRN Heartbeat Worker Boundary Smoke",
+    skippedLine: "Heartbeat worker boundary smoke: skipped (database not configured)",
+    failureLabel: "Heartbeat worker boundary smoke"
   },
   codexAdapter: {
     title: "KRN Codex Adapter Smoke",
@@ -572,19 +572,19 @@ const runShowSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
-const runHeartbeatWorkerAuthoritySmokeTarget: DbSmokeTargetHandler = async (
+const runHeartbeatWorkerBoundarySmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
 ) => {
-  const report = await runHeartbeatWorkerAuthoritySmokeCheck({
+  const report = await runHeartbeatWorkerBoundarySmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("heartbeat-worker-authority-smoke")
+    smokeId: runtime.createId("heartbeat-worker-boundary-smoke")
   });
 
   return smokeResultFromCleanup(
     context,
-    "KRN Heartbeat Worker Authority Smoke",
+    "KRN Heartbeat Worker Boundary Smoke",
     report.cleanedUp,
     [
       `Workspace smoke row: ${report.workspaceSlug}`,
@@ -601,12 +601,12 @@ const runHeartbeatWorkerAuthoritySmokeTarget: DbSmokeTargetHandler = async (
       `Candidate reviewability: ${report.candidateReviewability}`,
       `Candidate mutation: ${report.candidateMutation}`,
       `Memory staleness candidates: ${report.memoryStalenessCandidateCount}`,
-      `Worker authority jobType: ${report.workerJobType}`,
-      `Worker authority memoryCoreGate: ${report.workerMemoryCoreGate}`,
-      `Worker authority status: ${report.workerAuthorityStatus}`,
-      `Worker authority mutation: ${report.workerAuthorityMutation}`,
+      `Worker boundary jobType: ${report.workerJobType}`,
+      `Worker boundary memoryCoreGate: ${report.workerMemoryCoreGate}`,
+      `Worker boundary status: ${report.workerWriteBoundaryStatus}`,
+      `Worker boundary mutation: ${report.workerWriteBoundaryMutation}`,
       `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
-      ...cleanupStatusLines(report.cleanedUp, "Heartbeat worker authority smoke")
+      ...cleanupStatusLines(report.cleanedUp, "Heartbeat worker boundary smoke")
     ]
   );
 };
@@ -751,7 +751,7 @@ const dbSmokeTargetHandlers = {
   brainLoop: runBrainLoopSmokeTarget,
   brainSearch: runBrainSearchSmokeTarget,
   runShow: runShowSmokeTarget,
-  heartbeatWorkerAuthority: runHeartbeatWorkerAuthoritySmokeTarget,
+  heartbeatWorkerBoundary: runHeartbeatWorkerBoundarySmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,
   workerJobs: runWorkerJobsSmokeTarget,
   initConnect: runInitConnectSmokeTarget,

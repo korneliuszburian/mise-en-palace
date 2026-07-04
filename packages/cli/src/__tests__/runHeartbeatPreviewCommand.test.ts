@@ -202,7 +202,7 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain(`candidate: source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("reviewability:");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
-    expect(result.stdout).toContain("workerAuthority:");
+    expect(result.stdout).toContain("workerWriteBoundary:");
     expect(result.stdout).toContain("jobType: expire_stale_memory");
     expect(result.stdout).toContain("memoryCoreGate: must_create_reviewed_invalidation_candidate");
     expect(result.stdout).toContain("status: passed");
@@ -365,7 +365,7 @@ describe("runHeartbeatPreviewCommand", () => {
           {
             action: "review_memory_invalidation",
             nextAction: "review_memory_invalidation",
-            workerAuthority: {
+            workerWriteBoundary: {
               jobType: "expire_stale_memory",
               memoryCoreGate: "must_create_reviewed_invalidation_candidate",
               status: "passed",

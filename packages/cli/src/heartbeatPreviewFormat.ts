@@ -11,7 +11,7 @@ import type {
   KnowledgeAcquisitionActivationUtilitySignalEvidence,
   KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
-  WorkerJobAuthorityReadback
+  WorkerJobBoundaryReadback
 } from "@krn/workers";
 
 interface HeartbeatPreviewOutputInput {
@@ -81,31 +81,31 @@ const formatAcquisitionEscalationPreview = (
     ))
 ];
 
-const formatWorkerAuthority = (
-  authority: WorkerJobAuthorityReadback | undefined
+const formatWorkerWriteBoundary = (
+  writeBoundary: WorkerJobBoundaryReadback | undefined
 ): string[] => {
-  if (authority === undefined) {
+  if (writeBoundary === undefined) {
     return [];
   }
 
   return [
-    "  workerAuthority:",
-    `  - jobType: ${authority.jobType}`,
-    `  - memoryCoreGate: ${authority.memoryCoreGate}`,
-    `  - status: ${authority.status}`,
-    `  - idempotencyKey: ${authority.idempotencyKey}`,
+    "  workerWriteBoundary:",
+    `  - jobType: ${writeBoundary.jobType}`,
+    `  - memoryCoreGate: ${writeBoundary.memoryCoreGate}`,
+    `  - status: ${writeBoundary.status}`,
+    `  - idempotencyKey: ${writeBoundary.idempotencyKey}`,
     "  - allowedWrites:",
-    ...formatList(authority.allowedWrites),
+    ...formatList(writeBoundary.allowedWrites),
     "  - forbiddenWrites:",
-    ...formatList(authority.forbiddenWrites),
-    `  - doesNotProve: ${authority.doesNotProve}`
+    ...formatList(writeBoundary.forbiddenWrites),
+    `  - doesNotProve: ${writeBoundary.doesNotProve}`
   ];
 };
 
-const candidateWorkerAuthority = (
+const candidateWorkerWriteBoundary = (
   candidate: BrainHeartbeatCandidate
-): WorkerJobAuthorityReadback | undefined =>
-  "workerAuthority" in candidate ? candidate.workerAuthority : undefined;
+): WorkerJobBoundaryReadback | undefined =>
+  "workerWriteBoundary" in candidate ? candidate.workerWriteBoundary : undefined;
 
 const formatProjectResolutionLines = (
   projectResolution: ProjectResolution | undefined
@@ -240,7 +240,7 @@ const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => {
     ...formatList(candidate.evidenceRefs),
     `  doesNotProve: ${candidate.doesNotProve}`,
     `  mutation: ${candidate.mutation}`,
-    ...formatWorkerAuthority(candidateWorkerAuthority(candidate)),
+    ...formatWorkerWriteBoundary(candidateWorkerWriteBoundary(candidate)),
     "  forbiddenWrites:",
     ...formatList(candidate.forbiddenWrites)
   ];

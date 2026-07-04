@@ -101,7 +101,7 @@ Planned narrowing:
 
 - keep concrete repository constructors internal to DB wiring.
 - expose public persistence through harness/core ports or explicit factories
-  only after Memory Core write authority is sealed.
+  only after Memory Core write boundary is sealed.
 
 ### `packages/db/src/schema/index.ts`
 
@@ -181,7 +181,7 @@ Risk:
 
 - all repository ports are equally public even when they support internal
   plumbing.
-- memory write authority is not visually separated from reviewed promotion.
+- memory write boundary is not visually separated from reviewed promotion.
 
 C1-03 decision:
 
@@ -197,7 +197,7 @@ C1-03 decision:
 
 Does not prove:
 
-- worker runtime authority;
+- worker runtime enforcement;
 - DB adapter methods are inaccessible to internal packages.
 
 ### `packages/cli`

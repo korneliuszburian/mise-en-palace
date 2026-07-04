@@ -5,7 +5,7 @@ import type {
 export const formatWorkerJobSmokeReportLines = (
   report: WorkerJobSmokeReport
 ): string[] => [
-  `Authority validated jobs: ${report.authorityValidatedCount}`,
+  `Write-boundary validated jobs: ${report.writeBoundaryValidatedCount}`,
   `Worker jobs enqueued: ${report.enqueuedJobCount}`,
   `Queued jobs read back: ${report.queuedReadbackCount}`,
   `Running transitions: ${report.runningTransitionCount}`,

@@ -152,7 +152,7 @@ describe("brain heartbeat preview", () => {
     }
     expect(result.candidates[0]).toMatchObject({
       kind: "memory_staleness_maintenance_candidate",
-      workerAuthority: {
+      workerWriteBoundary: {
         jobType: "expire_stale_memory",
         memoryCoreGate: "must_create_reviewed_invalidation_candidate",
         status: "passed",
@@ -220,7 +220,7 @@ describe("brain heartbeat preview", () => {
           ],
           consumer: "heartbeat preview and future bounded eval/golden candidates",
           falsifier:
-            "Heartbeat preview drops activationUtilityEvidence or mutates direct authority.",
+            "Heartbeat preview drops activationUtilityEvidence or performs direct writes.",
           doesNotProve:
             "This candidate does not prove source truth, ranking quality, semantic-aware Thompson sampling, autonomous worker execution, or Memory Core mutation safety."
         }

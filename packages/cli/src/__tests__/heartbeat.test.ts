@@ -37,17 +37,17 @@ const readRootPackageJson = async (
 };
 
 describe("runCli", () => {
-  it("exposes the heartbeat worker authority smoke script", async () => {
+  it("exposes the heartbeat worker boundary smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const packageJson = await readRootPackageJson(repoRoot);
 
-    expect(packageJson.scripts?.["db:smoke:heartbeat-worker-authority"]).toBe(
-      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke heartbeat-worker-authority"
+    expect(packageJson.scripts?.["db:smoke:heartbeat-worker-boundary"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke heartbeat-worker-boundary"
     );
   });
 
-  it("reports heartbeat worker authority smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "heartbeat-worker-authority"], {
+  it("reports heartbeat worker boundary smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "heartbeat-worker-boundary"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -55,10 +55,10 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Heartbeat Worker Authority Smoke");
+    expect(result.stdout).toContain("KRN Heartbeat Worker Boundary Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
     expect(result.stdout).toContain(
-      "Heartbeat worker authority smoke: skipped (database not configured)"
+      "Heartbeat worker boundary smoke: skipped (database not configured)"
     );
   });
 });
