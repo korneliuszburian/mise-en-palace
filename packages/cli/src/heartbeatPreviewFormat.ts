@@ -263,16 +263,16 @@ const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
 
 const formatRuntimeLoop = (preview: BrainHeartbeatPreview): string[] => [
   "Candidate routing:",
-  `mode: ${preview.runtimeLoop.mode}`,
-  `status: ${preview.runtimeLoop.status}`,
-  `nextAction: ${preview.runtimeLoop.nextAction}`,
-  `summary: ${preview.runtimeLoop.summary}`,
-  `inspectedCandidates: ${preview.runtimeLoop.inspectedCandidates}`,
-  `reviewableCandidates: ${preview.runtimeLoop.reviewableCandidates}`,
-  `doesNotProve: ${preview.runtimeLoop.doesNotProve}`,
-  `mutation: ${preview.runtimeLoop.mutation}`,
+  `mode: ${preview.manualCandidateLoop.mode}`,
+  `status: ${preview.manualCandidateLoop.status}`,
+  `nextAction: ${preview.manualCandidateLoop.nextAction}`,
+  `summary: ${preview.manualCandidateLoop.summary}`,
+  `inspectedCandidates: ${preview.manualCandidateLoop.inspectedCandidates}`,
+  `reviewableCandidates: ${preview.manualCandidateLoop.reviewableCandidates}`,
+  `doesNotProve: ${preview.manualCandidateLoop.doesNotProve}`,
+  `mutation: ${preview.manualCandidateLoop.mutation}`,
   "forbiddenWrites:",
-  ...formatList(preview.runtimeLoop.forbiddenWrites)
+  ...formatList(preview.manualCandidateLoop.forbiddenWrites)
 ];
 
 const formatCandidateReviewResult = (preview: BrainHeartbeatPreview): string[] => {

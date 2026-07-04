@@ -119,6 +119,7 @@ describe("brain heartbeat preview", () => {
         "eval_candidates"
       ]
     });
+    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
     expect(result.runtimeLoop).toEqual({
       kind: "heartbeat_candidate_runtime_loop",
       mode: "manual_candidate_only",
@@ -580,6 +581,7 @@ describe("brain heartbeat preview", () => {
       reviewableCandidates: 1,
       mutation: "none"
     });
+    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
   });
 
   test("returns an empty candidate-only preview for healthy inputs", () => {
@@ -629,6 +631,7 @@ describe("brain heartbeat preview", () => {
       reviewableCandidates: 0,
       mutation: "none"
     });
+    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
     expect(result.runtimeLoop.forbiddenWrites).toContain("worker_jobs");
   });
 });

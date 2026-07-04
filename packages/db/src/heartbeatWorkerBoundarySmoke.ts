@@ -205,7 +205,7 @@ export const runHeartbeatWorkerBoundarySmokeCheck = async (
       { label: "preview mutation none", passed: preview.mutation === "none" },
       {
         label: "runtime loop candidate only",
-        passed: preview.runtimeLoop.mode === "manual_candidate_only"
+        passed: preview.manualCandidateLoop.mode === "manual_candidate_only"
       }
     ], readbackError);
 

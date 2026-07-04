@@ -173,6 +173,11 @@ export interface BrainHeartbeatPreview {
   proof: string;
   doesNotProve: string;
   reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
+  manualCandidateLoop: BrainHeartbeatRuntimeLoopReadback;
+  /**
+   * Legacy alias retained for existing JSON consumers.
+   * Prefer manualCandidateLoop for new readback because no worker runtime exists.
+   */
   runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
   candidateReviewResult?: BrainHeartbeatCandidateReviewResult;
   priorityOrder: readonly [
@@ -433,6 +438,7 @@ export const buildBrainHeartbeatPreview = (
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
   const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
+  const manualCandidateLoop = buildRuntimeLoopReadback(candidates, reviewEvalClosure);
 
   return {
     generatedAt: input.now,
@@ -454,7 +460,8 @@ export const buildBrainHeartbeatPreview = (
     proof: previewProof,
     doesNotProve: previewDoesNotProve,
     reviewEvalClosure,
-    runtimeLoop: buildRuntimeLoopReadback(candidates, reviewEvalClosure),
+    manualCandidateLoop,
+    runtimeLoop: manualCandidateLoop,
     ...(candidateReviewResult === undefined ? {} : { candidateReviewResult }),
     priorityOrder,
     forbiddenWrites

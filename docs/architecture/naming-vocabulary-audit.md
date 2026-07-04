@@ -185,20 +185,15 @@ supporting surface, or reduced/deprecated boundary in the primitive ledger.
 
 ## Follow-Up Rename Clusters
 
-### Cluster A: worker heartbeat vocabulary (`mise-en-palace-igw8`, closed)
+### Cluster A: worker heartbeat vocabulary (`mise-en-palace-pj25`, active cleanup)
 
 Problem: `heartbeat` implies autonomous periodic execution, while current code
 is candidate-only maintenance preview/readback.
 
-Proposed direction: decide with `mise-en-palace-jttl` first. If workers remain
-contract/readback-only, rename exported runtime-facing terms toward
-`maintenanceCandidatePreview` or `maintenanceReviewPreview`. Keep CLI alias if
-operator compatibility matters.
-
-Tracking: rename work was `mise-en-palace-igw8`, blocked by
-`mise-en-palace-jttl`. Both are closed; canonical active wording now uses
-maintenance candidate preview while legacy heartbeat aliases remain for
-compatibility where needed.
+Decision: `mise-en-palace-4ums` kept workers contract/readback-only. The first
+cleanup added `manualCandidateLoop` as the preferred readback field while
+retaining `runtimeLoop` as a legacy JSON alias. Keep CLI aliases unless a
+separate deprecation path is justified.
 
 Acceptance:
 

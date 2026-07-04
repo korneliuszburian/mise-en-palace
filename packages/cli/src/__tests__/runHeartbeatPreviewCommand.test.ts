@@ -347,6 +347,14 @@ describe("runHeartbeatPreviewCommand", () => {
           nextAction: "add_golden_behavior_case",
           mutation: "none"
         },
+        manualCandidateLoop: {
+          mode: "manual_candidate_only",
+          status: "ready_for_operator_review",
+          nextAction: "review_candidates_and_capture_evidence",
+          inspectedCandidates: 1,
+          reviewableCandidates: 1,
+          mutation: "none"
+        },
         runtimeLoop: {
           mode: "manual_candidate_only",
           status: "ready_for_operator_review",
@@ -999,6 +1007,13 @@ describe("runHeartbeatPreviewCommand", () => {
           reviewEvalClosure: {
             decision: "ready_for_behavior_proof",
             nextAction: "add_golden_behavior_case",
+            mutation: "none"
+          },
+          manualCandidateLoop: {
+            status: "ready_for_operator_review",
+            nextAction: "review_candidates_and_capture_evidence",
+            inspectedCandidates: 1,
+            reviewableCandidates: 1,
             mutation: "none"
           },
           runtimeLoop: {
