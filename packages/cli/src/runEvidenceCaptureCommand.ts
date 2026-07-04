@@ -200,13 +200,13 @@ const classifyChangedFiles = (
   changedFiles: readonly ChangedFile[],
   intendedFiles: readonly string[] | undefined
 ): ChangedFileClassification => {
-  const normalizedIntendedFiles = [
+  const canonicalIntendedFiles = [
     ...new Set((intendedFiles ?? [])
       .map(normalizeChangedFilePath)
       .filter((path) => path.length > 0))
   ];
 
-  if (normalizedIntendedFiles.length === 0) {
+  if (canonicalIntendedFiles.length === 0) {
     return {
       intended: [],
       unrelated: [],
@@ -216,7 +216,7 @@ const classifyChangedFiles = (
     };
   }
 
-  const intendedFileSet = new Set(normalizedIntendedFiles);
+  const intendedFileSet = new Set(canonicalIntendedFiles);
   const intended: ChangedFile[] = [];
   const unrelated: ChangedFile[] = [];
   const changedFileSet = new Set<string>();
@@ -238,8 +238,8 @@ const classifyChangedFiles = (
     intended,
     unrelated,
     unknown: [],
-    intendedFiles: normalizedIntendedFiles,
-    unmatchedIntendedFiles: normalizedIntendedFiles.filter((intendedPath) =>
+    intendedFiles: canonicalIntendedFiles,
+    unmatchedIntendedFiles: canonicalIntendedFiles.filter((intendedPath) =>
       ![...changedFileSet].some((changedPath) =>
         changedFileMatchesIntendedFile(changedPath, intendedPath)
       )

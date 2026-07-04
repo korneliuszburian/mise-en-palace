@@ -22,9 +22,9 @@ import type {
   CreateOperatorIntentInput,
   CreateTaskContractInput,
   ActivationDecisionRecord,
-  NewRunEvent,
   RetrievalCandidateRecord,
   RepositoryMetadata,
+  RunEventInput,
   RunEventRecord
 } from "./types.js";
 
@@ -43,14 +43,14 @@ export interface CreateExecutionRunInput extends RepositoryMetadata {
   adapter: string;
   status?: ExecutionRunStatus;
   startedAt?: string;
-  initialEvent: NewRunEvent;
+  initialEvent: RunEventInput;
 }
 
 export interface UpdateExecutionRunStatusInput {
   executionRunId: string;
   status: ExecutionRunStatus;
   completedAt?: string;
-  event: NewRunEvent;
+  event: RunEventInput;
   metadata?: Record<string, unknown>;
 }
 
@@ -64,7 +64,7 @@ export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   diffRisk: EvidenceBundle["diffRisk"];
   reviewBurden: string;
   rollbackPath: string;
-  event: NewRunEvent;
+  event: RunEventInput;
 }
 
 export interface CreateReviewAssessmentInput extends RepositoryMetadata {

@@ -80,7 +80,7 @@ export interface RunEventRecord {
   occurredAt: IsoTimestamp;
 }
 
-export interface NewRunEvent {
+export interface RunEventInput {
   sequence: number;
   type: string;
   severity?: RunEventSeverity;
@@ -339,7 +339,7 @@ export interface CreateOutboxEventInput {
   availableAt?: IsoTimestamp;
 }
 
-export interface AppendRunEventInput extends NewRunEvent {
+export interface AppendRunEventInput extends RunEventInput {
   executionRunId: ExecutionRunId;
 }
 
