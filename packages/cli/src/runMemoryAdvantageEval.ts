@@ -49,7 +49,17 @@ type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
 interface MemoryAdvantageCaseFixture {
   readonly id: string;
   readonly query: string;
+  readonly priorSession: MemoryAdvantagePriorSessionFixture;
   readonly expectedSelectedKnowledgeId: string;
+}
+
+interface MemoryAdvantagePriorSessionFixture {
+  readonly id: string;
+  readonly task: string;
+  readonly evidenceRef: string;
+  readonly reviewRef: string;
+  readonly feedbackRef: string;
+  readonly applicationOutcome: string;
   readonly memoryCards: readonly MemoryAdvantageCardFixture[];
   readonly sourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
 }
@@ -62,6 +72,16 @@ export interface MemoryAdvantageEvalFixture {
 interface MemoryAdvantageCaseReadback {
   readonly caseId: string;
   readonly query: string;
+  readonly priorSession: {
+    readonly id: string;
+    readonly task: string;
+    readonly evidenceRef: string;
+    readonly reviewRef: string;
+    readonly feedbackRef: string;
+    readonly applicationOutcome: string;
+    readonly createdMemoryIds: readonly string[];
+    readonly createdSourceClaimIds: readonly string[];
+  };
   readonly "baseline_no_memory": {
     readonly result: "miss" | "unexpected_hit";
     readonly answerUsefulness: string;
@@ -109,13 +129,29 @@ const parseCase = (
   index: number
 ): MemoryAdvantageCaseFixture => {
   const label = `cases[${index}]`;
+  const priorSession = value["priorSession"];
+
+  if (!isRecord(priorSession)) {
+    throw new Error(`${label}.priorSession must be an object`);
+  }
+
+  const memoryCards = parseEvalKnowledgeCards(priorSession, "memoryCards", `${label}.priorSession`);
+  const sourceClaims = parseEvalSourceClaims(priorSession, "sourceClaims", `${label}.priorSession`);
 
   return {
     id: requiredString(value, "id", label),
     query: requiredString(value, "query", label),
-    expectedSelectedKnowledgeId: requiredString(value, "expectedSelectedKnowledgeId", label),
-    memoryCards: parseEvalKnowledgeCards(value, "memoryCards", label),
-    sourceClaims: parseEvalSourceClaims(value, "sourceClaims", label)
+    priorSession: {
+      id: requiredString(priorSession, "id", `${label}.priorSession`),
+      task: requiredString(priorSession, "task", `${label}.priorSession`),
+      evidenceRef: requiredString(priorSession, "evidenceRef", `${label}.priorSession`),
+      reviewRef: requiredString(priorSession, "reviewRef", `${label}.priorSession`),
+      feedbackRef: requiredString(priorSession, "feedbackRef", `${label}.priorSession`),
+      applicationOutcome: requiredString(priorSession, "applicationOutcome", `${label}.priorSession`),
+      memoryCards,
+      sourceClaims
+    },
+    expectedSelectedKnowledgeId: requiredString(value, "expectedSelectedKnowledgeId", label)
   };
 };
 
@@ -203,10 +239,10 @@ const assertLexicalOverlap = (
   testCase: MemoryAdvantageCaseFixture
 ): void => {
   const query = testCase.query;
-  const hasCardOverlap = testCase.memoryCards.some((card) =>
+  const hasCardOverlap = testCase.priorSession.memoryCards.some((card) =>
     tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
   );
-  const hasClaimOverlap = testCase.sourceClaims.some((claim) =>
+  const hasClaimOverlap = testCase.priorSession.sourceClaims.some((claim) =>
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
   );
 
@@ -496,8 +532,8 @@ const evaluateCase = async (
   const baseline = await runCaseVariant(testCase, [], [], "baseline", true);
   const krnMemory = await runCaseVariant(
     testCase,
-    testCase.memoryCards,
-    testCase.sourceClaims,
+    testCase.priorSession.memoryCards,
+    testCase.priorSession.sourceClaims,
     "krn",
     false
   );
@@ -510,6 +546,16 @@ const evaluateCase = async (
   return {
     caseId: testCase.id,
     query: testCase.query,
+    priorSession: {
+      id: testCase.priorSession.id,
+      task: testCase.priorSession.task,
+      evidenceRef: testCase.priorSession.evidenceRef,
+      reviewRef: testCase.priorSession.reviewRef,
+      feedbackRef: testCase.priorSession.feedbackRef,
+      applicationOutcome: testCase.priorSession.applicationOutcome,
+      createdMemoryIds: testCase.priorSession.memoryCards.map((card) => `memory:${card.id}`),
+      createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId)
+    },
     "baseline_no_memory": {
       result: baselineMiss ? "miss" : "unexpected_hit",
       answerUsefulness: baseline.answerUsefulness,
@@ -548,6 +594,7 @@ export const runMemoryAdvantageEval = async (
     proof: {
       proves: [
         "the fixture query is unsupported when no KRN memory or source evidence is available",
+        "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths",
         "the expected memory/source id is present in selectedKnowledge",
         "the memory-advantage fixture output is deterministic enough for regression checks"
@@ -555,6 +602,7 @@ export const runMemoryAdvantageEval = async (
       doesNotProve: [
         "arbitrary task superiority over vanilla Codex",
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
+        "automatic Memory Core promotion from evidence or feedback",
         "live Postgres runtime behavior",
         "LLM output quality",
         "source truth",

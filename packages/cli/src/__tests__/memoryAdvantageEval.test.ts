@@ -19,6 +19,15 @@ describe("runMemoryAdvantageEval", () => {
     expect(result.cases).toHaveLength(1);
     expect(result.cases[0]).toMatchObject({
       caseId: "second-opinion-after-large-slice",
+      priorSession: {
+        id: "session:second-opinion-skill-refinement",
+        evidenceRef: "evidence:second-opinion-skill-refinement",
+        reviewRef: "review:second-opinion-skill-refinement",
+        feedbackRef: "feedback:second-opinion-skill-refinement-helped",
+        applicationOutcome: "helped",
+        createdMemoryIds: ["memory:pattern:second-opinion-after-large-slice"],
+        createdSourceClaimIds: ["source:second-opinion-after-large-slice"]
+      },
       "baseline_no_memory": {
         result: "miss",
         answerUsefulness: "not_useful",
@@ -46,11 +55,15 @@ describe("runMemoryAdvantageEval", () => {
       "source:second-opinion-after-large-slice"
     );
     expect(result.proof.proves).toContain(
+      "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
+    );
+    expect(result.proof.proves).toContain(
       "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths"
     );
     expect(result.proof.doesNotProve).toContain(
       "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
     );
+    expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");
     expect(result.proof.doesNotProve).toContain("arbitrary task superiority over vanilla Codex");
   });

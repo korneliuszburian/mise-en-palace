@@ -4,32 +4,40 @@
     {
       "id": "second-opinion-after-large-slice",
       "query": "after a larger KRN kernel migration slice should Codex ask Claude for second opinion or just close the work",
-      "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice",
-      "memoryCards": [
-        {
-          "id": "pattern:second-opinion-after-large-slice",
-          "title": "Second opinion after larger KRN slice",
-          "summary": "After larger migrations or audit-hardening slices, Codex owns a governed second-opinion-Claude loop with acceptance criteria, verification evidence, diff freshness, and explicit triage before closing.",
-          "consumers": [
-            "large slice closure",
-            "kernel development operating loop"
-          ],
-          "falsifier": "A large KRN refactor closes from local tests only and never runs governed second-opinion review.",
-          "doesNotProve": "This does not prove Claude judgment is correct or that every tiny slice needs review.",
-          "nextAction": "use"
-        }
-      ],
-      "sourceClaims": [
-        {
-          "sourceClaimId": "source:second-opinion-after-large-slice",
-          "claim": "KRN's operating loop requires governed Claude second opinion after larger migration or audit-hardening slices.",
-          "mechanism": "The second-opinion skill builds a compact context pack, requests read-only falsification, validates verdict JSON, and forces Codex-owned triage instead of operator coordination.",
-          "krnImplication": "Large memory/kernel slices should not close until local evidence and governed second-opinion output have been reconciled.",
-          "consumer": "kernel development operating loop",
-          "falsifier": "The review output is prose-only, stale against the diff, or routed back to the operator as the default decision layer.",
-          "doesNotProve": "This does not prove second opinion is required for small deterministic eval fixture edits."
-        }
-      ]
+      "priorSession": {
+        "id": "session:second-opinion-skill-refinement",
+        "task": "Refine the second-opinion-claude skill after a larger KRN kernel slice and record the governed review loop as learned operating evidence.",
+        "evidenceRef": "evidence:second-opinion-skill-refinement",
+        "reviewRef": "review:second-opinion-skill-refinement",
+        "feedbackRef": "feedback:second-opinion-skill-refinement-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:second-opinion-after-large-slice",
+            "title": "Second opinion after larger KRN slice",
+            "summary": "After larger migrations or audit-hardening slices, Codex owns a governed second-opinion-Claude loop with acceptance criteria, verification evidence, diff freshness, and explicit triage before closing.",
+            "consumers": [
+              "large slice closure",
+              "kernel development operating loop"
+            ],
+            "falsifier": "A large KRN refactor closes from local tests only and never runs governed second-opinion review.",
+            "doesNotProve": "This does not prove Claude judgment is correct or that every tiny slice needs review.",
+            "nextAction": "use"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:second-opinion-after-large-slice",
+            "claim": "KRN's operating loop requires governed Claude second opinion after larger migration or audit-hardening slices.",
+            "mechanism": "The second-opinion skill builds a compact context pack, requests read-only falsification, validates verdict JSON, and forces Codex-owned triage instead of operator coordination.",
+            "krnImplication": "Large memory/kernel slices should not close until local evidence and governed second-opinion output have been reconciled.",
+            "consumer": "kernel development operating loop",
+            "falsifier": "The review output is prose-only, stale against the diff, or routed back to the operator as the default decision layer.",
+            "doesNotProve": "This does not prove second opinion is required for small deterministic eval fixture edits."
+          }
+        ]
+      },
+      "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice"
     }
   ]
 }
