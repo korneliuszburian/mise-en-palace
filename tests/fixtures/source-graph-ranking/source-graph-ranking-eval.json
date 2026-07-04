@@ -18,6 +18,9 @@
     ["claim-decision-link", "accepted sourceclaim sourcedecisionedge linked support missing caveat", "Accepted claims need visible SourceDecisionEdge support or a missing-link caveat."],
     ["claim-graph-relation", "source graph relation edge temporal readback", "SourceClaimEdge relation support is graph readback, not source truth."],
     ["claim-graph-invalidation", "invalidates expires supersedes stale graph edge", "Invalidating graph edges should rank down stale source-search candidates."],
+    ["claim-relation-supports", "relation shape supports edge implementation proof", "A supports SourceClaimEdge should stay visible as relation-shape support readback."],
+    ["claim-relation-duplicates", "relation shape duplicates edge consolidation review", "A duplicates SourceClaimEdge should stay visible as duplicate relation-shape readback."],
+    ["claim-relation-invalidates", "relation shape invalidates edge stale source suppression", "An invalidates SourceClaimEdge should stay visible as invalidation relation-shape readback."],
     ["claim-search-document-link", "source claim document link searchdocument artifact chunk", "SourceClaim document links should expose SearchDocument refs by claim, artifact, or chunk."],
     ["claim-vector-scope", "embedding model searchVector searchHybrid mixed model", "Vector and hybrid search must be scoped by embedding model to avoid mixed-model retrieval."],
     ["claim-second-opinion", "second opinion claude governed verdict diff hash", "Second-opinion review must be governed JSON with diff freshness and evidence refs."],
@@ -38,7 +41,10 @@
     ["claim-graph-invalidation", "claim-graph-relation", "invalidates"],
     ["claim-search-document-link", "claim-source-artifact", "narrows"],
     ["claim-brain-ranking", "claim-source-decision", "depends_on"],
-    ["claim-vector-scope", "claim-pgvector", "narrows"]
+    ["claim-vector-scope", "claim-pgvector", "narrows"],
+    ["claim-relation-supports", "claim-source-decision", "supports"],
+    ["claim-relation-duplicates", "claim-decision-link", "duplicates"],
+    ["claim-relation-invalidates", "claim-graph-relation", "invalidates"]
   ],
   "queries": [
     ["memory-feedback", "hurt stale activation feedback", ["source_claim:claim-memory-feedback"], "A generic memory row can match feedback wording while missing hurt-to-exclusion semantics."],
@@ -47,6 +53,9 @@
     ["decision-link", "accepted sourceclaim sourcedecisionedge support", ["source_claim:claim-decision-link"], "Accepted SourceClaim wording can look governed without visible SourceDecisionEdge support."],
     ["graph-relation", "temporal source graph relation edge", ["source_claim:claim-graph-relation"], "Relation-edge wording can be mistaken for source truth instead of graph readback; the flat no-relation path can select the claim but cannot explain the adjacent SourceClaimEdge support.", true],
     ["graph-invalidation", "invalidates stale graph edge supersedes", ["source_claim:claim-graph-invalidation"], "Stale relation rows can remain highly lexical unless invalidating edges rank them down."],
+    ["relation-shape-supports", "relation shape supports edge implementation proof", ["source_claim:claim-relation-supports"], "A flat source row can match supports wording, but it cannot prove the supports SourceClaimEdge kind is visible for the expected claim.", true, ["supports"]],
+    ["relation-shape-duplicates", "relation shape duplicates edge consolidation review", ["source_claim:claim-relation-duplicates"], "A flat source row can match duplicate wording, but it cannot prove the duplicates SourceClaimEdge kind is visible for the expected claim.", true, ["duplicates"]],
+    ["relation-shape-invalidates", "relation shape invalidates edge stale source suppression", ["source_claim:claim-relation-invalidates"], "A flat source row can match invalidates wording, but it cannot prove the invalidates SourceClaimEdge kind is visible for the expected claim.", true, ["invalidates"]],
     ["document-link", "source claim document link artifact chunk", ["source_claim:claim-search-document-link"], "A source artifact row can match document wording without explicit SearchDocument linkage."],
     ["vector-scope", "searchHybrid embedding model mixed vector", ["source_claim:claim-vector-scope"], "A pgvector row can match retrieval words while missing embedding model scope."],
     ["second-opinion", "claude governed verdict diff hash", ["source_claim:claim-second-opinion"], "A review-process row can mention Claude without governed JSON verdict freshness."],

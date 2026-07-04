@@ -21,8 +21,8 @@ describe("runSourceGraphRankingEval", () => {
       topK: 6,
       corpus: {
         name: "source-graph-kernel-quality-corpus",
-        rowCount: 20,
-        queryCount: 15,
+        rowCount: 23,
+        queryCount: 18,
         distractorClasses: [
           "adjacent-governance-source",
           "stale-relation-edge",
@@ -32,18 +32,21 @@ describe("runSourceGraphRankingEval", () => {
         ]
       },
       metrics: {
-        queryCount: 15,
-        corpusRows: 20,
+        queryCount: 18,
+        corpusRows: 23,
         hitRateAtK: 1,
-        expectedHitIdCount: 15,
+        expectedHitIdCount: 18,
         distractorClassCount: 5,
-        relationLinkedCaseCount: 1,
-        flatBaselineWeakerCases: 1,
-        flatBaselineMissingExpectedRelationSupportCases: 1
+        relationLinkedCaseCount: 4,
+        flatBaselineWeakerCases: 4,
+        flatBaselineMissingExpectedRelationSupportCases: 4,
+        relationShapeCaseCount: 3,
+        relationShapeCoveredCases: 3,
+        relationShapeKinds: ["duplicates", "invalidates", "supports"]
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
-    expect(result.metrics.answerRelationReadbackCases).toBe(15);
+    expect(result.metrics.answerRelationReadbackCases).toBe(18);
     expect(result.metrics.expectedHitRelationReadbackCases).toBeGreaterThan(0);
     expect(result.metrics.expectedHitRelationReadbackCases).toBeLessThan(result.metrics.queryCount);
     expect(result.metrics.searchDocumentLinkReadbackCases).toBe(result.metrics.queryCount);
@@ -60,11 +63,60 @@ describe("runSourceGraphRankingEval", () => {
     );
     expect(relationLinkedCase).toMatchObject({
       relationLinkedExpected: true,
-      expectedHitRelationSupport: 2,
+      expectedRelationKinds: [],
+      expectedHitRelationSupport: 3,
+      expectedHitRelationKinds: ["invalidates", "narrows"],
       flatComparison: {
         relationSupport: 0,
         expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
         hitAtK: true,
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-supports"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["supports"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["supports"]),
+      expectedHitRelationKinds: ["supports"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-duplicates"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["duplicates"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["duplicates"]),
+      expectedHitRelationKinds: ["duplicates"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-invalidates"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["invalidates"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["invalidates"]),
+      expectedHitRelationKinds: ["invalidates"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
         weakness: "missing_expected_relation_support"
       }
     });
@@ -74,6 +126,9 @@ describe("runSourceGraphRankingEval", () => {
     );
     expect(result.proof.proves).toContain(
       "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback"
+    );
+    expect(result.proof.proves).toContain(
+      "relation-shape cases report expected and observed SourceClaimEdge kinds for duplicates, invalidates, supports readback"
     );
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "source truth",
@@ -161,7 +216,8 @@ describe("runSourceGraphRankingEval", () => {
           "relationanchor0",
           ["source_claim:claim-0"],
           "Relation-linked query intentionally has no SourceClaimEdge support.",
-          true
+          true,
+          ["supports"]
         ],
         ...Array.from({ length: 14 }, (_unused, index) => [
           `query-${index}`,
@@ -177,8 +233,54 @@ describe("runSourceGraphRankingEval", () => {
     expect(result.metrics.relationLinkedCaseCount).toBe(1);
     expect(result.metrics.flatBaselineWeakerCases).toBe(0);
     expect(result.metrics.flatBaselineMissingExpectedRelationSupportCases).toBe(0);
+    expect(result.metrics.relationShapeCaseCount).toBe(1);
+    expect(result.metrics.relationShapeCoveredCases).toBe(0);
+    expect(result.metrics.relationShapeKinds).toEqual(["supports"]);
     expect(result.cases.find((testCase) =>
       testCase.id === "query-relation-linked"
     )?.flatComparison).toBeUndefined();
+  });
+
+  it("fails when relation-shape coverage omits required edge kinds", async () => {
+    const result = await runSourceGraphRankingEval(parseSourceGraphRankingEvalFixture({
+      version: "1",
+      corpusName: "negative-relation-shape-partial",
+      distractorClasses: ["partial-relation-shape-coverage"],
+      topK: 6,
+      minimumHitRateAtK: 1,
+      minimumNdcgAtK: 1,
+      rows: Array.from({ length: 20 }, (_unused, index) => [
+        `claim-${index}`,
+        index === 0 ? "relationanchor0 supportsedge" : `controlanchor${index}`,
+        `Fixture claim ${index}.`
+      ]),
+      relations: [
+        ["claim-0", "claim-1", "supports"]
+      ],
+      queries: [
+        [
+          "query-supports-only",
+          "relationanchor0 supportsedge",
+          ["source_claim:claim-0"],
+          "The relation-linked path has support readback, but the fixture covers only supports and omits duplicates/invalidates.",
+          true,
+          ["supports"]
+        ],
+        ...Array.from({ length: 14 }, (_unused, index) => [
+          `query-${index}`,
+          `controlanchor${index + 1}`,
+          [`source_claim:claim-${index + 1}`],
+          `Control source ${index + 1} should remain selectable.`
+        ])
+      ]
+    }));
+
+    expect(result.metrics.hitRateAtK).toBe(1);
+    expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(1);
+    expect(result.metrics.flatBaselineWeakerCases).toBe(1);
+    expect(result.metrics.relationShapeCaseCount).toBe(1);
+    expect(result.metrics.relationShapeCoveredCases).toBe(1);
+    expect(result.metrics.relationShapeKinds).toEqual(["supports"]);
+    expect(result.status).toBe("fail");
   });
 });

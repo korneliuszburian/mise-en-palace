@@ -123,7 +123,7 @@ source-graph rank-down: invalidates/expires/supersedes SourceClaimEdges from acc
 source decision gaps readback: read-only `krn source decision gaps` exposes accepted SourceClaims missing SourceDecisionEdge support without CI mutation
 capability plan binding cleanup: decorative bindingKinds/policy_gate/tool_boundary vocabulary removed from active capability requirements
 brain code-quality pattern dogfood: retained pattern selection exposes targetFit summary and recommended use in plan/run readback
-source graph relation ranking proof: invalidates and duplicates SourceClaimEdges are DB-smoke visible in activation rank-down/influence readback
+source graph relation ranking proof: invalidates/duplicates are DB-smoke visible; eval:source-graph-ranking covers supports/duplicates/invalidates relation-shape readback
 behavior smoke naming: eval:krn:smoke is the active deterministic behavior/docs gate; the old eval alias was removed after a green compatibility window
 eval proof-boundary manifest scope: manifest remains docs-lint/test evidence, not public harness runtime API
 skill surface audit: retained repo-local skills stay operational guidance; active matrix cannot cite missing skill files

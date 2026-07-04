@@ -42,12 +42,15 @@ interface SourceGraphRankingQuery {
   readonly expectedHitIds: readonly string[];
   readonly baselineFailureRationale: string;
   readonly relationLinkedExpected: boolean;
+  readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
 }
 
 interface SourceGraphFlatComparison {
   readonly includedHitIds: readonly string[];
   readonly relationSupport: number;
   readonly expectedHitRelationSupport: number;
+  readonly relationKinds: readonly SourceClaimEdge["kind"][];
+  readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
   readonly weakness: "missing_expected_relation_support";
@@ -71,12 +74,15 @@ export interface SourceGraphRankingEvalCaseResult {
   readonly expectedHitIds: readonly string[];
   readonly baselineFailureRationale: string;
   readonly relationLinkedExpected: boolean;
+  readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly includedHitIds: readonly string[];
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
   readonly sourceClaimDocumentLinks: number;
   readonly relationSupport: number;
   readonly expectedHitRelationSupport: number;
+  readonly relationKinds: readonly SourceClaimEdge["kind"][];
+  readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
@@ -112,6 +118,9 @@ export interface SourceGraphRankingEvalResult {
     readonly relationLinkedCaseCount: number;
     readonly flatBaselineWeakerCases: number;
     readonly flatBaselineMissingExpectedRelationSupportCases: number;
+    readonly relationShapeCaseCount: number;
+    readonly relationShapeCoveredCases: number;
+    readonly relationShapeKinds: readonly SourceClaimEdge["kind"][];
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -188,6 +197,21 @@ const parseStringArray = (
   return value.map((item, index) => stringValue(item, `${label}[${index}]`));
 };
 
+const parseRelationKindArray = (
+  value: unknown,
+  label: string
+): readonly SourceClaimEdge["kind"][] => {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  return value.map((item, index) => parseRelationKind(item, `${label}[${index}]`));
+};
+
 const parseRow = (
   tuple: readonly unknown[],
   index: number
@@ -208,6 +232,12 @@ const sourceClaimEdgeKinds = new Set<SourceClaimEdge["kind"]>([
   "invalidates",
   "expires"
 ]);
+
+const requiredRelationShapeKinds = [
+  "duplicates",
+  "invalidates",
+  "supports"
+] as const satisfies readonly SourceClaimEdge["kind"][];
 
 const parseRelationKind = (
   value: unknown,
@@ -234,15 +264,25 @@ const parseRelation = (
 const parseQuery = (
   tuple: readonly unknown[],
   index: number
-): SourceGraphRankingQuery => ({
-  id: stringValue(tuple[0], `queries[${index}][0]`),
-  query: stringValue(tuple[1], `queries[${index}][1]`),
-  expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`),
-  baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`),
-  relationLinkedExpected: tuple[4] === undefined
+): SourceGraphRankingQuery => {
+  const relationLinkedExpected = tuple[4] === undefined
     ? false
-    : booleanValue(tuple[4], `queries[${index}][4]`)
-});
+    : booleanValue(tuple[4], `queries[${index}][4]`);
+  const expectedRelationKinds = parseRelationKindArray(tuple[5], `queries[${index}][5]`);
+
+  if (expectedRelationKinds.length > 0 && !relationLinkedExpected) {
+    throw new Error(`queries[${index}] expectedRelationKinds require relationLinkedExpected=true`);
+  }
+
+  return {
+    id: stringValue(tuple[0], `queries[${index}][0]`),
+    query: stringValue(tuple[1], `queries[${index}][1]`),
+    expectedHitIds: parseStringArray(tuple[2], `queries[${index}][2]`),
+    baselineFailureRationale: stringValue(tuple[3], `queries[${index}][3]`),
+    relationLinkedExpected,
+    expectedRelationKinds
+  };
+};
 
 const parseQueryTuples = (
   value: unknown
@@ -252,8 +292,8 @@ const parseQueryTuples = (
   }
 
   return value.map((item, index) => {
-    if (!Array.isArray(item) || (item.length !== 4 && item.length !== 5)) {
-      throw new Error(`queries[${index}] must be a 4-item or 5-item tuple`);
+    if (!Array.isArray(item) || (item.length < 4 || item.length > 6)) {
+      throw new Error(`queries[${index}] must be a 4-, 5-, or 6-item tuple`);
     }
 
     return parseQuery(item, index);
@@ -555,6 +595,21 @@ const recordArray = (
 const optionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
 
+const relationKindFromReadback = (
+  value: unknown
+): SourceClaimEdge["kind"] | undefined => {
+  const kind = optionalString(value);
+
+  return kind !== undefined && sourceClaimEdgeKinds.has(kind as SourceClaimEdge["kind"])
+    ? kind as SourceClaimEdge["kind"]
+    : undefined;
+};
+
+const uniqueRelationKinds = (
+  kinds: readonly SourceClaimEdge["kind"][]
+): readonly SourceClaimEdge["kind"][] =>
+  Array.from(new Set(kinds)).sort();
+
 const candidateHitId = (candidate: Record<string, unknown>): string | undefined => {
   const sourceClaimId = optionalString(candidate["sourceClaimId"]);
   const searchDocumentId = optionalString(candidate["searchDocumentId"]);
@@ -576,6 +631,8 @@ interface SourceGraphQueryRun {
   readonly sourceClaimDocumentLinks: number;
   readonly relationSupport: number;
   readonly expectedHitRelationSupport: number;
+  readonly relationKinds: readonly SourceClaimEdge["kind"][];
+  readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
@@ -620,6 +677,19 @@ const runQueryPath = async (
     return sourceClaimId === undefined ? [] : [sourceClaimId];
   }));
   const relationSupport = recordArray(answerPackage["relationSupport"], `${queryCase.id}.relationSupport`);
+  const relationKinds = uniqueRelationKinds(relationSupport.flatMap((support) => {
+    const kind = relationKindFromReadback(support["kind"]);
+
+    return kind === undefined ? [] : [kind];
+  }));
+  const expectedHitRelationKinds = uniqueRelationKinds(relationSupport.flatMap((support) => {
+    const sourceClaimId = optionalString(support["sourceClaimId"]);
+    const kind = relationKindFromReadback(support["kind"]);
+
+    return sourceClaimId !== undefined && expectedSourceClaimIds.has(sourceClaimId) && kind !== undefined
+      ? [kind]
+      : [];
+  }));
 
   return {
     includedHitIds,
@@ -635,6 +705,8 @@ const runQueryPath = async (
 
       return sourceClaimId !== undefined && expectedSourceClaimIds.has(sourceClaimId);
     }).length,
+    relationKinds,
+    expectedHitRelationKinds,
     sourceDecisionSupport: recordArray(answerPackage["sourceDecisionSupport"], `${queryCase.id}.sourceDecisionSupport`).length,
     hitAtK: includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id)),
     ndcgAtK: roundRankingMetric(ndcgAtK(includedHitIds, expectedHitIds, fixture.topK))
@@ -670,6 +742,7 @@ const evaluateQuery = async (
     expectedHitIds: queryCase.expectedHitIds,
     baselineFailureRationale: queryCase.baselineFailureRationale,
     relationLinkedExpected: queryCase.relationLinkedExpected,
+    expectedRelationKinds: queryCase.expectedRelationKinds,
     ...linked
   };
 
@@ -683,6 +756,8 @@ const evaluateQuery = async (
       includedHitIds: flat.includedHitIds,
       relationSupport: flat.relationSupport,
       expectedHitRelationSupport: flat.expectedHitRelationSupport,
+      relationKinds: flat.relationKinds,
+      expectedHitRelationKinds: flat.expectedHitRelationKinds,
       hitAtK: flat.hitAtK,
       ndcgAtK: flat.ndcgAtK,
       weakness
@@ -700,11 +775,23 @@ export const runSourceGraphRankingEval = async (
   const flatBaselineWeakerCases = relationLinkedCases.filter((testCase) =>
     testCase.flatComparison !== undefined
   );
+  const relationShapeCases = cases.filter((testCase) => testCase.expectedRelationKinds.length > 0);
+  const relationShapeCoveredCases = relationShapeCases.filter((testCase) =>
+    testCase.expectedRelationKinds.every((kind) => testCase.expectedHitRelationKinds.includes(kind))
+  );
+  const relationShapeKinds = uniqueRelationKinds(relationShapeCases.flatMap((testCase) =>
+    testCase.expectedRelationKinds
+  ));
+  const hasRequiredRelationShapeKinds = requiredRelationShapeKinds.every((kind) =>
+    relationShapeKinds.includes(kind)
+  );
   const status =
     hitRateAtK >= fixture.minimumHitRateAtK &&
     ndcgAtK >= fixture.minimumNdcgAtK &&
     relationLinkedCases.length > 0 &&
-    flatBaselineWeakerCases.length === relationLinkedCases.length
+    flatBaselineWeakerCases.length === relationLinkedCases.length &&
+    relationShapeCoveredCases.length === relationShapeCases.length &&
+    hasRequiredRelationShapeKinds
       ? "pass"
       : "fail";
 
@@ -749,7 +836,10 @@ export const runSourceGraphRankingEval = async (
       flatBaselineWeakerCases: flatBaselineWeakerCases.length,
       flatBaselineMissingExpectedRelationSupportCases: flatBaselineWeakerCases.filter((testCase) =>
         testCase.flatComparison?.weakness === "missing_expected_relation_support"
-      ).length
+      ).length,
+      relationShapeCaseCount: relationShapeCases.length,
+      relationShapeCoveredCases: relationShapeCoveredCases.length,
+      relationShapeKinds
     },
     cases,
     proof: {
@@ -757,6 +847,7 @@ export const runSourceGraphRankingEval = async (
         "source search selected expected proxy-labeled source graph rows for the fixture query set",
         "source graph ranking fixture reports corpus name, corpus size, distractor classes, and per-query baseline failure rationale",
         "relation-linked cases compare linked SourceClaimEdge readback against a flat no-relation path and require the flat path to be weaker in relation-support readback",
+        `relation-shape cases report expected and observed SourceClaimEdge kinds for ${requiredRelationShapeKinds.join(", ")} readback`,
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],

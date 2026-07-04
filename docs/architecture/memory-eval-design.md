@@ -191,19 +191,23 @@ decision proxy for one company TypeScript boundary, not arbitrary code quality.
 
 Follow-up Bead: `mise-en-palace-pz6l`.
 
-`pnpm eval:source-graph-ranking` now includes a relation-linked case that runs
-the same source-search query twice:
+`pnpm eval:source-graph-ranking` now includes relation-linked cases that run
+the same source-search query shape twice:
 
 1. linked path: SourceClaimEdge support is available and expected relation
    support must be visible in readback;
 2. flat path: the same SourceClaim rows and SearchDocument links are available,
    but SourceClaimEdge support is withheld;
-3. the eval passes only when the linked case records a weaker flat comparison.
+3. the eval passes only when each linked case records a weaker flat comparison.
+
+The current relation-shape slice covers `supports`, `duplicates`, and
+`invalidates` SourceClaimEdge readback by reporting both expected and observed
+relation kinds for the expected hit.
 
 This targets A-MEM-style relation usefulness as a local falsifier. It proves
-review/readback advantage for one controlled source graph case, not source
-truth, autonomous memory evolution, graph database need, crawler/API/MCP
-readiness, or production ranking quality.
+review/readback advantage for controlled source graph relation-shape cases, not
+source truth, autonomous memory evolution, graph database need, crawler/API/MCP
+readiness, broad corpus closure, or production ranking quality.
 
 ## Rejections
 
