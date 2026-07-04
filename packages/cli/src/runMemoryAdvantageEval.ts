@@ -45,6 +45,7 @@ import type {
 
 type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
 type ExpectedKrnResult = "hit" | "miss";
+type MemoryAdvantageBaselineClass = "no_memory_no_source";
 type MemoryAdvantageCardFixture = EvalKnowledgeCardFixture;
 type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
 type MemoryAdvantageCatalogCardFixture =
@@ -86,6 +87,7 @@ interface MemoryAdvantageCaseReadback {
   readonly query: string;
   readonly status: "pass" | "fail";
   readonly expectedKrnResult: ExpectedKrnResult;
+  readonly baselineClass: MemoryAdvantageBaselineClass;
   readonly priorSession: {
     readonly id: string;
     readonly task: string;
@@ -98,17 +100,23 @@ interface MemoryAdvantageCaseReadback {
     readonly createdSourceClaimIds: readonly string[];
   };
   readonly "baseline_no_memory": {
+    readonly baselineClass: MemoryAdvantageBaselineClass;
     readonly result: "miss" | "unexpected_hit";
     readonly answerUsefulness: string;
     readonly selectedKnowledgeIds: readonly string[];
+    readonly selectedMemoryIds: readonly string[];
+    readonly selectedSourceClaimIds: readonly string[];
+    readonly selectedContextSize: ApproximateSelectedContextSize;
     readonly missingEvidence: readonly string[];
   };
   readonly "krn_memory": {
     readonly result: "hit" | "miss";
     readonly answerUsefulness: string;
     readonly selectedKnowledgeIds: readonly string[];
+    readonly selectedMemoryIds: readonly string[];
     readonly selectedSources: readonly string[];
     readonly selectedSourceClaimIds: readonly string[];
+    readonly selectedContextSize: ApproximateSelectedContextSize;
     readonly writtenKnowledgeIds: readonly string[];
     readonly requiredKnowledgeId: string;
     readonly supportingClaims: number;
@@ -120,6 +128,12 @@ interface MemoryAdvantageCaseReadback {
 interface MemoryAdvantageMemoryExclusionReadback {
   readonly memoryId: string;
   readonly reason: string;
+}
+
+interface ApproximateSelectedContextSize {
+  readonly bytes: number;
+  readonly approximateTokens: number;
+  readonly method: "utf8_bytes_div_4";
 }
 
 export interface MemoryAdvantageEvalResult {
@@ -150,6 +164,7 @@ interface BrainSearchPreviewReadback {
 
 const now = "2026-07-04T00:00:00.000Z";
 const projectId = "project:memory-advantage";
+const baselineClass: MemoryAdvantageBaselineClass = "no_memory_no_source";
 const memoryCompetencies = ["retrieval", "learning", "long_range", "forgetting"] as const;
 const expectedKrnResults = ["hit", "miss"] as const;
 
@@ -319,6 +334,34 @@ const tokenScore = (query: string, text: string): number => {
   }
 
   return hits * 20;
+};
+
+const selectedMemoryIds = (
+  selectedKnowledgeIds: readonly string[]
+): readonly string[] =>
+  // Brain-search emits source-search packets with source-prefixed ids; catalog memory cards keep their fixture ids.
+  selectedKnowledgeIds.filter((id) => !id.startsWith("source:"));
+
+const approximateSelectedContextSize = (
+  readback: Pick<
+    BrainSearchPreviewReadback,
+    "selectedKnowledgeIds" | "selectedSourceClaimIds" | "selectedSources"
+  >
+): ApproximateSelectedContextSize => {
+  const selectedContextParts = [
+    ...readback.selectedKnowledgeIds,
+    ...readback.selectedSourceClaimIds,
+    ...readback.selectedSources
+  ];
+  const bytes = selectedContextParts.length === 0
+    ? 0
+    : Buffer.byteLength(selectedContextParts.join("\n"), "utf8");
+
+  return {
+    bytes,
+    approximateTokens: Math.ceil(bytes / 4),
+    method: "utf8_bytes_div_4"
+  };
 };
 
 const assertLexicalOverlap = (
@@ -707,6 +750,8 @@ const evaluateCase = async (
   const krnHit = isKrnHit(krnMemory, testCase);
   const exclusions = buildMemoryExclusions(testCase);
   const status = caseStatus(testCase, baseline, krnMemory, exclusions);
+  const baselineSelectedMemoryIds = selectedMemoryIds(baseline.selectedKnowledgeIds);
+  const krnSelectedMemoryIds = selectedMemoryIds(krnMemory.selectedKnowledgeIds);
 
   return {
     caseId: testCase.id,
@@ -714,6 +759,7 @@ const evaluateCase = async (
     query: testCase.query,
     status,
     expectedKrnResult: testCase.expectedKrnResult,
+    baselineClass,
     priorSession: {
       id: testCase.priorSession.id,
       task: testCase.priorSession.task,
@@ -726,17 +772,23 @@ const evaluateCase = async (
       createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId)
     },
     "baseline_no_memory": {
+      baselineClass,
       result: baselineMiss ? "miss" : "unexpected_hit",
       answerUsefulness: baseline.answerUsefulness,
       selectedKnowledgeIds: baseline.selectedKnowledgeIds,
+      selectedMemoryIds: baselineSelectedMemoryIds,
+      selectedSourceClaimIds: baseline.selectedSourceClaimIds,
+      selectedContextSize: approximateSelectedContextSize(baseline),
       missingEvidence: baseline.missingEvidence
     },
     "krn_memory": {
       result: krnHit ? "hit" : "miss",
       answerUsefulness: krnMemory.answerUsefulness,
       selectedKnowledgeIds: krnMemory.selectedKnowledgeIds,
+      selectedMemoryIds: krnSelectedMemoryIds,
       selectedSources: krnMemory.selectedSources,
       selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
+      selectedContextSize: approximateSelectedContextSize(krnMemory),
       writtenKnowledgeIds: krnMemory.writtenKnowledgeIds,
       requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
       supportingClaims: krnMemory.supportingClaims,
@@ -792,6 +844,7 @@ export const runMemoryAdvantageEval = async (
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
+        "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
@@ -799,6 +852,8 @@ export const runMemoryAdvantageEval = async (
         "arbitrary task superiority over vanilla Codex",
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
         "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows",
+        "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four",
+        "card or source-claim content payload size; selected-context size measures selection identifier overhead only",
         "automatic Memory Core promotion from evidence or feedback",
         "live Postgres runtime behavior",
         "LLM output quality",

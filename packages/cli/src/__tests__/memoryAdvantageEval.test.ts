@@ -43,6 +43,7 @@ describe("runMemoryAdvantageEval", () => {
       competency: "retrieval",
       status: "pass",
       expectedKrnResult: "hit",
+      baselineClass: "no_memory_no_source",
       priorSession: {
         id: "session:second-opinion-skill-refinement",
         evidenceRef: "evidence:second-opinion-skill-refinement",
@@ -54,17 +55,31 @@ describe("runMemoryAdvantageEval", () => {
         createdSourceClaimIds: ["source:second-opinion-after-large-slice"]
       },
       "baseline_no_memory": {
+        baselineClass: "no_memory_no_source",
         result: "miss",
         answerUsefulness: "not_useful",
-        selectedKnowledgeIds: []
+        selectedKnowledgeIds: [],
+        selectedMemoryIds: [],
+        selectedSourceClaimIds: [],
+        selectedContextSize: {
+          bytes: 0,
+          approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        }
       },
       "krn_memory": {
         result: "hit",
         answerUsefulness: "useful",
         requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
         selectedKnowledgeIds: ["pattern:second-opinion-after-large-slice"],
+        selectedMemoryIds: ["pattern:second-opinion-after-large-slice"],
         selectedSources: ["catalog_file"],
         selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        selectedContextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        },
         supportingClaims: 1,
         supportingDocuments: 1
       }
@@ -79,6 +94,8 @@ describe("runMemoryAdvantageEval", () => {
     expect(retrievalCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:second-opinion-after-large-slice"
     );
+    expect(retrievalCase?.["krn_memory"].selectedContextSize.bytes).toBeGreaterThan(0);
+    expect(retrievalCase?.["krn_memory"].selectedContextSize.approximateTokens).toBeGreaterThan(0);
 
     const learningCase = result.cases.find((testCase) =>
       testCase.caseId === "learn-company-review-standard"
@@ -117,13 +134,26 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_no_memory": {
         result: "miss",
         answerUsefulness: "not_useful",
-        selectedKnowledgeIds: []
+        selectedKnowledgeIds: [],
+        selectedMemoryIds: [],
+        selectedSourceClaimIds: [],
+        selectedContextSize: {
+          bytes: 0,
+          approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        }
       },
       "krn_memory": {
         result: "miss",
         answerUsefulness: "not_useful",
         selectedKnowledgeIds: [],
+        selectedMemoryIds: [],
         selectedSourceClaimIds: [],
+        selectedContextSize: {
+          bytes: 0,
+          approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        },
         writtenKnowledgeIds: ["pattern:routine-dependency-pin-cleanup"],
         requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
         supportingClaims: 0,
@@ -146,6 +176,9 @@ describe("runMemoryAdvantageEval", () => {
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
     );
     expect(result.proof.proves).toContain(
+      "baseline class and approximate selected-context readback size are reported for each case"
+    );
+    expect(result.proof.proves).toContain(
       "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason"
     );
     expect(result.proof.doesNotProve).toContain(
@@ -153,6 +186,12 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(result.proof.doesNotProve).toContain(
       "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows"
+    );
+    expect(result.proof.doesNotProve).toContain(
+      "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four"
+    );
+    expect(result.proof.doesNotProve).toContain(
+      "card or source-claim content payload size; selected-context size measures selection identifier overhead only"
     );
     expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");
