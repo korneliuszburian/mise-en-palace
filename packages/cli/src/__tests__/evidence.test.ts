@@ -687,6 +687,82 @@ describe("runCli", () => {
     expectDefaultTemplateCommands(capture.commands);
   });
 
+  it("downgrades persisted pattern usefulness when evidence refs do not match current evidence", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--intended-file",
+        "packages/cli/src/runEvidenceCaptureCommand.ts",
+        "--pattern-usefulness",
+        "pattern:ts-boundary-unknown-first-result-state=helped|Pattern allegedly helped without current proof|stale-proof-ref|Does not prove future pattern recall quality",
+        "--source-usefulness",
+        "claim:source-claim-1=helped|Source allegedly helped without current proof|stale-source-ref|Does not prove future source selection quality",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => " M packages/cli/src/runEvidenceCaptureCommand.ts\n",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
+    expect(result.stdout).toContain("outcome=unknown pattern=ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain(
+      "Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof."
+    );
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "unknown",
+        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
+        evidenceRefs: ["stale-source-ref"],
+        doesNotProve: "Does not prove future source selection quality"
+      }],
+      patternUsefulnessOutcomes: [{
+        patternId: "ts-boundary-unknown-first-result-state",
+        outcome: "unknown",
+        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
+        evidenceRefs: ["stale-proof-ref"],
+        doesNotProve: "Does not prove future pattern recall quality"
+      }]
+    });
+  });
+
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
     const result = await runCli(
       [

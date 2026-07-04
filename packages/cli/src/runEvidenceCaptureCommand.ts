@@ -85,6 +85,8 @@ interface PersistedEvidenceIdentity {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+  sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
 }
 
 interface EvidencePersistenceConfig {
@@ -786,6 +788,58 @@ const buildFeedbackDeltaInput = (
   }
 });
 
+const outcomeHasCurrentEvidenceRef = (
+  evidenceRefs: readonly string[],
+  currentEvidenceRefs: ReadonlySet<string>
+): boolean =>
+  evidenceRefs.some((evidenceRef) => currentEvidenceRefs.has(evidenceRef));
+
+const downgradeReason = (reason: string): string =>
+  `Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof. Original reason: ${reason}`;
+
+const normalizeSourceUsefulnessOutcomesForEvidence = (
+  outcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  currentEvidenceRefs: ReadonlySet<string>
+): readonly SourceUsefulnessOutcomeFeedback[] | undefined =>
+  outcomes?.map((outcome) =>
+    outcome.outcome === "unknown" || outcomeHasCurrentEvidenceRef(outcome.evidenceRefs, currentEvidenceRefs)
+      ? outcome
+      : {
+          ...outcome,
+          outcome: "unknown",
+          reason: downgradeReason(outcome.reason)
+        }
+  );
+
+const normalizePatternUsefulnessOutcomesForEvidence = (
+  outcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined,
+  currentEvidenceRefs: ReadonlySet<string>
+): readonly PatternUsefulnessOutcomeFeedback[] | undefined =>
+  outcomes?.map((outcome) =>
+    outcome.outcome === "unknown" || outcomeHasCurrentEvidenceRef(outcome.evidenceRefs, currentEvidenceRefs)
+      ? outcome
+      : {
+          ...outcome,
+          outcome: "unknown",
+          reason: downgradeReason(outcome.reason)
+        }
+  );
+
+const currentEvidenceRefsForUsefulness = (
+  evidenceBundleId: string,
+  reviewAssessmentId: string,
+  changedFiles: readonly ChangedFile[],
+  commands: readonly NormalizedEvidenceCommand[]
+): ReadonlySet<string> =>
+  new Set([
+    evidenceBundleId,
+    reviewAssessmentId,
+    ...changedFiles.map((file) => file.path),
+    ...commands.flatMap((command) =>
+      "outputRef" in command && command.outputRef !== undefined ? [command.outputRef] : []
+    )
+  ]);
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
@@ -838,6 +892,20 @@ const persistEvidenceCapture = async (
         runId
       )
     );
+    const currentEvidenceRefs = currentEvidenceRefsForUsefulness(
+      evidenceBundle.id,
+      reviewAssessment.id,
+      changedFiles,
+      commands
+    );
+    const evidenceLinkedSourceUsefulnessOutcomes = normalizeSourceUsefulnessOutcomesForEvidence(
+      sourceUsefulnessOutcomes,
+      currentEvidenceRefs
+    );
+    const evidenceLinkedPatternUsefulnessOutcomes = normalizePatternUsefulnessOutcomesForEvidence(
+      patternUsefulnessOutcomes,
+      currentEvidenceRefs
+    );
     const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta(
       buildFeedbackDeltaInput(
         reviewAssessment.id,
@@ -845,15 +913,21 @@ const persistEvidenceCapture = async (
         counts,
         memoryCandidates,
         sourceDecisionCandidates,
-        sourceUsefulnessOutcomes,
-        patternUsefulnessOutcomes
+        evidenceLinkedSourceUsefulnessOutcomes,
+        evidenceLinkedPatternUsefulnessOutcomes
       )
     );
 
     return {
       evidenceBundleId: evidenceBundle.id,
       reviewAssessmentId: reviewAssessment.id,
-      feedbackDeltaId: feedbackDelta.id
+      feedbackDeltaId: feedbackDelta.id,
+      ...(evidenceLinkedSourceUsefulnessOutcomes === undefined
+        ? {}
+        : { sourceUsefulnessOutcomes: evidenceLinkedSourceUsefulnessOutcomes }),
+      ...(evidenceLinkedPatternUsefulnessOutcomes === undefined
+        ? {}
+        : { patternUsefulnessOutcomes: evidenceLinkedPatternUsefulnessOutcomes })
     };
   } finally {
     await databaseRuntime.close();
@@ -899,6 +973,10 @@ export const runEvidenceCaptureCommand = async (
     changedFiles.length === 0
       ? "No changed files; no feedback candidate proposed."
       : "Review changed files and command evidence before promoting memory/source/eval candidates.";
+  const renderedSourceUsefulnessOutcomes =
+    persistedIdentity?.sourceUsefulnessOutcomes ?? runtime.sourceUsefulnessOutcomes;
+  const renderedPatternUsefulnessOutcomes =
+    persistedIdentity?.patternUsefulnessOutcomes ?? runtime.patternUsefulnessOutcomes;
   const lines = [
     "KRN Evidence Capture",
     `Captured at: ${runtime.now()}`,
@@ -926,9 +1004,9 @@ export const runEvidenceCaptureCommand = async (
     "sourceDecisionCandidates:",
     ...renderSourceDecisionCandidates(sourceDecisionCandidates),
     "sourceUsefulnessOutcomes:",
-    ...renderSourceUsefulnessOutcomes(runtime.sourceUsefulnessOutcomes),
+    ...renderSourceUsefulnessOutcomes(renderedSourceUsefulnessOutcomes),
     "patternUsefulnessOutcomes:",
-    ...renderPatternUsefulnessOutcomes(runtime.patternUsefulnessOutcomes)
+    ...renderPatternUsefulnessOutcomes(renderedPatternUsefulnessOutcomes)
   ];
 
   if (persistedIdentity !== undefined) {
