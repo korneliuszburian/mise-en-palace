@@ -1,0 +1,29 @@
+{
+  "patternId": "krn-brain-layer-model-boundary",
+  "name": "KRN brain layer boundary",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "KRN should behave as a governed RAG, memory, source, review, and feedback layer around Codex execution: Codex executes, while KRN selects bounded context, exposes source-grounded evidence, records proof boundaries, and keeps workers as candidate-only maintenance contracts until the human-deferred plnv executor decision. Workers are not Codex exec; they are candidate maintenance contracts. The naming standard is no vanity rename: apply the helper extraction rule only when it removes duplication, names a reviewed domain concept, moves boundary logic, or reduces unsafe casts/parser drift.",
+  "sourceRefs": [
+    "docs/KRN_KERNEL.md#kernel-law",
+    "docs/runbooks/krn-brain-layer-model.md",
+    "PLAN.md#active-task"
+  ],
+  "evidenceRefs": [
+    "docs/runs/2026-07-04-context-selection-quality-audit.md",
+    "docs/runbooks/krn-brain-layer-model.md",
+    "mise-en-palace-sefh",
+    "mise-en-palace-qzai",
+    "mise-en-palace-td3u"
+  ],
+  "consumers": [
+    "future brain/search planning queries about workers and Codex execution boundaries",
+    "future naming-standard and helper-extraction review",
+    "future kernel roadmap selection after cleanup waves"
+  ],
+  "falsifier": "A future plan, brief, or brain/search readback treats workers as Codex execution, claims worker runtime enforcement before plnv is explicitly un-deferred, performs a vanity naming sweep without review-cost evidence, or extracts helpers that do not remove duplication, name a domain concept, move boundary logic, or reduce unsafe casts/parser drift.",
+  "doesNotProve": "This card does not prove retrieval ranking quality, source truth, worker runtime, product readiness, or that every current KRN file already follows the brain layer model.",
+  "observedAt": "2026-07-04",
+  "nextAction": "use"
+}

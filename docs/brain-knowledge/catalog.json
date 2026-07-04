@@ -15,7 +15,8 @@
     "usefulness-feedback/v377-brain-qa-pattern-coverage-gap.json",
     "usefulness-feedback/imr-21-cost-aware-acquisition-escalation.json",
     "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json",
-    "usefulness-feedback/post-refactor-kernel-slices.json"
+    "usefulness-feedback/post-refactor-kernel-slices.json",
+    "usefulness-feedback/brain-layer-model-boundary.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",
@@ -30,6 +31,7 @@
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
     "../patterns/retained-patterns/graph-relation-readback-boundary.json",
     "../patterns/retained-patterns/heartbeat-candidate-only-runtime-boundary.json",
+    "../patterns/retained-patterns/krn-brain-layer-model-boundary.json",
     "../patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json",
     "../patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json",
     "../patterns/retained-patterns/source-to-decision-retention-gate.json",

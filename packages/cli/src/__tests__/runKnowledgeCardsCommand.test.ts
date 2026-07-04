@@ -557,6 +557,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
+      "pattern:krn-brain-layer-model-boundary",
       "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
@@ -581,7 +582,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalCards).toBe(18);
+    expect(preview.totalCards).toBe(19);
     expect(preview.returnedCards).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.cards).toHaveLength(2);
@@ -603,7 +604,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 18");
+    expect(result.stdout).toContain("Total filtered results: 19");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -834,6 +835,39 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
+  it("retains the KRN brain layer model for worker and naming boundary queries", async () => {
+    const workerBoundaryResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "workers are not codex exec candidate maintenance contracts plnv"
+      },
+      format: "json"
+    });
+    const namingBoundaryResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "naming standard no vanity rename helper extraction rule"
+      },
+      format: "json"
+    });
+
+    const workerBoundaryPreview = parsePreviewResource(workerBoundaryResult.stdout);
+    const namingBoundaryPreview = parsePreviewResource(namingBoundaryResult.stdout);
+
+    expect(cardIds(workerBoundaryPreview)).toEqual(["pattern:krn-brain-layer-model-boundary"]);
+    expect(cardIds(namingBoundaryPreview)).toEqual(["pattern:krn-brain-layer-model-boundary"]);
+    expect(workerBoundaryPreview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(namingBoundaryPreview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(workerBoundaryPreview.access).toBe("read_only");
+    expect(namingBoundaryPreview.mutation).toBe("none");
+  });
+
   it("returns every catalog card without a text filter", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -858,6 +892,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
+      "pattern:krn-brain-layer-model-boundary",
       "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
