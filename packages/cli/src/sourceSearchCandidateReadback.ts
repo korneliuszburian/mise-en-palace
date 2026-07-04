@@ -163,6 +163,7 @@ export const sourceSearchCandidateToOutput = (
       : candidate.sourceClaimId;
   const decisionSupportReadback = sourceDecisionSupportReadbackFor(
     candidate.subjectType === "source_claim" ? sourceClaimId : undefined,
+    candidate.sourceClaimStatus,
     decisionSupportBySourceClaimId
   );
 

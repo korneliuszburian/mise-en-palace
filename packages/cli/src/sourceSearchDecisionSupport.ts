@@ -1,5 +1,6 @@
 import type {
   SourceClaim,
+  SourceClaimStatus,
   SourceDecisionEdge
 } from "@krn/core";
 import {
@@ -115,6 +116,7 @@ export const groupSourceDecisionSupportByClaimId = (
 
 export const sourceDecisionSupportReadbackFor = (
   sourceClaimId: SourceClaim["id"] | undefined,
+  sourceClaimStatus: SourceClaimStatus | undefined,
   decisionSupportBySourceClaimId:
     | ReadonlyMap<SourceClaim["id"], readonly SourceSearchDecisionSupport[]>
     | undefined
@@ -123,7 +125,7 @@ export const sourceDecisionSupportReadbackFor = (
   edgeIds: readonly string[] | undefined;
   caveat: string | undefined;
 } => {
-  if (sourceClaimId === undefined) {
+  if (sourceClaimId === undefined || sourceClaimStatus !== "accepted") {
     return {
       state: undefined,
       edgeIds: undefined,

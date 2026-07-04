@@ -703,6 +703,8 @@ describe("runSourceSearchCommand", () => {
       expect(excluded?.exclusionExplanation).toContain(
         `Source claims require accepted status before activation; ${status} claims remain review candidates`
       );
+      expect(excluded?.sourceDecisionSupportState).toBeUndefined();
+      expect(excluded?.sourceDecisionSupportCaveat).toBeUndefined();
     }
   });
 
