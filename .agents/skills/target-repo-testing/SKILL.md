@@ -8,6 +8,16 @@ description: Use when Codex is asked to inspect, test, initialize, plan, verify,
 Use this skill before running target-repo commands or writing target-repo
 evidence.
 
+## Trigger
+
+- Use for KRN work against a repo other than the active KRN kernel workspace.
+- Use before `krn init --repo`, target-repo planning, target test execution,
+  headless repair, owner-file read-model capture, or second-operator proof.
+- Use when target dirty state, write authority, or handoff ownership could
+  affect whether evidence is valid.
+- Do not use for ordinary edits inside the current KRN repo unless that repo is
+  being treated as an explicit target under a bounded trial.
+
 ## Core Rule
 
 Target repositories are not disposable fixtures.

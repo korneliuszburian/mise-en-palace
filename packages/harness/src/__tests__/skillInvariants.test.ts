@@ -245,6 +245,9 @@ describe("KRN skill invariants", () => {
     );
 
     expect(targetRepoTesting).toContain("explicit mode");
+    expect(targetRepoTesting).toContain("## Trigger");
+    expect(targetRepoTesting).toContain("target dirty state, write authority, or handoff ownership");
+    expect(targetRepoTesting).toContain("Do not use for ordinary edits inside the current KRN repo");
     expect(targetRepoTesting).toContain("dirty-state");
     expect(targetRepoTesting).toContain("write-authority");
     expect(targetRepoTesting).toContain("proof/non-proof");
