@@ -4,12 +4,43 @@ import { describe, expect, it } from "vitest";
 
 import {
   runMemoryAdvantageEval,
-  loadMemoryAdvantageEvalFixture
+  loadMemoryAdvantageEvalFixture,
+  parseMemoryAdvantageEvalFixture
 } from "../runMemoryAdvantageEval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json", import.meta.url)
 );
+
+const mutableFixtureCase = (
+  fixture: { cases: Array<Record<string, unknown>> },
+  caseId: string
+): Record<string, unknown> => {
+  const matchingCase = fixture.cases.find((testCase) => testCase["id"] === caseId);
+
+  if (matchingCase === undefined) {
+    throw new Error(`missing fixture case ${caseId}`);
+  }
+
+  return matchingCase;
+};
+
+const expectExecutionContractFixtureError = (
+  mutate: (executionContract: Record<string, unknown>) => Record<string, unknown>,
+  expectedMessage: string
+): void => {
+  const malformedContractFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+    cases: Array<Record<string, unknown>>;
+  };
+  const malformedContractCase = mutableFixtureCase(
+    malformedContractFixture,
+    "heldout-coding-task-json-boundary"
+  );
+  const executionContract = malformedContractCase["executionContract"] as Record<string, unknown>;
+  malformedContractCase["executionContract"] = mutate(executionContract);
+
+  expect(() => parseMemoryAdvantageEvalFixture(malformedContractFixture)).toThrow(expectedMessage);
+};
 
 describe("runMemoryAdvantageEval", () => {
   it("proves controlled memory competencies over a no-memory baseline", async () => {
@@ -44,7 +75,8 @@ describe("runMemoryAdvantageEval", () => {
       expectedHitCount: 10,
       expectedMissCount: 2,
       distractorClassCount: 7,
-      codingTaskCaseCount: 1
+      codingTaskCaseCount: 1,
+      executionContractCaseCount: 1
     });
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
@@ -330,6 +362,43 @@ describe("runMemoryAdvantageEval", () => {
         },
         status: "pass"
       },
+      "execution_contract_decision": {
+        contractId: "execution-contract:cli-json-metadata-boundary",
+        objective: "Implement CLI JSON metadata readback for a command that receives untrusted parsed JSON.",
+        expectedKrnContractId: "contract:unknown-first-parser",
+        derivationOrder: "source_claims_first",
+        proof: "The baseline contract and KRN contract are derived from selected ids; KRN evaluates accepted source claims before memory patterns.",
+        doesNotProve: "This does not prove Codex implemented the contract, only that KRN memory/source changes the deterministic execution-contract decision.",
+        selectedContextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        },
+        baseline: {
+          baselineClass: "simple_lexical_retrieval",
+          contractId: "contract:cast-json-record",
+          decisionOrderedKnowledgeIds: [
+            "pattern:cast-json-record-in-command-runner",
+            "source:unknown-first-json-metadata-boundary",
+            "pattern:unknown-first-json-metadata-boundary"
+          ],
+          selectedMemoryIds: [
+            "pattern:cast-json-record-in-command-runner",
+            "pattern:unknown-first-json-metadata-boundary"
+          ],
+          selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
+        },
+        krn: {
+          contractId: "contract:unknown-first-parser",
+          decisionOrderedKnowledgeIds: [
+            "source:unknown-first-json-metadata-boundary",
+            "pattern:cast-json-record-in-command-runner"
+          ],
+          selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+          selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
+        },
+        status: "pass"
+      },
       "reviewed_feedback_effect": {
         priorFeedbackRef: "feedback:unknown-first-json-metadata-boundary-helped",
         priorEvidenceRef: "evidence:unknown-first-json-metadata-boundary",
@@ -345,6 +414,10 @@ describe("runMemoryAdvantageEval", () => {
       codingTaskCase?.["coding_task_decision"]?.krn.decisionId
     );
     expect(codingTaskCase?.["coding_task_decision"]?.selectedContextSize.bytes).toBeGreaterThan(0);
+    expect(codingTaskCase?.["execution_contract_decision"]?.baseline.contractId).not.toBe(
+      codingTaskCase?.["execution_contract_decision"]?.krn.contractId
+    );
+    expect(codingTaskCase?.["execution_contract_decision"]?.selectedContextSize.bytes).toBeGreaterThan(0);
 
     const longRangeCase = result.cases.find((testCase) =>
       testCase.caseId === "long-range-source-authority-boundary"
@@ -790,6 +863,9 @@ describe("runMemoryAdvantageEval", () => {
     expect(result.proof.proves).toContain(
       "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason"
     );
+    expect(result.proof.proves).toContain(
+      "execution-contract cases can report baseline and KRN contract choices mechanically derived from selected memory/source ids"
+    );
     expect(result.proof.doesNotProve).toContain(
       "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
     );
@@ -808,6 +884,31 @@ describe("runMemoryAdvantageEval", () => {
     expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");
     expect(result.proof.doesNotProve).toContain("arbitrary task superiority over vanilla Codex");
+    expect(result.proof.doesNotProve).toContain(
+      "that Codex would implement the reported execution contract without a separate execution-output evidence-shape gate"
+    );
     expect(result.proof.doesNotProve).toContain("arbitrary Codex output quality");
+  });
+
+  it("rejects execution-contract fixture drift before evaluation", () => {
+    expectExecutionContractFixtureError((executionContract) => ({
+      ...executionContract,
+      expectedKrnContractId: "contract:missing"
+    }),
+      "cases[11].executionContract.expectedKrnContractId must reference one of the declared option ids"
+    );
+    expectExecutionContractFixtureError((executionContract) => {
+      const missingExpectedContract = { ...executionContract };
+      delete missingExpectedContract["expectedKrnContractId"];
+      return missingExpectedContract;
+    }, "cases[11].executionContract.expectedKrnContractId must be a non-empty string");
+    expectExecutionContractFixtureError((executionContract) => ({
+      ...executionContract,
+      defaultContractId: "contract:missing"
+    }), "cases[11].executionContract.defaultContractId must reference one of the declared option ids");
+    expectExecutionContractFixtureError((executionContract) => ({
+      ...executionContract,
+      defaultContractId: "contract:unknown-first-parser"
+    }), "cases[11].executionContract default and expected KRN contracts must differ");
   });
 });

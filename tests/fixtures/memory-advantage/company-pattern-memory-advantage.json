@@ -639,6 +639,31 @@
           }
         ]
       },
+      "executionContract": {
+        "id": "execution-contract:cli-json-metadata-boundary",
+        "objective": "Implement CLI JSON metadata readback for a command that receives untrusted parsed JSON.",
+        "defaultContractId": "contract:cast-json-record",
+        "expectedKrnContractId": "contract:unknown-first-parser",
+        "contractOptions": [
+          {
+            "id": "contract:cast-json-record",
+            "label": "Execution contract allows the command runner to cast parsed JSON directly into Record-shaped state.",
+            "triggerKnowledgeIds": [
+              "pattern:cast-json-record-in-command-runner"
+            ]
+          },
+          {
+            "id": "contract:unknown-first-parser",
+            "label": "Execution contract requires an unknown-first parser helper before command/domain state observes metadata.",
+            "triggerKnowledgeIds": [
+              "pattern:unknown-first-json-metadata-boundary",
+              "source:unknown-first-json-metadata-boundary"
+            ]
+          }
+        ],
+        "proof": "The baseline contract and KRN contract are derived from selected ids; KRN evaluates accepted source claims before memory patterns.",
+        "doesNotProve": "This does not prove Codex implemented the contract, only that KRN memory/source changes the deterministic execution-contract decision."
+      },
       "priorSession": {
         "id": "session:unknown-first-json-metadata-boundary",
         "task": "A prior retained TypeScript boundary pattern taught that CLI JSON metadata readback should keep parsed values unknown until a named parser validates them.",

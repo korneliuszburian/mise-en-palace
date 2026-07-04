@@ -187,6 +187,25 @@ Follow-up Bead: `mise-en-palace-2gti`.
 This is still not Codex execution. It proves a deterministic implementation
 decision proxy for one company TypeScript boundary, not arbitrary code quality.
 
+### Execution-Contract Decision Readback
+
+Follow-up Bead: `mise-en-palace-r529`.
+
+The same held-out JSON-boundary case now also reports an execution-contract
+decision:
+
+1. the baseline simple retrieval contract is
+   `contract:cast-json-record`;
+2. the KRN contract is `contract:unknown-first-parser`;
+3. both contract ids are derived mechanically from selected memory/source ids;
+4. the readback includes selected ids, selected-context size, and explicit
+   proof/non-proof text.
+
+This proves only that selected KRN memory/source can change a deterministic
+execution-contract choice in one controlled company-pattern case. It does not
+prove Codex implemented that contract, arbitrary code quality, or product
+readiness.
+
 ### Relation-Linked Memory/Source Usefulness
 
 Follow-up Bead: `mise-en-palace-pz6l`.

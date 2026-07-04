@@ -90,9 +90,16 @@ interface MemoryAdvantageCaseFixture {
   readonly baselineFailureRationale: string;
   readonly negativeClass?: MemoryAdvantageNegativeClass;
   readonly codingTask?: MemoryAdvantageCodingTaskFixture;
+  readonly executionContract?: MemoryAdvantageExecutionContractFixture;
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
   readonly expectedKrnResult: ExpectedKrnResult;
   readonly expectedSelectedKnowledgeId: string;
+}
+
+interface MemoryAdvantageDecisionOptionFixture {
+  readonly id: string;
+  readonly label: string;
+  readonly triggerKnowledgeIds: readonly string[];
 }
 
 interface MemoryAdvantageCodingTaskFixture {
@@ -100,13 +107,17 @@ interface MemoryAdvantageCodingTaskFixture {
   readonly implementationConstraint: string;
   readonly defaultDecisionId: string;
   readonly expectedKrnDecisionId: string;
-  readonly decisionOptions: readonly MemoryAdvantageCodingDecisionOptionFixture[];
+  readonly decisionOptions: readonly MemoryAdvantageDecisionOptionFixture[];
 }
 
-interface MemoryAdvantageCodingDecisionOptionFixture {
+interface MemoryAdvantageExecutionContractFixture {
   readonly id: string;
-  readonly label: string;
-  readonly triggerKnowledgeIds: readonly string[];
+  readonly objective: string;
+  readonly defaultContractId: string;
+  readonly expectedKrnContractId: string;
+  readonly contractOptions: readonly MemoryAdvantageDecisionOptionFixture[];
+  readonly proof: string;
+  readonly doesNotProve: string;
 }
 
 interface MemoryAdvantagePriorSessionFixture {
@@ -200,6 +211,7 @@ interface MemoryAdvantageCaseReadback {
   };
   readonly "krn_plan_brief": PlanBriefReadback;
   readonly "coding_task_decision"?: CodingTaskDecisionReadback;
+  readonly "execution_contract_decision"?: ExecutionContractDecisionReadback;
   readonly "reviewed_feedback_effect": ReviewedFeedbackEffectReadback;
 }
 
@@ -218,6 +230,30 @@ interface CodingTaskDecisionReadback {
   readonly krn: {
     readonly decisionId: string;
     readonly selectedKnowledgeIds: readonly string[];
+    readonly selectedMemoryIds: readonly string[];
+    readonly selectedSourceClaimIds: readonly string[];
+  };
+  readonly status: "pass" | "fail";
+}
+
+interface ExecutionContractDecisionReadback {
+  readonly contractId: string;
+  readonly objective: string;
+  readonly expectedKrnContractId: string;
+  readonly derivationOrder: "source_claims_first";
+  readonly proof: string;
+  readonly doesNotProve: string;
+  readonly selectedContextSize: ApproximateSelectedContextSize;
+  readonly baseline: {
+    readonly baselineClass: SimpleRetrievalBaselineClass;
+    readonly contractId: string;
+    readonly decisionOrderedKnowledgeIds: readonly string[];
+    readonly selectedMemoryIds: readonly string[];
+    readonly selectedSourceClaimIds: readonly string[];
+  };
+  readonly krn: {
+    readonly contractId: string;
+    readonly decisionOrderedKnowledgeIds: readonly string[];
     readonly selectedMemoryIds: readonly string[];
     readonly selectedSourceClaimIds: readonly string[];
   };
@@ -296,6 +332,7 @@ export interface MemoryAdvantageEvalResult {
     readonly totalKrnPlanBriefContextBytes: number;
     readonly totalRenderedBriefBytes: number;
     readonly codingTaskCaseCount: number;
+    readonly executionContractCaseCount: number;
   };
   readonly cases: readonly MemoryAdvantageCaseReadback[];
   readonly proof: {
@@ -465,6 +502,34 @@ const parseOptionalExcludedSourceClaims = (
 ): readonly MemoryAdvantageExcludedSourceClaimFixture[] =>
   record[key] === undefined ? [] : parseExcludedSourceClaims(record, key, label);
 
+const parseDecisionOptions = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageDecisionOptionFixture[] => {
+  const decisionOptions = recordArray(record, key, label).map((option, index) => ({
+    id: requiredString(option, "id", `${label}.${key}[${index}]`),
+    label: requiredString(option, "label", `${label}.${key}[${index}]`),
+    triggerKnowledgeIds: requiredStringArray(option, "triggerKnowledgeIds", `${label}.${key}[${index}]`)
+  }));
+
+  if (decisionOptions.length === 0) {
+    throw new Error(`${label}.${key} must not be empty`);
+  }
+
+  return decisionOptions;
+};
+
+const assertDecisionOptionReference = (
+  decisionOptions: readonly MemoryAdvantageDecisionOptionFixture[],
+  optionId: string,
+  label: string
+): void => {
+  if (!decisionOptions.some((option) => option.id === optionId)) {
+    throw new Error(`${label} must reference one of the declared option ids`);
+  }
+};
+
 const parseCodingTask = (
   value: unknown,
   label: string
@@ -477,22 +542,55 @@ const parseCodingTask = (
     throw new Error(`${label}.codingTask must be an object`);
   }
 
-  const decisionOptions = recordArray(value, "decisionOptions", `${label}.codingTask`).map((option, index) => ({
-    id: requiredString(option, "id", `${label}.codingTask.decisionOptions[${index}]`),
-    label: requiredString(option, "label", `${label}.codingTask.decisionOptions[${index}]`),
-    triggerKnowledgeIds: requiredStringArray(option, "triggerKnowledgeIds", `${label}.codingTask.decisionOptions[${index}]`)
-  }));
-
-  if (decisionOptions.length === 0) {
-    throw new Error(`${label}.codingTask.decisionOptions must not be empty`);
-  }
+  const decisionOptions = parseDecisionOptions(value, "decisionOptions", `${label}.codingTask`);
+  const defaultDecisionId = requiredString(value, "defaultDecisionId", `${label}.codingTask`);
+  const expectedKrnDecisionId = requiredString(value, "expectedKrnDecisionId", `${label}.codingTask`);
+  assertDecisionOptionReference(decisionOptions, defaultDecisionId, `${label}.codingTask.defaultDecisionId`);
+  assertDecisionOptionReference(decisionOptions, expectedKrnDecisionId, `${label}.codingTask.expectedKrnDecisionId`);
 
   return {
     id: requiredString(value, "id", `${label}.codingTask`),
     implementationConstraint: requiredString(value, "implementationConstraint", `${label}.codingTask`),
-    defaultDecisionId: requiredString(value, "defaultDecisionId", `${label}.codingTask`),
-    expectedKrnDecisionId: requiredString(value, "expectedKrnDecisionId", `${label}.codingTask`),
+    defaultDecisionId,
+    expectedKrnDecisionId,
     decisionOptions
+  };
+};
+
+const parseExecutionContract = (
+  value: unknown,
+  label: string
+): MemoryAdvantageExecutionContractFixture | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw new Error(`${label}.executionContract must be an object`);
+  }
+
+  const contractOptions = parseDecisionOptions(value, "contractOptions", `${label}.executionContract`);
+  const defaultContractId = requiredString(value, "defaultContractId", `${label}.executionContract`);
+  const expectedKrnContractId = requiredString(value, "expectedKrnContractId", `${label}.executionContract`);
+  assertDecisionOptionReference(contractOptions, defaultContractId, `${label}.executionContract.defaultContractId`);
+  assertDecisionOptionReference(
+    contractOptions,
+    expectedKrnContractId,
+    `${label}.executionContract.expectedKrnContractId`
+  );
+
+  if (defaultContractId === expectedKrnContractId) {
+    throw new Error(`${label}.executionContract default and expected KRN contracts must differ`);
+  }
+
+  return {
+    id: requiredString(value, "id", `${label}.executionContract`),
+    objective: requiredString(value, "objective", `${label}.executionContract`),
+    defaultContractId,
+    expectedKrnContractId,
+    contractOptions,
+    proof: requiredString(value, "proof", `${label}.executionContract`),
+    doesNotProve: requiredString(value, "doesNotProve", `${label}.executionContract`)
   };
 };
 
@@ -526,6 +624,7 @@ const parseCase = (
     ? undefined
     : requiredEnum(value, "negativeClass", label, memoryNegativeClasses);
   const codingTask = parseCodingTask(value["codingTask"], label);
+  const executionContract = parseExecutionContract(value["executionContract"], label);
   const parsedCase: MemoryAdvantageCaseFixture = {
     id: requiredString(value, "id", label),
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
@@ -535,6 +634,7 @@ const parseCase = (
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
     ...(negativeClass === undefined ? {} : { negativeClass }),
     ...(codingTask === undefined ? {} : { codingTask }),
+    ...(executionContract === undefined ? {} : { executionContract }),
     priorSession: {
       id: requiredString(priorSession, "id", `${label}.priorSession`),
       task: requiredString(priorSession, "task", `${label}.priorSession`),
@@ -1152,12 +1252,13 @@ const runSimpleRetrievalBaseline = (
   };
 };
 
-const deriveCodingDecisionId = (
-  codingTask: MemoryAdvantageCodingTaskFixture,
+const deriveDecisionOptionId = (
+  defaultOptionId: string,
+  decisionOptions: readonly MemoryAdvantageDecisionOptionFixture[],
   selectedKnowledgeIds: readonly string[]
 ): string => {
   for (const selectedKnowledgeId of selectedKnowledgeIds) {
-    const option = codingTask.decisionOptions.find((decisionOption) =>
+    const option = decisionOptions.find((decisionOption) =>
       decisionOption.triggerKnowledgeIds.includes(selectedKnowledgeId)
     );
 
@@ -1166,7 +1267,14 @@ const deriveCodingDecisionId = (
     }
   }
 
-  return codingTask.defaultDecisionId;
+  return defaultOptionId;
+};
+
+const deriveCodingDecisionId = (
+  codingTask: MemoryAdvantageCodingTaskFixture,
+  selectedKnowledgeIds: readonly string[]
+): string => {
+  return deriveDecisionOptionId(codingTask.defaultDecisionId, codingTask.decisionOptions, selectedKnowledgeIds);
 };
 
 const buildCodingTaskDecision = (
@@ -1212,6 +1320,61 @@ const buildCodingTaskDecision = (
     krn: {
       decisionId: krnDecisionId,
       selectedKnowledgeIds: krnSelectedKnowledgeIds,
+      selectedMemoryIds: krnMemory.selectedMemoryIds,
+      selectedSourceClaimIds: krnMemory.selectedSourceClaimIds
+    },
+    status
+  };
+};
+
+const buildExecutionContractDecision = (
+  testCase: MemoryAdvantageCaseFixture,
+  simpleRetrieval: MemoryAdvantageCaseReadback["baseline_simple_retrieval"],
+  krnMemory: MemoryAdvantageCaseReadback["krn_memory"]
+): ExecutionContractDecisionReadback | undefined => {
+  const { executionContract } = testCase;
+
+  if (executionContract === undefined) {
+    return undefined;
+  }
+
+  const krnSelectedKnowledgeIds = [
+    ...krnMemory.selectedSourceClaimIds,
+    ...krnMemory.selectedKnowledgeIds
+  ];
+  const baselineContractId = deriveDecisionOptionId(
+    executionContract.defaultContractId,
+    executionContract.contractOptions,
+    simpleRetrieval.selectedKnowledgeIds
+  );
+  const krnContractId = deriveDecisionOptionId(
+    executionContract.defaultContractId,
+    executionContract.contractOptions,
+    krnSelectedKnowledgeIds
+  );
+  const status = baselineContractId !== krnContractId &&
+    krnContractId === executionContract.expectedKrnContractId
+    ? "pass"
+    : "fail";
+
+  return {
+    contractId: executionContract.id,
+    objective: executionContract.objective,
+    expectedKrnContractId: executionContract.expectedKrnContractId,
+    derivationOrder: "source_claims_first",
+    proof: executionContract.proof,
+    doesNotProve: executionContract.doesNotProve,
+    selectedContextSize: krnMemory.selectedContextSize,
+    baseline: {
+      baselineClass: simpleRetrieval.baselineClass,
+      contractId: baselineContractId,
+      decisionOrderedKnowledgeIds: simpleRetrieval.selectedKnowledgeIds,
+      selectedMemoryIds: simpleRetrieval.selectedMemoryIds,
+      selectedSourceClaimIds: simpleRetrieval.selectedSourceClaimIds
+    },
+    krn: {
+      contractId: krnContractId,
+      decisionOrderedKnowledgeIds: krnSelectedKnowledgeIds,
       selectedMemoryIds: krnMemory.selectedMemoryIds,
       selectedSourceClaimIds: krnMemory.selectedSourceClaimIds
     },
@@ -1468,19 +1631,23 @@ const caseStatus = (
   baselinePlanBrief: PlanBriefReadback,
   krnPlanBrief: PlanBriefReadback,
   hasExplicitExclusion: boolean,
-  codingTaskDecision: CodingTaskDecisionReadback | undefined
+  codingTaskDecision: CodingTaskDecisionReadback | undefined,
+  executionContractDecision: ExecutionContractDecisionReadback | undefined
 ): "pass" | "fail" => {
   const canProveExpectedMiss = testCase.expectedKrnResult === "hit" || hasExplicitExclusion;
   const planBriefSatisfied = testCase.expectedKrnResult === "hit"
     ? baselinePlanBrief.result === "miss" && krnPlanBrief.result === "hit"
     : baselinePlanBrief.result === "miss" && krnPlanBrief.result === "miss";
   const codingTaskSatisfied = codingTaskDecision === undefined || codingTaskDecision.status === "pass";
+  const executionContractSatisfied =
+    executionContractDecision === undefined || executionContractDecision.status === "pass";
   const checks = [
     isBaselineMiss(baseline),
     isExpectedKrnResultSatisfied(testCase, krnMemory),
     planBriefSatisfied,
     canProveExpectedMiss,
-    codingTaskSatisfied
+    codingTaskSatisfied,
+    executionContractSatisfied
   ];
 
   return checks.every((check) => check) ? "pass" : "fail";
@@ -1552,6 +1719,7 @@ const evaluateCase = async (
     sourceExclusions
   } as const;
   const codingTaskDecision = buildCodingTaskDecision(testCase, simpleRetrieval, krnMemoryReadback);
+  const executionContractDecision = buildExecutionContractDecision(testCase, simpleRetrieval, krnMemoryReadback);
   const status = caseStatus(
     testCase,
     baseline,
@@ -1559,7 +1727,8 @@ const evaluateCase = async (
     baselinePlanBrief,
     krnPlanBrief,
     exclusions.length > 0 || sourceExclusions.length > 0,
-    codingTaskDecision
+    codingTaskDecision,
+    executionContractDecision
   );
 
   return {
@@ -1593,6 +1762,9 @@ const evaluateCase = async (
     "krn_memory": krnMemoryReadback,
     "krn_plan_brief": krnPlanBrief,
     ...(codingTaskDecision === undefined ? {} : { "coding_task_decision": codingTaskDecision }),
+    ...(executionContractDecision === undefined
+      ? {}
+      : { "execution_contract_decision": executionContractDecision }),
     "reviewed_feedback_effect": buildReviewedFeedbackEffect(
       testCase,
       baselineNoMemory,
@@ -1669,7 +1841,10 @@ export const runMemoryAdvantageEval = async (
         (sum, testCase) => sum + testCase["krn_plan_brief"].renderedBriefSize.bytes,
         0
       ),
-      codingTaskCaseCount: cases.filter((testCase) => testCase["coding_task_decision"] !== undefined).length
+      codingTaskCaseCount: cases.filter((testCase) => testCase["coding_task_decision"] !== undefined).length,
+      executionContractCaseCount: cases.filter((testCase) =>
+        testCase["execution_contract_decision"] !== undefined
+      ).length
     },
     cases,
     proof: {
@@ -1689,6 +1864,7 @@ export const runMemoryAdvantageEval = async (
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",
         "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryCards or excludedSourceClaims",
+        "execution-contract cases can report baseline and KRN contract choices mechanically derived from selected memory/source ids",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
@@ -1703,6 +1879,7 @@ export const runMemoryAdvantageEval = async (
         "live Postgres runtime behavior",
         "LLM output quality",
         "that Codex would implement the reported coding-task decision without a separate execution-output check",
+        "that Codex would implement the reported execution contract without a separate execution-output evidence-shape gate",
         "arbitrary Codex output quality",
         "source truth",
         "broad memory retrieval quality",
