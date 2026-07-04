@@ -24,6 +24,7 @@ brain-search selected knowledge: usable pattern packet in preview output
 brain-search store-only: source/search and DB MemoryRecord evidence can be read without file catalog
 brain-search store-only selected knowledge: DB memory and source/search evidence yield reviewable packets
 DB-backed memory advantage smoke: baseline misses before seeded evidence; grounded run selects promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge support
+DB-backed multi-session memory advantage: brain-search smoke now persists Session A evidence/review/feedback and Session B selects its promoted MemoryRecord plus accepted source support
 store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable
@@ -129,12 +130,12 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 Status: active; overnight queue refreshed after CLI boundary/runtime wave.
 
-Result: post-refactor cleanup and memory-eval proxy work are closed and pushed.
-Latest slice closed brain-search DB project targeting; current next task is DB-backed multi-session memory advantage.
+Result: post-refactor cleanup, memory-eval proxy work, and DB-backed multi-session brain-search smoke are closed and pushed.
 
 Latest closed Beads: `mise-en-palace-24p7/.../2u9k/17o8/ezbm/6bdg/d09u/ymiz`.
 Latest closed Bead: `mise-en-palace-fo1q` explicit DB project selector for brain search.
-Current ready Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
+Latest closed Bead: `mise-en-palace-bvwi` DB-backed multi-session memory advantage through live repositories.
+Current queue: inspect `bd ready` after this commit; no operator routing needed unless the queue requires a product/budget tradeoff.
 Corrected planning duplicates: `lheq/hiz6/1bgy/mklo` closed as duplicate or premature after checking closed memory-eval Beads.
 `mise-en-palace-sefh/td3u/0ul0` frame KRN as governed RAG/memory/source/review; workers stay contract/readback until a named product loop needs execution, `plnv` remains deferred for any future executor branch, and naming allows no vanity/helper sweep.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
