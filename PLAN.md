@@ -191,11 +191,9 @@ source: pnpm typecheck, pnpm test, git diff --check
 DB/eval-affecting: pnpm db:ready, pnpm db:smoke
 ```
 
-If Vitest hits a temporary-directory write error, use
-`TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo checkout:
+If Vitest hits a temporary-directory write error, use `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo checkout:
 CLI boundary tests rely on outside-workspace temporary directories.
 
 After each bounded slice, commit, push, and confirm CI with the full SHA.
 
-Second-opinion workflow: for larger migration, audit-hardening, or authority-boundary slices, use `docs/runbooks/second-opinion-claude.md` after local evidence exists.
-Claude is a read-only reviewer; Codex owns triage, fixes, Beads state, commit, push, and CI.
+Second-opinion workflow: for larger migration, audit-hardening, or authority-boundary slices, use `docs/runbooks/second-opinion-claude.md` after local evidence exists; Claude reviews read-only, Codex owns triage, fixes, Beads state, commit, push, and CI.
