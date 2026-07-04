@@ -79,7 +79,7 @@ import {
   stringOrUndefined,
   stringListOrEmpty,
   toIsoTimestamp
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 import { mapLockedRowMetadataFields } from "./lockedRowMetadata.js";
 import { memoryCandidatesOrEmpty } from "./memoryMappers.js";
 

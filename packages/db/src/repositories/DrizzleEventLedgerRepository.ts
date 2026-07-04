@@ -8,7 +8,7 @@ import type { ExecutionRunId } from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
 import { runEvents } from "../schema/index.js";
-import { requireReturnedRow } from "./common.js";
+import { requireReturnedRow } from "./repositoryValueReaders.js";
 import { mapRunEvent } from "./mappers.js";
 
 export class DrizzleEventLedgerRepository implements EventLedgerRepository {

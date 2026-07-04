@@ -10,7 +10,7 @@ import { outboxEvents } from "../schema/index.js";
 import {
   fromIsoTimestamp,
   requireReturnedRow
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 import { mapOutboxEvent } from "./mappers.js";
 
 export class DrizzleOutboxRepository implements OutboxRepository {

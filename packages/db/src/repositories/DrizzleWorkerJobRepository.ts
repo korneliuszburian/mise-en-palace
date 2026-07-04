@@ -12,7 +12,7 @@ import { workerJobs } from "../schema/index.js";
 import {
   fromIsoTimestamp,
   requireReturnedRow
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 import { mapWorkerJob } from "./workerJobMappers.js";
 import type {
   CleanupTestWorkerJobsInput,

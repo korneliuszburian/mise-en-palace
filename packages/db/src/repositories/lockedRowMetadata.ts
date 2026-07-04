@@ -1,6 +1,6 @@
 import type { IsoTimestamp } from "@krn/core";
 
-import { toIsoTimestamp } from "./common.js";
+import { toIsoTimestamp } from "./repositoryValueReaders.js";
 
 export interface LockedRowMetadataInput {
   lockedAt: Date | null;

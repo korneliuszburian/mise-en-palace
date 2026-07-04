@@ -32,7 +32,7 @@ import {
   stringListOrEmpty,
   stringOrUndefined,
   toIsoTimestamp
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 
 export interface CreateReflectionRecordInput {
   scope: ReflectionScope;

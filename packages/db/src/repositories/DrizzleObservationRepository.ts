@@ -40,7 +40,7 @@ import {
   optionalIsoTimestamp,
   requireReturnedRow,
   toIsoTimestamp
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 
 export type ObservationFeedbackEventType =
   | "used"

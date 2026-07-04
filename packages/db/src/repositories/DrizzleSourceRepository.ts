@@ -39,7 +39,7 @@ import {
   sourceDecisions,
   sourceRejections
 } from "../schema/index.js";
-import { requireReturnedRow } from "./common.js";
+import { requireReturnedRow } from "./repositoryValueReaders.js";
 import {
   mapSourceArtifact,
   mapSourceChunk,

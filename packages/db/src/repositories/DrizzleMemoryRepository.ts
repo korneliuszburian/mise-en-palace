@@ -38,7 +38,7 @@ import {
 import {
   fromIsoTimestamp,
   requireReturnedRow
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 import {
   mapAntiMemoryRecord,
   mapAntiMemoryCandidate,

@@ -4,7 +4,7 @@ import { workerJobs } from "../schema/index.js";
 import {
   metadataOrEmpty,
   toIsoTimestamp
-} from "./common.js";
+} from "./repositoryValueReaders.js";
 import { mapLockedRowMetadataFields } from "./lockedRowMetadata.js";
 import {
   workerJobLifecycleStatuses,
