@@ -5,11 +5,30 @@ import {
 } from "../brainKnowledgeQuery.js";
 
 describe("brainKnowledgeQuery", () => {
-  it("drops dogfood feedback task language from retained-pattern mechanism queries", () => {
+  it("keeps a bounded dogfood mechanism retry list", () => {
     expect(
       compactBrainKnowledgeBridgeQueries(
         "unknown first retained pattern dogfood evidence feedback"
       )
-    ).toContain("unknown first");
+    ).toEqual([
+      "unknown first feedback",
+      "unknown first",
+      "first feedback"
+    ]);
+  });
+
+  it("keeps feedback available when it is part of the mechanism", () => {
+    expect(compactBrainKnowledgeBridgeQueries("user feedback collection")).toEqual([
+      "user feedback",
+      "feedback collection"
+    ]);
+  });
+
+  it("keeps later parser exemplar windows for long planning tasks", () => {
+    expect(
+      compactBrainKnowledgeBridgeQueries(
+        "Improve retained-pattern plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
+      )
+    ).toContain("typescript parser exemplar");
   });
 });

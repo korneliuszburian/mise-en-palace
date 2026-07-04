@@ -49,6 +49,7 @@ type BrainKnowledgeReadback = {
 };
 
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
+const maxBrainSearchCompactQueryRetries = 6;
 
 const runCatalogKnowledgeReadback = async (
   input: {
@@ -108,10 +109,12 @@ const runBrainKnowledgeReadback = async (
     };
   }
 
-  const compactQueries = compactBrainKnowledgeBridgeQueries(input.query);
-  const attemptedQueries = [input.query, ...compactQueries];
+  const compactQueries = compactBrainKnowledgeBridgeQueries(input.query)
+    .slice(0, maxBrainSearchCompactQueryRetries);
+  const attemptedQueries = [input.query];
 
   for (const compactQuery of compactQueries) {
+    attemptedQueries.push(compactQuery);
     const compactResult = await runCatalogKnowledgeReadback({
       ...input,
       query: compactQuery

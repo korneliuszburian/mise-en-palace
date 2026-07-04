@@ -480,20 +480,86 @@ describe("runBrainSearchCommand", () => {
     });
     const parsed: unknown = JSON.parse(result.stdout);
 
-    expect(knowledgeQueries).toContain("prove reference implementation recipe");
-    expect(knowledgeQueries).toContain("reference implementation recipe");
+    expect(knowledgeQueries).toEqual([
+      "prove retained reference implementation recipe pattern through local code exemplar",
+      "prove reference implementation recipe",
+      "prove reference implementation",
+      "reference implementation recipe"
+    ]);
     expect(parsed).toMatchObject({
-      brainKnowledgeQueries: expect.arrayContaining([
+      brainKnowledgeQueries: [
         "prove retained reference implementation recipe pattern through local code exemplar",
         "prove reference implementation recipe",
+        "prove reference implementation",
         "reference implementation recipe"
-      ]),
+      ],
       knowledgeCards: {
         selectedKnowledge: [{
           id: "pattern:reference-implementation-recipe-clone-boundary"
         }]
       }
     });
+  });
+
+  it("bounds compact retry fan-out when every catalog query misses", async () => {
+    const knowledgeQueries: string[] = [];
+    await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {},
+      now: () => "2026-07-04T02:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "alpha beta gamma delta epsilon zeta eta theta",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+
+    expect(knowledgeQueries).toHaveLength(7);
+    expect(knowledgeQueries[0]).toBe("alpha beta gamma delta epsilon zeta eta theta");
   });
 
   it("derives store-backed selected knowledge from source claims in store-only brain search", async () => {

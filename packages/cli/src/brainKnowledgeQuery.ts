@@ -19,7 +19,6 @@ const brainKnowledgeTaskNoiseTerms = new Set([
   "classify",
   "current",
   "dogfood",
-  "feedback",
   "for",
   "in",
   "is",
@@ -70,22 +69,31 @@ const compactBrainKnowledgeBridgeQueryWithLimit = (
     : undefined;
 };
 
-export const compactBrainKnowledgeBridgeQuery = (
-  query: string
-): string | undefined => compactBrainKnowledgeBridgeQueryWithLimit(query, 4);
+const compactBrainKnowledgeWindowQueries = (
+  query: string,
+  windowSize: number
+): readonly string[] => {
+  const compactTokens = compactBrainKnowledgeBridgeTokens(query);
+  const normalizedQuery = query.trim().toLowerCase();
+
+  return compactTokens.flatMap((_, index) => {
+    const mechanismTokens = compactTokens.slice(index, index + windowSize);
+    const mechanismQuery = mechanismTokens.join(" ");
+
+    return mechanismTokens.length === windowSize && mechanismQuery !== normalizedQuery
+      ? [mechanismQuery]
+      : [];
+  });
+};
 
 export const compactBrainKnowledgeBridgeQueries = (
   query: string
 ): readonly string[] => {
-  const compactTokens = compactBrainKnowledgeBridgeTokens(query);
   const compactQueries = [
     compactBrainKnowledgeBridgeQueryWithLimit(query, 4),
     compactBrainKnowledgeBridgeQueryWithLimit(query, 3, 3),
-    ...compactTokens.flatMap((_, index) => {
-      const mechanismTokens = compactTokens.slice(index, index + 3);
-
-      return mechanismTokens.length === 3 ? [mechanismTokens.join(" ")] : [];
-    })
+    ...compactBrainKnowledgeWindowQueries(query, 3),
+    ...compactBrainKnowledgeWindowQueries(query, 2)
   ];
 
   return [...new Set(compactQueries.filter((item): item is string => item !== undefined))];

@@ -8,10 +8,14 @@ Change:
 
 Proof:
 - Added a focused brain-search test where the primary query and first compact query miss, but a later mechanism window `reference implementation recipe` selects the retained recipe pattern.
+- Added exact retry-order assertions and a runner-level compact retry fan-out cap.
+- Added query-shaping tests proving feedback can remain a substantive mechanism token and long parser-exemplar planning recall is preserved.
 - Existing graph and heartbeat compact retry tests still pass.
+- Real catalog check selected `reference-implementation-recipe-clone-boundary` and `ts-boundary-brain-knowledge-parser-exemplar` for `prove retained reference implementation recipe pattern through local code exemplar`.
 
 Verification:
 - `pnpm --filter @krn/cli test -- runBrainSearchCommand brainKnowledgeQuery` passed.
+- `pnpm --filter @krn/cli test -- runBrainSearchCommand brainKnowledgeQuery plan retainedPatternSelection` passed after second-opinion fixes.
 - `pnpm -C packages/cli typecheck` passed.
 - `pnpm quality:fallow:ci` passed.
 - `git diff --check` passed.
