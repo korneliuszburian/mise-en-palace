@@ -11,6 +11,13 @@ import type {
   MemoryRecord,
   SourceClaim
 } from "@krn/core";
+import {
+  createExecutionBrief,
+  renderExecutionBriefText
+} from "@krn/codex-adapter";
+import {
+  compileHarnessPlan
+} from "@krn/harness";
 import type {
   SearchDocumentRecord,
   SearchDocumentSearchResult
@@ -42,6 +49,9 @@ import type {
 import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  createNoStoreCompilerDependencies
+} from "./noStoreRepositories.js";
 
 type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
 type ExpectedKrnResult = "hit" | "miss";
@@ -126,6 +136,7 @@ interface MemoryAdvantageCaseReadback {
     readonly selectedSourceClaimIds: readonly string[];
     readonly selectedContextSize: ApproximateSelectedContextSize;
   };
+  readonly "baseline_plan_brief": PlanBriefReadback;
   readonly "krn_memory": {
     readonly result: "hit" | "miss";
     readonly answerUsefulness: string;
@@ -140,6 +151,20 @@ interface MemoryAdvantageCaseReadback {
     readonly supportingDocuments: number;
     readonly exclusions: readonly MemoryAdvantageMemoryExclusionReadback[];
   };
+  readonly "krn_plan_brief": PlanBriefReadback;
+}
+
+interface PlanBriefReadback {
+  readonly baselineClass: MemoryAdvantageBaselineClass;
+  readonly result: "hit" | "miss" | "unexpected_hit";
+  readonly requiredKnowledgeId: string;
+  readonly selectedMemoryRecordIds: readonly string[];
+  readonly selectedSourceClaimIds: readonly string[];
+  readonly renderedMemoryRecordIds: readonly string[];
+  readonly renderedSourceClaimIds: readonly string[];
+  readonly contextInclusionCount: number;
+  readonly contextSize: ApproximateSelectedContextSize;
+  readonly renderedBriefSize: ApproximateSelectedContextSize;
 }
 
 interface MemoryAdvantageMemoryExclusionReadback {
@@ -538,6 +563,11 @@ const createMemoryAdvantageRuntime = (
   const claims = sourceClaims.map(sourceClaimFromFixture);
   const documents = claims.map(searchDocumentFromClaim);
   const memories = selectableMemoryCards(cards).map(memoryRecordFromCard);
+  const createRuntimeId = (prefix: string) => `${prefix}-memory-advantage-store`;
+  const baseCompilerDependencies = createNoStoreCompilerDependencies({
+    now: () => now,
+    createId: createRuntimeId
+  });
   const searchLexical = async (input: { query: string; limit?: number }) =>
     documents
       .map((document): SearchDocumentSearchResult => ({
@@ -552,12 +582,7 @@ const createMemoryAdvantageRuntime = (
     workspaceId: "workspace:memory-advantage",
     projectId,
     compilerDependencies: {
-      harnessRunRepository: {
-        createOperatorIntent: async () => throwingRepositoryMethod("createOperatorIntent"),
-        createTaskContract: async () => throwingRepositoryMethod("createTaskContract"),
-        createHarnessPlan: async () => throwingRepositoryMethod("createHarnessPlan"),
-        createContextAssembly: async () => throwingRepositoryMethod("createContextAssembly")
-      },
+      ...baseCompilerDependencies,
       memoryRepository: {
         listActiveMemory: async () => memories,
         listAntiMemoryForProject: async () => []
@@ -567,15 +592,10 @@ const createMemoryAdvantageRuntime = (
         listSourceClaimEdgesForClaim: async () => []
       },
       retrievalRepository: {
+        ...baseCompilerDependencies.retrievalRepository,
         searchLexical,
-        startRetrievalRun: async () => throwingRepositoryMethod("startRetrievalRun"),
-        completeRetrievalRun: async () => throwingRepositoryMethod("completeRetrievalRun"),
-        addCandidate: async () => throwingRepositoryMethod("addCandidate"),
-        recordActivationDecision: async () => throwingRepositoryMethod("recordActivationDecision"),
-        storeContextSelection: async () => throwingRepositoryMethod("storeContextSelection")
-      },
-      now: () => now,
-      createId: (prefix) => `${prefix}-memory-advantage-store`
+        storeContextSelection: async () => undefined
+      }
     },
     harnessRunRepository: {
       createExecutionRun: async () => throwingRepositoryMethod("createExecutionRun"),
@@ -834,6 +854,181 @@ const runSimpleRetrievalBaseline = (
   };
 };
 
+const expectedMemoryRecordId = (
+  expectedSelectedKnowledgeId: string
+): string | undefined =>
+  expectedSelectedKnowledgeId.startsWith("source:")
+    ? undefined
+    : `memory:${expectedSelectedKnowledgeId}`;
+
+const expectedSourceClaimId = (
+  expectedSelectedKnowledgeId: string
+): string | undefined =>
+  expectedSelectedKnowledgeId.startsWith("source:")
+    ? expectedSelectedKnowledgeId
+    : undefined;
+
+const selectedContextIds = (
+  contextAssembly: { readonly inclusions: ContextAssemblyInclusionReadback[] }
+): {
+  readonly memoryRecordIds: readonly string[];
+  readonly sourceClaimIds: readonly string[];
+} => ({
+  memoryRecordIds: contextAssembly.inclusions
+    .filter((inclusion) => inclusion.subjectType === "memory_record")
+    .map((inclusion) => inclusion.subjectId),
+  sourceClaimIds: contextAssembly.inclusions
+    .filter((inclusion) => inclusion.subjectType === "source_claim")
+    .map((inclusion) => inclusion.subjectId)
+});
+
+type ContextAssemblyInclusionReadback = {
+  readonly subjectType: string;
+  readonly subjectId: string;
+};
+
+const renderedBriefHit = (input: {
+  readonly expectedSelectedKnowledgeId: string;
+  readonly selectedMemoryRecordIds: readonly string[];
+  readonly selectedSourceClaimIds: readonly string[];
+  readonly renderedMemoryRecordIds: readonly string[];
+  readonly renderedSourceClaimIds: readonly string[];
+  readonly renderedBrief: string;
+}): boolean => {
+  const requiredMemoryRecordId = expectedMemoryRecordId(input.expectedSelectedKnowledgeId);
+  const requiredSourceClaimId = expectedSourceClaimId(input.expectedSelectedKnowledgeId);
+  const memoryHit = requiredMemoryRecordId !== undefined &&
+    input.selectedMemoryRecordIds.includes(requiredMemoryRecordId) &&
+    input.renderedMemoryRecordIds.includes(requiredMemoryRecordId) &&
+    input.renderedBrief.includes(requiredMemoryRecordId);
+  const sourceHit = requiredSourceClaimId !== undefined &&
+    input.selectedSourceClaimIds.includes(requiredSourceClaimId) &&
+    input.renderedSourceClaimIds.includes(requiredSourceClaimId) &&
+    input.renderedBrief.includes(requiredSourceClaimId);
+
+  return memoryHit || sourceHit;
+};
+
+const planBriefResult = (
+  baseline: boolean,
+  hit: boolean
+): PlanBriefReadback["result"] => {
+  if (baseline) {
+    return hit ? "unexpected_hit" : "miss";
+  }
+
+  return hit ? "hit" : "miss";
+};
+
+const planBriefContextPayloadParts = (
+  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
+  memoryRecordIds: readonly string[],
+  sourceClaimIds: readonly string[]
+): readonly string[] => {
+  const memoryById = new Map(
+    selectableMemoryCards(cards).map((card) => [
+      `memory:${card.id}`,
+      [card.title, card.summary, card.nextAction].join("\n")
+    ])
+  );
+  const sourceClaimById = new Map(
+    sourceClaims.map((claim) => [
+      claim.sourceClaimId,
+      [claim.claim, claim.mechanism, claim.krnImplication, claim.doesNotProve].join("\n")
+    ])
+  );
+
+  return [
+    ...memoryRecordIds.flatMap((id) => {
+      const payload = memoryById.get(id);
+      return payload === undefined ? [] : [payload];
+    }),
+    ...sourceClaimIds.flatMap((id) => {
+      const payload = sourceClaimById.get(id);
+      return payload === undefined ? [] : [payload];
+    })
+  ];
+};
+
+const compilePlanBriefReadback = async (
+  testCase: MemoryAdvantageCaseFixture,
+  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
+  baseline: boolean
+): Promise<PlanBriefReadback> => {
+  const runtime = createMemoryAdvantageRuntime(cards, sourceClaims);
+  const compiled = await compileHarnessPlan({
+    workspaceId: runtime.workspaceId,
+    projectId: runtime.projectId,
+    operatorIntent: {
+      rawIntent: testCase.query,
+      source: "cli",
+      metadata: {
+        eval: "memory-advantage",
+        caseId: testCase.id,
+        variant: baseline ? "baseline_plan_brief" : "krn_plan_brief"
+      }
+    },
+    taskContract: {
+      title: `Memory advantage eval: ${testCase.id}`,
+      objective: testCase.query,
+      constraints: [
+        "Use only retrieved KRN memory/source context.",
+        "Do not infer unavailable prior-session project rules."
+      ],
+      nonGoals: [
+        "Do not execute Codex.",
+        "Do not mutate memory."
+      ],
+      acceptance: [
+        "Required prior-session memory or source evidence is present in the rendered Codex brief when available."
+      ]
+    },
+    tokenBudget: 2048,
+    metadata: {
+      eval: "memory-advantage",
+      caseId: testCase.id
+    }
+  }, runtime.compilerDependencies);
+  const brief = createExecutionBrief({
+    taskContract: compiled.taskContract,
+    harnessPlan: compiled.harnessPlan,
+    contextAssembly: compiled.contextAssembly,
+    capabilityPlan: compiled.capabilityPlan,
+    evidenceContract: compiled.evidenceContract,
+    nextAction: compiled.nextAction
+  });
+  const renderedBrief = renderExecutionBriefText(brief);
+  const { memoryRecordIds, sourceClaimIds } = selectedContextIds(compiled.contextAssembly);
+  const hit = renderedBriefHit({
+    expectedSelectedKnowledgeId: testCase.expectedSelectedKnowledgeId,
+    selectedMemoryRecordIds: memoryRecordIds,
+    selectedSourceClaimIds: sourceClaimIds,
+    renderedMemoryRecordIds: brief.memoryRecordsUsed,
+    renderedSourceClaimIds: brief.sourceClaimsUsed,
+    renderedBrief
+  });
+
+  return {
+    baselineClass,
+    result: planBriefResult(baseline, hit),
+    requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
+    selectedMemoryRecordIds: memoryRecordIds,
+    selectedSourceClaimIds: sourceClaimIds,
+    renderedMemoryRecordIds: brief.memoryRecordsUsed,
+    renderedSourceClaimIds: brief.sourceClaimsUsed,
+    contextInclusionCount: compiled.contextAssembly.inclusions.length,
+    contextSize: approximateSelectedContextSizeFromParts(planBriefContextPayloadParts(
+      cards,
+      sourceClaims,
+      memoryRecordIds,
+      sourceClaimIds
+    )),
+    renderedBriefSize: approximateSelectedContextSizeFromParts([renderedBrief])
+  };
+};
+
 const isExpectedKrnResultSatisfied = (
   testCase: MemoryAdvantageCaseFixture,
   readback: BrainSearchPreviewReadback
@@ -851,12 +1046,18 @@ const caseStatus = (
   testCase: MemoryAdvantageCaseFixture,
   baseline: BrainSearchPreviewReadback,
   krnMemory: BrainSearchPreviewReadback,
+  baselinePlanBrief: PlanBriefReadback,
+  krnPlanBrief: PlanBriefReadback,
   exclusions: readonly MemoryAdvantageMemoryExclusionReadback[]
 ): "pass" | "fail" => {
   const canProveExpectedMiss = testCase.expectedKrnResult === "hit" || exclusions.length > 0;
+  const planBriefSatisfied = testCase.expectedKrnResult === "hit"
+    ? baselinePlanBrief.result === "miss" && krnPlanBrief.result === "hit"
+    : baselinePlanBrief.result === "miss" && krnPlanBrief.result === "miss";
 
   return isBaselineMiss(baseline) &&
     isExpectedKrnResultSatisfied(testCase, krnMemory) &&
+    planBriefSatisfied &&
     canProveExpectedMiss
     ? "pass"
     : "fail";
@@ -868,6 +1069,7 @@ const evaluateCase = async (
   assertLexicalOverlap(testCase);
   const baseline = await runCaseVariant(testCase, [], [], "baseline", true);
   const simpleRetrieval = runSimpleRetrievalBaseline(testCase);
+  const baselinePlanBrief = await compilePlanBriefReadback(testCase, [], [], true);
   const krnMemory = await runCaseVariant(
     testCase,
     [
@@ -882,10 +1084,23 @@ const evaluateCase = async (
     "krn",
     false
   );
+  const krnPlanBrief = await compilePlanBriefReadback(
+    testCase,
+    [
+      ...testCase.priorSession.memoryCards,
+      ...testCase.priorSession.distractorMemoryCards,
+      ...testCase.priorSession.excludedMemoryCards
+    ],
+    [
+      ...testCase.priorSession.sourceClaims,
+      ...testCase.priorSession.distractorSourceClaims
+    ],
+    false
+  );
   const baselineMiss = isBaselineMiss(baseline);
   const krnHit = isKrnHit(krnMemory, testCase);
   const exclusions = buildMemoryExclusions(testCase);
-  const status = caseStatus(testCase, baseline, krnMemory, exclusions);
+  const status = caseStatus(testCase, baseline, krnMemory, baselinePlanBrief, krnPlanBrief, exclusions);
   const baselineSelectedMemoryIds = selectedMemoryIds(baseline.selectedKnowledgeIds);
   const krnSelectedMemoryIds = selectedMemoryIds(krnMemory.selectedKnowledgeIds);
 
@@ -920,6 +1135,7 @@ const evaluateCase = async (
       missingEvidence: baseline.missingEvidence
     },
     "baseline_simple_retrieval": simpleRetrieval,
+    "baseline_plan_brief": baselinePlanBrief,
     "krn_memory": {
       result: krnHit ? "hit" : "miss",
       answerUsefulness: krnMemory.answerUsefulness,
@@ -933,7 +1149,8 @@ const evaluateCase = async (
       supportingClaims: krnMemory.supportingClaims,
       supportingDocuments: krnMemory.supportingDocuments,
       exclusions
-    }
+    },
+    "krn_plan_brief": krnPlanBrief
   };
 };
 
@@ -982,8 +1199,10 @@ export const runMemoryAdvantageEval = async (
         "a simple lexical retrieval baseline is reported so no-memory misses are not the only comparator",
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
+        "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
+        "the expected memory/source id is present in rendered Codex brief context for hit cases",
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason",
         "the memory-advantage fixture output is deterministic enough for regression checks"
@@ -998,6 +1217,7 @@ export const runMemoryAdvantageEval = async (
         "automatic Memory Core promotion from evidence or feedback",
         "live Postgres runtime behavior",
         "LLM output quality",
+        "arbitrary Codex output quality",
         "source truth",
         "broad memory retrieval quality",
         "product readiness"

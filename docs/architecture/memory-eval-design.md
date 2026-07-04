@@ -14,7 +14,7 @@ four falsifiable axes:
 
 | Axis | Local question | Current surface | Next eval candidate |
 | --- | --- | --- | --- |
-| Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: one case includes a tempting distractor and a simple lexical retrieval baseline. |
+| Accurate retrieval | Can KRN select the specific company/source pattern needed for a task? | `pnpm eval:memory-advantage` | Done for the current proxy: cases include no-memory, simple lexical, and plan/brief baselines with rendered Codex brief evidence. |
 | DB-backed retrieval | Can persisted memory/source rows change brain-search output through live repositories? | `pnpm db:smoke:brain-search` | Done for the current smoke: baseline misses, then a promoted MemoryRecord plus SourceClaim/SearchDocument/SourceDecisionEdge are selected through Postgres-backed readback. |
 | Test-time learning | Can a prior run's reviewed feedback improve a later task? | DB brain-loop smoke, memory application feedback | Multi-session eval: first task creates reviewed evidence; second task must use it. |
 | Long-range understanding | Can KRN carry evidence/source decisions across distant slices without broad rereads? | source decisions, run readback, activation | Fixture with old evidence, later source decision, and no active-doc clue. |
@@ -76,6 +76,26 @@ selects the governed memory/source id through the brain/source command path.
 
 This proves only a local foil against no-memory and naive lexical selection. It
 does not prove production retrieval quality or arbitrary Codex superiority.
+
+### Plan And Brief Comparator
+
+Follow-up Bead: `mise-en-palace-112w`.
+
+`pnpm eval:memory-advantage` now reports `baseline_plan_brief` and
+`krn_plan_brief` for each case. The comparator runs the real harness compiler
+and Codex brief renderer against the same in-memory memory/source fixture:
+
+1. baseline plan/brief has no KRN memory/source store and must miss the required
+   prior-session id;
+2. KRN plan/brief has the governed memory/source store and must render the
+   required MemoryRecord or SourceClaim id in the Codex brief for hit cases;
+3. forgetting cases must not render the obsolete required id as a hit;
+4. output includes selected MemoryRecord/SourceClaim ids, rendered ids, context
+   inclusion count, and approximate context/brief size.
+
+This proves plan/brief consumer-surface advantage for controlled
+company-pattern cases. It does not prove arbitrary Codex output quality,
+production ranking quality, or broad retrieval quality.
 
 ### DB-Backed Brain-Search Memory Advantage
 

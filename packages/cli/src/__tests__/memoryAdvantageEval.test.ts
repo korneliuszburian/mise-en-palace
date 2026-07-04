@@ -88,6 +88,26 @@ describe("runMemoryAdvantageEval", () => {
           method: "utf8_bytes_div_4"
         }
       },
+      "baseline_plan_brief": {
+        baselineClass: "no_memory_no_source",
+        result: "miss",
+        requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
+        selectedMemoryRecordIds: [],
+        selectedSourceClaimIds: [],
+        renderedMemoryRecordIds: [],
+        renderedSourceClaimIds: [],
+        contextInclusionCount: 0,
+        contextSize: {
+          bytes: 0,
+          approximateTokens: 0,
+          method: "utf8_bytes_div_4"
+        },
+        renderedBriefSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        }
+      },
       "krn_memory": {
         result: "hit",
         answerUsefulness: "useful",
@@ -103,6 +123,21 @@ describe("runMemoryAdvantageEval", () => {
         },
         supportingClaims: 1,
         supportingDocuments: 1
+      },
+      "krn_plan_brief": {
+        baselineClass: "no_memory_no_source",
+        result: "hit",
+        requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
+        contextSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        },
+        renderedBriefSize: {
+          bytes: expect.any(Number),
+          approximateTokens: expect.any(Number),
+          method: "utf8_bytes_div_4"
+        }
       }
     });
     expect(retrievalCase?.["baseline_no_memory"].missingEvidence).toEqual([
@@ -120,6 +155,22 @@ describe("runMemoryAdvantageEval", () => {
     );
     expect(retrievalCase?.["krn_memory"].selectedContextSize.bytes).toBeGreaterThan(0);
     expect(retrievalCase?.["krn_memory"].selectedContextSize.approximateTokens).toBeGreaterThan(0);
+    expect(retrievalCase?.["baseline_plan_brief"].renderedBriefSize.bytes).toBeGreaterThan(0);
+    expect(retrievalCase?.["krn_plan_brief"].contextSize.bytes).toBeGreaterThan(0);
+    expect(retrievalCase?.["krn_plan_brief"].renderedBriefSize.approximateTokens).toBeGreaterThan(0);
+    expect(retrievalCase?.["krn_plan_brief"].contextInclusionCount).toBeGreaterThanOrEqual(2);
+    expect(retrievalCase?.["krn_plan_brief"].selectedMemoryRecordIds).toContain(
+      "memory:pattern:second-opinion-after-large-slice"
+    );
+    expect(retrievalCase?.["krn_plan_brief"].selectedSourceClaimIds).toContain(
+      "source:second-opinion-after-large-slice"
+    );
+    expect(retrievalCase?.["krn_plan_brief"].renderedMemoryRecordIds).toContain(
+      "memory:pattern:second-opinion-after-large-slice"
+    );
+    expect(retrievalCase?.["krn_plan_brief"].renderedSourceClaimIds).toContain(
+      "source:second-opinion-after-large-slice"
+    );
 
     const learningCase = result.cases.find((testCase) =>
       testCase.caseId === "learn-company-review-standard"
@@ -138,6 +189,11 @@ describe("runMemoryAdvantageEval", () => {
       "source:accepted-source-claims-only"
     );
     expect(longRangeCase?.["krn_memory"].selectedSourceClaimIds).toContain(
+      "source:accepted-source-claims-only"
+    );
+    expect(longRangeCase?.["baseline_plan_brief"].result).toBe("miss");
+    expect(longRangeCase?.["krn_plan_brief"].result).toBe("hit");
+    expect(longRangeCase?.["krn_plan_brief"].renderedSourceClaimIds).toContain(
       "source:accepted-source-claims-only"
     );
 
@@ -181,6 +237,11 @@ describe("runMemoryAdvantageEval", () => {
           method: "utf8_bytes_div_4"
         }
       },
+      "baseline_plan_brief": {
+        result: "miss",
+        selectedMemoryRecordIds: [],
+        selectedSourceClaimIds: []
+      },
       "krn_memory": {
         result: "miss",
         answerUsefulness: "not_useful",
@@ -202,6 +263,10 @@ describe("runMemoryAdvantageEval", () => {
             reason: "stale memory contradicted by later governed second-opinion operating rule"
           }
         ]
+      },
+      "krn_plan_brief": {
+        result: "miss",
+        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule"
       }
     });
     expect(result.proof.proves).toContain(
@@ -214,10 +279,16 @@ describe("runMemoryAdvantageEval", () => {
       "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"
     );
     expect(result.proof.proves).toContain(
+      "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief"
+    );
+    expect(result.proof.proves).toContain(
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
     );
     expect(result.proof.proves).toContain(
       "baseline class and approximate selected-context readback size are reported for each case"
+    );
+    expect(result.proof.proves).toContain(
+      "the expected memory/source id is present in rendered Codex brief context for hit cases"
     );
     expect(result.proof.proves).toContain(
       "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason"
@@ -240,5 +311,6 @@ describe("runMemoryAdvantageEval", () => {
     expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");
     expect(result.proof.doesNotProve).toContain("arbitrary task superiority over vanilla Codex");
+    expect(result.proof.doesNotProve).toContain("arbitrary Codex output quality");
   });
 });
