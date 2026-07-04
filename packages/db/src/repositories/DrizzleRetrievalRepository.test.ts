@@ -50,6 +50,7 @@ const embeddingModelRow = {
 const createSearchDb = (input: {
   lexicalRows?: readonly unknown[];
   vectorRows?: readonly unknown[];
+  onVectorWhere?: (condition: unknown) => void;
 }) => ({
   select: () => ({
     from: () => ({
@@ -60,16 +61,51 @@ const createSearchDb = (input: {
       }),
       innerJoin: () => ({
         innerJoin: () => ({
-          where: () => ({
-            orderBy: () => ({
-              limit: () => Promise.resolve(input.vectorRows ?? [])
-            })
-          })
+          where: (condition: unknown) => {
+            input.onVectorWhere?.(condition);
+            return {
+              orderBy: () => ({
+                limit: () => Promise.resolve(input.vectorRows ?? [])
+              })
+            };
+          }
         })
       })
     })
   })
 });
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const sqlParamValues = (
+  value: unknown,
+  seen: WeakSet<object> = new WeakSet()
+): readonly unknown[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => sqlParamValues(item, seen));
+  }
+
+  if (!isRecord(value)) {
+    return [];
+  }
+
+  if (seen.has(value)) {
+    return [];
+  }
+  seen.add(value);
+
+  if ("encoder" in value && "value" in value) {
+    return [value["value"]];
+  }
+
+  const queryChunks = value["queryChunks"];
+  if (Array.isArray(queryChunks)) {
+    return queryChunks.flatMap((item) => sqlParamValues(item, seen));
+  }
+
+  return [];
+};
 
 const methodNames = [
   "createSearchDocument",
@@ -135,6 +171,24 @@ describe("DrizzleRetrievalRepository", () => {
       embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
       limit: 1
     })).resolves.toEqual([]);
+  });
+
+  it("scopes vector search SQL to the requested embedding model", async () => {
+    let vectorWhere: unknown;
+    const repository = new DrizzleRetrievalRepository(createSearchDb({
+      vectorRows: [],
+      onVectorWhere(condition) {
+        vectorWhere = condition;
+      }
+    }) as never);
+
+    await repository.searchVector({
+      embeddingModelId: "embedding-model-1",
+      embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
+      limit: 1
+    });
+
+    expect(sqlParamValues(vectorWhere)).toContain("embedding-model-1");
   });
 
   it("exposes embedding model provenance for vector and hybrid results but not lexical-only results", async () => {
