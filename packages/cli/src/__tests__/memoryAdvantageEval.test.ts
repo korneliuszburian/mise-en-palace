@@ -11,14 +11,38 @@ const fixturePath = fileURLToPath(
 );
 
 describe("runMemoryAdvantageEval", () => {
-  it("proves one controlled company-pattern memory advantage over no-memory baseline", async () => {
+  it("proves controlled memory competencies over a no-memory baseline", async () => {
     const result = await runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(1);
-    expect(result.cases[0]).toMatchObject({
-      caseId: "second-opinion-after-large-slice",
+    expect(result.cases).toHaveLength(4);
+    expect(result.competencies).toMatchObject({
+      retrieval: {
+        status: "pass",
+        caseIds: ["retrieve-second-opinion-procedure"]
+      },
+      learning: {
+        status: "pass",
+        caseIds: ["learn-company-review-standard"]
+      },
+      long_range: {
+        status: "pass",
+        caseIds: ["long-range-source-authority-boundary"]
+      },
+      forgetting: {
+        status: "pass",
+        caseIds: ["forget-obsolete-no-second-opinion-rule"]
+      }
+    });
+
+    const retrievalCase = result.cases.find((testCase) =>
+      testCase.caseId === "retrieve-second-opinion-procedure"
+    );
+    expect(retrievalCase).toMatchObject({
+      competency: "retrieval",
+      status: "pass",
+      expectedKrnResult: "hit",
       priorSession: {
         id: "session:second-opinion-skill-refinement",
         evidenceRef: "evidence:second-opinion-skill-refinement",
@@ -26,6 +50,7 @@ describe("runMemoryAdvantageEval", () => {
         feedbackRef: "feedback:second-opinion-skill-refinement-helped",
         applicationOutcome: "helped",
         createdMemoryIds: ["memory:pattern:second-opinion-after-large-slice"],
+        excludedMemoryIds: [],
         createdSourceClaimIds: ["source:second-opinion-after-large-slice"]
       },
       "baseline_no_memory": {
@@ -44,24 +69,90 @@ describe("runMemoryAdvantageEval", () => {
         supportingDocuments: 1
       }
     });
-    expect(result.cases[0]?.["baseline_no_memory"].missingEvidence).toEqual([
+    expect(retrievalCase?.["baseline_no_memory"].missingEvidence).toEqual([
       "governed SourceClaim evidence in the answer package for this query",
       "included SearchDocument evidence in the answer package for this query"
     ]);
-    expect(result.cases[0]?.["krn_memory"].selectedKnowledgeIds).toContain(
+    expect(retrievalCase?.["krn_memory"].selectedKnowledgeIds).toContain(
       "pattern:second-opinion-after-large-slice"
     );
-    expect(result.cases[0]?.["krn_memory"].selectedSourceClaimIds).toContain(
+    expect(retrievalCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:second-opinion-after-large-slice"
     );
+
+    const learningCase = result.cases.find((testCase) =>
+      testCase.caseId === "learn-company-review-standard"
+    );
+    expect(learningCase?.["krn_memory"].selectedKnowledgeIds).toContain(
+      "pattern:company-review-standard-after-eval-change"
+    );
+    expect(learningCase?.["krn_memory"].selectedSourceClaimIds).toContain(
+      "source:company-review-standard-after-eval-change"
+    );
+
+    const longRangeCase = result.cases.find((testCase) =>
+      testCase.caseId === "long-range-source-authority-boundary"
+    );
+    expect(longRangeCase?.["krn_memory"].selectedKnowledgeIds).toContain(
+      "source:accepted-source-claims-only"
+    );
+    expect(longRangeCase?.["krn_memory"].selectedSourceClaimIds).toContain(
+      "source:accepted-source-claims-only"
+    );
+
+    const forgettingCase = result.cases.find((testCase) =>
+      testCase.caseId === "forget-obsolete-no-second-opinion-rule"
+    );
+    expect(forgettingCase).toMatchObject({
+      competency: "forgetting",
+      status: "pass",
+      expectedKrnResult: "miss",
+      priorSession: {
+        id: "session:obsolete-second-opinion-rule",
+        applicationOutcome: "hurt",
+        createdMemoryIds: ["memory:pattern:routine-dependency-pin-cleanup"],
+        excludedMemoryIds: ["memory:pattern:obsolete-no-second-opinion-rule"],
+        createdSourceClaimIds: []
+      },
+      "baseline_no_memory": {
+        result: "miss",
+        answerUsefulness: "not_useful",
+        selectedKnowledgeIds: []
+      },
+      "krn_memory": {
+        result: "miss",
+        answerUsefulness: "not_useful",
+        selectedKnowledgeIds: [],
+        selectedSourceClaimIds: [],
+        writtenKnowledgeIds: ["pattern:routine-dependency-pin-cleanup"],
+        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        supportingClaims: 0,
+        supportingDocuments: 0,
+        exclusions: [
+          {
+            memoryId: "memory:pattern:obsolete-no-second-opinion-rule",
+            reason: "stale memory contradicted by later governed second-opinion operating rule"
+          }
+        ]
+      }
+    });
     expect(result.proof.proves).toContain(
       "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit"
     );
     expect(result.proof.proves).toContain(
       "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths"
     );
+    expect(result.proof.proves).toContain(
+      "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
+    );
+    expect(result.proof.proves).toContain(
+      "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason"
+    );
     expect(result.proof.doesNotProve).toContain(
       "production retrieval/recall quality; this eval uses in-memory lexical token overlap"
+    );
+    expect(result.proof.doesNotProve).toContain(
+      "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows"
     );
     expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");

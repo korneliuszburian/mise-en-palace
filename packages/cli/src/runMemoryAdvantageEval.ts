@@ -43,13 +43,19 @@ import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
 
+type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
+type ExpectedKrnResult = "hit" | "miss";
 type MemoryAdvantageCardFixture = EvalKnowledgeCardFixture;
 type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
+type MemoryAdvantageCatalogCardFixture =
+  MemoryAdvantageCardFixture | MemoryAdvantageExcludedMemoryFixture;
 
 interface MemoryAdvantageCaseFixture {
   readonly id: string;
+  readonly competency: MemoryAdvantageCompetency;
   readonly query: string;
   readonly priorSession: MemoryAdvantagePriorSessionFixture;
+  readonly expectedKrnResult: ExpectedKrnResult;
   readonly expectedSelectedKnowledgeId: string;
 }
 
@@ -61,7 +67,12 @@ interface MemoryAdvantagePriorSessionFixture {
   readonly feedbackRef: string;
   readonly applicationOutcome: string;
   readonly memoryCards: readonly MemoryAdvantageCardFixture[];
+  readonly excludedMemoryCards: readonly MemoryAdvantageExcludedMemoryFixture[];
   readonly sourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
+}
+
+interface MemoryAdvantageExcludedMemoryFixture extends MemoryAdvantageCardFixture {
+  readonly exclusionReason: string;
 }
 
 export interface MemoryAdvantageEvalFixture {
@@ -71,7 +82,10 @@ export interface MemoryAdvantageEvalFixture {
 
 interface MemoryAdvantageCaseReadback {
   readonly caseId: string;
+  readonly competency: MemoryAdvantageCompetency;
   readonly query: string;
+  readonly status: "pass" | "fail";
+  readonly expectedKrnResult: ExpectedKrnResult;
   readonly priorSession: {
     readonly id: string;
     readonly task: string;
@@ -80,6 +94,7 @@ interface MemoryAdvantageCaseReadback {
     readonly feedbackRef: string;
     readonly applicationOutcome: string;
     readonly createdMemoryIds: readonly string[];
+    readonly excludedMemoryIds: readonly string[];
     readonly createdSourceClaimIds: readonly string[];
   };
   readonly "baseline_no_memory": {
@@ -94,16 +109,27 @@ interface MemoryAdvantageCaseReadback {
     readonly selectedKnowledgeIds: readonly string[];
     readonly selectedSources: readonly string[];
     readonly selectedSourceClaimIds: readonly string[];
+    readonly writtenKnowledgeIds: readonly string[];
     readonly requiredKnowledgeId: string;
     readonly supportingClaims: number;
     readonly supportingDocuments: number;
+    readonly exclusions: readonly MemoryAdvantageMemoryExclusionReadback[];
   };
+}
+
+interface MemoryAdvantageMemoryExclusionReadback {
+  readonly memoryId: string;
+  readonly reason: string;
 }
 
 export interface MemoryAdvantageEvalResult {
   readonly kind: "krn.memoryAdvantage.eval.v1";
   readonly fixtureVersion: "1";
   readonly status: "pass" | "fail";
+  readonly competencies: Record<MemoryAdvantageCompetency, {
+    readonly status: "pass" | "fail";
+    readonly caseIds: readonly string[];
+  }>;
   readonly cases: readonly MemoryAdvantageCaseReadback[];
   readonly proof: {
     readonly proves: readonly string[];
@@ -115,6 +141,7 @@ interface BrainSearchPreviewReadback {
   readonly selectedKnowledgeIds: readonly string[];
   readonly selectedSources: readonly string[];
   readonly selectedSourceClaimIds: readonly string[];
+  readonly writtenKnowledgeIds: readonly string[];
   readonly answerUsefulness: string;
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
@@ -123,6 +150,57 @@ interface BrainSearchPreviewReadback {
 
 const now = "2026-07-04T00:00:00.000Z";
 const projectId = "project:memory-advantage";
+const memoryCompetencies = ["retrieval", "learning", "long_range", "forgetting"] as const;
+const expectedKrnResults = ["hit", "miss"] as const;
+
+const requiredEnum = <TValue extends string>(
+  record: Record<string, unknown>,
+  key: string,
+  label: string,
+  values: readonly TValue[]
+): TValue => {
+  const value = requiredString(record, key, label);
+
+  if (!values.includes(value as TValue)) {
+    throw new Error(`${label}.${key} must be one of ${values.join(", ")}`);
+  }
+
+  return value as TValue;
+};
+
+const parseExcludedMemoryCards = (
+  record: Record<string, unknown>,
+  key: string,
+  label: string
+): readonly MemoryAdvantageExcludedMemoryFixture[] => {
+  const cards = parseEvalKnowledgeCards(record, key, label);
+  const rawCards = recordArray(record, key, label);
+
+  return cards.map((card, index) => {
+    const rawCard = rawCards[index];
+
+    if (rawCard === undefined) {
+      throw new Error(`${label}.${key}[${index}] must be an object`);
+    }
+
+    return {
+      ...card,
+      exclusionReason: requiredString(rawCard, "exclusionReason", `${label}.${key}[${index}]`)
+    };
+  });
+};
+
+const assertNoMemoryCardLifecycleConflict = (
+  priorSession: MemoryAdvantagePriorSessionFixture,
+  label: string
+): void => {
+  const activeIds = new Set(priorSession.memoryCards.map((card) => card.id));
+  const conflictingCard = priorSession.excludedMemoryCards.find((card) => activeIds.has(card.id));
+
+  if (conflictingCard !== undefined) {
+    throw new Error(`${label}.priorSession cannot mark ${conflictingCard.id} as both active and excluded`);
+  }
+};
 
 const parseCase = (
   value: Record<string, unknown>,
@@ -138,8 +216,9 @@ const parseCase = (
   const memoryCards = parseEvalKnowledgeCards(priorSession, "memoryCards", `${label}.priorSession`);
   const sourceClaims = parseEvalSourceClaims(priorSession, "sourceClaims", `${label}.priorSession`);
 
-  return {
+  const parsedCase: MemoryAdvantageCaseFixture = {
     id: requiredString(value, "id", label),
+    competency: requiredEnum(value, "competency", label, memoryCompetencies),
     query: requiredString(value, "query", label),
     priorSession: {
       id: requiredString(priorSession, "id", `${label}.priorSession`),
@@ -149,10 +228,15 @@ const parseCase = (
       feedbackRef: requiredString(priorSession, "feedbackRef", `${label}.priorSession`),
       applicationOutcome: requiredString(priorSession, "applicationOutcome", `${label}.priorSession`),
       memoryCards,
+      excludedMemoryCards: parseExcludedMemoryCards(priorSession, "excludedMemoryCards", `${label}.priorSession`),
       sourceClaims
     },
+    expectedKrnResult: requiredEnum(value, "expectedKrnResult", label, expectedKrnResults),
     expectedSelectedKnowledgeId: requiredString(value, "expectedSelectedKnowledgeId", label)
   };
+
+  assertNoMemoryCardLifecycleConflict(parsedCase.priorSession, label);
+  return parsedCase;
 };
 
 export const parseMemoryAdvantageEvalFixture = (
@@ -190,7 +274,8 @@ export const loadMemoryAdvantageEvalFixture = (
 
 const parseBrainSearchPreview = (
   stdout: string,
-  label: string
+  label: string,
+  writtenKnowledgeIds: readonly string[]
 ): BrainSearchPreviewReadback => {
   const preview = parseBrainSearchPreviewSections(stdout, label);
 
@@ -206,6 +291,7 @@ const parseBrainSearchPreview = (
       "supportingClaimIds",
       `${label}.sourceSearch`
     ),
+    writtenKnowledgeIds,
     answerUsefulness: requiredString(preview.sourceSearch, "answerUsefulness", `${label}.sourceSearch`),
     supportingClaims: requiredFiniteNumber(preview.sourceSearch, "supportingClaims", `${label}.sourceSearch`),
     supportingDocuments: requiredFiniteNumber(
@@ -242,12 +328,19 @@ const assertLexicalOverlap = (
   const hasCardOverlap = testCase.priorSession.memoryCards.some((card) =>
     tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
   );
+  const hasExcludedCardOverlap = testCase.priorSession.excludedMemoryCards.some((card) =>
+    tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
+  );
   const hasClaimOverlap = testCase.priorSession.sourceClaims.some((claim) =>
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
   );
 
-  if (!hasCardOverlap || !hasClaimOverlap) {
+  if (testCase.expectedKrnResult === "hit" && (!hasCardOverlap || !hasClaimOverlap)) {
     throw new Error(`${testCase.id} must have lexical overlap with memory card and source claim text`);
+  }
+
+  if (testCase.expectedKrnResult === "miss" && !hasExcludedCardOverlap) {
+    throw new Error(`${testCase.id} must have lexical overlap with an excluded memory card`);
   }
 };
 
@@ -325,17 +418,27 @@ const memoryRecordFromCard = (
   updatedAt: now
 });
 
+const isExcludedMemoryCard = (
+  card: MemoryAdvantageCatalogCardFixture
+): card is MemoryAdvantageExcludedMemoryFixture =>
+  "exclusionReason" in card;
+
+const selectableMemoryCards = (
+  cards: readonly MemoryAdvantageCatalogCardFixture[]
+): readonly MemoryAdvantageCardFixture[] =>
+  cards.filter((card): card is MemoryAdvantageCardFixture => !isExcludedMemoryCard(card));
+
 const throwingRepositoryMethod = (method: string): never => {
   throw new Error(`${method} should not be called by memory advantage eval`);
 };
 
 const createMemoryAdvantageRuntime = (
-  cards: readonly MemoryAdvantageCardFixture[],
+  cards: readonly MemoryAdvantageCatalogCardFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[]
 ): DatabaseRuntime => {
   const claims = sourceClaims.map(sourceClaimFromFixture);
   const documents = claims.map(searchDocumentFromClaim);
-  const memories = cards.map(memoryRecordFromCard);
+  const memories = selectableMemoryCards(cards).map(memoryRecordFromCard);
   const searchLexical = async (input: { query: string; limit?: number }) =>
     documents
       .map((document): SearchDocumentSearchResult => ({
@@ -439,11 +542,15 @@ const createMemoryAdvantageRuntime = (
 };
 
 const writeKnowledgeCatalog = async (
-  cards: readonly MemoryAdvantageCardFixture[]
-): Promise<{ readonly root: string; readonly catalogFile: string }> => {
+  cards: readonly MemoryAdvantageCatalogCardFixture[]
+): Promise<{
+  readonly root: string;
+  readonly catalogFile: string;
+  readonly writtenCardIds: readonly string[];
+}> => {
   const root = await mkdtemp(join(tmpdir(), "krn-memory-advantage-"));
   const catalogFile = join(root, "catalog.json");
-  const readModelCards = cards.map((card) => ({
+  const readModelCards = selectableMemoryCards(cards).map((card) => ({
     id: card.id,
     kind: "pattern",
     status: "active",
@@ -480,18 +587,22 @@ const writeKnowledgeCatalog = async (
 
   return {
     root,
-    catalogFile
+    catalogFile,
+    writtenCardIds: readModelCards.map((card) => card.id)
   };
 };
 
 const runCaseVariant = async (
   testCase: MemoryAdvantageCaseFixture,
-  cards: readonly MemoryAdvantageCardFixture[],
+  cards: readonly MemoryAdvantageCatalogCardFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
   idSuffix: string,
   storeOnly: boolean
 ): Promise<BrainSearchPreviewReadback> => {
-  const knowledgeStore = storeOnly ? undefined : await writeKnowledgeCatalog(cards);
+  const knowledgeStore =
+    storeOnly || selectableMemoryCards(cards).length === 0
+      ? undefined
+      : await writeKnowledgeCatalog(cards);
   const command: BrainSearchCommand = {
     kind: "brainSearch",
     query: testCase.query,
@@ -514,7 +625,11 @@ const runCaseVariant = async (
       createDatabaseRuntime: async () => createMemoryAdvantageRuntime(cards, sourceClaims)
     });
 
-    return parseBrainSearchPreview(result.stdout, `${testCase.id}.${idSuffix}`);
+    return parseBrainSearchPreview(
+      result.stdout,
+      `${testCase.id}.${idSuffix}`,
+      knowledgeStore?.writtenCardIds ?? []
+    );
   } finally {
     if (knowledgeStore !== undefined) {
       await rm(knowledgeStore.root, {
@@ -525,6 +640,54 @@ const runCaseVariant = async (
   }
 };
 
+const isBaselineMiss = (
+  readback: BrainSearchPreviewReadback
+): boolean =>
+  readback.answerUsefulness === "not_useful" && readback.selectedKnowledgeIds.length === 0;
+
+const isKrnHit = (
+  readback: BrainSearchPreviewReadback,
+  testCase: MemoryAdvantageCaseFixture
+): boolean =>
+  readback.answerUsefulness === "useful" &&
+  readback.selectedKnowledgeIds.includes(testCase.expectedSelectedKnowledgeId);
+
+const buildMemoryExclusions = (
+  testCase: MemoryAdvantageCaseFixture
+): readonly MemoryAdvantageMemoryExclusionReadback[] =>
+  testCase.priorSession.excludedMemoryCards.map((card) => ({
+    memoryId: `memory:${card.id}`,
+    reason: card.exclusionReason
+  }));
+
+const isExpectedKrnResultSatisfied = (
+  testCase: MemoryAdvantageCaseFixture,
+  readback: BrainSearchPreviewReadback
+): boolean => {
+  const krnHit = isKrnHit(readback, testCase);
+
+  if (testCase.expectedKrnResult === "hit") {
+    return krnHit;
+  }
+
+  return !krnHit && readback.selectedKnowledgeIds.length === 0;
+};
+
+const caseStatus = (
+  testCase: MemoryAdvantageCaseFixture,
+  baseline: BrainSearchPreviewReadback,
+  krnMemory: BrainSearchPreviewReadback,
+  exclusions: readonly MemoryAdvantageMemoryExclusionReadback[]
+): "pass" | "fail" => {
+  const canProveExpectedMiss = testCase.expectedKrnResult === "hit" || exclusions.length > 0;
+
+  return isBaselineMiss(baseline) &&
+    isExpectedKrnResultSatisfied(testCase, krnMemory) &&
+    canProveExpectedMiss
+    ? "pass"
+    : "fail";
+};
+
 const evaluateCase = async (
   testCase: MemoryAdvantageCaseFixture
 ): Promise<MemoryAdvantageCaseReadback> => {
@@ -532,20 +695,25 @@ const evaluateCase = async (
   const baseline = await runCaseVariant(testCase, [], [], "baseline", true);
   const krnMemory = await runCaseVariant(
     testCase,
-    testCase.priorSession.memoryCards,
+    [
+      ...testCase.priorSession.memoryCards,
+      ...testCase.priorSession.excludedMemoryCards
+    ],
     testCase.priorSession.sourceClaims,
     "krn",
     false
   );
-  const baselineMiss =
-    baseline.answerUsefulness === "not_useful" && baseline.selectedKnowledgeIds.length === 0;
-  const krnHit =
-    krnMemory.answerUsefulness === "useful" &&
-    krnMemory.selectedKnowledgeIds.includes(testCase.expectedSelectedKnowledgeId);
+  const baselineMiss = isBaselineMiss(baseline);
+  const krnHit = isKrnHit(krnMemory, testCase);
+  const exclusions = buildMemoryExclusions(testCase);
+  const status = caseStatus(testCase, baseline, krnMemory, exclusions);
 
   return {
     caseId: testCase.id,
+    competency: testCase.competency,
     query: testCase.query,
+    status,
+    expectedKrnResult: testCase.expectedKrnResult,
     priorSession: {
       id: testCase.priorSession.id,
       task: testCase.priorSession.task,
@@ -554,6 +722,7 @@ const evaluateCase = async (
       feedbackRef: testCase.priorSession.feedbackRef,
       applicationOutcome: testCase.priorSession.applicationOutcome,
       createdMemoryIds: testCase.priorSession.memoryCards.map((card) => `memory:${card.id}`),
+      excludedMemoryIds: exclusions.map((exclusion) => exclusion.memoryId),
       createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId)
     },
     "baseline_no_memory": {
@@ -568,10 +737,35 @@ const evaluateCase = async (
       selectedKnowledgeIds: krnMemory.selectedKnowledgeIds,
       selectedSources: krnMemory.selectedSources,
       selectedSourceClaimIds: krnMemory.selectedSourceClaimIds,
+      writtenKnowledgeIds: krnMemory.writtenKnowledgeIds,
       requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
       supportingClaims: krnMemory.supportingClaims,
-      supportingDocuments: krnMemory.supportingDocuments
+      supportingDocuments: krnMemory.supportingDocuments,
+      exclusions
     }
+  };
+};
+
+const buildCompetencyCoverage = (
+  cases: readonly MemoryAdvantageCaseReadback[]
+): MemoryAdvantageEvalResult["competencies"] => {
+  const summarize = (competency: MemoryAdvantageCompetency) => {
+    const matchingCases = cases.filter((testCase) => testCase.competency === competency);
+
+    return {
+      status:
+        matchingCases.length > 0 && matchingCases.every((testCase) => testCase.status === "pass")
+          ? "pass"
+          : "fail",
+      caseIds: matchingCases.map((testCase) => testCase.caseId)
+    } as const;
+  };
+
+  return {
+    retrieval: summarize("retrieval"),
+    learning: summarize("learning"),
+    long_range: summarize("long_range"),
+    forgetting: summarize("forgetting")
   };
 };
 
@@ -579,10 +773,9 @@ export const runMemoryAdvantageEval = async (
   fixture: MemoryAdvantageEvalFixture
 ): Promise<MemoryAdvantageEvalResult> => {
   const cases = await Promise.all(fixture.cases.map(evaluateCase));
-  const status = cases.every((testCase) =>
-    testCase["baseline_no_memory"].result === "miss" &&
-    testCase["krn_memory"].result === "hit"
-  )
+  const competencies = buildCompetencyCoverage(cases);
+  const status = cases.every((testCase) => testCase.status === "pass") &&
+    memoryCompetencies.every((competency) => competencies[competency].status === "pass")
     ? "pass"
     : "fail";
 
@@ -590,18 +783,22 @@ export const runMemoryAdvantageEval = async (
     kind: "krn.memoryAdvantage.eval.v1",
     fixtureVersion: fixture.version,
     status,
+    competencies,
     cases,
     proof: {
       proves: [
         "the fixture query is unsupported when no KRN memory or source evidence is available",
         "a priorSession fixture supplies evidence, review, feedback refs, and nested learned memory/source inputs before the later task can hit",
         "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths",
-        "the expected memory/source id is present in selectedKnowledge",
+        "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
+        "the expected memory/source id is present in selectedKnowledge for hit cases",
+        "the eval fixture can pass declared stale or unsupported memory into the case runner, exclude it before catalog write, and surface the explicit exclusion reason",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [
         "arbitrary task superiority over vanilla Codex",
         "production retrieval/recall quality; this eval uses in-memory lexical token overlap",
+        "runtime stale-memory detection for stored fixture cards or arbitrary production MemoryRecord rows",
         "automatic Memory Core promotion from evidence or feedback",
         "live Postgres runtime behavior",
         "LLM output quality",

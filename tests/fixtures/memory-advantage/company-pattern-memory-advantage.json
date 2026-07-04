@@ -2,8 +2,11 @@
   "version": "1",
   "cases": [
     {
-      "id": "second-opinion-after-large-slice",
+      "id": "retrieve-second-opinion-procedure",
+      "competency": "retrieval",
       "query": "after a larger KRN kernel migration slice should Codex ask Claude for second opinion or just close the work",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice",
       "priorSession": {
         "id": "session:second-opinion-skill-refinement",
         "task": "Refine the second-opinion-claude skill after a larger KRN kernel slice and record the governed review loop as learned operating evidence.",
@@ -25,6 +28,7 @@
             "nextAction": "use"
           }
         ],
+        "excludedMemoryCards": [],
         "sourceClaims": [
           {
             "sourceClaimId": "source:second-opinion-after-large-slice",
@@ -36,8 +40,134 @@
             "doesNotProve": "This does not prove second opinion is required for small deterministic eval fixture edits."
           }
         ]
-      },
-      "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice"
+      }
+    },
+    {
+      "id": "learn-company-review-standard",
+      "competency": "learning",
+      "query": "when a slice changes KRN memory eval behavior what company review standard should Codex apply before closing",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "pattern:company-review-standard-after-eval-change",
+      "priorSession": {
+        "id": "session:memory-eval-review-standard",
+        "task": "A prior memory eval slice passed local tests but Claude found a proof overclaim, so Codex learned to reconcile reviewer evidence before closing.",
+        "evidenceRef": "evidence:memory-eval-review-standard",
+        "reviewRef": "review:memory-eval-review-standard",
+        "feedbackRef": "feedback:memory-eval-review-standard-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:company-review-standard-after-eval-change",
+            "title": "Company review standard after memory eval change",
+            "summary": "When a KRN memory eval slice changes behavior, Codex should verify focused tests, run the eval command, typecheck, diff-check, and reconcile Claude findings before closing.",
+            "consumers": [
+              "memory eval closure",
+              "company review standard"
+            ],
+            "falsifier": "A memory eval behavior change closes with only a single unit test and no review evidence.",
+            "doesNotProve": "This does not prove the eval measures arbitrary agent quality.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:company-review-standard-after-eval-change",
+            "claim": "KRN memory eval behavior changes require focused tests, eval command evidence, typecheck, diff-check, and reconciled second-opinion findings before closure.",
+            "mechanism": "The closure loop combines local deterministic checks with an independent falsification review and records proof/non-proof boundaries.",
+            "krnImplication": "A later slice that changes memory eval behavior should apply the learned closure standard rather than closing on one green assertion.",
+            "consumer": "memory eval closure",
+            "falsifier": "A later memory eval behavior change closes without focused eval evidence or reconciled review output.",
+            "doesNotProve": "This does not prove every documentation-only edit needs Claude review."
+          }
+        ]
+      }
+    },
+    {
+      "id": "long-range-source-authority-boundary",
+      "competency": "long_range",
+      "query": "months after the source authority fixes what rule should Codex remember about accepted SourceClaims in activation context",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:accepted-source-claims-only",
+      "priorSession": {
+        "id": "session:source-authority-boundary",
+        "task": "Earlier source authority hardening taught that activation and source-search may treat only accepted SourceClaims as context authority.",
+        "evidenceRef": "evidence:source-authority-boundary",
+        "reviewRef": "review:source-authority-boundary",
+        "feedbackRef": "feedback:source-authority-boundary-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:accepted-source-claims-only",
+            "title": "Accepted SourceClaims only for authority",
+            "summary": "KRN activation and source-search readbacks must exclude proposed, rejected, and deprecated SourceClaims before they can appear as authoritative context.",
+            "consumers": [
+              "source authority",
+              "activation context"
+            ],
+            "falsifier": "A proposed or rejected SourceClaim appears as supporting context authority.",
+            "doesNotProve": "This does not prove accepted claims are true or decision-linked.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:accepted-source-claims-only",
+            "claim": "KRN activation and source-search authority is limited to accepted SourceClaims.",
+            "mechanism": "The authority filter excludes proposed, rejected, and deprecated claims before ContextROI or source-search support packaging.",
+            "krnImplication": "Long-range source authority recall should keep non-accepted claims out of implementation context.",
+            "consumer": "source authority",
+            "falsifier": "A non-accepted claim survives as a source-search supporting claim or context inclusion.",
+            "doesNotProve": "This does not prove source truth or ranking quality."
+          }
+        ]
+      }
+    },
+    {
+      "id": "forget-obsolete-no-second-opinion-rule",
+      "competency": "forgetting",
+      "query": "for a larger KRN migration should Codex follow the old no second opinion rule from before the governed reviewer existed",
+      "expectedKrnResult": "miss",
+      "expectedSelectedKnowledgeId": "pattern:obsolete-no-second-opinion-rule",
+      "priorSession": {
+        "id": "session:obsolete-second-opinion-rule",
+        "task": "An old workflow note said larger slices could close without second opinion, but later review reversed it.",
+        "evidenceRef": "evidence:obsolete-second-opinion-rule",
+        "reviewRef": "review:obsolete-second-opinion-rule-rejected",
+        "feedbackRef": "feedback:obsolete-second-opinion-rule-hurt",
+        "applicationOutcome": "hurt",
+        "memoryCards": [
+          {
+            "id": "pattern:routine-dependency-pin-cleanup",
+            "title": "Routine dependency pin cleanup",
+            "summary": "For a small package metadata cleanup, local deterministic tests and typecheck are enough evidence when no kernel behavior changes.",
+            "consumers": [
+              "small maintenance cleanup",
+              "dependency pin"
+            ],
+            "falsifier": "The slice changes memory, source, activation, or evaluation behavior.",
+            "doesNotProve": "This does not apply to behavior-changing evaluation work.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [
+          {
+            "id": "pattern:obsolete-no-second-opinion-rule",
+            "title": "Obsolete no second opinion rule",
+            "summary": "Old guidance said Codex may close larger KRN migrations from local tests only without a governed second opinion loop.",
+            "consumers": [
+              "large slice closure",
+              "obsolete migration rule"
+            ],
+            "falsifier": "The governed second-opinion skill is available and required by the current operating loop.",
+            "doesNotProve": "This does not prove every tiny deterministic edit needs review.",
+            "nextAction": "do_not_use",
+            "exclusionReason": "stale memory contradicted by later governed second-opinion operating rule"
+          }
+        ],
+        "sourceClaims": []
+      }
     }
   ]
 }
