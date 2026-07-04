@@ -194,9 +194,17 @@ export interface SearchDocumentRecord extends SearchDocumentSubjectFields {
   updatedAt: IsoTimestamp;
 }
 
+export interface EmbeddingModelProvenance {
+  embeddingModelId: EmbeddingModelId;
+  provider: string;
+  model: string;
+  dimensions: number;
+}
+
 export interface SearchDocumentSearchResult extends SearchDocumentRecord {
   lexicalScore: number;
   vectorScore?: number;
+  embeddingModel?: EmbeddingModelProvenance;
   graphScore?: number;
   temporalScore?: number;
   contextRoiScore?: number;

@@ -159,7 +159,8 @@ const mergeSearchResults = (
     merged.set(result.id, {
       ...(existing ?? result),
       lexicalScore: existing?.lexicalScore ?? 0,
-      vectorScore: result.vectorScore ?? 0
+      vectorScore: result.vectorScore ?? 0,
+      ...(result.embeddingModel === undefined ? {} : { embeddingModel: result.embeddingModel })
     });
   }
 
@@ -426,10 +427,12 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     const rows = await this.db
       .select({
         document: searchDocuments,
+        embeddingModel: embeddingModels,
         vectorScore
       })
       .from(embeddings)
       .innerJoin(searchDocuments, eq(embeddings.searchDocumentId, searchDocuments.id))
+      .innerJoin(embeddingModels, eq(embeddings.embeddingModelId, embeddingModels.id))
       .where(
         and(
           eq(embeddings.validityStatus, "active"),
@@ -444,7 +447,13 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     return rows.map((row) => ({
       ...mapSearchDocument(row.document),
       lexicalScore: 0,
-      vectorScore: row.vectorScore ?? 0
+      vectorScore: row.vectorScore ?? 0,
+      embeddingModel: {
+        embeddingModelId: row.embeddingModel.id,
+        provider: row.embeddingModel.provider,
+        model: row.embeddingModel.model,
+        dimensions: row.embeddingModel.dimensions
+      }
     }));
   }
 

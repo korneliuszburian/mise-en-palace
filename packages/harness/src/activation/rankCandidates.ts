@@ -457,7 +457,10 @@ export const toSearchCandidate = (document: SearchDocumentSearchResult): Activat
     : { antiMemoryRecordId: document.antiMemoryRecordId }),
   metadata: {
     subjectType: document.subjectType,
-    subjectId: document.subjectId
+    subjectId: document.subjectId,
+    ...(document.embeddingModel === undefined
+      ? {}
+      : { embeddingModel: document.embeddingModel })
   }
 });
 

@@ -31,6 +31,12 @@ export interface RetrievalSubstrateSmokeReport {
   vectorResultCount: number;
   hybridResultCount: number;
   embeddingModelId: string;
+  embeddingModelProvider: string;
+  embeddingModelName: string;
+  embeddingModelDimensions: number;
+  vectorResultEmbeddingModelId?: string;
+  hybridResultEmbeddingModelId?: string;
+  lexicalEmbeddingModelProvenance: "unavailable_lexical_only";
   embeddingId: string;
   retrievalRunId: string;
   retrievalCandidateCount: number;
@@ -290,9 +296,16 @@ export const runRetrievalSubstrateSmokeCheck = async (
       limit: 5
     });
 
-    if (vectorResults[0]?.id !== sourceDocument.id) {
+    const firstVectorResult = vectorResults[0];
+
+    if (firstVectorResult?.id !== sourceDocument.id) {
       throw new Error("Retrieval substrate smoke vector search did not rank source document first");
     }
+
+    if (firstVectorResult.embeddingModel?.embeddingModelId !== embeddingModel.id) {
+      throw new Error("Retrieval substrate smoke vector result did not expose embedding model provenance");
+    }
+    const vectorResultEmbeddingModelId = firstVectorResult.embeddingModel.embeddingModelId;
 
     const hybridResults = await retrievalRepository.searchHybrid({
       projectId: project.id,
@@ -305,6 +318,13 @@ export const runRetrievalSubstrateSmokeCheck = async (
     if (!hybridResults.some((result) => result.id === sourceDocument.id)) {
       throw new Error("Retrieval substrate smoke hybrid search did not include source document");
     }
+
+    const hybridSourceResult = hybridResults.find((result) => result.id === sourceDocument.id);
+
+    if (hybridSourceResult?.embeddingModel?.embeddingModelId !== embeddingModel.id) {
+      throw new Error("Retrieval substrate smoke hybrid result did not expose embedding model provenance");
+    }
+    const hybridResultEmbeddingModelId = hybridSourceResult.embeddingModel.embeddingModelId;
 
     const retrievalRun = await retrievalRepository.createRetrievalRun({
       projectId: project.id,
@@ -452,6 +472,12 @@ export const runRetrievalSubstrateSmokeCheck = async (
       vectorResultCount,
       hybridResultCount,
       embeddingModelId: embeddingModel.id,
+      embeddingModelProvider: embeddingModel.provider,
+      embeddingModelName: embeddingModel.model,
+      embeddingModelDimensions: embeddingModel.dimensions,
+      vectorResultEmbeddingModelId,
+      hybridResultEmbeddingModelId,
+      lexicalEmbeddingModelProvenance: "unavailable_lexical_only",
       embeddingId: embedding.id,
       retrievalRunId: retrievalRun.id,
       retrievalCandidateCount,

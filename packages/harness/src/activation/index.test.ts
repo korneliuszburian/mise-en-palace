@@ -254,6 +254,29 @@ describe("activation engine", () => {
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
   });
 
+  it("preserves embedding model provenance on search activation candidates", () => {
+    const search = toSearchCandidate(
+      searchDocument({
+        vectorScore: 80,
+        embeddingModel: {
+          embeddingModelId: "embedding-model-1",
+          provider: "local-smoke",
+          model: "smoke-1536",
+          dimensions: 1536
+        }
+      })
+    );
+
+    expect(search.metadata).toMatchObject({
+      embeddingModel: {
+        embeddingModelId: "embedding-model-1",
+        provider: "local-smoke",
+        model: "smoke-1536",
+        dimensions: 1536
+      }
+    });
+  });
+
   it("carries source taxonomy projections from SourceClaim into activation context", () => {
     const query = buildSourceQuery(task);
     const source = toSourceClaimCandidate(sourceClaim({
