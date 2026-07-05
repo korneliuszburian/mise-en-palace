@@ -447,6 +447,14 @@ export type CliCommand =
       falsifier?: string;
       consumer?: string;
       metadata: Record<string, string>;
+      // When link is true (with --persist), also create a SourceDecisionEdge in
+      // the same command so a governing decision can be adopted + linked at once.
+      link?: boolean;
+      linkTargetType?: string;
+      linkTargetId?: string;
+      linkSupportType?: string;
+      linkConfidence?: string;
+      linkNotes?: string;
     }
   | {
       kind: "sourceDecisionGaps";

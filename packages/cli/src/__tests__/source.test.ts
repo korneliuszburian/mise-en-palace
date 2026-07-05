@@ -511,6 +511,149 @@ describe("runCli", () => {
     expect(result.stdout).toContain("doesNotProve: SourceDecision adoption does not prove source truth");
   });
 
+  it("adopts and links a source decision in one command via --link", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "adopt",
+        "--source-claim-id",
+        "source-claim-1",
+        "--decision",
+        "Adopt and link in one command.",
+        "--rationale",
+        "The --link path removes the two-command teach friction.",
+        "--falsifier",
+        "The edge is absent from decision-link readback.",
+        "--consumer",
+        "source decision adopt link dogfood",
+        "--persist",
+        "--link",
+        "--link-target-type",
+        "architecture_decision",
+        "--link-target-id",
+        "governing-bounded-loop",
+        "--link-support-type",
+        "implementation-boundary",
+        "--link-confidence",
+        "high",
+        "--link-notes",
+        "Combined adopt+link edge."
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            ...unusedSourceRepository,
+            async createSourceDecision(input) {
+              return {
+                id: "source-decision-1",
+                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
+                status: input.status,
+                decision: input.decision,
+                rationale: input.rationale,
+                falsifier: input.falsifier,
+                consumer: input.consumer,
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "KRN source decisions should be operator-facing.",
+                mechanism: "Combined adopt+link updates claim lifecycle.",
+                krnImplication: "One command can adopt and decision-link.",
+                doesNotProve: "This does not prove source truth.",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "source decision adopt link dogfood",
+                falsifier: "Accepted claim readback fails.",
+                status: "accepted",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge(input) {
+              return {
+                id: "source-decision-edge-1",
+                sourceClaimId: input.sourceClaimId,
+                targetType: input.targetType,
+                targetId: input.targetId,
+                supportType: input.supportType,
+                confidence: input.confidence,
+                notes: input.notes,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+            }
+          },
+          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("sourceDecision: source-decision-1");
+    expect(result.stdout).toContain("sourceClaimReadback: accepted");
+    expect(result.stdout).toContain("sourceDecisionEdge: source-decision-edge-1");
+    expect(result.stdout).toContain("edgeTarget: architecture_decision/governing-bounded-loop");
+    expect(result.stdout).toContain("edgeSupportType: implementation-boundary");
+    expect(result.stdout).toContain("edgeConfidence: high");
+  });
+
+  it("rejects --link without --link-target-type and --link-target-id", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "adopt",
+        "--source-claim-id",
+        "source-claim-1",
+        "--decision",
+        "Adopt with link but no target.",
+        "--rationale",
+        "The --link path requires a target.",
+        "--falsifier",
+        "The edge has no target.",
+        "--consumer",
+        "source decision adopt link dogfood",
+        "--persist",
+        "--link"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Usage: krn source decision adopt");
+    expect(result.stderr).toContain("--link");
+  });
+
   it("fails source decision adoption when accepted claim readback is missing", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,

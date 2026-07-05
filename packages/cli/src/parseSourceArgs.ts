@@ -132,7 +132,7 @@ export const formatSourceDecisionLinkUsage = (): string =>
 
 export const formatSourceDecisionAdoptUsage = (): string =>
   [
-    "Usage: krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
+    "Usage: krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist] [--link --link-target-type <type> --link-target-id <id> --link-support-type <type> --link-confidence <low|medium|high> --link-notes \"...\"]",
     "",
     "Required:",
     "--source-claim-id",
@@ -143,7 +143,13 @@ export const formatSourceDecisionAdoptUsage = (): string =>
     "",
     "Optional:",
     "--metadata key=value",
-    "--persist"
+    "--persist",
+    "--link (with --persist, also create a SourceDecisionEdge in the same command; requires --link-target-type and --link-target-id)",
+    "--link-target-type <type>",
+    "--link-target-id <id>",
+    "--link-support-type <type>",
+    "--link-confidence <low|medium|high>",
+    "--link-notes \"...\""
   ].join("\n") + "\n";
 
 export const formatSourceClaimRejectUsage = (): string =>
@@ -267,7 +273,12 @@ const sourceDecisionAdoptStringOptions = {
   "--decision": "decision",
   "--rationale": "rationale",
   "--falsifier": "falsifier",
-  "--consumer": "consumer"
+  "--consumer": "consumer",
+  "--link-target-type": "linkTargetType",
+  "--link-target-id": "linkTargetId",
+  "--link-support-type": "linkSupportType",
+  "--link-confidence": "linkConfidence",
+  "--link-notes": "linkNotes"
 } as const;
 
 const parseProjectOption = (
@@ -321,14 +332,27 @@ const hasText = (value: string | undefined): boolean =>
 
 const hasSourceDecisionAdoptRequiredFields = (
   sourceCommand: SourceDecisionAdoptCommand
-): boolean =>
-  [
+): boolean => {
+  const baseFields = [
     sourceCommand.sourceClaimId,
     sourceCommand.decision,
     sourceCommand.rationale,
     sourceCommand.falsifier,
     sourceCommand.consumer
   ].every(hasText);
+
+  if (!baseFields) {
+    return false;
+  }
+
+  // When --link is requested, the edge target must be specified so the combined
+  // command does not silently create a decision without a usable edge.
+  if (sourceCommand.link === true) {
+    return hasText(sourceCommand.linkTargetType) && hasText(sourceCommand.linkTargetId);
+  }
+
+  return true;
+};
 
 const sourceArtifactPreviewStringOptions = {
   "--claim": "claim",
@@ -1098,8 +1122,14 @@ const parseSourceDecisionAdoptToken = (
   rest: readonly string[],
   index: number,
   sourceCommand: SourceDecisionAdoptCommand
-): SourceTokenParseResult =>
-  parsePersistedMetadataToken(rest, index, sourceCommand, {
+): SourceTokenParseResult => {
+  if (rest[index] === "--link") {
+    sourceCommand.link = true;
+
+    return { kind: "next", nextIndex: index };
+  }
+
+  return parsePersistedMetadataToken(rest, index, sourceCommand, {
     fallbackUsage: formatSourceDecisionAdoptUsage(),
     optionMap: sourceDecisionAdoptStringOptions,
     assignOption: mapStringOptionAssignment<SourceDecisionAdoptCommand, SourceDecisionAdoptStringKey>({
@@ -1117,9 +1147,25 @@ const parseSourceDecisionAdoptToken = (
       },
       consumer: (command, value) => {
         command.consumer = value;
+      },
+      linkTargetType: (command, value) => {
+        command.linkTargetType = value;
+      },
+      linkTargetId: (command, value) => {
+        command.linkTargetId = value;
+      },
+      linkSupportType: (command, value) => {
+        command.linkSupportType = value;
+      },
+      linkConfidence: (command, value) => {
+        command.linkConfidence = value;
+      },
+      linkNotes: (command, value) => {
+        command.linkNotes = value;
       }
     }, sourceCommand)
   });
+};
 
 const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {

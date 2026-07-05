@@ -1,4 +1,5 @@
 import {
+  parseSourceDecisionEdgeInput,
   parseSourceDecisionInput
 } from "@krn/core";
 import {
@@ -53,6 +54,10 @@ const formatPreview = (
 const formatPersisted = (input: {
   sourceDecisionId: string;
   decision: ReturnType<typeof parseSourceDecisionInput>;
+  link?: {
+    sourceDecisionEdgeId: string;
+    edge: ReturnType<typeof parseSourceDecisionEdgeInput>;
+  };
 }): string =>
   [
     "KRN Source Decision Adopt",
@@ -67,6 +72,14 @@ const formatPersisted = (input: {
     `rationale: ${input.decision.rationale}`,
     `consumer: ${input.decision.consumer}`,
     `falsifier: ${input.decision.falsifier}`,
+    ...(input.link === undefined
+      ? []
+      : [
+          `sourceDecisionEdge: ${input.link.sourceDecisionEdgeId}`,
+          `edgeTarget: ${input.link.edge.targetType}/${input.link.edge.targetId}`,
+          `edgeSupportType: ${input.link.edge.supportType}`,
+          `edgeConfidence: ${input.link.edge.confidence}`
+        ]),
     "Memory mutation: none",
     "Graph runtime: none",
     "doesNotProve: SourceDecision adoption does not prove source truth, target correctness, graph retrieval, crawler readiness, or product readiness"
@@ -140,10 +153,35 @@ export const runSourceDecisionAdoptCommand = async (
       );
     }
 
+    let link: { sourceDecisionEdgeId: string; edge: ReturnType<typeof parseSourceDecisionEdgeInput> } | undefined;
+
+    if (command.link === true) {
+      const edgeInput = parseSourceDecisionEdgeInput({
+        sourceClaimId: decisionInput.sourceClaimId,
+        targetType: command.linkTargetType,
+        targetId: command.linkTargetId,
+        supportType: command.linkSupportType,
+        confidence: command.linkConfidence,
+        notes: command.linkNotes,
+        metadata: command.metadata
+      });
+      const sourceDecisionEdge = await databaseRuntime.sourceRepository.createSourceDecisionEdge({
+        sourceClaimId: edgeInput.sourceClaimId,
+        targetType: edgeInput.targetType,
+        targetId: edgeInput.targetId,
+        supportType: edgeInput.supportType,
+        confidence: edgeInput.confidence,
+        notes: edgeInput.notes,
+        metadata: edgeInput.metadata
+      });
+      link = { sourceDecisionEdgeId: sourceDecisionEdge.id, edge: edgeInput };
+    }
+
     return {
       stdout: formatPersisted({
         sourceDecisionId: sourceDecision.id,
-        decision: decisionInput
+        decision: decisionInput,
+        ...(link === undefined ? {} : { link })
       })
     };
   } finally {
