@@ -23,6 +23,7 @@ const now = "2026-07-03T19:00:00.000Z";
 const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
 const missingClaimId = "8beef0cc-6251-4c09-a3b8-b97383b4f234" as SourceClaim["id"];
 const linkedClaimId = "470d0876-8d18-468e-b8d2-f4715cd83354" as SourceClaim["id"];
+const proposedClaimId = "1f0c6e2a-9d77-4104-8bb1-2c7e9a0f5512" as SourceClaim["id"];
 
 const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
   id: missingClaimId,
@@ -182,6 +183,18 @@ describe("runSourceDecisionGapsCommand", () => {
         json: true
       },
       createDatabaseRuntime: runtime({
+        claims: [
+          sourceClaim(),
+          sourceClaim({
+            id: linkedClaimId,
+            claim: "Linked SourceClaim should not appear as a gap."
+          }),
+          sourceClaim({
+            id: proposedClaimId,
+            status: "proposed",
+            claim: "Proposed SourceClaim was never adopted and has no SourceDecision."
+          })
+        ],
         onRuntimeInput(input) {
           runtimeInput = input;
         },
@@ -193,6 +206,8 @@ describe("runSourceDecisionGapsCommand", () => {
     const output = parseJsonObject(result.stdout);
     const gaps = arrayValue(output.missingDecisionEdgeClaims, "missingDecisionEdgeClaims");
     const firstGap = objectValue(gaps[0], "first gap");
+    const unadopted = arrayValue(output.unadoptedClaims, "unadoptedClaims");
+    const firstUnadopted = objectValue(unadopted[0], "first unadopted");
 
     expect(output.kind).toBe("source_decision_gaps");
     expect(output.projectId).toBe(projectId);
@@ -203,6 +218,9 @@ describe("runSourceDecisionGapsCommand", () => {
     expect(output.missingDecisionEdgeCount).toBe(1);
     expect(firstGap.sourceClaimId).toBe(missingClaimId);
     expect(firstGap.caveat).toContain("has no SourceDecisionEdge support");
+    expect(output.unadoptedSourceClaimCount).toBe(1);
+    expect(firstUnadopted.sourceClaimId).toBe(proposedClaimId);
+    expect(firstUnadopted.status).toBe("proposed");
     expect(runtimeInput?.projectId).toBe("project-explicit");
     expect(runtimeInput?.requireProjectKernelForExplicitProject).toBe(false);
     expect(closed).toBe(true);
@@ -230,6 +248,7 @@ describe("runSourceDecisionGapsCommand", () => {
 
     expect(result.stdout).toContain("KRN Source Decision Gaps");
     expect(result.stdout).toContain("missingDecisionEdgeClaims: 0");
+    expect(result.stdout).toContain("unadoptedSourceClaims: 0");
     expect(result.stdout).toContain("- none");
   });
 });

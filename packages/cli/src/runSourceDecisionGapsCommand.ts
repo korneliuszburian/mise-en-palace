@@ -40,6 +40,13 @@ interface SourceDecisionGap {
   doesNotProve: string;
 }
 
+interface UnadoptedSourceClaim {
+  sourceClaimId: SourceClaim["id"];
+  status: SourceClaim["status"];
+  claim: string;
+  consumer: string;
+}
+
 interface SourceDecisionGapsReport {
   kind: "source_decision_gaps";
   projectId: string;
@@ -51,6 +58,13 @@ interface SourceDecisionGapsReport {
   linkedSourceClaimCount: number;
   missingDecisionEdgeCount: number;
   missingDecisionEdgeClaims: readonly SourceDecisionGap[];
+  // Claims in this project whose status is not "accepted" - they have no active
+  // SourceDecision, so source-search cannot surface them. Surfacing this count
+  // is the difference between "no missing edges" (everything accepted is
+  // linked) and "the project has raw claims that were never promoted to
+  // decisions at all".
+  unadoptedSourceClaimCount: number;
+  unadoptedClaims: readonly UnadoptedSourceClaim[];
   proof: {
     proves: readonly string[];
     doesNotProve: readonly string[];
@@ -86,6 +100,7 @@ const formatText = (report: SourceDecisionGapsReport): string =>
     `acceptedSourceClaims: ${report.acceptedSourceClaimCount}`,
     `linkedSourceClaims: ${report.linkedSourceClaimCount}`,
     `missingDecisionEdgeClaims: ${report.missingDecisionEdgeCount}`,
+    `unadoptedSourceClaims: ${report.unadoptedSourceClaimCount}`,
     "",
     "Missing SourceDecisionEdge claims:",
     ...(report.missingDecisionEdgeClaims.length === 0
@@ -98,6 +113,18 @@ const formatText = (report: SourceDecisionGapsReport): string =>
             ` consumer:${gap.consumer}`,
             ` claim:${gap.claim}`,
             ` caveat:${gap.caveat}`
+          ].join("")
+        )),
+    "",
+    "Un-adopted SourceClaims (status is not accepted; no active SourceDecision, invisible to source-search):",
+    ...(report.unadoptedClaims.length === 0
+      ? ["- none"]
+      : report.unadoptedClaims.map((claim) =>
+          [
+            `- sourceClaim:${claim.sourceClaimId}`,
+            ` status:${claim.status}`,
+            ` consumer:${claim.consumer}`,
+            ` claim:${claim.claim}`
           ].join("")
         )),
     "",
@@ -120,6 +147,14 @@ const buildReport = async (input: {
 
   const claims = await input.sourceRepository.listClaimsForProject(input.projectId, input.limit);
   const acceptedClaims = claims.filter((claim) => claim.status === "accepted");
+  const unadoptedClaims = claims
+    .filter((claim) => claim.status !== "accepted")
+    .map((claim) => ({
+      sourceClaimId: claim.id,
+      status: claim.status,
+      claim: claim.claim,
+      consumer: claim.consumer
+    }));
   const edgeGroups = await Promise.all(acceptedClaims.map(async (claim) => ({
     claim,
     edges: await listSourceDecisionEdgesForClaim(claim.id)
@@ -138,14 +173,18 @@ const buildReport = async (input: {
     linkedSourceClaimCount: linked.length,
     missingDecisionEdgeCount: missing.length,
     missingDecisionEdgeClaims: missing.map((item) => sourceDecisionGapFor(item.claim)),
+    unadoptedSourceClaimCount: unadoptedClaims.length,
+    unadoptedClaims,
     proof: {
       proves: [
-        "read-only project scan can identify accepted SourceClaims without SourceDecisionEdge readback"
+        "read-only project scan can identify accepted SourceClaims without SourceDecisionEdge readback",
+        "read-only project scan can count SourceClaims that were never adopted (status is not accepted) and are therefore invisible to source-search"
       ],
       doesNotProve: [
         "source truth",
         "claim usefulness",
-        "that a missing edge is a defect",
+        "that a missing edge or an un-adopted claim is a defect",
+        "that an un-adopted claim should be adopted",
         "Memory Core mutation",
         "product readiness"
       ]
