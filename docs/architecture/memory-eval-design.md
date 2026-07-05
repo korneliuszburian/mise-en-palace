@@ -77,26 +77,32 @@ bound its own advantage claim:
    earlier advantage shape because the prompt already names evidence refs,
    verification, changed files, and `doesNotProve`.
 
-The current readback reports 23 cases: 17 advantage wins, 4
+The current readback reports 25 cases: 19 advantage wins, 4
 neutral/no-advantage cases, and 1 case that breaks the prior interdependent
 advantage shape. Seven held-out firm-pattern challenges explicitly state the
 remembered standard, expected decision, baseline failure mode, and falsifier:
 six currently beat the simple lexical baseline, and one obvious TypeScript
 typecheck standard is intentionally classified as baseline-sufficient neutral.
-Neutral cases are not failures; they are evidence that KRN must not claim broad
-superiority when the simple lexical baseline already selects the same expected
-knowledge or contract. Each neutral or broken-prior delta carries an
-`advantageDelta.limitation` classification so the eval can separate bounded
-baseline parity from fixture drift or regression candidates.
+Two further held-out cases turn remembered engineering standards into
+implementation decisions: an idempotency-key requirement on state-mutating
+writes/enqueues (competency: learning) and bounded exponential backoff with
+jitter on retries against a flaky dependency (competency: long_range). In both,
+simple lexical retrieval selects the unsafe shortcut first while KRN selects the
+source-backed standard. Neutral cases are not failures; they are evidence that
+KRN must not claim broad superiority when the simple lexical baseline already
+selects the same expected knowledge or contract. Each neutral or broken-prior
+delta carries an `advantageDelta.limitation` classification so the eval can
+separate bounded baseline parity from fixture drift or regression candidates.
 
 Every case also emits `implementation_decision` with
 `decision_before_memory`, `decision_after_krn`, selected evidence refs,
 selected evidence ids, a changed/neutral/rejection class, and a non-proof
 boundary. This turns memory hits into deterministic coding-decision readback:
-one case changes an unsafe cast-JSON decision into an unknown-first parser
-decision, one neutral case keeps the same typecheck decision, and stale/source
-conflict cases show rejection protection through excluded evidence ids. The
-current class distribution is 7 wins, 6 neutral decisions, 10
+the cast-JSON case changes into an unknown-first parser decision, the
+idempotency and retry cases change fire-and-forget/naive-loop decisions into
+source-backed standards, one neutral case keeps the same typecheck decision,
+and stale/source conflict cases show rejection protection through excluded
+evidence ids. The current class distribution is 9 wins, 6 neutral decisions, 10
 rejection-protection decisions, and 0 regression decisions. This does not prove
 live Codex would follow the decision without a separate execution-output
 evidence check.
@@ -301,8 +307,8 @@ reports a deterministic Codex-vs-KRN sweep:
    changed files, proof/non-proof readback, and selected memory/source ids when
    retrieval contributed context.
 
-Current readback reports 46 comparison cases over 23 source prompts, including
-34 win comparisons, 8 neutral comparisons, and 4 loss comparisons. Neutral
+Current readback reports 50 comparison cases over 25 source prompts, including
+38 win comparisons, 8 neutral comparisons, and 4 loss comparisons. Neutral
 cases remain visible with `baseline_already_sufficient` labels instead of being
 treated as KRN wins. It also separates broad selected-content deltas from real
 execution-contract deltas: 38 comparisons change selected content/proxy state,

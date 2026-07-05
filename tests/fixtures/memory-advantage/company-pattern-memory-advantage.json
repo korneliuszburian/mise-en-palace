@@ -1487,6 +1487,124 @@
         ],
         "distractorSourceClaims": []
       }
+    },
+    {
+      "id": "heldout-coding-decision-idempotency-key",
+      "competency": "learning",
+      "heldOut": true,
+      "query": "when implementing a state-mutating write or enqueue should Codex fire the operation directly without a key or require an idempotency key so retries cannot duplicate the side effect",
+      "distractorClasses": ["adjacent-kernel-boundary", "generic-quality-guidance"],
+      "baselineFailureRationale": "A simple lexical baseline can select the fire-and-forget write packet because it repeats write, enqueue, operation, directly, without, key, and retry terms more densely than the idempotency-key boundary.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:idempotency-key-on-writes",
+      "priorSession": {
+        "id": "session:idempotency-key-on-writes",
+        "task": "A prior retained worker write boundary taught that every state-mutating write or enqueue must carry an idempotency key so a retry cannot duplicate the side effect.",
+        "evidenceRef": "evidence:idempotency-key-on-writes",
+        "reviewRef": "review:idempotency-key-on-writes",
+        "feedbackRef": "feedback:idempotency-key-on-writes-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:idempotency-key-on-state-writes",
+            "title": "Idempotency key on state-mutating writes",
+            "summary": "State-mutating writes must carry an idempotency key so a retried operation recognizes its own prior effect instead of duplicating it.",
+            "consumers": [
+              "worker enqueue write boundary",
+              "retry-safe state mutation"
+            ],
+            "falsifier": "A state-mutating write or enqueue is implemented without an idempotency key and a retry duplicates the side effect.",
+            "doesNotProve": "This does not prove every idempotency scheme is correct or that the key is the only retry-safety mechanism.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:fire-and-forget-write-no-key",
+            "title": "Fire-and-forget write without a key",
+            "summary": "When implementing a state-mutating write or enqueue, fire the operation directly without a key and let the call complete for speed; a retry can run the write again immediately.",
+            "consumers": [
+              "fast write path",
+              "unsafe enqueue without key"
+            ],
+            "falsifier": "The retained worker write boundary requires an idempotency key on every state-mutating write so retries cannot duplicate the side effect.",
+            "doesNotProve": "This intentionally represents the baseline's tempting unsafe implementation decision.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:idempotency-key-on-writes",
+            "claim": "A retained worker write boundary requires an idempotency key on every state-mutating operation so retry duplication is impossible.",
+            "mechanism": "An idempotency key lets a retried write recognize its own prior effect instead of duplicating the side effect.",
+            "krnImplication": "For state-mutating write or enqueue implementation work, KRN should select the idempotency-key decision instead of a fire-and-forget write.",
+            "consumer": "worker enqueue write boundary",
+            "falsifier": "A state-mutating write is implemented without an idempotency key and a retry duplicates the side effect.",
+            "doesNotProve": "This does not prove the write path is otherwise correct or complete."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
+    },
+    {
+      "id": "heldout-coding-decision-retry-backoff",
+      "competency": "long_range",
+      "heldOut": true,
+      "query": "when implementing retries for a flaky external call should Codex use a naive tight retry loop or bounded exponential backoff with jitter",
+      "distractorClasses": ["adjacent-kernel-boundary", "generic-quality-guidance"],
+      "baselineFailureRationale": "A simple lexical baseline can select the naive retry loop packet because it repeats retries, flaky, external, call, naive, tight, retry, and loop terms more densely than the backoff boundary.",
+      "expectedKrnResult": "hit",
+      "expectedSelectedKnowledgeId": "source:bounded-exponential-backoff-jitter",
+      "priorSession": {
+        "id": "session:bounded-exponential-backoff-jitter",
+        "task": "A prior retained reliability boundary taught that retries against a flaky dependency must use bounded exponential backoff with jitter so synchronized overload does not amplify outages.",
+        "evidenceRef": "evidence:bounded-exponential-backoff-jitter",
+        "reviewRef": "review:bounded-exponential-backoff-jitter",
+        "feedbackRef": "feedback:bounded-exponential-backoff-jitter-helped",
+        "applicationOutcome": "helped",
+        "memoryCards": [
+          {
+            "id": "pattern:bounded-exponential-backoff-jitter",
+            "title": "Bounded exponential backoff with jitter",
+            "summary": "Retries against a flaky dependency must use bounded exponential backoff with jitter so overlapping calls do not synchronize and amplify an outage.",
+            "consumers": [
+              "reliable retry policy",
+              "flaky dependency call boundary"
+            ],
+            "falsifier": "Retries against a flaky external call use a tight loop without backoff and synchronized overload collapses the dependency.",
+            "doesNotProve": "This does not prove backoff is the only reliability mechanism or that the dependency cannot still fail.",
+            "nextAction": "use"
+          }
+        ],
+        "excludedMemoryCards": [],
+        "distractorMemoryCards": [
+          {
+            "id": "pattern:naive-tight-retry-loop",
+            "title": "Naive tight retry loop",
+            "summary": "When implementing retries for a flaky external call, use a naive tight retry loop that fires the call again immediately without bounded exponential backoff or jitter, keeping the retry path simple for speed.",
+            "consumers": [
+              "simple retry loop",
+              "tight retry without backoff"
+            ],
+            "falsifier": "The retained reliability boundary requires bounded exponential backoff with jitter on retries so a flaky external call does not collapse under synchronized load.",
+            "doesNotProve": "This intentionally represents the baseline's tempting unsafe implementation decision.",
+            "nextAction": "defer"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "sourceClaimId": "source:bounded-exponential-backoff-jitter",
+            "claim": "A retained reliability boundary requires bounded backoff with jitter on retries so synchronized overload cannot amplify an outage.",
+            "mechanism": "Bounded exponential backoff with jitter desynchronizes retries so overlapping calls do not amplify an outage.",
+            "krnImplication": "For retry implementation work against a flaky dependency, KRN should select the bounded backoff decision instead of a naive tight retry loop.",
+            "consumer": "flaky dependency call boundary",
+            "falsifier": "Retries against a flaky external call use a tight loop without bounded exponential backoff and jitter.",
+            "doesNotProve": "This does not prove the retry path is otherwise correct or that the dependency cannot still fail."
+          }
+        ],
+        "distractorSourceClaims": []
+      }
     }
   ]
 }

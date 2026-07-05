@@ -88,11 +88,11 @@ describe("runMemoryAdvantageEval", () => {
 
     expect(result.kind).toBe("krn.memoryAdvantage.eval.v1");
     expect(result.status).toBe("pass");
-    expect(result.cases).toHaveLength(23);
+    expect(result.cases).toHaveLength(25);
     expect(result.corpus).toMatchObject({
       name: "company-pattern-memory-advantage-heldout",
-      caseCount: 23,
-      heldOutCaseCount: 19,
+      caseCount: 25,
+      heldOutCaseCount: 21,
       distractorClasses: [
         "obsolete-operating-rule",
         "generic-quality-guidance",
@@ -104,11 +104,11 @@ describe("runMemoryAdvantageEval", () => {
       ]
     });
     expect(result.metrics).toMatchObject({
-      caseCount: 23,
-      heldOutCaseCount: 19,
-      expectedHitCount: 21,
+      caseCount: 25,
+      heldOutCaseCount: 21,
+      expectedHitCount: 23,
       expectedMissCount: 2,
-      advantageWinCount: 17,
+      advantageWinCount: 19,
       noAdvantageCaseCount: 4,
       brokenPriorAdvantageCaseCount: 1,
       distractorClassCount: 7,
@@ -117,8 +117,8 @@ describe("runMemoryAdvantageEval", () => {
       companyPatternChallengeCaseCount: 7,
       companyPatternChallengeWinCount: 6,
       interdependentSessionCaseCount: 2,
-      sourceDisabledAblationCaseCount: 23,
-      sourceRequiredCaseCount: 21,
+      sourceDisabledAblationCaseCount: 25,
+      sourceRequiredCaseCount: 23,
       sourceZeroDeltaCaseCount: 0,
       sourcePruneCandidateCount: 0
     });
@@ -146,7 +146,8 @@ describe("runMemoryAdvantageEval", () => {
           "heldout-multi-session-codex-output-evidence",
           "neutral-single-turn-typecheck",
           "neutral-breaks-codex-output-evidence-advantage",
-          "firm-pattern-narrow-verification-not-every-command"
+          "firm-pattern-narrow-verification-not-every-command",
+          "heldout-coding-decision-idempotency-key"
         ]
       },
       long_range: {
@@ -156,7 +157,8 @@ describe("runMemoryAdvantageEval", () => {
           "heldout-ranking-corpus-quality",
           "firm-pattern-store-backed-memory-no-markdown",
           "firm-pattern-no-guard-only-treadmill",
-          "firm-pattern-no-worker-daemon-without-product-loop"
+          "firm-pattern-no-worker-daemon-without-product-loop",
+          "heldout-coding-decision-retry-backoff"
         ]
       },
       forgetting: {
@@ -543,7 +545,9 @@ describe("runMemoryAdvantageEval", () => {
       "firm-pattern-narrow-verification-not-every-command",
       "firm-pattern-no-guard-only-treadmill",
       "firm-pattern-no-worker-daemon-without-product-loop",
-      "firm-pattern-no-decorative-skills"
+      "firm-pattern-no-decorative-skills",
+      "heldout-coding-decision-idempotency-key",
+      "heldout-coding-decision-retry-backoff"
     ]);
     expect(nonHeldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
       "retrieve-second-opinion-procedure",
@@ -584,7 +588,9 @@ describe("runMemoryAdvantageEval", () => {
       "source:narrow-verification-policy",
       "source:no-guard-only-treadmill",
       "source:no-worker-daemon-without-product-loop",
-      "source:no-decorative-skills"
+      "source:no-decorative-skills",
+      "source:idempotency-key-on-writes",
+      "source:bounded-exponential-backoff-jitter"
     ]);
     const firmPatternChallengeCases = result.cases.filter((testCase) =>
       testCase.companyPatternChallenge !== undefined

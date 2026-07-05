@@ -15,8 +15,8 @@ describe("memory advantage implementation decision readback", () => {
     const result = await runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
     const caseById = new Map(result.cases.map((testCase) => [testCase.caseId, testCase]));
 
-    expect(result.metrics.implementationDecisionCaseCount).toBe(23);
-    expect(result.metrics.implementationDecisionWinCount).toBe(7);
+    expect(result.metrics.implementationDecisionCaseCount).toBe(25);
+    expect(result.metrics.implementationDecisionWinCount).toBe(9);
     expect(result.metrics.implementationDecisionNeutralCount).toBe(6);
     expect(result.metrics.implementationDecisionRejectionProtectionCount).toBe(10);
     expect(result.metrics.implementationDecisionRegressionCount).toBe(0);
@@ -37,6 +37,30 @@ describe("memory advantage implementation decision readback", () => {
       reason: "Memory changed the implementation decision: KRN selected or refused the expected knowledge where simple lexical retrieval did not",
       doesNotProve:
         "This deterministic proxy does not prove live Codex would follow the decision without an execution-output evidence check."
+    });
+    expect(caseById.get("heldout-coding-decision-idempotency-key")?.["implementation_decision"]).toMatchObject({
+      decision_before_memory: "select:pattern:fire-and-forget-write-no-key",
+      decision_after_krn: "select:source:idempotency-key-on-writes",
+      selectedEvidenceRefs: [
+        "evidence:idempotency-key-on-writes",
+        "review:idempotency-key-on-writes",
+        "feedback:idempotency-key-on-writes-helped"
+      ],
+      selectedEvidenceIds: [
+        "memory:pattern:fire-and-forget-write-no-key",
+        "source:idempotency-key-on-writes"
+      ],
+      decisionChanged: true,
+      decisionChangeClass: "win",
+      reason: "Memory changed the implementation decision: KRN selected or refused the expected knowledge where simple lexical retrieval did not",
+      doesNotProve:
+        "This deterministic proxy does not prove live Codex would follow the decision without an execution-output evidence check."
+    });
+    expect(caseById.get("heldout-coding-decision-retry-backoff")?.["implementation_decision"]).toMatchObject({
+      decision_before_memory: "select:pattern:naive-tight-retry-loop",
+      decision_after_krn: "select:source:bounded-exponential-backoff-jitter",
+      decisionChanged: true,
+      decisionChangeClass: "win"
     });
     expect(caseById.get("neutral-single-turn-typecheck")?.["implementation_decision"]).toMatchObject({
       decision_before_memory: "select:pattern:neutral-run-typecheck",
