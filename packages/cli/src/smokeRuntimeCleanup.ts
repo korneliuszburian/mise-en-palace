@@ -8,6 +8,22 @@ type PostgresClient = ReturnType<typeof postgres>;
 type SmokeRuntime = Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
 type CreatedSmokeRuntime = Awaited<ReturnType<typeof createDatabaseRuntime>>;
 
+// Smoke createId factory: returns a createId whose values are unique per call
+// (prefix + smokeId + monotonic counter). The counter is deterministic under
+// sequential code and keeps ids unique across concurrent recall passes that
+// share one createId closure - preventing task/intent id collisions if a
+// downstream command ever persists a run-scoped row keyed by these ids.
+export const createUniqueSmokeCreateId = (smokeId: string): ((prefix: string) => string) => {
+  let counter = 0;
+
+  return (prefix: string): string => {
+    const id = `${prefix}-${smokeId}-${counter}`;
+    counter += 1;
+
+    return id;
+  };
+};
+
 // Shared try/finally cleanup for DB smoke targets that hold both an injected
 // database runtime and a raw postgres marker-audit client. Extracted so the
 // cleanup tail is not cloned across smoke implementations.

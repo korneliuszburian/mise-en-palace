@@ -12,6 +12,7 @@ import {
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
+  createUniqueSmokeCreateId,
   finalizeSmokeMarkerCleanup
 } from "./smokeRuntimeCleanup.js";
 
@@ -170,8 +171,7 @@ const sourceDecisionSupportCount = (json: BrainSearchJson): number =>
 const linkedSearchDocumentCount = (json: BrainSearchJson): number =>
   numberValue(json.sourceSearch?.linkedSearchDocuments);
 
-const createSmokeId = (smokeId: string) => (prefix: string): string =>
-  `${prefix}-${smokeId}`;
+const createSmokeId = (smokeId: string) => createUniqueSmokeCreateId(smokeId);
 
 const smokeSource = "krn db smoke brain-search";
 

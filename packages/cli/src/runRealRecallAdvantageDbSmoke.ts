@@ -9,6 +9,7 @@ import {
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
+  createUniqueSmokeCreateId,
   finalizeSmokeMarkerCleanup
 } from "./smokeRuntimeCleanup.js";
 
@@ -510,7 +511,7 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
   input: RealRecallAdvantageDbSmokeInput
 ): Promise<RealRecallAdvantageDbSmokeReport> => {
   const client = postgres(input.databaseUrl, { max: 1 });
-  const createId = (prefix: string): string => `${prefix}-${input.smokeId}`;
+  const createId = createUniqueSmokeCreateId(input.smokeId);
   const metadata = {
     smokeId: input.smokeId,
     source: smokeSource
