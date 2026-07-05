@@ -9,6 +9,11 @@ import {
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  bindSmokeProjectRuntimeFactory,
+  closeSmokeRuntimeAndClient,
+  finalizeSmokeMarkerCleanup
+} from "./smokeRuntimeCleanup.js";
 
 type PostgresClient = ReturnType<typeof postgres>;
 
@@ -322,12 +327,7 @@ export const runBrainSearchDbSmokeCheck = async (
       createId
     });
     const projectId = runtime.projectId;
-    const createSmokeDatabaseRuntime = (runtimeInput: Parameters<typeof createDatabaseRuntime>[0]) =>
-      createDatabaseRuntime({
-        ...runtimeInput,
-        projectId,
-        requireProjectKernelForExplicitProject: false
-      });
+    const createSmokeDatabaseRuntime = bindSmokeProjectRuntimeFactory(runtime);
     const runStoreOnlyBrainSearchJson = async (): Promise<BrainSearchJson> =>
       parseBrainSearchJson((await runBrainSearchCommand({
         cwd: input.repoRoot,
@@ -668,11 +668,12 @@ export const runBrainSearchDbSmokeCheck = async (
       throw new Error("Brain-search DB smoke grounded run lacked source/link decision support");
     }
 
-    const remainingMarkerCountBeforeCleanup = await countMarkerRows(client, input.smokeId);
-
-    await cleanupMarkerRows(client, input.smokeId);
-
-    const remainingMarkerCount = await countMarkerRows(client, input.smokeId);
+    const markerCleanup = await finalizeSmokeMarkerCleanup(
+      client,
+      input.smokeId,
+      countMarkerRows,
+      cleanupMarkerRows
+    );
 
     return {
       smokeId: input.smokeId,
@@ -716,14 +717,10 @@ export const runBrainSearchDbSmokeCheck = async (
         "accepted_source_claim_with_linked_search_document_and_source_decision_edge",
       limitationClassification:
         "single_firm_pattern_db_replay_not_broad_ranking_or_codex_output_quality",
-      remainingMarkerCount,
-      cleanedUp: remainingMarkerCountBeforeCleanup > 0 && remainingMarkerCount === 0
+      remainingMarkerCount: markerCleanup.remainingMarkerCount,
+      cleanedUp: markerCleanup.cleanedUp
     };
   } finally {
-    if (runtime !== undefined) {
-      await runtime.close();
-    }
-
-    await client.end();
+    await closeSmokeRuntimeAndClient(runtime, client);
   }
 };

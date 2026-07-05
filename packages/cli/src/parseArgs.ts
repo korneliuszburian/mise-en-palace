@@ -116,7 +116,8 @@ export type CliCommand =
         | "codexAdapter"
         | "workerJobs"
         | "initConnect"
-        | "targetRepoHarness";
+        | "targetRepoHarness"
+        | "realRecallAdvantage";
     }
   | {
       kind: "evidenceCapture";

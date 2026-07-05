@@ -33,7 +33,8 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["codex-adapter", "codexAdapter"],
   ["worker-jobs", "workerJobs"],
   ["init-connect", "initConnect"],
-  ["target-repo-harness", "targetRepoHarness"]
+  ["target-repo-harness", "targetRepoHarness"],
+  ["real-recall-advantage", "realRecallAdvantage"]
 ]);
 
 export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {

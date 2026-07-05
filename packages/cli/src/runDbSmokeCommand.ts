@@ -32,6 +32,9 @@ import {
 import {
   runBrainSearchDbSmokeCheck
 } from "./runBrainSearchDbSmoke.js";
+import {
+  runRealRecallAdvantageDbSmokeCheck
+} from "./runRealRecallAdvantageDbSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -52,7 +55,8 @@ export interface DbSmokeRuntime {
     | "codexAdapter"
     | "workerJobs"
     | "initConnect"
-    | "targetRepoHarness";
+    | "targetRepoHarness"
+    | "realRecallAdvantage";
 }
 
 export interface DbSmokeResult {
@@ -159,6 +163,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Target Repo Harness Smoke",
     skippedLine: "Target repo harness smoke: skipped (database not configured)",
     failureLabel: "Target repo harness smoke"
+  },
+  realRecallAdvantage: {
+    title: "KRN Real Recall Advantage Smoke",
+    skippedLine: "Real recall advantage smoke: skipped (database not configured)",
+    failureLabel: "Real recall advantage smoke"
   }
 } satisfies Record<DbSmokeRuntime["target"], DbSmokeTargetMetadata>;
 
@@ -571,6 +580,43 @@ const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runRealRecallAdvantageSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runRealRecallAdvantageDbSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    repoRoot: context.repoRoot,
+    smokeId: runtime.createId("real-recall-advantage-smoke"),
+    now: "2026-07-04T00:00:00.000Z"
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Real Recall Advantage Smoke",
+    report.cleanedUp,
+    [
+      `Project: ${report.projectId}`,
+      `Smoke id: ${report.smokeId}`,
+      `Real decisions seeded: ${report.decisionCount}`,
+      `Grounded governing-claim hits: ${report.groundedHitCount}/${report.decisionCount}`,
+      `Baseline governing-claim hits (pre-seed): ${report.baselineHitCount}/${report.decisionCount}`,
+      ...report.decisions.map((decision) => [
+        `Decision ${decision.decisionId} (${decision.standardId})`,
+        `  Query: ${decision.query}`,
+        `  Expected decision: ${decision.expectedDecision}`,
+        `  Baseline selected governing claim: ${decision.baselineSelectedGovernClaim ? "yes" : "no"}` +
+          ` (candidates: ${decision.baselineIncludedCandidateCount})`,
+        `  Grounded selected governing claim: ${decision.groundedSelectedGovernClaim ? "yes" : "no"}` +
+          ` (candidates: ${decision.groundedIncludedCandidateCount})`
+      ].join("\n")),
+      `Limitation: ${report.limitationClassification}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Real recall advantage smoke")
+    ]
+  );
+};
+
 const runShowSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -782,7 +828,8 @@ const dbSmokeTargetHandlers = {
   codexAdapter: runCodexAdapterSmokeTarget,
   workerJobs: runWorkerJobsSmokeTarget,
   initConnect: runInitConnectSmokeTarget,
-  targetRepoHarness: runTargetRepoHarnessSmokeTarget
+  targetRepoHarness: runTargetRepoHarnessSmokeTarget,
+  realRecallAdvantage: runRealRecallAdvantageSmokeTarget
 } satisfies Record<DbSmokeTarget, DbSmokeTargetHandler>;
 
 export const runDbSmokeCommand = async (

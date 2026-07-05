@@ -108,6 +108,15 @@ describe("runCli", () => {
     );
   });
 
+  it("exposes the real recall advantage smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = await readRootPackageJson(repoRoot);
+
+    expect(packageJson.scripts?.["db:smoke:real-recall-advantage"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke real-recall-advantage"
+    );
+  });
+
   it("prints DB help as an internal dev surface", async () => {
     const result = await runCli(["db", "--help"], {
       env: {},
@@ -269,8 +278,21 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Brain search smoke: skipped (database not configured)");
   });
 
-  it("reports worker job smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "worker-jobs"], {
+  it("reports real recall advantage smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "real-recall-advantage"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Real Recall Advantage Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Real recall advantage smoke: skipped (database not configured)");
+  });
+
+  it("reports worker job smoke missing configuration", async () => {    const result = await runCli(["db", "smoke", "worker-jobs"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
