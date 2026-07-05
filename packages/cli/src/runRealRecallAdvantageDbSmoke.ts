@@ -295,87 +295,207 @@ const createSmokeSourceArtifact = async (
   return sourceArtifact.id;
 };
 
-const seedDecision = async (
+interface SmokeSourceClaimSeed {
+  readonly sourceArtifactId: string;
+  readonly claim: string;
+  readonly mechanism: string;
+  readonly krnImplication: string;
+  readonly doesNotProve: string;
+  readonly consumer: string;
+  readonly falsifier: string;
+  readonly metadata: Record<string, unknown>;
+}
+
+// Shared SourceClaim creation for governing and distractor seeds. Both pin
+// trustTier/supportType to the same project-decision/implementation-boundary
+// pair; only the claim content and metadata differ.
+const createSmokeSourceClaim = async (
   runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>,
-  decision: RealRecallAdvantageDecision,
-  projectId: string,
-  input: RealRecallAdvantageDbSmokeInput,
-  metadata: Record<string, unknown>
-): Promise<{ readonly sourceClaimId: string }> => {
-  const sourceArtifactId = await createSmokeSourceArtifact(
-    runtime,
-    projectId,
-    `smoke://real-recall-advantage/${decision.id}`,
-    `Real recall advantage source ${decision.id}`,
-    `real-recall-${input.smokeId}-${decision.id}`,
-    metadata
-  );
+  seed: SmokeSourceClaimSeed
+): Promise<string> => {
   const sourceClaim = await runtime.sourceRepository.createSourceClaim({
-    sourceArtifactId,
-    claim: `${decision.claim} Marker: ${decision.query}.`,
-    mechanism: decision.mechanism,
-    krnImplication: decision.implication,
-    doesNotProve: decision.doesNotProve,
+    sourceArtifactId: seed.sourceArtifactId,
+    claim: seed.claim,
+    mechanism: seed.mechanism,
+    krnImplication: seed.krnImplication,
+    doesNotProve: seed.doesNotProve,
     trustTier: "project-decision",
     supportType: "implementation-boundary",
-    consumer: decision.consumer,
-    falsifier: decision.falsifier,
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      standardId: decision.standardId
-    }
+    consumer: seed.consumer,
+    falsifier: seed.falsifier,
+    metadata: seed.metadata
   });
+
+  return sourceClaim.id;
+};
+
+interface SmokeSourceDecisionSeed {
+  readonly projectId: string;
+  readonly sourceClaimId: string;
+  readonly decision: string;
+  readonly rationale: string;
+  readonly falsifier: string;
+  readonly consumer: string;
+  readonly metadata: Record<string, unknown>;
+}
+
+// Shared SourceDecision creation; throws if the repository does not expose
+// createSourceDecision so both seed paths fail loudly instead of silently
+// skipping the decision.
+const createSmokeSourceDecision = async (
+  runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>,
+  seed: SmokeSourceDecisionSeed
+): Promise<string> => {
   const sourceDecision = await runtime.sourceRepository.createSourceDecision?.({
-    projectId,
-    sourceClaimId: sourceClaim.id,
+    projectId: seed.projectId,
+    sourceClaimId: seed.sourceClaimId,
     status: "adopt",
-    decision: decision.expectedDecision,
-    rationale:
-      "The real governing decision has mechanism, implication, consumer, falsifier, and non-proof boundary.",
-    falsifier: decision.falsifier,
-    consumer: decision.consumer,
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      standardId: decision.standardId
-    }
+    decision: seed.decision,
+    rationale: seed.rationale,
+    falsifier: seed.falsifier,
+    consumer: seed.consumer,
+    metadata: seed.metadata
   });
 
   if (sourceDecision === undefined) {
     throw new Error("SourceDecision creation is unavailable for real-recall-advantage DB smoke");
   }
 
+  return sourceDecision.id;
+};
+
+// All content that differs between a governing seed and a distractor seed.
+// Capturing it as data (instead of two parallel seed functions) keeps the
+// artifact -> claim -> decision -> edge -> search-document sequence in one
+// place and lets the variant describe only the differences.
+interface RealRecallSeedVariant {
+  readonly artifactSlug: string;
+  readonly claimText: string;
+  readonly mechanism: string;
+  readonly krnImplication: string;
+  readonly doesNotProve: string;
+  readonly decisionText: string;
+  readonly decisionRationale: string;
+  readonly edgeConfidence: "high" | "low";
+  readonly edgeNotes: string;
+  readonly searchTitle: string;
+  readonly searchBody: string;
+  readonly searchText: string;
+  readonly extraMetadata: Record<string, unknown>;
+}
+
+const governingVariant = (decision: RealRecallAdvantageDecision): RealRecallSeedVariant => ({
+  artifactSlug: "source",
+  claimText: decision.claim,
+  mechanism: decision.mechanism,
+  krnImplication: decision.implication,
+  doesNotProve: decision.doesNotProve,
+  decisionText: decision.expectedDecision,
+  decisionRationale:
+    "The real governing decision has mechanism, implication, consumer, falsifier, and non-proof boundary.",
+  edgeConfidence: "high",
+  edgeNotes: "Decision-linked support for the real-recall-advantage DB replay.",
+  searchTitle: `Real recall advantage SearchDocument ${decision.id}`,
+  searchBody: `${decision.expectedDecision} ${decision.claim}`,
+  searchText:
+    `${decision.query} ${decision.standardId} ${decision.expectedDecision} ${decision.claim} ${decision.mechanism}`,
+  extraMetadata: { standardId: decision.standardId }
+});
+
+// The distractor mirrors the governing seed but carries the tempting shortcut,
+// a low-confidence edge (so it is visible but ranks below the governing
+// high-confidence edge), and lexically denser searchText.
+const distractorVariant = (decision: RealRecallAdvantageDecision): RealRecallSeedVariant => ({
+  artifactSlug: "distractor",
+  claimText: decision.distractorClaim,
+  mechanism:
+    "This distractor intentionally represents the tempting shortcut the lexical baseline picks before the governing decision is recorded.",
+  krnImplication:
+    "This is the wrong shortcut; the governing decision for this query is the accepted, high-confidence, decision-linked claim.",
+  doesNotProve: "This intentionally represents the baseline's tempting wrong implementation decision.",
+  decisionText: decision.distractorClaim,
+  decisionRationale:
+    "Distractor decision seeded at low confidence so it is visible but ranks below the high-confidence governing decision.",
+  edgeConfidence: "low",
+  edgeNotes: "Low-confidence edge so the distractor is visible but ranks below the governing high-confidence edge.",
+  searchTitle: `Real recall advantage distractor SearchDocument ${decision.id}`,
+  searchBody: decision.distractorClaim,
+  searchText: decision.distractorSearchText,
+  extraMetadata: { role: "distractor" }
+});
+
+// Single seed path for both governing and distractor claims. Creates a source
+// artifact, claim, adopt decision, decision edge, and search document, using
+// the variant to pick content and confidence. Returns the created claim id.
+const seedRealRecallClaim = async (
+  runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>,
+  decision: RealRecallAdvantageDecision,
+  variant: RealRecallSeedVariant,
+  projectId: string,
+  input: RealRecallAdvantageDbSmokeInput,
+  metadata: Record<string, unknown>
+): Promise<string> => {
+  const claimMetadata = {
+    ...metadata,
+    decisionId: decision.id,
+    ...variant.extraMetadata
+  };
+  const sourceArtifactId = await createSmokeSourceArtifact(
+    runtime,
+    projectId,
+    `smoke://real-recall-advantage/${variant.artifactSlug}-${decision.id}`,
+    `Real recall advantage ${variant.artifactSlug} ${decision.id}`,
+    `real-recall-${variant.artifactSlug}-${input.smokeId}-${decision.id}`,
+    metadata
+  );
+  const sourceClaimId = await createSmokeSourceClaim(runtime, {
+    sourceArtifactId,
+    claim: `${variant.claimText} Marker: ${decision.query}.`,
+    mechanism: variant.mechanism,
+    krnImplication: variant.krnImplication,
+    doesNotProve: variant.doesNotProve,
+    consumer: decision.consumer,
+    falsifier: decision.falsifier,
+    metadata: claimMetadata
+  });
+  const sourceDecisionId = await createSmokeSourceDecision(runtime, {
+    projectId,
+    sourceClaimId,
+    decision: variant.decisionText,
+    rationale: variant.decisionRationale,
+    falsifier: decision.falsifier,
+    consumer: decision.consumer,
+    metadata: claimMetadata
+  });
+
   await runtime.sourceRepository.createSourceDecisionEdge({
-    sourceClaimId: sourceClaim.id,
+    sourceClaimId,
     targetType: "architecture_decision",
-    targetId: `real-recall-advantage-${decision.id}`,
+    targetId: `real-recall-advantage-${variant.artifactSlug}-${decision.id}`,
     supportType: "implementation-boundary",
-    confidence: "high",
-    notes: "Decision-linked support for the real-recall-advantage DB replay.",
+    confidence: variant.edgeConfidence,
+    notes: variant.edgeNotes,
     metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      sourceDecisionId: sourceDecision.id
+      ...claimMetadata,
+      sourceDecisionId
     }
   });
   const searchDocument = await runtime.retrievalRepository?.createSearchDocument({
     projectId,
     subjectType: "source_claim",
-    subjectId: sourceClaim.id,
+    subjectId: sourceClaimId,
     sourceArtifactId,
-    sourceClaimId: sourceClaim.id,
+    sourceClaimId,
     trustTier: "project-decision",
-    title: `Real recall advantage SearchDocument ${decision.id}`,
-    body: `${decision.expectedDecision} ${decision.claim}`,
-    searchText: `${decision.query} ${decision.standardId} ${decision.expectedDecision} ${decision.claim} ${decision.mechanism}`,
+    title: variant.searchTitle,
+    body: variant.searchBody,
+    searchText: variant.searchText,
     metadataFilters: {
       smokeId: input.smokeId
     },
     metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      sourceDecisionId: sourceDecision.id
+      ...claimMetadata,
+      sourceDecisionId
     }
   });
 
@@ -383,107 +503,7 @@ const seedDecision = async (
     throw new Error("SearchDocument creation is unavailable for real-recall-advantage DB smoke");
   }
 
-  return { sourceClaimId: sourceClaim.id };
-};
-
-// Seeds the tempting-but-wrong distractor: an accepted SourceClaim WITH a
-// SourceDecision and a LOW-confidence SourceDecisionEdge so it is visible to
-// source-search, but ranks below the governing claim's HIGH-confidence edge.
-// The distractor's searchText is lexically denser than the governing claim's,
-// so a pure-lexical ranking would pick the distractor first.
-const seedDistractor = async (
-  runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>,
-  decision: RealRecallAdvantageDecision,
-  projectId: string,
-  input: RealRecallAdvantageDbSmokeInput,
-  metadata: Record<string, unknown>
-): Promise<{ readonly distractorClaimId: string }> => {
-  const sourceArtifactId = await createSmokeSourceArtifact(
-    runtime,
-    projectId,
-    `smoke://real-recall-advantage/distractor-${decision.id}`,
-    `Real recall advantage distractor ${decision.id}`,
-    `real-recall-distractor-${input.smokeId}-${decision.id}`,
-    metadata
-  );
-  const sourceClaim = await runtime.sourceRepository.createSourceClaim({
-    sourceArtifactId,
-    claim: `${decision.distractorClaim} Marker: ${decision.query}.`,
-    mechanism:
-      "This distractor intentionally represents the tempting shortcut the lexical baseline picks before the governing decision is recorded.",
-    krnImplication:
-      "This is the wrong shortcut; the governing decision for this query is the accepted, high-confidence, decision-linked claim.",
-    doesNotProve: "This intentionally represents the baseline's tempting wrong implementation decision.",
-    trustTier: "project-decision",
-    supportType: "implementation-boundary",
-    consumer: decision.consumer,
-    falsifier: decision.falsifier,
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      role: "distractor"
-    }
-  });
-  const distractorDecision = await runtime.sourceRepository.createSourceDecision?.({
-    projectId,
-    sourceClaimId: sourceClaim.id,
-    status: "adopt",
-    decision: decision.distractorClaim,
-    rationale:
-      "Distractor decision seeded at low confidence so it is visible but ranks below the high-confidence governing decision.",
-    falsifier: decision.falsifier,
-    consumer: decision.consumer,
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      role: "distractor"
-    }
-  });
-
-  if (distractorDecision === undefined) {
-    throw new Error("Distractor SourceDecision creation is unavailable for real-recall-advantage DB smoke");
-  }
-
-  await runtime.sourceRepository.createSourceDecisionEdge({
-    sourceClaimId: sourceClaim.id,
-    targetType: "architecture_decision",
-    targetId: `real-recall-advantage-distractor-${decision.id}`,
-    supportType: "implementation-boundary",
-    confidence: "low",
-    notes: "Low-confidence edge so the distractor is visible but ranks below the governing high-confidence edge.",
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      role: "distractor",
-      sourceDecisionId: distractorDecision.id
-    }
-  });
-  const searchDocument = await runtime.retrievalRepository?.createSearchDocument({
-    projectId,
-    subjectType: "source_claim",
-    subjectId: sourceClaim.id,
-    sourceArtifactId,
-    sourceClaimId: sourceClaim.id,
-    trustTier: "project-decision",
-    title: `Real recall advantage distractor SearchDocument ${decision.id}`,
-    body: decision.distractorClaim,
-    searchText: decision.distractorSearchText,
-    metadataFilters: {
-      smokeId: input.smokeId
-    },
-    metadata: {
-      ...metadata,
-      decisionId: decision.id,
-      role: "distractor",
-      sourceDecisionId: distractorDecision.id
-    }
-  });
-
-  if (searchDocument === undefined) {
-    throw new Error("Distractor SearchDocument creation is unavailable for real-recall-advantage DB smoke");
-  }
-
-  return { distractorClaimId: sourceClaim.id };
+  return sourceClaimId;
 };
 
 export const runRealRecallAdvantageDbSmokeCheck = async (
@@ -499,7 +519,7 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
 
   try {
     await cleanupMarkerRows(client, input.smokeId);
-    runtime = await createDatabaseRuntime({
+    const seedingRuntime = await createDatabaseRuntime({
       databaseUrl: input.databaseUrl,
       workspaceSlug: "local",
       projectSlug: "real-recall-advantage-smoke",
@@ -507,20 +527,19 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
       now: () => input.now,
       createId
     });
-    const projectId = runtime.projectId;
-    const createSmokeDatabaseRuntime = bindSmokeProjectRuntimeFactory(runtime);
+    runtime = seedingRuntime;
+    const projectId = seedingRuntime.projectId;
+    const createSmokeDatabaseRuntime = bindSmokeProjectRuntimeFactory(seedingRuntime);
 
-    // Baseline setup: seed ONLY the distractors (tempting shortcuts, no
-    // decision edge). Pure lexical retrieval should pick each distractor first
-    // because no governing decision has been recorded yet.
+    // Baseline setup: seed ONLY the distractors (tempting shortcuts with a
+    // low-confidence edge). Pure lexical retrieval should pick each distractor
+    // first because no governing decision has been recorded yet. The single
+    // seeding runtime stays open for the governing seed too; recall queries
+    // inject their own runtime via createSmokeDatabaseRuntime.
     const distractorsSeeded = await Promise.all(realDecisions.map(async (decision) => ({
       decision,
-      ...(await seedDistractor(runtime as Awaited<ReturnType<typeof createDatabaseRuntime>>,
-        decision, projectId, input, metadata))
+      distractorClaimId: await seedRealRecallClaim(seedingRuntime, decision, distractorVariant(decision), projectId, input, metadata)
     })));
-
-    await runtime.close();
-    runtime = undefined;
 
     // Baseline pass: top recall result per query should be the distractor.
     const baselineTops = new Map<string, { top: string | null; count: number }>();
@@ -532,28 +551,17 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
       });
     }));
 
-    // Grounded setup: also seed the governing decisions WITH SourceDecision +
-    // SourceDecisionEdge so decision-linked recall can boost them ahead of the
-    // lexically-stronger distractors.
-    const seededRuntime = await createDatabaseRuntime({
-      databaseUrl: input.databaseUrl,
-      workspaceSlug: "local",
-      projectSlug: "real-recall-advantage-smoke",
-      requireProjectKernelForExplicitProject: false,
-      projectId,
-      now: () => input.now,
-      createId
-    });
-    runtime = seededRuntime;
+    // Grounded setup: seed the governing decisions WITH SourceDecision +
+    // SourceDecisionEdge (high confidence) so decision-linked recall can boost
+    // them ahead of the lexically-stronger distractors.
     const governingSeeded = await Promise.all(realDecisions.map(async (decision) => ({
       decision,
-      ...(await seedDecision(seededRuntime, decision, projectId, input, metadata))
+      sourceClaimId: await seedRealRecallClaim(seedingRuntime, decision, governingVariant(decision), projectId, input, metadata)
     })));
-    await seededRuntime.close();
-    runtime = undefined;
 
     // Grounded pass: top recall result per query should now be the governing
-    // claim, because the SourceDecisionEdge boost overtakes the distractor.
+    // claim, because the high-confidence SourceDecisionEdge overtakes the
+    // low-confidence distractor.
     const decisionResults = await Promise.all(governingSeeded.map(async (seededEntry) => {
       const { decision, sourceClaimId } = seededEntry;
       const distractorClaimId = distractorsSeeded.find((entry) => entry.decision.id === decision.id)
