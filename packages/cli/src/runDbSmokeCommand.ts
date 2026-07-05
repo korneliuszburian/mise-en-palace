@@ -599,16 +599,17 @@ const runRealRecallAdvantageSmokeTarget: DbSmokeTargetHandler = async (
       `Project: ${report.projectId}`,
       `Smoke id: ${report.smokeId}`,
       `Real decisions seeded: ${report.decisionCount}`,
-      `Grounded governing-claim hits: ${report.groundedHitCount}/${report.decisionCount}`,
-      `Baseline governing-claim hits (pre-seed): ${report.baselineHitCount}/${report.decisionCount}`,
+      `Distractor-competition advantage wins: ${report.advantageWinCount}/${report.decisionCount}`,
+      `Baseline distractor top picks: ${report.baselineDistractorTopCount}/${report.decisionCount}`,
+      `Grounded governing top picks: ${report.groundedGoverningTopCount}/${report.decisionCount}`,
       ...report.decisions.map((decision) => [
         `Decision ${decision.decisionId} (${decision.standardId})`,
         `  Query: ${decision.query}`,
         `  Expected decision: ${decision.expectedDecision}`,
-        `  Baseline selected governing claim: ${decision.baselineSelectedGovernClaim ? "yes" : "no"}` +
-          ` (candidates: ${decision.baselineIncludedCandidateCount})`,
-        `  Grounded selected governing claim: ${decision.groundedSelectedGovernClaim ? "yes" : "no"}` +
-          ` (candidates: ${decision.groundedIncludedCandidateCount})`
+        `  Baseline top pick: ${decision.baselinePickedDistractor ? "distractor" : "other"}` +
+          ` (candidates: ${decision.baselineIncludedCandidateCount}; governing: ${decision.baselineTopClaimId === decision.governingClaimId ? "yes" : "no"})`,
+        `  Grounded top pick: ${decision.groundedPickedGoverning ? "governing" : "other"}`,
+        `  Advantage win: ${decision.advantageWin ? "yes" : "no"}`
       ].join("\n")),
       `Limitation: ${report.limitationClassification}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
