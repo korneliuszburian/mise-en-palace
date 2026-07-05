@@ -43,7 +43,8 @@ export const bindSmokeProjectRuntimeFactory = (
   });
 };
 
-// Shared count -> cleanup -> count tail used by DB smokes that audit marker// rows. Each smoke passes its own count/cleanup helpers because the audited
+// Shared count -> cleanup -> count tail used by DB smokes that audit marker
+// rows. Each smoke passes its own count/cleanup helpers because the audited
 // table set differs per smoke; the orchestration is identical.
 export const finalizeSmokeMarkerCleanup = async (
   client: PostgresClient,
