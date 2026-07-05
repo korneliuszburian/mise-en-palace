@@ -2,6 +2,16 @@
 
 Status: source-to-decision audit for bounded rename work.
 
+Re-verified 2026-07-05 under `mise-en-palace-o67w`: a full source+docs sweep for
+the target vocabulary (`final`, `new`, `normalized`, `helper`, `utils`,
+`manager`, `data`, `info`, `result`) found no new actionable cluster. Every hit
+is already covered by a closed cluster below (E: `normalized`/`final`/`new` via
+`mise-en-palace-m59a`; A–D: `heartbeat`, `golden`, legacy alias, `policy` via
+`mise-en-palace-pj25`, `mise-en-palace-7tsq`, `mise-en-palace-yq2p`,
+`mise-en-palace-woql`) or is a legitimate domain name (`packageManager` =
+npm/pnpm; `Metadata` = real metadata layer; `*Result` = operation return types).
+`o67w` closed as rejected-by-evidence per its own falsifier; no rename executed.
+
 This report is not a rename sweep. It separates names that hide product truth
 from names that are merely imperfect. Follow-up implementation must stay
 bounded to one cluster at a time.
