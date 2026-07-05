@@ -21,8 +21,8 @@ describe("runSourceGraphRankingEval", () => {
       topK: 6,
       corpus: {
         name: "source-graph-kernel-quality-corpus",
-        rowCount: 25,
-        queryCount: 20,
+        rowCount: 29,
+        queryCount: 24,
         heldOutQueryCount: 2,
         distractorClasses: [
           "adjacent-governance-source",
@@ -33,28 +33,29 @@ describe("runSourceGraphRankingEval", () => {
         ]
       },
       metrics: {
-        queryCount: 20,
-        corpusRows: 25,
+        queryCount: 24,
+        corpusRows: 29,
         hitRateAtK: 1,
-        expectedHitIdCount: 20,
+        expectedHitIdCount: 24,
         distractorClassCount: 5,
-        relationLinkedCaseCount: 6,
-        flatBaselineWeakerCases: 6,
-        flatBaselineMissingExpectedRelationSupportCases: 6,
-        relationShapeCaseCount: 5,
-        relationShapeCoveredCases: 5,
-        relationShapeKinds: ["depends_on", "duplicates", "invalidates", "qualifies", "supports"],
+        relationLinkedCaseCount: 10,
+        flatBaselineWeakerCases: 10,
+        flatBaselineMissingExpectedRelationSupportCases: 10,
+        relationShapeCaseCount: 9,
+        relationShapeCoveredCases: 9,
+        relationShapeKinds: ["contradicts", "depends_on", "duplicates", "expires", "invalidates", "qualifies", "supersedes", "supports"],
         heldOutQueryCount: 2,
         heldOutHitRateAtK: 1,
         heldOutNdcgAtK: 1,
         heldOutRelationShapeCaseCount: 2,
         heldOutRelationShapeKinds: ["depends_on", "qualifies"],
-        relationDirectionCaseCount: 2,
-        relationDirectionCoveredCases: 2,
+        relationDirectionCaseCount: 3,
+        relationDirectionCoveredCases: 3,
         relationDirections: ["incoming", "outgoing"],
         observedRelationDirections: ["incoming", "outgoing"],
         heldOutRelationDirections: ["incoming", "outgoing"],
-        heldOutObservedRelationDirections: ["incoming", "outgoing"]
+        heldOutObservedRelationDirections: ["incoming", "outgoing"],
+        staleEdgeReadbackCases: 2
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
@@ -133,6 +134,73 @@ describe("runSourceGraphRankingEval", () => {
       }
     });
     expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-supersedes"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["supersedes"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["supersedes"]),
+      expectedHitRelationKinds: ["supersedes"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-expires"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["expires"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["expires"]),
+      expectedHitRelationKinds: ["expires"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "relation-shape-contradicts"
+    )).toMatchObject({
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["contradicts"],
+      expectedHitRelationSupport: 1,
+      relationKinds: expect.arrayContaining(["contradicts"]),
+      expectedHitRelationKinds: ["contradicts"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        relationKinds: [],
+        expectedHitRelationKinds: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "stale-rankdown-incoming"
+    )).toMatchObject({
+      corpusSplit: "main",
+      relationLinkedExpected: true,
+      expectedRelationKinds: ["invalidates"],
+      expectedRelationDirections: ["incoming"],
+      hitAtK: true,
+      incomingStaleEdge: true,
+      expectedHitRelationSupport: 1,
+      expectedHitRelationKinds: ["invalidates"],
+      expectedHitRelationDirections: ["incoming"],
+      flatComparison: {
+        expectedHitRelationSupport: 0,
+        expectedHitRelationKinds: [],
+        expectedHitRelationDirections: [],
+        weakness: "missing_expected_relation_support"
+      }
+    });
+    expect(result.metrics.staleEdgeReadbackCases).toBeGreaterThanOrEqual(1);
+    expect(result.cases.filter((testCase) => testCase.incomingStaleEdge).length)
+      .toBe(result.metrics.staleEdgeReadbackCases);
+    expect(result.cases.find((testCase) =>
       testCase.id === "heldout-skill-context-qualifies"
     )).toMatchObject({
       corpusSplit: "held_out",
@@ -182,6 +250,12 @@ describe("runSourceGraphRankingEval", () => {
     expect(result.proof.proves).toContain(
       "relation-direction cases report expected and observed incoming/outgoing SourceClaimEdge directions for expected hits"
     );
+    expect(result.proof.proves).toContain(
+      "relation-shape coverage spans supports, duplicates, invalidates, supersedes, expires, and contradicts SourceClaimEdge kinds"
+    );
+    expect(result.proof.proves).toContain(
+      "stale-edge cases surface incoming invalidating relation readback while the expected claim remains selectable in top-k"
+    );
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "source truth",
       "broad semantic ranking quality",
@@ -190,7 +264,8 @@ describe("runSourceGraphRankingEval", () => {
       "autonomous memory evolution",
       "API or MCP readiness",
       "crawler readiness",
-      "product readiness"
+      "product readiness",
+      "stale-edge readback is not score-based rank demotion"
     ]));
   });
 

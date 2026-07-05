@@ -86,6 +86,7 @@ interface SourceGraphQueryRun {
   readonly expectedHitRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly relationDirections: readonly SourceGraphRankingRelationDirection[];
   readonly expectedHitRelationDirections: readonly SourceGraphRankingRelationDirection[];
+  readonly incomingStaleEdge: boolean;
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
   readonly ndcgAtK: number;
@@ -147,6 +148,7 @@ export interface SourceGraphRankingEvalResult {
     readonly observedRelationDirections: readonly SourceGraphRankingRelationDirection[];
     readonly heldOutRelationDirections: readonly SourceGraphRankingRelationDirection[];
     readonly heldOutObservedRelationDirections: readonly SourceGraphRankingRelationDirection[];
+    readonly staleEdgeReadbackCases: number;
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -786,6 +788,16 @@ const runQueryPath = async (
       ? [direction]
       : [];
   }));
+  const incomingStaleEdge = relationSupport.some((support) => {
+    const sourceClaimId = optionalString(support["sourceClaimId"]);
+    const kind = relationKindFromReadback(support["kind"]);
+    const direction = relationDirectionFromReadback(support["direction"]);
+
+    return sourceClaimId !== undefined &&
+      expectedSourceClaimIds.has(sourceClaimId) &&
+      (kind === "invalidates" || kind === "supersedes") &&
+      direction === "incoming";
+  });
 
   return {
     includedHitIds,
@@ -805,6 +817,7 @@ const runQueryPath = async (
     expectedHitRelationKinds,
     relationDirections,
     expectedHitRelationDirections,
+    incomingStaleEdge,
     sourceDecisionSupport: recordArray(answerPackage["sourceDecisionSupport"], `${queryCase.id}.sourceDecisionSupport`).length,
     hitAtK: includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id)),
     ndcgAtK: roundRankingMetric(ndcgAtK(includedHitIds, expectedHitIds, fixture.topK))
@@ -925,6 +938,9 @@ export const runSourceGraphRankingEval = async (
   const heldOutObservedRelationDirections = uniqueRelationDirections(heldOutRelationDirectionCases.flatMap((testCase) =>
     testCase.expectedHitRelationDirections
   ));
+  const staleEdgeReadbackCases = cases.filter((testCase) =>
+    testCase.hitAtK && testCase.incomingStaleEdge
+  ).length;
   const hasRequiredRelationShapeKinds = requiredRelationShapeKinds.every((kind) =>
     relationShapeKinds.includes(kind)
   );
@@ -1005,7 +1021,8 @@ export const runSourceGraphRankingEval = async (
       relationDirections,
       observedRelationDirections,
       heldOutRelationDirections,
-      heldOutObservedRelationDirections
+      heldOutObservedRelationDirections,
+      staleEdgeReadbackCases
     },
     cases,
     proof: {
@@ -1016,6 +1033,8 @@ export const runSourceGraphRankingEval = async (
         `relation-shape cases report expected and observed SourceClaimEdge kinds for ${requiredRelationShapeKinds.join(", ")} readback`,
         "held-out relation corpus split reports held-out query count, hit-rate/NDCG, relation-shape kinds, and flat comparison",
         "relation-direction cases report expected and observed incoming/outgoing SourceClaimEdge directions for expected hits",
+        "relation-shape coverage spans supports, duplicates, invalidates, supersedes, expires, and contradicts SourceClaimEdge kinds",
+        "stale-edge cases surface incoming invalidating relation readback while the expected claim remains selectable in top-k",
         "SourceClaim, source-claim-to-SearchDocument link, SourceDecisionEdge, and SourceClaimEdge readbacks were exercised without DB writes",
         "future changes that drop expected source graph hits from top-k will fail this eval"
       ],
@@ -1028,7 +1047,8 @@ export const runSourceGraphRankingEval = async (
         "autonomous memory evolution",
         "API or MCP readiness",
         "crawler readiness",
-        "product readiness"
+        "product readiness",
+        "stale-edge readback is not score-based rank demotion"
       ]
     }
   };

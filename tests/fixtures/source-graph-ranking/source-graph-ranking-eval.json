@@ -36,7 +36,11 @@
     ["claim-docs-lint", "behavior matrix docs lint proof boundary", "Docs lint should protect active proof boundaries without pretending to be behavior proof."],
     ["claim-pgvector", "postgres pgvector retrieval substrate lexical vector hybrid", "The retrieval substrate should distinguish lexical, vector, and hybrid readback limits."],
     ["claim-heldout-skill-context", "heldout governed skill prompt context pack evidence ref", "A governed skill context pack should include compact objective, acceptance criteria, verification evidence, and evidence refs."],
-    ["claim-heldout-contract-output", "heldout execution contract evidence shape output gate", "Execution-contract output should require evidence-shape readback before claiming Codex followed KRN context."]
+    ["claim-heldout-contract-output", "heldout execution contract evidence shape output gate", "Execution-contract output should require evidence-shape readback before claiming Codex followed KRN context."],
+    ["claim-relation-supersedes", "relation shape supersedes edge successor replacement", "A supersedes SourceClaimEdge should stay visible as successor relation-shape readback."],
+    ["claim-relation-expires", "relation shape expires edge temporal validity sunset", "An expires SourceClaimEdge should stay visible as expiration relation-shape readback."],
+    ["claim-relation-contradicts", "relation shape contradicts edge conflict polarity evidence", "A contradicts SourceClaimEdge should stay visible as conflicting relation-shape readback."],
+    ["claim-stale-rankdown", "stale incoming invalidates edge retained candidate suppression", "An incoming invalidates edge should surface stale-edge readback without deleting the retained candidate."]
   ],
   "relations": [
     ["claim-graph-relation", "claim-source-decision", "narrows"],
@@ -48,7 +52,11 @@
     ["claim-relation-duplicates", "claim-decision-link", "duplicates"],
     ["claim-relation-invalidates", "claim-graph-relation", "invalidates"],
     ["claim-second-opinion", "claim-heldout-skill-context", "qualifies"],
-    ["claim-heldout-contract-output", "claim-codex-brief", "depends_on"]
+    ["claim-heldout-contract-output", "claim-codex-brief", "depends_on"],
+    ["claim-relation-supersedes", "claim-worker-boundary", "supersedes"],
+    ["claim-relation-expires", "claim-cli-boundary", "expires"],
+    ["claim-relation-contradicts", "claim-context-roi", "contradicts"],
+    ["claim-graph-invalidation", "claim-stale-rankdown", "invalidates"]
   ],
   "queries": [
     ["memory-feedback", "hurt stale activation feedback", ["source_claim:claim-memory-feedback"], "A generic memory row can match feedback wording while missing hurt-to-exclusion semantics."],
@@ -70,6 +78,10 @@
     ["typescript-boundary", "unknown first json parse result state", ["source_claim:claim-typescript-boundary"], "TypeScript strictness rows can match JSON wording without unknown-first boundary evidence."],
     ["pgvector", "postgres pgvector lexical vector hybrid", ["source_claim:claim-pgvector"], "Lexical/vector retrieval rows can match pgvector wording without proving live pgvector quality."],
     ["heldout-skill-context-qualifies", "heldout governed skill context pack evidence ref", ["source_claim:claim-heldout-skill-context"], "A flat source row can match held-out skill context wording, but it cannot show incoming qualifies relation support from the second-opinion source.", true, ["qualifies"], "held_out", ["incoming"]],
-    ["heldout-contract-output-depends", "heldout execution contract evidence shape output gate", ["source_claim:claim-heldout-contract-output"], "A flat source row can match held-out execution-contract wording, but it cannot show outgoing depends_on relation support to the Codex brief evidence gate.", true, ["depends_on"], "held_out", ["outgoing"]]
+    ["heldout-contract-output-depends", "heldout execution contract evidence shape output gate", ["source_claim:claim-heldout-contract-output"], "A flat source row can match held-out execution-contract wording, but it cannot show outgoing depends_on relation support to the Codex brief evidence gate.", true, ["depends_on"], "held_out", ["outgoing"]],
+    ["relation-shape-supersedes", "relation shape supersedes edge successor replacement", ["source_claim:claim-relation-supersedes"], "A flat source row can match supersedes wording, but it cannot prove the supersedes SourceClaimEdge kind is visible for the expected claim.", true, ["supersedes"]],
+    ["relation-shape-expires", "relation shape expires edge temporal validity sunset", ["source_claim:claim-relation-expires"], "A flat source row can match expires wording, but it cannot prove the expires SourceClaimEdge kind is visible for the expected claim.", true, ["expires"]],
+    ["relation-shape-contradicts", "relation shape contradicts edge conflict polarity evidence", ["source_claim:claim-relation-contradicts"], "A flat source row can match contradicts wording, but it cannot prove the contradicts SourceClaimEdge kind is visible for the expected claim.", true, ["contradicts"]],
+    ["stale-rankdown-incoming", "stale incoming invalidates edge retained candidate", ["source_claim:claim-stale-rankdown"], "A flat source row can match stale-edge wording, but it cannot prove the incoming invalidates SourceClaimEdge is surfaced as stale readback while the expected claim stays selectable.", true, ["invalidates"], "main", ["incoming"]]
   ]
 }
