@@ -136,7 +136,8 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 ## Active Task
 
 Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
-Current active Bead: `mise-en-palace-taxv` expand the compact decision corpus through import dogfood; latest closed Bead: `mise-en-palace-9u9w`; next ready Bead after `taxv`: select from Beads after verification and second-opinion review.
+Current active Bead: `mise-en-palace-w88x` CLI parser naming batch; latest closed Bead: `mise-en-palace-taxv`; next ready Bead after `w88x`: select from Beads after verification.
+`mise-en-palace-w88x` renames parser-table `handler` vocabulary in brain, knowledge, and heartbeat arg parsers to `parser`, with no command behavior changes.
 `mise-en-palace-taxv` expands the compact import fixture to five current decisions, two stale paths, two rejected paths, and five cases without hand-editing the large notes-baseline corpus.
 `mise-en-palace-9u9w` adds `pnpm eval:codex-decision-packet-obedience:live-pilot`: one read-only `codex exec` output preserves governing/stale/rejected/non-proof packet signals under schema.
 `mise-en-palace-kj09` adds `pnpm db:smoke:decision-corpus-import`: compact source-to-decision rows now persist through existing SourceArtifact/SourceChunk/SourceClaim/SourceDecision/SourceDecisionEdge/SearchDocument/SourceRejection repository ports and source-search readback selects the imported governing claim.

@@ -109,7 +109,7 @@ type ParseHeartbeatOptionResult =
       error: string;
     };
 
-type HeartbeatOptionHandler = (
+type HeartbeatOptionParser = (
   args: readonly string[],
   index: number,
   state: HeartbeatParseState
@@ -228,7 +228,7 @@ const addCandidateKind = (
   }
 };
 
-const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
+const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
   "--project": (args, index, state) =>
     assignTextOption(args, index, "--project", (value) => {
       state.projectId = value;
@@ -457,15 +457,15 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
-    const handler = heartbeatOptionHandlers[arg];
+    const parser = heartbeatOptionParsers[arg];
 
-    if (handler === undefined) {
+    if (parser === undefined) {
       return {
         error: `Unsupported maintenance preview argument: ${arg}\n${formatHeartbeatUsage()}`
       };
     }
 
-    const parsed = handler(args, index, state);
+    const parsed = parser(args, index, state);
 
     if (!parsed.ok) {
       return {

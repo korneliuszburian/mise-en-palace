@@ -146,7 +146,7 @@ type ParseKnowledgeOptionResult =
       error: string;
     };
 
-type KnowledgeOptionHandler = (
+type KnowledgeOptionParser = (
   args: readonly string[],
   index: number,
   state: KnowledgeParseState
@@ -172,7 +172,7 @@ const pushPathOption = (
   };
 };
 
-const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
+const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
   "--card-file": (args, index, state) =>
     pushPathOption(args, index, "--card-file", state.cardFiles),
   "--pattern-file": (args, index, state) =>
@@ -392,15 +392,15 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
 
-    const handler = knowledgeOptionHandlers[arg];
+    const parser = knowledgeOptionParsers[arg];
 
-    if (handler === undefined) {
+    if (parser === undefined) {
       return {
         error: `Unsupported brain knowledge argument: ${arg}\n${formatKnowledgeUsage()}`
       };
     }
 
-    const parsed = handler(args, index, state);
+    const parsed = parser(args, index, state);
 
     if (!parsed.ok) {
       return {

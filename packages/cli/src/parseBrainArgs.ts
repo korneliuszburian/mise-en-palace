@@ -87,7 +87,7 @@ const parseRequiredValue = (
   };
 };
 
-type BrainSearchOptionHandler = (
+type BrainSearchOptionParser = (
   args: readonly string[],
   index: number,
   state: BrainSearchParseState
@@ -143,7 +143,7 @@ const assignPositiveIntegerOption = (
   };
 };
 
-const brainSearchOptionHandlers: Record<string, BrainSearchOptionHandler> = {
+const brainSearchOptionParsers: Record<string, BrainSearchOptionParser> = {
   "--query": (args, index, state) =>
     assignStringOption(args, index, "--query", (value) => {
       state.query = value;
@@ -207,14 +207,14 @@ const parseBrainSearchOption = (
   state: BrainSearchParseState
 ): BrainSearchOptionResult => {
   const arg = args[index]!;
-  const handler = brainSearchOptionHandlers[optionName(arg)];
+  const parser = brainSearchOptionParsers[optionName(arg)];
 
-  return handler === undefined
+  return parser === undefined
     ? {
         ok: false,
         error: `Unsupported brain search argument: ${arg}\n${formatBrainSearchUsage()}`
       }
-    : handler(args, index, state);
+    : parser(args, index, state);
 };
 
 export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
