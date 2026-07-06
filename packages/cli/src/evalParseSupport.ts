@@ -12,6 +12,17 @@ export const stringValue = (
   return value;
 };
 
+export const stringArrayValue = (
+  value: unknown,
+  label: string
+): readonly string[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  return value.map((item, index) => stringValue(item, `${label}[${index}]`));
+};
+
 export const numberValue = (
   value: unknown,
   label: string
@@ -67,4 +78,15 @@ export const tupleArray = (
 
     return item;
   });
+};
+
+export const assertUniqueIds = (
+  ids: readonly string[],
+  label: string
+): void => {
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+
+  if (duplicates.length > 0) {
+    throw new Error(`${label} contains duplicate ids: ${Array.from(new Set(duplicates)).join(", ")}`);
+  }
 };

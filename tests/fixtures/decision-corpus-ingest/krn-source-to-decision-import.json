@@ -1,0 +1,50 @@
+{
+  "version": "1",
+  "baseFixturePath": "../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+  "corpusName": "krn-decision-packet-imported-source-to-decision",
+  "topK": 3,
+  "minimumKrnWinRate": 0.75,
+  "maximumNotesWinRate": 0,
+  "decisions": [
+    {
+      "id": "decision-corpus-import-path",
+      "title": "Decision corpus import path",
+      "statement": "Add compact source-to-decision import rows to the decision-packet corpus through a validated importer instead of hand-editing the large benchmark fixture.",
+      "status": "current",
+      "evidenceRef": "docs/runs/2026-07-06-codex-decision-packet-obedience-we82.md",
+      "falsifier": "A new source-to-decision decision still requires hand-editing the large notes-baseline fixture before packet evals can see it.",
+      "doesNotProve": "Does not prove DB ingestion, source truth, or broad corpus quality.",
+      "noteText": "Decision corpus import path. Use compact source-to-decision import rows with validation instead of hand-editing the large benchmark fixture."
+    },
+    {
+      "id": "manual-fixture-editing-only",
+      "title": "Manual fixture editing only",
+      "statement": "Maintain the decision-packet corpus only by hand-editing the monolithic notes-baseline JSON fixture.",
+      "status": "stale",
+      "evidenceRef": "docs/audit.md",
+      "falsifier": "The importer converts compact source-to-decision rows into corpus decisions, notes, and cases.",
+      "doesNotProve": "Historical stale path only.",
+      "noteText": "Manual fixture editing only. Hand-edit the monolithic notes-baseline JSON fixture for every new decision."
+    },
+    {
+      "id": "import-without-link-validation",
+      "title": "Import without link validation",
+      "statement": "Accept imported decision rows without validating current, stale, and rejected links for imported cases.",
+      "status": "rejected",
+      "evidenceRef": "docs/KRN_KERNEL.md:65",
+      "falsifier": "An imported case references a rejected or stale decision in the wrong slot and the importer still accepts it.",
+      "doesNotProve": "Rejected path only.",
+      "noteText": "Import without link validation. Accept imported decision rows without validating current stale rejected links for imported cases."
+    }
+  ],
+  "cases": [
+    {
+      "id": "decision-corpus-import-task",
+      "task": "How should a new source-to-decision item enter the decision-packet corpus without manual fixture editing only or unvalidated links?",
+      "expectedDecisionId": "decision-corpus-import-path",
+      "staleDecisionIds": ["manual-fixture-editing-only"],
+      "rejectedDecisionIds": ["import-without-link-validation"],
+      "baselineFailureRationale": "A notes-only path can recall the import idea, but it cannot expose stale manual editing and rejected unvalidated-link paths as governed packet fields."
+    }
+  ]
+}

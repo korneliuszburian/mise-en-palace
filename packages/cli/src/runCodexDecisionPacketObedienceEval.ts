@@ -13,6 +13,7 @@ import {
 import {
   isRecord,
   recordArray,
+  stringArrayValue,
   stringValue
 } from "./evalParseSupport.js";
 import {
@@ -87,17 +88,6 @@ export interface CodexDecisionPacketObedienceEvalResult {
   };
 }
 
-const stringArray = (
-  value: unknown,
-  label: string
-): readonly string[] => {
-  if (!Array.isArray(value)) {
-    throw new Error(`${label} must be an array`);
-  }
-
-  return value.map((item, index) => stringValue(item, `${label}[${index}]`));
-};
-
 const parseOutput = (
   value: unknown,
   label: string
@@ -108,9 +98,9 @@ const parseOutput = (
 
   return {
     summary: stringValue(value["summary"], `${label}.summary`),
-    evidenceRefs: stringArray(value["evidenceRefs"], `${label}.evidenceRefs`),
-    verification: stringArray(value["verification"], `${label}.verification`),
-    changedFiles: stringArray(value["changedFiles"], `${label}.changedFiles`),
+    evidenceRefs: stringArrayValue(value["evidenceRefs"], `${label}.evidenceRefs`),
+    verification: stringArrayValue(value["verification"], `${label}.verification`),
+    changedFiles: stringArrayValue(value["changedFiles"], `${label}.changedFiles`),
     doesNotProve: stringValue(value["doesNotProve"], `${label}.doesNotProve`)
   };
 };
@@ -138,11 +128,11 @@ const parseFixture = (
         testCase["expectedGoverningDecisionId"],
         `cases[${index}].expectedGoverningDecisionId`
       ),
-      expectedStaleDecisionIds: stringArray(
+      expectedStaleDecisionIds: stringArrayValue(
         testCase["expectedStaleDecisionIds"],
         `cases[${index}].expectedStaleDecisionIds`
       ),
-      expectedRejectedPathIds: stringArray(
+      expectedRejectedPathIds: stringArrayValue(
         testCase["expectedRejectedPathIds"],
         `cases[${index}].expectedRejectedPathIds`
       ),

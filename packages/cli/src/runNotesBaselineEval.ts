@@ -8,6 +8,8 @@ import {
   isRecord,
   numberValue,
   recordArray,
+  assertUniqueIds,
+  stringArrayValue,
   stringValue
 } from "./evalParseSupport.js";
 import {
@@ -144,20 +146,10 @@ export interface NotesBaselineEvalResult {
 
 const decisionStatuses = new Set<DecisionStatus>(["current", "stale", "rejected"]);
 
-const stringArray = (
+const optionalStringArrayValue = (
   value: unknown,
   label: string
-): readonly string[] => {
-  if (value === undefined) {
-    return [];
-  }
-
-  if (!Array.isArray(value)) {
-    throw new Error(`${label} must be an array`);
-  }
-
-  return value.map((item, index) => stringValue(item, `${label}[${index}]`));
-};
+): readonly string[] => value === undefined ? [] : stringArrayValue(value, label);
 
 const optionalStringValue = (
   value: unknown,
@@ -223,21 +215,10 @@ const parseCase = (
   id: stringValue(value["id"], `cases[${index}].id`),
   task: stringValue(value["task"], `cases[${index}].task`),
   expectedDecisionId: stringValue(value["expectedDecisionId"], `cases[${index}].expectedDecisionId`),
-  staleDecisionIds: stringArray(value["staleDecisionIds"], `cases[${index}].staleDecisionIds`),
-  rejectedDecisionIds: stringArray(value["rejectedDecisionIds"], `cases[${index}].rejectedDecisionIds`),
+  staleDecisionIds: optionalStringArrayValue(value["staleDecisionIds"], `cases[${index}].staleDecisionIds`),
+  rejectedDecisionIds: optionalStringArrayValue(value["rejectedDecisionIds"], `cases[${index}].rejectedDecisionIds`),
   baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
 });
-
-const assertUniqueIds = (
-  ids: readonly string[],
-  label: string
-): void => {
-  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
-
-  if (duplicates.length > 0) {
-    throw new Error(`${label} contains duplicate ids: ${Array.from(new Set(duplicates)).join(", ")}`);
-  }
-};
 
 const assertFixtureSize = (
   fixture: {
