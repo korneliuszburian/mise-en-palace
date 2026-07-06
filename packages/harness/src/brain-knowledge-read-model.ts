@@ -83,6 +83,8 @@ export const brainKnowledgeNextActionValues = [
 export type BrainKnowledgeNextAction = typeof brainKnowledgeNextActionValues[number];
 
 export const brainKnowledgeUsefulnessOutcomeValues = [
+  "selected",
+  "used",
   "helped",
   "neutral",
   "noise",

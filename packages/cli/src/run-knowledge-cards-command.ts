@@ -29,6 +29,15 @@ export interface KnowledgeCardsCommandRuntime {
   filter: BrainKnowledgeSearchFilter;
   format: KnowledgeCardsOutputFormat;
   limit?: number;
+  /**
+   * Optional store-backed usefulness source (9xc1). When provided, the command
+   * awaits it and merges the result into the usefulness feedback, so the
+   * readback can show usefulness without a static corpus JSON ledger. The CLI
+   * layer wires this to a feedback_delta store read (mapped via
+   * brainKnowledgeUsefulnessFromPatternOutcomes). Seed-only corpus
+   * usefulnessFeedbackFiles may still be supplied and are merged alongside.
+   */
+  usefulnessProvider?: () => Promise<BrainKnowledgeUsefulnessFeedback[]>;
 }
 
 export interface KnowledgeCardsCommandResult {
@@ -49,6 +58,7 @@ interface KnowledgeCardsPreviewResource {
   access: "read_only";
   mutation: "none";
   source: "explicit_files";
+  usefulnessSource: "explicit_files" | "store_backed";
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
   patternFiles: string[];
@@ -79,6 +89,22 @@ const proof = {
     "KRN is product-ready"
   ]
 } as const;
+
+const buildProof = (
+  usefulnessSource: "explicit_files" | "store_backed"
+): { proves: string[]; doesNotProve: string[] } =>
+  usefulnessSource === "store_backed"
+    ? {
+        proves: [
+          "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
+          "usefulness feedback was read from store-backed feedback_delta records",
+          "local readback filters were applied deterministically"
+        ],
+        doesNotProve: proof.doesNotProve.filter(
+          (item) => item !== "brain knowledge readback was produced from live DB state"
+        )
+      }
+    : { proves: [...proof.proves], doesNotProve: [...proof.doesNotProve] };
 
 const createLoadedKnowledgeCards = (): LoadedKnowledgeCards => ({
   cards: [],
@@ -195,7 +221,15 @@ export const runKnowledgeCardsCommand = async (
 ): Promise<KnowledgeCardsCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const loaded = await loadKnowledgeCards(runtime, cwd);
-  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(loaded.cards, loaded.feedback);
+  const storeUsefulness = runtime.usefulnessProvider === undefined
+    ? []
+    : await runtime.usefulnessProvider();
+  const usefulnessSource: "explicit_files" | "store_backed" =
+    storeUsefulness.length > 0 ? "store_backed" : "explicit_files";
+  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(
+    loaded.cards,
+    [...loaded.feedback, ...storeUsefulness]
+  );
   const matchingCards = searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter);
   const cards = runtime.limit === undefined
     ? matchingCards
@@ -209,6 +243,7 @@ export const runKnowledgeCardsCommand = async (
     access: "read_only",
     mutation: "none",
     source: "explicit_files",
+    usefulnessSource,
     filter: runtime.filter,
     cardFiles: loaded.cardFiles,
     patternFiles: loaded.patternFiles,
@@ -219,10 +254,7 @@ export const runKnowledgeCardsCommand = async (
     ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
     ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
     cards,
-    proof: {
-      proves: [...proof.proves],
-      doesNotProve: [...proof.doesNotProve]
-    }
+    proof: buildProof(usefulnessSource)
   };
 
   return {
@@ -251,6 +283,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     "Access: read-only",
     "Mutation: none",
     "Source: explicit files",
+    `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Brain knowledge files: ${formatList(resource.cardFiles)}`,
     `Pattern files: ${formatList(resource.patternFiles)}`,
