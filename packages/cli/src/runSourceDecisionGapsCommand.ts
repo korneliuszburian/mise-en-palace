@@ -14,10 +14,14 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
+import {
+  createSourceCommandDatabaseRuntime
+} from "./sourceDatabaseRuntimeSupport.js";
 
 export type SourceDecisionGapsCommand = Extract<CliCommand, { kind: "sourceDecisionGaps" }>;
 
 export interface SourceDecisionGapsCommandRuntime extends BaseCommandRuntime {
+  cwd: string;
   command: SourceDecisionGapsCommand;
   createDatabaseRuntime?: CreateSourceDecisionGapsDatabaseRuntime;
 }
@@ -45,6 +49,9 @@ interface UnadoptedSourceClaim {
   status: SourceClaim["status"];
   claim: string;
   consumer: string;
+  explicitDisposition: "rejected" | "pending_review";
+  rejectionIds: readonly string[];
+  dispositionReason?: string;
 }
 
 interface SourceDecisionGapsReport {
@@ -64,6 +71,8 @@ interface SourceDecisionGapsReport {
   // linked) and "the project has raw claims that were never promoted to
   // decisions at all".
   unadoptedSourceClaimCount: number;
+  resolvedUnadoptedSourceClaimCount: number;
+  pendingUnadoptedSourceClaimCount: number;
   unadoptedClaims: readonly UnadoptedSourceClaim[];
   proof: {
     proves: readonly string[];
@@ -71,8 +80,6 @@ interface SourceDecisionGapsReport {
   };
 }
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const defaultLimit = 50;
 
 const sourceDecisionGapFor = (claim: SourceClaim): SourceDecisionGap => ({
@@ -101,6 +108,8 @@ const formatText = (report: SourceDecisionGapsReport): string =>
     `linkedSourceClaims: ${report.linkedSourceClaimCount}`,
     `missingDecisionEdgeClaims: ${report.missingDecisionEdgeCount}`,
     `unadoptedSourceClaims: ${report.unadoptedSourceClaimCount}`,
+    `resolvedUnadoptedSourceClaims: ${report.resolvedUnadoptedSourceClaimCount}`,
+    `pendingUnadoptedSourceClaims: ${report.pendingUnadoptedSourceClaimCount}`,
     "",
     "Missing SourceDecisionEdge claims:",
     ...(report.missingDecisionEdgeClaims.length === 0
@@ -123,6 +132,7 @@ const formatText = (report: SourceDecisionGapsReport): string =>
           [
             `- sourceClaim:${claim.sourceClaimId}`,
             ` status:${claim.status}`,
+            ` disposition:${claim.explicitDisposition}`,
             ` consumer:${claim.consumer}`,
             ` claim:${claim.claim}`
           ].join("")
@@ -147,14 +157,32 @@ const buildReport = async (input: {
 
   const claims = await input.sourceRepository.listClaimsForProject(input.projectId, input.limit);
   const acceptedClaims = claims.filter((claim) => claim.status === "accepted");
-  const unadoptedClaims = claims
-    .filter((claim) => claim.status !== "accepted")
-    .map((claim) => ({
-      sourceClaimId: claim.id,
-      status: claim.status,
-      claim: claim.claim,
-      consumer: claim.consumer
-    }));
+  const listSourceRejectionsForClaim = input.sourceRepository.listSourceRejectionsForClaim;
+  const unadoptedClaims = await Promise.all(
+    claims.filter((claim) => claim.status !== "accepted").map(async (claim) => {
+      const rejections = listSourceRejectionsForClaim === undefined
+        ? []
+        : await listSourceRejectionsForClaim(claim.id);
+      const dispositionReason = rejections.at(0)?.reason;
+      const explicitDisposition: UnadoptedSourceClaim["explicitDisposition"] =
+        rejections.length > 0 ? "rejected" : "pending_review";
+
+      return {
+        sourceClaimId: claim.id,
+        status: claim.status,
+        claim: claim.claim,
+        consumer: claim.consumer,
+        explicitDisposition,
+        rejectionIds: rejections.map((rejection) => rejection.id),
+        ...(dispositionReason === undefined ? {} : { dispositionReason })
+      };
+    })
+  );
+  const resolvedUnadoptedSourceClaimCount = unadoptedClaims.filter(
+    (claim) => claim.explicitDisposition === "rejected"
+  ).length;
+  const pendingUnadoptedSourceClaimCount =
+    unadoptedClaims.length - resolvedUnadoptedSourceClaimCount;
   const edgeGroups = await Promise.all(acceptedClaims.map(async (claim) => ({
     claim,
     edges: await listSourceDecisionEdgesForClaim(claim.id)
@@ -174,11 +202,14 @@ const buildReport = async (input: {
     missingDecisionEdgeCount: missing.length,
     missingDecisionEdgeClaims: missing.map((item) => sourceDecisionGapFor(item.claim)),
     unadoptedSourceClaimCount: unadoptedClaims.length,
+    resolvedUnadoptedSourceClaimCount,
+    pendingUnadoptedSourceClaimCount,
     unadoptedClaims,
     proof: {
       proves: [
         "read-only project scan can identify accepted SourceClaims without SourceDecisionEdge readback",
-        "read-only project scan can count SourceClaims that were never adopted (status is not accepted) and are therefore invisible to source-search"
+        "read-only project scan can count SourceClaims that were never adopted (status is not accepted) and are therefore invisible to source-search",
+        "read-only project scan can separate unadopted claims with explicit SourceRejection readback from pending review claims"
       ],
       doesNotProve: [
         "source truth",
@@ -201,12 +232,11 @@ export const runSourceDecisionGapsCommand = async (
     throw new Error("KRN_DATABASE_URL is required for krn source decision gaps");
   }
 
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
+  const databaseRuntime = await createSourceCommandDatabaseRuntime({
+    createRuntime: runtime.createDatabaseRuntime ?? createDatabaseRuntime,
     databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    ...(runtime.command.projectId === undefined ? {} : { projectId: runtime.command.projectId }),
+    commandProjectId: runtime.command.projectId,
+    cwd: runtime.cwd,
     requireProjectKernelForExplicitProject: false,
     now: runtime.now,
     createId: runtime.createId

@@ -17,12 +17,12 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
-import {
-  findRepoRoot
-} from "./cliFileBoundary.js";
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
+import {
+  createSourceCommandDatabaseRuntime
+} from "./sourceDatabaseRuntimeSupport.js";
 import {
   buildRelationSupport,
   buildSourceClaimDocumentLinks
@@ -58,8 +58,6 @@ export type CreateSourceSearchDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const defaultLimit = 20;
 const defaultMaxInclusions = 6;
 const defaultSourceClaimScanFloor = 30;
@@ -135,14 +133,12 @@ export const runSourceSearchCommand = async (
   const now = runtime.now();
   const limit = runtime.command.limit ?? defaultLimit;
   const maxInclusions = runtime.command.maxInclusions ?? Math.min(defaultMaxInclusions, limit);
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
+  const databaseRuntime = await createSourceCommandDatabaseRuntime({
+    createRuntime: runtime.createDatabaseRuntime ?? createDatabaseRuntime,
     databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    ...(runtime.command.projectId === undefined ? {} : { projectId: runtime.command.projectId }),
+    commandProjectId: runtime.command.projectId,
+    cwd: runtime.cwd,
     requireProjectKernelForExplicitProject: false,
-    repoPathHint: await findRepoRoot(runtime.cwd),
     now: runtime.now,
     createId: runtime.createId
   });

@@ -169,12 +169,14 @@ const runSelectedSourceCommand = async (
   if (command.kind === "sourceDecisionGaps") {
     return runSourceDecisionGapsCommand({
       ...standardSourceInput(context),
+      cwd: context.cwd,
       command
     });
   }
 
   return runSourceClaimRejectCommand({
     ...standardSourceInput(context),
+    cwd: context.cwd,
     command
   });
 };

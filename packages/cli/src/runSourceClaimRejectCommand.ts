@@ -14,10 +14,14 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
+import {
+  createSourceCommandDatabaseRuntime
+} from "./sourceDatabaseRuntimeSupport.js";
 
 export type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
 
 export interface SourceClaimRejectCommandRuntime extends BaseCommandRuntime {
+  cwd: string;
   command: SourceClaimRejectCommand;
   createDatabaseRuntime?: CreateSourceClaimRejectDatabaseRuntime;
 }
@@ -30,8 +34,6 @@ export type CreateSourceClaimRejectDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const defaultConsumer = "M22 source rejection CLI";
 const defaultDoesNotProve = "This rejected source should not become trusted KRN context.";
 
@@ -101,11 +103,11 @@ export const runSourceClaimRejectCommand = async (
     throw new Error("KRN_DATABASE_URL is required for krn source claim reject --persist");
   }
 
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
+  const databaseRuntime = await createSourceCommandDatabaseRuntime({
+    createRuntime: runtime.createDatabaseRuntime ?? createDatabaseRuntime,
     databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
+    commandProjectId: undefined,
+    cwd: runtime.cwd,
     now: runtime.now,
     createId: runtime.createId
   });

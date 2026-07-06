@@ -571,4 +571,13 @@ export class DrizzleSourceRepository implements SourceRepository {
       return mapSourceRejection(row);
     });
   }
+
+  async listSourceRejectionsForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceRejection[]> {
+    const rows = await this.db
+      .select()
+      .from(sourceRejections)
+      .where(eq(sourceRejections.sourceClaimId, sourceClaimId));
+
+    return rows.map(mapSourceRejection);
+  }
 }

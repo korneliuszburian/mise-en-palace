@@ -104,4 +104,5 @@ export interface SourceRepository {
   ): Promise<SourceDecisionEdge[]>;
   listSourceDecisionEdgesForRun(executionRunId: ExecutionRunId): Promise<SourceDecisionEdge[]>;
   createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection>;
+  listSourceRejectionsForClaim?(sourceClaimId: SourceClaim["id"]): Promise<SourceRejection[]>;
 }

@@ -98,6 +98,7 @@ export interface DatabaseRuntime {
     | "createSourceDecisionEdge"
     | "getSourceDecisionEdgeById"
     | "createSourceRejection"
+    | "listSourceRejectionsForClaim"
   > & Partial<Pick<
     SourceRepository,
     | "createSourceChunk"
@@ -513,7 +514,9 @@ export const createDatabaseRuntime = async (
     getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
     listSourceDecisionEdgesForClaim: (...args) =>
       sourceRepository.listSourceDecisionEdgesForClaim(...args),
-    createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args)
+    createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args),
+    listSourceRejectionsForClaim: (...args) =>
+      sourceRepository.listSourceRejectionsForClaim(...args)
   };
 
   return {
