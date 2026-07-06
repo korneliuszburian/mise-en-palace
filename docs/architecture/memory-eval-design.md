@@ -3,6 +3,10 @@
 Status: current design map for turning agent-memory research into KRN eval
 work. This is not a benchmark backlog and not a research archive.
 
+Research refresh: `docs/architecture/memory-eval-research-refresh.md` records
+the 2026-07-06 source-to-decision pass that keeps KRN focused on governed
+coding-agent decision packets rather than generic chatbot memory benchmarks.
+
 ## Decision
 
 KRN memory quality should be proven by local coding-agent tasks where memory,
