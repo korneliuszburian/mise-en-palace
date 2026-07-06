@@ -59,22 +59,34 @@ describe("runDecisionCorpusImport", () => {
       fixtureVersion: "1",
       status: "pass",
       imported: {
-        decisionCount: 3,
-        noteCount: 3,
-        caseCount: 1,
-        currentDecisionCount: 1,
-        staleDecisionCount: 1,
-        rejectedDecisionCount: 1
+        decisionCount: 9,
+        noteCount: 9,
+        caseCount: 5,
+        currentDecisionCount: 5,
+        staleDecisionCount: 2,
+        rejectedDecisionCount: 2
       },
       notesBaselineStatus: "pass",
       decisionPacketStatus: "pass"
     });
     expect(result.importedDecisionIds).toEqual([
       "decision-corpus-import-path",
+      "db-backed-decision-corpus-import",
+      "live-codex-packet-obedience-pilot",
+      "third-repo-portability-before-breadth",
+      "anti-vanity-naming-source-backed",
       "manual-fixture-editing-only",
-      "import-without-link-validation"
+      "recorded-obedience-proves-live-codex",
+      "import-without-link-validation",
+      "product-readiness-from-live-pilot"
     ]);
-    expect(result.importedCaseIds).toEqual(["decision-corpus-import-task"]);
+    expect(result.importedCaseIds).toEqual([
+      "decision-corpus-import-task",
+      "db-backed-decision-corpus-import-task",
+      "live-codex-packet-obedience-task",
+      "third-repo-portability-task",
+      "anti-vanity-naming-task"
+    ]);
     expect(result.proof.proves).toContain(
       "the importer validates current, stale, and rejected decision links for imported cases"
     );
@@ -87,9 +99,9 @@ describe("runDecisionCorpusImport", () => {
     expect(result.status).toBe("pass");
     expect(result.mergedCorpus).toMatchObject({
       name: "krn-decision-packet-imported-source-to-decision",
-      decisionCount: 37,
-      noteCount: 37,
-      caseCount: 18
+      decisionCount: 43,
+      noteCount: 43,
+      caseCount: 22
     });
   });
 
@@ -176,10 +188,12 @@ describe("runDecisionCorpusImport", () => {
       buildImportedDecisionCorpus(
         {
           ...sourceFixture,
-          cases: sourceFixture.cases.map((testCase) => ({
-            ...testCase,
-            id: "memory-runtime-task"
-          }))
+          cases: sourceFixture.cases.map((testCase, index) => index === 0
+            ? {
+                ...testCase,
+                id: "memory-runtime-task"
+              }
+            : testCase)
         },
         baseFixture()
       )
@@ -425,20 +439,31 @@ describe("runDecisionCorpusImport", () => {
       now
     });
 
-    expect(rows).toHaveLength(3);
-    expect(artifacts).toHaveLength(3);
-    expect(chunks).toHaveLength(3);
-    expect(decisions).toHaveLength(3);
-    expect(decisionEdges).toHaveLength(2);
+    expect(rows).toHaveLength(9);
+    expect(artifacts).toHaveLength(9);
+    expect(chunks).toHaveLength(9);
+    expect(decisions).toHaveLength(9);
+    expect(decisionEdges).toHaveLength(7);
     expect(searchDocuments).toMatchObject([
       { validityStatus: "active" },
+      { validityStatus: "active" },
+      { validityStatus: "active" },
+      { validityStatus: "active" },
+      { validityStatus: "active" },
+      { validityStatus: "invalidated" },
       { validityStatus: "invalidated" }
     ]);
-    expect(rejections).toHaveLength(1);
+    expect(rejections).toHaveLength(2);
     expect(rows.map((row) => [row.decisionId, row.sourceClaimStatus])).toEqual([
       ["decision-corpus-import-path", "accepted"],
+      ["db-backed-decision-corpus-import", "accepted"],
+      ["live-codex-packet-obedience-pilot", "accepted"],
+      ["third-repo-portability-before-breadth", "accepted"],
+      ["anti-vanity-naming-source-backed", "accepted"],
       ["manual-fixture-editing-only", "accepted"],
-      ["import-without-link-validation", "rejected"]
+      ["recorded-obedience-proves-live-codex", "accepted"],
+      ["import-without-link-validation", "rejected"],
+      ["product-readiness-from-live-pilot", "rejected"]
     ]);
     expect(rows.find((row) => row.decisionId === "decision-corpus-import-path")?.sourceDecisionEdgeId)
       .toMatch(/^source-decision-edge-/u);
