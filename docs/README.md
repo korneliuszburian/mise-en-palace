@@ -23,11 +23,13 @@ Current count:
 
 ```txt
 docs files: 809
-docs markdown files: 769
+docs files: 572
+docs markdown files: 531
 root markdown files: 6
-docs/reviews files: 393
-docs/runs files: 272
+docs/reviews files: 311
+docs/runs files: 116
 docs/materials files: 7
+docs/archive files: 4
 ```
 
 Root markdown files after this cleanup:
@@ -51,8 +53,8 @@ README.md
 | `docs/standards/` | keep focused | Code, commit, and TypeScript standards. |
 | `docs/brain-knowledge/` | keep focused | Retained catalog and usefulness feedback seed data. |
 | `docs/patterns/` | keep focused | Pattern intake and reference recipe material. |
-| `docs/runs/` | keep as historical evidence | Many reports are evidence refs for current tests/readbacks. Not default context. |
-| `docs/reviews/` | keep as historical evidence | Many controlled-dogfood reports are evidence refs. Not default context. |
+| `docs/runs/` | keep only owned historical evidence | Reports without exact-path owners are removed from the active tree. Not default context. |
+| `docs/reviews/` | keep only owned historical evidence | Controlled-dogfood reports without exact-path owners are removed from the active tree. Not default context. |
 | `docs/materials/` | keep quarantined | Raw source/audit material. Never default context. |
 | `docs/plans/` | keep historical | Archived detailed planning material; root `PLAN.md` owns current execution truth. |
 | `docs/archive/` | keep archive | Historical root docs and compacted ledgers. |
@@ -65,6 +67,9 @@ Do not delete `docs/runs/` or `docs/reviews/` files just because they are old.
 They may be evidence refs in tests, source decisions, feedback records, or brain
 knowledge. Delete only when a focused grep proves no active source, fixture,
 test, Beads issue, or docs map references the artifact.
+
+The first owner-based cleanup removed exact-unowned historical reports instead
+of moving them into another docs archive.
 
 ## Proof Boundary
 
