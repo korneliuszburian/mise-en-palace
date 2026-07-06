@@ -28,7 +28,7 @@ reviewed feedback memory effect: eval:memory-advantage reports prior feedback re
 coding-task memory decision: eval:memory-advantage now reports per-case `decision_before_memory`/`decision_after_krn`; win, neutral, and rejection-protection cases show memory/source evidence changing or preserving bounded implementation decisions without LLM execution
 Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
 notes-baseline decision-packet eval: eval:notes-baseline compares KRN packets against comprehensive notes+grep; notes ties raw recall while KRN wins through governed boundary, stale exclusion, and rejected-path visibility
-corpus closure readback: connected project source decision gaps report 8/8 accepted SourceClaims linked and 11/11 non-adopted claims explicitly rejected; canonical worker/dashboard/unknown-first/bounded-loop/source-authority/feedback-forget queries surface linked governing claims in top 3
+corpus closure readback: connected project source decision gaps report 8/8 accepted SourceClaims linked and 11/11 non-adopted claims explicitly rejected; eval:corpus-closure guards six canonical source-search queries with linked governing claims in top 3
 feedback/forget product path: product CLI seeded one obsolete larger-slice memory, promoted it through MemoryReviewGate, recorded three stale applications, and next `krn plan --persist` excluded it with `unresolved_negative_feedback`; operator-governed, not autonomous pruning
 memory advantage falsification/source ablation: eval:memory-advantage now reports 17 wins, 7 firm-pattern challenge cases with 6 wins and 1 neutral, 4 classified neutral/no-advantage cases, one classified broken-prior-advantage case, 23 source-disabled reruns, 21 source-required hits, and source prune candidate counts
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
@@ -136,9 +136,9 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 ## Active Task
 
 Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
-Current active Bead: `mise-en-palace-ovit` feedback/forget loop.
-Latest closed Bead: `mise-en-palace-9rnq` corpus closure.
-Next ready Beads after `ovit`: `mise-en-palace-qqet` proof/docs cleanup, `mise-en-palace-rr9b` decision-packet benchmark, `mise-en-palace-v4e9` second-repo dry run.
+Current active Bead: `mise-en-palace-a4s0` corpus-closure regression guard.
+Latest closed Bead: `mise-en-palace-ovit` feedback/forget loop.
+Next ready Beads after `a4s0`: `mise-en-palace-rr9b` decision-packet benchmark, `mise-en-palace-qqet` proof/docs cleanup, `mise-en-palace-v4e9` second-repo dry run.
 Worker/runtime expansion stays rejected until a named product loop needs execution; second-opinion-claude runs after larger slices and its verdict is advisory under local evidence.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
