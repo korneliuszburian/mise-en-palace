@@ -18,7 +18,10 @@ import type {
 
 import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
 import { findRepoRoot } from "../cliFileBoundary.js";
-import type { DatabaseRuntime } from "../databaseRuntime.js";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "../databaseRuntime.js";
 import { runCli } from "../runCli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -1365,6 +1368,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let runtimeInput: DatabaseRuntimeInput | undefined;
     const result = await runCli(
       [
         "source",
@@ -1383,53 +1387,58 @@ describe("runCli", () => {
         "--persist"
       ],
       {
+        cwd: "/repo",
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: dependencies,
-          sourceRepository: {
-            ...unusedSourceRepository,
-            async createSourceArtifact() {
-              throw new Error("createSourceArtifact should not be called");
+        createDatabaseRuntime: async (input) => {
+          runtimeInput = input;
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: dependencies,
+            sourceRepository: {
+              ...unusedSourceRepository,
+              async createSourceArtifact() {
+                throw new Error("createSourceArtifact should not be called");
+              },
+              async createSourceClaim() {
+                throw new Error("createSourceClaim should not be called");
+              },
+              async getSourceClaimById() {
+                throw new Error("getSourceClaimById should not be called");
+              },
+              async createSourceDecisionEdge() {
+                throw new Error("createSourceDecisionEdge should not be called");
+              },
+              async createSourceRejection(input) {
+                return {
+                  id: "source-rejection-1",
+                  ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+                  ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+                  ...(input.sourceArtifactId === undefined ? {} : { sourceArtifactId: input.sourceArtifactId }),
+                  ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
+                  title: input.title,
+                  attemptedClaim: input.attemptedClaim,
+                  rejectedBecause: input.rejectedBecause,
+                  reason: input.reason,
+                  doesNotProve: input.doesNotProve,
+                  consumer: input.consumer,
+                  metadata: input.metadata ?? {},
+                  rejectedAt: now
+                };
+              }
             },
-            async createSourceClaim() {
-              throw new Error("createSourceClaim should not be called");
-            },
-            async getSourceClaimById() {
-              throw new Error("getSourceClaimById should not be called");
-            },
-            async createSourceDecisionEdge() {
-              throw new Error("createSourceDecisionEdge should not be called");
-            },
-            async createSourceRejection(input) {
-              return {
-                id: "source-rejection-1",
-                ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-                ...(input.sourceArtifactId === undefined ? {} : { sourceArtifactId: input.sourceArtifactId }),
-                ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
-                title: input.title,
-                attemptedClaim: input.attemptedClaim,
-                rejectedBecause: input.rejectedBecause,
-                reason: input.reason,
-                doesNotProve: input.doesNotProve,
-                consumer: input.consumer,
-                metadata: input.metadata ?? {},
-                rejectedAt: now
-              };
+            harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
             }
-          },
-          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
-          memoryRepository: unusedMemoryRepository,
-          async close() {
-            return undefined;
-          }
-        })
+          };
+        }
       }
     );
 
@@ -1439,5 +1448,6 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceRejection: source-rejection-1");
     expect(result.stdout).toContain("rejectedBecause: decorative");
     expect(result.stdout).toContain("No SourceClaim created");
+    expect(runtimeInput?.repoPathHint).toBe("/repo");
   });
 });

@@ -98,12 +98,12 @@ export interface DatabaseRuntime {
     | "createSourceDecisionEdge"
     | "getSourceDecisionEdgeById"
     | "createSourceRejection"
-    | "listSourceRejectionsForClaim"
   > & Partial<Pick<
     SourceRepository,
     | "createSourceChunk"
     | "createSourceDecision"
     | "listSourceDecisionEdgesForClaim"
+    | "listSourceRejectionsForClaim"
   >>;
   retrievalRepository?: Pick<
     RetrievalRepository,
