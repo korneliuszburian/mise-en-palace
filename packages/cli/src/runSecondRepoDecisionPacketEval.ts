@@ -54,7 +54,8 @@ export interface SecondRepoDecisionPacketEvalResult {
 
 const defaultFixturePaths = [
   "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json",
-  "tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json"
+  "tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json",
+  "tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json"
 ] as const;
 
 const selfRepoEvidencePrefixes = [
@@ -80,7 +81,8 @@ const targetRepoNameFromFixture = (
 ): string => {
   const suffixes = [
     "-second-repo",
-    "-third-repo"
+    "-third-repo",
+    "-fourth-repo"
   ] as const;
   const matchedSuffix = suffixes.find((suffix) => fixture.corpusName.endsWith(suffix));
 

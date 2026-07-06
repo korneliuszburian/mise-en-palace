@@ -14,6 +14,9 @@ const fixturePath = fileURLToPath(
 const thirdRepoFixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json", import.meta.url)
 );
+const fourthRepoFixturePath = fileURLToPath(
+  new URL("../../../../tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json", import.meta.url)
+);
 
 const writeFixtureVariant = (
   mutate: (fixture: Record<string, unknown>) => void,
@@ -67,24 +70,26 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]));
   });
 
-  it("passes with per-repo metrics across second and third target corpora", () => {
+  it("passes with per-repo metrics across second, third, and fourth target corpora", () => {
     const result = runSecondRepoDecisionPacketEval([
       fixturePath,
-      thirdRepoFixturePath
+      thirdRepoFixturePath,
+      fourthRepoFixturePath
     ]);
 
     expect(result.status).toBe("pass");
     expect(result.targetRepos).toEqual([
       "weak-json-boundary-typescript",
-      "env-config-contract-typescript"
+      "env-config-contract-typescript",
+      "async-job-boundary-typescript"
     ]);
     expect(result.metrics).toMatchObject({
-      repoCount: 2,
-      caseCount: 30,
-      repoSpecificDecisionCount: 20,
-      reusablePatternDecisionCount: 6,
-      rejectedPathCount: 8,
-      staleDecisionCount: 7,
+      repoCount: 3,
+      caseCount: 45,
+      repoSpecificDecisionCount: 28,
+      reusablePatternDecisionCount: 9,
+      rejectedPathCount: 11,
+      staleDecisionCount: 9,
       selfRepoContaminationCount: 0
     });
     expect(result.repoResults.map((repo) => ({
@@ -101,6 +106,12 @@ describe("runSecondRepoDecisionPacketEval", () => {
       },
       {
         targetRepo: "env-config-contract-typescript",
+        notesBaselineStatus: "pass",
+        decisionPacketStatus: "pass",
+        selfRepoContaminationCount: 0
+      },
+      {
+        targetRepo: "async-job-boundary-typescript",
         notesBaselineStatus: "pass",
         decisionPacketStatus: "pass",
         selfRepoContaminationCount: 0

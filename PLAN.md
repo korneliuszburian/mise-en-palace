@@ -29,7 +29,7 @@ coding-task memory decision: eval:memory-advantage now reports per-case `decisio
 Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
 notes-baseline decision-packet eval: eval:notes-baseline compares KRN packets against comprehensive notes+grep; notes ties raw recall while KRN wins through governed boundary, stale exclusion, and rejected-path visibility
 decision-packet task eval: eval:decision-packet measures pre-code governed packet quality over 17 real task framings; current result is 17/17 useful, zero stale-authority inclusions, and average noise 2
-target-repo packet eval: eval:second-repo-decision-packet runs notes-baseline plus decision-packet gates on weak-json-boundary-typescript and env-config-contract-typescript; current result is 30/30 useful/wins, zero scanned self-repo evidence contamination, 20 target-repo-backed decisions, 6 reusable TypeScript pattern decisions, and 8 rejected paths
+target-repo packet eval: eval:second-repo-decision-packet runs notes-baseline plus decision-packet gates on weak-json-boundary-typescript, env-config-contract-typescript, and async-job-boundary-typescript; current result is 45/45 useful/wins, zero scanned self-repo evidence contamination, 28 target-repo-backed decisions, 9 reusable TypeScript pattern decisions, and 11 rejected paths
 recorded Codex packet obedience: eval:codex-decision-packet-obedience checks replayed output keeps governing decision, stale boundary, rejected path, evidence-shape, and non-proof signals; current result is 2/2 pass
 decision corpus import path: eval:decision-corpus-import converts three compact source-to-decision rows into merged notes/decision-packet corpus rows, validates duplicate/stale/rejected links, and keeps merged evals passing
 corpus closure readback: connected project source decision gaps report 8/8 accepted SourceClaims linked and 11/11 non-adopted claims explicitly rejected; eval:corpus-closure guards six canonical source-search queries with linked governing claims in top 3
@@ -136,8 +136,8 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 ## Active Task
 
 Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
-Current active Bead: `mise-en-palace-w88x` CLI parser naming batch; latest closed Bead: `mise-en-palace-taxv`; next ready Bead after `w88x`: select from Beads after verification.
-`mise-en-palace-w88x` renames parser-table `handler` vocabulary in brain, knowledge, and heartbeat arg parsers to `parser`, with no command behavior changes.
+Current active Bead: `mise-en-palace-olwb` fourth target packet eval; latest closed Bead: `mise-en-palace-w88x`; next ready Bead after `olwb`: select from Beads after verification and second-opinion review.
+`mise-en-palace-olwb` adds the async-job-boundary-typescript target corpus for queue/idempotency/retry/lease/clock-injection shape; `mise-en-palace-w88x` renames parser-table `handler` vocabulary to `parser` with no command behavior changes.
 `mise-en-palace-taxv` expands the compact import fixture to five current decisions, two stale paths, two rejected paths, and five cases without hand-editing the large notes-baseline corpus.
 `mise-en-palace-9u9w` adds `pnpm eval:codex-decision-packet-obedience:live-pilot`: one read-only `codex exec` output preserves governing/stale/rejected/non-proof packet signals under schema.
 `mise-en-palace-kj09` adds `pnpm db:smoke:decision-corpus-import`: compact source-to-decision rows now persist through existing SourceArtifact/SourceChunk/SourceClaim/SourceDecision/SourceDecisionEdge/SearchDocument/SourceRejection repository ports and source-search readback selects the imported governing claim.
