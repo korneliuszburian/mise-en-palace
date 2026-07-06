@@ -6,14 +6,12 @@
   "reviewability": "ready",
   "decision": "External JSON/env/file/CLI/MCP inputs should enter as unknown, narrow near the boundary, and return explicit finite result states when callers need failure reasons.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#typescript-narrowing-and-exhaustiveness",
-    "docs/KRN_SOURCES.md#designing-your-types",
-    "docs/KRN_SOURCES.md#ts-reset"
+    "source:typescript-narrowing-and-exhaustiveness",
+    "source:designing-your-types",
+    "source:ts-reset"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v253-normalized-target-repair-trial",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v256-replayable-target-repair-trial",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v258-pattern-enforcement-gate"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "V258 Pattern Enforcement Gate",

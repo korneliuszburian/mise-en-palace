@@ -13,9 +13,7 @@
     "user-provided screenshots 2026-07-01: reference implementation, clone workflow, recipe hashing, and code-as-up-to-date-documentation practitioner notes"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-sdt-01-reference-implementation-pattern",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-sbv-02-retained-pattern-code-quality",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-dvy-01-typescript-exemplar-trial"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future TypeScript parser-boundary repairs",

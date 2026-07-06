@@ -6,12 +6,11 @@
   "reviewability": "ready",
   "decision": "Every non-trivial KRN task contract should name objective, non-goals, allowed and forbidden writes, verification, proof and non-proof boundaries, rollback, and next-task synthesis so Codex can execute surgically and report what evidence actually proves.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#codex-prompting-guide",
+    "source:codex-prompting-guide",
     "https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide",
     "PLANS.md#9-task-contract-schema"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v286-brain-knowledge-catalog-coverage-expansion",
     "packages/harness/src/__tests__/activePlanInvariants.test.ts",
     "packages/cli/src/runKnowledgeCardsCommand.test.ts"
   ],

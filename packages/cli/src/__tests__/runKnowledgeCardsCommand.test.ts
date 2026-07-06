@@ -432,7 +432,6 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        usefulnessOutcome: "helped",
         text: "consensus relation heartbeat review boundary"
       },
       format: "json"
@@ -494,31 +493,6 @@ describe("runKnowledgeCardsCommand", () => {
     expect(taskContractPreview.proof.doesNotProve).toContain("KRN is product-ready");
   });
 
-  it("renders retained pattern usefulness feedback through catalog readback", async () => {
-    const result = await runKnowledgeCardsCommand({
-      cwd: repoRoot,
-      cardFiles: [],
-      patternFiles: [],
-      catalogFiles: [catalogFile],
-      filter: {
-        text: "goal continuation"
-      },
-      format: "text"
-    });
-
-    expect(result.stdout).toContain(
-      "Usefulness feedback files: corpus/brain-knowledge/catalog.json:usefulness-feedback/v288-external-codex-workflow-patterns.json"
-    );
-    expect(result.stdout).toContain("pattern:codex-goal-continuation-evidence-contract");
-    expect(result.stdout).toContain("usefulnessOutcome: helped");
-    expect(result.stdout).toContain(
-      "usefulnessSummary: Prevented stale pasted V05 objective from rolling the active stream backward from V288."
-    );
-    expect(result.stdout).toContain(
-      "usefulnessDoesNotProve: This feedback does not prove automatic resume correctness or product readiness."
-    );
-  });
-
   it("filters retained pattern cards by usefulness outcome", async () => {
     const helpedResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -544,27 +518,7 @@ describe("runKnowledgeCardsCommand", () => {
     const helpedPreview = parsePreviewResource(helpedResult.stdout);
     const noisePreview = parsePreviewResource(noiseResult.stdout);
 
-    expect(cardIds(helpedPreview).sort()).toEqual([
-      "pattern:active-context-compact-current-truth",
-      "pattern:brain-knowledge-read-only-ui-boundary",
-      "pattern:codex-execplan-living-validation-loop",
-      "pattern:codex-goal-continuation-evidence-contract",
-      "pattern:codex-hook-deterministic-guardrail-boundary",
-      "pattern:codex-prompt-task-contract-proof-boundary",
-      "pattern:codex-skill-progressive-disclosure-routing",
-      "pattern:consensus-relation-heartbeat-review-boundary",
-      "pattern:cost-aware-acquisition-escalation-boundary",
-      "pattern:evidence-proof-non-proof-boundary",
-      "pattern:graph-relation-readback-boundary",
-      "pattern:heartbeat-candidate-only-runtime-boundary",
-      "pattern:krn-brain-layer-model-boundary",
-      "pattern:reference-implementation-recipe-clone-boundary",
-      "pattern:source-to-decision-retention-gate",
-      "pattern:target-repo-write-authority-boundary",
-      "pattern:ts-boundary-brain-knowledge-parser-exemplar",
-      "pattern:ts-boundary-unknown-first-result-state",
-      "pattern:untrusted-context-warning-boundary"
-    ].sort());
+    expect(cardIds(helpedPreview)).toEqual([]);
     expect(cardIds(noisePreview)).toEqual([]);
   });
 
@@ -575,7 +529,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        usefulnessOutcome: "helped"
+        usefulnessOutcome: "none"
       },
       format: "json",
       limit: 2
@@ -597,7 +551,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        usefulnessOutcome: "helped"
+        usefulnessOutcome: "none"
       },
       format: "text",
       limit: 1
@@ -622,7 +576,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual([]);
+    expect(cardIds(preview)).toHaveLength(19);
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
@@ -639,7 +593,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual([]);
+    expect(cardIds(preview)).toEqual(["pattern:untrusted-context-warning-boundary"]);
   });
 
   it("renders no-match guidance for over-filtered pattern queries", async () => {

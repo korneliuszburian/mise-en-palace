@@ -7,11 +7,10 @@
   "decision": "KRN may use Codex hooks for deterministic lifecycle guardrails around tool use, compaction, evidence reminders, and trust-boundary checks, but hooks must not become semantic source truth, review-gate authority, memory-promotion authority, or complete enforcement boundaries.",
   "sourceRefs": [
     "https://developers.openai.com/codex/hooks",
-    "docs/runbooks/pattern-intake.md#surface-consumer-matrix",
-    "docs/KRN_KERNEL.md#decision-rule"
+    "runbook:pattern-intake#surface-consumer-matrix",
+    "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-30-v375-pattern-research-brain-intake-trial",
     "packages/cli/src/runKnowledgeCardsCommand.test.ts"
   ],
   "consumers": [

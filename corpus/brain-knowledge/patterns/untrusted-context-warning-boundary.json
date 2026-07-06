@@ -6,12 +6,11 @@
   "reviewability": "ready",
   "decision": "Codex-facing briefs should label untrusted or external selected context with deterministic warnings and proof boundaries instead of treating selected context as trusted execution truth.",
   "sourceRefs": [
-    "docs/architecture/security-trust-boundaries.md#current-trust-boundary-map",
+    "source-decision:security-trust-boundaries#current-trust-boundary-map",
     "packages/codex-adapter/src/renderExecutionBrief.ts",
-    "docs/architecture/behavior-gate-matrix.md#classification"
+    "behavior-gate:classification"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-25-codex-brief-contract-hardening",
     "packages/codex-adapter/src/renderExecutionBrief.test.ts",
     "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
     "packages/harness/src/__tests__/goldenKrnBehaviorGate.test.ts"

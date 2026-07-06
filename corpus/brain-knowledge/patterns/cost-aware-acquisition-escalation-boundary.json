@@ -6,16 +6,11 @@
   "reviewability": "ready",
   "decision": "KRN knowledge-acquisition candidates should expose a candidate-only low-to-high cost escalation path: review linked document evidence first when linkedDocumentEvidence exists, then source-search review, then bounded external research, and human review only when cheaper evidence remains insufficient. Missing-evidence-only candidates must start at source_search_review.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#towards-autonomous-memory-agents",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-18-cost-aware-acquisition-escalation-preview",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-19-cost-aware-acquisition-escalation-review",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-20-missing-evidence-only-acquisition-escalation"
+    "source:towards-autonomous-memory-agents"
   ],
   "evidenceRefs": [
     "packages/workers/src/knowledgeAcquisitionHeartbeatPreview.test.ts",
-    "packages/cli/src/runHeartbeatPreviewCommand.test.ts",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-19-cost-aware-acquisition-escalation-review",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-20-missing-evidence-only-acquisition-escalation"
+    "packages/cli/src/runHeartbeatPreviewCommand.test.ts"
   ],
   "consumers": [
     "future heartbeat knowledge-acquisition review",

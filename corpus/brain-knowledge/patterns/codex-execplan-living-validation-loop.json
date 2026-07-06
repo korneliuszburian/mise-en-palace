@@ -6,13 +6,12 @@
   "reviewability": "ready",
   "decision": "KRN long-running implementation should keep detailed objective, discoveries, decisions, validation, next work, and compactness rules in PLANS.md, while PLAN.md remains the compact product truth.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#execplans",
+    "source:codex-execplans",
     "https://developers.openai.com/cookbook/articles/codex_exec_plans",
     "PLANS.md#condensation-rules"
   ],
   "evidenceRefs": [
     "PLAN.md#current-product-state",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v255-active-ledger-condensation",
     "packages/harness/src/__tests__/contextHygieneInvariants.test.ts",
     "packages/harness/src/__tests__/activePlanInvariants.test.ts"
   ],

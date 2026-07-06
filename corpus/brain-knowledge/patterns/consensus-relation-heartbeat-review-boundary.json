@@ -6,13 +6,9 @@
   "reviewability": "ready",
   "decision": "KRN consensus/eval work should review relation-bearing candidates through heartbeat consensus_evaluation readback that exposes relationReviewFocus, relationReviewQuestion, reviewUsefulness, support/risk evidence refs, candidate reviewability, mutation none, and decision options before any consensus runtime, graph ranking, source truth mutation, or Memory Core mutation is introduced.",
   "sourceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-gce-01-consensus-relation-focus",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-cro-01-consensus-operator-readback",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-cru-01-consensus-readback-review"
+    "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-cru-01-consensus-readback-review",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-cru-01-consensus-readback-review-consensus-candidate",
     "packages/cli/src/runHeartbeatPreviewCommand.test.ts"
   ],
   "consumers": [

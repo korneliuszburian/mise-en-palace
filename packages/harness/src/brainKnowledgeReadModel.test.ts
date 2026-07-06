@@ -267,7 +267,7 @@ describe("Brain knowledge read model", () => {
     });
     expect(card.sourceRefs).toContain("packages/harness/src/brainKnowledgeReadModel.ts");
     expect(card.evidenceRefs).toContain(
-      "legacy-evidence:reviews-controlled-dogfood-2026-07-01-dvy-01-typescript-exemplar-trial"
+      "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
     );
     expect(searchBrainKnowledgeCards([card], {
       text: "brain knowledge parser exemplar unknown-first recipe"

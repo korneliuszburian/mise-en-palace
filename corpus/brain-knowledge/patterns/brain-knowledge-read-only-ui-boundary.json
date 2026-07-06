@@ -6,15 +6,13 @@
   "reviewability": "ready",
   "decision": "Brain knowledge UI/search should render read-only BrainKnowledgeReadModel cards with proof boundaries before any API, MCP, dashboard, DB search service, or mutation-capable surface is built.",
   "sourceRefs": [
-    "docs/architecture/observability-read-models.md#brainknowledgereadmodel",
-    "docs/decisions/ADR-0025-dashboard-readiness-gate.md",
-    "docs/decisions/ADR-0028-brain-knowledge-web-search-readiness-gate.md",
+    "read-model:brain-knowledge",
+    "adr:0025-dashboard-readiness-gate",
+    "adr:0028-brain-knowledge-web-search-readiness-gate",
     "packages/cli/src/runKnowledgeCardsCommand.ts"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v281-brain-knowledge-web-search-readiness-gate",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v282-brain-knowledge-static-web-preview-artifact",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v285-brain-knowledge-static-preview-browser-smoke"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future brain knowledge UI/search slices",

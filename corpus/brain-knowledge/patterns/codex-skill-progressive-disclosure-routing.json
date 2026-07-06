@@ -6,15 +6,13 @@
   "reviewability": "ready",
   "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained brain knowledge when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#skills",
-    "docs/runbooks/pattern-intake.md#official-codex-docs-to-skill",
+    "source:codex-skills",
+    "runbook:pattern-intake#official-codex-docs-to-skill",
     ".agents/skills/source-to-decision/SKILL.md",
     ".agents/skills/typescript-type-safety/SKILL.md"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v259-codex-skills-pack-regate",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v270-brain-knowledge-skill-readback-hook",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v271-brain-knowledge-skill-readback-usefulness"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future Codex skill updates",

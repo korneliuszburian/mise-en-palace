@@ -6,14 +6,12 @@
   "reviewability": "ready",
   "decision": "A source or pattern may become retained KRN knowledge only when it states mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
   "sourceRefs": [
-    "docs/KRN_KERNEL.md#decision-rule",
+    "KRN_ROADMAP.md#decision-rule",
     "legacy-pattern-selection-gate",
     ".agents/skills/source-to-decision/SKILL.md"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v257-pattern-intake-trial",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v265-brain-knowledge-card-producer",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v267-brain-knowledge-explicit-catalog-preview"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future pattern intake",

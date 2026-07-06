@@ -7,13 +7,10 @@
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",
   "sourceRefs": [
     ".agents/skills/target-repo-testing/SKILL.md",
-    "docs/architecture/behavior-gate-matrix.md#classification",
+    "behavior-gate:classification",
     "PLAN.md#hard-non-goals"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v251-fresh-target-trial-gate-after-activation-guards",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v252-normalized-target-trial-substrate",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v256-replayable-target-repair-trial",
     "packages/harness/src/__tests__/skillInvariants.test.ts"
   ],
   "consumers": [

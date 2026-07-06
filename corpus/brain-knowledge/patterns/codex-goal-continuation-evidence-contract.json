@@ -6,13 +6,12 @@
   "reviewability": "ready",
   "decision": "KRN goals should stay compact and phase-oriented, naming the active objective, current task, continuation rules, evidence expectations, and completion boundary instead of becoming a progress ledger or product brain.",
   "sourceRefs": [
-    "docs/KRN_SOURCES.md#goals-in-codex",
+    "source:codex-goals",
     "https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex",
     "GOAL.md#continuation-after-compact"
   ],
   "evidenceRefs": [
     "GOAL.md#current-objective",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v255-active-ledger-condensation",
     "packages/harness/src/__tests__/activePlanInvariants.test.ts"
   ],
   "consumers": [

@@ -11,9 +11,7 @@
     "packages/schema/src/evidenceCapture.ts"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v246-observe-reflect-sequencing-guard",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v240-project-resolution-readback",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v273-brain-knowledge-html-search-preview"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future evidence capture and review slices",

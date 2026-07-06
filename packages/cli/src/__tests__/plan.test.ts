@@ -270,7 +270,7 @@ describe("runCli", () => {
       "Retained pattern IDs: ts-boundary-brain-knowledge-parser-exemplar, ts-boundary-unknown-first-result-state"
     );
     expect(result.stdout).toContain(
-      "Retained pattern reason: Retained brain knowledge with helped usefulness feedback matched the pre-coding plan query."
+      "Retained pattern reason: Retained brain knowledge matched the pre-coding plan query."
     );
     expect(result.stdout).toContain("Retained pattern targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Retained pattern recommended use: Use target-specific selectedKnowledge");
@@ -284,7 +284,7 @@ describe("runCli", () => {
       retainedPatternSelection: {
         status: "selected",
         reason:
-          "Retained brain knowledge with helped usefulness feedback matched the pre-coding plan query.",
+          "Retained brain knowledge matched the pre-coding plan query.",
         selectedPatternIds: [
           "ts-boundary-brain-knowledge-parser-exemplar",
           "ts-boundary-unknown-first-result-state"

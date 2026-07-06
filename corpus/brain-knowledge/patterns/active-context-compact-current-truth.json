@@ -6,14 +6,13 @@
   "reviewability": "ready",
   "decision": "KRN active execution truth should stay in compact root GOAL.md and PLAN.md, detailed history should live in PLANS.md/reports/archives, and stale pasted objectives must not roll the active stream backward.",
   "sourceRefs": [
-    "docs/KRN_KERNEL.md#runtime-truth",
+    "KRN_ROADMAP.md#authority-surfaces",
     "GOAL.md#continuation-after-compact",
     "PLAN.md#verification-policy",
     "PLANS.md#condensation-rules",
-    "docs/architecture/behavior-gate-matrix.md#classification"
+    "behavior-gate:classification"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v255-active-ledger-condensation",
     "packages/harness/src/__tests__/contextHygieneInvariants.test.ts",
     "packages/harness/src/__tests__/activePlanInvariants.test.ts"
   ],

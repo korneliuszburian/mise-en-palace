@@ -11,12 +11,11 @@
     "https://greenonsoftware.com/articles/research/types-vs-interfaces-in-typescript-fully-explained/",
     "https://4markdown.com/mapped-types-in-typescript/",
     "https://4markdown.com/5-game-changing-typescript-utility-types-you-should-master/",
-    "docs/runbooks/pattern-intake.md",
-    "docs/KRN_KERNEL.md#decision-rule"
+    "runbook:pattern-intake",
+    "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-sdt-01-reference-implementation-pattern",
-    "legacy-evidence:reviews-controlled-dogfood-2026-07-01-cpr-01-plan-bridge-recall"
+    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
   ],
   "consumers": [
     "future TypeScript pattern intake",

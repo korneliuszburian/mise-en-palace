@@ -6,13 +6,9 @@
   "reviewability": "ready",
   "decision": "KRN heartbeat and dreaming work should run as a candidate-only maintenance/readback loop that reports readiness, reviewability, missing evidence, next action, and forbidden writes before any scheduler, daemon, source-truth mutation, or Memory Core mutation is introduced.",
   "sourceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-30-v372-heartbeat-dreaming-runtime-loop",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-30-v374-source-relation-candidate-evidence-repair",
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-30-v376-mini-brain-qa-benchmark-slice",
-    "legacy-eval-fixture:benchmarks-brain-qa-v376-questions"
+    "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "legacy-evidence:reviews-controlled-dogfood-2026-06-30-v376-mini-brain-qa-benchmark-slice",
     "packages/cli/src/runKnowledgeCardsCommand.test.ts"
   ],
   "consumers": [
