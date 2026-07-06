@@ -41,7 +41,6 @@ Already covered enough for internal alpha:
 Still missing before "brain is useful enough to rely on":
 
 - live or recorded Codex-output obedience check;
-- explicit memory-competency coverage gate that fails on missing axes;
 - ingestion/product path for adding real decisions without hand-editing JSON;
 - at least one more different target repo/failure mode;
 - naming/API cleanup so the kernel surface reads like a decision engine, not a
@@ -52,9 +51,9 @@ Still missing before "brain is useful enough to rely on":
 1. `mise-en-palace-we82`: live or recorded Codex decision-packet obedience eval.
    This is the highest leverage because all current packet evals stop before
    output obedience.
-2. Memory competency coverage gate: add a small deterministic checker around
-   `eval:memory-advantage` that reports and gates the four MemoryAgentBench
-   axes without importing the external benchmark.
+2. Memory competency coverage gate: already present in
+   `runMemoryAdvantageEval` and `memoryAdvantageEval.test.ts`; keep it as a
+   maintained invariant rather than new work.
 3. `mise-en-palace-79ae`: decision corpus ingestion product path. This should
    turn real source-to-decision artifacts into corpus rows with validation,
    staleness/rejection support, and duplicate checks.
