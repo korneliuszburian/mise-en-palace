@@ -23,8 +23,8 @@ Current count:
 
 ```txt
 docs files: 809
-docs files: 454
-docs markdown files: 414
+docs files: 453
+docs markdown files: 413
 root markdown files: 6
 docs/reviews files: 204
 docs/runs files: 108
