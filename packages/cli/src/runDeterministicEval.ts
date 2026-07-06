@@ -76,7 +76,7 @@ export const runDeterministicEval = async (input: {
   sourceGraphRankingFixturePath: string;
   memoryAdvantageFixturePath: string;
   notesBaselineFixturePath: string;
-  secondRepoDecisionPacketFixturePath: string;
+  secondRepoDecisionPacketFixturePath: string | readonly string[];
   codexDecisionPacketObedienceFixturePath: string;
 }): Promise<DeterministicEvalResult> => {
   const brainRankingFixture = loadBrainRankingEvalFixture(input.brainRankingFixturePath);
@@ -171,7 +171,7 @@ export const runDeterministicEval = async (input: {
         "fixed company-pattern memory-advantage fixture output is bit-identical across consecutive runs",
         "fixed notes-baseline fixture output is bit-identical across consecutive runs",
         "fixed decision-packet fixture output is bit-identical across consecutive runs",
-        "fixed second-repo decision-packet fixture output is bit-identical across consecutive runs",
+        "fixed target-repo decision-packet fixture output is bit-identical across consecutive runs",
         "fixed recorded Codex decision-packet obedience fixture output is bit-identical across consecutive runs",
         "retrieval/context proxy evals are stable enough to serve as a regression gate"
       ],
@@ -187,24 +187,28 @@ export const runDeterministicEval = async (input: {
 };
 
 const main = async (): Promise<DeterministicEvalResult> => {
+  const args = process.argv.slice(2);
   const brainRankingFixturePath =
-    process.argv[2] ?? "tests/fixtures/brain-ranking/brain-ranking-eval.json";
+    args[0] ?? "tests/fixtures/brain-ranking/brain-ranking-eval.json";
   const sourceGraphRankingFixturePath =
-    process.argv[3] ?? "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json";
+    args[1] ?? "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json";
   const memoryAdvantageFixturePath =
-    process.argv[4] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
+    args[2] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
   const notesBaselineFixturePath =
-    process.argv[5] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
-  const secondRepoDecisionPacketFixturePath =
-    process.argv[6] ?? "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json";
+    args[3] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
+  const secondRepoDecisionPacketFixturePaths = args.length >= 6
+    ? args.slice(4, -1)
+    : [args[4] ?? "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json"];
   const codexDecisionPacketObedienceFixturePath =
-    process.argv[7] ?? "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json";
+    args.length >= 6
+      ? args[args.length - 1]!
+      : "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json";
   return runDeterministicEval({
     brainRankingFixturePath,
     sourceGraphRankingFixturePath,
     memoryAdvantageFixturePath,
     notesBaselineFixturePath,
-    secondRepoDecisionPacketFixturePath,
+    secondRepoDecisionPacketFixturePath: secondRepoDecisionPacketFixturePaths,
     codexDecisionPacketObedienceFixturePath
   });
 };

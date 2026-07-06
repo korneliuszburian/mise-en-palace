@@ -11,11 +11,15 @@ import {
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json", import.meta.url)
 );
+const thirdRepoFixturePath = fileURLToPath(
+  new URL("../../../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json", import.meta.url)
+);
 
 const writeFixtureVariant = (
-  mutate: (fixture: Record<string, unknown>) => void
+  mutate: (fixture: Record<string, unknown>) => void,
+  sourcePath = fixturePath
 ): string => {
-  const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as Record<string, unknown>;
+  const fixture = JSON.parse(readFileSync(sourcePath, "utf8")) as Record<string, unknown>;
   mutate(fixture);
   const dir = mkdtempSync(join(tmpdir(), "krn-second-repo-eval-"));
   const path = join(dir, "fixture.json");
@@ -31,29 +35,77 @@ describe("runSecondRepoDecisionPacketEval", () => {
       kind: "krn.secondRepoDecisionPacket.eval.v1",
       status: "pass",
       targetRepo: "weak-json-boundary-typescript",
-      notesBaselineStatus: "pass",
-      decisionPacketStatus: "pass",
+      targetRepos: ["weak-json-boundary-typescript"],
       metrics: {
+        repoCount: 1,
         caseCount: 15,
         repoSpecificDecisionCount: 12,
         reusablePatternDecisionCount: 3,
         rejectedPathCount: 5,
         staleDecisionCount: 5,
-        notesKrnWinRate: 1,
-        decisionPacketUsefulRate: 1,
         selfRepoContaminationCount: 0
+      }
+    });
+    expect(result.repoResults[0]).toMatchObject({
+      targetRepo: "weak-json-boundary-typescript",
+      notesBaselineStatus: "pass",
+      decisionPacketStatus: "pass",
+      metrics: {
+        notesKrnWinRate: 1,
+        decisionPacketUsefulRate: 1
       },
       selfRepoContaminationRefs: []
     });
     expect(result.proof.proves).toEqual(expect.arrayContaining([
-      "the decision-packet and notes-baseline evals run on a second target-repo corpus",
-      "the second corpus includes rejected-path readback"
+      "the decision-packet and notes-baseline evals run on target-repo corpora outside the KRN repo",
+      "each target corpus includes stale and rejected-path readback"
     ]));
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "live Codex execution or obedience",
       "arbitrary repository portability",
       "repo-specificity beyond id prefix plus target-repo evidenceRef convention"
     ]));
+  });
+
+  it("passes with per-repo metrics across second and third target corpora", () => {
+    const result = runSecondRepoDecisionPacketEval([
+      fixturePath,
+      thirdRepoFixturePath
+    ]);
+
+    expect(result.status).toBe("pass");
+    expect(result.targetRepos).toEqual([
+      "weak-json-boundary-typescript",
+      "env-config-contract-typescript"
+    ]);
+    expect(result.metrics).toMatchObject({
+      repoCount: 2,
+      caseCount: 30,
+      repoSpecificDecisionCount: 20,
+      reusablePatternDecisionCount: 6,
+      rejectedPathCount: 8,
+      staleDecisionCount: 7,
+      selfRepoContaminationCount: 0
+    });
+    expect(result.repoResults.map((repo) => ({
+      targetRepo: repo.targetRepo,
+      notesBaselineStatus: repo.notesBaselineStatus,
+      decisionPacketStatus: repo.decisionPacketStatus,
+      selfRepoContaminationCount: repo.metrics.selfRepoContaminationCount
+    }))).toEqual([
+      {
+        targetRepo: "weak-json-boundary-typescript",
+        notesBaselineStatus: "pass",
+        decisionPacketStatus: "pass",
+        selfRepoContaminationCount: 0
+      },
+      {
+        targetRepo: "env-config-contract-typescript",
+        notesBaselineStatus: "pass",
+        decisionPacketStatus: "pass",
+        selfRepoContaminationCount: 0
+      }
+    ]);
   });
 
   it("fails when a second-repo fixture references self-repo evidence", () => {
@@ -69,7 +121,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
-    expect(result.selfRepoContaminationRefs).toEqual([
+    expect(result.repoResults[0]?.selfRepoContaminationRefs).toEqual([
       "docs/runs/2026-07-06-self-repo.md"
     ]);
   });
@@ -105,7 +157,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
-    expect(result.selfRepoContaminationRefs).toEqual([
+    expect(result.repoResults[0]?.selfRepoContaminationRefs).toEqual([
       "docs/runs/2026-07-06-case-level-leak.md"
     ]);
   });
@@ -127,5 +179,37 @@ describe("runSecondRepoDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.repoSpecificDecisionCount).toBe(0);
+  });
+
+  it("fails when the third repo loses target-repo-backed governing decisions", () => {
+    const genericThirdRepoFixturePath = writeFixtureVariant((fixture) => {
+      const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
+      fixture["decisions"] = decisions.map((decision) =>
+        typeof decision["id"] === "string" && decision["id"].startsWith("env-config-")
+          ? {
+              ...decision,
+              evidenceRef: "docs/standards/typescript-boundaries.md"
+            }
+          : decision
+      );
+    }, thirdRepoFixturePath);
+
+    const result = runSecondRepoDecisionPacketEval([
+      fixturePath,
+      genericThirdRepoFixturePath
+    ]);
+
+    expect(result.status).toBe("fail");
+    expect(result.repoResults[0]).toMatchObject({
+      targetRepo: "weak-json-boundary-typescript",
+      notesBaselineStatus: "pass",
+      decisionPacketStatus: "pass"
+    });
+    expect(result.repoResults[1]).toMatchObject({
+      targetRepo: "env-config-contract-typescript",
+      metrics: {
+        repoSpecificDecisionCount: 0
+      }
+    });
   });
 });

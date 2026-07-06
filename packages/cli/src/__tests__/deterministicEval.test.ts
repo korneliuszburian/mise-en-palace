@@ -20,6 +20,9 @@ const notesBaselineFixturePath = fileURLToPath(
 const secondRepoDecisionPacketFixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json", import.meta.url)
 );
+const thirdRepoDecisionPacketFixturePath = fileURLToPath(
+  new URL("../../../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json", import.meta.url)
+);
 const codexDecisionPacketObedienceFixturePath = fileURLToPath(
   new URL(
     "../../../../tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",
@@ -34,7 +37,10 @@ describe("runDeterministicEval", () => {
       sourceGraphRankingFixturePath,
       memoryAdvantageFixturePath,
       notesBaselineFixturePath,
-      secondRepoDecisionPacketFixturePath,
+      secondRepoDecisionPacketFixturePath: [
+        secondRepoDecisionPacketFixturePath,
+        thirdRepoDecisionPacketFixturePath
+      ],
       codexDecisionPacketObedienceFixturePath
     });
 
@@ -99,7 +105,7 @@ describe("runDeterministicEval", () => {
       "fixed decision-packet fixture output is bit-identical across consecutive runs"
     );
     expect(result.proof.proves).toContain(
-      "fixed second-repo decision-packet fixture output is bit-identical across consecutive runs"
+      "fixed target-repo decision-packet fixture output is bit-identical across consecutive runs"
     );
     expect(result.proof.proves).toContain(
       "fixed recorded Codex decision-packet obedience fixture output is bit-identical across consecutive runs"
