@@ -23,11 +23,12 @@ Current count:
 
 ```txt
 docs files: 809
-docs files: 572
-docs markdown files: 531
+docs files: 454
+docs markdown files: 414
 root markdown files: 6
-docs/reviews files: 311
-docs/runs files: 116
+docs/reviews files: 204
+docs/runs files: 108
+docs/plans files: 14
 docs/materials files: 7
 docs/archive files: 4
 ```
@@ -56,7 +57,7 @@ README.md
 | `docs/runs/` | keep only owned historical evidence | Reports without exact-path owners are removed from the active tree. Not default context. |
 | `docs/reviews/` | keep only owned historical evidence | Controlled-dogfood reports without exact-path owners are removed from the active tree. Not default context. |
 | `docs/materials/` | keep quarantined | Raw source/audit material. Never default context. |
-| `docs/plans/` | keep historical | Archived detailed planning material; root `PLAN.md` owns current execution truth. |
+| `docs/plans/` | keep only focused retained plans | Historical ledger snapshots were removed; root `PLAN.md` owns current execution truth. |
 | `docs/archive/` | keep archive | Historical root docs and compacted ledgers. |
 | root `REVIEW.md` | archived | Historical pointer moved to `docs/archive/root-docs/2026-07-06-review-pointer.md`. |
 | root `GOAL_REPO_RESET_AUDIT.md` | archived | Historical pointer moved to `docs/archive/root-docs/2026-07-06-goal-repo-reset-audit-pointer.md`. |
