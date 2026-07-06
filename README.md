@@ -16,7 +16,8 @@ dashboard-first application.
 3. Read `docs/KRN_BRAIN.md` when you need the target brain architecture.
 4. Use `GOAL.md` as the compact activation contract.
 5. Use `PLAN.md` as the canonical living execution map.
-6. Treat `docs/materials/` as raw source/audit quarantine, not default context.
+6. Use `docs/README.md` as the docs routing map.
+7. Treat `docs/materials/` as raw source/audit quarantine, not default context.
 
 `docs/plans/memory-ideal-state/PLAN.md`, QG docs, handoff docs, and review docs
 are historical ledgers unless the root `PLAN.md` explicitly names them as
@@ -27,7 +28,8 @@ evidence for a slice.
 Root `PLAN.md` is the active compact product plan. Root `GOAL.md` is the compact
 execution contract. Root `PLANS.md` carries the compact execution contract.
 Detailed continuous execution history, outcomes, and next-task synthesis live in
-Beads, archived ledgers, and archived reports.
+Beads, archived ledgers, archived reports, and the docs routing map in
+`docs/README.md`.
 
 Current status:
 
