@@ -20,7 +20,7 @@ runtime deferred until a concrete self-hosting bottleneck proves it is needed.
 
 ```yaml
 source_id: krn-kernel-runtime-truth
-source: docs/KRN_KERNEL.md
+source: KRN_ROADMAP.md
 mechanism: KRN supplies bounded context, store-backed memory, policy, traces,
   review gates, and feedback; Codex remains the executor.
 krn_implication: Background workers must not become a second autonomous executor

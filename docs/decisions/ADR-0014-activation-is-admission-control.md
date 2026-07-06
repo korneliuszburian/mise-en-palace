@@ -16,7 +16,7 @@ between recall and context.
 
 ## Source Decision
 
-source: `docs/KRN_KERNEL.md`
+source: `KRN_ROADMAP.md`
 mechanism: canonical spine renders `ContextAssembly` before Codex adapter
 output and states that `ContextPacket` is not the central model.
 KRN implication: admission decisions belong in typed activation/context models,

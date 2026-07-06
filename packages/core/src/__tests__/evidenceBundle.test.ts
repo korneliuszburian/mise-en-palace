@@ -37,7 +37,7 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
   rollbackPath: "git revert <commit>",
   metadata: {
     diffSummary: "Changed pure EvidenceBundle assessment helper and focused tests.",
-    sourceRefs: ["docs/plans/memory-ideal-state/PLAN.md#MM-52"]
+    sourceRefs: ["KRN_ROADMAP.md#MM-52"]
   },
   createdAt: now,
   updatedAt: now,
@@ -269,12 +269,12 @@ describe("evidence bundle completeness", () => {
   test("parses evidence bundle metadata readback as an unknown-first boundary", () => {
     expect(parseEvidenceBundleMetadataReadback({
       diffSummary: " Changed evidence metadata parsing. ",
-      sourceRefs: [" packages/core/src/evidenceBundle.ts ", "", 1, "docs/KRN_KERNEL.md"]
+      sourceRefs: [" packages/core/src/evidenceBundle.ts ", "", 1, "KRN_ROADMAP.md"]
     })).toEqual({
       diffSummary: "Changed evidence metadata parsing.",
       sourceRefs: [
         "packages/core/src/evidenceBundle.ts",
-        "docs/KRN_KERNEL.md"
+        "KRN_ROADMAP.md"
       ]
     });
 

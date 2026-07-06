@@ -71,7 +71,7 @@ export interface RealRecallAdvantageDbSmokeReport {
   readonly cleanedUp: boolean;
 }
 
-// Real KRN governing decisions extracted from repo docs/ADRs (KRN_KERNEL.md,
+// Real KRN governing decisions extracted from repo docs/ADRs (KRN_ROADMAP.md,
 // naming-vocabulary-audit.md, kernel-next-priority-synthesis.md). These are the
 // actual standards the project adopted, not synthetic company-pattern fixtures.
 const realDecisions: readonly RealRecallAdvantageDecision[] = [

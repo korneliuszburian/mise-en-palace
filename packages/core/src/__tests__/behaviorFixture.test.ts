@@ -36,7 +36,7 @@ const behaviorFixture = (overrides: Partial<BehaviorFixture>): BehaviorFixture =
       mustNot: "ContextAssembly must not include invalidated memory.",
       detection: "Included context item references memory_record:stale-pattern."
     }],
-    sourceRefs: ["docs/plans/memory-ideal-state/PLAN.md#MM-59"],
+    sourceRefs: ["KRN_ROADMAP.md#MM-59"],
     metadata: {}
   }],
   metadata: {},

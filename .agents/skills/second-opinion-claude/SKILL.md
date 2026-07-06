@@ -196,7 +196,6 @@ rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \
 q="${CODEX_QUICK_VALIDATE:-/home/krn/.codex/skills/.system/skill-creator/scripts/quick_validate.py}"
 [[ -x "$q" ]] && rtk "$q" .agents/skills/second-opinion-claude 2>/dev/null \
   || echo "skip quick_validate (absent or missing pyyaml; set CODEX_QUICK_VALIDATE)"
-rtk pnpm --filter @krn/harness test -- skillInvariants
 ```
 
 For a real slice:

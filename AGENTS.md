@@ -40,8 +40,8 @@ For git history:
 - use Semantic/Conventional Commits only; see
   `docs/standards/git-commits.md`.
 
-For complex KRN implementation work, keep root `PLAN.md` current as the living
-ExecPlan.
+For complex KRN implementation work, use Beads as the active execution plan.
+Product and architecture direction lives in `KRN_ROADMAP.md`.
 
 For larger migration or audit-hardening slices, Codex must own the second-opinion
 loop:
@@ -142,7 +142,7 @@ bd prime              # Refresh workflow context after compact/resume
 - Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
 - Run `bd prime` after context compaction, resume, or a new session before choosing or continuing Beads-tracked work
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
-- Keep KRN root `GOAL.md` / `PLAN.md` / `PLANS.md` compact; use Beads for durable task graph and follow-up tracking, not for replacing KRN source-of-truth docs
+- Do not recreate root `GOAL.md`, `PLAN.md`, or `PLANS.md`; use Beads for active task graph and follow-up tracking; use `KRN_ROADMAP.md` for product and architecture truth
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
 

@@ -21,9 +21,9 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Mechanism: Codex discovers durable project instructions from `AGENTS.md`
   layers before work.
 - KRN implication: keep `AGENTS.md` thin and use it for repo guidance only.
-- Decision: active instructions point to `docs/KRN_KERNEL.md` and forbid broad
+- Decision: active instructions point to `KRN_ROADMAP.md` and forbid broad
   rereads.
-- Consumer: root `AGENTS.md` and compact `GOAL.md`/`PLAN.md` guidance.
+- Consumer: root `AGENTS.md` and `KRN_ROADMAP.md` guidance.
 - Falsifier: repeated Codex runs need broad rereads or miss kernel constraints
   because durable repo guidance is too thin or unclear.
 - Does not prove: that a giant `AGENTS.md` improves results.
@@ -274,12 +274,15 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Source class: official docs.
 - Decision kind: adopt.
 - Mechanism: goals support continuation with explicit objective and evidence.
-- KRN implication: `GOAL.md` should be a current execution contract.
-- Decision: keep goal compact and phase-oriented.
-- Consumer: root `GOAL.md`.
-- Falsifier: `GOAL.md` becomes a ledger/backlog or a completed old slice remains
-  the first resume target after compaction.
-- Does not prove: that goal should become product brain.
+- KRN implication: continuation needs explicit objective, evidence, and active
+  task state, but KRN should not implement that as a root markdown ledger.
+- Decision: keep continuation state in Beads and governed handoffs, with product
+  direction in `KRN_ROADMAP.md`.
+- Consumer: Beads task graph, handoff-compact skill, and second-opinion context
+  packs.
+- Falsifier: a fresh continuation follows old chat or a deleted markdown plan
+  instead of the current Beads task and roadmap boundary.
+- Does not prove: that goal files should exist in repo root.
 
 ### Iterative Repair Loops
 
@@ -296,7 +299,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
   loops; do not route future work through stale review-capture or doctor-first
   wording.
 - Consumer: bounded repair loop tasks, evidence/review/feedback commands, and
-  `PLANS.md` next-task synthesis.
+  Beads next-task synthesis.
 - Falsifier: KRN keeps adding features without a failing check, repair, and
   verification loop tied to one behavior.
 - Does not prove: that broad automation should run before kernel spine.
@@ -339,16 +342,16 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision kind: adopt.
 - Mechanism: ExecPlans preserve objective, discoveries, decisions, validation,
   and next work for long-running implementation.
-- KRN implication: root `PLANS.md` is the detailed continuous ExecPlan, while
-  root `PLAN.md` stays compact product truth.
-- Decision: keep the current `GOAL.md` + compact `PLAN.md` + detailed
-  `PLANS.md` split.
-- Consumer: root `PLANS.md`, compact root `PLAN.md`, and handoff/compaction
-  rules.
-- Falsifier: a fresh Codex continuation cannot resume from compact active task
-  state without broad rereads or stale completed slices.
-- Does not prove: that `PLANS.md` should carry raw logs, old ledgers, or
-  decorative research forever.
+- KRN implication: long-running work needs durable objective, discoveries,
+  decisions, validation, and next work, but this should be Beads plus compact
+  handoff, not root markdown ledgers.
+- Decision: reject root `GOAL.md` / `PLAN.md` / `PLANS.md` as active state
+  surfaces; keep `KRN_ROADMAP.md` for product direction and Beads for execution.
+- Consumer: Beads, governed handoffs, second-opinion context packs, and compact
+  final responses.
+- Falsifier: a fresh Codex continuation cannot resume from Beads plus the last
+  handoff without broad historical markdown rereads.
+- Does not prove: that every task needs a verbose ExecPlan document.
 
 ### Codex Prompting Guide
 
@@ -362,9 +365,9 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - KRN implication: every bounded KRN task needs non-goals, allowed writes,
   forbidden writes, verification, proof/non-proof boundaries, rollback, and
   next-task synthesis.
-- Decision: keep `PLANS.md` task contracts mandatory for generated active
-  tasks.
-- Consumer: generated `PLANS.md` task contracts and Codex-facing goal prompts.
+- Decision: keep task contracts in Beads issue descriptions, second-opinion
+  context packs, or bounded prompts; do not recreate root plan ledgers.
+- Consumer: Beads tasks, Codex-facing briefs, and second-opinion prompts.
 - Falsifier: an active task lacks non-goals, allowed/forbidden writes,
   verification, proof/non-proof boundaries, rollback, or next-task synthesis.
 - Does not prove: that every small edit needs a verbose prompt.
@@ -645,7 +648,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: use this taxonomy to reject one-bucket "brain memory" design and
   to route future eval cases by memory function and lifecycle.
 - Consumer: `docs/architecture/memory-eval-design.md`,
-  `docs/KRN_KERNEL.md`, and future memory/source eval Beads.
+  `KRN_ROADMAP.md`, and future memory/source eval Beads.
 - Falsifier: a future KRN design merges evidence, working context, source
   claims, and durable memory into one undifferentiated store while still
   claiming governed memory.

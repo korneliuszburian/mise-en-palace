@@ -5,18 +5,18 @@ Status: accepted.
 ## Context
 
 KRN needs one typed state plane for harness runs, Memory Core, source graph,
-retrieval, events, outbox work, and later read models. ADR-0002 already rejects
-runtime markdown memory. `GOAL.md` and `PLAN.md` now require a Postgres-backed
-final harness spine rather than contracts detached from storage.
+retrieval, events, outbox work, and later read models. The current roadmap
+rejects runtime markdown memory and requires store-backed memory/source/evidence
+paths rather than contracts detached from storage.
 
 ## Source To Decision
 
 ```yaml
-source_id: goal-final-harness-spine
-title: GOAL.md compact activation contract and PLAN.md living ExecPlan
+source_id: roadmap-store-backed-memory
+title: KRN roadmap store-backed memory boundary
 trust_tier: high
-mechanism: The active goal names PostgreSQL plus pgvector, Drizzle, Zod, and the
-  forbidden separate stores as completion constraints.
+mechanism: The roadmap requires runtime memory to live in typed store-backed
+  paths instead of markdown ledgers.
 krn_implication: The first implementation spine must start from the target data
   plane instead of adding in-memory contracts and choosing storage later.
 decision: adopt PostgreSQL plus pgvector as the canonical KRN brain store.
@@ -46,7 +46,7 @@ falsifier: Memory records cannot preserve lineage, validity, feedback counters,
 
 ```yaml
 source_id: krn-kernel-runtime-truth
-title: docs/KRN_KERNEL.md Runtime Truth and Decision Rule
+title: KRN_ROADMAP.md Runtime Truth and Decision Rule
 trust_tier: high
 mechanism: Active context must be selected, task-specific, source-grounded, and
   verified through source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier.

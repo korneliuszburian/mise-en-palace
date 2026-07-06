@@ -69,16 +69,16 @@ claims authority without a reviewable workflow.
 
 | Skill | Class | Decision | Evidence | What it does not prove |
 |---|---|---|---|---|
-| `activation-engine` | operational kernel skill | keep | Routes activation, retrieval, exclusion, owner-file recall, context ROI, and abstention work. Guarded by `skillInvariants`. | Does not prove current activation ranking is correct. |
+| `activation-engine` | operational kernel skill | keep | Routes activation, retrieval, exclusion, owner-file recall, context ROI, and abstention work. | Does not prove current activation ranking is correct. |
 | `beads` | operational kernel skill | keep | Routes durable task tracking and handoff work through `bd`; referenced by `AGENTS.md`. | Does not prove a Beads issue is true or complete without code evidence. |
-| `brain-store-schema` | operational kernel skill | keep | Routes Drizzle/Postgres schema, migration, repository, and SQL-boundary work. Guarded by `skillInvariants`. | Does not prove every table is live or every smoke is meaningful. |
-| `codex-adapter-plan` | operational kernel skill | keep | Routes Codex-brief rendering and non-mutating adapter-boundary work. Guarded by `skillInvariants`. | Does not prove Codex follows the rendered brief. |
-| `evidence-review-loop` | operational kernel skill | keep | Routes command provenance, proof/non-proof, feedback, observe-before-reflect, and memory/source candidate discipline. Guarded by `skillInvariants`. | Does not prove evidence rows are sufficient for product readiness. |
-| `handoff-compact` | operational kernel skill | keep | Routes compact continuation state after compaction, pause, transfer, commit, push, or CI. Guarded by `skillInvariants`. | Does not replace Beads, CI, or source evidence. |
-| `second-opinion-claude` | governed review skill | keep and validate | Runs non-interactive Claude with a validated verdict JSON and diff freshness. Guarded by deterministic validator examples and `skillInvariants`. | Does not prove Claude is right or replace local verification. |
-| `source-to-decision` | operational kernel skill | keep | Routes source mechanism, KRN implication, decision/rejection, consumer, falsifier, and usefulness closure. Guarded by `skillInvariants`. | Does not make external sources true. |
-| `target-repo-testing` | operational kernel skill | keep | Routes target-repo mode, dirty state, write authority, evidence, and handoff boundaries. Guarded by `skillInvariants` and `docs/runbooks/target-repo-testing.md`. | Does not prove arbitrary target safety or V02-01 second-operator usability. |
-| `typescript-type-safety` | operational kernel skill | keep | Routes unknown-first boundaries, public types, casts, validators, JSON/env/CLI inputs, and typecheck discipline. Guarded by `skillInvariants`. | Does not prove runtime correctness outside typed boundaries. |
+| `brain-store-schema` | operational kernel skill | keep | Routes Drizzle/Postgres schema, migration, repository, and SQL-boundary work. | Does not prove every table is live or every smoke is meaningful. |
+| `codex-adapter-plan` | operational kernel skill | keep | Routes Codex-brief rendering and non-mutating adapter-boundary work. | Does not prove Codex follows the rendered brief. |
+| `evidence-review-loop` | operational kernel skill | keep | Routes command provenance, proof/non-proof, feedback, observe-before-reflect, and memory/source candidate discipline. | Does not prove evidence rows are sufficient for product readiness. |
+| `handoff-compact` | operational kernel skill | keep | Routes compact continuation state after compaction, pause, transfer, commit, push, or CI. | Does not replace Beads, CI, or source evidence. |
+| `second-opinion-claude` | governed review skill | keep and validate | Runs non-interactive Claude with a validated verdict JSON and diff freshness. Guarded by deterministic validator examples. | Does not prove Claude is right or replace local verification. |
+| `source-to-decision` | operational kernel skill | keep | Routes source mechanism, KRN implication, decision/rejection, consumer, falsifier, and usefulness closure. | Does not make external sources true. |
+| `target-repo-testing` | operational kernel skill | keep | Routes target-repo mode, dirty state, write authority, evidence, and handoff boundaries and `docs/runbooks/target-repo-testing.md`. | Does not prove arbitrary target safety or V02-01 second-operator usability. |
+| `typescript-type-safety` | operational kernel skill | keep | Routes unknown-first boundaries, public types, casts, validators, JSON/env/CLI inputs, and typecheck discipline. | Does not prove runtime correctness outside typed boundaries. |
 
 ## Skill Criteria
 

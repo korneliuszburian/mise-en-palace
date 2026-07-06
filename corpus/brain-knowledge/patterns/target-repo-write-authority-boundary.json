@@ -7,11 +7,10 @@
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",
   "sourceRefs": [
     ".agents/skills/target-repo-testing/SKILL.md",
-    "behavior-gate:classification",
-    "PLAN.md#hard-non-goals"
+    "KRN_ROADMAP.md#non-goals"
   ],
   "evidenceRefs": [
-    "packages/harness/src/__tests__/skillInvariants.test.ts"
+    "KRN_ROADMAP.md#non-goals"
   ],
   "consumers": [
     "future target-repo trials",

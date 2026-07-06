@@ -178,7 +178,7 @@ const task: BehaviorFixture = {
       }],
       sourceRefs: [
         "packages/codex-adapter/src/renderExecutionBrief.ts",
-        "docs/architecture/behavior-gate-matrix.md"
+        "KRN_ROADMAP.md"
       ],
       metadata: {}
     },
@@ -253,7 +253,7 @@ const task: BehaviorFixture = {
       }],
       sourceRefs: [
         "tests/fixtures/target-repos/typescript-basic/AGENTS.md",
-        "docs/architecture/behavior-gate-matrix.md"
+        "KRN_ROADMAP.md"
       ],
       metadata: {}
     },
@@ -279,7 +279,7 @@ const task: BehaviorFixture = {
       }],
       sourceRefs: [
         "tests/fixtures/target-repos/typescript-basic/tests/readiness.test.ts",
-        "docs/architecture/behavior-gate-matrix.md"
+        "KRN_ROADMAP.md"
       ],
       metadata: {}
     },
@@ -330,7 +330,7 @@ const task: BehaviorFixture = {
       }],
       sourceRefs: [
         "packages/core/src/source.ts",
-        "docs/architecture/behavior-gate-matrix.md"
+        "KRN_ROADMAP.md"
       ],
       metadata: {}
     },

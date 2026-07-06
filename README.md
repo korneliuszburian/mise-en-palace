@@ -14,18 +14,15 @@ dashboard-first application.
 1. Read `AGENTS.md`.
 2. Read `KRN_ROADMAP.md`.
 3. Read repo-local skills only when the task matches their scope.
-4. Use `GOAL.md` as the compact activation contract.
-5. Use `PLAN.md` as the canonical living execution map.
-6. Use Beads for durable task state when the Beads workspace is available.
-7. Treat docs folders as temporary source artifacts or fixtures, not the brain.
+4. Use Beads for durable task state when the Beads workspace is available.
+5. Treat docs folders as temporary source artifacts, fixtures, or runbooks, not
+   the brain.
 
 ## Current Truth
 
-Root `PLAN.md` is the active compact product plan. Root `GOAL.md` is the compact
-execution contract. Root `PLANS.md` carries the compact execution contract.
-Detailed continuous execution history, outcomes, and next-task synthesis live in
-Beads when available and in verified store/corpus/eval paths, not markdown
-report forests.
+`KRN_ROADMAP.md` is the product and architecture roadmap. Beads is the active
+task graph. Detailed execution history, outcomes, and next-task synthesis belong
+in Beads and verified store/corpus/eval paths, not markdown report forests.
 
 Current status:
 
@@ -42,7 +39,7 @@ controlled scenario
   -> finding
   -> condensation decision
   -> rule / skill / guard / eval / memory candidate / source decision / repair
-  -> update Beads and compact root state
+  -> update Beads and store-backed candidates
   -> continue
 ```
 

@@ -34,10 +34,11 @@ note is current. A vector RAG can retrieve similar text but cannot decide that a
 newer-but-wrong comment lost to an older consensus, or that a once-correct
 standard expired.
 
-KRN must beat plain Codex plus notes plus grep on governance, temporal
-correctness, rejected-path recall, source fidelity, abstention, and task
-usefulness. It does not need to win raw recall against a comprehensive notes
-dump.
+KRN is being built to beat plain Codex plus notes plus grep on governance,
+temporal correctness, rejected-path recall, source fidelity, abstention, and
+task usefulness. That is not proven yet. The near-term work is to build the
+mechanisms and falsifiers that can measure it honestly. KRN does not need to
+win raw recall against a comprehensive notes dump.
 
 ## Product Shape
 
@@ -87,8 +88,9 @@ Not product-ready:
 - no final temporal consensus engine;
 - no markdown-backed runtime memory.
 
-The next phase is not a UI phase. It is the phase where KRN proves it can make
-Codex better on real engineering tasks than Codex plus notes plus grep.
+The next phase is not a UI phase. It is the phase where KRN builds enough
+MemoryCoordinator, decision-packet, feedback, and temporal-consensus machinery
+to run honest comparisons against Codex plus notes plus grep.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
@@ -148,9 +150,9 @@ Active authority should be small:
   evaluation state.
 - Compact handoffs: temporary transfer material when another agent needs context.
 
-`GOAL.md`, `PLAN.md`, and `PLANS.md` are transitional execution aids. They are
-allowed while they help active work, but they must not become a permanent
-parallel brain.
+Root `GOAL.md`, `PLAN.md`, and `PLANS.md` are not active authority surfaces. Do
+not recreate them as compatibility shims. Active task state lives in Beads;
+product and architecture direction lives here.
 
 Docs folders are not the brain. Any remaining docs dependency must be either a
 real source artifact, a real fixture, a compact operator surface, or a migration
@@ -450,13 +452,14 @@ plus grep on:
 - task usefulness: selected standards change Codex behavior in a useful,
   verifiable way.
 
-The first make-or-break eval is a notes-baseline decision-packet test:
+The first make-or-break eval scaffold is a notes-baseline decision-packet test:
 
 ```txt
 same task
   -> baseline Codex with notes/grep
   -> KRN decision packet
-  -> compare whether KRN avoids stale/rejected paths and selects current standards
+  -> compare whether the current KRN mechanism avoids stale/rejected paths and
+     selects current standards
 ```
 
 The benchmark should not reward confident hallucination. A cautious packet that
@@ -603,7 +606,8 @@ Done when:
 
 ### Phase 2: Decision-Packet Falsifier
 
-Goal: prove KRN beats notes plus grep on engineering tasks.
+Goal: create the first Global Workspace falsifier that can later prove or
+disprove whether KRN beats notes plus grep on engineering tasks.
 
 Work:
 
@@ -617,8 +621,8 @@ Work:
 Done when:
 
 - the eval can fail KRN for stale or unsupported advice;
-- KRN wins at least one meaningful task because it selects governed current
-  context rather than more context;
+- the scaffold exposes at least one meaningful task where governed current
+  context should beat more context, without claiming broad product victory;
 - the result is reproducible without human vibes.
 
 ### Phase 3: Store-Backed Feedback Loop

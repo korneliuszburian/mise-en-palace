@@ -61,7 +61,7 @@
       "title": "Manual fixture editing only",
       "statement": "Maintain the decision-packet corpus only by hand-editing the monolithic notes-baseline JSON fixture.",
       "status": "stale",
-      "evidenceRef": "docs/audit.md",
+      "evidenceRef": "KRN_ROADMAP.md",
       "falsifier": "The importer converts compact source-to-decision rows into corpus decisions, notes, and cases.",
       "doesNotProve": "Historical stale path only.",
       "noteText": "Manual fixture editing only. Hand-edit the monolithic notes-baseline JSON fixture for every new decision."
@@ -81,7 +81,7 @@
       "title": "Import without link validation",
       "statement": "Accept imported decision rows without validating current, stale, and rejected links for imported cases.",
       "status": "rejected",
-      "evidenceRef": "docs/KRN_KERNEL.md:65",
+      "evidenceRef": "KRN_ROADMAP.md:65",
       "falsifier": "An imported case references a rejected or stale decision in the wrong slot and the importer still accepts it.",
       "doesNotProve": "Rejected path only.",
       "noteText": "Import without link validation. Accept imported decision rows without validating current stale rejected links for imported cases."

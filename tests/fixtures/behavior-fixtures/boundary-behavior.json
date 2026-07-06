@@ -18,7 +18,7 @@
           "outcome": "exclude",
           "subject": "context_assembly:broad_dump",
           "rationale": "ContextROI must keep the packet small and mark extra candidates as exclusions.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-62"]
         },
         "protectedFailureModes": [
           {
@@ -30,7 +30,7 @@
             "detection": "ContextAssembly includes more than the configured maxInclusions or omits over_budget exclusions."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-62"],
         "metadata": {}
       },
       {
@@ -43,7 +43,7 @@
           "outcome": "flag",
           "subject": "source_claim:source-claim-missing-does-not-prove",
           "rationale": "Source-to-decision records must say what the source does not prove before they can guide architecture.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-62"]
         },
         "protectedFailureModes": [
           {
@@ -55,7 +55,7 @@
             "detection": "Source grounding audit emits no blocking finding for a claim missing doesNotProve."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-62"],
         "metadata": {}
       },
       {
@@ -68,7 +68,7 @@
           "outcome": "flag",
           "subject": "repo_surface:research-foundry",
           "rationale": "Audit must block rejected product subsystems before they enter the runtime surface.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-62"]
         },
         "protectedFailureModes": [
           {
@@ -80,7 +80,7 @@
             "detection": "Repo surface audit emits no blocking finding for packages/research-foundry."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-62"],
         "metadata": {}
       },
       {
@@ -93,7 +93,7 @@
           "outcome": "flag",
           "subject": "type_boundary:runtime-json-parse",
           "rationale": "Runtime input must be treated as unknown and validated before use.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-62"]
         },
         "protectedFailureModes": [
           {
@@ -105,7 +105,7 @@
             "detection": "Type-safety audit emits no warning for unchecked JSON.parse."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-62"],
         "metadata": {}
       }
     ],

@@ -18,7 +18,7 @@
           "outcome": "reject",
           "subject": "observation:promotionTarget",
           "rationale": "Observation staging must not contain Memory Core promotion semantics.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-63"]
         },
         "protectedFailureModes": [
           {
@@ -30,7 +30,7 @@
             "detection": "validateObservationContract returns ok for an observation carrying memory promotion semantics."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-63"],
         "metadata": {}
       },
       {
@@ -43,7 +43,7 @@
           "outcome": "reject",
           "subject": "reflection_output:memory_record_target",
           "rationale": "Reflection may propose MemoryCandidate rows, but must not target MemoryRecord or SourceDecision direct authority.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-63"]
         },
         "protectedFailureModes": [
           {
@@ -55,7 +55,7 @@
             "detection": "buildReflectionCandidateGenerationPlan returns ready for memory_record target."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-63"],
         "metadata": {}
       },
       {
@@ -68,7 +68,7 @@
           "outcome": "exclude",
           "subject": "observation_prefix:observation-rejected-pattern",
           "rationale": "Anti-memory must block matching observation prefix items before they become context.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-63"]
         },
         "protectedFailureModes": [
           {
@@ -80,7 +80,7 @@
             "detection": "selectObservationPrefix includes observation-rejected-pattern instead of anti_memory exclusion."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-63"],
         "metadata": {}
       },
       {
@@ -93,7 +93,7 @@
           "outcome": "flag",
           "subject": "reflection_gap:missing_source_range",
           "rationale": "Reflection must surface missing evidence as a visible gap instead of silently synthesizing memory.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-63"]
         },
         "protectedFailureModes": [
           {
@@ -105,7 +105,7 @@
             "detection": "buildReflectionIssueReports returns no gap-missing-source-range entry."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-63"],
         "metadata": {}
       }
     ],

@@ -297,16 +297,6 @@ const sourceSeedCandidates = [
     kind: "test_root",
     reason: "seed target repo verification surface"
   },
-  {
-    path: "packages/harness/src/__tests__/sourceMapInvariants.test.ts",
-    kind: "invariant_test",
-    reason: "seed source-map invariant and Codex/source decision guard tests"
-  },
-  {
-    path: "packages/harness/src/__tests__/skillInvariants.test.ts",
-    kind: "skill_invariant_test",
-    reason: "seed skill invariant tests for repo-local skill workflow guards"
-  }
 ] as const satisfies readonly SourceSeedProposal[];
 
 export const detectSourceSeeds = async (repoPath: string): Promise<SourceSeedProposal[]> => {

@@ -33,7 +33,7 @@ const task = (overrides: Partial<BehaviorFixture> = {}): BehaviorFixture => ({
       mustNot: "Stale memory must not enter context.",
       detection: "ContextAssembly includes stale memory."
     }],
-    sourceRefs: ["docs/plans/memory-ideal-state/PLAN.md#MM-64"],
+    sourceRefs: ["KRN_ROADMAP.md#MM-64"],
     metadata: {}
   }],
   metadata: {},

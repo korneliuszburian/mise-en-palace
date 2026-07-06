@@ -38,7 +38,7 @@
             "detection": "Exclusion exists without conflict or stale reason."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-60"],
         "metadata": {}
       },
       {
@@ -51,7 +51,7 @@
           "outcome": "abstain",
           "subject": "context_assembly",
           "rationale": "Weak stale memory should not become confident context.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61"]
         },
         "protectedFailureModes": [
           {
@@ -63,7 +63,7 @@
             "detection": "ContextAssembly includes stale memory without abstention metadata."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-60"],
         "metadata": {}
       },
       {
@@ -76,7 +76,7 @@
           "outcome": "abstain",
           "subject": "context_assembly",
           "rationale": "A stale memory record must become exclusion evidence, not confident context.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61-lite"]
         },
         "protectedFailureModes": [
           {
@@ -88,7 +88,7 @@
             "detection": "ContextAssembly includes memory_record:memory-smoke-stale."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-61-lite"],
         "metadata": {}
       },
       {
@@ -101,7 +101,7 @@
           "outcome": "exclude",
           "subject": "memory_record:memory-stale-pattern",
           "rationale": "Active anti-memory must block a high-confidence stale pattern even when it lexically matches the task.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61-lite"]
         },
         "protectedFailureModes": [
           {
@@ -113,7 +113,7 @@
             "detection": "ContextAssembly includes memory_record:memory-stale-pattern or omits anti_memory_block conflict evidence."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-61-lite"],
         "metadata": {}
       }
     ],
@@ -152,7 +152,7 @@
             "detection": "Included memory lacks sourceLineage or sourceClaimIds."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-60"],
         "metadata": {}
       }
     ],
@@ -179,7 +179,7 @@
           "outcome": "include",
           "subject": "memory_record:current-memory",
           "rationale": "Expired memory should be excluded and current memory may be used.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61"]
         },
         "protectedFailureModes": [
           {
@@ -191,7 +191,7 @@
             "detection": "ContextAssembly includes a memory item with expired validUntil."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-61"],
         "metadata": {}
       },
       {
@@ -204,7 +204,7 @@
           "outcome": "rank",
           "subject": "memory_record:guidance-memory",
           "rationale": "Application guidance should participate in activation text and expected use.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61"]
         },
         "protectedFailureModes": [
           {
@@ -216,7 +216,7 @@
             "detection": "Ranked memory candidate lacks expectedUse from applicationGuidance."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-61"],
         "metadata": {}
       },
       {
@@ -332,7 +332,7 @@
           "outcome": "flag",
           "subject": "source_decision:source-decision-unsupported",
           "rationale": "Source-backed decisions must link to a SourceClaim or be rejected as unsupported.",
-          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+          "evidenceRefs": ["KRN_ROADMAP.md#MM-61-lite"]
         },
         "protectedFailureModes": [
           {
@@ -344,7 +344,7 @@
             "detection": "Source grounding audit emits no blocking finding for source-decision-unsupported."
           }
         ],
-        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
+        "sourceRefs": ["KRN_ROADMAP.md#MM-61-lite"],
         "metadata": {}
       }
     ],
