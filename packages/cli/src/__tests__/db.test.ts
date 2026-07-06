@@ -117,6 +117,15 @@ describe("runCli", () => {
     );
   });
 
+  it("exposes the decision corpus import smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = await readRootPackageJson(repoRoot);
+
+    expect(packageJson.scripts?.["db:smoke:decision-corpus-import"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke decision-corpus-import"
+    );
+  });
+
   it("prints DB help as an internal dev surface", async () => {
     const result = await runCli(["db", "--help"], {
       env: {},
@@ -160,6 +169,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("KRN DB Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
     expect(result.stdout).toContain("Persistence smoke: skipped (database not configured)");
+  });
+
+  it("reports decision corpus import smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "decision-corpus-import"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Decision Corpus Import Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Decision corpus import smoke: skipped (database not configured)");
   });
 
   it("reports harness plan smoke missing configuration", async () => {

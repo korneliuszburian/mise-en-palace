@@ -24,12 +24,12 @@ import type {
   NotesBaselineEvalFixture
 } from "./runNotesBaselineEval.js";
 
-type ImportedDecisionStatus = "current" | "stale" | "rejected";
+export type ImportedDecisionStatus = "current" | "stale" | "rejected";
 type ImportedDecision = NotesBaselineEvalFixture["decisions"][number];
 type ImportedNote = NotesBaselineEvalFixture["notes"][number];
 type ImportedCase = NotesBaselineEvalFixture["cases"][number];
 
-interface DecisionCorpusImportRow {
+export interface DecisionCorpusImportRow {
   readonly id: string;
   readonly title: string;
   readonly statement: string;
@@ -40,7 +40,7 @@ interface DecisionCorpusImportRow {
   readonly noteText: string;
 }
 
-interface DecisionCorpusImportCase {
+export interface DecisionCorpusImportCase {
   readonly id: string;
   readonly task: string;
   readonly expectedDecisionId: string;

@@ -35,6 +35,9 @@ import {
 import {
   runRealRecallAdvantageDbSmokeCheck
 } from "./runRealRecallAdvantageDbSmoke.js";
+import {
+  runDecisionCorpusImportDbSmokeCheck
+} from "./runDecisionCorpusImportDbSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -56,6 +59,7 @@ export interface DbSmokeRuntime {
     | "workerJobs"
     | "initConnect"
     | "targetRepoHarness"
+    | "decisionCorpusImport"
     | "realRecallAdvantage";
 }
 
@@ -163,6 +167,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Target Repo Harness Smoke",
     skippedLine: "Target repo harness smoke: skipped (database not configured)",
     failureLabel: "Target repo harness smoke"
+  },
+  decisionCorpusImport: {
+    title: "KRN Decision Corpus Import Smoke",
+    skippedLine: "Decision corpus import smoke: skipped (database not configured)",
+    failureLabel: "Decision corpus import smoke"
   },
   realRecallAdvantage: {
     title: "KRN Real Recall Advantage Smoke",
@@ -618,6 +627,42 @@ const runRealRecallAdvantageSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runDecisionCorpusImportDbSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    repoRoot: context.repoRoot,
+    smokeId: runtime.createId("decision-corpus-import-smoke"),
+    now: "2026-07-06T00:00:00.000Z"
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Decision Corpus Import Smoke",
+    report.cleanedUp,
+    [
+      `Project: ${report.projectId}`,
+      `Smoke id: ${report.smokeId}`,
+      `Fixture corpus: ${report.fixtureCorpusName}`,
+      `Imported decisions: ${report.importedDecisionCount}`,
+      `Imported cases: ${report.importedCaseCount}`,
+      `Governing decision: ${report.governingDecisionId}`,
+      `Governing SourceClaim: ${report.governingSourceClaimId}`,
+      `Governing SourceDecisionEdge: ${report.governingSourceDecisionEdgeId}`,
+      `Governing SearchDocument: ${report.governingSearchDocumentId}`,
+      `Source search selected governing claim: ${report.sourceSearchSelectedGoverningClaim ? "yes" : "no"}`,
+      `Source search supporting claims: ${report.sourceSearchSupportingClaimCount}`,
+      `Source search supporting documents: ${report.sourceSearchSupportingDocumentCount}`,
+      `Source search decision support: ${report.sourceSearchDecisionSupportCount}`,
+      `Limitation: ${report.limitationClassification}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Decision corpus import smoke")
+    ]
+  );
+};
+
 const runShowSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -830,6 +875,7 @@ const dbSmokeTargetHandlers = {
   workerJobs: runWorkerJobsSmokeTarget,
   initConnect: runInitConnectSmokeTarget,
   targetRepoHarness: runTargetRepoHarnessSmokeTarget,
+  decisionCorpusImport: runDecisionCorpusImportSmokeTarget,
   realRecallAdvantage: runRealRecallAdvantageSmokeTarget
 } satisfies Record<DbSmokeTarget, DbSmokeTargetHandler>;
 

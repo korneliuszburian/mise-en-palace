@@ -117,6 +117,7 @@ export type CliCommand =
         | "workerJobs"
         | "initConnect"
         | "targetRepoHarness"
+        | "decisionCorpusImport"
         | "realRecallAdvantage";
     }
   | {
