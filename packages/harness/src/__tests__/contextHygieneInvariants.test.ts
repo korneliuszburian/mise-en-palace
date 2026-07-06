@@ -14,14 +14,14 @@ const lineCount = (body: string): number => body.split("\n").length;
 describe("KRN context hygiene invariants", () => {
   it("keeps raw materials and broad historical rereads out of active context", () => {
     const agents = readRootFile("AGENTS.md");
-    const kernel = readRootFile("docs/KRN_KERNEL.md");
+    const roadmap = readRootFile("KRN_ROADMAP.md");
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");
 
-    expect(agents).toContain("Do not treat `docs/materials/` as required reading");
+    expect(agents).toContain("Do not treat historical docs as required reading");
     expect(agents).toContain("If the next step requires broad historical rereads");
-    expect(kernel).toContain("Raw onboarding material is quarantined in `docs/materials/`.");
-    expect(kernel).toContain("Active context must be small, selected, and task-specific.");
+    expect(roadmap).toContain("Markdown is not runtime memory.");
+    expect(roadmap).toContain("Docs folders are not the brain.");
 
     const activeTruth = `${goal}\n${plan}`;
 
@@ -30,22 +30,21 @@ describe("KRN context hygiene invariants", () => {
   });
 
   it("keeps the required kernel boundary aligned with current product state", () => {
-    const kernel = readRootFile("docs/KRN_KERNEL.md");
+    const roadmap = readRootFile("KRN_ROADMAP.md");
 
-    expect(kernel).toContain("## Current Product Boundary");
-    expect(kernel).toContain("controlled-internal-alpha");
-    expect(kernel).toContain("not product-ready");
-    expect(kernel).toContain("not widened internal alpha");
-    expect(kernel).toContain("compact root `GOAL.md`, `PLAN.md`, and `PLANS.md`");
-    expect(kernel).toContain("archived ledgers");
-    expect(kernel).toContain("docs/architecture/primitive-ledger.md");
-    expect(kernel).toContain("PLANS.md");
-    expect(kernel).toContain("source-to-decision and pattern-intake gates");
-    expect(kernel).toContain("typed harness spine");
-    expect(kernel).toContain("store-backed memory/source/evidence/review behavior");
+    expect(roadmap).toContain("## Current Boundary");
+    expect(roadmap).toContain("controlled internal alpha");
+    expect(roadmap).toContain("Not product-ready");
+    expect(roadmap).toContain("no markdown-backed runtime memory");
+    expect(roadmap).toContain("`AGENTS.md` for agent operating rules");
+    expect(roadmap).toContain("Beads for durable task graph");
+    expect(roadmap).toContain("DB/corpus/eval read models for brain memory");
+    expect(roadmap).toContain("strict TypeScript package spine");
+    expect(roadmap).toContain("source and memory activation");
+    expect(roadmap).toContain("DB-backed source/memory/evidence/review paths");
 
-    expect(kernel).not.toContain("## Current Bootstrap Boundary");
-    expect(kernel).not.toContain("Commit 0/1");
+    expect(roadmap).not.toContain("## Current Bootstrap Boundary");
+    expect(roadmap).not.toContain("Commit 0/1");
   });
 
   it("keeps primitive ledger explicit about live, reduced, rejected, and deprecated surfaces", () => {
@@ -86,7 +85,7 @@ describe("KRN context hygiene invariants", () => {
     expect(readme).toContain("Root `PLAN.md` is the active compact product plan.");
     expect(readme).toContain("Root `GOAL.md` is the compact");
     expect(readme).toContain("Root `PLANS.md` carries the compact execution contract");
-    expect(readme).toContain("archived ledgers");
+    expect(readme.replace(/\s+/gu, " ")).toContain("not markdown report forests");
     expect(readme).toContain("controlled-internal-alpha for technical operators");
     expect(readme).toContain("product-ready: no");
     expect(readme).toContain("widened internal alpha: no");
@@ -114,41 +113,37 @@ describe("KRN context hygiene invariants", () => {
     expect(activeTruth).not.toMatch(/^V\d{3,}-00.*complete\.$/mu);
   });
 
-  it("keeps onboarding aligned with current controlled-internal-alpha state", () => {
-    const onboarding = readRootFile("docs/KRN_ONBOARDING.md");
+  it("keeps roadmap aligned with current controlled-internal-alpha state", () => {
+    const roadmap = readRootFile("KRN_ROADMAP.md");
 
-    expect(onboarding).toContain("controlled-internal-alpha");
-    expect(onboarding).toContain("not product-ready");
-    expect(onboarding).toContain("not widened internal alpha");
-    expect(onboarding).toContain("GOAL.md` / `PLAN.md");
-    expect(onboarding).toContain("PLANS.md");
-    expect(onboarding).toContain("source-to-decision and pattern-intake gates");
-    expect(onboarding).toContain("DB-backed replay and smoke paths");
-    expect(onboarding).toContain("External second-operator proof remains blocked/deferred");
-    expect(onboarding).toContain(
+    expect(roadmap).toContain("controlled internal alpha");
+    expect(roadmap).toContain("Not product-ready");
+    expect(roadmap).toContain("no external operator proof");
+    expect(roadmap).toContain("`GOAL.md`, `PLAN.md`, and `PLANS.md`");
+    expect(roadmap).toContain("governed second-opinion review");
+    expect(roadmap).toContain("DB/corpus/eval read models");
+    expect(roadmap).toContain(
       "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
     );
 
-    expect(onboarding).not.toContain("This repo currently contains only Commit 0/1 surfaces");
-    expect(onboarding).not.toContain("krn context build");
-    expect(onboarding).not.toContain("krn review capture");
+    expect(roadmap).not.toContain("This repo currently contains only Commit 0/1 surfaces");
+    expect(roadmap).not.toContain("krn context build");
+    expect(roadmap).not.toContain("krn review capture");
   });
 
-  it("keeps state-of-the-art doctrine aligned with the current harness spine", () => {
-    const doctrine = readRootFile("docs/STATE_OF_THE_ART.md");
+  it("keeps roadmap aligned with the current harness spine", () => {
+    const roadmap = readRootFile("KRN_ROADMAP.md");
 
-    expect(doctrine).toContain("Root `GOAL.md` and");
-    expect(doctrine).toContain("`PLAN.md` remain active execution truth");
-    expect(doctrine).toContain("source-to-decision / pattern gate");
-    expect(doctrine).toContain("typed harness spine");
-    expect(doctrine).toContain("evidence bundle");
-    expect(doctrine).toContain("review assessment");
-    expect(doctrine).toContain("feedback delta");
-    expect(doctrine).toContain("reviewable Memory/Source/Eval candidates");
-    expect(doctrine).toContain("Controlled Internal Alpha Before Product Readiness");
+    expect(roadmap).toContain("operator intent");
+    expect(roadmap).toContain("task contract");
+    expect(roadmap).toContain("bounded Codex brief");
+    expect(roadmap).toContain("evidence capture");
+    expect(roadmap).toContain("review and feedback");
+    expect(roadmap).toContain("memory/source/eval candidates");
+    expect(roadmap).toContain("controlled internal alpha");
 
-    expect(doctrine).not.toContain("context packet");
-    expect(doctrine).not.toContain("review capture");
-    expect(doctrine).not.toContain("This is the active project doctrine");
+    expect(roadmap).not.toContain("context packet");
+    expect(roadmap).not.toContain("review capture");
+    expect(roadmap).not.toContain("This is the active project doctrine");
   });
 });

@@ -123,7 +123,7 @@ describe("KRN skill invariants", () => {
     expect(sourceToDecision).toContain("decisions with a consumer and falsifier");
     expect(sourceToDecision).toContain("docs/runbooks/pattern-intake.md");
     expect(sourceToDecision).toContain(
-      "pnpm --filter @krn/cli krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text source-to-decision"
+      "pnpm --filter @krn/cli krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text source-to-decision"
     );
     expect(sourceToDecision).toContain("Use catalog results as read-only context.");
     expect(sourceToDecision).toContain("Source without mechanism is decoration.");
@@ -198,7 +198,7 @@ describe("KRN skill invariants", () => {
     expect(codexAdapterPlan).toContain("non-mutating adapter behavior");
     expect(codexAdapterPlan).toContain("evidence contract");
     expect(codexAdapterPlan).toContain(
-      "pnpm --filter @krn/cli krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text progressive-disclosure"
+      "pnpm --filter @krn/cli krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text progressive-disclosure"
     );
     expect(codexAdapterPlan).toContain("Use the result as read-only context.");
     expect(codexAdapterPlan).toContain(
@@ -270,7 +270,7 @@ describe("KRN skill invariants", () => {
     expect(typeSafety).toContain("any usage");
     expect(typeSafety).toContain("fixes that might weaken type safety");
     expect(typeSafety).toContain(
-      "pnpm --filter @krn/cli krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text unknown-first"
+      "pnpm --filter @krn/cli krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text unknown-first"
     );
     expect(typeSafety).toContain("Use the catalog result as read-only pattern context.");
     expect(typeSafety).toContain("Keep external data as `unknown` until validated.");

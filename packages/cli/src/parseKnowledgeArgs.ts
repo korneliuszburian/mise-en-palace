@@ -23,8 +23,8 @@ const knowledgeUsage = [
   "",
   "Read-only preview commands:",
   "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
-  "krn brain knowledge --pattern-file docs/patterns/retained-patterns/pattern.json [--text unknown-first]",
-  "krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json [--text unknown-first]",
+  "krn brain knowledge --pattern-file corpus/brain-knowledge/patterns/pattern.json [--text unknown-first]",
+  "krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json [--text unknown-first]",
   "  note: brain knowledge readback reads explicit card or retained-pattern files only; it does not scan, rank, persist, or mutate Memory Core",
   "  proof boundary: valid output proves only that supplied files match known read-model inputs and local filters"
 ].join("\n");

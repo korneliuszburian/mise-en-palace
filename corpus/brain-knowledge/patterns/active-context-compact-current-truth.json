@@ -1,0 +1,29 @@
+{
+  "patternId": "active-context-compact-current-truth",
+  "name": "Active context stays compact and current-truth routed",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "KRN active execution truth should stay in compact root GOAL.md and PLAN.md, detailed history should live in PLANS.md/reports/archives, and stale pasted objectives must not roll the active stream backward.",
+  "sourceRefs": [
+    "docs/KRN_KERNEL.md#runtime-truth",
+    "GOAL.md#continuation-after-compact",
+    "PLAN.md#verification-policy",
+    "PLANS.md#condensation-rules",
+    "docs/architecture/behavior-gate-matrix.md#classification"
+  ],
+  "evidenceRefs": [
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v255-active-ledger-condensation",
+    "packages/harness/src/__tests__/contextHygieneInvariants.test.ts",
+    "packages/harness/src/__tests__/activePlanInvariants.test.ts"
+  ],
+  "consumers": [
+    "future compact/resume runs",
+    "future active-plan edits",
+    "future PLANS condensation slices"
+  ],
+  "falsifier": "A future compact/resume flow follows a stale pasted objective or historical ledger instead of the current root GOAL.md, PLAN.md, and PLANS.md active stream while tests still pass.",
+  "doesNotProve": "This card does not prove every historical document is clean, every future resume will follow the rule, or product readiness.",
+  "observedAt": "2026-06-28",
+  "nextAction": "use"
+}

@@ -1,0 +1,16 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:krn-brain-layer-model-boundary",
+      "outcome": "helped",
+      "summary": "Repaired qzai under-inclusion by making the KRN brain layer, worker boundary, naming standard, and helper extraction rule retrievable through brain knowledge readback.",
+      "evidenceRefs": [
+        "legacy-evidence:runs-2026-07-04-context-selection-quality-audit",
+        "legacy-evidence:runs-2026-07-04-brain-layer-model-retention",
+        "corpus/brain-knowledge/patterns/krn-brain-layer-model-boundary.json"
+      ],
+      "doesNotProve": "This feedback does not prove DB-backed source-search recall, broad ranking quality, worker runtime, naming implementation quality, or KRN product readiness.",
+      "observedAt": "2026-07-04"
+    }
+  ]
+}

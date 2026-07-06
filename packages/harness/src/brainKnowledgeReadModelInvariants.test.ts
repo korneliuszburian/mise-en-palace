@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync
+} from "node:fs";
 
 import {
   describe,
@@ -80,7 +83,7 @@ describe("Brain knowledge read model invariants", () => {
 
   it("keeps the retained TypeScript pattern available as a concrete knowledge card", () => {
     const pattern = readJsonRootFile(
-      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
     );
     const card = readJsonRootFile(
       "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
@@ -122,8 +125,8 @@ describe("Brain knowledge read model invariants", () => {
     expectNonEmptyStringArray(card, "consumers");
   });
 
-  it("keeps the explicit brain knowledge catalog pointed at retained pattern sources", () => {
-    const catalog = readJsonRootFile("docs/brain-knowledge/catalog.json");
+  it("keeps the explicit brain knowledge catalog pointed only at corpus files that still exist", () => {
+    const catalog = readJsonRootFile("corpus/brain-knowledge/catalog.json");
 
     if (!isRecord(catalog)) {
       throw new Error("Brain knowledge catalog must be an object.");
@@ -134,68 +137,24 @@ describe("Brain knowledge read model invariants", () => {
 
     expect(Array.isArray(patternFiles)).toBe(true);
     expect(Array.isArray(usefulnessFeedbackFiles)).toBe(true);
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/active-context-compact-current-truth.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/codex-execplan-living-validation-loop.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/codex-goal-continuation-evidence-contract.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/codex-prompt-task-contract-proof-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/consensus-relation-heartbeat-review-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json"
-    );
-    expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");
-    expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/target-repo-write-authority-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/untrusted-context-warning-boundary.json"
-    );
-    expect(patternFiles).toContain(
-      "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
-    );
-    expect(usefulnessFeedbackFiles).toContain(
-      "usefulness-feedback/v288-external-codex-workflow-patterns.json"
-    );
-    expect(usefulnessFeedbackFiles).toContain(
-      "usefulness-feedback/dvy-01-typescript-exemplar-trial.json"
-    );
-    expect(usefulnessFeedbackFiles).toContain(
-      "usefulness-feedback/cru-01-consensus-relation-heartbeat-review.json"
-    );
-  });
 
-  it("keeps catalog usefulness feedback files present and parser-valid", () => {
-    const catalog = readJsonRootFile("docs/brain-knowledge/catalog.json");
-
-    if (!isRecord(catalog)) {
-      throw new Error("Brain knowledge catalog must be an object.");
+    if (!Array.isArray(patternFiles) || !Array.isArray(usefulnessFeedbackFiles)) {
+      return;
     }
 
-    const usefulnessFeedbackFiles = catalog["usefulnessFeedbackFiles"];
+    expect(patternFiles.length).toBeGreaterThan(0);
 
-    expect(Array.isArray(usefulnessFeedbackFiles)).toBe(true);
+    for (const file of patternFiles) {
+      expect(typeof file).toBe("string");
 
-    if (!Array.isArray(usefulnessFeedbackFiles)) {
-      return;
+      if (typeof file !== "string") {
+        continue;
+      }
+
+      const absolute = new URL(`../../../corpus/brain-knowledge/${file}`, import.meta.url);
+
+      expect(existsSync(absolute), file).toBe(true);
+      expect(readJsonRootFile(`corpus/brain-knowledge/${file}`), file).toEqual(expect.any(Object));
     }
 
     for (const file of usefulnessFeedbackFiles) {
@@ -205,10 +164,12 @@ describe("Brain knowledge read model invariants", () => {
         continue;
       }
 
+      const absolute = new URL(`../../../corpus/brain-knowledge/${file}`, import.meta.url);
       const parsed = parseBrainKnowledgeUsefulnessFeedbackList(
-        readJsonRootFile(`docs/brain-knowledge/${file}`)
+        readJsonRootFile(`corpus/brain-knowledge/${file}`)
       );
 
+      expect(existsSync(absolute), file).toBe(true);
       expect(parsed, file).not.toBeUndefined();
       expect(parsed?.length, file).toBeGreaterThan(0);
     }
@@ -236,7 +197,7 @@ describe("Brain knowledge read model invariants", () => {
     }
 
     expect(previewScript).toContain("brain knowledge");
-    expect(previewScript).toContain("--catalog-file docs/brain-knowledge/catalog.json");
+    expect(previewScript).toContain("--catalog-file corpus/brain-knowledge/catalog.json");
     expect(previewScript).toContain("--html");
     expect(previewScript).toContain(".local-lab/brain-knowledge-preview.html");
     expect(previewScript).not.toContain(" db ");

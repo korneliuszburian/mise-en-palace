@@ -73,7 +73,7 @@ describe("runCli", () => {
       "knowledge",
       "cards",
       "--pattern-file",
-      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json",
+      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ], {
@@ -85,7 +85,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Pattern files: docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Pattern files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
@@ -96,7 +96,7 @@ describe("runCli", () => {
       "knowledge",
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--text",
       "unknown-first"
     ], {
@@ -108,7 +108,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
@@ -119,7 +119,7 @@ describe("runCli", () => {
       "knowledge",
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--text",
       "unknown-first",
       "--html"

@@ -49,7 +49,7 @@
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",
     "beads:doctor": "bd doctor",
-    "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts brain knowledge --catalog-file docs/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
+    "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
     "quality:fallow": "mkdir -p .local-lab/fallow && fallow --skip health --format compact --output-file .local-lab/fallow/dead-dupes.compact.txt && fallow health --report-only --format compact --output-file .local-lab/fallow/health.compact.txt",
     "quality:fallow:ci": "fallow audit --format compact",
     "alpha:verify": "pnpm alpha:verify:fast",

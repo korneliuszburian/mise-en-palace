@@ -16,8 +16,8 @@ import {
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
-const patternFile = "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json";
-const catalogFile = "docs/brain-knowledge/catalog.json";
+const patternFile = "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json";
+const catalogFile = "corpus/brain-knowledge/catalog.json";
 
 describe("runKnowledgeCardsCommand", () => {
   it("renders a read-only knowledge card preview", async () => {
@@ -112,7 +112,7 @@ describe("runKnowledgeCardsCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Pattern files: docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Pattern files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain knowledge readback was produced from live DB state");
@@ -141,12 +141,12 @@ describe("runKnowledgeCardsCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
     expect(result.stdout).toContain(
-      "docs/brain-knowledge/catalog.json:../patterns/retained-patterns/source-to-decision-retention-gate.json"
+      "corpus/brain-knowledge/catalog.json:patterns/source-to-decision-retention-gate.json"
     );
     expect(result.stdout).toContain(
-      "docs/brain-knowledge/catalog.json:../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+      "corpus/brain-knowledge/catalog.json:patterns/ts-boundary-unknown-first-result-state.json"
     );
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
@@ -314,7 +314,7 @@ describe("runKnowledgeCardsCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
 
@@ -507,7 +507,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain(
-      "Usefulness feedback files: docs/brain-knowledge/catalog.json:usefulness-feedback/v288-external-codex-workflow-patterns.json"
+      "Usefulness feedback files: corpus/brain-knowledge/catalog.json:usefulness-feedback/v288-external-codex-workflow-patterns.json"
     );
     expect(result.stdout).toContain("pattern:codex-goal-continuation-evidence-contract");
     expect(result.stdout).toContain("usefulnessOutcome: helped");

@@ -60,7 +60,7 @@ type BrainKnowledgeReadback = {
   queries: readonly string[];
 };
 
-const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
+const defaultCatalogFile = "corpus/brain-knowledge/catalog.json";
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 const maxBrainSearchCompactQueryRetries = 6;

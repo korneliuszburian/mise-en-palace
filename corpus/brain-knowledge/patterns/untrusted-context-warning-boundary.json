@@ -1,0 +1,28 @@
+{
+  "patternId": "untrusted-context-warning-boundary",
+  "name": "Untrusted selected context is labeled before Codex use",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "Codex-facing briefs should label untrusted or external selected context with deterministic warnings and proof boundaries instead of treating selected context as trusted execution truth.",
+  "sourceRefs": [
+    "docs/architecture/security-trust-boundaries.md#current-trust-boundary-map",
+    "packages/codex-adapter/src/renderExecutionBrief.ts",
+    "docs/architecture/behavior-gate-matrix.md#classification"
+  ],
+  "evidenceRefs": [
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-25-codex-brief-contract-hardening",
+    "packages/codex-adapter/src/renderExecutionBrief.test.ts",
+    "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
+    "packages/harness/src/__tests__/goldenKrnBehaviorGate.test.ts"
+  ],
+  "consumers": [
+    "future Codex adapter changes",
+    "future target-repo trials",
+    "future security/trust-boundary gates"
+  ],
+  "falsifier": "A future Codex brief renders untrusted external source or memory text without a warning label or proof boundary and adapter tests still pass.",
+  "doesNotProve": "This card does not prove prompt-injection resistance, safe Codex execution, source truth, or product readiness.",
+  "observedAt": "2026-06-28",
+  "nextAction": "use"
+}

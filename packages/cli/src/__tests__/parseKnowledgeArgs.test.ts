@@ -62,7 +62,7 @@ describe("parseKnowledgeArgs", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--usefulness-outcome",
       "helped",
       "--limit",
@@ -73,7 +73,7 @@ describe("parseKnowledgeArgs", () => {
         kind: "knowledgeCards",
         cardFiles: [],
         patternFiles: [],
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         filter: {
           usefulnessOutcome: "helped"
         },
@@ -87,7 +87,7 @@ describe("parseKnowledgeArgs", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--usefulness-outcome",
       "none",
       "--json"
@@ -96,7 +96,7 @@ describe("parseKnowledgeArgs", () => {
         kind: "knowledgeCards",
         cardFiles: [],
         patternFiles: [],
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         filter: {
           usefulnessOutcome: "none"
         },
@@ -109,14 +109,14 @@ describe("parseKnowledgeArgs", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--html"
     ])).toEqual({
       command: {
         kind: "knowledgeCards",
         cardFiles: [],
         patternFiles: [],
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         filter: {},
         format: "html"
       }
@@ -127,7 +127,7 @@ describe("parseKnowledgeArgs", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--pattern-file",
-      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json",
+      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -135,7 +135,7 @@ describe("parseKnowledgeArgs", () => {
         kind: "knowledgeCards",
         cardFiles: [],
         patternFiles: [
-          "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+          "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
         ],
         catalogFiles: [],
         filter: {
@@ -150,7 +150,7 @@ describe("parseKnowledgeArgs", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -158,7 +158,7 @@ describe("parseKnowledgeArgs", () => {
         kind: "knowledgeCards",
         cardFiles: [],
         patternFiles: [],
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         filter: {
           text: "unknown-first"
         },

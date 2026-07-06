@@ -114,7 +114,7 @@ type TargetOwnerFileRecall = ReturnType<typeof assessTargetOwnerFileRecall>;
 
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
-const defaultBrainKnowledgeCatalogFile = "docs/brain-knowledge/catalog.json";
+const defaultBrainKnowledgeCatalogFile = "corpus/brain-knowledge/catalog.json";
 
 const targetTrustExclusions = [
   {

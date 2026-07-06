@@ -1,0 +1,28 @@
+{
+  "patternId": "brain-knowledge-read-only-ui-boundary",
+  "name": "Brain knowledge UI/search remains read-only until usefulness proof",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "Brain knowledge UI/search should render read-only BrainKnowledgeReadModel cards with proof boundaries before any API, MCP, dashboard, DB search service, or mutation-capable surface is built.",
+  "sourceRefs": [
+    "docs/architecture/observability-read-models.md#brainknowledgereadmodel",
+    "docs/decisions/ADR-0025-dashboard-readiness-gate.md",
+    "docs/decisions/ADR-0028-brain-knowledge-web-search-readiness-gate.md",
+    "packages/cli/src/runKnowledgeCardsCommand.ts"
+  ],
+  "evidenceRefs": [
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v281-brain-knowledge-web-search-readiness-gate",
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v282-brain-knowledge-static-web-preview-artifact",
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v285-brain-knowledge-static-preview-browser-smoke"
+  ],
+  "consumers": [
+    "future brain knowledge UI/search slices",
+    "future API/MCP/dashboard readiness gates",
+    "future knowledge-card review"
+  ],
+  "falsifier": "A future brain knowledge UI/search slice mutates Memory Core, SourceDecision, candidate status, or evidence, or adds API/MCP/dashboard before static preview usefulness fails or becomes insufficient.",
+  "doesNotProve": "This card does not prove browser UX polish, search ranking quality, catalog completeness, product readiness, or that API/MCP/dashboard will never be needed.",
+  "observedAt": "2026-06-28",
+  "nextAction": "use"
+}

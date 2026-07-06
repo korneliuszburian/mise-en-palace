@@ -23,14 +23,14 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "source-to-decision",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 2,
         maxInclusions: 2,
         format: "json"
       },
       async runKnowledgeCards(runtime) {
-        expect(runtime.catalogFiles).toEqual(["docs/brain-knowledge/catalog.json"]);
+        expect(runtime.catalogFiles).toEqual(["corpus/brain-knowledge/catalog.json"]);
         expect(runtime.filter).toEqual({ text: "source-to-decision" });
         expect(runtime.format).toBe("json");
 
@@ -213,7 +213,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "graph sourceclaimedge relation temporal source relations",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 16,
         maxInclusions: 6,
@@ -314,7 +314,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "heartbeat dreaming source relation evidence",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 16,
         maxInclusions: 6,
@@ -416,7 +416,7 @@ describe("runBrainSearchCommand", () => {
         kind: "brainSearch",
         query:
           "prove retained reference implementation recipe pattern through local code exemplar",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 16,
         maxInclusions: 6,
@@ -518,7 +518,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "alpha beta gamma delta epsilon zeta eta theta",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         format: "json"
       },
@@ -1068,7 +1068,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "activation utility source eval follow-up",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 12,
         maxInclusions: 8,
@@ -1304,7 +1304,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query: "Towards Autonomous Memory Agents semantic-aware Thompson sampling",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 12,
         maxInclusions: 8,

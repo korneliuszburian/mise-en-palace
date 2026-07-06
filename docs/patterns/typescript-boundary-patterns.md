@@ -5,7 +5,7 @@ Status: active pattern catalog.
 This file keeps retained TypeScript patterns small, decision-oriented, and
 falsifiable. It is not a course transcript or broad research archive.
 
-Structured retained-pattern sources live under `docs/patterns/retained-patterns/`
+Structured retained-pattern sources live under `corpus/brain-knowledge/patterns/`
 and are the producer input for `BrainKnowledgeReadModel` cards. Do not parse
 this markdown as the runtime/card source.
 

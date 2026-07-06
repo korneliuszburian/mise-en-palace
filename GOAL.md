@@ -159,7 +159,7 @@ internal work, real repos, real evidence, and compact reports.
 
 After auto-compact, resume, context loss, or a new `/goal` continuation:
 
-1. Read `GOAL.md`, `PLAN.md`, `PLANS.md`, and `docs/KRN_KERNEL.md`.
+1. Read `GOAL.md`, `PLAN.md`, `PLANS.md`, and `KRN_ROADMAP.md`.
 2. Run `bd prime`, then `git fetch --prune`, `git status --short --branch`, and
    `git log --oneline -n 8`.
 3. Return to the first incomplete active task.

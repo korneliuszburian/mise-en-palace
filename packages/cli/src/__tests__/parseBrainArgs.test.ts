@@ -11,7 +11,7 @@ describe("parseBrainArgs", () => {
       "--query",
       "source-to-decision",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json",
+      "corpus/brain-knowledge/catalog.json",
       "--limit",
       "5",
       "--max-inclusions",
@@ -21,7 +21,7 @@ describe("parseBrainArgs", () => {
       command: {
         kind: "brainSearch",
         query: "source-to-decision",
-        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 5,
         maxInclusions: 3,
@@ -70,7 +70,7 @@ describe("parseBrainArgs", () => {
       "source-to-decision",
       "--store-only",
       "--catalog-file",
-      "docs/brain-knowledge/catalog.json"
+      "corpus/brain-knowledge/catalog.json"
     ]);
 
     expect(result.error).toContain("--store-only cannot be combined with --catalog-file");

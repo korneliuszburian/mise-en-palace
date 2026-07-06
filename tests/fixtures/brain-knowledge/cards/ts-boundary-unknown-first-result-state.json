@@ -12,9 +12,9 @@
     "docs/KRN_SOURCES.md#ts-reset"
   ],
   "evidenceRefs": [
-    "docs/reviews/controlled-dogfood/2026-06-28-v253-normalized-target-repair-trial/REPORT.md",
-    "docs/reviews/controlled-dogfood/2026-06-28-v256-replayable-target-repair-trial/REPORT.md",
-    "docs/reviews/controlled-dogfood/2026-06-28-v258-pattern-enforcement-gate/REPORT.md"
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v253-normalized-target-repair-trial",
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v256-replayable-target-repair-trial",
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v258-pattern-enforcement-gate"
   ],
   "consumers": [
     "V258 Pattern Enforcement Gate",

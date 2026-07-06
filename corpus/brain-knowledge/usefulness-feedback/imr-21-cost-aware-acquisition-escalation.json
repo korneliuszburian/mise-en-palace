@@ -1,0 +1,17 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:cost-aware-acquisition-escalation-boundary",
+      "outcome": "helped",
+      "summary": "IMR-18 through IMR-20 validated both linked-document and missing-evidence-only acquisition escalation branches, then retained the low-to-high candidate-only acquisition rule as reusable brain knowledge.",
+      "evidenceRefs": [
+        "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-18-cost-aware-acquisition-escalation-preview",
+        "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-19-cost-aware-acquisition-escalation-review",
+        "legacy-evidence:reviews-controlled-dogfood-2026-07-01-imr-20-missing-evidence-only-acquisition-escalation",
+        "corpus/brain-knowledge/patterns/cost-aware-acquisition-escalation-boundary.json"
+      ],
+      "doesNotProve": "This feedback does not prove source truth, acquisition success, ranking quality, autonomous acquisition safety, Memory Core usefulness, or KRN product readiness.",
+      "observedAt": "2026-07-01"
+    }
+  ]
+}

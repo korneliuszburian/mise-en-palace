@@ -25,13 +25,13 @@ const cardFixture = (): unknown =>
   readJsonRootFile("tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json");
 
 const patternDecisionFixture = (): unknown =>
-  readJsonRootFile("docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+  readJsonRootFile("corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
 
 const referenceImplementationPatternDecisionFixture = (): unknown =>
-  readJsonRootFile("docs/patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json");
+  readJsonRootFile("corpus/brain-knowledge/patterns/reference-implementation-recipe-clone-boundary.json");
 
 const brainKnowledgeParserExemplarPatternDecisionFixture = (): unknown =>
-  readJsonRootFile("docs/patterns/retained-patterns/ts-boundary-brain-knowledge-parser-exemplar.json");
+  readJsonRootFile("corpus/brain-knowledge/patterns/ts-boundary-brain-knowledge-parser-exemplar.json");
 
 const parsedCardFixture = () => {
   const card = parseBrainKnowledgeReadModel(cardFixture());
@@ -267,7 +267,7 @@ describe("Brain knowledge read model", () => {
     });
     expect(card.sourceRefs).toContain("packages/harness/src/brainKnowledgeReadModel.ts");
     expect(card.evidenceRefs).toContain(
-      "docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md"
+      "legacy-evidence:reviews-controlled-dogfood-2026-07-01-dvy-01-typescript-exemplar-trial"
     );
     expect(searchBrainKnowledgeCards([card], {
       text: "brain knowledge parser exemplar unknown-first recipe"

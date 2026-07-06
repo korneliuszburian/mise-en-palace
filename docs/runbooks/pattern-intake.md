@@ -80,7 +80,7 @@ irrelevant, and a medium-trust source can still create a useful lab-test.
    the mechanism:
 
    ```sh
-   pnpm --filter @krn/cli krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json --text <pattern-or-mechanism>
+   pnpm --filter @krn/cli krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text <pattern-or-mechanism>
    ```
 
    Use catalog output as read-only context. Do not treat it as ranking, product
@@ -170,7 +170,7 @@ Before coding:
 
 ```sh
 pnpm --filter @krn/cli krn brain knowledge \
-  --catalog-file docs/brain-knowledge/catalog.json \
+  --catalog-file corpus/brain-knowledge/catalog.json \
   --usefulness-outcome helped \
   --text "<slice topic>"
 ```

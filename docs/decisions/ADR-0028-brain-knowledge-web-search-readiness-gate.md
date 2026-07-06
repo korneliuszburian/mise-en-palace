@@ -63,7 +63,7 @@ V282 Brain Knowledge Static Web Preview Artifact
 Acceptable implementation shapes:
 
 1. A package script that generates `.local-lab/brain-knowledge-preview.html`
-   from `docs/brain-knowledge/catalog.json`.
+   from `corpus/brain-knowledge/catalog.json`.
 2. A small runbook that documents the exact static preview command and proof
    boundaries, guarded by CLI tests.
 3. A focused HTML rendering guard that proves catalog breadth, proof boundaries,

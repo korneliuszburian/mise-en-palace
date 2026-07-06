@@ -1,0 +1,17 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:source-to-decision-retention-gate",
+      "outcome": "helped",
+      "summary": "Turned repeated TypeScript boundary repair evidence into a retained pattern with mechanism, KRN implication, consumer, falsifier, does-not-prove boundary, and follow-up enforcement path.",
+      "evidenceRefs": [
+        "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v257-pattern-intake-trial",
+        "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v265-brain-knowledge-card-producer",
+        "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
+        "legacy-pattern-selection-gate"
+      ],
+      "doesNotProve": "This feedback does not prove automatic research condensation, source truth, research completeness, or that every retained source/pattern will be useful.",
+      "observedAt": "2026-06-28"
+    }
+  ]
+}

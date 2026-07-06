@@ -1,0 +1,27 @@
+{
+  "patternId": "codex-goal-continuation-evidence-contract",
+  "name": "Codex goal continuation evidence contract",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "KRN goals should stay compact and phase-oriented, naming the active objective, current task, continuation rules, evidence expectations, and completion boundary instead of becoming a progress ledger or product brain.",
+  "sourceRefs": [
+    "docs/KRN_SOURCES.md#goals-in-codex",
+    "https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex",
+    "GOAL.md#continuation-after-compact"
+  ],
+  "evidenceRefs": [
+    "GOAL.md#current-objective",
+    "legacy-evidence:reviews-controlled-dogfood-2026-06-28-v255-active-ledger-condensation",
+    "packages/harness/src/__tests__/activePlanInvariants.test.ts"
+  ],
+  "consumers": [
+    "root GOAL.md continuation contract",
+    "future compact/resume runs",
+    "future handoff/compaction checks"
+  ],
+  "falsifier": "After compaction or resume, Codex follows a completed historical slice, broad ledger text, or stale pasted objective instead of the current GOAL.md task and evidence boundary.",
+  "doesNotProve": "This card does not prove that goals are product memory, that every resume will be correct automatically, or that KRN is product-ready.",
+  "observedAt": "2026-06-28",
+  "nextAction": "use"
+}

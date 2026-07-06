@@ -12,24 +12,20 @@ dashboard-first application.
 ## Start Here
 
 1. Read `AGENTS.md`.
-2. Read `docs/KRN_KERNEL.md`.
-3. Read `docs/KRN_BRAIN.md` when you need the target brain architecture.
+2. Read `KRN_ROADMAP.md`.
+3. Read repo-local skills only when the task matches their scope.
 4. Use `GOAL.md` as the compact activation contract.
 5. Use `PLAN.md` as the canonical living execution map.
-6. Use `docs/README.md` as the docs routing map.
-7. Treat `docs/materials/` as raw source/audit quarantine, not default context.
-
-`docs/plans/memory-ideal-state/PLAN.md`, QG docs, handoff docs, and review docs
-are historical ledgers unless the root `PLAN.md` explicitly names them as
-evidence for a slice.
+6. Use Beads for durable task state when the Beads workspace is available.
+7. Treat docs folders as temporary source artifacts or fixtures, not the brain.
 
 ## Current Truth
 
 Root `PLAN.md` is the active compact product plan. Root `GOAL.md` is the compact
 execution contract. Root `PLANS.md` carries the compact execution contract.
 Detailed continuous execution history, outcomes, and next-task synthesis live in
-Beads, archived ledgers, archived reports, and the docs routing map in
-`docs/README.md`.
+Beads when available and in verified store/corpus/eval paths, not markdown
+report forests.
 
 Current status:
 
