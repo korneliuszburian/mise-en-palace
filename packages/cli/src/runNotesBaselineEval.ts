@@ -14,6 +14,9 @@ import {
   roundRankingMetric
 } from "./rankingEvalMetrics.js";
 import {
+  rankDecisionRows
+} from "./decisionPacketScoring.js";
+import {
   tokenOverlapScore
 } from "./evalTextScoring.js";
 
@@ -57,12 +60,6 @@ export interface NotesBaselineEvalFixture {
   readonly decisions: readonly DecisionPacketRow[];
   readonly notes: readonly NotesEntry[];
   readonly cases: readonly NotesBaselineCase[];
-}
-
-interface RankedDecision {
-  readonly id: string;
-  readonly score: number;
-  readonly status: DecisionStatus;
 }
 
 interface RankedNote {
@@ -338,31 +335,6 @@ export const loadNotesBaselineEvalFixture = (
   return parseNotesBaselineEvalFixture(parsed);
 };
 
-const statusScore = (
-  status: DecisionStatus
-): number => {
-  switch (status) {
-    case "current":
-      return 30;
-    case "rejected":
-      return -20;
-    case "stale":
-      return -40;
-  }
-};
-
-const rankDecisions = (
-  decisions: readonly DecisionPacketRow[],
-  task: string
-): readonly RankedDecision[] =>
-  decisions
-    .map((decision) => ({
-      id: decision.id,
-      score: tokenOverlapScore(task, `${decision.title} ${decision.statement}`) + statusScore(decision.status),
-      status: decision.status
-    }))
-    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
-
 const rankNotes = (
   notes: readonly NotesEntry[],
   task: string
@@ -401,7 +373,7 @@ const buildKrnPacket = (
   testCase: NotesBaselineCase
 ): KRNPacketReadback => {
   const decisionsById = new Map(fixture.decisions.map((decision) => [decision.id, decision]));
-  const ranked = rankDecisions(fixture.decisions, testCase.task);
+  const ranked = rankDecisionRows(fixture.decisions, testCase.task);
   const selectedDecisionIds = ranked
     .filter((decision) => decision.status === "current")
     .slice(0, fixture.topK)

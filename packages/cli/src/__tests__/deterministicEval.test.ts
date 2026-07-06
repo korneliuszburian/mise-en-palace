@@ -54,6 +54,12 @@ describe("runDeterministicEval", () => {
           identical: true,
           firstStatus: "pass",
           secondStatus: "pass"
+        },
+        {
+          id: "decision-packet",
+          identical: true,
+          firstStatus: "pass",
+          secondStatus: "pass"
         }
       ]
     });
@@ -65,6 +71,9 @@ describe("runDeterministicEval", () => {
     );
     expect(result.proof.proves).toContain(
       "fixed notes-baseline fixture output is bit-identical across consecutive runs"
+    );
+    expect(result.proof.proves).toContain(
+      "fixed decision-packet fixture output is bit-identical across consecutive runs"
     );
     expect(result.proof.doesNotProve).toContain("arbitrary company-pattern memory advantage");
   });

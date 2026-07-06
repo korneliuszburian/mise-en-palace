@@ -11,6 +11,9 @@ import {
   runMemoryAdvantageEval
 } from "./runMemoryAdvantageEval.js";
 import {
+  runDecisionPacketEval
+} from "./runDecisionPacketEval.js";
+import {
   loadNotesBaselineEvalFixture,
   runNotesBaselineEval
 } from "./runNotesBaselineEval.js";
@@ -84,6 +87,8 @@ export const runDeterministicEval = async (input: {
   const notesBaselineFixture = loadNotesBaselineEvalFixture(input.notesBaselineFixturePath);
   const firstNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
   const secondNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
+  const firstDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
+  const secondDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
 
   const checks = [
     deterministicCheck({
@@ -109,6 +114,12 @@ export const runDeterministicEval = async (input: {
       kind: firstNotesBaseline.kind,
       first: firstNotesBaseline,
       second: secondNotesBaseline
+    }),
+    deterministicCheck({
+      id: "decision-packet",
+      kind: firstDecisionPacket.kind,
+      first: firstDecisionPacket,
+      second: secondDecisionPacket
     })
   ];
   const status = checks.every((check) => check.status === "pass") ? "pass" : "fail";
@@ -123,6 +134,7 @@ export const runDeterministicEval = async (input: {
         "fixed source-graph-ranking fixture output is bit-identical across consecutive runs",
         "fixed company-pattern memory-advantage fixture output is bit-identical across consecutive runs",
         "fixed notes-baseline fixture output is bit-identical across consecutive runs",
+        "fixed decision-packet fixture output is bit-identical across consecutive runs",
         "retrieval/context proxy evals are stable enough to serve as a regression gate"
       ],
       doesNotProve: [
