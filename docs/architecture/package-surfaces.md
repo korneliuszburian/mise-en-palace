@@ -132,21 +132,19 @@ Current root exports after C1-02:
 
 Explicit subpaths after C1-02:
 
-- `@krn/harness/eval` for Promptfoo adapter export/result helpers;
 - `@krn/harness/repositories` for repository ports and persistence-facing
   record/input types.
 
 Risk:
 
-- Promptfoo adapter helpers sit beside canonical behavior fixture primitives.
 - repository ports are exported as a broad package surface.
 
 C1-02 decision:
 
 - root should prefer task planning, context assembly, execution/evidence, and
   reviewed feedback/memory promotion contracts.
-- Promptfoo remains eval-adapter surface under `@krn/harness/eval`, not
-  canonical behavior authority.
+- Promptfoo remains adapter-boundary evidence, not canonical behavior
+  authority; no active `@krn/harness/eval` subpath remains.
 - repository ports move out of the root package surface to
   `@krn/harness/repositories`.
 - root continues to expose canonical BehaviorFixture proof helpers and
@@ -229,8 +227,7 @@ COND-03 inspected the remaining wildcard package roots and nested domain
 barrels:
 
 ```sh
-rg -n "export \\*" packages/core/src/index.ts packages/core/src/observations/index.ts packages/schema/src/index.ts packages/codex-adapter/src/index.ts packages/workers/src/index.ts
-rg -n "schemaPrimitives" packages/schema/src/index.ts packages/schema/src/*.ts
+rg -n "export \\*" packages/core/src/index.ts packages/core/src/observations/index.ts packages/codex-adapter/src/index.ts packages/workers/src/index.ts
 rg -n "requiresBackgroundLoop|daemon|background|runtime|enqueue" packages/workers/src/*.ts packages/workers/README.md docs/decisions/ADR-0015-worker-runtime-boundary.md
 ```
 
@@ -258,21 +255,18 @@ falsifier: the root or nested observation barrel exports tests, fixtures,
 adapters, smokes, command runners, or implementation helpers that are not core
 domain contracts.
 
-source_id: `packages/schema/src/index.ts`,
-`packages/schema/src/schemaPrimitives.ts`
-trust_tier: high live source.
-mechanism: schema root exports public Zod IO parser modules, while shared
-`schemaPrimitives.ts` is imported by schema modules and tests but not exported
-from the package root.
-KRN implication: schema entrypoint can remain a parser-surface barrel if
-primitive construction details stay internal.
-decision: keep the current schema root; do not export schema primitives as
-public API.
+source_id: former `packages/schema`
+trust_tier: historical source.
+mechanism: the duplicate schema package was removed after importer checks
+proved the live parser surface could move into core/CLI-owned contracts.
+KRN implication: do not recreate a schema package without a live consumer and
+drift proof.
+decision: treat the old schema package surface as superseded.
 does_not_prove: every parser is complete or every JSON/file/CLI boundary is
 fully hardened.
-consumer: schema package surface.
-falsifier: `schemaPrimitives`, test fixtures, or boundary-bypass helpers become
-root exports.
+consumer: package surface contract.
+falsifier: a duplicate schema package is reintroduced only to mirror core
+types without an executing consumer.
 
 source_id: `packages/codex-adapter/src/index.ts`
 trust_tier: high live source.
@@ -314,13 +308,13 @@ background loop, or Memory Core mutator before a future runtime ADR accepts it.
    schema moved behind explicit subpaths.
 2. CLI root: complete in C1-01. Root exports `runCli`, `CliRuntime`, and
    `CliResult` only.
-3. Harness root: complete in C1-02. Root keeps canonical harness behavior;
-   Promptfoo helpers move to `@krn/harness/eval`; repository ports move to
-   `@krn/harness/repositories`.
+3. Harness root: complete in C1-02, later refined. Root keeps canonical harness
+   behavior; Promptfoo stays non-authoritative adapter evidence; repository
+   ports move to `@krn/harness/repositories`.
 4. Repository ports: complete in C1-03. Public repository surface is curated;
    full persistence plumbing moved to `@krn/harness/repositories/internal`.
-5. Remaining core/schema/codex-adapter/workers barrels: complete in COND-03.
-   Current barrels stay because they expose stable domain/schema/adapter/
+5. Remaining core/codex-adapter/workers barrels: complete in COND-03.
+   Current barrels stay because they expose stable domain/adapter/
    worker-contract surfaces; falsifiers above define when to reopen the slice.
 
 Each code slice must run:

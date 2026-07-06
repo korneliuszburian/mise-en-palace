@@ -7,12 +7,11 @@ database, or Codex adapter from becoming the architecture.
 
 ```text
 core
-schema -> core types where useful
-db -> core, schema
-harness -> core, schema
+db -> core
+harness -> core
 codex-adapter -> core, harness
-workers -> core, schema, db
-cli -> schema, harness, codex-adapter, db
+workers -> core, db
+cli -> core, harness, codex-adapter, db
 ```
 
 Reverse imports are forbidden. `packages/core` must remain pure and
@@ -27,15 +26,6 @@ port interfaces when those interfaces are IO-free abstractions.
 
 Must not import database code, CLI code, filesystem code, shell/process/env
 code, network code, Codex-specific code, Drizzle, Zod, or test/runtime adapters.
-
-### `packages/schema`
-
-Owns Zod schemas and parse functions for external IO/API/CLI boundaries.
-Public parse functions accept `unknown` and return typed values only after
-validation.
-
-Must not import database code, CLI code, Codex adapter code, or filesystem
-runtime helpers.
 
 ### `packages/db`
 
@@ -66,7 +56,8 @@ implement an MCP server.
 ### `packages/cli`
 
 Owns terminal commands and user-facing output. It validates CLI input through
-`packages/schema`, calls harness services, and renders bounded output.
+core parser contracts and command-local parsers, calls harness services, and
+renders bounded output.
 
 Must not become the product architecture, bypass schema validation, or create
 runtime markdown memory.

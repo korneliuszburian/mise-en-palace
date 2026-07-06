@@ -22,11 +22,11 @@ test names the file.
 Current count:
 
 ```txt
-docs files: 797
-docs markdown files: 757
+docs files: 809
+docs markdown files: 769
 root markdown files: 6
 docs/reviews files: 393
-docs/runs files: 261
+docs/runs files: 272
 docs/materials files: 7
 ```
 

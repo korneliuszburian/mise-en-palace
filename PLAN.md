@@ -136,8 +136,8 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 ## Active Task
 
 Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
-Current active Bead: `mise-en-palace-olwb` fourth target packet eval; latest closed Bead: `mise-en-palace-w88x`; next ready Bead after `olwb`: select from Beads after verification and second-opinion review.
-`mise-en-palace-olwb` adds the async-job-boundary-typescript target corpus for queue/idempotency/retry/lease/clock-injection shape; `mise-en-palace-w88x` renames parser-table `handler` vocabulary to `parser` with no command behavior changes.
+Current active Bead: `mise-en-palace-jct3` docs prune/count consistency; latest closed Bead: `mise-en-palace-olwb`; next ready Bead after `jct3`: select from Beads after verification.
+`mise-en-palace-jct3` refreshes active docs counts and removed-package references without archiving historical evidence; `mise-en-palace-olwb` adds the async-job-boundary-typescript target corpus for queue/idempotency/retry/lease/clock-injection shape.
 `mise-en-palace-taxv` expands the compact import fixture to five current decisions, two stale paths, two rejected paths, and five cases without hand-editing the large notes-baseline corpus.
 `mise-en-palace-9u9w` adds `pnpm eval:codex-decision-packet-obedience:live-pilot`: one read-only `codex exec` output preserves governing/stale/rejected/non-proof packet signals under schema.
 `mise-en-palace-kj09` adds `pnpm db:smoke:decision-corpus-import`: compact source-to-decision rows now persist through existing SourceArtifact/SourceChunk/SourceClaim/SourceDecision/SourceDecisionEdge/SearchDocument/SourceRejection repository ports and source-search readback selects the imported governing claim.

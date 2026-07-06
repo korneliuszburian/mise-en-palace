@@ -822,8 +822,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
   `JSON.parse` returning `any` into safer unknown-first behavior, but global
   type changes are application-scoped.
 - KRN implication: use unknown-first parsing at CLI/file/env/JSON boundaries,
-  but reject global `ts-reset` in `packages/core`, `packages/schema`, and public
-  package APIs.
+  but reject global `ts-reset` in `packages/core` and public package APIs.
 - Decision: keep the current `ts-reset` policy in
   `docs/standards/typescript-boundaries.md`.
 - Consumer: TypeScript boundary standard and package/app-scope type decisions.
