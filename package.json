@@ -37,6 +37,7 @@
     "eval:notes-baseline": "pnpm --filter @krn/cli eval:notes-baseline",
     "eval:decision-packet": "pnpm --filter @krn/cli eval:decision-packet",
     "eval:codex-decision-packet-obedience": "pnpm --filter @krn/cli eval:codex-decision-packet-obedience",
+    "eval:codex-decision-packet-obedience:live-pilot": "pnpm --filter @krn/cli eval:codex-decision-packet-obedience:live-pilot",
     "eval:second-repo-decision-packet": "pnpm --filter @krn/cli eval:second-repo-decision-packet",
     "eval:decision-corpus-import": "pnpm --filter @krn/cli eval:decision-corpus-import",
     "eval:corpus-closure": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli eval:corpus-closure",

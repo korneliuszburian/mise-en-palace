@@ -136,16 +136,16 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 ## Active Task
 
 Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
-Current active Bead: `mise-en-palace-kj09` persist decision corpus imports into brain store.
-Latest closed Bead: `mise-en-palace-79cm` third-repo portability falsifier.
-Next ready Bead after `kj09`: select from Beads after verification and second-opinion review.
+Current active Bead: `mise-en-palace-9u9w` run live Codex decision-packet obedience pilot.
+Latest closed Bead: `mise-en-palace-kj09` persist decision corpus imports into brain store.
+Next ready Bead after `9u9w`: select from Beads after verification and second-opinion review.
+`mise-en-palace-9u9w` adds `pnpm eval:codex-decision-packet-obedience:live-pilot`: one read-only `codex exec` output preserves governing/stale/rejected/non-proof packet signals under schema.
 `mise-en-palace-kj09` adds `pnpm db:smoke:decision-corpus-import`: compact source-to-decision rows now persist through existing SourceArtifact/SourceChunk/SourceClaim/SourceDecision/SourceDecisionEdge/SearchDocument/SourceRejection repository ports and source-search readback selects the imported governing claim.
 Worker/runtime expansion stays rejected until a named product loop needs execution; second-opinion-claude runs after larger slices and its verdict is advisory under local evidence.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.
 `mise-en-palace-75za` source-search command boundary split is closed: readback/format/ranking helpers moved out of the command runner.
-`mise-en-palace-wgei` source artifact preview boundary split is closed:
-DB persistence/readback helpers moved out of the command runner.
+`mise-en-palace-wgei` source artifact preview boundary split is closed: DB persistence/readback helpers moved out of the command runner.
 `mise-en-palace-ww5l` added deterministic source artifact preview extraction -> activation context reuse to `eval:krn:smoke`.
 `mise-en-palace-y6ib` brain-search readback split is closed: selectedKnowledge/readback formatting moved out of the command runner.
 `mise-en-palace-2ksv` second-opinion retry artifact hardening is closed:

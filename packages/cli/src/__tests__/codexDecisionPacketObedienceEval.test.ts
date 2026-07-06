@@ -12,7 +12,14 @@ const fixturePath = fileURLToPath(
     import.meta.url
   )
 );
+const livePilotFixturePath = fileURLToPath(
+  new URL(
+    "../../../../tests/fixtures/codex-decision-packet-obedience/live-pilot-2026-07-06.json",
+    import.meta.url
+  )
+);
 const fixture = () => loadCodexDecisionPacketObedienceFixture(fixturePath);
+const livePilotFixture = () => loadCodexDecisionPacketObedienceFixture(livePilotFixturePath);
 
 describe("runCodexDecisionPacketObedienceEval", () => {
   it("checks recorded Codex output against decision-packet obedience signals", () => {
@@ -68,6 +75,38 @@ describe("runCodexDecisionPacketObedienceEval", () => {
       "the checker requires governing decision, stale-boundary, rejected-path, and non-proof signals to survive into the recorded output"
     );
     expect(result.proof.doesNotProve).toContain("live Codex execution");
+  });
+
+  it("checks the live Codex pilot output against decision-packet obedience signals", () => {
+    const result = runCodexDecisionPacketObedienceEval(livePilotFixture());
+
+    expect(result).toMatchObject({
+      kind: "krn.codexDecisionPacketObedience.eval.v1",
+      status: "pass",
+      metrics: {
+        caseCount: 1,
+        passedCaseCount: 1,
+        failedCaseCount: 0,
+        validEvidenceShapeCount: 1,
+        governedDecisionObedienceCount: 1,
+        staleBoundaryObedienceCount: 1,
+        rejectedPathObedienceCount: 1,
+        nonProofObedienceCount: 1
+      }
+    });
+    expect(result.cases[0]).toMatchObject({
+      id: "live-memory-runtime-obedience-2026-07-06",
+      decisionPacketCaseId: "memory-runtime-task",
+      status: "pass",
+      briefIncludesPacket: true,
+      outputEvidenceShape: "valid",
+      outputObeysGoverningDecision: true,
+      outputPreservesStaleBoundary: true,
+      outputPreservesRejectedPath: true,
+      outputPreservesNonProof: true,
+      validationFindings: [],
+      missingObedienceSignals: []
+    });
   });
 
   it("fails when recorded output drops a packet boundary", () => {

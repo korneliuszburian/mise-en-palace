@@ -43,6 +43,7 @@ interface ObedienceCaseFixture {
   readonly expectedGoverningDecisionId: string;
   readonly expectedStaleDecisionIds: readonly string[];
   readonly expectedRejectedPathIds: readonly string[];
+  readonly expectedBriefReceiptRef: string;
   readonly output: RecordedCodexDecisionPacketOutput;
 }
 
@@ -136,6 +137,9 @@ const parseFixture = (
         testCase["expectedRejectedPathIds"],
         `cases[${index}].expectedRejectedPathIds`
       ),
+      expectedBriefReceiptRef: typeof testCase["expectedBriefReceiptRef"] === "string"
+        ? testCase["expectedBriefReceiptRef"]
+        : "recorded-obedience:decision-packet-brief-read",
       output: parseOutput(testCase["output"], `cases[${index}].output`)
     }))
   };
@@ -262,7 +266,7 @@ const evaluateCase = (
   const validationFindings = validateClaimedCodexOutputEvidence(outputEvidence(testCase.output));
   const briefIncludesPacket =
     briefHasRequiredPacketSignals({ brief, sourceCase, testCase }) &&
-    outputEvidenceMentions(testCase.output, ["recorded-obedience:decision-packet-brief-read"]);
+    outputEvidenceMentions(testCase.output, [testCase.expectedBriefReceiptRef]);
   const outputObeysGoverningDecision = outputEvidenceMentions(testCase.output, [testCase.expectedGoverningDecisionId]);
   const outputPreservesStaleBoundary = outputEvidenceMentions(testCase.output, testCase.expectedStaleDecisionIds);
   const outputPreservesRejectedPath = outputEvidenceMentions(testCase.output, testCase.expectedRejectedPathIds);
