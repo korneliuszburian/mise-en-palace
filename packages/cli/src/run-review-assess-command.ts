@@ -1,0 +1,240 @@
+import type {
+  ReviewOutcome,
+  ReviewAssessmentStatus,
+  ReviewFinding,
+  ReviewRisk
+} from "@krn/core";
+import {
+  isReviewRisk,
+  isReviewAssessmentStatus,
+  parseReviewOutcome,
+  parseReviewRisk
+} from "@krn/core";
+import {
+  createReviewAssessDatabaseRuntime
+} from "./database-runtime.js";
+import {
+  noStorePreviewLabel,
+  persistenceLine,
+  postgresPersistedLabel
+} from "./command-runtime-support.js";
+import type {
+  BaseCommandRuntime
+} from "./command-runtime-support.js";
+import type {
+  ReviewAssessDatabaseRuntime,
+  ReviewAssessDatabaseRuntimeInput
+} from "./database-runtime.js";
+import type {
+  CliCommand
+} from "./parse-args.js";
+
+type ReviewAssessCommand = Extract<CliCommand, { kind: "reviewAssess" }>;
+
+export interface ReviewAssessCommandRuntime extends BaseCommandRuntime {
+  command: ReviewAssessCommand;
+  createDatabaseRuntime?: CreateReviewAssessDatabaseRuntime;
+}
+
+export interface ReviewAssessCommandResult {
+  stdout: string;
+}
+
+export type CreateReviewAssessDatabaseRuntime = (
+  input: ReviewAssessDatabaseRuntimeInput
+) => Promise<ReviewAssessDatabaseRuntime>;
+
+const requiredText = (
+  value: string | undefined,
+  label: string
+): string => {
+  const trimmed = value?.trim();
+
+  if (trimmed === undefined || trimmed.length === 0) {
+    throw new Error(`${label} is required for krn review assess`);
+  }
+
+  return trimmed;
+};
+
+const parseReviewStatus = (value: string | undefined): ReviewAssessmentStatus => {
+  const status = value?.trim() ?? "pending";
+
+  if (!isReviewAssessmentStatus(status)) {
+    throw new Error("--status must be pending, accepted, changes_requested, or rejected");
+  }
+
+  return status;
+};
+
+const parseOutcome = (value: string | undefined, status: ReviewAssessmentStatus): ReviewOutcome => {
+  const outcome = parseReviewOutcome(value ?? status);
+
+  if (outcome === undefined) {
+    throw new Error("--outcome must be accepted, changes_requested, rejected, pending, or needs_changes");
+  }
+
+  return outcome;
+};
+
+const parseRisk = (
+  value: string | undefined,
+  label: string
+): ReviewRisk => {
+  const risk = parseReviewRisk(value ?? "low");
+
+  if (risk === undefined) {
+    throw new Error(`${label} must be low, medium, or high`);
+  }
+
+  return risk;
+};
+
+const parseFinding = (input: string): ReviewFinding => {
+  const separatorIndex = input.indexOf(":");
+
+  if (separatorIndex <= 0 || separatorIndex === input.length - 1) {
+    throw new Error("--finding must use severity:message");
+  }
+
+  const severity = input.slice(0, separatorIndex).trim();
+  const message = input.slice(separatorIndex + 1).trim();
+
+  if (!isReviewRisk(severity)) {
+    throw new Error("--finding severity must be low, medium, or high");
+  }
+
+  if (message.length === 0) {
+    throw new Error("--finding message is required");
+  }
+
+  return {
+    severity,
+    message
+  };
+};
+
+const formatPreview = (
+  evidenceBundleId: string,
+  reviewer: string,
+  status: ReviewAssessmentStatus,
+  summary: string,
+  findings: readonly ReviewFinding[]
+): string =>
+  [
+    "KRN Review Assess",
+    persistenceLine(noStorePreviewLabel),
+    "DB writes: none",
+    "",
+    "Review assessment preview:",
+    `evidenceBundleId: ${evidenceBundleId}`,
+    `reviewer: ${reviewer}`,
+    `status: ${status}`,
+    `summary: ${summary}`,
+    `findings: ${findings.length}`,
+    "FeedbackDelta created: no",
+    "Memory mutation: none",
+    "MemoryRecord created: no"
+  ].join("\n");
+
+const formatPersisted = (
+  reviewAssessmentId: string,
+  feedbackDeltaId: string,
+  status: ReviewAssessmentStatus,
+  outcome: ReviewOutcome,
+  reviewBurden: ReviewRisk,
+  diffRisk: ReviewRisk,
+  correctionLabels: readonly string[]
+): string =>
+  [
+    "KRN Review Assess",
+    persistenceLine(postgresPersistedLabel),
+    "",
+    "Persisted IDs:",
+    `reviewAssessment: ${reviewAssessmentId}`,
+    `feedbackDelta: ${feedbackDeltaId}`,
+    `status: ${status}`,
+    `outcome: ${outcome}`,
+    `reviewBurden: ${reviewBurden}`,
+    `diffRisk: ${diffRisk}`,
+    `correctionLabels: ${correctionLabels.join(",")}`,
+    "Memory mutation: none",
+    "MemoryRecord created: no"
+  ].join("\n");
+
+export const runReviewAssessCommand = async (
+  runtime: ReviewAssessCommandRuntime
+): Promise<ReviewAssessCommandResult> => {
+  const command = runtime.command;
+  const evidenceBundleId = requiredText(command.evidenceBundleId, "--evidence-bundle-id");
+  const reviewer = requiredText(command.reviewer, "--reviewer");
+  const summary = requiredText(command.summary, "--summary");
+  const status = parseReviewStatus(command.status);
+  const outcome = parseOutcome(command.outcome, status);
+  const reviewBurden = parseRisk(command.reviewBurden, "--review-burden");
+  const diffRisk = parseRisk(command.diffRisk, "--diff-risk");
+  const correctionLabels = command.correctionLabels
+    .map((label) => label.trim())
+    .filter((label) => label.length > 0);
+  const findings = command.findings.map(parseFinding);
+  const metadata = {
+    ...command.metadata,
+    outcome,
+    reviewBurden,
+    diffRisk,
+    correctionLabels
+  };
+
+  if (!command.persist) {
+    return {
+      stdout: formatPreview(evidenceBundleId, reviewer, status, summary, findings)
+    };
+  }
+
+  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for krn review assess --persist");
+  }
+
+  const createRuntime = runtime.createDatabaseRuntime ?? createReviewAssessDatabaseRuntime;
+  const databaseRuntime = await createRuntime({
+    databaseUrl
+  });
+
+  try {
+    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment({
+      evidenceBundleId,
+      status,
+      reviewer,
+      summary,
+      findings,
+      metadata
+    });
+    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta({
+      reviewAssessmentId: reviewAssessment.id,
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        ...metadata,
+        memoryRecordMutation: "none"
+      }
+    });
+
+    return {
+      stdout: formatPersisted(
+        reviewAssessment.id,
+        feedbackDelta.id,
+        status,
+        outcome,
+        reviewBurden,
+        diffRisk,
+        correctionLabels
+      )
+    };
+  } finally {
+    await databaseRuntime.close();
+  }
+};

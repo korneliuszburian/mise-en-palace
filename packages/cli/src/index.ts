@@ -1,14 +1,14 @@
 import {
   runCli
-} from "./runCli.js";
+} from "./run-cli.js";
 
 export {
   runCli
-} from "./runCli.js";
+} from "./run-cli.js";
 export type {
   CliResult,
   CliRuntime
-} from "./runCli.js";
+} from "./run-cli.js";
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const result = await runCli(process.argv.slice(2), {

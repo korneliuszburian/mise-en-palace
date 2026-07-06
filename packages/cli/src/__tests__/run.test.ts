@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   runCli
-} from "../runCli.js";
+} from "../run-cli.js";
 import {
   now
-} from "./helpers/testRuntime.js";
+} from "./helpers/test-runtime.js";
 
 const runTestCli = (args: readonly string[]) =>
   runCli(args, {

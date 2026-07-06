@@ -1,14 +1,14 @@
 export {};
 export * from "./activation/index.js";
-export * from "./brainKnowledgeReadModel.js";
+export * from "./brain-knowledge-read-model.js";
 export * from "./observations/index.js";
 export * from "./compiler/index.js";
-export * from "./behaviorFixtureRunner.js";
+export * from "./behavior-fixture-runner.js";
 export {
   validateClaimedCodexOutputEvidence
-} from "./krnBehaviorGate.js";
+} from "./krn-behavior-gate.js";
 export type {
   ClaimedCodexOutputEvidence
-} from "./krnBehaviorGate.js";
+} from "./krn-behavior-gate.js";
 export * from "./memory/index.js";
 export * from "./reflection/index.js";

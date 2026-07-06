@@ -87,7 +87,7 @@
         "id": "golden-case-type-001-a",
         "title": "unknown-first boundary is enforced",
         "input": {
-          "file": "packages/cli/src/runtimeInput.ts"
+          "file": "packages/cli/src/runtime-input.ts"
         },
         "expectedBehavior": {
           "outcome": "flag",

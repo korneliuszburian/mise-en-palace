@@ -9,7 +9,7 @@ export type {
   HarnessRunAggregate,
   HarnessRunRepository,
   UpdateExecutionRunStatusInput
-} from "./harnessRunRepository.js";
+} from "./harness-run-repository.js";
 export type {
   CreateMemoryCandidateInput,
   CreateAntiMemoryCandidateInput,
@@ -22,14 +22,14 @@ export type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
-} from "./memoryRepository.js";
+} from "./memory-repository.js";
 export type {
   CreateSourceClaimInput,
   CreateSourceDecisionEdgeInput,
   CreateSourceDecisionInput,
   CreateSourceRejectionInput,
   SourceRepository
-} from "./sourceRepository.js";
+} from "./source-repository.js";
 export type {
   ActivationDecisionRecord,
   CreateHarnessPlanInput,

@@ -7,7 +7,7 @@ import {
 } from "../contracts.js";
 import {
   skillRoutingPatternRef
-} from "../renderSkillHints.js";
+} from "../render-skill-hints.js";
 import type {
   CodexAdapterPlan,
   CodexHookExpectation,

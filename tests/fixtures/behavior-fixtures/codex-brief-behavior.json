@@ -21,7 +21,7 @@
           "rationale": "Codex-facing briefs must expose constraints, acceptance, review burden, rollback, selected context, exclusions, and proof limits without becoming the product brain.",
           "evidenceRefs": [
             "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
-            "packages/codex-adapter/src/renderExecutionBrief.ts"
+            "packages/codex-adapter/src/render-execution-brief.ts"
           ]
         },
         "protectedFailureModes": [

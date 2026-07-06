@@ -39,7 +39,7 @@ import type {
 import {
   createRetrievalCandidateRecord,
   createRetrievalRunRecord
-} from "../testSupport/retrievalRows.js";
+} from "../test-support/retrieval-rows.js";
 import type {
   TargetActivationReadModel
 } from "../activation/index.js";
@@ -897,7 +897,7 @@ describe("compileHarnessPlan", () => {
         expect.objectContaining({
           subjectType: "search_document",
           subjectId: "11111111-1111-4111-8111-111111111001",
-          reason: "Owner-file recall: packages/cli/src/runDbReadinessCommand.ts"
+          reason: "Owner-file recall: packages/cli/src/run-db-readiness-command.ts"
         })
       ])
     );
@@ -910,7 +910,7 @@ describe("compileHarnessPlan", () => {
           metadata: expect.objectContaining({
             source: "owner_file_recall",
             ownerFileSubjectId: "11111111-1111-4111-8111-111111111001",
-            ownerFilePath: "packages/cli/src/runDbReadinessCommand.ts"
+            ownerFilePath: "packages/cli/src/run-db-readiness-command.ts"
           })
         })
       ])

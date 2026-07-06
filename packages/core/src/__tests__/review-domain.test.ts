@@ -1,0 +1,231 @@
+import { describe, expect, expectTypeOf, test } from "vitest";
+import {
+  sourceUsefulnessOutcomesFromMetadata,
+  summarizeFeedbackDeltaReview,
+  summarizeFeedbackCandidateProposals,
+  type FeedbackDeltaCreateStatus,
+  type FeedbackDeltaLifecycleStatus,
+  type FeedbackDelta
+} from "../feedback-delta.js";
+
+const now = "2026-06-23T07:20:00.000Z";
+
+const feedback = (overrides: Partial<FeedbackDelta>): FeedbackDelta => ({
+  id: "feedback-1",
+  reviewAssessmentId: "review-1",
+  status: "candidate",
+  memoryCandidates: [],
+  sourceDecisions: [],
+  evalCandidates: [],
+  metadata: {
+    outcome: "needs_changes",
+    burden: "medium",
+    risk: "high",
+    correctionLabels: ["source_grounding", "rollback"]
+  },
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
+describe("review outcome domain", () => {
+  test("separates feedback delta create status from later lifecycle states", () => {
+    expectTypeOf<FeedbackDeltaCreateStatus>().toEqualTypeOf<"candidate">();
+    expectTypeOf<FeedbackDeltaLifecycleStatus>().toEqualTypeOf<
+      "accepted" | "rejected" | "applied"
+    >();
+  });
+
+  test("summarizes feedback outcome burden risk and correction labels", () => {
+    expect(summarizeFeedbackDeltaReview(feedback({}))).toEqual({
+      outcome: "needs_changes",
+      reviewBurden: "medium",
+      diffRisk: "high",
+      correctionLabels: ["source_grounding", "rollback"]
+    });
+  });
+
+  test("falls back to stable feedback labels when metadata is absent", () => {
+    expect(summarizeFeedbackDeltaReview(feedback({
+      status: "accepted",
+      metadata: {}
+    }))).toEqual({
+      outcome: "accepted",
+      reviewBurden: "low",
+      diffRisk: "low",
+      correctionLabels: ["feedback_delta"]
+    });
+  });
+});
+
+describe("source usefulness outcome feedback", () => {
+  test("parses complete outcome feedback and drops malformed metadata rows", () => {
+    expect(sourceUsefulnessOutcomesFromMetadata({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        sourceDecisionId: "source-decision-1",
+        outcome: "helped",
+        reason: "Source claim prevented overclaiming command proof.",
+        evidenceRefs: ["evidence-1", "feedback-1"],
+        doesNotProve:
+          "This outcome does not prove source selection quality across future runs."
+      }, {
+        sourceClaimId: "source-claim-stale",
+        outcome: "stale",
+        reason: "Source claim is past its revisit boundary.",
+        evidenceRefs: ["context-1"],
+        doesNotProve:
+          "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
+      }, {
+        sourceClaimId: "source-claim-invalid",
+        outcome: "helped",
+        reason: "Missing doesNotProve should be rejected."
+      }, {
+        outcome: "helped",
+        reason: "Missing source id should be rejected.",
+        doesNotProve: "No source id exists."
+      }, {
+        sourceClaimId: "source-claim-unknown",
+        outcome: "decorative",
+        reason: "Unknown labels should narrow to unknown.",
+        doesNotProve: "Unknown outcome does not prove usefulness."
+      }]
+    })).toEqual([{
+      sourceClaimId: "source-claim-1",
+      sourceDecisionId: "source-decision-1",
+      outcome: "helped",
+      reason: "Source claim prevented overclaiming command proof.",
+      evidenceRefs: ["evidence-1", "feedback-1"],
+      doesNotProve:
+        "This outcome does not prove source selection quality across future runs."
+    }, {
+      sourceClaimId: "source-claim-stale",
+      outcome: "stale",
+      reason: "Source claim is past its revisit boundary.",
+      evidenceRefs: ["context-1"],
+      doesNotProve:
+        "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
+    }, {
+      sourceClaimId: "source-claim-unknown",
+      outcome: "unknown",
+      reason: "Unknown labels should narrow to unknown.",
+      evidenceRefs: [],
+      doesNotProve: "Unknown outcome does not prove usefulness."
+    }]);
+  });
+});
+
+describe("feedback candidate proposal summary", () => {
+  test("types eval candidates as proposal-only candidate status", () => {
+    expectTypeOf<FeedbackDelta["evalCandidates"][number]["status"]>().toEqualTypeOf<"candidate">();
+  });
+
+  test("summarizes structured candidate proposals without final memory mutation semantics", () => {
+    expect(summarizeFeedbackCandidateProposals(feedback({
+      memoryCandidates: [{
+        id: "memory-candidate-1",
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-1",
+        proposedBy: "reviewer",
+        kind: "procedure",
+        status: "candidate",
+        summary: "Keep review feedback as candidates.",
+        body: "Feedback extraction must not create MemoryRecord rows.",
+        owner: "memory-governance",
+        confidence: 80,
+        applicationGuidance: "Use when closing review slices.",
+        sourceClaimIds: [],
+        sourceLineage: [{
+          sourceId: "review-1",
+          note: "review feedback"
+        }],
+        isUserPreference: false,
+        validFrom: now,
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      }],
+      sourceDecisions: [{
+        id: "source-decision-candidate-1",
+        status: "defer",
+        decision: "Review source graph decision update.",
+        rationale: "Changed files imply a possible source decision.",
+        falsifier: "No SourceClaim with mechanism exists.",
+        consumer: "krn evidence capture",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      }],
+      evalCandidates: [{
+        id: "eval-candidate-1",
+        projectId: "project-1",
+        status: "candidate",
+        title: "Feedback proposal summary does not promote memory",
+        scenario: "Review feedback contains memory guidance.",
+        expectedSignal: "Candidate proposal summary exists; MemoryRecord does not.",
+        sourceEvidence: ["review-1"],
+        metadata: {},
+        createdAt: now
+      }],
+      metadata: {
+        sourceClaimCandidates: [{
+          id: "source-claim-candidate-1",
+          claim: "Review feedback can propose source claims."
+        }],
+        antiMemoryCandidates: [{
+          id: "anti-memory-candidate-1",
+          rejectedClaim: "Feedback can directly mutate Memory Core."
+        }],
+        observationCandidates: [{
+          id: "observation-candidate-1",
+          summary: "Reviewer found a recurring rollback gap."
+        }]
+      }
+    }))).toEqual({
+      memoryRecordMutation: "none",
+      counts: {
+        memoryCandidates: 1,
+        sourceClaimCandidates: 1,
+        sourceDecisionCandidates: 1,
+        antiMemoryCandidates: 1,
+        evalCandidates: 1,
+        observationCandidates: 1
+      },
+      candidates: [
+        {
+          kind: "memory_candidate",
+          id: "memory-candidate-1",
+          summary: "Keep review feedback as candidates.",
+          status: "candidate"
+        },
+        {
+          kind: "source_claim_candidate",
+          id: "source-claim-candidate-1",
+          summary: "Review feedback can propose source claims."
+        },
+        {
+          kind: "source_decision_candidate",
+          id: "source-decision-candidate-1",
+          summary: "Review source graph decision update.",
+          status: "defer"
+        },
+        {
+          kind: "anti_memory_candidate",
+          id: "anti-memory-candidate-1",
+          summary: "Feedback can directly mutate Memory Core."
+        },
+        {
+          kind: "eval_candidate",
+          id: "eval-candidate-1",
+          summary: "Feedback proposal summary does not promote memory",
+          status: "candidate"
+        },
+        {
+          kind: "observation_candidate",
+          id: "observation-candidate-1",
+          summary: "Reviewer found a recurring rollback gap."
+        }
+      ]
+    });
+  });
+});

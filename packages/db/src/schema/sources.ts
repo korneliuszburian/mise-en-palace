@@ -17,7 +17,7 @@ import {
 import {
   executionRunIdColumn,
   nullableProjectIdColumn
-} from "./referenceColumns.js";
+} from "./reference-columns.js";
 
 export const sourceArtifactKind = pgEnum("source_artifact_kind", [
   "doc",

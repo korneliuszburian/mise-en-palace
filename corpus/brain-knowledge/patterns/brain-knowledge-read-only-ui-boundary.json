@@ -9,10 +9,10 @@
     "read-model:brain-knowledge",
     "adr:0025-dashboard-readiness-gate",
     "adr:0028-brain-knowledge-web-search-readiness-gate",
-    "packages/cli/src/runKnowledgeCardsCommand.ts"
+    "packages/cli/src/run-knowledge-cards-command.ts"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
+    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future brain knowledge UI/search slices",

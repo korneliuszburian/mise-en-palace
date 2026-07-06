@@ -12,7 +12,7 @@
     ".agents/skills/typescript-type-safety/SKILL.md"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
+    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future Codex skill updates",

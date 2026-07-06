@@ -1,2 +1,2 @@
-export * from "./observerInput.js";
-export * from "./observationPrefix.js";
+export * from "./observer-input.js";
+export * from "./observation-prefix.js";

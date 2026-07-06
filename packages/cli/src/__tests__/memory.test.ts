@@ -17,9 +17,9 @@ import type {
   RecordMemoryApplicationInput
 } from "@krn/harness/repositories/internal";
 
-import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
-import type { DatabaseRuntime } from "../databaseRuntime.js";
-import { runCli } from "../runCli.js";
+import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
+import type { DatabaseRuntime } from "../database-runtime.js";
+import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 

@@ -26,7 +26,7 @@ import {
   executionRunIdColumn,
   requiredProjectIdColumn,
   taskContractIdColumn
-} from "./referenceColumns.js";
+} from "./reference-columns.js";
 import {
   sourceClaims
 } from "./sources.js";

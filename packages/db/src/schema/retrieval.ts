@@ -28,7 +28,7 @@ import {
   executionRunIdColumn,
   nullableProjectIdColumn,
   taskContractIdColumn
-} from "./referenceColumns.js";
+} from "./reference-columns.js";
 import { runEvents } from "./events.js";
 import {
   sourceArtifacts,
@@ -37,7 +37,7 @@ import {
   sourceDecisions,
   sourceTrustTier
 } from "./sources.js";
-import { tsvector } from "../sql/fullTextSearch.js";
+import { tsvector } from "../sql/full-text-search.js";
 import { DEFAULT_EMBEDDING_DIMENSIONS } from "../sql/pgvector.js";
 
 export const embeddingModelStatus = pgEnum("embedding_model_status", [

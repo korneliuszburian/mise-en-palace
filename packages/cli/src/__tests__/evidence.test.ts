@@ -18,9 +18,9 @@ import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories/internal";
 
-import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
-import type { DatabaseRuntime } from "../databaseRuntime.js";
-import { runCli } from "../runCli.js";
+import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
+import type { DatabaseRuntime } from "../database-runtime.js";
+import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
@@ -399,7 +399,7 @@ describe("runCli", () => {
       "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--pattern-usefulness \"pattern:<id>=helped|reason|evidence|doesNotProve\"] [--persist]"
     );
     expect(result.stdout).toContain(
-      "example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
+      "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
     expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
     expect(result.stdout).toContain("pattern usefulness: krn evidence capture --pattern-usefulness");
@@ -415,14 +415,14 @@ describe("runCli", () => {
       cwd: path.resolve(process.cwd(), "../.."),
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
-      readGitStatus: async () => " M packages/cli/src/runCli.ts\n?? notes.md\n"
+      readGitStatus: async () => " M packages/cli/src/run-cli.ts\n?? notes.md\n"
     });
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("KRN Evidence Capture");
     expect(result.stdout).toContain("Persistence: disabled");
-    expect(result.stdout).toContain("packages/cli/src/runCli.ts");
+    expect(result.stdout).toContain("packages/cli/src/run-cli.ts");
     expect(result.stdout).toContain("notes.md");
     expect(result.stdout).toContain("Changed files:\nunknown:");
     expect(result.stdout).toContain("Dirty context: unclassified (no --intended-file provided).");
@@ -451,10 +451,10 @@ describe("runCli", () => {
       "evidence",
       "capture",
       "--intended-file",
-      "packages/cli/src/runEvidenceCaptureCommand.ts",
-      "--intended-file=./packages/cli/src/parseEvidenceArgs.ts",
+      "packages/cli/src/run-evidence-capture-command.ts",
+      "--intended-file=./packages/cli/src/parse-evidence-args.ts",
       "--intended-file",
-      "packages/core/src/candidateReviewability.ts",
+      "packages/core/src/candidate-reviewability.ts",
       "--intended-file",
       "docs/reviews/controlled-dogfood/run/REPORT.md",
       "--verification",
@@ -465,9 +465,9 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () =>
-        " M src/runEvidenceCaptureCommand.ts\n" +
-        " M src/parseEvidenceArgs.ts\n" +
-        " M ../core/src/candidateReviewability.ts\n" +
+        " M src/run-evidence-capture-command.ts\n" +
+        " M src/parse-evidence-args.ts\n" +
+        " M ../core/src/candidate-reviewability.ts\n" +
         "?? ../../docs/reviews/controlled-dogfood/run/\n" +
         "?? ../../docs/materials/raw-audit.md\n"
     });
@@ -475,12 +475,12 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Changed files:\nintended:");
-    expect(result.stdout).toContain("- M packages/cli/src/runEvidenceCaptureCommand.ts");
-    expect(result.stdout).toContain("- M packages/cli/src/parseEvidenceArgs.ts");
-    expect(result.stdout).toContain("- M packages/core/src/candidateReviewability.ts");
+    expect(result.stdout).toContain("- M packages/cli/src/run-evidence-capture-command.ts");
+    expect(result.stdout).toContain("- M packages/cli/src/parse-evidence-args.ts");
+    expect(result.stdout).toContain("- M packages/core/src/candidate-reviewability.ts");
     expect(result.stdout).toContain("- ?? docs/reviews/controlled-dogfood/run");
     expect(result.stdout).not.toContain("../../docs/reviews/controlled-dogfood/run");
-    expect(result.stdout).not.toContain("- M core/src/candidateReviewability.ts");
+    expect(result.stdout).not.toContain("- M core/src/candidate-reviewability.ts");
     expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
     expect(result.stdout).toContain("unknown:\n- none");
     expect(result.stdout).toContain("Dirty context: unrelated files present; review burden increased.");
@@ -557,7 +557,7 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () =>
         " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n" +
-        " M packages/cli/src/runSourceClaimAddCommand.ts\n"
+        " M packages/cli/src/run-source-claim-add-command.ts\n"
     });
 
     expect(result.exitCode).toBe(0);
@@ -706,7 +706,7 @@ describe("runCli", () => {
         "--run-id",
         "execution-run-1",
         "--intended-file",
-        "packages/cli/src/runEvidenceCaptureCommand.ts",
+        "packages/cli/src/run-evidence-capture-command.ts",
         "--pattern-usefulness",
         "pattern:ts-boundary-unknown-first-result-state=helped|Pattern allegedly helped without current proof|stale-proof-ref|Does not prove future pattern recall quality",
         "--source-usefulness",
@@ -720,7 +720,7 @@ describe("runCli", () => {
         cwd: path.resolve(process.cwd(), "../.."),
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        readGitStatus: async () => " M packages/cli/src/runEvidenceCaptureCommand.ts\n",
+        readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n",
         createDatabaseRuntime: async () => ({
           workspaceId: "workspace-1",
           projectId: "project-1",

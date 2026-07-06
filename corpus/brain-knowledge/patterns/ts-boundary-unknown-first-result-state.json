@@ -11,7 +11,7 @@
     "source:ts-reset"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
+    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "V258 Pattern Enforcement Gate",

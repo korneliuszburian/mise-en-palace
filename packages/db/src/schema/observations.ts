@@ -24,7 +24,7 @@ import {
   nullableCascadeProjectIdColumn,
   taskContractIdColumn,
   workspaceIdColumn
-} from "./referenceColumns.js";
+} from "./reference-columns.js";
 import {
   sourceChunks,
   sourceClaims

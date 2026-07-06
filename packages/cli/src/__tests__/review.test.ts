@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   runCli
-} from "../runCli.js";
+} from "../run-cli.js";
 import {
   createNoStoreCompilerDependencies
-} from "../noStoreRepositories.js";
+} from "../no-store-repositories.js";
 import type {
   CreateFeedbackDeltaInput,
   CreateReviewAssessmentInput
 } from "@krn/harness/repositories/internal";
 import {
   now
-} from "./helpers/testRuntime.js";
+} from "./helpers/test-runtime.js";
 
 describe("runCli", () => {
   it("persists review assess as a ReviewAssessment and FeedbackDelta", async () => {

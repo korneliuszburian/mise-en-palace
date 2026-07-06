@@ -79,9 +79,9 @@ import {
   stringOrUndefined,
   stringListOrEmpty,
   toIsoTimestamp
-} from "./repositoryValueReaders.js";
-import { mapLockedRowMetadataFields } from "./lockedRowMetadata.js";
-import { memoryCandidatesOrEmpty } from "./memoryMappers.js";
+} from "./repository-value-readers.js";
+import { mapLockedRowMetadataFields } from "./locked-row-metadata.js";
+import { memoryCandidatesOrEmpty } from "./memory-mappers.js";
 
 export {
   mapAntiMemoryCandidate,
@@ -90,7 +90,7 @@ export {
   mapMemoryCandidate,
   mapMemoryFeedbackEvent,
   mapMemoryRecord
-} from "./memoryMappers.js";
+} from "./memory-mappers.js";
 
 type WorkspaceRow = InferSelectModel<typeof workspaces>;
 type ProjectRow = InferSelectModel<typeof projects>;

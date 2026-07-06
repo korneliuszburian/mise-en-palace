@@ -3,7 +3,7 @@ import type {
 } from "../eval.js";
 import type {
   EvidenceCommandProvenance
-} from "../evidenceBundle.js";
+} from "../evidence-bundle.js";
 import type {
   ExecutionRunId,
   ObservationGroupId,

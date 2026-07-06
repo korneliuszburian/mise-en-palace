@@ -11,8 +11,8 @@ import type {
 } from "@krn/db/adapters";
 import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
 
-import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
-import { runCli } from "../runCli.js";
+import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
+import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
@@ -436,7 +436,7 @@ describe("runCli", () => {
         id: "evidence-bundle-1",
         executionRunId: "execution-run-1",
         status: "captured",
-        changedFiles: ["packages/cli/src/parseEvidenceArgs.ts"],
+        changedFiles: ["packages/cli/src/parse-evidence-args.ts"],
         commands: [
           {
             command: "pnpm typecheck",

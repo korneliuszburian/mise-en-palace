@@ -9,8 +9,8 @@
     "source:towards-autonomous-memory-agents"
   ],
   "evidenceRefs": [
-    "packages/workers/src/knowledgeAcquisitionHeartbeatPreview.test.ts",
-    "packages/cli/src/runHeartbeatPreviewCommand.test.ts"
+    "packages/workers/src/knowledge-acquisition-heartbeat-preview.test.ts",
+    "packages/cli/src/run-heartbeat-preview-command.test.ts"
   ],
   "consumers": [
     "future heartbeat knowledge-acquisition review",

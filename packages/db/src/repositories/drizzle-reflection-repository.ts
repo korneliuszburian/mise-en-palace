@@ -1,0 +1,701 @@
+import { and, asc, eq } from "drizzle-orm";
+import type {
+  ReflectionInput,
+  ReflectionAntiMemoryCandidateProposal,
+  ReflectionCandidateEvidence,
+  ReflectionCandidateLink,
+  ReflectionEvalCandidateProposal,
+  ReflectionFinding,
+  ReflectionMemoryCandidateProposal,
+  ReflectionOutput,
+  ReflectionPolicyCandidateProposal,
+  ReflectionRecord,
+  ReflectionScope,
+  ReflectionSourceClaimCandidateProposal,
+  ReflectionStatus,
+  ContradictionReport,
+  GapReport,
+  SourceLineageRef
+} from "@krn/core";
+
+import type { KrnDatabase } from "../database.js";
+import {
+  reflectionRecords
+} from "../schema/index.js";
+import {
+  booleanOrUndefined,
+  hasDefinedValues,
+  isRecord,
+  metadataOrEmpty,
+  numberOrUndefined,
+  requireReturnedRow,
+  stringListOrEmpty,
+  stringOrUndefined,
+  toIsoTimestamp
+} from "./repository-value-readers.js";
+
+export interface CreateReflectionRecordInput {
+  scope: ReflectionScope;
+  status?: ReflectionStatus;
+  summary: string;
+  input: ReflectionInput;
+  output: ReflectionOutput;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ReflectionRecordScopeQuery {
+  projectId: string;
+  executionRunId?: string;
+  taskContractId?: string;
+  status?: ReflectionStatus;
+  limit?: number;
+}
+
+type ReflectionRecordRow = typeof reflectionRecords.$inferSelect;
+
+const reflectionCandidateEvidenceProvenances = new Set<string>([
+  "default_template",
+  "operator_reported",
+  "captured_output_file",
+  "command_runner",
+  "external_log",
+  "run_event",
+  "source_chunk",
+  "tool_trace",
+  "diff",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "user_correction",
+  "user_preference",
+  "local_operator_note",
+  "source_claim"
+]);
+
+const memoryKinds = new Set<string>([
+  "fact",
+  "preference",
+  "constraint",
+  "procedure",
+  "pattern",
+  "risk"
+]);
+
+const sourceTrustTiers = new Set<string>([
+  "high",
+  "medium",
+  "low",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
+]);
+
+const sourceSupportTypes = new Set<string>([
+  "supports",
+  "contradicts",
+  "qualifies",
+  "background",
+  "does_not_support",
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary"
+]);
+
+const reflectionFindingKinds = new Set<string>([
+  "candidate_signal",
+  "contradiction",
+  "gap",
+  "risk",
+  "correction",
+  "policy_signal"
+]);
+
+const reflectionSeverities = new Set<string>([
+  "low",
+  "medium",
+  "high",
+  "critical"
+]);
+
+const reflectionCandidateLinkTargetTypes = new Set<string>([
+  "memory_candidate",
+  "source_claim_candidate",
+  "anti_memory_candidate",
+  "policy_candidate",
+  "eval_candidate"
+]);
+
+const isReflectionFindingKind = (value: unknown): value is ReflectionFinding["kind"] =>
+  typeof value === "string" && reflectionFindingKinds.has(value);
+
+const isReflectionSeverity = (value: unknown): value is ReflectionFinding["severity"] =>
+  typeof value === "string" && reflectionSeverities.has(value);
+
+const isReflectionCandidateLinkTargetType = (
+  value: unknown
+): value is ReflectionCandidateLink["targetType"] =>
+  typeof value === "string" &&
+  reflectionCandidateLinkTargetTypes.has(value);
+
+const isReflectionCandidateEvidenceProvenance = (
+  value: string
+): value is ReflectionCandidateEvidence["provenance"] =>
+  reflectionCandidateEvidenceProvenances.has(value);
+
+const isReflectionMemoryKind = (
+  value: unknown
+): value is ReflectionMemoryCandidateProposal["kind"] =>
+  typeof value === "string" && memoryKinds.has(value);
+
+const isReflectionSourceTrustTier = (
+  value: unknown
+): value is ReflectionSourceClaimCandidateProposal["trustTier"] =>
+  typeof value === "string" && sourceTrustTiers.has(value);
+
+const isReflectionSourceSupportType = (
+  value: unknown
+): value is ReflectionSourceClaimCandidateProposal["supportType"] =>
+  typeof value === "string" && sourceSupportTypes.has(value);
+
+const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): SourceLineageRef[] => {
+    if (!isRecord(item) || typeof item.sourceId !== "string") {
+      return [];
+    }
+
+    return [{
+      sourceId: item.sourceId,
+      ...(typeof item.note === "string" ? { note: item.note } : {})
+    }];
+  });
+};
+
+const reflectionCandidateEvidenceOrUndefined = (
+  value: unknown
+): ReflectionCandidateEvidence | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const provenance = stringOrUndefined(value.provenance);
+  const doesNotProve = stringOrUndefined(value.doesNotProve);
+
+  if (
+    provenance === undefined ||
+    !isReflectionCandidateEvidenceProvenance(provenance) ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    provenance,
+    evidenceRefs: stringListOrEmpty(value.evidenceRefs),
+    doesNotProve
+  };
+};
+
+const reflectionScopeOrFallback = (
+  value: unknown,
+  row: ReflectionRecordRow
+): ReflectionScope => {
+  const record = isRecord(value) ? value : {};
+  const scope: ReflectionScope = {
+    projectId: row.projectId
+  };
+
+  if (typeof record.executionRunId === "string") {
+    scope.executionRunId = record.executionRunId;
+  } else if (row.executionRunId !== null) {
+    scope.executionRunId = row.executionRunId;
+  }
+
+  if (typeof record.taskContractId === "string") {
+    scope.taskContractId = record.taskContractId;
+  } else if (row.taskContractId !== null) {
+    scope.taskContractId = row.taskContractId;
+  }
+
+  const observationGroupIds = stringListOrEmpty(record.observationGroupIds);
+
+  if (observationGroupIds.length > 0) {
+    scope.observationGroupIds = observationGroupIds;
+  }
+
+  return scope;
+};
+
+const reflectionInputOrFallback = (
+  value: unknown,
+  scope: ReflectionScope,
+  createdAt: string
+): ReflectionInput => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    scope,
+    observationItemIds: stringListOrEmpty(record.observationItemIds),
+    sourceClaimIds: stringListOrEmpty(record.sourceClaimIds),
+    antiMemoryKeys: stringListOrEmpty(record.antiMemoryKeys),
+    generatedAt: typeof record.generatedAt === "string" ? record.generatedAt : createdAt,
+    metadata: metadataOrEmpty(record.metadata)
+  };
+};
+
+const reflectionFindingsOrEmpty = (value: unknown): ReflectionFinding[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionFinding[] => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      !isReflectionFindingKind(item.kind) ||
+      !isReflectionSeverity(item.severity) ||
+      typeof item.summary !== "string"
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      kind: item.kind,
+      severity: item.severity,
+      summary: item.summary,
+      observationItemIds: stringListOrEmpty(item.observationItemIds),
+      evidenceRefs: stringListOrEmpty(item.evidenceRefs),
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const contradictionsOrEmpty = (value: unknown): ContradictionReport[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ContradictionReport[] => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      typeof item.summary !== "string" ||
+      !isReflectionSeverity(item.severity)
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      summary: item.summary,
+      observationItemIds: stringListOrEmpty(item.observationItemIds),
+      conflictingClaims: stringListOrEmpty(item.conflictingClaims),
+      evidenceRefs: stringListOrEmpty(item.evidenceRefs),
+      severity: item.severity,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const gapsOrEmpty = (value: unknown): GapReport[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): GapReport[] => {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      typeof item.summary !== "string" ||
+      typeof item.missingEvidence !== "string" ||
+      !isReflectionSeverity(item.severity)
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      summary: item.summary,
+      missingEvidence: item.missingEvidence,
+      observationItemIds: stringListOrEmpty(item.observationItemIds),
+      severity: item.severity,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const candidateLinksOrEmpty = (value: unknown): ReflectionCandidateLink[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionCandidateLink[] => {
+    if (
+      !isRecord(item) ||
+      !isReflectionCandidateLinkTargetType(item.targetType) ||
+      typeof item.summary !== "string"
+    ) {
+      return [];
+    }
+
+    return [{
+      targetType: item.targetType,
+      ...(typeof item.targetId === "string" ? { targetId: item.targetId } : {}),
+      summary: item.summary,
+      evidenceRefs: stringListOrEmpty(item.evidenceRefs)
+    }];
+  });
+};
+
+const reflectionMemoryCandidatesOrEmpty = (
+  value: unknown
+): ReflectionMemoryCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionMemoryCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const kind = stringOrUndefined(item.kind);
+    const summary = stringOrUndefined(item.summary);
+    const body = stringOrUndefined(item.body);
+    const owner = stringOrUndefined(item.owner);
+    const confidence = numberOrUndefined(item.confidence);
+    const applicationGuidance = stringOrUndefined(item.applicationGuidance);
+    const isUserPreference = booleanOrUndefined(item.isUserPreference);
+    const validFrom = stringOrUndefined(item.validFrom);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+    const required = {
+      summary,
+      body,
+      owner,
+      confidence,
+      applicationGuidance,
+      isUserPreference,
+      validFrom,
+      evidence
+    };
+
+    if (!isReflectionMemoryKind(kind) || !hasDefinedValues(required)) {
+      return [];
+    }
+
+    return [{
+      kind,
+      summary: required.summary,
+      body: required.body,
+      owner: required.owner,
+      confidence: required.confidence,
+      applicationGuidance: required.applicationGuidance,
+      ...(typeof item.invalidationRule === "string" ? { invalidationRule: item.invalidationRule } : {}),
+      sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
+      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+      isUserPreference: required.isUserPreference,
+      validFrom: required.validFrom,
+      ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
+      evidence: required.evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionSourceClaimCandidatesOrEmpty = (
+  value: unknown
+): ReflectionSourceClaimCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionSourceClaimCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const claim = stringOrUndefined(item.claim);
+    const mechanism = stringOrUndefined(item.mechanism);
+    const krnImplication = stringOrUndefined(item.krnImplication);
+    const doesNotProve = stringOrUndefined(item.doesNotProve);
+    const trustTier = stringOrUndefined(item.trustTier);
+    const supportType = stringOrUndefined(item.supportType);
+    const consumer = stringOrUndefined(item.consumer);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+    const required = {
+      claim,
+      mechanism,
+      krnImplication,
+      doesNotProve,
+      consumer,
+      evidence
+    };
+
+    if (
+      !isReflectionSourceTrustTier(trustTier) ||
+      !isReflectionSourceSupportType(supportType) ||
+      !hasDefinedValues(required)
+    ) {
+      return [];
+    }
+
+    return [{
+      claim: required.claim,
+      mechanism: required.mechanism,
+      krnImplication: required.krnImplication,
+      doesNotProve: required.doesNotProve,
+      trustTier,
+      supportType,
+      consumer: required.consumer,
+      ...(typeof item.falsifier === "string" ? { falsifier: item.falsifier } : {}),
+      ...(typeof item.revisitWhen === "string" ? { revisitWhen: item.revisitWhen } : {}),
+      evidence: required.evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionAntiMemoryCandidatesOrEmpty = (
+  value: unknown
+): ReflectionAntiMemoryCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionAntiMemoryCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const key = stringOrUndefined(item.key);
+    const summary = stringOrUndefined(item.summary);
+    const body = stringOrUndefined(item.body);
+    const owner = stringOrUndefined(item.owner);
+    const confidence = numberOrUndefined(item.confidence);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+    const required = {
+      key,
+      summary,
+      body,
+      owner,
+      confidence,
+      evidence
+    };
+
+    if (!hasDefinedValues(required)) {
+      return [];
+    }
+
+    return [{
+      key: required.key,
+      summary: required.summary,
+      body: required.body,
+      owner: required.owner,
+      confidence: required.confidence,
+      ...(typeof item.reason === "string" ? { reason: item.reason } : {}),
+      invalidatedBySourceClaimIds: stringListOrEmpty(item.invalidatedBySourceClaimIds),
+      ...(typeof item.appliesTo === "string" ? { appliesTo: item.appliesTo } : {}),
+      ...(typeof item.mayRevisitWhen === "string" ? { mayRevisitWhen: item.mayRevisitWhen } : {}),
+      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+      evidence: required.evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionPolicyCandidatesOrEmpty = (
+  value: unknown
+): ReflectionPolicyCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionPolicyCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const key = stringOrUndefined(item.key);
+    const summary = stringOrUndefined(item.summary);
+    const rationale = stringOrUndefined(item.rationale);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      key === undefined ||
+      summary === undefined ||
+      rationale === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      key,
+      summary,
+      rationale,
+      evidenceRefs: stringListOrEmpty(item.evidenceRefs),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionEvalCandidatesOrEmpty = (
+  value: unknown
+): ReflectionEvalCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionEvalCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const title = stringOrUndefined(item.title);
+    const scenario = stringOrUndefined(item.scenario);
+    const expectedSignal = stringOrUndefined(item.expectedSignal);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      title === undefined ||
+      scenario === undefined ||
+      expectedSignal === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      title,
+      scenario,
+      expectedSignal,
+      sourceEvidence: stringListOrEmpty(item.sourceEvidence),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionOutputOrFallback = (
+  value: unknown,
+  scope: ReflectionScope,
+  row: ReflectionRecordRow
+): ReflectionOutput => {
+  const record = isRecord(value) ? value : {};
+  const id = typeof record.id === "string" ? record.id : row.id;
+
+  return {
+    id,
+    scope,
+    status: row.status,
+    summary: typeof record.summary === "string" ? record.summary : row.summary,
+    findings: reflectionFindingsOrEmpty(record.findings),
+    contradictions: contradictionsOrEmpty(record.contradictions),
+    gaps: gapsOrEmpty(record.gaps),
+    candidateLinks: candidateLinksOrEmpty(record.candidateLinks),
+    memoryCandidates: reflectionMemoryCandidatesOrEmpty(record.memoryCandidates),
+    sourceClaimCandidates: reflectionSourceClaimCandidatesOrEmpty(record.sourceClaimCandidates),
+    antiMemoryCandidates: reflectionAntiMemoryCandidatesOrEmpty(record.antiMemoryCandidates),
+    policyCandidates: reflectionPolicyCandidatesOrEmpty(record.policyCandidates),
+    evalCandidates: reflectionEvalCandidatesOrEmpty(record.evalCandidates),
+    metadata: metadataOrEmpty(record.metadata),
+    createdAt: toIsoTimestamp(row.createdAt),
+    updatedAt: toIsoTimestamp(row.updatedAt)
+  };
+};
+
+export const mapReflectionRecordForRead = (row: ReflectionRecordRow): ReflectionRecord => {
+  const scope = reflectionScopeOrFallback(row.scope, row);
+
+  return {
+    id: row.id,
+    scope,
+    status: row.status,
+    summary: row.summary,
+    input: reflectionInputOrFallback(row.input, scope, toIsoTimestamp(row.createdAt)),
+    output: reflectionOutputOrFallback(row.output, scope, row),
+    metadata: metadataOrEmpty(row.metadata),
+    createdAt: toIsoTimestamp(row.createdAt),
+    updatedAt: toIsoTimestamp(row.updatedAt)
+  };
+};
+
+export class DrizzleReflectionRepository {
+  constructor(private readonly db: KrnDatabase) {}
+
+  async createReflectionRecord(input: CreateReflectionRecordInput): Promise<ReflectionRecord> {
+    const scopeJson: Record<string, unknown> = { ...input.scope };
+    const inputJson: Record<string, unknown> = { ...input.input };
+    const outputJson: Record<string, unknown> = { ...input.output };
+    const row = requireReturnedRow(
+      await this.db
+        .insert(reflectionRecords)
+        .values({
+          projectId: input.scope.projectId,
+          ...(input.scope.executionRunId === undefined
+            ? {}
+            : { executionRunId: input.scope.executionRunId }),
+          ...(input.scope.taskContractId === undefined
+            ? {}
+            : { taskContractId: input.scope.taskContractId }),
+          status: input.status ?? "candidate",
+          summary: input.summary,
+          scope: scopeJson,
+          input: inputJson,
+          output: outputJson,
+          metadata: input.metadata ?? {}
+        })
+        .returning(),
+      "createReflectionRecord"
+    );
+
+    return mapReflectionRecordForRead(row);
+  }
+
+  async getReflectionRecordById(id: string): Promise<ReflectionRecord | undefined> {
+    const row = await this.db.query.reflectionRecords.findFirst({
+      where: eq(reflectionRecords.id, id)
+    });
+
+    return row === undefined ? undefined : mapReflectionRecordForRead(row);
+  }
+
+  async listReflectionRecordsByScope(
+    input: ReflectionRecordScopeQuery
+  ): Promise<ReflectionRecord[]> {
+    const predicates = [eq(reflectionRecords.projectId, input.projectId)];
+
+    if (input.executionRunId !== undefined) {
+      predicates.push(eq(reflectionRecords.executionRunId, input.executionRunId));
+    }
+
+    if (input.taskContractId !== undefined) {
+      predicates.push(eq(reflectionRecords.taskContractId, input.taskContractId));
+    }
+
+    if (input.status !== undefined) {
+      predicates.push(eq(reflectionRecords.status, input.status));
+    }
+
+    const rows = await this.db.query.reflectionRecords.findMany({
+      where: and(...predicates),
+      orderBy: asc(reflectionRecords.createdAt),
+      ...(input.limit === undefined ? {} : { limit: input.limit })
+    });
+
+    return rows.map(mapReflectionRecordForRead);
+  }
+}

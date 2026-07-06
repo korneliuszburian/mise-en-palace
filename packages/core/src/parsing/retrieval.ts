@@ -3,7 +3,7 @@ import {
   MetadataSchema,
   OptionalTextSchema,
   RequiredTextSchema
-} from "./schemaPrimitives.js";
+} from "./schema-primitives.js";
 const OptionalIdSchema = OptionalTextSchema;
 const BoundedScoreSchema = z.number().int().min(0).max(1000);
 const OptionalBoundedScoreSchema = BoundedScoreSchema.optional();

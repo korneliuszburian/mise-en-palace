@@ -7,13 +7,13 @@
   "decision": "Codex-facing briefs should label untrusted or external selected context with deterministic warnings and proof boundaries instead of treating selected context as trusted execution truth.",
   "sourceRefs": [
     "source-decision:security-trust-boundaries#current-trust-boundary-map",
-    "packages/codex-adapter/src/renderExecutionBrief.ts",
+    "packages/codex-adapter/src/render-execution-brief.ts",
     "behavior-gate:classification"
   ],
   "evidenceRefs": [
-    "packages/codex-adapter/src/renderExecutionBrief.test.ts",
-    "packages/codex-adapter/src/__tests__/codexBriefGoldenBehavior.test.ts",
-    "packages/harness/src/__tests__/goldenKrnBehaviorGate.test.ts"
+    "packages/codex-adapter/src/render-execution-brief.test.ts",
+    "packages/codex-adapter/src/__tests__/codex-brief-golden-behavior.test.ts",
+    "packages/harness/src/__tests__/golden-krn-behavior-gate.test.ts"
   ],
   "consumers": [
     "future Codex adapter changes",

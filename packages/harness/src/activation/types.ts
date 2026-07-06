@@ -14,7 +14,7 @@ import type {
 } from "@krn/core";
 import type {
   ObservationPrefix
-} from "../observations/observationPrefix.js";
+} from "../observations/observation-prefix.js";
 
 export type ActivationCandidateKind = CoreActivationCandidateKind;
 

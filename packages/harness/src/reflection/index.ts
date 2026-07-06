@@ -1,2 +1,2 @@
-export * from "./reflectionInputSelector.js";
-export * from "./reflectionCandidateWriter.js";
+export * from "./reflection-input-selector.js";
+export * from "./reflection-candidate-writer.js";

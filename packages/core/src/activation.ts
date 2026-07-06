@@ -3,7 +3,7 @@ import type {
   ContextExclusion,
   ContextInclusion,
   ContextSubjectType
-} from "./contextAssembly.js";
+} from "./context-assembly.js";
 import type { TaskContractId } from "./ids.js";
 import type {
   SourceContextTaxonomy,

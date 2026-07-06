@@ -3,10 +3,10 @@ import path from "node:path";
 
 import {
   runCli
-} from "../runCli.js";
+} from "../run-cli.js";
 import {
   createNoStoreCompilerDependencies
-} from "../noStoreRepositories.js";
+} from "../no-store-repositories.js";
 import type {
   AntiMemoryRecord,
   MemoryRecord,
@@ -21,12 +21,12 @@ import type {
 } from "@krn/harness/repositories/internal";
 import type {
   DatabaseRuntimeInput
-} from "../databaseRuntime.js";
+} from "../database-runtime.js";
 import {
   now,
   runPersistedPlanWithCapturedMetadata,
   unusedMemoryRepository
-} from "./helpers/testRuntime.js";
+} from "./helpers/test-runtime.js";
 
 const shouldNotBeCalled = (method: string): never => {
   throw new Error(`Plan test runtime method should not be called: ${method}`);
@@ -454,7 +454,7 @@ describe("runCli", () => {
                 metadata: {
                   ownerFiles: [
                     {
-                      path: "packages/cli/src/runPlanCommand.ts",
+                      path: "packages/cli/src/run-plan-command.ts",
                       root: "packages/cli/src",
                       kind: "cli_plan_rendering",
                       reason: "plan output owner"
@@ -494,7 +494,7 @@ describe("runCli", () => {
     );
     expect(result.stdout).toContain("ProjectKernel: project-kernel-connected");
     expect(result.stdout).toContain("Repo installations: repo-installation-connected");
-    expect(result.stdout).toContain("Target owner files: packages/cli/src/runPlanCommand.ts");
+    expect(result.stdout).toContain("Target owner files: packages/cli/src/run-plan-command.ts");
     expect(executionRunMetadata).toMatchObject({
       projectResolution: {
         kind: "connected_repo_path",

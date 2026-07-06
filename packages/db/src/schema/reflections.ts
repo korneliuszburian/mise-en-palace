@@ -16,7 +16,7 @@ import {
   executionRunIdColumn,
   requiredProjectIdColumn,
   taskContractIdColumn
-} from "./referenceColumns.js";
+} from "./reference-columns.js";
 
 export const reflectionStatus = pgEnum("reflection_status", [
   "candidate",

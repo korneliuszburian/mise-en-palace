@@ -21,7 +21,7 @@
           "recorded-obedience:rejected-path=create-markdown-memory-files"
         ],
         "changedFiles": [
-          "packages/cli/src/runCodexDecisionPacketObedienceEval.ts"
+          "packages/cli/src/run-codex-decision-packet-obedience-eval.ts"
         ],
         "doesNotProve": "This recorded output obeys the decision-packet evidence shape but remains packet quality only; does not prove live Codex obedience; does not prove source truth."
       }
@@ -45,7 +45,7 @@
           "recorded-obedience:rejected-path=portability-before-self-proof"
         ],
         "changedFiles": [
-          "packages/cli/src/runCodexDecisionPacketObedienceEval.ts"
+          "packages/cli/src/run-codex-decision-packet-obedience-eval.ts"
         ],
         "doesNotProve": "This recorded output obeys the decision-packet evidence shape but remains packet quality only; does not prove live Codex obedience; does not prove source truth."
       }

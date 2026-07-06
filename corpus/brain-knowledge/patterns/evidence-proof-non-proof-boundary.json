@@ -7,11 +7,11 @@
   "decision": "Every evidence item that can influence review, memory, source, skill, policy, or eval decisions must state what it proves and what it does not prove, with command provenance kept visible.",
   "sourceRefs": [
     ".agents/skills/evidence-review-loop/SKILL.md",
-    "packages/core/src/evidenceBundle.ts",
-    "packages/schema/src/evidenceCapture.ts"
+    "packages/core/src/evidence-bundle.ts",
+    "packages/schema/src/evidence-capture.ts"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
+    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future evidence capture and review slices",

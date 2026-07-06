@@ -1,0 +1,1783 @@
+import { describe, expect, it } from "vitest";
+
+import type {
+  MemoryRecord
+} from "@krn/core";
+import {
+  runBrainSearchCommand
+} from "../run-brain-search-command.js";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "../database-runtime.js";
+
+describe("runBrainSearchCommand", () => {
+  it("combines brain knowledge and source search into a read-only brain preview", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-06-30T13:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "source-to-decision",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 2,
+        maxInclusions: 2,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        expect(runtime.catalogFiles).toEqual(["corpus/brain-knowledge/catalog.json"]);
+        expect(runtime.filter).toEqual({ text: "source-to-decision" });
+        expect(runtime.format).toBe("json");
+
+        return {
+          stdout: JSON.stringify({
+            kind: "krn.brainKnowledge.cards.preview.v1",
+            returnedCards: 1,
+            totalCards: 1,
+            cards: [{
+              id: "pattern:source-to-decision-retention-gate",
+              title: "Source-to-decision retention gate",
+              summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
+              consumers: ["pattern application gate"],
+              falsifier: "A future slice retains a source with no consumer.",
+              doesNotProve: "This card does not prove source truth.",
+              nextAction: "use"
+            }],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch(runtime) {
+        expect(runtime.command).toMatchObject({
+          kind: "sourceSearch",
+          query: "source-to-decision",
+          limit: 2,
+          maxInclusions: 2,
+          json: true
+        });
+
+        return {
+          stdout: JSON.stringify({
+            kind: "source_search_answer_package",
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{ label: "claim" }],
+              supportingDocuments: [{ label: "doc" }],
+              relationSupport: [{ edgeId: "edge-1" }],
+              sourceDecisionSupport: [{ sourceDecisionEdgeId: "decision-edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 1,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 1,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [{ subjectId: "claim-1" }],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      kind: "krn.brainSearch.preview.v1",
+      access: "read_only",
+      mutation: "none",
+      query: "source-to-decision",
+      brainKnowledgeReadback: "catalog_files",
+      knowledgeCards: {
+        returnedCards: 1,
+        totalCards: 1,
+        cardIds: ["pattern:source-to-decision-retention-gate"],
+        selectedKnowledge: [{
+          id: "pattern:source-to-decision-retention-gate",
+          title: "Source-to-decision retention gate",
+          summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
+          consumers: ["pattern application gate"],
+          falsifier: "A future slice retains a source with no consumer.",
+          doesNotProve: "This card does not prove source truth.",
+          nextAction: "use"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        relationSupport: 1,
+        sourceDecisionSupport: 1,
+        graphReadback: {
+          claimNodes: 1,
+          relationEdges: 1,
+          temporalEdges: 1,
+          invalidationEdges: 1,
+          graphAware: true
+        },
+        includedCandidates: 1
+      }
+    });
+    expect(JSON.stringify(parsed)).toContain("matching brain knowledge");
+    expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
+  });
+
+  it("renders text proof and no-match guidance", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {},
+      now: () => "2026-06-30T13:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "missing pattern",
+        catalogFiles: [],
+        storeOnly: false,
+        format: "text"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: ["entity extraction is not available in this bounded readback"]
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+
+    expect(result.stdout).toContain("KRN Brain Search Preview");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("Brain knowledge readback: catalog_files");
+    expect(result.stdout).toContain("Brain knowledge:");
+    expect(result.stdout).toContain("cardIds: none");
+    expect(result.stdout).toContain("graphAware: false");
+    expect(result.stdout).toContain("sourceDecisionSupport: 0");
+    expect(result.stdout).toContain("graphCaveat: entity extraction is not available in this bounded readback");
+    expect(result.stdout).toContain("missingEvidence: governed SourceClaim evidence");
+    expect(result.stdout).toContain("Do not infer product truth");
+    expect(result.stdout).toContain("does not prove: product readiness");
+  });
+
+  it("retries selected knowledge with a compact mechanism query after a graph benchmark miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "graph sourceclaimedge relation temporal source relations",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "graph sourceclaimedge") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:graph-relation-readback-boundary",
+                title: "Graph relation readback boundary",
+                summary: "Expose graph readback without treating it as source truth.",
+                consumers: ["future Brain-QA graph relation cases"],
+                falsifier: "A graph slice treats relationSupport as source truth.",
+                doesNotProve: "This does not prove graph ranking quality.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [{ edgeId: "edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toEqual([
+      "graph sourceclaimedge relation temporal source relations",
+      "graph sourceclaimedge"
+    ]);
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: [
+        "graph sourceclaimedge relation temporal source relations",
+        "graph sourceclaimedge"
+      ],
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:graph-relation-readback-boundary"
+        }]
+      },
+      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+    });
+  });
+
+  it("retries selected knowledge with a compact mechanism query after a heartbeat benchmark miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "heartbeat dreaming source relation evidence",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "heartbeat dreaming") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:heartbeat-candidate-only-runtime-boundary",
+                title: "Heartbeat candidate-only runtime boundary",
+                summary: "Heartbeat and dreaming work stays candidate-only before scheduler work.",
+                consumers: ["future heartbeat preview CLI/readback tests"],
+                falsifier: "A heartbeat slice adds automatic memory mutation.",
+                doesNotProve: "This does not prove autonomous dreaming.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [{ edgeId: "edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toEqual([
+      "heartbeat dreaming source relation evidence",
+      "heartbeat dreaming"
+    ]);
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: [
+        "heartbeat dreaming source relation evidence",
+        "heartbeat dreaming"
+      ],
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:heartbeat-candidate-only-runtime-boundary"
+        }]
+      },
+      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+    });
+  });
+
+  it("tries later compact mechanism windows after an early compact miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T02:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query:
+          "prove retained reference implementation recipe pattern through local code exemplar",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "reference implementation recipe") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:reference-implementation-recipe-clone-boundary",
+                title: "Reference implementation recipe boundary",
+                summary: "Clone a local exemplar shape only as a bounded implementation recipe.",
+                consumers: ["future local exemplar work"],
+                falsifier: "A future slice treats the recipe as runtime clone automation.",
+                doesNotProve: "This does not prove broad implementation quality.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toEqual([
+      "prove retained reference implementation recipe pattern through local code exemplar",
+      "prove reference implementation recipe",
+      "prove reference implementation",
+      "reference implementation recipe"
+    ]);
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: [
+        "prove retained reference implementation recipe pattern through local code exemplar",
+        "prove reference implementation recipe",
+        "prove reference implementation",
+        "reference implementation recipe"
+      ],
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:reference-implementation-recipe-clone-boundary"
+        }]
+      }
+    });
+  });
+
+  it("bounds compact retry fan-out when every catalog query misses", async () => {
+    const knowledgeQueries: string[] = [];
+    await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {},
+      now: () => "2026-07-04T02:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "alpha beta gamma delta epsilon zeta eta theta",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+
+    expect(knowledgeQueries).toHaveLength(7);
+    expect(knowledgeQueries[0]).toBe("alpha beta gamma delta epsilon zeta eta theta");
+  });
+
+  it("derives store-backed selected knowledge from source claims in store-only brain search", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-06-30T13:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "source-to-decision",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                label: "source_claim:claim-1",
+                subjectId: "claim-1",
+                sourceClaimId: "claim-1",
+                claim: "Store-only brain search should derive selected knowledge from source evidence.",
+                mechanism: "Source search already returns governed SourceClaim fields.",
+                krnImplication: "Brain search can surface selected knowledge without file-backed catalog cards.",
+                consumer: "IMR-00 pattern brain",
+                falsifier: "Store-only search with governed source evidence returns empty selectedKnowledge.",
+                doesNotProve: "This does not prove ranking quality.",
+                expectedUse: "Use source-backed knowledge as a pre-coding pattern gate."
+              }],
+              supportingDocuments: [{ label: "doc" }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [{
+          id: "claim-1",
+          title: "Store-only brain search should derive selected knowledge from source evidence.",
+          summary: "Brain search can surface selected knowledge without file-backed catalog cards.",
+          source: "source_search",
+          reviewability: "ready",
+          consumers: ["IMR-00 pattern brain"],
+          falsifier: "Store-only search with governed source evidence returns empty selectedKnowledge.",
+          doesNotProve: "This does not prove ranking quality.",
+          nextAction: "use"
+        }],
+        doesNotProve: [
+          "brain knowledge catalog readback was explicitly skipped by --store-only"
+        ]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1
+      },
+      proof: {
+        proves: [
+          "brain knowledge catalog readback was explicitly skipped for this query",
+          "existing source-search answer package was executed for this query",
+          "brain search combined both readbacks without mutating KRN state"
+        ]
+      }
+    });
+    expect(JSON.stringify(parsed)).toContain("store-backed source/search evidence");
+    expect(JSON.stringify(parsed)).not.toContain("memory_store");
+  });
+
+  it("derives store-backed selected knowledge from DB MemoryRecords in store-only brain search", async () => {
+    const memoryRecord: MemoryRecord = {
+      id: "memory-record-1",
+      projectId: "project-1",
+      key: "memory:second-opinion-loop",
+      kind: "pattern",
+      status: "active",
+      summary: "Use governed second-opinion after larger slices",
+      body: "KRN should run second-opinion review after larger migration or authority slices.",
+      owner: "kernel-development",
+      confidence: 95,
+      applicationGuidance:
+        "Use this memory when the task asks how to close a large KRN slice.",
+      invalidationRule:
+        "Invalidate when second-opinion-claude stops producing governed verdict JSON.",
+      sourceLineage: [{
+        sourceId: "source-claim-1",
+        note: "source-claim:source-claim-1"
+      }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {
+        falsifier: "A larger slice closes without second-opinion review.",
+        doesNotProve: "This memory does not prove Claude found every bug."
+      },
+      validFrom: "2026-07-04T00:00:00.000Z",
+      createdAt: "2026-07-04T00:00:00.000Z",
+      updatedAt: "2026-07-04T00:00:00.000Z"
+    };
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T00:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "second opinion after large slice",
+        catalogFiles: [],
+        storeOnly: true,
+        projectId: "project-explicit",
+        limit: 6,
+        format: "json"
+      },
+      async createDatabaseRuntime(input: DatabaseRuntimeInput): Promise<DatabaseRuntime> {
+        expect(input.databaseUrl).toBe("postgres://krn:krn@localhost:54329/krn");
+        expect(input.projectSlug.trim().length).toBeGreaterThan(0);
+        expect(input.projectId).toBe("project-explicit");
+        expect(input.requireProjectKernelForExplicitProject).toBe(false);
+
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+          harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+          sourceRepository: {} as DatabaseRuntime["sourceRepository"],
+          memoryRepository: {
+            async listActiveMemory(projectId, limit) {
+              expect(projectId).toBe("project-1");
+              expect(limit).toBe(6);
+
+              return [memoryRecord];
+            }
+          } as DatabaseRuntime["memoryRepository"],
+          async close() {}
+        };
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch(runtime) {
+        expect(runtime.command.projectId).toBe("project-explicit");
+
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "source-claim-1",
+                claim: "Second-opinion review should challenge larger KRN slices.",
+                mechanism: "A governed source claim names mechanism, implication, consumer, and falsifier.",
+                krnImplication: "Brain search should keep source support visible next to selected memory.",
+                consumer: "kernel-development",
+                falsifier: "The source-search packet is hidden when MemoryRecord readback succeeds.",
+                doesNotProve: "This does not prove source truth."
+              }],
+              supportingDocuments: [],
+              sourceDecisionSupport: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      brainKnowledgeQueries: ["second opinion after large slice"],
+      knowledgeCards: {
+        returnedCards: 1,
+        cardIds: ["memory-record-1"],
+        selectedKnowledge: [{
+          id: "memory-record-1",
+          source: "memory_store",
+          reviewability: "ready",
+          consumers: ["kernel-development"],
+          falsifier: "A larger slice closes without second-opinion review.",
+          doesNotProve: "This memory does not prove Claude found every bug.",
+          nextAction: "use"
+        }, {
+          id: "source-claim-1",
+          source: "source_search",
+          reviewability: "ready"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1
+      }
+    });
+  });
+
+  it("keeps store-only brain search resilient when DB memory readback is unavailable", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T00:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "configured db is unavailable",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async createDatabaseRuntime() {
+        throw new Error("database unavailable");
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [],
+        doesNotProve: [
+          "brain knowledge catalog readback was explicitly skipped by --store-only",
+          "DB memory-store readback was unavailable: database unavailable"
+        ]
+      }
+    });
+    expect(JSON.stringify(parsed)).not.toContain("memory_store");
+  });
+
+  it("classifies selected knowledge target fit without changing store-only selection", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "EKOLOGUS Brain quality gate",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "target-claim",
+                claim: "EKOLOGUS Brain README defines the current quality gate.",
+                mechanism: "A persisted second-repo README source artifact can be searched directly.",
+                krnImplication: "Use target-specific source evidence before generic KRN patterns.",
+                consumer: "IMR-47 multi-repo Brain-QA",
+                falsifier: "EKOLOGUS source search returns no target-specific README evidence.",
+                doesNotProve: "This does not prove broad target repo readiness."
+              }, {
+                sourceClaimId: "generic-claim",
+                claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
+                mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
+                krnImplication: "Treat this as a guardrail, not target repo evidence.",
+                consumer: "pattern application gate",
+                falsifier: "A retained decision omits the falsifier field.",
+                doesNotProve: "This does not prove target repo source recall."
+              }, {
+                sourceClaimId: "adjacent-claim",
+                claim: "Graph relation source readback pattern supports selected knowledge review.",
+                mechanism: "SourceClaimEdge relation summaries expose adjacent graph evidence.",
+                krnImplication: "Use as adjacent context only when target-specific evidence is absent.",
+                consumer: "graph brain readback",
+                falsifier: "Graph relation readback is treated as target-specific source truth.",
+                doesNotProve: "This does not prove target repo source relevance."
+              }],
+              supportingDocuments: [{ label: "ekologus-readme" }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 3,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: [
+          expect.objectContaining({
+            id: "target-claim",
+            targetFit: "target_specific",
+            targetFitReasons: ["matched distinctive query token(s): ekologus."]
+          }),
+          expect.objectContaining({
+            id: "generic-claim",
+            targetFit: "generic_guardrail",
+            targetFitReasons: expect.arrayContaining([
+              "no distinctive query token matched.",
+              "generic guardrail token(s): consumer, falsifier, gate, guardrail, must, retained."
+            ])
+          }),
+          expect.objectContaining({
+            id: "adjacent-claim",
+            targetFit: "adjacent_pattern",
+            targetFitReasons: expect.arrayContaining([
+              "no distinctive query token matched."
+            ])
+          })
+        ]
+      }
+    });
+  });
+
+  it("does not treat generic-only selected knowledge as target-specific sufficiency", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "EKOLOGUS Brain quality gate",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "generic-guardrail-1",
+                claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
+                mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
+                krnImplication: "Treat this as a guardrail, not target repo evidence.",
+                consumer: "pattern application gate",
+                falsifier: "A retained decision omits the falsifier field.",
+                doesNotProve: "This does not prove target repo source recall."
+              }, {
+                sourceClaimId: "generic-guardrail-2",
+                claim: "KRN guardrails should keep proof boundaries visible before code changes.",
+                mechanism: "Generic proof packets prevent overclaiming.",
+                krnImplication: "Use this as a generic review guardrail.",
+                consumer: "pattern application gate",
+                falsifier: "A future run treats proof boundaries as target evidence.",
+                doesNotProve: "This does not prove EKOLOGUS source evidence."
+              }],
+              supportingDocuments: [{ label: "ekologus-readme" }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 2,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        targetFitSummary: {
+          verdict: "generic_only_selected_knowledge",
+          targetSpecific: 0,
+          genericGuardrail: 2,
+          recommendedUse:
+            "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
+          doesNotProve:
+            "Generic-only selectedKnowledge does not prove target-specific context was selected."
+        },
+        selectedKnowledge: [
+          expect.objectContaining({ targetFit: "generic_guardrail" }),
+          expect.objectContaining({ targetFit: "generic_guardrail" })
+        ]
+      },
+      activationUtility: {
+        verdict: "selected_knowledge_sufficient"
+      },
+      recommendedNextAction:
+        "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient."
+    });
+  });
+
+  it("uses ready source-backed selected knowledge when catalog search misses", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "activation utility source eval follow-up",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 12,
+        maxInclusions: 8,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                label: "source_claim:190f1f72-4621-49b4-b93c-538ea2c581ef",
+                subjectId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+                sourceClaimId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+                claim: "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only.",
+                mechanism: "Accepted heartbeat review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
+                krnImplication: "Natural source search should surface the retained follow-up evidence before opening new acquisition work.",
+                consumer: "IMR-40 natural source recall repair",
+                falsifier: "A small-limit natural source search cannot include this exact retained claim.",
+                doesNotProve: "This does not prove source truth, eval promotion, or product readiness.",
+                expectedUse: "Use retained follow-up evidence as a source-backed pattern gate."
+              }],
+              supportingDocuments: [{ label: "doc" }],
+              sourceDecisionSupport: [{
+                sourceDecisionEdgeId: "73e266bb-e957-4a07-aa62-fe74cb7178a0"
+              }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "catalog_files",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [{
+          id: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+          source: "source_search",
+          reviewability: "ready",
+          nextAction: "use"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        sourceDecisionSupport: 1
+      },
+      activationUtility: {
+        verdict: "selected_knowledge_sufficient"
+      },
+      recommendedNextAction:
+        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+    });
+  });
+
+  it("keeps weak store-backed selected knowledge visibly not review-ready", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-06-30T13:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "weak source evidence",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{
+                label: "source_claim:weak-claim",
+                subjectId: "weak-claim",
+                sourceClaimId: "weak-claim",
+                claim: "Weak source evidence should remain visible.",
+                expectedUse: "Use only after adding mechanism and falsifier."
+              }],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [{
+          id: "weak-claim",
+          source: "source_search",
+          reviewability: "needs_more_evidence",
+          nextAction: "needs_more_evidence"
+        }]
+      }
+    });
+    expect(JSON.stringify(parsed)).toContain("mechanism missing.");
+    expect(JSON.stringify(parsed)).toContain("falsifier missing.");
+  });
+
+  it("returns no store-backed selected knowledge when source evidence is empty", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-06-30T13:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "empty source evidence",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "store_only",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: []
+      },
+      sourceSearch: {
+        supportingClaims: 0,
+        supportingDocuments: 0
+      },
+      proof: {
+        proves: [
+          "brain knowledge catalog readback was explicitly skipped for this query",
+          "existing source-search answer package was executed for this query",
+          "brain search combined both readbacks without mutating KRN state"
+        ]
+      }
+    });
+  });
+
+  it("exposes activation utility when selected knowledge misses but linked evidence is useful", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "Towards Autonomous Memory Agents semantic-aware Thompson sampling",
+        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 12,
+        maxInclusions: 8,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: Array.from({ length: 8 }, (_, index) => ({
+                label: `claim-${index + 1}`
+              })),
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: Array.from({ length: 8 }, (_, index) => ({
+                sourceClaimId: `claim-${index + 1}`,
+                linkedSearchDocumentCount: 1,
+                linkedSearchDocumentIds: [`doc-${index + 1}`],
+                caveat: "SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+              })),
+              relationSupport: Array.from({ length: 6 }, (_, index) => ({
+                edgeId: `edge-${index + 1}`
+              })),
+              graphReadback: {
+                claimNodes: 8,
+                relationEdges: 6,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: []
+      },
+      sourceSearch: {
+        answerUsefulness: "partly_useful_missing_document",
+        supportingClaims: 8,
+        supportingDocuments: 0,
+        sourceClaimDocumentLinks: 8,
+        linkedSearchDocuments: 8,
+        relationSupport: 6
+      },
+      activationUtility: {
+        selectedKnowledge: {
+          signal: "selected_knowledge",
+          strength: "missing",
+          reasons: ["selectedKnowledge returned no packets."]
+        },
+        sourceLinkGraph: {
+          signal: "source_link_graph",
+          strength: "useful",
+          reasons: [
+            "answerUsefulness is partly_useful_missing_document.",
+            "source/link/graph evidence count is 30."
+          ]
+        },
+        verdict: "linked_evidence_exploration_candidate",
+        recommendedNextAction:
+          "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility; do not change production ranking without a bounded eval.",
+        doesNotProve:
+          "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+      }
+    });
+  });
+
+  it("surfaces source claim linked document evidence in source-search summaries", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "artifact-linked evidence",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "text"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [
+                { label: "claim-1" },
+                { label: "claim-2" },
+                { label: "claim-3" },
+                { label: "claim-4" },
+                { label: "claim-5" }
+              ],
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: [{
+                sourceClaimId: "claim-1",
+                linkedSearchDocumentCount: 2,
+                linkedSearchDocumentIds: ["doc-1", "doc-2"],
+                linkKinds: ["same_source_artifact"],
+                caveat: "SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+              }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 5,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+
+    expect(result.stdout).toContain("supportingClaims: 5");
+    expect(result.stdout).toContain("supportingDocuments: 0");
+    expect(result.stdout).toContain("sourceClaimDocumentLinks: 1");
+    expect(result.stdout).toContain("linkedSearchDocuments: 2");
+    expect(result.stdout).toContain(
+      "sourceClaimDocumentLinkCaveat: SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+    );
+    expect(result.stdout).toContain("missingEvidence: included SearchDocument evidence");
+    expect(result.stdout).toContain("Activation utility:");
+    expect(result.stdout).toContain("targetFit:");
+    expect(result.stdout).toContain("selectedKnowledge: useful");
+    expect(result.stdout).toContain("sourceLinkGraph: useful");
+  });
+
+  it("contrasts weak baseline with source-grounded useful brain context", async () => {
+    const baseline = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T14:00:00.000Z",
+      createId: (prefix) => `${prefix}-baseline`,
+      command: {
+        kind: "brainSearch",
+        query: "worker boundary maintenance contract",
+        catalogFiles: [],
+        storeOnly: false,
+        limit: 4,
+        maxInclusions: 2,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            kind: "krn.brainKnowledge.cards.preview.v1",
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: [],
+              relationSupport: [],
+              sourceDecisionSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["governed SourceClaim evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const sourceGrounded = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-04T14:00:00.000Z",
+      createId: (prefix) => `${prefix}-source-grounded`,
+      command: {
+        kind: "brainSearch",
+        query: "worker boundary maintenance contract",
+        catalogFiles: [],
+        storeOnly: false,
+        limit: 4,
+        maxInclusions: 2,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            kind: "krn.brainKnowledge.cards.preview.v1",
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                label: "source_claim:worker-boundary",
+                sourceClaimId: "worker-boundary",
+                claim: "Workers expose maintenance candidates, not Codex execution.",
+                mechanism: "Heartbeat previews surface reviewable maintenance work without mutating Memory Core.",
+                krnImplication: "Worker guidance should block executor/runtime claims until plnv is resolved.",
+                consumer: "worker package decision",
+                falsifier: "Brain readback claims workers execute scheduled jobs.",
+                doesNotProve: "This does not prove worker runtime behavior."
+              }],
+              supportingDocuments: [{
+                label: "search_document:worker-boundary"
+              }],
+              sourceClaimDocumentLinks: [],
+              relationSupport: [],
+              sourceDecisionSupport: [{
+                sourceDecisionEdgeId: "decision-edge-worker-boundary",
+                sourceClaimId: "worker-boundary",
+                confidence: "high"
+              }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth", "worker runtime behavior"]
+            }
+          })
+        };
+      }
+    });
+    const baselineJson: unknown = JSON.parse(baseline.stdout);
+    const sourceGroundedJson: unknown = JSON.parse(sourceGrounded.stdout);
+
+    expect(baselineJson).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: []
+      },
+      sourceSearch: {
+        answerUsefulness: "not_useful",
+        missingEvidence: ["governed SourceClaim evidence"]
+      },
+      recommendedNextAction: "Do not infer product truth; narrow the query or ingest/review source evidence first."
+    });
+    expect(sourceGroundedJson).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "worker-boundary",
+          source: "source_search",
+          reviewability: "ready",
+          nextAction: "use"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        sourceDecisionSupport: 1,
+        missingEvidence: []
+      },
+      recommendedNextAction:
+        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+    });
+  });
+
+  it("keeps the fixed brain grounding mini-gate source-backed and decision-linked", async () => {
+    const cases = [
+      {
+        query: "workers are candidate maintenance contracts not codex exec",
+        claimId: "claim-workers-boundary",
+        claim: "Workers are candidate maintenance contracts, not Codex execution.",
+        mechanism: "Heartbeat previews produce candidate-only maintenance work and do not execute code.",
+        krnImplication: "Brain answers about workers must not imply runtime enforcement before plnv.",
+        consumer: "worker boundary planning",
+        falsifier: "A worker answer claims scheduler or executor behavior without plnv."
+      },
+      {
+        query: "naming standard no vanity rename helper extraction rule",
+        claimId: "claim-naming-boundary",
+        claim: "KRN naming changes require evidence and must not become vanity sweeps.",
+        mechanism: "The code vocabulary standard accepts renames only when they reduce review cost or reveal authority boundaries.",
+        krnImplication: "Brain answers about naming should preserve the anti-vanity gate.",
+        consumer: "naming-standard implementation",
+        falsifier: "A naming task renames broadly without evidence_ref and rollback risk."
+      },
+      {
+        query: "source-to-decision retention gate consumer falsifier",
+        claimId: "claim-source-decision",
+        claim: "Retained sources must map source to mechanism, KRN implication, decision, consumer, and falsifier.",
+        mechanism: "The source-to-decision gate rejects decorative sources without consumers and falsifiers.",
+        krnImplication: "Brain answers should cite governed source decisions before treating external material as useful.",
+        consumer: "pattern intake",
+        falsifier: "A retained source is used in a slice without a consumer or falsifier."
+      },
+      {
+        query: "typescript boundary unknown first result state",
+        claimId: "claim-ts-boundary",
+        claim: "External TypeScript inputs stay unknown until a parser or guard narrows them.",
+        mechanism: "Unknown-first readback keeps JSON/env/file boundaries from becoming trusted domain objects.",
+        krnImplication: "Brain answers about TypeScript repairs should route through parser evidence, not casts.",
+        consumer: "TypeScript boundary repair",
+        falsifier: "A JSON boundary repair adds unchecked casts instead of parser narrowing."
+      }
+    ] as const;
+
+    for (const entry of cases) {
+      const result = await runBrainSearchCommand({
+        cwd: "/repo",
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => "2026-07-04T12:00:00.000Z",
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "brainSearch",
+          query: entry.query,
+          catalogFiles: [],
+          storeOnly: true,
+          limit: 8,
+          maxInclusions: 4,
+          format: "json"
+        },
+        async runKnowledgeCards() {
+          throw new Error("grounding mini-gate should use store/source evidence");
+        },
+        async runSourceSearch(runtime) {
+          expect(runtime.command.query).toBe(entry.query);
+
+          return {
+            stdout: JSON.stringify({
+              answerPackage: {
+                answerUsefulness: "useful",
+                supportingClaims: [{
+                  label: `source_claim:${entry.claimId}`,
+                  subjectId: entry.claimId,
+                  sourceClaimId: entry.claimId,
+                  claim: entry.claim,
+                  mechanism: entry.mechanism,
+                  krnImplication: entry.krnImplication,
+                  consumer: entry.consumer,
+                  falsifier: entry.falsifier,
+                  doesNotProve: "This does not prove broad brain quality.",
+                  sourceDecisionSupportState: "linked"
+                }],
+                supportingDocuments: [{
+                  label: `search_document:${entry.claimId}`,
+                  title: `${entry.claimId} source document`
+                }],
+                sourceDecisionSupport: [{
+                  sourceDecisionEdgeId: `decision-edge-${entry.claimId}`,
+                  sourceClaimId: entry.claimId,
+                  confidence: "high"
+                }],
+                sourceClaimDocumentLinks: [{
+                  sourceClaimId: entry.claimId,
+                  linkedSearchDocumentCount: 1,
+                  linkedSearchDocumentIds: [`doc-${entry.claimId}`],
+                  linkKinds: ["same_source_artifact"]
+                }],
+                relationSupport: [],
+                graphReadback: {
+                  claimNodes: 1,
+                  relationEdges: 0,
+                  temporalEdges: 0,
+                  contradictionEdges: 0,
+                  duplicateEdges: 0,
+                  invalidationEdges: 0,
+                  graphAware: false,
+                  caveats: []
+                },
+                missingEvidence: []
+              },
+              includedCandidates: [],
+              proof: {
+                doesNotProve: ["source truth", "broad brain quality"]
+              }
+            })
+          };
+        }
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        query: entry.query,
+        brainKnowledgeReadback: "store_only",
+        knowledgeCards: {
+          selectedKnowledge: [{
+            id: entry.claimId,
+            source: "source_search",
+            reviewability: "ready",
+            nextAction: "use"
+          }]
+        },
+        sourceSearch: {
+          answerUsefulness: "useful",
+          supportingClaims: 1,
+          supportingDocuments: 1,
+          sourceDecisionSupport: 1,
+          sourceClaimDocumentLinks: 1,
+          missingEvidence: []
+        }
+      });
+      expect(JSON.stringify(parsed)).toContain("brain search combined both readbacks without mutating KRN state");
+      expect(JSON.stringify(parsed)).not.toContain("governed SourceClaim evidence");
+    }
+  });
+});

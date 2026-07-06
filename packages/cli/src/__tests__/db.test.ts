@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { runCli } from "../runCli.js";
+import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 

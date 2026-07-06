@@ -15,7 +15,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brainKnowledgeReadModelInvariants.test.ts"
+    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future TypeScript pattern intake",

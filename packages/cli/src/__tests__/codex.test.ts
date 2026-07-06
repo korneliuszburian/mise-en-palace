@@ -15,10 +15,10 @@ import type {
 } from "@krn/harness/repositories/internal";
 import {
   deriveCodexAdapterReadiness
-} from "../doctorReadiness.js";
-import type { DatabaseRuntime } from "../databaseRuntime.js";
-import { createNoStoreCompilerDependencies } from "../noStoreRepositories.js";
-import { runCli } from "../runCli.js";
+} from "../doctor-readiness.js";
+import type { DatabaseRuntime } from "../database-runtime.js";
+import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
+import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 

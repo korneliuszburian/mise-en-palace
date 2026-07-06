@@ -189,7 +189,7 @@ describe("evidence bundle mappers", () => {
       id: "evidence-bundle-1",
       executionRunId: "execution-run-1",
       status: "captured",
-      changedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"],
+      changedFiles: ["packages/cli/src/run-evidence-capture-command.ts"],
       commands: [
         {
           command: "pnpm typecheck",

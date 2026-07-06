@@ -24,7 +24,7 @@ describe("repository package surfaces", () => {
     expect(publicIndex).not.toContain("CreateAntiMemoryRecordInput");
     expect(publicIndex).not.toContain("MemoryRepository,");
     expect(publicIndex).toContain("MemoryCandidateReviewRepository");
-    expect(internalIndex).toContain("../memoryRepository.js");
+    expect(internalIndex).toContain("../memory-repository.js");
   });
 
   it("keeps EvidenceBundle verified and rejected status out of the write input", () => {

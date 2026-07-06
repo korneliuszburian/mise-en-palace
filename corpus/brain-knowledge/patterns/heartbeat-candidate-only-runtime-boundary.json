@@ -9,7 +9,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/runKnowledgeCardsCommand.test.ts"
+    "packages/cli/src/run-knowledge-cards-command.test.ts"
   ],
   "consumers": [
     "future heartbeat/dreaming repair slices",

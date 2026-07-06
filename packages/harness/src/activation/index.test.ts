@@ -12,7 +12,7 @@ import type {
 } from "../repositories/types.js";
 import {
   selectObservationPrefix
-} from "../observations/observationPrefix.js";
+} from "../observations/observation-prefix.js";
 
 import {
   applyContextROI,
