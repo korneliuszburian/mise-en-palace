@@ -5,6 +5,7 @@ import {
 } from "vitest";
 
 import type {
+  ProjectId,
   SourceClaim,
   SourceDecisionEdge,
   SourceRejection
@@ -64,7 +65,6 @@ const sourceRejection = (
   overrides: Partial<SourceRejection> = {}
 ): SourceRejection => ({
   id: "4fc26da7-4b0c-4449-a052-8e5f876de871" as SourceRejection["id"],
-  projectId: projectId as SourceRejection["projectId"],
   sourceClaimId: rejectedProposedClaimId,
   title: "Rejected non-governing proposed claim",
   attemptedClaim: "Rejected proposed claim should not stay pending.",
@@ -74,7 +74,8 @@ const sourceRejection = (
   consumer: "source decision gap detector",
   metadata: {},
   rejectedAt: now,
-  ...overrides
+  ...overrides,
+  projectId: projectId as ProjectId
 });
 
 interface RuntimeInput {
