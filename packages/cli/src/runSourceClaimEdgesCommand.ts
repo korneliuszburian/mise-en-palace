@@ -7,6 +7,8 @@ import {
   relatedSourceClaimIdForEdge
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -35,8 +37,6 @@ export type CreateSourceClaimEdgesDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const directionFor = (
   sourceClaimId: SourceClaim["id"],

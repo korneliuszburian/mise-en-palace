@@ -35,6 +35,8 @@ import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import {
@@ -61,8 +63,6 @@ type BrainKnowledgeReadback = {
 };
 
 const defaultCatalogFile = "corpus/brain-knowledge/catalog.json";
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const maxBrainSearchCompactQueryRetries = 6;
 
 const memoryConfidence = (confidence: number): BrainKnowledgeReadModel["confidence"] => {

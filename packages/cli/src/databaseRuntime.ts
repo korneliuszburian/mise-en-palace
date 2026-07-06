@@ -41,6 +41,15 @@ import type {
 
 type PostgresClient = ReturnType<typeof postgres>;
 
+/**
+ * CLI fallback project scope used when no explicit --project is given and no
+ * connected repo path resolves. Single source of truth for the default
+ * workspace/project slugs; command files must import these instead of
+ * hardcoding the literals.
+ */
+export const defaultWorkspaceSlug = "local";
+export const defaultProjectSlug = "mise-en-palace";
+
 export interface DatabaseRuntimeInput {
   databaseUrl: string;
   workspaceSlug: string;

@@ -12,6 +12,7 @@ import {
 import type {
   BaseCommandRuntime
 } from "./commandRuntimeSupport.js";
+import { defaultWorkspaceSlug, defaultProjectSlug } from "./databaseRuntime.js";
 
 export interface CodexBriefCommandRuntime extends BaseCommandRuntime {
   runId: string;
@@ -22,8 +23,6 @@ export interface CodexBriefCommandResult {
   stdout: string;
 }
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const renderText = (
   runId: string,

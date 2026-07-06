@@ -27,6 +27,8 @@ import {
   parseTaskContractInput
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -112,8 +114,6 @@ type HarnessCompileInput = ReturnType<typeof parseHarnessCompileInput>;
 type CompiledHarnessPlan = Awaited<ReturnType<typeof compileHarnessPlan>>;
 type TargetOwnerFileRecall = ReturnType<typeof assessTargetOwnerFileRecall>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const defaultBrainKnowledgeCatalogFile = "corpus/brain-knowledge/catalog.json";
 
 const targetTrustExclusions = [

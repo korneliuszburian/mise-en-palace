@@ -2,6 +2,8 @@ import {
   parseSourceDecisionEdgeInput
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -30,8 +32,6 @@ export type CreateSourceDecisionLinkDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const formatPreview = (
   edge: ReturnType<typeof parseSourceDecisionEdgeInput>

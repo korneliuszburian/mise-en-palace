@@ -10,6 +10,8 @@ import type {
   MemoryFeedbackEventType
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -38,8 +40,6 @@ type CreateMemoryRecordApplyDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const defaultExpectedUse = (command: MemoryRecordApplyCommand): string =>
   `Operator explicitly applied memory record ${command.memoryId ?? ""} to run ${command.runId ?? ""}`;

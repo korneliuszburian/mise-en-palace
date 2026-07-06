@@ -14,6 +14,8 @@ import type {
 } from "@krn/workers";
 
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -68,8 +70,6 @@ export interface HeartbeatPreviewCommandResult {
   stdout: string;
 }
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const defaultMemoryLimit = 50;
 const defaultSourceClaimLimit = 50;
 const defaultMaxCandidates = 10;

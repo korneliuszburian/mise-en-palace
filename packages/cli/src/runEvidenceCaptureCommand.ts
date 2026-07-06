@@ -28,6 +28,8 @@ import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import {
@@ -120,8 +122,6 @@ interface MemoryCandidateProposal {
 const candidateReviewabilityDoesNotProve =
   "This reviewability classification does not approve, promote, or persist the candidate as Memory Core truth.";
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const readGitStatus = async (runtime: EvidenceCaptureRuntime): Promise<string> => {
   if (runtime.readGitStatus !== undefined) {

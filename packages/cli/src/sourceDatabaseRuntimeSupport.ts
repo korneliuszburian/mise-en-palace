@@ -5,9 +5,8 @@ import type {
 import {
   findRepoRoot
 } from "./cliFileBoundary.js";
+import { defaultWorkspaceSlug, defaultProjectSlug } from "./databaseRuntime.js";
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 type SourceCommandDatabaseRuntimeFactory = (
   input: DatabaseRuntimeInput

@@ -3,6 +3,8 @@ import {
   parseSourceDecisionInput
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -31,8 +33,6 @@ export type CreateSourceDecisionAdoptDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const formatPreview = (
   decision: ReturnType<typeof parseSourceDecisionInput>

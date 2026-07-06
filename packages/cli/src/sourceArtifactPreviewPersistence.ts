@@ -14,6 +14,8 @@ import {
   parseSourceClaimInput
 } from "@krn/core";
 import {
+  defaultWorkspaceSlug,
+  defaultProjectSlug,
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -88,8 +90,6 @@ export interface SourceArtifactPreviewPersistenceReadback {
   };
 }
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 type SourceArtifactRecord = Awaited<
   ReturnType<DatabaseRuntime["sourceRepository"]["createSourceArtifact"]>

@@ -27,6 +27,7 @@ export type {
   RunReadbackOutputFormat,
   RunReadbackResource
 } from "./runShowReadback.js";
+import { defaultWorkspaceSlug, defaultProjectSlug } from "./databaseRuntime.js";
 
 export interface RunShowCommandRuntime extends BaseCommandRuntime {
   runId: string;
@@ -47,8 +48,6 @@ export type CreateRunShowDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<ReadOnlyHarnessRuntime>;
 
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 
 const missingRunShowDatabaseUrlMessage = [
