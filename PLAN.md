@@ -27,6 +27,7 @@ plan/brief memory eval comparator: eval:memory-advantage now reports no-memory p
 reviewed feedback memory effect: eval:memory-advantage reports prior feedback refs, baseline/KRN outcomes, selected/excluded memory/source ids, context-size cost, and stale/adversarial negative classes
 coding-task memory decision: eval:memory-advantage now reports per-case `decision_before_memory`/`decision_after_krn`; win, neutral, and rejection-protection cases show memory/source evidence changing or preserving bounded implementation decisions without LLM execution
 Codex-vs-KRN comparator sweep: eval:codex-output-comparator reports 34 no-memory/simple-retrieval comparisons with explicit usefulness labels and win/neutral/loss counts
+notes-baseline decision-packet eval: eval:notes-baseline compares KRN packets against comprehensive notes+grep; notes ties raw recall while KRN wins through governed boundary, stale exclusion, and rejected-path visibility
 memory advantage falsification/source ablation: eval:memory-advantage now reports 17 wins, 7 firm-pattern challenge cases with 6 wins and 1 neutral, 4 classified neutral/no-advantage cases, one classified broken-prior-advantage case, 23 source-disabled reruns, 21 source-required hits, and source prune candidate counts
 runtime contradiction eval: eval:memory-advantage now excludes one active-looking memory from runtime contradiction metadata without explicit excludedMemoryCards/excludedSourceClaims shortcuts
 store-backed pattern gate: source/search packets shaped one retained paper intake
@@ -132,10 +133,10 @@ skill surface audit: retained repo-local skills stay operational guidance; activ
 
 ## Active Task
 
-Status: active; post-refactor kernel queue is moving through memory advantage proof before worker/runtime expansion. Result so far: schema deletion, pgvector validation, cleanup wave, firm-pattern memory challenge set, and DB-backed brain-search replay are pushed or in verification.
-Current active Bead: `mise-en-palace-hgk2` DB-backed memory advantage challenge replay.
-Latest closed Bead: `mise-en-palace-l7ti` firm-pattern memory challenge set.
-Next ready Beads after `hgk2`: `mise-en-palace-5ydu` coding-decision proof, `mise-en-palace-cxlq` source graph relation ranking corpus, `mise-en-palace-o67w` evidence-backed naming cleanup, `mise-en-palace-35qi` worker package branch decision.
+Status: active; post-refactor kernel queue is proving whether KRN decision packets beat the realistic Codex+notes+grep competitor before worker/runtime expansion.
+Current active Bead: `mise-en-palace-yb2n` notes-baseline decision-packet eval.
+Latest closed Bead: `mise-en-palace-pikl` roadmap redefined by second-opinion verdict.
+Next ready Beads after `yb2n`: `mise-en-palace-9rnq` corpus closure, `mise-en-palace-ovit` feedback/forget loop, `mise-en-palace-qqet` proof/docs cleanup, `mise-en-palace-rr9b` decision-packet benchmark, `mise-en-palace-v4e9` second-repo dry run.
 Worker/runtime expansion stays rejected until a named product loop needs execution; second-opinion-claude runs after larger slices and its verdict is advisory under local evidence.
 `mise-en-palace-j5p7/lx5v` selected the post-refactor next slice with Claude review and moved duplicated SourceClaimEdge endpoint logic into core.
 `mise-en-palace-whvw/8vug` keep false authority readbacks out of source search: no-id owner-file candidates are not document support, and non-accepted claims do not get accepted-claim caveats.

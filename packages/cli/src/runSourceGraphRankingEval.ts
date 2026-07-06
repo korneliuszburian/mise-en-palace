@@ -17,12 +17,23 @@ import {
   writeJsonEvalResult
 } from "./evalMain.js";
 import {
+  booleanValue,
+  isRecord,
+  numberValue,
+  recordArray,
+  stringValue,
+  tupleArray
+} from "./evalParseSupport.js";
+import {
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
 import {
   ndcgAtK,
   roundRankingMetric
 } from "./rankingEvalMetrics.js";
+import {
+  tokenOverlapScore
+} from "./evalTextScoring.js";
 
 interface SourceGraphRankingRow {
   readonly id: string;
@@ -160,42 +171,6 @@ export interface SourceGraphRankingEvalResult {
 const projectId = "source-graph-ranking-project";
 const now = "2026-07-04T00:00:00.000Z";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const stringValue = (
-  value: unknown,
-  label: string
-): string => {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`${label} must be a non-empty string`);
-  }
-
-  return value;
-};
-
-const numberValue = (
-  value: unknown,
-  label: string
-): number => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${label} must be a finite number`);
-  }
-
-  return value;
-};
-
-const booleanValue = (
-  value: unknown,
-  label: string
-): boolean => {
-  if (typeof value !== "boolean") {
-    throw new Error(`${label} must be a boolean`);
-  }
-
-  return value;
-};
-
 const parseCorpusSplit = (
   value: unknown,
   label: string
@@ -211,24 +186,6 @@ const parseCorpusSplit = (
   }
 
   return split;
-};
-
-const tupleArray = (
-  value: unknown,
-  label: string,
-  length: number
-): readonly unknown[][] => {
-  if (!Array.isArray(value)) {
-    throw new Error(`${label} must be an array`);
-  }
-
-  return value.map((item, index) => {
-    if (!Array.isArray(item) || item.length !== length) {
-      throw new Error(`${label}[${index}] must be a ${length}-item tuple`);
-    }
-
-    return item;
-  });
 };
 
 const parseStringArray = (
@@ -429,23 +386,6 @@ export const loadSourceGraphRankingEvalFixture = (
   return parseSourceGraphRankingEvalFixture(parsed);
 };
 
-const tokens = (value: string): readonly string[] =>
-  [...value.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
-
-const overlapScore = (query: string, text: string): number => {
-  const queryTokens = new Set(tokens(query).filter((token) => token.length >= 4));
-  const textTokens = new Set(tokens(text));
-  let score = 0;
-
-  for (const token of queryTokens) {
-    if (textTokens.has(token)) {
-      score += 20;
-    }
-  }
-
-  return score;
-};
-
 const rowSourceArtifactId = (row: SourceGraphRankingRow): string =>
   `artifact:${row.id}`;
 
@@ -494,8 +434,8 @@ const rowDocument = (
   metadata: {},
   createdAt: now,
   updatedAt: now,
-  lexicalScore: overlapScore(query, `${row.claim} ${row.terms}`),
-  vectorScore: overlapScore(query, row.terms) / 2,
+  lexicalScore: tokenOverlapScore(query, `${row.claim} ${row.terms}`),
+  vectorScore: tokenOverlapScore(query, row.terms) / 2,
   graphScore: 0
 });
 
@@ -654,29 +594,6 @@ const parseJsonObject = (
 
   return parsed;
 };
-
-const arrayValue = (
-  value: unknown,
-  label: string
-): readonly unknown[] => {
-  if (!Array.isArray(value)) {
-    throw new Error(`${label} must be an array`);
-  }
-
-  return value;
-};
-
-const recordArray = (
-  value: unknown,
-  label: string
-): readonly Record<string, unknown>[] =>
-  arrayValue(value, label).map((item, index) => {
-    if (!isRecord(item)) {
-      throw new Error(`${label}[${index}] must be an object`);
-    }
-
-    return item;
-  });
 
 const optionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;

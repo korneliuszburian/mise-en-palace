@@ -1,0 +1,693 @@
+{
+  "version": "1",
+  "corpusName": "krn-decision-packet-vs-notes-baseline",
+  "topK": 3,
+  "minimumKrnWinRate": 0.75,
+  "maximumNotesWinRate": 0,
+  "decisions": [
+    {
+      "id": "store-backed-memory-no-markdown",
+      "title": "Store backed memory no markdown runtime",
+      "statement": "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory. Do not create markdown memory files as the active recall system.",
+      "status": "current",
+      "evidenceRef": "PLAN.md:23",
+      "sourceClaimId": "source-claim:store-backed-memory-no-markdown",
+      "sourceDecisionEdgeId": "source-decision-edge:store-backed-memory-no-markdown",
+      "falsifier": "A runtime task needs a markdown memory folder to recall KRN knowledge.",
+      "doesNotProve": "Does not prove broad memory retrieval quality or live Codex obedience."
+    },
+    {
+      "id": "unknown-first-json-boundary",
+      "title": "Unknown first JSON metadata boundary",
+      "statement": "Treat JSON, CLI, DB metadata, and model envelopes as unknown until parsed by narrow validators before use.",
+      "status": "current",
+      "evidenceRef": "docs/KRN_KERNEL.md:63",
+      "sourceClaimId": "source-claim:unknown-first-json-boundary",
+      "sourceDecisionEdgeId": "source-decision-edge:unknown-first-json-boundary",
+      "falsifier": "A changed JSON shape can be consumed through casts without a parser failing.",
+      "doesNotProve": "Does not prove every test file is strictly typechecked."
+    },
+    {
+      "id": "second-opinion-validated-json",
+      "title": "Second opinion validated JSON verdict",
+      "statement": "Claude second opinion is advisory only after deterministic verdict validation and diff freshness binding.",
+      "status": "current",
+      "evidenceRef": "docs/runbooks/second-opinion-claude.md",
+      "sourceClaimId": "source-claim:second-opinion-validated-json",
+      "sourceDecisionEdgeId": "source-decision-edge:second-opinion-validated-json",
+      "falsifier": "A prose envelope or stale diff can close a slice as approved.",
+      "doesNotProve": "Does not prove Claude judgment quality."
+    },
+    {
+      "id": "no-worker-daemon-before-loop",
+      "title": "No worker daemon before named product loop",
+      "statement": "Keep workers as preview or contract surfaces until a named product loop needs an executor.",
+      "status": "current",
+      "evidenceRef": "PLAN.md:137",
+      "sourceClaimId": "source-claim:no-worker-daemon-before-loop",
+      "sourceDecisionEdgeId": "source-decision-edge:no-worker-daemon-before-loop",
+      "falsifier": "A product loop cannot progress without scheduled background execution.",
+      "doesNotProve": "Does not prove worker contracts are the right long-term package boundary."
+    },
+    {
+      "id": "source-decision-edge-ranks-authority",
+      "title": "SourceDecisionEdge ranks source authority",
+      "statement": "Decision-linked SourceClaims outrank accepted-only peers when the decision edge has stronger support and confidence.",
+      "status": "current",
+      "evidenceRef": "PLAN.md:122",
+      "sourceClaimId": "source-claim:source-decision-edge-ranks-authority",
+      "sourceDecisionEdgeId": "source-decision-edge:source-decision-edge-ranks-authority",
+      "falsifier": "Accepted-only claims outrank linked decision authority in source-search readback.",
+      "doesNotProve": "Does not prove source truth."
+    },
+    {
+      "id": "invalidates-rankdown-stale-source",
+      "title": "Invalidates rank down stale source",
+      "statement": "Invalidates, expires, and supersedes SourceClaimEdges lower stale source-search candidates before context ROI.",
+      "status": "current",
+      "evidenceRef": "PLAN.md:124",
+      "sourceClaimId": "source-claim:invalidates-rankdown-stale-source",
+      "sourceDecisionEdgeId": "source-decision-edge:invalidates-rankdown-stale-source",
+      "falsifier": "A superseded source claim remains selected as current authority with no caveat.",
+      "doesNotProve": "Does not prove broad graph retrieval quality."
+    },
+    {
+      "id": "adopt-link-before-authority",
+      "title": "Adopt link before authority",
+      "statement": "Use source decision adopt --link so a retained SourceClaim has visible SourceDecisionEdge support before it is treated as governed authority.",
+      "status": "current",
+      "evidenceRef": "docs/runs/2026-07-06-second-opinion-verdict-and-plan.md:15",
+      "sourceClaimId": "source-claim:adopt-link-before-authority",
+      "sourceDecisionEdgeId": "source-decision-edge:adopt-link-before-authority",
+      "falsifier": "A retained claim exists but cannot be used by source search because it lacks linked decision support.",
+      "doesNotProve": "Does not prove every historical claim has been linked."
+    },
+    {
+      "id": "behavior-smoke-not-llm-judge",
+      "title": "Behavior smoke not LLM judge",
+      "statement": "Use deterministic behavior and docs gates for KRN smoke; do not treat LLM-as-judge output as behavior proof.",
+      "status": "current",
+      "evidenceRef": "docs/architecture/behavior-gate-matrix.md:138",
+      "sourceClaimId": "source-claim:behavior-smoke-not-llm-judge",
+      "sourceDecisionEdgeId": "source-decision-edge:behavior-smoke-not-llm-judge",
+      "falsifier": "A broad LLM judge grade becomes required proof authority for KRN behavior.",
+      "doesNotProve": "Does not prove deterministic gates cover all product risk."
+    },
+    {
+      "id": "codex-adapter-non-mutating-brief",
+      "title": "Codex adapter non mutating brief",
+      "statement": "The Codex adapter renders bounded execution briefs and must not mutate Memory Core, source truth, or runtime state.",
+      "status": "current",
+      "evidenceRef": "docs/architecture/behavior-gate-matrix.md:18",
+      "sourceClaimId": "source-claim:codex-adapter-non-mutating-brief",
+      "sourceDecisionEdgeId": "source-decision-edge:codex-adapter-non-mutating-brief",
+      "falsifier": "Rendering a brief writes memory, source decisions, or evidence records.",
+      "doesNotProve": "Does not prove Codex follows the brief."
+    },
+    {
+      "id": "pattern-intake-consumer-falsifier",
+      "title": "Pattern intake needs consumer and falsifier",
+      "statement": "Retain external patterns only through source, mechanism, KRN implication, decision or rejection, consumer, and falsifier.",
+      "status": "current",
+      "evidenceRef": "docs/KRN_KERNEL.md:65",
+      "sourceClaimId": "source-claim:pattern-intake-consumer-falsifier",
+      "sourceDecisionEdgeId": "source-decision-edge:pattern-intake-consumer-falsifier",
+      "falsifier": "A source is retained because it sounds impressive but has no consumer or falsifier.",
+      "doesNotProve": "Does not prove every future retained source is correct."
+    },
+    {
+      "id": "no-dashboard-before-brain-proof",
+      "title": "No dashboard before brain proof",
+      "statement": "Do not build dashboard, API, MCP, crawler, or broad benchmark surfaces before the governed brain loop proves usefulness.",
+      "status": "current",
+      "evidenceRef": "docs/KRN_KERNEL.md:49",
+      "sourceClaimId": "source-claim:no-dashboard-before-brain-proof",
+      "sourceDecisionEdgeId": "source-decision-edge:no-dashboard-before-brain-proof",
+      "falsifier": "A missing UI surface blocks the next proven select/apply/verify/forget primitive.",
+      "doesNotProve": "Does not prove product UX can be ignored forever."
+    },
+    {
+      "id": "fallow-evidence-not-automatic-truth",
+      "title": "Fallow evidence not automatic truth",
+      "statement": "Treat Fallow findings as review evidence; fix true positives and configure intentional exceptions with owner evidence.",
+      "status": "current",
+      "evidenceRef": "AGENTS.md:34",
+      "sourceClaimId": "source-claim:fallow-evidence-not-automatic-truth",
+      "sourceDecisionEdgeId": "source-decision-edge:fallow-evidence-not-automatic-truth",
+      "falsifier": "A live runtime path is deleted only because Fallow reported it unused.",
+      "doesNotProve": "Does not prove all current Fallow exceptions are ideal."
+    },
+    {
+      "id": "second-repo-after-first-repo-proof",
+      "title": "Second repo after first repo proof",
+      "statement": "Run a second-repo dry run after the first repo decision-packet eval proves KRN beats notes on real task framings.",
+      "status": "current",
+      "evidenceRef": "docs/runs/2026-07-06-second-opinion-verdict-and-plan.md:54",
+      "sourceClaimId": "source-claim:second-repo-after-first-repo-proof",
+      "sourceDecisionEdgeId": "source-decision-edge:second-repo-after-first-repo-proof",
+      "falsifier": "The self-repo eval fails against notes, so portability work is premature.",
+      "doesNotProve": "Does not prove portability to arbitrary repositories."
+    },
+    {
+      "id": "notes-baseline-is-real-competitor",
+      "title": "Notes baseline is real competitor",
+      "statement": "Compare KRN against Codex plus maintained NOTES.md plus grep before claiming breakthrough usefulness.",
+      "status": "current",
+      "evidenceRef": "docs/architecture/notes-baseline-eval-design.md:1",
+      "sourceClaimId": "source-claim:notes-baseline-is-real-competitor",
+      "sourceDecisionEdgeId": "source-decision-edge:notes-baseline-is-real-competitor",
+      "falsifier": "Notes and grep provide equal or better packets with less ceremony.",
+      "doesNotProve": "Does not prove live Codex obedience."
+    },
+    {
+      "id": "compact-root-truth-not-ledger",
+      "title": "Compact root truth not ledger",
+      "statement": "Keep root GOAL, PLAN, and PLANS compact active truth; use Beads and archives for detailed completed history.",
+      "status": "current",
+      "evidenceRef": "docs/KRN_KERNEL.md:31",
+      "sourceClaimId": "source-claim:compact-root-truth-not-ledger",
+      "sourceDecisionEdgeId": "source-decision-edge:compact-root-truth-not-ledger",
+      "falsifier": "Active root docs become a massive run ledger that hides current decisions.",
+      "doesNotProve": "Does not prove old reports should be deleted."
+    },
+    {
+      "id": "feedback-forget-real-stale-decision",
+      "title": "Feedback forget real stale decision",
+      "statement": "Use feedback and source relation evidence to demote or exclude stale decisions with visible explanation on the next activation.",
+      "status": "current",
+      "evidenceRef": "PLAN.md:69",
+      "sourceClaimId": "source-claim:feedback-forget-real-stale-decision",
+      "sourceDecisionEdgeId": "source-decision-edge:feedback-forget-real-stale-decision",
+      "falsifier": "A hurt or superseded decision keeps reappearing as current context without explanation.",
+      "doesNotProve": "Does not prove autonomous pruning is complete."
+    },
+    {
+      "id": "markdown-runtime-memory",
+      "title": "Markdown runtime memory",
+      "statement": "Create MEMORY.md files and use markdown as the active recall system for agent memory.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-memory-notes.md",
+      "sourceClaimId": "source-claim:markdown-runtime-memory",
+      "sourceDecisionEdgeId": "source-decision-edge:markdown-runtime-memory",
+      "falsifier": "Store-backed memory recalls decisions without markdown files.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "cast-json-record",
+      "title": "Cast JSON record directly",
+      "statement": "Cast parsed JSON metadata as Record<string, unknown> and read nested keys directly in command runners.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-json-casts.md",
+      "sourceClaimId": "source-claim:cast-json-record",
+      "sourceDecisionEdgeId": "source-decision-edge:cast-json-record",
+      "falsifier": "Unknown-first parser rejects changed JSON shape before use.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "prose-second-opinion",
+      "title": "Prose second opinion approval",
+      "statement": "Accept a markdown prose second-opinion response as approval when it sounds senior enough.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-second-opinion.md",
+      "sourceClaimId": "source-claim:prose-second-opinion",
+      "sourceDecisionEdgeId": "source-decision-edge:prose-second-opinion",
+      "falsifier": "Validated JSON verdict rejects prose envelopes and stale diffs.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "build-worker-daemon-now",
+      "title": "Build worker daemon now",
+      "statement": "Build scheduler, leases, retries, and autonomous worker daemon before a named product loop needs runtime execution.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-worker-daemon.md",
+      "sourceClaimId": "source-claim:build-worker-daemon-now",
+      "sourceDecisionEdgeId": "source-decision-edge:build-worker-daemon-now",
+      "falsifier": "Current product loops progress through manual candidate-only previews.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "accepted-only-source-authority",
+      "title": "Accepted only source authority",
+      "statement": "Treat accepted SourceClaims as sufficient authority even without decision-link readback.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-source-authority.md",
+      "sourceClaimId": "source-claim:accepted-only-source-authority",
+      "sourceDecisionEdgeId": "source-decision-edge:accepted-only-source-authority",
+      "falsifier": "Decision-edge ranking distinguishes governed authority from accepted-only peers.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "dashboard-next",
+      "title": "Dashboard next",
+      "statement": "Build dashboard, API, MCP, crawler, or benchmark product surfaces before proving the brain loop.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-dashboard-next.md",
+      "sourceClaimId": "source-claim:dashboard-next",
+      "sourceDecisionEdgeId": "source-decision-edge:dashboard-next",
+      "falsifier": "Kernel primitives still need proof before surface expansion.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "llm-judge-behavior-proof",
+      "title": "LLM judge behavior proof",
+      "statement": "Use broad LLM-as-judge grades as authoritative behavior proof for KRN.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-llm-judge.md",
+      "sourceClaimId": "source-claim:llm-judge-behavior-proof",
+      "sourceDecisionEdgeId": "source-decision-edge:llm-judge-behavior-proof",
+      "falsifier": "Deterministic behavior smoke catches regressions without model judgment.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "second-repo-before-falsifier",
+      "title": "Second repo before falsifier",
+      "statement": "Start second-repo portability before proving this repo beats notes plus grep.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-second-repo.md",
+      "sourceClaimId": "source-claim:second-repo-before-falsifier",
+      "sourceDecisionEdgeId": "source-decision-edge:second-repo-before-falsifier",
+      "falsifier": "Notes baseline eval fails or passes before portability work.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "root-ledger-all-history",
+      "title": "Root ledger all history",
+      "statement": "Keep every completed micro-slice in root active plans so no historical detail is lost.",
+      "status": "stale",
+      "evidenceRef": "docs/materials/old-root-ledger.md",
+      "sourceClaimId": "source-claim:root-ledger-all-history",
+      "sourceDecisionEdgeId": "source-decision-edge:root-ledger-all-history",
+      "falsifier": "Operators cannot find current state because root docs became ledgers.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "create-markdown-memory-files",
+      "title": "Create markdown memory files",
+      "statement": "Create new markdown memory files during implementation to persist agent knowledge.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/markdown-memory-files.md",
+      "sourceClaimId": "source-claim:create-markdown-memory-files",
+      "sourceRejectionId": "source-rejection:create-markdown-memory-files",
+      "falsifier": "Memory Core and Beads already persist durable task knowledge.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "skip-json-validator",
+      "title": "Skip JSON validator",
+      "statement": "Skip parser validation for model or CLI JSON because tests already pass.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/skip-json-validator.md",
+      "sourceClaimId": "source-claim:skip-json-validator",
+      "sourceRejectionId": "source-rejection:skip-json-validator",
+      "falsifier": "A malformed review envelope can be accepted as proof.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "trust-prose-review",
+      "title": "Trust prose review",
+      "statement": "Trust a second-opinion prose review without deterministic validation or diff freshness.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/trust-prose-review.md",
+      "sourceClaimId": "source-claim:trust-prose-review",
+      "sourceRejectionId": "source-rejection:trust-prose-review",
+      "falsifier": "Validator rejects missing verdict JSON or stale diff hash.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "ship-daemon-without-loop",
+      "title": "Ship daemon without loop",
+      "statement": "Ship autonomous worker daemon, leases, retries, and scheduling before a named product loop needs it.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/ship-daemon-without-loop.md",
+      "sourceClaimId": "source-claim:ship-daemon-without-loop",
+      "sourceRejectionId": "source-rejection:ship-daemon-without-loop",
+      "falsifier": "Manual candidate-only previews already support the current loop.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "treat-accepted-only-as-governed",
+      "title": "Treat accepted only as governed",
+      "statement": "Treat accepted SourceClaims without SourceDecisionEdge support as fully governed authority.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/treat-accepted-only-as-governed.md",
+      "sourceClaimId": "source-claim:treat-accepted-only-as-governed",
+      "sourceRejectionId": "source-rejection:treat-accepted-only-as-governed",
+      "falsifier": "Decision-linked ranking surfaces missing support as a caveat.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "build-dashboard-first",
+      "title": "Build dashboard first",
+      "statement": "Build product UI, API, MCP, crawler, or benchmark platform before kernel usefulness is proven.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/build-dashboard-first.md",
+      "sourceClaimId": "source-claim:build-dashboard-first",
+      "sourceRejectionId": "source-rejection:build-dashboard-first",
+      "falsifier": "Decision packet eval fails against notes or memory loop remains unproven.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "use-llm-judge-as-gate",
+      "title": "Use LLM judge as gate",
+      "statement": "Use an uncalibrated LLM judge as the blocking behavior gate for KRN quality.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/use-llm-judge-as-gate.md",
+      "sourceClaimId": "source-claim:use-llm-judge-as-gate",
+      "sourceRejectionId": "source-rejection:use-llm-judge-as-gate",
+      "falsifier": "Deterministic fixtures catch the regression without judge variance.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "portability-before-self-proof",
+      "title": "Portability before self proof",
+      "statement": "Run second-repo portability work before proving the self-repo decision packet beats notes.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/portability-before-self-proof.md",
+      "sourceClaimId": "source-claim:portability-before-self-proof",
+      "sourceRejectionId": "source-rejection:portability-before-self-proof",
+      "falsifier": "Self-repo notes baseline exposes no advantage.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "copy-ledger-into-plan",
+      "title": "Copy ledger into plan",
+      "statement": "Copy every historical run and micro-outcome into root PLAN so future agents have all detail.",
+      "status": "rejected",
+      "evidenceRef": "docs/rejections/copy-ledger-into-plan.md",
+      "sourceClaimId": "source-claim:copy-ledger-into-plan",
+      "sourceRejectionId": "source-rejection:copy-ledger-into-plan",
+      "falsifier": "Compact root truth plus Beads is enough to resume work.",
+      "doesNotProve": "Rejected path record only."
+    }
+  ],
+  "notes": [
+    {
+      "id": "note-store-backed-memory-no-markdown",
+      "decisionId": "store-backed-memory-no-markdown",
+      "text": "Store backed memory no markdown runtime. Use MemoryRecord and SourceClaim evidence, not markdown memory files."
+    },
+    {
+      "id": "note-unknown-first-json-boundary",
+      "decisionId": "unknown-first-json-boundary",
+      "text": "Unknown first JSON metadata boundary. Parse CLI DB model JSON before reading nested keys."
+    },
+    {
+      "id": "note-second-opinion-validated-json",
+      "decisionId": "second-opinion-validated-json",
+      "text": "Second opinion validated JSON verdict. Claude review needs verdict JSON and freshness."
+    },
+    {
+      "id": "note-no-worker-daemon-before-loop",
+      "decisionId": "no-worker-daemon-before-loop",
+      "text": "No worker daemon before named product loop. Keep worker preview until runtime execution is needed."
+    },
+    {
+      "id": "note-source-decision-edge-ranks-authority",
+      "decisionId": "source-decision-edge-ranks-authority",
+      "text": "SourceDecisionEdge ranks source authority. Decision linked support outranks accepted only source claims."
+    },
+    {
+      "id": "note-invalidates-rankdown-stale-source",
+      "decisionId": "invalidates-rankdown-stale-source",
+      "text": "Invalidates rank down stale source. Supersedes and expires edges lower stale source search candidates."
+    },
+    {
+      "id": "note-adopt-link-before-authority",
+      "decisionId": "adopt-link-before-authority",
+      "text": "Adopt link before authority. Use source decision adopt --link before treating retained claims as governed."
+    },
+    {
+      "id": "note-behavior-smoke-not-llm-judge",
+      "decisionId": "behavior-smoke-not-llm-judge",
+      "text": "Behavior smoke not LLM judge. Deterministic eval and docs gates are behavior proof; LLM judge is not."
+    },
+    {
+      "id": "note-codex-adapter-non-mutating-brief",
+      "decisionId": "codex-adapter-non-mutating-brief",
+      "text": "Codex adapter non mutating brief. Rendering a brief must not mutate memory, source, or evidence."
+    },
+    {
+      "id": "note-pattern-intake-consumer-falsifier",
+      "decisionId": "pattern-intake-consumer-falsifier",
+      "text": "Pattern intake needs consumer and falsifier. Keep source mechanism implication decision consumer falsifier."
+    },
+    {
+      "id": "note-no-dashboard-before-brain-proof",
+      "decisionId": "no-dashboard-before-brain-proof",
+      "text": "No dashboard before brain proof. Avoid dashboard API MCP crawler benchmark until kernel usefulness is proven."
+    },
+    {
+      "id": "note-fallow-evidence-not-automatic-truth",
+      "decisionId": "fallow-evidence-not-automatic-truth",
+      "text": "Fallow evidence not automatic truth. Treat dead code findings as review evidence, not deletion authority."
+    },
+    {
+      "id": "note-second-repo-after-first-repo-proof",
+      "decisionId": "second-repo-after-first-repo-proof",
+      "text": "Second repo after first repo proof. Do portability after self repo notes baseline proof."
+    },
+    {
+      "id": "note-notes-baseline-is-real-competitor",
+      "decisionId": "notes-baseline-is-real-competitor",
+      "text": "Notes baseline is real competitor. Compare KRN against Codex plus NOTES.md plus grep."
+    },
+    {
+      "id": "note-compact-root-truth-not-ledger",
+      "decisionId": "compact-root-truth-not-ledger",
+      "text": "Compact root truth not ledger. Keep root GOAL PLAN PLANS compact; archive details elsewhere."
+    },
+    {
+      "id": "note-feedback-forget-real-stale-decision",
+      "decisionId": "feedback-forget-real-stale-decision",
+      "text": "Feedback forget real stale decision. Demote or exclude stale decisions on next activation."
+    },
+    {
+      "id": "note-markdown-runtime-memory",
+      "decisionId": "markdown-runtime-memory",
+      "text": "Markdown runtime memory. Use MEMORY.md files and markdown as active recall system."
+    },
+    {
+      "id": "note-cast-json-record",
+      "decisionId": "cast-json-record",
+      "text": "Cast JSON record directly. Cast metadata as Record and read keys directly."
+    },
+    {
+      "id": "note-prose-second-opinion",
+      "decisionId": "prose-second-opinion",
+      "text": "Prose second opinion approval. A senior sounding markdown review can approve a slice."
+    },
+    {
+      "id": "note-build-worker-daemon-now",
+      "decisionId": "build-worker-daemon-now",
+      "text": "Build worker daemon now. Add scheduler leases retries daemon before product loop."
+    },
+    {
+      "id": "note-accepted-only-source-authority",
+      "decisionId": "accepted-only-source-authority",
+      "text": "Accepted only source authority. Accepted SourceClaims are enough without SourceDecisionEdge."
+    },
+    {
+      "id": "note-dashboard-next",
+      "decisionId": "dashboard-next",
+      "text": "Dashboard next. Build API MCP crawler benchmark before brain proof."
+    },
+    {
+      "id": "note-llm-judge-behavior-proof",
+      "decisionId": "llm-judge-behavior-proof",
+      "text": "LLM judge behavior proof. Use model judge grades as authoritative behavior proof."
+    },
+    {
+      "id": "note-second-repo-before-falsifier",
+      "decisionId": "second-repo-before-falsifier",
+      "text": "Second repo before falsifier. Start portability before notes baseline self proof."
+    },
+    {
+      "id": "note-root-ledger-all-history",
+      "decisionId": "root-ledger-all-history",
+      "text": "Root ledger all history. Put every micro slice and run into active PLAN."
+    },
+    {
+      "id": "note-create-markdown-memory-files",
+      "decisionId": "create-markdown-memory-files",
+      "text": "Create markdown memory files. Persist agent knowledge by writing markdown memory files."
+    },
+    {
+      "id": "note-skip-json-validator",
+      "decisionId": "skip-json-validator",
+      "text": "Skip JSON validator. Tests pass so do not add parser validation for JSON."
+    },
+    {
+      "id": "note-trust-prose-review",
+      "decisionId": "trust-prose-review",
+      "text": "Trust prose review. Let a prose second-opinion review close a slice."
+    },
+    {
+      "id": "note-ship-daemon-without-loop",
+      "decisionId": "ship-daemon-without-loop",
+      "text": "Ship daemon without loop. Add autonomous worker daemon with leases and retries."
+    },
+    {
+      "id": "note-treat-accepted-only-as-governed",
+      "decisionId": "treat-accepted-only-as-governed",
+      "text": "Treat accepted only as governed. Accepted source claims are full authority without edges."
+    },
+    {
+      "id": "note-build-dashboard-first",
+      "decisionId": "build-dashboard-first",
+      "text": "Build dashboard first. Product UI API MCP crawler before brain proof."
+    },
+    {
+      "id": "note-use-llm-judge-as-gate",
+      "decisionId": "use-llm-judge-as-gate",
+      "text": "Use LLM judge as gate. Let uncalibrated LLM judge be the blocking behavior gate."
+    },
+    {
+      "id": "note-portability-before-self-proof",
+      "decisionId": "portability-before-self-proof",
+      "text": "Portability before self proof. Run second repo before self repo notes baseline."
+    },
+    {
+      "id": "note-copy-ledger-into-plan",
+      "decisionId": "copy-ledger-into-plan",
+      "text": "Copy ledger into plan. Put all historical run details into root PLAN."
+    }
+  ],
+  "cases": [
+    {
+      "id": "memory-runtime-task",
+      "task": "For a runtime memory task, should we create markdown memory files or use store backed MemoryRecord SourceClaim evidence?",
+      "expectedDecisionId": "store-backed-memory-no-markdown",
+      "staleDecisionIds": ["markdown-runtime-memory"],
+      "rejectedDecisionIds": ["create-markdown-memory-files"],
+      "baselineFailureRationale": "Notes grep can recall the current line, but it also returns stale and rejected markdown-memory paths without authority status."
+    },
+    {
+      "id": "json-boundary-task",
+      "task": "When parsing CLI DB model JSON metadata, should command code cast Record keys or use unknown first validation?",
+      "expectedDecisionId": "unknown-first-json-boundary",
+      "staleDecisionIds": ["cast-json-record"],
+      "rejectedDecisionIds": ["skip-json-validator"],
+      "baselineFailureRationale": "Notes grep matches both the parser rule and old cast shortcut; only the packet marks the shortcut stale and rejected."
+    },
+    {
+      "id": "second-opinion-task",
+      "task": "After a large slice, can a prose second opinion approval close the work or do we require validated JSON verdict freshness?",
+      "expectedDecisionId": "second-opinion-validated-json",
+      "staleDecisionIds": ["prose-second-opinion"],
+      "rejectedDecisionIds": ["trust-prose-review"],
+      "baselineFailureRationale": "Flat notes recall both review approaches but cannot bind freshness or identify prose review as rejected."
+    },
+    {
+      "id": "worker-runtime-task",
+      "task": "Should we build a worker daemon with scheduler leases retries now or keep preview until a named product loop needs execution?",
+      "expectedDecisionId": "no-worker-daemon-before-loop",
+      "staleDecisionIds": ["build-worker-daemon-now"],
+      "rejectedDecisionIds": ["ship-daemon-without-loop"],
+      "baselineFailureRationale": "Notes grep finds daemon language as easily as the current boundary; KRN carries the stop condition."
+    },
+    {
+      "id": "source-authority-task",
+      "task": "For source search authority, should accepted only claims be enough or should SourceDecisionEdge support rank governed claims?",
+      "expectedDecisionId": "source-decision-edge-ranks-authority",
+      "staleDecisionIds": ["accepted-only-source-authority"],
+      "rejectedDecisionIds": ["treat-accepted-only-as-governed"],
+      "baselineFailureRationale": "Notes grep cannot distinguish accepted-only authority from decision-linked authority without structured status."
+    },
+    {
+      "id": "stale-source-task",
+      "task": "How should invalidates supersedes expires edges affect stale source search candidates?",
+      "expectedDecisionId": "invalidates-rankdown-stale-source",
+      "staleDecisionIds": ["accepted-only-source-authority"],
+      "rejectedDecisionIds": ["treat-accepted-only-as-governed"],
+      "baselineFailureRationale": "Flat notes return stale source authority lines; KRN exposes rank-down and stale caveats."
+    },
+    {
+      "id": "adopt-link-task",
+      "task": "Before treating a retained source claim as governed authority, do we need source decision adopt link?",
+      "expectedDecisionId": "adopt-link-before-authority",
+      "staleDecisionIds": ["accepted-only-source-authority"],
+      "rejectedDecisionIds": ["treat-accepted-only-as-governed"],
+      "baselineFailureRationale": "Notes recall the command and the old accepted-only shortcut; only KRN shows decision-edge requirement."
+    },
+    {
+      "id": "behavior-gate-task",
+      "task": "Should behavior proof rely on deterministic smoke or LLM judge behavior proof?",
+      "expectedDecisionId": "behavior-smoke-not-llm-judge",
+      "staleDecisionIds": ["llm-judge-behavior-proof"],
+      "rejectedDecisionIds": ["use-llm-judge-as-gate"],
+      "baselineFailureRationale": "Notes include the old LLM judge phrase; packet shows it is not proof authority."
+    },
+    {
+      "id": "adapter-boundary-task",
+      "task": "Can Codex adapter rendering mutate memory source or evidence, or is it a non mutating brief renderer?",
+      "expectedDecisionId": "codex-adapter-non-mutating-brief",
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": ["build-dashboard-first"],
+      "baselineFailureRationale": "Notes recall non-mutating adapter behavior, but do not expose what broad product surface work is rejected."
+    },
+    {
+      "id": "pattern-intake-task",
+      "task": "When importing a paper course or practitioner source, what chain makes it retainable: consumer falsifier or impressive source text?",
+      "expectedDecisionId": "pattern-intake-consumer-falsifier",
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": ["copy-ledger-into-plan"],
+      "baselineFailureRationale": "Notes recall the chain but do not expose anti-decoration rejection metadata."
+    },
+    {
+      "id": "surface-expansion-task",
+      "task": "Should we build dashboard API MCP crawler benchmark now or wait until brain proof is stronger?",
+      "expectedDecisionId": "no-dashboard-before-brain-proof",
+      "staleDecisionIds": ["dashboard-next"],
+      "rejectedDecisionIds": ["build-dashboard-first"],
+      "baselineFailureRationale": "Notes grep returns both dashboard-next and no-dashboard rules; KRN marks the expansion as rejected."
+    },
+    {
+      "id": "fallow-cleanup-task",
+      "task": "When Fallow reports dead code, can we delete immediately or treat it as evidence requiring owner proof?",
+      "expectedDecisionId": "fallow-evidence-not-automatic-truth",
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": ["copy-ledger-into-plan"],
+      "baselineFailureRationale": "Notes recall the Fallow rule but do not carry deletion falsifier or review boundary."
+    },
+    {
+      "id": "second-repo-task",
+      "task": "Should second repo dry run happen before self repo notes baseline falsifier or after first repo proof?",
+      "expectedDecisionId": "second-repo-after-first-repo-proof",
+      "staleDecisionIds": ["second-repo-before-falsifier"],
+      "rejectedDecisionIds": ["portability-before-self-proof"],
+      "baselineFailureRationale": "Notes grep recalls both second-repo orderings; KRN marks the premature ordering stale and rejected."
+    },
+    {
+      "id": "notes-baseline-task",
+      "task": "What is the realistic competitor before claiming breakthrough: Codex plus NOTES.md grep or no-memory baseline?",
+      "expectedDecisionId": "notes-baseline-is-real-competitor",
+      "staleDecisionIds": ["second-repo-before-falsifier"],
+      "rejectedDecisionIds": ["portability-before-self-proof"],
+      "baselineFailureRationale": "Notes recall the competitor, but only KRN reports the falsifier and non-proof boundary."
+    },
+    {
+      "id": "root-doc-task",
+      "task": "Should root PLAN become a ledger with all historical run details, or stay compact active truth?",
+      "expectedDecisionId": "compact-root-truth-not-ledger",
+      "staleDecisionIds": ["root-ledger-all-history"],
+      "rejectedDecisionIds": ["copy-ledger-into-plan"],
+      "baselineFailureRationale": "Notes grep returns both compact and ledger advice; KRN records the ledger path as stale and rejected."
+    },
+    {
+      "id": "feedback-forget-task",
+      "task": "How should the brain handle a real stale decision after hurt feedback or superseding evidence?",
+      "expectedDecisionId": "feedback-forget-real-stale-decision",
+      "staleDecisionIds": ["root-ledger-all-history"],
+      "rejectedDecisionIds": ["copy-ledger-into-plan"],
+      "baselineFailureRationale": "Notes recall stale decision language but cannot show next-activation demotion or exclusion intent."
+    },
+    {
+      "id": "adapter-non-mutating-boundary-only-task",
+      "task": "What is the Codex adapter boundary for rendering execution briefs without mutating kernel state?",
+      "expectedDecisionId": "codex-adapter-non-mutating-brief",
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": [],
+      "baselineFailureRationale": "This is a control case: notes recall the same governing decision and KRN has governed boundary metadata, but no stale or rejected-path advantage is applicable."
+    }
+  ]
+}

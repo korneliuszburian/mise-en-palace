@@ -1,7 +1,9 @@
 # Notes-Baseline Eval Design (yb2n)
 
-Status: design for the make-or-break falsifier. The runner/fixture/test come
-after this design is locked.
+Status: implemented make-or-break falsifier. The runner, fixture, and tests are
+`packages/cli/src/runNotesBaselineEval.ts`,
+`tests/fixtures/notes-baseline/decision-packet-vs-notes.json`, and
+`packages/cli/src/__tests__/notesBaselineEval.test.ts`.
 
 ## The Subtle Question This Eval Must Answer
 
@@ -70,14 +72,10 @@ decisions, deterministically. It does NOT prove live Codex would obey the
 packet, that an operator would pay, or broad advantage across arbitrary repos
 (second-repo is `mise-en-palace-v4e9`).
 
-## Open Build Questions (resolve before coding)
+## Resolved Build Decisions
 
-- Reuse the existing `runMemoryAdvantageEval` harness/runner shape, or a sibling
-  runner? Lean: sibling runner (`runNotesBaselineEval`) so the notes-corpus and
+- Runner: sibling runner (`runNotesBaselineEval`) so the notes-corpus and
   scoring do not entangle the memory-eval fixture.
-- Where does the NOTES corpus live? A fixture file
-  `tests/fixtures/notes-baseline/*.json` mirroring the source-graph-ranking
-  fixture pattern.
-- Live DB vs in-memory? Lean: in-memory store via the same
-  `createMemoryAdvantageRuntime`-style fake, so it is deterministic and CI-safe
-  (the live-DB advantage is already proven in `db:smoke:real-recall-advantage`).
+- Corpus: `tests/fixtures/notes-baseline/decision-packet-vs-notes.json`.
+- Runtime: deterministic in-memory fixture, not live DB. The live-DB advantage
+  remains covered by `db:smoke:real-recall-advantage`.

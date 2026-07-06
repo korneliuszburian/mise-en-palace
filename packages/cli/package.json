@@ -9,7 +9,8 @@
     "eval:source-graph-ranking": "tsx src/runSourceGraphRankingEval.ts ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json",
     "eval:memory-advantage": "tsx src/runMemoryAdvantageEval.ts ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json",
     "eval:codex-output-comparator": "tsx src/runCodexOutputComparatorEval.ts ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json",
-    "eval:determinism": "tsx src/runDeterministicEval.ts ../../tests/fixtures/brain-ranking/brain-ranking-eval.json ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json",
+    "eval:notes-baseline": "tsx src/runNotesBaselineEval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+    "eval:determinism": "tsx src/runDeterministicEval.ts ../../tests/fixtures/brain-ranking/brain-ranking-eval.json ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "typecheck:tests:clean": "tsc -p tsconfig.tests.clean.json"

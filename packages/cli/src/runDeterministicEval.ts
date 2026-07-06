@@ -11,6 +11,10 @@ import {
   runMemoryAdvantageEval
 } from "./runMemoryAdvantageEval.js";
 import {
+  loadNotesBaselineEvalFixture,
+  runNotesBaselineEval
+} from "./runNotesBaselineEval.js";
+import {
   loadSourceGraphRankingEvalFixture,
   runSourceGraphRankingEval
 } from "./runSourceGraphRankingEval.js";
@@ -61,6 +65,7 @@ export const runDeterministicEval = async (input: {
   brainRankingFixturePath: string;
   sourceGraphRankingFixturePath: string;
   memoryAdvantageFixturePath: string;
+  notesBaselineFixturePath: string;
 }): Promise<DeterministicEvalResult> => {
   const brainRankingFixture = loadBrainRankingEvalFixture(input.brainRankingFixturePath);
   const firstBrainRanking = await runBrainRankingEval(brainRankingFixture);
@@ -75,6 +80,10 @@ export const runDeterministicEval = async (input: {
   const memoryAdvantageFixture = loadMemoryAdvantageEvalFixture(input.memoryAdvantageFixturePath);
   const firstMemoryAdvantage = await runMemoryAdvantageEval(memoryAdvantageFixture);
   const secondMemoryAdvantage = await runMemoryAdvantageEval(memoryAdvantageFixture);
+
+  const notesBaselineFixture = loadNotesBaselineEvalFixture(input.notesBaselineFixturePath);
+  const firstNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
+  const secondNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
 
   const checks = [
     deterministicCheck({
@@ -94,6 +103,12 @@ export const runDeterministicEval = async (input: {
       kind: firstMemoryAdvantage.kind,
       first: firstMemoryAdvantage,
       second: secondMemoryAdvantage
+    }),
+    deterministicCheck({
+      id: "notes-baseline",
+      kind: firstNotesBaseline.kind,
+      first: firstNotesBaseline,
+      second: secondNotesBaseline
     })
   ];
   const status = checks.every((check) => check.status === "pass") ? "pass" : "fail";
@@ -107,6 +122,7 @@ export const runDeterministicEval = async (input: {
         "fixed brain-ranking fixture output is bit-identical across consecutive runs",
         "fixed source-graph-ranking fixture output is bit-identical across consecutive runs",
         "fixed company-pattern memory-advantage fixture output is bit-identical across consecutive runs",
+        "fixed notes-baseline fixture output is bit-identical across consecutive runs",
         "retrieval/context proxy evals are stable enough to serve as a regression gate"
       ],
       doesNotProve: [
@@ -127,10 +143,13 @@ const main = async (): Promise<DeterministicEvalResult> => {
     process.argv[3] ?? "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json";
   const memoryAdvantageFixturePath =
     process.argv[4] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
+  const notesBaselineFixturePath =
+    process.argv[5] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
   return runDeterministicEval({
     brainRankingFixturePath,
     sourceGraphRankingFixturePath,
-    memoryAdvantageFixturePath
+    memoryAdvantageFixturePath,
+    notesBaselineFixturePath
   });
 };
 
