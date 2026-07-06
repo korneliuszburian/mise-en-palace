@@ -17,6 +17,9 @@ const memoryAdvantageFixturePath = fileURLToPath(
 const notesBaselineFixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json", import.meta.url)
 );
+const secondRepoDecisionPacketFixturePath = fileURLToPath(
+  new URL("../../../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json", import.meta.url)
+);
 
 describe("runDeterministicEval", () => {
   it("passes when ranking eval fixtures produce bit-identical consecutive output", async () => {
@@ -24,7 +27,8 @@ describe("runDeterministicEval", () => {
       brainRankingFixturePath,
       sourceGraphRankingFixturePath,
       memoryAdvantageFixturePath,
-      notesBaselineFixturePath
+      notesBaselineFixturePath,
+      secondRepoDecisionPacketFixturePath
     });
 
     expect(result).toMatchObject({
@@ -60,6 +64,12 @@ describe("runDeterministicEval", () => {
           identical: true,
           firstStatus: "pass",
           secondStatus: "pass"
+        },
+        {
+          id: "second-repo-decision-packet",
+          identical: true,
+          firstStatus: "pass",
+          secondStatus: "pass"
         }
       ]
     });
@@ -74,6 +84,9 @@ describe("runDeterministicEval", () => {
     );
     expect(result.proof.proves).toContain(
       "fixed decision-packet fixture output is bit-identical across consecutive runs"
+    );
+    expect(result.proof.proves).toContain(
+      "fixed second-repo decision-packet fixture output is bit-identical across consecutive runs"
     );
     expect(result.proof.doesNotProve).toContain("arbitrary company-pattern memory advantage");
   });

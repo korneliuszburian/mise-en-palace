@@ -11,8 +11,9 @@
     "eval:codex-output-comparator": "tsx src/runCodexOutputComparatorEval.ts ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json",
     "eval:notes-baseline": "tsx src/runNotesBaselineEval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
     "eval:decision-packet": "tsx src/runDecisionPacketEval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+    "eval:second-repo-decision-packet": "tsx src/runSecondRepoDecisionPacketEval.ts ../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json",
     "eval:corpus-closure": "tsx src/runCorpusClosureSmoke.ts",
-    "eval:determinism": "tsx src/runDeterministicEval.ts ../../tests/fixtures/brain-ranking/brain-ranking-eval.json ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+    "eval:determinism": "tsx src/runDeterministicEval.ts ../../tests/fixtures/brain-ranking/brain-ranking-eval.json ../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json ../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json ../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "typecheck:tests:clean": "tsc -p tsconfig.tests.clean.json"

@@ -18,6 +18,9 @@ import {
   runNotesBaselineEval
 } from "./runNotesBaselineEval.js";
 import {
+  runSecondRepoDecisionPacketEval
+} from "./runSecondRepoDecisionPacketEval.js";
+import {
   loadSourceGraphRankingEvalFixture,
   runSourceGraphRankingEval
 } from "./runSourceGraphRankingEval.js";
@@ -69,6 +72,7 @@ export const runDeterministicEval = async (input: {
   sourceGraphRankingFixturePath: string;
   memoryAdvantageFixturePath: string;
   notesBaselineFixturePath: string;
+  secondRepoDecisionPacketFixturePath: string;
 }): Promise<DeterministicEvalResult> => {
   const brainRankingFixture = loadBrainRankingEvalFixture(input.brainRankingFixturePath);
   const firstBrainRanking = await runBrainRankingEval(brainRankingFixture);
@@ -89,6 +93,12 @@ export const runDeterministicEval = async (input: {
   const secondNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
   const firstDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
   const secondDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
+  const firstSecondRepoDecisionPacket = runSecondRepoDecisionPacketEval(
+    input.secondRepoDecisionPacketFixturePath
+  );
+  const secondSecondRepoDecisionPacket = runSecondRepoDecisionPacketEval(
+    input.secondRepoDecisionPacketFixturePath
+  );
 
   const checks = [
     deterministicCheck({
@@ -120,6 +130,12 @@ export const runDeterministicEval = async (input: {
       kind: firstDecisionPacket.kind,
       first: firstDecisionPacket,
       second: secondDecisionPacket
+    }),
+    deterministicCheck({
+      id: "second-repo-decision-packet",
+      kind: firstSecondRepoDecisionPacket.kind,
+      first: firstSecondRepoDecisionPacket,
+      second: secondSecondRepoDecisionPacket
     })
   ];
   const status = checks.every((check) => check.status === "pass") ? "pass" : "fail";
@@ -135,6 +151,7 @@ export const runDeterministicEval = async (input: {
         "fixed company-pattern memory-advantage fixture output is bit-identical across consecutive runs",
         "fixed notes-baseline fixture output is bit-identical across consecutive runs",
         "fixed decision-packet fixture output is bit-identical across consecutive runs",
+        "fixed second-repo decision-packet fixture output is bit-identical across consecutive runs",
         "retrieval/context proxy evals are stable enough to serve as a regression gate"
       ],
       doesNotProve: [
@@ -157,11 +174,14 @@ const main = async (): Promise<DeterministicEvalResult> => {
     process.argv[4] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
   const notesBaselineFixturePath =
     process.argv[5] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
+  const secondRepoDecisionPacketFixturePath =
+    process.argv[6] ?? "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json";
   return runDeterministicEval({
     brainRankingFixturePath,
     sourceGraphRankingFixturePath,
     memoryAdvantageFixturePath,
-    notesBaselineFixturePath
+    notesBaselineFixturePath,
+    secondRepoDecisionPacketFixturePath
   });
 };
 
