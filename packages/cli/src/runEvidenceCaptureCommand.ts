@@ -8,7 +8,7 @@ import {
 import type {
   DiffRisk,
   EvidenceCommand,
-  NormalizedEvidenceCommand,
+  EvidenceCommandReadback,
   MemoryCandidate,
   PatternUsefulnessOutcomeFeedback,
   SourceDecision,
@@ -18,7 +18,7 @@ import type {
 } from "@krn/core";
 import {
   assessCandidateReviewability,
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
 import type {
@@ -368,7 +368,7 @@ const defaultCommands = (): EvidenceCommand[] => [
 ];
 
 const renderCommand = (command: EvidenceCommand): string => {
-  const evidenceCommand = normalizeEvidenceCommand(command);
+  const evidenceCommand = toEvidenceCommandReadback(command);
 
   return [
     `${evidenceCommand.command}: ${evidenceCommand.status}`,
@@ -383,11 +383,11 @@ const renderCommand = (command: EvidenceCommand): string => {
   ].join(" | ");
 };
 
-const hasWeakCommandProvenance = (commands: readonly NormalizedEvidenceCommand[]): boolean =>
+const hasWeakCommandProvenance = (commands: readonly EvidenceCommandReadback[]): boolean =>
   commands.some((command) => command.kind === "default_template");
 
-const normalizeCommands = (commands: readonly EvidenceCommand[]): NormalizedEvidenceCommand[] =>
-  commands.map(normalizeEvidenceCommand);
+const normalizeCommands = (commands: readonly EvidenceCommand[]): EvidenceCommandReadback[] =>
+  commands.map(toEvidenceCommandReadback);
 
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
   runtime.persist ? postgresPersistedLabel : "disabled (explicit printed-only preview; use --persist to write)";
@@ -708,7 +708,7 @@ const buildEvidenceBundleInput = (
   runId: string,
   changedFiles: readonly ChangedFile[],
   classification: ChangedFileClassification,
-  commands: NormalizedEvidenceCommand[],
+  commands: EvidenceCommandReadback[],
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
@@ -829,7 +829,7 @@ const currentEvidenceRefsForUsefulness = (
   evidenceBundleId: string,
   reviewAssessmentId: string,
   changedFiles: readonly ChangedFile[],
-  commands: readonly NormalizedEvidenceCommand[]
+  commands: readonly EvidenceCommandReadback[]
 ): ReadonlySet<string> =>
   new Set([
     evidenceBundleId,
@@ -844,7 +844,7 @@ const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
   classification: ChangedFileClassification,
-  commands: NormalizedEvidenceCommand[],
+  commands: EvidenceCommandReadback[],
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,

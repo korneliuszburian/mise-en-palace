@@ -106,19 +106,19 @@ export interface TargetEvidence {
   doesNotProve: string[];
 }
 
-interface BaseNormalizedEvidenceCommand {
+interface BaseEvidenceCommandReadback {
   command: string;
   provenance: EvidenceCommandProvenance;
   doesNotProve: string;
 }
 
-export interface DefaultTemplateEvidenceCommand extends BaseNormalizedEvidenceCommand {
+export interface DefaultTemplateEvidenceCommand extends BaseEvidenceCommandReadback {
   kind: "default_template";
   status: "skipped" | "not_run";
   provenance: "default_template";
 }
 
-export interface OperatorReportedEvidenceCommand extends BaseNormalizedEvidenceCommand {
+export interface OperatorReportedEvidenceCommand extends BaseEvidenceCommandReadback {
   kind: "operator_reported";
   status: EvidenceCommandStatus;
   provenance: "operator_reported";
@@ -127,7 +127,7 @@ export interface OperatorReportedEvidenceCommand extends BaseNormalizedEvidenceC
   assertedBy?: string;
 }
 
-export interface CapturedOutputFileEvidenceCommand extends BaseNormalizedEvidenceCommand {
+export interface CapturedOutputFileEvidenceCommand extends BaseEvidenceCommandReadback {
   kind: "captured_output_file";
   status: EvidenceCommandStatus;
   provenance: "captured_output_file";
@@ -138,7 +138,7 @@ export interface CapturedOutputFileEvidenceCommand extends BaseNormalizedEvidenc
   assertedBy?: string;
 }
 
-export interface CommandRunnerEvidenceCommand extends BaseNormalizedEvidenceCommand {
+export interface CommandRunnerEvidenceCommand extends BaseEvidenceCommandReadback {
   kind: "command_runner";
   status: "passed" | "failed";
   provenance: "command_runner";
@@ -147,7 +147,7 @@ export interface CommandRunnerEvidenceCommand extends BaseNormalizedEvidenceComm
   outputRef?: string;
 }
 
-export interface ExternalLogEvidenceCommand extends BaseNormalizedEvidenceCommand {
+export interface ExternalLogEvidenceCommand extends BaseEvidenceCommandReadback {
   kind: "external_log";
   status: EvidenceCommandStatus;
   provenance: "external_log";
@@ -156,7 +156,7 @@ export interface ExternalLogEvidenceCommand extends BaseNormalizedEvidenceComman
   capturedAt?: IsoTimestamp;
 }
 
-export type NormalizedEvidenceCommand =
+export type EvidenceCommandReadback =
   | DefaultTemplateEvidenceCommand
   | OperatorReportedEvidenceCommand
   | CapturedOutputFileEvidenceCommand
@@ -500,9 +500,9 @@ const normalizeDefaultTemplateCommand = (
   }
 );
 
-export const normalizeEvidenceCommand = (
+export const toEvidenceCommandReadback = (
   command: EvidenceCommand
-): NormalizedEvidenceCommand => {
+): EvidenceCommandReadback => {
   const provenance = command.provenance ?? inferCommandProvenance(command);
   const outputRef = normalizedCommandOutputRef(command);
   const doesNotProve = normalizedCommandDoesNotProve(command, provenance);

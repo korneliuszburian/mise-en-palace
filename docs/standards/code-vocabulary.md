@@ -25,6 +25,17 @@ domain vocabulary, discriminated unions where they buy safety, explicit public
 types, `as const` for narrow vocabularies, unknown-first IO boundaries, and no
 type weakening to move faster.
 
+External style sources used by this standard are mechanisms, not authority by
+themselves:
+
+- Google's TypeScript style guide: names should be descriptive and clear to a
+  new reader, with ambiguous abbreviations avoided.
+- Microsoft's TypeScript coding guidelines: type names use PascalCase,
+  functions/properties/locals use camelCase, and whole words are preferred when
+  possible.
+- `@typescript-eslint/naming-convention`: naming rules can be automated, but a
+  linter cannot decide whether a KRN name overclaims authority.
+
 ## Authority Ladder
 
 Use the weakest accurate verb.
@@ -99,9 +110,9 @@ Avoid:
 ## Package Authority
 
 - `packages/core`: pure domain contracts and pure helpers only. No DB, CLI,
-  filesystem, process, network, Zod, Drizzle, or runtime authority.
-- `packages/schema`: IO validation. External inputs become domain-safe values
-  here or in local boundary parsers.
+  filesystem, process, network, Drizzle, or runtime authority. Zod is allowed
+  only under `packages/core/src/parsing/`, where pure parsers live beside the
+  domain types they validate after the `@krn/schema` package deletion.
 - `packages/db`: Drizzle schema, migrations, repositories, and persistence
   invariants.
 - `packages/harness`: planning, activation, review gates, selection, and

@@ -12,7 +12,7 @@ import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories";
 import {
-  normalizeEvidenceCommand
+  toEvidenceCommandReadback
 } from "@krn/core";
 import {
   assertBrainStoreReady,
@@ -397,7 +397,7 @@ const commandsAreWeakDefaultNotRun = (
   evidenceBundle: EvidenceReadbackBundle | undefined
 ): boolean =>
   evidenceBundle?.commands.every((command) => {
-    const evidenceCommand = normalizeEvidenceCommand(command);
+    const evidenceCommand = toEvidenceCommandReadback(command);
 
     return evidenceCommand.status === "not_run" && evidenceCommand.provenance === "default_template";
   }) ?? false;

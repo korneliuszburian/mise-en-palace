@@ -12,7 +12,7 @@ import type {
   ExecutionRun,
   FeedbackDelta,
   HarnessPlan,
-  NormalizedEvidenceCommand,
+  EvidenceCommandReadback,
   OperatorIntent,
   OperatorIntentSource,
   ReviewAssessment,
@@ -27,7 +27,7 @@ import type {
 } from "@krn/core";
 import {
   evidenceCommandStatuses,
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   sourceTrustTiers
 } from "@krn/core";
 import type {
@@ -273,9 +273,9 @@ const optionalEvidenceCommandFields = (
   };
 };
 
-const normalizedEvidenceCommandOrUndefined = (
+const evidenceCommandReadbackOrUndefined = (
   item: unknown
-): NormalizedEvidenceCommand | undefined => {
+): EvidenceCommandReadback | undefined => {
   if (!isRecord(item) || typeof item.command !== "string") {
     return undefined;
   }
@@ -286,20 +286,20 @@ const normalizedEvidenceCommandOrUndefined = (
     return undefined;
   }
 
-  return normalizeEvidenceCommand({
+  return toEvidenceCommandReadback({
     command: item.command,
     status,
     ...optionalEvidenceCommandFields(item)
   });
 };
 
-const evidenceCommandsOrEmpty = (value: unknown): NormalizedEvidenceCommand[] => {
+const evidenceCommandsOrEmpty = (value: unknown): EvidenceCommandReadback[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((item): NormalizedEvidenceCommand[] => {
-    const command = normalizedEvidenceCommandOrUndefined(item);
+  return value.flatMap((item): EvidenceCommandReadback[] => {
+    const command = evidenceCommandReadbackOrUndefined(item);
 
     return command === undefined ? [] : [command];
   });

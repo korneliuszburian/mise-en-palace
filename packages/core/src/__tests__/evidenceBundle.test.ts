@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   normalizeTargetEvidence,
   parseEvidenceBundleMetadataReadback,
   targetEvidenceFromMetadata,
@@ -46,7 +46,7 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
 
 describe("evidence bundle completeness", () => {
   test("normalizes legacy command rows with weak default provenance", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm test",
       status: "skipped"
     })).toEqual({
@@ -60,7 +60,7 @@ describe("evidence bundle completeness", () => {
   });
 
   test("normalizes captured output command rows with explicit limits", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm typecheck",
       status: "passed",
       exitCode: 0,
@@ -79,7 +79,7 @@ describe("evidence bundle completeness", () => {
   });
 
   test("normalizes operator-reported command rows", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm test",
       status: "failed",
       provenance: "operator_reported",
@@ -98,7 +98,7 @@ describe("evidence bundle completeness", () => {
   });
 
   test("normalizes external-log command rows with output refs", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "KRN CI",
       status: "passed",
       provenance: "external_log",
@@ -117,7 +117,7 @@ describe("evidence bundle completeness", () => {
   });
 
   test("does not allow weak default provenance to become passed proof", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm test",
       status: "passed",
       provenance: "default_template"
@@ -132,7 +132,7 @@ describe("evidence bundle completeness", () => {
   });
 
   test("normalizes command-runner rows only when runner proof fields exist", () => {
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm typecheck",
       status: "passed",
       provenance: "command_runner",
@@ -149,7 +149,7 @@ describe("evidence bundle completeness", () => {
         "This command result does not prove memory quality, source truth, review correctness, or production readiness."
     });
 
-    expect(normalizeEvidenceCommand({
+    expect(toEvidenceCommandReadback({
       command: "pnpm typecheck",
       status: "passed",
       provenance: "command_runner",

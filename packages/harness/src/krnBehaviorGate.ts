@@ -13,7 +13,7 @@ import {
   assessReflectionOutputContract,
   buildSourceArtifactPreviewChunks,
   extractLocalSourceCandidates,
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   sourceArtifactLines
 } from "@krn/core";
 
@@ -542,11 +542,11 @@ const runObservationPrefixSourceRangeRejection = (now: string): BehaviorFixtureP
 };
 
 const runEvidenceCommandProvenance = (_now: string): BehaviorFixtureProof => {
-  const weakDefault = normalizeEvidenceCommand({
+  const weakDefault = toEvidenceCommandReadback({
     command: "pnpm test",
     status: "not_run"
   });
-  const operatorReported = normalizeEvidenceCommand({
+  const operatorReported = toEvidenceCommandReadback({
     command: "pnpm typecheck",
     status: "passed",
     provenance: "operator_reported",

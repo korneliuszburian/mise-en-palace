@@ -1,5 +1,5 @@
 import {
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   readMetadataObjectList,
   readMetadataString,
   readMetadataStringList,
@@ -17,7 +17,7 @@ import type {
   EvidenceCommand,
   FeedbackDelta,
   FeedbackCandidateProposalKind,
-  NormalizedEvidenceCommand,
+  EvidenceCommandReadback,
   SourceTrustTier,
   SourceUsefulnessOutcome,
   TargetEvidence
@@ -55,7 +55,7 @@ export type RunReadbackOutputFormat = "text" | "json";
 export interface RunReadbackCommandResource {
   command: string;
   status: EvidenceCommand["status"];
-  provenance: NormalizedEvidenceCommand["provenance"];
+  provenance: EvidenceCommandReadback["provenance"];
   doesNotProve: string;
 }
 
@@ -370,7 +370,7 @@ const metadataArrayLength = (
 };
 
 const renderCommand = (command: EvidenceCommand): string[] => {
-  const commandReadback = normalizeEvidenceCommand(command);
+  const commandReadback = toEvidenceCommandReadback(command);
 
   return [
     `- ${commandReadback.command}: ${commandReadback.status} | provenance=${commandReadback.provenance}`,
@@ -458,7 +458,7 @@ const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): strin
 };
 
 const commandResource = (command: EvidenceCommand): RunReadbackCommandResource => {
-  const commandReadback = normalizeEvidenceCommand(command);
+  const commandReadback = toEvidenceCommandReadback(command);
 
   return {
     command: commandReadback.command,

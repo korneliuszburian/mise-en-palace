@@ -3,7 +3,7 @@ import type {
   EvidenceCommand
 } from "../evidenceBundle.js";
 import {
-  normalizeEvidenceCommand
+  toEvidenceCommandReadback
 } from "../evidenceBundle.js";
 import {
   MetadataSchema,
@@ -43,7 +43,7 @@ const EvidenceCommandInputSchema = z.object({
 
 type EvidenceCommandInput = z.infer<typeof EvidenceCommandInputSchema>;
 
-const normalizeEvidenceCommandInput = (command: EvidenceCommandInput) => {
+const evidenceCommandInputToReadback = (command: EvidenceCommandInput) => {
   const evidenceCommand: EvidenceCommand = {
     command: command.command,
     status: command.status
@@ -78,7 +78,7 @@ const normalizeEvidenceCommandInput = (command: EvidenceCommandInput) => {
     evidenceCommand.doesNotProve = command.doesNotProve;
   }
 
-  return normalizeEvidenceCommand(evidenceCommand);
+  return toEvidenceCommandReadback(evidenceCommand);
 };
 
 export const EvidenceCommandSchema = EvidenceCommandInputSchema.superRefine(
@@ -97,7 +97,7 @@ export const EvidenceCommandSchema = EvidenceCommandInputSchema.superRefine(
       path: ["kind"]
     });
   }
-}).transform(normalizeEvidenceCommandInput);
+}).transform(evidenceCommandInputToReadback);
 
 export const DiffRiskSchema = z.enum(["low", "medium", "high"]);
 

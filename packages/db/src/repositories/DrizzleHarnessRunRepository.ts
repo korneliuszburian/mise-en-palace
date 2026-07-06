@@ -10,13 +10,13 @@ import type {
   ExecutionRun,
   FeedbackDelta,
   HarnessPlan,
-  NormalizedEvidenceCommand,
+  EvidenceCommandReadback,
   OperatorIntent,
   ReviewAssessment,
   TaskContract
 } from "@krn/core";
 import {
-  normalizeEvidenceCommand,
+  toEvidenceCommandReadback,
   readMetadataString
 } from "@krn/core";
 import {
@@ -81,8 +81,8 @@ const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
 
 export const evidenceCommandsForPersistence = (
   commands: readonly EvidenceCommand[]
-): NormalizedEvidenceCommand[] =>
-  commands.map(normalizeEvidenceCommand);
+): EvidenceCommandReadback[] =>
+  commands.map(toEvidenceCommandReadback);
 
 export const validateEvidenceBundleInputForPersistence = (
   input: CreateEvidenceBundleInput

@@ -151,7 +151,7 @@ const task: BehaviorFixture = {
         severity: "blocking",
         title: "weak command evidence masquerades as proof",
         mustNot: "EvidenceBundle command rows must not lose default_template versus operator_reported provenance.",
-        detection: "normalizeEvidenceCommand returns indistinguishable provenance for default and operator-reported rows."
+        detection: "toEvidenceCommandReadback returns indistinguishable provenance for default and operator-reported rows."
       }],
       sourceRefs: ["packages/core/src/evidenceBundle.ts"],
       metadata: {}
