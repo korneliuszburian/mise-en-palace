@@ -2,10 +2,6 @@ import type {
   Sql
 } from "postgres";
 import {
-  codexHookPhases,
-  skillRoutingPatternRef
-} from "@krn/codex-adapter";
-import {
   runMigrationReadinessCheck,
   smokeFixtureClocks
 } from "@krn/db/dev";
@@ -77,13 +73,6 @@ const sameStringList = (
 ): boolean =>
   actual.length === expected.length &&
   actual.every((value, index) => value === expected[index]);
-
-const hasRenderedSkillRoutingPatternRefs = (rendered: RenderedCodexBrief): boolean =>
-  rendered.brief.skillBindingHints.length > 0 &&
-  rendered.brief.skillBindingHints.every((hint) =>
-    hint.patternRefs.includes(skillRoutingPatternRef)
-  ) &&
-  rendered.renderedBrief.includes(`patterns=${skillRoutingPatternRef}`);
 
 const countMarkerRows = async (
   client: Sql,
@@ -181,8 +170,7 @@ const renderedBriefCoversContract = (
   rendered.renderedBrief.includes("Evidence Contract:") &&
   rendered.evidenceContract.commands.every((command) =>
     rendered.renderedBrief.includes(command.command)
-  ) &&
-  hasRenderedSkillRoutingPatternRefs(rendered);
+  );
 
 const assertCodexAdapterBoundary = (
   input: {
@@ -226,13 +214,6 @@ const assertCodexAdapterBoundary = (
         expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
         rendered: input.rendered
       })
-    },
-    {
-      label: "hook-phases",
-      passed: sameStringList(
-        input.rendered.brief.hookExpectations.map((expectation) => expectation.phase),
-        codexHookPhases
-      )
     },
     { label: "no-codex-invocation", passed: codexInvocationCount === 0 }
   ];

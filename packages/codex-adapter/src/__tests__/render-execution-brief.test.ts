@@ -18,9 +18,6 @@ import {
 import {
   executionBriefFormatVersion
 } from "../contracts.js";
-import {
-  createCodexSkillBindingHints
-} from "../skill-binding-hints.js";
 
 const createdAt = "2026-06-21T12:00:00.000Z";
 
@@ -236,30 +233,18 @@ describe("renderExecutionBrief", () => {
     expect(brief.stopCondition).toBe("Stop before Codex execution or hidden state mutation.");
     expect(brief.rollbackExpectation).toBe(evidenceContract.rollbackPath);
     expect(brief.doesNotProve).toContain("Codex executed the work.");
-    expect(brief.skillBindingHints.every((hint) =>
-      hint.patternRefs.includes("pattern:codex-skill-progressive-disclosure-routing")
-    )).toBe(true);
 
     const profile = describeExecutionBriefProfile(brief);
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 21,
+      maxRenderedSections: 19,
       maxRenderedItems: 80,
       status: "within_budget"
     });
-    expect(profile.sections.find((section) => section.id === "mcp_resource_refs")).toMatchObject({
-      kind: "reserved",
-      rendered: false,
-      itemCount: 0,
-      emptyBehavior: "omit_when_empty"
-    });
-    expect(profile.sections.find((section) => section.id === "subagent_probe_hints")).toMatchObject({
-      kind: "reserved",
-      rendered: false,
-      itemCount: 0,
-      emptyBehavior: "omit_when_empty"
-    });
+    expect(profile.sections.find((section) => section.id === "mcp_resource_refs")).toBeUndefined();
+    expect(profile.sections.find((section) => section.id === "subagent_probe_hints")).toBeUndefined();
+    expect(profile.sections.find((section) => section.id === "hook_expectations")).toBeUndefined();
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
       kind: "diagnostic",
       rendered: true,
@@ -313,22 +298,19 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
     expect(rendered).toContain(`Review burden: ${evidenceContract.reviewBurden}`);
-    expect(rendered).toContain("Skill Binding Hints:");
-    expect(rendered).toContain("- activation-engine");
-    expect(rendered).toContain("patterns=pattern:codex-skill-progressive-disclosure-routing");
+    expect(rendered).not.toContain("Skill Binding Hints:");
+    expect(rendered).not.toContain("patterns=pattern:codex-skill-progressive-disclosure-routing");
     expect(rendered).not.toContain("select-kernel-patterns");
     expect(rendered).not.toContain("MCP Resource Refs:");
     expect(rendered).not.toContain("Subagent Probe Hints:");
-    expect(rendered).toContain("Hook Expectations:");
-    expect(rendered).toContain(
-      "PreToolUse | action=warn_or_deny | required=true | applies_to=destructive paths, generated files, untrusted selected context, destructive/write approval, tool boundary notes"
-    );
+    expect(rendered).not.toContain("Hook Expectations:");
+    expect(rendered).not.toContain("PreToolUse | action=warn_or_deny");
     expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
     expect(rendered).toContain(`Rollback Expectation: ${evidenceContract.rollbackPath}`);
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
-    expect(rendered).toContain("- MCP resources exist.");
+    expect(rendered).not.toContain("- MCP resources exist.");
     expect(rendered).toContain("Goal: canonical harness spine");
     expect(rendered).toContain(
       "- Goal: canonical harness spine | objective=Make doctor report Postgres memory and source graph readiness | status=active"
@@ -363,52 +345,6 @@ describe("renderExecutionBrief", () => {
 
     expect(profile.budget.renderedItems).toBeGreaterThan(profile.budget.maxRenderedItems);
     expect(profile.budget.status).toBe("over_budget");
-  });
-
-  it("renders reserved future-hook sections only when populated", () => {
-    const brief = {
-      ...createExecutionBrief({
-        taskContract,
-        harnessPlan,
-        contextAssembly,
-        capabilityPlan,
-        evidenceContract,
-        nextAction: "Implement the smallest missing doctor check."
-      }),
-      mcpResourceRefs: [{
-        name: "run-ledger",
-        purpose: "Future typed read-only access to persisted run evidence.",
-        access: "future_reference" as const,
-        doesNotGrant: ["memory mutation", "Codex execution"]
-      }],
-      subagentProbeHints: [{
-        name: "ts-type-critic",
-        mode: "read_only" as const,
-        purpose: "Review TypeScript public boundaries.",
-        trigger: "broad TypeScript contract change",
-        allowedActions: ["inspect", "propose"]
-      }]
-    };
-    const profile = describeExecutionBriefProfile(brief);
-    const rendered = renderExecutionBriefText(brief);
-
-    expect(profile.sections.find((section) => section.id === "mcp_resource_refs")).toMatchObject({
-      kind: "reserved",
-      rendered: true,
-      itemCount: 1,
-      emptyBehavior: "omit_when_empty"
-    });
-    expect(profile.sections.find((section) => section.id === "subagent_probe_hints")).toMatchObject({
-      kind: "reserved",
-      rendered: true,
-      itemCount: 1,
-      emptyBehavior: "omit_when_empty"
-    });
-    expect(rendered).toContain("- required=title, format_version, objective");
-    expect(rendered).toContain("MCP Resource Refs:");
-    expect(rendered).toContain("- run-ledger | access=future_reference");
-    expect(rendered).toContain("Subagent Probe Hints:");
-    expect(rendered).toContain("- ts-type-critic | mode=read_only");
   });
 
   it("warns when selected context is not a trusted tier", () => {
@@ -460,63 +396,4 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("What This Does Not Prove:");
   });
 
-  it("renders focused skill hints for memory source audit capabilities", () => {
-    const hints = createCodexSkillBindingHints({
-      ...capabilityPlan,
-      requirements: [
-        {
-          kind: "schema_design",
-          priority: "required",
-          reason: "Memory schema changes require brain-store schema discipline.",
-          requiredEvidence: ["schema/domain tests"]
-        },
-        {
-          kind: "db_migration",
-          priority: "required",
-          reason: "Memory persistence changes require DB readiness proof.",
-          requiredEvidence: ["pnpm db:ready"]
-        },
-        {
-          kind: "source_grounding",
-          priority: "required",
-          reason: "Architecture decisions require source-to-decision evidence.",
-          requiredEvidence: ["source claim"]
-        },
-        {
-          kind: "evidence_capture",
-          priority: "required",
-          reason: "Audit work requires reviewable evidence.",
-          requiredEvidence: ["audit slice"]
-        },
-        {
-          kind: "review_capture",
-          priority: "required",
-          reason: "Review output must become candidates, not direct authority.",
-          requiredEvidence: ["feedback delta"]
-        },
-        {
-          kind: "context_abstention",
-          priority: "recommended",
-          reason: "Context abstention is useful when weak context appears.",
-          requiredEvidence: ["abstention readback"]
-        }
-      ]
-    });
-
-    expect(hints.map((hint) => hint.skillName)).toEqual(expect.arrayContaining([
-      "brain-store-schema",
-      "source-to-decision",
-      "evidence-review-loop"
-    ]));
-    expect(hints.every((hint) =>
-      hint.patternRefs.includes("pattern:codex-skill-progressive-disclosure-routing")
-    )).toBe(true);
-    expect(hints.find((hint) => hint.capabilityKind === "context_abstention")).toMatchObject({
-      priority: "recommended",
-      skillName: "activation-engine"
-    });
-    expect(hints.find((hint) => hint.capabilityKind === "schema_design")).toMatchObject({
-      priority: "required"
-    });
-  });
 });

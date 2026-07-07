@@ -279,10 +279,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- memory-record-1");
     expect(result.stdout).toContain("Anti-memory Warnings:");
     expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
-    expect(result.stdout).toContain("unknown-first boundary check");
-    expect(result.stdout).toContain("no type weakening");
-    expect(result.stdout).toContain("diff risk summary");
-    expect(result.stdout).toContain("review-risk notes");
+    expect(result.stdout).toContain("Evidence Contract:");
+    expect(result.stdout).toContain("- pnpm typecheck (required)");
+    expect(result.stdout).toContain("Diff risk: medium");
+    expect(result.stdout).toContain("Review burden: Review the CLI output only.");
   });
 
   it("requires database config for codex brief", async () => {

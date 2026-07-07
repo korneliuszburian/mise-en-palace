@@ -22,13 +22,6 @@ import {
   executionBriefFormatVersion,
   executionBriefSectionProfiles
 } from "./contracts.js";
-import {
-  createCodexHookExpectations
-} from "./render-hook-expectations.js";
-import {
-  createCodexSkillBindingHints
-} from "./skill-binding-hints.js";
-
 export interface RenderExecutionBriefInput {
   taskContract: TaskContract;
   harnessPlan: HarnessPlan;
@@ -104,20 +97,6 @@ const untrustedContextWarnings = (
       ].join(" | ")
     );
 
-const renderSkillBindingHints = (brief: ExecutionBrief): string[] =>
-  brief.skillBindingHints.length === 0
-    ? ["- none"]
-    : brief.skillBindingHints.map((hint) =>
-        [
-          `- ${hint.skillName}`,
-          `capability=${hint.capabilityKind}`,
-          `priority=${hint.priority}`,
-          `patterns=${hint.patternRefs.join(", ")}`,
-          `reason=${hint.reason}`,
-          `evidence=${hint.requiredEvidence.join(", ")}`
-        ].join(" | ")
-      );
-
 const renderToolBoundaries = (brief: ExecutionBrief): string[] => [
   "Tool Boundaries:",
   ...renderList(brief.toolBoundaries)
@@ -143,10 +122,6 @@ const executionBriefSectionCounters = {
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
   evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
-  hook_expectations: (brief) => brief.hookExpectations.length,
-  skill_binding_hints: (brief) => brief.skillBindingHints.length,
-  mcp_resource_refs: (brief) => brief.mcpResourceRefs.length,
-  subagent_probe_hints: (brief) => brief.subagentProbeHints.length,
   goal_refs: (brief) => brief.goalRefs.length,
   exec_plan_refs: (brief) => brief.execPlanRefs.length,
   stop_condition: scalarSectionItemCount,
@@ -229,21 +204,7 @@ const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   ...brief.evidenceContract.commands.map((command) => `- ${command}`),
   `Diff risk: ${brief.evidenceContract.diffRisk}`,
   `Review burden: ${brief.evidenceContract.reviewBurden}`,
-  `Rollback path: ${brief.evidenceContract.rollbackPath}`,
-  "Hook Expectations:",
-  ...renderList(
-    brief.hookExpectations.map((expectation) =>
-      [
-        expectation.phase,
-        `action=${expectation.action}`,
-        `required=${String(expectation.required)}`,
-        ...(expectation.appliesTo === undefined
-          ? []
-          : [`applies_to=${expectation.appliesTo.join(", ")}`]),
-        `reason=${expectation.reason}`
-      ].join(" | ")
-    )
-  )
+  `Rollback path: ${brief.evidenceContract.rollbackPath}`
 ];
 
 const toGoalRef = (
@@ -412,18 +373,13 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       reviewBurden: input.evidenceContract.reviewBurden,
       rollbackPath: input.evidenceContract.rollbackPath
     },
-    hookExpectations: createCodexHookExpectations(input.evidenceContract),
-    skillBindingHints: createCodexSkillBindingHints(input.capabilityPlan),
-    mcpResourceRefs: [],
     goalRefs: toGoalRef(input.goalReference, input.taskContract),
     execPlanRefs: toExecPlanRef(input.execPlanReference, input.harnessPlan),
-    subagentProbeHints: [],
     stopCondition: "Stop before Codex execution or hidden state mutation.",
     rollbackExpectation: input.evidenceContract.rollbackPath,
     nextAction: input.nextAction,
     doesNotProve: [
       "Codex executed the work.",
-      "MCP resources exist.",
       "Memory was mutated.",
       "Worker jobs executed."
     ]
@@ -458,33 +414,11 @@ const renderOptionalRefs = (
   refs: readonly { source: string; status: string; objective?: string; section?: string }[]
 ): string[] => refs.length === 0 ? [] : [...renderRefs(label, refs), ""];
 
-const renderMcpResourceRefs = (brief: ExecutionBrief): string[] =>
-  brief.mcpResourceRefs.map((ref) =>
-    [
-      `- ${ref.name}`,
-      `access=${ref.access}`,
-      `purpose=${ref.purpose}`,
-      `does_not_grant=${ref.doesNotGrant.join(", ")}`
-    ].join(" | ")
-  );
-
-const renderSubagentProbeHints = (brief: ExecutionBrief): string[] =>
-  brief.subagentProbeHints.map((hint) =>
-    [
-      `- ${hint.name}`,
-      `mode=${hint.mode}`,
-      `purpose=${hint.purpose}`,
-      `trigger=${hint.trigger}`,
-      `allowed=${hint.allowedActions.join(", ")}`
-    ].join(" | ")
-  );
-
 export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const observationPrefixLines =
     brief.observationPrefix.length === 0 && brief.observationPrefixWarnings.length === 0
       ? []
       : renderObservationPrefix(brief.observationPrefix, brief.observationPrefixWarnings);
-  const skillHintLines = brief.skillBindingHints.length === 0 ? [] : renderSkillBindingHints(brief);
   const lines = [
     brief.title,
     `Format Version: ${brief.formatVersion}`,
@@ -520,9 +454,6 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "Evidence Contract:",
     ...renderEvidenceContract(brief),
     "",
-    ...renderOptionalSection("Skill Binding Hints:", skillHintLines),
-    ...renderOptionalSection("MCP Resource Refs:", renderMcpResourceRefs(brief)),
-    ...renderOptionalSection("Subagent Probe Hints:", renderSubagentProbeHints(brief)),
     ...renderOptionalRefs("Goal References:", brief.goalRefs),
     ...renderOptionalRefs("ExecPlan References:", brief.execPlanRefs),
     `Stop Condition: ${brief.stopCondition}`,

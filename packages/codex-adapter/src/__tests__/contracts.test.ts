@@ -1,19 +1,11 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  codexHookPhases,
   executionBriefSectionIds,
   executionBriefFormatVersion
 } from "../contracts.js";
-import {
-  skillRoutingPatternRef
-} from "../skill-binding-hints.js";
 import type {
   CodexAdapterPlan,
-  CodexHookExpectation,
-  CodexMcpResourceRef,
-  CodexSkillBindingHint,
-  CodexSubagentProbeHint,
   ExecutionBrief,
   ExecutionBriefProfileReadback
 } from "../contracts.js";
@@ -22,60 +14,6 @@ const createdAt = "2026-06-22T06:00:00.000Z";
 
 describe("Codex adapter contracts", () => {
   test("model bounded Codex-facing outputs without execution authority", () => {
-    const skillHint: CodexSkillBindingHint = {
-      skillName: "typescript-type-safety",
-      capabilityKind: "type_safety",
-      reason: "Preserve strict TypeScript boundaries.",
-      requiredEvidence: ["pnpm typecheck"],
-      patternRefs: [skillRoutingPatternRef],
-      priority: "required",
-      source: "capability_plan"
-    };
-    const hookExpectations: CodexHookExpectation[] = [
-      {
-        phase: "SessionStart",
-        action: "inject_pointer",
-        reason: "Surface the compact project and run pointer.",
-        required: false
-      },
-      {
-        phase: "PreToolUse",
-        action: "warn_or_deny",
-        reason: "Guard destructive commands before execution.",
-        required: true
-      },
-      {
-        phase: "PostToolUse",
-        action: "record_signal",
-        reason: "Capture command success or failure evidence.",
-        required: true
-      },
-      {
-        phase: "PreCompact",
-        action: "require_handoff",
-        reason: "Keep restart state explicit before compaction.",
-        required: true
-      },
-      {
-        phase: "Stop",
-        action: "suggest_evidence_capture",
-        reason: "Make review evidence visible before stopping.",
-        required: false
-      }
-    ];
-    const mcpRef: CodexMcpResourceRef = {
-      name: "run-ledger",
-      purpose: "Future typed read-only access to persisted run evidence.",
-      access: "future_reference",
-      doesNotGrant: ["memory mutation", "Codex execution"]
-    };
-    const subagentHint: CodexSubagentProbeHint = {
-      name: "ts-type-critic",
-      mode: "read_only",
-      purpose: "Review TypeScript public boundaries.",
-      trigger: "broad TypeScript contract change",
-      allowedActions: ["inspect", "propose"]
-    };
     const brief: ExecutionBrief = {
       formatVersion: executionBriefFormatVersion,
       title: "KRN Codex Execution Brief",
@@ -84,8 +22,12 @@ describe("Codex adapter contracts", () => {
       currentTaskContract: {
         id: "task-1",
         title: "Render a bounded Codex brief.",
-        objective: "Render a bounded Codex brief."
+        objective: "Render a bounded Codex brief.",
+        constraints: ["keep the renderer non-mutating"],
+        acceptance: ["brief is inspectable"]
       },
+      observationPrefix: [],
+      observationPrefixWarnings: [],
       includedContext: [
         {
           subjectType: "memory_record",
@@ -112,11 +54,9 @@ describe("Codex adapter contracts", () => {
       evidenceContract: {
         commands: ["pnpm typecheck"],
         diffRisk: "medium",
+        reviewBurden: "focused adapter contract review",
         rollbackPath: "Focused revert of the adapter contract commit."
       },
-      hookExpectations,
-      skillBindingHints: [skillHint],
-      mcpResourceRefs: [mcpRef],
       goalRefs: [
         {
           source: "GOAL.md",
@@ -131,11 +71,10 @@ describe("Codex adapter contracts", () => {
           status: "active"
         }
       ],
-      subagentProbeHints: [subagentHint],
       stopCondition: "Stop before invoking Codex.",
       rollbackExpectation: "Focused revert of adapter contract changes.",
       nextAction: "Implement contract exports.",
-      doesNotProve: ["Codex execution", "MCP server availability"]
+      doesNotProve: ["Codex execution", "memory mutation"]
     };
     const plan: CodexAdapterPlan = {
       id: "codex-plan-1",
@@ -147,20 +86,9 @@ describe("Codex adapter contracts", () => {
       metadata: {}
     };
 
-    expect(codexHookPhases).toEqual([
-      "SessionStart",
-      "PreToolUse",
-      "PostToolUse",
-      "PreCompact",
-      "Stop"
-    ]);
-    expect(plan.executionBrief.skillBindingHints).toEqual([skillHint]);
     expect(plan.executionBrief.formatVersion).toBe(executionBriefFormatVersion);
-    expect(plan.executionBrief.mcpResourceRefs).toEqual([mcpRef]);
-    expect(plan.executionBrief.subagentProbeHints).toEqual([subagentHint]);
-    expect(plan.executionBrief.hookExpectations.map((item) => item.phase)).toEqual(
-      codexHookPhases
-    );
+    expect(plan.executionBrief.goalRefs[0]?.objective).toBe("M26 Codex adapter contracts");
+    expect(plan.executionBrief.doesNotProve).toContain("memory mutation");
   });
 
   test("models execution brief profile readback without runtime authority", () => {
@@ -168,8 +96,8 @@ describe("Codex adapter contracts", () => {
       formatVersion: executionBriefFormatVersion,
       profile: "default",
       sections: [{
-        id: "mcp_resource_refs",
-        kind: "reserved",
+        id: "goal_refs",
+        kind: "diagnostic",
         rendered: false,
         itemCount: 0,
         emptyBehavior: "omit_when_empty"
@@ -183,16 +111,17 @@ describe("Codex adapter contracts", () => {
       },
       doesNotProve: [
         "Brief profile classification proves only adapter rendering intent.",
-        "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist."
+        "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
       ]
     };
 
-    expect(executionBriefSectionIds).toContain("mcp_resource_refs");
-    expect(executionBriefSectionIds).toContain("subagent_probe_hints");
-    expect(readback.sections[0]?.kind).toBe("reserved");
+    expect(executionBriefSectionIds).not.toContain("mcp_resource_refs");
+    expect(executionBriefSectionIds).not.toContain("subagent_probe_hints");
+    expect(executionBriefSectionIds).not.toContain("hook_expectations");
+    expect(readback.sections[0]?.kind).toBe("diagnostic");
     expect(readback.sections[0]?.rendered).toBe(false);
     expect(readback.doesNotProve).toContain(
-      "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist."
+      "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
     );
   });
 });

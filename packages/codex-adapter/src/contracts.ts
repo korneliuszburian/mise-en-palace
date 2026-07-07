@@ -1,5 +1,4 @@
 import type {
-  CapabilityRequirementKind,
   ContextAssemblyId,
   ContextSubjectType,
   DiffRisk,
@@ -11,20 +10,6 @@ import type {
 } from "@krn/core";
 
 export type CodexAdapterPlanStatus = "draft" | "ready" | "superseded";
-
-export type CodexSkillBindingPriority = "required" | "recommended";
-
-export type CodexSkillBindingSource = "capability_plan" | "operator";
-
-export interface CodexSkillBindingHint {
-  skillName: string;
-  capabilityKind: CapabilityRequirementKind;
-  reason: string;
-  requiredEvidence: string[];
-  patternRefs: string[];
-  priority: CodexSkillBindingPriority;
-  source: CodexSkillBindingSource;
-}
 
 export const codexHookPhases = [
   "SessionStart",
@@ -58,16 +43,6 @@ export interface CodexHookExpectationProjection {
   doesNotDo: string[];
 }
 
-export type CodexMcpResourceAccess = "read_only" | "future_reference";
-
-export interface CodexMcpResourceRef {
-  name: string;
-  purpose: string;
-  access: CodexMcpResourceAccess;
-  uri?: string;
-  doesNotGrant: string[];
-}
-
 export type CodexReferenceStatus = "active" | "planned" | "superseded";
 
 export const executionBriefFormatVersion = "krn.executionBrief.v1" as const;
@@ -83,7 +58,7 @@ export type ExecutionBriefSectionEmptyBehavior = "render_none" | "omit_when_empt
 export type ExecutionBriefProfileBudgetStatus = "within_budget" | "over_budget";
 
 export const executionBriefProfileBudget = {
-  maxRenderedSections: 21,
+  maxRenderedSections: 19,
   maxRenderedItems: 80
 } as const;
 
@@ -102,10 +77,6 @@ export const executionBriefSectionProfiles = [
   { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
   { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
-  { id: "hook_expectations", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "skill_binding_hints", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "mcp_resource_refs", kind: "reserved", emptyBehavior: "omit_when_empty" },
-  { id: "subagent_probe_hints", kind: "reserved", emptyBehavior: "omit_when_empty" },
   { id: "goal_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "exec_plan_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
@@ -155,16 +126,6 @@ export interface CodexExecPlanRef {
   source: string;
   section: string;
   status: CodexReferenceStatus;
-}
-
-export type CodexSubagentProbeMode = "read_only" | "proposal_only";
-
-export interface CodexSubagentProbeHint {
-  name: string;
-  mode: CodexSubagentProbeMode;
-  purpose: string;
-  trigger: string;
-  allowedActions: string[];
 }
 
 export interface ExecutionBriefContextInclusion {
@@ -231,12 +192,8 @@ export interface ExecutionBrief {
   antiMemoryWarnings: string[];
   toolBoundaries: string[];
   evidenceContract: ExecutionBriefEvidenceContract;
-  hookExpectations: CodexHookExpectation[];
-  skillBindingHints: CodexSkillBindingHint[];
-  mcpResourceRefs: CodexMcpResourceRef[];
   goalRefs: CodexGoalRef[];
   execPlanRefs: CodexExecPlanRef[];
-  subagentProbeHints: CodexSubagentProbeHint[];
   stopCondition: string;
   rollbackExpectation: string;
   nextAction: string;
