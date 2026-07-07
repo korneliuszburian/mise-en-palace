@@ -6,6 +6,7 @@ import {
   assessSourceClaimTemporalValidity,
   assessSourceDecisionReviewSignals,
   assessSourceSupportType,
+  buildSourceConsensusTimelineReadback,
   classifySourceAuthority,
   classifySourceClaimTaxonomy,
   classifySourceSupportType,
@@ -19,9 +20,12 @@ import {
   sourceSupportTypes,
   sourceTrustTiers,
   type SourceClaimCreateStatus,
+  type SourceClaimEdge,
   type SourceClaimLifecycleStatus,
   type SourceClaim,
-  type SourceDecision
+  type SourceDecision,
+  type SourceDecisionEdge,
+  type SourceRejection
 } from "../source.js";
 
 const now = "2026-06-24T08:00:00.000Z";
@@ -55,6 +59,49 @@ const sourceDecision = (overrides: Partial<SourceDecision>): SourceDecision => (
   metadata: {},
   createdAt: "2026-06-23T08:00:00.000Z",
   updatedAt: "2026-06-23T08:00:00.000Z",
+  ...overrides
+});
+
+const sourceClaimEdge = (
+  overrides: Partial<SourceClaimEdge>
+): SourceClaimEdge => ({
+  id: "source-claim-edge-1",
+  fromSourceClaimId: "source-claim-1",
+  toSourceClaimId: "source-claim-2",
+  kind: "supports",
+  metadata: {},
+  createdAt: "2026-06-23T08:00:00.000Z",
+  ...overrides
+});
+
+const sourceDecisionEdge = (
+  overrides: Partial<SourceDecisionEdge>
+): SourceDecisionEdge => ({
+  id: "source-decision-edge-1",
+  sourceClaimId: "source-claim-1",
+  targetType: "architecture_decision",
+  targetId: "KRN_ROADMAP.md#phase-5",
+  supportType: "decision",
+  confidence: "high",
+  notes: "Decision-linked source support.",
+  metadata: {},
+  createdAt: "2026-06-23T08:00:00.000Z",
+  ...overrides
+});
+
+const sourceRejection = (
+  overrides: Partial<SourceRejection>
+): SourceRejection => ({
+  id: "source-rejection-1",
+  sourceClaimId: "source-claim-1",
+  title: "Rejected source claim",
+  attemptedClaim: "A rejected claim should not become authority.",
+  rejectedBecause: "conflicting",
+  reason: "A stronger accepted claim superseded it.",
+  doesNotProve: "This rejection does not prove corpus completeness.",
+  consumer: "source consensus timeline readback",
+  metadata: {},
+  rejectedAt: "2026-06-23T08:00:00.000Z",
   ...overrides
 });
 
@@ -235,6 +282,164 @@ describe("source review signals", () => {
           "Accepted SourceClaim has invalid temporal metadata and cannot be used as current authority."
       }
     ]);
+  });
+
+  test("builds a temporal source consensus timeline readback", () => {
+    const oldStandard = sourceClaim({
+      id: "claim-old-standard",
+      claim: "Frontend projects should use the legacy boilerplate.",
+      trustTier: "official",
+      createdAt: "2026-05-01T08:00:00.000Z",
+      updatedAt: "2026-05-01T08:00:00.000Z"
+    });
+    const currentStandard = sourceClaim({
+      id: "claim-current-standard",
+      claim: "Frontend projects should use the current app template.",
+      trustTier: "project-decision",
+      createdAt: "2026-06-20T08:00:00.000Z",
+      updatedAt: "2026-06-20T08:00:00.000Z"
+    });
+    const staleStandard = sourceClaim({
+      id: "claim-stale-standard",
+      claim: "Frontend projects should refresh old test standards.",
+      trustTier: "official",
+      revisitWhen: "2026-06-01T00:00:00.000Z",
+      createdAt: "2026-06-18T08:00:00.000Z",
+      updatedAt: "2026-06-18T08:00:00.000Z"
+    });
+    const invalidTimeStandard = sourceClaim({
+      id: "claim-invalid-time-standard",
+      claim: "Invalid temporal metadata must remain caveated.",
+      trustTier: "official",
+      revisitWhen: "not-a-date",
+      createdAt: "2026-06-19T08:00:00.000Z",
+      updatedAt: "2026-06-19T08:00:00.000Z"
+    });
+    const acceptedOnly = sourceClaim({
+      id: "claim-accepted-only",
+      claim: "Accepted-only source evidence needs a caveat.",
+      trustTier: "official",
+      createdAt: "2026-06-22T08:00:00.000Z",
+      updatedAt: "2026-06-22T08:00:00.000Z"
+    });
+    const rejectedClaim = sourceClaim({
+      id: "claim-rejected",
+      claim: "Rejected source evidence remains historical.",
+      status: "rejected",
+      trustTier: "hypothesis",
+      createdAt: "2026-06-21T08:00:00.000Z",
+      updatedAt: "2026-06-21T08:00:00.000Z"
+    });
+
+    const readback = buildSourceConsensusTimelineReadback({
+      sourceClaims: [
+        currentStandard,
+        oldStandard,
+        acceptedOnly,
+        rejectedClaim,
+        staleStandard,
+        invalidTimeStandard
+      ],
+      sourceClaimEdges: [
+        sourceClaimEdge({
+          id: "edge-current-supersedes-old",
+          fromSourceClaimId: currentStandard.id,
+          toSourceClaimId: oldStandard.id,
+          kind: "supersedes"
+        }),
+        sourceClaimEdge({
+          id: "edge-rejected-contradicts-current",
+          fromSourceClaimId: rejectedClaim.id,
+          toSourceClaimId: currentStandard.id,
+          kind: "contradicts"
+        })
+      ],
+      sourceDecisionEdges: [
+        sourceDecisionEdge({
+          id: "decision-edge-current",
+          sourceClaimId: currentStandard.id
+        })
+      ],
+      sourceRejections: [
+        sourceRejection({
+          id: "rejection-rejected",
+          sourceClaimId: rejectedClaim.id
+        })
+      ],
+      now
+    });
+
+    expect(readback.currentSourceClaimIds).toEqual(["claim-current-standard"]);
+    expect(readback.caveatedSourceClaimIds).toEqual(["claim-accepted-only"]);
+    expect(readback.historicalSourceClaimIds).toEqual([
+      "claim-old-standard",
+      "claim-stale-standard",
+      "claim-invalid-time-standard"
+    ]);
+    expect(readback.rejectedSourceClaimIds).toEqual(["claim-rejected"]);
+
+    expect(readback.entries.map((entry) => entry.sourceClaimId)).toEqual([
+      "claim-old-standard",
+      "claim-stale-standard",
+      "claim-invalid-time-standard",
+      "claim-current-standard",
+      "claim-rejected",
+      "claim-accepted-only"
+    ]);
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-current-standard"
+    )).toMatchObject({
+      state: "current_authority",
+      decisionSupportEdgeIds: ["decision-edge-current"],
+      dissentingSourceClaimIds: ["claim-rejected"],
+      supersedesSourceClaimIds: ["claim-old-standard"],
+      caveats: []
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-old-standard"
+    )).toMatchObject({
+      state: "historical",
+      supersededBySourceClaimIds: ["claim-current-standard"],
+      caveats: expect.arrayContaining([
+        "missing_source_decision_support",
+        "superseded_by:claim-current-standard"
+      ])
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-stale-standard"
+    )).toMatchObject({
+      state: "historical",
+      caveats: expect.arrayContaining([
+        "stale",
+        "missing_source_decision_support"
+      ])
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-invalid-time-standard"
+    )).toMatchObject({
+      state: "historical",
+      caveats: expect.arrayContaining([
+        "invalid_time:invalid_revisit_when",
+        "missing_source_decision_support"
+      ])
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-accepted-only"
+    )).toMatchObject({
+      state: "caveated_authority",
+      caveats: ["missing_source_decision_support"]
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-rejected"
+    )).toMatchObject({
+      state: "rejected",
+      rejectionIds: ["rejection-rejected"],
+      caveats: expect.arrayContaining([
+        "missing_source_decision_support",
+        "rejected_by:rejection-rejected"
+      ])
+    });
+    expect(readback.doesNotProve).toContain("large-scale temporal consensus quality");
   });
 
   test("reports source decisions without support or falsifiability", () => {
