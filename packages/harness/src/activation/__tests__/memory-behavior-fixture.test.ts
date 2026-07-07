@@ -252,6 +252,62 @@ describe("golden memory behavior cases", () => {
     expect(ranked[0]?.lexicalScore).toBeGreaterThan(0);
   });
 
+  it("uses store-backed feedback counts to demote harmful memory on the next activation", () => {
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-harmful-feedback",
+        summary: "Reviewed memory supports rollback path",
+        body: "Use this rollback path guidance for memory dogfood work.",
+        applicationGuidance: "Use when planning rollback path for memory dogfood.",
+        positiveFeedbackCount: 0,
+        negativeFeedbackCount: 3
+      })),
+      toMemoryCandidate(memoryRecord({
+        id: "memory-helpful-feedback",
+        summary: "Reviewed memory supports rollback path",
+        body: "Use this rollback path guidance for memory dogfood work.",
+        applicationGuidance: "Use when planning rollback path for memory dogfood.",
+        positiveFeedbackCount: 2,
+        negativeFeedbackCount: 0
+      }))
+    ], buildMemoryQuery(task({
+      objective: "Plan rollback path for memory dogfood."
+    })));
+    const filtered = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [],
+      minimumTrustTier: "medium",
+      now
+    });
+    const context = assembleContext({
+      id: "context-feedback-next-activation",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(filtered.candidates, { maxInclusions: 1 }),
+      createdAt: now
+    });
+
+    expect(ranked.find((candidate) =>
+      candidate.subjectId === "memory-harmful-feedback"
+    )).toMatchObject({
+      feedbackScore: -45,
+      metadata: {
+        feedbackPenalty: -45,
+        memoryReviewSignals: expect.arrayContaining([expect.objectContaining({
+          kind: "unresolved_negative_feedback",
+          severity: "blocking"
+        })])
+      }
+    });
+    expect(context.inclusions.map((item) => item.subjectId)).toEqual(["memory-helpful-feedback"]);
+    expect(context.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "memory-harmful-feedback",
+        reason: "unsafe",
+        explanation: expect.stringContaining("unresolved_negative_feedback")
+      })
+    ]));
+  });
+
   it("requires raw recall when exact source proof is needed", () => {
     const ranked = rankCandidates([
       toSourceClaimCandidate(sourceClaim({}))
