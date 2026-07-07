@@ -57,6 +57,13 @@ export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
   doesNotProve: string;
 }
 
+export interface DecisionPacketReadModelSourceDecisionSupportBoost {
+  sourceDecisionEdgeIds: string[];
+  confidence: string[];
+  supportTypes: string[];
+  doesNotProve: string;
+}
+
 export interface DecisionPacketReadModelActivationCandidate {
   id: string;
   kind: string;
@@ -73,6 +80,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   score?: number;
   reason: string;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
+  sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
 }
 
 export interface DecisionPacketReadModelActivationDecision {

@@ -151,6 +151,15 @@ const renderActivationTrace = (
             `      edgeKinds: ${candidate.sourceClaimEdgeInfluence.edgeKinds.join(", ")}`,
             `      seedSourceClaimIds: ${candidate.sourceClaimEdgeInfluence.seedSourceClaimIds.join(", ")}`,
             `      doesNotProve: ${candidate.sourceClaimEdgeInfluence.doesNotProve}`
+          ]),
+      ...(candidate.sourceDecisionSupportBoost === undefined
+        ? []
+        : [
+            "    sourceDecisionSupportBoost:",
+            `      sourceDecisionEdgeIds: ${candidate.sourceDecisionSupportBoost.sourceDecisionEdgeIds.join(", ")}`,
+            `      confidence: ${candidate.sourceDecisionSupportBoost.confidence.join(", ")}`,
+            `      supportTypes: ${candidate.sourceDecisionSupportBoost.supportTypes.join(", ")}`,
+            `      doesNotProve: ${candidate.sourceDecisionSupportBoost.doesNotProve}`
           ])
     ]),
     `- decisions: ${trace.decisions.length}`,

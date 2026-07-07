@@ -11,7 +11,8 @@ import type {
 } from "./database-runtime.js";
 import type {
   DecisionPacketReadModelChangedFiles,
-  DecisionPacketReadModelSourceClaimEdgeInfluence
+  DecisionPacketReadModelSourceClaimEdgeInfluence,
+  DecisionPacketReadModelSourceDecisionSupportBoost
 } from "./decision-packet-read-model.js";
 
 type MetadataRecordParseResult =
@@ -169,6 +170,37 @@ export const sourceClaimEdgeInfluenceFromMetadata = (
     edgeIds,
     edgeKinds,
     seedSourceClaimIds,
+    doesNotProve
+  };
+};
+
+export const sourceDecisionSupportBoostFromMetadata = (
+  metadata: Record<string, unknown>
+): DecisionPacketReadModelSourceDecisionSupportBoost | undefined => {
+  const value = metadataRecordValue(metadata.sourceDecisionSupportBoost);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const sourceDecisionEdgeIds = readMetadataStringList(value, "sourceDecisionEdgeIds");
+  const confidence = readMetadataStringList(value, "confidence");
+  const supportTypes = readMetadataStringList(value, "supportTypes");
+  const doesNotProve = readMetadataString(value, "doesNotProve");
+
+  if (
+    sourceDecisionEdgeIds.length === 0 ||
+    confidence.length === 0 ||
+    supportTypes.length === 0 ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    sourceDecisionEdgeIds,
+    confidence,
+    supportTypes,
     doesNotProve
   };
 };

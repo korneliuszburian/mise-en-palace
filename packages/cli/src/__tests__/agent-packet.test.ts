@@ -96,6 +96,13 @@ const aggregate: HarnessRunAggregate = {
           seedSourceClaimIds: ["claim-seed-agent-1"],
           doesNotProve:
             "SourceClaimEdge influence does not prove SourceDecisionEdge support."
+        },
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+          confidence: ["high"],
+          supportTypes: ["decision"],
+          doesNotProve:
+            "SourceDecisionEdge boost does not prove source truth or target correctness."
         }
       },
       createdAt: now
@@ -152,7 +159,7 @@ describe("agent packet CLI", () => {
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         sourceClaimIds: ["claim-agent-1"],
-        sourceDecisionEdgeIds: [],
+        sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         memoryRefs: ["memory-agent-1"],
         rejectedPathIds: ["memory-rejected-1"],
         brief: {
@@ -175,6 +182,9 @@ describe("agent packet CLI", () => {
             candidates: [{
               sourceClaimEdgeInfluence: {
                 edgeIds: ["source-claim-edge-agent-1"]
+              },
+              sourceDecisionSupportBoost: {
+                sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
               }
             }]
           }

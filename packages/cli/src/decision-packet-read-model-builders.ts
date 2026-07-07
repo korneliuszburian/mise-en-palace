@@ -27,7 +27,8 @@ import {
   candidateReviewabilityReasons,
   changedFileClassification,
   projectResolutionFromMetadata,
-  sourceClaimEdgeInfluenceFromMetadata
+  sourceClaimEdgeInfluenceFromMetadata,
+  sourceDecisionSupportBoostFromMetadata
 } from "./decision-packet-read-model-decoders.js";
 import {
   decisionPacketReadModelDoesNotProve,
@@ -90,10 +91,39 @@ const contextExclusionResource = (
   ...(exclusion.score === undefined ? {} : { score: exclusion.score })
 });
 
+type ActivationCandidateScoreField =
+  | "lexicalScore"
+  | "vectorScore"
+  | "graphScore"
+  | "temporalScore"
+  | "contextRoiScore"
+  | "totalScore"
+  | "score";
+
+const activationCandidateScoreFields = [
+  "lexicalScore",
+  "vectorScore",
+  "graphScore",
+  "temporalScore",
+  "contextRoiScore",
+  "totalScore",
+  "score"
+] as const satisfies readonly ActivationCandidateScoreField[];
+
+const activationCandidateScores = (
+  candidate: RetrievalCandidateRecord
+): Partial<Pick<DecisionPacketReadModelActivationCandidate, ActivationCandidateScoreField>> =>
+  Object.fromEntries(activationCandidateScoreFields.flatMap((field) => {
+    const value = candidate[field];
+
+    return value === undefined ? [] : [[field, value]];
+  })) as Partial<Pick<DecisionPacketReadModelActivationCandidate, ActivationCandidateScoreField>>;
+
 const activationCandidateResource = (
   candidate: RetrievalCandidateRecord
 ): DecisionPacketReadModelActivationCandidate => {
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
+  const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
 
   return {
     id: candidate.id,
@@ -102,15 +132,10 @@ const activationCandidateResource = (
     subjectType: candidate.subjectType,
     subjectId: candidate.subjectId,
     trustTier: candidate.trustTier,
-    ...(candidate.lexicalScore === undefined ? {} : { lexicalScore: candidate.lexicalScore }),
-    ...(candidate.vectorScore === undefined ? {} : { vectorScore: candidate.vectorScore }),
-    ...(candidate.graphScore === undefined ? {} : { graphScore: candidate.graphScore }),
-    ...(candidate.temporalScore === undefined ? {} : { temporalScore: candidate.temporalScore }),
-    ...(candidate.contextRoiScore === undefined ? {} : { contextRoiScore: candidate.contextRoiScore }),
-    ...(candidate.totalScore === undefined ? {} : { totalScore: candidate.totalScore }),
-    ...(candidate.score === undefined ? {} : { score: candidate.score }),
+    ...activationCandidateScores(candidate),
     reason: candidate.reason,
-    ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence })
+    ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
+    ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost })
   };
 };
 
