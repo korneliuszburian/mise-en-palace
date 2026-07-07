@@ -23,6 +23,9 @@ import {
 import {
   runMemoryRecordApplyCommand
 } from "./run-memory-record-apply-command.js";
+import {
+  runMemoryPatternSeedCommand
+} from "./run-memory-pattern-seed-command.js";
 
 type MemoryCliCommand = Extract<
   CliCommand,
@@ -30,6 +33,7 @@ type MemoryCliCommand = Extract<
   | { kind: "memoryCandidatePromote" }
   | { kind: "memoryCandidateReject" }
   | { kind: "memoryRecordApply" }
+  | { kind: "memoryPatternSeed" }
   | { kind: "memoryAntiAdd" }
   | { kind: "memoryAntiPromote" }
   | { kind: "memoryAntiReject" }
@@ -87,6 +91,7 @@ const isMemoryCliCommand = (command: CliCommand): command is MemoryCliCommand =>
   command.kind === "memoryCandidatePromote" ||
   command.kind === "memoryCandidateReject" ||
   command.kind === "memoryRecordApply" ||
+  command.kind === "memoryPatternSeed" ||
   command.kind === "memoryAntiAdd" ||
   command.kind === "memoryAntiPromote" ||
   command.kind === "memoryAntiReject"
@@ -97,6 +102,7 @@ const memoryFallbackMessages = {
   memoryCandidatePromote: "Unknown memory candidate review error",
   memoryCandidateReject: "Unknown memory candidate review error",
   memoryRecordApply: "Unknown memory record apply error",
+  memoryPatternSeed: "Unknown memory pattern seed error",
   memoryAntiAdd: "Unknown memory anti add error",
   memoryAntiPromote: "Unknown memory anti review error",
   memoryAntiReject: "Unknown memory anti review error"
@@ -125,6 +131,13 @@ const runSelectedMemoryCommand = async (
 
   if (command.kind === "memoryRecordApply") {
     return runMemoryRecordApplyCommand({
+      ...standardMemoryInput(context),
+      command
+    });
+  }
+
+  if (command.kind === "memoryPatternSeed") {
+    return runMemoryPatternSeedCommand({
       ...standardMemoryInput(context),
       command
     });

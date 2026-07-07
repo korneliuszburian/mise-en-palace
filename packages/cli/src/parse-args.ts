@@ -256,6 +256,9 @@ export type CliCommand =
       kind: "memoryRecordApplyHelp";
     }
   | {
+      kind: "memoryPatternSeedHelp";
+    }
+  | {
       kind: "memoryAntiAddHelp";
     }
   | {
@@ -312,6 +315,12 @@ export type CliCommand =
       taskContractId?: string;
       contextAssemblyId?: string;
       metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryPatternSeed";
+      persist: boolean;
+      dryRun: boolean;
+      catalogFile: string;
     }
   | {
       kind: "memoryAntiAdd";

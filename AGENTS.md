@@ -35,6 +35,28 @@ For code quality:
   evidence;
 - CI runs `pnpm quality:fallow:ci` as the changed-files Fallow gate.
 
+For naming and API shape:
+
+- name modules, functions, classes, files, and types by the concept they own,
+  not by pipeline history, temporary state, or implementation ceremony;
+- avoid vague lifecycle words such as `new`, `final`, `normalized`, `manager`,
+  `processor`, `helper`, and `utils` unless the domain meaning is explicit and
+  unavoidable;
+- do not hide bad exported names behind local aliases; fix the exported boundary
+  or file a Beads cleanup before building more on top of it;
+- prefer one small domain boundary over adapter chains, duplicate read models,
+  or "from X to Y" conversion names that expose storage plumbing to product code.
+
+For tests:
+
+- test risky behavior, contracts, parsers, migrations, and authority boundaries;
+- do not add tests that only freeze prose, file topology, command lists, docs
+  wording, or implementation ceremony;
+- one focused behavior test is better than broad snapshots that make refactors
+  harder without proving product value;
+- when a test exists only to protect cleanup/process theater, delete or replace
+  it with a real behavior falsifier.
+
 For git history:
 
 - use Semantic/Conventional Commits only; see

@@ -37,6 +37,7 @@ import {
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
   formatMemoryRecordApplyUsage,
+  formatMemoryPatternSeedUsage,
   formatMemoryAntiAddUsage,
   formatMemoryAntiPromoteUsage,
   formatMemoryAntiRejectUsage
@@ -150,6 +151,7 @@ const helpRenderers = {
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
   memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,
   memoryRecordApplyHelp: formatMemoryRecordApplyUsage,
+  memoryPatternSeedHelp: formatMemoryPatternSeedUsage,
   memoryAntiAddHelp: formatMemoryAntiAddUsage,
   memoryAntiPromoteHelp: formatMemoryAntiPromoteUsage,
   memoryAntiRejectHelp: formatMemoryAntiRejectUsage

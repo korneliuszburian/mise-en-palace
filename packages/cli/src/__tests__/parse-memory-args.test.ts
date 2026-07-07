@@ -5,13 +5,6 @@ import {
 } from "vitest";
 
 import {
-  formatMemoryAntiAddUsage,
-  formatMemoryCandidateAddUsage,
-  formatMemoryCandidatePromoteUsage,
-  formatMemoryCandidateRejectUsage,
-  formatMemoryRecordApplyUsage,
-  formatMemoryAntiPromoteUsage,
-  formatMemoryAntiRejectUsage,
   parseMemoryArgs
 } from "../parse-memory-args.js";
 
@@ -347,16 +340,13 @@ describe("parseMemoryArgs", () => {
         metadata: {}
       }
     });
-    expect(parseMemoryArgs(["candidate", "unknown"])).toEqual({
-      error: [
-        formatMemoryCandidateAddUsage().trim(),
-        formatMemoryCandidatePromoteUsage().trim(),
-        formatMemoryCandidateRejectUsage().trim(),
-        formatMemoryRecordApplyUsage().trim(),
-        formatMemoryAntiAddUsage().trim(),
-        formatMemoryAntiPromoteUsage().trim(),
-        formatMemoryAntiRejectUsage().trim()
-      ].join("\n\n")
+    const unsupportedShape = parseMemoryArgs(["candidate", "unknown"]);
+
+    expect(unsupportedShape).toEqual({
+      error: expect.any(String)
     });
+    expect(unsupportedShape.error).toContain("Usage: krn memory candidate add");
+    expect(unsupportedShape.error).toContain("Usage: krn memory pattern seed");
+    expect(unsupportedShape.error).toContain("Usage: krn memory anti add");
   });
 });
