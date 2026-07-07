@@ -29,8 +29,8 @@ const loadMutableFixture = (): {
 };
 
 describe("runDecisionPacketEval", () => {
-  it("passes the pre-code decision-packet quality benchmark", () => {
-    const result = runDecisionPacketEval(loadNotesBaselineEvalFixture(fixturePath));
+  it("passes the pre-code decision-packet quality benchmark", async () => {
+    const result = await runDecisionPacketEval(loadNotesBaselineEvalFixture(fixturePath));
 
     expect(result).toMatchObject({
       kind: "krn.decisionPacket.eval.v1",
@@ -48,7 +48,7 @@ describe("runDecisionPacketEval", () => {
         missCount: 0,
         staleAuthorityCount: 0,
         usefulRate: 1,
-        averageNoiseDecisions: 2,
+        averageNoiseDecisions: 1.1176,
         severeStaleAuthorityInclusions: 0
       }
     });
@@ -77,7 +77,7 @@ describe("runDecisionPacketEval", () => {
     ]));
   });
 
-  it("fails when packets lose SourceDecisionEdge boundaries", () => {
+  it("fails when packets lose SourceDecisionEdge boundaries", async () => {
     const rawFixture = loadMutableFixture();
 
     for (const decision of rawFixture.decisions) {
@@ -86,7 +86,7 @@ describe("runDecisionPacketEval", () => {
       }
     }
 
-    const result = runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
+    const result = await runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
 
     expect(result.status).toBe("fail");
     expect(result.metrics.usefulCount).toBe(0);
@@ -98,18 +98,19 @@ describe("runDecisionPacketEval", () => {
     });
   });
 
-  it("fails when a stale decision reaches the raw top-k authority set", () => {
+  it("fails when a stale decision reaches the governed packet", async () => {
     const rawFixture = loadMutableFixture();
     const staleDecision = rawFixture.decisions.find((decision) =>
       decision["id"] === "markdown-runtime-memory"
     );
 
     (rawFixture as Record<string, unknown>)["topK"] = 34;
+    staleDecision!["status"] = "current";
 
     expect(rawFixture.decisions).toHaveLength(34);
-    expect(staleDecision?.["status"]).toBe("stale");
+    expect(staleDecision?.["status"]).toBe("current");
 
-    const result = runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
+    const result = await runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
 
     expect(result.status).toBe("fail");
     expect(result.metrics.staleAuthorityCount).toBeGreaterThan(0);

@@ -31,8 +31,8 @@ const writeFixtureVariant = (
 };
 
 describe("runSecondRepoDecisionPacketEval", () => {
-  it("passes on the weak-json-boundary TypeScript target corpus", () => {
-    const result = runSecondRepoDecisionPacketEval(fixturePath);
+  it("passes on the weak-json-boundary TypeScript target corpus", async () => {
+    const result = await runSecondRepoDecisionPacketEval(fixturePath);
 
     expect(result).toMatchObject({
       kind: "krn.secondRepoDecisionPacket.eval.v1",
@@ -70,8 +70,8 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]));
   });
 
-  it("passes with per-repo metrics across second, third, and fourth target corpora", () => {
-    const result = runSecondRepoDecisionPacketEval([
+  it("passes with per-repo metrics across second, third, and fourth target corpora", async () => {
+    const result = await runSecondRepoDecisionPacketEval([
       fixturePath,
       thirdRepoFixturePath,
       fourthRepoFixturePath
@@ -119,7 +119,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]);
   });
 
-  it("fails when a second-repo fixture references self-repo evidence", () => {
+  it("fails when a second-repo fixture references self-repo evidence", async () => {
     const contaminatedFixturePath = writeFixtureVariant((fixture) => {
       const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
       decisions[0] = {
@@ -128,7 +128,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
       };
     });
 
-    const result = runSecondRepoDecisionPacketEval(contaminatedFixturePath);
+    const result = await runSecondRepoDecisionPacketEval(contaminatedFixturePath);
 
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
@@ -137,7 +137,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]);
   });
 
-  it("fails when a case-level reference points back to self-repo evidence", () => {
+  it("fails when a case-level reference points back to self-repo evidence", async () => {
     const contaminatedFixturePath = writeFixtureVariant((fixture) => {
       const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
       const rejectedDecision = decisions.find((decision) => decision["status"] === "rejected") ?? {};
@@ -164,7 +164,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
       };
     });
 
-    const result = runSecondRepoDecisionPacketEval(contaminatedFixturePath);
+    const result = await runSecondRepoDecisionPacketEval(contaminatedFixturePath);
 
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
@@ -173,7 +173,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]);
   });
 
-  it("fails when no target-repo-backed governing decision remains", () => {
+  it("fails when no target-repo-backed governing decision remains", async () => {
     const genericFixturePath = writeFixtureVariant((fixture) => {
       const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
       fixture["decisions"] = decisions.map((decision) =>
@@ -186,13 +186,13 @@ describe("runSecondRepoDecisionPacketEval", () => {
       );
     });
 
-    const result = runSecondRepoDecisionPacketEval(genericFixturePath);
+    const result = await runSecondRepoDecisionPacketEval(genericFixturePath);
 
     expect(result.status).toBe("fail");
     expect(result.metrics.repoSpecificDecisionCount).toBe(0);
   });
 
-  it("fails when the third repo loses target-repo-backed governing decisions", () => {
+  it("fails when the third repo loses target-repo-backed governing decisions", async () => {
     const genericThirdRepoFixturePath = writeFixtureVariant((fixture) => {
       const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
       fixture["decisions"] = decisions.map((decision) =>
@@ -205,7 +205,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
       );
     }, thirdRepoFixturePath);
 
-    const result = runSecondRepoDecisionPacketEval([
+    const result = await runSecondRepoDecisionPacketEval([
       fixturePath,
       genericThirdRepoFixturePath
     ]);

@@ -315,10 +315,10 @@ const metricsForCases = (
   nonProofObedienceCount: cases.filter((testCase) => testCase.outputPreservesNonProof).length
 });
 
-export const runCodexDecisionPacketObedienceEval = (
+export const runCodexDecisionPacketObedienceEval = async (
   fixture: CodexDecisionPacketObedienceFixture
-): CodexDecisionPacketObedienceEvalResult => {
-  const decisionPacket = runDecisionPacketEval(loadNotesBaselineEvalFixture(fixture.notesBaselineFixturePath));
+): Promise<CodexDecisionPacketObedienceEvalResult> => {
+  const decisionPacket = await runDecisionPacketEval(loadNotesBaselineEvalFixture(fixture.notesBaselineFixturePath));
   const cases = fixture.cases.map((testCase): CodexDecisionPacketObedienceCaseReadback => {
     const sourceCase = decisionPacket.cases.find((candidate) => candidate.id === testCase.decisionPacketCaseId);
 

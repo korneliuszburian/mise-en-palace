@@ -122,15 +122,15 @@ const collectSelfRepoContaminationRefs = (
   ...fixture.cases.flatMap(caseReferenceValues)
 ].filter(isSelfRepoEvidenceRef);
 
-export const runSecondRepoDecisionPacketEval = (
+export const runSecondRepoDecisionPacketEval = async (
   fixturePaths: string | readonly string[]
-): SecondRepoDecisionPacketEvalResult => {
+): Promise<SecondRepoDecisionPacketEvalResult> => {
   const paths = typeof fixturePaths === "string" ? [fixturePaths] : fixturePaths;
-  const repoResults = paths.map((fixturePath): SecondRepoTargetResult => {
+  const repoResults = await Promise.all(paths.map(async (fixturePath): Promise<SecondRepoTargetResult> => {
     const fixture = loadNotesBaselineEvalFixture(fixturePath);
     const targetRepo = targetRepoNameFromFixture(fixture);
-    const notesBaseline = runNotesBaselineEval(fixture);
-    const decisionPacket = runDecisionPacketEval(fixture);
+    const notesBaseline = await runNotesBaselineEval(fixture);
+    const decisionPacket = await runDecisionPacketEval(fixture);
     const repoSpecificDecisionCount = fixture.decisions.filter((decision) =>
       isRepoSpecificDecision(targetRepo, decision)
     ).length;
@@ -162,7 +162,7 @@ export const runSecondRepoDecisionPacketEval = (
       decisionPacketStatus: decisionPacket.status,
       selfRepoContaminationRefs
     };
-  });
+  }));
 
   const targetRepos = repoResults.map((result) => result.targetRepo);
   const totals = repoResults.reduce((sum, result) => ({

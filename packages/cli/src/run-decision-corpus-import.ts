@@ -299,13 +299,13 @@ export const buildImportedDecisionCorpus = (
   });
 };
 
-export const runDecisionCorpusImport = (
+export const runDecisionCorpusImport = async (
   fixture: DecisionCorpusImportFixture
-): DecisionCorpusImportResult => {
+): Promise<DecisionCorpusImportResult> => {
   const base = loadNotesBaselineEvalFixture(fixture.baseFixturePath);
   const merged = buildImportedDecisionCorpus(fixture, base);
-  const notesBaseline = runNotesBaselineEval(merged);
-  const decisionPacket = runDecisionPacketEval(merged);
+  const notesBaseline = await runNotesBaselineEval(merged);
+  const decisionPacket = await runDecisionPacketEval(merged);
   const currentDecisionCount = fixture.decisions.filter((decision) => decision.status === "current").length;
   const staleDecisionCount = fixture.decisions.filter((decision) => decision.status === "stale").length;
   const rejectedDecisionCount = fixture.decisions.filter((decision) => decision.status === "rejected").length;

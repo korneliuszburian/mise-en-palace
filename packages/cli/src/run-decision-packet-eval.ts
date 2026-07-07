@@ -6,9 +6,12 @@ import {
   roundRankingMetric
 } from "./ranking-eval-metrics.js";
 import {
-  rankDecisionRows
-} from "./decision-packet-scoring.js";
+  buildDecisionPacketWithEngine,
+  type EngineDecisionPacket
+} from "./decision-packet-engine.js";
 import type {
+  DecisionPacketRow,
+  NotesBaselineCase,
   NotesBaselineEvalFixture
 } from "./run-notes-baseline-eval.js";
 import {
@@ -18,22 +21,10 @@ import {
 type PacketQualityLabel = "useful" | "noisy" | "stale_authority" | "miss";
 type DecisionPacketStatus = "pass" | "fail";
 
-type DecisionPacketDecision = NotesBaselineEvalFixture["decisions"][number];
-type DecisionPacketCase = NotesBaselineEvalFixture["cases"][number];
+type DecisionPacketDecision = DecisionPacketRow;
+type DecisionPacketCase = NotesBaselineCase;
 
-interface DecisionPacketReadback {
-  readonly governingDecisionIds: readonly string[];
-  readonly sourceClaimIds: readonly string[];
-  readonly sourceDecisionEdgeIds: readonly string[];
-  readonly memoryRefs: readonly string[];
-  readonly staleDecisionIds: readonly string[];
-  readonly rejectedPathIds: readonly string[];
-  readonly falsifiers: readonly string[];
-  readonly doesNotProve: readonly string[];
-  readonly nonProofs: readonly string[];
-  readonly noiseDecisionIds: readonly string[];
-  readonly severeStaleAuthorityIds: readonly string[];
-}
+type DecisionPacketReadback = EngineDecisionPacket;
 
 interface DecisionPacketCaseResult {
   readonly id: string;
@@ -85,53 +76,6 @@ const decisionById = (
 const nonEmpty = (
   value: string | undefined
 ): value is string => value !== undefined && value.trim().length > 0;
-
-const buildPacket = (
-  fixture: NotesBaselineEvalFixture,
-  testCase: DecisionPacketCase
-): DecisionPacketReadback => {
-  const decisionsById = decisionById(fixture.decisions);
-  const topRanked = rankDecisionRows(fixture.decisions, testCase.task)
-    .slice(0, fixture.topK);
-  const governingDecisionIds = topRanked
-    .filter((decision) => decision.status === "current")
-    .map((decision) => decision.id);
-  const governingDecisions = governingDecisionIds
-    .map((id) => decisionsById.get(id))
-    .filter((decision): decision is DecisionPacketDecision => decision !== undefined);
-  const staleDecisionIds = testCase.staleDecisionIds.filter((id) =>
-    decisionsById.get(id)?.status === "stale" &&
-    !governingDecisionIds.includes(id)
-  );
-  const rejectedPathIds = testCase.rejectedDecisionIds.filter((id) => {
-    const decision = decisionsById.get(id);
-
-    return decision?.status === "rejected" && nonEmpty(decision.sourceRejectionId);
-  });
-  const severeStaleAuthorityIds = topRanked
-    .filter((decision) => decision.status === "stale" || decision.status === "rejected")
-    .map((decision) => decision.id);
-
-  return {
-    governingDecisionIds,
-    sourceClaimIds: governingDecisions.map((decision) => decision.sourceClaimId),
-    sourceDecisionEdgeIds: governingDecisions.flatMap((decision) =>
-      nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
-    ),
-    memoryRefs: governingDecisionIds.map((id) => `memory:decision:${id}`),
-    staleDecisionIds,
-    rejectedPathIds,
-    falsifiers: governingDecisions.map((decision) => decision.falsifier).filter(nonEmpty),
-    doesNotProve: governingDecisions.map((decision) => decision.doesNotProve).filter(nonEmpty),
-    nonProofs: [
-      "packet quality only",
-      "does not prove live Codex obedience",
-      "does not prove source truth"
-    ],
-    noiseDecisionIds: governingDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
-    severeStaleAuthorityIds
-  };
-};
 
 const hasDecisionBoundary = (
   packet: DecisionPacketReadback,
@@ -197,11 +141,11 @@ const classifyPacket = (
   return "useful";
 };
 
-const evaluateCase = (
+const evaluateCase = async (
   fixture: NotesBaselineEvalFixture,
   testCase: DecisionPacketCase
-): DecisionPacketCaseResult => {
-  const packet = buildPacket(fixture, testCase);
+): Promise<DecisionPacketCaseResult> => {
+  const packet = await buildDecisionPacketWithEngine(fixture, testCase);
   const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
   const qualityLabel = classifyPacket(packet, testCase, expectedDecision);
 
@@ -224,10 +168,10 @@ const average = (
   ? 0
   : roundRankingMetric(values.reduce((sum, value) => sum + value, 0) / values.length);
 
-export const runDecisionPacketEval = (
+export const runDecisionPacketEval = async (
   fixture: NotesBaselineEvalFixture
-): DecisionPacketEvalResult => {
-  const cases = fixture.cases.map((testCase) => evaluateCase(fixture, testCase));
+): Promise<DecisionPacketEvalResult> => {
+  const cases = await Promise.all(fixture.cases.map((testCase) => evaluateCase(fixture, testCase)));
   const usefulCount = cases.filter((testCase) => testCase.qualityLabel === "useful").length;
   const noisyCount = cases.filter((testCase) => testCase.qualityLabel === "noisy").length;
   const missCount = cases.filter((testCase) => testCase.qualityLabel === "miss").length;
@@ -269,8 +213,9 @@ export const runDecisionPacketEval = (
     cases,
     proof: {
       proves: [
-        "deterministic pre-code task packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, memory refs, falsifiers, and doesNotProve boundaries",
-        "packet scoring reports stale-decision exclusions and rejected-path visibility before coding starts",
+        "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
+        "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, memory refs, falsifiers, and doesNotProve boundaries",
+        "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
         "packet quality is gated by a predeclared useful-rate threshold and zero severe stale-authority inclusions"
       ],
       doesNotProve: [

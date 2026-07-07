@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -12,8 +13,8 @@ const fixturePath = fileURLToPath(
 );
 
 describe("runNotesBaselineEval", () => {
-  it("passes the governed decision-packet vs notes baseline falsifier", () => {
-    const result = runNotesBaselineEval(loadNotesBaselineEvalFixture(fixturePath));
+  it("passes the governed decision-packet vs notes baseline falsifier", async () => {
+    const result = await runNotesBaselineEval(loadNotesBaselineEvalFixture(fixturePath));
 
     expect(result).toMatchObject({
       kind: "krn.notesBaseline.eval.v1",
@@ -123,8 +124,37 @@ describe("runNotesBaselineEval", () => {
     ]));
   });
 
-  it("fails when KRN cannot beat the comprehensive notes baseline", () => {
-    const result = runNotesBaselineEval(parseNotesBaselineEvalFixture({
+  it("fails governed-boundary scoring when the expected decision lacks a decision edge", async () => {
+    const rawFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+      decisions: Array<Record<string, unknown>>;
+    };
+    const expectedDecision = rawFixture.decisions.find((decision) =>
+      decision["id"] === "store-backed-memory-no-markdown"
+    );
+
+    if (expectedDecision === undefined) {
+      throw new Error("missing store-backed-memory-no-markdown decision");
+    }
+
+    delete expectedDecision["sourceDecisionEdgeId"];
+
+    const result = await runNotesBaselineEval(parseNotesBaselineEvalFixture(rawFixture));
+    const memoryRuntimeCase = result.cases.find((testCase) =>
+      testCase.id === "memory-runtime-task"
+    );
+
+    expect(result.status).toBe("fail");
+    expect(result.metrics.governedBoundaryRate).toBeLessThan(1);
+    expect(memoryRuntimeCase).toMatchObject({
+      krn: {
+        recallExpected: true,
+        governedBoundary: false
+      }
+    });
+  });
+
+  it("fails when KRN cannot beat the comprehensive notes baseline", async () => {
+    const result = await runNotesBaselineEval(parseNotesBaselineEvalFixture({
       version: "1",
       corpusName: "negative-notes-parity",
       topK: 1,
@@ -163,8 +193,8 @@ describe("runNotesBaselineEval", () => {
     expect(result.metrics.tieCount).toBe(15);
   });
 
-  it("fails when the notes baseline beats KRN recall", () => {
-    const result = runNotesBaselineEval(parseNotesBaselineEvalFixture({
+  it("fails when the notes baseline beats KRN recall", async () => {
+    const result = await runNotesBaselineEval(parseNotesBaselineEvalFixture({
       version: "1",
       corpusName: "negative-notes-recall-win",
       topK: 1,

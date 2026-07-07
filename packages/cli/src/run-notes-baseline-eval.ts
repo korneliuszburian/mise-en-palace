@@ -16,16 +16,16 @@ import {
   roundRankingMetric
 } from "./ranking-eval-metrics.js";
 import {
-  rankDecisionRows
-} from "./decision-packet-scoring.js";
-import {
   tokenOverlapScore
 } from "./eval-text-scoring.js";
+import {
+  buildDecisionPacketWithEngine
+} from "./decision-packet-engine.js";
 
 type DecisionStatus = "current" | "stale" | "rejected";
 type PacketWinner = "krn" | "notes" | "tie";
 
-interface DecisionPacketRow {
+export interface DecisionPacketRow {
   readonly id: string;
   readonly title: string;
   readonly statement: string;
@@ -38,13 +38,13 @@ interface DecisionPacketRow {
   readonly doesNotProve: string;
 }
 
-interface NotesEntry {
+export interface NotesEntry {
   readonly id: string;
   readonly decisionId: string;
   readonly text: string;
 }
 
-interface NotesBaselineCase {
+export interface NotesBaselineCase {
   readonly id: string;
   readonly task: string;
   readonly expectedDecisionId: string;
@@ -338,52 +338,41 @@ const average = (
   return roundRankingMetric(values.reduce((sum, value) => sum + value, 0) / values.length);
 };
 
-const hasGovernedBoundary = (
+const hasDecisionBoundary = (
   decision: DecisionPacketRow | undefined
 ): boolean =>
   decision !== undefined &&
-  decision.status === "current" &&
-  decision.evidenceRef.length > 0 &&
-  decision.sourceClaimId.length > 0 &&
+  decision.evidenceRef.trim().length > 0 &&
+  decision.sourceClaimId.trim().length > 0 &&
   decision.sourceDecisionEdgeId !== undefined &&
-  decision.falsifier.length > 0 &&
-  decision.doesNotProve.length > 0;
+  decision.sourceDecisionEdgeId.trim().length > 0;
 
-const buildKrnPacket = (
+const buildKrnPacket = async (
   fixture: NotesBaselineEvalFixture,
   testCase: NotesBaselineCase
-): KRNPacketReadback => {
-  const decisionsById = new Map(fixture.decisions.map((decision) => [decision.id, decision]));
-  const ranked = rankDecisionRows(fixture.decisions, testCase.task);
-  const selectedDecisionIds = ranked
-    .filter((decision) => decision.status === "current")
-    .slice(0, fixture.topK)
-    .map((decision) => decision.id);
-  const staleDecisionIds = testCase.staleDecisionIds.filter((id) => {
-    const decision = decisionsById.get(id);
-
-    return decision?.status === "stale" && !selectedDecisionIds.includes(id);
-  });
-  const rejectedPathIds = testCase.rejectedDecisionIds.filter((id) => {
-    const decision = decisionsById.get(id);
-
-    return decision?.status === "rejected" && decision.sourceRejectionId !== undefined;
-  });
-  const expectedDecision = decisionsById.get(testCase.expectedDecisionId);
-  const noiseCount = selectedDecisionIds.filter((id) => id !== testCase.expectedDecisionId).length;
+): Promise<KRNPacketReadback> => {
+  const packet = await buildDecisionPacketWithEngine(fixture, testCase);
+  const selectedDecisionIds = packet.governingDecisionIds;
+  const expectedDecision = fixture.decisions.find((decision) =>
+    decision.id === testCase.expectedDecisionId
+  );
 
   return {
     selectedDecisionIds,
-    staleDecisionIds,
-    rejectedPathIds,
+    staleDecisionIds: packet.staleDecisionIds,
+    rejectedPathIds: packet.rejectedPathIds,
     recallExpected: selectedDecisionIds.includes(testCase.expectedDecisionId),
-    governedBoundary: hasGovernedBoundary(expectedDecision) && selectedDecisionIds.includes(testCase.expectedDecisionId),
+    governedBoundary: hasDecisionBoundary(expectedDecision) &&
+      packet.sourceDecisionEdgeIds.length > 0 &&
+      packet.falsifiers.length > 0 &&
+      packet.doesNotProve.length > 0 &&
+      selectedDecisionIds.includes(testCase.expectedDecisionId),
     staleExcluded: testCase.staleDecisionIds.length > 0 &&
-      staleDecisionIds.length === testCase.staleDecisionIds.length,
+      packet.staleDecisionIds.length === testCase.staleDecisionIds.length,
     rejectedPathVisible: testCase.rejectedDecisionIds.length > 0 &&
-      rejectedPathIds.length === testCase.rejectedDecisionIds.length,
-    noiseCount,
-    ceremonyUnits: selectedDecisionIds.length + staleDecisionIds.length + rejectedPathIds.length
+      packet.rejectedPathIds.length === testCase.rejectedDecisionIds.length,
+    noiseCount: packet.noiseDecisionIds.length,
+    ceremonyUnits: packet.brief.includedContextCount + packet.brief.explicitExclusionCount
   };
 };
 
@@ -475,11 +464,11 @@ const chooseWinner = (
     };
 };
 
-const evaluateCase = (
+const evaluateCase = async (
   fixture: NotesBaselineEvalFixture,
   testCase: NotesBaselineCase
-): NotesBaselineEvalCaseResult => {
-  const krn = buildKrnPacket(fixture, testCase);
+): Promise<NotesBaselineEvalCaseResult> => {
+  const krn = await buildKrnPacket(fixture, testCase);
   const notes = buildNotesPacket(fixture, testCase);
   const winner = chooseWinner(krn, notes);
 
@@ -495,10 +484,10 @@ const evaluateCase = (
   };
 };
 
-export const runNotesBaselineEval = (
+export const runNotesBaselineEval = async (
   fixture: NotesBaselineEvalFixture
-): NotesBaselineEvalResult => {
-  const cases = fixture.cases.map((testCase) => evaluateCase(fixture, testCase));
+): Promise<NotesBaselineEvalResult> => {
+  const cases = await Promise.all(fixture.cases.map((testCase) => evaluateCase(fixture, testCase)));
   const krnWinCount = cases.filter((testCase) => testCase.winner === "krn").length;
   const notesWinCount = cases.filter((testCase) => testCase.winner === "notes").length;
   const tieCount = cases.filter((testCase) => testCase.winner === "tie").length;

@@ -94,23 +94,23 @@ export const runDeterministicEval = async (input: {
   const secondMemoryAdvantage = await runMemoryAdvantageEval(memoryAdvantageFixture);
 
   const notesBaselineFixture = loadNotesBaselineEvalFixture(input.notesBaselineFixturePath);
-  const firstNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
-  const secondNotesBaseline = runNotesBaselineEval(notesBaselineFixture);
-  const firstDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
-  const secondDecisionPacket = runDecisionPacketEval(notesBaselineFixture);
-  const firstSecondRepoDecisionPacket = runSecondRepoDecisionPacketEval(
+  const firstNotesBaseline = await runNotesBaselineEval(notesBaselineFixture);
+  const secondNotesBaseline = await runNotesBaselineEval(notesBaselineFixture);
+  const firstDecisionPacket = await runDecisionPacketEval(notesBaselineFixture);
+  const secondDecisionPacket = await runDecisionPacketEval(notesBaselineFixture);
+  const firstSecondRepoDecisionPacket = await runSecondRepoDecisionPacketEval(
     input.secondRepoDecisionPacketFixturePath
   );
-  const secondSecondRepoDecisionPacket = runSecondRepoDecisionPacketEval(
+  const secondSecondRepoDecisionPacket = await runSecondRepoDecisionPacketEval(
     input.secondRepoDecisionPacketFixturePath
   );
   const codexDecisionPacketObedienceFixture = loadCodexDecisionPacketObedienceFixture(
     input.codexDecisionPacketObedienceFixturePath
   );
-  const firstCodexDecisionPacketObedience = runCodexDecisionPacketObedienceEval(
+  const firstCodexDecisionPacketObedience = await runCodexDecisionPacketObedienceEval(
     codexDecisionPacketObedienceFixture
   );
-  const secondCodexDecisionPacketObedience = runCodexDecisionPacketObedienceEval(
+  const secondCodexDecisionPacketObedience = await runCodexDecisionPacketObedienceEval(
     codexDecisionPacketObedienceFixture
   );
 

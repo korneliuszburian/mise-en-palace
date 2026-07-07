@@ -22,8 +22,8 @@ const fixture = () => loadCodexDecisionPacketObedienceFixture(fixturePath);
 const livePilotFixture = () => loadCodexDecisionPacketObedienceFixture(livePilotFixturePath);
 
 describe("runCodexDecisionPacketObedienceEval", () => {
-  it("checks recorded Codex output against decision-packet obedience signals", () => {
-    const result = runCodexDecisionPacketObedienceEval(
+  it("checks recorded Codex output against decision-packet obedience signals", async () => {
+    const result = await runCodexDecisionPacketObedienceEval(
       fixture()
     );
 
@@ -77,8 +77,8 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     expect(result.proof.doesNotProve).toContain("live Codex execution");
   });
 
-  it("checks the live Codex pilot output against decision-packet obedience signals", () => {
-    const result = runCodexDecisionPacketObedienceEval(livePilotFixture());
+  it("checks the live Codex pilot output against decision-packet obedience signals", async () => {
+    const result = await runCodexDecisionPacketObedienceEval(livePilotFixture());
 
     expect(result).toMatchObject({
       kind: "krn.codexDecisionPacketObedience.eval.v1",
@@ -109,9 +109,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output drops a packet boundary", () => {
+  it("fails when recorded output drops a packet boundary", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"
@@ -140,9 +140,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output drops the governing decision evidence", () => {
+  it("fails when recorded output drops the governing decision evidence", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"
@@ -167,9 +167,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output drops the rejected-path evidence", () => {
+  it("fails when recorded output drops the rejected-path evidence", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"
@@ -197,9 +197,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output drops packet non-proof boundaries", () => {
+  it("fails when recorded output drops packet non-proof boundaries", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"
@@ -222,9 +222,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output does not acknowledge the decision-packet brief", () => {
+  it("fails when recorded output does not acknowledge the decision-packet brief", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"
@@ -249,9 +249,9 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     });
   });
 
-  it("fails when recorded output has an invalid evidence shape", () => {
+  it("fails when recorded output has an invalid evidence shape", async () => {
     const sourceFixture = fixture();
-    const result = runCodexDecisionPacketObedienceEval({
+    const result = await runCodexDecisionPacketObedienceEval({
       ...sourceFixture,
       cases: sourceFixture.cases.map((testCase) =>
         testCase.id === "memory-runtime-obedience"

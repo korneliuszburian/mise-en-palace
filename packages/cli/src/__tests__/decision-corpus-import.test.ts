@@ -48,8 +48,8 @@ const importDecision = (
 };
 
 describe("runDecisionCorpusImport", () => {
-  it("imports compact source-to-decision rows into a passing decision corpus", () => {
-    const result = runDecisionCorpusImport({
+  it("imports compact source-to-decision rows into a passing decision corpus", async () => {
+    const result = await runDecisionCorpusImport({
       ...fixture(),
       baseFixturePath
     });
@@ -93,8 +93,8 @@ describe("runDecisionCorpusImport", () => {
     expect(result.proof.doesNotProve).toContain("DB ingestion");
   });
 
-  it("runs with the fixture embedded relative base path", () => {
-    const result = runDecisionCorpusImport(fixture());
+  it("runs with the fixture embedded relative base path", async () => {
+    const result = await runDecisionCorpusImport(fixture());
 
     expect(result.status).toBe("pass");
     expect(result.mergedCorpus).toMatchObject({
