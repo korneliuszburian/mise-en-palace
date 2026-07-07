@@ -30,8 +30,8 @@ Use this skill before or during TypeScript changes.
    ```
 
    Use the catalog result as read-only pattern context. If the command is not
-   available, fall back to `docs/patterns/typescript-boundary-patterns.md` and
-   record that catalog readback was not used.
+   available, record that catalog readback was not used; do not fall back to a
+   markdown pattern file as runtime authority.
 8. State whether `ts-boundary-unknown-first-result-state` applies.
 9. Decide whether `ts-type-critic` should review.
 10. Run typecheck before completion.

@@ -193,8 +193,3 @@ what_did_not_prove:
 target_dirty_after:
 condensation_decision:
 ```
-
-## Reference
-
-Use `docs/runbooks/target-repo-testing.md` for the full operator runbook when a
-scenario needs more detail.

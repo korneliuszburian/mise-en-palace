@@ -585,9 +585,10 @@ For large strategy reviews, the prompt should request proposed Beads with
 dependencies, acceptance criteria, and non-goals. The output should update the
 task graph, not create another prose forest.
 
-The old Claude-based repo skill is deferred under
-`.agents/deffered/skills/second-opinion-claude` until it can use a reviewer that
-does not hallucinate basic repository facts.
+The old Claude-based repo skill was removed from the active repo surface after
+local reviewer output hallucinated basic repository facts. Reintroduce an
+external-review skill only when a current reviewer can produce evidence-backed
+findings that survive deterministic local validation.
 
 ## Near-Term Roadmap
 

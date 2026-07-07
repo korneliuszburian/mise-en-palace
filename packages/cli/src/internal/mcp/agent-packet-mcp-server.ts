@@ -311,7 +311,8 @@ export const serveAgentPacketMcpStdio = async (
       let parsed: unknown;
 
       try {
-        parsed = JSON.parse(line);
+        const message: unknown = JSON.parse(line);
+        parsed = message;
       } catch {
         output.write(`${JSON.stringify(errorResponse(null, -32700, "Parse error"))}\n`);
         continue;
