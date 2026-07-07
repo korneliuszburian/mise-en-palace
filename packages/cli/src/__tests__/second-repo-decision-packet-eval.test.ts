@@ -39,6 +39,21 @@ describe("runSecondRepoDecisionPacketEval", () => {
       status: "pass",
       targetRepo: "weak-json-boundary-typescript",
       targetRepos: ["weak-json-boundary-typescript"],
+      targetTrial: {
+        mode: "observation-only",
+        targetDirtyBefore: "not_applicable_fixture",
+        targetStatusFreshness: "fresh_current_task",
+        targetPatchLifecycle: "none",
+        allowedWrites: [],
+        forbiddenWrites: [
+          "target source edits",
+          "target commits",
+          "target pushes",
+          "target cleanup or reset"
+        ],
+        commands: ["pnpm eval:second-repo-decision-packet"],
+        targetDirtyAfter: "not_applicable_fixture"
+      },
       metrics: {
         repoCount: 1,
         caseCount: 15,
@@ -65,6 +80,11 @@ describe("runSecondRepoDecisionPacketEval", () => {
       "the decision-packet eval runs on target-repo corpora outside the KRN repo",
       "each target corpus includes stale and rejected-path readback",
       "each target corpus reports KRN-vs-notes comparison outcomes"
+    ]));
+    expect(result.gaps).toEqual(expect.arrayContaining([
+      "live Codex execution or obedience",
+      "arbitrary repository portability",
+      "source truth"
     ]));
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "live Codex execution or obedience",

@@ -37,6 +37,16 @@ export interface SecondRepoDecisionPacketEvalResult {
   readonly status: SecondRepoEvalStatus;
   readonly targetRepo: string;
   readonly targetRepos: readonly string[];
+  readonly targetTrial: {
+    readonly mode: "observation-only";
+    readonly targetDirtyBefore: "not_applicable_fixture";
+    readonly targetStatusFreshness: "fresh_current_task";
+    readonly targetPatchLifecycle: "none";
+    readonly allowedWrites: readonly [];
+    readonly forbiddenWrites: readonly string[];
+    readonly commands: readonly string[];
+    readonly targetDirtyAfter: "not_applicable_fixture";
+  };
   readonly repoResults: readonly SecondRepoTargetResult[];
   readonly metrics: {
     readonly repoCount: number;
@@ -51,6 +61,7 @@ export interface SecondRepoDecisionPacketEvalResult {
     readonly decisiveComparisonCount: number;
     readonly selfRepoContaminationCount: number;
   };
+  readonly gaps: readonly string[];
   readonly proof: {
     readonly proves: readonly string[];
     readonly doesNotProve: readonly string[];
@@ -73,6 +84,17 @@ const selfRepoEvidencePrefixes = [
   "docs/runs/",
   "packages/"
 ];
+
+const secondRepoEvalCommand = "pnpm eval:second-repo-decision-packet";
+
+const secondRepoEvalGaps = [
+  "commercial validation",
+  "live Codex execution or obedience",
+  "arbitrary repository portability",
+  "source truth",
+  "that every reusable pattern transfers cleanly",
+  "repo-specificity beyond id prefix plus target-repo evidenceRef convention"
+] as const;
 
 const isSelfRepoEvidenceRef = (
   evidenceRef: string
@@ -208,11 +230,27 @@ export const runSecondRepoDecisionPacketEval = async (
     status,
     targetRepo: targetRepos[0] ?? "none",
     targetRepos,
+    targetTrial: {
+      mode: "observation-only",
+      targetDirtyBefore: "not_applicable_fixture",
+      targetStatusFreshness: "fresh_current_task",
+      targetPatchLifecycle: "none",
+      allowedWrites: [],
+      forbiddenWrites: [
+        "target source edits",
+        "target commits",
+        "target pushes",
+        "target cleanup or reset"
+      ],
+      commands: [secondRepoEvalCommand],
+      targetDirtyAfter: "not_applicable_fixture"
+    },
     repoResults,
     metrics: {
       repoCount: repoResults.length,
       ...totals
     },
+    gaps: [...secondRepoEvalGaps],
     proof: {
       proves: [
         "the decision-packet eval runs on target-repo corpora outside the KRN repo",
@@ -222,14 +260,7 @@ export const runSecondRepoDecisionPacketEval = async (
         "each target corpus reports KRN-vs-notes comparison outcomes",
         "each target corpus avoids self-repo KRN plan/architecture evidence refs"
       ],
-      doesNotProve: [
-        "commercial validation",
-        "live Codex execution or obedience",
-        "arbitrary repository portability",
-        "source truth",
-        "that every reusable pattern transfers cleanly",
-        "repo-specificity beyond id prefix plus target-repo evidenceRef convention"
-      ]
+      doesNotProve: [...secondRepoEvalGaps]
     }
   };
 };
