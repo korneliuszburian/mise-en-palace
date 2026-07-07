@@ -37,15 +37,15 @@ export const formatMemoryCandidateAddUsage = (): string =>
 
 export const formatMemoryCandidatePromoteUsage = (): string =>
   [
-    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
+    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--evidence-reviewed-ref <ref>] [--untrusted-source-review-ref <ref>] [--persist]",
     "",
     "Required:",
     "--candidate-id",
     "--reviewer",
     "--decision accepted",
-    "--evidence-reviewed-ref",
     "",
     "Optional:",
+    "--evidence-reviewed-ref <ref> (required before persisted promotion)",
     "--untrusted-source-review-ref <ref> (required by the review gate for non-trusted source lineage)",
     "--metadata key=value",
     "--persist"
@@ -90,10 +90,10 @@ export const formatMemoryAntiAddUsage = (): string =>
     "Required:",
     "--run-id",
     "--rejected-claim",
-    "--reason",
     "--invalidated-by-source-claim-id or --source-lineage",
     "",
     "Optional:",
+    "--reason <text> (required by the anti-memory input boundary)",
     "--applies-to <text>",
     "--may-revisit-when <text>",
     "--owner <owner>",
@@ -203,8 +203,7 @@ const hasMemoryCandidatePromoteRequiredFields = (
 ): boolean =>
   [
     memoryCommand.candidateId,
-    memoryCommand.reviewer,
-    memoryCommand.evidenceReviewedRef
+    memoryCommand.reviewer
   ].every(hasText) && hasAcceptedDecision(memoryCommand.decision);
 
 const hasMemoryRejectRequiredFields = (
@@ -231,8 +230,7 @@ const hasMemoryAntiAddRequiredFields = (
 ): boolean =>
   [
     memoryCommand.runId,
-    memoryCommand.rejectedClaim,
-    memoryCommand.reason
+    memoryCommand.rejectedClaim
   ].every(hasText) &&
   (hasText(memoryCommand.invalidatedBySourceClaimId) || memoryCommand.sourceLineageIds.length > 0);
 

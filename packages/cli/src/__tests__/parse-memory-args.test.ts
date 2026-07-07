@@ -77,6 +77,26 @@ describe("parseMemoryArgs", () => {
       "--reviewer",
       "operator",
       "--decision",
+      "accepted"
+    ])).toEqual({
+      command: {
+        kind: "memoryCandidatePromote",
+        persist: false,
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        decision: "accepted",
+        metadata: {}
+      }
+    });
+
+    expect(parseMemoryArgs([
+      "candidate",
+      "promote",
+      "--candidate-id",
+      "candidate-1",
+      "--reviewer",
+      "operator",
+      "--decision",
       "accepted",
       "--evidence-reviewed-ref",
       "review-1",
@@ -127,6 +147,28 @@ describe("parseMemoryArgs", () => {
   });
 
   it("parses memory record apply and anti-memory add commands", () => {
+    expect(parseMemoryArgs([
+      "anti",
+      "add",
+      "--run-id",
+      "run-1",
+      "--rejected-claim",
+      "Markdown is runtime memory",
+      "--invalidated-by-source-claim-id",
+      "source-claim-1"
+    ])).toEqual({
+      command: {
+        kind: "memoryAntiAdd",
+        persist: false,
+        runId: "run-1",
+        rejectedClaim: "Markdown is runtime memory",
+        invalidatedBySourceClaimId: "source-claim-1",
+        sourceLineageIds: [],
+        candidateEvidenceRefs: [],
+        metadata: {}
+      }
+    });
+
     expect(parseMemoryArgs([
       "record",
       "apply",
