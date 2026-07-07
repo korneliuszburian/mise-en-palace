@@ -179,6 +179,72 @@ interface MemoryDraftTokenConfig<TOption extends string, TKey extends string>
   extends PersistedMetadataTokenConfig<TOption, TKey> {
 }
 
+const hasText = (value: string | undefined): boolean =>
+  value !== undefined && value.trim().length > 0;
+
+const hasAcceptedDecision = (value: string | undefined): boolean =>
+  value === "accepted";
+
+const hasMemoryCandidateAddRequiredFields = (
+  memoryCommand: MemoryCandidateAddCommand
+): boolean =>
+  (hasText(memoryCommand.runId) || hasText(memoryCommand.feedbackDeltaId)) &&
+  [
+    memoryCommand.memoryKind,
+    memoryCommand.content,
+    memoryCommand.confidence,
+    memoryCommand.applicationGuidance,
+    memoryCommand.invalidationRule
+  ].every(hasText) &&
+  (hasText(memoryCommand.sourceClaimId) || memoryCommand.sourceLineageIds.length > 0);
+
+const hasMemoryCandidatePromoteRequiredFields = (
+  memoryCommand: MemoryCandidatePromoteCommand
+): boolean =>
+  [
+    memoryCommand.candidateId,
+    memoryCommand.reviewer,
+    memoryCommand.evidenceReviewedRef
+  ].every(hasText) && hasAcceptedDecision(memoryCommand.decision);
+
+const hasMemoryRejectRequiredFields = (
+  memoryCommand: MemoryRejectCommand
+): boolean =>
+  [
+    memoryCommand.candidateId,
+    memoryCommand.reviewer,
+    memoryCommand.reason
+  ].every(hasText);
+
+const hasMemoryRecordApplyRequiredFields = (
+  memoryCommand: MemoryRecordApplyCommand
+): boolean =>
+  [
+    memoryCommand.runId,
+    memoryCommand.memoryId,
+    memoryCommand.outcome,
+    memoryCommand.notes
+  ].every(hasText);
+
+const hasMemoryAntiAddRequiredFields = (
+  memoryCommand: MemoryAntiAddCommand
+): boolean =>
+  [
+    memoryCommand.runId,
+    memoryCommand.rejectedClaim,
+    memoryCommand.reason
+  ].every(hasText) &&
+  (hasText(memoryCommand.invalidatedBySourceClaimId) || memoryCommand.sourceLineageIds.length > 0);
+
+const hasMemoryAntiPromoteRequiredFields = (
+  memoryCommand: MemoryAntiPromoteCommand
+): boolean =>
+  [
+    memoryCommand.candidateId,
+    memoryCommand.reviewer,
+    memoryCommand.evidenceReviewedRef
+  ].every(hasText) && hasAcceptedDecision(memoryCommand.decision);
+
 const memoryCandidateAddStringOptions = {
   "--run-id": "runId",
   "--feedback-delta-id": "feedbackDeltaId",
@@ -611,6 +677,12 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
     return parsed;
   }
 
+  if (!hasMemoryCandidateAddRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryCandidateAddUsage()
+    };
+  }
+
   return {
     command: memoryCommand
   };
@@ -641,6 +713,12 @@ const parseMemoryCandidatePromoteArgs = (rest: readonly string[]): ParseArgsResu
 
   if (parsed !== undefined) {
     return parsed;
+  }
+
+  if (!hasMemoryCandidatePromoteRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryCandidatePromoteUsage()
+    };
   }
 
   return {
@@ -675,6 +753,12 @@ const parseMemoryCandidateRejectArgs = (rest: readonly string[]): ParseArgsResul
     return parsed;
   }
 
+  if (!hasMemoryRejectRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryCandidateRejectUsage()
+    };
+  }
+
   return {
     command: memoryCommand
   };
@@ -705,6 +789,12 @@ const parseMemoryRecordApplyArgs = (rest: readonly string[]): ParseArgsResult =>
 
   if (parsed !== undefined) {
     return parsed;
+  }
+
+  if (!hasMemoryRecordApplyRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryRecordApplyUsage()
+    };
   }
 
   return {
@@ -741,6 +831,12 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
     return parsed;
   }
 
+  if (!hasMemoryAntiAddRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryAntiAddUsage()
+    };
+  }
+
   return {
     command: memoryCommand
   };
@@ -773,6 +869,12 @@ const parseMemoryAntiPromoteArgs = (rest: readonly string[]): ParseArgsResult =>
     return parsed;
   }
 
+  if (!hasMemoryAntiPromoteRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryAntiPromoteUsage()
+    };
+  }
+
   return {
     command: memoryCommand
   };
@@ -803,6 +905,12 @@ const parseMemoryAntiRejectArgs = (rest: readonly string[]): ParseArgsResult => 
 
   if (parsed !== undefined) {
     return parsed;
+  }
+
+  if (!hasMemoryRejectRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryAntiRejectUsage()
+    };
   }
 
   return {

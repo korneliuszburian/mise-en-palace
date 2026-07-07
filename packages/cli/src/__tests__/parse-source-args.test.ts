@@ -269,6 +269,38 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("rejects source commands missing required fields", () => {
+    const invalidCases = [
+      {
+        args: ["claim", "add", "--title", "Only title"],
+        usage: "Usage: krn source claim add"
+      },
+      {
+        args: ["claim", "edges"],
+        usage: "Usage: krn source claim edges"
+      },
+      {
+        args: ["search", "--json"],
+        usage: "Usage: krn source search"
+      },
+      {
+        args: ["claim", "reject", "--title", "Only title"],
+        usage: "Usage: krn source claim reject"
+      },
+      {
+        args: ["decision", "link", "--source-claim-id", "claim-1"],
+        usage: "Usage: krn source decision link"
+      }
+    ];
+
+    for (const invalidCase of invalidCases) {
+      const parsed = parseSourceArgs(invalidCase.args);
+
+      expect(parsed.command).toBeUndefined();
+      expect(parsed.error).toContain(invalidCase.usage);
+    }
+  });
+
   it("parses source claim reject and source decision link", () => {
     expect(parseSourceArgs([
       "claim",

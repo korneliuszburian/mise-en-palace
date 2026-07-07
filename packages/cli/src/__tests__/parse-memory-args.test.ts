@@ -275,6 +275,46 @@ describe("parseMemoryArgs", () => {
     });
   });
 
+  it("rejects memory commands missing required fields", () => {
+    const invalidCases = [
+      {
+        args: ["candidate", "add", "--kind", "lesson"],
+        usage: "Usage: krn memory candidate add"
+      },
+      {
+        args: ["candidate", "promote", "--candidate-id", "candidate-1"],
+        usage: "Usage: krn memory candidate promote"
+      },
+      {
+        args: ["candidate", "reject", "--candidate-id", "candidate-1"],
+        usage: "Usage: krn memory candidate reject"
+      },
+      {
+        args: ["record", "apply", "--run-id", "run-1"],
+        usage: "Usage: krn memory record apply"
+      },
+      {
+        args: ["anti", "add", "--run-id", "run-1"],
+        usage: "Usage: krn memory anti add"
+      },
+      {
+        args: ["anti", "promote", "--candidate-id", "anti-candidate-1"],
+        usage: "Usage: krn memory anti promote"
+      },
+      {
+        args: ["anti", "reject", "--candidate-id", "anti-candidate-1"],
+        usage: "Usage: krn memory anti reject"
+      }
+    ];
+
+    for (const invalidCase of invalidCases) {
+      const parsed = parseMemoryArgs(invalidCase.args);
+
+      expect(parsed.command).toBeUndefined();
+      expect(parsed.error).toContain(invalidCase.usage);
+    }
+  });
+
   it("parses memory command help and rejects unsupported shapes", () => {
     expect(parseMemoryArgs(["candidate", "add", "--help"])).toEqual({
       command: {

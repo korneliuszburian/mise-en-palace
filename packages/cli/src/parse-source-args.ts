@@ -354,6 +354,49 @@ const hasSourceDecisionAdoptRequiredFields = (
   return true;
 };
 
+const hasSourceClaimAddRequiredFields = (
+  sourceCommand: Extract<CliCommand, { kind: "sourceClaimAdd" }>
+): boolean =>
+  [
+    sourceCommand.title,
+    sourceCommand.claim,
+    sourceCommand.mechanism,
+    sourceCommand.doesNotProve,
+    sourceCommand.supportType,
+    sourceCommand.trustTier,
+    sourceCommand.consumer
+  ].every(hasText);
+
+const hasSourceClaimEdgesRequiredFields = (
+  sourceCommand: Extract<CliCommand, { kind: "sourceClaimEdges" }>
+): boolean =>
+  hasText(sourceCommand.sourceClaimId);
+
+const hasSourceSearchRequiredFields = (
+  sourceCommand: Extract<CliCommand, { kind: "sourceSearch" }>
+): boolean =>
+  hasText(sourceCommand.query);
+
+const hasSourceClaimRejectRequiredFields = (
+  sourceCommand: Extract<CliCommand, { kind: "sourceClaimReject" }>
+): boolean =>
+  [
+    sourceCommand.title,
+    sourceCommand.rejectedBecause
+  ].every(hasText) && (hasText(sourceCommand.attemptedClaim) || hasText(sourceCommand.reason));
+
+const hasSourceDecisionLinkRequiredFields = (
+  sourceCommand: Extract<CliCommand, { kind: "sourceDecisionLink" }>
+): boolean =>
+  [
+    sourceCommand.sourceClaimId,
+    sourceCommand.targetType,
+    sourceCommand.targetId,
+    sourceCommand.supportType,
+    sourceCommand.confidence,
+    sourceCommand.notes
+  ].every(hasText);
+
 const sourceArtifactPreviewStringOptions = {
   "--claim": "claim",
   "--mechanism": "mechanism",
@@ -1249,6 +1292,12 @@ const parseSourceClaimAddArgs = (rest: readonly string[]): ParseArgsResult => {
     index = parsed.nextIndex;
   }
 
+  if (!hasSourceClaimAddRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceClaimAddUsage()
+    };
+  }
+
   return {
     command: sourceCommand
   };
@@ -1287,6 +1336,12 @@ const parseSourceClaimEdgesArgs = (rest: readonly string[]): ParseArgsResult => 
     index = parsed.nextIndex;
   }
 
+  if (!hasSourceClaimEdgesRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceClaimEdgesUsage()
+    };
+  }
+
   return {
     command: sourceCommand
   };
@@ -1323,6 +1378,12 @@ const parseSourceSearchArgs = (rest: readonly string[]): ParseArgsResult => {
     }
 
     index = parsed.nextIndex;
+  }
+
+  if (!hasSourceSearchRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceSearchUsage()
+    };
   }
 
   return {
@@ -1365,6 +1426,12 @@ const parseSourceClaimRejectArgs = (rest: readonly string[]): ParseArgsResult =>
     index = parsed.nextIndex;
   }
 
+  if (!hasSourceClaimRejectRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceClaimRejectUsage()
+    };
+  }
+
   return {
     command: sourceCommand
   };
@@ -1403,6 +1470,12 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
     }
 
     index = parsed.nextIndex;
+  }
+
+  if (!hasSourceDecisionLinkRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceDecisionLinkUsage()
+    };
   }
 
   return {
