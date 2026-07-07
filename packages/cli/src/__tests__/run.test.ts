@@ -57,6 +57,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Governed admin commands:");
     expect(result.stdout).toContain("Internal/dev commands:");
     expect(result.stdout).toContain("krn db --help");
+    expect(result.stdout).toContain("decision-corpus-import");
+    expect(result.stdout).toContain("real-recall-advantage");
     expect(result.stdout).toContain(
       "DB readiness/smoke commands prove local runtime plumbing only"
     );

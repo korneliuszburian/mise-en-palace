@@ -157,6 +157,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Internal/dev commands:");
     expect(result.stdout).toContain("krn db readiness");
     expect(result.stdout).toContain("krn db smoke [target]");
+    expect(result.stdout).toContain("decision-corpus-import");
+    expect(result.stdout).toContain("real-recall-advantage");
     expect(result.stdout).toContain(
       "They are not public operator workflow, product quality authority, or Memory Brain readiness proof."
     );

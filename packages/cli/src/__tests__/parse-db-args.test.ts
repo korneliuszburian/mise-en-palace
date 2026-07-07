@@ -63,6 +63,18 @@ describe("parseDbArgs", () => {
         target: "maintenanceBoundary"
       }
     });
+    expect(parseDbArgs(["smoke", "decision-corpus-import"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "decisionCorpusImport"
+      }
+    });
+    expect(parseDbArgs(["smoke", "real-recall-advantage"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "realRecallAdvantage"
+      }
+    });
   });
 
   it("rejects unsupported db command shapes", () => {
