@@ -304,14 +304,18 @@ const budgetCandidates = (
 };
 
 const makeRepositories = (
-  fixture: DecisionPacketEvalFixture
+  fixture: DecisionPacketEvalFixture,
+  testCase: DecisionPacketCase
 ) => {
-  const sourceClaims = fixture.decisions.map(toSourceClaim);
-  const sourceEdges = sourceClaimEdgesFor(fixture.decisions);
-  const sourceDecisionEdges = fixture.decisions
+  const scopedDecisions = fixture.decisions.filter((decision) =>
+    decisionAppliesToCase(decision, testCase)
+  );
+  const sourceClaims = scopedDecisions.map(toSourceClaim);
+  const sourceEdges = sourceClaimEdgesFor(scopedDecisions);
+  const sourceDecisionEdges = scopedDecisions
     .map(toSourceDecisionEdge)
     .filter((edge): edge is SourceDecisionEdge => edge !== undefined);
-  const memoryRecords = fixture.decisions
+  const memoryRecords = scopedDecisions
     .filter((decision) => decision.status === currentDecisionStatus)
     .map(toMemoryRecord);
 
@@ -346,6 +350,35 @@ const makeRepositories = (
     }
   };
 };
+
+const decisionAppliesToCase = (
+  decision: DecisionPacketRow,
+  testCase: DecisionPacketCase
+): boolean => {
+  if (
+    decision.id === testCase.expectedDecisionId ||
+    testCase.staleDecisionIds.includes(decision.id) ||
+    testCase.rejectedDecisionIds.includes(decision.id)
+  ) {
+    return true;
+  }
+
+  if (decision.taskScopes.length === 0) {
+    return true;
+  }
+
+  const taskTokens = new Set(scopeTokens(testCase.task));
+
+  return decision.taskScopes.some((scope) =>
+    scopeTokens(scope).every((token) => taskTokens.has(token))
+  );
+};
+
+const scopeTokens = (
+  value: string
+): readonly string[] => [...value.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)]
+  .map((match) => match[0])
+  .filter((token) => token.length > 0);
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
@@ -387,7 +420,7 @@ export const buildDecisionPacketWithEngine = async (
   fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
 ): Promise<DecisionPacket> => {
-  const repositories = makeRepositories(fixture);
+  const repositories = makeRepositories(fixture, testCase);
   const retrieved = await retrieveActivationCandidates({
     taskContract: taskContractFor(testCase),
     limits: {

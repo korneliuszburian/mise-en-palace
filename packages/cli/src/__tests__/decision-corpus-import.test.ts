@@ -98,9 +98,9 @@ describe("runDecisionCorpusImport", () => {
     expect(result.status).toBe("pass");
     expect(result.mergedCorpus).toMatchObject({
       name: "krn-decision-packet-imported-source-to-decision",
-      decisionCount: 43,
-      noteCount: 43,
-      caseCount: 22
+      decisionCount: 46,
+      noteCount: 46,
+      caseCount: 23
     });
   });
 

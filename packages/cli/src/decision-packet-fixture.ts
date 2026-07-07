@@ -22,6 +22,7 @@ export interface DecisionPacketRow {
   readonly title: string;
   readonly statement: string;
   readonly status: DecisionStatus;
+  readonly taskScopes: readonly string[];
   readonly evidenceRef: string;
   readonly sourceClaimId: string;
   readonly sourceDecisionEdgeId?: string;
@@ -90,6 +91,7 @@ const parseDecision = (
 
   return {
     ...decision,
+    taskScopes: optionalStringArrayValue(value["taskScopes"], `decisions[${index}].taskScopes`),
     sourceClaimId: stringValue(value["sourceClaimId"], `decisions[${index}].sourceClaimId`),
     ...(sourceDecisionEdgeId === undefined ? {} : { sourceDecisionEdgeId }),
     ...(sourceRejectionId === undefined ? {} : { sourceRejectionId })

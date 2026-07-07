@@ -21,10 +21,14 @@ const fixturePath = fileURLToPath(
 );
 
 const loadMutableFixture = (): {
+  topK: number;
   decisions: Array<Record<string, unknown>>;
+  notes: Array<Record<string, unknown>>;
   cases: Array<Record<string, unknown>>;
 } => JSON.parse(readFileSync(fixturePath, "utf8")) as {
+  topK: number;
   decisions: Array<Record<string, unknown>>;
+  notes: Array<Record<string, unknown>>;
   cases: Array<Record<string, unknown>>;
 };
 
@@ -44,22 +48,22 @@ describe("runDecisionPacketEval", () => {
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
-        caseCount: 17,
-        usefulCount: 17,
+        caseCount: 18,
+        usefulCount: 18,
         noisyCount: 0,
         missCount: 0,
         staleAuthorityCount: 0,
         notesUsableCount: 5,
-        notesUnsafeCount: 12,
+        notesUnsafeCount: 13,
         notesMissCount: 0,
-        krnWinCount: 12,
+        krnWinCount: 13,
         notesWinCount: 0,
         tieCount: 5,
-        decisiveComparisonCount: 12,
+        decisiveComparisonCount: 13,
         usefulRate: 1,
         krnWinRate: 1,
         notesWinRate: 0,
-        averageNoiseDecisions: 1.1176,
+        averageNoiseDecisions: 1.1111,
         severeStaleAuthorityInclusions: 0
       }
     });
@@ -96,6 +100,34 @@ describe("runDecisionPacketEval", () => {
         severeStaleAuthorityIds: []
       }
     });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "new-frontend-project-standard-task"
+    )).toMatchObject({
+      expectedDecisionId: "frontend-project-standard-packet",
+      qualityLabel: "useful",
+      notesBaseline: {
+        qualityLabel: "unsafe",
+        topDecisionIds: [
+          "frontend-project-standard-packet",
+          "generic-frontend-starter-default",
+          "install-latest-frontend-stack"
+        ],
+        unsafeDecisionIds: [
+          "generic-frontend-starter-default",
+          "install-latest-frontend-stack"
+        ]
+      },
+      comparisonOutcome: "krn_win",
+      packet: {
+        governingDecisionIds: expect.arrayContaining(["frontend-project-standard-packet"]),
+        staleDecisionIds: ["generic-frontend-starter-default"],
+        rejectedPathIds: ["install-latest-frontend-stack"],
+        brief: {
+          observationPrefixCount: 1
+        },
+        severeStaleAuthorityIds: []
+      }
+    });
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "live Codex execution or obedience",
       "source truth",
@@ -118,12 +150,40 @@ describe("runDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.usefulCount).toBe(0);
-    expect(result.metrics.noisyCount).toBe(17);
+    expect(result.metrics.noisyCount).toBe(18);
     expect(result.metrics.usefulRate).toBe(0);
     expect(result.cases[0]).toMatchObject({
       qualityLabel: "noisy",
       reasons: expect.arrayContaining(["packet is missing SourceDecisionEdge refs"])
     });
+  });
+
+  it("does not match task scopes by substring", async () => {
+    const rawFixture = loadMutableFixture();
+
+    rawFixture.decisions.push({
+      id: "time-scope-runtime-leak",
+      title: "Time scope runtime leak",
+      statement: "Runtime memory task guidance that must not apply merely because runtime contains the substring time.",
+      status: "current",
+      taskScopes: ["time"],
+      evidenceRef: "test:scope-token-boundary",
+      sourceClaimId: "source-claim:time-scope-runtime-leak",
+      sourceDecisionEdgeId: "source-decision-edge:time-scope-runtime-leak",
+      falsifier: "A task containing runtime selects a scope that only says time.",
+      doesNotProve: "Does not prove all possible scope vocabularies are ideal."
+    });
+    rawFixture.notes.push({
+      id: "note-time-scope-runtime-leak",
+      decisionId: "time-scope-runtime-leak",
+      text: "Time scope runtime leak. Runtime memory task guidance that must not match runtime by substring time."
+    });
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+
+    expect(result.cases.find((testCase) =>
+      testCase.id === "memory-runtime-task"
+    )?.packet.governingDecisionIds).not.toContain("time-scope-runtime-leak");
   });
 
   it("fails when a stale decision reaches the governed packet", async () => {
@@ -132,10 +192,9 @@ describe("runDecisionPacketEval", () => {
       decision["id"] === "markdown-runtime-memory"
     );
 
-    (rawFixture as Record<string, unknown>)["topK"] = 34;
+    rawFixture.topK = rawFixture.decisions.length;
     staleDecision!["status"] = "current";
 
-    expect(rawFixture.decisions).toHaveLength(34);
     expect(staleDecision?.["status"]).toBe("current");
 
     const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));

@@ -182,6 +182,18 @@
       "doesNotProve": "Does not prove autonomous pruning is complete."
     },
     {
+      "id": "frontend-project-standard-packet",
+      "title": "Frontend project standard packet",
+      "statement": "For a new frontend app, activate the current project template, package manager, UI constraints, test strategy, deployment assumptions, and rejected boilerplate paths before coding.",
+      "status": "current",
+      "taskScopes": ["frontend"],
+      "evidenceRef": "KRN_ROADMAP.md:new-project-setup",
+      "sourceClaimId": "source-claim:frontend-project-standard-packet",
+      "sourceDecisionEdgeId": "source-decision-edge:frontend-project-standard-packet",
+      "falsifier": "A new frontend setup task receives no current project standard packet, or notes plus grep selects the same standard without stale or rejected boilerplate risk.",
+      "doesNotProve": "Does not prove arbitrary frontend framework choice quality or live Codex obedience."
+    },
+    {
       "id": "markdown-runtime-memory",
       "title": "Markdown runtime memory",
       "statement": "Create MEMORY.md files and use markdown as the active recall system for agent memory.",
@@ -278,6 +290,18 @@
       "sourceClaimId": "source-claim:root-ledger-all-history",
       "sourceDecisionEdgeId": "source-decision-edge:root-ledger-all-history",
       "falsifier": "Operators cannot find current state because root docs became ledgers.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "generic-frontend-starter-default",
+      "title": "Generic frontend starter default",
+      "statement": "For a new frontend app, use a generic starter or copied boilerplate by default without checking the current project template, UI constraints, test strategy, deployment assumptions, or rejected paths.",
+      "status": "stale",
+      "taskScopes": ["frontend"],
+      "evidenceRef": "docs/materials/old-frontend-starter.md",
+      "sourceClaimId": "source-claim:generic-frontend-starter-default",
+      "sourceDecisionEdgeId": "source-decision-edge:generic-frontend-starter-default",
+      "falsifier": "The current project standard packet supersedes generic starter advice for normal new frontend setup.",
       "doesNotProve": "Historical note only."
     },
     {
@@ -378,6 +402,18 @@
       "sourceRejectionId": "source-rejection:copy-ledger-into-plan",
       "falsifier": "Compact root truth plus Beads is enough to resume work.",
       "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "install-latest-frontend-stack",
+      "title": "Install latest frontend stack",
+      "statement": "For a new frontend app, install the latest fashionable framework, component library, and testing stack without first applying the current project standard packet.",
+      "status": "rejected",
+      "taskScopes": ["frontend"],
+      "evidenceRef": "docs/rejections/install-latest-frontend-stack.md",
+      "sourceClaimId": "source-claim:install-latest-frontend-stack",
+      "sourceRejectionId": "source-rejection:install-latest-frontend-stack",
+      "falsifier": "The task-standard packet names the current approved template and rejected boilerplate paths before coding.",
+      "doesNotProve": "Rejected path record only."
     }
   ],
   "notes": [
@@ -462,6 +498,11 @@
       "text": "Feedback forget real stale decision. Demote or exclude stale decisions on next activation."
     },
     {
+      "id": "note-frontend-project-standard-packet",
+      "decisionId": "frontend-project-standard-packet",
+      "text": "Frontend project standard packet. For a new frontend app activate current project template package manager UI constraints test strategy deployment assumptions and rejected boilerplate paths."
+    },
+    {
       "id": "note-markdown-runtime-memory",
       "decisionId": "markdown-runtime-memory",
       "text": "Markdown runtime memory. Use MEMORY.md files and markdown as active recall system."
@@ -507,6 +548,11 @@
       "text": "Root ledger all history. Put every micro slice and run into active PLAN."
     },
     {
+      "id": "note-generic-frontend-starter-default",
+      "decisionId": "generic-frontend-starter-default",
+      "text": "Generic frontend starter default. For a new frontend app use a generic starter copied boilerplate default without checking current project template UI constraints test strategy deployment assumptions rejected paths."
+    },
+    {
       "id": "note-create-markdown-memory-files",
       "decisionId": "create-markdown-memory-files",
       "text": "Create markdown memory files. Persist agent knowledge by writing markdown memory files."
@@ -550,6 +596,11 @@
       "id": "note-copy-ledger-into-plan",
       "decisionId": "copy-ledger-into-plan",
       "text": "Copy ledger into plan. Put all historical run details into root PLAN."
+    },
+    {
+      "id": "note-install-latest-frontend-stack",
+      "decisionId": "install-latest-frontend-stack",
+      "text": "Install latest frontend stack. For a new frontend app install latest fashionable framework component library testing stack without applying current project standard packet."
     }
   ],
   "cases": [
@@ -688,6 +739,22 @@
       "staleDecisionIds": ["root-ledger-all-history"],
       "rejectedDecisionIds": ["copy-ledger-into-plan"],
       "baselineFailureRationale": "Notes recall stale decision language but cannot show next-activation demotion or exclusion intent."
+    },
+    {
+      "id": "new-frontend-project-standard-task",
+      "task": "Create a new frontend app: which project template package manager UI constraints test strategy deployment assumptions and rejected boilerplate paths should Codex use before coding?",
+      "expectedDecisionId": "frontend-project-standard-packet",
+      "staleDecisionIds": ["generic-frontend-starter-default"],
+      "rejectedDecisionIds": ["install-latest-frontend-stack"],
+      "observationPrefixItems": [
+        {
+          "observationId": "observation:new-frontend-project-setup",
+          "kind": "operator_intent",
+          "summary": "The operator wants normal new-project setup memory, not a dashboard, crawler, or broad product surface.",
+          "reason": "Observation scopes the task to current project-standard activation for a new frontend app."
+        }
+      ],
+      "baselineFailureRationale": "Notes grep matches the current frontend standard and the stale or rejected starter advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
     },
     {
       "id": "adapter-non-mutating-boundary-only-task",

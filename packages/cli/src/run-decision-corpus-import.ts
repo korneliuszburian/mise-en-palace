@@ -156,6 +156,7 @@ const toDecision = (
   title: row.title,
   statement: row.statement,
   status: row.status,
+  taskScopes: [],
   evidenceRef: row.evidenceRef,
   sourceClaimId: `source-claim:${row.id}`,
   sourceDecisionEdgeId: `source-decision-edge:${row.id}`,
