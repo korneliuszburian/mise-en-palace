@@ -56,13 +56,11 @@ export interface SourceSeedProposal {
     | "workspace_manifest"
     | "typescript_config"
     | "project_readme"
+    | "product_roadmap"
     | "agent_instructions"
     | "skill_root"
     | "skill_doc"
     | "docs_root"
-    | "source_map"
-    | "runbook"
-    | "standard_doc"
     | "eval_workspace"
     | "invariant_test"
     | "mcp_workspace"
@@ -233,6 +231,11 @@ const sourceSeedCandidates = [
     reason: "capture project-facing current truth"
   },
   {
+    path: "KRN_ROADMAP.md",
+    kind: "product_roadmap",
+    reason: "capture compact KRN product and architecture direction when present"
+  },
+  {
     path: "AGENTS.md",
     kind: "agent_instructions",
     reason: "capture target repo Codex instructions when present"
@@ -256,21 +259,6 @@ const sourceSeedCandidates = [
     path: "docs",
     kind: "docs_root",
     reason: "seed target documentation and runbook context"
-  },
-  {
-    path: "docs/KRN_SOURCES.md",
-    kind: "source_map",
-    reason: "seed retained source-to-decision map and source usefulness decisions"
-  },
-  {
-    path: "docs/runbooks/pattern-intake.md",
-    kind: "runbook",
-    reason: "seed pattern-intake workflow and source-to-decision consumer routing"
-  },
-  {
-    path: "docs/standards/typescript-excellence.md",
-    kind: "standard_doc",
-    reason: "seed TypeScript best-pattern and finite-state standard"
   },
   {
     path: "evals",

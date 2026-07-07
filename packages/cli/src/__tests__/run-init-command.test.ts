@@ -17,23 +17,15 @@ import {
 } from "./helpers/test-runtime.js";
 
 describe("runInitCommand source seed detection", () => {
-  it("detects source-to-decision owner seeds in the KRN repo", async () => {
+  it("detects compact active authority seeds in the KRN repo", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const sourceSeeds = await detectSourceSeeds(repoRoot);
 
     expect(sourceSeeds).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          path: "docs/KRN_SOURCES.md",
-          kind: "source_map"
-        }),
-        expect.objectContaining({
-          path: "docs/runbooks/pattern-intake.md",
-          kind: "runbook"
-        }),
-        expect.objectContaining({
-          path: "docs/standards/typescript-excellence.md",
-          kind: "standard_doc"
+          path: "KRN_ROADMAP.md",
+          kind: "product_roadmap"
         }),
         expect.objectContaining({
           path: ".agents/skills",
@@ -43,6 +35,13 @@ describe("runInitCommand source seed detection", () => {
           path: ".agents/skills/evidence-review-loop/SKILL.md",
           kind: "skill_doc"
         }),
+      ])
+    );
+    expect(sourceSeeds.map((seed) => seed.path)).not.toEqual(
+      expect.arrayContaining([
+        "docs/KRN_SOURCES.md",
+        "docs/runbooks/pattern-intake.md",
+        "docs/standards/typescript-excellence.md"
       ])
     );
   });

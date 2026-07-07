@@ -171,7 +171,7 @@ describe("owner-file recall", () => {
     );
   });
 
-  it("surfaces source-to-decision owner seeds as concrete target candidates", () => {
+  it("surfaces compact roadmap owner seeds as concrete target candidates", () => {
     const targetReadModel: TargetActivationReadModel = {
       projectKernelId: "kernel-1",
       repoInstallationIds: ["repo-installation-1"],
@@ -183,19 +183,9 @@ describe("owner-file recall", () => {
           reason: "seed target documentation and runbook context"
         },
         {
-          path: "docs/KRN_SOURCES.md",
-          kind: "source_map",
-          reason: "seed retained source-to-decision map and source usefulness decisions"
-        },
-        {
-          path: "docs/runbooks/pattern-intake.md",
-          kind: "runbook",
-          reason: "seed pattern-intake workflow and source-to-decision consumer routing"
-        },
-        {
-          path: "docs/standards/typescript-excellence.md",
-          kind: "standard_doc",
-          reason: "seed TypeScript best-pattern and finite-state standard"
+          path: "KRN_ROADMAP.md",
+          kind: "product_roadmap",
+          reason: "capture compact KRN product and architecture direction when present"
         },
       ],
       ownerFiles: [],
@@ -203,16 +193,14 @@ describe("owner-file recall", () => {
     };
     const candidates = buildOwnerFileRecallCandidates(
       taskContract(
-        "Repair source-to-decision pattern-intake TypeScript standard and source-map invariant owner-file recall"
+        "Repair KRN roadmap authority and source-to-decision owner-file recall"
       ),
       { targetReadModel }
     );
 
     expect(candidates.map((candidate) => candidate.reason)).toEqual(
       expect.arrayContaining([
-        "Target source seed: docs/KRN_SOURCES.md",
-        "Target source seed: docs/runbooks/pattern-intake.md",
-        "Target source seed: docs/standards/typescript-excellence.md"
+        "Target source seed: KRN_ROADMAP.md"
       ])
     );
     expect(candidates).toEqual(
@@ -221,8 +209,8 @@ describe("owner-file recall", () => {
           metadata: expect.objectContaining({
             source: "target_project_read_model",
             targetReadModelKind: "source_seed",
-            targetPath: "docs/KRN_SOURCES.md",
-            seedKind: "source_map"
+            targetPath: "KRN_ROADMAP.md",
+            seedKind: "product_roadmap"
           })
         }),
       ])
@@ -282,9 +270,9 @@ describe("owner-file recall", () => {
       localPathHints: ["/tmp/mise-en-palace"],
       sourceSeeds: [
         {
-          path: "docs/standards/typescript-excellence.md",
-          kind: "standard_doc",
-          reason: "seed TypeScript best-pattern and finite-state standard"
+          path: ".agents/skills/typescript-type-safety/SKILL.md",
+          kind: "skill_doc",
+          reason: "seed TypeScript boundary workflow for strict code changes"
         }
       ],
       ownerFiles: [
@@ -298,7 +286,7 @@ describe("owner-file recall", () => {
       trustExclusions: []
     };
     const task = taskContract(
-      "Apply TypeScript finite-state standard and best-pattern source decision"
+      "Apply TypeScript type-safety skill to strict boundary changes"
     );
     const ranked = rankCandidates(
       buildOwnerFileRecallCandidates(task, { targetReadModel }),
@@ -311,8 +299,8 @@ describe("owner-file recall", () => {
 
     expect(included?.metadata).toMatchObject({
       targetReadModelKind: "source_seed",
-      targetPath: "docs/standards/typescript-excellence.md",
-      seedKind: "standard_doc"
+      targetPath: ".agents/skills/typescript-type-safety/SKILL.md",
+      seedKind: "skill_doc"
     });
     expect(excluded).toEqual(expect.arrayContaining([
       expect.objectContaining({
