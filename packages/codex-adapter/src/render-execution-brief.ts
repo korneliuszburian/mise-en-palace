@@ -2,12 +2,9 @@ import type {
   CapabilityPlan,
   ContextAssembly,
   EvidenceContract,
-  HarnessPlan,
   TaskContract
 } from "@krn/core";
 import type {
-  CodexExecPlanRef,
-  CodexGoalRef,
   ExecutionBrief,
   ExecutionBriefContextExclusion,
   ExecutionBriefContextInclusion,
@@ -24,13 +21,10 @@ import {
 } from "./contracts.js";
 export interface RenderExecutionBriefInput {
   taskContract: TaskContract;
-  harnessPlan: HarnessPlan;
   contextAssembly: ContextAssembly;
   capabilityPlan: CapabilityPlan;
   evidenceContract: EvidenceContract;
   nextAction: string;
-  goalReference?: string;
-  execPlanReference?: string;
 }
 
 const renderList = (items: readonly string[]): string[] =>
@@ -122,8 +116,6 @@ const executionBriefSectionCounters = {
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
   evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
-  goal_refs: (brief) => brief.goalRefs.length,
-  exec_plan_refs: (brief) => brief.execPlanRefs.length,
   stop_condition: scalarSectionItemCount,
   rollback_expectation: scalarSectionItemCount,
   next_action: scalarSectionItemCount,
@@ -206,34 +198,6 @@ const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   `Review burden: ${brief.evidenceContract.reviewBurden}`,
   `Rollback path: ${brief.evidenceContract.rollbackPath}`
 ];
-
-const toGoalRef = (
-  goalReference: string | undefined,
-  taskContract: TaskContract
-): CodexGoalRef[] =>
-  goalReference === undefined
-    ? []
-    : [
-        {
-          source: goalReference,
-          objective: taskContract.objective,
-          status: "active"
-        }
-      ];
-
-const toExecPlanRef = (
-  execPlanReference: string | undefined,
-  harnessPlan: HarnessPlan
-): CodexExecPlanRef[] =>
-  execPlanReference === undefined
-    ? []
-    : [
-        {
-          source: execPlanReference,
-          section: harnessPlan.summary,
-          status: "active"
-        }
-      ];
 
 const toContextInclusions = (
   contextAssembly: ContextAssembly
@@ -373,8 +337,6 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       reviewBurden: input.evidenceContract.reviewBurden,
       rollbackPath: input.evidenceContract.rollbackPath
     },
-    goalRefs: toGoalRef(input.goalReference, input.taskContract),
-    execPlanRefs: toExecPlanRef(input.execPlanReference, input.harnessPlan),
     stopCondition: "Stop before Codex execution or hidden state mutation.",
     rollbackExpectation: input.evidenceContract.rollbackPath,
     nextAction: input.nextAction,
@@ -386,33 +348,10 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   };
 };
 
-const renderRefs = (
-  label: string,
-  refs: readonly { source: string; status: string; objective?: string; section?: string }[]
-): string[] =>
-  refs.length === 0
-    ? [label, "- none"]
-    : [
-        label,
-        ...refs.map((ref) =>
-          [
-            `- ${ref.source}`,
-            ...(ref.objective === undefined ? [] : [`objective=${ref.objective}`]),
-            ...(ref.section === undefined ? [] : [`section=${ref.section}`]),
-            `status=${ref.status}`
-          ].join(" | ")
-        )
-      ];
-
 const renderOptionalSection = (
   label: string,
   items: readonly string[]
 ): string[] => (items.length === 0 ? [] : [label, ...items, ""]);
-
-const renderOptionalRefs = (
-  label: string,
-  refs: readonly { source: string; status: string; objective?: string; section?: string }[]
-): string[] => refs.length === 0 ? [] : [...renderRefs(label, refs), ""];
 
 export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const observationPrefixLines =
@@ -454,8 +393,6 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "Evidence Contract:",
     ...renderEvidenceContract(brief),
     "",
-    ...renderOptionalRefs("Goal References:", brief.goalRefs),
-    ...renderOptionalRefs("ExecPlan References:", brief.execPlanRefs),
     `Stop Condition: ${brief.stopCondition}`,
     `Rollback Expectation: ${brief.rollbackExpectation}`,
     `Next Action: ${brief.nextAction}`,

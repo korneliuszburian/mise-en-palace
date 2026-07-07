@@ -24,9 +24,7 @@ import {
   countRetrievalRunById,
   countRunEventsBySmokeId,
   countSourceArtifactsBySmokeId,
-  countSourceClaimsBySmokeId,
-  defaultCodexBriefAuthorityRefs,
-  matchedOrMismatch,
+  countSourceClaimsBySmokeId,  matchedOrMismatch,
   matchedWhen,
   metadataString,
   normalizeSmokeSlugPart,
@@ -721,10 +719,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       aggregate: baselineAggregate,
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-baseline-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
-      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
-      missingContextMessage: "Target repo harness smoke failed to read back baseline run"
+      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Target repo harness smoke failed to read back baseline run"
     });
     const baselineProof = assertTargetBaselineReadback({
       aggregate: baselineAggregate,
@@ -830,10 +825,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       aggregate,
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
-      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
-      missingContextMessage: "Target repo harness smoke failed to read back persisted run"
+      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
     const planProof = assertTargetPlanReadback({
       aggregate,

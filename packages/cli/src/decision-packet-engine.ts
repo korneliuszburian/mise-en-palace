@@ -3,7 +3,6 @@ import {
   type CapabilityPlan,
   type ContextObservationPrefix,
   type DecisionPacket,
-  type HarnessPlan,
   type MemoryRecord,
   type SourceClaim,
   type SourceClaimEdge,
@@ -163,20 +162,6 @@ const taskContractFor = (testCase: DecisionPacketCase): TaskContract => ({
     "Excludes stale and rejected authority"
   ],
   status: "active",
-  metadata: {
-    evalCaseId: testCase.id
-  },
-  createdAt: now,
-  updatedAt: now
-});
-
-const harnessPlanFor = (testCase: DecisionPacketCase): HarnessPlan => ({
-  id: `harness-plan:${testCase.id}`,
-  taskContractId: `task-contract:${testCase.id}`,
-  version: 1,
-  status: "ready",
-  summary: `Decision-packet eval harness for ${testCase.id}.`,
-  nextAction: "Render a governed pre-code decision packet.",
   metadata: {
     evalCaseId: testCase.id
   },
@@ -464,7 +449,6 @@ export const buildDecisionPacketWithEngine = async (
   });
   const brief = createExecutionBrief({
     taskContract: taskContractFor(testCase),
-    harnessPlan: harnessPlanFor(testCase),
     contextAssembly,
     capabilityPlan: capabilityPlanFor(testCase),
     evidenceContract: evidenceContractFor(testCase),

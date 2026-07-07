@@ -2120,7 +2120,6 @@ const compilePlanBriefReadback = async (
   }, runtime.compilerDependencies);
   const brief = createExecutionBrief({
     taskContract: compiled.taskContract,
-    harnessPlan: compiled.harnessPlan,
     contextAssembly: compiled.contextAssembly,
     capabilityPlan: compiled.capabilityPlan,
     evidenceContract: compiled.evidenceContract,

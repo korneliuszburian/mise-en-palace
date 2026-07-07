@@ -1,9 +1,7 @@
 import type {
   CreateDatabaseRuntime
 } from "./run-plan-command.js";
-import {
-  defaultCodexBriefAuthorityRefs,
-  renderCodexBriefFromAggregate,
+import {  renderCodexBriefFromAggregate,
   resolveReadOnlyHarnessRuntime
 } from "./codex-brief-support.js";
 import {
@@ -85,10 +83,7 @@ export const runCodexBriefCommand = async (
       aggregate,
       includeTaskContractInCapabilityPlan: true,
       createdAt: runtime.now(),
-      createId: runtime.createId,
-      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
-      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
-      nextActionFallback: "Use this brief as the next Codex input.",
+      createId: runtime.createId,      nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
     const brainKnowledgeSelection = brainKnowledgeSelectionFromMetadata(

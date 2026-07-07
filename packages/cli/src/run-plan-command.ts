@@ -56,9 +56,6 @@ import {
   compactBrainKnowledgeBridgeQueries
 } from "./brain-knowledge-query.js";
 import {
-  defaultCodexBriefAuthorityRefs
-} from "./codex-brief-support.js";
-import {
   formatBrainKnowledgeSelectionLines,
   brainKnowledgePlanSelectionMetadataKey,
   brainKnowledgeSelectionFromReadbackJson,
@@ -770,13 +767,10 @@ const compilePlanForCommand = (
 const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
   renderExecutionBrief({
     taskContract: result.taskContract,
-    harnessPlan: result.harnessPlan,
     contextAssembly: result.contextAssembly,
     capabilityPlan: result.capabilityPlan,
     evidenceContract: result.evidenceContract,
-    nextAction: result.nextAction,
-    goalReference: defaultCodexBriefAuthorityRefs.goalReference,
-    execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference
+    nextAction: result.nextAction
   });
 
 const targetReadModelMetadata = (

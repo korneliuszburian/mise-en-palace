@@ -81,8 +81,6 @@ interface RenderCodexBriefFromAggregateInput {
   createdAt: string;
   createId(prefix: string): string;
   nextActionFallback: string;
-  goalReference: string;
-  execPlanReference: string;
   includeTaskContractInCapabilityPlan?: boolean;
   missingContextMessage: string;
 }
@@ -92,11 +90,6 @@ export interface RenderedCodexBrief {
   renderedBrief: string;
   evidenceContract: EvidenceContract;
 }
-
-export const defaultCodexBriefAuthorityRefs = {
-  goalReference: "KRN_ROADMAP.md product and architecture roadmap",
-  execPlanReference: "Beads active task graph"
-} as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -327,13 +320,10 @@ export const renderCodexBriefFromAggregate = (
   });
   const brief = createExecutionBrief({
     taskContract: input.aggregate.taskContract,
-    harnessPlan: input.aggregate.harnessPlan,
     contextAssembly,
     capabilityPlan,
     evidenceContract,
-    nextAction: input.aggregate.harnessPlan.nextAction ?? input.nextActionFallback,
-    goalReference: input.goalReference,
-    execPlanReference: input.execPlanReference
+    nextAction: input.aggregate.harnessPlan.nextAction ?? input.nextActionFallback
   });
 
   return {

@@ -57,20 +57,6 @@ describe("Codex adapter contracts", () => {
         reviewBurden: "focused adapter contract review",
         rollbackPath: "Focused revert of the adapter contract commit."
       },
-      goalRefs: [
-        {
-          source: "GOAL.md",
-          objective: "M26 Codex adapter contracts",
-          status: "active"
-        }
-      ],
-      execPlanRefs: [
-        {
-          source: "GOAL.md",
-          section: "M26.01",
-          status: "active"
-        }
-      ],
       stopCondition: "Stop before invoking Codex.",
       rollbackExpectation: "Focused revert of adapter contract changes.",
       nextAction: "Implement contract exports.",
@@ -87,7 +73,7 @@ describe("Codex adapter contracts", () => {
     };
 
     expect(plan.executionBrief.formatVersion).toBe(executionBriefFormatVersion);
-    expect(plan.executionBrief.goalRefs[0]?.objective).toBe("M26 Codex adapter contracts");
+    expect(plan.executionBrief.includedContext[0]?.subjectId).toBe("memory-1");
     expect(plan.executionBrief.doesNotProve).toContain("memory mutation");
   });
 
@@ -96,11 +82,11 @@ describe("Codex adapter contracts", () => {
       formatVersion: executionBriefFormatVersion,
       profile: "default",
       sections: [{
-        id: "goal_refs",
-        kind: "diagnostic",
-        rendered: false,
-        itemCount: 0,
-        emptyBehavior: "omit_when_empty"
+        id: "context_inclusions",
+        kind: "required",
+        rendered: true,
+        itemCount: 1,
+        emptyBehavior: "render_none"
       }],
       budget: {
         maxRenderedSections: 21,
@@ -118,8 +104,10 @@ describe("Codex adapter contracts", () => {
     expect(executionBriefSectionIds).not.toContain("mcp_resource_refs");
     expect(executionBriefSectionIds).not.toContain("subagent_probe_hints");
     expect(executionBriefSectionIds).not.toContain("hook_expectations");
-    expect(readback.sections[0]?.kind).toBe("diagnostic");
-    expect(readback.sections[0]?.rendered).toBe(false);
+    expect(executionBriefSectionIds).not.toContain("goal_refs");
+    expect(executionBriefSectionIds).not.toContain("exec_plan_refs");
+    expect(readback.sections[0]?.kind).toBe("required");
+    expect(readback.sections[0]?.rendered).toBe(true);
     expect(readback.doesNotProve).toContain(
       "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
     );

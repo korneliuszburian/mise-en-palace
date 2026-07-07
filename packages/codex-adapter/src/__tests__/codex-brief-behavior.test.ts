@@ -176,13 +176,10 @@ describe("codex brief behavior fixture", () => {
   it("guards the dogfood-derived execution brief review contract", () => {
     const brief = createExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly,
       capabilityPlan,
       evidenceContract,
-      nextAction: "Execute the bounded source repair.",
-      goalReference: "GOAL.md",
-      execPlanReference: "PLAN.md D-00"
+      nextAction: "Execute the bounded source repair."
     });
     const rendered = renderExecutionBriefText(brief);
     const passed = includesAllFragments(rendered, expectedRenderedBriefFragments) &&

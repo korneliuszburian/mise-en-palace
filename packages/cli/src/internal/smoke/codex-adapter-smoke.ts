@@ -19,9 +19,7 @@ import {
   countCodexInvocationEvents,
   createSmokeIdFactory,
   createSmokeDatabaseRuntime,
-  createSmokeRepositories,
-  defaultCodexBriefAuthorityRefs,
-  countMemoryRecordsBySmokeId,
+  createSmokeRepositories,  countMemoryRecordsBySmokeId,
   countRetrievalRunById,
   countRunEventsBySmokeId,
   countSourceArtifactsBySmokeId,
@@ -469,10 +467,7 @@ export const runCodexAdapterSmokeCheck = async (
       aggregate,
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
-      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
-      missingContextMessage: "Codex adapter smoke failed to read back persisted run"
+      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });
     const proof = assertCodexAdapterBoundary({
       aggregate,

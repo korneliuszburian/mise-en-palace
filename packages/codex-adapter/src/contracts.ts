@@ -11,8 +11,6 @@ import type {
 
 export type CodexAdapterPlanStatus = "draft" | "ready" | "superseded";
 
-export type CodexReferenceStatus = "active" | "planned" | "superseded";
-
 export const executionBriefFormatVersion = "krn.executionBrief.v1" as const;
 
 export type ExecutionBriefFormatVersion = typeof executionBriefFormatVersion;
@@ -45,8 +43,6 @@ export const executionBriefSectionProfiles = [
   { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
   { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
-  { id: "goal_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "exec_plan_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
   { id: "rollback_expectation", kind: "required", emptyBehavior: "render_none" },
   { id: "next_action", kind: "required", emptyBehavior: "render_none" },
@@ -82,18 +78,6 @@ export interface ExecutionBriefProfileReadback {
     status: ExecutionBriefProfileBudgetStatus;
   };
   doesNotProve: string[];
-}
-
-export interface CodexGoalRef {
-  source: string;
-  objective: string;
-  status: CodexReferenceStatus;
-}
-
-export interface CodexExecPlanRef {
-  source: string;
-  section: string;
-  status: CodexReferenceStatus;
 }
 
 export interface ExecutionBriefContextInclusion {
@@ -160,8 +144,6 @@ export interface ExecutionBrief {
   antiMemoryWarnings: string[];
   toolBoundaries: string[];
   evidenceContract: ExecutionBriefEvidenceContract;
-  goalRefs: CodexGoalRef[];
-  execPlanRefs: CodexExecPlanRef[];
   stopCondition: string;
   rollbackExpectation: string;
   nextAction: string;

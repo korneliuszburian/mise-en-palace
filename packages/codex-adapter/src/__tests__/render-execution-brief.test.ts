@@ -174,13 +174,10 @@ describe("renderExecutionBrief", () => {
   it("creates a typed execution brief artifact before rendering text", () => {
     const brief = createExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly,
       capabilityPlan,
       evidenceContract,
-      nextAction: "Implement the smallest missing doctor check.",
-      goalReference: "Goal: canonical harness spine",
-      execPlanReference: "PLAN.md Milestone 14"
+      nextAction: "Implement the smallest missing doctor check."
     });
 
     expect(brief.currentTaskContract).toEqual({
@@ -193,20 +190,6 @@ describe("renderExecutionBrief", () => {
     expect(brief.formatVersion).toBe(executionBriefFormatVersion);
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
-    expect(brief.goalRefs).toEqual([
-      {
-        source: "Goal: canonical harness spine",
-        objective: "Make doctor report Postgres memory and source graph readiness",
-        status: "active"
-      }
-    ]);
-    expect(brief.execPlanRefs).toEqual([
-      {
-        source: "PLAN.md Milestone 14",
-        section: "Doctor brain-store readiness plan",
-        status: "active"
-      }
-    ]);
     expect(brief.observationPrefix).toEqual([
       {
         observationId: "observation-1",
@@ -256,13 +239,10 @@ describe("renderExecutionBrief", () => {
   it("renders a bounded Codex execution brief with exclusions and evidence", () => {
     const brief = createExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly,
       capabilityPlan,
       evidenceContract,
-      nextAction: "Implement the smallest missing doctor check.",
-      goalReference: "Goal: canonical harness spine",
-      execPlanReference: "PLAN.md Milestone 14"
+      nextAction: "Implement the smallest missing doctor check."
     });
     const rendered = renderExecutionBriefText(brief);
 
@@ -311,13 +291,8 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
     expect(rendered).not.toContain("- MCP resources exist.");
-    expect(rendered).toContain("Goal: canonical harness spine");
-    expect(rendered).toContain(
-      "- Goal: canonical harness spine | objective=Make doctor report Postgres memory and source graph readiness | status=active"
-    );
-    expect(rendered).toContain(
-      "- PLAN.md Milestone 14 | section=Doctor brain-store readiness plan | status=active"
-    );
+    expect(rendered).not.toContain("Goal References:");
+    expect(rendered).not.toContain("ExecPlan References:");
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {
@@ -334,7 +309,6 @@ describe("renderExecutionBrief", () => {
     };
     const brief = createExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly: overloadedContextAssembly,
       capabilityPlan,
       evidenceContract,
@@ -350,7 +324,6 @@ describe("renderExecutionBrief", () => {
   it("warns when selected context is not a trusted tier", () => {
     const brief = createExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly: {
         ...contextAssembly,
         inclusions: [
@@ -384,7 +357,6 @@ describe("renderExecutionBrief", () => {
   it("keeps the existing renderExecutionBrief wrapper stable", () => {
     const rendered = renderExecutionBrief({
       taskContract,
-      harnessPlan,
       contextAssembly,
       capabilityPlan,
       evidenceContract,
