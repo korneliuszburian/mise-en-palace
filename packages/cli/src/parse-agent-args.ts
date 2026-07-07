@@ -12,29 +12,23 @@ export const formatAgentPacketUsage = (): string => [
 const isValue = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0 && !value.startsWith("-");
 
-export const parseAgentArgs = (rest: readonly string[]): ParseArgsResult => {
-  if (rest[0] === "--help" || rest[0] === "-h") {
-    return {
-      command: {
-        kind: "agentPacketHelp"
-      }
-    };
+const agentPacketHelp = (): ParseArgsResult => ({
+  command: {
+    kind: "agentPacketHelp"
   }
+});
 
-  if (rest[0] !== "packet") {
-    return {
-      error: formatAgentPacketUsage()
-    };
-  }
+const agentPacketUsageError = (): ParseArgsResult => ({
+  error: formatAgentPacketUsage()
+});
 
-  if (rest[1] === "--help" || rest[1] === "-h") {
-    return {
-      command: {
-        kind: "agentPacketHelp"
-      }
-    };
-  }
+type AgentPacketOptionsParseResult =
+  | { kind: "parsed"; runId: string }
+  | { kind: "error" };
 
+const parseAgentPacketOptions = (
+  rest: readonly string[]
+): AgentPacketOptionsParseResult => {
   let runId: string | undefined;
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -48,9 +42,7 @@ export const parseAgentArgs = (rest: readonly string[]): ParseArgsResult => {
       const value = rest[index + 1];
 
       if (!isValue(value)) {
-        return {
-          error: formatAgentPacketUsage()
-        };
+        return { kind: "error" };
       }
 
       runId = value;
@@ -63,21 +55,37 @@ export const parseAgentArgs = (rest: readonly string[]): ParseArgsResult => {
       continue;
     }
 
-    return {
-      error: formatAgentPacketUsage()
-    };
+    return { kind: "error" };
   }
 
-  if (!isValue(runId)) {
-    return {
-      error: formatAgentPacketUsage()
-    };
+  return isValue(runId)
+    ? { kind: "parsed", runId: runId.trim() }
+    : { kind: "error" };
+};
+
+export const parseAgentArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "--help" || rest[0] === "-h") {
+    return agentPacketHelp();
+  }
+
+  if (rest[0] !== "packet") {
+    return agentPacketUsageError();
+  }
+
+  if (rest[1] === "--help" || rest[1] === "-h") {
+    return agentPacketHelp();
+  }
+
+  const options = parseAgentPacketOptions(rest);
+
+  if (options.kind === "error") {
+    return agentPacketUsageError();
   }
 
   return {
     command: {
       kind: "agentPacket",
-      runId: runId.trim()
+      runId: options.runId
     }
   };
 };
