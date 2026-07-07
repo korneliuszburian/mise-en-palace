@@ -1059,7 +1059,7 @@ export const assessSourceDecisionReviewSignals = (
   ) {
     signals.push({
       kind: "missing_decision_fields",
-      severity: "warning",
+      severity: "blocking",
       sourceDecisionId: decision.id,
       reason:
         "SourceDecision needs decision, rationale, consumer, and falsifier to avoid decorative source retention."

@@ -498,7 +498,7 @@ describe("source review signals", () => {
       },
       {
         kind: "missing_decision_fields",
-        severity: "warning",
+        severity: "blocking",
         sourceDecisionId: "source-decision-1",
         reason:
           "SourceDecision needs decision, rationale, consumer, and falsifier to avoid decorative source retention."
