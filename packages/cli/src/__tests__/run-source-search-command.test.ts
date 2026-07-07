@@ -7,7 +7,8 @@ import {
 import type {
   SourceClaim,
   SourceClaimEdge,
-  SourceDecisionEdge
+  SourceDecisionEdge,
+  SourceRejection
 } from "@krn/core";
 import type {
   RankedActivationCandidate
@@ -142,12 +143,29 @@ const sourceDecisionEdge = (
   ...overrides
 });
 
+const sourceRejection = (
+  overrides: Partial<SourceRejection> = {}
+): SourceRejection => ({
+  id: "9e57ce15-37c5-4638-8f6f-d4c43685d402" as SourceRejection["id"],
+  sourceClaimId,
+  title: "Reject stale source claim",
+  attemptedClaim: "Rejected claim should not govern source search.",
+  rejectedBecause: "conflicting",
+  reason: "Conflicts with current source decision support.",
+  doesNotProve: "This rejection does not prove all future claims are invalid.",
+  consumer: "source search consensus readback",
+  metadata: {},
+  rejectedAt: now,
+  ...overrides
+});
+
 interface SourceSearchRuntimeInput {
   claims?: readonly SourceClaim[];
   documents?: readonly SearchDocumentSearchResult[];
   linkedDocuments?: readonly SearchDocumentSearchResult[];
   edges?: readonly SourceClaimEdge[];
   decisionEdges?: readonly SourceDecisionEdge[];
+  rejections?: readonly SourceRejection[];
   onRuntimeInput?(input: DatabaseRuntimeInput): void;
   onSearchQuery?(query: string): void;
   onClose?(): void;
@@ -159,23 +177,52 @@ interface SourceSearchRuntimeFixtures {
   linkedDocuments: SearchDocumentSearchResult[];
   edges: readonly SourceClaimEdge[];
   decisionEdges: readonly SourceDecisionEdge[];
-  onRuntimeInput?: (input: DatabaseRuntimeInput) => void;
-  onSearchQuery?: (query: string) => void;
-  onClose?: () => void;
+  rejections: readonly SourceRejection[];
+  onRuntimeInput(input: DatabaseRuntimeInput): void;
+  onSearchQuery(query: string): void;
+  onClose(): void;
 }
 
+const ignoreRuntimeInput = (_input: DatabaseRuntimeInput): void => {};
+
+const ignoreSearchQuery = (_query: string): void => {};
+
+const ignoreClose = (): void => {};
+
+const fixtureDocuments = (
+  input: SourceSearchRuntimeInput
+): SearchDocumentSearchResult[] => [...(input.documents ?? [searchDocument()])];
+
+const fixtureLinkedDocuments = (
+  input: SourceSearchRuntimeInput,
+  documents: readonly SearchDocumentSearchResult[]
+): SearchDocumentSearchResult[] => [...(input.linkedDocuments ?? documents)];
+
+const fixtureClaims = (input: SourceSearchRuntimeInput): readonly SourceClaim[] =>
+  input.claims ?? [sourceClaim()];
+
+const fixtureEdges = (input: SourceSearchRuntimeInput): readonly SourceClaimEdge[] =>
+  input.edges ?? [];
+
+const fixtureDecisionEdges = (input: SourceSearchRuntimeInput): readonly SourceDecisionEdge[] =>
+  input.decisionEdges ?? [];
+
+const fixtureRejections = (input: SourceSearchRuntimeInput): readonly SourceRejection[] =>
+  input.rejections ?? [];
+
 const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRuntimeFixtures => {
-  const documents = [...(input.documents ?? [searchDocument()])];
+  const documents = fixtureDocuments(input);
 
   return {
-    claims: input.claims ?? [sourceClaim()],
+    claims: fixtureClaims(input),
     documents,
-    linkedDocuments: [...(input.linkedDocuments ?? documents)],
-    edges: input.edges ?? [],
-    decisionEdges: input.decisionEdges ?? [],
-    ...(input.onRuntimeInput === undefined ? {} : { onRuntimeInput: input.onRuntimeInput }),
-    ...(input.onSearchQuery === undefined ? {} : { onSearchQuery: input.onSearchQuery }),
-    ...(input.onClose === undefined ? {} : { onClose: input.onClose })
+    linkedDocuments: fixtureLinkedDocuments(input, documents),
+    edges: fixtureEdges(input),
+    decisionEdges: fixtureDecisionEdges(input),
+    rejections: fixtureRejections(input),
+    onRuntimeInput: input.onRuntimeInput ?? ignoreRuntimeInput,
+    onSearchQuery: input.onSearchQuery ?? ignoreSearchQuery,
+    onClose: input.onClose ?? ignoreClose
   };
 };
 
@@ -183,7 +230,7 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
   const fixtures = runtimeFixtures(input);
 
   return async (runtimeInput) => {
-    fixtures.onRuntimeInput?.(runtimeInput);
+    fixtures.onRuntimeInput(runtimeInput);
 
     return {
       workspaceId: "workspace-1",
@@ -216,7 +263,7 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
         },
         retrievalRepository: {
           async searchLexical(searchInput) {
-            fixtures.onSearchQuery?.(searchInput.query);
+            fixtures.onSearchQuery(searchInput.query);
 
             return fixtures.documents;
           },
@@ -249,8 +296,8 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
         async listClaimsForProject() {
           throw new Error("listClaimsForProject should not be called");
         },
-        async getSourceClaimById() {
-          throw new Error("getSourceClaimById should not be called");
+        async getSourceClaimById(sourceClaimIdForReadback) {
+          return fixtures.claims.find((claim) => claim.id === sourceClaimIdForReadback);
         },
         async createSourceClaimEdge() {
           throw new Error("createSourceClaimEdge should not be called");
@@ -272,6 +319,11 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
         },
         async createSourceRejection() {
           throw new Error("createSourceRejection should not be called");
+        },
+        async listSourceRejectionsForClaim(sourceClaimIdForReadback) {
+          return fixtures.rejections.filter((rejection) =>
+            rejection.sourceClaimId === sourceClaimIdForReadback
+          );
         }
       },
       retrievalRepository: {
@@ -279,7 +331,7 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
           throw new Error("createSearchDocument should not be called");
         },
         async searchLexical(searchInput) {
-          fixtures.onSearchQuery?.(searchInput.query);
+            fixtures.onSearchQuery(searchInput.query);
 
           return fixtures.documents;
         },
@@ -288,7 +340,7 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
         }
       },
       async close() {
-        fixtures.onClose?.();
+        fixtures.onClose();
       }
     };
   };
@@ -1121,6 +1173,146 @@ describe("runSourceSearchCommand", () => {
     expect(graphReadback.invalidationEdges).toBe(1);
     expect(excludedStaleClaim?.reason).toContain("Source graph rank-down");
     expect(excludedStaleClaim?.graphScore).toBeLessThan(0);
+  });
+
+  it("includes temporal consensus readback in source search answer packages", async () => {
+    const currentClaimId = "3d66d870-5556-4d56-8554-cf602a1e1201" as SourceClaim["id"];
+    const staleClaimId = "061e9341-bb5c-48d5-95db-4eb4c07bf361" as SourceClaim["id"];
+    const acceptedOnlyClaimId = "be7f08d8-9062-4eda-83fa-d1eb08a0945" as SourceClaim["id"];
+    const rejectedClaimId = "de0f20a8-a574-4f37-bfcc-d99bb6504d2d" as SourceClaim["id"];
+    const currentClaim = sourceClaim({
+      id: currentClaimId,
+      claim: "Temporal consensus readback should use the current governed template.",
+      mechanism: "The current claim has SourceDecisionEdge support and supersedes stale guidance.",
+      krnImplication: "Source search can expose this claim as current authority for agent packets.",
+      falsifier: "Consensus readback omits this claim from currentSourceClaimIds.",
+      createdAt: "2026-06-22T08:00:00.000Z",
+      updatedAt: "2026-06-22T08:00:00.000Z"
+    });
+    const staleClaim = sourceClaim({
+      id: staleClaimId,
+      claim: "Temporal consensus readback can keep using the old template.",
+      mechanism: "The claim predates the current governed template and is past revisitWhen.",
+      krnImplication: "Source search should show this as historical, not governing authority.",
+      falsifier: "Consensus readback presents this stale claim as current authority.",
+      revisitWhen: "2026-06-01T00:00:00.000Z",
+      createdAt: "2026-05-22T08:00:00.000Z",
+      updatedAt: "2026-05-22T08:00:00.000Z"
+    });
+    const acceptedOnlyClaim = sourceClaim({
+      id: acceptedOnlyClaimId,
+      claim: "Temporal consensus readback accepted-only evidence still needs decision support.",
+      mechanism: "The claim is accepted but has no SourceDecisionEdge support.",
+      krnImplication: "Source search can show it as caveated evidence, not current authority.",
+      falsifier: "Consensus readback treats accepted-only evidence as current authority.",
+      createdAt: "2026-06-23T08:00:00.000Z",
+      updatedAt: "2026-06-23T08:00:00.000Z"
+    });
+    const rejectedClaim = sourceClaim({
+      id: rejectedClaimId,
+      claim: "Temporal consensus readback should use the rejected template.",
+      mechanism: "The claim conflicts with current governed source support.",
+      krnImplication: "Source search should expose it as rejected history.",
+      falsifier: "Consensus readback omits the rejected path.",
+      status: "rejected",
+      sourceAuthority: "hypothesis",
+      createdAt: "2026-06-24T08:00:00.000Z",
+      updatedAt: "2026-06-24T08:00:00.000Z"
+    });
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "temporal consensus readback current template stale accepted-only rejected",
+        limit: 10,
+        maxInclusions: 4,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [
+          staleClaim,
+          currentClaim,
+          acceptedOnlyClaim,
+          rejectedClaim
+        ],
+        documents: [],
+        edges: [
+          sourceClaimEdge({
+            id: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46" as SourceClaimEdge["id"],
+            fromSourceClaimId: currentClaimId,
+            toSourceClaimId: staleClaimId,
+            kind: "supersedes"
+          }),
+          sourceClaimEdge({
+            id: "93c0eb08-fc5a-4a7d-aa79-a930d42f8062" as SourceClaimEdge["id"],
+            fromSourceClaimId: rejectedClaimId,
+            toSourceClaimId: currentClaimId,
+            kind: "contradicts"
+          })
+        ],
+        decisionEdges: [
+          sourceDecisionEdge({
+            id: "9f87a7f4-0bf1-4796-8a46-3bda94cbb221" as SourceDecisionEdge["id"],
+            sourceClaimId: currentClaimId,
+            confidence: "high"
+          })
+        ],
+        rejections: [
+          sourceRejection({
+            id: "51a3f795-fd7d-4cc4-ac0f-407603cd5ae2" as SourceRejection["id"],
+            sourceClaimId: rejectedClaimId
+          })
+        ]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const consensusReadback = objectValue(
+      answerPackage.consensusReadback,
+      "consensusReadback"
+    );
+    const entries = arrayValue(consensusReadback.entries, "consensus entries")
+      .map((entry, index) => objectValue(entry, `consensus entry ${index}`));
+    const entryFor = (sourceClaimId: SourceClaim["id"]) =>
+      entries.find((entry) => entry.sourceClaimId === sourceClaimId);
+
+    expect(arrayValue(consensusReadback.currentSourceClaimIds, "currentSourceClaimIds"))
+      .toContain(currentClaimId);
+    expect(arrayValue(consensusReadback.historicalSourceClaimIds, "historicalSourceClaimIds"))
+      .toContain(staleClaimId);
+    expect(arrayValue(consensusReadback.caveatedSourceClaimIds, "caveatedSourceClaimIds"))
+      .toContain(acceptedOnlyClaimId);
+    expect(arrayValue(consensusReadback.rejectedSourceClaimIds, "rejectedSourceClaimIds"))
+      .toContain(rejectedClaimId);
+    expect(arrayValue(consensusReadback.currentSourceClaimIds, "currentSourceClaimIds"))
+      .not.toContain(acceptedOnlyClaimId);
+    expect(entryFor(currentClaimId)).toMatchObject({
+      state: "current_authority",
+      decisionSupportEdgeIds: ["9f87a7f4-0bf1-4796-8a46-3bda94cbb221"],
+      dissentingSourceClaimIds: [rejectedClaimId],
+      supersedesSourceClaimIds: [staleClaimId]
+    });
+    expect(entryFor(staleClaimId)).toMatchObject({
+      state: "historical",
+      supersededBySourceClaimIds: [currentClaimId],
+      caveats: expect.arrayContaining([
+        "stale",
+        `superseded_by:${currentClaimId}`
+      ])
+    });
+    expect(entryFor(acceptedOnlyClaimId)).toMatchObject({
+      state: "caveated_authority",
+      caveats: ["missing_source_decision_support"]
+    });
+    expect(entryFor(rejectedClaimId)).toMatchObject({
+      state: "rejected",
+      rejectionIds: ["51a3f795-fd7d-4cc4-ac0f-407603cd5ae2"]
+    });
   });
 
   it("lets duplicate SourceClaimEdge influence change source-search selection", async () => {

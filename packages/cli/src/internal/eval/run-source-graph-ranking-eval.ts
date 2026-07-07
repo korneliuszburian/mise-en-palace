@@ -545,8 +545,8 @@ const createRuntime = (
       async listClaimsForProject() {
         throw new Error("listClaimsForProject should not be called");
       },
-      async getSourceClaimById() {
-        throw new Error("getSourceClaimById should not be called");
+      async getSourceClaimById(sourceClaimId) {
+        return claims.find((claim) => claim.id === sourceClaimId);
       },
       async createSourceClaimEdge() {
         throw new Error("createSourceClaimEdge should not be called");
@@ -568,6 +568,9 @@ const createRuntime = (
       },
       async createSourceRejection() {
         throw new Error("createSourceRejection should not be called");
+      },
+      async listSourceRejectionsForClaim() {
+        return [];
       }
     },
     retrievalRepository: {

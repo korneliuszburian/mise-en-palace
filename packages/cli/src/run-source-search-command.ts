@@ -24,6 +24,7 @@ import {
   createSourceCommandDatabaseRuntime
 } from "./source-database-runtime-support.js";
 import {
+  buildSourceConsensusReadback,
   buildRelationSupport,
   buildSourceClaimDocumentLinks
 } from "./source-search-graph-readback.js";
@@ -201,6 +202,11 @@ export const runSourceSearchCommand = async (
       projectId: databaseRuntime.projectId,
       retrievalRepository
     });
+    const consensusReadback = await buildSourceConsensusReadback({
+      candidates: bounded,
+      now,
+      sourceRepository: databaseRuntime.sourceRepository
+    });
 
     return {
       stdout: runtime.command.json === true
@@ -213,7 +219,8 @@ export const runSourceSearchCommand = async (
             diagnostics: retrieved.diagnostics,
             relationSupport,
             sourceDecisionSupport,
-            sourceClaimDocumentLinks
+            sourceClaimDocumentLinks,
+            consensusReadback
           })
         : formatSearchResult({
             query,
@@ -224,7 +231,8 @@ export const runSourceSearchCommand = async (
             diagnostics: retrieved.diagnostics,
             relationSupport,
             sourceDecisionSupport,
-            sourceClaimDocumentLinks
+            sourceClaimDocumentLinks,
+            consensusReadback
           })
     };
   } finally {

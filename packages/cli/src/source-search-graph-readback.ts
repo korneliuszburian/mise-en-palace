@@ -1,8 +1,10 @@
 import type {
+  SourceConsensusTimelineReadback,
   SourceClaim,
   SourceClaimEdge
 } from "@krn/core";
 import {
+  buildSourceConsensusTimelineReadback,
   readSourceRelationMetadataReadback,
   relatedSourceClaimIdForEdge
 } from "@krn/core";
@@ -83,6 +85,10 @@ interface SourceClaimDocumentLinkInput {
 }
 
 const uniqueStrings = (values: readonly string[]): readonly string[] => [...new Set(values)];
+
+const uniqueById = <TItem extends { readonly id: string }>(
+  items: readonly TItem[]
+): TItem[] => [...new Map(items.map((item) => [item.id, item])).values()];
 
 const sourceClaimDocumentLinkInputFor = (
   candidate: RankedActivationCandidate
@@ -317,4 +323,53 @@ export const buildRelationSupport = async (input: {
   }));
 
   return edgeGroups.flat();
+};
+
+export const buildSourceConsensusReadback = async (input: {
+  candidates: readonly RankedActivationCandidate[];
+  now: string;
+  sourceRepository: Pick<
+    DatabaseRuntime["sourceRepository"],
+    | "getSourceClaimById"
+    | "listSourceClaimEdgesForClaim"
+    | "listSourceDecisionEdgesForClaim"
+  > & Pick<DatabaseRuntime["sourceRepository"], "listSourceRejectionsForClaim">;
+}): Promise<SourceConsensusTimelineReadback> => {
+  const candidateSourceClaimIds = sourceClaimIdsForCandidates(input.candidates);
+  const candidateClaimEdges = (await Promise.all(candidateSourceClaimIds.map((sourceClaimId) =>
+    input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId)
+  ))).flat();
+  const relatedSourceClaimIds = candidateClaimEdges.flatMap((edge) => [
+    edge.fromSourceClaimId,
+    edge.toSourceClaimId
+  ]);
+  const sourceClaimIds = uniqueStrings([
+    ...candidateSourceClaimIds,
+    ...relatedSourceClaimIds
+  ]);
+  const sourceClaims = (await Promise.all(sourceClaimIds.map((sourceClaimId) =>
+    input.sourceRepository.getSourceClaimById(sourceClaimId)
+  ))).filter((claim): claim is SourceClaim => claim !== undefined);
+  const sourceClaimEdges = uniqueById([
+    ...candidateClaimEdges,
+    ...(await Promise.all(sourceClaims.map((claim) =>
+      input.sourceRepository.listSourceClaimEdgesForClaim(claim.id)
+    ))).flat()
+  ]);
+  const sourceDecisionEdges = uniqueById((await Promise.all(sourceClaims.map((claim) =>
+    input.sourceRepository.listSourceDecisionEdgesForClaim(claim.id)
+  ))).flat());
+  const sourceRejections = uniqueById(input.sourceRepository.listSourceRejectionsForClaim === undefined
+    ? []
+    : (await Promise.all(sourceClaims.map((claim) =>
+        input.sourceRepository.listSourceRejectionsForClaim?.(claim.id) ?? Promise.resolve([])
+      ))).flat());
+
+  return buildSourceConsensusTimelineReadback({
+    sourceClaims,
+    sourceClaimEdges,
+    sourceDecisionEdges,
+    sourceRejections,
+    now: input.now
+  });
 };

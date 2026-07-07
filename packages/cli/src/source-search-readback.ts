@@ -81,6 +81,37 @@ const formatSourceDecisionSupport = (
         ].join("")
       );
 
+const commaList = (values: readonly string[]): string =>
+  values.length === 0 ? "none" : values.join(",");
+
+const formatConsensusReadback = (
+  answerPackage: SourceSearchAnswerPackage
+): readonly string[] => [
+  "consensus readback:",
+  `- currentSourceClaims: ${commaList(answerPackage.consensusReadback.currentSourceClaimIds)}`,
+  `- caveatedSourceClaims: ${commaList(answerPackage.consensusReadback.caveatedSourceClaimIds)}`,
+  `- historicalSourceClaims: ${commaList(answerPackage.consensusReadback.historicalSourceClaimIds)}`,
+  `- rejectedSourceClaims: ${commaList(answerPackage.consensusReadback.rejectedSourceClaimIds)}`,
+  "consensus entries:",
+  ...(answerPackage.consensusReadback.entries.length === 0
+    ? ["- none"]
+    : answerPackage.consensusReadback.entries.map((entry) =>
+        [
+          `- source_claim:${entry.sourceClaimId}`,
+          ` state:${entry.state}`,
+          ` status:${entry.status}`,
+          ` authority:${entry.sourceAuthority}`,
+          ` decisionEdges:${commaList(entry.decisionSupportEdgeIds)}`,
+          ` supports:${commaList(entry.supportingSourceClaimIds)}`,
+          ` conflicts:${commaList(entry.dissentingSourceClaimIds)}`,
+          ` supersededBy:${commaList(entry.supersededBySourceClaimIds)}`,
+          ` rejections:${commaList(entry.rejectionIds)}`,
+          ` caveats:${commaList(entry.caveats)}`
+        ].join("")
+      )),
+  `consensus doesNotProve: ${answerPackage.consensusReadback.doesNotProve}`
+];
+
 const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[] => {
   return [
     "Answer package preview:",
@@ -160,6 +191,7 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
     `- graphAware: ${answerPackage.graphReadback.graphAware}`,
     "graph caveats:",
     ...answerPackage.graphReadback.caveats.map((item) => `- ${item}`),
+    ...formatConsensusReadback(answerPackage),
     "neutral/noise:",
     ...(answerPackage.neutralOrNoise.length === 0
       ? ["- none from included candidates"]
@@ -184,6 +216,7 @@ export type SourceSearchRenderInput = {
   relationSupport: readonly SourceSearchRelationSupport[];
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
+  consensusReadback: SourceSearchAnswerPackage["consensusReadback"];
 };
 
 const buildSearchReadback = (input: SourceSearchRenderInput) => {
@@ -198,7 +231,8 @@ const buildSearchReadback = (input: SourceSearchRenderInput) => {
     diagnostics: input.diagnostics,
     relationSupport: input.relationSupport,
     sourceDecisionSupport: input.sourceDecisionSupport,
-    sourceClaimDocumentLinks: input.sourceClaimDocumentLinks
+    sourceClaimDocumentLinks: input.sourceClaimDocumentLinks,
+    consensusReadback: input.consensusReadback
   });
 
   return {

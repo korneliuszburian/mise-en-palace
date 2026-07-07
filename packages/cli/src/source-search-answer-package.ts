@@ -1,4 +1,7 @@
 import type {
+  SourceConsensusTimelineReadback
+} from "@krn/core";
+import type {
   RetrieveActivationCandidatesResult,
   RankedActivationCandidate
 } from "@krn/harness";
@@ -42,6 +45,7 @@ export interface SourceSearchAnswerPackage {
   relationSupport: readonly SourceSearchRelationSupport[];
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   graphReadback: SourceSearchGraphReadback;
+  consensusReadback: SourceConsensusTimelineReadback;
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
   missingEvidence: readonly string[];
   doesNotProve: readonly string[];
@@ -138,6 +142,7 @@ export const buildSourceSearchAnswerPackage = (input: {
   relationSupport: readonly SourceSearchRelationSupport[];
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
+  consensusReadback?: SourceConsensusTimelineReadback;
 }): SourceSearchAnswerPackage => {
   const decisionSupportBySourceClaimId = groupSourceDecisionSupportByClaimId(
     input.sourceDecisionSupport
@@ -178,6 +183,15 @@ export const buildSourceSearchAnswerPackage = (input: {
     supportingClaims,
     relationSupport: input.relationSupport
   });
+  const consensusReadback = input.consensusReadback ?? {
+    currentSourceClaimIds: [],
+    caveatedSourceClaimIds: [],
+    historicalSourceClaimIds: [],
+    rejectedSourceClaimIds: [],
+    entries: [],
+    doesNotProve:
+      "Source consensus timeline readback was not built for this answer package."
+  };
   const queryShapeDiagnostics = buildSourceSearchQueryShapeDiagnostics({
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length,
@@ -224,6 +238,7 @@ export const buildSourceSearchAnswerPackage = (input: {
     relationSupport: input.relationSupport,
     sourceDecisionSupport: input.sourceDecisionSupport,
     graphReadback,
+    consensusReadback,
     neutralOrNoise,
     missingEvidence,
     doesNotProve,
