@@ -84,6 +84,9 @@ const unusedSourceRepository = {
   async listSourceClaimEdgesForClaim(): Promise<never> {
     throw new Error("listSourceClaimEdgesForClaim should not be called");
   },
+  async listSourceDecisionEdgesForClaim(): Promise<never> {
+    throw new Error("listSourceDecisionEdgesForClaim should not be called");
+  },
   async createSourceDecisionEdge(): Promise<never> {
     throw new Error("createSourceDecisionEdge should not be called");
   },

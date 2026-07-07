@@ -1,7 +1,8 @@
 import type {
   AntiMemoryRecord,
   ConflictSet,
-  MemoryRecordReviewSignal
+  MemoryRecordReviewSignal,
+  SourceClaimReviewSignal
 } from "@krn/core";
 
 import {
@@ -44,6 +45,13 @@ const blockingMemoryReviewSignal = (
     ? candidate.memoryReviewSignals?.find((signal) => signal.severity === "blocking")
     : undefined;
 
+const blockingSourceClaimReviewSignal = (
+  candidate: RankedActivationCandidate
+): SourceClaimReviewSignal | undefined =>
+  candidate.kind === "source" && candidate.subjectType === "source_claim"
+    ? candidate.sourceClaimReviewSignals?.find((signal) => signal.severity === "blocking")
+    : undefined;
+
 const memoryReviewExclusionReason = (
   signal: MemoryRecordReviewSignal
 ): ActivationExclusionReason => {
@@ -77,6 +85,26 @@ export const applyMemoryReviewSignalFilter = (
     });
   });
 
+export const applySourceClaimReviewSignalFilter = (
+  candidates: readonly RankedActivationCandidate[]
+): RankedActivationCandidate[] =>
+  candidates.map((candidate) => {
+    if (candidate.exclusion !== undefined) {
+      return candidate;
+    }
+
+    const signal = blockingSourceClaimReviewSignal(candidate);
+
+    if (signal === undefined) {
+      return candidate;
+    }
+
+    return markExcluded(candidate, {
+      reason: "unsafe",
+      explanation: `SourceClaim review signal ${signal.kind}: ${signal.reason}`
+    });
+  });
+
 export const applySourceClaimAuthorityFilter = (
   candidates: readonly RankedActivationCandidate[]
 ): RankedActivationCandidate[] =>
@@ -95,7 +123,8 @@ export const applyActivationFilters = (
 ): ApplyActivationFiltersResult => {
   const conflictResult = detectConflicts(input.candidates, input.antiMemoryRecords);
   const memoryReviewSafe = applyMemoryReviewSignalFilter(conflictResult.candidates);
-  const sourceAuthoritySafe = applySourceClaimAuthorityFilter(memoryReviewSafe);
+  const sourceReviewSafe = applySourceClaimReviewSignalFilter(memoryReviewSafe);
+  const sourceAuthoritySafe = applySourceClaimAuthorityFilter(sourceReviewSafe);
   const trusted = applyTrustFilter(sourceAuthoritySafe, {
     minimumTrustTier: input.minimumTrustTier
   });

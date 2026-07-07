@@ -8,6 +8,7 @@ import type {
   MemoryRecordReviewSignal,
   MemoryRecordStatus,
   ProjectId,
+  SourceClaimReviewSignal,
   SourceContextTaxonomy,
   SourceClaimStatus,
   SourceTrustTier
@@ -81,6 +82,7 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   searchDocumentIds?: readonly string[];
   sourceClaimId?: string;
   sourceClaimStatus?: SourceClaimStatus;
+  sourceClaimReviewSignals?: readonly SourceClaimReviewSignal[];
   memoryRecordId?: string;
   memoryReviewSignals?: readonly MemoryRecordReviewSignal[];
   antiMemoryRecordId?: string;

@@ -148,13 +148,6 @@ const buildReport = async (input: {
   limit: number;
   sourceRepository: DatabaseRuntime["sourceRepository"];
 }): Promise<SourceDecisionGapsReport> => {
-  const listSourceDecisionEdgesForClaim =
-    input.sourceRepository.listSourceDecisionEdgesForClaim;
-
-  if (listSourceDecisionEdgesForClaim === undefined) {
-    throw new Error("SourceDecisionEdge readback is unavailable in this database runtime");
-  }
-
   const claims = await input.sourceRepository.listClaimsForProject(input.projectId, input.limit);
   const acceptedClaims = claims.filter((claim) => claim.status === "accepted");
   const listSourceRejectionsForClaim = input.sourceRepository.listSourceRejectionsForClaim;
@@ -185,7 +178,7 @@ const buildReport = async (input: {
     unadoptedClaims.length - resolvedUnadoptedSourceClaimCount;
   const edgeGroups = await Promise.all(acceptedClaims.map(async (claim) => ({
     claim,
-    edges: await listSourceDecisionEdgesForClaim(claim.id)
+    edges: await input.sourceRepository.listSourceDecisionEdgesForClaim(claim.id)
   })));
   const linked = edgeGroups.filter((item) => item.edges.length > 0);
   const missing = edgeGroups.filter((item) => item.edges.length === 0);

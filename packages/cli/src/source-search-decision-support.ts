@@ -75,15 +75,9 @@ export const buildSourceDecisionSupport = async (input: {
   candidates: readonly RankedActivationCandidate[];
   sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceDecisionEdgesForClaim">;
 }): Promise<SourceSearchDecisionSupport[]> => {
-  const listSourceDecisionEdgesForClaim = input.sourceRepository.listSourceDecisionEdgesForClaim;
-
-  if (listSourceDecisionEdgesForClaim === undefined) {
-    return [];
-  }
-
   const sourceClaimIds = sourceClaimIdsForCandidates(input.candidates);
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) =>
-    (await input.sourceRepository.listSourceDecisionEdgesForClaim?.(sourceClaimId) ?? [])
+    (await input.sourceRepository.listSourceDecisionEdgesForClaim(sourceClaimId))
       .map(sourceDecisionSupportFromEdge)
   ));
 

@@ -11,6 +11,7 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   SourceClaim,
+  SourceDecisionEdge,
   SourceClaimEdge,
   TaskContract
 } from "@krn/core";
@@ -79,12 +80,28 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   krnImplication: "Compiler plans for doctor work need source grounding and evidence commands.",
   doesNotProve: "The production deployment is already ready.",
   trustTier: "high",
-  supportType: "supports",
+  supportType: "implementation-boundary",
   consumer: "compiler-test",
+  falsifier: "A compiler plan includes this claim without decision support.",
   status: "accepted",
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const sourceDecisionEdge = (
+  overrides: Partial<SourceDecisionEdge>
+): SourceDecisionEdge => ({
+  id: "source-decision-edge-1",
+  sourceClaimId: "claim-1",
+  targetType: "task_contract",
+  targetId: "task-1",
+  supportType: "implementation-boundary",
+  confidence: "high",
+  notes: "Decision edge supports compiler activation authority for this test claim.",
+  metadata: {},
+  createdAt: now,
   ...overrides
 });
 
@@ -255,12 +272,21 @@ class FakeMemoryRepository implements MemoryRepository {
 
 class FakeSourceRepository implements Pick<
   SourceRepository,
-  "listClaimsForProject" | "listSourceClaimEdgesForClaim"
+  "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
 > {
+  private readonly decisionEdges: readonly SourceDecisionEdge[];
+
   constructor(
     private readonly claims: readonly SourceClaim[],
-    private readonly edges: readonly SourceClaimEdge[] = []
-  ) {}
+    private readonly edges: readonly SourceClaimEdge[] = [],
+    decisionEdges?: readonly SourceDecisionEdge[]
+  ) {
+    this.decisionEdges = decisionEdges ?? claims.map((claim) =>
+      sourceDecisionEdge({
+        id: `source-decision-edge-${claim.id}`,
+        sourceClaimId: claim.id
+      }));
+  }
 
   async listClaimsForProject(): Promise<SourceClaim[]> {
     return [...this.claims];
@@ -270,6 +296,12 @@ class FakeSourceRepository implements Pick<
     return this.edges.filter((edge) =>
       edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
     );
+  }
+
+  async listSourceDecisionEdgesForClaim(
+    sourceClaimId: SourceDecisionEdge["sourceClaimId"]
+  ): Promise<SourceDecisionEdge[]> {
+    return this.decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimId);
   }
 }
 
@@ -606,8 +638,7 @@ describe("compileHarnessPlan", () => {
       sourceRepository: new FakeSourceRepository([
         sourceClaim({
           id: "claim-unsafe",
-          trustTier: "low",
-          doesNotProve: ""
+          trustTier: "low"
         })
       ]),
       retrievalRepository,
@@ -677,6 +708,45 @@ describe("compileHarnessPlan", () => {
       expect.objectContaining({
         decision: "excluded",
         subjectId: "memory-negative-review",
+        reason: "unsafe",
+        exclusionCategory: "unsafe"
+      })
+    ]));
+  });
+
+  it("excludes accepted source claims without decision support from compiled activation context", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        tokenBudget: 500
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([
+          sourceClaim({ id: "claim-without-decision" })
+        ], [], []),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-source-review`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions.map((item) => item.subjectId))
+      .not.toContain("claim-without-decision");
+    expect(result.contextAssembly.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "claim-without-decision",
+        reason: "unsafe",
+        explanation: expect.stringContaining("accepted_claim_without_decision")
+      })
+    ]));
+    expect(retrievalRepository.decisions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        decision: "excluded",
+        subjectId: "claim-without-decision",
         reason: "unsafe",
         exclusionCategory: "unsafe"
       })

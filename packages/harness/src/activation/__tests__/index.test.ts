@@ -4,6 +4,7 @@ import type {
   MemoryRecord,
   ObservationItem,
   SourceClaim,
+  SourceDecisionEdge,
   SourceClaimEdge,
   TaskContract
 } from "@krn/core";
@@ -90,6 +91,21 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const sourceDecisionEdge = (
+  overrides: Partial<SourceDecisionEdge>
+): SourceDecisionEdge => ({
+  id: "source-decision-edge-1",
+  sourceClaimId: "claim-1",
+  targetType: "task_contract",
+  targetId: "task-1",
+  supportType: "implementation-boundary",
+  confidence: "high",
+  notes: "Decision edge supports activation authority for this test claim.",
+  metadata: {},
+  createdAt: now,
   ...overrides
 });
 
@@ -784,6 +800,9 @@ describe("activation engine", () => {
           },
           async listSourceClaimEdgesForClaim() {
             return [edge];
+          },
+          async listSourceDecisionEdgesForClaim() {
+            return [];
           }
         },
         retrievalRepository: {
@@ -1229,6 +1248,84 @@ describe("activation engine", () => {
       exclusion: {
         reason: "unsafe",
         explanation: expect.stringContaining("deprecated claims remain review candidates")
+      }
+    });
+  });
+
+  it("blocks accepted source claims without decision-edge support from activation authority", async () => {
+    const linkedClaim = sourceClaim({
+      id: "claim-linked",
+      claim: "Decision-linked source claims can guide activation.",
+      supportType: "implementation-boundary",
+      falsifier: "A linked claim is excluded despite SourceDecisionEdge support."
+    });
+    const unlinkedClaim = sourceClaim({
+      id: "claim-unlinked",
+      claim: "Accepted-only source claims should not guide activation.",
+      supportType: "implementation-boundary",
+      falsifier: "An accepted-only claim is included as activation authority."
+    });
+    const linkedEdge = sourceDecisionEdge({
+      id: "edge-linked",
+      sourceClaimId: linkedClaim.id
+    });
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 0,
+        source: 10,
+        search: 0,
+        antiMemory: 0
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [linkedClaim, unlinkedClaim];
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return sourceClaimId === linkedClaim.id ? [linkedEdge] : [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+    const result = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumTrustTier: "medium",
+      now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("claim-linked")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("claim-unlinked")).toMatchObject({
+      sourceClaimReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "accepted_claim_without_decision",
+          severity: "blocking"
+        })
+      ]),
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("accepted_claim_without_decision")
       }
     });
   });

@@ -12,6 +12,7 @@ import {
   applyContextROI,
   applyMemoryReviewSignalFilter,
   applySourceClaimAuthorityFilter,
+  applySourceClaimReviewSignalFilter,
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
@@ -70,7 +71,10 @@ export interface HarnessCompilerRepositories {
     "createOperatorIntent" | "createTaskContract" | "createHarnessPlan" | "createContextAssembly"
   >;
   memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
-  sourceRepository: Pick<SourceRepository, "listClaimsForProject" | "listSourceClaimEdgesForClaim">;
+  sourceRepository: Pick<
+    SourceRepository,
+    "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
+  >;
   retrievalRepository: Pick<
     RetrievalRepository,
     | "startRetrievalRun"
@@ -209,7 +213,9 @@ const filterActivationCandidates = (
   applyTemporalFilter(
     applyTrustFilter(
       applySourceClaimAuthorityFilter(
-        applyMemoryReviewSignalFilter(conflictResult.candidates)
+        applySourceClaimReviewSignalFilter(
+          applyMemoryReviewSignalFilter(conflictResult.candidates)
+        )
       ),
       { minimumTrustTier }
     ),

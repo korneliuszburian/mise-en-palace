@@ -58,10 +58,27 @@ const sourceClaimContentExclusion = (
   };
 };
 
+const sourceClaimReviewExclusion = (
+  candidate: RankedActivationCandidate
+): ActivationExclusion | undefined => {
+  const signal = candidate.sourceClaimReviewSignals?.find((item) => item.severity === "blocking");
+
+  if (signal === undefined) {
+    return undefined;
+  }
+
+  return {
+    reason: "unsafe",
+    explanation: `SourceClaim review signal ${signal.kind}: ${signal.reason}`
+  };
+};
+
 const sourceClaimSafetyExclusion = (
   candidate: RankedActivationCandidate
 ): ActivationExclusion | undefined =>
-  sourceClaimAuthorityExclusion(candidate) ?? sourceClaimContentExclusion(candidate);
+  sourceClaimAuthorityExclusion(candidate) ??
+  sourceClaimReviewExclusion(candidate) ??
+  sourceClaimContentExclusion(candidate);
 
 const enforceSourceClaimSafety = (
   candidate: RankedActivationCandidate

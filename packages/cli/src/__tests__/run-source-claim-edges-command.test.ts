@@ -119,6 +119,9 @@ describe("runSourceClaimEdgesCommand", () => {
           async listSourceClaimEdgesForClaim(id) {
             return id === sourceClaimId ? [sourceClaimEdge] : [];
           },
+          async listSourceDecisionEdgesForClaim() {
+            return [];
+          },
           async createSourceDecisionEdge() {
             throw new Error("createSourceDecisionEdge should not be called");
           },
@@ -202,6 +205,9 @@ describe("runSourceClaimEdgesCommand", () => {
           },
           async listSourceClaimEdgesForClaim() {
             throw new Error("listSourceClaimEdgesForClaim should not be called");
+          },
+          async listSourceDecisionEdgesForClaim() {
+            throw new Error("listSourceDecisionEdgesForClaim should not be called");
           },
           async createSourceDecisionEdge() {
             throw new Error("createSourceDecisionEdge should not be called");

@@ -507,6 +507,9 @@ const createRuntime = (
             edge.fromSourceClaimId === sourceClaimId ||
             edge.toSourceClaimId === sourceClaimId
           );
+        },
+        async listSourceDecisionEdgesForClaim(sourceClaimId) {
+          return decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimId);
         }
       },
       retrievalRepository: {

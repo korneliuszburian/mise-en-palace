@@ -272,6 +272,7 @@ describe("runDecisionCorpusImport", () => {
         throw new Error("createSourceClaimEdge should not be called");
       },
       listSourceClaimEdgesForClaim: async () => [],
+      listSourceDecisionEdgesForClaim: async () => [],
       getSourceDecisionEdgeById: async () => undefined,
       createSourceChunk: async () => {
         const id = nextId("source-chunk");
@@ -485,6 +486,7 @@ describe("runDecisionCorpusImport", () => {
       listClaimsForProject: async () => [],
       createSourceClaimEdge: failWrite,
       listSourceClaimEdgesForClaim: async () => [],
+      listSourceDecisionEdgesForClaim: async () => [],
       createSourceDecision: failWrite,
       createSourceDecisionEdge: failWrite,
       getSourceDecisionEdgeById: async () => undefined,

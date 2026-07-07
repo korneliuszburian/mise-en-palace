@@ -7,6 +7,7 @@ import {
   classifySourceClaimTaxonomy,
   classifySourceSupportType,
   classifySourceTrustTier,
+  isSourceClaimTemporallyValid,
   rankSourceTrustTier,
   readSourceRelationMetadataReadback,
   relatedSourceClaimIdForEdge,
@@ -156,7 +157,7 @@ describe("source review signals", () => {
       },
       {
         kind: "accepted_claim_without_decision",
-        severity: "warning",
+        severity: "blocking",
         sourceClaimId: "source-claim-1",
         reason:
           "Accepted SourceClaim has a consumer but no linked SourceDecision, which risks source hoarding instead of source-to-decision evidence."
@@ -176,6 +177,14 @@ describe("source review signals", () => {
       "decorative_support_type"
     ]);
     expect(signals.every((signal) => signal.severity === "blocking")).toBe(true);
+  });
+
+  test("fails closed for invalid source claim timestamps", () => {
+    expect(isSourceClaimTemporallyValid(sourceClaim({}), "not-a-date")).toBe(false);
+    expect(isSourceClaimTemporallyValid(sourceClaim({
+      revisitWhen: "not-a-date"
+    }), now)).toBe(false);
+    expect(isSourceClaimTemporallyValid(sourceClaim({}), now)).toBe(true);
   });
 
   test("reports source decisions without support or falsifiability", () => {
@@ -272,6 +281,46 @@ describe("source review signals", () => {
       allowed: false,
       reason: "weaker_than_current_valid_consensus",
       blockedBySourceClaimId: "source-claim-official"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-older-weak",
+        trustTier: "hypothesis",
+        createdAt: "2026-05-01T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-current-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-current-official"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-invalid-now-weak",
+        trustTier: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-invalid-now-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now: "not-a-date"
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-invalid-now-official"
     });
   });
 

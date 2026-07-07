@@ -6,6 +6,7 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
+  assessSourceClaimReviewSignals,
   activationExclusionReasons
 } from "@krn/core";
 
@@ -62,7 +63,10 @@ export interface ActivationRetrievalLimits {
 
 export interface ActivationCandidateRepositories {
   memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
-  sourceRepository: Pick<SourceRepository, "listClaimsForProject" | "listSourceClaimEdgesForClaim">;
+  sourceRepository: Pick<
+    SourceRepository,
+    "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
+  >;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -440,6 +444,21 @@ const sourceClaimEdgesForClaims = async (
   return [...uniqueEdgesById.values()];
 };
 
+const sourceDecisionCountsForClaims = async (
+  sourceRepository: Pick<SourceRepository, "listSourceDecisionEdgesForClaim">,
+  sourceClaims: readonly { id: string }[]
+): Promise<ReadonlyMap<string, number>> => {
+  const countsBySourceClaimId = new Map<string, number>();
+
+  await Promise.all(sourceClaims.map(async (claim) => {
+    const edges = await sourceRepository.listSourceDecisionEdgesForClaim(claim.id);
+
+    countsBySourceClaimId.set(claim.id, edges.length);
+  }));
+
+  return countsBySourceClaimId;
+};
+
 export const retrieveActivationCandidates = async (
   input: RetrieveActivationCandidatesInput
 ): Promise<RetrieveActivationCandidatesResult> => {
@@ -480,6 +499,10 @@ export const retrieveActivationCandidates = async (
     input.repositories.sourceRepository,
     sourceClaims
   );
+  const sourceDecisionCountsByClaimId = await sourceDecisionCountsForClaims(
+    input.repositories.sourceRepository,
+    sourceClaims
+  );
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
@@ -488,7 +511,13 @@ export const retrieveActivationCandidates = async (
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
-      applySourceClaimEdgeInfluence(sourceClaims.map(toSourceClaimCandidate), {
+      applySourceClaimEdgeInfluence(sourceClaims.map((claim) => ({
+        ...toSourceClaimCandidate(claim),
+        sourceClaimReviewSignals: assessSourceClaimReviewSignals(claim, {
+          now: input.taskContract.updatedAt,
+          sourceDecisionCount: sourceDecisionCountsByClaimId.get(claim.id) ?? 0
+        })
+      })), {
         edges: sourceClaimEdges,
         seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
       }),

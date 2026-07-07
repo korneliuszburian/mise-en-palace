@@ -454,11 +454,20 @@ export const isSourceClaimTemporallyValid = (
     return false;
   }
 
-  const revisitAt = parseTimestampMs(sourceClaim.revisitWhen);
   const nowAt = parseTimestampMs(now);
 
-  if (revisitAt === undefined || nowAt === undefined) {
+  if (nowAt === undefined) {
+    return false;
+  }
+
+  if (sourceClaim.revisitWhen === undefined) {
     return true;
+  }
+
+  const revisitAt = parseTimestampMs(sourceClaim.revisitWhen);
+
+  if (revisitAt === undefined) {
+    return false;
   }
 
   return revisitAt >= nowAt;
@@ -486,7 +495,6 @@ export const assessSourceClaimOverride = (input: {
   readonly now: string;
   readonly overrideReason?: string;
 }): SourceClaimOverrideAssessment => {
-  const candidateCreatedAt = parseTimestampMs(input.candidate.createdAt);
   const overrideReason = input.overrideReason?.trim();
 
   if (overrideReason !== undefined && overrideReason.length > 0) {
@@ -497,21 +505,17 @@ export const assessSourceClaimOverride = (input: {
   }
 
   const candidateTrustRank = rankSourceTrustTier(input.candidate.trustTier);
+  const nowIsInvalid = parseTimestampMs(input.now) === undefined;
   const strongerCurrentConsensus = input.currentConsensus.find((currentClaim) => {
-    if (!isSourceClaimTemporallyValid(currentClaim, input.now)) {
+    if (currentClaim.id === input.candidate.id || currentClaim.status !== "accepted") {
       return false;
     }
 
-    const currentCreatedAt = parseTimestampMs(currentClaim.createdAt);
-    const candidateIsNewer =
-      candidateCreatedAt === undefined ||
-      currentCreatedAt === undefined ||
-      candidateCreatedAt > currentCreatedAt;
+    if (!nowIsInvalid && !isSourceClaimTemporallyValid(currentClaim, input.now)) {
+      return false;
+    }
 
-    return (
-      candidateIsNewer &&
-      rankSourceTrustTier(currentClaim.trustTier) > candidateTrustRank
-    );
+    return rankSourceTrustTier(currentClaim.trustTier) > candidateTrustRank;
   });
 
   if (strongerCurrentConsensus !== undefined) {
@@ -599,7 +603,7 @@ export const assessSourceClaimReviewSignals = (
   ) {
     signals.push({
       kind: "accepted_claim_without_decision",
-      severity: "warning",
+      severity: "blocking",
       sourceClaimId: claim.id,
       reason:
         "Accepted SourceClaim has a consumer but no linked SourceDecision, which risks source hoarding instead of source-to-decision evidence."

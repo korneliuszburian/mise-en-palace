@@ -9,7 +9,8 @@ import { join } from "node:path";
 
 import type {
   MemoryRecord,
-  SourceClaim
+  SourceClaim,
+  SourceDecisionEdge
 } from "@krn/core";
 import {
   createExecutionBrief,
@@ -1074,6 +1075,30 @@ const throwingRepositoryMethod = (method: string): never => {
   throw new Error(`${method} should not be called by memory advantage eval`);
 };
 
+const sourceDecisionEdgeForEvalClaim = (
+  sourceClaimId: SourceClaim["id"]
+): SourceDecisionEdge => ({
+  id: `decision-edge:${sourceClaimId}`,
+  sourceClaimId,
+  targetType: "eval_candidate",
+  targetId: "eval:memory-advantage",
+  supportType: "decision",
+  confidence: "high",
+  notes: "Memory advantage eval fixture links accepted source evidence to the eval candidate.",
+  metadata: {
+    eval: "memory-advantage"
+  },
+  createdAt: now
+});
+
+const sourceDecisionEdgesForEvalClaim = (
+  claims: readonly SourceClaim[],
+  sourceClaimId: SourceClaim["id"]
+): SourceDecisionEdge[] =>
+  claims.some((claim) => claim.id === sourceClaimId)
+    ? [sourceDecisionEdgeForEvalClaim(sourceClaimId)]
+    : [];
+
 const createMemoryAdvantageRuntime = (
   cards: readonly MemoryAdvantageCatalogCardFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[]
@@ -1107,7 +1132,9 @@ const createMemoryAdvantageRuntime = (
       },
       sourceRepository: {
         listClaimsForProject: async () => claims,
-        listSourceClaimEdgesForClaim: async () => []
+        listSourceClaimEdgesForClaim: async () => [],
+        listSourceDecisionEdgesForClaim: async (sourceClaimId) =>
+          sourceDecisionEdgesForEvalClaim(claims, sourceClaimId)
       },
       retrievalRepository: {
         ...baseCompilerDependencies.retrievalRepository,
@@ -1133,22 +1160,7 @@ const createMemoryAdvantageRuntime = (
       getSourceDecisionEdgeById: async () => undefined,
       createSourceRejection: async () => throwingRepositoryMethod("createSourceRejection"),
       listSourceDecisionEdgesForClaim: async (sourceClaimId) =>
-        claims.some((claim) => claim.id === sourceClaimId)
-          ? [{
-              id: `decision-edge:${sourceClaimId}`,
-              sourceClaimId,
-              targetType: "eval_candidate",
-              targetId: "eval:memory-advantage",
-              supportType: "decision",
-              confidence: "high",
-              notes: "Memory advantage eval fixture links accepted source evidence to the eval candidate.",
-              metadata: {
-                eval: "memory-advantage"
-              },
-              createdAt: now,
-              updatedAt: now
-            }]
-          : []
+        [...sourceDecisionEdgesForEvalClaim(claims, sourceClaimId)]
     },
     retrievalRepository: {
       createSearchDocument: async () => throwingRepositoryMethod("createSearchDocument"),

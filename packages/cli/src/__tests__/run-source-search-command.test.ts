@@ -209,6 +209,9 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
               edge.fromSourceClaimId === sourceClaimIdForReadback ||
               edge.toSourceClaimId === sourceClaimIdForReadback
             );
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimIdForReadback) {
+            return fixtures.decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimIdForReadback);
           }
         },
         retrievalRepository: {

@@ -986,6 +986,9 @@ describe("runCli", () => {
                 },
                 async listSourceClaimEdgesForClaim() {
                   return [];
+                },
+                async listSourceDecisionEdgesForClaim() {
+                  return [];
                 }
               },
               retrievalRepository: {
@@ -1140,6 +1143,9 @@ describe("runCli", () => {
                   return [];
                 },
                 async listSourceClaimEdgesForClaim() {
+                  return [];
+                },
+                async listSourceDecisionEdgesForClaim() {
                   return [];
                 }
               },

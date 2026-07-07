@@ -66,12 +66,15 @@ const sourceReadbackNoops = {
   async listClaimsForProject() {
     return [];
   },
+  async listSourceDecisionEdgesForClaim() {
+    return [];
+  },
   async getSourceDecisionEdgeById() {
     return undefined;
   }
 } satisfies Pick<
   DatabaseRuntime["sourceRepository"],
-  "listClaimsForProject" | "getSourceDecisionEdgeById"
+  "listClaimsForProject" | "listSourceDecisionEdgesForClaim" | "getSourceDecisionEdgeById"
 >;
 
 const sourceArtifactRecord = (
