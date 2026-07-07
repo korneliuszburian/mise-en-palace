@@ -21,6 +21,9 @@ const mocks = vi.hoisted(() => {
     listRepoInstallationsForProject: vi.fn()
   };
   const sourceRepository: Partial<Pick<SourceRepository, "createSourceChunk">> = {};
+  const drizzleSourceRepository = vi.fn(function DrizzleSourceRepository() {
+    return sourceRepository;
+  });
 
   return {
     client,
@@ -29,6 +32,7 @@ const mocks = vi.hoisted(() => {
     projectRepository,
     harnessRunRepository: {},
     sourceRepository,
+    drizzleSourceRepository,
     retrievalRepository: {},
     memoryRepository: {},
     observationRepository: {}
@@ -50,9 +54,7 @@ vi.mock("@krn/db/adapters", () => ({
   DrizzleHarnessRunRepository: vi.fn(function DrizzleHarnessRunRepository() {
     return mocks.harnessRunRepository;
   }),
-  DrizzleSourceRepository: vi.fn(function DrizzleSourceRepository() {
-    return mocks.sourceRepository;
-  }),
+  DrizzleSourceRepository: mocks.drizzleSourceRepository,
   DrizzleRetrievalRepository: vi.fn(function DrizzleRetrievalRepository() {
     return mocks.retrievalRepository;
   }),
@@ -135,6 +137,45 @@ describe("createDatabaseRuntime", () => {
       now: () => now,
       createId: (prefix: string) => `${prefix}-1`
     })).rejects.toThrow("repo installation read failed");
+
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the database client when observe runtime repository setup fails", async () => {
+    const { createObserveDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.createKrnDatabase.mockImplementationOnce(() => {
+      throw new Error("db init failed");
+    });
+
+    await expect(createObserveDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn"
+    })).rejects.toThrow("db init failed");
+
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the database client when review assessment runtime setup fails", async () => {
+    const { createReviewAssessDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.createKrnDatabase.mockImplementationOnce(() => {
+      throw new Error("review db init failed");
+    });
+
+    await expect(createReviewAssessDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn"
+    })).rejects.toThrow("review db init failed");
+
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the database client when reflect runtime repository setup fails", async () => {
+    const { createReflectDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.drizzleSourceRepository.mockImplementationOnce(() => {
+      throw new Error("reflect repository init failed");
+    });
+
+    await expect(createReflectDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn"
+    })).rejects.toThrow("reflect repository init failed");
 
     expect(mocks.client.end).toHaveBeenCalledTimes(1);
   });

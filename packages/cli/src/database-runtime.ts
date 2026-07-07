@@ -244,17 +244,23 @@ const closePostgresClient = (client: PostgresClient): (() => Promise<void>) => a
   await client.end();
 };
 
-const createObservationRuntimeRepositories = (databaseUrl: string) => {
+const createObservationRuntimeRepositories = async (databaseUrl: string) => {
   const client = postgres(databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
 
-  return {
-    client,
-    projectRepository: new DrizzleProjectRepository(db),
-    harnessRunRepository: new DrizzleHarnessRunRepository(db),
-    observationRepository: new DrizzleObservationRepository(db),
-    db
-  };
+  try {
+    const db = createKrnDatabase(client);
+
+    return {
+      client,
+      projectRepository: new DrizzleProjectRepository(db),
+      harnessRunRepository: new DrizzleHarnessRunRepository(db),
+      observationRepository: new DrizzleObservationRepository(db),
+      db
+    };
+  } catch (error) {
+    await client.end();
+    throw error;
+  }
 };
 
 const trimmedValue = (value: string | undefined): string | undefined => {
@@ -582,7 +588,7 @@ export const createObserveDatabaseRuntime = async (
     projectRepository,
     harnessRunRepository,
     observationRepository
-  } = createObservationRuntimeRepositories(input.databaseUrl);
+  } = await createObservationRuntimeRepositories(input.databaseUrl);
 
   return {
     harnessRunRepository,
@@ -618,10 +624,20 @@ export const createReflectDatabaseRuntime = async (
     projectRepository,
     harnessRunRepository,
     observationRepository
-  } = createObservationRuntimeRepositories(input.databaseUrl);
-  const sourceRepository = new DrizzleSourceRepository(db);
-  const memoryRepository = new DrizzleMemoryRepository(db);
-  const reflectionRepository = new DrizzleReflectionRepository(db);
+  } = await createObservationRuntimeRepositories(input.databaseUrl);
+
+  let sourceRepository: DrizzleSourceRepository;
+  let memoryRepository: DrizzleMemoryRepository;
+  let reflectionRepository: DrizzleReflectionRepository;
+
+  try {
+    sourceRepository = new DrizzleSourceRepository(db);
+    memoryRepository = new DrizzleMemoryRepository(db);
+    reflectionRepository = new DrizzleReflectionRepository(db);
+  } catch (error) {
+    await client.end();
+    throw error;
+  }
 
   return {
     async getRunSnapshot(executionRunId: string): Promise<ReflectRunSnapshot | undefined> {
@@ -671,11 +687,17 @@ export const createReviewAssessDatabaseRuntime = async (
   input: ReviewAssessDatabaseRuntimeInput
 ): Promise<ReviewAssessDatabaseRuntime> => {
   const client = postgres(input.databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
 
-  return {
-    harnessRunRepository,
-    close: closePostgresClient(client)
-  };
+  try {
+    const db = createKrnDatabase(client);
+    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+
+    return {
+      harnessRunRepository,
+      close: closePostgresClient(client)
+    };
+  } catch (error) {
+    await client.end();
+    throw error;
+  }
 };
