@@ -77,6 +77,14 @@ describe("runDecisionPacketEval", () => {
     )).toMatchObject({
       expectedDecisionId: "store-backed-memory-no-markdown",
       qualityLabel: "useful",
+      scores: {
+        taskUsefulness: 1,
+        evidenceFidelity: 1,
+        temporalCorrectness: 1,
+        rejectionRecall: 1,
+        nonProofBoundaries: 1,
+        total: 5
+      },
       notesBaseline: {
         qualityLabel: "unsafe",
         topDecisionIds: [
@@ -87,7 +95,9 @@ describe("runDecisionPacketEval", () => {
         unsafeDecisionIds: [
           "create-markdown-memory-files",
           "markdown-runtime-memory"
-        ]
+        ],
+        failureRationale:
+          "Notes grep can recall the current line, but it also returns stale and rejected markdown-memory paths without authority status."
       },
       comparisonOutcome: "krn_win",
       packet: {
@@ -110,6 +120,14 @@ describe("runDecisionPacketEval", () => {
     )).toMatchObject({
       expectedDecisionId: "frontend-project-standard-packet",
       qualityLabel: "useful",
+      scores: {
+        taskUsefulness: 1,
+        evidenceFidelity: 1,
+        temporalCorrectness: 1,
+        rejectionRecall: 1,
+        nonProofBoundaries: 1,
+        total: 5
+      },
       notesBaseline: {
         qualityLabel: "unsafe",
         topDecisionIds: [
@@ -120,7 +138,9 @@ describe("runDecisionPacketEval", () => {
         unsafeDecisionIds: [
           "generic-frontend-starter-default",
           "install-latest-frontend-stack"
-        ]
+        ],
+        failureRationale:
+          "Notes grep matches the current frontend standard and the stale or rejected starter advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
       },
       comparisonOutcome: "krn_win",
       packet: {
@@ -160,6 +180,10 @@ describe("runDecisionPacketEval", () => {
     expect(result.metrics.usefulRate).toBe(0);
     expect(result.cases[0]).toMatchObject({
       qualityLabel: "noisy",
+      scores: {
+        evidenceFidelity: 0,
+        total: 4
+      },
       reasons: expect.arrayContaining(["packet is missing SourceDecisionEdge refs"])
     });
   });

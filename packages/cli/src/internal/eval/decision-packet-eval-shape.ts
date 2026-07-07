@@ -11,6 +11,16 @@ export interface NotesBaselineResult {
   readonly qualityLabel: NotesBaselineLabel;
   readonly topDecisionIds: readonly string[];
   readonly unsafeDecisionIds: readonly string[];
+  readonly failureRationale: string;
+}
+
+export interface DecisionPacketScoreBreakdown {
+  readonly taskUsefulness: number;
+  readonly evidenceFidelity: number;
+  readonly temporalCorrectness: number;
+  readonly rejectionRecall: number;
+  readonly nonProofBoundaries: number;
+  readonly total: number;
 }
 
 export interface DecisionPacketEvalCaseReadback {
@@ -20,6 +30,7 @@ export interface DecisionPacketEvalCaseReadback {
   readonly expectedStaleDecisionIds: readonly string[];
   readonly expectedRejectedDecisionIds: readonly string[];
   readonly qualityLabel: PacketQualityLabel;
+  readonly scores: DecisionPacketScoreBreakdown;
   readonly notesBaseline: NotesBaselineResult;
   readonly comparisonOutcome: BaselineComparisonOutcome;
   readonly status: DecisionPacketStatus;

@@ -11,6 +11,7 @@ import {
 import type {
   DecisionPacketEvalCaseReadback,
   DecisionPacketEvalResult,
+  DecisionPacketScoreBreakdown,
   NotesBaselineResult,
   PacketQualityLabel
 } from "./decision-packet-eval-shape.js";
@@ -142,6 +143,44 @@ const packetReasons = (
   )
 ];
 
+const score = (condition: boolean): number => condition ? 1 : 0;
+
+const scoreDecisionPacket = (
+  fixture: DecisionPacketEvalFixture,
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase,
+  expectedDecision: DecisionPacketDecision | undefined
+): DecisionPacketScoreBreakdown => {
+  const taskUsefulness = score(
+    packet.governingDecisionIds.includes(testCase.expectedDecisionId) &&
+    packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions
+  );
+  const evidenceFidelity = score(hasDecisionBoundary(packet, expectedDecision));
+  const temporalCorrectness = score(
+    hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) &&
+    packet.severeStaleAuthorityIds.length === 0
+  );
+  const rejectionRecall = score(
+    hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) &&
+    hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase))
+  );
+  const nonProofBoundaries = score(packet.falsifiers.length > 0 && packet.doesNotProve.length > 0);
+
+  return {
+    taskUsefulness,
+    evidenceFidelity,
+    temporalCorrectness,
+    rejectionRecall,
+    nonProofBoundaries,
+    total:
+      taskUsefulness +
+      evidenceFidelity +
+      temporalCorrectness +
+      rejectionRecall +
+      nonProofBoundaries
+  };
+};
+
 export const classifyDecisionPacketForEval = (
   fixture: DecisionPacketEvalFixture,
   packet: DecisionPacketEvalCaseReadback["packet"],
@@ -204,14 +243,18 @@ const evaluateNotesBaseline = (
     return {
       qualityLabel: "unsafe",
       topDecisionIds,
-      unsafeDecisionIds
+      unsafeDecisionIds,
+      failureRationale: testCase.baselineFailureRationale
     };
   }
 
   return {
     qualityLabel: topDecisionIds.includes(testCase.expectedDecisionId) ? "usable" : "miss",
     topDecisionIds,
-    unsafeDecisionIds
+    unsafeDecisionIds,
+    failureRationale: topDecisionIds.includes(testCase.expectedDecisionId)
+      ? "Notes baseline retrieved the expected decision without stale or rejected top-k conflict for this fixture case."
+      : testCase.baselineFailureRationale
   };
 };
 
@@ -222,6 +265,7 @@ const evaluateCase = async (
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
   const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
   const qualityLabel = classifyDecisionPacketForEval(fixture, packet, testCase, expectedDecision);
+  const scores = scoreDecisionPacket(fixture, packet, testCase, expectedDecision);
   const notesBaseline = evaluateNotesBaseline(fixture, testCase);
   const comparisonOutcome = comparePacketAgainstNotesBaseline(
     qualityLabel,
@@ -235,6 +279,7 @@ const evaluateCase = async (
     expectedStaleDecisionIds: testCase.staleDecisionIds,
     expectedRejectedDecisionIds: testCase.rejectedDecisionIds,
     qualityLabel,
+    scores,
     notesBaseline,
     comparisonOutcome,
     status: decisionPacketCaseStatus(qualityLabel),
