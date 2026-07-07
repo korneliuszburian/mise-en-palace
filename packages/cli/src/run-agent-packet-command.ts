@@ -131,6 +131,7 @@ const compactDecisionPacket = (
       .filter((inclusion) => inclusion.subjectType === "source_claim")
       .map((inclusion) => inclusion.subjectId)),
     sourceDecisionEdgeIds: sourceDecisionEdgeIdsFor(readModel),
+    sourceRejectionIds: [],
     memoryRefs: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "memory_record")
       .map((inclusion) => inclusion.subjectId)),

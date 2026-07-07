@@ -128,34 +128,74 @@ const hasSameIds = (
   return expected.every((id) => actualIds.has(id));
 };
 
+const expectedSourceRejectionIds = (
+  fixture: DecisionPacketEvalFixture,
+  testCase: DecisionPacketCase
+): readonly string[] => {
+  const rejected = new Set(testCase.rejectedDecisionIds);
+
+  return fixture.decisions
+    .filter((decision) => decision.status === "rejected" && rejected.has(decision.id))
+    .flatMap((decision) =>
+      nonEmpty(decision.sourceRejectionId) ? [decision.sourceRejectionId] : []
+    );
+};
+
+const reasonFor = (
+  condition: boolean,
+  passed: string,
+  failed: string
+): string => condition ? passed : failed;
+
 const packetReasons = (
+  fixture: DecisionPacketEvalFixture,
   packet: DecisionPacketReadback,
   testCase: DecisionPacketCase
 ): readonly string[] => [
-  ...(packet.governingDecisionIds.includes(testCase.expectedDecisionId)
-    ? ["packet includes expected governing decision"]
-    : ["packet misses expected governing decision"]),
-  ...(packet.sourceDecisionEdgeIds.length > 0
-    ? ["packet includes SourceDecisionEdge refs"]
-    : ["packet is missing SourceDecisionEdge refs"]),
-  ...(packet.falsifiers.length > 0 && packet.doesNotProve.length > 0
-    ? ["packet includes falsifier and doesNotProve boundaries"]
-    : ["packet is missing falsifier or doesNotProve boundaries"]),
-  ...(hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds)
-    ? ["packet excludes expected stale decisions with readback"]
-    : ["packet misses stale-decision exclusion readback"]),
-  ...(hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds)
-    ? ["packet includes expected rejected-path readback"]
-    : ["packet misses rejected-path readback"]),
-  ...(packet.severeStaleAuthorityIds.length === 0
-    ? ["packet has no severe stale-authority inclusions"]
-    : ["packet includes stale or rejected authority as governing context"]),
-  ...(packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions
-    ? ["packet noise is within budget"]
-    : ["packet is too noisy for pre-code use"])
+  reasonFor(
+    packet.governingDecisionIds.includes(testCase.expectedDecisionId),
+    "packet includes expected governing decision",
+    "packet misses expected governing decision"
+  ),
+  reasonFor(
+    packet.sourceDecisionEdgeIds.length > 0,
+    "packet includes SourceDecisionEdge refs",
+    "packet is missing SourceDecisionEdge refs"
+  ),
+  reasonFor(
+    packet.falsifiers.length > 0 && packet.doesNotProve.length > 0,
+    "packet includes falsifier and doesNotProve boundaries",
+    "packet is missing falsifier or doesNotProve boundaries"
+  ),
+  reasonFor(
+    hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds),
+    "packet excludes expected stale decisions with readback",
+    "packet misses stale-decision exclusion readback"
+  ),
+  reasonFor(
+    hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds),
+    "packet includes expected rejected-path readback",
+    "packet misses rejected-path readback"
+  ),
+  reasonFor(
+    hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase)),
+    "packet includes SourceRejection refs for rejected paths",
+    "packet misses SourceRejection refs for rejected paths"
+  ),
+  reasonFor(
+    packet.severeStaleAuthorityIds.length === 0,
+    "packet has no severe stale-authority inclusions",
+    "packet includes stale or rejected authority as governing context"
+  ),
+  reasonFor(
+    packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions,
+    "packet noise is within budget",
+    "packet is too noisy for pre-code use"
+  )
 ];
 
 export const classifyDecisionPacketForEval = (
+  fixture: DecisionPacketEvalFixture,
   packet: DecisionPacketReadback,
   testCase: DecisionPacketCase,
   expectedDecision: DecisionPacketDecision | undefined
@@ -172,6 +212,7 @@ export const classifyDecisionPacketForEval = (
     !hasDecisionBoundary(packet, expectedDecision) ||
     !hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) ||
     !hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) ||
+    !hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase)) ||
     packet.noiseDecisionIds.length > maximumAverageNoiseDecisions
   ) {
     return "noisy";
@@ -250,7 +291,7 @@ const evaluateCase = async (
 ): Promise<DecisionPacketCaseResult> => {
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
   const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
-  const qualityLabel = classifyDecisionPacketForEval(packet, testCase, expectedDecision);
+  const qualityLabel = classifyDecisionPacketForEval(fixture, packet, testCase, expectedDecision);
   const notesBaseline = evaluateNotesBaseline(fixture, testCase);
   const comparisonOutcome = compareAgainstNotesBaseline(
     qualityLabel,
@@ -267,7 +308,7 @@ const evaluateCase = async (
     notesBaseline,
     comparisonOutcome,
     status: qualityLabel === "useful" ? "pass" : "fail",
-    reasons: packetReasons(packet, testCase),
+    reasons: packetReasons(fixture, packet, testCase),
     packet
   };
 };
@@ -363,7 +404,7 @@ export const runDecisionPacketEval = async (
     proof: {
       proves: [
         "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
-        "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, memory refs, falsifiers, and doesNotProve boundaries",
+        "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
         "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, and zero severe stale-authority thresholds"
       ],

@@ -89,6 +89,10 @@ const parseDecision = (
   );
   const decision = parseDecisionCorpusBaseRow(value, index);
 
+  if (decision.status === "rejected" && sourceRejectionId === undefined) {
+    throw new Error(`decisions[${index}].sourceRejectionId is required for rejected decisions`);
+  }
+
   return {
     ...decision,
     taskScopes: optionalStringArrayValue(value["taskScopes"], `decisions[${index}].taskScopes`),

@@ -416,6 +416,17 @@ const excludedDecisionIds = (
     .filter((id): id is string => id !== undefined && expected.has(id)));
 };
 
+const rejectedRows = (
+  fixture: DecisionPacketEvalFixture,
+  rejectedDecisionIds: readonly string[]
+): readonly DecisionPacketRow[] => {
+  const rejected = new Set(rejectedDecisionIds);
+
+  return fixture.decisions.filter((decision) =>
+    decision.status === "rejected" && rejected.has(decision.id)
+  );
+};
+
 export const buildDecisionPacketWithEngine = async (
   fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
@@ -471,6 +482,9 @@ export const buildDecisionPacketWithEngine = async (
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
   const staleDecisionIds = excludedDecisionIds(fixture, brief, testCase.staleDecisionIds);
   const rejectedPathIds = excludedDecisionIds(fixture, brief, testCase.rejectedDecisionIds);
+  const sourceRejectionIds = unique(rejectedRows(fixture, rejectedPathIds).flatMap((decision) =>
+    nonEmpty(decision.sourceRejectionId) ? [decision.sourceRejectionId] : []
+  ));
   const severeExpectedIds = new Set([
     ...testCase.staleDecisionIds,
     ...testCase.rejectedDecisionIds
@@ -483,6 +497,7 @@ export const buildDecisionPacketWithEngine = async (
     sourceDecisionEdgeIds: unique(governingRows.flatMap((decision) =>
       nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
     )),
+    sourceRejectionIds,
     memoryRefs: unique(memoryRows.map((decision) => `memory:decision:${decision.id}`)),
     staleDecisionIds,
     rejectedPathIds,

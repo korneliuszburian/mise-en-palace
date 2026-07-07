@@ -95,6 +95,7 @@ describe("runDecisionPacketEval", () => {
         governingDecisionIds: expect.arrayContaining(["store-backed-memory-no-markdown"]),
         sourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
+        sourceRejectionIds: expect.arrayContaining(["source-rejection:create-markdown-memory-files"]),
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
         brief: {
           observationPrefixCount: 1
@@ -124,6 +125,7 @@ describe("runDecisionPacketEval", () => {
       comparisonOutcome: "krn_win",
       packet: {
         governingDecisionIds: expect.arrayContaining(["frontend-project-standard-packet"]),
+        sourceRejectionIds: expect.arrayContaining(["source-rejection:install-latest-frontend-stack"]),
         staleDecisionIds: ["generic-frontend-starter-default"],
         rejectedPathIds: ["install-latest-frontend-stack"],
         brief: {
@@ -181,6 +183,7 @@ describe("runDecisionPacketEval", () => {
       governingDecisionIds: ["store-backed-memory-no-markdown"],
       sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
       sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
+      sourceRejectionIds: [],
       memoryRefs: ["memory:decision:store-backed-memory-no-markdown"],
       staleDecisionIds: ["cast-json-record"],
       rejectedPathIds: ["prose-second-opinion"],
@@ -198,7 +201,21 @@ describe("runDecisionPacketEval", () => {
       }
     };
 
-    expect(classifyDecisionPacketForEval(packet, testCase, expectedDecision)).toBe("noisy");
+    expect(classifyDecisionPacketForEval(fixture, packet, testCase, expectedDecision)).toBe("noisy");
+  });
+
+  it("fails when rejected paths lose SourceRejection boundaries", async () => {
+    const rawFixture = loadMutableFixture();
+
+    for (const decision of rawFixture.decisions) {
+      if (decision["status"] === "rejected") {
+        delete decision["sourceRejectionId"];
+      }
+    }
+
+    expect(() => parseDecisionPacketEvalFixture(rawFixture)).toThrow(
+      "sourceRejectionId is required for rejected decisions"
+    );
   });
 
   it("does not match task scopes by substring", async () => {
