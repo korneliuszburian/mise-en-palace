@@ -3,7 +3,7 @@ import type {
 } from "postgres";
 import {
   describeMaintenanceJob
-} from "@krn/maintenance-preview";
+} from "@krn/core";
 
 import {
   createSmokeDatabase,

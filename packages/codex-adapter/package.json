@@ -14,10 +14,10 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@krn/core": "workspace:*",
-    "@krn/harness": "workspace:*"
+    "@krn/core": "workspace:*"
   },
   "devDependencies": {
+    "@krn/harness": "workspace:*",
     "vitest": "^4.1.9"
   }
 }

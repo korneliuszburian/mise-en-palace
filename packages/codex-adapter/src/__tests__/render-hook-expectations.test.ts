@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   EvidenceContract
-} from "@krn/harness";
+} from "@krn/core";
 
 import {
   codexHookPhases

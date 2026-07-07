@@ -257,7 +257,7 @@ describe("maintenance worker skeleton", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Declared worker write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+        "Declared maintenance write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
     });
   });
 

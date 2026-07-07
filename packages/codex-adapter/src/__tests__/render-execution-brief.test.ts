@@ -7,7 +7,7 @@ import type {
 } from "@krn/core";
 import type {
   EvidenceContract
-} from "@krn/harness";
+} from "@krn/core";
 
 import {
   createExecutionBrief,

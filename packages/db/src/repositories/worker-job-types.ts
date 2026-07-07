@@ -2,12 +2,12 @@ import type { IsoTimestamp } from "@krn/core";
 import {
   maintenanceJobTypes,
   workerJobStatuses
-} from "@krn/maintenance-preview";
+} from "@krn/core";
 import type {
   MaintenanceJob,
   MaintenanceJobType,
   WorkerJobStatus
-} from "@krn/maintenance-preview";
+} from "@krn/core";
 
 export const workerJobTypes = maintenanceJobTypes;
 

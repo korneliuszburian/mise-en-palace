@@ -11,7 +11,7 @@ import {
 } from "@krn/harness";
 import type {
   EvidenceContract
-} from "@krn/harness";
+} from "@krn/core";
 
 import {
   executionBriefFormatVersion

@@ -1,10 +1,9 @@
 import {
-  buildMaintenancePreview
-} from "@krn/maintenance-preview";
+  buildMemoryStalenessMaintenancePreview
+} from "@krn/core";
 import type {
-  MaintenancePreviewCandidate,
   MemoryStalenessMaintenanceCandidate
-} from "@krn/maintenance-preview";
+} from "@krn/core";
 
 import {
   assertSmokeReadbackChecks,
@@ -45,11 +44,6 @@ export interface MaintenanceBoundarySmokeReport {
 }
 
 const { now, expiredAt, validFrom } = smokeFixtureClocks.maintenanceBoundary;
-
-const isMemoryStalenessCandidate = (
-  candidate: MaintenancePreviewCandidate
-): candidate is MemoryStalenessMaintenanceCandidate =>
-  candidate.kind === "memory_staleness_maintenance_candidate";
 
 export const runMaintenanceBoundarySmokeCheck = async (
   input: MaintenanceBoundarySmokeInput
@@ -173,16 +167,14 @@ export const runMaintenanceBoundarySmokeCheck = async (
       }
     });
     const memoryRecords = await memoryRepository.listMemoryRecordsForProject(project.id, 10);
-    const preview = buildMaintenancePreview({
+    const preview = buildMemoryStalenessMaintenancePreview({
       now,
       evidenceRef: `db:smoke:maintenance-boundary:${marker}`,
       memoryRecords,
-      sourceClaims: [],
-      sourceClaimEdges: [],
       maxCandidates: 1
     });
     const candidate = preview.candidates.find((item): item is MemoryStalenessMaintenanceCandidate =>
-      isMemoryStalenessCandidate(item) && item.memoryRecordId === memoryRecord.id
+      item.memoryRecordId === memoryRecord.id
     );
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const readbackError = "Maintenance boundary smoke readback did not match seeded state";
@@ -202,10 +194,9 @@ export const runMaintenanceBoundarySmokeCheck = async (
       },
       { label: "maintenance boundary passed", passed: candidate?.maintenanceWriteBoundary.status === "passed" },
       { label: "candidate mutation none", passed: candidate?.mutation === "none" },
-      { label: "preview mutation none", passed: preview.mutation === "none" },
       {
-        label: "runtime loop candidate only",
-        passed: preview.manualCandidateLoop.mode === "manual_candidate_only"
+        label: "maintenance preview mutation none",
+        passed: preview.mutation === "none"
       }
     ], readbackError);
 
@@ -237,7 +228,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
       maintenanceWriteBoundaryStatus: emittedCandidate.maintenanceWriteBoundary.status,
       maintenanceWriteBoundaryMutation: preview.mutation,
       memoryRecordCount: memoryRecords.length,
-      memoryStalenessCandidateCount: preview.candidateCounts.memoryStaleness,
+      memoryStalenessCandidateCount: preview.candidates.length,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0
     };

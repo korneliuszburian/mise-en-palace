@@ -1,12 +1,10 @@
 import type {
   CapabilityPlan,
   ContextAssembly,
+  EvidenceContract,
   HarnessPlan,
   TaskContract
 } from "@krn/core";
-import type {
-  EvidenceContract
-} from "@krn/harness";
 import type {
   CodexExecPlanRef,
   CodexGoalRef,

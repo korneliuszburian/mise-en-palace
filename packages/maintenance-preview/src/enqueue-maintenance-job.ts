@@ -1,20 +1,10 @@
-import type { IsoTimestamp } from "@krn/core";
-
 import type {
   MaintenanceJob,
   MaintenanceJobPayloadByType,
-  MaintenanceJobType
-} from "./job-types.js";
-
-export const workerJobStatuses = [
-  "queued",
-  "running",
-  "succeeded",
-  "failed",
-  "skipped"
-] as const;
-
-export type WorkerJobStatus = (typeof workerJobStatuses)[number];
+  MaintenanceJobType,
+  WorkerJobStatus,
+  IsoTimestamp
+} from "@krn/core";
 
 export type WorkerJobRecord<TType extends MaintenanceJobType = MaintenanceJobType> = {
   [K in TType]: {

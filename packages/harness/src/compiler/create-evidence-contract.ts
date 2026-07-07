@@ -1,20 +1,13 @@
 import type {
   DiffRisk,
+  EvidenceContract,
   TaskContract
 } from "@krn/core";
 
-export interface EvidenceContractCommand {
-  command: string;
-  required: boolean;
-}
-
-export interface EvidenceContract {
-  commands: EvidenceContractCommand[];
-  diffRisk: DiffRisk;
-  reviewBurden: string;
-  rollbackPath: string;
-  metadata: Record<string, unknown>;
-}
+export type {
+  EvidenceContract,
+  EvidenceContractCommand
+} from "@krn/core";
 
 const riskFromTask = (taskContract: TaskContract): DiffRisk => {
   const text = [
