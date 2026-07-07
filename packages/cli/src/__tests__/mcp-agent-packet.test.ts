@@ -77,7 +77,7 @@ const packetJson = {
     }
   },
   proof: {
-    proves: ["MCP wrapper returns the existing agent packet contract."],
+    proves: ["Internal MCP wrapper returns the existing agent packet contract."],
     doesNotProve: ["live Codex obedience", "memory/source promotion"]
   }
 };
@@ -98,8 +98,8 @@ const runtime = (
   runAgentPacket: handler
 });
 
-describe("agent packet MCP server", () => {
-  it("advertises a tools-only MCP server and the agent packet tool", async () => {
+describe("internal agent packet MCP wrapper", () => {
+  it("advertises a tools-only MCP wrapper and the agent packet tool", async () => {
     const initialized = await handleAgentPacketMcpMessage({
       jsonrpc: "2.0",
       id: 1,

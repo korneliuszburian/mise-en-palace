@@ -32,7 +32,7 @@ describe("doctorStaticChecks", () => {
       "Codex adapter renderer",
       "Execution brief smoke",
       "Codex execution runner",
-      "KRN MCP server",
+      "KRN MCP product server",
       "Maintenance queue schema",
       "Maintenance queue repository",
       "Maintenance queue smoke",

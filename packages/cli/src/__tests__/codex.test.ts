@@ -307,7 +307,7 @@ describe("runCli", () => {
       { label: "Codex adapter renderer", status: "present" },
       { label: "Execution brief smoke", status: "available (pnpm db:smoke:codex-adapter)" },
       { label: "Codex execution runner", status: "absent" },
-      { label: "KRN MCP server", status: "absent" },
+      { label: "KRN MCP product server", status: "absent" },
       { label: "Codex adapter runtime proof", status: "ready (source 1, memory 1)" }
     ];
 
@@ -332,11 +332,11 @@ describe("runCli", () => {
       deriveCodexAdapterReadiness(postgresReady, [
         ...codexAdapterReady.slice(0, 2),
         { label: "Codex execution runner", status: "present" },
-        { label: "KRN MCP server", status: "absent" }
+        { label: "KRN MCP product server", status: "absent" }
       ])
     ).toEqual({
       label: "Codex adapter readiness",
-      status: "blocked (forbidden Codex execution or MCP server present)"
+      status: "blocked (forbidden Codex execution or MCP product server present)"
     });
   });
 

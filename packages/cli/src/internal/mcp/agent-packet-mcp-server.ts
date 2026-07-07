@@ -174,11 +174,11 @@ const initializeResult = (
     },
     serverInfo: {
       name: serverName,
-      title: "KRN Agent Packet MCP",
+      title: "Internal KRN Agent Packet MCP Wrapper",
       version: serverVersion
     },
     instructions:
-      "Use krn_agent_packet to fetch a read-only DecisionPacket. Evidence and feedback remain explicit return channels; this MCP server does not execute Codex or promote memory/source truth."
+      "Use krn_agent_packet to fetch a read-only DecisionPacket. Evidence and feedback remain explicit return channels; this internal wrapper does not execute Codex, promote memory/source truth, or represent a KRN MCP product server."
   };
 };
 

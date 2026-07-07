@@ -93,8 +93,8 @@ describe("doctorReadiness", () => {
         severity: "pass"
       },
       {
-        label: "KRN MCP server",
-        status: "MCP forbidden surface absent after wording change",
+        label: "KRN MCP product server",
+        status: "MCP product surface absent after wording change",
         outcome: "absent",
         severity: "pass"
       },
@@ -132,9 +132,9 @@ describe("doctorReadiness", () => {
       deriveCodexAdapterReadiness(
         postgresReadyTyped,
         codexAdapterChecks.map((check) =>
-          check.label === "KRN MCP server"
+          check.label === "KRN MCP product server"
             ? {
-                label: "KRN MCP server",
+                label: "KRN MCP product server",
                 status: "custom forbidden wording",
                 outcome: "present",
                 severity: "failure"
@@ -144,7 +144,7 @@ describe("doctorReadiness", () => {
       )
     ).toEqual({
       label: "Codex adapter readiness",
-      status: "blocked (forbidden Codex execution or MCP server present)"
+      status: "blocked (forbidden Codex execution or MCP product server present)"
     });
   });
 

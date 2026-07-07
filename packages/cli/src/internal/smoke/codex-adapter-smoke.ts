@@ -393,7 +393,7 @@ export const runCodexAdapterSmokeCheck = async (
             "Render a persisted Codex execution brief with bounded context, explicit exclusions, evidence contract, and proof boundaries.",
           constraints: [
             "no Codex invocation",
-            "no MCP server",
+            "no MCP product server",
             "self-clean marker rows"
           ],
           nonGoals: [

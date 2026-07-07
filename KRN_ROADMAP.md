@@ -735,6 +735,10 @@ DecisionPacket and returning evidence/feedback. CLI keeps the contract local,
 scriptable, and testable; MCP can wrap that contract later without making the
 adapter or dashboard the product core.
 
+Current boundary: `mcp:agent-packet:internal` is an internal read-only wrapper
+over the CLI agent-packet contract, not a KRN MCP product server. It must not
+add selection policy, execute Codex, or promote memory/source truth.
+
 ## Current P1 Queue
 
 The current P1 direction is:

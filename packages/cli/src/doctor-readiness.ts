@@ -573,9 +573,9 @@ export const deriveCodexAdapterReadiness = (
     "present",
     (status) => status === "present"
   );
-  const mcpServerPresent = hasCheckOutcome(
+  const mcpProductServerPresent = hasCheckOutcome(
     codexAdapterChecks,
-    "KRN MCP server",
+    "KRN MCP product server",
     "present",
     (status) => status === "present"
   );
@@ -586,10 +586,10 @@ export const deriveCodexAdapterReadiness = (
     (status) => status?.startsWith("ready") === true
   );
 
-  if (codexRunnerPresent || mcpServerPresent) {
+  if (codexRunnerPresent || mcpProductServerPresent) {
     return {
       label: "Codex adapter readiness",
-      status: "blocked (forbidden Codex execution or MCP server present)"
+      status: "blocked (forbidden Codex execution or MCP product server present)"
     };
   }
 

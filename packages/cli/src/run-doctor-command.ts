@@ -92,7 +92,7 @@ const doctorFailureRules: readonly DoctorFailureRule[] = [
       ".krn runtime truth",
       "Forbidden surfaces",
       "Codex execution runner",
-      "KRN MCP server",
+      "KRN MCP product server",
       "Redis/Kafka queue",
       "Broad worker daemon",
       "Runtime markdown memory",

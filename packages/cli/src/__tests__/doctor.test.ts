@@ -76,7 +76,7 @@ describe("runCli", () => {
       "Execution brief smoke: available (pnpm db:smoke:codex-adapter)"
     );
     expect(result.stdout).toContain("Codex execution runner: absent");
-    expect(result.stdout).toContain("KRN MCP server: absent");
+    expect(result.stdout).toContain("KRN MCP product server: absent");
     expect(result.stdout).toContain(
       "Codex adapter readiness: preview only (set KRN_DATABASE_URL and run codex adapter smoke for proof)"
     );

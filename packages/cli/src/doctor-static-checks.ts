@@ -80,7 +80,7 @@ const hasCodexRunner = async (
     path.join(repoRoot, "packages", "codex-execution")
   ]);
 
-const hasMcpServer = async (
+const hasMcpProductServer = async (
   repoRoot: string
 ): Promise<boolean> => await pathExistsAny([
     path.join(repoRoot, "packages", "mcp-server"),
@@ -99,7 +99,7 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
     "krn db smoke codex-adapter"
   );
   const codexRunnerPresent = await hasCodexRunner(repoRoot);
-  const mcpServerPresent = await hasMcpServer(repoRoot);
+  const mcpProductServerPresent = await hasMcpProductServer(repoRoot);
 
   return [
     {
@@ -121,10 +121,10 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
       severity: forbiddenSurfaceSeverity(codexRunnerPresent)
     },
     {
-      label: "KRN MCP server",
-      status: mcpServerPresent ? "present" : "absent",
-      outcome: mcpServerPresent ? "present" : "absent",
-      severity: forbiddenSurfaceSeverity(mcpServerPresent)
+      label: "KRN MCP product server",
+      status: mcpProductServerPresent ? "present" : "absent",
+      outcome: mcpProductServerPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(mcpProductServerPresent)
     }
   ];
 };
