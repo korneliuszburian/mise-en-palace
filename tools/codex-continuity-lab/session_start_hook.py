@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Codex SessionStart continuity lab.
 
-This is not a KRN memory substrate. It is a small compatibility probe for the
-Codex hook mechanism: read one compact continuity record from an ignored lab
-directory and emit Codex SessionStart additionalContext JSON.
+This is not a KRN memory substrate. It is a compatibility probe for the Codex
+hook mechanism: read one generated ``krn agent packet --json`` artifact and
+emit compact Codex SessionStart additionalContext JSON.
 """
 
 from __future__ import annotations
@@ -14,23 +14,11 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any
 
 
-DEFAULT_CONTEXT_FILE = "continuity.json"
 MAX_FIELD_CHARS = 700
 MAX_CONTEXT_CHARS = 1800
-
-
-def lab_dir() -> Path:
-    configured = os.environ.get("KRN_CONTINUITY_LAB_DIR")
-    if configured:
-        return Path(configured).expanduser()
-    return Path(".local-lab/krn-codex-continuity")
-
-
-def context_path() -> Path:
-    return lab_dir() / DEFAULT_CONTEXT_FILE
+AGENT_PACKET_ENV = "KRN_CONTINUITY_AGENT_PACKET_PATH"
 
 
 def as_record(value: object) -> dict[str, object]:
@@ -57,34 +45,55 @@ def clean_list(value: object, *, max_items: int = 6) -> list[str]:
     return cleaned
 
 
-def load_context(path: Path) -> dict[str, object]:
+def load_json_record(path: Path) -> dict[str, object]:
     if not path.exists():
         return {}
     with path.open("r", encoding="utf-8") as handle:
         return as_record(json.load(handle))
 
 
-def render_context(record: dict[str, object]) -> str:
-    title = clean_text(record.get("title"))
-    next_action = clean_text(record.get("next_action"))
-    decision = clean_text(record.get("decision"))
-    evidence_refs = clean_list(record.get("evidence_refs"))
-    non_goals = clean_list(record.get("non_goals"))
+def child_record(record: dict[str, object], key: str) -> dict[str, object]:
+    return as_record(record.get(key))
 
-    lines = ["KRN continuity lab context:"]
-    if title:
-        lines.append(f"- Slice: {title}")
-    if next_action:
-        lines.append(f"- Next action: {next_action}")
-    if decision:
-        lines.append(f"- Current decision: {decision}")
-    if evidence_refs:
-        lines.append(f"- Evidence refs: {', '.join(evidence_refs)}")
-    if non_goals:
-        lines.append(f"- Non-goals: {', '.join(non_goals)}")
+
+def render_agent_packet(record: dict[str, object]) -> str:
+    if record.get("kind") != "krn.agentPacket.v1":
+        return ""
+
+    request = child_record(record, "request")
+    read_model = child_record(record, "readModel")
+    packet = child_record(record, "packet")
+    task = child_record(read_model, "task")
+
+    run_id = clean_text(request.get("runId"), max_chars=160)
+    objective = clean_text(task.get("objective"))
+    governing_decisions = clean_list(packet.get("governingDecisionIds"))
+    stale_decisions = clean_list(packet.get("staleDecisionIds"))
+    rejected_paths = clean_list(packet.get("rejectedPathIds"))
+    source_rejections = clean_list(packet.get("sourceRejectionIds"))
+    falsifiers = clean_list(packet.get("falsifiers"), max_items=4)
+    non_proofs = clean_list(packet.get("nonProofs"), max_items=4)
+
+    lines = ["KRN continuity context from generated agent packet:"]
+    if run_id:
+        lines.append(f"- Run: {run_id}")
+    if objective:
+        lines.append(f"- Objective: {objective}")
+    if governing_decisions:
+        lines.append(f"- Governing decisions: {', '.join(governing_decisions)}")
+    if stale_decisions:
+        lines.append(f"- Stale decisions: {', '.join(stale_decisions)}")
+    if rejected_paths:
+        lines.append(f"- Rejected paths: {', '.join(rejected_paths)}")
+    if source_rejections:
+        lines.append(f"- Source rejections: {', '.join(source_rejections)}")
+    if falsifiers:
+        lines.append(f"- Falsifiers: {' | '.join(falsifiers)}")
+    if non_proofs:
+        lines.append(f"- Non-proofs: {' | '.join(non_proofs)}")
     lines.append(
-        "- Boundary: this hook output is session continuity only; it is not KRN "
-        "runtime memory, source authority, or memory promotion."
+        "- Boundary: this is generated continuity context only; it is not KRN "
+        "runtime memory, source authority, review approval, or memory promotion."
     )
     return "\n".join(lines)[:MAX_CONTEXT_CHARS]
 
@@ -99,7 +108,12 @@ def read_hook_input() -> dict[str, object]:
         return {}
 
 
-def run_hook() -> int:
+def agent_packet_path(args: argparse.Namespace) -> Path | None:
+    explicit = args.agent_packet or os.environ.get(AGENT_PACKET_ENV)
+    return None if explicit is None or explicit.strip() == "" else Path(explicit).expanduser()
+
+
+def run_hook(args: argparse.Namespace) -> int:
     hook_input = read_hook_input()
     if hook_input.get("hook_event_name") != "SessionStart":
         return 0
@@ -107,8 +121,12 @@ def run_hook() -> int:
     if source not in {"startup", "resume", "compact"}:
         return 0
 
-    record = load_context(context_path())
-    context = render_context(record) if record else ""
+    path = agent_packet_path(args)
+    if path is None:
+        return 0
+
+    record = load_json_record(path)
+    context = render_agent_packet(record) if record else ""
     if not context:
         return 0
 
@@ -122,39 +140,21 @@ def run_hook() -> int:
     return 0
 
 
-def write_record(args: argparse.Namespace) -> int:
-    record: dict[str, Any] = {
-        "title": args.title,
-        "next_action": args.next_action,
-        "decision": args.decision,
-        "evidence_refs": args.evidence_ref,
-        "non_goals": args.non_goal,
-    }
-    path = context_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(record, handle, ensure_ascii=False, indent=2, sort_keys=True)
-        handle.write("\n")
-    print(path)
-    return 0
-
-
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--write-record", action="store_true")
-    parser.add_argument("--title", default="")
-    parser.add_argument("--next-action", default="")
-    parser.add_argument("--decision", default="")
-    parser.add_argument("--evidence-ref", action="append", default=[])
-    parser.add_argument("--non-goal", action="append", default=[])
+    parser.add_argument(
+        "--agent-packet",
+        help=(
+            "Path to a generated `krn agent packet --json` artifact. "
+            f"Defaults to ${AGENT_PACKET_ENV}."
+        ),
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
-    if args.write_record:
-        return write_record(args)
-    return run_hook()
+    return run_hook(args)
 
 
 if __name__ == "__main__":
