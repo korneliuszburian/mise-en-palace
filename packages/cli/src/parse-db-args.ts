@@ -5,7 +5,7 @@ import type {
 
 const dbUsage = [
   "Usage: krn db readiness|smoke",
-  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|worker-jobs|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage]",
+  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|worker-jobs|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|agent-packet-return-loop]",
   "",
   "Internal/dev commands:",
   "krn db readiness",
@@ -35,7 +35,8 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["init-connect", "initConnect"],
   ["target-repo-harness", "targetRepoHarness"],
   ["decision-corpus-import", "decisionCorpusImport"],
-  ["real-recall-advantage", "realRecallAdvantage"]
+  ["real-recall-advantage", "realRecallAdvantage"],
+  ["agent-packet-return-loop", "agentPacketReturnLoop"]
 ]);
 
 export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {

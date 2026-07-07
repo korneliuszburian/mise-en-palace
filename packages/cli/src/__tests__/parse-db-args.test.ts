@@ -75,6 +75,12 @@ describe("parseDbArgs", () => {
         target: "realRecallAdvantage"
       }
     });
+    expect(parseDbArgs(["smoke", "agent-packet-return-loop"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "agentPacketReturnLoop"
+      }
+    });
   });
 
   it("rejects unsupported db command shapes", () => {

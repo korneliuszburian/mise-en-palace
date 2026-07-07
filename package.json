@@ -29,6 +29,7 @@
     "db:smoke:target-repo-harness": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke target-repo-harness",
     "db:smoke:decision-corpus-import": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke decision-corpus-import",
     "db:smoke:real-recall-advantage": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke real-recall-advantage",
+    "db:smoke:agent-packet-return-loop": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke agent-packet-return-loop",
     "db:smoke:source-graph": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke source-graph",
     "eval:decision-packet": "pnpm --filter @krn/cli eval:decision-packet",
     "eval:codex-decision-packet-obedience": "pnpm --filter @krn/cli eval:codex-decision-packet-obedience",
