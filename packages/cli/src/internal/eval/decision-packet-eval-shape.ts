@@ -3,14 +3,15 @@ import type {
 } from "@krn/core";
 
 export type DecisionPacketStatus = "pass" | "fail";
-export type PacketQualityLabel = "useful" | "noisy" | "stale_authority" | "miss";
-export type NotesBaselineLabel = "usable" | "unsafe" | "miss";
+export type PacketQualityLabel = "useful" | "abstained" | "noisy" | "stale_authority" | "miss";
+export type NotesBaselineLabel = "usable" | "unsafe" | "unsupported" | "miss";
 export type BaselineComparisonOutcome = "krn_win" | "notes_win" | "tie";
 
 export interface NotesBaselineResult {
   readonly qualityLabel: NotesBaselineLabel;
   readonly topDecisionIds: readonly string[];
   readonly unsafeDecisionIds: readonly string[];
+  readonly unsupportedDecisionIds: readonly string[];
   readonly failureRationale: string;
 }
 
@@ -20,6 +21,7 @@ export interface DecisionPacketScoreBreakdown {
   readonly temporalCorrectness: number;
   readonly sourceSupport: number;
   readonly rejectionRecall: number;
+  readonly abstention: number;
   readonly nonProofBoundaries: number;
   readonly total: number;
 }
@@ -27,7 +29,8 @@ export interface DecisionPacketScoreBreakdown {
 export interface DecisionPacketEvalCaseReadback {
   readonly id: string;
   readonly task: string;
-  readonly expectedDecisionId: string;
+  readonly expectedDecisionId?: string;
+  readonly expectedEvidenceGap?: DecisionPacket["evidenceGaps"][number];
   readonly expectedStaleDecisionIds: readonly string[];
   readonly expectedRejectedDecisionIds: readonly string[];
   readonly qualityLabel: PacketQualityLabel;
@@ -49,16 +52,19 @@ export interface DecisionPacketEvalResult {
     readonly maximumNotesWinRate: number;
     readonly maximumSevereStaleAuthorityInclusions: number;
     readonly maximumCaveatedSourceClaimInclusions: number;
+    readonly maximumMissingAbstentions: number;
     readonly maximumAverageNoiseDecisions: number;
   };
   readonly metrics: {
     readonly caseCount: number;
     readonly usefulCount: number;
     readonly noisyCount: number;
+    readonly abstainedCount: number;
     readonly missCount: number;
     readonly staleAuthorityCount: number;
     readonly notesUsableCount: number;
     readonly notesUnsafeCount: number;
+    readonly notesUnsupportedCount: number;
     readonly notesMissCount: number;
     readonly krnWinCount: number;
     readonly notesWinCount: number;
@@ -70,6 +76,7 @@ export interface DecisionPacketEvalResult {
     readonly averageNoiseDecisions: number;
     readonly severeStaleAuthorityInclusions: number;
     readonly caveatedSourceClaimInclusions: number;
+    readonly missingAbstentions: number;
   };
   readonly cases: readonly DecisionPacketEvalCaseReadback[];
   readonly proof: {
@@ -80,7 +87,9 @@ export interface DecisionPacketEvalResult {
 
 export const decisionPacketCaseStatus = (
   qualityLabel: PacketQualityLabel
-): DecisionPacketStatus => qualityLabel === "useful" ? "pass" : "fail";
+): DecisionPacketStatus => qualityLabel === "useful" || qualityLabel === "abstained"
+  ? "pass"
+  : "fail";
 
 export const isPassingDecisionPacketCase = (
   testCase: DecisionPacketEvalCaseReadback
@@ -90,7 +99,7 @@ export const comparePacketAgainstNotesBaseline = (
   packetLabel: PacketQualityLabel,
   notesBaselineLabel: NotesBaselineLabel
 ): BaselineComparisonOutcome => {
-  const packetUseful = packetLabel === "useful";
+  const packetUseful = packetLabel === "useful" || packetLabel === "abstained";
   const notesUsable = notesBaselineLabel === "usable";
 
   if (packetUseful && !notesUsable) {

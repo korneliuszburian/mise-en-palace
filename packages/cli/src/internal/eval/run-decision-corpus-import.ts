@@ -234,6 +234,10 @@ const assertImportedCaseLinks = (
   const decisionsById = new Map(decisions.map((decision) => [decision.id, decision]));
 
   for (const testCase of cases) {
+    if (testCase.expectedDecisionId === undefined) {
+      throw new Error(`case ${testCase.id} expectedDecisionId is required for imported cases`);
+    }
+
     assertDecisionStatus({
       decisionsById,
       decisionId: testCase.expectedDecisionId,

@@ -10,6 +10,12 @@ export interface DecisionPacketBriefSummary {
   memoryRecordUseCount: number;
 }
 
+export interface DecisionPacketEvidenceGap {
+  id: string;
+  reason: string;
+  verificationRequired: string;
+}
+
 export interface DecisionPacket {
   formatVersion: DecisionPacketFormatVersion;
   governingDecisionIds: readonly string[];
@@ -22,6 +28,7 @@ export interface DecisionPacket {
   staleDecisionIds: readonly string[];
   rejectedPathIds: readonly string[];
   falsifiers: readonly string[];
+  evidenceGaps: readonly DecisionPacketEvidenceGap[];
   doesNotProve: readonly string[];
   nonProofs: readonly string[];
   noiseDecisionIds: readonly string[];

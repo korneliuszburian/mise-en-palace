@@ -891,6 +891,18 @@
       "baselineFailureRationale": "Notes grep matches the current package standard and the stale or rejected utility-package advice; KRN must select the current packet and expose the bad helper paths as non-governing."
     },
     {
+      "id": "unsupported-mobile-release-task",
+      "task": "Create a native mobile release pipeline with app store certificates fastlane profiles ios android signing. What should Codex do before coding?",
+      "expectedEvidenceGap": {
+        "id": "evidence-gap:unsupported-mobile-release-task:no-governing-decision",
+        "reason": "No current governed decision matched this task strongly enough to guide Codex.",
+        "verificationRequired": "Capture or promote source-backed decision evidence before turning this task into governing context."
+      },
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": [],
+      "baselineFailureRationale": "Flat notes still returns confident-looking KRN guidance for an unsupported mobile-release task; KRN must abstain until source-backed mobile release evidence exists."
+    },
+    {
       "id": "adapter-non-mutating-boundary-only-task",
       "task": "What is the Codex adapter boundary for rendering execution briefs without mutating kernel state?",
       "expectedDecisionId": "codex-adapter-non-mutating-brief",

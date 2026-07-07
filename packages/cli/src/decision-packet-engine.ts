@@ -158,7 +158,9 @@ const taskContractFor = (testCase: DecisionPacketCase): TaskContract => ({
     "LLM judgment"
   ],
   acceptance: [
-    `Includes ${testCase.expectedDecisionId}`,
+    testCase.expectedDecisionId === undefined
+      ? `Abstains with ${testCase.expectedEvidenceGap?.id ?? "evidence gap"}`
+      : `Includes ${testCase.expectedDecisionId}`,
     "Excludes stale and rejected authority"
   ],
   status: "active",
@@ -365,6 +367,53 @@ const scopeTokens = (
   .map((match) => match[0])
   .filter((token) => token.length > 0);
 
+const weakMatchStopwords = new Set([
+  "about",
+  "after",
+  "before",
+  "coding",
+  "codex",
+  "could",
+  "current",
+  "create",
+  "decision",
+  "does",
+  "from",
+  "governed",
+  "have",
+  "into",
+  "should",
+  "store",
+  "task",
+  "that",
+  "this",
+  "what",
+  "when",
+  "where",
+  "which",
+  "with",
+  "without"
+]);
+
+const meaningfulTokens = (
+  value: string
+): readonly string[] => scopeTokens(value)
+  .filter((token) => token.length >= 4 && !weakMatchStopwords.has(token));
+
+const stronglyMatchesTask = (
+  decision: DecisionPacketRow,
+  testCase: DecisionPacketCase
+): boolean => {
+  const taskTokens = new Set(meaningfulTokens(testCase.task));
+  const decisionTokens = meaningfulTokens([
+    decision.title,
+    decision.statement,
+    ...decision.taskScopes
+  ].join(" "));
+
+  return decisionTokens.some((token) => taskTokens.has(token));
+};
+
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
 const includedDecisionRows = (
@@ -464,6 +513,10 @@ export const buildDecisionPacketWithEngine = async (
   const governingRows = governingDecisionIds
     .map((id) => decisionsById.get(id))
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
+  const supportedGoverningRows = governingRows.filter((decision) =>
+    stronglyMatchesTask(decision, testCase)
+  );
+  const supportedGoverningDecisionIds = supportedGoverningRows.map((decision) => decision.id);
   const staleDecisionIds = excludedDecisionIds(fixture, brief, testCase.staleDecisionIds);
   const rejectedPathIds = excludedDecisionIds(fixture, brief, testCase.rejectedDecisionIds);
   const sourceRejectionIds = unique(rejectedRows(fixture, rejectedPathIds).flatMap((decision) =>
@@ -476,28 +529,38 @@ export const buildDecisionPacketWithEngine = async (
 
   return {
     formatVersion: decisionPacketFormatVersion,
-    governingDecisionIds,
-    governingStatements: unique(governingRows.map((decision) => decision.statement).filter(nonEmpty)),
-    sourceClaimIds: unique(governingRows.map((decision) => decision.sourceClaimId)),
-    caveatedSourceClaimIds: unique(governingRows
+    governingDecisionIds: supportedGoverningDecisionIds,
+    governingStatements: unique(supportedGoverningRows.map((decision) => decision.statement).filter(nonEmpty)),
+    sourceClaimIds: unique(supportedGoverningRows.map((decision) => decision.sourceClaimId)),
+    caveatedSourceClaimIds: unique(supportedGoverningRows
       .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
       .map((decision) => decision.sourceClaimId)),
-    sourceDecisionEdgeIds: unique(governingRows.flatMap((decision) =>
+    sourceDecisionEdgeIds: unique(supportedGoverningRows.flatMap((decision) =>
       nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
     )),
     sourceRejectionIds,
-    memoryRefs: unique(memoryRows.map((decision) => `memory:decision:${decision.id}`)),
+    memoryRefs: unique(memoryRows
+      .filter((decision) => supportedGoverningDecisionIds.includes(decision.id))
+      .map((decision) => `memory:decision:${decision.id}`)),
     staleDecisionIds,
     rejectedPathIds,
-    falsifiers: unique(governingRows.map((decision) => decision.falsifier).filter(nonEmpty)),
-    doesNotProve: unique(governingRows.map((decision) => decision.doesNotProve).filter(nonEmpty)),
+    falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
+    evidenceGaps: supportedGoverningDecisionIds.length === 0
+      ? [{
+          id: `evidence-gap:${testCase.id}:no-governing-decision`,
+          reason: "No current governed decision matched this task strongly enough to guide Codex.",
+          verificationRequired:
+            "Capture or promote source-backed decision evidence before turning this task into governing context."
+        }]
+      : [],
+    doesNotProve: unique(supportedGoverningRows.map((decision) => decision.doesNotProve).filter(nonEmpty)),
     nonProofs: [
       "packet quality only",
       "does not prove live Codex obedience",
       "does not prove source truth"
     ],
-    noiseDecisionIds: governingDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
-    severeStaleAuthorityIds: governingDecisionIds.filter((id) => severeExpectedIds.has(id)),
+    noiseDecisionIds: supportedGoverningDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
+    severeStaleAuthorityIds: supportedGoverningDecisionIds.filter((id) => severeExpectedIds.has(id)),
     brief: {
       includedContextCount: brief.includedContext.length,
       observationPrefixCount: brief.observationPrefix.length,

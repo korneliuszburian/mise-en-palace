@@ -44,10 +44,17 @@ export interface DecisionPacketObservationPrefixItem {
   readonly reason: string;
 }
 
+export interface DecisionPacketExpectedEvidenceGap {
+  readonly id: string;
+  readonly reason: string;
+  readonly verificationRequired: string;
+}
+
 export interface DecisionPacketCase {
   readonly id: string;
   readonly task: string;
-  readonly expectedDecisionId: string;
+  readonly expectedDecisionId?: string;
+  readonly expectedEvidenceGap?: DecisionPacketExpectedEvidenceGap;
   readonly staleDecisionIds: readonly string[];
   readonly rejectedDecisionIds: readonly string[];
   readonly observationPrefixItems?: readonly DecisionPacketObservationPrefixItem[];
@@ -143,18 +150,55 @@ const optionalObservationPrefixItems = (
     : recordArray(value, `cases[${caseIndex}].observationPrefixItems`)
         .map((item, index) => parseObservationPrefixItem(item, index, caseIndex));
 
+const optionalExpectedEvidenceGap = (
+  value: unknown,
+  caseIndex: number
+): DecisionPacketExpectedEvidenceGap | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw new Error(`cases[${caseIndex}].expectedEvidenceGap must be an object`);
+  }
+
+  return {
+    id: stringValue(value["id"], `cases[${caseIndex}].expectedEvidenceGap.id`),
+    reason: stringValue(value["reason"], `cases[${caseIndex}].expectedEvidenceGap.reason`),
+    verificationRequired: stringValue(
+      value["verificationRequired"],
+      `cases[${caseIndex}].expectedEvidenceGap.verificationRequired`
+    )
+  };
+};
+
 const parseCase = (
   value: Record<string, unknown>,
   index: number
-): DecisionPacketCase => ({
-  id: stringValue(value["id"], `cases[${index}].id`),
-  task: stringValue(value["task"], `cases[${index}].task`),
-  expectedDecisionId: stringValue(value["expectedDecisionId"], `cases[${index}].expectedDecisionId`),
-  staleDecisionIds: optionalStringArrayValue(value["staleDecisionIds"], `cases[${index}].staleDecisionIds`),
-  rejectedDecisionIds: optionalStringArrayValue(value["rejectedDecisionIds"], `cases[${index}].rejectedDecisionIds`),
-  observationPrefixItems: optionalObservationPrefixItems(value["observationPrefixItems"], index),
-  baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
-});
+): DecisionPacketCase => {
+  const expectedDecisionId = optionalStringValue(
+    value["expectedDecisionId"],
+    `cases[${index}].expectedDecisionId`
+  );
+  const expectedEvidenceGap = optionalExpectedEvidenceGap(value["expectedEvidenceGap"], index);
+
+  if ((expectedDecisionId === undefined) === (expectedEvidenceGap === undefined)) {
+    throw new Error(
+      `cases[${index}] must define exactly one of expectedDecisionId or expectedEvidenceGap`
+    );
+  }
+
+  return {
+    id: stringValue(value["id"], `cases[${index}].id`),
+    task: stringValue(value["task"], `cases[${index}].task`),
+    ...(expectedDecisionId === undefined ? {} : { expectedDecisionId }),
+    ...(expectedEvidenceGap === undefined ? {} : { expectedEvidenceGap }),
+    staleDecisionIds: optionalStringArrayValue(value["staleDecisionIds"], `cases[${index}].staleDecisionIds`),
+    rejectedDecisionIds: optionalStringArrayValue(value["rejectedDecisionIds"], `cases[${index}].rejectedDecisionIds`),
+    observationPrefixItems: optionalObservationPrefixItems(value["observationPrefixItems"], index),
+    baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
+  };
+};
 
 const assertFixtureSize = (
   fixture: {
@@ -181,7 +225,7 @@ const assertCaseDecisionRefs = (
   decisionIds: ReadonlySet<string>
 ): void => {
   const unknownRefs = [
-    testCase.expectedDecisionId,
+    ...(testCase.expectedDecisionId === undefined ? [] : [testCase.expectedDecisionId]),
     ...testCase.staleDecisionIds,
     ...testCase.rejectedDecisionIds
   ].filter((id) => !decisionIds.has(id));

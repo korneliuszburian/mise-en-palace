@@ -136,7 +136,7 @@ const decisionReferenceValues = (
 const caseReferenceValues = (
   baselineCase: DecisionPacketEvalFixture["cases"][number]
 ): readonly string[] => [
-  baselineCase.expectedDecisionId,
+  ...(baselineCase.expectedDecisionId === undefined ? [] : [baselineCase.expectedDecisionId]),
   ...baselineCase.staleDecisionIds,
   ...baselineCase.rejectedDecisionIds
 ];

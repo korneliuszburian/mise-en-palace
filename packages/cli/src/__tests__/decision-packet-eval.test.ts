@@ -62,8 +62,9 @@ const expectProjectStandardCase = (
       temporalCorrectness: 1,
       sourceSupport: 1,
       rejectionRecall: 1,
+      abstention: 1,
       nonProofBoundaries: 1,
-      total: 6
+      total: 7
     },
     notesBaseline: {
       qualityLabel: "unsafe",
@@ -107,30 +108,35 @@ describe("runDecisionPacketEval", () => {
         maximumNotesWinRate: 0,
         maximumSevereStaleAuthorityInclusions: 0,
         maximumCaveatedSourceClaimInclusions: 0,
+        maximumMissingAbstentions: 0,
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
-        caseCount: 20,
+        caseCount: 21,
         usefulCount: 20,
+        abstainedCount: 1,
         noisyCount: 0,
         missCount: 0,
         staleAuthorityCount: 0,
         notesUsableCount: 5,
         notesUnsafeCount: 15,
+        notesUnsupportedCount: 1,
         notesMissCount: 0,
-        krnWinCount: 15,
+        krnWinCount: 16,
         notesWinCount: 0,
         tieCount: 5,
-        decisiveComparisonCount: 15,
-        usefulRate: 1,
+        decisiveComparisonCount: 16,
+        usefulRate: 0.9524,
         krnWinRate: 1,
         notesWinRate: 0,
-        averageNoiseDecisions: 1.1,
+        averageNoiseDecisions: 0.6667,
         severeStaleAuthorityInclusions: 0,
-        caveatedSourceClaimInclusions: 0
+        caveatedSourceClaimInclusions: 0,
+        missingAbstentions: 0
       }
     });
-    expect(result.cases.every((testCase) => testCase.qualityLabel === "useful")).toBe(true);
+    expect(result.cases.filter((testCase) => testCase.qualityLabel === "useful")).toHaveLength(20);
+    expect(result.cases.filter((testCase) => testCase.qualityLabel === "abstained")).toHaveLength(1);
     expect(result.cases.find((testCase) =>
       testCase.id === "memory-runtime-task"
     )).toMatchObject({
@@ -142,8 +148,9 @@ describe("runDecisionPacketEval", () => {
         temporalCorrectness: 1,
         sourceSupport: 1,
         rejectionRecall: 1,
+        abstention: 1,
         nonProofBoundaries: 1,
-        total: 6
+        total: 7
       },
       notesBaseline: {
         qualityLabel: "unsafe",
@@ -176,8 +183,52 @@ describe("runDecisionPacketEval", () => {
         },
         staleDecisionIds: ["markdown-runtime-memory"],
         rejectedPathIds: ["create-markdown-memory-files"],
+        evidenceGaps: [],
         severeStaleAuthorityIds: []
       }
+    });
+    expect(result.cases.find((testCase) =>
+      testCase.id === "unsupported-mobile-release-task"
+    )).toMatchObject({
+      expectedEvidenceGap: {
+        id: "evidence-gap:unsupported-mobile-release-task:no-governing-decision",
+        reason: "No current governed decision matched this task strongly enough to guide Codex.",
+        verificationRequired:
+          "Capture or promote source-backed decision evidence before turning this task into governing context."
+      },
+      qualityLabel: "abstained",
+      scores: {
+        taskUsefulness: 1,
+        evidenceFidelity: 1,
+        temporalCorrectness: 1,
+        sourceSupport: 1,
+        rejectionRecall: 1,
+        abstention: 1,
+        nonProofBoundaries: 1,
+        total: 7
+      },
+      notesBaseline: {
+        qualityLabel: "unsupported",
+        unsupportedDecisionIds: expect.arrayContaining([
+          "create-generic-utils-package",
+          "adopt-link-before-authority",
+          "build-dashboard-first"
+        ])
+      },
+      comparisonOutcome: "krn_win",
+      packet: {
+        governingDecisionIds: [],
+        evidenceGaps: [{
+          id: "evidence-gap:unsupported-mobile-release-task:no-governing-decision",
+          reason: "No current governed decision matched this task strongly enough to guide Codex.",
+          verificationRequired:
+            "Capture or promote source-backed decision evidence before turning this task into governing context."
+        }]
+      },
+      reasons: expect.arrayContaining([
+        "packet abstains from governing advice for unsupported task",
+        "packet includes expected evidence-gap abstention"
+      ])
     });
     const projectStandardCases: readonly ProjectStandardCaseExpectation[] = [
       {
@@ -240,6 +291,7 @@ describe("runDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.usefulCount).toBe(0);
+    expect(result.metrics.abstainedCount).toBe(1);
     expect(result.metrics.noisyCount).toBe(20);
     expect(result.metrics.usefulRate).toBe(0);
     expect(result.cases[0]).toMatchObject({
@@ -247,7 +299,7 @@ describe("runDecisionPacketEval", () => {
       scores: {
         evidenceFidelity: 0,
         sourceSupport: 0,
-        total: 4
+        total: 5
       },
       reasons: expect.arrayContaining([
         "packet is missing SourceDecisionEdge refs",
@@ -328,6 +380,7 @@ describe("runDecisionPacketEval", () => {
       staleDecisionIds: ["cast-json-record"],
       rejectedPathIds: ["prose-second-opinion"],
       falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
+      evidenceGaps: [],
       doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
       nonProofs: ["packet quality only"],
       noiseDecisionIds: [],

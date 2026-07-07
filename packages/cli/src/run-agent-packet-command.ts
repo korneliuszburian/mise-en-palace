@@ -228,6 +228,14 @@ const compactDecisionPacket = (
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)
     ),
+    evidenceGaps: governingDecisionIds.length === 0
+      ? [{
+          id: `evidence-gap:${readModel.run.id}:no-governing-decision`,
+          reason: "No governed decision is present in this read-only packet.",
+          verificationRequired:
+            "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+        }]
+      : [],
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
     noiseDecisionIds: noiseDecisionIdsFor(readModel),

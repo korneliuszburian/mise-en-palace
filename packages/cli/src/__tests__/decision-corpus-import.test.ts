@@ -106,7 +106,7 @@ describe("runDecisionCorpusImport", () => {
       name: "krn-decision-packet-imported-source-to-decision",
       decisionCount: 54,
       noteCount: 54,
-      caseCount: 26
+      caseCount: 27
     });
   });
 

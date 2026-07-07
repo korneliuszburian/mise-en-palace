@@ -42,6 +42,7 @@ type DecisionPacketDecision = DecisionPacketRow;
 const minimumUsefulRate = 0.8;
 const maximumSevereStaleAuthorityInclusions = 0;
 const maximumCaveatedSourceClaimInclusions = 0;
+const maximumMissingAbstentions = 0;
 const maximumAverageNoiseDecisions = 2;
 
 const decisionById = (
@@ -64,6 +65,20 @@ const hasDecisionBoundary = (
   nonEmpty(expectedDecision.falsifier) &&
   nonEmpty(expectedDecision.doesNotProve) &&
   packet.nonProofs.length > 0;
+
+const hasExpectedEvidenceGap = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase
+): boolean => {
+  const expected = testCase.expectedEvidenceGap;
+
+  return expected !== undefined &&
+    packet.evidenceGaps.some((gap) =>
+      gap.id === expected.id &&
+      gap.reason === expected.reason &&
+      gap.verificationRequired === expected.verificationRequired
+    );
+};
 
 const hasSameIds = (
   actual: readonly string[],
@@ -102,21 +117,36 @@ const packetReasons = (
   packet: DecisionPacketEvalCaseReadback["packet"],
   testCase: DecisionPacketCase
 ): readonly string[] => [
-  reasonFor(
-    packet.governingDecisionIds.includes(testCase.expectedDecisionId),
-    "packet includes expected governing decision",
-    "packet misses expected governing decision"
-  ),
-  reasonFor(
-    packet.sourceDecisionEdgeIds.length > 0,
-    "packet includes SourceDecisionEdge refs",
-    "packet is missing SourceDecisionEdge refs"
-  ),
-  reasonFor(
-    packet.falsifiers.length > 0 && packet.doesNotProve.length > 0,
-    "packet includes falsifier and doesNotProve boundaries",
-    "packet is missing falsifier or doesNotProve boundaries"
-  ),
+  ...(testCase.expectedDecisionId === undefined
+    ? [
+        reasonFor(
+          packet.governingDecisionIds.length === 0,
+          "packet abstains from governing advice for unsupported task",
+          "packet gives governing advice for unsupported task"
+        ),
+        reasonFor(
+          hasExpectedEvidenceGap(packet, testCase),
+          "packet includes expected evidence-gap abstention",
+          "packet misses expected evidence-gap abstention"
+        )
+      ]
+    : [
+        reasonFor(
+          packet.governingDecisionIds.includes(testCase.expectedDecisionId),
+          "packet includes expected governing decision",
+          "packet misses expected governing decision"
+        ),
+        reasonFor(
+          packet.sourceDecisionEdgeIds.length > 0,
+          "packet includes SourceDecisionEdge refs",
+          "packet is missing SourceDecisionEdge refs"
+        ),
+        reasonFor(
+          packet.falsifiers.length > 0 && packet.doesNotProve.length > 0,
+          "packet includes falsifier and doesNotProve boundaries",
+          "packet is missing falsifier or doesNotProve boundaries"
+        )
+      ]),
   reasonFor(
     hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds),
     "packet excludes expected stale decisions with readback",
@@ -151,17 +181,60 @@ const packetReasons = (
 
 const score = (condition: boolean): number => condition ? 1 : 0;
 
+const expectsAbstention = (
+  testCase: DecisionPacketCase
+): boolean => testCase.expectedEvidenceGap !== undefined;
+
+const scoreTaskUsefulness = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase,
+  hasEvidenceGap: boolean
+): number => expectsAbstention(testCase)
+  ? score(packet.governingDecisionIds.length === 0 && hasEvidenceGap)
+  : score(
+      testCase.expectedDecisionId !== undefined &&
+      packet.governingDecisionIds.includes(testCase.expectedDecisionId) &&
+      packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions
+    );
+
+const scoreEvidenceFidelity = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase,
+  expectedDecision: DecisionPacketDecision | undefined,
+  hasEvidenceGap: boolean
+): number => expectsAbstention(testCase)
+  ? score(hasEvidenceGap)
+  : score(hasDecisionBoundary(packet, expectedDecision));
+
+const scoreAbstention = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase,
+  hasEvidenceGap: boolean
+): number => expectsAbstention(testCase)
+  ? score(packet.governingDecisionIds.length === 0 && hasEvidenceGap)
+  : score(packet.evidenceGaps.length === 0);
+
+const scoreNonProofBoundaries = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase
+): number => expectsAbstention(testCase)
+  ? score(packet.nonProofs.length > 0)
+  : score(packet.falsifiers.length > 0 && packet.doesNotProve.length > 0);
+
 const scoreDecisionPacket = (
   fixture: DecisionPacketEvalFixture,
   packet: DecisionPacketEvalCaseReadback["packet"],
   testCase: DecisionPacketCase,
   expectedDecision: DecisionPacketDecision | undefined
 ): DecisionPacketScoreBreakdown => {
-  const taskUsefulness = score(
-    packet.governingDecisionIds.includes(testCase.expectedDecisionId) &&
-    packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions
+  const hasEvidenceGap = hasExpectedEvidenceGap(packet, testCase);
+  const taskUsefulness = scoreTaskUsefulness(packet, testCase, hasEvidenceGap);
+  const evidenceFidelity = scoreEvidenceFidelity(
+    packet,
+    testCase,
+    expectedDecision,
+    hasEvidenceGap
   );
-  const evidenceFidelity = score(hasDecisionBoundary(packet, expectedDecision));
   const temporalCorrectness = score(
     hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) &&
     packet.severeStaleAuthorityIds.length === 0
@@ -171,7 +244,8 @@ const scoreDecisionPacket = (
     hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) &&
     hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase))
   );
-  const nonProofBoundaries = score(packet.falsifiers.length > 0 && packet.doesNotProve.length > 0);
+  const abstention = scoreAbstention(packet, testCase, hasEvidenceGap);
+  const nonProofBoundaries = scoreNonProofBoundaries(packet, testCase);
 
   return {
     taskUsefulness,
@@ -179,6 +253,7 @@ const scoreDecisionPacket = (
     temporalCorrectness,
     sourceSupport,
     rejectionRecall,
+    abstention,
     nonProofBoundaries,
     total:
       taskUsefulness +
@@ -186,6 +261,7 @@ const scoreDecisionPacket = (
       temporalCorrectness +
       sourceSupport +
       rejectionRecall +
+      abstention +
       nonProofBoundaries
   };
 };
@@ -198,6 +274,18 @@ export const classifyDecisionPacketForEval = (
 ): PacketQualityLabel => {
   if (packet.severeStaleAuthorityIds.length > 0) {
     return "stale_authority";
+  }
+
+  if (testCase.expectedEvidenceGap !== undefined) {
+    if (packet.governingDecisionIds.length > 0) {
+      return "noisy";
+    }
+
+    return hasExpectedEvidenceGap(packet, testCase) ? "abstained" : "miss";
+  }
+
+  if (testCase.expectedDecisionId === undefined) {
+    return "miss";
   }
 
   if (!packet.governingDecisionIds.includes(testCase.expectedDecisionId)) {
@@ -244,6 +332,20 @@ const evaluateNotesBaseline = (
   testCase: DecisionPacketCase
 ): NotesBaselineResult => {
   const topDecisionIds = noteDecisionIds(topNotesFor(fixture, testCase));
+  const unsupportedDecisionIds = testCase.expectedEvidenceGap === undefined
+    ? []
+    : topDecisionIds;
+
+  if (unsupportedDecisionIds.length > 0) {
+    return {
+      qualityLabel: "unsupported",
+      topDecisionIds,
+      unsafeDecisionIds: [],
+      unsupportedDecisionIds,
+      failureRationale: testCase.baselineFailureRationale
+    };
+  }
+
   const unsafeDecisionIds = topDecisionIds.filter((id) =>
     testCase.staleDecisionIds.includes(id) ||
     testCase.rejectedDecisionIds.includes(id)
@@ -254,15 +356,19 @@ const evaluateNotesBaseline = (
       qualityLabel: "unsafe",
       topDecisionIds,
       unsafeDecisionIds,
+      unsupportedDecisionIds,
       failureRationale: testCase.baselineFailureRationale
     };
   }
 
   return {
-    qualityLabel: topDecisionIds.includes(testCase.expectedDecisionId) ? "usable" : "miss",
+    qualityLabel: testCase.expectedDecisionId !== undefined &&
+      topDecisionIds.includes(testCase.expectedDecisionId) ? "usable" : "miss",
     topDecisionIds,
     unsafeDecisionIds,
-    failureRationale: topDecisionIds.includes(testCase.expectedDecisionId)
+    unsupportedDecisionIds,
+    failureRationale: testCase.expectedDecisionId !== undefined &&
+      topDecisionIds.includes(testCase.expectedDecisionId)
       ? "Notes baseline retrieved the expected decision without stale or rejected top-k conflict for this fixture case."
       : testCase.baselineFailureRationale
   };
@@ -273,7 +379,9 @@ const evaluateCase = async (
   testCase: DecisionPacketCase
 ): Promise<DecisionPacketEvalCaseReadback> => {
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
-  const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
+  const expectedDecision = testCase.expectedDecisionId === undefined
+    ? undefined
+    : decisionById(fixture.decisions).get(testCase.expectedDecisionId);
   const qualityLabel = classifyDecisionPacketForEval(fixture, packet, testCase, expectedDecision);
   const scores = scoreDecisionPacket(fixture, packet, testCase, expectedDecision);
   const notesBaseline = evaluateNotesBaseline(fixture, testCase);
@@ -285,7 +393,12 @@ const evaluateCase = async (
   return {
     id: testCase.id,
     task: testCase.task,
-    expectedDecisionId: testCase.expectedDecisionId,
+    ...(testCase.expectedDecisionId === undefined
+      ? {}
+      : { expectedDecisionId: testCase.expectedDecisionId }),
+    ...(testCase.expectedEvidenceGap === undefined
+      ? {}
+      : { expectedEvidenceGap: testCase.expectedEvidenceGap }),
     expectedStaleDecisionIds: testCase.staleDecisionIds,
     expectedRejectedDecisionIds: testCase.rejectedDecisionIds,
     qualityLabel,
@@ -314,6 +427,7 @@ export const runDecisionPacketEval = async (
 ): Promise<DecisionPacketEvalResult> => {
   const cases = await Promise.all(fixture.cases.map((testCase) => evaluateCase(fixture, testCase)));
   const usefulCount = cases.filter((testCase) => testCase.qualityLabel === "useful").length;
+  const abstainedCount = cases.filter((testCase) => testCase.qualityLabel === "abstained").length;
   const noisyCount = cases.filter((testCase) => testCase.qualityLabel === "noisy").length;
   const missCount = cases.filter((testCase) => testCase.qualityLabel === "miss").length;
   const staleAuthorityCount = cases.filter((testCase) =>
@@ -324,6 +438,9 @@ export const runDecisionPacketEval = async (
   ).length;
   const notesUnsafeCount = cases.filter((testCase) =>
     testCase.notesBaseline.qualityLabel === "unsafe"
+  ).length;
+  const notesUnsupportedCount = cases.filter((testCase) =>
+    testCase.notesBaseline.qualityLabel === "unsupported"
   ).length;
   const notesMissCount = cases.filter((testCase) =>
     testCase.notesBaseline.qualityLabel === "miss"
@@ -350,12 +467,16 @@ export const runDecisionPacketEval = async (
     (sum, testCase) => sum + testCase.packet.caveatedSourceClaimIds.length,
     0
   );
+  const missingAbstentions = cases.filter((testCase) =>
+    testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel !== "abstained"
+  ).length;
   const status =
     usefulRate >= minimumUsefulRate &&
     krnWinRate >= fixture.minimumKrnWinRate &&
     notesWinRate <= fixture.maximumNotesWinRate &&
     severeStaleAuthorityInclusions <= maximumSevereStaleAuthorityInclusions &&
     caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions &&
+    missingAbstentions <= maximumMissingAbstentions &&
     averageNoiseDecisions <= maximumAverageNoiseDecisions
       ? "pass"
       : "fail";
@@ -370,16 +491,19 @@ export const runDecisionPacketEval = async (
       maximumNotesWinRate: fixture.maximumNotesWinRate,
       maximumSevereStaleAuthorityInclusions,
       maximumCaveatedSourceClaimInclusions,
+      maximumMissingAbstentions,
       maximumAverageNoiseDecisions
     },
     metrics: {
       caseCount: cases.length,
       usefulCount,
       noisyCount,
+      abstainedCount,
       missCount,
       staleAuthorityCount,
       notesUsableCount,
       notesUnsafeCount,
+      notesUnsupportedCount,
       notesMissCount,
       krnWinCount,
       notesWinCount,
@@ -390,7 +514,8 @@ export const runDecisionPacketEval = async (
       notesWinRate,
       averageNoiseDecisions,
       severeStaleAuthorityInclusions,
-      caveatedSourceClaimInclusions
+      caveatedSourceClaimInclusions,
+      missingAbstentions
     },
     cases,
     proof: {
@@ -398,7 +523,8 @@ export const runDecisionPacketEval = async (
         "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
-        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, and zero caveated source-claim thresholds"
+        "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
+        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, and zero missing-abstention thresholds"
       ],
       doesNotProve: [
         "live Codex execution or obedience",
