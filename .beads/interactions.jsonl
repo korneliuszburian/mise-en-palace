@@ -658,3 +658,4 @@
 {"id":"int-67c74500","kind":"field_change","created_at":"2026-07-07T12:53:28.34553766Z","actor":"korneliuszburian","issue_id":"mise-en-palace-exu5","extra":{"field":"assignee","new_value":"korneliuszburian","old_value":""}}
 {"id":"int-696b98dd","kind":"field_change","created_at":"2026-07-07T13:01:37.516910039Z","actor":"korneliuszburian","issue_id":"mise-en-palace-exu5","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"completed"}}
 {"id":"int-6385410d","kind":"field_change","created_at":"2026-07-07T13:20:40.704486142Z","actor":"korneliuszburian","issue_id":"mise-en-palace-wizu","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"completed"}}
+{"id":"int-710dcf2d","kind":"field_change","created_at":"2026-07-07T13:22:05.295235121Z","actor":"korneliuszburian","issue_id":"mise-en-palace-9403","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"completed"}}
