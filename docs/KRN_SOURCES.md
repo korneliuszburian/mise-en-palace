@@ -77,12 +77,11 @@ cannot be falsified locally, keep it out of active KRN guidance.
   variables, functions, and files consistent and easier for agents to navigate.
 - KRN implication: KRN naming should encode the governed brain model and package
   authority boundaries, not decorative AI/control-plane vocabulary.
-- Decision: keep `docs/standards/code-vocabulary.md` as the active naming
-  contract and reject broad vanity rename sweeps. Rename only when evidence
+- Decision: use `AGENTS.md` naming rules and `KRN_ROADMAP.md` as the active
+  naming contract; reject broad vanity rename sweeps. Rename only when evidence
   shows review cost, duplicated domain language, hidden authority, failed
   retrieval, or unsafe boundary confusion.
-- Consumer: `docs/standards/code-vocabulary.md`,
-  `docs/runbooks/krn-brain-layer-model.md`, and future naming Beads.
+- Consumer: `AGENTS.md`, `KRN_ROADMAP.md`, and future naming Beads.
 - Falsifier: a future naming slice changes many names without evidence refs, or
   keeps names such as `helper`, `common`, `final`, `new`, or `normalized` when
   they obscure the domain boundary they serve.
@@ -101,8 +100,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
   and review boundary to a reader who has not been in the audit thread.
 - Decision: avoid vague catch-all names (`common`, `utils`, `helper`) unless
   they are backed by a precise local convention; prefer package/domain nouns.
-- Consumer: `docs/standards/code-vocabulary.md` and future bounded rename
-  issues.
+- Consumer: `AGENTS.md` naming rules and future bounded rename issues.
 - Falsifier: a new exported type, file, or helper can be understood only by
   reading several call sites because the name hides the domain concept.
 - Does not prove: Google casing/file rules should be copied wholesale.
@@ -120,8 +118,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
   ledgers.
 - Decision: route naming decisions through source-to-decision and bounded Beads;
   do not leave naming as an operator preference or one-off chat instruction.
-- Consumer: `docs/standards/code-vocabulary.md`, Beads descriptions, and
-  second-opinion review prompts.
+- Consumer: `AGENTS.md`, Beads descriptions, and future reviewer prompts only
+  after the reviewer skill is reactivated.
 - Falsifier: naming rules are repeatedly re-explained in chat because the repo
   standard is missing or too vague to apply.
 - Does not prove: every TypeScript contributor rule is relevant to KRN.
@@ -174,11 +172,10 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - KRN implication: completed implementation slices can request bounded
   second-opinion review without adding a dashboard, multi-agent runtime, or
   broad automation surface.
-- Decision: add a repo-local `second-opinion-claude` operational skill with
-  explicit context packs, read-only review posture, budget caps, and Codex-owned
-  triage.
-- Consumer: `.agents/skills/second-opinion-claude/SKILL.md` and larger KRN
-  migration/audit-hardening handoffs.
+- Decision: keep `second-opinion-claude` deferred until a trustworthy reviewer
+  backend is available; use the existing skill only as a parked lab artifact.
+- Consumer: `.agents/deferred/skills/second-opinion-claude/SKILL.md` and future
+  larger KRN migration/audit-hardening handoffs after reactivation.
 - Falsifier: the review loop burns budget without finding actionable issues,
   encourages broad rewrites, or replaces local tests and source evidence with
   model authority.
@@ -411,8 +408,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: add a bounded eval candidate for relation-linked memory/source
   usefulness; do not add autonomous memory evolution or unreviewed Memory Core
   rewrites from this paper alone.
-- Consumer: `docs/architecture/memory-eval-design.md`, source graph ranking
-  eval follow-ups, and future memory/source relation usefulness Beads.
+- Consumer: source graph ranking eval follow-ups, memory/source relation
+  usefulness Beads, and `KRN_ROADMAP.md` eval direction.
 - Falsifier: a relation-linked memory/source fixture cannot improve selection,
   explanation, or exclusion compared with flat memory/source packets.
 - Does not prove: that KRN needs agent-generated memory rewrites, a graph
@@ -555,8 +552,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
   anti-memory behavior.
 - Decision: extend the memory-advantage eval roadmap around these four
   competencies; do not treat one company-pattern hit as full memory quality.
-- Consumer: `docs/architecture/memory-eval-design.md`, future memory eval
-  fixtures, and future KRN behavior gate cases.
+- Consumer: future memory eval fixtures, future KRN behavior gate cases, and
+  `KRN_ROADMAP.md` eval direction.
 - Falsifier: KRN can pass `pnpm eval:memory-advantage` while lacking a local
   eval for retrieval, test-time learning, long-range carryover, or selective
   forgetting.
@@ -581,8 +578,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: create a bounded multi-session coding-pattern eval candidate after
   the current single-slice memory-advantage proof, using local company-pattern
   tasks and explicit baseline comparison.
-- Consumer: `docs/architecture/memory-eval-design.md`, a follow-up Beads eval
-  task, and future memory-advantage fixtures.
+- Consumer: follow-up Beads eval tasks, future memory-advantage fixtures, and
+  `KRN_ROADMAP.md` eval direction.
 - Falsifier: a KRN memory eval can be solved from a single prompt or preseeded
   selected context without relying on prior run feedback or persisted evidence.
 - Does not prove: MemoryArena task domains map one-to-one to KRN, KRN needs a
@@ -604,8 +601,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: lab-test cost-aware memory advantage metrics before adding broad
   memory automation; keep graph memory as a hypothesis tied to source claims
   and decision edges, not a new platform.
-- Consumer: `docs/architecture/memory-eval-design.md`, memory-advantage eval
-  readback, and future graph/source eval candidates.
+- Consumer: memory-advantage eval readback, future graph/source eval
+  candidates, and `KRN_ROADMAP.md` eval direction.
 - Falsifier: KRN claims memory advantage without showing selected evidence ids,
   baseline comparison, or cost/readback overhead for the selected context.
 - Does not prove: Mem0 architecture should be copied, graph memory always helps
@@ -626,8 +623,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
   not only positive recall cases where the correct memory is easy to retrieve.
 - Decision: add temporal/source-grounded and adversarial negative cases to the
   memory eval roadmap before claiming broad memory advantage.
-- Consumer: `docs/architecture/memory-eval-design.md`, future memory/source
-  fixtures, and anti-memory/staleness behavior gates.
+- Consumer: future memory/source fixtures, anti-memory/staleness behavior gates,
+  and `KRN_ROADMAP.md` eval direction.
 - Falsifier: a memory eval suite contains only positive single-hop recall and
   still claims useful long-term agent memory.
 - Does not prove: LoCoMo's conversational setup is the right product workload
@@ -647,8 +644,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
   different review gates and evals.
 - Decision: use this taxonomy to reject one-bucket "brain memory" design and
   to route future eval cases by memory function and lifecycle.
-- Consumer: `docs/architecture/memory-eval-design.md`,
-  `KRN_ROADMAP.md`, and future memory/source eval Beads.
+- Consumer: `KRN_ROADMAP.md` and future memory/source eval Beads.
 - Falsifier: a future KRN design merges evidence, working context, source
   claims, and durable memory into one undifferentiated store while still
   claiming governed memory.
@@ -670,8 +666,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: use write-manage-read as the memory-eval organizing frame and keep
   worker automation deferred until a product loop proves background management
   is needed.
-- Consumer: `docs/architecture/memory-eval-design.md`, primitive ledger
-  wording, and future worker decision work.
+- Consumer: `KRN_ROADMAP.md`, future memory eval Beads, and future worker
+  decision work.
 - Falsifier: KRN adds memory write automation or worker execution without a
   local eval showing read/write/manage benefit and bounded cost or trust risk.
 - Does not prove: autonomous memory mechanisms are safe, KRN needs a worker
@@ -692,8 +688,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: defer MIRIX-style multi-memory expansion; use it only to check that
   KRN names memory layers by function instead of stuffing everything into one
   store.
-- Consumer: `docs/architecture/memory-eval-design.md` and future worker/memory
-  architecture decisions.
+- Consumer: `KRN_ROADMAP.md` and future worker/memory architecture decisions.
 - Falsifier: KRN introduces multi-agent memory roles, screen capture, or
   multimodal memory without a local text/code memory advantage gap that demands
   it.
@@ -716,10 +711,10 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - KRN implication: observation and reflection stay as staging layers over raw
   evidence; they may create reviewable candidates but must not become Memory
   Core or replace exact source provenance.
-- Decision: keep ADR-0011's raw event -> observation -> reflection ->
+- Decision: keep ADR-0013's raw event -> observation -> reflection ->
   candidate -> reviewed promotion architecture, while rejecting text-only
   memory, source hoarding, and benchmark claims as KRN product proof.
-- Consumer: `docs/decisions/ADR-0011-observational-memory-as-staging-layer.md`.
+- Consumer: `docs/decisions/ADR-0013-observation-is-staging-not-memory.md`.
 - Falsifier: a future slice lets observation/reflection directly mutate Memory
   Core, loses raw evidence recall, or treats source-reported memory benchmark
   results as KRN product readiness.
