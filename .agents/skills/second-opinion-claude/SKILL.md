@@ -1,6 +1,6 @@
 ---
 name: second-opinion-claude
-description: Use when a KRN implementation slice is ready for independent second-opinion review through non-interactive Claude Code, especially after large refactors, authority-boundary changes, cleanup waves, or before closing Beads work that needs challenge, proof/non-proof review, and next-slice synthesis.
+description: Use when KRN needs independent second-opinion review through non-interactive Claude Code: governed implementation verdicts after large slices, or read-only strategy reviews for naming, CLI concept models, roadmap direction, architecture tradeoffs, and next-slice synthesis.
 ---
 
 # Second Opinion Claude
@@ -15,9 +15,21 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
   next-slice synthesis.
 - When local evidence exists but an independent, read-only falsifier should
   stress "done" before merge or closure.
+- When Codex needs a strategic second opinion on naming, CLI concept shape,
+  roadmap direction, architecture boundaries, or Beads decomposition without a
+  diff approval.
 - Skip for trivial edits where local tests and review are enough.
 
 ## Workflow
+
+Choose one mode:
+
+- **Implementation verdict**: use `build_context_pack.sh` and `run_review.sh`
+  after code changed. Output is validated JSON with diff freshness.
+- **Strategy review**: use `run_strategy_review.sh` before or between slices
+  when the question is conceptual. Output is advisory Markdown, not approval.
+
+### Implementation Verdict
 
 1. Build a compact context pack:
 
@@ -99,6 +111,41 @@ or engineering judgment. Claude is a reviewer, not the source of truth.
    passed, Beads state is updated, and the final handoff records what Claude did
    and did not prove.
 
+### Strategy Review
+
+Use this mode for architecture/naming/roadmap questions where a diff verdict
+would be fake precision.
+
+1. Write one compact prompt file under `.local-lab/second-opinion/<topic>/`.
+   Include the question, current decision pressure, relevant authority surfaces,
+   constraints, rejected options, and the output you need. Do not paste broad
+   docs or whole audits.
+
+2. Run the strategy reviewer:
+
+   ```bash
+   rtk env SECOND_OPINION_MAX_BUDGET_USD=10 \
+     .agents/skills/second-opinion-claude/scripts/run_strategy_review.sh \
+     .local-lab/second-opinion/<topic>/question.md \
+     .local-lab/second-opinion/<topic>/strategy.md
+   ```
+
+   The script disables Claude tools, writes Claude's SDK envelope beside the
+   answer, and saves only the model's result Markdown to the output file. It
+   does not validate a diff hash and does not approve implementation.
+
+3. Triage the result as advisory input:
+
+   - adopt a direction only when it improves the roadmap or current Beads work;
+   - reject with local evidence when the recommendation conflicts with current
+     code, roadmap, or product constraints;
+   - create Beads only for concrete follow-up work with dependencies,
+     acceptance, and falsifier;
+   - do not add markdown ledgers, aliases, compatibility shims, or broad docs as
+     a substitute for implementation.
+
+4. Use implementation verdict mode after a strategy-driven code slice is ready.
+
 ## Verdict Contract
 
 The verdict schema lives at `schemas/review.schema.json`. Examples live in
@@ -150,6 +197,12 @@ All optional; defaults shown.
 | `SECOND_OPINION_ACCEPTANCE_CRITERIA` | gap placeholder | injected into the pack |
 | `SECOND_OPINION_VERIFICATION_EVIDENCE` | gap placeholder | injected into the pack |
 
+`run_strategy_review.sh` uses the same budget, timeout, and model variables.
+Both scripts require a Claude CLI that supports `--tools ""`,
+`--output-format json`, `--max-budget-usd`, and `--no-session-persistence`. If
+the local CLI rejects those flags, the output is an error artifact, not a
+verdict or strategy decision.
+
 ## Guardrails
 
 - Prefer `--bare`, explicit prompt context, JSON output, and `--max-budget-usd`.
@@ -170,6 +223,9 @@ All optional; defaults shown.
   itself.
 - Do not create a new skill for every review pattern. Improve this one only
   when a repeated failure appears.
+- Do not treat strategy review output as a governed verdict. It is direction
+  input; code still needs local verification and, for larger slices,
+  implementation verdict review.
 - Do not use this skill for trivial edits where local tests and review are
   enough.
 
@@ -180,6 +236,7 @@ For skill changes:
 ```bash
 rtk bash -n .agents/skills/second-opinion-claude/scripts/build_context_pack.sh
 rtk bash -n .agents/skills/second-opinion-claude/scripts/run_review.sh
+rtk bash -n .agents/skills/second-opinion-claude/scripts/run_strategy_review.sh
 rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
   .agents/skills/second-opinion-claude/examples/approve.review.json
 rtk .agents/skills/second-opinion-claude/scripts/validate_review.py check \
@@ -192,6 +249,14 @@ rtk .agents/skills/second-opinion-claude/scripts/build_context_pack.sh \
   "second-opinion smoke" .local-lab/second-opinion/smoke/prompt.md
 rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \
   .local-lab/second-opinion/smoke/prompt.md
+rtk bash -lc "printf 'Question: Should KRN use one public brain CLI noun?\n' \
+  > .local-lab/second-opinion/smoke/strategy-question.md"
+rtk env SECOND_OPINION_TIMEOUT_SECONDS=120 \
+  .agents/skills/second-opinion-claude/scripts/run_strategy_review.sh \
+  .local-lab/second-opinion/smoke/strategy-question.md \
+  .local-lab/second-opinion/smoke/strategy.md
+rtk rg -n "## Decision|## Beads|## Evidence Gaps" \
+  .local-lab/second-opinion/smoke/strategy.md
 # Optional codex skill-creator structural check (needs pyyaml); non-fatal if absent.
 q="${CODEX_QUICK_VALIDATE:-/home/krn/.codex/skills/.system/skill-creator/scripts/quick_validate.py}"
 [[ -x "$q" ]] && rtk "$q" .agents/skills/second-opinion-claude 2>/dev/null \
