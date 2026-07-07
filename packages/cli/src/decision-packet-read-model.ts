@@ -150,7 +150,7 @@ export interface DecisionPacketReadModel {
     };
     candidates: DecisionPacketReadModelCandidate[];
     sourceUsefulnessOutcomes: DecisionPacketReadModelSourceUsefulnessOutcome[];
-    patternUsefulnessOutcomes: DecisionPacketReadModelPatternUsefulnessOutcome[];
+    brainKnowledgeUsefulnessOutcomes: DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome[];
   }[];
   proof: {
     proves: string[];
@@ -176,8 +176,8 @@ export interface DecisionPacketReadModelSourceUsefulnessOutcome {
   doesNotProve: string;
 }
 
-export interface DecisionPacketReadModelPatternUsefulnessOutcome {
-  patternId: string;
+export interface DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome {
+  brainKnowledgeId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];

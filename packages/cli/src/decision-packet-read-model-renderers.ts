@@ -27,7 +27,7 @@ import {
   activationTraceResource,
   retainedPatternSelectionResource,
   decisionPacketReadModelCandidates,
-  decisionPacketReadModelPatternUsefulnessOutcomes,
+  decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes,
   decisionPacketReadModelSourceUsefulnessOutcomes
 } from "./decision-packet-read-model-builders.js";
 import {
@@ -182,19 +182,19 @@ const renderSourceUsefulnessOutcomes = (
   ];
 };
 
-const renderPatternUsefulnessOutcomes = (
+const renderBrainKnowledgeUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): string[] => {
-  const outcomes = decisionPacketReadModelPatternUsefulnessOutcomes(feedback);
+  const outcomes = decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes(feedback);
 
   if (outcomes.length === 0) {
-    return ["  pattern usefulness outcomes: none"];
+    return ["  knowledge usefulness outcomes: none"];
   }
 
   return [
-    "  pattern usefulness outcomes:",
+    "  knowledge usefulness outcomes:",
     ...outcomes.flatMap((outcome) => [
-      `  - outcome=${outcome.outcome} pattern=${outcome.patternId}`,
+      `  - outcome=${outcome.outcome} knowledge=${outcome.brainKnowledgeId}`,
       `    reason: ${outcome.reason}`,
       ...(outcome.evidenceRefs.length === 0
         ? ["    evidenceRef: none"]
@@ -217,7 +217,7 @@ const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
     `  memoryRecordMutation: ${summary.memoryRecordMutation}`,
     `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates}, source_claim=${summary.counts.sourceClaimCandidates}, source_decision=${summary.counts.sourceDecisionCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
     ...renderSourceUsefulnessOutcomes(feedback),
-    ...renderPatternUsefulnessOutcomes(feedback),
+    ...renderBrainKnowledgeUsefulnessOutcomes(feedback),
     ...(
       candidateDetails.length === 0
         ? ["  candidate details: none"]

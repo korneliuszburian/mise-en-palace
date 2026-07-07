@@ -44,7 +44,7 @@ import type {
   DecisionPacketReadModelContext,
   DecisionPacketReadModelEvidenceBundle,
   DecisionPacketReadModelFeedbackDelta,
-  DecisionPacketReadModelPatternUsefulnessOutcome,
+  DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome,
   DecisionPacketReadModelProof,
   DecisionPacketReadModel,
   DecisionPacketReadModelReviewAssessment,
@@ -253,11 +253,11 @@ export const decisionPacketReadModelSourceUsefulnessOutcomes = (
     doesNotProve: outcome.doesNotProve
   }));
 
-export const decisionPacketReadModelPatternUsefulnessOutcomes = (
+export const decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes = (
   feedback: FeedbackDelta
-): DecisionPacketReadModelPatternUsefulnessOutcome[] =>
+): DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome[] =>
   brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
-    patternId: outcome.patternId,
+    brainKnowledgeId: outcome.brainKnowledgeId,
     outcome: outcome.outcome,
     reason: outcome.reason,
     evidenceRefs: outcome.evidenceRefs,
@@ -358,7 +358,7 @@ const feedbackDeltaResource = (
     },
     candidates: decisionPacketReadModelCandidates(feedback),
     sourceUsefulnessOutcomes: decisionPacketReadModelSourceUsefulnessOutcomes(feedback),
-    patternUsefulnessOutcomes: decisionPacketReadModelPatternUsefulnessOutcomes(feedback)
+    brainKnowledgeUsefulnessOutcomes: decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes(feedback)
   };
 };
 

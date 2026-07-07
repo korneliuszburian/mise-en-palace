@@ -5,7 +5,7 @@ import {
   brainKnowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import {
-  brainKnowledgeUsefulnessFromPatternOutcomes
+  brainKnowledgeUsefulnessFromKnowledgeOutcomes
 } from "@krn/harness";
 import type {
   CliCommand
@@ -92,11 +92,11 @@ const trimmedEnvValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
-const feedbackDeltasToPatternUsefulness = (
+const feedbackDeltasToBrainKnowledgeUsefulness = (
   feedbackDeltas: readonly FeedbackDelta[]
 ) =>
   feedbackDeltas.flatMap((feedback) =>
-    brainKnowledgeUsefulnessFromPatternOutcomes(
+    brainKnowledgeUsefulnessFromKnowledgeOutcomes(
       brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
       feedback.createdAt
     )
@@ -152,7 +152,7 @@ const createBrainKnowledgeStoreProviders = async (
         runtime.projectId
       );
 
-      return feedbackDeltasToPatternUsefulness(feedbackDeltas);
+      return feedbackDeltasToBrainKnowledgeUsefulness(feedbackDeltas);
     });
 
   if (!command.storeOnly) {

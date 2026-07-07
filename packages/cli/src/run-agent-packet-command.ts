@@ -86,7 +86,7 @@ const buildAgentPacket = (
       sourceDecisionUsefulnessExample:
         `krn evidence capture --run-id ${runId} --source-usefulness "decision:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
       knowledgeUsefulnessExample:
-        `krn evidence capture --run-id ${runId} --pattern-usefulness "pattern:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
+        `krn evidence capture --run-id ${runId} --knowledge-usefulness "<brain-knowledge-id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:
         "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates."
     }

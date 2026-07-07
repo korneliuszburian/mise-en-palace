@@ -10,10 +10,10 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--pattern-usefulness \"pattern:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
-    "Pattern usefulness example: krn evidence capture --pattern-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
+    "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
     "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
     "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"git diff --check=passed\" --persist",
     "Note: evidence capture records operator/captured evidence; it does not run commands."
@@ -144,19 +144,19 @@ describe("parseEvidenceArgs", () => {
     });
   });
 
-  it("parses pattern usefulness outcomes separately from source usefulness", () => {
+  it("parses knowledge usefulness outcomes separately from source usefulness", () => {
     expect(parseEvidenceArgs([
       "capture",
-      "--pattern-usefulness",
-      "pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|evidence-1,run-show-1|Does not prove future pattern recall quality"
+      "--knowledge-usefulness",
+      "pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1,run-show-1|Does not prove future pattern recall quality"
     ])).toEqual({
       command: {
         kind: "evidenceCapture",
         persist: false,
-        patternUsefulnessOutcomes: [{
-          patternId: "ts-boundary-unknown-first-result-state",
+        brainKnowledgeUsefulnessOutcomes: [{
+          brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          reason: "Pattern selected the unknown-first parser shape",
+          reason: "Knowledge selected the unknown-first parser shape",
           evidenceRefs: ["evidence-1", "run-show-1"],
           doesNotProve: "Does not prove future pattern recall quality"
         }]
@@ -291,20 +291,17 @@ describe("parseEvidenceArgs", () => {
     expect(parseEvidenceArgs(["capture", "--source-usefulness", "claim:source-claim-1=helped|reason|evidence|"])).toEqual({
       error: "--source-usefulness requires a non-empty doesNotProve field"
     });
-    expect(parseEvidenceArgs(["capture", "--pattern-usefulness", "claim:source-claim-1=helped|reason|evidence|does not prove"])).toEqual({
-      error: "--pattern-usefulness selector must start with pattern:<id>"
+    expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "=helped|reason|evidence|does not prove"])).toEqual({
+      error: "--knowledge-usefulness requires a non-empty brain knowledge id"
     });
-    expect(parseEvidenceArgs(["capture", "--pattern-usefulness", "pattern:=helped|reason|evidence|does not prove"])).toEqual({
-      error: "--pattern-usefulness requires a non-empty pattern id"
+    expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "pattern:knowledge-1=decorative|reason|evidence|does not prove"])).toEqual({
+      error: "--knowledge-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"
     });
-    expect(parseEvidenceArgs(["capture", "--pattern-usefulness", "pattern:pattern-1=decorative|reason|evidence|does not prove"])).toEqual({
-      error: "--pattern-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"
+    expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "pattern:knowledge-1=helped||evidence|does not prove"])).toEqual({
+      error: "--knowledge-usefulness requires a non-empty reason"
     });
-    expect(parseEvidenceArgs(["capture", "--pattern-usefulness", "pattern:pattern-1=helped||evidence|does not prove"])).toEqual({
-      error: "--pattern-usefulness requires a non-empty reason"
-    });
-    expect(parseEvidenceArgs(["capture", "--pattern-usefulness", "pattern:pattern-1=helped|reason|evidence|"])).toEqual({
-      error: "--pattern-usefulness requires a non-empty doesNotProve field"
+    expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "pattern:knowledge-1=helped|reason|evidence|"])).toEqual({
+      error: "--knowledge-usefulness requires a non-empty doesNotProve field"
     });
     expect(parseEvidenceArgs(["capture", "--intended-file", "   "])).toEqual({
       error: "--intended-file requires a non-empty path"

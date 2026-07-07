@@ -103,15 +103,15 @@
       },
       {
         "id": "golden-case-evidence-pattern-usefulness-001-d",
-        "title": "retained pattern usefulness remains tied to evidence refs",
+        "title": "retained knowledge usefulness remains tied to evidence refs",
         "input": {
-          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --pattern-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality\"",
-          "gitStatus": "package cwd changed implementation file with explicit pattern usefulness feedback"
+          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality\"",
+          "gitStatus": "package cwd changed implementation file with explicit knowledge usefulness feedback"
         },
         "expectedBehavior": {
           "outcome": "flag",
           "subject": "evidence_capture:pattern_usefulness_evidence_ref",
-          "rationale": "Retained pattern usefulness must remain reviewable as evidence-backed feedback, not an automatic learning claim.",
+          "rationale": "Retained knowledge usefulness must remain reviewable as evidence-backed feedback, not an automatic learning claim.",
           "evidenceRefs": [
             "packages/cli/src/run-evidence-capture-command.ts",
             "packages/cli/src/__tests__/evidence-capture-behavior.test.ts"
@@ -122,9 +122,9 @@
             "id": "failure-mode-evidence-pattern-usefulness-001-d",
             "domain": "capability",
             "severity": "blocking",
-            "title": "pattern usefulness is recorded without evidence refs or non-proof boundary",
-            "mustNot": "Evidence capture must not render retained pattern usefulness as helped feedback unless the pattern id, evidence ref, reason, and does-not-prove boundary are visible.",
-            "detection": "CLI output omits patternUsefulnessOutcomes, the retained pattern id, evidenceRef, or doesNotProve."
+            "title": "knowledge usefulness is recorded without evidence refs or non-proof boundary",
+            "mustNot": "Evidence capture must not render retained knowledge usefulness as helped feedback unless the brain knowledge id, evidence ref, reason, and does-not-prove boundary are visible.",
+            "detection": "CLI output omits brainKnowledgeUsefulnessOutcomes, the brain knowledge id, evidenceRef, or doesNotProve."
           }
         ],
         "sourceRefs": [

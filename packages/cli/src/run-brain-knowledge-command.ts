@@ -35,7 +35,7 @@ export interface BrainKnowledgeCommandRuntime {
    * awaits it and merges the result into the usefulness feedback, so the
    * readback can show usefulness without a static corpus JSON ledger. The CLI
    * layer wires this to a feedback_delta store read (mapped via
-   * brainKnowledgeUsefulnessFromPatternOutcomes). Seed-only corpus
+   * brainKnowledgeUsefulnessFromKnowledgeOutcomes). Seed-only corpus
    * usefulnessFeedbackFiles may still be supplied and are merged alongside.
    */
   usefulnessProvider?: () => Promise<BrainKnowledgeUsefulnessFeedback[]>;

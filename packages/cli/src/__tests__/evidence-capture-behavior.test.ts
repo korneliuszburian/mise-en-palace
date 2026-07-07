@@ -133,14 +133,14 @@ const targetEvidenceExpectation: OutputExpectation = {
   ]
 };
 
-const patternUsefulnessExpectation: OutputExpectation = {
+const brainKnowledgeUsefulnessExpectation: OutputExpectation = {
   includes: [
     "Changed files:\nintended:",
     "- M packages/cli/src/run-evidence-capture-command.ts",
     "pnpm typecheck: passed | provenance=operator_reported",
-    "patternUsefulnessOutcomes:",
-    "outcome=helped pattern=ts-boundary-unknown-first-result-state",
-    "reason: Pattern selected the unknown-first parser shape",
+    "brainKnowledgeUsefulnessOutcomes:",
+    "outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state",
+    "reason: Knowledge selected the unknown-first parser shape",
     "evidenceRef: packages/cli/src/run-evidence-capture-command.ts",
     "doesNotProve: Does not prove future pattern recall quality"
   ],
@@ -214,15 +214,15 @@ describe("evidence capture behavior fixture", () => {
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => ""
     });
-    const patternUsefulnessResult = await runCli([
+    const brainKnowledgeUsefulnessResult = await runCli([
       "evidence",
       "capture",
       "--intended-file",
       "packages/cli/src/run-evidence-capture-command.ts",
       "--verification",
       "pnpm typecheck=passed",
-      "--pattern-usefulness",
-      "pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality"
+      "--knowledge-usefulness",
+      "pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality"
     ], {
       env: {},
       cwd: process.cwd(),
@@ -233,13 +233,13 @@ describe("evidence capture behavior fixture", () => {
     const classifiedOutput = classifiedResult.stdout;
     const unclassifiedOutput = unclassifiedResult.stdout;
     const targetEvidenceOutput = targetEvidenceResult.stdout;
-    const patternUsefulnessOutput = patternUsefulnessResult.stdout;
+    const brainKnowledgeUsefulnessOutput = brainKnowledgeUsefulnessResult.stdout;
     const classifiedPassed = cliOutputMatches(classifiedResult, classifiedExpectation);
     const unclassifiedPassed = cliOutputMatches(unclassifiedResult, unclassifiedExpectation);
     const targetEvidencePassed = cliOutputMatches(targetEvidenceResult, targetEvidenceExpectation);
-    const patternUsefulnessPassed = cliOutputMatches(
-      patternUsefulnessResult,
-      patternUsefulnessExpectation
+    const brainKnowledgeUsefulnessPassed = cliOutputMatches(
+      brainKnowledgeUsefulnessResult,
+      brainKnowledgeUsefulnessExpectation
     );
     const report = runBehaviorFixtures({
       tasks,
@@ -267,10 +267,10 @@ describe("evidence capture behavior fixture", () => {
         ),
         proof(
           "golden-case-evidence-pattern-usefulness-001-d",
-          patternUsefulnessPassed,
-          patternUsefulnessPassed
-            ? "Real CLI evidence capture rendered retained pattern usefulness with pattern id, evidence ref, reason, and does-not-prove boundary."
-            : patternUsefulnessOutput
+          brainKnowledgeUsefulnessPassed,
+          brainKnowledgeUsefulnessPassed
+            ? "Real CLI evidence capture rendered retained knowledge usefulness with brain knowledge id, evidence ref, reason, and does-not-prove boundary."
+            : brainKnowledgeUsefulnessOutput
         )
       ]
     });

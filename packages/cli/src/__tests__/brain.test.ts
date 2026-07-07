@@ -46,7 +46,7 @@ const storePatternMemory = (): MemoryRecord => ({
 });
 
 const patternFeedbackDelta = (
-  patternId = "store-backed-usefulness"
+  brainKnowledgeId = "pattern:store-backed-usefulness"
 ): FeedbackDelta => ({
   id: "feedback-delta-1" as FeedbackDelta["id"],
   reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
@@ -55,8 +55,8 @@ const patternFeedbackDelta = (
   sourceDecisions: [],
   evalCandidates: [],
   metadata: {
-    patternUsefulnessOutcomes: [{
-      patternId,
+    brainKnowledgeUsefulnessOutcomes: [{
+      brainKnowledgeId,
       outcome: "helped",
       reason: "The pattern changed the implementation decision.",
       evidenceRefs: ["test:brain knowledge store-only"],
@@ -68,7 +68,7 @@ const patternFeedbackDelta = (
 });
 
 const createBrainKnowledgeDatabaseRuntime = (
-  feedbackPatternId = "store-backed-usefulness"
+  feedbackPatternId = "pattern:store-backed-usefulness"
 ) => async (_input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => ({
   workspaceId: "workspace-1",
   projectId: "project-1",
@@ -260,7 +260,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
-  it("renders store-backed pattern usefulness from feedback deltas", async () => {
+  it("renders store-backed knowledge usefulness from feedback deltas", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
@@ -308,7 +308,7 @@ describe("runCli", () => {
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");
   });
 
-  it("merges store-backed usefulness into explicit seed cards by retained pattern id", async () => {
+  it("merges store-backed usefulness into explicit seed cards by brain knowledge id", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
@@ -326,7 +326,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       createDatabaseRuntime: createBrainKnowledgeDatabaseRuntime(
-        "ts-boundary-unknown-first-result-state"
+        "pattern:ts-boundary-unknown-first-result-state"
       )
     });
     const resource = JSON.parse(result.stdout) as {

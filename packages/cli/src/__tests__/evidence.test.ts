@@ -258,9 +258,9 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("reason: Source claim kept pattern-intake proof boundaries visible");
   expect(stdout).toContain("evidenceRef: evidence-bundle-1");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
-  expect(stdout).toContain("patternUsefulnessOutcomes:");
-  expect(stdout).toContain("outcome=helped pattern=ts-boundary-unknown-first-result-state");
-  expect(stdout).toContain("reason: Pattern selected the unknown-first parser shape");
+  expect(stdout).toContain("brainKnowledgeUsefulnessOutcomes:");
+  expect(stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
+  expect(stdout).toContain("reason: Knowledge selected the unknown-first parser shape");
   expect(stdout).toContain("doesNotProve: Does not prove future pattern recall quality");
 };
 
@@ -303,10 +303,10 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
       doesNotProve: "Does not prove future source selector quality"
     }],
-    patternUsefulnessOutcomes: [{
-      patternId: "ts-boundary-unknown-first-result-state",
+    brainKnowledgeUsefulnessOutcomes: [{
+      brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
       outcome: "helped",
-      reason: "Pattern selected the unknown-first parser shape",
+      reason: "Knowledge selected the unknown-first parser shape",
       evidenceRefs: ["evidence-bundle-1"],
       doesNotProve: "Does not prove future pattern recall quality"
     }]
@@ -399,13 +399,13 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--pattern-usefulness \"pattern:<id>=helped|reason|evidence|doesNotProve\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
     expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
-    expect(result.stdout).toContain("pattern usefulness: krn evidence capture --pattern-usefulness");
+    expect(result.stdout).toContain("knowledge usefulness: krn evidence capture --knowledge-usefulness");
     expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
@@ -652,8 +652,8 @@ describe("runCli", () => {
         "wilq-seo scripts/test.sh",
         "--source-usefulness",
         "claim:source-claim-1=helped|Source claim kept pattern-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
-        "--pattern-usefulness",
-        "pattern:ts-boundary-unknown-first-result-state=helped|Pattern selected the unknown-first parser shape|evidence-bundle-1|Does not prove future pattern recall quality",
+        "--knowledge-usefulness",
+        "pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-bundle-1|Does not prove future pattern recall quality",
         "--persist"
       ],
       {
@@ -690,7 +690,7 @@ describe("runCli", () => {
     expectDefaultTemplateCommands(capture.commands);
   });
 
-  it("downgrades persisted pattern usefulness when evidence refs do not match current evidence", async () => {
+  it("downgrades persisted knowledge usefulness when evidence refs do not match current evidence", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -710,7 +710,7 @@ describe("runCli", () => {
         "execution-run-1",
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
-        "--pattern-usefulness",
+        "--knowledge-usefulness",
         "pattern:ts-boundary-unknown-first-result-state=helped|Pattern allegedly helped without current proof|stale-proof-ref|Does not prove future pattern recall quality",
         "--source-usefulness",
         "claim:source-claim-1=helped|Source allegedly helped without current proof|stale-source-ref|Does not prove future source selection quality",
@@ -744,7 +744,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
-    expect(result.stdout).toContain("outcome=unknown pattern=ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("outcome=unknown knowledge=pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
       "Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof."
     );
@@ -756,8 +756,8 @@ describe("runCli", () => {
         evidenceRefs: ["stale-source-ref"],
         doesNotProve: "Does not prove future source selection quality"
       }],
-      patternUsefulnessOutcomes: [{
-        patternId: "ts-boundary-unknown-first-result-state",
+      brainKnowledgeUsefulnessOutcomes: [{
+        brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
         outcome: "unknown",
         reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
         evidenceRefs: ["stale-proof-ref"],

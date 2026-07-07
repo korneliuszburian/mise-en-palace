@@ -52,17 +52,17 @@
     },
     {
       "id": "pattern-usefulness-evidence",
-      "query": "pattern usefulness evidenceRef helped outcome",
+      "query": "knowledge usefulness evidenceRef helped outcome",
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A loose usefulness match can select helped feedback without evidenceRef and doesNotProve requirements.",
       "expectedSelectedKnowledgeIds": ["pattern:pattern-usefulness-evidence-link"],
       "knowledgeCards": [
         {
           "id": "pattern:pattern-usefulness-evidence-link",
-          "title": "Pattern usefulness evidence link",
-          "summary": "Retained pattern usefulness needs outcome, reason, evidenceRef, and doesNotProve before helped feedback.",
-          "consumers": ["pattern usefulness feedback"],
-          "falsifier": "A pattern usefulness capture omits evidenceRef but records helped feedback.",
+          "title": "Knowledge usefulness evidence link",
+          "summary": "Retained knowledge usefulness needs outcome, reason, evidenceRef, and doesNotProve before helped feedback.",
+          "consumers": ["knowledge usefulness feedback"],
+          "falsifier": "A knowledge usefulness capture omits evidenceRef but records helped feedback.",
           "doesNotProve": "This does not prove automatic pattern learning.",
           "nextAction": "use"
         }

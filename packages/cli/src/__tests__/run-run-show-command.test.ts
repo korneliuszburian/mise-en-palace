@@ -319,15 +319,15 @@ const aggregate: HarnessRunAggregate = {
         reason: "Missing doesNotProve should drop this malformed feedback row.",
         evidenceRefs: ["feedback-1"]
       }],
-      patternUsefulnessOutcomes: [{
-        patternId: "ts-boundary-unknown-first-result-state",
+      brainKnowledgeUsefulnessOutcomes: [{
+        brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
         outcome: "helped",
-        reason: "Pattern selected the unknown-first parser shape for the implementation.",
+        reason: "Knowledge selected the unknown-first parser shape for the implementation.",
         evidenceRefs: ["evidence-1", "feedback-1"],
         doesNotProve:
           "This pattern outcome does not prove future pattern recall or TypeScript quality."
       }, {
-        patternId: "pattern-incomplete",
+        brainKnowledgeId: "pattern-incomplete",
         outcome: "helped",
         reason: "Missing doesNotProve should drop this malformed pattern row.",
         evidenceRefs: ["feedback-1"]
@@ -446,10 +446,10 @@ describe("runRunShowCommand", () => {
     );
     expect(result.stdout).toContain("outcome=stale sourceClaim=claim-weak sourceDecision=none");
     expect(result.stdout).not.toContain("claim-incomplete");
-    expect(result.stdout).toContain("pattern usefulness outcomes:");
-    expect(result.stdout).toContain("outcome=helped pattern=ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge usefulness outcomes:");
+    expect(result.stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "reason: Pattern selected the unknown-first parser shape for the implementation."
+      "reason: Knowledge selected the unknown-first parser shape for the implementation."
     );
     expect(result.stdout).toContain(
       "doesNotProve: This pattern outcome does not prove future pattern recall or TypeScript quality."
@@ -753,10 +753,10 @@ describe("runRunShowCommand", () => {
           doesNotProve:
             "This stale outcome does not alter or deprecate SourceClaim truth."
         }],
-        patternUsefulnessOutcomes: [{
-          patternId: "ts-boundary-unknown-first-result-state",
+        brainKnowledgeUsefulnessOutcomes: [{
+          brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          reason: "Pattern selected the unknown-first parser shape for the implementation.",
+          reason: "Knowledge selected the unknown-first parser shape for the implementation.",
           evidenceRefs: ["evidence-1", "feedback-1"],
           doesNotProve:
             "This pattern outcome does not prove future pattern recall or TypeScript quality."

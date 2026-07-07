@@ -56,7 +56,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   commandOutcomes?: readonly EvidenceCommand[];
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-  patternUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
+  brainKnowledgeUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -88,7 +88,7 @@ interface PersistedEvidenceIdentity {
   reviewAssessmentId: string;
   feedbackDeltaId: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-  patternUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
+  brainKnowledgeUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
 }
 
 interface EvidencePersistenceConfig {
@@ -577,7 +577,7 @@ const renderSourceUsefulnessOutcomes = (
   ]);
 };
 
-const renderPatternUsefulnessOutcomes = (
+const renderBrainKnowledgeUsefulnessOutcomes = (
   outcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined
 ): string[] => {
   if (outcomes === undefined || outcomes.length === 0) {
@@ -585,7 +585,7 @@ const renderPatternUsefulnessOutcomes = (
   }
 
   return outcomes.flatMap((outcome) => [
-    `- outcome=${outcome.outcome} pattern=${outcome.patternId}`,
+    `- outcome=${outcome.outcome} knowledge=${outcome.brainKnowledgeId}`,
     `  reason: ${outcome.reason}`,
     ...(outcome.evidenceRefs.length === 0
       ? ["  evidenceRef: none"]
@@ -766,7 +766,7 @@ const buildFeedbackDeltaInput = (
   memoryCandidates: readonly MemoryCandidate[],
   sourceDecisionCandidates: readonly SourceDecision[],
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  patternUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined
+  brainKnowledgeUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
@@ -782,9 +782,9 @@ const buildFeedbackDeltaInput = (
     ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
       ? {}
       : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
-    ...(patternUsefulnessOutcomes === undefined || patternUsefulnessOutcomes.length === 0
+    ...(brainKnowledgeUsefulnessOutcomes === undefined || brainKnowledgeUsefulnessOutcomes.length === 0
       ? {}
-      : { patternUsefulnessOutcomes: [...patternUsefulnessOutcomes] })
+      : { brainKnowledgeUsefulnessOutcomes: [...brainKnowledgeUsefulnessOutcomes] })
   }
 });
 
@@ -811,7 +811,7 @@ const normalizeSourceUsefulnessOutcomesForEvidence = (
         }
   );
 
-const normalizePatternUsefulnessOutcomesForEvidence = (
+const normalizeBrainKnowledgeUsefulnessOutcomesForEvidence = (
   outcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
   currentEvidenceRefs: ReadonlySet<string>
 ): readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined =>
@@ -848,7 +848,7 @@ const persistEvidenceCapture = async (
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  patternUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
+  brainKnowledgeUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
@@ -902,8 +902,8 @@ const persistEvidenceCapture = async (
       sourceUsefulnessOutcomes,
       currentEvidenceRefs
     );
-    const evidenceLinkedPatternUsefulnessOutcomes = normalizePatternUsefulnessOutcomesForEvidence(
-      patternUsefulnessOutcomes,
+    const evidenceLinkedBrainKnowledgeUsefulnessOutcomes = normalizeBrainKnowledgeUsefulnessOutcomesForEvidence(
+      brainKnowledgeUsefulnessOutcomes,
       currentEvidenceRefs
     );
     const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta(
@@ -914,7 +914,7 @@ const persistEvidenceCapture = async (
         memoryCandidates,
         sourceDecisionCandidates,
         evidenceLinkedSourceUsefulnessOutcomes,
-        evidenceLinkedPatternUsefulnessOutcomes
+        evidenceLinkedBrainKnowledgeUsefulnessOutcomes
       )
     );
 
@@ -925,9 +925,9 @@ const persistEvidenceCapture = async (
       ...(evidenceLinkedSourceUsefulnessOutcomes === undefined
         ? {}
         : { sourceUsefulnessOutcomes: evidenceLinkedSourceUsefulnessOutcomes }),
-      ...(evidenceLinkedPatternUsefulnessOutcomes === undefined
+      ...(evidenceLinkedBrainKnowledgeUsefulnessOutcomes === undefined
         ? {}
-        : { patternUsefulnessOutcomes: evidenceLinkedPatternUsefulnessOutcomes })
+        : { brainKnowledgeUsefulnessOutcomes: evidenceLinkedBrainKnowledgeUsefulnessOutcomes })
     };
   } finally {
     await databaseRuntime.close();
@@ -964,7 +964,7 @@ export const runEvidenceCaptureCommand = async (
       diffRisk,
       targetEvidence,
       runtime.sourceUsefulnessOutcomes,
-      runtime.patternUsefulnessOutcomes,
+      runtime.brainKnowledgeUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals
     )
@@ -975,8 +975,8 @@ export const runEvidenceCaptureCommand = async (
       : "Review changed files and command evidence before promoting memory/source/eval candidates.";
   const renderedSourceUsefulnessOutcomes =
     persistedIdentity?.sourceUsefulnessOutcomes ?? runtime.sourceUsefulnessOutcomes;
-  const renderedPatternUsefulnessOutcomes =
-    persistedIdentity?.patternUsefulnessOutcomes ?? runtime.patternUsefulnessOutcomes;
+  const renderedBrainKnowledgeUsefulnessOutcomes =
+    persistedIdentity?.brainKnowledgeUsefulnessOutcomes ?? runtime.brainKnowledgeUsefulnessOutcomes;
   const lines = [
     "KRN Evidence Capture",
     `Captured at: ${runtime.now()}`,
@@ -1005,8 +1005,8 @@ export const runEvidenceCaptureCommand = async (
     ...renderSourceDecisionCandidates(sourceDecisionCandidates),
     "sourceUsefulnessOutcomes:",
     ...renderSourceUsefulnessOutcomes(renderedSourceUsefulnessOutcomes),
-    "patternUsefulnessOutcomes:",
-    ...renderPatternUsefulnessOutcomes(renderedPatternUsefulnessOutcomes)
+    "brainKnowledgeUsefulnessOutcomes:",
+    ...renderBrainKnowledgeUsefulnessOutcomes(renderedBrainKnowledgeUsefulnessOutcomes)
   ];
 
   if (persistedIdentity !== undefined) {
