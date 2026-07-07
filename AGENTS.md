@@ -65,19 +65,20 @@ For git history:
 For complex KRN implementation work, use Beads as the active execution plan.
 Product and architecture direction lives in `KRN_ROADMAP.md`.
 
-For larger migration or audit-hardening slices, Codex must own the second-opinion
-loop:
+For larger migration or audit-hardening slices, Codex may use an external
+reviewer only as advisory evidence:
 
 - compact handoff of current repo state, changed files, verification, proof and
   non-proof;
-- run `.agents/skills/second-opinion-claude` when available with a compact
-  context pack and budget caps;
-- triage Claude's output into must-fix, evidence-gap, rejected-with-evidence,
-  or follow-up Beads work;
+- prefer local tests, DB smokes, Fallow, and code evidence over reviewer prose;
+- triage reviewer output into must-fix, evidence-gap, rejected-with-evidence, or
+  follow-up Beads work;
 - continue implementation without waiting for the operator unless the finding
   requires a product decision, budget decision, or explicit human tradeoff.
 
-Do not hand the operator a second-opinion prompt as the default path.
+Do not treat external review as a gate while the repo-local Claude skill is
+deferred; factual claims from reviewers must be checked against the current
+code and verification output.
 
 If the next step requires broad historical rereads, stop and re-scope.
 

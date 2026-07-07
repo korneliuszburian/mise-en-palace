@@ -76,7 +76,6 @@ Built enough to keep:
 - DB-backed source, memory, evidence, review, retrieval, and feedback paths;
 - Codex brief rendering;
 - deterministic behavior gates and DB smokes;
-- governed second-opinion review through `.agents/skills/second-opinion-claude`;
 - Beads task graph for durable implementation planning.
 
 Not product-ready:
@@ -483,7 +482,8 @@ Every implementation slice should satisfy:
 - no `any` as a shortcut;
 - no broad docs/prose tests masquerading as behavior tests;
 - no retained markdown ledger unless it is a compact operator surface;
-- second-opinion review after larger refactors or authority-boundary changes;
+- external reviewer findings checked against local code and verification before
+  they affect implementation;
 - Beads issue graph updated with follow-up work instead of TODO files.
 
 If a change adds more surface than it removes, it must justify the new consumer.
@@ -558,7 +558,6 @@ state, decorative vocabulary, or instructions better expressed in `AGENTS.md`.
 The target is a small set of sharp skills:
 
 - Beads workflow;
-- second-opinion Claude review;
 - source-to-decision mapping;
 - evidence review;
 - activation/context work;
@@ -569,16 +568,15 @@ The target is a small set of sharp skills:
 Skills for building the kernel may stay if they encode real project discipline,
 but their vocabulary must not leak into runtime contracts unless implemented.
 
-## Second-Opinion Rule
+## External Review Rule
 
-Claude review is advisory but governed:
+External review is optional advisory evidence, not an implementation gate:
 
-- run it after larger implementation, cleanup, authority, roadmap, or eval
-  slices;
-- ask it to falsify "done";
-- require evidence refs;
-- validate the verdict JSON;
-- bind the review to the current diff;
+- use it only when the slice is large enough that independent critique is worth
+  the cost;
+- ask reviewers to falsify "done" and require evidence refs;
+- reject factual claims that conflict with current code, live smoke output, or
+  other local verification;
 - triage findings as accept-and-fix, counterargue-with-evidence, follow-up Bead,
   or human decision;
 - do not use it as a replacement for local verification.
@@ -586,6 +584,10 @@ Claude review is advisory but governed:
 For large strategy reviews, the prompt should request proposed Beads with
 dependencies, acceptance criteria, and non-goals. The output should update the
 task graph, not create another prose forest.
+
+The old Claude-based repo skill is deferred under
+`.agents/deferred/skills/second-opinion-claude` until it can use a reviewer that
+does not hallucinate basic repository facts.
 
 ## Near-Term Roadmap
 

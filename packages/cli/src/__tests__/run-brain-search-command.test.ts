@@ -668,17 +668,17 @@ describe("runBrainSearchCommand", () => {
     const memoryRecord: MemoryRecord = {
       id: "memory-record-1",
       projectId: "project-1",
-      key: "memory:second-opinion-loop",
+      key: "memory:external-review-loop",
       kind: "pattern",
       status: "active",
-      summary: "Use governed second-opinion after larger slices",
-      body: "KRN should run second-opinion review after larger migration or authority slices.",
+      summary: "Treat external review as advisory evidence after larger slices",
+      body: "KRN may use external review after larger migration or authority slices, but local code and verification decide factual claims.",
       owner: "kernel-development",
       confidence: 95,
       applicationGuidance:
         "Use this memory when the task asks how to close a large KRN slice.",
       invalidationRule:
-        "Invalidate when second-opinion-claude stops producing governed verdict JSON.",
+        "Invalidate when external review becomes mandatory gatekeeping again.",
       sourceLineage: [{
         sourceId: "source-claim-1",
         note: "source-claim:source-claim-1"
@@ -687,7 +687,7 @@ describe("runBrainSearchCommand", () => {
       positiveFeedbackCount: 0,
       negativeFeedbackCount: 0,
       metadata: {
-        falsifier: "A larger slice closes without second-opinion review.",
+        falsifier: "Reviewer prose overrides local verification evidence.",
         doesNotProve: "This memory does not prove Claude found every bug."
       },
       validFrom: "2026-07-04T00:00:00.000Z",
@@ -703,7 +703,7 @@ describe("runBrainSearchCommand", () => {
       createId: (prefix) => `${prefix}-1`,
       command: {
         kind: "brainSearch",
-        query: "second opinion after large slice",
+        query: "external review after large slice",
         catalogFiles: [],
         storeOnly: true,
         projectId: "project-explicit",
@@ -745,7 +745,7 @@ describe("runBrainSearchCommand", () => {
               answerUsefulness: "useful",
               supportingClaims: [{
                 sourceClaimId: "source-claim-1",
-                claim: "Second-opinion review should challenge larger KRN slices.",
+                claim: "External review can challenge larger KRN slices.",
                 mechanism: "A governed source claim names mechanism, implication, consumer, and falsifier.",
                 krnImplication: "Brain search should keep source support visible next to selected memory.",
                 consumer: "kernel-development",
@@ -779,7 +779,7 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
-      brainKnowledgeQueries: ["second opinion after large slice"],
+      brainKnowledgeQueries: ["external review after large slice"],
       knowledgeCards: {
         returnedCards: 1,
         cardIds: ["memory-record-1"],
@@ -788,7 +788,7 @@ describe("runBrainSearchCommand", () => {
           source: "memory_store",
           reviewability: "ready",
           consumers: ["kernel-development"],
-          falsifier: "A larger slice closes without second-opinion review.",
+          falsifier: "Reviewer prose overrides local verification evidence.",
           doesNotProve: "This memory does not prove Claude found every bug.",
           nextAction: "use"
         }, {
