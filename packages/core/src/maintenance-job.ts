@@ -81,28 +81,28 @@ export const workerJobStatuses = [
 
 export type WorkerJobStatus = (typeof workerJobStatuses)[number];
 
-export const maintenanceJobRuntimeContract = {
+export const maintenanceJobPersistenceContract = {
   workerTable: "worker_jobs",
   outboxTable: "outbox_events",
   outboxTopic: "worker_job.queued",
-  requiresBackgroundLoop: false,
-  outputEvent: "worker_job.completed",
-  failureState: "failed"
+  executionMode: "persistence_only",
+  completionTopic: "worker_job.completed",
+  terminalFailureStatus: "failed"
 } as const;
 
-export type MaintenanceJobRuntimeContract = typeof maintenanceJobRuntimeContract;
+export type MaintenanceJobPersistenceContract = typeof maintenanceJobPersistenceContract;
 
 export interface MaintenanceJobDescription {
   jobType: MaintenanceJobType;
   label: string;
-  workerTable: MaintenanceJobRuntimeContract["workerTable"];
-  outboxTable: MaintenanceJobRuntimeContract["outboxTable"];
-  outboxTopic: MaintenanceJobRuntimeContract["outboxTopic"];
-  requiresBackgroundLoop: MaintenanceJobRuntimeContract["requiresBackgroundLoop"];
+  workerTable: MaintenanceJobPersistenceContract["workerTable"];
+  outboxTable: MaintenanceJobPersistenceContract["outboxTable"];
+  outboxTopic: MaintenanceJobPersistenceContract["outboxTopic"];
+  executionMode: MaintenanceJobPersistenceContract["executionMode"];
   inputSchema: string;
   idempotencyKey: string;
-  outputEvent: MaintenanceJobRuntimeContract["outputEvent"];
-  failureState: MaintenanceJobRuntimeContract["failureState"];
+  completionTopic: MaintenanceJobPersistenceContract["completionTopic"];
+  terminalFailureStatus: MaintenanceJobPersistenceContract["terminalFailureStatus"];
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
   memoryCoreGate: MaintenanceJobMemoryCoreGate;
@@ -255,7 +255,7 @@ export const describeMaintenanceJob = (
   const description: MaintenanceJobDescription = {
     jobType,
     label: labels[jobType],
-    ...maintenanceJobRuntimeContract,
+    ...maintenanceJobPersistenceContract,
     inputSchema: writeBoundary.inputSchema,
     idempotencyKey: writeBoundary.idempotencyKey,
     allowedWrites: writeBoundary.allowedWrites,

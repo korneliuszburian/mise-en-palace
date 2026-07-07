@@ -7,7 +7,7 @@ import {
   buildMaintenanceJobWriteBoundaryReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
-  maintenanceJobRuntimeContract,
+  maintenanceJobPersistenceContract,
   maintenanceJobTypes,
   parseMaintenanceJobType
 } from "../index.js";
@@ -53,8 +53,8 @@ class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
   }
 }
 
-describe("maintenance worker skeleton", () => {
-  test("describes the supported KRN maintenance jobs without daemon behavior", () => {
+describe("maintenance queue contract", () => {
+  test("describes the supported KRN maintenance jobs as persistence-only", () => {
     expect(maintenanceJobTypes).toEqual([
       "embed_source_chunk",
       "embed_memory_record",
@@ -69,7 +69,7 @@ describe("maintenance worker skeleton", () => {
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
           jobType: type,
-          ...maintenanceJobRuntimeContract
+          ...maintenanceJobPersistenceContract
         })
       )
     );
@@ -149,7 +149,7 @@ describe("maintenance worker skeleton", () => {
       expect.objectContaining({
         jobType: "embed_memory_record",
         label: "Embed memory record",
-        requiresBackgroundLoop: false
+        executionMode: "persistence_only"
       })
     );
 
@@ -196,15 +196,16 @@ describe("maintenance worker skeleton", () => {
     );
   });
 
-  test("describes write boundary before any maintenance runtime exists", () => {
+  test("describes write boundary before any maintenance executor exists", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 
     expect(descriptions).toEqual(
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
           jobType: type,
-          failureState: "failed",
-          outputEvent: "worker_job.completed",
+          terminalFailureStatus: "failed",
+          completionTopic: "worker_job.completed",
+          executionMode: "persistence_only",
           memoryCoreGate: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),
           idempotencyKey: expect.stringContaining(type),

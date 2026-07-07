@@ -20,7 +20,7 @@ import {
   workerJobStatus
 } from "@krn/db/schema";
 import {
-  maintenanceJobRuntimeContract
+  maintenanceJobPersistenceContract
 } from "@krn/maintenance-preview";
 
 import type {
@@ -200,7 +200,7 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
   );
   const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
     repoRoot
-  ) || Boolean(maintenanceJobRuntimeContract.requiresBackgroundLoop);
+  ) || maintenanceJobPersistenceContract.executionMode !== "persistence_only";
 
   return [
     {

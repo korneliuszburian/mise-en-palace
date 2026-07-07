@@ -4,7 +4,7 @@ export {
   buildMaintenanceJobWriteBoundaryReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
-  maintenanceJobRuntimeContract,
+  maintenanceJobPersistenceContract,
   maintenanceJobTypes,
   parseMaintenanceJobType,
   workerJobStatuses
@@ -23,7 +23,7 @@ export type {
   MaintenanceJobForbiddenWrite,
   MaintenanceJobMemoryCoreGate,
   MaintenanceJobPayloadByType,
-  MaintenanceJobRuntimeContract,
+  MaintenanceJobPersistenceContract,
   MaintenanceJobType,
   MaintenanceJobWriteBoundaryAssessment,
   MaintenanceJobWriteBoundaryViolation,
