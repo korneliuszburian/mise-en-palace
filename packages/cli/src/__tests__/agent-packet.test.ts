@@ -121,7 +121,11 @@ describe("agent packet CLI", () => {
         },
         feedback: {
           memoryRecordApplyExample:
-            "krn memory record apply --run-id run-agent-1 --memory-id <memory-id> --outcome helped --notes \"<why>\" --persist"
+            "krn memory record apply --run-id run-agent-1 --memory-id <memory-id> --outcome helped --notes \"<why>\" --persist",
+          sourceUsefulnessExample:
+            "krn evidence capture --run-id run-agent-1 --source-usefulness \"claim:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>\" --persist",
+          sourceDecisionUsefulnessExample:
+            "krn evidence capture --run-id run-agent-1 --source-usefulness \"decision:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>\" --persist"
         }
       },
       proof: {

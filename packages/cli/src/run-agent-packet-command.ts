@@ -38,6 +38,7 @@ interface AgentPacketReadModel {
     readonly feedback: {
       readonly memoryRecordApplyExample: string;
       readonly sourceUsefulnessExample: string;
+      readonly sourceDecisionUsefulnessExample: string;
       readonly knowledgeUsefulnessExample: string;
       readonly doesNotProve: string;
     };
@@ -82,6 +83,8 @@ const buildAgentPacket = (
         `krn memory record apply --run-id ${runId} --memory-id <memory-id> --outcome helped --notes "<why>" --persist`,
       sourceUsefulnessExample:
         `krn evidence capture --run-id ${runId} --source-usefulness "claim:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
+      sourceDecisionUsefulnessExample:
+        `krn evidence capture --run-id ${runId} --source-usefulness "decision:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
       knowledgeUsefulnessExample:
         `krn evidence capture --run-id ${runId} --pattern-usefulness "pattern:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:
