@@ -160,6 +160,70 @@ export const createNoStoreCompilerDependencies = (
       return [];
     }
   };
+  const startRetrievalRun = async (
+    input: StartRetrievalRunInput
+  ): Promise<RetrievalRunRecord> => ({
+    id: runtime.createId("retrieval-run"),
+    ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+    ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+    ...(input.taskContractId === undefined ? {} : { taskContractId: input.taskContractId }),
+    status: "running",
+    query: input.query,
+    mode: input.mode ?? "mixed",
+    ...(input.budget === undefined ? {} : { budget: input.budget }),
+    ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
+    metadataFilters: input.metadataFilters ?? {},
+    startedAt: runtime.now(),
+    metadata: input.metadata ?? {},
+    createdAt: runtime.now()
+  });
+  const addRetrievalCandidate = async (
+    input: AddRetrievalCandidateInput
+  ) => ({
+    id: runtime.createId("retrieval-candidate"),
+    retrievalRunId: input.retrievalRunId,
+    kind: input.kind,
+    status: input.status ?? "candidate",
+    subjectType: input.subjectType,
+    subjectId: input.subjectId,
+    ...optionalField("searchDocumentId", input.searchDocumentId),
+    trustTier: input.trustTier,
+    ...optionalField("lexicalScore", input.lexicalScore),
+    ...optionalField("vectorScore", input.vectorScore),
+    ...optionalField("graphScore", input.graphScore),
+    ...optionalField("temporalScore", input.temporalScore),
+    ...optionalField("contextRoiScore", input.contextRoiScore),
+    ...optionalField("totalScore", input.totalScore),
+    ...optionalField("score", input.score),
+    reason: input.reason,
+    metadata: input.metadata ?? {},
+    createdAt: runtime.now()
+  });
+  const recordActivationDecision = async (
+    input: RecordActivationDecisionInput
+  ) => ({
+    id: runtime.createId("activation-decision"),
+    retrievalRunId: input.retrievalRunId,
+    ...(input.retrievalCandidateId === undefined
+      ? {}
+      : { retrievalCandidateId: input.retrievalCandidateId }),
+    ...(input.contextAssemblyId === undefined
+      ? {}
+      : { contextAssemblyId: input.contextAssemblyId }),
+    subjectType: input.subjectType,
+    subjectId: input.subjectId,
+    decision: input.decision,
+    reason: input.reason,
+    ...(input.score === undefined ? {} : { score: input.score }),
+    ...(input.contextBudgetCost === undefined
+      ? {}
+      : { contextBudgetCost: input.contextBudgetCost }),
+    ...(input.expectedDecisionImpact === undefined
+      ? {}
+      : { expectedDecisionImpact: input.expectedDecisionImpact }),
+    metadata: input.metadata ?? {},
+    createdAt: runtime.now()
+  });
   const retrievalRepository = {
     async createSearchDocument() {
       return notUsed("createSearchDocument");
@@ -178,26 +242,10 @@ export const createNoStoreCompilerDependencies = (
     },
 
     async createRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
-      return this.startRetrievalRun(input);
+      return startRetrievalRun(input);
     },
 
-    async startRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
-      return {
-        id: runtime.createId("retrieval-run"),
-        ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-        ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-        ...(input.taskContractId === undefined ? {} : { taskContractId: input.taskContractId }),
-        status: "running",
-        query: input.query,
-        mode: input.mode ?? "mixed",
-        ...(input.budget === undefined ? {} : { budget: input.budget }),
-        ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-        metadataFilters: input.metadataFilters ?? {},
-        startedAt: runtime.now(),
-        metadata: input.metadata ?? {},
-        createdAt: runtime.now()
-      };
-    },
+    startRetrievalRun,
 
     async completeRetrievalRun(input: CompleteRetrievalRunInput): Promise<RetrievalRunRecord> {
       return {
@@ -214,61 +262,16 @@ export const createNoStoreCompilerDependencies = (
     },
 
     async createRetrievalCandidate(input: AddRetrievalCandidateInput) {
-      return this.addCandidate(input);
+      return addRetrievalCandidate(input);
     },
 
-    async addCandidate(input: AddRetrievalCandidateInput) {
-      return {
-        id: runtime.createId("retrieval-candidate"),
-        retrievalRunId: input.retrievalRunId,
-        kind: input.kind,
-        status: input.status ?? "candidate",
-        subjectType: input.subjectType,
-        subjectId: input.subjectId,
-        ...optionalField("searchDocumentId", input.searchDocumentId),
-        trustTier: input.trustTier,
-        ...optionalField("lexicalScore", input.lexicalScore),
-        ...optionalField("vectorScore", input.vectorScore),
-        ...optionalField("graphScore", input.graphScore),
-        ...optionalField("temporalScore", input.temporalScore),
-        ...optionalField("contextRoiScore", input.contextRoiScore),
-        ...optionalField("totalScore", input.totalScore),
-        ...optionalField("score", input.score),
-        reason: input.reason,
-        metadata: input.metadata ?? {},
-        createdAt: runtime.now()
-      };
-    },
+    addCandidate: addRetrievalCandidate,
 
     async createActivationDecision(input: RecordActivationDecisionInput) {
-      return this.recordActivationDecision(input);
+      return recordActivationDecision(input);
     },
 
-    async recordActivationDecision(input: RecordActivationDecisionInput) {
-      return {
-        id: runtime.createId("activation-decision"),
-        retrievalRunId: input.retrievalRunId,
-        ...(input.retrievalCandidateId === undefined
-          ? {}
-          : { retrievalCandidateId: input.retrievalCandidateId }),
-        ...(input.contextAssemblyId === undefined
-          ? {}
-          : { contextAssemblyId: input.contextAssemblyId }),
-        subjectType: input.subjectType,
-        subjectId: input.subjectId,
-        decision: input.decision,
-        reason: input.reason,
-        ...(input.score === undefined ? {} : { score: input.score }),
-        ...(input.contextBudgetCost === undefined
-          ? {}
-          : { contextBudgetCost: input.contextBudgetCost }),
-        ...(input.expectedDecisionImpact === undefined
-          ? {}
-          : { expectedDecisionImpact: input.expectedDecisionImpact }),
-        metadata: input.metadata ?? {},
-        createdAt: runtime.now()
-      };
-    },
+    recordActivationDecision,
 
     async listCandidatesForRetrievalRun() {
       return [];
