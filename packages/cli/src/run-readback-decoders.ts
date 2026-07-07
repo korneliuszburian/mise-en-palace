@@ -24,10 +24,10 @@ type MetadataRecordParseResult =
     reason: "missing" | "not_object" | "array";
   };
 
-export const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
+const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
+const parseMetadataRecord = (value: unknown): MetadataRecordParseResult => {
   if (value === undefined || value === null) {
     return {
       status: "invalid",
@@ -55,13 +55,13 @@ export const parseMetadataRecord = (value: unknown): MetadataRecordParseResult =
   };
 };
 
-export const metadataRecordValue = (value: unknown): Record<string, unknown> | undefined => {
+const metadataRecordValue = (value: unknown): Record<string, unknown> | undefined => {
   const result = parseMetadataRecord(value);
 
   return result.status === "record" ? result.value : undefined;
 };
 
-export const isProjectResolutionKind = (value: string): value is ProjectResolutionKind => {
+const isProjectResolutionKind = (value: string): value is ProjectResolutionKind => {
   switch (value) {
     case "explicit_project":
     case "connected_repo_path":
@@ -177,7 +177,7 @@ export const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
 ): string[] => readMetadataStringList(metadata, "reviewabilityReasons");
 
-export const isCandidateReviewability = (value: string): value is CandidateReviewability => {
+const isCandidateReviewability = (value: string): value is CandidateReviewability => {
   switch (value) {
     case "ready":
     case "needs_more_evidence":

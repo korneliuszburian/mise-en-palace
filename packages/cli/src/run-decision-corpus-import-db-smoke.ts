@@ -16,9 +16,6 @@ import type {
   DatabaseRuntime
 } from "./database-runtime.js";
 import {
-  runSourceSearchCommand
-} from "./run-source-search-command.js";
-import {
   loadDecisionCorpusImportFixture,
   buildImportedDecisionCorpus
 } from "./run-decision-corpus-import.js";
@@ -29,6 +26,10 @@ import type {
   DecisionCorpusImportFixture,
   DecisionCorpusImportRow
 } from "./run-decision-corpus-import.js";
+import {
+  runSmokeSourceSearch,
+  sourceSearchIncludesClaim
+} from "./source-search-smoke-runner.js";
 
 type PostgresClient = ReturnType<typeof postgres>;
 type DecisionCorpusImportRuntime = Pick<
@@ -84,15 +85,6 @@ interface PersistDecisionCorpusImportInput {
   readonly fixture: DecisionCorpusImportFixture;
   readonly smokeId: string;
   readonly now: string;
-}
-
-interface SourceSearchJson {
-  readonly includedCandidates: readonly unknown[];
-  readonly answerPackage?: {
-    readonly supportingClaims?: unknown;
-    readonly supportingDocuments?: unknown;
-    readonly sourceDecisionSupport?: unknown;
-  };
 }
 
 const smokeSource = "krn db smoke decision-corpus-import";
@@ -388,84 +380,12 @@ export const persistDecisionCorpusImport = async (
   }));
 };
 
-const objectValue = (value: unknown): Record<string, unknown> | undefined =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : undefined;
-
 const countValue = (value: unknown): number => {
   if (Array.isArray(value)) {
     return value.length;
   }
 
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
-};
-
-const parseSourceSearchJson = (text: string): SourceSearchJson => {
-  const parsed: unknown = JSON.parse(text);
-  const record = objectValue(parsed);
-
-  if (record === undefined) {
-    throw new Error("decision-corpus-import DB smoke expected JSON object output");
-  }
-
-  const answerPackage = objectValue(record["answerPackage"]);
-
-  return {
-    includedCandidates: Array.isArray(record["includedCandidates"])
-      ? record["includedCandidates"]
-      : [],
-    ...(answerPackage === undefined
-      ? {}
-      : {
-          answerPackage: {
-            supportingClaims: answerPackage["supportingClaims"],
-            supportingDocuments: answerPackage["supportingDocuments"],
-            sourceDecisionSupport: answerPackage["sourceDecisionSupport"]
-          }
-        })
-  };
-};
-
-const candidateSourceClaimId = (candidate: unknown): string | undefined => {
-  const record = objectValue(candidate);
-
-  return typeof record?.["sourceClaimId"] === "string"
-    ? record["sourceClaimId"]
-    : undefined;
-};
-
-const sourceSearchIncludesClaim = (
-  json: SourceSearchJson,
-  sourceClaimId: string
-): boolean =>
-  json.includedCandidates.some((candidate) => candidateSourceClaimId(candidate) === sourceClaimId);
-
-const runSourceSearch = async (
-  input: DecisionCorpusImportDbSmokeInput,
-  createId: (prefix: string) => string,
-  createSmokeDatabaseRuntime: (runtimeInput: Parameters<typeof createDatabaseRuntime>[0]) =>
-    Promise<Awaited<ReturnType<typeof createDatabaseRuntime>>>,
-  query: string
-): Promise<SourceSearchJson> => {
-  const result = await runSourceSearchCommand({
-    cwd: input.repoRoot,
-    env: {
-      KRN_DATABASE_URL: input.databaseUrl
-    },
-    now: () => input.now,
-    createId,
-    createDatabaseRuntime: createSmokeDatabaseRuntime,
-    command: {
-      kind: "sourceSearch",
-      query,
-      json: true,
-      limit: 12,
-      maxInclusions: 6
-    }
-  });
-
-  return parseSourceSearchJson(result.stdout);
 };
 
 const requiredPersistedRow = (
@@ -536,11 +456,12 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       "governing SearchDocument"
     );
     const createSmokeDatabaseRuntime = bindSmokeProjectRuntimeFactory(runtime);
-    const sourceSearchJson = await runSourceSearch(
+    const sourceSearchJson = await runSmokeSourceSearch(
       input,
       createId,
       createSmokeDatabaseRuntime,
-      firstCase.task
+      firstCase.task,
+      "decision-corpus-import DB smoke"
     );
     const sourceSearchSelectedGoverningClaim = sourceSearchIncludesClaim(
       sourceSearchJson,

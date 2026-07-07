@@ -1,9 +1,6 @@
 import postgres from "postgres";
 
 import {
-  runSourceSearchCommand
-} from "./run-source-search-command.js";
-import {
   createDatabaseRuntime
 } from "./database-runtime.js";
 import {
@@ -12,6 +9,10 @@ import {
   createUniqueSmokeCreateId,
   finalizeSmokeMarkerCleanup
 } from "./smoke-runtime-cleanup.js";
+import {
+  runSmokeSourceSearch,
+  topSourceSearchClaimId
+} from "./source-search-smoke-runner.js";
 
 type PostgresClient = ReturnType<typeof postgres>;
 
@@ -214,77 +215,6 @@ const countMarkerRows = async (
   `;
 
   return rows[0]?.count ?? 0;
-};
-
-interface SourceSearchJson {
-  readonly includedCandidates: readonly unknown[];
-}
-
-const parseSourceSearchJson = (text: string): SourceSearchJson => {
-  const parsed: unknown = JSON.parse(text);
-
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("real-recall-advantage DB smoke expected JSON object output");
-  }
-
-  const record = parsed as Record<string, unknown>;
-  const includedCandidates = record["includedCandidates"];
-
-  return {
-    includedCandidates: Array.isArray(includedCandidates)
-      ? includedCandidates as readonly unknown[]
-      : []
-  };
-};
-
-const candidateSourceClaimId = (candidate: unknown): string | undefined => {
-  if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
-    return undefined;
-  }
-
-  const id = (candidate as Record<string, unknown>)["sourceClaimId"];
-
-  return typeof id === "string" ? id : undefined;
-};
-
-// Included candidates are rank-ordered; the first is the top recall result.
-const topCandidateSourceClaimId = (json: SourceSearchJson): string | null => {
-  for (const candidate of json.includedCandidates) {
-    const id = candidateSourceClaimId(candidate);
-
-    if (id !== undefined) {
-      return id;
-    }
-  }
-
-  return null;
-};
-
-const runSourceSearch = async (
-  input: RealRecallAdvantageDbSmokeInput,
-  createId: (prefix: string) => string,
-  createSmokeDatabaseRuntime: (runtimeInput: Parameters<typeof createDatabaseRuntime>[0]) =>
-    Promise<Awaited<ReturnType<typeof createDatabaseRuntime>>>,
-  query: string
-): Promise<SourceSearchJson> => {
-  const result = await runSourceSearchCommand({
-    cwd: input.repoRoot,
-    env: {
-      KRN_DATABASE_URL: input.databaseUrl
-    },
-    now: () => input.now,
-    createId,
-    createDatabaseRuntime: createSmokeDatabaseRuntime,
-    command: {
-      kind: "sourceSearch",
-      query,
-      json: true,
-      limit: 12,
-      maxInclusions: 6
-    }
-  });
-
-  return parseSourceSearchJson(result.stdout);
 };
 
 // Shared SourceArtifact creation for governing and distractor seeds so the
@@ -559,9 +489,15 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
     // Baseline pass: top recall result per query should be the distractor.
     const baselineTops = new Map<string, { top: string | null; count: number }>();
     await Promise.all(distractorsSeeded.map(async (entry) => {
-      const json = await runSourceSearch(input, createId, createSmokeDatabaseRuntime, entry.decision.query);
+      const json = await runSmokeSourceSearch(
+        input,
+        createId,
+        createSmokeDatabaseRuntime,
+        entry.decision.query,
+        "real-recall-advantage DB smoke"
+      );
       baselineTops.set(entry.decision.id, {
-        top: topCandidateSourceClaimId(json),
+        top: topSourceSearchClaimId(json),
         count: json.includedCandidates.length
       });
     }));
@@ -584,8 +520,14 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
       const baseline = baselineTops.get(decision.id);
       const baselineTopClaimId = baseline?.top ?? null;
       const baselineIncludedCandidateCount = baseline?.count ?? 0;
-      const groundedJson = await runSourceSearch(input, createId, createSmokeDatabaseRuntime, decision.query);
-      const groundedTopClaimId = topCandidateSourceClaimId(groundedJson);
+      const groundedJson = await runSmokeSourceSearch(
+        input,
+        createId,
+        createSmokeDatabaseRuntime,
+        decision.query,
+        "real-recall-advantage DB smoke"
+      );
+      const groundedTopClaimId = topSourceSearchClaimId(groundedJson);
       const baselinePickedDistractor = distractorClaimId !== null && baselineTopClaimId === distractorClaimId;
       const groundedPickedGoverning = groundedTopClaimId === sourceClaimId;
 
