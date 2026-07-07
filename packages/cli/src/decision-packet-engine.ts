@@ -25,9 +25,9 @@ import type {
 
 import type {
   DecisionPacketRow,
-  NotesBaselineCase,
-  NotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  DecisionPacketCase,
+  DecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 
 export interface EngineDecisionPacket {
   readonly governingDecisionIds: readonly string[];
@@ -161,7 +161,7 @@ const toMemoryRecord = (decision: DecisionPacketRow): MemoryRecord => ({
   updatedAt: now
 });
 
-const taskContractFor = (testCase: NotesBaselineCase): TaskContract => ({
+const taskContractFor = (testCase: DecisionPacketCase): TaskContract => ({
   id: `task-contract:${testCase.id}`,
   operatorIntentId: `operator-intent:${testCase.id}`,
   projectId,
@@ -187,7 +187,7 @@ const taskContractFor = (testCase: NotesBaselineCase): TaskContract => ({
   updatedAt: now
 });
 
-const harnessPlanFor = (testCase: NotesBaselineCase): HarnessPlan => ({
+const harnessPlanFor = (testCase: DecisionPacketCase): HarnessPlan => ({
   id: `harness-plan:${testCase.id}`,
   taskContractId: `task-contract:${testCase.id}`,
   version: 1,
@@ -201,7 +201,7 @@ const harnessPlanFor = (testCase: NotesBaselineCase): HarnessPlan => ({
   updatedAt: now
 });
 
-const capabilityPlanFor = (testCase: NotesBaselineCase): CapabilityPlan => ({
+const capabilityPlanFor = (testCase: DecisionPacketCase): CapabilityPlan => ({
   id: `capability-plan:${testCase.id}`,
   harnessPlanId: `harness-plan:${testCase.id}`,
   requirements: [
@@ -228,7 +228,7 @@ const capabilityPlanFor = (testCase: NotesBaselineCase): CapabilityPlan => ({
   createdAt: now
 });
 
-const evidenceContractFor = (testCase: NotesBaselineCase): EvidenceContract => ({
+const evidenceContractFor = (testCase: DecisionPacketCase): EvidenceContract => ({
   commands: [
     {
       command: "pnpm --filter @krn/cli test -- decision-packet-eval",
@@ -292,7 +292,7 @@ const budgetCandidates = (
 };
 
 const makeRepositories = (
-  fixture: NotesBaselineEvalFixture
+  fixture: DecisionPacketEvalFixture
 ) => {
   const sourceClaims = fixture.decisions.map(toSourceClaim);
   const sourceEdges = sourceClaimEdgesFor(fixture.decisions);
@@ -338,7 +338,7 @@ const makeRepositories = (
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
 const includedDecisionRows = (
-  fixture: NotesBaselineEvalFixture,
+  fixture: DecisionPacketEvalFixture,
   brief: ExecutionBrief
 ): readonly DecisionPacketRow[] =>
   unique([
@@ -351,7 +351,7 @@ const includedDecisionRows = (
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
 
 const includedMemoryRows = (
-  fixture: NotesBaselineEvalFixture,
+  fixture: DecisionPacketEvalFixture,
   brief: ExecutionBrief
 ): readonly DecisionPacketRow[] =>
   brief.memoryRecordsUsed
@@ -359,7 +359,7 @@ const includedMemoryRows = (
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
 
 const excludedDecisionIds = (
-  fixture: NotesBaselineEvalFixture,
+  fixture: DecisionPacketEvalFixture,
   brief: ExecutionBrief,
   expectedIds: readonly string[]
 ): readonly string[] => {
@@ -372,8 +372,8 @@ const excludedDecisionIds = (
 };
 
 export const buildDecisionPacketWithEngine = async (
-  fixture: NotesBaselineEvalFixture,
-  testCase: NotesBaselineCase
+  fixture: DecisionPacketEvalFixture,
+  testCase: DecisionPacketCase
 ): Promise<EngineDecisionPacket> => {
   const repositories = makeRepositories(fixture);
   const retrieved = await retrieveActivationCandidates({

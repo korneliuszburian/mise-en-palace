@@ -16,18 +16,17 @@ import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import {
-  loadNotesBaselineEvalFixture,
-  parseNotesBaselineEvalFixture,
-  runNotesBaselineEval
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture,
+  parseDecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 import type {
-  NotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  DecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 
 export type ImportedDecisionStatus = "current" | "stale" | "rejected";
-type ImportedDecision = NotesBaselineEvalFixture["decisions"][number];
-type ImportedNote = NotesBaselineEvalFixture["notes"][number];
-type ImportedCase = NotesBaselineEvalFixture["cases"][number];
+type ImportedDecision = DecisionPacketEvalFixture["decisions"][number];
+type ImportedNote = DecisionPacketEvalFixture["notes"][number];
+type ImportedCase = DecisionPacketEvalFixture["cases"][number];
 
 export interface DecisionCorpusImportRow {
   readonly id: string;
@@ -80,7 +79,6 @@ export interface DecisionCorpusImportResult {
   };
   readonly importedDecisionIds: readonly string[];
   readonly importedCaseIds: readonly string[];
-  readonly notesBaselineStatus: "pass" | "fail";
   readonly decisionPacketStatus: "pass" | "fail";
   readonly proof: {
     readonly proves: readonly string[];
@@ -201,7 +199,7 @@ const toCase = (
 });
 
 const assertNoBaseCollisions = (
-  base: NotesBaselineEvalFixture,
+  base: DecisionPacketEvalFixture,
   importedDecisions: readonly ImportedDecision[],
   importedNotes: readonly ImportedNote[],
   importedCases: readonly ImportedCase[]
@@ -275,8 +273,8 @@ const assertImportedCaseLinks = (
 
 export const buildImportedDecisionCorpus = (
   fixture: DecisionCorpusImportFixture,
-  base: NotesBaselineEvalFixture
-): NotesBaselineEvalFixture => {
+  base: DecisionPacketEvalFixture
+): DecisionPacketEvalFixture => {
   assertUniqueIds(fixture.decisions.map((decision) => decision.id), "import decisions");
   assertUniqueIds(fixture.cases.map((testCase) => testCase.id), "import cases");
 
@@ -287,7 +285,7 @@ export const buildImportedDecisionCorpus = (
   assertNoBaseCollisions(base, importedDecisions, importedNotes, importedCases);
   assertImportedCaseLinks(importedDecisions, importedCases);
 
-  return parseNotesBaselineEvalFixture({
+  return parseDecisionPacketEvalFixture({
     version: "1",
     corpusName: fixture.corpusName,
     topK: fixture.topK,
@@ -302,14 +300,13 @@ export const buildImportedDecisionCorpus = (
 export const runDecisionCorpusImport = async (
   fixture: DecisionCorpusImportFixture
 ): Promise<DecisionCorpusImportResult> => {
-  const base = loadNotesBaselineEvalFixture(fixture.baseFixturePath);
+  const base = loadDecisionPacketEvalFixture(fixture.baseFixturePath);
   const merged = buildImportedDecisionCorpus(fixture, base);
-  const notesBaseline = await runNotesBaselineEval(merged);
   const decisionPacket = await runDecisionPacketEval(merged);
   const currentDecisionCount = fixture.decisions.filter((decision) => decision.status === "current").length;
   const staleDecisionCount = fixture.decisions.filter((decision) => decision.status === "stale").length;
   const rejectedDecisionCount = fixture.decisions.filter((decision) => decision.status === "rejected").length;
-  const status = notesBaseline.status === "pass" && decisionPacket.status === "pass"
+  const status = decisionPacket.status === "pass"
     ? "pass"
     : "fail";
 
@@ -333,14 +330,13 @@ export const runDecisionCorpusImport = async (
     },
     importedDecisionIds: fixture.decisions.map((decision) => decision.id),
     importedCaseIds: fixture.cases.map((testCase) => testCase.id),
-    notesBaselineStatus: notesBaseline.status,
     decisionPacketStatus: decisionPacket.status,
     proof: {
       proves: [
-        "compact source-to-decision import rows can be converted into notes-baseline and decision-packet corpus rows",
+        "compact source-to-decision import rows can be converted into decision-packet corpus rows",
         "the importer rejects duplicate imported ids and collisions with the base corpus before merge",
         "the importer validates current, stale, and rejected decision links for imported cases",
-        "the merged corpus still passes notes-baseline and decision-packet eval gates"
+        "the merged corpus still passes the decision-packet eval gate"
       ],
       doesNotProve: [
         "DB ingestion",

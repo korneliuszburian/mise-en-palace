@@ -13,8 +13,8 @@ import type {
   DatabaseRuntime
 } from "../database-runtime.js";
 import {
-  loadNotesBaselineEvalFixture
-} from "../run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "../decision-packet-fixture.js";
 
 const fixturePath = fileURLToPath(
   new URL(
@@ -33,7 +33,7 @@ const baseFixturePath = fileURLToPath(
 const now = "2026-07-06T00:00:00.000Z";
 
 const fixture = () => loadDecisionCorpusImportFixture(fixturePath);
-const baseFixture = () => loadNotesBaselineEvalFixture(baseFixturePath);
+const baseFixture = () => loadDecisionPacketEvalFixture(baseFixturePath);
 
 const importDecision = (
   id: string
@@ -66,7 +66,6 @@ describe("runDecisionCorpusImport", () => {
         staleDecisionCount: 2,
         rejectedDecisionCount: 2
       },
-      notesBaselineStatus: "pass",
       decisionPacketStatus: "pass"
     });
     expect(result.importedDecisionIds).toEqual([

@@ -23,8 +23,8 @@ import {
   buildImportedDecisionCorpus
 } from "./run-decision-corpus-import.js";
 import {
-  loadNotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 import type {
   DecisionCorpusImportFixture,
   DecisionCorpusImportRow
@@ -292,7 +292,7 @@ const createRejectedPath = async (
 export const persistDecisionCorpusImport = async (
   input: PersistDecisionCorpusImportInput
 ): Promise<readonly PersistedDecisionCorpusRow[]> => {
-  const base = loadNotesBaselineEvalFixture(input.fixture.baseFixturePath);
+  const base = loadDecisionPacketEvalFixture(input.fixture.baseFixturePath);
   const retrievalRepository = input.runtime.retrievalRepository;
   const createSourceDecision = input.runtime.sourceRepository.createSourceDecision;
 

@@ -6,10 +6,9 @@ import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import {
-  loadNotesBaselineEvalFixture,
-  type NotesBaselineEvalFixture,
-  runNotesBaselineEval
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture,
+  type DecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 
 type SecondRepoEvalStatus = "pass" | "fail";
 
@@ -22,11 +21,9 @@ export interface SecondRepoTargetResult {
     readonly reusablePatternDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
-    readonly notesKrnWinRate: number;
     readonly decisionPacketUsefulRate: number;
     readonly selfRepoContaminationCount: number;
   };
-  readonly notesBaselineStatus: SecondRepoEvalStatus;
   readonly decisionPacketStatus: SecondRepoEvalStatus;
   readonly selfRepoContaminationRefs: readonly string[];
 }
@@ -77,7 +74,7 @@ const isSelfRepoEvidenceRef = (
 const isDefinedString = (value: string | undefined): value is string => value !== undefined;
 
 const targetRepoNameFromFixture = (
-  fixture: NotesBaselineEvalFixture
+  fixture: DecisionPacketEvalFixture
 ): string => {
   const suffixes = [
     "-second-repo",
@@ -93,13 +90,13 @@ const targetRepoNameFromFixture = (
 
 const isRepoSpecificDecision = (
   targetRepo: string,
-  decision: NotesBaselineEvalFixture["decisions"][number]
+  decision: DecisionPacketEvalFixture["decisions"][number]
 ): boolean =>
   decision.status === "current" &&
   decision.evidenceRef.startsWith(`tests/fixtures/target-repos/${targetRepo}/`);
 
 const decisionReferenceValues = (
-  decision: NotesBaselineEvalFixture["decisions"][number]
+  decision: DecisionPacketEvalFixture["decisions"][number]
 ): readonly string[] => [
   decision.evidenceRef,
   decision.sourceClaimId,
@@ -108,7 +105,7 @@ const decisionReferenceValues = (
 ].filter(isDefinedString);
 
 const caseReferenceValues = (
-  baselineCase: NotesBaselineEvalFixture["cases"][number]
+  baselineCase: DecisionPacketEvalFixture["cases"][number]
 ): readonly string[] => [
   baselineCase.expectedDecisionId,
   ...baselineCase.staleDecisionIds,
@@ -116,7 +113,7 @@ const caseReferenceValues = (
 ];
 
 const collectSelfRepoContaminationRefs = (
-  fixture: NotesBaselineEvalFixture
+  fixture: DecisionPacketEvalFixture
 ): readonly string[] => [
   ...fixture.decisions.flatMap(decisionReferenceValues),
   ...fixture.cases.flatMap(caseReferenceValues)
@@ -127,9 +124,8 @@ export const runSecondRepoDecisionPacketEval = async (
 ): Promise<SecondRepoDecisionPacketEvalResult> => {
   const paths = typeof fixturePaths === "string" ? [fixturePaths] : fixturePaths;
   const repoResults = await Promise.all(paths.map(async (fixturePath): Promise<SecondRepoTargetResult> => {
-    const fixture = loadNotesBaselineEvalFixture(fixturePath);
+    const fixture = loadDecisionPacketEvalFixture(fixturePath);
     const targetRepo = targetRepoNameFromFixture(fixture);
-    const notesBaseline = await runNotesBaselineEval(fixture);
     const decisionPacket = await runDecisionPacketEval(fixture);
     const repoSpecificDecisionCount = fixture.decisions.filter((decision) =>
       isRepoSpecificDecision(targetRepo, decision)
@@ -154,11 +150,9 @@ export const runSecondRepoDecisionPacketEval = async (
         reusablePatternDecisionCount,
         rejectedPathCount,
         staleDecisionCount,
-        notesKrnWinRate: notesBaseline.metrics.krnWinRate,
         decisionPacketUsefulRate: decisionPacket.metrics.usefulRate,
         selfRepoContaminationCount: selfRepoContaminationRefs.length
       },
-      notesBaselineStatus: notesBaseline.status,
       decisionPacketStatus: decisionPacket.status,
       selfRepoContaminationRefs
     };
@@ -181,7 +175,6 @@ export const runSecondRepoDecisionPacketEval = async (
     selfRepoContaminationCount: 0
   });
   const everyRepoPasses = repoResults.every((result) =>
-    result.notesBaselineStatus === "pass" &&
     result.decisionPacketStatus === "pass" &&
     result.metrics.repoSpecificDecisionCount >= 1 &&
     result.metrics.reusablePatternDecisionCount >= 1 &&
@@ -203,7 +196,7 @@ export const runSecondRepoDecisionPacketEval = async (
     },
     proof: {
       proves: [
-        "the decision-packet and notes-baseline evals run on target-repo corpora outside the KRN repo",
+        "the decision-packet eval runs on target-repo corpora outside the KRN repo",
         "each target corpus has repo-specific governing decisions",
         "each target corpus includes at least one reusable KRN TypeScript pattern",
         "each target corpus includes stale and rejected-path readback",

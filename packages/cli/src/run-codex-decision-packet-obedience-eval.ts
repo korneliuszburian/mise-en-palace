@@ -17,8 +17,8 @@ import {
   stringValue
 } from "./eval-parse-support.js";
 import {
-  loadNotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
@@ -49,7 +49,7 @@ interface ObedienceCaseFixture {
 
 interface CodexDecisionPacketObedienceFixture {
   readonly version: "1";
-  readonly notesBaselineFixturePath: string;
+  readonly decisionPacketFixturePath: string;
   readonly cases: readonly ObedienceCaseFixture[];
 }
 
@@ -121,7 +121,7 @@ const parseFixture = (
 
   return {
     version,
-    notesBaselineFixturePath: stringValue(value["notesBaselineFixturePath"], "notesBaselineFixturePath"),
+    decisionPacketFixturePath: stringValue(value["decisionPacketFixturePath"], "decisionPacketFixturePath"),
     cases: recordArray(value["cases"], "cases").map((testCase, index) => ({
       id: stringValue(testCase["id"], `cases[${index}].id`),
       decisionPacketCaseId: stringValue(testCase["decisionPacketCaseId"], `cases[${index}].decisionPacketCaseId`),
@@ -318,7 +318,9 @@ const metricsForCases = (
 export const runCodexDecisionPacketObedienceEval = async (
   fixture: CodexDecisionPacketObedienceFixture
 ): Promise<CodexDecisionPacketObedienceEvalResult> => {
-  const decisionPacket = await runDecisionPacketEval(loadNotesBaselineEvalFixture(fixture.notesBaselineFixturePath));
+  const decisionPacket = await runDecisionPacketEval(
+    loadDecisionPacketEvalFixture(fixture.decisionPacketFixturePath)
+  );
   const cases = fixture.cases.map((testCase): CodexDecisionPacketObedienceCaseReadback => {
     const sourceCase = decisionPacket.cases.find((candidate) => candidate.id === testCase.decisionPacketCaseId);
 

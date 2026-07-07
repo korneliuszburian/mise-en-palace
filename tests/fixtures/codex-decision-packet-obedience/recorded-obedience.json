@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "notesBaselineFixturePath": "../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+  "decisionPacketFixturePath": "../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
   "cases": [
     {
       "id": "memory-runtime-obedience",

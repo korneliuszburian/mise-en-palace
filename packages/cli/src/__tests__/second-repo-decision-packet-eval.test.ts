@@ -51,16 +51,14 @@ describe("runSecondRepoDecisionPacketEval", () => {
     });
     expect(result.repoResults[0]).toMatchObject({
       targetRepo: "weak-json-boundary-typescript",
-      notesBaselineStatus: "pass",
       decisionPacketStatus: "pass",
       metrics: {
-        notesKrnWinRate: 1,
         decisionPacketUsefulRate: 1
       },
       selfRepoContaminationRefs: []
     });
     expect(result.proof.proves).toEqual(expect.arrayContaining([
-      "the decision-packet and notes-baseline evals run on target-repo corpora outside the KRN repo",
+      "the decision-packet eval runs on target-repo corpora outside the KRN repo",
       "each target corpus includes stale and rejected-path readback"
     ]));
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
@@ -94,25 +92,21 @@ describe("runSecondRepoDecisionPacketEval", () => {
     });
     expect(result.repoResults.map((repo) => ({
       targetRepo: repo.targetRepo,
-      notesBaselineStatus: repo.notesBaselineStatus,
       decisionPacketStatus: repo.decisionPacketStatus,
       selfRepoContaminationCount: repo.metrics.selfRepoContaminationCount
     }))).toEqual([
       {
         targetRepo: "weak-json-boundary-typescript",
-        notesBaselineStatus: "pass",
         decisionPacketStatus: "pass",
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "env-config-contract-typescript",
-        notesBaselineStatus: "pass",
         decisionPacketStatus: "pass",
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "async-job-boundary-typescript",
-        notesBaselineStatus: "pass",
         decisionPacketStatus: "pass",
         selfRepoContaminationCount: 0
       }
@@ -213,7 +207,6 @@ describe("runSecondRepoDecisionPacketEval", () => {
     expect(result.status).toBe("fail");
     expect(result.repoResults[0]).toMatchObject({
       targetRepo: "weak-json-boundary-typescript",
-      notesBaselineStatus: "pass",
       decisionPacketStatus: "pass"
     });
     expect(result.repoResults[1]).toMatchObject({

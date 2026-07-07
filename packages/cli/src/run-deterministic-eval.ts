@@ -3,14 +3,6 @@ import {
   writeJsonEvalResult
 } from "./eval-main.js";
 import {
-  loadBrainRankingEvalFixture,
-  runBrainRankingEval
-} from "./run-brain-ranking-eval.js";
-import {
-  loadMemoryAdvantageEvalFixture,
-  runMemoryAdvantageEval
-} from "./run-memory-advantage-eval.js";
-import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import {
@@ -18,16 +10,11 @@ import {
   runCodexDecisionPacketObedienceEval
 } from "./run-codex-decision-packet-obedience-eval.js";
 import {
-  loadNotesBaselineEvalFixture,
-  runNotesBaselineEval
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 import {
   runSecondRepoDecisionPacketEval
 } from "./run-second-repo-decision-packet-eval.js";
-import {
-  loadSourceGraphRankingEvalFixture,
-  runSourceGraphRankingEval
-} from "./run-source-graph-ranking-eval.js";
 
 interface DeterministicEvalCheck {
   readonly id: string;
@@ -72,32 +59,13 @@ const deterministicCheck = (input: {
 };
 
 export const runDeterministicEval = async (input: {
-  brainRankingFixturePath: string;
-  sourceGraphRankingFixturePath: string;
-  memoryAdvantageFixturePath: string;
-  notesBaselineFixturePath: string;
+  decisionPacketFixturePath: string;
   secondRepoDecisionPacketFixturePath: string | readonly string[];
   codexDecisionPacketObedienceFixturePath: string;
 }): Promise<DeterministicEvalResult> => {
-  const brainRankingFixture = loadBrainRankingEvalFixture(input.brainRankingFixturePath);
-  const firstBrainRanking = await runBrainRankingEval(brainRankingFixture);
-  const secondBrainRanking = await runBrainRankingEval(brainRankingFixture);
-
-  const sourceGraphRankingFixture = loadSourceGraphRankingEvalFixture(
-    input.sourceGraphRankingFixturePath
-  );
-  const firstSourceGraphRanking = await runSourceGraphRankingEval(sourceGraphRankingFixture);
-  const secondSourceGraphRanking = await runSourceGraphRankingEval(sourceGraphRankingFixture);
-
-  const memoryAdvantageFixture = loadMemoryAdvantageEvalFixture(input.memoryAdvantageFixturePath);
-  const firstMemoryAdvantage = await runMemoryAdvantageEval(memoryAdvantageFixture);
-  const secondMemoryAdvantage = await runMemoryAdvantageEval(memoryAdvantageFixture);
-
-  const notesBaselineFixture = loadNotesBaselineEvalFixture(input.notesBaselineFixturePath);
-  const firstNotesBaseline = await runNotesBaselineEval(notesBaselineFixture);
-  const secondNotesBaseline = await runNotesBaselineEval(notesBaselineFixture);
-  const firstDecisionPacket = await runDecisionPacketEval(notesBaselineFixture);
-  const secondDecisionPacket = await runDecisionPacketEval(notesBaselineFixture);
+  const decisionPacketFixture = loadDecisionPacketEvalFixture(input.decisionPacketFixturePath);
+  const firstDecisionPacket = await runDecisionPacketEval(decisionPacketFixture);
+  const secondDecisionPacket = await runDecisionPacketEval(decisionPacketFixture);
   const firstSecondRepoDecisionPacket = await runSecondRepoDecisionPacketEval(
     input.secondRepoDecisionPacketFixturePath
   );
@@ -115,30 +83,6 @@ export const runDeterministicEval = async (input: {
   );
 
   const checks = [
-    deterministicCheck({
-      id: "brain-ranking",
-      kind: firstBrainRanking.kind,
-      first: firstBrainRanking,
-      second: secondBrainRanking
-    }),
-    deterministicCheck({
-      id: "source-graph-ranking",
-      kind: firstSourceGraphRanking.kind,
-      first: firstSourceGraphRanking,
-      second: secondSourceGraphRanking
-    }),
-    deterministicCheck({
-      id: "memory-advantage",
-      kind: firstMemoryAdvantage.kind,
-      first: firstMemoryAdvantage,
-      second: secondMemoryAdvantage
-    }),
-    deterministicCheck({
-      id: "notes-baseline",
-      kind: firstNotesBaseline.kind,
-      first: firstNotesBaseline,
-      second: secondNotesBaseline
-    }),
     deterministicCheck({
       id: "decision-packet",
       kind: firstDecisionPacket.kind,
@@ -166,14 +110,10 @@ export const runDeterministicEval = async (input: {
     checks,
     proof: {
       proves: [
-        "fixed brain-ranking fixture output is bit-identical across consecutive runs",
-        "fixed source-graph-ranking fixture output is bit-identical across consecutive runs",
-        "fixed company-pattern memory-advantage fixture output is bit-identical across consecutive runs",
-        "fixed notes-baseline fixture output is bit-identical across consecutive runs",
         "fixed decision-packet fixture output is bit-identical across consecutive runs",
         "fixed target-repo decision-packet fixture output is bit-identical across consecutive runs",
         "fixed recorded Codex decision-packet obedience fixture output is bit-identical across consecutive runs",
-        "retrieval/context proxy evals are stable enough to serve as a regression gate"
+        "decision-packet family evals are stable enough to serve as a regression gate"
       ],
       doesNotProve: [
         "production retrieval quality",
@@ -188,26 +128,17 @@ export const runDeterministicEval = async (input: {
 
 const main = async (): Promise<DeterministicEvalResult> => {
   const args = process.argv.slice(2);
-  const brainRankingFixturePath =
-    args[0] ?? "tests/fixtures/brain-ranking/brain-ranking-eval.json";
-  const sourceGraphRankingFixturePath =
-    args[1] ?? "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json";
-  const memoryAdvantageFixturePath =
-    args[2] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
-  const notesBaselineFixturePath =
-    args[3] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
-  const secondRepoDecisionPacketFixturePaths = args.length >= 6
-    ? args.slice(4, -1)
-    : [args[4] ?? "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json"];
+  const decisionPacketFixturePath =
+    args[0] ?? "tests/fixtures/notes-baseline/decision-packet-vs-notes.json";
+  const secondRepoDecisionPacketFixturePaths = args.length >= 3
+    ? args.slice(1, -1)
+    : [args[1] ?? "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json"];
   const codexDecisionPacketObedienceFixturePath =
-    args.length >= 6
+    args.length >= 3
       ? args[args.length - 1]!
       : "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json";
   return runDeterministicEval({
-    brainRankingFixturePath,
-    sourceGraphRankingFixturePath,
-    memoryAdvantageFixturePath,
-    notesBaselineFixturePath,
+    decisionPacketFixturePath,
     secondRepoDecisionPacketFixturePath: secondRepoDecisionPacketFixturePaths,
     codexDecisionPacketObedienceFixturePath
   });

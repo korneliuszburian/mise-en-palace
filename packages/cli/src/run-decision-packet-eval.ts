@@ -11,18 +11,17 @@ import {
 } from "./decision-packet-engine.js";
 import type {
   DecisionPacketRow,
-  NotesBaselineCase,
-  NotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  DecisionPacketCase,
+  DecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 import {
-  loadNotesBaselineEvalFixture
-} from "./run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "./decision-packet-fixture.js";
 
 type PacketQualityLabel = "useful" | "noisy" | "stale_authority" | "miss";
 type DecisionPacketStatus = "pass" | "fail";
 
 type DecisionPacketDecision = DecisionPacketRow;
-type DecisionPacketCase = NotesBaselineCase;
 
 type DecisionPacketReadback = EngineDecisionPacket;
 
@@ -142,7 +141,7 @@ const classifyPacket = (
 };
 
 const evaluateCase = async (
-  fixture: NotesBaselineEvalFixture,
+  fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
 ): Promise<DecisionPacketCaseResult> => {
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
@@ -169,7 +168,7 @@ const average = (
   : roundRankingMetric(values.reduce((sum, value) => sum + value, 0) / values.length);
 
 export const runDecisionPacketEval = async (
-  fixture: NotesBaselineEvalFixture
+  fixture: DecisionPacketEvalFixture
 ): Promise<DecisionPacketEvalResult> => {
   const cases = await Promise.all(fixture.cases.map((testCase) => evaluateCase(fixture, testCase)));
   const usefulCount = cases.filter((testCase) => testCase.qualityLabel === "useful").length;
@@ -233,6 +232,6 @@ export const runDecisionPacketEval = async (
 
 if (isCliEntrypoint(import.meta.url)) {
   await writeJsonEvalResult(async () =>
-    runDecisionPacketEval(loadNotesBaselineEvalFixture(process.argv[2] ?? ""))
+    runDecisionPacketEval(loadDecisionPacketEvalFixture(process.argv[2] ?? ""))
   );
 }

@@ -7,11 +7,11 @@ import {
 } from "vitest";
 
 import {
-  parseNotesBaselineEvalFixture
-} from "../run-notes-baseline-eval.js";
+  parseDecisionPacketEvalFixture
+} from "../decision-packet-fixture.js";
 import {
-  loadNotesBaselineEvalFixture
-} from "../run-notes-baseline-eval.js";
+  loadDecisionPacketEvalFixture
+} from "../decision-packet-fixture.js";
 import {
   runDecisionPacketEval
 } from "../run-decision-packet-eval.js";
@@ -30,7 +30,7 @@ const loadMutableFixture = (): {
 
 describe("runDecisionPacketEval", () => {
   it("passes the pre-code decision-packet quality benchmark", async () => {
-    const result = await runDecisionPacketEval(loadNotesBaselineEvalFixture(fixturePath));
+    const result = await runDecisionPacketEval(loadDecisionPacketEvalFixture(fixturePath));
 
     expect(result).toMatchObject({
       kind: "krn.decisionPacket.eval.v1",
@@ -86,7 +86,7 @@ describe("runDecisionPacketEval", () => {
       }
     }
 
-    const result = await runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
 
     expect(result.status).toBe("fail");
     expect(result.metrics.usefulCount).toBe(0);
@@ -110,7 +110,7 @@ describe("runDecisionPacketEval", () => {
     expect(rawFixture.decisions).toHaveLength(34);
     expect(staleDecision?.["status"]).toBe("current");
 
-    const result = await runDecisionPacketEval(parseNotesBaselineEvalFixture(rawFixture));
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
 
     expect(result.status).toBe("fail");
     expect(result.metrics.staleAuthorityCount).toBeGreaterThan(0);
