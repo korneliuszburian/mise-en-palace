@@ -8,7 +8,8 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
-  buildMemoryStalenessMaintenancePreview
+  buildMemoryStalenessMaintenancePreview,
+  projectStandardDecisionFromMemoryRecord
 } from "@krn/core";
 import {
   applyActivationFilters,
@@ -410,7 +411,18 @@ describe("reviewed memory revision", () => {
     const originalRecord: MemoryRecord = {
       ...memoryRecord(),
       positiveFeedbackCount: 1,
-      negativeFeedbackCount: 0
+      negativeFeedbackCount: 0,
+      metadata: {
+        projectStandardDecision: {
+          mechanism: "The old frontend starter was the accepted project bootstrap path before the current template existed.",
+          krnImplication: "Activation may use this standard only for historical explanation, not current new-project setup.",
+          decision: "Supersede the old frontend bootstrap standard.",
+          rejectedPath: "Do not start new frontend projects from the old bootstrap.",
+          consumer: "activation:new-project-setup",
+          falsifier: "A new-project DecisionPacket includes memory-stale-1 as current guidance.",
+          doesNotProve: "Historical project standard readback does not prove the old starter is currently valid."
+        }
+      }
     };
     let candidate: MemoryCandidate | undefined;
     let supersedeInput: SupersedeMemoryRecordInput | undefined;
@@ -443,7 +455,17 @@ describe("reviewed memory revision", () => {
       proposedBy: "maintenance-consolidation",
       feedbackDeltaId: "feedback-delta-2",
       metadata: {
-        smokeId: "memory-revision-test"
+        smokeId: "memory-revision-test",
+        projectStandardDecision: {
+          sourceRefs: ["feedback-delta-2", "source-claim-2"],
+          mechanism: "Reviewed feedback and source claim show the current frontend boilerplate replaced the older starter.",
+          krnImplication: "Activation should select this standard for new frontend project setup and caveat the superseded path.",
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+          consumer: "activation:new-project-setup",
+          falsifier: "A matching new-project DecisionPacket omits memory-refreshed-1 or includes memory-stale-1 as current guidance.",
+          doesNotProve: "This project standard does not prove the starter applies to every stack or future template revision."
+        }
       }
     });
 
@@ -497,11 +519,40 @@ describe("reviewed memory revision", () => {
         replacementMemoryRecordId: "memory-refreshed-1"
       }
     });
+    expect(projectStandardDecisionFromMemoryRecord(applied.memoryRecord)).toEqual({
+      kind: "krn.projectStandardDecision.v1",
+      memoryRecordId: "memory-refreshed-1",
+      key: "frontend-bootstrap-standard",
+      sourceRefs: ["source-claim-2", "feedback-delta-2"],
+      mechanism: "Reviewed feedback and source claim show the current frontend boilerplate replaced the older starter.",
+      krnImplication: "Activation should select this standard for new frontend project setup and caveat the superseded path.",
+      decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+      rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+      consumer: "activation:new-project-setup",
+      falsifier: "A matching new-project DecisionPacket omits memory-refreshed-1 or includes memory-stale-1 as current guidance.",
+      validFrom: "2026-06-01T00:00:00.000Z",
+      doesNotProve: "This project standard does not prove the starter applies to every stack or future template revision."
+    });
+    expect(projectStandardDecisionFromMemoryRecord(applied.supersededMemoryRecord)).toMatchObject({
+      memoryRecordId: "memory-stale-1",
+      decision: "Supersede the old frontend bootstrap standard.",
+      rejectedPath: "Do not start new frontend projects from the old bootstrap.",
+      consumer: "activation:new-project-setup"
+    });
 
     const ranked = rankCandidates([
       toMemoryCandidate(applied.supersededMemoryRecord),
       toMemoryCandidate(applied.memoryRecord)
     ], buildMemoryQuery(taskContract()));
+    expect(ranked.find((candidate) =>
+      candidate.subjectId === "memory-refreshed-1"
+    )?.metadata).toMatchObject({
+      projectStandardDecision: {
+        decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+        consumer: "activation:new-project-setup",
+        falsifier: "A matching new-project DecisionPacket omits memory-refreshed-1 or includes memory-stale-1 as current guidance."
+      }
+    });
     const filtered = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [],

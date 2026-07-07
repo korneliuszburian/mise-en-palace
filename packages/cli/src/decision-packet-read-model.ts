@@ -4,6 +4,7 @@ import type {
   EvidenceCommand,
   EvidenceCommandReadback,
   FeedbackCandidateProposalKind,
+  ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
   SourceUsefulnessOutcome,
   TargetEvidence
@@ -80,6 +81,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   totalScore?: number;
   score?: number;
   reason: string;
+  projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
   sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
 }

@@ -17,6 +17,10 @@ import type {
   IsoTimestamp,
   ValidityWindow
 } from "./time.js";
+import {
+  readMetadataString,
+  readMetadataStringList
+} from "./metadata.js";
 
 export type MemoryRecordKind =
   | "fact"
@@ -190,6 +194,84 @@ export interface MemoryRecordReviewSignal {
   memoryRecordId: MemoryRecordId;
   reason: string;
 }
+
+export interface ProjectStandardDecisionReadback {
+  kind: "krn.projectStandardDecision.v1";
+  memoryRecordId: MemoryRecordId;
+  key: string;
+  sourceRefs: string[];
+  mechanism: string;
+  krnImplication: string;
+  decision: string;
+  consumer: string;
+  falsifier: string;
+  validFrom: IsoTimestamp;
+  validUntil?: IsoTimestamp;
+  rejectedPath?: string;
+  doesNotProve: string;
+}
+
+const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const projectStandardDecisionMetadata = (
+  metadata: Record<string, unknown>
+): Record<string, unknown> | undefined => {
+  const value = metadata["projectStandardDecision"];
+
+  return isMetadataRecord(value) ? value : undefined;
+};
+
+export const projectStandardDecisionFromMemoryRecord = (
+  record: MemoryRecord
+): ProjectStandardDecisionReadback | undefined => {
+  const metadata = projectStandardDecisionMetadata(record.metadata);
+
+  if (metadata === undefined) {
+    return undefined;
+  }
+
+  const mechanism = readMetadataString(metadata, "mechanism");
+  const krnImplication = readMetadataString(metadata, "krnImplication");
+  const decision = readMetadataString(metadata, "decision");
+  const consumer = readMetadataString(metadata, "consumer");
+  const falsifier = readMetadataString(metadata, "falsifier");
+  const doesNotProve = readMetadataString(metadata, "doesNotProve");
+  const sourceRefs = [
+    ...record.sourceLineage.map((source) => source.sourceId),
+    ...readMetadataStringList(metadata, "sourceRefs")
+  ].filter((sourceRef, index, refs) => refs.indexOf(sourceRef) === index);
+
+  if (
+    sourceRefs.length === 0 ||
+    mechanism === undefined ||
+    krnImplication === undefined ||
+    decision === undefined ||
+    consumer === undefined ||
+    falsifier === undefined ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  const rejectedPath = readMetadataString(metadata, "rejectedPath");
+
+  return {
+    kind: "krn.projectStandardDecision.v1",
+    memoryRecordId: record.id,
+    key: record.key,
+    sourceRefs,
+    mechanism,
+    krnImplication,
+    decision,
+    consumer,
+    falsifier,
+    validFrom: record.validFrom,
+    ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
+    ...(rejectedPath === undefined ? {} : { rejectedPath }),
+    doesNotProve
+  };
+};
 
 export const assessMemoryRecordReviewSignals = (
   record: MemoryRecord

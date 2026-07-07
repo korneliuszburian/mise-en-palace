@@ -27,6 +27,7 @@ import {
   candidateReviewabilityReasons,
   changedFileClassification,
   projectResolutionFromMetadata,
+  projectStandardDecisionFromMetadata,
   readMetadataFiniteNumber,
   sourceClaimEdgeInfluenceFromMetadata,
   sourceDecisionSupportBoostFromMetadata
@@ -129,6 +130,7 @@ const activationCandidateResource = (
 ): DecisionPacketReadModelActivationCandidate => {
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
+  const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
 
   return {
     id: candidate.id,
@@ -139,6 +141,7 @@ const activationCandidateResource = (
     sourceAuthority: candidate.sourceAuthority,
     ...activationCandidateScores(candidate),
     reason: candidate.reason,
+    ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
     ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost })
   };

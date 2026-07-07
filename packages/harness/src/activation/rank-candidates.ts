@@ -10,6 +10,7 @@ import type {
 import {
   assessMemoryRecordReviewSignals,
   classifySourceClaimTaxonomy,
+  projectStandardDecisionFromMemoryRecord,
   rankSourceAuthority
 } from "@krn/core";
 
@@ -366,6 +367,7 @@ export const applySourceClaimEdgeRankDown = (
 
 export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => {
   const memoryReviewSignals = assessMemoryRecordReviewSignals(record);
+  const projectStandardDecision = projectStandardDecisionFromMemoryRecord(record);
 
   return {
     id: record.id,
@@ -393,6 +395,7 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
       positiveFeedbackCount: record.positiveFeedbackCount,
       negativeFeedbackCount: record.negativeFeedbackCount,
       feedbackPenalty: Math.min(0, memoryFeedbackScore(record)),
+      ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
       ...memoryReviewSignalMetadata(memoryReviewSignals)
     }
   };

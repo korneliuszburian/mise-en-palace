@@ -158,6 +158,39 @@ const aggregate: HarnessRunAggregate = {
         }
       },
       createdAt: now
+    }, {
+      id: "retrieval-candidate-2",
+      retrievalRunId: "retrieval-1",
+      kind: "memory",
+      status: "included",
+      subjectType: "memory_record",
+      subjectId: "memory-refreshed-1",
+      sourceAuthority: "project-decision",
+      lexicalScore: 16,
+      vectorScore: 0,
+      graphScore: 0,
+      temporalScore: 20,
+      contextRoiScore: 40,
+      totalScore: 106,
+      score: 106,
+      reason: "Current frontend bootstrap project standard.",
+      metadata: {
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          memoryRecordId: "memory-refreshed-1",
+          key: "frontend-bootstrap-standard",
+          sourceRefs: ["source-claim-2", "feedback-delta-2"],
+          mechanism: "Reviewed feedback and source claim show the current frontend boilerplate replaced the older starter.",
+          krnImplication: "Activation should select this standard for new frontend project setup and caveat the superseded path.",
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+          consumer: "activation:new-project-setup",
+          falsifier: "A matching new-project DecisionPacket omits memory-refreshed-1 or includes memory-stale-1 as current guidance.",
+          validFrom: "2026-06-01T00:00:00.000Z",
+          doesNotProve: "This project standard does not prove the starter applies to every stack or future template revision."
+        }
+      },
+      createdAt: now
     }],
     decisions: [{
       id: "activation-decision-1",
@@ -401,6 +434,11 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("retrievalRunId: retrieval-1");
     expect(result.stdout).toContain("source_claim:claim-1 | status=included | kind=source");
     expect(result.stdout).toContain("scores: lexical=12 vector=0 graph=9 temporal=0 contextRoi=80 feedback=12 total=113");
+    expect(result.stdout).toContain("memory_record:memory-refreshed-1 | status=included | kind=memory");
+    expect(result.stdout).toContain("projectStandardDecision:");
+    expect(result.stdout).toContain("decision: Use the refreshed frontend bootstrap standard for matching new frontend projects.");
+    expect(result.stdout).toContain("consumer: activation:new-project-setup");
+    expect(result.stdout).toContain("falsifier: A matching new-project DecisionPacket omits memory-refreshed-1");
     expect(result.stdout).toContain("sourceClaimEdgeInfluence:");
     expect(result.stdout).toContain("edgeIds: edge-1");
     expect(result.stdout).toContain("edgeKinds: narrows");
@@ -661,20 +699,6 @@ describe("runRunShowCommand", () => {
         },
         activationTrace: {
           retrievalRunId: "retrieval-1",
-          candidates: [{
-            id: "retrieval-candidate-1",
-            subjectType: "source_claim",
-            subjectId: "claim-1",
-            graphScore: 9,
-            feedbackScore: 12,
-            sourceClaimEdgeInfluence: {
-              edgeIds: ["edge-1"],
-              edgeKinds: ["narrows"],
-              seedSourceClaimIds: ["claim-seed"],
-              doesNotProve:
-                "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
-            }
-          }],
           decisions: [{
             id: "activation-decision-1",
             subjectType: "source_claim",
@@ -778,6 +802,41 @@ describe("runRunShowCommand", () => {
         ]
       }
     });
+    expect(parsed.context.activationTrace?.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "retrieval-candidate-1",
+        subjectType: "source_claim",
+        subjectId: "claim-1",
+        graphScore: 9,
+        feedbackScore: 12,
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-1"],
+          edgeKinds: ["narrows"],
+          seedSourceClaimIds: ["claim-seed"],
+          doesNotProve:
+            "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }),
+      expect.objectContaining({
+        id: "retrieval-candidate-2",
+        subjectType: "memory_record",
+        subjectId: "memory-refreshed-1",
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          memoryRecordId: "memory-refreshed-1",
+          key: "frontend-bootstrap-standard",
+          sourceRefs: ["source-claim-2", "feedback-delta-2"],
+          mechanism: "Reviewed feedback and source claim show the current frontend boilerplate replaced the older starter.",
+          krnImplication: "Activation should select this standard for new frontend project setup and caveat the superseded path.",
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+          consumer: "activation:new-project-setup",
+          falsifier: "A matching new-project DecisionPacket omits memory-refreshed-1 or includes memory-stale-1 as current guidance.",
+          validFrom: "2026-06-01T00:00:00.000Z",
+          doesNotProve: "This project standard does not prove the starter applies to every stack or future template revision."
+        }
+      })
+    ]));
     expect(parsed.proof.proves).toEqual([
       "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
       "persisted activation candidate scores and edge-influence metadata can be read without mutating state",

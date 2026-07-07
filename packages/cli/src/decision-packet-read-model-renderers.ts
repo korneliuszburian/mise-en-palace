@@ -137,6 +137,16 @@ const renderActivationCandidateTrace = (
   `  - ${candidate.subjectType}:${candidate.subjectId} | status=${candidate.status} | kind=${candidate.kind}`,
   activationCandidateScoreLine(candidate),
   `    reason: ${candidate.reason}`,
+  ...(candidate.projectStandardDecision === undefined
+    ? []
+    : [
+        "    projectStandardDecision:",
+        `      decision: ${candidate.projectStandardDecision.decision}`,
+        `      rejectedPath: ${candidate.projectStandardDecision.rejectedPath ?? "none"}`,
+        `      consumer: ${candidate.projectStandardDecision.consumer}`,
+        `      falsifier: ${candidate.projectStandardDecision.falsifier}`,
+        `      doesNotProve: ${candidate.projectStandardDecision.doesNotProve}`
+      ]),
   ...(candidate.sourceClaimEdgeInfluence === undefined
     ? []
     : [

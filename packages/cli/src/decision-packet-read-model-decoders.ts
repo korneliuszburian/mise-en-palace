@@ -3,6 +3,7 @@ import {
   readMetadataStringList
 } from "@krn/core";
 import type { CandidateReviewability } from "@krn/core";
+import type { ProjectStandardDecisionReadback } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/harness/repositories";
 
 import type {
@@ -210,6 +211,63 @@ export const sourceDecisionSupportBoostFromMetadata = (
     sourceDecisionEdgeIds,
     confidence,
     supportTypes,
+    doesNotProve
+  };
+};
+
+export const projectStandardDecisionFromMetadata = (
+  metadata: Record<string, unknown>
+): ProjectStandardDecisionReadback | undefined => {
+  const value = metadataRecordValue(metadata.projectStandardDecision);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const kind = readMetadataString(value, "kind");
+  const memoryRecordId = readMetadataString(value, "memoryRecordId");
+  const key = readMetadataString(value, "key");
+  const sourceRefs = readMetadataStringList(value, "sourceRefs");
+  const mechanism = readMetadataString(value, "mechanism");
+  const krnImplication = readMetadataString(value, "krnImplication");
+  const decision = readMetadataString(value, "decision");
+  const consumer = readMetadataString(value, "consumer");
+  const falsifier = readMetadataString(value, "falsifier");
+  const validFrom = readMetadataString(value, "validFrom");
+  const doesNotProve = readMetadataString(value, "doesNotProve");
+
+  if (
+    kind !== "krn.projectStandardDecision.v1" ||
+    memoryRecordId === undefined ||
+    key === undefined ||
+    sourceRefs.length === 0 ||
+    mechanism === undefined ||
+    krnImplication === undefined ||
+    decision === undefined ||
+    consumer === undefined ||
+    falsifier === undefined ||
+    validFrom === undefined ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  const validUntil = readMetadataString(value, "validUntil");
+  const rejectedPath = readMetadataString(value, "rejectedPath");
+
+  return {
+    kind,
+    memoryRecordId,
+    key,
+    sourceRefs,
+    mechanism,
+    krnImplication,
+    decision,
+    consumer,
+    falsifier,
+    validFrom,
+    ...(validUntil === undefined ? {} : { validUntil }),
+    ...(rejectedPath === undefined ? {} : { rejectedPath }),
     doesNotProve
   };
 };
