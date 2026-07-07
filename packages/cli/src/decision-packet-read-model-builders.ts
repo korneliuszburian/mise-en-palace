@@ -1,5 +1,5 @@
 import {
-  patternUsefulnessOutcomesFromMetadata,
+  brainKnowledgeUsefulnessOutcomesFromMetadata,
   readMetadataObjectList,
   readMetadataString,
   sourceUsefulnessOutcomesFromMetadata,
@@ -256,7 +256,7 @@ export const decisionPacketReadModelSourceUsefulnessOutcomes = (
 export const decisionPacketReadModelPatternUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): DecisionPacketReadModelPatternUsefulnessOutcome[] =>
-  patternUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
+  brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
     patternId: outcome.patternId,
     outcome: outcome.outcome,
     reason: outcome.reason,

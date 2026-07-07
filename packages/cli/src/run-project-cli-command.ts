@@ -2,7 +2,7 @@ import type {
   FeedbackDelta
 } from "@krn/core";
 import {
-  patternUsefulnessOutcomesFromMetadata
+  brainKnowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import {
   brainKnowledgeUsefulnessFromPatternOutcomes
@@ -97,7 +97,7 @@ const feedbackDeltasToPatternUsefulness = (
 ) =>
   feedbackDeltas.flatMap((feedback) =>
     brainKnowledgeUsefulnessFromPatternOutcomes(
-      patternUsefulnessOutcomesFromMetadata(feedback.metadata),
+      brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
       feedback.createdAt
     )
   );

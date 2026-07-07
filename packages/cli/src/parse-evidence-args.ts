@@ -1,7 +1,7 @@
 import type {
   EvidenceCommand,
   EvidenceCommandStatus,
-  PatternUsefulnessOutcomeFeedback,
+  BrainKnowledgeUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceChangedFileInput,
   TargetEvidenceInput
@@ -320,7 +320,7 @@ const parseSourceUsefulness = (
 
 const parsePatternUsefulness = (
   value: string
-): { outcome?: PatternUsefulnessOutcomeFeedback; error?: string } => {
+): { outcome?: BrainKnowledgeUsefulnessOutcomeFeedback; error?: string } => {
   const separatorIndex = value.indexOf("=");
 
   if (separatorIndex < 0) {
@@ -510,7 +510,7 @@ type EvidenceParseState = {
   targetChangedFilesExplicitNone: boolean;
   targetCommands: string[];
   sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[];
-  patternUsefulnessOutcomes: PatternUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes: BrainKnowledgeUsefulnessOutcomeFeedback[];
 };
 
 type EvidenceOptionResult =

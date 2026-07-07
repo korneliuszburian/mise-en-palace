@@ -1,6 +1,6 @@
 import type {
   EvidenceCommand,
-  PatternUsefulnessOutcomeFeedback,
+  BrainKnowledgeUsefulnessOutcomeFeedback,
   SourceClaimEdgeKind,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
@@ -128,7 +128,7 @@ export type CliCommand =
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
       sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-      patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
+      patternUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
     }
   | {
       kind: "evidenceCaptureHelp";

@@ -1,4 +1,4 @@
-import type { PatternUsefulnessOutcomeFeedback } from "@krn/core";
+import type { BrainKnowledgeUsefulnessOutcomeFeedback } from "@krn/core";
 
 import type { BrainKnowledgeUsefulnessFeedback } from "./brain-knowledge-read-model.js";
 
@@ -24,7 +24,7 @@ import type { BrainKnowledgeUsefulnessFeedback } from "./brain-knowledge-read-mo
  * latest entry per card.
  */
 export const brainKnowledgeUsefulnessFromPatternOutcome = (
-  outcome: PatternUsefulnessOutcomeFeedback,
+  outcome: BrainKnowledgeUsefulnessOutcomeFeedback,
   observedAt?: string
 ): BrainKnowledgeUsefulnessFeedback => ({
   cardId: `pattern:${outcome.patternId}`,
@@ -36,7 +36,7 @@ export const brainKnowledgeUsefulnessFromPatternOutcome = (
 });
 
 export const brainKnowledgeUsefulnessFromPatternOutcomes = (
-  outcomes: readonly PatternUsefulnessOutcomeFeedback[],
+  outcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[],
   observedAt?: string
 ): BrainKnowledgeUsefulnessFeedback[] =>
   outcomes.map((outcome) => brainKnowledgeUsefulnessFromPatternOutcome(outcome, observedAt));

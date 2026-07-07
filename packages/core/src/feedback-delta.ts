@@ -90,7 +90,7 @@ export interface SourceUsefulnessOutcomeFeedback {
   doesNotProve: string;
 }
 
-export interface PatternUsefulnessOutcomeFeedback {
+export interface BrainKnowledgeUsefulnessOutcomeFeedback {
   patternId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
@@ -150,9 +150,9 @@ export const sourceUsefulnessOutcomesFromMetadata = (
     }];
   });
 
-export const patternUsefulnessOutcomesFromMetadata = (
+export const brainKnowledgeUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
-): PatternUsefulnessOutcomeFeedback[] =>
+): BrainKnowledgeUsefulnessOutcomeFeedback[] =>
   readMetadataObjectList(metadata, "patternUsefulnessOutcomes").flatMap((item) => {
     const patternId = readMetadataString(item, "patternId");
     const reason = readMetadataString(item, "reason");

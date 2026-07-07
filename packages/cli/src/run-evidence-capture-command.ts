@@ -10,7 +10,7 @@ import type {
   EvidenceCommand,
   EvidenceCommandReadback,
   MemoryCandidate,
-  PatternUsefulnessOutcomeFeedback,
+  BrainKnowledgeUsefulnessOutcomeFeedback,
   SourceDecision,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidence,
@@ -56,7 +56,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   commandOutcomes?: readonly EvidenceCommand[];
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-  patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -88,7 +88,7 @@ interface PersistedEvidenceIdentity {
   reviewAssessmentId: string;
   feedbackDeltaId: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-  patternUsefulnessOutcomes?: readonly PatternUsefulnessOutcomeFeedback[];
+  patternUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
 }
 
 interface EvidencePersistenceConfig {
@@ -578,7 +578,7 @@ const renderSourceUsefulnessOutcomes = (
 };
 
 const renderPatternUsefulnessOutcomes = (
-  outcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined
+  outcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined
 ): string[] => {
   if (outcomes === undefined || outcomes.length === 0) {
     return ["- none"];
@@ -766,7 +766,7 @@ const buildFeedbackDeltaInput = (
   memoryCandidates: readonly MemoryCandidate[],
   sourceDecisionCandidates: readonly SourceDecision[],
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  patternUsefulnessOutcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined
+  patternUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
@@ -812,9 +812,9 @@ const normalizeSourceUsefulnessOutcomesForEvidence = (
   );
 
 const normalizePatternUsefulnessOutcomesForEvidence = (
-  outcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined,
+  outcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
   currentEvidenceRefs: ReadonlySet<string>
-): readonly PatternUsefulnessOutcomeFeedback[] | undefined =>
+): readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined =>
   outcomes?.map((outcome) =>
     outcome.outcome === "unknown" || outcomeHasCurrentEvidenceRef(outcome.evidenceRefs, currentEvidenceRefs)
       ? outcome
@@ -848,7 +848,7 @@ const persistEvidenceCapture = async (
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  patternUsefulnessOutcomes: readonly PatternUsefulnessOutcomeFeedback[] | undefined,
+  patternUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
