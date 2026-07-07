@@ -142,6 +142,13 @@ const aggregate: HarnessRunAggregate = {
         evidenceRefs: ["test:agent-packet-helped-decision"],
         doesNotProve:
           "Helpful feedback does not prove source truth."
+      }, {
+        sourceDecisionId: "source-decision-noise-agent-1",
+        outcome: "noise",
+        reason: "Noisy decision should be visible without governing the packet.",
+        evidenceRefs: ["test:agent-packet-noise-decision"],
+        doesNotProve:
+          "Noise feedback does not prove future source usefulness."
       }]
     },
     createdAt: now,
@@ -184,11 +191,13 @@ describe("agent packet CLI", () => {
       },
       packet: {
         formatVersion: "krn.decisionPacket.v1",
+        governingDecisionIds: ["source-decision-helped-agent-1"],
         sourceClaimIds: ["claim-agent-1"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         memoryRefs: ["memory-agent-1"],
         staleDecisionIds: ["source-decision-stale-agent-1"],
         rejectedPathIds: ["memory-rejected-1"],
+        noiseDecisionIds: ["source-decision-noise-agent-1"],
         brief: {
           includedContextCount: 2,
           explicitExclusionCount: 1,

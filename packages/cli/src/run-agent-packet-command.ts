@@ -1,5 +1,6 @@
 import type {
-  DecisionPacket
+  DecisionPacket,
+  SourceUsefulnessOutcome
 } from "@krn/core";
 import {
   decisionPacketFormatVersion
@@ -73,15 +74,28 @@ const sourceDecisionEdgeIdsFor = (
   candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
 ) ?? []);
 
-const staleDecisionIdsFor = (
-  readModel: DecisionPacketReadModel
+const sourceDecisionIdsWithUsefulness = (
+  readModel: DecisionPacketReadModel,
+  outcomes: readonly SourceUsefulnessOutcome[]
 ): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-    outcome.outcome === "stale" && outcome.sourceDecisionId !== undefined
+    outcome.sourceDecisionId !== undefined && outcomes.includes(outcome.outcome)
       ? [outcome.sourceDecisionId]
       : []
   )
 ));
+
+const governingDecisionIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"]);
+
+const staleDecisionIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
+
+const noiseDecisionIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => sourceDecisionIdsWithUsefulness(readModel, ["noise"]);
 
 const compactDecisionPacket = (
   readModel: DecisionPacketReadModel
@@ -91,7 +105,7 @@ const compactDecisionPacket = (
 
   return {
     formatVersion: decisionPacketFormatVersion,
-    governingDecisionIds: [],
+    governingDecisionIds: governingDecisionIdsFor(readModel),
     sourceClaimIds: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "source_claim")
       .map((inclusion) => inclusion.subjectId)),
@@ -113,7 +127,7 @@ const compactDecisionPacket = (
     ),
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
-    noiseDecisionIds: [],
+    noiseDecisionIds: noiseDecisionIdsFor(readModel),
     severeStaleAuthorityIds: [],
     brief: {
       includedContextCount: readModel.context.inclusions,
