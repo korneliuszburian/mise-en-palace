@@ -107,6 +107,19 @@ const rejectedSourceDecisionIdsFor = (
   )
 ));
 
+const governingStatementsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique([
+  ...readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
+  ) ?? [],
+  ...readModel.feedbackDeltas.flatMap((feedback) =>
+    feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+      ["selected", "used", "helped"].includes(outcome.outcome) ? [outcome.reason] : []
+    )
+  )
+]);
+
 const antiMemoryBlockedPathIdsFor = (
   readModel: DecisionPacketReadModel
 ): string[] => unique(readModel.context.activationTrace?.decisions.flatMap((decision) =>
@@ -134,6 +147,7 @@ const compactDecisionPacket = (
   return {
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
+    governingStatements: governingStatementsFor(readModel),
     sourceClaimIds: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "source_claim")
       .map((inclusion) => inclusion.subjectId)),

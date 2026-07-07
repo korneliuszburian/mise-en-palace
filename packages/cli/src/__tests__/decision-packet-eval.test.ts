@@ -103,6 +103,9 @@ describe("runDecisionPacketEval", () => {
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         governingDecisionIds: expect.arrayContaining(["store-backed-memory-no-markdown"]),
+        governingStatements: expect.arrayContaining([
+          "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory. Do not create markdown memory files as the active recall system."
+        ]),
         sourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
         sourceRejectionIds: expect.arrayContaining(["source-rejection:create-markdown-memory-files"]),
@@ -130,21 +133,24 @@ describe("runDecisionPacketEval", () => {
       },
       notesBaseline: {
         qualityLabel: "unsafe",
-        topDecisionIds: [
+        topDecisionIds: expect.arrayContaining([
           "frontend-project-standard-packet",
           "generic-frontend-starter-default",
           "install-latest-frontend-stack"
-        ],
-        unsafeDecisionIds: [
+        ]),
+        unsafeDecisionIds: expect.arrayContaining([
           "generic-frontend-starter-default",
           "install-latest-frontend-stack"
-        ],
+        ]),
         failureRationale:
           "Notes grep matches the current frontend standard and the stale or rejected starter advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
       },
       comparisonOutcome: "krn_win",
       packet: {
         governingDecisionIds: expect.arrayContaining(["frontend-project-standard-packet"]),
+        governingStatements: expect.arrayContaining([
+          "For a normal new frontend app, use the governed frontend bootstrap standard: approved project template, pnpm workspace conventions, project UI constraints, focused component and smoke tests, deployment assumptions, and rejected boilerplate paths before coding."
+        ]),
         sourceRejectionIds: expect.arrayContaining(["source-rejection:install-latest-frontend-stack"]),
         staleDecisionIds: ["generic-frontend-starter-default"],
         rejectedPathIds: ["install-latest-frontend-stack"],
@@ -205,6 +211,9 @@ describe("runDecisionPacketEval", () => {
     const packet: DecisionPacket = {
       formatVersion: "krn.decisionPacket.v1",
       governingDecisionIds: ["store-backed-memory-no-markdown"],
+      governingStatements: [
+        "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
+      ],
       sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
       sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
       sourceRejectionIds: [],

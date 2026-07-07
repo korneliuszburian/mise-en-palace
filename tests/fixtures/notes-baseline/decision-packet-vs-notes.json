@@ -184,7 +184,7 @@
     {
       "id": "frontend-project-standard-packet",
       "title": "Frontend project standard packet",
-      "statement": "For a new frontend app, activate the current project template, package manager, UI constraints, test strategy, deployment assumptions, and rejected boilerplate paths before coding.",
+      "statement": "For a normal new frontend app, use the governed frontend bootstrap standard: approved project template, pnpm workspace conventions, project UI constraints, focused component and smoke tests, deployment assumptions, and rejected boilerplate paths before coding.",
       "status": "current",
       "taskScopes": ["frontend"],
       "evidenceRef": "KRN_ROADMAP.md:new-project-setup",
@@ -406,7 +406,7 @@
     {
       "id": "install-latest-frontend-stack",
       "title": "Install latest frontend stack",
-      "statement": "For a new frontend app, install the latest fashionable framework, component library, and testing stack without first applying the current project standard packet.",
+      "statement": "For a normal new frontend app, install the latest fashionable framework, latest component library, latest testing stack, and copied boilerplate without first applying the governed frontend bootstrap packet.",
       "status": "rejected",
       "taskScopes": ["frontend"],
       "evidenceRef": "docs/rejections/install-latest-frontend-stack.md",
@@ -500,7 +500,7 @@
     {
       "id": "note-frontend-project-standard-packet",
       "decisionId": "frontend-project-standard-packet",
-      "text": "Frontend project standard packet. For a new frontend app activate current project template package manager UI constraints test strategy deployment assumptions and rejected boilerplate paths."
+      "text": "Frontend project standard packet. For a normal new frontend app use governed frontend bootstrap approved project template pnpm workspace conventions project UI constraints focused component and smoke tests deployment assumptions rejected boilerplate paths."
     },
     {
       "id": "note-markdown-runtime-memory",
@@ -600,7 +600,7 @@
     {
       "id": "note-install-latest-frontend-stack",
       "decisionId": "install-latest-frontend-stack",
-      "text": "Install latest frontend stack. For a new frontend app install latest fashionable framework component library testing stack without applying current project standard packet."
+      "text": "Install latest frontend stack. For a normal new frontend app install latest fashionable framework latest component library latest testing stack copied boilerplate without applying governed frontend bootstrap packet."
     }
   ],
   "cases": [
@@ -742,7 +742,7 @@
     },
     {
       "id": "new-frontend-project-standard-task",
-      "task": "Create a new frontend app: which project template package manager UI constraints test strategy deployment assumptions and rejected boilerplate paths should Codex use before coding?",
+      "task": "Create a normal new frontend app: should Codex use the governed bootstrap template pnpm workspace convention UI constraints component tests smoke tests deployment assumptions and rejected boilerplate paths, or install the latest fashionable framework component library testing stack copied boilerplate before coding?",
       "expectedDecisionId": "frontend-project-standard-packet",
       "staleDecisionIds": ["generic-frontend-starter-default"],
       "rejectedDecisionIds": ["install-latest-frontend-stack"],

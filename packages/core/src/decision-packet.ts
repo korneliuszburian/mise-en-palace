@@ -13,6 +13,7 @@ export interface DecisionPacketBriefSummary {
 export interface DecisionPacket {
   formatVersion: DecisionPacketFormatVersion;
   governingDecisionIds: readonly string[];
+  governingStatements: readonly string[];
   sourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
   sourceRejectionIds: readonly string[];

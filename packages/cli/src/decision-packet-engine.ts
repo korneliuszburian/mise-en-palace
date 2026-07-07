@@ -477,6 +477,7 @@ export const buildDecisionPacketWithEngine = async (
   return {
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
+    governingStatements: unique(governingRows.map((decision) => decision.statement).filter(nonEmpty)),
     sourceClaimIds: unique(sourceRows.map((decision) => decision.sourceClaimId)),
     sourceDecisionEdgeIds: unique(governingRows.flatMap((decision) =>
       nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []

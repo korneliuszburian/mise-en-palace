@@ -100,6 +100,20 @@ const aggregate: HarnessRunAggregate = {
       score: 101,
       reason: "Source claim was boosted by graph edge influence.",
       metadata: {
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          memoryRecordId: "memory-agent-1",
+          key: "frontend-bootstrap-standard",
+          sourceRefs: ["claim-agent-1"],
+          mechanism: "Headless agent packet fixture carries the retained frontend standard as governed context.",
+          krnImplication: "Agent packet should expose the standard statement before coding.",
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+          consumer: "krn agent packet",
+          falsifier: "Agent packet omits the governed standard statement.",
+          validFrom: "2026-06-01T00:00:00.000Z",
+          doesNotProve: "This fixture does not prove arbitrary frontend template quality."
+        },
         sourceClaimEdgeInfluence: {
           edgeIds: ["source-claim-edge-agent-1"],
           edgeKinds: ["narrows"],
@@ -335,6 +349,9 @@ describe("agent packet CLI", () => {
           "source-decision-helped-agent-1",
           "source-decision-conflicted-agent-1"
         ],
+        governingStatements: expect.arrayContaining([
+          "Use the refreshed frontend bootstrap standard for matching new frontend projects."
+        ]),
         sourceClaimIds: ["claim-agent-1"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         sourceRejectionIds: ["source-decision-rejected-agent-1"],
