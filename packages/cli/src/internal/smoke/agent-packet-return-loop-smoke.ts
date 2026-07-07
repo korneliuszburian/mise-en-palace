@@ -38,10 +38,15 @@ export interface AgentPacketReturnLoopSmokeReport {
   matchingFeedbackDeltaId: string;
   matchingFeedbackOutcome: string;
   matchingFeedbackRemainedAuthoritative: boolean;
+  staleFeedbackDeltaId: string;
+  staleFeedbackOutcome: string;
+  staleFeedbackDemotedDecision: boolean;
   mismatchedFeedbackDeltaId: string;
   mismatchedFeedbackOutcome: string;
   mismatchedFeedbackDowngraded: boolean;
+  mismatchedFeedbackStayedOutOfNextPacket: boolean;
   nextPacketGoverningDecisionIds: readonly string[];
+  nextPacketStaleDecisionIds: readonly string[];
   nextPacketIncludesMatchingDecision: boolean;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
@@ -54,6 +59,7 @@ interface AgentPacketSmokeJson {
   };
   packet: {
     governingDecisionIds: readonly string[];
+    staleDecisionIds: readonly string[];
   };
   returnChannels: {
     evidence: {
@@ -140,6 +146,10 @@ const readPacket = (
   governingDecisionIds: readStringArray(
     readRequiredRecord(parsed, "packet"),
     "governingDecisionIds"
+  ),
+  staleDecisionIds: readStringArray(
+    readRequiredRecord(parsed, "packet"),
+    "staleDecisionIds"
   )
 });
 
@@ -411,20 +421,57 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
     const matchingFeedbackRemainedAuthoritative =
       matchingFeedbackOutcome === "helped" &&
       matchingEvidence.stdout.includes(`agentPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
-    const staleChecksum = "0".repeat(64);
-    await runEvidenceCaptureCommand({
+    const staleDecisionId = `${decisionId}-stale`;
+    const staleEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
-      agentPacketChecksum: staleChecksum,
+      agentPacketChecksum: firstPacket.packetIdentity.checksum,
       commandOutcomes: [{
-        command: "pnpm --filter @krn/cli test -- stale-agent-packet",
+        command: "pnpm --filter @krn/cli test -- agent-packet-stale-feedback",
         status: "passed",
         provenance: "operator_reported"
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
-          decisionId: `${decisionId}-stale`,
+          decisionId: staleDecisionId,
+          evidenceRef: firstPacket.packetIdentity.evidenceRef,
+          outcome: "stale",
+          reason: "Matching packet checksum demoted stale source decision feedback in the next packet."
+        })
+      ],
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => commandRuntime
+    });
+    const aggregateAfterStale =
+      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
+    const staleFeedbackDelta = aggregateAfterStale?.feedbackDeltas.at(-1);
+
+    if (staleFeedbackDelta === undefined) {
+      throw new Error("Agent-packet return-loop smoke did not persist stale feedback");
+    }
+
+    feedbackDeltaIds.push(staleFeedbackDelta.id);
+
+    const staleFeedbackOutcome = feedbackOutcome(staleFeedbackDelta.metadata);
+    const staleFeedbackBoundToPacket =
+      staleFeedbackOutcome === "stale" &&
+      staleEvidence.stdout.includes(`agentPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
+    const mismatchedDecisionId = `${decisionId}-mismatched`;
+    const mismatchedChecksum = "0".repeat(64);
+    await runEvidenceCaptureCommand({
+      ...baseRuntime,
+      persist: true,
+      runId: executionRun.id,
+      agentPacketChecksum: mismatchedChecksum,
+      commandOutcomes: [{
+        command: "pnpm --filter @krn/cli test -- mismatched-agent-packet",
+        status: "passed",
+        provenance: "operator_reported"
+      }],
+      sourceUsefulnessOutcomes: [
+        sourceUsefulnessOutcome({
+          decisionId: mismatchedDecisionId,
           evidenceRef: firstPacket.packetIdentity.evidenceRef,
           outcome: "helped",
           reason: "Mismatched packet checksum must downgrade this feedback."
@@ -452,11 +499,20 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
     })).stdout);
     const nextPacketIncludesMatchingDecision =
       nextPacket.packet.governingDecisionIds.includes(decisionId);
+    const staleFeedbackDemotedDecision =
+      nextPacket.packet.staleDecisionIds.includes(staleDecisionId) &&
+      !nextPacket.packet.governingDecisionIds.includes(staleDecisionId);
+    const mismatchedFeedbackStayedOutOfNextPacket =
+      !nextPacket.packet.governingDecisionIds.includes(mismatchedDecisionId) &&
+      !nextPacket.packet.staleDecisionIds.includes(mismatchedDecisionId);
 
     if (
       !returnChannelHasChecksum ||
       !matchingFeedbackRemainedAuthoritative ||
+      !staleFeedbackBoundToPacket ||
+      !staleFeedbackDemotedDecision ||
       !mismatchedFeedbackDowngraded ||
+      !mismatchedFeedbackStayedOutOfNextPacket ||
       !nextPacketIncludesMatchingDecision
     ) {
       throw new Error("Agent-packet return-loop smoke failed checksum binding assertions");
@@ -475,10 +531,15 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
       matchingFeedbackDeltaId: matchingFeedbackDelta.id,
       matchingFeedbackOutcome: matchingFeedbackOutcome ?? "missing",
       matchingFeedbackRemainedAuthoritative,
+      staleFeedbackDeltaId: staleFeedbackDelta.id,
+      staleFeedbackOutcome: staleFeedbackOutcome ?? "missing",
+      staleFeedbackDemotedDecision,
       mismatchedFeedbackDeltaId: mismatchedFeedbackDelta.id,
       mismatchedFeedbackOutcome: mismatchedFeedbackOutcome ?? "missing",
       mismatchedFeedbackDowngraded,
+      mismatchedFeedbackStayedOutOfNextPacket,
       nextPacketGoverningDecisionIds: nextPacket.packet.governingDecisionIds,
+      nextPacketStaleDecisionIds: nextPacket.packet.staleDecisionIds,
       nextPacketIncludesMatchingDecision,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0
