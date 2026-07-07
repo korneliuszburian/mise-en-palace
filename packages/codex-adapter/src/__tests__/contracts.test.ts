@@ -174,9 +174,16 @@ describe("Codex adapter contracts", () => {
         itemCount: 0,
         emptyBehavior: "omit_when_empty"
       }],
+      budget: {
+        maxRenderedSections: 21,
+        maxRenderedItems: 80,
+        renderedSections: 12,
+        renderedItems: 20,
+        status: "within_budget"
+      },
       doesNotProve: [
         "Brief profile classification proves only adapter rendering intent.",
-        "Omitted reserved sections do not prove MCP resources or subagents exist."
+        "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist."
       ]
     };
 
@@ -185,7 +192,7 @@ describe("Codex adapter contracts", () => {
     expect(readback.sections[0]?.kind).toBe("reserved");
     expect(readback.sections[0]?.rendered).toBe(false);
     expect(readback.doesNotProve).toContain(
-      "Omitted reserved sections do not prove MCP resources or subagents exist."
+      "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist."
     );
   });
 });

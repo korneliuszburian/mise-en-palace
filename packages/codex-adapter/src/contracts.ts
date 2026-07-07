@@ -80,6 +80,13 @@ export type ExecutionBriefSectionKind = "required" | "diagnostic" | "reserved";
 
 export type ExecutionBriefSectionEmptyBehavior = "render_none" | "omit_when_empty";
 
+export type ExecutionBriefProfileBudgetStatus = "within_budget" | "over_budget";
+
+export const executionBriefProfileBudget = {
+  maxRenderedSections: 21,
+  maxRenderedItems: 80
+} as const;
+
 export const executionBriefSectionProfiles = [
   { id: "title", kind: "required", emptyBehavior: "render_none" },
   { id: "format_version", kind: "required", emptyBehavior: "render_none" },
@@ -87,20 +94,20 @@ export const executionBriefSectionProfiles = [
   { id: "non_goals", kind: "required", emptyBehavior: "render_none" },
   { id: "current_task_contract", kind: "required", emptyBehavior: "render_none" },
   { id: "context_inclusions", kind: "required", emptyBehavior: "render_none" },
-  { id: "observation_prefix", kind: "required", emptyBehavior: "render_none" },
-  { id: "untrusted_context_warnings", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "observation_prefix", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "untrusted_context_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
-  { id: "source_claims_used", kind: "diagnostic", emptyBehavior: "render_none" },
-  { id: "memory_records_used", kind: "diagnostic", emptyBehavior: "render_none" },
-  { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "source_claims_used", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "memory_records_used", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
   { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
-  { id: "hook_expectations", kind: "required", emptyBehavior: "render_none" },
-  { id: "skill_binding_hints", kind: "required", emptyBehavior: "render_none" },
+  { id: "hook_expectations", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "skill_binding_hints", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "mcp_resource_refs", kind: "reserved", emptyBehavior: "omit_when_empty" },
   { id: "subagent_probe_hints", kind: "reserved", emptyBehavior: "omit_when_empty" },
-  { id: "goal_refs", kind: "diagnostic", emptyBehavior: "render_none" },
-  { id: "exec_plan_refs", kind: "diagnostic", emptyBehavior: "render_none" },
+  { id: "goal_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "exec_plan_refs", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
   { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
   { id: "rollback_expectation", kind: "required", emptyBehavior: "render_none" },
   { id: "next_action", kind: "required", emptyBehavior: "render_none" },
@@ -128,6 +135,13 @@ export interface ExecutionBriefProfileReadback {
   formatVersion: ExecutionBriefFormatVersion;
   profile: ExecutionBriefProfileName;
   sections: ExecutionBriefSectionReadback[];
+  budget: {
+    maxRenderedSections: number;
+    maxRenderedItems: number;
+    renderedSections: number;
+    renderedItems: number;
+    status: ExecutionBriefProfileBudgetStatus;
+  };
   doesNotProve: string[];
 }
 

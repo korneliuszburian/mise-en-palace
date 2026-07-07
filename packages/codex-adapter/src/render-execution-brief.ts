@@ -18,6 +18,7 @@ import type {
   ExecutionBriefSectionReadback
 } from "./contracts.js";
 import {
+  executionBriefProfileBudget,
   executionBriefFormatVersion,
   executionBriefSectionProfiles
 } from "./contracts.js";
@@ -176,16 +177,34 @@ const sectionReadback = (
 
 export const describeExecutionBriefProfile = (
   brief: ExecutionBrief
-): ExecutionBriefProfileReadback => ({
-  formatVersion: brief.formatVersion,
-  profile: "default",
-  sections: executionBriefSectionProfiles.map((section) => sectionReadback(brief, section)),
-  doesNotProve: [
-    "Brief profile classification proves only adapter rendering intent.",
-    "Omitted reserved sections do not prove MCP resources or subagents exist.",
-    "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
-  ]
-});
+): ExecutionBriefProfileReadback => {
+  const sections = executionBriefSectionProfiles.map((section) => sectionReadback(brief, section));
+  const renderedSections = sections.filter((section) => section.rendered).length;
+  const renderedItems = sections.reduce((sum, section) =>
+    section.rendered ? sum + section.itemCount : sum, 0);
+  const status =
+    renderedSections <= executionBriefProfileBudget.maxRenderedSections &&
+    renderedItems <= executionBriefProfileBudget.maxRenderedItems
+      ? "within_budget"
+      : "over_budget";
+
+  return {
+    formatVersion: brief.formatVersion,
+    profile: "default",
+    sections,
+    budget: {
+      ...executionBriefProfileBudget,
+      renderedSections,
+      renderedItems,
+      status
+    },
+    doesNotProve: [
+      "Brief profile classification proves only adapter rendering intent.",
+      "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist.",
+      "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
+    ]
+  };
+};
 
 const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
   const profile = describeExecutionBriefProfile(brief);
@@ -199,6 +218,7 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
   return [
     "Brief Profile:",
     `- profile=${profile.profile} | format=${profile.formatVersion}`,
+    `- budget=${profile.budget.status} | rendered_sections=${profile.budget.renderedSections}/${profile.budget.maxRenderedSections} | rendered_items=${profile.budget.renderedItems}/${profile.budget.maxRenderedItems}`,
     `- required=${renderJoinedValues(requiredSections)}`,
     `- diagnostic=${renderJoinedValues(diagnosticSections)}`,
     `- does_not_prove=${profile.doesNotProve.join(" | ")}`
@@ -427,6 +447,11 @@ const renderOptionalSection = (
   items: readonly string[]
 ): string[] => (items.length === 0 ? [] : [label, ...items, ""]);
 
+const renderOptionalRefs = (
+  label: string,
+  refs: readonly { source: string; status: string; objective?: string; section?: string }[]
+): string[] => refs.length === 0 ? [] : [...renderRefs(label, refs), ""];
+
 const renderMcpResourceRefs = (brief: ExecutionBrief): string[] =>
   brief.mcpResourceRefs.map((ref) =>
     [
@@ -449,6 +474,11 @@ const renderSubagentProbeHints = (brief: ExecutionBrief): string[] =>
   );
 
 export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
+  const observationPrefixLines =
+    brief.observationPrefix.length === 0 && brief.observationPrefixWarnings.length === 0
+      ? []
+      : renderObservationPrefix(brief.observationPrefix, brief.observationPrefixWarnings);
+  const skillHintLines = brief.skillBindingHints.length === 0 ? [] : renderSkillBindingHints(brief);
   const lines = [
     brief.title,
     `Format Version: ${brief.formatVersion}`,
@@ -471,38 +501,24 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "Context Inclusions:",
     ...renderContextInclusions(brief.includedContext),
     "",
-    "Observation Prefix:",
-    ...renderObservationPrefix(brief.observationPrefix, brief.observationPrefixWarnings),
-    "",
-    "Untrusted Context Warnings:",
-    ...renderList(brief.untrustedContextWarnings),
-    "",
+    ...renderOptionalSection("Observation Prefix:", observationPrefixLines),
+    ...renderOptionalSection("Untrusted Context Warnings:", brief.untrustedContextWarnings.map((warning) => `- ${warning}`)),
     "Explicit Exclusions:",
     ...renderContextExclusions(brief.explicitExclusions),
     "",
-    "Source Claims Used:",
-    ...renderList(brief.sourceClaimsUsed),
-    "",
-    "Memory Records Used:",
-    ...renderList(brief.memoryRecordsUsed),
-    "",
-    "Anti-memory Warnings:",
-    ...renderList(brief.antiMemoryWarnings),
-    "",
+    ...renderOptionalSection("Source Claims Used:", brief.sourceClaimsUsed.map((claim) => `- ${claim}`)),
+    ...renderOptionalSection("Memory Records Used:", brief.memoryRecordsUsed.map((record) => `- ${record}`)),
+    ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderToolBoundaries(brief),
     "",
     "Evidence Contract:",
     ...renderEvidenceContract(brief),
     "",
-    "Skill Binding Hints:",
-    ...renderSkillBindingHints(brief),
-    "",
+    ...renderOptionalSection("Skill Binding Hints:", skillHintLines),
     ...renderOptionalSection("MCP Resource Refs:", renderMcpResourceRefs(brief)),
     ...renderOptionalSection("Subagent Probe Hints:", renderSubagentProbeHints(brief)),
-    ...renderRefs("Goal References:", brief.goalRefs),
-    "",
-    ...renderRefs("ExecPlan References:", brief.execPlanRefs),
-    "",
+    ...renderOptionalRefs("Goal References:", brief.goalRefs),
+    ...renderOptionalRefs("ExecPlan References:", brief.execPlanRefs),
     `Stop Condition: ${brief.stopCondition}`,
     `Rollback Expectation: ${brief.rollbackExpectation}`,
     `Next Action: ${brief.nextAction}`,

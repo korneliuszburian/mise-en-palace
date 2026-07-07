@@ -229,6 +229,11 @@ describe("renderExecutionBrief", () => {
     const profile = describeExecutionBriefProfile(brief);
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
+    expect(profile.budget).toMatchObject({
+      maxRenderedSections: 21,
+      maxRenderedItems: 80,
+      status: "within_budget"
+    });
     expect(profile.sections.find((section) => section.id === "mcp_resource_refs")).toMatchObject({
       kind: "reserved",
       rendered: false,
@@ -242,10 +247,10 @@ describe("renderExecutionBrief", () => {
       emptyBehavior: "omit_when_empty"
     });
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
-      kind: "required",
+      kind: "diagnostic",
       rendered: true,
       itemCount: 2,
-      emptyBehavior: "render_none"
+      emptyBehavior: "omit_when_empty"
     });
   });
 
@@ -267,6 +272,7 @@ describe("renderExecutionBrief", () => {
     );
     expect(rendered).toContain(`Format Version: ${executionBriefFormatVersion}`);
     expect(rendered).toContain("Brief Profile:");
+    expect(rendered).toContain("- budget=within_budget");
     expect(rendered).toContain("- required=title, format_version, objective");
     expect(rendered).toContain("Non-goals:");
     expect(rendered).toContain("- do not add dashboard");
@@ -276,7 +282,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("observation:observation-1");
     expect(rendered).toContain("source_ranges=1");
     expect(rendered).toContain("warning:observation-1");
-    expect(rendered).toContain("Untrusted Context Warnings:");
+    expect(rendered).not.toContain("Untrusted Context Warnings:");
     expect(rendered).toContain("Constraints:");
     expect(rendered).toContain("- no runtime markdown memory");
     expect(rendered).toContain("Acceptance:");
@@ -311,6 +317,33 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- MCP resources exist.");
     expect(rendered).toContain("Goal: canonical harness spine");
     expect(rendered).toContain("PLAN.md Milestone 14");
+  });
+
+  it("reports over budget when rendered brief items exceed the profile budget", () => {
+    const overloadedContextAssembly: ContextAssembly = {
+      ...contextAssembly,
+      exclusions: Array.from({ length: 81 }, (_, index) => ({
+        subjectType: "source_claim",
+        subjectId: `claim-noise-${index}`,
+        reason: "low_trust",
+        explanation: "Candidate trust tier low is below medium.",
+        score: 10,
+        trustTier: "low"
+      }))
+    };
+    const brief = createExecutionBrief({
+      taskContract,
+      harnessPlan,
+      contextAssembly: overloadedContextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Implement the smallest missing doctor check."
+    });
+
+    const profile = describeExecutionBriefProfile(brief);
+
+    expect(profile.budget.renderedItems).toBeGreaterThan(profile.budget.maxRenderedItems);
+    expect(profile.budget.status).toBe("over_budget");
   });
 
   it("renders reserved future-hook sections only when populated", () => {
