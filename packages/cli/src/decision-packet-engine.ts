@@ -1,12 +1,14 @@
-import type {
-  CapabilityPlan,
-  ContextObservationPrefix,
-  HarnessPlan,
-  MemoryRecord,
-  SourceClaim,
-  SourceClaimEdge,
-  SourceDecisionEdge,
-  TaskContract
+import {
+  decisionPacketFormatVersion,
+  type CapabilityPlan,
+  type ContextObservationPrefix,
+  type DecisionPacket,
+  type HarnessPlan,
+  type MemoryRecord,
+  type SourceClaim,
+  type SourceClaimEdge,
+  type SourceDecisionEdge,
+  type TaskContract
 } from "@krn/core";
 import {
   createExecutionBrief,
@@ -29,27 +31,6 @@ import type {
   DecisionPacketCase,
   DecisionPacketEvalFixture
 } from "./decision-packet-fixture.js";
-
-export interface EngineDecisionPacket {
-  readonly governingDecisionIds: readonly string[];
-  readonly sourceClaimIds: readonly string[];
-  readonly sourceDecisionEdgeIds: readonly string[];
-  readonly memoryRefs: readonly string[];
-  readonly staleDecisionIds: readonly string[];
-  readonly rejectedPathIds: readonly string[];
-  readonly falsifiers: readonly string[];
-  readonly doesNotProve: readonly string[];
-  readonly nonProofs: readonly string[];
-  readonly noiseDecisionIds: readonly string[];
-  readonly severeStaleAuthorityIds: readonly string[];
-  readonly brief: {
-    readonly includedContextCount: number;
-    readonly observationPrefixCount: number;
-    readonly explicitExclusionCount: number;
-    readonly sourceClaimUseCount: number;
-    readonly memoryRecordUseCount: number;
-  };
-}
 
 const now = "2026-07-07T00:00:00.000Z";
 const projectId = "project:decision-packet-eval";
@@ -405,7 +386,7 @@ const excludedDecisionIds = (
 export const buildDecisionPacketWithEngine = async (
   fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
-): Promise<EngineDecisionPacket> => {
+): Promise<DecisionPacket> => {
   const repositories = makeRepositories(fixture);
   const retrieved = await retrieveActivationCandidates({
     taskContract: taskContractFor(testCase),
@@ -463,6 +444,7 @@ export const buildDecisionPacketWithEngine = async (
   ]);
 
   return {
+    formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
     sourceClaimIds: unique(sourceRows.map((decision) => decision.sourceClaimId)),
     sourceDecisionEdgeIds: unique(governingRows.flatMap((decision) =>

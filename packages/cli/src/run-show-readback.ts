@@ -1,6 +1,6 @@
-export { buildRunReadbackResource } from "./run-readback-builders.js";
-export { renderRunReadbackAggregate } from "./run-readback-renderers.js";
+export { buildDecisionPacketReadModel } from "./decision-packet-read-model-builders.js";
+export { renderDecisionPacketReadModelText } from "./decision-packet-read-model-renderers.js";
 export type {
-  RunReadbackOutputFormat,
-  RunReadbackResource,
-} from "./run-readback-resource.js";
+  DecisionPacketReadModelOutputFormat,
+  DecisionPacketReadModel,
+} from "./decision-packet-read-model.js";

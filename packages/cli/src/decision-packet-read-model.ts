@@ -13,16 +13,16 @@ import type { ActivationRetrievalDiagnostics } from "@krn/harness";
 import type { ProjectResolution } from "./database-runtime.js";
 import type { RetainedPatternPlanSelection } from "./retained-pattern-selection.js";
 
-export type RunReadbackOutputFormat = "text" | "json";
+export type DecisionPacketReadModelOutputFormat = "text" | "json";
 
-export interface RunReadbackCommandResource {
+export interface DecisionPacketReadModelCommand {
   command: string;
   status: EvidenceCommand["status"];
   provenance: EvidenceCommandReadback["provenance"];
   doesNotProve: string;
 }
 
-export interface RunReadbackChangedFilesResource {
+export interface DecisionPacketReadModelChangedFiles {
   all: string[];
   classification: {
     source: "metadata" | "not_recorded";
@@ -32,7 +32,7 @@ export interface RunReadbackChangedFilesResource {
   };
 }
 
-export interface RunReadbackContextInclusionResource {
+export interface DecisionPacketReadModelContextInclusion {
   subjectType: ContextSubjectType;
   subjectId: string;
   reason: string;
@@ -41,7 +41,7 @@ export interface RunReadbackContextInclusionResource {
   tokenEstimate?: number;
 }
 
-export interface RunReadbackContextExclusionResource {
+export interface DecisionPacketReadModelContextExclusion {
   subjectType: ContextSubjectType;
   subjectId: string;
   reason: string;
@@ -50,14 +50,14 @@ export interface RunReadbackContextExclusionResource {
   score?: number;
 }
 
-export interface RunReadbackSourceClaimEdgeInfluenceResource {
+export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
   edgeIds: string[];
   edgeKinds: string[];
   seedSourceClaimIds: string[];
   doesNotProve: string;
 }
 
-export interface RunReadbackActivationCandidateResource {
+export interface DecisionPacketReadModelActivationCandidate {
   id: string;
   kind: string;
   status: string;
@@ -72,10 +72,10 @@ export interface RunReadbackActivationCandidateResource {
   totalScore?: number;
   score?: number;
   reason: string;
-  sourceClaimEdgeInfluence?: RunReadbackSourceClaimEdgeInfluenceResource;
+  sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
 }
 
-export interface RunReadbackActivationDecisionResource {
+export interface DecisionPacketReadModelActivationDecision {
   id: string;
   subjectType: string;
   subjectId: string;
@@ -86,14 +86,14 @@ export interface RunReadbackActivationDecisionResource {
   retrievalCandidateId?: string;
 }
 
-export interface RunReadbackActivationTraceResource {
+export interface DecisionPacketReadModelActivationTrace {
   retrievalRunId: string;
-  candidates: RunReadbackActivationCandidateResource[];
-  decisions: RunReadbackActivationDecisionResource[];
+  candidates: DecisionPacketReadModelActivationCandidate[];
+  decisions: DecisionPacketReadModelActivationDecision[];
 }
 
-export interface RunReadbackResource {
-  kind: "krn.run.readback.v1";
+export interface DecisionPacketReadModel {
+  kind: "krn.decisionPacket.readModel.v1";
   access: "read_only";
   mutation: "none";
   run: {
@@ -115,10 +115,10 @@ export interface RunReadbackResource {
     status: string;
     inclusions: number;
     exclusions: number;
-    inclusionDetails: RunReadbackContextInclusionResource[];
-    exclusionDetails: RunReadbackContextExclusionResource[];
+    inclusionDetails: DecisionPacketReadModelContextInclusion[];
+    exclusionDetails: DecisionPacketReadModelContextExclusion[];
     activationDiagnostics?: ActivationRetrievalDiagnostics;
-    activationTrace?: RunReadbackActivationTraceResource;
+    activationTrace?: DecisionPacketReadModelActivationTrace;
   };
   evidenceBundles: {
     id: string;
@@ -126,8 +126,8 @@ export interface RunReadbackResource {
     diffRisk: string;
     reviewBurden: string;
     rollbackPath: string;
-    changedFiles: RunReadbackChangedFilesResource;
-    commands: RunReadbackCommandResource[];
+    changedFiles: DecisionPacketReadModelChangedFiles;
+    commands: DecisionPacketReadModelCommand[];
     targetEvidence?: TargetEvidence;
   }[];
   reviewAssessments: {
@@ -148,9 +148,9 @@ export interface RunReadbackResource {
       eval: number;
       observation: number;
     };
-    candidates: RunReadbackCandidateResource[];
-    sourceUsefulnessOutcomes: RunReadbackSourceUsefulnessOutcomeResource[];
-    patternUsefulnessOutcomes: RunReadbackPatternUsefulnessOutcomeResource[];
+    candidates: DecisionPacketReadModelCandidate[];
+    sourceUsefulnessOutcomes: DecisionPacketReadModelSourceUsefulnessOutcome[];
+    patternUsefulnessOutcomes: DecisionPacketReadModelPatternUsefulnessOutcome[];
   }[];
   proof: {
     proves: string[];
@@ -158,7 +158,7 @@ export interface RunReadbackResource {
   };
 }
 
-export interface RunReadbackCandidateResource {
+export interface DecisionPacketReadModelCandidate {
   kind: FeedbackCandidateProposalKind;
   id: string;
   status: string;
@@ -167,7 +167,7 @@ export interface RunReadbackCandidateResource {
   reviewabilityReasons: string[];
 }
 
-export interface RunReadbackSourceUsefulnessOutcomeResource {
+export interface DecisionPacketReadModelSourceUsefulnessOutcome {
   sourceClaimId?: string;
   sourceDecisionId?: string;
   outcome: SourceUsefulnessOutcome;
@@ -176,7 +176,7 @@ export interface RunReadbackSourceUsefulnessOutcomeResource {
   doesNotProve: string;
 }
 
-export interface RunReadbackPatternUsefulnessOutcomeResource {
+export interface DecisionPacketReadModelPatternUsefulnessOutcome {
   patternId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
@@ -184,21 +184,21 @@ export interface RunReadbackPatternUsefulnessOutcomeResource {
   doesNotProve: string;
 }
 
-export type RunReadbackRunResource = RunReadbackResource["run"];
-export type RunReadbackTaskResource = RunReadbackResource["task"];
-export type RunReadbackContextResource = RunReadbackResource["context"];
-export type RunReadbackEvidenceBundleResource = RunReadbackResource["evidenceBundles"][number];
-export type RunReadbackReviewAssessmentResource = RunReadbackResource["reviewAssessments"][number];
-export type RunReadbackFeedbackDeltaResource = RunReadbackResource["feedbackDeltas"][number];
-export type RunReadbackProofResource = RunReadbackResource["proof"];
+export type DecisionPacketReadModelRun = DecisionPacketReadModel["run"];
+export type DecisionPacketReadModelTask = DecisionPacketReadModel["task"];
+export type DecisionPacketReadModelContext = DecisionPacketReadModel["context"];
+export type DecisionPacketReadModelEvidenceBundle = DecisionPacketReadModel["evidenceBundles"][number];
+export type DecisionPacketReadModelReviewAssessment = DecisionPacketReadModel["reviewAssessments"][number];
+export type DecisionPacketReadModelFeedbackDelta = DecisionPacketReadModel["feedbackDeltas"][number];
+export type DecisionPacketReadModelProof = DecisionPacketReadModel["proof"];
 
-export const runReadbackProves = [
+export const decisionPacketReadModelProves = [
   "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
   "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
   "this readback surface exposes no write action"
 ];
 
-export const runReadbackDoesNotProve = [
+export const decisionPacketReadModelDoesNotProve = [
   "commands were executed by this readback command",
   "activation scoring quality or production graph retrieval quality",
   "memory quality, source truth, review correctness, or product readiness",

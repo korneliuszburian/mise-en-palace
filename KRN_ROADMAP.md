@@ -42,7 +42,8 @@ win raw recall against a comprehensive notes dump.
 
 ## Product Shape
 
-The operator-facing product is a governed decision packet:
+The operator-facing product is a governed decision packet (`DecisionPacket` in
+`@krn/core`):
 
 ```txt
 operator intent
@@ -325,6 +326,11 @@ The resulting decision packet should contain:
 
 It must not become a dump of everything relevant. The packet is a control
 surface for Codex.
+
+`DecisionPacket` is the product control surface. `DecisionPacketReadModel` is
+the operator readback for persisted run, evidence, review, feedback, activation,
+and proof/non-proof state. The read model can be larger than the packet because
+it explains what happened; it must not become a second authority model.
 
 ### 6. Feedback, Maintenance, And Dreaming
 

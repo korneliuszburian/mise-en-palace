@@ -5,9 +5,11 @@ import {
 import {
   roundRankingMetric
 } from "./ranking-eval-metrics.js";
+import type {
+  DecisionPacket
+} from "@krn/core";
 import {
-  buildDecisionPacketWithEngine,
-  type EngineDecisionPacket
+  buildDecisionPacketWithEngine
 } from "./decision-packet-engine.js";
 import type {
   DecisionPacketRow,
@@ -23,7 +25,7 @@ type DecisionPacketStatus = "pass" | "fail";
 
 type DecisionPacketDecision = DecisionPacketRow;
 
-type DecisionPacketReadback = EngineDecisionPacket;
+type DecisionPacketReadback = DecisionPacket;
 
 interface DecisionPacketCaseResult {
   readonly id: string;

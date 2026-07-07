@@ -21,19 +21,19 @@ import { formatRetainedPatternSelectionLines } from "./retained-pattern-selectio
 import {
   metadataArrayLength,
   projectResolutionFromMetadata
-} from "./run-readback-decoders.js";
+} from "./decision-packet-read-model-decoders.js";
 import {
   activationDiagnosticsResource,
   activationTraceResource,
   retainedPatternSelectionResource,
-  runReadbackCandidateResources,
-  runReadbackPatternUsefulnessOutcomes,
-  runReadbackSourceUsefulnessOutcomes
-} from "./run-readback-builders.js";
+  decisionPacketReadModelCandidates,
+  decisionPacketReadModelPatternUsefulnessOutcomes,
+  decisionPacketReadModelSourceUsefulnessOutcomes
+} from "./decision-packet-read-model-builders.js";
 import {
-  runReadbackDoesNotProve,
-  runReadbackProves
-} from "./run-readback-resource.js";
+  decisionPacketReadModelDoesNotProve,
+  decisionPacketReadModelProves
+} from "./decision-packet-read-model.js";
 
 const renderCommand = (command: EvidenceCommand): string[] => {
   const commandReadback = toEvidenceCommandReadback(command);
@@ -163,7 +163,7 @@ const renderActivationTrace = (
 const renderSourceUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): string[] => {
-  const outcomes = runReadbackSourceUsefulnessOutcomes(feedback);
+  const outcomes = decisionPacketReadModelSourceUsefulnessOutcomes(feedback);
 
   if (outcomes.length === 0) {
     return ["  source usefulness outcomes: none"];
@@ -185,7 +185,7 @@ const renderSourceUsefulnessOutcomes = (
 const renderPatternUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): string[] => {
-  const outcomes = runReadbackPatternUsefulnessOutcomes(feedback);
+  const outcomes = decisionPacketReadModelPatternUsefulnessOutcomes(feedback);
 
   if (outcomes.length === 0) {
     return ["  pattern usefulness outcomes: none"];
@@ -206,7 +206,7 @@ const renderPatternUsefulnessOutcomes = (
 
 const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   const summary = summarizeFeedbackCandidateProposals(feedback);
-  const candidateDetails = runReadbackCandidateResources(feedback).flatMap((candidate) => [
+  const candidateDetails = decisionPacketReadModelCandidates(feedback).flatMap((candidate) => [
     `  - ${candidate.kind}:${candidate.id} | status=${candidate.status} | ${candidate.summary}`,
     `    reviewability: ${candidate.reviewability}`,
     ...candidate.reviewabilityReasons.map((reason) => `    reviewabilityReason: ${reason}`)
@@ -331,21 +331,21 @@ const renderReviewAssessments = (
 
 const renderProofSections = (): string[] => [
   "What This Proves:",
-  ...runReadbackProves.map((proof) => `- ${proof}`),
+  ...decisionPacketReadModelProves.map((proof) => `- ${proof}`),
   "",
   "What This Does Not Prove:",
-  ...runReadbackDoesNotProve.map((proof) => `- ${proof}`),
+  ...decisionPacketReadModelDoesNotProve.map((proof) => `- ${proof}`),
   ""
 ];
 
-export const renderRunReadbackAggregate = (
+export const renderDecisionPacketReadModelText = (
   aggregate: HarnessRunAggregate
 ): string => {
   const activationDiagnostics = activationDiagnosticsResource(aggregate.contextAssembly);
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
 
   return [
-    "KRN Run Readback",
+    "KRN Decision Packet Read Model",
     `Run ID: ${aggregate.executionRun.id}`,
     "Persistence: read-only (Postgres)",
     "Mutation: none",

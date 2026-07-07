@@ -16,22 +16,22 @@ import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
 import {
-  buildRunReadbackResource,
-  renderRunReadbackAggregate
+  buildDecisionPacketReadModel,
+  renderDecisionPacketReadModelText
 } from "./run-show-readback.js";
 import type {
-  RunReadbackOutputFormat
+  DecisionPacketReadModelOutputFormat
 } from "./run-show-readback.js";
 
 export type {
-  RunReadbackOutputFormat,
-  RunReadbackResource
+  DecisionPacketReadModelOutputFormat,
+  DecisionPacketReadModel
 } from "./run-show-readback.js";
 import { defaultWorkspaceSlug, defaultProjectSlug } from "./database-runtime.js";
 
 export interface RunShowCommandRuntime extends BaseCommandRuntime {
   runId: string;
-  format: RunReadbackOutputFormat;
+  format: DecisionPacketReadModelOutputFormat;
   createDatabaseRuntime?: CreateRunShowDatabaseRuntime;
 }
 
@@ -109,12 +109,12 @@ export const runRunShowCommand = async (
 
     if (runtime.format === "json") {
       return {
-        stdout: `${JSON.stringify(buildRunReadbackResource(aggregate), null, 2)}\n`
+        stdout: `${JSON.stringify(buildDecisionPacketReadModel(aggregate), null, 2)}\n`
       };
     }
 
     return {
-      stdout: `${renderRunReadbackAggregate(aggregate)}\n`
+      stdout: `${renderDecisionPacketReadModelText(aggregate)}\n`
     };
   } finally {
     await readRuntime.close();

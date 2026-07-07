@@ -7,7 +7,7 @@ import {
   runRunShowCommand
 } from "../run-run-show-command.js";
 import type {
-  RunReadbackResource
+  DecisionPacketReadModel
 } from "../run-run-show-command.js";
 
 const now = "2026-06-25T14:40:00.000Z";
@@ -58,7 +58,7 @@ const aggregate: HarnessRunAggregate = {
     taskContractId: "task-1",
     version: 1,
     status: "ready",
-    summary: "Run readback plan",
+    summary: "Decision packet read model plan",
     metadata: {
       retainedPatternSelection: {
         kind: "krn.retainedPatternPlanSelection.v1",
@@ -302,7 +302,7 @@ const aggregate: HarnessRunAggregate = {
         sourceClaimId: "claim-1",
         sourceDecisionId: "source-decision-candidate-1",
         outcome: "helped",
-        reason: "Source claim kept command proof boundaries visible in the run readback.",
+        reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
         evidenceRefs: ["evidence-1", "feedback-1"],
         doesNotProve:
           "This source outcome does not prove the source selector will choose the same claim in future runs."
@@ -342,8 +342,8 @@ const aggregate: HarnessRunAggregate = {
 const isRecord = (input: unknown): input is Record<string, unknown> =>
   typeof input === "object" && input !== null && !Array.isArray(input);
 
-const isRunReadbackResource = (input: unknown): input is RunReadbackResource =>
-  isRecord(input) && input.kind === "krn.run.readback.v1";
+const isDecisionPacketReadModel = (input: unknown): input is DecisionPacketReadModel =>
+  isRecord(input) && input.kind === "krn.decisionPacket.readModel.v1";
 
 describe("runRunShowCommand", () => {
   it("renders persisted run evidence without mutating state", async () => {
@@ -368,7 +368,7 @@ describe("runRunShowCommand", () => {
       })
     });
 
-    expect(result.stdout).toContain("KRN Run Readback");
+    expect(result.stdout).toContain("KRN Decision Packet Read Model");
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Run ID: run-1");
@@ -438,7 +438,7 @@ describe("runRunShowCommand", () => {
       "outcome=helped sourceClaim=claim-1 sourceDecision=source-decision-candidate-1"
     );
     expect(result.stdout).toContain(
-      "reason: Source claim kept command proof boundaries visible in the run readback."
+      "reason: Source claim kept command proof boundaries visible in the decision packet read model."
     );
     expect(result.stdout).toContain("evidenceRef: evidence-1");
     expect(result.stdout).toContain(
@@ -521,10 +521,10 @@ describe("runRunShowCommand", () => {
 
     const parsed: unknown = JSON.parse(result.stdout);
 
-    expect(isRunReadbackResource(parsed)).toBe(true);
+    expect(isDecisionPacketReadModel(parsed)).toBe(true);
 
-    if (!isRunReadbackResource(parsed)) {
-      throw new Error("run show json did not render a run readback resource");
+    if (!isDecisionPacketReadModel(parsed)) {
+      throw new Error("run show json did not render a decision packet read model");
     }
 
     expect(parsed.run.projectResolution).toBeUndefined();
@@ -580,14 +580,14 @@ describe("runRunShowCommand", () => {
 
     const parsed: unknown = JSON.parse(result.stdout);
 
-    expect(isRunReadbackResource(parsed)).toBe(true);
+    expect(isDecisionPacketReadModel(parsed)).toBe(true);
 
-    if (!isRunReadbackResource(parsed)) {
-      throw new Error("run show json did not render a run readback resource");
+    if (!isDecisionPacketReadModel(parsed)) {
+      throw new Error("run show json did not render a decision packet read model");
     }
 
     expect(parsed).toMatchObject({
-      kind: "krn.run.readback.v1",
+      kind: "krn.decisionPacket.readModel.v1",
       access: "read_only",
       mutation: "none",
       run: {
@@ -741,7 +741,7 @@ describe("runRunShowCommand", () => {
           sourceClaimId: "claim-1",
           sourceDecisionId: "source-decision-candidate-1",
           outcome: "helped",
-          reason: "Source claim kept command proof boundaries visible in the run readback.",
+          reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
           evidenceRefs: ["evidence-1", "feedback-1"],
           doesNotProve:
             "This source outcome does not prove the source selector will choose the same claim in future runs."

@@ -125,11 +125,11 @@ export const runRunShowDbSmokeCheck = async (
     const readbackKind = readString(parsed, "kind") ?? "missing";
     const readbackMutation = readString(parsed, "mutation") ?? "missing";
     const textReadbackMatched =
-      textReadback.stdout.includes("KRN Run Readback") &&
+      textReadback.stdout.includes("KRN Decision Packet Read Model") &&
       textReadback.stdout.includes(`Run ID: ${executionRun.id}`) &&
       textReadback.stdout.includes("Mutation: none");
     const jsonReadbackMatched =
-      readbackKind === "krn.run.readback.v1" &&
+      readbackKind === "krn.decisionPacket.readModel.v1" &&
       readbackMutation === "none" &&
       readRunId(parsed) === executionRun.id;
 

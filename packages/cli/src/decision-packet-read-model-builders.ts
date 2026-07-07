@@ -28,36 +28,36 @@ import {
   changedFileClassification,
   projectResolutionFromMetadata,
   sourceClaimEdgeInfluenceFromMetadata
-} from "./run-readback-decoders.js";
+} from "./decision-packet-read-model-decoders.js";
 import {
-  runReadbackDoesNotProve,
-  runReadbackProves
-} from "./run-readback-resource.js";
+  decisionPacketReadModelDoesNotProve,
+  decisionPacketReadModelProves
+} from "./decision-packet-read-model.js";
 import type {
-  RunReadbackActivationCandidateResource,
-  RunReadbackActivationDecisionResource,
-  RunReadbackActivationTraceResource,
-  RunReadbackCandidateResource,
-  RunReadbackCommandResource,
-  RunReadbackContextExclusionResource,
-  RunReadbackContextInclusionResource,
-  RunReadbackContextResource,
-  RunReadbackEvidenceBundleResource,
-  RunReadbackFeedbackDeltaResource,
-  RunReadbackPatternUsefulnessOutcomeResource,
-  RunReadbackProofResource,
-  RunReadbackResource,
-  RunReadbackReviewAssessmentResource,
-  RunReadbackRunResource,
-  RunReadbackSourceUsefulnessOutcomeResource,
-  RunReadbackTaskResource
-} from "./run-readback-resource.js";
+  DecisionPacketReadModelActivationCandidate,
+  DecisionPacketReadModelActivationDecision,
+  DecisionPacketReadModelActivationTrace,
+  DecisionPacketReadModelCandidate,
+  DecisionPacketReadModelCommand,
+  DecisionPacketReadModelContextExclusion,
+  DecisionPacketReadModelContextInclusion,
+  DecisionPacketReadModelContext,
+  DecisionPacketReadModelEvidenceBundle,
+  DecisionPacketReadModelFeedbackDelta,
+  DecisionPacketReadModelPatternUsefulnessOutcome,
+  DecisionPacketReadModelProof,
+  DecisionPacketReadModel,
+  DecisionPacketReadModelReviewAssessment,
+  DecisionPacketReadModelRun,
+  DecisionPacketReadModelSourceUsefulnessOutcome,
+  DecisionPacketReadModelTask
+} from "./decision-packet-read-model.js";
 import {
   retainedPatternSelectionFromMetadata
 } from "./retained-pattern-selection.js";
 import type { ProjectResolution } from "./database-runtime.js";
 
-const commandResource = (command: EvidenceCommand): RunReadbackCommandResource => {
+const commandResource = (command: EvidenceCommand): DecisionPacketReadModelCommand => {
   const commandReadback = toEvidenceCommandReadback(command);
 
   return {
@@ -70,7 +70,7 @@ const commandResource = (command: EvidenceCommand): RunReadbackCommandResource =
 
 const contextInclusionResource = (
   inclusion: ContextInclusion
-): RunReadbackContextInclusionResource => ({
+): DecisionPacketReadModelContextInclusion => ({
   subjectType: inclusion.subjectType,
   subjectId: inclusion.subjectId,
   reason: inclusion.reason,
@@ -81,7 +81,7 @@ const contextInclusionResource = (
 
 const contextExclusionResource = (
   exclusion: ContextExclusion
-): RunReadbackContextExclusionResource => ({
+): DecisionPacketReadModelContextExclusion => ({
   subjectType: exclusion.subjectType,
   subjectId: exclusion.subjectId,
   reason: exclusion.reason,
@@ -92,7 +92,7 @@ const contextExclusionResource = (
 
 const activationCandidateResource = (
   candidate: RetrievalCandidateRecord
-): RunReadbackActivationCandidateResource => {
+): DecisionPacketReadModelActivationCandidate => {
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
 
   return {
@@ -116,7 +116,7 @@ const activationCandidateResource = (
 
 const activationDecisionResource = (
   decision: ActivationDecisionRecord
-): RunReadbackActivationDecisionResource => ({
+): DecisionPacketReadModelActivationDecision => ({
   id: decision.id,
   subjectType: decision.subjectType,
   subjectId: decision.subjectId,
@@ -133,7 +133,7 @@ const activationDecisionResource = (
 
 export const activationTraceResource = (
   aggregate: HarnessRunAggregate
-): RunReadbackActivationTraceResource | undefined =>
+): DecisionPacketReadModelActivationTrace | undefined =>
   aggregate.activationTrace === undefined
     ? undefined
     : {
@@ -148,7 +148,7 @@ const candidateResource = (input: {
   status: string | undefined;
   summary: string;
   metadata: Record<string, unknown>;
-}): RunReadbackCandidateResource => {
+}): DecisionPacketReadModelCandidate => {
   const reviewability = candidateReviewability(input.metadata);
   const reviewabilityReasons = candidateReviewabilityReasons(input.metadata);
 
@@ -169,7 +169,7 @@ const metadataCandidateResource = (
   item: Record<string, unknown>,
   kind: FeedbackCandidateProposalKind,
   summaryField: string
-): RunReadbackCandidateResource | undefined => {
+): DecisionPacketReadModelCandidate | undefined => {
   const id = readMetadataString(item, "id");
   const summary = readMetadataString(item, summaryField) ?? readMetadataString(item, "summary");
 
@@ -191,15 +191,15 @@ const metadataCandidateResources = (
   key: string,
   kind: FeedbackCandidateProposalKind,
   summaryField: string
-): RunReadbackCandidateResource[] =>
+): DecisionPacketReadModelCandidate[] =>
   readMetadataObjectList(metadata, key).flatMap((item) => {
     const resource = metadataCandidateResource(item, kind, summaryField);
     return resource === undefined ? [] : [resource];
   });
 
-export const runReadbackCandidateResources = (
+export const decisionPacketReadModelCandidates = (
   feedback: FeedbackDelta
-): RunReadbackCandidateResource[] => [
+): DecisionPacketReadModelCandidate[] => [
   ...feedback.memoryCandidates.map((candidate) => candidateResource({
     kind: "memory_candidate",
     id: candidate.id,
@@ -241,9 +241,9 @@ export const runReadbackCandidateResources = (
   )
 ];
 
-export const runReadbackSourceUsefulnessOutcomes = (
+export const decisionPacketReadModelSourceUsefulnessOutcomes = (
   feedback: FeedbackDelta
-): RunReadbackSourceUsefulnessOutcomeResource[] =>
+): DecisionPacketReadModelSourceUsefulnessOutcome[] =>
   sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
     ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),
     ...(outcome.sourceDecisionId === undefined ? {} : { sourceDecisionId: outcome.sourceDecisionId }),
@@ -253,9 +253,9 @@ export const runReadbackSourceUsefulnessOutcomes = (
     doesNotProve: outcome.doesNotProve
   }));
 
-export const runReadbackPatternUsefulnessOutcomes = (
+export const decisionPacketReadModelPatternUsefulnessOutcomes = (
   feedback: FeedbackDelta
-): RunReadbackPatternUsefulnessOutcomeResource[] =>
+): DecisionPacketReadModelPatternUsefulnessOutcome[] =>
   patternUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
     patternId: outcome.patternId,
     outcome: outcome.outcome,
@@ -267,7 +267,7 @@ export const runReadbackPatternUsefulnessOutcomes = (
 const runResource = (
   aggregate: HarnessRunAggregate,
   projectResolution: ProjectResolution | undefined
-): RunReadbackRunResource => ({
+): DecisionPacketReadModelRun => ({
   id: aggregate.executionRun.id,
   status: aggregate.executionRun.status,
   adapter: aggregate.executionRun.adapter,
@@ -278,7 +278,7 @@ const runResource = (
 
 const taskResource = (
   aggregate: HarnessRunAggregate
-): RunReadbackTaskResource => ({
+): DecisionPacketReadModelTask => ({
   id: aggregate.taskContract.id,
   title: aggregate.taskContract.title,
   objective: aggregate.taskContract.objective,
@@ -294,8 +294,8 @@ export const activationDiagnosticsResource = (
 
 const contextResource = (
   aggregate: HarnessRunAggregate,
-  activationTrace: RunReadbackActivationTraceResource | undefined
-): RunReadbackContextResource => {
+  activationTrace: DecisionPacketReadModelActivationTrace | undefined
+): DecisionPacketReadModelContext => {
   const contextAssembly = aggregate.contextAssembly;
   const activationDiagnostics = activationDiagnosticsResource(contextAssembly);
 
@@ -312,7 +312,7 @@ const contextResource = (
 
 const evidenceBundleResource = (
   bundle: HarnessRunAggregate["evidenceBundles"][number]
-): RunReadbackEvidenceBundleResource => {
+): DecisionPacketReadModelEvidenceBundle => {
   const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
 
   return {
@@ -332,7 +332,7 @@ const evidenceBundleResource = (
 
 const reviewAssessmentResource = (
   assessment: HarnessRunAggregate["reviewAssessments"][number]
-): RunReadbackReviewAssessmentResource => ({
+): DecisionPacketReadModelReviewAssessment => ({
   id: assessment.id,
   status: assessment.status,
   reviewer: assessment.reviewer
@@ -340,7 +340,7 @@ const reviewAssessmentResource = (
 
 const feedbackDeltaResource = (
   feedback: FeedbackDelta
-): RunReadbackFeedbackDeltaResource => {
+): DecisionPacketReadModelFeedbackDelta => {
   const summary = summarizeFeedbackCandidateProposals(feedback);
 
   return {
@@ -356,15 +356,15 @@ const feedbackDeltaResource = (
       eval: summary.counts.evalCandidates,
       observation: summary.counts.observationCandidates
     },
-    candidates: runReadbackCandidateResources(feedback),
-    sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback),
-    patternUsefulnessOutcomes: runReadbackPatternUsefulnessOutcomes(feedback)
+    candidates: decisionPacketReadModelCandidates(feedback),
+    sourceUsefulnessOutcomes: decisionPacketReadModelSourceUsefulnessOutcomes(feedback),
+    patternUsefulnessOutcomes: decisionPacketReadModelPatternUsefulnessOutcomes(feedback)
   };
 };
 
-const proofResource = (): RunReadbackProofResource => ({
-  proves: [...runReadbackProves],
-  doesNotProve: [...runReadbackDoesNotProve]
+const proofResource = (): DecisionPacketReadModelProof => ({
+  proves: [...decisionPacketReadModelProves],
+  doesNotProve: [...decisionPacketReadModelDoesNotProve]
 });
 
 export const retainedPatternSelectionResource = (
@@ -373,15 +373,15 @@ export const retainedPatternSelectionResource = (
   retainedPatternSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
   retainedPatternSelectionFromMetadata(aggregate.executionRun.metadata);
 
-export const buildRunReadbackResource = (
+export const buildDecisionPacketReadModel = (
   aggregate: HarnessRunAggregate
-): RunReadbackResource => {
+): DecisionPacketReadModel => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
   const retainedPatternSelection = retainedPatternSelectionResource(aggregate);
 
   return {
-    kind: "krn.run.readback.v1",
+    kind: "krn.decisionPacket.readModel.v1",
     access: "read_only",
     mutation: "none",
     run: runResource(aggregate, projectResolution),

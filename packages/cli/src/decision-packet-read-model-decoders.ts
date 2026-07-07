@@ -10,9 +10,9 @@ import type {
   ProjectResolutionKind
 } from "./database-runtime.js";
 import type {
-  RunReadbackChangedFilesResource,
-  RunReadbackSourceClaimEdgeInfluenceResource
-} from "./run-readback-resource.js";
+  DecisionPacketReadModelChangedFiles,
+  DecisionPacketReadModelSourceClaimEdgeInfluence
+} from "./decision-packet-read-model.js";
 
 type MetadataRecordParseResult =
   | {
@@ -106,7 +106,7 @@ export const projectResolutionFromMetadata = (
 
 export const changedFileClassification = (
   bundle: HarnessRunAggregate["evidenceBundles"][number]
-): RunReadbackChangedFilesResource["classification"] => {
+): DecisionPacketReadModelChangedFiles["classification"] => {
   const group = metadataRecordValue(bundle.metadata.changedFileClassification);
 
   if (group === undefined) {
@@ -144,7 +144,7 @@ export const metadataArrayLength = (
 
 export const sourceClaimEdgeInfluenceFromMetadata = (
   metadata: Record<string, unknown>
-): RunReadbackSourceClaimEdgeInfluenceResource | undefined => {
+): DecisionPacketReadModelSourceClaimEdgeInfluence | undefined => {
   const value = metadataRecordValue(metadata.sourceClaimEdgeInfluence);
 
   if (value === undefined) {

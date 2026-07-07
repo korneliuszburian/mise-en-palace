@@ -59,6 +59,7 @@ describe("runDecisionPacketEval", () => {
       expectedDecisionId: "store-backed-memory-no-markdown",
       qualityLabel: "useful",
       packet: {
+        formatVersion: "krn.decisionPacket.v1",
         governingDecisionIds: expect.arrayContaining(["store-backed-memory-no-markdown"]),
         sourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
