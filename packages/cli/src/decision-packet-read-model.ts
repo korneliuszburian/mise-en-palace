@@ -11,7 +11,7 @@ import type {
 import type { ActivationRetrievalDiagnostics } from "@krn/harness";
 
 import type { ProjectResolution } from "./database-runtime.js";
-import type { RetainedPatternPlanSelection } from "./retained-pattern-selection.js";
+import type { BrainKnowledgePlanSelection } from "./brain-knowledge-selection.js";
 
 export type DecisionPacketReadModelOutputFormat = "text" | "json";
 
@@ -118,7 +118,7 @@ export interface DecisionPacketReadModel {
     objective: string;
     status: string;
   };
-  retainedPatternSelection?: RetainedPatternPlanSelection;
+  brainKnowledgeSelection?: BrainKnowledgePlanSelection;
   context: {
     status: string;
     inclusions: number;

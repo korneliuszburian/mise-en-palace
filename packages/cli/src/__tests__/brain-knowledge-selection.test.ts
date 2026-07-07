@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatRetainedPatternSelectionLines,
-  retainedPatternSelectionFromKnowledgeJson,
-  retainedPatternSelectionFromMetadata,
-  unavailableRetainedPatternSelection
-} from "../retained-pattern-selection.js";
+  formatBrainKnowledgeSelectionLines,
+  brainKnowledgeSelectionFromReadbackJson,
+  brainKnowledgeSelectionFromMetadata,
+  unavailableBrainKnowledgeSelection
+} from "../brain-knowledge-selection.js";
 
-const validPatternCard = {
+const validKnowledgeCard = {
   id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
   title: "Brain knowledge parser TypeScript exemplar",
   reviewability: "ready",
@@ -16,14 +16,14 @@ const validPatternCard = {
 };
 
 const validSelectionMetadata = {
-  kind: "krn.retainedPatternPlanSelection.v1",
+  kind: "krn.brainKnowledgePlanSelection.v1",
   status: "selected",
   query: "unknown-first parser exemplar",
   source: "brain_knowledge_catalog",
-  selectedPatternIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
-  selectedPatterns: [{
-    ...validPatternCard,
-    patternId: "ts-boundary-brain-knowledge-parser-exemplar",
+  selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
+  selectedKnowledge: [{
+    ...validKnowledgeCard,
+    knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
     targetFit: "target_specific",
     targetFitReasons: ["matched distinctive query token(s): parser, exemplar."]
   }],
@@ -41,32 +41,32 @@ const validSelectionMetadata = {
   },
   recommendedNextAction:
     "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
-  reason: "Retained brain knowledge matched the pre-coding plan query.",
+  reason: "Brain knowledge matched the pre-coding plan query.",
   doesNotProve:
-    "Selected retained patterns do not prove implementation correctness.",
+    "Selected brain knowledge does not prove implementation correctness.",
   proof: {
-    proves: ["brain knowledge catalog selected a retained pattern"],
+    proves: ["brain knowledge catalog selected a brain knowledge"],
     doesNotProve: ["implementation correctness"]
   }
 };
 
-describe("retainedPatternSelection", () => {
-  it("parses retained pattern cards through finite reviewability and action fields", () => {
-    const result = retainedPatternSelectionFromKnowledgeJson(
+describe("brainKnowledgeSelection", () => {
+  it("parses brain knowledge cards through finite reviewability and action fields", () => {
+    const result = brainKnowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
       JSON.stringify({
-        cards: [validPatternCard],
+        cards: [validKnowledgeCard],
         proof: {
-          proves: ["brain knowledge catalog selected a retained pattern"],
+          proves: ["brain knowledge catalog selected a brain knowledge"],
           doesNotProve: ["implementation correctness"]
         }
       })
     );
 
     expect(result.status).toBe("selected");
-    expect(result.selectedPatterns).toEqual([{
-      ...validPatternCard,
-      patternId: "ts-boundary-brain-knowledge-parser-exemplar",
+    expect(result.selectedKnowledge).toEqual([{
+      ...validKnowledgeCard,
+      knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
       targetFit: "target_specific",
       targetFitReasons: ["matched distinctive query token(s): parser, exemplar."]
     }]);
@@ -74,30 +74,30 @@ describe("retainedPatternSelection", () => {
     expect(result.recommendedNextAction).toContain("Use target-specific selectedKnowledge");
   });
 
-  it("rejects retained pattern cards with prose next actions", () => {
-    const result = retainedPatternSelectionFromKnowledgeJson(
+  it("rejects brain knowledge cards with prose next actions", () => {
+    const result = brainKnowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
       JSON.stringify({
         cards: [{
-          ...validPatternCard,
+          ...validKnowledgeCard,
           nextAction: "Use before editing TypeScript IO boundaries."
         }]
       })
     );
 
     expect(result.status).toBe("rejected_or_deferred");
-    expect(result.selectedPatterns).toEqual([]);
-    expect(result.selectedPatternIds).toEqual([]);
+    expect(result.selectedKnowledge).toEqual([]);
+    expect(result.selectedKnowledgeIds).toEqual([]);
   });
 
-  it("rejects metadata when selected pattern items drift from the exemplar enums", () => {
+  it("rejects metadata when selected knowledge items drift from the exemplar enums", () => {
     expect(
-      retainedPatternSelectionFromMetadata({
-        retainedPatternSelection: {
+      brainKnowledgeSelectionFromMetadata({
+        brainKnowledgeSelection: {
           ...validSelectionMetadata,
-          selectedPatterns: [{
-            ...validPatternCard,
-            patternId: "ts-boundary-brain-knowledge-parser-exemplar",
+          selectedKnowledge: [{
+            ...validKnowledgeCard,
+            knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
             reviewability: "good_enough"
           }]
         }
@@ -105,16 +105,16 @@ describe("retainedPatternSelection", () => {
     ).toBeUndefined();
   });
 
-  it("parses valid retained pattern metadata packets", () => {
+  it("parses valid brain knowledge metadata packets", () => {
     expect(
-      retainedPatternSelectionFromMetadata({
-        retainedPatternSelection: validSelectionMetadata
+      brainKnowledgeSelectionFromMetadata({
+        brainKnowledgeSelection: validSelectionMetadata
       })
     ).toMatchObject({
       status: "selected",
-      selectedPatternIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
-      selectedPatterns: [{
-        patternId: "ts-boundary-brain-knowledge-parser-exemplar",
+      selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
+      selectedKnowledge: [{
+        knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
         reviewability: "ready",
         nextAction: "review"
       }]
@@ -122,8 +122,8 @@ describe("retainedPatternSelection", () => {
   });
 
   it("preserves explicit target-fit summary metadata instead of recomputing it", () => {
-    const result = retainedPatternSelectionFromMetadata({
-      retainedPatternSelection: {
+    const result = brainKnowledgeSelectionFromMetadata({
+      brainKnowledgeSelection: {
         ...validSelectionMetadata,
         targetFitSummary: {
           verdict: "generic_only_selected_knowledge",
@@ -145,16 +145,16 @@ describe("retainedPatternSelection", () => {
     expect(result?.recommendedNextAction).toBe("stored target-fit summary was preserved");
   });
 
-  it("formats unavailable retained pattern readback with empty-target-fit guidance", () => {
-    const selection = unavailableRetainedPatternSelection(
+  it("formats unavailable brain knowledge readback with empty-target-fit guidance", () => {
+    const selection = unavailableBrainKnowledgeSelection(
       "unknown-first parser exemplar",
       "brain knowledge command failed"
     );
 
     expect(selection.targetFitSummary.verdict).toBe("no_selected_knowledge");
     expect(selection.recommendedNextAction).toBe(selection.targetFitSummary.recommendedUse);
-    expect(formatRetainedPatternSelectionLines(selection)).toContain(
-      "Retained pattern recommended use: Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first."
+    expect(formatBrainKnowledgeSelectionLines(selection)).toContain(
+      "Brain knowledge recommended use: Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first."
     );
   });
 });

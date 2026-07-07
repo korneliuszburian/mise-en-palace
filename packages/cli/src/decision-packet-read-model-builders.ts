@@ -54,8 +54,8 @@ import type {
   DecisionPacketReadModelTask
 } from "./decision-packet-read-model.js";
 import {
-  retainedPatternSelectionFromMetadata
-} from "./retained-pattern-selection.js";
+  brainKnowledgeSelectionFromMetadata
+} from "./brain-knowledge-selection.js";
 import type { ProjectResolution } from "./database-runtime.js";
 
 const commandResource = (command: EvidenceCommand): DecisionPacketReadModelCommand => {
@@ -392,18 +392,18 @@ const proofResource = (): DecisionPacketReadModelProof => ({
   doesNotProve: [...decisionPacketReadModelDoesNotProve]
 });
 
-export const retainedPatternSelectionResource = (
+export const brainKnowledgeSelectionResource = (
   aggregate: HarnessRunAggregate
-): ReturnType<typeof retainedPatternSelectionFromMetadata> =>
-  retainedPatternSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
-  retainedPatternSelectionFromMetadata(aggregate.executionRun.metadata);
+): ReturnType<typeof brainKnowledgeSelectionFromMetadata> =>
+  brainKnowledgeSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
+  brainKnowledgeSelectionFromMetadata(aggregate.executionRun.metadata);
 
 export const buildDecisionPacketReadModel = (
   aggregate: HarnessRunAggregate
 ): DecisionPacketReadModel => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
-  const retainedPatternSelection = retainedPatternSelectionResource(aggregate);
+  const brainKnowledgeSelection = brainKnowledgeSelectionResource(aggregate);
 
   return {
     kind: "krn.decisionPacket.readModel.v1",
@@ -411,7 +411,7 @@ export const buildDecisionPacketReadModel = (
     mutation: "none",
     run: runResource(aggregate, projectResolution),
     task: taskResource(aggregate),
-    ...(retainedPatternSelection === undefined ? {} : { retainedPatternSelection }),
+    ...(brainKnowledgeSelection === undefined ? {} : { brainKnowledgeSelection }),
     context: contextResource(aggregate, activationTrace),
     evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),

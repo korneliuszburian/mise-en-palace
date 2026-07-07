@@ -59,14 +59,14 @@ import {
   defaultCodexBriefAuthorityRefs
 } from "./codex-brief-support.js";
 import {
-  formatRetainedPatternSelectionLines,
-  retainedPatternPlanSelectionMetadataKey,
-  retainedPatternSelectionFromKnowledgeJson,
-  unavailableRetainedPatternSelection
-} from "./retained-pattern-selection.js";
+  formatBrainKnowledgeSelectionLines,
+  brainKnowledgePlanSelectionMetadataKey,
+  brainKnowledgeSelectionFromReadbackJson,
+  unavailableBrainKnowledgeSelection
+} from "./brain-knowledge-selection.js";
 import type {
-  RetainedPatternPlanSelection
-} from "./retained-pattern-selection.js";
+  BrainKnowledgePlanSelection
+} from "./brain-knowledge-selection.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
@@ -552,18 +552,18 @@ const formatPersistedIdentityLines = (
       ]
 );
 
-const withRetainedPatternSelectionReason = (
-  selection: RetainedPatternPlanSelection,
+const withBrainKnowledgeSelectionReason = (
+  selection: BrainKnowledgePlanSelection,
   reason: string
-): RetainedPatternPlanSelection => ({
+): BrainKnowledgePlanSelection => ({
   ...selection,
   reason
 });
 
-const readRetainedPatternSelection = async (
+const readBrainKnowledgeSelection = async (
   query: string,
   compilerRuntime: CompilerRuntimeResolution
-): Promise<RetainedPatternPlanSelection> => {
+): Promise<BrainKnowledgePlanSelection> => {
   const records = await compilerRuntime.compilerDependencies.memoryRepository.listActiveMemory(
     compilerRuntime.projectId,
     20
@@ -574,7 +574,7 @@ const readRetainedPatternSelection = async (
       text: query
     }
   ).slice(0, 5);
-  const selection = retainedPatternSelectionFromKnowledgeJson(
+  const selection = brainKnowledgeSelectionFromReadbackJson(
     query,
     JSON.stringify({
       kind: "krn.brainKnowledge.cards.preview.v1",
@@ -601,16 +601,16 @@ const readRetainedPatternSelection = async (
   );
 
   return selection.status === "selected"
-    ? withRetainedPatternSelectionReason(selection, "Retained store-backed memory matched the pre-coding plan query.")
+    ? withBrainKnowledgeSelectionReason(selection, "Store-backed brain knowledge matched the pre-coding plan query.")
     : selection;
 };
 
-const firstSelectedRetainedPattern = async (
+const firstSelectedBrainKnowledge = async (
   queries: readonly string[],
   compilerRuntime: CompilerRuntimeResolution
-): Promise<RetainedPatternPlanSelection | undefined> => {
+): Promise<BrainKnowledgePlanSelection | undefined> => {
   for (const query of queries) {
-    const selection = await readRetainedPatternSelection(query, compilerRuntime);
+    const selection = await readBrainKnowledgeSelection(query, compilerRuntime);
 
     if (selection.status === "selected") {
       return selection;
@@ -620,10 +620,10 @@ const firstSelectedRetainedPattern = async (
   return undefined;
 };
 
-const buildRetainedPatternSelection = async (
+const buildBrainKnowledgeSelection = async (
   task: string,
   compilerRuntime: CompilerRuntimeResolution
-): Promise<RetainedPatternPlanSelection> => {
+): Promise<BrainKnowledgePlanSelection> => {
   const baseQueries = [task, task.replace(/-/gu, " ")];
   const queries = [...new Set(baseQueries.flatMap((query) => {
     const compactQueries = compactBrainKnowledgeBridgeQueries(query);
@@ -632,13 +632,13 @@ const buildRetainedPatternSelection = async (
   }))];
 
   try {
-    const selection = await firstSelectedRetainedPattern(queries, compilerRuntime);
+    const selection = await firstSelectedBrainKnowledge(queries, compilerRuntime);
 
     if (selection !== undefined) {
       return selection;
     }
 
-    return retainedPatternSelectionFromKnowledgeJson(
+    return brainKnowledgeSelectionFromReadbackJson(
       task,
       JSON.stringify({
         cards: [],
@@ -649,20 +649,20 @@ const buildRetainedPatternSelection = async (
       })
     );
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "unknown retained pattern readback error";
+    const reason = error instanceof Error ? error.message : "unknown brain knowledge readback error";
 
-    return unavailableRetainedPatternSelection(task, reason);
+    return unavailableBrainKnowledgeSelection(task, reason);
   }
 };
 
-const withRetainedPatternSelectionMetadata = (
+const withBrainKnowledgeSelectionMetadata = (
   compileInput: HarnessCompileInput,
-  retainedPatternSelection: RetainedPatternPlanSelection
+  brainKnowledgeSelection: BrainKnowledgePlanSelection
 ): HarnessCompileInput => ({
   ...compileInput,
   metadata: {
     ...(compileInput.metadata ?? {}),
-    [retainedPatternPlanSelectionMetadataKey]: retainedPatternSelection
+    [brainKnowledgePlanSelectionMetadataKey]: brainKnowledgeSelection
   }
 });
 
@@ -675,7 +675,7 @@ const formatPlanSummary = (
   evidenceCommands: readonly string[],
   nextAction: string,
   executionBrief: string,
-  retainedPatternSelection: RetainedPatternPlanSelection,
+  brainKnowledgeSelection: BrainKnowledgePlanSelection,
   projectScopedMetadata?: ProjectScopedPlanMetadata,
   targetReadModel?: TargetActivationReadModel,
   persistedIdentity?: PersistedPlanIdentity
@@ -688,7 +688,7 @@ const formatPlanSummary = (
     ...formatProjectResolutionLines(projectResolution),
     ...formatProjectScopedMetadataLines(projectScopedMetadata),
     ...formatTargetReadModelLines(targetReadModel),
-    ...formatRetainedPatternSelectionLines(retainedPatternSelection),
+    ...formatBrainKnowledgeSelectionLines(brainKnowledgeSelection),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
     ...formatActivationSummary(contextAssembly, nextAction),
@@ -813,15 +813,15 @@ const projectScopedMetadataForRun = (
       })
 });
 
-const retainedPatternSelectionMetadataForRun = (
+const brainKnowledgeSelectionMetadataForRun = (
   harnessPlan: CompiledHarnessPlan["harnessPlan"]
 ): Record<string, unknown> => {
-  const retainedPatternSelection =
-    harnessPlan.metadata[retainedPatternPlanSelectionMetadataKey];
+  const brainKnowledgeSelection =
+    harnessPlan.metadata[brainKnowledgePlanSelectionMetadataKey];
 
-  return retainedPatternSelection === undefined
+  return brainKnowledgeSelection === undefined
     ? {}
-    : { [retainedPatternPlanSelectionMetadataKey]: retainedPatternSelection };
+    : { [brainKnowledgePlanSelectionMetadataKey]: brainKnowledgeSelection };
 };
 
 const createPersistedPlanIdentity = async (
@@ -853,7 +853,7 @@ const createPersistedPlanIdentity = async (
           metadata: {
             command,
             ...projectScopedMetadataForRun(compilerRuntime),
-            ...retainedPatternSelectionMetadataForRun(result.harnessPlan),
+            ...brainKnowledgeSelectionMetadataForRun(result.harnessPlan),
             ...targetReadModelMetadata(targetReadModel, targetOwnerFileRecall),
             ...(compilerRuntime.projectResolution === undefined
               ? {}
@@ -884,10 +884,10 @@ export const runPlanCommand = async (
   const compilerRuntime = await resolveCompilerRuntime(runtime, workspaceSlug, projectSlug);
 
   try {
-    const retainedPatternSelection = await buildRetainedPatternSelection(task, compilerRuntime);
-    const compileInput = withRetainedPatternSelectionMetadata(
+    const brainKnowledgeSelection = await buildBrainKnowledgeSelection(task, compilerRuntime);
+    const compileInput = withBrainKnowledgeSelectionMetadata(
       baseCompileInput,
-      retainedPatternSelection
+      brainKnowledgeSelection
     );
     const targetReadModel = await buildTargetActivationReadModel(
       compilerRuntime.projectScopedMetadata
@@ -915,7 +915,7 @@ export const runPlanCommand = async (
         evidenceCommands,
         result.nextAction,
         executionBrief,
-        retainedPatternSelection,
+        brainKnowledgeSelection,
         compilerRuntime.projectScopedMetadata,
         targetReadModel,
         persistedIdentity

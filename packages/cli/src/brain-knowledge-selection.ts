@@ -17,14 +17,14 @@ import type {
   TargetFitSummary
 } from "@krn/core";
 
-export type RetainedPatternPlanSelectionStatus =
+export type BrainKnowledgePlanSelectionStatus =
   | "selected"
   | "rejected_or_deferred"
   | "unavailable";
 
-export interface RetainedPatternPlanItem {
+export interface BrainKnowledgePlanItem {
   id: string;
-  patternId: string;
+  knowledgeId: string;
   title: string;
   reviewability: BrainKnowledgeReviewability;
   nextAction: BrainKnowledgeNextAction;
@@ -33,13 +33,13 @@ export interface RetainedPatternPlanItem {
   targetFitReasons: readonly string[];
 }
 
-export interface RetainedPatternPlanSelection {
-  kind: "krn.retainedPatternPlanSelection.v1";
-  status: RetainedPatternPlanSelectionStatus;
+export interface BrainKnowledgePlanSelection {
+  kind: "krn.brainKnowledgePlanSelection.v1";
+  status: BrainKnowledgePlanSelectionStatus;
   query: string;
   source: "brain_knowledge_catalog";
-  selectedPatternIds: string[];
-  selectedPatterns: RetainedPatternPlanItem[];
+  selectedKnowledgeIds: string[];
+  selectedKnowledge: BrainKnowledgePlanItem[];
   targetFitSummary: TargetFitSummary;
   recommendedNextAction: string;
   reason: string;
@@ -50,7 +50,7 @@ export interface RetainedPatternPlanSelection {
   };
 }
 
-export const retainedPatternPlanSelectionMetadataKey = "retainedPatternSelection";
+export const brainKnowledgePlanSelectionMetadataKey = "brainKnowledgeSelection";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -59,14 +59,14 @@ type FieldParsers<T extends object> = {
   [Key in keyof T]-?: (record: Record<string, unknown>) => T[Key] | undefined;
 };
 
-type RetainedPatternPlanItemFields = Omit<
-  RetainedPatternPlanItem,
-  "patternId" | "targetFit" | "targetFitReasons"
+type BrainKnowledgePlanItemFields = Omit<
+  BrainKnowledgePlanItem,
+  "knowledgeId" | "targetFit" | "targetFitReasons"
 >;
 
-type RetainedPatternPlanSelectionMetadataFields = Pick<
-  RetainedPatternPlanSelection,
-  "kind" | "status" | "query" | "source" | "selectedPatternIds" | "reason" | "doesNotProve"
+type BrainKnowledgePlanSelectionMetadataFields = Pick<
+  BrainKnowledgePlanSelection,
+  "kind" | "status" | "query" | "source" | "selectedKnowledgeIds" | "reason" | "doesNotProve"
 >;
 
 const selectionStatuses = new Set<string>([
@@ -94,12 +94,12 @@ const parseNonEmptyString = (value: unknown): string | undefined =>
 
 const isSelectionStatus = (
   value: unknown
-): value is RetainedPatternPlanSelectionStatus =>
+): value is BrainKnowledgePlanSelectionStatus =>
   typeof value === "string" && selectionStatuses.has(value);
 
 const isSelectionSource = (
   value: unknown
-): value is RetainedPatternPlanSelection["source"] =>
+): value is BrainKnowledgePlanSelection["source"] =>
   typeof value === "string" && selectionSources.has(value);
 
 const isPlanItemReviewability = (
@@ -141,7 +141,7 @@ const parseObjectFields = <T extends object>(
   return Object.fromEntries(entries) as T;
 };
 
-const planItemFieldParsers: FieldParsers<RetainedPatternPlanItemFields> = {
+const planItemFieldParsers: FieldParsers<BrainKnowledgePlanItemFields> = {
   id: (record) => parseNonEmptyString(record["id"]),
   title: (record) => parseNonEmptyString(record["title"]),
   reviewability: (record) =>
@@ -151,22 +151,22 @@ const planItemFieldParsers: FieldParsers<RetainedPatternPlanItemFields> = {
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
-const selectionMetadataFieldParsers: FieldParsers<RetainedPatternPlanSelectionMetadataFields> = {
+const selectionMetadataFieldParsers: FieldParsers<BrainKnowledgePlanSelectionMetadataFields> = {
   kind: (record) =>
-    record["kind"] === "krn.retainedPatternPlanSelection.v1"
-      ? "krn.retainedPatternPlanSelection.v1"
+    record["kind"] === "krn.brainKnowledgePlanSelection.v1"
+      ? "krn.brainKnowledgePlanSelection.v1"
       : undefined,
   status: (record) =>
     isSelectionStatus(record["status"]) ? record["status"] : undefined,
   query: (record) => parseNonEmptyString(record["query"]),
   source: (record) =>
     isSelectionSource(record["source"]) ? record["source"] : undefined,
-  selectedPatternIds: (record) => parseStringArray(record["selectedPatternIds"]),
+  selectedKnowledgeIds: (record) => parseStringArray(record["selectedKnowledgeIds"]),
   reason: (record) => parseNonEmptyString(record["reason"]),
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
-const patternIdFromCardId = (id: string): string =>
+const knowledgeIdFromCardId = (id: string): string =>
   id.startsWith("pattern:") ? id.slice("pattern:".length) : id;
 
 const cardTargetFitText = (record: Record<string, unknown>): string =>
@@ -185,8 +185,8 @@ const cardTargetFitText = (record: Record<string, unknown>): string =>
 
 const planItemFromRecord = (
   record: Record<string, unknown>,
-  patternId: string | undefined
-): RetainedPatternPlanItem | undefined => {
+  knowledgeId: string | undefined
+): BrainKnowledgePlanItem | undefined => {
   const requiredFields = parseObjectFields(record, planItemFieldParsers);
 
   if (requiredFields === undefined) {
@@ -195,10 +195,10 @@ const planItemFromRecord = (
 
   return {
     ...requiredFields,
-    patternId: patternId ?? patternIdFromCardId(requiredFields.id),
+    knowledgeId: knowledgeId ?? knowledgeIdFromCardId(requiredFields.id),
     targetFit: isPlanItemTargetFit(record["targetFit"]) ? record["targetFit"] : "unknown",
     targetFitReasons: parseStringArray(record["targetFitReasons"]) ?? [
-      "target-fit metadata was not present on this retained pattern item."
+      "target-fit metadata was not present on this brain knowledge item."
     ]
   };
 };
@@ -206,7 +206,7 @@ const planItemFromRecord = (
 const planItemFromCard = (
   value: unknown,
   query: string
-): RetainedPatternPlanItem | undefined => {
+): BrainKnowledgePlanItem | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -223,14 +223,14 @@ const planItemFromCard = (
     ...classifyTargetFit({
       query,
       text: cardTargetFitText(value),
-      emptyTextReason: "retained pattern card has no classifiable target-fit text."
+      emptyTextReason: "brain knowledge card has no classifiable target-fit text."
     })
   };
 };
 
 const proofFromRecord = (
   value: unknown
-): RetainedPatternPlanSelection["proof"] => {
+): BrainKnowledgePlanSelection["proof"] => {
   if (!isRecord(value)) {
     return {
       proves: [],
@@ -244,122 +244,122 @@ const proofFromRecord = (
   };
 };
 
-export const retainedPatternSelectionFromKnowledgeJson = (
+export const brainKnowledgeSelectionFromReadbackJson = (
   query: string,
   text: string
-): RetainedPatternPlanSelection => {
+): BrainKnowledgePlanSelection => {
   const parsed: unknown = JSON.parse(text);
   const record = isRecord(parsed) ? parsed : undefined;
   const cards = Array.isArray(record?.cards) ? record.cards : [];
-  const selectedPatterns = cards.flatMap((card) => {
+  const selectedKnowledge = cards.flatMap((card) => {
     const item = planItemFromCard(card, query);
 
     return item === undefined ? [] : [item];
   });
-  const targetFitSummary = summarizeTargetFit(selectedPatterns);
+  const targetFitSummary = summarizeTargetFit(selectedKnowledge);
 
-  if (selectedPatterns.length === 0) {
+  if (selectedKnowledge.length === 0) {
     return {
-      kind: "krn.retainedPatternPlanSelection.v1",
+      kind: "krn.brainKnowledgePlanSelection.v1",
       status: "rejected_or_deferred",
       query,
       source: "brain_knowledge_catalog",
-      selectedPatternIds: [],
-      selectedPatterns: [],
+      selectedKnowledgeIds: [],
+      selectedKnowledge: [],
       targetFitSummary,
       recommendedNextAction: targetFitSummary.recommendedUse,
-      reason: "No retained brain knowledge pattern matched the pre-coding plan query.",
+      reason: "No brain knowledge matched the pre-coding plan query.",
       doesNotProve:
-        "No matched retained pattern does not prove no relevant pattern exists; it proves only that this catalog readback did not select one.",
+        "No matched brain knowledge does not prove no relevant knowledge exists; it proves only that this catalog readback did not select one.",
       proof: proofFromRecord(record?.proof)
     };
   }
 
   return {
-    kind: "krn.retainedPatternPlanSelection.v1",
+    kind: "krn.brainKnowledgePlanSelection.v1",
     status: "selected",
     query,
     source: "brain_knowledge_catalog",
-    selectedPatternIds: selectedPatterns.map((pattern) => pattern.patternId),
-    selectedPatterns,
+    selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
+    selectedKnowledge,
     targetFitSummary,
     recommendedNextAction: targetFitSummary.recommendedUse,
-    reason: "Retained brain knowledge matched the pre-coding plan query.",
+    reason: "Brain knowledge matched the pre-coding plan query.",
     doesNotProve:
-      "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+      "Selected brain knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
     proof: proofFromRecord(record?.proof)
   };
 };
 
-export const unavailableRetainedPatternSelection = (
+export const unavailableBrainKnowledgeSelection = (
   query: string,
   reason: string
-): RetainedPatternPlanSelection => {
+): BrainKnowledgePlanSelection => {
   const targetFitSummary = summarizeTargetFit([]);
 
   return {
-    kind: "krn.retainedPatternPlanSelection.v1",
+    kind: "krn.brainKnowledgePlanSelection.v1",
     status: "unavailable",
     query,
     source: "brain_knowledge_catalog",
-    selectedPatternIds: [],
-    selectedPatterns: [],
+    selectedKnowledgeIds: [],
+    selectedKnowledge: [],
     targetFitSummary,
     recommendedNextAction: targetFitSummary.recommendedUse,
     reason,
     doesNotProve:
-      "Unavailable retained pattern readback does not prove no relevant pattern exists; run brain knowledge readback before making pattern-retention claims.",
+      "Unavailable brain knowledge readback does not prove no relevant knowledge exists; run brain knowledge readback before making selection claims.",
     proof: {
-      proves: ["plan recorded an explicit retained-pattern readback failure"],
+      proves: ["plan recorded an explicit brain-knowledge readback failure"],
       doesNotProve: [
         "brain knowledge catalog completeness",
-        "pattern relevance",
+        "knowledge relevance",
         "implementation correctness"
       ]
     }
   }
 };
 
-const planItemFromMetadata = (value: unknown): RetainedPatternPlanItem | undefined => {
+const planItemFromMetadata = (value: unknown): BrainKnowledgePlanItem | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const patternId = parseNonEmptyString(value["patternId"]);
+  const knowledgeId = parseNonEmptyString(value["knowledgeId"]);
 
-  return patternId === undefined ? undefined : planItemFromRecord(value, patternId);
+  return knowledgeId === undefined ? undefined : planItemFromRecord(value, knowledgeId);
 };
 
-export const retainedPatternSelectionFromMetadata = (
+export const brainKnowledgeSelectionFromMetadata = (
   metadata: Record<string, unknown> | undefined
-): RetainedPatternPlanSelection | undefined => {
-  const value = metadata?.[retainedPatternPlanSelectionMetadataKey];
+): BrainKnowledgePlanSelection | undefined => {
+  const value = metadata?.[brainKnowledgePlanSelectionMetadataKey];
 
   if (!isRecord(value)) {
     return undefined;
   }
 
   const requiredFields = parseObjectFields(value, selectionMetadataFieldParsers);
-  const selectedPatternsValue = value.selectedPatterns;
-  if (requiredFields === undefined || !Array.isArray(selectedPatternsValue)) {
+  const selectedKnowledgeValue = value.selectedKnowledge;
+  if (requiredFields === undefined || !Array.isArray(selectedKnowledgeValue)) {
     return undefined;
   }
 
-  const selectedPatterns = selectedPatternsValue.flatMap((item) => {
+  const selectedKnowledge = selectedKnowledgeValue.flatMap((item) => {
     const parsed = planItemFromMetadata(item);
 
     return parsed === undefined ? [] : [parsed];
   });
 
-  if (selectedPatterns.length !== selectedPatternsValue.length) {
+  if (selectedKnowledge.length !== selectedKnowledgeValue.length) {
     return undefined;
   }
   const targetFitSummary =
-    parseTargetFitSummary(value.targetFitSummary) ?? summarizeTargetFit(selectedPatterns);
+    parseTargetFitSummary(value.targetFitSummary) ?? summarizeTargetFit(selectedKnowledge);
 
   return {
     ...requiredFields,
-    selectedPatterns,
+    selectedKnowledge,
     targetFitSummary,
     recommendedNextAction:
       parseNonEmptyString(value.recommendedNextAction) ?? targetFitSummary.recommendedUse,
@@ -367,35 +367,35 @@ export const retainedPatternSelectionFromMetadata = (
   };
 };
 
-export const formatRetainedPatternSelectionLines = (
-  selection: RetainedPatternPlanSelection | undefined
+export const formatBrainKnowledgeSelectionLines = (
+  selection: BrainKnowledgePlanSelection | undefined
 ): string[] => {
   if (selection === undefined) {
     return [
-      "Retained pattern selection: unavailable",
-      "Retained pattern reason: no retained pattern metadata was present"
+      "Brain knowledge selection: unavailable",
+      "Brain knowledge reason: no brain knowledge metadata was present"
     ];
   }
 
   return [
-    `Retained pattern selection: ${selection.status}`,
-    `Retained pattern query: ${selection.query}`,
-    `Retained pattern IDs: ${
-      selection.selectedPatternIds.length === 0 ? "none" : selection.selectedPatternIds.join(", ")
+    `Brain knowledge selection: ${selection.status}`,
+    `Brain knowledge query: ${selection.query}`,
+    `Brain knowledge IDs: ${
+      selection.selectedKnowledgeIds.length === 0 ? "none" : selection.selectedKnowledgeIds.join(", ")
     }`,
-    `Retained pattern targetFit: ${selection.targetFitSummary.verdict}`,
-    `Retained pattern recommended use: ${selection.recommendedNextAction}`,
-    ...selection.selectedPatterns.map((pattern) =>
+    `Brain knowledge targetFit: ${selection.targetFitSummary.verdict}`,
+    `Brain knowledge recommended use: ${selection.recommendedNextAction}`,
+    ...selection.selectedKnowledge.map((knowledge) =>
       [
-        `- pattern=${pattern.patternId}`,
-        `card=${pattern.id}`,
-        `reviewability=${pattern.reviewability}`,
-        `targetFit=${pattern.targetFit}`,
-        `title=${pattern.title}`,
-        `nextAction=${pattern.nextAction}`
+        `- knowledge=${knowledge.knowledgeId}`,
+        `card=${knowledge.id}`,
+        `reviewability=${knowledge.reviewability}`,
+        `targetFit=${knowledge.targetFit}`,
+        `title=${knowledge.title}`,
+        `nextAction=${knowledge.nextAction}`
       ].join(" | ")
     ),
-    `Retained pattern reason: ${selection.reason}`,
-    `Retained pattern does not prove: ${selection.doesNotProve}`
+    `Brain knowledge reason: ${selection.reason}`,
+    `Brain knowledge does not prove: ${selection.doesNotProve}`
   ];
 };

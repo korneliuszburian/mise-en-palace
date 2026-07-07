@@ -101,25 +101,25 @@ describe("runCli", () => {
         status: "ready",
         summary: "render persisted Codex brief",
         metadata: {
-          retainedPatternSelection: {
-            kind: "krn.retainedPatternPlanSelection.v1",
+          brainKnowledgeSelection: {
+            kind: "krn.brainKnowledgePlanSelection.v1",
             status: "selected",
             query: "unknown-first boundary",
             source: "brain_knowledge_catalog",
-            selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
-            selectedPatterns: [
+            selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+            selectedKnowledge: [
               {
                 id: "pattern:ts-boundary-unknown-first-result-state",
-                patternId: "ts-boundary-unknown-first-result-state",
+                knowledgeId: "ts-boundary-unknown-first-result-state",
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
                 nextAction: "use",
                 doesNotProve: "This pattern does not prove implementation correctness."
               }
             ],
-            reason: "Retained brain knowledge matched the pre-coding plan query.",
+            reason: "Brain knowledge matched the pre-coding plan query.",
             doesNotProve:
-              "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+              "Selected brain knowledge do not prove implementation correctness, source truth, ranking quality, or product readiness.",
             proof: {
               proves: ["local readback filters were applied deterministically"],
               doesNotProve: ["ranking quality is good"]
@@ -266,11 +266,11 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Codex invocation: none");
     expect(result.stdout).toContain("Memory mutation: none");
-    expect(result.stdout).toContain("Retained Pattern Context:");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Brain Knowledge Context:");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "- pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).toContain("Source Claims Used:");

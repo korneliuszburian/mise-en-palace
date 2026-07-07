@@ -7,9 +7,9 @@ import {
   resolveReadOnlyHarnessRuntime
 } from "./codex-brief-support.js";
 import {
-  formatRetainedPatternSelectionLines,
-  retainedPatternSelectionFromMetadata
-} from "./retained-pattern-selection.js";
+  formatBrainKnowledgeSelectionLines,
+  brainKnowledgeSelectionFromMetadata
+} from "./brain-knowledge-selection.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
@@ -28,7 +28,7 @@ export interface CodexBriefCommandResult {
 const renderText = (
   runId: string,
   briefText: string,
-  retainedPatternLines: readonly string[]
+  brainKnowledgeLines: readonly string[]
 ): string =>
   [
     "KRN Codex Brief",
@@ -37,8 +37,8 @@ const renderText = (
     "Codex invocation: none",
     "Memory mutation: none",
     "",
-    "Retained Pattern Context:",
-    ...retainedPatternLines,
+    "Brain Knowledge Context:",
+    ...brainKnowledgeLines,
     "",
     briefText.trimEnd()
   ].join("\n") + "\n";
@@ -91,7 +91,7 @@ export const runCodexBriefCommand = async (
       nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
-    const retainedPatternSelection = retainedPatternSelectionFromMetadata(
+    const brainKnowledgeSelection = brainKnowledgeSelectionFromMetadata(
       aggregate.harnessPlan.metadata
     );
 
@@ -99,7 +99,7 @@ export const runCodexBriefCommand = async (
       stdout: renderText(
         runtime.runId,
         renderedBrief,
-        formatRetainedPatternSelectionLines(retainedPatternSelection)
+        formatBrainKnowledgeSelectionLines(brainKnowledgeSelection)
       )
     };
   } finally {

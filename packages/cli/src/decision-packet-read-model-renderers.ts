@@ -17,7 +17,7 @@ import type { HarnessRunAggregate } from "@krn/harness/repositories";
 
 import type { ProjectResolution } from "./database-runtime.js";
 import { formatProjectResolutionKind } from "./project-resolution-format.js";
-import { formatRetainedPatternSelectionLines } from "./retained-pattern-selection.js";
+import { formatBrainKnowledgeSelectionLines } from "./brain-knowledge-selection.js";
 import {
   metadataArrayLength,
   projectResolutionFromMetadata
@@ -25,7 +25,7 @@ import {
 import {
   activationDiagnosticsResource,
   activationTraceResource,
-  retainedPatternSelectionResource,
+  brainKnowledgeSelectionResource,
   decisionPacketReadModelCandidates,
   decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes,
   decisionPacketReadModelSourceUsefulnessOutcomes
@@ -320,11 +320,11 @@ const renderContextSection = (
   ...renderActivationTrace(aggregate)
 ];
 
-const renderRetainedPatternSelection = (
+const renderBrainKnowledgeSelection = (
   aggregate: HarnessRunAggregate
 ): string[] => [
-  "Retained Pattern Selection:",
-  ...formatRetainedPatternSelectionLines(retainedPatternSelectionResource(aggregate))
+  "Brain Knowledge Selection:",
+  ...formatBrainKnowledgeSelectionLines(brainKnowledgeSelectionResource(aggregate))
 ];
 
 const renderReviewAssessments = (
@@ -361,7 +361,7 @@ export const renderDecisionPacketReadModelText = (
     "",
     ...renderTaskSection(aggregate, projectResolution),
     "",
-    ...renderRetainedPatternSelection(aggregate),
+    ...renderBrainKnowledgeSelection(aggregate),
     "",
     ...renderContextSection(aggregate, activationDiagnostics),
     "",

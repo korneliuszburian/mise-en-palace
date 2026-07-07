@@ -84,14 +84,14 @@ export const unusedMemoryRepository = {
   }
 };
 
-const retainedPatternMemory = (
-  patternId: string,
+const brainKnowledgeMemory = (
+  knowledgeId: string,
   summary: string,
   body: string
 ): MemoryRecord => ({
-  id: `memory-${patternId}`,
+  id: `memory-${knowledgeId}`,
   projectId: "project-1",
-  key: `pattern:${patternId}`,
+  key: `pattern:${knowledgeId}`,
   kind: "pattern",
   status: "active",
   summary,
@@ -99,51 +99,51 @@ const retainedPatternMemory = (
   owner: "codex",
   confidence: 95,
   applicationGuidance: body,
-  invalidationRule: `Invalidate if ${patternId} stops matching KRN implementation practice.`,
+  invalidationRule: `Invalidate if ${knowledgeId} stops matching KRN implementation practice.`,
   sourceLineage: [{
-    sourceId: `source-${patternId}`,
-    note: `source:${patternId}`
+    sourceId: `source-${knowledgeId}`,
+    note: `source:${knowledgeId}`
   }],
   isUserPreference: false,
   positiveFeedbackCount: 0,
   negativeFeedbackCount: 0,
   metadata: {
-    patternId,
-    falsifier: `A task matching ${patternId} no longer benefits from this pattern.`,
-    doesNotProve: "This retained pattern memory does not prove source truth or broad ranking quality."
+    patternId: knowledgeId,
+    falsifier: `A task matching ${knowledgeId} no longer benefits from this pattern.`,
+    doesNotProve: "This brain knowledge memory does not prove source truth or broad ranking quality."
   },
   validFrom: now,
   createdAt: now,
   updatedAt: now
 });
 
-const retainedPatternMemories: MemoryRecord[] = [
-  retainedPatternMemory(
+const brainKnowledgeMemories: MemoryRecord[] = [
+  brainKnowledgeMemory(
     "ts-boundary-brain-knowledge-parser-exemplar",
     "TypeScript parser exemplar metadata-boundary",
     "Use the retained TypeScript parser exemplar for parser, metadata-boundary, and brain knowledge read-model work."
   ),
-  retainedPatternMemory(
+  brainKnowledgeMemory(
     "ts-boundary-unknown-first-result-state",
     "Unknown-first TypeScript result state",
     "Use unknown-first parsing and explicit result-state narrowing for untrusted JSON or CLI inputs."
   ),
-  retainedPatternMemory(
+  brainKnowledgeMemory(
     "consensus-relation-maintenance-review-boundary",
     "Consensus relation maintenance review boundary",
     "Use the consensus relation maintenance review boundary for bounded consensus, relation, and maintenance review work."
   ),
-  retainedPatternMemory(
+  brainKnowledgeMemory(
     "reference-implementation-recipe-clone-boundary",
     "Reference implementation recipe clone boundary",
     "Use the reference implementation recipe when proving a local code exemplar without building clone runtime machinery."
   )
 ];
 
-export const retainedPatternMemoryRepository = {
+export const brainKnowledgeMemoryRepository = {
   ...unusedMemoryRepository,
   async listActiveMemory(_projectId: string, limit: number): Promise<MemoryRecord[]> {
-    return retainedPatternMemories.slice(0, limit);
+    return brainKnowledgeMemories.slice(0, limit);
   },
   async listAntiMemoryForProject(_projectId: string): Promise<AntiMemoryRecord[]> {
     return [];
@@ -231,11 +231,11 @@ export const runPersistedPlanWithCapturedMetadata = async (
           compilerDependencies: {
             ...dependencies,
             harnessRunRepository,
-            memoryRepository: retainedPatternMemoryRepository
+            memoryRepository: brainKnowledgeMemoryRepository
           },
           harnessRunRepository,
           sourceRepository,
-          memoryRepository: retainedPatternMemoryRepository,
+          memoryRepository: brainKnowledgeMemoryRepository,
           async close() {
             return undefined;
           }

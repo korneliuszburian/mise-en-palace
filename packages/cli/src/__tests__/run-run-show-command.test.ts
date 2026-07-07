@@ -60,22 +60,22 @@ const aggregate: HarnessRunAggregate = {
     status: "ready",
     summary: "Decision packet read model plan",
     metadata: {
-      retainedPatternSelection: {
-        kind: "krn.retainedPatternPlanSelection.v1",
+      brainKnowledgeSelection: {
+        kind: "krn.brainKnowledgePlanSelection.v1",
         status: "selected",
         query: "unknown first",
         source: "brain_knowledge_catalog",
-        selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
-        selectedPatterns: [{
+        selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+        selectedKnowledge: [{
           id: "pattern:ts-boundary-unknown-first-result-state",
-          patternId: "ts-boundary-unknown-first-result-state",
+          knowledgeId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
           nextAction: "use",
           targetFit: "target_specific",
           targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
-            "This retained pattern does not prove the implementation used unknown-first validation correctly."
+            "This brain knowledge does not prove the implementation used unknown-first validation correctly."
         }],
         targetFitSummary: {
           verdict: "target_specific_selected_knowledge",
@@ -91,11 +91,11 @@ const aggregate: HarnessRunAggregate = {
         },
         recommendedNextAction:
           "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
-        reason: "Retained brain knowledge matched the pre-coding plan query.",
+        reason: "Brain knowledge matched the pre-coding plan query.",
         doesNotProve:
-          "Selected retained patterns do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+          "Selected brain knowledge do not prove implementation correctness, source truth, ranking quality, or product readiness.",
         proof: {
-          proves: ["brain knowledge catalog selected a retained pattern for the plan query"],
+          proves: ["brain knowledge catalog selected a brain knowledge for the plan query"],
           doesNotProve: ["future pattern recall quality"]
         }
       }
@@ -380,17 +380,17 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain(
       "project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
     );
-    expect(result.stdout).toContain("Retained Pattern Selection:");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern query: unknown first");
-    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
-    expect(result.stdout).toContain("Retained pattern targetFit: target_specific_selected_knowledge");
-    expect(result.stdout).toContain("Retained pattern recommended use: Use target-specific selectedKnowledge");
+    expect(result.stdout).toContain("Brain Knowledge Selection:");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge query: unknown first");
+    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Brain knowledge targetFit: target_specific_selected_knowledge");
+    expect(result.stdout).toContain("Brain knowledge recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
+      "knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
     );
     expect(result.stdout).toContain(
-      "Retained pattern does not prove: Selected retained patterns do not prove implementation correctness"
+      "Brain knowledge does not prove: Selected brain knowledge do not prove implementation correctness"
     );
     expect(result.stdout).toContain("Activation diagnostics:");
     expect(result.stdout).toContain("Context inclusion details:");
@@ -600,22 +600,22 @@ describe("runRunShowCommand", () => {
           repoPathHint: "/repo/root"
         }
       },
-      retainedPatternSelection: {
-        kind: "krn.retainedPatternPlanSelection.v1",
+      brainKnowledgeSelection: {
+        kind: "krn.brainKnowledgePlanSelection.v1",
         status: "selected",
         query: "unknown first",
         source: "brain_knowledge_catalog",
-        selectedPatternIds: ["ts-boundary-unknown-first-result-state"],
-        selectedPatterns: [{
+        selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+        selectedKnowledge: [{
           id: "pattern:ts-boundary-unknown-first-result-state",
-          patternId: "ts-boundary-unknown-first-result-state",
+          knowledgeId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
           nextAction: "use",
           targetFit: "target_specific",
           targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
-            "This retained pattern does not prove the implementation used unknown-first validation correctly."
+            "This brain knowledge does not prove the implementation used unknown-first validation correctly."
         }],
         targetFitSummary: {
           verdict: "target_specific_selected_knowledge",

@@ -25,7 +25,7 @@ import type {
 import {
   now,
   runPersistedPlanWithCapturedMetadata,
-  retainedPatternMemoryRepository,
+  brainKnowledgeMemoryRepository,
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
 
@@ -159,11 +159,11 @@ describe("runCli", () => {
             compilerDependencies: {
               ...dependencies,
               harnessRunRepository,
-              memoryRepository: retainedPatternMemoryRepository
+              memoryRepository: brainKnowledgeMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: retainedPatternMemoryRepository,
+            memoryRepository: brainKnowledgeMemoryRepository,
             async close() {
               return undefined;
             }
@@ -183,7 +183,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
-  it("persists selected retained pattern IDs for plan --persist", async () => {
+  it("persists selected brain knowledge IDs for plan --persist", async () => {
     let executionRunMetadata: Record<string, unknown> | undefined;
     const result = await runCli(
       ["plan", "--task", "unknown first", "--persist"],
@@ -253,11 +253,11 @@ describe("runCli", () => {
             compilerDependencies: {
               ...dependencies,
               harnessRunRepository,
-              memoryRepository: retainedPatternMemoryRepository
+              memoryRepository: brainKnowledgeMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: retainedPatternMemoryRepository,
+            memoryRepository: brainKnowledgeMemoryRepository,
             async close() {
               return undefined;
             }
@@ -268,77 +268,77 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "Retained pattern reason: Retained store-backed memory matched the pre-coding plan query."
+      "Brain knowledge reason: Store-backed brain knowledge matched the pre-coding plan query."
     );
-    expect(result.stdout).toContain("Retained pattern targetFit: target_specific_selected_knowledge");
-    expect(result.stdout).toContain("Retained pattern recommended use: Use target-specific selectedKnowledge");
+    expect(result.stdout).toContain("Brain knowledge targetFit: target_specific_selected_knowledge");
+    expect(result.stdout).toContain("Brain knowledge recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "- pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );
     expect(executionRunMetadata).toMatchObject({
-      retainedPatternSelection: {
+      brainKnowledgeSelection: {
         status: "selected",
         reason:
-          "Retained store-backed memory matched the pre-coding plan query.",
-        selectedPatternIds: ["ts-boundary-unknown-first-result-state"]
+          "Store-backed brain knowledge matched the pre-coding plan query.",
+        selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"]
       }
     });
   });
 
-  it("retries retained-pattern planning with compact mechanism terms", async () => {
+  it("retries brain knowledge planning with compact mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern IDs: consensus-relation-maintenance-review-boundary");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge IDs: consensus-relation-maintenance-review-boundary");
     expect(executionRunMetadata).toMatchObject({
-      retainedPatternSelection: {
+      brainKnowledgeSelection: {
         status: "selected",
-        selectedPatternIds: ["consensus-relation-maintenance-review-boundary"]
+        selectedKnowledgeIds: ["consensus-relation-maintenance-review-boundary"]
       }
     });
   });
 
-  it("retries retained-pattern planning with parser exemplar mechanism terms", async () => {
+  it("retries brain knowledge planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Improve retained-pattern plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern query: typescript parser exemplar");
-    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-brain-knowledge-parser-exemplar");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge query: typescript parser exemplar");
+    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-brain-knowledge-parser-exemplar");
     expect(executionRunMetadata).toMatchObject({
-      retainedPatternSelection: {
+      brainKnowledgeSelection: {
         status: "selected",
         query: "typescript parser exemplar",
-        selectedPatternIds: ["ts-boundary-brain-knowledge-parser-exemplar"]
+        selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"]
       }
     });
   });
 
-  it("selects reference implementation recipe patterns for exemplar tasks", async () => {
+  it("selects reference implementation recipe knowledge for exemplar tasks", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Prove the retained reference-implementation recipe pattern through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions"
     );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern query: prove reference implementation recipe");
-    expect(result.stdout).toContain("Retained pattern IDs: reference-implementation-recipe-clone-boundary");
+    expect(result.stdout).toContain("Brain knowledge selection: selected");
+    expect(result.stdout).toContain("Brain knowledge query: prove reference implementation recipe");
+    expect(result.stdout).toContain("Brain knowledge IDs: reference-implementation-recipe-clone-boundary");
     expect(executionRunMetadata).toMatchObject({
-      retainedPatternSelection: {
+      brainKnowledgeSelection: {
         status: "selected",
         query: "prove reference implementation recipe",
-        selectedPatternIds: ["reference-implementation-recipe-clone-boundary"]
+        selectedKnowledgeIds: ["reference-implementation-recipe-clone-boundary"]
       }
     });
   });
