@@ -130,11 +130,11 @@ describe("runCli", () => {
         usage: "Usage: krn brain search"
       },
       {
-        args: ["knowledge", "--help"],
+        args: ["brain", "knowledge", "--help"],
         usage: "Usage: krn brain knowledge"
       },
       {
-        args: ["knowledge", "-h"],
+        args: ["brain", "knowledge", "-h"],
         usage: "Usage: krn brain knowledge"
       },
       {

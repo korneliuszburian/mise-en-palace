@@ -35,16 +35,16 @@ import {
   memoryRecordToKnowledgeCard
 } from "./memory-knowledge-card.js";
 import {
-  runKnowledgeCardsCommand
-} from "./run-knowledge-cards-command.js";
+  runBrainKnowledgeCommand
+} from "./run-brain-knowledge-command.js";
 import type {
-  KnowledgeCardsCommandRuntime
-} from "./run-knowledge-cards-command.js";
+  BrainKnowledgeCommandRuntime
+} from "./run-brain-knowledge-command.js";
 
 type ProjectCliCommand = Extract<
   CliCommand,
   | { kind: "init" }
-  | { kind: "knowledgeCards" }
+  | { kind: "brainKnowledge" }
 >;
 
 interface ProjectCliCommandContext {
@@ -83,7 +83,7 @@ const projectCommandError = (
 
 const isProjectCliCommand = (command: CliCommand): command is ProjectCliCommand => (
   command.kind === "init" ||
-  command.kind === "knowledgeCards"
+  command.kind === "brainKnowledge"
 );
 
 const trimmedEnvValue = (value: string | undefined): string | undefined => {
@@ -102,10 +102,10 @@ const feedbackDeltasToPatternUsefulness = (
     )
   );
 
-const createKnowledgeCardsStoreProviders = async (
-  command: Extract<ProjectCliCommand, { kind: "knowledgeCards" }>,
+const createBrainKnowledgeStoreProviders = async (
+  command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
   context: ProjectCliCommandContext
-): Promise<Pick<KnowledgeCardsCommandRuntime, "cardProvider" | "usefulnessProvider">> => {
+): Promise<Pick<BrainKnowledgeCommandRuntime, "cardProvider" | "usefulnessProvider">> => {
   const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
 
   if (databaseUrl === undefined) {
@@ -175,16 +175,16 @@ const createKnowledgeCardsStoreProviders = async (
 
 const projectFallbackMessages = {
   init: "Unknown init error",
-  knowledgeCards: "Unknown brain knowledge error"
+  brainKnowledge: "Unknown brain knowledge error"
 } satisfies Record<ProjectCliCommand["kind"], string>;
 
-const runKnowledgeCardsProjectCommand = async (
-  command: Extract<ProjectCliCommand, { kind: "knowledgeCards" }>,
+const runBrainKnowledgeProjectCommand = async (
+  command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
   context: ProjectCliCommandContext
 ): Promise<ProjectCommandOutput> => {
-  const storeProviders = await createKnowledgeCardsStoreProviders(command, context);
+  const storeProviders = await createBrainKnowledgeStoreProviders(command, context);
 
-  return runKnowledgeCardsCommand({
+  return runBrainKnowledgeCommand({
     cwd: context.cwd,
     cardFiles: command.cardFiles,
     patternFiles: command.patternFiles,
@@ -214,7 +214,7 @@ const runSelectedProjectCommand = async (
     });
   }
 
-  return runKnowledgeCardsProjectCommand(command, context);
+  return runBrainKnowledgeProjectCommand(command, context);
 };
 
 export const runProjectCliCommand = async (

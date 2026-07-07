@@ -30,9 +30,6 @@ import {
   parseInitArgs
 } from "./parse-init-args.js";
 import {
-  parseKnowledgeArgs
-} from "./parse-knowledge-args.js";
-import {
   parseMemoryArgs
 } from "./parse-memory-args.js";
 import {
@@ -159,10 +156,10 @@ export type CliCommand =
       format: "text" | "json";
     }
   | {
-      kind: "knowledgeCardsHelp";
+      kind: "brainKnowledgeHelp";
     }
   | {
-      kind: "knowledgeCards";
+      kind: "brainKnowledge";
       cardFiles: readonly string[];
       patternFiles: readonly string[];
       catalogFiles: readonly string[];
@@ -528,7 +525,6 @@ const usage = [
   "krn run show --run-id <id>",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
   "krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
-  "  legacy alias: krn knowledge cards ...",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",
@@ -566,10 +562,7 @@ const isEvidenceHelpRequest = (rest: readonly string[]): boolean =>
   (rest[0] === "capture" && (rest[1] === "--help" || rest[1] === "-h"));
 
 const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
-  brain: (rest) =>
-    rest[0] === "knowledge"
-      ? parseKnowledgeArgs(["cards", ...rest.slice(1)])
-      : parseBrainArgs(rest),
+  brain: parseBrainArgs,
   doctor: parseDoctorArgs,
   init: parseInitArgs,
   db: parseDbArgs,
@@ -582,7 +575,6 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
         }
       : parseEvidenceArgs(rest),
   review: parseReviewArgs,
-  knowledge: parseKnowledgeArgs,
   maintenance: parseMaintenancePreviewArgs,
   observe: parseObserveArgs,
   reflect: parseReflectArgs,

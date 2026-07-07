@@ -19,15 +19,15 @@ import {
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
 
-export type KnowledgeCardsOutputFormat = "text" | "json" | "html";
+export type BrainKnowledgeOutputFormat = "text" | "json" | "html";
 
-export interface KnowledgeCardsCommandRuntime {
+export interface BrainKnowledgeCommandRuntime {
   cwd?: string;
   cardFiles: readonly string[];
   patternFiles: readonly string[];
   catalogFiles: readonly string[];
   filter: BrainKnowledgeSearchFilter;
-  format: KnowledgeCardsOutputFormat;
+  format: BrainKnowledgeOutputFormat;
   limit?: number;
   cardProvider?: () => Promise<BrainKnowledgeReadModel[]>;
   /**
@@ -41,11 +41,11 @@ export interface KnowledgeCardsCommandRuntime {
   usefulnessProvider?: () => Promise<BrainKnowledgeUsefulnessFeedback[]>;
 }
 
-export interface KnowledgeCardsCommandResult {
+export interface BrainKnowledgeCommandResult {
   stdout: string;
 }
 
-interface LoadedKnowledgeCards {
+interface LoadedBrainKnowledgeCards {
   cards: BrainKnowledgeReadModel[];
   feedback: BrainKnowledgeUsefulnessFeedback[];
   cardFiles: string[];
@@ -54,7 +54,7 @@ interface LoadedKnowledgeCards {
   catalogFiles: string[];
 }
 
-interface KnowledgeCardsPreviewResource {
+interface BrainKnowledgePreviewResource {
   kind: "krn.brainKnowledge.cards.preview.v1";
   access: "read_only";
   mutation: "none";
@@ -98,7 +98,7 @@ const buildProof = (
   {
     const proves = source === "memory_store"
       ? [
-          "brain knowledge cards were read from DB-backed MemoryRecord rows",
+          "brain knowledge entries were read from DB-backed MemoryRecord rows",
           "MemoryRecords were converted into BrainKnowledgeReadModel cards",
           "local readback filters were applied deterministically"
         ]
@@ -123,7 +123,7 @@ const buildProof = (
     };
   };
 
-const createLoadedKnowledgeCards = (): LoadedKnowledgeCards => ({
+const createLoadedBrainKnowledgeCards = (): LoadedBrainKnowledgeCards => ({
   cards: [],
   feedback: [],
   cardFiles: [],
@@ -132,10 +132,10 @@ const createLoadedKnowledgeCards = (): LoadedKnowledgeCards => ({
   catalogFiles: []
 });
 
-const loadExplicitKnowledgeFiles = async (
-  runtime: KnowledgeCardsCommandRuntime,
+const loadExplicitBrainKnowledgeFiles = async (
+  runtime: BrainKnowledgeCommandRuntime,
   cwd: string,
-  loaded: LoadedKnowledgeCards
+  loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
   for (const cardFile of runtime.cardFiles) {
     await loadCardFile(cardFile, await resolveRepoInputFile(cwd, cardFile), loaded.cards);
@@ -152,7 +152,7 @@ const loadCatalogCardFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedKnowledgeCards
+  loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
   for (const cardFile of catalog.cardFiles) {
     const resolvedCardFile = path.resolve(catalogDirectory, cardFile);
@@ -165,7 +165,7 @@ const loadCatalogPatternFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedKnowledgeCards
+  loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
   for (const patternFile of catalog.patternFiles) {
     const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
@@ -178,7 +178,7 @@ const loadCatalogUsefulnessFeedbackFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedKnowledgeCards
+  loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
   for (const usefulnessFeedbackFile of catalog.usefulnessFeedbackFiles) {
     const resolvedUsefulnessFeedbackFile = path.resolve(catalogDirectory, usefulnessFeedbackFile);
@@ -191,10 +191,10 @@ const loadCatalogUsefulnessFeedbackFiles = async (
   }
 };
 
-const loadKnowledgeCatalogFile = async (
+const loadBrainKnowledgeCatalogFile = async (
   cwd: string,
   catalogFile: string,
-  loaded: LoadedKnowledgeCards
+  loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
   const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
   const result = await readJsonObjectResult(resolvedCatalogFile);
@@ -218,16 +218,16 @@ const loadKnowledgeCatalogFile = async (
   loaded.catalogFiles.push(catalogFile);
 };
 
-const loadKnowledgeCards = async (
-  runtime: KnowledgeCardsCommandRuntime,
+const loadBrainKnowledgeCards = async (
+  runtime: BrainKnowledgeCommandRuntime,
   cwd: string
-): Promise<LoadedKnowledgeCards> => {
-  const loaded = createLoadedKnowledgeCards();
+): Promise<LoadedBrainKnowledgeCards> => {
+  const loaded = createLoadedBrainKnowledgeCards();
 
-  await loadExplicitKnowledgeFiles(runtime, cwd, loaded);
+  await loadExplicitBrainKnowledgeFiles(runtime, cwd, loaded);
 
   for (const catalogFile of runtime.catalogFiles) {
-    await loadKnowledgeCatalogFile(cwd, catalogFile, loaded);
+    await loadBrainKnowledgeCatalogFile(cwd, catalogFile, loaded);
   }
 
   if (runtime.cardProvider !== undefined) {
@@ -237,11 +237,11 @@ const loadKnowledgeCards = async (
   return loaded;
 };
 
-export const runKnowledgeCardsCommand = async (
-  runtime: KnowledgeCardsCommandRuntime
-): Promise<KnowledgeCardsCommandResult> => {
+export const runBrainKnowledgeCommand = async (
+  runtime: BrainKnowledgeCommandRuntime
+): Promise<BrainKnowledgeCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
-  const loaded = await loadKnowledgeCards(runtime, cwd);
+  const loaded = await loadBrainKnowledgeCards(runtime, cwd);
   const storeUsefulness = runtime.usefulnessProvider === undefined
     ? []
     : await runtime.usefulnessProvider();
@@ -261,7 +261,7 @@ export const runKnowledgeCardsCommand = async (
     ? buildNoMatchGuidance(runtime.filter)
     : undefined;
 
-  const resource: KnowledgeCardsPreviewResource = {
+  const resource: BrainKnowledgePreviewResource = {
     kind: "krn.brainKnowledge.cards.preview.v1",
     access: "read_only",
     mutation: "none",
@@ -281,26 +281,26 @@ export const runKnowledgeCardsCommand = async (
   };
 
   return {
-    stdout: formatKnowledgeCardsOutput(resource, runtime.format)
+    stdout: formatBrainKnowledgeOutput(resource, runtime.format)
   };
 };
 
-const formatKnowledgeCardsOutput = (
-  resource: KnowledgeCardsPreviewResource,
-  format: KnowledgeCardsOutputFormat
+const formatBrainKnowledgeOutput = (
+  resource: BrainKnowledgePreviewResource,
+  format: BrainKnowledgeOutputFormat
 ): string => {
   if (format === "json") {
     return `${JSON.stringify(resource, null, 2)}\n`;
   }
 
   if (format === "html") {
-    return formatKnowledgeCardsHtmlPreview(resource);
+    return formatBrainKnowledgeHtmlPreview(resource);
   }
 
-  return formatKnowledgeCardsTextPreview(resource);
+  return formatBrainKnowledgeTextPreview(resource);
 };
 
-const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource): string =>
+const formatBrainKnowledgeTextPreview = (resource: BrainKnowledgePreviewResource): string =>
   [
     "KRN Brain Knowledge Readback",
     "Access: read-only",
@@ -324,7 +324,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     ...resource.proof.doesNotProve.map((item) => `- does not prove: ${item}`)
   ].join("\n") + "\n";
 
-const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource): string => {
+const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource): string => {
   const serializedResource = JSON.stringify(resource).replace(/</gu, "\\u003c");
 
   return `<!doctype html>
@@ -559,14 +559,14 @@ const hasStructuredFilter = (filter: BrainKnowledgeSearchFilter): boolean =>
   filter.reviewability !== undefined ||
   filter.usefulnessOutcome !== undefined;
 
-const formatNoMatchGuidanceText = (resource: KnowledgeCardsPreviewResource): string[] =>
+const formatNoMatchGuidanceText = (resource: BrainKnowledgePreviewResource): string[] =>
   resource.noMatchGuidance === undefined ? [] : [
     "",
     "No-match guidance:",
     ...resource.noMatchGuidance.map((item) => `- ${item}`)
   ];
 
-const formatNoMatchGuidanceHtml = (resource: KnowledgeCardsPreviewResource): string =>
+const formatNoMatchGuidanceHtml = (resource: BrainKnowledgePreviewResource): string =>
   resource.noMatchGuidance === undefined
     ? "No brain knowledge entries match the current search."
     : `<strong>No brain knowledge entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;

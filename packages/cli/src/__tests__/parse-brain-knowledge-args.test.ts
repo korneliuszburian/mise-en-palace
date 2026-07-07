@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  parseKnowledgeArgs
-} from "../parse-knowledge-args.js";
+  parseBrainKnowledgeArgs
+} from "../parse-brain-knowledge-args.js";
 
-describe("parseKnowledgeArgs", () => {
+describe("parseBrainKnowledgeArgs", () => {
   it("parses brain knowledge readback preview", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--card-file",
       "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json",
       "--kind",
@@ -22,7 +21,7 @@ describe("parseKnowledgeArgs", () => {
       "unknown-first"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [
           "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
         ],
@@ -42,14 +41,13 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses json format", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--card-file",
       "card.json",
       "--json"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: ["card.json"],
         patternFiles: [],
         catalogFiles: [],
@@ -61,8 +59,7 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses a positive result limit", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--usefulness-outcome",
@@ -72,7 +69,7 @@ describe("parseKnowledgeArgs", () => {
       "--json"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
@@ -87,8 +84,7 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses missing usefulness feedback filter", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--usefulness-outcome",
@@ -96,7 +92,7 @@ describe("parseKnowledgeArgs", () => {
       "--json"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
@@ -110,14 +106,13 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses html format", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--html"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
@@ -129,15 +124,14 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses retained pattern files", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--pattern-file",
       "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [
           "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
@@ -153,15 +147,14 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses catalog files", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--text",
       "unknown-first"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
@@ -175,8 +168,7 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("parses store-only readback without file sources", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--store-only",
       "--project",
       "project-1",
@@ -185,7 +177,7 @@ describe("parseKnowledgeArgs", () => {
       "--json"
     ])).toEqual({
       command: {
-        kind: "knowledgeCards",
+        kind: "brainKnowledge",
         cardFiles: [],
         patternFiles: [],
         catalogFiles: [],
@@ -200,14 +192,13 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("requires a file source unless store-only is explicit", () => {
-    expect(parseKnowledgeArgs(["cards"])).toEqual({
+    expect(parseBrainKnowledgeArgs([])).toEqual({
       error: expect.stringContaining("Missing required --card-file, --pattern-file, or --catalog-file")
     });
   });
 
   it("rejects store-only combined with file sources", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--store-only",
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json"
@@ -217,45 +208,41 @@ describe("parseKnowledgeArgs", () => {
   });
 
   it("rejects unknown filters", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--card-file",
       "card.json",
       "--kind",
       "everything"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported knowledge kind: everything")
+      error: expect.stringContaining("Unsupported brain knowledge kind: everything")
     });
   });
 
   it("rejects unknown usefulness outcome filters", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--card-file",
       "card.json",
       "--usefulness-outcome",
       "maybe"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported knowledge usefulness outcome: maybe")
+      error: expect.stringContaining("Unsupported brain knowledge usefulness outcome: maybe")
     });
   });
 
   it("rejects unknown status filters", () => {
-    expect(parseKnowledgeArgs([
-      "cards",
+    expect(parseBrainKnowledgeArgs([
       "--card-file",
       "card.json",
       "--status",
       "draft"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported knowledge status: draft")
+      error: expect.stringContaining("Unsupported brain knowledge status: draft")
     });
   });
 
   it("rejects invalid result limits", () => {
     for (const limit of ["0", "-1", "1.5", "many"]) {
-      expect(parseKnowledgeArgs([
-        "cards",
+      expect(parseBrainKnowledgeArgs([
         "--card-file",
         "card.json",
         "--limit",

@@ -1,6 +1,9 @@
 import {
   optionValue
 } from "./parse-cli-options.js";
+import {
+  parseBrainKnowledgeArgs
+} from "./parse-brain-knowledge-args.js";
 import type {
   ParseArgsResult
 } from "./parse-args.js";
@@ -11,6 +14,7 @@ const brainSearchUsage = [
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
+  "krn brain knowledge --text \"unknown-first\"",
   "krn brain search --query \"source-to-decision\" --project project-explicit --json",
   "  note: brain search defaults to DB-backed MemoryRecord readback plus source-search. --catalog-file is an explicit legacy catalog preview mode; --store-only keeps file catalog readback disabled. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
@@ -219,47 +223,33 @@ const parseBrainSearchOption = (
     : parser(args, index, state);
 };
 
-export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
-  const [action, ...args] = rest;
-
-  if (action === undefined || action === "--help" || action === "-h") {
-    return {
-      command: {
-        kind: "brainSearchHelp"
-      }
-    };
+const brainSearchHelp = (): ParseArgsResult => ({
+  command: {
+    kind: "brainSearchHelp"
   }
+});
 
-  if (action !== "search") {
-    return {
-      error: `Unsupported brain command: ${action}\n${formatBrainSearchUsage()}`
-    };
-  }
+const createBrainSearchParseState = (): BrainSearchParseState => ({
+  query: undefined,
+  catalogFiles: [],
+  storeOnly: true,
+  storeOnlyExplicit: false,
+  projectId: undefined,
+  limit: undefined,
+  maxInclusions: undefined,
+  format: "text"
+});
 
-  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
-    return {
-      command: {
-        kind: "brainSearchHelp"
-      }
-    };
-  }
-
-  const state: BrainSearchParseState = {
-    query: undefined,
-    catalogFiles: [],
-    storeOnly: true,
-    storeOnlyExplicit: false,
-    projectId: undefined,
-    limit: undefined,
-    maxInclusions: undefined,
-    format: "text"
-  };
-
+const parseBrainSearchOptions = (
+  args: readonly string[],
+  state: BrainSearchParseState
+): { ok: true } | { ok: false; error: string } => {
   for (let index = 0; index < args.length; index += 1) {
     const parsed = parseBrainSearchOption(args, index, state);
 
     if (!parsed.ok) {
       return {
+        ok: false,
         error: parsed.error
       };
     }
@@ -267,22 +257,44 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
     index = parsed.nextIndex;
   }
 
-  if (state.query === undefined || state.query.trim().length === 0) {
+  return {
+    ok: true
+  };
+};
+
+const validateBrainSearchState = (
+  state: BrainSearchParseState
+): { ok: true; query: string } | { ok: false; error: string } => {
+  const query = state.query?.trim();
+
+  if (query === undefined || query.length === 0) {
     return {
+      ok: false,
       error: `Missing required --query\n${formatBrainSearchUsage()}`
     };
   }
 
   if (state.storeOnlyExplicit && state.catalogFiles.length > 0) {
     return {
+      ok: false,
       error: `--store-only cannot be combined with --catalog-file\n${formatBrainSearchUsage()}`
     };
   }
 
   return {
+    ok: true,
+    query
+  };
+};
+
+const buildBrainSearchCommand = (
+  state: BrainSearchParseState,
+  query: string
+): ParseArgsResult => {
+  return {
     command: {
       kind: "brainSearch",
-      query: state.query.trim(),
+      query,
       catalogFiles: state.catalogFiles,
       storeOnly: state.storeOnly,
       format: state.format,
@@ -291,4 +303,43 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
       ...(state.maxInclusions === undefined ? {} : { maxInclusions: state.maxInclusions })
     }
   };
+};
+
+const parseBrainSearchArgs = (args: readonly string[]): ParseArgsResult => {
+  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
+    return brainSearchHelp();
+  }
+
+  const state = createBrainSearchParseState();
+  const parsed = parseBrainSearchOptions(args, state);
+
+  if (!parsed.ok) {
+    return {
+      error: parsed.error
+    };
+  }
+
+  const validation = validateBrainSearchState(state);
+
+  return validation.ok
+    ? buildBrainSearchCommand(state, validation.query)
+    : { error: validation.error };
+};
+
+export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
+  const [action, ...args] = rest;
+
+  if (action === undefined || action === "--help" || action === "-h") {
+    return brainSearchHelp();
+  }
+
+  if (action === "knowledge") {
+    return parseBrainKnowledgeArgs(args);
+  }
+
+  return action === "search"
+    ? parseBrainSearchArgs(args)
+    : {
+        error: `Unsupported brain command: ${action}\n${formatBrainSearchUsage()}`
+      };
 };

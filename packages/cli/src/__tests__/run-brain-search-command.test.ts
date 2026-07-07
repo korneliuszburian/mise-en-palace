@@ -29,7 +29,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runKnowledgeCards(runtime) {
+      async runBrainKnowledge(runtime) {
         expect(runtime.catalogFiles).toEqual(["corpus/brain-knowledge/catalog.json"]);
         expect(runtime.filter).toEqual({ text: "source-to-decision" });
         expect(runtime.format).toBe("json");
@@ -147,7 +147,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: false,
         format: "text"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
             returnedCards: 0,
@@ -219,7 +219,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runKnowledgeCards(runtime) {
+      async runBrainKnowledge(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "graph sourceclaimedge") {
@@ -320,7 +320,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runKnowledgeCards(runtime) {
+      async runBrainKnowledge(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "maintenance dreaming") {
@@ -422,7 +422,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runKnowledgeCards(runtime) {
+      async runBrainKnowledge(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "reference implementation recipe") {
@@ -522,7 +522,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: false,
         format: "json"
       },
-      async runKnowledgeCards(runtime) {
+      async runBrainKnowledge(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         return {
@@ -584,7 +584,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -733,7 +733,7 @@ describe("runBrainSearchCommand", () => {
           async close() {}
         };
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch(runtime) {
@@ -822,7 +822,7 @@ describe("runBrainSearchCommand", () => {
       async createDatabaseRuntime() {
         throw new Error("database unavailable");
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -884,7 +884,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -984,7 +984,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1074,7 +1074,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 8,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
             returnedCards: 0,
@@ -1170,7 +1170,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1240,7 +1240,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1310,7 +1310,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 8,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
             returnedCards: 0,
@@ -1412,7 +1412,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "text"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1488,7 +1488,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
             kind: "krn.brainKnowledge.cards.preview.v1",
@@ -1547,7 +1547,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runKnowledgeCards() {
+      async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
             kind: "krn.brainKnowledge.cards.preview.v1",
@@ -1697,7 +1697,7 @@ describe("runBrainSearchCommand", () => {
           maxInclusions: 4,
           format: "json"
         },
-        async runKnowledgeCards() {
+        async runBrainKnowledge() {
           throw new Error("grounding mini-gate should use store/source evidence");
         },
         async runSourceSearch(runtime) {

@@ -11,12 +11,12 @@ import {
   returnedBrainKnowledgeCardCount
 } from "./brain-search-readback.js";
 import {
-  runKnowledgeCardsCommand
-} from "./run-knowledge-cards-command.js";
+  runBrainKnowledgeCommand
+} from "./run-brain-knowledge-command.js";
 import type {
-  KnowledgeCardsCommandRuntime,
-  KnowledgeCardsCommandResult
-} from "./run-knowledge-cards-command.js";
+  BrainKnowledgeCommandRuntime,
+  BrainKnowledgeCommandResult
+} from "./run-brain-knowledge-command.js";
 import {
   runSourceSearchCommand
 } from "./run-source-search-command.js";
@@ -46,7 +46,7 @@ export interface BrainSearchCommandRuntime extends BaseCommandRuntime {
   cwd: string;
   command: BrainSearchCommand;
   createDatabaseRuntime?: CreateSourceSearchDatabaseRuntime;
-  runKnowledgeCards?: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
+  runBrainKnowledge?: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
   runSourceSearch?: (runtime: SourceSearchCommandRuntime) => Promise<SourceSearchCommandResult>;
 }
 
@@ -55,7 +55,7 @@ export interface BrainSearchCommandResult {
 }
 
 type BrainKnowledgeReadback = {
-  result: KnowledgeCardsCommandResult;
+  result: BrainKnowledgeCommandResult;
   queries: readonly string[];
 };
 
@@ -160,15 +160,15 @@ const runStoreMemoryReadback = async (
   }
 };
 
-const runCatalogKnowledgeReadback = async (
+const runCatalogBrainKnowledgeReadback = async (
   input: {
     runtime: BrainSearchCommandRuntime;
-    runKnowledge: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
+    runBrainKnowledge: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
     catalogFiles: readonly string[];
     query: string;
   }
-): Promise<KnowledgeCardsCommandResult> =>
-  input.runKnowledge({
+): Promise<BrainKnowledgeCommandResult> =>
+  input.runBrainKnowledge({
     cwd: input.runtime.cwd,
     cardFiles: [],
     patternFiles: [],
@@ -185,7 +185,7 @@ const runCatalogKnowledgeReadback = async (
 const runBrainKnowledgeReadback = async (
   input: {
     runtime: BrainSearchCommandRuntime;
-    runKnowledge: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
+    runBrainKnowledge: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
     catalogFiles: readonly string[];
     query: string;
     useStoreReadback: boolean;
@@ -201,7 +201,7 @@ const runBrainKnowledgeReadback = async (
       : skippedStoreOnlyReadback();
   }
 
-  const primaryResult = await runCatalogKnowledgeReadback(input);
+  const primaryResult = await runCatalogBrainKnowledgeReadback(input);
   const primaryJson = parseJsonObject(primaryResult.stdout, "brain knowledge");
 
   if (returnedBrainKnowledgeCardCount(primaryJson) > 0) {
@@ -217,7 +217,7 @@ const runBrainKnowledgeReadback = async (
 
   for (const compactQuery of compactQueries) {
     attemptedQueries.push(compactQuery);
-    const compactResult = await runCatalogKnowledgeReadback({
+    const compactResult = await runCatalogBrainKnowledgeReadback({
       ...input,
       query: compactQuery
     });
@@ -245,11 +245,11 @@ export const runBrainSearchCommand = async (
   const useStoreReadback = runtime.command.storeOnly || catalogFiles.length === 0;
   const readStoreMemory =
     useStoreReadback && (runtime.runSourceSearch === undefined || runtime.createDatabaseRuntime !== undefined);
-  const runKnowledge = runtime.runKnowledgeCards ?? runKnowledgeCardsCommand;
+  const runBrainKnowledge = runtime.runBrainKnowledge ?? runBrainKnowledgeCommand;
   const runSource = runtime.runSourceSearch ?? runSourceSearchCommand;
   const knowledgeResultPromise = runBrainKnowledgeReadback({
     runtime,
-    runKnowledge,
+    runBrainKnowledge,
     catalogFiles,
     query,
     useStoreReadback,

@@ -17,9 +17,8 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-const knowledgeUsage = [
+const brainKnowledgeUsage = [
   "Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
-  "Legacy alias: krn knowledge cards [same options]",
   "",
   "Read-only preview commands:",
   "krn brain knowledge --store-only [--text unknown-first]",
@@ -30,7 +29,7 @@ const knowledgeUsage = [
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
-export const formatKnowledgeUsage = (): string => `${knowledgeUsage}\n`;
+export const formatBrainKnowledgeUsage = (): string => `${brainKnowledgeUsage}\n`;
 
 const isAllowed = <T extends string>(
   value: string,
@@ -64,11 +63,11 @@ const parseRequiredOption = (
   if (valueResult.error !== undefined) {
     return {
       ok: false,
-      error: `${valueResult.error}\n${formatKnowledgeUsage()}`
+      error: `${valueResult.error}\n${formatBrainKnowledgeUsage()}`
     };
   }
 
-  return requiredOption(valueResult.value, formatKnowledgeUsage());
+  return requiredOption(valueResult.value, formatBrainKnowledgeUsage());
 };
 
 const parseAllowedOption = <T extends string>(
@@ -87,7 +86,7 @@ const parseAllowedOption = <T extends string>(
   if (!isAllowed(required.value, allowed)) {
     return {
       ok: false,
-      error: `Unsupported knowledge ${label}: ${required.value}\n${formatKnowledgeUsage()}`
+      error: `Unsupported brain knowledge ${label}: ${required.value}\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -124,7 +123,7 @@ const parsePositiveInteger = (
   };
 };
 
-type KnowledgeParseState = {
+type BrainKnowledgeParseState = {
   cardFiles: string[];
   patternFiles: string[];
   catalogFiles: string[];
@@ -139,7 +138,7 @@ type KnowledgeParseState = {
   limit: number | undefined;
 };
 
-type ParseKnowledgeOptionResult =
+type ParseBrainKnowledgeOptionResult =
   | {
       ok: true;
       nextIndex: number;
@@ -149,18 +148,18 @@ type ParseKnowledgeOptionResult =
       error: string;
     };
 
-type KnowledgeOptionParser = (
+type BrainKnowledgeOptionParser = (
   args: readonly string[],
   index: number,
-  state: KnowledgeParseState
-) => ParseKnowledgeOptionResult;
+  state: BrainKnowledgeParseState
+) => ParseBrainKnowledgeOptionResult;
 
 const pushPathOption = (
   args: readonly string[],
   index: number,
   optionName: string,
   target: string[]
-): ParseKnowledgeOptionResult => {
+): ParseBrainKnowledgeOptionResult => {
   const required = parseRequiredOption(args, index, optionName);
 
   if (!required.ok) {
@@ -175,7 +174,7 @@ const pushPathOption = (
   };
 };
 
-const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
+const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = {
   "--card-file": (args, index, state) =>
     pushPathOption(args, index, "--card-file", state.cardFiles),
   "--pattern-file": (args, index, state) =>
@@ -200,7 +199,7 @@ const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
     if (required.value.trim().length === 0) {
       return {
         ok: false,
-        error: `--project requires a non-empty project id\n${formatKnowledgeUsage()}`
+        error: `--project requires a non-empty project id\n${formatBrainKnowledgeUsage()}`
       };
     }
 
@@ -311,7 +310,7 @@ const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
     if (!parsedLimit.ok) {
       return {
         ok: false,
-        error: `${parsedLimit.error}\n${formatKnowledgeUsage()}`
+        error: `${parsedLimit.error}\n${formatBrainKnowledgeUsage()}`
       };
     }
 
@@ -340,27 +339,27 @@ const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
   }
 };
 
-const validateKnowledgeSources = (
-  state: KnowledgeParseState
+const validateBrainKnowledgeSources = (
+  state: BrainKnowledgeParseState
 ): ParseOptionResult<undefined> => {
-  if (!state.storeOnly && !hasExplicitKnowledgeSource(state)) {
+  if (!state.storeOnly && !hasExplicitBrainKnowledgeSource(state)) {
     return {
       ok: false,
-      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
     };
   }
 
-  if (state.storeOnly && hasExplicitKnowledgeSource(state)) {
+  if (state.storeOnly && hasExplicitBrainKnowledgeSource(state)) {
     return {
       ok: false,
-      error: `--store-only cannot be combined with --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+      error: `--store-only cannot be combined with --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
     };
   }
 
-  if (hasEmptyKnowledgeSourcePath(state)) {
+  if (hasEmptyBrainKnowledgeSourcePath(state)) {
     return {
       ok: false,
-      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -370,21 +369,21 @@ const validateKnowledgeSources = (
   };
 };
 
-const hasExplicitKnowledgeSource = (state: KnowledgeParseState): boolean =>
+const hasExplicitBrainKnowledgeSource = (state: BrainKnowledgeParseState): boolean =>
   state.cardFiles.length > 0 ||
   state.patternFiles.length > 0 ||
   state.catalogFiles.length > 0;
 
-const hasEmptyKnowledgeSourcePath = (state: KnowledgeParseState): boolean =>
+const hasEmptyBrainKnowledgeSourcePath = (state: BrainKnowledgeParseState): boolean =>
   state.cardFiles.some((cardFile) => cardFile.length === 0) ||
   state.patternFiles.some((patternFile) => patternFile.length === 0) ||
   state.catalogFiles.some((catalogFile) => catalogFile.length === 0);
 
-const buildKnowledgeCardsCommand = (
-  state: KnowledgeParseState
+const buildBrainKnowledgeCommand = (
+  state: BrainKnowledgeParseState
 ): ParseArgsResult => ({
   command: {
-    kind: "knowledgeCards",
+    kind: "brainKnowledge",
     cardFiles: state.cardFiles,
     patternFiles: state.patternFiles,
     catalogFiles: state.catalogFiles,
@@ -402,24 +401,16 @@ const buildKnowledgeCardsCommand = (
   }
 });
 
-export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => {
-  const [action, ...args] = rest;
-
-  if (action === undefined || action === "--help" || action === "-h") {
+export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResult => {
+  if (args[0] === "--help" || args[0] === "-h") {
     return {
       command: {
-        kind: "knowledgeCardsHelp"
+        kind: "brainKnowledgeHelp"
       }
     };
   }
 
-  if (action !== "cards") {
-    return {
-      error: `Unsupported knowledge command: ${action}\n${formatKnowledgeUsage()}`
-    };
-  }
-
-  const state: KnowledgeParseState = {
+  const state: BrainKnowledgeParseState = {
     cardFiles: [],
     patternFiles: [],
     catalogFiles: [],
@@ -437,11 +428,11 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
 
-    const parser = knowledgeOptionParsers[arg];
+    const parser = brainKnowledgeOptionParsers[arg];
 
     if (parser === undefined) {
       return {
-        error: `Unsupported brain knowledge argument: ${arg}\n${formatKnowledgeUsage()}`
+        error: `Unsupported brain knowledge argument: ${arg}\n${formatBrainKnowledgeUsage()}`
       };
     }
 
@@ -456,7 +447,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     index = parsed.nextIndex;
   }
 
-  const sourceValidation = validateKnowledgeSources(state);
+  const sourceValidation = validateBrainKnowledgeSources(state);
 
   if (!sourceValidation.ok) {
     return {
@@ -464,5 +455,5 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     };
   }
 
-  return buildKnowledgeCardsCommand(state);
+  return buildBrainKnowledgeCommand(state);
 };

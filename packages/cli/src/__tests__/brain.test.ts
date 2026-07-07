@@ -177,7 +177,7 @@ const createBrainKnowledgeDatabaseRuntime = (
 
 describe("runCli", () => {
   it("prints brain knowledge readback help", async () => {
-    const result = await runCli(["knowledge", "--help"], {
+    const result = await runCli(["brain", "knowledge", "--help"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -186,7 +186,6 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>]");
-    expect(result.stdout).toContain("Legacy alias: krn knowledge cards [same options]");
     expect(result.stdout).toContain("Read-only preview commands:");
     expect(result.stdout).toContain("--store-only reads DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes");
   });
@@ -215,33 +214,11 @@ describe("runCli", () => {
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
   });
 
-  it("keeps the legacy knowledge cards CLI alias working", async () => {
-    const repoRoot = path.resolve(process.cwd(), "../..");
-    const result = await runCli([
-      "knowledge",
-      "cards",
-      "--card-file",
-      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json",
-      "--text",
-      "unknown-first"
-    ], {
-      cwd: repoRoot,
-      env: {},
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`
-    });
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Brain Knowledge Readback");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
-  });
-
   it("renders retained pattern files through the brain knowledge CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
+      "brain",
       "knowledge",
-      "cards",
       "--pattern-file",
       "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
@@ -263,8 +240,8 @@ describe("runCli", () => {
   it("renders explicit catalog files through the brain knowledge CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
+      "brain",
       "knowledge",
-      "cards",
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--text",
@@ -380,8 +357,8 @@ describe("runCli", () => {
   it("renders brain knowledge as self-contained html", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
+      "brain",
       "knowledge",
-      "cards",
       "--catalog-file",
       "corpus/brain-knowledge/catalog.json",
       "--text",

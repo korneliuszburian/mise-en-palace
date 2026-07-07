@@ -290,7 +290,7 @@ const evaluateCase = async (
     now: () => "2026-07-04T00:00:00.000Z",
     createId: (prefix) => `${prefix}-brain-ranking-eval`,
     command,
-    async runKnowledgeCards() {
+    async runBrainKnowledge() {
       return {
         stdout: knowledgePayload(testCase.knowledgeCards)
       };

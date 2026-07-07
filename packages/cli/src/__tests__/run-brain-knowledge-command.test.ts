@@ -10,8 +10,8 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 import {
-  runKnowledgeCardsCommand
-} from "../run-knowledge-cards-command.js";
+  runBrainKnowledgeCommand
+} from "../run-brain-knowledge-command.js";
 
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -19,9 +19,9 @@ const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first
 const patternFile = "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json";
 const catalogFile = "corpus/brain-knowledge/catalog.json";
 
-describe("runKnowledgeCardsCommand", () => {
-  it("renders a read-only knowledge card preview", async () => {
-    const result = await runKnowledgeCardsCommand({
+describe("runBrainKnowledgeCommand", () => {
+  it("renders a read-only brain knowledge preview", async () => {
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
       patternFiles: [],
@@ -50,7 +50,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders json preview without mutation authority", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
       patternFiles: [],
@@ -90,7 +90,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("rejects invalid card files", async () => {
-    await expect(runKnowledgeCardsCommand({
+    await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: ["package.json"],
       patternFiles: [],
@@ -101,7 +101,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders brain knowledge produced from retained pattern files", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [patternFile],
@@ -119,7 +119,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("rejects invalid retained pattern files", async () => {
-    await expect(runKnowledgeCardsCommand({
+    await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: ["package.json"],
@@ -130,7 +130,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders brain knowledge from explicit catalog files", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -152,7 +152,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders self-contained html preview with proof boundaries", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -196,7 +196,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders every catalog card in html with proof-boundary fields", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -262,7 +262,7 @@ describe("runKnowledgeCardsCommand", () => {
       nextAction: "defer"
     })));
 
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [patternCardPath, memoryCardPath],
       patternFiles: [],
@@ -295,7 +295,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("resolves root-relative catalog files from a package cwd", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: cliPackageRoot,
       cardFiles: [],
       patternFiles: [],
@@ -311,7 +311,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the second retained pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -328,7 +328,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the evidence proof boundary pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -346,7 +346,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the Codex skill routing pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -364,7 +364,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the Codex hook guardrail pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -382,7 +382,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the graph relation readback pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -400,7 +400,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the maintenance candidate-only runtime pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -418,7 +418,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the consensus relation maintenance review pattern through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -436,7 +436,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("filters retained pattern cards by usefulness outcome", async () => {
-    const helpedResult = await runKnowledgeCardsCommand({
+    const helpedResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -446,7 +446,7 @@ describe("runKnowledgeCardsCommand", () => {
       },
       format: "json"
     });
-    const noiseResult = await runKnowledgeCardsCommand({
+    const noiseResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -465,7 +465,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("limits filtered catalog readback without hiding total result count", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -487,7 +487,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders text preview limit with total filtered result boundary", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -506,7 +506,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("filters retained pattern cards with no usefulness feedback", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -522,7 +522,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -539,7 +539,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders no-match guidance for over-filtered pattern queries", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -573,7 +573,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("renders text no-match guidance with proof boundaries", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -594,7 +594,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("guards BQ-015 broad no-match retrying with a shorter mechanism query", async () => {
-    const broadResult = await runKnowledgeCardsCommand({
+    const broadResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -604,7 +604,7 @@ describe("runKnowledgeCardsCommand", () => {
       },
       format: "json"
     });
-    const mechanismResult = await runKnowledgeCardsCommand({
+    const mechanismResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -635,7 +635,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("includes no-match guidance in the static html preview", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -655,7 +655,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("guards deterministic catalog search results and proof boundaries", async () => {
-    const typeScriptResult = await runKnowledgeCardsCommand({
+    const typeScriptResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -665,7 +665,7 @@ describe("runKnowledgeCardsCommand", () => {
       },
       format: "json"
     });
-    const sourceDecisionResult = await runKnowledgeCardsCommand({
+    const sourceDecisionResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -690,7 +690,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("matches natural multi-token catalog queries without semantic ranking claims", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -711,7 +711,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("searches the brain knowledge parser exemplar through the catalog", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -732,7 +732,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("retains the KRN brain layer model for worker and naming boundary queries", async () => {
-    const workerBoundaryResult = await runKnowledgeCardsCommand({
+    const workerBoundaryResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -742,7 +742,7 @@ describe("runKnowledgeCardsCommand", () => {
       },
       format: "json"
     });
-    const namingBoundaryResult = await runKnowledgeCardsCommand({
+    const namingBoundaryResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -765,7 +765,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("returns every catalog card without a text filter", async () => {
-    const result = await runKnowledgeCardsCommand({
+    const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
@@ -795,7 +795,7 @@ describe("runKnowledgeCardsCommand", () => {
   });
 
   it("rejects invalid catalog files", async () => {
-    await expect(runKnowledgeCardsCommand({
+    await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],

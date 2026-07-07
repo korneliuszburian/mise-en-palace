@@ -15,8 +15,8 @@ import {
   formatEvidenceCaptureUsage
 } from "./parse-evidence-args.js";
 import {
-  formatKnowledgeUsage
-} from "./parse-knowledge-args.js";
+  formatBrainKnowledgeUsage
+} from "./parse-brain-knowledge-args.js";
 import {
   formatObserveUsage
 } from "./parse-observe-args.js";
@@ -145,7 +145,7 @@ const helpRenderers = {
   sourceDecisionGapsHelp: formatSourceDecisionGapsUsage,
   sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
-  knowledgeCardsHelp: formatKnowledgeUsage,
+  brainKnowledgeHelp: formatBrainKnowledgeUsage,
   maintenancePreviewHelp: formatMaintenancePreviewUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
