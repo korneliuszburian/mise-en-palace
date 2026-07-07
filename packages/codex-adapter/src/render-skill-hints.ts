@@ -27,7 +27,7 @@ export const createCodexSkillBindingHints = (
     reason: requirement.reason,
     requiredEvidence: requirement.requiredEvidence,
     patternRefs: [skillRoutingPatternRef],
-    priority: "required",
+    priority: requirement.priority,
     source: "capability_plan"
   }));
 

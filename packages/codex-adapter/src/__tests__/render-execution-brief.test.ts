@@ -493,6 +493,12 @@ describe("renderExecutionBrief", () => {
           priority: "required",
           reason: "Review output must become candidates, not direct authority.",
           requiredEvidence: ["feedback delta"]
+        },
+        {
+          kind: "context_abstention",
+          priority: "recommended",
+          reason: "Context abstention is useful when weak context appears.",
+          requiredEvidence: ["abstention readback"]
         }
       ]
     });
@@ -505,5 +511,12 @@ describe("renderExecutionBrief", () => {
     expect(hints.every((hint) =>
       hint.patternRefs.includes("pattern:codex-skill-progressive-disclosure-routing")
     )).toBe(true);
+    expect(hints.find((hint) => hint.capabilityKind === "context_abstention")).toMatchObject({
+      priority: "recommended",
+      skillName: "activation-engine"
+    });
+    expect(hints.find((hint) => hint.capabilityKind === "schema_design")).toMatchObject({
+      priority: "required"
+    });
   });
 });
