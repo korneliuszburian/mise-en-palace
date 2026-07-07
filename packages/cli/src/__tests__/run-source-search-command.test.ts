@@ -1184,7 +1184,7 @@ describe("runSourceSearchCommand", () => {
       id: currentClaimId,
       claim: "Temporal consensus readback should use the current governed template.",
       mechanism: "The current claim has SourceDecisionEdge support and supersedes stale guidance.",
-      krnImplication: "Source search can expose this claim as current authority for agent packets.",
+      krnImplication: "Source search can expose this claim as current authority for decision packets.",
       falsifier: "Consensus readback omits this claim from currentSourceClaimIds.",
       createdAt: "2026-06-22T08:00:00.000Z",
       updatedAt: "2026-06-22T08:00:00.000Z"

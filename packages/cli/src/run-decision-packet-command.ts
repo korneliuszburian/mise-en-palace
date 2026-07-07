@@ -21,17 +21,17 @@ import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
 
-export interface AgentPacketCommandRuntime extends BaseCommandRuntime {
+export interface DecisionPacketCommandRuntime extends BaseCommandRuntime {
   readonly runId: string;
   readonly createDatabaseRuntime?: CreateRunShowDatabaseRuntime;
 }
 
-export interface AgentPacketCommandResult {
+export interface DecisionPacketCommandResult {
   readonly stdout: string;
 }
 
-interface AgentPacketReadModel {
-  readonly kind: "krn.agentPacket.v1";
+interface DecisionPacketCommandReadback {
+  readonly kind: "krn.decisionPacketReadback.v1";
   readonly access: "read_only";
   readonly mutation: "none";
   readonly surface: "headless_cli";
@@ -74,8 +74,8 @@ interface AgentPacketReadModel {
 
 const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 
-const missingAgentPacketDatabaseUrlMessage = [
-  "KRN_DATABASE_URL is required for krn agent packet",
+const missingDecisionPacketDatabaseUrlMessage = [
+  "KRN_DATABASE_URL is required for krn decision packet",
   `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:ready before readback`,
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
 ].join("\n");
@@ -262,7 +262,7 @@ const packetIdentityFor = (
   readModel: DecisionPacketReadModel,
   packet: DecisionPacket,
   generatedAt: string
-): AgentPacketReadModel["packetIdentity"] => {
+): DecisionPacketCommandReadback["packetIdentity"] => {
   const checksum = sha256Hex(canonicalJson({
     packet,
     request: {
@@ -286,17 +286,17 @@ const packetIdentityFor = (
   };
 };
 
-const buildAgentPacket = (
+const buildDecisionPacket = (
   runId: string,
   readModel: DecisionPacketReadModel,
   generatedAt: string
-): AgentPacketReadModel => {
+): DecisionPacketCommandReadback => {
   const packet = compactDecisionPacket(readModel);
   const packetIdentity = packetIdentityFor(runId, readModel, packet, generatedAt);
-  const packetChecksumOption = `--agent-packet-checksum ${packetIdentity.checksum}`;
+  const packetChecksumOption = `--decision-packet-checksum ${packetIdentity.checksum}`;
 
   return {
-    kind: "krn.agentPacket.v1",
+    kind: "krn.decisionPacketReadback.v1",
     access: "read_only",
     mutation: "none",
     surface: "headless_cli",
@@ -330,9 +330,9 @@ const buildAgentPacket = (
     },
     proof: {
       proves: [
-        "a headless agent can request a read-only DecisionPacket contract through CLI JSON",
+        "a headless consumer can request a read-only DecisionPacket contract through CLI JSON",
         "the response names evidence and feedback return channels without invoking Codex or mutating memory",
-        "the agent surface exposes the compact DecisionPacket separately from the diagnostic read model",
+        "the DecisionPacket command exposes the compact DecisionPacket separately from the diagnostic read model",
         "return-channel commands carry a packet checksum evidence ref for later freshness checks"
       ],
       doesNotProve: [
@@ -347,13 +347,13 @@ const buildAgentPacket = (
   };
 };
 
-export const runAgentPacketCommand = async (
-  runtime: AgentPacketCommandRuntime
-): Promise<AgentPacketCommandResult> => {
+export const runDecisionPacketCommand = async (
+  runtime: DecisionPacketCommandRuntime
+): Promise<DecisionPacketCommandResult> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error(missingAgentPacketDatabaseUrlMessage);
+    throw new Error(missingDecisionPacketDatabaseUrlMessage);
   }
 
   const readModel = await readDecisionPacketReadModel({
@@ -368,6 +368,6 @@ export const runAgentPacketCommand = async (
   });
 
   return {
-    stdout: `${JSON.stringify(buildAgentPacket(runtime.runId, readModel, runtime.now()), null, 2)}\n`
+    stdout: `${JSON.stringify(buildDecisionPacket(runtime.runId, readModel, runtime.now()), null, 2)}\n`
   };
 };

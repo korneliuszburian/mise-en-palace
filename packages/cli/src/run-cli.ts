@@ -18,8 +18,8 @@ import {
   formatBrainKnowledgeUsage
 } from "./parse-brain-knowledge-args.js";
 import {
-  formatAgentPacketUsage
-} from "./parse-agent-args.js";
+  formatDecisionPacketUsage
+} from "./parse-decision-args.js";
 import {
   formatObserveUsage
 } from "./parse-observe-args.js";
@@ -149,7 +149,7 @@ const helpRenderers = {
   sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
   brainKnowledgeHelp: formatBrainKnowledgeUsage,
-  agentPacketHelp: formatAgentPacketUsage,
+  decisionPacketHelp: formatDecisionPacketUsage,
   maintenancePreviewHelp: formatMaintenancePreviewUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,

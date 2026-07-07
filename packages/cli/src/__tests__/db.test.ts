@@ -123,12 +123,12 @@ describe("runCli", () => {
     );
   });
 
-  it("exposes the agent packet return-loop smoke script", async () => {
+  it("exposes the decision packet return-loop smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const packageJson = await readRootPackageJson(repoRoot);
 
-    expect(packageJson.scripts?.["db:smoke:agent-packet-return-loop"]).toBe(
-      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke agent-packet-return-loop"
+    expect(packageJson.scripts?.["db:smoke:decision-packet-return-loop"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke decision-packet-return-loop"
     );
   });
 
@@ -345,8 +345,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Real recall advantage smoke: skipped (database not configured)");
   });
 
-  it("reports agent packet return-loop smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "agent-packet-return-loop"], {
+  it("reports decision packet return-loop smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "decision-packet-return-loop"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -354,10 +354,10 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Agent Packet Return Loop Smoke");
+    expect(result.stdout).toContain("KRN Decision Packet Return Loop Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
     expect(result.stdout).toContain(
-      "Agent packet return-loop smoke: skipped (database not configured)"
+      "DecisionPacket return-loop smoke: skipped (database not configured)"
     );
   });
 

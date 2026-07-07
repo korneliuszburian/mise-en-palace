@@ -5,10 +5,10 @@ import {
   isCliEntrypoint
 } from "../eval/eval-main.js";
 import {
-  runAgentPacketCommand,
-  type AgentPacketCommandResult,
-  type AgentPacketCommandRuntime
-} from "../../run-agent-packet-command.js";
+  runDecisionPacketCommand,
+  type DecisionPacketCommandResult,
+  type DecisionPacketCommandRuntime
+} from "../../run-decision-packet-command.js";
 import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
@@ -57,8 +57,8 @@ export interface DecisionPacketMcpRuntime {
   createId(prefix: string): string;
   readonly createDatabaseRuntime?: CreateRunShowDatabaseRuntime;
   readonly runDecisionPacket?: (
-    runtime: AgentPacketCommandRuntime
-  ) => Promise<AgentPacketCommandResult>;
+    runtime: DecisionPacketCommandRuntime
+  ) => Promise<DecisionPacketCommandResult>;
 }
 
 const protocolVersion = "2025-06-18";
@@ -186,7 +186,7 @@ const runDecisionPacket = async (
   runtime: DecisionPacketMcpRuntime,
   runId: string
 ): Promise<ToolCallResult> => {
-  const commandRuntime: AgentPacketCommandRuntime = {
+  const commandRuntime: DecisionPacketCommandRuntime = {
     env: runtime.env,
     now: runtime.now,
     createId: runtime.createId,
@@ -195,7 +195,7 @@ const runDecisionPacket = async (
       ? {}
       : { createDatabaseRuntime: runtime.createDatabaseRuntime })
   };
-  const result = await (runtime.runDecisionPacket ?? runAgentPacketCommand)(commandRuntime);
+  const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
   const parsed: unknown = JSON.parse(result.stdout);
 
   if (!isJsonValue(parsed)) {

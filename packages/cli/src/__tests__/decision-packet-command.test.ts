@@ -15,7 +15,7 @@ import {
 
 const now = "2026-07-07T16:35:00.000Z";
 
-interface AgentPacketJson {
+interface DecisionPacketJson {
   readonly packetIdentity: {
     readonly checksum: string;
     readonly evidenceRef: string;
@@ -36,7 +36,7 @@ interface AgentPacketJson {
   };
 }
 
-const isAgentPacketJson = (value: unknown): value is AgentPacketJson =>
+const isDecisionPacketJson = (value: unknown): value is DecisionPacketJson =>
   typeof value === "object" &&
   value !== null &&
   "packetIdentity" in value &&
@@ -52,7 +52,7 @@ const aggregate: HarnessRunAggregate = {
     workspaceId: "workspace-1",
     projectId: "project-1",
     source: "cli",
-    rawIntent: "agent packet",
+    rawIntent: "decision packet",
     metadata: {},
     createdAt: now
   },
@@ -60,11 +60,11 @@ const aggregate: HarnessRunAggregate = {
     id: "task-agent-1",
     operatorIntentId: "intent-agent-1",
     projectId: "project-1",
-    title: "Headless agent packet",
+    title: "Headless decision packet",
     objective: "Return a DecisionPacket to a headless agent.",
     constraints: ["read-only"],
     nonGoals: ["do not execute Codex"],
-    acceptance: ["agent receives evidence return channels"],
+    acceptance: ["consumer receives evidence return channels"],
     status: "active",
     metadata: {},
     createdAt: now,
@@ -75,7 +75,7 @@ const aggregate: HarnessRunAggregate = {
     taskContractId: "task-agent-1",
     version: 1,
     status: "ready",
-    summary: "Headless agent packet plan",
+    summary: "Headless decision packet plan",
     metadata: {},
     createdAt: now,
     updatedAt: now
@@ -108,7 +108,7 @@ const aggregate: HarnessRunAggregate = {
       subjectType: "memory_record",
       subjectId: "memory-rejected-1",
       reason: "unsafe",
-      explanation: "Rejected path should be visible to the agent packet.",
+      explanation: "Rejected path should be visible to the decision packet.",
       sourceAuthority: "medium"
     }],
     metadata: {},
@@ -138,12 +138,12 @@ const aggregate: HarnessRunAggregate = {
           memoryRecordId: "memory-agent-1",
           key: "frontend-bootstrap-standard",
           sourceRefs: ["claim-agent-1"],
-          mechanism: "Headless agent packet fixture carries the retained frontend standard as governed context.",
-          krnImplication: "Agent packet should expose the standard statement before coding.",
+          mechanism: "Headless decision packet fixture carries the retained frontend standard as governed context.",
+          krnImplication: "DecisionPacket should expose the standard statement before coding.",
           decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
           rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
-          consumer: "krn agent packet",
-          falsifier: "Agent packet omits the governed standard statement.",
+          consumer: "krn decision packet",
+          falsifier: "DecisionPacket omits the governed standard statement.",
           validFrom: "2026-06-01T00:00:00.000Z",
           doesNotProve: "This fixture does not prove arbitrary frontend template quality."
         },
@@ -199,8 +199,8 @@ const aggregate: HarnessRunAggregate = {
       status: "reject",
       decision: "Do not use the rejected packet path.",
       rationale: "Rejected source decisions should be visible to headless agents.",
-      falsifier: "Agent packet omits the rejected source decision.",
-      consumer: "krn agent packet",
+      falsifier: "DecisionPacket omits the rejected source decision.",
+      consumer: "krn decision packet",
       metadata: {},
       createdAt: now,
       updatedAt: now
@@ -211,35 +211,35 @@ const aggregate: HarnessRunAggregate = {
         sourceDecisionId: "source-decision-stale-agent-1",
         outcome: "stale",
         reason: "Prior source decision is stale for this packet.",
-        evidenceRefs: ["test:agent-packet-stale-decision"],
+        evidenceRefs: ["test:decision-packet-stale-decision"],
         doesNotProve:
           "Stale decision feedback does not prove the replacement decision is correct."
       }, {
         sourceDecisionId: "source-decision-helped-agent-1",
         outcome: "helped",
         reason: "Useful decision should not be reported as stale.",
-        evidenceRefs: ["test:agent-packet-helped-decision"],
+        evidenceRefs: ["test:decision-packet-helped-decision"],
         doesNotProve:
           "Helpful feedback does not prove source truth."
       }, {
         sourceDecisionId: "source-decision-noise-agent-1",
         outcome: "noise",
         reason: "Noisy decision should be visible without governing the packet.",
-        evidenceRefs: ["test:agent-packet-noise-decision"],
+        evidenceRefs: ["test:decision-packet-noise-decision"],
         doesNotProve:
           "Noise feedback does not prove future source usefulness."
       }, {
         sourceDecisionId: "source-decision-conflicted-agent-1",
         outcome: "helped",
         reason: "Conflicted decision should remain visible as governing.",
-        evidenceRefs: ["test:agent-packet-conflicted-helped"],
+        evidenceRefs: ["test:decision-packet-conflicted-helped"],
         doesNotProve:
           "Helpful feedback does not erase stale feedback."
       }, {
         sourceDecisionId: "source-decision-conflicted-agent-1",
         outcome: "stale",
         reason: "Conflicted decision should be flagged as stale authority.",
-        evidenceRefs: ["test:agent-packet-conflicted-stale"],
+        evidenceRefs: ["test:decision-packet-conflicted-stale"],
         doesNotProve:
           "Stale feedback does not identify the replacement decision."
       }]
@@ -250,10 +250,10 @@ const aggregate: HarnessRunAggregate = {
   runEvents: []
 };
 
-describe("agent packet CLI", () => {
+describe("decision packet CLI", () => {
   it("returns a read-only DecisionPacket and evidence return channels for headless agents", async () => {
     let closed = false;
-    const result = await runCli(["agent", "packet", "--run-id", "run-agent-1", "--json"], {
+    const result = await runCli(["decision", "packet", "--run-id", "run-agent-1", "--json"], {
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
       },
@@ -369,7 +369,7 @@ describe("agent packet CLI", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(json).toMatchObject({
-      kind: "krn.agentPacket.v1",
+      kind: "krn.decisionPacketReadback.v1",
       access: "read_only",
       mutation: "none",
       surface: "headless_cli",
@@ -445,7 +445,7 @@ describe("agent packet CLI", () => {
       returnChannels: {
         evidence: {
           persistedCommand: expect.stringContaining(
-            "krn evidence capture --run-id run-agent-1 --agent-packet-checksum "
+            "krn evidence capture --run-id run-agent-1 --decision-packet-checksum "
           )
         },
         feedback: {
@@ -457,14 +457,14 @@ describe("agent packet CLI", () => {
       },
       proof: {
         proves: expect.arrayContaining([
-          "a headless agent can request a read-only DecisionPacket contract through CLI JSON"
+          "a headless consumer can request a read-only DecisionPacket contract through CLI JSON"
         ]),
         doesNotProve: expect.arrayContaining(["MCP integration"])
       }
     });
-    expect(isAgentPacketJson(json)).toBe(true);
-    if (!isAgentPacketJson(json)) {
-      throw new Error("agent packet JSON did not expose packet identity");
+    expect(isDecisionPacketJson(json)).toBe(true);
+    if (!isDecisionPacketJson(json)) {
+      throw new Error("decision packet JSON did not expose packet identity");
     }
 
     expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
@@ -479,8 +479,8 @@ describe("agent packet CLI", () => {
     expect(closed).toBe(true);
   });
 
-  it("explains how to unblock agent packet without database config", async () => {
-    const result = await runCli(["agent", "packet", "--run-id", "run-agent-1"], {
+  it("explains how to unblock decision packet without database config", async () => {
+    const result = await runCli(["decision", "packet", "--run-id", "run-agent-1"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -488,7 +488,7 @@ describe("agent packet CLI", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn agent packet");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn decision packet");
     expect(result.stderr).toContain("run pnpm db:ready before readback");
   });
 });

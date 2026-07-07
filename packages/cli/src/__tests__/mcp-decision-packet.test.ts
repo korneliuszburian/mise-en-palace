@@ -13,7 +13,7 @@ import {
 const now = "2026-07-07T22:00:00.000Z";
 
 const packetJson = {
-  kind: "krn.agentPacket.v1",
+  kind: "krn.decisionPacket.v1",
   access: "read_only",
   mutation: "none",
   surface: "headless_cli",
@@ -43,7 +43,7 @@ const packetJson = {
     memoryRefs: ["memory:decision:frontend-project-standard-packet"],
     staleDecisionIds: ["generic-frontend-starter-default"],
     rejectedPathIds: ["install-latest-frontend-stack"],
-    falsifiers: ["Agent packet omits the governed frontend standard."],
+    falsifiers: ["DecisionPacket omits the governed frontend standard."],
     doesNotProve: ["live Codex obedience"],
     nonProofs: ["live Codex obedience"],
     noiseDecisionIds: [],
@@ -61,19 +61,19 @@ const packetJson = {
   },
   returnChannels: {
     evidence: {
-      command: "krn evidence capture --run-id run-agent-1 --agent-packet-checksum current --verification test=passed",
+      command: "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --verification test=passed",
       persistedCommand:
-        "krn evidence capture --run-id run-agent-1 --agent-packet-checksum current --verification test=passed --persist",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --verification test=passed --persist",
       doesNotProve: "Evidence capture does not execute commands."
     },
     feedback: {
       memoryRecordApplyExample: "krn memory record apply --run-id run-agent-1 --memory-id <memory-id>",
       sourceUsefulnessExample:
-        "krn evidence capture --run-id run-agent-1 --agent-packet-checksum current --source-usefulness claim:<id>=helped",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness claim:<id>=helped",
       sourceDecisionUsefulnessExample:
-        "krn evidence capture --run-id run-agent-1 --agent-packet-checksum current --source-usefulness decision:<id>=helped",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness decision:<id>=helped",
       knowledgeUsefulnessExample:
-        "krn evidence capture --run-id run-agent-1 --agent-packet-checksum current --knowledge-usefulness knowledge=helped",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --knowledge-usefulness knowledge=helped",
       doesNotProve: "Feedback does not promote truth without review gates."
     }
   },
@@ -185,14 +185,14 @@ describe("DecisionPacket MCP wrapper", () => {
       result: {
         isError: false,
         structuredContent: {
-          kind: "krn.agentPacket.v1",
+          kind: "krn.decisionPacket.v1",
           packetIdentity: {
             checksum: "a".repeat(64),
             evidenceRef: `packet:${"a".repeat(64)}`
           },
           returnChannels: {
             evidence: {
-              persistedCommand: expect.stringContaining("--agent-packet-checksum")
+              persistedCommand: expect.stringContaining("--decision-packet-checksum")
             },
             feedback: {
               sourceDecisionUsefulnessExample: expect.stringContaining("decision:<id>=helped")
@@ -254,7 +254,7 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(isRecord(toolCall) && isRecord(toolCall["result"])
       ? toolCall["result"]["structuredContent"]
       : undefined).toMatchObject({
-        kind: "krn.agentPacket.v1",
+        kind: "krn.decisionPacket.v1",
         packetIdentity: {
           checksum: "a".repeat(64)
         }

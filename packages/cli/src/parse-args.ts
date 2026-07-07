@@ -15,8 +15,8 @@ import {
   parseCodexArgs
 } from "./parse-codex-args.js";
 import {
-  parseAgentArgs
-} from "./parse-agent-args.js";
+  parseDecisionArgs
+} from "./parse-decision-args.js";
 import {
   parseDbArgs
 } from "./parse-db-args.js";
@@ -119,13 +119,13 @@ export type CliCommand =
         | "targetRepoHarness"
         | "decisionCorpusImport"
         | "realRecallAdvantage"
-        | "agentPacketReturnLoop";
+        | "decisionPacketReturnLoop";
     }
   | {
       kind: "evidenceCapture";
       persist: boolean;
       runId?: string;
-      agentPacketChecksum?: string;
+      decisionPacketChecksum?: string;
       intendedFiles?: readonly string[];
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
@@ -161,10 +161,10 @@ export type CliCommand =
       format: "text" | "json";
     }
   | {
-      kind: "agentPacketHelp";
+      kind: "decisionPacketHelp";
     }
   | {
-      kind: "agentPacket";
+      kind: "decisionPacket";
       runId: string;
     }
   | {
@@ -535,7 +535,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
-  "krn agent packet --run-id <id> [--json]",
+  "krn decision packet --run-id <id> [--json]",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
   "krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
@@ -561,7 +561,7 @@ const usage = [
   "Internal/dev commands:",
   "krn db --help",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|agent-packet-return-loop]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "  note: DB readiness/smoke commands prove local runtime plumbing only; they are not product workflow or quality authority"
 ].join("\n");
 
@@ -589,7 +589,7 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
       : parseEvidenceArgs(rest),
   review: parseReviewArgs,
   maintenance: parseMaintenancePreviewArgs,
-  agent: parseAgentArgs,
+  decision: parseDecisionArgs,
   observe: parseObserveArgs,
   reflect: parseReflectArgs,
   codex: parseCodexArgs,

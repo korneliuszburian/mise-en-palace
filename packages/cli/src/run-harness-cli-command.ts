@@ -39,15 +39,15 @@ import {
   runRunShowCommand
 } from "./run-run-show-command.js";
 import {
-  runAgentPacketCommand
-} from "./run-agent-packet-command.js";
+  runDecisionPacketCommand
+} from "./run-decision-packet-command.js";
 
 type HarnessCliCommand = Extract<
   CliCommand,
   | { kind: "plan" }
   | { kind: "reviewAssess" }
   | { kind: "runShow" }
-  | { kind: "agentPacket" }
+  | { kind: "decisionPacket" }
   | { kind: "codexBrief" }
   | { kind: "evidenceCapture" }
   | { kind: "observeRun" }
@@ -103,7 +103,7 @@ const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand 
   command.kind === "plan" ||
     command.kind === "reviewAssess" ||
     command.kind === "runShow" ||
-    command.kind === "agentPacket" ||
+    command.kind === "decisionPacket" ||
     command.kind === "codexBrief" ||
   command.kind === "evidenceCapture" ||
   command.kind === "observeRun" ||
@@ -115,7 +115,7 @@ const harnessFallbackMessages = {
   reviewAssess: "Unknown review assess error",
   runShow: "Unknown run show error",
   codexBrief: "Unknown Codex brief error",
-  agentPacket: "Unknown agent packet error",
+  decisionPacket: "Unknown decision packet error",
   evidenceCapture: "Unknown evidence capture error",
   observeRun: "Unknown observe error",
   reflect: "Unknown reflect error"
@@ -150,7 +150,7 @@ const runReviewAssessCliCommand = (
   });
 
 const runReadbackHarnessCommand = (
-  command: Extract<HarnessCliCommand, { kind: "runShow" | "agentPacket" | "codexBrief" }>,
+  command: Extract<HarnessCliCommand, { kind: "runShow" | "decisionPacket" | "codexBrief" }>,
   context: HarnessCliCommandContext
 ): Promise<HarnessCommandOutput> => {
   if (command.kind === "runShow") {
@@ -164,8 +164,8 @@ const runReadbackHarnessCommand = (
     });
   }
 
-  if (command.kind === "agentPacket") {
-    return runAgentPacketCommand({
+  if (command.kind === "decisionPacket") {
+    return runDecisionPacketCommand({
       env: context.env,
       now: context.now,
       createId: context.createId,
@@ -194,9 +194,9 @@ const runEvidenceCliCommand = (
     createId: context.createId,
     persist: command.persist,
     ...(command.runId === undefined ? {} : { runId: command.runId }),
-    ...(command.agentPacketChecksum === undefined
+    ...(command.decisionPacketChecksum === undefined
       ? {}
-      : { agentPacketChecksum: command.agentPacketChecksum }),
+      : { decisionPacketChecksum: command.decisionPacketChecksum }),
     ...(command.intendedFiles === undefined ? {} : { intendedFiles: command.intendedFiles }),
     ...(command.commandOutcomes === undefined
       ? {}
@@ -250,7 +250,7 @@ const runSelectedHarnessCommand = (
     return runReviewAssessCliCommand(command, context);
   }
 
-  if (command.kind === "runShow" || command.kind === "agentPacket" || command.kind === "codexBrief") {
+  if (command.kind === "runShow" || command.kind === "decisionPacket" || command.kind === "codexBrief") {
     return runReadbackHarnessCommand(command, context);
   }
 

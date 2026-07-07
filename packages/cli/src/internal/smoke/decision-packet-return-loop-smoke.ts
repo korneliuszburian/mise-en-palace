@@ -16,19 +16,19 @@ import type {
   DatabaseRuntime
 } from "../../database-runtime.js";
 import {
-  runAgentPacketCommand
-} from "../../run-agent-packet-command.js";
+  runDecisionPacketCommand
+} from "../../run-decision-packet-command.js";
 import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 
-export interface AgentPacketReturnLoopSmokeInput {
+export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
 }
 
-export interface AgentPacketReturnLoopSmokeReport {
+export interface DecisionPacketReturnLoopSmokeReport {
   workspaceSlug: string;
   projectSlug: string;
   executionRunId: string;
@@ -52,7 +52,7 @@ export interface AgentPacketReturnLoopSmokeReport {
   cleanedUp: boolean;
 }
 
-interface AgentPacketSmokeJson {
+interface DecisionPacketSmokeJson {
   packetIdentity: {
     checksum: string;
     evidenceRef: string;
@@ -110,7 +110,7 @@ const readRequiredRecord = (
   const field = readRecord(value, key);
 
   if (field === undefined) {
-    throw new Error(`Agent packet smoke readback missed ${key}`);
+    throw new Error(`DecisionPacket smoke readback missed ${key}`);
   }
 
   return field;
@@ -123,7 +123,7 @@ const readRequiredString = (
   const field = readString(value, key);
 
   if (field === undefined) {
-    throw new Error(`Agent packet smoke readback missed ${key}`);
+    throw new Error(`DecisionPacket smoke readback missed ${key}`);
   }
 
   return field;
@@ -131,7 +131,7 @@ const readRequiredString = (
 
 const readPacketIdentity = (
   parsed: Record<string, unknown>
-): AgentPacketSmokeJson["packetIdentity"] => {
+): DecisionPacketSmokeJson["packetIdentity"] => {
   const packetIdentity = readRequiredRecord(parsed, "packetIdentity");
 
   return {
@@ -142,7 +142,7 @@ const readPacketIdentity = (
 
 const readPacket = (
   parsed: Record<string, unknown>
-): AgentPacketSmokeJson["packet"] => ({
+): DecisionPacketSmokeJson["packet"] => ({
   governingDecisionIds: readStringArray(
     readRequiredRecord(parsed, "packet"),
     "governingDecisionIds"
@@ -155,7 +155,7 @@ const readPacket = (
 
 const readReturnChannels = (
   parsed: Record<string, unknown>
-): AgentPacketSmokeJson["returnChannels"] => {
+): DecisionPacketSmokeJson["returnChannels"] => {
   const returnChannels = readRequiredRecord(parsed, "returnChannels");
   const evidence = readRequiredRecord(returnChannels, "evidence");
   const feedback = readRequiredRecord(returnChannels, "feedback");
@@ -173,11 +173,11 @@ const readReturnChannels = (
   };
 };
 
-const parseAgentPacket = (stdout: string): AgentPacketSmokeJson => {
+const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
   const parsed: unknown = JSON.parse(stdout);
 
   if (!isRecord(parsed)) {
-    throw new Error("Agent packet smoke readback was not an object");
+    throw new Error("DecisionPacket smoke readback was not an object");
   }
 
   return {
@@ -282,18 +282,18 @@ const countFeedbackOutboxRows = async (
   return count;
 };
 
-export const runAgentPacketReturnLoopSmokeCheck = async (
-  input: AgentPacketReturnLoopSmokeInput
-): Promise<AgentPacketReturnLoopSmokeReport> => {
+export const runDecisionPacketReturnLoopSmokeCheck = async (
+  input: DecisionPacketReturnLoopSmokeInput
+): Promise<DecisionPacketReturnLoopSmokeReport> => {
   const { client, db, marker, projectSlug, task, workspaceSlug } =
     await createHarnessCompilerSmokeRuntime({
       databaseUrl: input.databaseUrl,
       migrationsFolder: input.migrationsFolder,
       smokeId: input.smokeId,
-      smokeName: "agent packet return-loop smoke",
-      workspacePrefix: "krn-agent-packet-smoke",
-      projectSlug: "agent-packet-return-loop",
-      taskPrefix: "agent packet return loop smoke"
+      smokeName: "decision packet return-loop smoke",
+      workspacePrefix: "krn-decision-packet-smoke",
+      projectSlug: "decision-packet-return-loop",
+      taskPrefix: "decision packet return loop smoke"
     });
   let retrievalRunId: string | undefined;
   const feedbackDeltaIds: string[] = [];
@@ -330,8 +330,8 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
       sourceRepository,
       workspace
     } = await createCompiledSmokeExecution({
-      acceptance: "bind headless agent packet feedback to packet checksum",
-      command: "db:smoke:agent-packet-return-loop",
+      acceptance: "bind headless decision packet feedback to packet checksum",
+      command: "db:smoke:decision-packet-return-loop",
       db,
       eventMessage: "Agent-packet return-loop smoke created persisted run",
       eventPayload: (compiledResult) => ({
@@ -340,7 +340,7 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
         harnessPlanId: compiledResult.harnessPlan.id,
         contextAssemblyId: compiledResult.contextAssembly.id
       }),
-      eventType: "smoke.agent_packet_return_loop.persisted",
+      eventType: "smoke.decision_packet_return_loop.persisted",
       marker,
       projectSlug,
       task,
@@ -375,7 +375,7 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
       now: () => "2026-07-07T12:00:00.000Z",
       createId: (prefix: string) => `${prefix}-${marker}`
     };
-    const firstPacket = parseAgentPacket((await runAgentPacketCommand({
+    const firstPacket = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime
@@ -385,14 +385,14 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
         firstPacket.packetIdentity.evidenceRef
       );
-    const decisionId = `source-decision-agent-packet-${marker}`;
+    const decisionId = `source-decision-decision-packet-${marker}`;
     const matchingEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
-      agentPacketChecksum: firstPacket.packetIdentity.checksum,
+      decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       commandOutcomes: [{
-        command: "pnpm --filter @krn/cli test -- agent-packet",
+        command: "pnpm --filter @krn/cli test -- decision-packet",
         status: "passed",
         provenance: "operator_reported"
       }],
@@ -420,15 +420,15 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
     const matchingFeedbackOutcome = feedbackOutcome(matchingFeedbackDelta.metadata);
     const matchingFeedbackRemainedAuthoritative =
       matchingFeedbackOutcome === "helped" &&
-      matchingEvidence.stdout.includes(`agentPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
+      matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
     const staleDecisionId = `${decisionId}-stale`;
     const staleEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
-      agentPacketChecksum: firstPacket.packetIdentity.checksum,
+      decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       commandOutcomes: [{
-        command: "pnpm --filter @krn/cli test -- agent-packet-stale-feedback",
+        command: "pnpm --filter @krn/cli test -- decision-packet-stale-feedback",
         status: "passed",
         provenance: "operator_reported"
       }],
@@ -456,16 +456,16 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
     const staleFeedbackOutcome = feedbackOutcome(staleFeedbackDelta.metadata);
     const staleFeedbackBoundToPacket =
       staleFeedbackOutcome === "stale" &&
-      staleEvidence.stdout.includes(`agentPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
+      staleEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
     const mismatchedDecisionId = `${decisionId}-mismatched`;
     const mismatchedChecksum = "0".repeat(64);
     await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
-      agentPacketChecksum: mismatchedChecksum,
+      decisionPacketChecksum: mismatchedChecksum,
       commandOutcomes: [{
-        command: "pnpm --filter @krn/cli test -- mismatched-agent-packet",
+        command: "pnpm --filter @krn/cli test -- mismatched-decision-packet",
         status: "passed",
         provenance: "operator_reported"
       }],
@@ -492,7 +492,7 @@ export const runAgentPacketReturnLoopSmokeCheck = async (
 
     const mismatchedFeedbackOutcome = feedbackOutcome(mismatchedFeedbackDelta.metadata);
     const mismatchedFeedbackDowngraded = mismatchedFeedbackOutcome === "unknown";
-    const nextPacket = parseAgentPacket((await runAgentPacketCommand({
+    const nextPacket = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime

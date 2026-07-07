@@ -75,10 +75,10 @@ describe("parseDbArgs", () => {
         target: "realRecallAdvantage"
       }
     });
-    expect(parseDbArgs(["smoke", "agent-packet-return-loop"])).toEqual({
+    expect(parseDbArgs(["smoke", "decision-packet-return-loop"])).toEqual({
       command: {
         kind: "dbSmoke",
-        target: "agentPacketReturnLoop"
+        target: "decisionPacketReturnLoop"
       }
     });
   });

@@ -43,8 +43,8 @@ import {
   runDecisionCorpusImportDbSmokeCheck
 } from "./internal/smoke/run-decision-corpus-import-db-smoke.js";
 import {
-  runAgentPacketReturnLoopSmokeCheck
-} from "./internal/smoke/agent-packet-return-loop-smoke.js";
+  runDecisionPacketReturnLoopSmokeCheck
+} from "./internal/smoke/decision-packet-return-loop-smoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -68,7 +68,7 @@ export interface DbSmokeRuntime {
     | "targetRepoHarness"
     | "decisionCorpusImport"
     | "realRecallAdvantage"
-    | "agentPacketReturnLoop";
+    | "decisionPacketReturnLoop";
 }
 
 export interface DbSmokeResult {
@@ -186,10 +186,10 @@ const dbSmokeTargetMetadata = {
     skippedLine: "Real recall advantage smoke: skipped (database not configured)",
     failureLabel: "Real recall advantage smoke"
   },
-  agentPacketReturnLoop: {
-    title: "KRN Agent Packet Return Loop Smoke",
-    skippedLine: "Agent packet return-loop smoke: skipped (database not configured)",
-    failureLabel: "Agent packet return-loop smoke"
+  decisionPacketReturnLoop: {
+    title: "KRN Decision Packet Return Loop Smoke",
+    skippedLine: "DecisionPacket return-loop smoke: skipped (database not configured)",
+    failureLabel: "DecisionPacket return-loop smoke"
   }
 } satisfies Record<DbSmokeRuntime["target"], DbSmokeTargetMetadata>;
 
@@ -697,19 +697,19 @@ const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
-const runAgentPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
+const runDecisionPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
 ) => {
-  const report = await runAgentPacketReturnLoopSmokeCheck({
+  const report = await runDecisionPacketReturnLoopSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("agent-packet-return-loop-smoke")
+    smokeId: runtime.createId("decision-packet-return-loop-smoke")
   });
 
   return smokeResultFromCleanup(
     context,
-    "KRN Agent Packet Return Loop Smoke",
+    "KRN Decision Packet Return Loop Smoke",
     report.cleanedUp,
     [
       `Workspace smoke row: ${report.workspaceSlug}`,
@@ -732,7 +732,7 @@ const runAgentPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Next packet stale decisions: ${report.nextPacketStaleDecisionIds.join(", ")}`,
       `Next packet includes matching decision: ${report.nextPacketIncludesMatchingDecision ? "yes" : "no"}`,
       `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
-      ...cleanupStatusLines(report.cleanedUp, "Agent packet return-loop smoke")
+      ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
     ]
   );
 };
@@ -951,7 +951,7 @@ const dbSmokeTargetHandlers = {
   targetRepoHarness: runTargetRepoHarnessSmokeTarget,
   decisionCorpusImport: runDecisionCorpusImportSmokeTarget,
   realRecallAdvantage: runRealRecallAdvantageSmokeTarget,
-  agentPacketReturnLoop: runAgentPacketReturnLoopSmokeTarget
+  decisionPacketReturnLoop: runDecisionPacketReturnLoopSmokeTarget
 } satisfies Record<DbSmokeTarget, DbSmokeTargetHandler>;
 
 export const runDbSmokeCommand = async (

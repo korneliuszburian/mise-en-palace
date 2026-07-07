@@ -111,20 +111,20 @@ describe("runCli", () => {
         usage: "Usage: krn run show"
       },
       {
-        args: ["agent", "--help"],
-        usage: "Usage: krn agent packet"
+        args: ["decision", "--help"],
+        usage: "Usage: krn decision packet"
       },
       {
-        args: ["agent", "-h"],
-        usage: "Usage: krn agent packet"
+        args: ["decision", "-h"],
+        usage: "Usage: krn decision packet"
       },
       {
-        args: ["agent", "packet", "--help"],
-        usage: "Usage: krn agent packet"
+        args: ["decision", "packet", "--help"],
+        usage: "Usage: krn decision packet"
       },
       {
-        args: ["agent", "packet", "-h"],
-        usage: "Usage: krn agent packet"
+        args: ["decision", "packet", "-h"],
+        usage: "Usage: krn decision packet"
       },
       {
         args: ["db", "--help"],

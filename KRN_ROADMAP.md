@@ -766,8 +766,8 @@ Rejected alternatives:
   and goes through existing review gates.
 - Resource forest for every read model: rejected. It recreates the old context
   swamp as transport API.
-- Product name `krn_agent_packet`: rejected for the external boundary. The
-  product concept is the `DecisionPacket`; MCP exposes `krn_decision_packet`.
+- Treating the MCP tool name as the product name: rejected. The product concept
+  is the `DecisionPacket`; MCP exposes `krn_decision_packet` only as transport.
 
 ## Current P1 Queue
 

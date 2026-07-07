@@ -52,7 +52,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   cwd: string;
   persist: boolean;
   runId?: string;
-  agentPacketChecksum?: string;
+  decisionPacketChecksum?: string;
   intendedFiles?: readonly string[];
   commandOutcomes?: readonly EvidenceCommand[];
   targetEvidence?: TargetEvidenceInput;
@@ -90,7 +90,7 @@ interface PersistedEvidenceIdentity {
   feedbackDeltaId: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   brainKnowledgeUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
-  agentPacketEvidenceRef?: string;
+  decisionPacketEvidenceRef?: string;
 }
 
 interface EvidencePersistenceConfig {
@@ -392,33 +392,33 @@ const normalizeCommands = (commands: readonly EvidenceCommand[]): EvidenceComman
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
   runtime.persist ? postgresPersistedLabel : "disabled (explicit printed-only preview; use --persist to write)";
 
-const agentPacketEvidenceRef = (
-  agentPacketChecksum: string | undefined
+const decisionPacketEvidenceRef = (
+  decisionPacketChecksum: string | undefined
 ): string | undefined => {
-  const checksum = agentPacketChecksum?.trim();
+  const checksum = decisionPacketChecksum?.trim();
 
   return checksum === undefined || checksum.length === 0
     ? undefined
     : `packet:${checksum}`;
 };
 
-const normalizeAgentPacketChecksum = (
-  agentPacketChecksum: string | undefined
+const normalizeDecisionPacketChecksum = (
+  decisionPacketChecksum: string | undefined
 ): string | undefined => {
-  const checksum = agentPacketChecksum?.trim();
+  const checksum = decisionPacketChecksum?.trim();
 
   return checksum === undefined || checksum.length === 0 ? undefined : checksum;
 };
 
-const renderAgentPacketBinding = (
-  agentPacketChecksum: string | undefined
+const renderDecisionPacketBinding = (
+  decisionPacketChecksum: string | undefined
 ): string => {
-  const checksum = normalizeAgentPacketChecksum(agentPacketChecksum);
-  const evidenceRef = agentPacketEvidenceRef(checksum);
+  const checksum = normalizeDecisionPacketChecksum(decisionPacketChecksum);
+  const evidenceRef = decisionPacketEvidenceRef(checksum);
 
   return evidenceRef === undefined
-    ? "Agent packet: unbound (no --agent-packet-checksum supplied)."
-    : `Agent packet: checksum=${checksum} | evidenceRef=${evidenceRef}`;
+    ? "DecisionPacket: unbound (no --decision-packet-checksum supplied)."
+    : `DecisionPacket: checksum=${checksum} | evidenceRef=${evidenceRef}`;
 };
 
 const commandInputHint =
@@ -742,7 +742,7 @@ const buildEvidenceBundleInput = (
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
   eventSequence: number,
-  agentPacketChecksum: string | undefined
+  decisionPacketChecksum: string | undefined
 ): CreateEvidenceBundleInput => ({
   executionRunId: runId,
   status: "captured",
@@ -769,9 +769,9 @@ const buildEvidenceBundleInput = (
       hasUnrelatedFiles: classification.unrelated.length > 0,
       unrelatedFileCount: classification.unrelated.length
     },
-    ...(agentPacketChecksum === undefined ? {} : {
-      agentPacketChecksum,
-      agentPacketEvidenceRef: `packet:${agentPacketChecksum}`
+    ...(decisionPacketChecksum === undefined ? {} : {
+      decisionPacketChecksum,
+      decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}`
     }),
     ...(targetEvidence === undefined ? {} : { targetEvidence })
   }
@@ -801,7 +801,7 @@ const buildFeedbackDeltaInput = (
   sourceDecisionCandidates: readonly SourceDecision[],
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   brainKnowledgeUsefulnessOutcomes: readonly BrainKnowledgeUsefulnessOutcomeFeedback[] | undefined,
-  agentPacketChecksum: string | undefined
+  decisionPacketChecksum: string | undefined
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
@@ -814,9 +814,9 @@ const buildFeedbackDeltaInput = (
     memoryCandidateProposalCount: memoryCandidates.length,
     memoryCandidateRowCount: 0,
     sourceDecisionCandidateCount: sourceDecisionCandidates.length,
-    ...(agentPacketChecksum === undefined ? {} : {
-      agentPacketChecksum,
-      agentPacketEvidenceRef: `packet:${agentPacketChecksum}`
+    ...(decisionPacketChecksum === undefined ? {} : {
+      decisionPacketChecksum,
+      decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}`
     }),
     ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
       ? {}
@@ -869,12 +869,12 @@ const currentEvidenceRefsForUsefulness = (
   reviewAssessmentId: string,
   changedFiles: readonly ChangedFile[],
   commands: readonly EvidenceCommandReadback[],
-  agentPacketChecksum: string | undefined
+  decisionPacketChecksum: string | undefined
 ): ReadonlySet<string> =>
   new Set([
     evidenceBundleId,
     reviewAssessmentId,
-    ...(agentPacketChecksum === undefined ? [] : [`packet:${agentPacketChecksum}`]),
+    ...(decisionPacketChecksum === undefined ? [] : [`packet:${decisionPacketChecksum}`]),
     ...changedFiles.map((file) => file.path),
     ...commands.flatMap((command) =>
       "outputRef" in command && command.outputRef !== undefined ? [command.outputRef] : []
@@ -911,7 +911,7 @@ const persistEvidenceCapture = async (
     }
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
-    const agentPacketChecksum = normalizeAgentPacketChecksum(runtime.agentPacketChecksum);
+    const decisionPacketChecksum = normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum);
     const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle(
       buildEvidenceBundleInput(
         runId,
@@ -922,7 +922,7 @@ const persistEvidenceCapture = async (
         targetEvidence,
         counts,
         nextEvidenceEventSequence(aggregate),
-        agentPacketChecksum
+        decisionPacketChecksum
       )
     );
     const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment(
@@ -940,7 +940,7 @@ const persistEvidenceCapture = async (
       reviewAssessment.id,
       changedFiles,
       commands,
-      agentPacketChecksum
+      decisionPacketChecksum
     );
     const evidenceLinkedSourceUsefulnessOutcomes = normalizeSourceUsefulnessOutcomesForEvidence(
       sourceUsefulnessOutcomes,
@@ -959,7 +959,7 @@ const persistEvidenceCapture = async (
         sourceDecisionCandidates,
         evidenceLinkedSourceUsefulnessOutcomes,
         evidenceLinkedBrainKnowledgeUsefulnessOutcomes,
-        agentPacketChecksum
+        decisionPacketChecksum
       )
     );
 
@@ -967,9 +967,9 @@ const persistEvidenceCapture = async (
       evidenceBundleId: evidenceBundle.id,
       reviewAssessmentId: reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
-      ...(agentPacketChecksum === undefined
+      ...(decisionPacketChecksum === undefined
         ? {}
-        : { agentPacketEvidenceRef: `packet:${agentPacketChecksum}` }),
+        : { decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}` }),
       ...(evidenceLinkedSourceUsefulnessOutcomes === undefined
         ? {}
         : { sourceUsefulnessOutcomes: evidenceLinkedSourceUsefulnessOutcomes }),
@@ -1030,7 +1030,7 @@ export const runEvidenceCaptureCommand = async (
     `Captured at: ${runtime.now()}`,
     persistenceLine(persistenceLabel(runtime)),
     ...(runtime.runId === undefined ? [] : [`Run ID: ${runtime.runId}`]),
-    renderAgentPacketBinding(runtime.agentPacketChecksum),
+    renderDecisionPacketBinding(runtime.decisionPacketChecksum),
     commandInputHint,
     commandExecutionNotice,
     "Changed files:",
@@ -1064,9 +1064,9 @@ export const runEvidenceCaptureCommand = async (
       `evidenceBundle: ${persistedIdentity.evidenceBundleId}`,
       `reviewAssessment: ${persistedIdentity.reviewAssessmentId}`,
       `feedbackDelta: ${persistedIdentity.feedbackDeltaId}`,
-      ...(persistedIdentity.agentPacketEvidenceRef === undefined
+      ...(persistedIdentity.decisionPacketEvidenceRef === undefined
         ? []
-        : [`agentPacketEvidenceRef: ${persistedIdentity.agentPacketEvidenceRef}`])
+        : [`decisionPacketEvidenceRef: ${persistedIdentity.decisionPacketEvidenceRef}`])
     );
   }
 

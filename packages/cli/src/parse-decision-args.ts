@@ -2,33 +2,33 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-const agentPacketUsage = "Usage: krn agent packet --run-id <id> [--json]";
+const decisionPacketUsage = "Usage: krn decision packet --run-id <id> [--json]";
 
-export const formatAgentPacketUsage = (): string => [
-  agentPacketUsage,
+export const formatDecisionPacketUsage = (): string => [
+  decisionPacketUsage,
   "  note: returns a read-only DecisionPacket contract plus evidence/feedback return channels for headless agents"
 ].join("\n") + "\n";
 
 const isValue = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0 && !value.startsWith("-");
 
-const agentPacketHelp = (): ParseArgsResult => ({
+const decisionPacketHelp = (): ParseArgsResult => ({
   command: {
-    kind: "agentPacketHelp"
+    kind: "decisionPacketHelp"
   }
 });
 
-const agentPacketUsageError = (): ParseArgsResult => ({
-  error: formatAgentPacketUsage()
+const decisionPacketUsageError = (): ParseArgsResult => ({
+  error: formatDecisionPacketUsage()
 });
 
-type AgentPacketOptionsParseResult =
+type DecisionPacketOptionsParseResult =
   | { kind: "parsed"; runId: string }
   | { kind: "error" };
 
-const parseAgentPacketOptions = (
+const parseDecisionPacketOptions = (
   rest: readonly string[]
-): AgentPacketOptionsParseResult => {
+): DecisionPacketOptionsParseResult => {
   let runId: string | undefined;
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -63,28 +63,28 @@ const parseAgentPacketOptions = (
     : { kind: "error" };
 };
 
-export const parseAgentArgs = (rest: readonly string[]): ParseArgsResult => {
+export const parseDecisionArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] === "--help" || rest[0] === "-h") {
-    return agentPacketHelp();
+    return decisionPacketHelp();
   }
 
   if (rest[0] !== "packet") {
-    return agentPacketUsageError();
+    return decisionPacketUsageError();
   }
 
   if (rest[1] === "--help" || rest[1] === "-h") {
-    return agentPacketHelp();
+    return decisionPacketHelp();
   }
 
-  const options = parseAgentPacketOptions(rest);
+  const options = parseDecisionPacketOptions(rest);
 
   if (options.kind === "error") {
-    return agentPacketUsageError();
+    return decisionPacketUsageError();
   }
 
   return {
     command: {
-      kind: "agentPacket",
+      kind: "decisionPacket",
       runId: options.runId
     }
   };

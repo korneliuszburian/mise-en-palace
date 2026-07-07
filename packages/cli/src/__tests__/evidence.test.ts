@@ -766,7 +766,7 @@ describe("runCli", () => {
     });
   });
 
-  it("binds persisted usefulness feedback to the supplied agent packet checksum", async () => {
+  it("binds persisted usefulness feedback to the supplied decision packet checksum", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -784,7 +784,7 @@ describe("runCli", () => {
         "capture",
         "--run-id",
         "execution-run-1",
-        "--agent-packet-checksum",
+        "--decision-packet-checksum",
         "current-packet",
         "--source-usefulness",
         "claim:source-claim-current=helped|Current packet source helped|packet:current-packet|Does not prove future source selection quality",
@@ -819,15 +819,15 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Agent packet: checksum=current-packet | evidenceRef=packet:current-packet");
-    expect(result.stdout).toContain("agentPacketEvidenceRef: packet:current-packet");
+    expect(result.stdout).toContain("DecisionPacket: checksum=current-packet | evidenceRef=packet:current-packet");
+    expect(result.stdout).toContain("decisionPacketEvidenceRef: packet:current-packet");
     expect(capture.evidenceBundle?.metadata).toMatchObject({
-      agentPacketChecksum: "current-packet",
-      agentPacketEvidenceRef: "packet:current-packet"
+      decisionPacketChecksum: "current-packet",
+      decisionPacketEvidenceRef: "packet:current-packet"
     });
     expect(capture.feedbackDeltaMetadata).toMatchObject({
-      agentPacketChecksum: "current-packet",
-      agentPacketEvidenceRef: "packet:current-packet",
+      decisionPacketChecksum: "current-packet",
+      decisionPacketEvidenceRef: "packet:current-packet",
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-current",
         outcome: "helped",
