@@ -408,6 +408,7 @@ export interface MemoryAdvantageEvalResult {
     readonly expectedMissCount: number;
     readonly advantageWinCount: number;
     readonly noAdvantageCaseCount: number;
+    readonly advantageLossCount: number;
     readonly brokenPriorAdvantageCaseCount: number;
     readonly distractorClassCount: number;
     readonly interdependentSessionCaseCount: number;
@@ -429,6 +430,13 @@ export interface MemoryAdvantageEvalResult {
     readonly sourcePruneCandidateCount: number;
   };
   readonly cases: readonly MemoryAdvantageCaseReadback[];
+  readonly claimGuard: {
+    readonly broadProductClaim: "allowed" | "blocked";
+    readonly reason: string;
+    readonly winCaseIds: readonly string[];
+    readonly neutralCaseIds: readonly string[];
+    readonly lossCaseIds: readonly string[];
+  };
   readonly proof: {
     readonly proves: readonly string[];
     readonly doesNotProve: readonly string[];
@@ -2360,6 +2368,33 @@ const buildCompetencyCoverage = (
   };
 };
 
+const buildClaimGuard = (
+  cases: readonly MemoryAdvantageCaseReadback[]
+): MemoryAdvantageEvalResult["claimGuard"] => {
+  const winCaseIds = cases
+    .filter((testCase) => testCase.advantageDelta.result === "win")
+    .map((testCase) => testCase.caseId);
+  const neutralCaseIds = cases
+    .filter((testCase) => testCase.advantageDelta.result === "neutral")
+    .map((testCase) => testCase.caseId);
+  const lossCaseIds = cases
+    .filter((testCase) => testCase.advantageDelta.result === "loss")
+    .map((testCase) => testCase.caseId);
+  const broadProductClaim = neutralCaseIds.length === 0 && lossCaseIds.length === 0
+    ? "allowed"
+    : "blocked";
+
+  return {
+    broadProductClaim,
+    reason: broadProductClaim === "allowed"
+      ? "Every case beats the simple lexical baseline in this bounded fixture."
+      : "Neutral or loss cases mean the benchmark can support bounded claims only, not broad Memory Core superiority.",
+    winCaseIds,
+    neutralCaseIds,
+    lossCaseIds
+  };
+};
+
 export const runMemoryAdvantageEval = async (
   fixture: MemoryAdvantageEvalFixture
 ): Promise<MemoryAdvantageEvalResult> => {
@@ -2395,6 +2430,9 @@ export const runMemoryAdvantageEval = async (
       ).length,
       noAdvantageCaseCount: cases.filter((testCase) =>
         testCase.advantageDelta.result === "neutral"
+      ).length,
+      advantageLossCount: cases.filter((testCase) =>
+        testCase.advantageDelta.result === "loss"
       ).length,
       brokenPriorAdvantageCaseCount: cases.filter((testCase) =>
         testCase.falsificationClass === "breaks_interdependent_advantage"
@@ -2454,6 +2492,7 @@ export const runMemoryAdvantageEval = async (
       )
     },
     cases,
+    claimGuard: buildClaimGuard(cases),
     proof: {
       proves: [
         "the fixture query is unsupported when no KRN memory or source evidence is available",
@@ -2479,6 +2518,7 @@ export const runMemoryAdvantageEval = async (
         "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryCards or excludedSourceClaims",
         "execution-contract cases can report baseline and KRN contract choices mechanically derived from selected memory/source ids",
         "source contribution readback reruns each case with SourceClaim/SearchDocument inputs disabled and reports required, zero-delta, and source prune candidate classes",
+        "broad product claims are blocked when any case is neutral against or loses to the cheaper simple lexical baseline",
         "the memory-advantage fixture output is deterministic enough for regression checks"
       ],
       doesNotProve: [

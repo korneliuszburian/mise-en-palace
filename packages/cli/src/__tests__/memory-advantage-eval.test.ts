@@ -110,6 +110,7 @@ describe("runMemoryAdvantageEval", () => {
       expectedMissCount: 2,
       advantageWinCount: 19,
       noAdvantageCaseCount: 4,
+      advantageLossCount: 2,
       brokenPriorAdvantageCaseCount: 1,
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
@@ -122,6 +123,21 @@ describe("runMemoryAdvantageEval", () => {
       sourceZeroDeltaCaseCount: 0,
       sourcePruneCandidateCount: 0
     });
+    expect(result.claimGuard).toMatchObject({
+      broadProductClaim: "blocked",
+      reason: "Neutral or loss cases mean the benchmark can support bounded claims only, not broad Memory Core superiority.",
+      neutralCaseIds: [
+        "neutral-short-context-second-opinion",
+        "neutral-single-turn-typecheck",
+        "neutral-retrieval-not-needed-docs",
+        "neutral-breaks-codex-output-evidence-advantage"
+      ]
+    });
+    expect(result.claimGuard.lossCaseIds).toHaveLength(2);
+    expect(result.claimGuard.winCaseIds).toHaveLength(19);
+    expect(result.proof.proves).toContain(
+      "broad product claims are blocked when any case is neutral against or loses to the cheaper simple lexical baseline"
+    );
     expect(result.metrics.totalKrnMemoryContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalKrnPlanBriefContextBytes).toBeGreaterThan(0);
     expect(result.metrics.totalRenderedBriefBytes).toBeGreaterThan(0);
