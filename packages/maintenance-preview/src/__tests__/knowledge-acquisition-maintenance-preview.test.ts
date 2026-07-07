@@ -23,7 +23,7 @@ describe("knowledge acquisition maintenance preview", () => {
             "candidate-only maintenance/dreaming behavior needs a local falsifier"
           ],
           evidenceRefs: [
-            "docs/KRN_SOURCES.md#towards-autonomous-memory-agents"
+            "KRN_ROADMAP.md#research-intake"
           ],
           consumer: "maintenance/dreaming candidate runtime",
           falsifier:
@@ -67,7 +67,7 @@ describe("knowledge acquisition maintenance preview", () => {
     ]);
     expect(result.candidates[0]?.evidenceRefs).toEqual([
       evidenceRef,
-      "docs/KRN_SOURCES.md#towards-autonomous-memory-agents"
+      "KRN_ROADMAP.md#research-intake"
     ]);
     expect(result.candidates[0]?.applicationGuidance).toContain(
       "before creating source claims"

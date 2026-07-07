@@ -61,8 +61,10 @@ For tests:
 
 For git history:
 
-- use Semantic/Conventional Commits only; see
-  `docs/standards/git-commits.md`.
+- use Semantic/Conventional Commits only, for example
+  `fix(scope): concise imperative summary`;
+- prefer `fix`, `feat`, `refactor`, `test`, `docs`, and `chore` according to
+  the actual change.
 
 For complex KRN implementation work, use Beads as the active execution plan.
 Product and architecture direction lives in `KRN_ROADMAP.md`.

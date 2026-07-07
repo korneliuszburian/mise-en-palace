@@ -7,7 +7,7 @@
   "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained brain knowledge when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",
   "sourceRefs": [
     "source:codex-skills",
-    "runbook:pattern-intake#official-codex-docs-to-skill",
+    ".agents/skills/source-to-decision/SKILL.md",
     ".agents/skills/source-to-decision/SKILL.md",
     ".agents/skills/typescript-type-safety/SKILL.md"
   ],

@@ -43,8 +43,9 @@ consumer routing, and falsifiers, but they do not promote memory, mutate source
 truth, rank knowledge, or prove product readiness.
 
 For multi-source, course, paper, practitioner-pattern, or operator-facing
-intake, use `docs/runbooks/pattern-intake.md` as the fuller procedure. Keep
-this skill as the trigger/gate; keep the runbook as the workflow.
+intake, keep this skill as the trigger/gate and route durable follow-up through
+Beads, store-backed source candidates, eval candidates, or a focused skill
+update. Do not create a markdown research runbook as the source of truth.
 
 Keep the gate strict:
 
@@ -61,9 +62,10 @@ Keep the gate strict:
 
 Preferred consumers:
 
-- `docs/KRN_SOURCES.md` for durable source maps.
-- ADRs for architecture decisions.
-- Standards docs for coding rules.
+- `KRN_ROADMAP.md` for compact product and architecture direction.
+- Beads for durable follow-up work and blockers.
+- Store-backed source, memory, feedback, and eval candidates for runtime
+  learning paths.
 - Skills for repeated execution workflows.
 - Eval candidates for behavior that can be falsified.
 - Memory/source candidates for future review, never automatic promotion.

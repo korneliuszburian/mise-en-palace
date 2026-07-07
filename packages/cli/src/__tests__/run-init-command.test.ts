@@ -37,12 +37,8 @@ describe("runInitCommand source seed detection", () => {
         }),
       ])
     );
-    expect(sourceSeeds.map((seed) => seed.path)).not.toEqual(
-      expect.arrayContaining([
-        "docs/KRN_SOURCES.md",
-        "docs/runbooks/pattern-intake.md",
-        "docs/standards/typescript-excellence.md"
-      ])
+    expect(sourceSeeds.map((seed) => seed.kind)).not.toEqual(
+      expect.arrayContaining(["source_map", "runbook", "standard_doc"])
     );
   });
 });

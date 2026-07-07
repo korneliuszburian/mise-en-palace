@@ -539,7 +539,7 @@ describe("brain maintenance preview", () => {
           source: "brain_search",
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: ["candidate-only acquisition lane"],
-          evidenceRefs: ["docs/KRN_SOURCES.md#towards-autonomous-memory-agents"],
+          evidenceRefs: ["KRN_ROADMAP.md#research-intake"],
           consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Missing-evidence readback cannot create a reviewable candidate.",
           doesNotProve:

@@ -193,7 +193,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
         typeof decision["id"] === "string" && decision["id"].startsWith("env-config-")
           ? {
               ...decision,
-              evidenceRef: "docs/standards/typescript-boundaries.md"
+              evidenceRef: ".agents/skills/typescript-type-safety/SKILL.md"
             }
           : decision
       );
