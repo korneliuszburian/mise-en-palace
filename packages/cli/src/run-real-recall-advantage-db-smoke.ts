@@ -6,15 +6,16 @@ import {
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
-  createUniqueSmokeCreateId,
-  finalizeSmokeMarkerCleanup
+  createUniqueSmokeCreateId
 } from "./smoke-runtime-cleanup.js";
 import {
   runSmokeSourceSearch,
   topSourceSearchClaimId
 } from "./source-search-smoke-runner.js";
-
-type PostgresClient = ReturnType<typeof postgres>;
+import {
+  cleanupSourceSmokeMarkers,
+  finalizeSourceSmokeMarkerCleanup
+} from "./source-smoke-marker-cleanup.js";
 
 interface RealRecallAdvantageDecision {
   readonly id: string;
@@ -169,53 +170,6 @@ const markerTables = [
   "source_claims",
   "source_artifacts"
 ] as const;
-
-const deleteMarkerRows = (
-  client: PostgresClient,
-  table: typeof markerTables[number],
-  smokeId: string
-) => client.unsafe(
-  `delete from ${table} where metadata->>'smokeId' = $1 or metadata->>'source' = $2`,
-  [smokeId, smokeSource]
-);
-
-const cleanupMarkerRows = async (
-  client: PostgresClient,
-  smokeId: string
-): Promise<void> => {
-  for (const table of markerTables) {
-    await deleteMarkerRows(client, table, smokeId);
-  }
-  await client`
-    delete from outbox_events
-    where payload->>'smokeId' = ${smokeId}
-      or payload->>'source' = ${smokeSource}
-  `;
-  await client`
-    delete from run_events
-    where payload->>'smokeId' = ${smokeId}
-  `;
-};
-
-const countMarkerRows = async (
-  client: PostgresClient,
-  smokeId: string
-): Promise<number> => {
-  const rows = await client<{ count: number }[]>`
-    select (
-      (select count(*)::int from outbox_events where payload->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from retrieval_runs where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from run_events where payload->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_artifacts where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_claims where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_decision_edges where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from search_documents where metadata->>'smokeId' = ${smokeId})
-    ) as count
-  `;
-
-  return rows[0]?.count ?? 0;
-};
 
 // Shared SourceArtifact creation for governing and distractor seeds so the
 // artifact bootstrap is not cloned across the two seed paths.
@@ -463,7 +417,7 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
   let runtime: Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
 
   try {
-    await cleanupMarkerRows(client, input.smokeId);
+    await cleanupSourceSmokeMarkers(client, markerTables, input.smokeId, smokeSource);
     const seedingRuntime = await createDatabaseRuntime({
       databaseUrl: input.databaseUrl,
       workspaceSlug: "local",
@@ -553,11 +507,11 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
 
     assertAllRealRecallAdvantageWins(decisionResults);
 
-    const markerCleanup = await finalizeSmokeMarkerCleanup(
+    const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
+      markerTables,
       input.smokeId,
-      countMarkerRows,
-      cleanupMarkerRows
+      smokeSource
     );
 
     return {

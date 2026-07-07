@@ -6,8 +6,7 @@ import type {
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
-  createUniqueSmokeCreateId,
-  finalizeSmokeMarkerCleanup
+  createUniqueSmokeCreateId
 } from "./smoke-runtime-cleanup.js";
 import {
   createDatabaseRuntime
@@ -30,8 +29,11 @@ import {
   runSmokeSourceSearch,
   sourceSearchIncludesClaim
 } from "./source-search-smoke-runner.js";
+import {
+  cleanupSourceSmokeMarkers,
+  finalizeSourceSmokeMarkerCleanup
+} from "./source-smoke-marker-cleanup.js";
 
-type PostgresClient = ReturnType<typeof postgres>;
 type DecisionCorpusImportRuntime = Pick<
   DatabaseRuntime,
   "sourceRepository" | "retrievalRepository"
@@ -101,8 +103,6 @@ const markerTables = [
   "source_artifacts"
 ] as const;
 
-// Table names stay in this local literal tuple; do not pass operator input to
-// client.unsafe cleanup.
 const metadataForRow = (
   smokeId: string,
   row: DecisionCorpusImportRow
@@ -113,55 +113,6 @@ const metadataForRow = (
   decisionCorpusStatus: row.status,
   evidenceRef: row.evidenceRef
 });
-
-const deleteMarkerRows = (
-  client: PostgresClient,
-  table: typeof markerTables[number],
-  smokeId: string
-) => client.unsafe(
-  `delete from ${table} where metadata->>'smokeId' = $1 or metadata->>'source' = $2`,
-  [smokeId, smokeSource]
-);
-
-const cleanupMarkerRows = async (
-  client: PostgresClient,
-  smokeId: string
-): Promise<void> => {
-  for (const table of markerTables) {
-    await deleteMarkerRows(client, table, smokeId);
-  }
-  await client`
-    delete from outbox_events
-    where payload->>'smokeId' = ${smokeId}
-      or payload->>'source' = ${smokeSource}
-  `;
-  await client`
-    delete from run_events
-    where payload->>'smokeId' = ${smokeId}
-  `;
-};
-
-const countMarkerRows = async (
-  client: PostgresClient,
-  smokeId: string
-): Promise<number> => {
-  const rows = await client<{ count: number }[]>`
-    select (
-      (select count(*)::int from outbox_events where payload->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from retrieval_runs where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from run_events where payload->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_artifacts where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_chunks where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_claims where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_decision_edges where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from source_rejections where metadata->>'smokeId' = ${smokeId}) +
-      (select count(*)::int from search_documents where metadata->>'smokeId' = ${smokeId})
-    ) as count
-  `;
-
-  return rows[0]?.count ?? 0;
-};
 
 const createSourceArtifactAndChunk = async (
   sourceRepository: DecisionCorpusSourceRepository,
@@ -420,7 +371,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
   let runtime: Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
 
   try {
-    await cleanupMarkerRows(client, input.smokeId);
+    await cleanupSourceSmokeMarkers(client, markerTables, input.smokeId, smokeSource);
     runtime = await createDatabaseRuntime({
       databaseUrl: input.databaseUrl,
       workspaceSlug: "local",
@@ -472,11 +423,11 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       throw new Error("decision corpus import DB smoke did not select the governing SourceClaim");
     }
 
-    const markerCleanup = await finalizeSmokeMarkerCleanup(
+    const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
+      markerTables,
       input.smokeId,
-      countMarkerRows,
-      cleanupMarkerRows
+      smokeSource
     );
 
     return {
