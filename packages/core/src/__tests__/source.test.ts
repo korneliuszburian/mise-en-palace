@@ -322,6 +322,70 @@ describe("source review signals", () => {
       reason: "weaker_than_current_valid_consensus",
       blockedBySourceClaimId: "source-claim-invalid-now-official"
     });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-trivial-override-weak",
+        trustTier: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-trivial-override-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now,
+      overrideReason: "ok",
+      overrideProvenanceRef: "source-decision:manual-review"
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-trivial-override-official"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-unprovenanced-override-weak",
+        trustTier: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-unprovenanced-override-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now,
+      overrideReason: "Official docs were superseded by an explicit project decision."
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-unprovenanced-override-official"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-provenanced-override-weak",
+        trustTier: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-provenanced-override-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now,
+      overrideReason: "Official docs were superseded by an explicit project decision.",
+      overrideProvenanceRef: "source-decision:manual-review"
+    })).toEqual({
+      allowed: true,
+      reason: "explicit_override_reason"
+    });
   });
 
   test("projects legacy trust tiers into explicit trust level and source kind", () => {

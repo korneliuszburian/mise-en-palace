@@ -446,6 +446,16 @@ export const isDecisionGradeSourceSupportType = (
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
+const hasMeaningfulOverrideReason = (value: string | undefined): boolean => {
+  const trimmed = value?.trim();
+
+  if (trimmed === undefined || trimmed.length < 24) {
+    return false;
+  }
+
+  return trimmed.split(/\s+/u).filter((word) => word.length >= 3).length >= 4;
+};
+
 export const isSourceClaimTemporallyValid = (
   sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
   now: string
@@ -494,10 +504,12 @@ export const assessSourceClaimOverride = (input: {
   readonly currentConsensus: readonly SourceClaimOverrideClaim[];
   readonly now: string;
   readonly overrideReason?: string;
+  readonly overrideProvenanceRef?: string;
 }): SourceClaimOverrideAssessment => {
-  const overrideReason = input.overrideReason?.trim();
-
-  if (overrideReason !== undefined && overrideReason.length > 0) {
+  if (
+    hasMeaningfulOverrideReason(input.overrideReason) &&
+    hasText(input.overrideProvenanceRef)
+  ) {
     return {
       allowed: true,
       reason: "explicit_override_reason"

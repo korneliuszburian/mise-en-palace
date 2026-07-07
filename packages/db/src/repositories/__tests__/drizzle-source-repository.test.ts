@@ -245,7 +245,8 @@ describe("DrizzleSourceRepository", () => {
       candidate: weakClaim,
       currentConsensus: [consensusClaim],
       now: "2026-06-23T12:00:00.000Z",
-      overrideReason: "Official docs were superseded by an explicit project decision."
+      overrideReason: "Official docs were superseded by an explicit project decision.",
+      overrideProvenanceRef: "source-decision:manual-review"
     })).toEqual({
       allowed: true,
       reason: "explicit_override_reason"
