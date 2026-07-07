@@ -1,8 +1,18 @@
 import {
+  sql
+} from "drizzle-orm";
+
+import {
   cleanupHarnessCompilerSmokeRows,
   createCompiledSmokeExecution,
   createHarnessCompilerSmokeRuntime
 } from "./db-smoke-support.js";
+import {
+  DrizzleProjectRepository
+} from "./repositories/index.js";
+import {
+  outboxEvents
+} from "./schema/index.js";
 export interface HarnessEvidenceSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
@@ -20,9 +30,86 @@ export interface HarnessEvidenceSmokeReport {
   evidenceBundleCount: number;
   reviewAssessmentCount: number;
   feedbackDeltaCount: number;
+  projectFeedbackDeltaCount: number;
+  otherProjectFeedbackDeltaCount: number;
+  otherProjectFeedbackDeltaExcluded: boolean;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
+
+type HarnessEvidenceRepository = Awaited<
+  ReturnType<typeof createCompiledSmokeExecution>
+>["harnessRunRepository"];
+
+interface SmokeFeedbackDeltaInput {
+  harnessRunRepository: HarnessEvidenceRepository;
+  executionRunId: string;
+  marker: string;
+  changedFile: string;
+  evidenceEventType: string;
+  evidenceEventMessage: string;
+  reviewSummary: string;
+}
+
+interface SmokeFeedbackDeltaOutput {
+  evidenceBundleId: string;
+  reviewAssessmentId: string;
+  feedbackDeltaId: string;
+}
+
+const createSmokeFeedbackDelta = async (
+  input: SmokeFeedbackDeltaInput
+): Promise<SmokeFeedbackDeltaOutput> => {
+  const evidenceBundle = await input.harnessRunRepository.createEvidenceBundle({
+    executionRunId: input.executionRunId,
+    status: "captured",
+    changedFiles: [input.changedFile],
+    commands: [{
+      command: "pnpm typecheck",
+      status: "passed"
+    }],
+    diffRisk: "low",
+    reviewBurden: "Smoke proof only.",
+    rollbackPath: "Delete smoke marker rows.",
+    event: {
+      sequence: 2,
+      type: input.evidenceEventType,
+      message: input.evidenceEventMessage,
+      payload: {
+        smokeId: input.marker
+      }
+    },
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const reviewAssessment = await input.harnessRunRepository.createReviewAssessment({
+    evidenceBundleId: evidenceBundle.id,
+    status: "pending",
+    reviewer: "krn-smoke",
+    summary: input.reviewSummary,
+    findings: [],
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const feedbackDelta = await input.harnessRunRepository.createFeedbackDelta({
+    reviewAssessmentId: reviewAssessment.id,
+    status: "candidate",
+    memoryCandidates: [],
+    sourceDecisions: [],
+    evalCandidates: [],
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+
+  return {
+    evidenceBundleId: evidenceBundle.id,
+    reviewAssessmentId: reviewAssessment.id,
+    feedbackDeltaId: feedbackDelta.id
+  };
+};
 
 export const runHarnessEvidenceSmokeCheck = async (
   input: HarnessEvidenceSmokeInput
@@ -39,14 +126,23 @@ export const runHarnessEvidenceSmokeCheck = async (
     });
   let retrievalRunId: string | undefined;
   let feedbackDeltaId: string | undefined;
+  let otherFeedbackDeltaId: string | undefined;
 
-  const cleanup = (): Promise<number> => cleanupHarnessCompilerSmokeRows({
-    db,
-    feedbackDeltaId,
-    marker,
-    retrievalRunId,
-    workspaceSlug
-  });
+  const cleanup = async (): Promise<number> => {
+    if (otherFeedbackDeltaId !== undefined) {
+      await db
+        .delete(outboxEvents)
+        .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${otherFeedbackDeltaId}`);
+    }
+
+    return cleanupHarnessCompilerSmokeRows({
+      db,
+      feedbackDeltaId,
+      marker,
+      retrievalRunId,
+      workspaceSlug
+    });
+  };
 
   try {
     await cleanup();
@@ -54,7 +150,9 @@ export const runHarnessEvidenceSmokeCheck = async (
     const {
       executionRun,
       harnessRunRepository,
-      retrievalRunId: compiledRetrievalRunId
+      project,
+      retrievalRunId: compiledRetrievalRunId,
+      workspace
     } = await createCompiledSmokeExecution({
       acceptance: "read back persisted evidence records",
       command: "db:smoke:harness-evidence",
@@ -67,21 +165,65 @@ export const runHarnessEvidenceSmokeCheck = async (
       workspaceSlug
     });
     retrievalRunId = compiledRetrievalRunId;
-    const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
+    const feedbackDelta = await createSmokeFeedbackDelta({
+      harnessRunRepository,
       executionRunId: executionRun.id,
-      status: "captured",
-      changedFiles: ["smoke/harness-evidence.ts"],
-      commands: [{
-        command: "pnpm typecheck",
-        status: "passed"
-      }],
-      diffRisk: "low",
-      reviewBurden: "Smoke proof only.",
-      rollbackPath: "Delete smoke marker rows.",
-      event: {
-        sequence: 2,
-        type: "smoke.harness_evidence.evidence_captured",
-        message: "Persisted harness evidence smoke captured",
+      marker,
+      changedFile: "smoke/harness-evidence.ts",
+      evidenceEventType: "smoke.harness_evidence.evidence_captured",
+      evidenceEventMessage: "Persisted harness evidence smoke captured",
+      reviewSummary: "Smoke evidence captured."
+    });
+    feedbackDeltaId = feedbackDelta.feedbackDeltaId;
+
+    const projectRepository = new DrizzleProjectRepository(db);
+    const otherProject = await projectRepository.createProject({
+      workspaceId: workspace.id,
+      slug: `${projectSlug}-other`,
+      displayName: `${projectSlug}-other`,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const otherOperatorIntent = await harnessRunRepository.createOperatorIntent({
+      workspaceId: workspace.id,
+      projectId: otherProject.id,
+      source: "cli",
+      rawIntent: `${task} other project`,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const otherTaskContract = await harnessRunRepository.createTaskContract({
+      operatorIntentId: otherOperatorIntent.id,
+      projectId: otherProject.id,
+      title: `${task} other project`,
+      objective: `${task} other project`,
+      constraints: ["preserve strict TypeScript boundaries"],
+      nonGoals: ["do not mutate memory"],
+      acceptance: ["read back persisted evidence records"],
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const otherHarnessPlan = await harnessRunRepository.createHarnessPlan({
+      taskContractId: otherTaskContract.id,
+      version: 1,
+      status: "ready",
+      summary: "Other project harness evidence smoke plan",
+      nextAction: "Create project-scoping regression evidence.",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const otherExecutionRun = await harnessRunRepository.createExecutionRun({
+      harnessPlanId: otherHarnessPlan.id,
+      adapter: "codex",
+      status: "planned",
+      initialEvent: {
+        sequence: 1,
+        type: "smoke.harness_evidence.other_project_plan_persisted",
+        message: "Other project harness evidence smoke plan created",
         payload: {
           smokeId: marker
         }
@@ -90,27 +232,33 @@ export const runHarnessEvidenceSmokeCheck = async (
         smokeId: marker
       }
     });
-    const reviewAssessment = await harnessRunRepository.createReviewAssessment({
-      evidenceBundleId: evidenceBundle.id,
-      status: "pending",
-      reviewer: "krn-smoke",
-      summary: "Smoke evidence captured.",
-      findings: [],
-      metadata: {
-        smokeId: marker
-      }
+    const otherFeedbackDelta = await createSmokeFeedbackDelta({
+      harnessRunRepository,
+      executionRunId: otherExecutionRun.id,
+      marker,
+      changedFile: "smoke/harness-evidence-other.ts",
+      evidenceEventType: "smoke.harness_evidence.other_project_evidence_captured",
+      evidenceEventMessage: "Other project harness evidence smoke captured",
+      reviewSummary: "Other project smoke evidence captured."
     });
-    const feedbackDelta = await harnessRunRepository.createFeedbackDelta({
-      reviewAssessmentId: reviewAssessment.id,
-      status: "candidate",
-      memoryCandidates: [],
-      sourceDecisions: [],
-      evalCandidates: [],
-      metadata: {
-        smokeId: marker
-      }
-    });
-    feedbackDeltaId = feedbackDelta.id;
+    otherFeedbackDeltaId = otherFeedbackDelta.feedbackDeltaId;
+
+    const projectFeedbackDeltas =
+      await harnessRunRepository.listFeedbackDeltasForProject(project.id);
+    const otherProjectFeedbackDeltas =
+      await harnessRunRepository.listFeedbackDeltasForProject(otherProject.id);
+    const otherProjectFeedbackDeltaExcluded =
+      projectFeedbackDeltas.every((delta) => delta.id !== otherFeedbackDelta.feedbackDeltaId);
+
+    if (
+      projectFeedbackDeltas.length !== 1 ||
+      projectFeedbackDeltas[0]?.id !== feedbackDelta.feedbackDeltaId ||
+      otherProjectFeedbackDeltas.length !== 1 ||
+      otherProjectFeedbackDeltas[0]?.id !== otherFeedbackDelta.feedbackDeltaId ||
+      !otherProjectFeedbackDeltaExcluded
+    ) {
+      throw new Error("Harness evidence smoke project-scoped feedback readback leaked rows");
+    }
 
     const readBack = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
 
@@ -138,13 +286,16 @@ export const runHarnessEvidenceSmokeCheck = async (
       workspaceSlug,
       projectSlug,
       executionRunId: executionRun.id,
-      evidenceBundleId: evidenceBundle.id,
-      reviewAssessmentId: reviewAssessment.id,
-      feedbackDeltaId: feedbackDelta.id,
+      evidenceBundleId: feedbackDelta.evidenceBundleId,
+      reviewAssessmentId: feedbackDelta.reviewAssessmentId,
+      feedbackDeltaId: feedbackDelta.feedbackDeltaId,
       runEventCount,
       evidenceBundleCount,
       reviewAssessmentCount,
       feedbackDeltaCount,
+      projectFeedbackDeltaCount: projectFeedbackDeltas.length,
+      otherProjectFeedbackDeltaCount: otherProjectFeedbackDeltas.length,
+      otherProjectFeedbackDeltaExcluded,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };

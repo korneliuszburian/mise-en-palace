@@ -273,6 +273,9 @@ const runHarnessEvidenceSmokeTarget: DbSmokeTargetHandler = async (
       `Evidence bundles: ${report.evidenceBundleCount}`,
       `Review assessments: ${report.reviewAssessmentCount}`,
       `Feedback deltas: ${report.feedbackDeltaCount}`,
+      `Project feedback deltas: ${report.projectFeedbackDeltaCount}`,
+      `Other project feedback deltas: ${report.otherProjectFeedbackDeltaCount}`,
+      `Other project feedback excluded: ${report.otherProjectFeedbackDeltaExcluded ? "yes" : "no"}`,
       `Run events: ${report.runEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Harness evidence smoke")
