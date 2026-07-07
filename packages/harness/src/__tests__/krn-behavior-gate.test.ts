@@ -203,7 +203,7 @@ const task: BehaviorFixture = {
         detection: "Relation-grounded QA readback omits baseline verdict, edge-aware verdict, used SourceClaim ids, or doesNotProve."
       }],
       sourceRefs: [
-        "docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md",
+        "review-evidence/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md",
         "packages/harness/src/activation/relation-grounded-qa-readback.ts"
       ],
       metadata: {}
@@ -304,7 +304,7 @@ const task: BehaviorFixture = {
         detection: "Target read-model candidates omit target-trust-exclusions or include owner_file_recall metadata."
       }],
       sourceRefs: [
-        "docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md"
+        "review-evidence/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md"
       ],
       metadata: {}
     },

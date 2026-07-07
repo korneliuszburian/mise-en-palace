@@ -257,7 +257,7 @@ const aggregate: HarnessRunAggregate = {
         ownedChanges: "external",
         targetStatusFreshness: "changed_since_selection",
         targetPatchLifecycle: "handed_off_unresolved",
-        handoffArtifact: "docs/reviews/target/HANDOFF.md",
+        handoffArtifact: "review-evidence/target/HANDOFF.md",
         targetOwnerDecision: "stronger verification requested",
         allowedWrites: [],
         forbiddenWrites: ["wilq-seo/**"],
@@ -464,7 +464,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("- dirtyBefore: dirty");
     expect(result.stdout).toContain("- targetStatusFreshness: changed_since_selection");
     expect(result.stdout).toContain("- targetPatchLifecycle: handed_off_unresolved");
-    expect(result.stdout).toContain("- handoffArtifact: docs/reviews/target/HANDOFF.md");
+    expect(result.stdout).toContain("- handoffArtifact: review-evidence/target/HANDOFF.md");
     expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
     expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
     expect(result.stdout).toContain("pnpm typecheck: passed | provenance=operator_reported");
@@ -725,7 +725,7 @@ describe("runRunShowCommand", () => {
           ownedChanges: "external",
           targetStatusFreshness: "changed_since_selection",
           targetPatchLifecycle: "handed_off_unresolved",
-          handoffArtifact: "docs/reviews/target/HANDOFF.md",
+          handoffArtifact: "review-evidence/target/HANDOFF.md",
           targetOwnerDecision: "stronger verification requested",
           allowedWrites: ["none"],
           forbiddenWrites: ["wilq-seo/**"],

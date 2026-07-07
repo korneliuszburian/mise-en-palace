@@ -253,10 +253,8 @@ const sourceDecisionSignal = (file: ChangedFile): boolean => {
   const path = file.path.toLowerCase();
 
   return (
-    path === "goal.md" ||
-    path === "plan.md" ||
-    path.startsWith("docs/decisions/") ||
-    path.startsWith("docs/runs/") ||
+    path === "agents.md" ||
+    path === "krn_roadmap.md" ||
     path.startsWith(".agents/skills/") ||
     path.includes("source")
   );

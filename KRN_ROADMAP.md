@@ -80,7 +80,8 @@ Built enough to keep:
 
 Not product-ready:
 
-- no dashboard/API/MCP product surface;
+- no dashboard/API or broad MCP product surface beyond the minimal read-only
+  `krn_decision_packet` wrapper;
 - no external operator proof;
 - no broad benchmark suite;
 - no autonomous worker daemon or scheduler;

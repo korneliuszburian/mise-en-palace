@@ -315,9 +315,9 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
     "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."
   );
   expect(capture.evidenceBundle?.metadata).toMatchObject({
-    intendedFiles: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+    intendedFiles: ["KRN_ROADMAP.md"],
     changedFileClassification: {
-      intended: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+      intended: ["KRN_ROADMAP.md"],
       unrelated: [],
       unknown: [],
       unmatchedIntendedFiles: []
@@ -459,7 +459,7 @@ describe("runCli", () => {
       "--intended-file",
       "packages/core/src/candidate-reviewability.ts",
       "--intended-file",
-      "docs/reviews/controlled-dogfood/run/REPORT.md",
+      "review-evidence/controlled-dogfood/run/REPORT.md",
       "--verification",
       "pnpm typecheck=passed"
     ], {
@@ -471,7 +471,7 @@ describe("runCli", () => {
         " M src/run-evidence-capture-command.ts\n" +
         " M src/parse-evidence-args.ts\n" +
         " M ../core/src/candidate-reviewability.ts\n" +
-        "?? ../../docs/reviews/controlled-dogfood/run/\n" +
+        "?? ../../review-evidence/controlled-dogfood/run/\n" +
         "?? ../../docs/materials/raw-audit.md\n"
     });
 
@@ -481,8 +481,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- M packages/cli/src/run-evidence-capture-command.ts");
     expect(result.stdout).toContain("- M packages/cli/src/parse-evidence-args.ts");
     expect(result.stdout).toContain("- M packages/core/src/candidate-reviewability.ts");
-    expect(result.stdout).toContain("- ?? docs/reviews/controlled-dogfood/run");
-    expect(result.stdout).not.toContain("../../docs/reviews/controlled-dogfood/run");
+    expect(result.stdout).toContain("- ?? review-evidence/controlled-dogfood/run");
+    expect(result.stdout).not.toContain("../../review-evidence/controlled-dogfood/run");
     expect(result.stdout).not.toContain("- M core/src/candidate-reviewability.ts");
     expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
     expect(result.stdout).toContain("unknown:\n- none");
@@ -514,7 +514,7 @@ describe("runCli", () => {
       "--target-patch-lifecycle",
       "handed-off-unresolved",
       "--target-handoff-artifact",
-      "docs/reviews/target/HANDOFF.md",
+      "review-evidence/target/HANDOFF.md",
       "--target-owner-decision",
       "stronger verification requested",
       "--target-changed-file",
@@ -544,7 +544,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- ownedChanges: external");
     expect(result.stdout).toContain("- targetStatusFreshness: changed_since_selection");
     expect(result.stdout).toContain("- targetPatchLifecycle: handed_off_unresolved");
-    expect(result.stdout).toContain("- handoffArtifact: docs/reviews/target/HANDOFF.md");
+    expect(result.stdout).toContain("- handoffArtifact: review-evidence/target/HANDOFF.md");
     expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
     expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
     expect(result.stdout).toContain("- wilq-seo scripts/test.sh");
@@ -559,7 +559,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () =>
-        " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n" +
+        " M KRN_ROADMAP.md\n" +
         " M packages/cli/src/run-source-claim-add-command.ts\n"
     });
 
@@ -629,7 +629,7 @@ describe("runCli", () => {
         "--run-id",
         "execution-run-1",
         "--intended-file",
-        "docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md",
+        "KRN_ROADMAP.md",
         "--target-repo",
         "../wilq-seo",
         "--target-mode",
@@ -664,7 +664,7 @@ describe("runCli", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         readGitStatus: async () =>
-          " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n",
+          " M KRN_ROADMAP.md\n",
         createDatabaseRuntime: async () => ({
           workspaceId: "workspace-1",
           projectId: "project-1",

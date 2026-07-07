@@ -11,7 +11,7 @@ const support = {
   position: "support" as const,
   summary: "The candidate is grounded in a completed dogfood report.",
   evidenceRef:
-    "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md",
+    "review-evidence/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md",
   doesNotProve: "This support does not prove promotion readiness."
 };
 
@@ -20,7 +20,7 @@ const dissent = {
   position: "dissent" as const,
   summary: "The candidate may overstate consensus because it has one run only.",
   evidenceRef:
-    "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md#proof-boundary",
+    "review-evidence/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md#proof-boundary",
   doesNotProve: "This dissent does not prove the candidate should be rejected."
 };
 
@@ -29,7 +29,7 @@ const risk = {
   position: "risk" as const,
   summary: "Autonomous truth runtime is explicitly out of scope.",
   evidenceRef:
-    "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md#next-recommended-task",
+    "review-evidence/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md#next-recommended-task",
   doesNotProve: "This risk does not prove the candidate is unusable."
 };
 
@@ -133,7 +133,7 @@ describe("consensus candidate evaluation preview", () => {
         candidateKind: "source_decision_candidate",
         summary: "Evaluate candidate with repeated evidence refs.",
         applicationGuidance: "Review only distinct evidence refs.",
-        evidenceRefs: [support.evidenceRef, "docs/reviews/manual-check.md"],
+        evidenceRefs: [support.evidenceRef, "review-evidence/manual-check.md"],
         evidence: [
           support,
           {
@@ -142,7 +142,7 @@ describe("consensus candidate evaluation preview", () => {
           },
           {
             ...risk,
-            evidenceRef: "docs/reviews/manual-check.md"
+            evidenceRef: "review-evidence/manual-check.md"
           }
         ]
       }]
@@ -150,7 +150,7 @@ describe("consensus candidate evaluation preview", () => {
 
     expect(result.evaluations[0]?.evidenceRefs).toEqual([
       support.evidenceRef,
-      "docs/reviews/manual-check.md"
+      "review-evidence/manual-check.md"
     ]);
   });
 

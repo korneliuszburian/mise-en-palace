@@ -173,7 +173,7 @@ describe("evidence bundle completeness", () => {
       ownedChanges: "external",
       targetStatusFreshness: "changed-since-selection",
       targetPatchLifecycle: "handed-off-unresolved",
-      handoffArtifact: " docs/reviews/target/HANDOFF.md ",
+      handoffArtifact: " review-evidence/target/HANDOFF.md ",
       targetOwnerDecision: " stronger verification requested ",
       forbiddenWrites: [" wilq-seo/** "],
       changedFiles: [{
@@ -191,7 +191,7 @@ describe("evidence bundle completeness", () => {
       ownedChanges: "external",
       targetStatusFreshness: "changed_since_selection",
       targetPatchLifecycle: "handed_off_unresolved",
-      handoffArtifact: "docs/reviews/target/HANDOFF.md",
+      handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "stronger verification requested",
       allowedWrites: ["none"],
       forbiddenWrites: ["wilq-seo/**"],
@@ -233,7 +233,7 @@ describe("evidence bundle completeness", () => {
       ownedChanges: "partial",
       targetStatusFreshness: "fresh-current-task",
       targetPatchLifecycle: "accepted-by-target-owner",
-      handoffArtifact: "docs/reviews/target/HANDOFF.md",
+      handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "accepted after smoke proof",
       changedFiles: [{
         status: "M",
@@ -250,7 +250,7 @@ describe("evidence bundle completeness", () => {
       ownedChanges: "partial",
       targetStatusFreshness: "fresh_current_task",
       targetPatchLifecycle: "accepted_by_target_owner",
-      handoffArtifact: "docs/reviews/target/HANDOFF.md",
+      handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "accepted after smoke proof",
       changedFiles: [{
         status: "M",

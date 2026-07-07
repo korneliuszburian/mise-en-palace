@@ -89,7 +89,7 @@ const classifiedExpectation: OutputExpectation = {
     "Changed files:\nintended:",
     "- M packages/cli/src/run-evidence-capture-command.ts",
     "- M packages/core/src/candidate-reviewability.ts",
-    "- ?? docs/reviews/controlled-dogfood/run",
+    "- ?? review-evidence/controlled-dogfood/run",
     "unrelated:\n- ?? docs/materials/raw-audit.md",
     "unknown:\n- none",
     "Dirty context: unrelated files present; review burden increased.",
@@ -97,7 +97,7 @@ const classifiedExpectation: OutputExpectation = {
   ],
   excludes: [
     "- M core/src/candidate-reviewability.ts",
-    "../../docs/reviews/controlled-dogfood/run"
+    "../../review-evidence/controlled-dogfood/run"
   ]
 };
 
@@ -123,7 +123,7 @@ const targetEvidenceExpectation: OutputExpectation = {
     "- ownedChanges: external",
     "- targetStatusFreshness: changed_since_selection",
     "- targetPatchLifecycle: handed_off_unresolved",
-    "- handoffArtifact: docs/reviews/target/HANDOFF.md",
+    "- handoffArtifact: review-evidence/target/HANDOFF.md",
     "- targetOwnerDecision: stronger verification requested",
     "- target source edits",
     "- target commits",
@@ -160,7 +160,7 @@ describe("evidence capture behavior fixture", () => {
       "--intended-file",
       "packages/core/src/candidate-reviewability.ts",
       "--intended-file",
-      "docs/reviews/controlled-dogfood/run/REPORT.md",
+      "review-evidence/controlled-dogfood/run/REPORT.md",
       "--verification",
       "pnpm typecheck=passed"
     ], {
@@ -171,7 +171,7 @@ describe("evidence capture behavior fixture", () => {
       readGitStatus: async () =>
         " M src/run-evidence-capture-command.ts\n" +
         " M ../core/src/candidate-reviewability.ts\n" +
-        "?? ../../docs/reviews/controlled-dogfood/run/\n" +
+        "?? ../../review-evidence/controlled-dogfood/run/\n" +
         "?? ../../docs/materials/raw-audit.md\n"
     });
     const unclassifiedResult = await runCli(["evidence", "capture"], {
@@ -199,7 +199,7 @@ describe("evidence capture behavior fixture", () => {
       "--target-patch-lifecycle",
       "handed-off-unresolved",
       "--target-handoff-artifact",
-      "docs/reviews/target/HANDOFF.md",
+      "review-evidence/target/HANDOFF.md",
       "--target-owner-decision",
       "stronger verification requested",
       "--target-changed-file",

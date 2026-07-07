@@ -11,7 +11,7 @@ import {
 
 const now = "2026-06-29T05:00:00.000Z";
 const evidenceRef =
-  "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md";
+  "review-evidence/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md";
 
 const memoryRecord = (
   id: string,
@@ -29,7 +29,7 @@ const memoryRecord = (
   applicationGuidance: "Use only when current evidence still supports this memory.",
   invalidationRule: "Revisit when current evidence supersedes this memory.",
   sourceLineage: [{
-    sourceId: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+    sourceId: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
   }],
   isUserPreference: false,
   positiveFeedbackCount: 1,
@@ -92,7 +92,7 @@ describe("memory staleness maintenance preview", () => {
     ]);
     expect(result.candidates[0]?.evidenceRefs).toContain(evidenceRef);
     expect(result.candidates[0]?.sourceLineageRefs).toEqual([
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     ]);
   });
 

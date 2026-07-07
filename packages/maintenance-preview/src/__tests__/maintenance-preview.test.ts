@@ -15,7 +15,7 @@ import {
 
 const now = "2026-06-30T11:30:00.000Z";
 const evidenceRef =
-  "docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md";
+  "review-evidence/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md";
 
 const memoryRecord = (
   id: string,
@@ -216,7 +216,7 @@ describe("brain maintenance preview", () => {
               "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
           },
           evidenceRefs: [
-            "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+            "review-evidence/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
           ],
           consumer: "maintenance preview and future bounded eval/golden candidates",
           falsifier:
@@ -269,7 +269,7 @@ describe("brain maintenance preview", () => {
         }),
         evidenceRefs: expect.arrayContaining([
           evidenceRef,
-          "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+          "review-evidence/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
         ]),
         doesNotProve: expect.stringContaining("semantic-aware Thompson sampling"),
         mutation: "none",
@@ -289,7 +289,7 @@ describe("brain maintenance preview", () => {
     ]);
     expect(result.reviewEvalClosure.evidenceRefs).toEqual([
       evidenceRef,
-      "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+      "review-evidence/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
     ]);
     expect(result.reviewEvalClosure.forbiddenWrites).toContain("eval_candidates");
     expect(result.manualCandidateLoop.forbiddenWrites).toContain("worker_jobs");
@@ -329,7 +329,7 @@ describe("brain maintenance preview", () => {
               id: "dissent-1",
               position: "dissent",
               summary: "The claims may only partially overlap.",
-              evidenceRef: "docs/reviews/controlled-dogfood/relation-dissent.md",
+              evidenceRef: "review-evidence/controlled-dogfood/relation-dissent.md",
               doesNotProve: "This does not prove the relation is wrong."
             }
           ]
@@ -460,7 +460,7 @@ describe("brain maintenance preview", () => {
         decision: "defer_pending_evidence",
         reason: "Relation evidence refs are empty in the current maintenance candidate.",
         evidenceRef:
-          "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md",
+          "review-evidence/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md",
         reviewer: "krn-operator"
       }
     });
@@ -474,7 +474,7 @@ describe("brain maintenance preview", () => {
       reason: "Relation evidence refs are empty in the current maintenance candidate.",
       reviewer: "krn-operator",
       evidenceRefs: [
-        "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md"
+        "review-evidence/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md"
       ],
       candidateReviewability: "ready",
       mutation: "none",

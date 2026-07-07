@@ -81,7 +81,7 @@ const memoryRecord: MemoryRecord = {
   invalidationRule: "Refresh before July 2026.",
   sourceLineage: [
     {
-      sourceId: "docs/reviews/controlled-dogfood/v364.md",
+      sourceId: "review-evidence/controlled-dogfood/v364.md",
       note: "test lineage"
     }
   ],
@@ -141,7 +141,7 @@ describe("runMaintenancePreviewCommand", () => {
         memoryLimit: 5,
         sourceClaimLimit: 5,
         maxCandidates: 5,
-        evidenceRef: "docs/reviews/controlled-dogfood/v364.md",
+        evidenceRef: "review-evidence/controlled-dogfood/v364.md",
         format: "text"
       },
       createDatabaseRuntime: async () => ({
@@ -253,12 +253,12 @@ describe("runMaintenancePreviewCommand", () => {
         memoryLimit: 0,
         sourceClaimLimit: 2,
         maxCandidates: 1,
-        evidenceRef: "docs/reviews/controlled-dogfood/v372.md",
+        evidenceRef: "review-evidence/controlled-dogfood/v372.md",
         candidateReview: {
           candidateId,
           decision: "defer_pending_evidence",
           reason: "Relation evidence refs are empty.",
-          evidenceRef: "docs/reviews/controlled-dogfood/v373.md",
+          evidenceRef: "review-evidence/controlled-dogfood/v373.md",
           reviewer: "operator"
         },
         format: "text"
@@ -311,12 +311,12 @@ describe("runMaintenancePreviewCommand", () => {
         memoryLimit: 1,
         sourceClaimLimit: 0,
         maxCandidates: 1,
-        evidenceRef: "docs/reviews/controlled-dogfood/v364.md",
+        evidenceRef: "review-evidence/controlled-dogfood/v364.md",
         candidateReview: {
           candidateId: `memory-staleness-maintenance:${memoryRecordId}:near_expiry_memory`,
           decision: "accept_for_manual_followup",
           reason: "Candidate has enough evidence for manual follow-up.",
-          evidenceRef: "docs/reviews/controlled-dogfood/v373.md"
+          evidenceRef: "review-evidence/controlled-dogfood/v373.md"
         },
         format: "json"
       },
@@ -453,7 +453,7 @@ describe("runMaintenancePreviewCommand", () => {
           memoryLimit: 0,
           sourceClaimLimit: 0,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-07.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-07.md",
           acquisitionReadbackFile: fixture.fileName,
           format: "text"
         },
@@ -572,7 +572,7 @@ describe("runMaintenancePreviewCommand", () => {
           memoryLimit: 0,
           sourceClaimLimit: 0,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-50.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-50.md",
           candidateKinds: ["knowledge_acquisition"],
           acquisitionReadbackFile: fixture.fileName,
           format: "json"
@@ -657,7 +657,7 @@ describe("runMaintenancePreviewCommand", () => {
           memoryLimit: 0,
           sourceClaimLimit: 0,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-07.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-07.md",
           acquisitionReadbackFile: fixture.fileName,
           format: "json"
         },
@@ -770,7 +770,7 @@ describe("runMaintenancePreviewCommand", () => {
           kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-44.md",
           candidateKinds: ["knowledge_acquisition"],
           acquisitionReadbackFile: fixture.fileName,
           format: "text"
@@ -852,7 +852,7 @@ describe("runMaintenancePreviewCommand", () => {
           kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-44.md",
           candidateKinds: ["knowledge_acquisition"],
           acquisitionReadbackFile: fixture.fileName,
           format: "json"
@@ -922,7 +922,7 @@ describe("runMaintenancePreviewCommand", () => {
           memoryLimit: 0,
           sourceClaimLimit: 0,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-35.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-35.md",
           acquisitionReadbackFile: fixture.fileName,
           format: "text"
         },
@@ -965,7 +965,7 @@ describe("runMaintenancePreviewCommand", () => {
           kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/imr-09.md",
+          evidenceRef: "review-evidence/controlled-dogfood/imr-09.md",
           candidateKinds: ["knowledge_acquisition"],
           acquisitionReadbackFile: fixture.fileName,
           format: "json"
@@ -1050,14 +1050,14 @@ describe("runMaintenancePreviewCommand", () => {
               id: "support-1",
               position: "support",
               summary: "The source edge carries reviewed duplicate focus.",
-              evidenceRef: "docs/reviews/controlled-dogfood/cro-01.md",
+              evidenceRef: "review-evidence/controlled-dogfood/cro-01.md",
               doesNotProve: "This does not prove source truth."
             },
             {
               id: "dissent-1",
               position: "dissent",
               summary: "The claims may only partially overlap.",
-              evidenceRef: "docs/reviews/controlled-dogfood/cro-01-dissent.md",
+              evidenceRef: "review-evidence/controlled-dogfood/cro-01-dissent.md",
               doesNotProve: "This does not prove the relation is wrong."
             }
           ]
@@ -1077,7 +1077,7 @@ describe("runMaintenancePreviewCommand", () => {
           kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
-          evidenceRef: "docs/reviews/controlled-dogfood/cro-01.md",
+          evidenceRef: "review-evidence/controlled-dogfood/cro-01.md",
           candidateKinds: ["consensus_evaluation"],
           consensusCandidateFile: fixture.fileName,
           format: "text"

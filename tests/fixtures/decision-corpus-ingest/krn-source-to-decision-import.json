@@ -11,7 +11,7 @@
       "title": "Decision corpus import path",
       "statement": "Add compact source-to-decision import rows to the decision-packet corpus through a validated importer instead of hand-editing the large benchmark fixture.",
       "status": "current",
-      "evidenceRef": "docs/runs/2026-07-06-codex-decision-packet-obedience-we82.md",
+      "evidenceRef": "run-evidence/2026-07-06-codex-decision-packet-obedience-we82.md",
       "falsifier": "A new source-to-decision decision still requires hand-editing the large notes-baseline fixture before packet evals can see it.",
       "doesNotProve": "Does not prove DB ingestion, source truth, or broad corpus quality.",
       "noteText": "Decision corpus import path. Use compact source-to-decision import rows with validation instead of hand-editing the large benchmark fixture."
@@ -21,7 +21,7 @@
       "title": "DB-backed decision corpus import smoke",
       "statement": "Persist compact decision-corpus import rows through existing SourceArtifact, SourceChunk, SourceClaim, SourceDecision, SourceDecisionEdge, SearchDocument, and SourceRejection repositories before claiming DB-backed import proof.",
       "status": "current",
-      "evidenceRef": "docs/runs/2026-07-06-decision-corpus-import-db-kj09.md",
+      "evidenceRef": "run-evidence/2026-07-06-decision-corpus-import-db-kj09.md",
       "falsifier": "The DB smoke imports compact rows but source-search cannot select the governing imported SourceClaim or cleanup leaves marker rows behind.",
       "doesNotProve": "Does not prove live Codex obedience, source truth, broad corpus quality, or arbitrary source ingestion.",
       "noteText": "DB-backed decision corpus import smoke. Persist compact rows through SourceArtifact SourceChunk SourceClaim SourceDecision SourceDecisionEdge SearchDocument SourceRejection repositories and require source-search readback plus cleanup."
@@ -31,7 +31,7 @@
       "title": "Live Codex packet obedience pilot",
       "statement": "Run one bounded read-only codex exec pilot through the decision-packet obedience checker before claiming any live Codex packet-following evidence.",
       "status": "current",
-      "evidenceRef": "docs/runs/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
+      "evidenceRef": "run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
       "falsifier": "A live Codex run returns schema-valid output but omits exact packet non-proof or source-boundary readback and the checker still passes it.",
       "doesNotProve": "Does not prove product readiness, broad obedience, write-mode safety, or that future Codex runs will follow packets.",
       "noteText": "Live Codex packet obedience pilot. Use bounded read-only codex exec and decision-packet obedience checker instead of claiming recorded fixtures prove live obedience."
@@ -41,7 +41,7 @@
       "title": "Third repo portability before breadth claims",
       "statement": "Add a third target-repo packet fixture with a different stack shape before claiming decision-packet portability beyond the self repo and one external repo.",
       "status": "current",
-      "evidenceRef": "docs/runs/2026-07-06-third-repo-portability-79cm.md",
+      "evidenceRef": "run-evidence/2026-07-06-third-repo-portability-79cm.md",
       "falsifier": "A second target repo passes but a third stack shape fails to produce useful governing decisions with stale and rejected path readback.",
       "doesNotProve": "Does not prove arbitrary-repo quality, live target writes, or semantic retrieval quality.",
       "noteText": "Third repo portability before breadth claims. Add third target repo packet fixture with different stack shape before claiming portability beyond self repo and one external repo."
@@ -51,7 +51,7 @@
       "title": "Anti-vanity naming changes require source-backed evidence",
       "statement": "Rename KRN classes, files, commands, or persisted fields only when code evidence and source-to-decision support show a real reviewability or contract problem.",
       "status": "current",
-      "evidenceRef": "docs/runs/2026-07-06-naming-api-surface-81i0.md",
+      "evidenceRef": "run-evidence/2026-07-06-naming-api-surface-81i0.md",
       "falsifier": "A future naming slice renames precise domain vocabulary only because a word feels annoying, without old-name evidence, new-name contract impact, and source-backed justification.",
       "doesNotProve": "Does not prove all current names are ideal or that naming lint should be added.",
       "noteText": "Anti-vanity naming source backed. Rename classes files commands persisted fields only with code evidence source-to-decision support and reviewability impact, not annoyance alone."
@@ -86,7 +86,7 @@
       "title": "Recorded obedience proves live Codex",
       "statement": "Treat recorded decision-packet obedience fixtures as sufficient evidence that live Codex obeys KRN packets.",
       "status": "stale",
-      "evidenceRef": "docs/runs/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
+      "evidenceRef": "run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
       "falsifier": "A live read-only codex exec pilot is required before any live obedience claim survives review.",
       "doesNotProve": "Historical stale path only.",
       "noteText": "Recorded obedience proves live Codex. Treat recorded decision-packet obedience fixtures as enough live Codex proof without a bounded codex exec pilot."
@@ -106,7 +106,7 @@
       "title": "Product readiness from one live pilot",
       "statement": "Claim product readiness or broad Codex obedience from one bounded live decision-packet pilot.",
       "status": "rejected",
-      "evidenceRef": "docs/runs/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
+      "evidenceRef": "run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md",
       "falsifier": "The live pilot report explicitly says it proves one bounded read-only run and does not prove product readiness or broad obedience.",
       "doesNotProve": "Rejected path only.",
       "noteText": "Product readiness from one live pilot. Claim broad product readiness or broad Codex obedience from a single bounded live decision-packet pilot."

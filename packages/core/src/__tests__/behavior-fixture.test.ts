@@ -26,7 +26,7 @@ const behaviorFixture = (overrides: Partial<BehaviorFixture>): BehaviorFixture =
       outcome: "exclude",
       subject: "memory_record:stale-pattern",
       rationale: "Active anti-memory invalidates the stale pattern.",
-      evidenceRefs: ["docs/runs/2026-06-23-memory-dogfood.md"]
+      evidenceRefs: ["run-evidence/2026-06-23-memory-dogfood.md"]
     },
     protectedFailureModes: [{
       id: "failure-mode-1",

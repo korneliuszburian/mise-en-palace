@@ -44,7 +44,7 @@ describe("candidate reviewability", () => {
   it("classifies vague candidates as too_vague", () => {
     expect(assessCandidateReviewability({
       summary: "Review changed files for reusable memory.",
-      evidenceRefs: ["PLAN.md"],
+      evidenceRefs: ["KRN_ROADMAP.md"],
       applicationGuidance: "Use later.",
       doesNotProve: "This does not prove usefulness."
     })).toEqual({

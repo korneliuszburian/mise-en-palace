@@ -42,7 +42,7 @@ const sourceClaimEdge = (
   metadata: {
     consumer: "source relation maintenance preview test",
     doesNotProve: "This edge does not prove source truth.",
-    evidenceRefs: ["docs/reviews/controlled-dogfood/v336/REPORT.md"]
+    evidenceRefs: ["review-evidence/controlled-dogfood/v336/REPORT.md"]
   },
   createdAt: "2026-06-29T04:10:00.000Z",
   ...overrides
@@ -57,7 +57,7 @@ describe("source relation maintenance preview", () => {
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.mutation).toBe("none");
@@ -85,7 +85,7 @@ describe("source relation maintenance preview", () => {
       "Candidate has review evidence, application guidance, and doesNotProve boundary."
     ]);
     expect(result.candidates[0]?.evidenceRefs).toContain(
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     );
     expect(result.candidates[0]?.summary).toBe(
       "Review contradiction SourceClaimEdge source-claim-edge-1 between source-claim-1 and source-claim-2."
@@ -94,7 +94,7 @@ describe("source relation maintenance preview", () => {
       "real contradiction"
     );
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
-      "docs/reviews/controlled-dogfood/v336/REPORT.md"
+      "review-evidence/controlled-dogfood/v336/REPORT.md"
     ]);
     expect(result.candidates[0]?.relationEvidenceRequest).toBe(
       "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance."
@@ -113,7 +113,7 @@ describe("source relation maintenance preview", () => {
           kind: "duplicates"
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -144,27 +144,27 @@ describe("source relation maintenance preview", () => {
           metadata: {
             consumer: " source relation maintenance preview test ",
             doesNotProve: " This edge does not prove source truth. ",
-            evidenceRef: " docs/reviews/source-edge-a.md ",
+            evidenceRef: " review-evidence/source-edge-a.md ",
             evidenceRefs: [
-              "docs/reviews/source-edge-a.md",
-              " docs/reviews/source-edge-b.md ",
+              "review-evidence/source-edge-a.md",
+              " review-evidence/source-edge-b.md ",
               "",
               12
             ]
           }
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
-      "docs/reviews/source-edge-a.md",
-      "docs/reviews/source-edge-b.md"
+      "review-evidence/source-edge-a.md",
+      "review-evidence/source-edge-b.md"
     ]);
     expect(result.candidates[0]?.evidenceRefs).toEqual([
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
-      "docs/reviews/source-edge-a.md",
-      "docs/reviews/source-edge-b.md"
+      "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
+      "review-evidence/source-edge-a.md",
+      "review-evidence/source-edge-b.md"
     ]);
     expect(result.candidates[0]?.relationEvidenceRequest).toBe(
       "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance."
@@ -182,7 +182,7 @@ describe("source relation maintenance preview", () => {
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -202,7 +202,7 @@ describe("source relation maintenance preview", () => {
         sourceClaim("source-claim-1")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -228,7 +228,7 @@ describe("source relation maintenance preview", () => {
           metadata: {}
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -261,7 +261,7 @@ describe("source relation maintenance preview", () => {
           kind: "supports"
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates).toEqual([]);
@@ -276,7 +276,7 @@ describe("source relation maintenance preview", () => {
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
+      evidenceRef: "review-evidence/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
       maxCandidates: 0
     });
 

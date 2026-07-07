@@ -12,7 +12,7 @@
         "id": "golden-case-evidence-dirty-context-001-a",
         "title": "intended and unrelated dirty files are separated",
         "input": {
-          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --intended-file docs/reviews/controlled-dogfood/run/REPORT.md --verification \"pnpm typecheck=passed\"",
+          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --intended-file review-evidence/controlled-dogfood/run/REPORT.md --verification \"pnpm typecheck=passed\"",
           "gitStatus": "package cwd paths plus root-parent report directory and unrelated raw material"
         },
         "expectedBehavior": {
@@ -20,7 +20,7 @@
           "subject": "evidence_capture:dirty_context_classification",
           "rationale": "Evidence capture must make intended and unrelated dirty files visible so review burden is explicit.",
           "evidenceRefs": [
-            "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
+            "review-evidence/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
             "packages/cli/src/run-evidence-capture-command.ts"
           ]
         },
@@ -35,7 +35,7 @@
           }
         ],
         "sourceRefs": [
-          "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
+          "review-evidence/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
         ],
         "metadata": {}
       },
@@ -51,7 +51,7 @@
           "subject": "evidence_capture:unknown_and_weak_default_proof",
           "rationale": "When no intended files or verification outcomes are supplied, changed files must remain unclassified and default command rows must stay weak proof.",
           "evidenceRefs": [
-            "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
+            "review-evidence/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
             "packages/cli/src/run-evidence-capture-command.ts"
           ]
         },
@@ -66,7 +66,7 @@
           }
         ],
         "sourceRefs": [
-          "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
+          "review-evidence/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
         ],
         "metadata": {}
       },
@@ -82,7 +82,7 @@
           "subject": "evidence_capture:target_evidence_boundary",
           "rationale": "Target repo proof must remain visible as target evidence, not be collapsed into KRN changed files or command strings.",
           "evidenceRefs": [
-            "docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md",
+            "review-evidence/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md",
             "packages/cli/src/run-evidence-capture-command.ts"
           ]
         },
@@ -97,7 +97,7 @@
           }
         ],
         "sourceRefs": [
-          "docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md"
+          "review-evidence/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md"
         ],
         "metadata": {}
       },

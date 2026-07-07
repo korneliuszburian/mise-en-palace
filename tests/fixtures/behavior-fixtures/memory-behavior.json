@@ -18,7 +18,7 @@
           "outcome": "exclude",
           "subject": "memory_record:stale-pattern",
           "rationale": "Active anti-memory invalidates the stale pattern.",
-          "evidenceRefs": ["docs/runs/2026-06-23-memory-dogfood.md"]
+          "evidenceRefs": ["run-evidence/2026-06-23-memory-dogfood.md"]
         },
         "protectedFailureModes": [
           {
@@ -140,7 +140,7 @@
           "outcome": "include",
           "subject": "memory_record:reviewed-lesson",
           "rationale": "Reviewed memory with source lineage should be eligible for context.",
-          "evidenceRefs": ["docs/runs/2026-06-23-memory-dogfood.md"]
+          "evidenceRefs": ["run-evidence/2026-06-23-memory-dogfood.md"]
         },
         "protectedFailureModes": [
           {

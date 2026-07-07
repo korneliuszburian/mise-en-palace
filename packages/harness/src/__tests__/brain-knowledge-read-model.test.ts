@@ -178,7 +178,7 @@ describe("Brain knowledge read model", () => {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "The brain knowledge guided an unknown-first boundary repair.",
-          evidenceRefs: ["docs/reviews/newer.md"],
+          evidenceRefs: ["review-evidence/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
         }
@@ -303,7 +303,7 @@ describe("Brain knowledge read model", () => {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Older feedback should not win.",
-          evidenceRefs: ["docs/reviews/older.md"],
+          evidenceRefs: ["review-evidence/older.md"],
           doesNotProve: "Older feedback does not prove current usefulness.",
           observedAt: "2026-06-27"
         },
@@ -311,7 +311,7 @@ describe("Brain knowledge read model", () => {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "The brain knowledge guided an unknown-first boundary repair.",
-          evidenceRefs: ["docs/reviews/newer.md"],
+          evidenceRefs: ["review-evidence/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
         }
@@ -328,7 +328,7 @@ describe("Brain knowledge read model", () => {
         usefulnessFeedback: {
           outcome: "helped",
           summary: "The brain knowledge guided an unknown-first boundary repair.",
-          evidenceRefs: ["docs/reviews/newer.md"]
+          evidenceRefs: ["review-evidence/newer.md"]
         }
       }
     ]);
@@ -341,7 +341,7 @@ describe("Brain knowledge read model", () => {
           cardId: "pattern:missing-boundary",
           outcome: "helped",
           summary: "Missing doesNotProve should fail.",
-          evidenceRefs: ["docs/reviews/report.md"]
+          evidenceRefs: ["review-evidence/report.md"]
         }
       ]
     })).toBeUndefined();
@@ -355,14 +355,14 @@ describe("Brain knowledge read model", () => {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "Untimestamped feedback should win only against untimestamped feedback.",
-          evidenceRefs: ["docs/reviews/untimestamped.md"],
+          evidenceRefs: ["review-evidence/untimestamped.md"],
           doesNotProve: "This feedback does not prove product readiness."
         },
         {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Timestamped feedback should win against untimestamped feedback.",
-          evidenceRefs: ["docs/reviews/timestamped.md"],
+          evidenceRefs: ["review-evidence/timestamped.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
         }
@@ -377,7 +377,7 @@ describe("Brain knowledge read model", () => {
       {
         usefulnessFeedback: {
           outcome: "neutral",
-          evidenceRefs: ["docs/reviews/timestamped.md"]
+          evidenceRefs: ["review-evidence/timestamped.md"]
         }
       }
     ]);

@@ -1024,7 +1024,7 @@ describe("runCli", () => {
       confidence: 95,
       applicationGuidance:
         "Use when sealing Memory Core write authority or reviewing public MemoryRecord promotion paths.",
-      sourceLineage: [{ sourceId: "PLAN.md#P2-00" }],
+      sourceLineage: [{ sourceId: "KRN_ROADMAP.md#P2-00" }],
       isUserPreference: false,
       positiveFeedbackCount: 0,
       negativeFeedbackCount: 0,
@@ -1044,7 +1044,7 @@ describe("runCli", () => {
       owner: "kernel",
       confidence: 95,
       applicationGuidance: "Use when deciding whether source graph work needs a graph database.",
-      sourceLineage: [{ sourceId: "PLAN.md#P2-01" }],
+      sourceLineage: [{ sourceId: "KRN_ROADMAP.md#P2-01" }],
       isUserPreference: false,
       positiveFeedbackCount: 0,
       negativeFeedbackCount: 0,

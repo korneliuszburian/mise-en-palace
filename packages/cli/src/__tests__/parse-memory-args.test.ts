@@ -31,7 +31,7 @@ describe("parseMemoryArgs", () => {
       "operator_reported",
       "--candidate-evidence-ref",
       "raw-evidence:run-event-1",
-      "--candidate-evidence-ref=PLAN.md#P2-00",
+      "--candidate-evidence-ref=KRN_ROADMAP.md#P2-00",
       "--candidate-evidence-does-not-prove",
       "This does not prove the candidate is approved Memory Core truth.",
       "--invalidation-rule",
@@ -55,7 +55,7 @@ describe("parseMemoryArgs", () => {
         sourceClaimId: "claim-1",
         sourceLineageIds: ["lineage-1"],
         candidateEvidenceProvenance: "operator_reported",
-        candidateEvidenceRefs: ["raw-evidence:run-event-1", "PLAN.md#P2-00"],
+        candidateEvidenceRefs: ["raw-evidence:run-event-1", "KRN_ROADMAP.md#P2-00"],
         candidateEvidenceDoesNotProve:
           "This does not prove the candidate is approved Memory Core truth.",
         invalidationRule: "revisit after schema changes",

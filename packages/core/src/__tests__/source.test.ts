@@ -111,10 +111,10 @@ describe("source review signals", () => {
     expect(readSourceRelationMetadataReadback({
       consumer: " graph brain ",
       doesNotProve: " relation metadata does not prove source truth ",
-      evidenceRef: " docs/reviews/source-edge-a.md ",
+      evidenceRef: " review-evidence/source-edge-a.md ",
       evidenceRefs: [
-        "docs/reviews/source-edge-a.md",
-        " docs/reviews/source-edge-b.md ",
+        "review-evidence/source-edge-a.md",
+        " review-evidence/source-edge-b.md ",
         "",
         " ",
         42
@@ -135,10 +135,10 @@ describe("source review signals", () => {
     })).toEqual({
       consumer: "graph brain",
       doesNotProve: "relation metadata does not prove source truth",
-      evidenceRef: "docs/reviews/source-edge-a.md",
+      evidenceRef: "review-evidence/source-edge-a.md",
       evidenceRefs: [
-        "docs/reviews/source-edge-a.md",
-        "docs/reviews/source-edge-b.md"
+        "review-evidence/source-edge-a.md",
+        "review-evidence/source-edge-b.md"
       ],
       file: "KRN_ROADMAP.md",
       contentHash: "sha256:source-edge",
@@ -159,10 +159,10 @@ describe("source review signals", () => {
       consumer: " ",
       doesNotProve: 12,
       evidenceRef: "",
-      evidenceRefs: [" ", 42, "docs/reviews/source-edge.md"],
+      evidenceRefs: [" ", 42, "review-evidence/source-edge.md"],
       sourceRanges: ["", " docs/source.md:1-2 "]
     })).toEqual({
-      evidenceRefs: ["docs/reviews/source-edge.md"],
+      evidenceRefs: ["review-evidence/source-edge.md"],
       missingProofBoundaryFields: ["consumer", "doesNotProve"],
       sourceRanges: ["docs/source.md:1-2"]
     });

@@ -155,7 +155,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
       const decisions = fixture["decisions"] as Array<Record<string, unknown>>;
       decisions[0] = {
         ...decisions[0],
-        evidenceRef: "docs/runs/2026-07-06-self-repo.md"
+        evidenceRef: "run-evidence/2026-07-06-self-repo.md"
       };
     });
 
@@ -164,7 +164,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
     expect(result.repoResults[0]?.selfRepoContaminationRefs).toEqual([
-      "docs/runs/2026-07-06-self-repo.md"
+      "run-evidence/2026-07-06-self-repo.md"
     ]);
   });
 
@@ -174,13 +174,13 @@ describe("runSecondRepoDecisionPacketEval", () => {
       const rejectedDecision = decisions.find((decision) => decision["status"] === "rejected") ?? {};
       decisions.push({
         ...rejectedDecision,
-        id: "docs/runs/2026-07-06-case-level-leak.md",
+        id: "run-evidence/2026-07-06-case-level-leak.md",
         evidenceRef: "tests/fixtures/target-repos/weak-json-boundary-typescript/src/parser.ts"
       });
       const notes = fixture["notes"] as Array<Record<string, unknown>>;
       notes.push({
         id: "note-case-level-leak",
-        decisionId: "docs/runs/2026-07-06-case-level-leak.md",
+        decisionId: "run-evidence/2026-07-06-case-level-leak.md",
         text: "Rejected case-level self-repo path leak fixture note."
       });
       const cases = fixture["cases"] as Array<Record<string, unknown>>;
@@ -190,7 +190,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
         ...firstCase,
         rejectedDecisionIds: [
           ...rejectedDecisionIds,
-          "docs/runs/2026-07-06-case-level-leak.md"
+          "run-evidence/2026-07-06-case-level-leak.md"
         ]
       };
     });
@@ -200,7 +200,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
     expect(result.status).toBe("fail");
     expect(result.metrics.selfRepoContaminationCount).toBe(1);
     expect(result.repoResults[0]?.selfRepoContaminationRefs).toEqual([
-      "docs/runs/2026-07-06-case-level-leak.md"
+      "run-evidence/2026-07-06-case-level-leak.md"
     ]);
   });
 
