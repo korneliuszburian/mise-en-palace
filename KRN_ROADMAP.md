@@ -739,6 +739,35 @@ Current boundary: `mcp:agent-packet:internal` is an internal read-only wrapper
 over the CLI agent-packet contract, not a KRN MCP product server. It must not
 add selection policy, execute Codex, or promote memory/source truth.
 
+MCP product boundary decision:
+
+- Product tool name: `krn_decision_packet`.
+- Transport role: MCP wraps the proven CLI `DecisionPacket` contract; it does
+  not define selection policy.
+- Initial input: `{ runId: string }` for an already persisted KRN run.
+- Initial output: the existing structured packet, packet checksum/evidence ref,
+  proof/non-proof boundary, and explicit evidence/feedback return channels.
+- Initial resources: none. A `krn://runs/{runId}/decision-packet` resource is
+  deferred until a real consumer needs resource-style reads.
+- Auth and mutation boundary: read-only, idempotent, no target-repo writes, no
+  Codex execution, no memory/source promotion, no feedback capture by side
+  effect.
+- Server instructions: concise, self-contained, and focused on "fetch the
+  packet, follow its return channels, do not treat MCP as authority."
+- Blocker before product MCP: the packet must expose an explicit abstention
+  scorer so MCP does not turn weak memory into confident guidance.
+
+Rejected alternatives:
+
+- MCP executes Codex: rejected. Codex executes; KRN supplies governed context.
+- MCP writes memory/source truth directly: rejected. Feedback remains explicit
+  and goes through existing review gates.
+- Resource forest for every read model: rejected. It recreates the old context
+  swamp as transport API.
+- Product name `krn_agent_packet`: rejected for the external boundary. The
+  product concept is the `DecisionPacket`; the current `agent-packet` wrapper is
+  an internal proof shim.
+
 ## Current P1 Queue
 
 The current P1 direction is:
