@@ -9,8 +9,15 @@ import {
   tokenOverlapScore
 } from "./eval-text-scoring.js";
 import type {
-  DecisionPacket
-} from "@krn/core";
+  DecisionPacketEvalCaseReadback,
+  DecisionPacketEvalResult,
+  NotesBaselineResult,
+  PacketQualityLabel
+} from "./decision-packet-eval-shape.js";
+import {
+  comparePacketAgainstNotesBaseline,
+  decisionPacketCaseStatus
+} from "./decision-packet-eval-shape.js";
 import {
   buildDecisionPacketWithEngine
 } from "../../decision-packet-engine.js";
@@ -24,71 +31,12 @@ import {
   loadDecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
 
-type PacketQualityLabel = "useful" | "noisy" | "stale_authority" | "miss";
-type DecisionPacketStatus = "pass" | "fail";
-type NotesBaselineLabel = "usable" | "unsafe" | "miss";
-type BaselineComparisonOutcome = "krn_win" | "notes_win" | "tie";
+export type {
+  DecisionPacketEvalCaseReadback,
+  DecisionPacketEvalResult
+} from "./decision-packet-eval-shape.js";
 
 type DecisionPacketDecision = DecisionPacketRow;
-
-type DecisionPacketReadback = DecisionPacket;
-
-interface NotesBaselineResult {
-  readonly qualityLabel: NotesBaselineLabel;
-  readonly topDecisionIds: readonly string[];
-  readonly unsafeDecisionIds: readonly string[];
-}
-
-interface DecisionPacketCaseResult {
-  readonly id: string;
-  readonly task: string;
-  readonly expectedDecisionId: string;
-  readonly expectedStaleDecisionIds: readonly string[];
-  readonly expectedRejectedDecisionIds: readonly string[];
-  readonly qualityLabel: PacketQualityLabel;
-  readonly notesBaseline: NotesBaselineResult;
-  readonly comparisonOutcome: BaselineComparisonOutcome;
-  readonly status: DecisionPacketStatus;
-  readonly reasons: readonly string[];
-  readonly packet: DecisionPacketReadback;
-}
-
-export interface DecisionPacketEvalResult {
-  readonly kind: "krn.decisionPacket.eval.v1";
-  readonly fixtureVersion: "1";
-  readonly status: DecisionPacketStatus;
-  readonly thresholds: {
-    readonly minimumUsefulRate: number;
-    readonly minimumKrnWinRate: number;
-    readonly maximumNotesWinRate: number;
-    readonly maximumSevereStaleAuthorityInclusions: number;
-    readonly maximumAverageNoiseDecisions: number;
-  };
-  readonly metrics: {
-    readonly caseCount: number;
-    readonly usefulCount: number;
-    readonly noisyCount: number;
-    readonly missCount: number;
-    readonly staleAuthorityCount: number;
-    readonly notesUsableCount: number;
-    readonly notesUnsafeCount: number;
-    readonly notesMissCount: number;
-    readonly krnWinCount: number;
-    readonly notesWinCount: number;
-    readonly tieCount: number;
-    readonly decisiveComparisonCount: number;
-    readonly usefulRate: number;
-    readonly krnWinRate: number;
-    readonly notesWinRate: number;
-    readonly averageNoiseDecisions: number;
-    readonly severeStaleAuthorityInclusions: number;
-  };
-  readonly cases: readonly DecisionPacketCaseResult[];
-  readonly proof: {
-    readonly proves: readonly string[];
-    readonly doesNotProve: readonly string[];
-  };
-}
 
 const minimumUsefulRate = 0.8;
 const maximumSevereStaleAuthorityInclusions = 0;
@@ -104,7 +52,7 @@ const nonEmpty = (
 ): value is string => value !== undefined && value.trim().length > 0;
 
 const hasDecisionBoundary = (
-  packet: DecisionPacketReadback,
+  packet: DecisionPacketEvalCaseReadback["packet"],
   expectedDecision: DecisionPacketDecision | undefined
 ): boolean =>
   expectedDecision !== undefined &&
@@ -149,7 +97,7 @@ const reasonFor = (
 
 const packetReasons = (
   fixture: DecisionPacketEvalFixture,
-  packet: DecisionPacketReadback,
+  packet: DecisionPacketEvalCaseReadback["packet"],
   testCase: DecisionPacketCase
 ): readonly string[] => [
   reasonFor(
@@ -196,7 +144,7 @@ const packetReasons = (
 
 export const classifyDecisionPacketForEval = (
   fixture: DecisionPacketEvalFixture,
-  packet: DecisionPacketReadback,
+  packet: DecisionPacketEvalCaseReadback["packet"],
   testCase: DecisionPacketCase,
   expectedDecision: DecisionPacketDecision | undefined
 ): PacketQualityLabel => {
@@ -267,33 +215,15 @@ const evaluateNotesBaseline = (
   };
 };
 
-const compareAgainstNotesBaseline = (
-  packetLabel: PacketQualityLabel,
-  notesBaselineLabel: NotesBaselineLabel
-): BaselineComparisonOutcome => {
-  const packetUseful = packetLabel === "useful";
-  const notesUsable = notesBaselineLabel === "usable";
-
-  if (packetUseful && !notesUsable) {
-    return "krn_win";
-  }
-
-  if (!packetUseful && notesUsable) {
-    return "notes_win";
-  }
-
-  return "tie";
-};
-
 const evaluateCase = async (
   fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
-): Promise<DecisionPacketCaseResult> => {
+): Promise<DecisionPacketEvalCaseReadback> => {
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
   const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
   const qualityLabel = classifyDecisionPacketForEval(fixture, packet, testCase, expectedDecision);
   const notesBaseline = evaluateNotesBaseline(fixture, testCase);
-  const comparisonOutcome = compareAgainstNotesBaseline(
+  const comparisonOutcome = comparePacketAgainstNotesBaseline(
     qualityLabel,
     notesBaseline.qualityLabel
   );
@@ -307,7 +237,7 @@ const evaluateCase = async (
     qualityLabel,
     notesBaseline,
     comparisonOutcome,
-    status: qualityLabel === "useful" ? "pass" : "fail",
+    status: decisionPacketCaseStatus(qualityLabel),
     reasons: packetReasons(fixture, packet, testCase),
     packet
   };

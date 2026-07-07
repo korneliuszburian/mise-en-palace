@@ -23,11 +23,13 @@ import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import type {
-  DecisionPacketEvalResult
-} from "./run-decision-packet-eval.js";
+  DecisionPacketEvalCaseReadback
+} from "./decision-packet-eval-shape.js";
+import {
+  isPassingDecisionPacketCase
+} from "./decision-packet-eval-shape.js";
 
 type ObedienceStatus = "pass" | "fail";
-type DecisionPacketCaseReadback = DecisionPacketEvalResult["cases"][number];
 
 interface RecordedCodexDecisionPacketOutput {
   readonly summary: string;
@@ -214,7 +216,7 @@ const missingSignals = (
 const briefHasRequiredPacketSignals = (
   input: {
     readonly brief: string;
-    readonly sourceCase: DecisionPacketCaseReadback;
+    readonly sourceCase: DecisionPacketEvalCaseReadback;
     readonly testCase: ObedienceCaseFixture;
   }
 ): boolean => {
@@ -237,13 +239,13 @@ const briefHasRequiredPacketSignals = (
 
 const caseStatus = (
   input: {
-    readonly sourceCase: DecisionPacketCaseReadback;
+    readonly sourceCase: DecisionPacketEvalCaseReadback;
     readonly briefIncludesPacket: boolean;
     readonly validationFindings: readonly string[];
     readonly missingObedienceSignals: readonly string[];
   }
 ): ObedienceStatus => {
-  if (input.sourceCase.status !== "pass") {
+  if (!isPassingDecisionPacketCase(input.sourceCase)) {
     return "fail";
   }
 
@@ -260,7 +262,7 @@ const caseStatus = (
 
 const evaluateCase = (
   testCase: ObedienceCaseFixture,
-  sourceCase: DecisionPacketCaseReadback
+  sourceCase: DecisionPacketEvalCaseReadback
 ): CodexDecisionPacketObedienceCaseReadback => {
   const brief = renderDecisionPacketBrief(sourceCase.packet);
   const validationFindings = validateClaimedCodexOutputEvidence(outputEvidence(testCase.output));
