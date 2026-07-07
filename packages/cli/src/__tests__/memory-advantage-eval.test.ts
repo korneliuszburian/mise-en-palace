@@ -127,7 +127,7 @@ describe("runMemoryAdvantageEval", () => {
       broadProductClaim: "blocked",
       reason: "Neutral or loss cases mean the benchmark can support bounded claims only, not broad Memory Core superiority.",
       neutralCaseIds: [
-        "neutral-short-context-second-opinion",
+        "neutral-short-context-external-review",
         "neutral-single-turn-typecheck",
         "neutral-retrieval-not-needed-docs",
         "neutral-breaks-codex-output-evidence-advantage"
@@ -145,9 +145,9 @@ describe("runMemoryAdvantageEval", () => {
       retrieval: {
         status: "pass",
         caseIds: [
-          "retrieve-second-opinion-procedure",
+          "retrieve-external-review-policy",
           "heldout-source-search-command-boundary",
-          "neutral-short-context-second-opinion",
+          "neutral-short-context-external-review",
           "neutral-retrieval-not-needed-docs",
           "firm-pattern-source-to-decision-chain",
           "firm-pattern-no-decorative-skills"
@@ -180,7 +180,7 @@ describe("runMemoryAdvantageEval", () => {
       forgetting: {
         status: "pass",
         caseIds: [
-          "forget-obsolete-no-second-opinion-rule",
+          "forget-obsolete-mandatory-reviewer-rule",
           "adversarial-unsupported-secret-scan-rule",
           "adversarial-memory-source-conflict-secret-review",
           "temporal-stale-source-claim-decision-link",
@@ -190,7 +190,7 @@ describe("runMemoryAdvantageEval", () => {
     });
 
     const retrievalCase = result.cases.find((testCase) =>
-      testCase.caseId === "retrieve-second-opinion-procedure"
+      testCase.caseId === "retrieve-external-review-policy"
     );
     expect(retrievalCase).toMatchObject({
       competency: "retrieval",
@@ -198,15 +198,15 @@ describe("runMemoryAdvantageEval", () => {
       expectedKrnResult: "hit",
       baselineClass: "no_memory_no_source",
       priorSession: {
-        id: "session:second-opinion-skill-refinement",
-        evidenceRef: "evidence:second-opinion-skill-refinement",
-        reviewRef: "review:second-opinion-skill-refinement",
-        feedbackRef: "feedback:second-opinion-skill-refinement-helped",
+        id: "session:external-review-policy-adoption",
+        evidenceRef: "evidence:external-review-policy-adoption",
+        reviewRef: "review:external-review-policy-adoption",
+        feedbackRef: "feedback:external-review-policy-adoption-helped",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:second-opinion-after-large-slice"],
+        createdMemoryIds: ["memory:pattern:external-review-advisory-after-large-slice"],
         excludedMemoryIds: [],
         distractorMemoryIds: ["memory:pattern:close-large-migration-from-local-tests"],
-        createdSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        createdSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         distractorSourceClaimIds: []
       },
       "baseline_no_memory": {
@@ -226,15 +226,15 @@ describe("runMemoryAdvantageEval", () => {
         baselineClass: "simple_lexical_retrieval",
         result: "distractor_selected",
         selectedKnowledgeIds: [
+          "source:external-review-advisory-after-large-slice",
           "pattern:close-large-migration-from-local-tests",
-          "source:second-opinion-after-large-slice",
-          "pattern:second-opinion-after-large-slice"
+          "pattern:external-review-advisory-after-large-slice"
         ],
         selectedMemoryIds: [
           "pattern:close-large-migration-from-local-tests",
-          "pattern:second-opinion-after-large-slice"
+          "pattern:external-review-advisory-after-large-slice"
         ],
-        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         selectedContextSize: {
           bytes: expect.any(Number),
           approximateTokens: expect.any(Number),
@@ -244,12 +244,12 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_plan_brief": {
         baselineClass: "no_memory_no_source",
         result: "miss",
-        requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
+        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
         selectedMemoryRecordIds: [],
         selectedSourceClaimIds: [],
         renderedMemoryRecordIds: [],
         renderedSourceClaimIds: [],
-        contextInclusionCount: 0,
+        contextInclusionCount: 1,
         contextSize: {
           bytes: 0,
           approximateTokens: 0,
@@ -264,11 +264,11 @@ describe("runMemoryAdvantageEval", () => {
       "krn_memory": {
         result: "hit",
         answerUsefulness: "useful",
-        requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
-        selectedKnowledgeIds: ["pattern:second-opinion-after-large-slice"],
-        selectedMemoryIds: ["pattern:second-opinion-after-large-slice"],
+        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
+        selectedKnowledgeIds: ["pattern:external-review-advisory-after-large-slice"],
+        selectedMemoryIds: ["pattern:external-review-advisory-after-large-slice"],
         selectedSources: ["catalog_file"],
-        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         selectedContextSize: {
           bytes: expect.any(Number),
           approximateTokens: expect.any(Number),
@@ -278,11 +278,11 @@ describe("runMemoryAdvantageEval", () => {
         supportingDocuments: 1
       },
       "source_contribution": {
-        selectedSourceClaimIds: ["source:second-opinion-after-large-slice"],
+        selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         sourceDisabled: {
           result: "miss",
-          selectedKnowledgeIds: ["pattern:second-opinion-after-large-slice"],
-          selectedMemoryIds: ["pattern:second-opinion-after-large-slice"],
+          selectedKnowledgeIds: ["pattern:external-review-advisory-after-large-slice"],
+          selectedMemoryIds: ["pattern:external-review-advisory-after-large-slice"],
           selectedContextSize: {
             bytes: expect.any(Number),
             approximateTokens: expect.any(Number),
@@ -296,7 +296,7 @@ describe("runMemoryAdvantageEval", () => {
       "krn_plan_brief": {
         baselineClass: "no_memory_no_source",
         result: "hit",
-        requiredKnowledgeId: "pattern:second-opinion-after-large-slice",
+        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
         contextSize: {
           bytes: expect.any(Number),
           approximateTokens: expect.any(Number),
@@ -314,12 +314,12 @@ describe("runMemoryAdvantageEval", () => {
       "included SearchDocument evidence in the answer package for this query"
     ]);
     expect(retrievalCase?.["krn_memory"].selectedKnowledgeIds).toContain(
-      "pattern:second-opinion-after-large-slice"
+      "pattern:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_memory"].selectedSourceClaimIds).toContain(
-      "source:second-opinion-after-large-slice"
+      "source:external-review-advisory-after-large-slice"
     );
-    expect(retrievalCase?.["baseline_simple_retrieval"].selectedKnowledgeIds[0]).toBe(
+    expect(retrievalCase?.["baseline_simple_retrieval"].selectedMemoryIds[0]).toBe(
       "pattern:close-large-migration-from-local-tests"
     );
     expect(retrievalCase?.["krn_memory"].selectedContextSize.bytes).toBeGreaterThan(0);
@@ -329,16 +329,16 @@ describe("runMemoryAdvantageEval", () => {
     expect(retrievalCase?.["krn_plan_brief"].renderedBriefSize.approximateTokens).toBeGreaterThan(0);
     expect(retrievalCase?.["krn_plan_brief"].contextInclusionCount).toBeGreaterThanOrEqual(2);
     expect(retrievalCase?.["krn_plan_brief"].selectedMemoryRecordIds).toContain(
-      "memory:pattern:second-opinion-after-large-slice"
+      "memory:pattern:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].selectedSourceClaimIds).toContain(
-      "source:second-opinion-after-large-slice"
+      "source:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].renderedMemoryRecordIds).toContain(
-      "memory:pattern:second-opinion-after-large-slice"
+      "memory:pattern:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].renderedSourceClaimIds).toContain(
-      "source:second-opinion-after-large-slice"
+      "source:external-review-advisory-after-large-slice"
     );
 
     const learningCase = result.cases.find((testCase) =>
@@ -552,7 +552,7 @@ describe("runMemoryAdvantageEval", () => {
       "heldout-ranking-corpus-quality",
       "heldout-coding-task-json-boundary",
       "heldout-multi-session-codex-output-evidence",
-      "neutral-short-context-second-opinion",
+      "neutral-short-context-external-review",
       "neutral-single-turn-typecheck",
       "neutral-retrieval-not-needed-docs",
       "neutral-breaks-codex-output-evidence-advantage",
@@ -566,7 +566,7 @@ describe("runMemoryAdvantageEval", () => {
       "heldout-coding-decision-retry-backoff"
     ]);
     expect(nonHeldOutHitCases.map((testCase) => testCase.caseId)).toEqual([
-      "retrieve-second-opinion-procedure",
+      "retrieve-external-review-policy",
       "learn-company-review-standard",
       "long-range-source-authority-boundary"
     ]);
@@ -647,7 +647,7 @@ describe("runMemoryAdvantageEval", () => {
       testCase.advantageDelta.result === "neutral"
     );
     expect(noAdvantageCases.map((testCase) => testCase.caseId)).toEqual([
-      "neutral-short-context-second-opinion",
+      "neutral-short-context-external-review",
       "neutral-single-turn-typecheck",
       "neutral-retrieval-not-needed-docs",
       "neutral-breaks-codex-output-evidence-advantage"
@@ -691,7 +691,7 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:codex-output-evidence-shape-review",
         evidenceRef: "evidence:codex-output-evidence-shape-review",
-        reviewRef: "review:claude-f2fw-r1-r2",
+        reviewRef: "review:external-f2fw-r1-r2",
         feedbackRef: "feedback:codex-output-evidence-shape-helped",
         applicationOutcome: "helped",
         createdMemoryIds: ["memory:pattern:codex-output-evidence-shape-required"],
@@ -730,7 +730,7 @@ describe("runMemoryAdvantageEval", () => {
       "reviewed_feedback_effect": {
         priorFeedbackRef: "feedback:codex-output-evidence-shape-helped",
         priorEvidenceRef: "evidence:codex-output-evidence-shape-review",
-        priorReviewRef: "review:claude-f2fw-r1-r2",
+        priorReviewRef: "review:external-f2fw-r1-r2",
         requiredKnowledgeId: "source:codex-output-evidence-shape-required",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "distractor_selected",
@@ -745,7 +745,7 @@ describe("runMemoryAdvantageEval", () => {
     );
 
     const forgettingCase = result.cases.find((testCase) =>
-      testCase.caseId === "forget-obsolete-no-second-opinion-rule"
+      testCase.caseId === "forget-obsolete-mandatory-reviewer-rule"
     );
     expect(forgettingCase).toMatchObject({
       competency: "forgetting",
@@ -753,10 +753,10 @@ describe("runMemoryAdvantageEval", () => {
       expectedKrnResult: "miss",
       negativeClass: "stale_memory",
       priorSession: {
-        id: "session:obsolete-second-opinion-rule",
+        id: "session:obsolete-mandatory-reviewer-rule",
         applicationOutcome: "hurt",
         createdMemoryIds: ["memory:pattern:routine-dependency-pin-cleanup"],
-        excludedMemoryIds: ["memory:pattern:obsolete-no-second-opinion-rule"],
+        excludedMemoryIds: ["memory:pattern:obsolete-mandatory-reviewer-rule"],
         distractorMemoryIds: [],
         createdSourceClaimIds: [],
         distractorSourceClaimIds: []
@@ -776,8 +776,8 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_simple_retrieval": {
         baselineClass: "simple_lexical_retrieval",
         result: "top_match_selected",
-        selectedKnowledgeIds: ["pattern:obsolete-no-second-opinion-rule"],
-        selectedMemoryIds: ["pattern:obsolete-no-second-opinion-rule"],
+        selectedKnowledgeIds: ["pattern:obsolete-mandatory-reviewer-rule"],
+        selectedMemoryIds: ["pattern:obsolete-mandatory-reviewer-rule"],
         selectedSourceClaimIds: [],
         selectedContextSize: {
           bytes: expect.any(Number),
@@ -802,13 +802,13 @@ describe("runMemoryAdvantageEval", () => {
           method: "utf8_bytes_div_4"
         },
         writtenKnowledgeIds: ["pattern:routine-dependency-pin-cleanup"],
-        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
         supportingClaims: 0,
         supportingDocuments: 0,
         exclusions: [
           {
-            memoryId: "memory:pattern:obsolete-no-second-opinion-rule",
-            reason: "stale memory contradicted by later governed second-opinion operating rule"
+            memoryId: "memory:pattern:obsolete-mandatory-reviewer-rule",
+            reason: "stale memory contradicted by current external-review advisory policy"
           }
         ]
       },
@@ -824,15 +824,15 @@ describe("runMemoryAdvantageEval", () => {
       },
       "krn_plan_brief": {
         result: "miss",
-        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule"
+        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule"
       },
       "reviewed_feedback_effect": {
-        priorFeedbackRef: "feedback:obsolete-second-opinion-rule-hurt",
+        priorFeedbackRef: "feedback:obsolete-mandatory-reviewer-rule-hurt",
         applicationOutcome: "hurt",
-        requiredKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "top_match_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:obsolete-no-second-opinion-rule",
+        simpleRetrievalTopKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "miss",
         selectedMemoryIds: [],

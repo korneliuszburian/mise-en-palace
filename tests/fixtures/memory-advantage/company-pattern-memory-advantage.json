@@ -12,32 +12,32 @@
   ],
   "cases": [
     {
-      "id": "retrieve-second-opinion-procedure",
+      "id": "retrieve-external-review-policy",
       "competency": "retrieval",
       "heldOut": false,
-      "query": "after a larger KRN kernel migration slice should Codex ask Claude for second opinion or just close the work",
+      "query": "after a larger KRN kernel migration slice should Codex treat external review as advisory evidence or just close the work",
       "distractorClasses": ["obsolete-operating-rule"],
       "baselineFailureRationale": "A simple lexical baseline can over-select an obsolete local-tests-only closure rule because it shares migration and closeout wording.",
       "expectedKrnResult": "hit",
-      "expectedSelectedKnowledgeId": "pattern:second-opinion-after-large-slice",
+      "expectedSelectedKnowledgeId": "pattern:external-review-advisory-after-large-slice",
       "priorSession": {
-        "id": "session:second-opinion-skill-refinement",
-        "task": "Refine the second-opinion-claude skill after a larger KRN kernel slice and record the governed review loop as learned operating evidence.",
-        "evidenceRef": "evidence:second-opinion-skill-refinement",
-        "reviewRef": "review:second-opinion-skill-refinement",
-        "feedbackRef": "feedback:second-opinion-skill-refinement-helped",
+        "id": "session:external-review-policy-adoption",
+        "task": "Adopt the current external-review policy after removing the stale reviewer-skill path and record the advisory review loop as learned operating evidence.",
+        "evidenceRef": "evidence:external-review-policy-adoption",
+        "reviewRef": "review:external-review-policy-adoption",
+        "feedbackRef": "feedback:external-review-policy-adoption-helped",
         "applicationOutcome": "helped",
         "memoryCards": [
           {
-            "id": "pattern:second-opinion-after-large-slice",
-            "title": "Second opinion after larger KRN slice",
-            "summary": "After larger migrations or audit-hardening slices, Codex owns a governed second-opinion-Claude loop with acceptance criteria, verification evidence, diff freshness, and explicit triage before closing.",
+            "id": "pattern:external-review-advisory-after-large-slice",
+            "title": "External review after larger KRN slice",
+            "summary": "After larger migrations or audit-hardening slices, Codex may use external review as advisory falsification evidence after local verification; findings require evidence-backed triage, not operator routing.",
             "consumers": [
               "large slice closure",
               "kernel development operating loop"
             ],
-            "falsifier": "A large KRN refactor closes from local tests only and never runs governed second-opinion review.",
-            "doesNotProve": "This does not prove Claude judgment is correct or that every tiny slice needs review.",
+            "falsifier": "A large KRN refactor treats external review as mandatory runtime authority or routes reviewer uncertainty back to the operator by default.",
+            "doesNotProve": "This does not prove external reviewer judgment is correct or that every tiny slice needs review.",
             "nextAction": "use"
           }
         ],
@@ -46,25 +46,25 @@
           {
             "id": "pattern:close-large-migration-from-local-tests",
             "title": "Close larger KRN migration from local tests only",
-            "summary": "For a larger KRN kernel migration slice, Codex should close the work from local tests and skip asking Claude for second opinion when the diff looks straightforward.",
+            "summary": "For a larger KRN kernel migration slice, Codex should close the work from local tests and skip external falsification when the diff looks straightforward.",
             "consumers": [
               "large slice closure",
               "obsolete local-only closure"
             ],
-            "falsifier": "The governed second-opinion skill is available and the slice is a larger KRN migration or audit-hardening change.",
+            "falsifier": "The slice has unresolved evidence gaps or reviewer-worthy risk that local verification alone did not close.",
             "doesNotProve": "This tempting distractor intentionally lacks governed source support for the current operating loop.",
             "nextAction": "defer"
           }
         ],
         "sourceClaims": [
           {
-            "sourceClaimId": "source:second-opinion-after-large-slice",
-            "claim": "KRN's operating loop requires governed Claude second opinion after larger migration or audit-hardening slices.",
-            "mechanism": "The second-opinion skill builds a compact context pack, requests read-only falsification, validates verdict JSON, and forces Codex-owned triage instead of operator coordination.",
-            "krnImplication": "Large memory/kernel slices should not close until local evidence and governed second-opinion output have been reconciled.",
+            "sourceClaimId": "source:external-review-advisory-after-large-slice",
+            "claim": "KRN's operating loop treats external review after larger migration or audit-hardening slices as optional advisory evidence, not a mandatory reviewer skill.",
+            "mechanism": "External review should try to falsify done with evidence refs; Codex reconciles findings against current code and tests, then records fixes or follow-up work.",
+            "krnImplication": "Large memory/kernel slices should close on local evidence plus reconciled advisory review when review is used; absence or failure of a reviewer is an evidence gap, not default operator coordination.",
             "consumer": "kernel development operating loop",
-            "falsifier": "The review output is prose-only, stale against the diff, or routed back to the operator as the default decision layer.",
-            "doesNotProve": "This does not prove second opinion is required for small deterministic eval fixture edits."
+            "falsifier": "Reviewer output is treated as authority despite contradicting current code, or a stale reviewer path is required for closure.",
+            "doesNotProve": "This does not prove external review is required for small deterministic eval fixture edits."
           }
         ]
       }
@@ -75,12 +75,12 @@
       "heldOut": false,
       "query": "when a slice changes KRN memory eval behavior what company review standard should Codex apply before closing",
       "distractorClasses": ["generic-quality-guidance"],
-      "baselineFailureRationale": "A generic review checklist can match eval and closing vocabulary without the learned second-opinion reconciliation requirement.",
+      "baselineFailureRationale": "A generic review checklist can match eval and closing vocabulary without the learned external-review reconciliation requirement.",
       "expectedKrnResult": "hit",
       "expectedSelectedKnowledgeId": "pattern:company-review-standard-after-eval-change",
       "priorSession": {
         "id": "session:memory-eval-review-standard",
-        "task": "A prior memory eval slice passed local tests but Claude found a proof overclaim, so Codex learned to reconcile reviewer evidence before closing.",
+        "task": "A prior memory eval slice passed local tests but an external reviewer found a proof overclaim, so Codex learned to reconcile reviewer evidence before closing.",
         "evidenceRef": "evidence:memory-eval-review-standard",
         "reviewRef": "review:memory-eval-review-standard",
         "feedbackRef": "feedback:memory-eval-review-standard-helped",
@@ -89,7 +89,7 @@
           {
             "id": "pattern:company-review-standard-after-eval-change",
             "title": "Company review standard after memory eval change",
-            "summary": "When a KRN memory eval slice changes behavior, Codex should verify focused tests, run the eval command, typecheck, diff-check, and reconcile Claude findings before closing.",
+            "summary": "When a KRN memory eval slice changes behavior, Codex should verify focused tests, run the eval command, typecheck, diff-check, and reconcile evidence-backed reviewer findings before closing.",
             "consumers": [
               "memory eval closure",
               "company review standard"
@@ -103,12 +103,12 @@
         "sourceClaims": [
           {
             "sourceClaimId": "source:company-review-standard-after-eval-change",
-            "claim": "KRN memory eval behavior changes require focused tests, eval command evidence, typecheck, diff-check, and reconciled second-opinion findings before closure.",
+            "claim": "KRN memory eval behavior changes require focused tests, eval command evidence, typecheck, diff-check, and reconciled external-review findings when review is used before closure.",
             "mechanism": "The closure loop combines local deterministic checks with an independent falsification review and records proof/non-proof boundaries.",
             "krnImplication": "A later slice that changes memory eval behavior should apply the learned closure standard rather than closing on one green assertion.",
             "consumer": "memory eval closure",
             "falsifier": "A later memory eval behavior change closes without focused eval evidence or reconciled review output.",
-            "doesNotProve": "This does not prove every documentation-only edit needs Claude review."
+            "doesNotProve": "This does not prove every documentation-only edit needs external review."
           }
         ]
       }
@@ -158,21 +158,21 @@
       }
     },
     {
-      "id": "forget-obsolete-no-second-opinion-rule",
+      "id": "forget-obsolete-mandatory-reviewer-rule",
       "competency": "forgetting",
       "heldOut": false,
-      "query": "for a larger KRN migration should Codex follow the old no second opinion rule from before the governed reviewer existed",
+      "query": "for a larger KRN migration should Codex follow the old mandatory reviewer rule after the reviewer path was removed",
       "distractorClasses": ["obsolete-operating-rule"],
-      "baselineFailureRationale": "A simple lexical baseline can select the obsolete no-second-opinion rule because the query repeats its terms.",
+      "baselineFailureRationale": "A simple lexical baseline can select the obsolete mandatory-reviewer rule because the query repeats its terms.",
       "negativeClass": "stale_memory",
       "expectedKrnResult": "miss",
-      "expectedSelectedKnowledgeId": "pattern:obsolete-no-second-opinion-rule",
+      "expectedSelectedKnowledgeId": "pattern:obsolete-mandatory-reviewer-rule",
       "priorSession": {
-        "id": "session:obsolete-second-opinion-rule",
-        "task": "An old workflow note said larger slices could close without second opinion, but later review reversed it.",
-        "evidenceRef": "evidence:obsolete-second-opinion-rule",
-        "reviewRef": "review:obsolete-second-opinion-rule-rejected",
-        "feedbackRef": "feedback:obsolete-second-opinion-rule-hurt",
+        "id": "session:obsolete-mandatory-reviewer-rule",
+        "task": "An old workflow note said larger slices must run a specific reviewer path, but later roadmap cleanup demoted external review to advisory evidence.",
+        "evidenceRef": "evidence:obsolete-mandatory-reviewer-rule",
+        "reviewRef": "review:obsolete-mandatory-reviewer-rule-rejected",
+        "feedbackRef": "feedback:obsolete-mandatory-reviewer-rule-hurt",
         "applicationOutcome": "hurt",
         "memoryCards": [
           {
@@ -190,17 +190,17 @@
         ],
         "excludedMemoryCards": [
           {
-            "id": "pattern:obsolete-no-second-opinion-rule",
-            "title": "Obsolete no second opinion rule",
-            "summary": "Old guidance said Codex may close larger KRN migrations from local tests only without a governed second opinion loop.",
+            "id": "pattern:obsolete-mandatory-reviewer-rule",
+            "title": "Obsolete mandatory reviewer rule",
+            "summary": "Old guidance said larger KRN migrations must run a specific governed reviewer path before closure.",
             "consumers": [
               "large slice closure",
               "obsolete migration rule"
             ],
-            "falsifier": "The governed second-opinion skill is available and required by the current operating loop.",
+            "falsifier": "The current roadmap treats external review as optional advisory evidence and removed the stale reviewer-skill path.",
             "doesNotProve": "This does not prove every tiny deterministic edit needs review.",
             "nextAction": "do_not_use",
-            "exclusionReason": "stale memory contradicted by later governed second-opinion operating rule"
+            "exclusionReason": "stale memory contradicted by current external-review advisory policy"
           }
         ],
         "sourceClaims": []
@@ -227,7 +227,7 @@
           {
             "id": "pattern:secret-path-denylist-for-review-context",
             "title": "Secret path denylist for review context",
-            "summary": "Second-opinion and review context builders must denylist .env, key, pem, p12, id_rsa, and secrets paths instead of sending secret-bearing files.",
+            "summary": "External review context builders must denylist .env, key, pem, p12, id_rsa, and secrets paths instead of sending secret-bearing files.",
             "consumers": [
               "security cleanup",
               "review context"
@@ -751,9 +751,9 @@
       },
       "priorSession": {
         "id": "session:codex-output-evidence-shape-review",
-        "task": "A prior f2fw slice added a Codex-output evidence-shape gate after Claude found missing evidence refs and non-proof coverage.",
+        "task": "A prior f2fw slice added a Codex-output evidence-shape gate after an external reviewer found missing evidence refs and non-proof coverage.",
         "evidenceRef": "evidence:codex-output-evidence-shape-review",
-        "reviewRef": "review:claude-f2fw-r1-r2",
+        "reviewRef": "review:external-f2fw-r1-r2",
         "feedbackRef": "feedback:codex-output-evidence-shape-helped",
         "applicationOutcome": "helped",
         "memoryCards": [
@@ -800,32 +800,32 @@
       }
     },
     {
-      "id": "neutral-short-context-second-opinion",
+      "id": "neutral-short-context-external-review",
       "competency": "retrieval",
       "heldOut": true,
       "falsificationClass": "short_context_no_advantage",
-      "query": "KRN larger migration governed Claude second opinion diff freshness triage",
+      "query": "KRN larger migration external review advisory evidence diff freshness triage",
       "distractorClasses": ["obsolete-operating-rule"],
-      "baselineFailureRationale": "This short query is intentionally easy: simple lexical retrieval should already rank the current governed second-opinion rule first, so KRN must not claim unique advantage.",
+      "baselineFailureRationale": "This short query is intentionally easy: simple lexical retrieval should already rank the current external-review policy first, so KRN must not claim unique advantage.",
       "expectedKrnResult": "hit",
-      "expectedSelectedKnowledgeId": "pattern:neutral-governed-second-opinion",
+      "expectedSelectedKnowledgeId": "pattern:neutral-external-review-policy",
       "priorSession": {
-        "id": "session:neutral-short-context-second-opinion",
-        "task": "A prior short-context planning note recorded the governed second-opinion rule using exact operator vocabulary.",
-        "evidenceRef": "evidence:neutral-short-context-second-opinion",
-        "reviewRef": "review:neutral-short-context-second-opinion",
-        "feedbackRef": "feedback:neutral-short-context-second-opinion-neutral",
+        "id": "session:neutral-short-context-external-review",
+        "task": "A prior short-context planning note recorded the external-review policy using exact operator vocabulary.",
+        "evidenceRef": "evidence:neutral-short-context-external-review",
+        "reviewRef": "review:neutral-short-context-external-review",
+        "feedbackRef": "feedback:neutral-short-context-external-review-neutral",
         "applicationOutcome": "neutral",
         "memoryCards": [
           {
-            "id": "pattern:neutral-governed-second-opinion",
-            "title": "Governed Claude second opinion for larger migration",
-            "summary": "KRN larger migration work uses governed Claude second opinion with diff freshness, verification evidence, and Codex-owned triage.",
+            "id": "pattern:neutral-external-review-policy",
+            "title": "External review advisory evidence for larger migration",
+            "summary": "KRN larger migration work may use external review as advisory falsification evidence with diff freshness, verification evidence, and Codex-owned triage.",
             "consumers": [
               "larger migration closeout",
-              "second opinion triage"
+              "external review triage"
             ],
-            "falsifier": "A larger migration closes without governed Claude review or diff freshness.",
+            "falsifier": "A larger migration treats external review as mandatory runtime authority or accepts stale review output.",
             "doesNotProve": "This neutral case does not prove KRN beats simple retrieval.",
             "nextAction": "use"
           }
@@ -846,10 +846,10 @@
         ],
         "sourceClaims": [
           {
-            "sourceClaimId": "source:neutral-governed-second-opinion",
-            "claim": "KRN larger migration work uses governed Claude second opinion with diff freshness, verification evidence, and Codex-owned triage.",
-            "mechanism": "The second-opinion wrapper validates JSON verdicts against the current diff before Codex routes findings.",
-            "krnImplication": "This query should retrieve the governed review rule, but simple lexical retrieval should already find it.",
+            "sourceClaimId": "source:neutral-external-review-policy",
+            "claim": "KRN larger migration work may use external review as advisory falsification evidence with diff freshness, verification evidence, and Codex-owned triage.",
+            "mechanism": "External review output must be checked against current local evidence before Codex routes findings.",
+            "krnImplication": "This query should retrieve the external-review policy, but simple lexical retrieval should already find it.",
             "consumer": "larger migration closeout",
             "falsifier": "The review output is stale against the diff or routed back to the operator by default.",
             "doesNotProve": "This does not prove KRN beats a simple lexical baseline for short, exact queries."
