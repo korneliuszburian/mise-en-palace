@@ -41,6 +41,7 @@ type DecisionPacketDecision = DecisionPacketRow;
 
 const minimumUsefulRate = 0.8;
 const maximumSevereStaleAuthorityInclusions = 0;
+const maximumCaveatedSourceClaimInclusions = 0;
 const maximumAverageNoiseDecisions = 2;
 
 const decisionById = (
@@ -137,6 +138,11 @@ const packetReasons = (
     "packet includes stale or rejected authority as governing context"
   ),
   reasonFor(
+    packet.caveatedSourceClaimIds.length === 0,
+    "packet has no caveated source-claim authority",
+    "packet includes caveated source claims without decision support"
+  ),
+  reasonFor(
     packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions,
     "packet noise is within budget",
     "packet is too noisy for pre-code use"
@@ -160,6 +166,7 @@ const scoreDecisionPacket = (
     hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) &&
     packet.severeStaleAuthorityIds.length === 0
   );
+  const sourceSupport = score(packet.caveatedSourceClaimIds.length === 0);
   const rejectionRecall = score(
     hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) &&
     hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase))
@@ -170,12 +177,14 @@ const scoreDecisionPacket = (
     taskUsefulness,
     evidenceFidelity,
     temporalCorrectness,
+    sourceSupport,
     rejectionRecall,
     nonProofBoundaries,
     total:
       taskUsefulness +
       evidenceFidelity +
       temporalCorrectness +
+      sourceSupport +
       rejectionRecall +
       nonProofBoundaries
   };
@@ -198,6 +207,7 @@ export const classifyDecisionPacketForEval = (
   if (
     !hasDecisionBoundary(packet, expectedDecision) ||
     !hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) ||
+    packet.caveatedSourceClaimIds.length > maximumCaveatedSourceClaimInclusions ||
     !hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) ||
     !hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase)) ||
     packet.noiseDecisionIds.length > maximumAverageNoiseDecisions
@@ -336,11 +346,16 @@ export const runDecisionPacketEval = async (
     (sum, testCase) => sum + testCase.packet.severeStaleAuthorityIds.length,
     0
   );
+  const caveatedSourceClaimInclusions = cases.reduce(
+    (sum, testCase) => sum + testCase.packet.caveatedSourceClaimIds.length,
+    0
+  );
   const status =
     usefulRate >= minimumUsefulRate &&
     krnWinRate >= fixture.minimumKrnWinRate &&
     notesWinRate <= fixture.maximumNotesWinRate &&
     severeStaleAuthorityInclusions <= maximumSevereStaleAuthorityInclusions &&
+    caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions &&
     averageNoiseDecisions <= maximumAverageNoiseDecisions
       ? "pass"
       : "fail";
@@ -354,6 +369,7 @@ export const runDecisionPacketEval = async (
       minimumKrnWinRate: fixture.minimumKrnWinRate,
       maximumNotesWinRate: fixture.maximumNotesWinRate,
       maximumSevereStaleAuthorityInclusions,
+      maximumCaveatedSourceClaimInclusions,
       maximumAverageNoiseDecisions
     },
     metrics: {
@@ -373,7 +389,8 @@ export const runDecisionPacketEval = async (
       krnWinRate,
       notesWinRate,
       averageNoiseDecisions,
-      severeStaleAuthorityInclusions
+      severeStaleAuthorityInclusions,
+      caveatedSourceClaimInclusions
     },
     cases,
     proof: {
@@ -381,7 +398,7 @@ export const runDecisionPacketEval = async (
         "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
-        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, and zero severe stale-authority thresholds"
+        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, and zero caveated source-claim thresholds"
       ],
       doesNotProve: [
         "live Codex execution or obedience",

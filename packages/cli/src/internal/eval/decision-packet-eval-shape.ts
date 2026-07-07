@@ -18,6 +18,7 @@ export interface DecisionPacketScoreBreakdown {
   readonly taskUsefulness: number;
   readonly evidenceFidelity: number;
   readonly temporalCorrectness: number;
+  readonly sourceSupport: number;
   readonly rejectionRecall: number;
   readonly nonProofBoundaries: number;
   readonly total: number;
@@ -47,6 +48,7 @@ export interface DecisionPacketEvalResult {
     readonly minimumKrnWinRate: number;
     readonly maximumNotesWinRate: number;
     readonly maximumSevereStaleAuthorityInclusions: number;
+    readonly maximumCaveatedSourceClaimInclusions: number;
     readonly maximumAverageNoiseDecisions: number;
   };
   readonly metrics: {
@@ -67,6 +69,7 @@ export interface DecisionPacketEvalResult {
     readonly notesWinRate: number;
     readonly averageNoiseDecisions: number;
     readonly severeStaleAuthorityInclusions: number;
+    readonly caveatedSourceClaimInclusions: number;
   };
   readonly cases: readonly DecisionPacketEvalCaseReadback[];
   readonly proof: {

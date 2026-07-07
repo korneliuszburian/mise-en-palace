@@ -478,8 +478,8 @@ export const buildDecisionPacketWithEngine = async (
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
     governingStatements: unique(governingRows.map((decision) => decision.statement).filter(nonEmpty)),
-    sourceClaimIds: unique(sourceRows.map((decision) => decision.sourceClaimId)),
-    caveatedSourceClaimIds: unique(sourceRows
+    sourceClaimIds: unique(governingRows.map((decision) => decision.sourceClaimId)),
+    caveatedSourceClaimIds: unique(governingRows
       .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
       .map((decision) => decision.sourceClaimId)),
     sourceDecisionEdgeIds: unique(governingRows.flatMap((decision) =>

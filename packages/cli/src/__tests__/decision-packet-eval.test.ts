@@ -60,9 +60,10 @@ const expectProjectStandardCase = (
       taskUsefulness: 1,
       evidenceFidelity: 1,
       temporalCorrectness: 1,
+      sourceSupport: 1,
       rejectionRecall: 1,
       nonProofBoundaries: 1,
-      total: 5
+      total: 6
     },
     notesBaseline: {
       qualityLabel: "unsafe",
@@ -105,6 +106,7 @@ describe("runDecisionPacketEval", () => {
         minimumKrnWinRate: 0.75,
         maximumNotesWinRate: 0,
         maximumSevereStaleAuthorityInclusions: 0,
+        maximumCaveatedSourceClaimInclusions: 0,
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
@@ -124,7 +126,8 @@ describe("runDecisionPacketEval", () => {
         krnWinRate: 1,
         notesWinRate: 0,
         averageNoiseDecisions: 1.1,
-        severeStaleAuthorityInclusions: 0
+        severeStaleAuthorityInclusions: 0,
+        caveatedSourceClaimInclusions: 0
       }
     });
     expect(result.cases.every((testCase) => testCase.qualityLabel === "useful")).toBe(true);
@@ -137,9 +140,10 @@ describe("runDecisionPacketEval", () => {
         taskUsefulness: 1,
         evidenceFidelity: 1,
         temporalCorrectness: 1,
+        sourceSupport: 1,
         rejectionRecall: 1,
         nonProofBoundaries: 1,
-        total: 5
+        total: 6
       },
       notesBaseline: {
         qualityLabel: "unsafe",
@@ -163,6 +167,7 @@ describe("runDecisionPacketEval", () => {
           "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory. Do not create markdown memory files as the active recall system."
         ]),
         sourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
+        caveatedSourceClaimIds: [],
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
         sourceRejectionIds: expect.arrayContaining(["source-rejection:create-markdown-memory-files"]),
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
@@ -241,9 +246,57 @@ describe("runDecisionPacketEval", () => {
       qualityLabel: "noisy",
       scores: {
         evidenceFidelity: 0,
+        sourceSupport: 0,
         total: 4
       },
-      reasons: expect.arrayContaining(["packet is missing SourceDecisionEdge refs"])
+      reasons: expect.arrayContaining([
+        "packet is missing SourceDecisionEdge refs",
+        "packet includes caveated source claims without decision support"
+      ])
+    });
+  });
+
+  it("fails when unsupported source claims reach the governed packet", async () => {
+    const rawFixture = loadMutableFixture();
+
+    rawFixture.topK = rawFixture.decisions.length + 1;
+    rawFixture.decisions.push({
+      id: "accepted-only-runtime-memory-shortcut",
+      title: "Accepted-only runtime memory shortcut",
+      statement: "Runtime memory can use accepted-only evidence as active authority without a decision edge.",
+      status: "current",
+      taskScopes: ["runtime memory"],
+      evidenceRef: "test:accepted-only-source-claim",
+      sourceClaimId: "source-claim:accepted-only-runtime-memory-shortcut",
+      falsifier: "An accepted-only source claim appears in a governed decision packet without a caveat.",
+      doesNotProve: "Does not prove all source support is present."
+    });
+    rawFixture.notes.push({
+      id: "note-accepted-only-runtime-memory-shortcut",
+      decisionId: "accepted-only-runtime-memory-shortcut",
+      text: "Runtime memory accepted-only shortcut source claim should not become active authority without a decision edge."
+    });
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+    const memoryRuntimeCase = result.cases.find((testCase) =>
+      testCase.id === "memory-runtime-task"
+    );
+
+    expect(result.status).toBe("fail");
+    expect(result.metrics.caveatedSourceClaimInclusions).toBeGreaterThan(0);
+    expect(memoryRuntimeCase).toMatchObject({
+      qualityLabel: "noisy",
+      scores: {
+        sourceSupport: 0
+      },
+      packet: {
+        caveatedSourceClaimIds: expect.arrayContaining([
+          "source-claim:accepted-only-runtime-memory-shortcut"
+        ])
+      },
+      reasons: expect.arrayContaining([
+        "packet includes caveated source claims without decision support"
+      ])
     });
   });
 
@@ -268,6 +321,7 @@ describe("runDecisionPacketEval", () => {
         "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
       ],
       sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
+      caveatedSourceClaimIds: [],
       sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
       sourceRejectionIds: [],
       memoryRefs: ["memory:decision:store-backed-memory-no-markdown"],
