@@ -43,7 +43,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
         repoCount: 1,
         caseCount: 15,
         repoSpecificDecisionCount: 12,
-        reusablePatternDecisionCount: 3,
+        reusableKnowledgeDecisionCount: 3,
         rejectedPathCount: 5,
         staleDecisionCount: 5,
         selfRepoContaminationCount: 0
@@ -85,7 +85,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
       repoCount: 3,
       caseCount: 45,
       repoSpecificDecisionCount: 28,
-      reusablePatternDecisionCount: 9,
+      reusableKnowledgeDecisionCount: 9,
       rejectedPathCount: 11,
       staleDecisionCount: 9,
       selfRepoContaminationCount: 0

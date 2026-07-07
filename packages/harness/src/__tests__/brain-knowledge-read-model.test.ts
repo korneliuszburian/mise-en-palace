@@ -24,13 +24,13 @@ const readJsonRootFile = (path: string): unknown =>
 const cardFixture = (): unknown =>
   readJsonRootFile("tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json");
 
-const patternDecisionFixture = (): unknown =>
+const knowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
 
-const referenceImplementationPatternDecisionFixture = (): unknown =>
+const referenceImplementationKnowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json");
 
-const brainKnowledgeParserExemplarPatternDecisionFixture = (): unknown =>
+const brainKnowledgeParserExemplarKnowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-brain-knowledge-parser-exemplar.json");
 
 const parsedCardFixture = () => {
@@ -43,34 +43,34 @@ const parsedCardFixture = () => {
   return card;
 };
 
-const parsedPatternDecisionFixture = () => {
-  const patternDecision = parseBrainKnowledgeDecision(patternDecisionFixture());
+const parsedKnowledgeDecisionFixture = () => {
+  const knowledgeDecision = parseBrainKnowledgeDecision(knowledgeDecisionFixture());
 
-  if (patternDecision === undefined) {
+  if (knowledgeDecision === undefined) {
     throw new Error("Expected brain knowledge decision fixture to parse.");
   }
 
-  return patternDecision;
+  return knowledgeDecision;
 };
 
-const parsedReferenceImplementationPatternDecisionFixture = () => {
-  const patternDecision = parseBrainKnowledgeDecision(referenceImplementationPatternDecisionFixture());
+const parsedReferenceImplementationKnowledgeDecisionFixture = () => {
+  const knowledgeDecision = parseBrainKnowledgeDecision(referenceImplementationKnowledgeDecisionFixture());
 
-  if (patternDecision === undefined) {
+  if (knowledgeDecision === undefined) {
     throw new Error("Expected reference implementation brain knowledge decision to parse.");
   }
 
-  return patternDecision;
+  return knowledgeDecision;
 };
 
-const parsedBrainKnowledgeParserExemplarPatternDecisionFixture = () => {
-  const patternDecision = parseBrainKnowledgeDecision(brainKnowledgeParserExemplarPatternDecisionFixture());
+const parsedBrainKnowledgeParserExemplarKnowledgeDecisionFixture = () => {
+  const knowledgeDecision = parseBrainKnowledgeDecision(brainKnowledgeParserExemplarKnowledgeDecisionFixture());
 
-  if (patternDecision === undefined) {
+  if (knowledgeDecision === undefined) {
     throw new Error("Expected brain knowledge parser exemplar brain knowledge decision to parse.");
   }
 
-  return patternDecision;
+  return knowledgeDecision;
 };
 
 describe("Brain knowledge read model", () => {
@@ -226,19 +226,19 @@ describe("Brain knowledge read model", () => {
   });
 
   it("produces the TypeScript boundary knowledge card from the brain knowledge decision", () => {
-    const patternDecision = parsedPatternDecisionFixture();
+    const knowledgeDecision = parsedKnowledgeDecisionFixture();
     const expectedCard = parseBrainKnowledgeReadModel(cardFixture());
 
     if (expectedCard === undefined) {
       throw new Error("Expected brain knowledge fixture to parse.");
     }
 
-    expect(brainKnowledgeCardFromDecision(patternDecision)).toEqual(expectedCard);
+    expect(brainKnowledgeCardFromDecision(knowledgeDecision)).toEqual(expectedCard);
   });
 
-  it("keeps the reference implementation recipe pattern searchable but deferred", () => {
-    const patternDecision = parsedReferenceImplementationPatternDecisionFixture();
-    const card = brainKnowledgeCardFromDecision(patternDecision);
+  it("keeps the reference implementation recipe knowledge searchable but deferred", () => {
+    const knowledgeDecision = parsedReferenceImplementationKnowledgeDecisionFixture();
+    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
 
     expect(card).toMatchObject({
       id: "pattern:reference-implementation-recipe-clone-boundary",
@@ -254,8 +254,8 @@ describe("Brain knowledge read model", () => {
   });
 
   it("keeps the brain knowledge parser exemplar searchable but deferred", () => {
-    const patternDecision = parsedBrainKnowledgeParserExemplarPatternDecisionFixture();
-    const card = brainKnowledgeCardFromDecision(patternDecision);
+    const knowledgeDecision = parsedBrainKnowledgeParserExemplarKnowledgeDecisionFixture();
+    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
 
     expect(card).toMatchObject({
       id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
@@ -275,22 +275,22 @@ describe("Brain knowledge read model", () => {
   });
 
   it("maps brain knowledge decision statuses to brain-knowledge status", () => {
-    const patternDecision = parsedPatternDecisionFixture();
+    const knowledgeDecision = parsedKnowledgeDecisionFixture();
 
     expect(brainKnowledgeCardFromDecision({
-      ...patternDecision,
+      ...knowledgeDecision,
       decisionStatus: "adopt_now"
     })).toMatchObject({ status: "active" });
     expect(brainKnowledgeCardFromDecision({
-      ...patternDecision,
+      ...knowledgeDecision,
       decisionStatus: "lab"
     })).toMatchObject({ status: "deferred" });
     expect(brainKnowledgeCardFromDecision({
-      ...patternDecision,
+      ...knowledgeDecision,
       decisionStatus: "later"
     })).toMatchObject({ status: "deferred" });
     expect(brainKnowledgeCardFromDecision({
-      ...patternDecision,
+      ...knowledgeDecision,
       decisionStatus: "reject"
     })).toMatchObject({ status: "rejected" });
   });

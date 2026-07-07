@@ -18,7 +18,7 @@ export interface SecondRepoTargetResult {
   readonly metrics: {
     readonly caseCount: number;
     readonly repoSpecificDecisionCount: number;
-    readonly reusablePatternDecisionCount: number;
+    readonly reusableKnowledgeDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
     readonly decisionPacketUsefulRate: number;
@@ -38,7 +38,7 @@ export interface SecondRepoDecisionPacketEvalResult {
     readonly repoCount: number;
     readonly caseCount: number;
     readonly repoSpecificDecisionCount: number;
-    readonly reusablePatternDecisionCount: number;
+    readonly reusableKnowledgeDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
     readonly selfRepoContaminationCount: number;
@@ -130,7 +130,7 @@ export const runSecondRepoDecisionPacketEval = async (
     const repoSpecificDecisionCount = fixture.decisions.filter((decision) =>
       isRepoSpecificDecision(targetRepo, decision)
     ).length;
-    const reusablePatternDecisionCount = fixture.decisions.filter((decision) =>
+    const reusableKnowledgeDecisionCount = fixture.decisions.filter((decision) =>
       decision.id.startsWith("reuse-") && decision.status === "current"
     ).length;
     const rejectedPathCount = fixture.decisions.filter((decision) =>
@@ -147,7 +147,7 @@ export const runSecondRepoDecisionPacketEval = async (
       metrics: {
         caseCount: fixture.cases.length,
         repoSpecificDecisionCount,
-        reusablePatternDecisionCount,
+        reusableKnowledgeDecisionCount,
         rejectedPathCount,
         staleDecisionCount,
         decisionPacketUsefulRate: decisionPacket.metrics.usefulRate,
@@ -162,14 +162,14 @@ export const runSecondRepoDecisionPacketEval = async (
   const totals = repoResults.reduce((sum, result) => ({
     caseCount: sum.caseCount + result.metrics.caseCount,
     repoSpecificDecisionCount: sum.repoSpecificDecisionCount + result.metrics.repoSpecificDecisionCount,
-    reusablePatternDecisionCount: sum.reusablePatternDecisionCount + result.metrics.reusablePatternDecisionCount,
+    reusableKnowledgeDecisionCount: sum.reusableKnowledgeDecisionCount + result.metrics.reusableKnowledgeDecisionCount,
     rejectedPathCount: sum.rejectedPathCount + result.metrics.rejectedPathCount,
     staleDecisionCount: sum.staleDecisionCount + result.metrics.staleDecisionCount,
     selfRepoContaminationCount: sum.selfRepoContaminationCount + result.metrics.selfRepoContaminationCount
   }), {
     caseCount: 0,
     repoSpecificDecisionCount: 0,
-    reusablePatternDecisionCount: 0,
+    reusableKnowledgeDecisionCount: 0,
     rejectedPathCount: 0,
     staleDecisionCount: 0,
     selfRepoContaminationCount: 0
@@ -177,7 +177,7 @@ export const runSecondRepoDecisionPacketEval = async (
   const everyRepoPasses = repoResults.every((result) =>
     result.decisionPacketStatus === "pass" &&
     result.metrics.repoSpecificDecisionCount >= 1 &&
-    result.metrics.reusablePatternDecisionCount >= 1 &&
+    result.metrics.reusableKnowledgeDecisionCount >= 1 &&
     result.metrics.rejectedPathCount >= 1 &&
     result.metrics.staleDecisionCount >= 1 &&
     result.metrics.selfRepoContaminationCount === 0
