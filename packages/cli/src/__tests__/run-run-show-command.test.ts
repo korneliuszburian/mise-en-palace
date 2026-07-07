@@ -380,17 +380,17 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain(
       "project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
     );
-    expect(result.stdout).toContain("Brain Knowledge Selection:");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge query: unknown first");
-    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
-    expect(result.stdout).toContain("Brain knowledge targetFit: target_specific_selected_knowledge");
-    expect(result.stdout).toContain("Brain knowledge recommended use: Use target-specific selectedKnowledge");
+    expect(result.stdout).toContain("Selected KRN Context:");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context query: unknown first");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
+    expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
       "knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
     );
     expect(result.stdout).toContain(
-      "Brain knowledge does not prove: Selected brain knowledge do not prove implementation correctness"
+      "Selected KRN context does not prove: Selected brain knowledge do not prove implementation correctness"
     );
     expect(result.stdout).toContain("Activation diagnostics:");
     expect(result.stdout).toContain("Context inclusion details:");

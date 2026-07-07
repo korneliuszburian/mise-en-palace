@@ -372,19 +372,19 @@ export const formatBrainKnowledgeSelectionLines = (
 ): string[] => {
   if (selection === undefined) {
     return [
-      "Brain knowledge selection: unavailable",
-      "Brain knowledge reason: no brain knowledge metadata was present"
+      "Selected KRN context: unavailable",
+      "Selected KRN context reason: no selected knowledge metadata was present"
     ];
   }
 
   return [
-    `Brain knowledge selection: ${selection.status}`,
-    `Brain knowledge query: ${selection.query}`,
-    `Brain knowledge IDs: ${
+    `Selected KRN context: ${selection.status}`,
+    `Selected KRN context query: ${selection.query}`,
+    `Selected KRN context IDs: ${
       selection.selectedKnowledgeIds.length === 0 ? "none" : selection.selectedKnowledgeIds.join(", ")
     }`,
-    `Brain knowledge targetFit: ${selection.targetFitSummary.verdict}`,
-    `Brain knowledge recommended use: ${selection.recommendedNextAction}`,
+    `Selected KRN context targetFit: ${selection.targetFitSummary.verdict}`,
+    `Selected KRN context recommended use: ${selection.recommendedNextAction}`,
     ...selection.selectedKnowledge.map((knowledge) =>
       [
         `- knowledge=${knowledge.knowledgeId}`,
@@ -395,7 +395,7 @@ export const formatBrainKnowledgeSelectionLines = (
         `nextAction=${knowledge.nextAction}`
       ].join(" | ")
     ),
-    `Brain knowledge reason: ${selection.reason}`,
-    `Brain knowledge does not prove: ${selection.doesNotProve}`
+    `Selected KRN context reason: ${selection.reason}`,
+    `Selected KRN context does not prove: ${selection.doesNotProve}`
   ];
 };

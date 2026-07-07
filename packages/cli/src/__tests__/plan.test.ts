@@ -268,13 +268,13 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "Brain knowledge reason: Store-backed brain knowledge matched the pre-coding plan query."
+      "Selected KRN context reason: Store-backed brain knowledge matched the pre-coding plan query."
     );
-    expect(result.stdout).toContain("Brain knowledge targetFit: target_specific_selected_knowledge");
-    expect(result.stdout).toContain("Brain knowledge recommended use: Use target-specific selectedKnowledge");
+    expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
+    expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
       "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );
@@ -295,8 +295,8 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge IDs: consensus-relation-maintenance-review-boundary");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context IDs: consensus-relation-maintenance-review-boundary");
     expect(executionRunMetadata).toMatchObject({
       brainKnowledgeSelection: {
         status: "selected",
@@ -312,9 +312,9 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge query: typescript parser exemplar");
-    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-brain-knowledge-parser-exemplar");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context query: typescript parser exemplar");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-brain-knowledge-parser-exemplar");
     expect(executionRunMetadata).toMatchObject({
       brainKnowledgeSelection: {
         status: "selected",
@@ -331,9 +331,9 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge query: prove reference implementation recipe");
-    expect(result.stdout).toContain("Brain knowledge IDs: reference-implementation-recipe-clone-boundary");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context query: prove reference implementation recipe");
+    expect(result.stdout).toContain("Selected KRN context IDs: reference-implementation-recipe-clone-boundary");
     expect(executionRunMetadata).toMatchObject({
       brainKnowledgeSelection: {
         status: "selected",

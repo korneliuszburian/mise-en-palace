@@ -325,6 +325,7 @@ describe("agent packet CLI", () => {
         ],
         sourceClaimIds: ["claim-agent-1"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+        sourceRejectionIds: ["source-decision-rejected-agent-1"],
         memoryRefs: ["memory-agent-1"],
         staleDecisionIds: [
           "source-decision-stale-agent-1",

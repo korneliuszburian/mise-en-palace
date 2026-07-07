@@ -6,6 +6,11 @@ Codex executes. KRN supplies bounded context, service/store-backed memory,
 source grounding, policy, skills, eval expectations, traces, review gates, and
 feedback.
 
+Current product goal: build a temporal Memory Core that gives Codex a governed
+decision packet: selected current knowledge, stale/rejected paths, source
+support, task-specific use, and falsifiers. Do not optimize for more notes,
+prompt bloat, decorative platform wiring, or proof theater.
+
 Before editing:
 
 1. Read `KRN_ROADMAP.md`.
@@ -16,6 +21,18 @@ Before editing:
 5. Do not treat historical docs as required reading.
 6. If a decision depends on a source, map it through source -> mechanism -> KRN
    implication -> decision/rejection.
+
+For architecture, naming, context-boundary, or product-shape changes:
+
+- map the current code path before editing;
+- compare the intended behavior against `KRN_ROADMAP.md` and any official docs
+  that define platform mechanics;
+- state the smallest decision that makes the roadmap more true;
+- reject or defer ideas whose consumer, falsifier, or owner is unclear;
+- prefer one direct model over aliases, compatibility shims, or parallel
+  abstractions;
+- do not proceed from a vague concept to code until the runtime consumer and
+  non-proof boundary are explicit.
 
 For TypeScript changes:
 

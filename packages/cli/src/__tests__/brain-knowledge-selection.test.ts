@@ -154,7 +154,7 @@ describe("brainKnowledgeSelection", () => {
     expect(selection.targetFitSummary.verdict).toBe("no_selected_knowledge");
     expect(selection.recommendedNextAction).toBe(selection.targetFitSummary.recommendedUse);
     expect(formatBrainKnowledgeSelectionLines(selection)).toContain(
-      "Brain knowledge recommended use: Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first."
+      "Selected KRN context recommended use: Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first."
     );
   });
 });

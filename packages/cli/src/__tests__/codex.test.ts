@@ -266,9 +266,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Codex invocation: none");
     expect(result.stdout).toContain("Memory mutation: none");
-    expect(result.stdout).toContain("Brain Knowledge Context:");
-    expect(result.stdout).toContain("Brain knowledge selection: selected");
-    expect(result.stdout).toContain("Brain knowledge IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Selected KRN Context:");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
       "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );

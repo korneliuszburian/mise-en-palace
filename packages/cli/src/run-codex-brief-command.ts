@@ -37,7 +37,7 @@ const renderText = (
     "Codex invocation: none",
     "Memory mutation: none",
     "",
-    "Brain Knowledge Context:",
+    "Selected KRN Context:",
     ...brainKnowledgeLines,
     "",
     briefText.trimEnd()

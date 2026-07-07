@@ -323,7 +323,7 @@ const renderContextSection = (
 const renderBrainKnowledgeSelection = (
   aggregate: HarnessRunAggregate
 ): string[] => [
-  "Brain Knowledge Selection:",
+  "Selected KRN Context:",
   ...formatBrainKnowledgeSelectionLines(brainKnowledgeSelectionResource(aggregate))
 ];
 
