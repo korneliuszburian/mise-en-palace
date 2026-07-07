@@ -74,7 +74,7 @@ const aggregate: HarnessRunAggregate = {
     exclusions: [{
       subjectType: "memory_record",
       subjectId: "memory-rejected-1",
-      reason: "anti_memory",
+      reason: "unsafe",
       explanation: "Rejected path should be visible to the agent packet.",
       sourceAuthority: "medium"
     }],
@@ -117,7 +117,19 @@ const aggregate: HarnessRunAggregate = {
       },
       createdAt: now
     }],
-    decisions: []
+    decisions: [{
+      id: "activation-decision-agent-1",
+      retrievalRunId: "retrieval-agent-1",
+      contextAssemblyId: "context-agent-1",
+      subjectType: "memory_record",
+      subjectId: "memory-rejected-1",
+      decision: "conflict",
+      reason: "anti_memory_block",
+      metadata: {
+        antiMemoryRecordId: "anti-memory-agent-1"
+      },
+      createdAt: now
+    }]
   },
   executionRun: {
     id: "run-agent-1",
@@ -332,7 +344,7 @@ describe("agent packet CLI", () => {
           "source-decision-conflicted-agent-1"
         ],
         rejectedPathIds: [
-          "memory-rejected-1",
+          "anti-memory-agent-1",
           "source-decision-rejected-agent-1"
         ],
         noiseDecisionIds: ["source-decision-noise-agent-1"],

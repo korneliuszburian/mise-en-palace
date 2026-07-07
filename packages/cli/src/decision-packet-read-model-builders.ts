@@ -141,20 +141,25 @@ const activationCandidateResource = (
 
 const activationDecisionResource = (
   decision: ActivationDecisionRecord
-): DecisionPacketReadModelActivationDecision => ({
-  id: decision.id,
-  subjectType: decision.subjectType,
-  subjectId: decision.subjectId,
-  decision: decision.decision,
-  reason: decision.reason,
-  ...(decision.score === undefined ? {} : { score: decision.score }),
-  ...(decision.expectedDecisionImpact === undefined
-    ? {}
-    : { expectedDecisionImpact: decision.expectedDecisionImpact }),
-  ...(decision.retrievalCandidateId === undefined
-    ? {}
-    : { retrievalCandidateId: decision.retrievalCandidateId })
-});
+): DecisionPacketReadModelActivationDecision => {
+  const antiMemoryRecordId = readMetadataString(decision.metadata, "antiMemoryRecordId");
+
+  return {
+    id: decision.id,
+    subjectType: decision.subjectType,
+    subjectId: decision.subjectId,
+    decision: decision.decision,
+    reason: decision.reason,
+    ...(decision.score === undefined ? {} : { score: decision.score }),
+    ...(decision.expectedDecisionImpact === undefined
+      ? {}
+      : { expectedDecisionImpact: decision.expectedDecisionImpact }),
+    ...(decision.retrievalCandidateId === undefined
+      ? {}
+      : { retrievalCandidateId: decision.retrievalCandidateId }),
+    ...(antiMemoryRecordId === undefined ? {} : { antiMemoryRecordId })
+  };
+};
 
 export const activationTraceResource = (
   aggregate: HarnessRunAggregate

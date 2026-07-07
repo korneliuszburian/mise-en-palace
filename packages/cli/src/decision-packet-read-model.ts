@@ -92,6 +92,7 @@ export interface DecisionPacketReadModelActivationDecision {
   score?: number;
   expectedDecisionImpact?: string;
   retrievalCandidateId?: string;
+  antiMemoryRecordId?: string;
 }
 
 export interface DecisionPacketReadModelActivationTrace {

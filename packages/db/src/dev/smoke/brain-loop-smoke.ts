@@ -18,7 +18,8 @@ import type {
   EvidenceContract
 } from "@krn/harness";
 import {
-  buildMemoryStalenessMaintenancePreview
+  buildMemoryStalenessMaintenancePreview,
+  sourceUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import type {
   CapabilityPlan,
@@ -73,6 +74,10 @@ export interface BrainLoopSmokeReport {
   sourceDecisionTraceEdgeCount: number;
   sourceDecisionTraceEdgeIds: string[];
   sourceDecisionTraceTargetTypes: string[];
+  decisionPacketGoverningDecisionIds: string[];
+  decisionPacketRejectedPathIds: string[];
+  decisionPacketFalsifierCommands: string[];
+  decisionPacketNonProofs: string[];
   sourceClaimStatus: string;
   memoryCandidateId: string;
   reviewedMemoryCandidateStatus: string;
@@ -138,6 +143,9 @@ const stringMetadataValue = (
 
   return typeof value === "string" ? value : undefined;
 };
+
+const unique = (values: readonly string[]): string[] =>
+  [...new Set(values)];
 
 const targetReadModelForRepo = (repoInstallationId: string) => ({
   projectKernelId: "brain-loop-shared-kernel",
@@ -268,6 +276,28 @@ const sourceDecisionTraceTargets = (input: {
   }
 ] as const;
 
+const governingDecisionIdsFromMetadata = (
+  metadata: Record<string, unknown>
+): string[] => unique(sourceUsefulnessOutcomesFromMetadata(metadata).flatMap((outcome) =>
+  outcome.sourceDecisionId !== undefined && (
+    outcome.outcome === "selected" ||
+    outcome.outcome === "used" ||
+    outcome.outcome === "helped"
+  )
+    ? [outcome.sourceDecisionId]
+    : []
+));
+
+const antiMemoryRejectedPathIdsFromActivationDecisions = (
+  decisions: readonly { reason: string; metadata: Record<string, unknown> }[]
+): string[] => unique(decisions.flatMap((decision) => {
+  const antiMemoryRecordId = stringMetadataValue(decision.metadata, "antiMemoryRecordId");
+
+  return decision.reason === "anti_memory_block" && antiMemoryRecordId !== undefined
+    ? [antiMemoryRecordId]
+    : [];
+}));
+
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput
 ): Promise<BrainLoopSmokeReport> => {
@@ -393,19 +423,6 @@ export const runBrainLoopSmokeCheck = async (
         reviewBurden: "low"
       }
     });
-    const feedbackDelta = await harnessRunRepository.createFeedbackDelta({
-      reviewAssessmentId: reviewAssessment.id,
-      status: "candidate",
-      memoryCandidates: [],
-      sourceDecisions: [],
-      evalCandidates: [],
-      metadata: {
-        smokeId: marker,
-        memoryRecordMutation: "none"
-      }
-    });
-    feedbackDeltaId = feedbackDelta.id;
-
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -446,6 +463,27 @@ export const runBrainLoopSmokeCheck = async (
         smokeId: marker
       }
     });
+    const feedbackDelta = await harnessRunRepository.createFeedbackDelta({
+      reviewAssessmentId: reviewAssessment.id,
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        smokeId: marker,
+        memoryRecordMutation: "none",
+        sourceUsefulnessOutcomes: [{
+          sourceDecisionId: sourceDecision.id,
+          outcome: "helped",
+          reason: "The accepted SourceDecision anchored the memory promotion and next activation proof.",
+          evidenceRefs: [evidenceBundle.id, reviewAssessment.id],
+          doesNotProve:
+            "A helpful smoke SourceDecision does not prove broad source truth, activation quality, or product readiness."
+        }]
+      }
+    });
+    feedbackDeltaId = feedbackDelta.id;
+
     const sourceClaim = requireSmokeReadbackValue(
       await sourceRepository.getSourceClaimById(proposedSourceClaim.id),
       "accepted source claim readback",
@@ -868,6 +906,21 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
+    const decisionPacketGoverningDecisionIds = governingDecisionIdsFromMetadata(
+      feedbackDelta.metadata
+    );
+    const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
+      consolidationRunActivationDecisions
+    );
+    const decisionPacketFalsifierCommands = evidenceBundle.commands.map((command) =>
+      command.command
+    );
+    const decisionPacketNonProofs = unique([
+      ...evidenceBundle.commands.flatMap((command) =>
+        command.doesNotProve === undefined ? [] : [command.doesNotProve]
+      ),
+      ...(sourceClaim.doesNotProve === undefined ? [] : [sourceClaim.doesNotProve])
+    ]);
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
     const runSourceDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
       executionRun.id
@@ -949,6 +1002,22 @@ export const runBrainLoopSmokeCheck = async (
         label: "run source decision provenance trace target ids",
         passed: readBackSourceDecisionTraceRefs.join(",") ===
           sourceDecisionTraceRefs(sourceDecisionTraceTargetsForRun).join(",")
+      },
+      {
+        label: "decision packet governing source decision",
+        passed: decisionPacketGoverningDecisionIds.join(",") === sourceDecision.id
+      },
+      {
+        label: "decision packet anti-memory rejected path",
+        passed: decisionPacketRejectedPathIds.join(",") === consolidationGateResult.antiMemoryRecord.id
+      },
+      {
+        label: "decision packet falsifier command",
+        passed: decisionPacketFalsifierCommands.includes("pnpm db:smoke:brain-loop")
+      },
+      {
+        label: "decision packet non-proof boundary",
+        passed: decisionPacketNonProofs.some((boundary) => boundary.includes("product readiness"))
       },
       { label: "memory candidate accepted", passed: reviewedCandidate?.status === "accepted" },
       { label: "memory record readback", passed: readBackMemoryRecord?.id === memoryRecord.id },
@@ -1079,6 +1148,10 @@ export const runBrainLoopSmokeCheck = async (
       sourceDecisionTraceEdgeCount: sourceDecisionTraceReadbackEdges.length,
       sourceDecisionTraceEdgeIds: sourceDecisionTraceReadbackEdges.map((edge) => edge.id),
       sourceDecisionTraceTargetTypes: readBackSourceDecisionTraceTargetTypes,
+      decisionPacketGoverningDecisionIds,
+      decisionPacketRejectedPathIds,
+      decisionPacketFalsifierCommands,
+      decisionPacketNonProofs,
       sourceClaimStatus: sourceClaim.status,
       memoryCandidateId: memoryCandidate.id,
       reviewedMemoryCandidateStatus: reviewedCandidate?.status ?? "missing",

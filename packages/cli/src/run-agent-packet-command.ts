@@ -107,6 +107,14 @@ const rejectedSourceDecisionIdsFor = (
   )
 ));
 
+const antiMemoryBlockedPathIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.context.activationTrace?.decisions.flatMap((decision) =>
+  decision.reason === "anti_memory_block" && decision.antiMemoryRecordId !== undefined
+    ? [decision.antiMemoryRecordId]
+    : []
+) ?? []);
+
 const severeStaleAuthorityIdsFor = (input: {
   readonly governingDecisionIds: readonly string[];
   readonly staleDecisionIds: readonly string[];
@@ -120,7 +128,6 @@ const compactDecisionPacket = (
   readModel: DecisionPacketReadModel
 ): DecisionPacket => {
   const inclusions = readModel.context.inclusionDetails;
-  const exclusions = readModel.context.exclusionDetails;
   const governingDecisionIds = governingDecisionIdsFor(readModel);
   const staleDecisionIds = staleDecisionIdsFor(readModel);
 
@@ -140,9 +147,7 @@ const compactDecisionPacket = (
       ...inclusions
         .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
         .map((inclusion) => inclusion.subjectId),
-      ...exclusions
-        .filter((exclusion) => exclusion.reason === "anti_memory")
-        .map((exclusion) => exclusion.subjectId),
+      ...antiMemoryBlockedPathIdsFor(readModel),
       ...rejectedSourceDecisionIdsFor(readModel)
     ]),
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
