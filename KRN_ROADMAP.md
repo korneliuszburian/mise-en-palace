@@ -723,6 +723,17 @@ Possible surfaces:
 Do not start this phase until decision packets and feedback loops prove useful
 inside this repo.
 
+Chosen first surface:
+
+- headless CLI request/response commands for agent use;
+- MCP wrapper only after the CLI contract proves useful;
+- no dashboard or broad API until an external operator needs it.
+
+Reason: the first real consumer is a headless coding agent asking for a
+DecisionPacket and returning evidence/feedback. CLI keeps the contract local,
+scriptable, and testable; MCP can wrap that contract later without making the
+adapter or dashboard the product core.
+
 ## Current P1 Queue
 
 The current P1 direction is:
