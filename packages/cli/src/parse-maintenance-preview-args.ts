@@ -2,13 +2,12 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-export const formatHeartbeatUsage = (): string =>
+export const formatMaintenancePreviewUsage = (): string =>
   [
     "Usage: krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
     "krn maintenance preview",
-    "legacy alias: krn heartbeat preview",
     "",
     "Optional:",
     "--project <project-id>",
@@ -27,7 +26,7 @@ export const formatHeartbeatUsage = (): string =>
     "--reviewer <name>",
     "--json",
     "",
-    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, worker runtime state, or DB schema."
+    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, maintenance runtime state, or DB schema."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
@@ -49,7 +48,7 @@ const parsePositiveInteger = (
   };
 };
 
-type HeartbeatParseState = {
+type MaintenancePreviewParseState = {
   projectId: string | undefined;
   memoryLimit: number | undefined;
   sourceClaimLimit: number | undefined;
@@ -58,34 +57,34 @@ type HeartbeatParseState = {
   evidenceRef: string | undefined;
   acquisitionReadbackFile: string | undefined;
   consensusCandidateFile: string | undefined;
-  candidateKinds: HeartbeatCandidateKind[];
+  candidateKinds: MaintenanceCandidateKind[];
   reviewCandidateId: string | undefined;
-  reviewDecision: HeartbeatReviewDecision | undefined;
+  reviewDecision: MaintenanceReviewDecision | undefined;
   reviewReason: string | undefined;
   reviewEvidenceRef: string | undefined;
   reviewer: string | undefined;
   format: "text" | "json";
 };
 
-type HeartbeatReviewDecision =
+type MaintenanceReviewDecision =
   | "accept_for_manual_followup"
   | "defer_pending_evidence"
   | "reject_not_actionable";
 
-type HeartbeatCandidateKind =
+type MaintenanceCandidateKind =
   | "memory_staleness"
   | "source_relation"
   | "knowledge_acquisition"
   | "consensus_evaluation";
 
-type NonEmptyHeartbeatCandidateKinds = readonly [
-  HeartbeatCandidateKind,
-  ...HeartbeatCandidateKind[]
+type NonEmptyMaintenanceCandidateKinds = readonly [
+  MaintenanceCandidateKind,
+  ...MaintenanceCandidateKind[]
 ];
 
-type HeartbeatCandidateReviewCommand = {
+type MaintenanceCandidateReviewCommand = {
   candidateId: string;
-  decision: HeartbeatReviewDecision;
+  decision: MaintenanceReviewDecision;
   reason: string;
   evidenceRef: string;
   reviewer?: string;
@@ -99,7 +98,7 @@ const optionalProperty = <Key extends string, Value>(
     ? {}
     : { [key]: value } as { [Property in Key]?: Value };
 
-type ParseHeartbeatOptionResult =
+type ParseMaintenancePreviewOptionResult =
   | {
       ok: true;
       nextIndex: number;
@@ -109,11 +108,11 @@ type ParseHeartbeatOptionResult =
       error: string;
     };
 
-type HeartbeatOptionParser = (
+type MaintenancePreviewOptionParser = (
   args: readonly string[],
   index: number,
-  state: HeartbeatParseState
-) => ParseHeartbeatOptionResult;
+  state: MaintenancePreviewParseState
+) => ParseMaintenancePreviewOptionResult;
 
 const requiredOption = (
   args: readonly string[],
@@ -140,13 +139,13 @@ const assignTextOption = (
   index: number,
   option: string,
   assign: (value: string) => void
-): ParseHeartbeatOptionResult => {
+): ParseMaintenancePreviewOptionResult => {
   const required = requiredOption(args, index, option);
 
   if (!required.ok) {
     return {
       ok: false,
-      error: `${required.error}\n${formatHeartbeatUsage()}`
+      error: `${required.error}\n${formatMaintenancePreviewUsage()}`
     };
   }
 
@@ -163,13 +162,13 @@ const assignPositiveIntegerOption = (
   index: number,
   option: string,
   assign: (value: number) => void
-): ParseHeartbeatOptionResult => {
+): ParseMaintenancePreviewOptionResult => {
   const required = requiredOption(args, index, option);
 
   if (!required.ok) {
     return {
       ok: false,
-      error: `${required.error}\n${formatHeartbeatUsage()}`
+      error: `${required.error}\n${formatMaintenancePreviewUsage()}`
     };
   }
 
@@ -178,7 +177,7 @@ const assignPositiveIntegerOption = (
   if (!parsed.ok) {
     return {
       ok: false,
-      error: `${parsed.error}\n${formatHeartbeatUsage()}`
+      error: `${parsed.error}\n${formatMaintenancePreviewUsage()}`
     };
   }
 
@@ -192,7 +191,7 @@ const assignPositiveIntegerOption = (
 
 const parseReviewDecision = (
   value: string
-): HeartbeatReviewDecision | undefined => {
+): MaintenanceReviewDecision | undefined => {
   if (
     value === "accept_for_manual_followup" ||
     value === "defer_pending_evidence" ||
@@ -206,7 +205,7 @@ const parseReviewDecision = (
 
 const parseCandidateKind = (
   value: string
-): HeartbeatCandidateKind | undefined => {
+): MaintenanceCandidateKind | undefined => {
   if (
     value === "memory_staleness" ||
     value === "source_relation" ||
@@ -220,15 +219,15 @@ const parseCandidateKind = (
 };
 
 const addCandidateKind = (
-  state: HeartbeatParseState,
-  candidateKind: HeartbeatCandidateKind
+  state: MaintenancePreviewParseState,
+  candidateKind: MaintenanceCandidateKind
 ): void => {
   if (!state.candidateKinds.includes(candidateKind)) {
     state.candidateKinds.push(candidateKind);
   }
 };
 
-const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
+const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionParser> = {
   "--project": (args, index, state) =>
     assignTextOption(args, index, "--project", (value) => {
       state.projectId = value;
@@ -259,7 +258,7 @@ const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
     if (!required.ok) {
       return {
         ok: false,
-        error: `${required.error}\n${formatHeartbeatUsage()}`
+        error: `${required.error}\n${formatMaintenancePreviewUsage()}`
       };
     }
 
@@ -270,7 +269,7 @@ const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
         ok: false,
         error:
           "--candidate-kind must be memory_staleness, source_relation, knowledge_acquisition, or consensus_evaluation\n" +
-          formatHeartbeatUsage()
+          formatMaintenancePreviewUsage()
       };
     }
 
@@ -299,7 +298,7 @@ const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
     if (!required.ok) {
       return {
         ok: false,
-        error: `${required.error}\n${formatHeartbeatUsage()}`
+        error: `${required.error}\n${formatMaintenancePreviewUsage()}`
       };
     }
 
@@ -310,7 +309,7 @@ const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
         ok: false,
         error:
           "--review-decision must be accept_for_manual_followup, defer_pending_evidence, or reject_not_actionable\n" +
-          formatHeartbeatUsage()
+          formatMaintenancePreviewUsage()
       };
     }
 
@@ -343,14 +342,14 @@ const heartbeatOptionParsers: Record<string, HeartbeatOptionParser> = {
   }
 };
 
-const hasAnyReviewField = (state: HeartbeatParseState): boolean =>
+const hasAnyReviewField = (state: MaintenancePreviewParseState): boolean =>
   state.reviewCandidateId !== undefined ||
   state.reviewDecision !== undefined ||
   state.reviewReason !== undefined ||
   state.reviewEvidenceRef !== undefined ||
   state.reviewer !== undefined;
 
-const validateReviewState = (state: HeartbeatParseState): string | undefined => {
+const validateReviewState = (state: MaintenancePreviewParseState): string | undefined => {
   if (!hasAnyReviewField(state)) {
     return undefined;
   }
@@ -366,12 +365,12 @@ const validateReviewState = (state: HeartbeatParseState): string | undefined => 
     return undefined;
   }
 
-  return `Maintenance candidate review requires ${missing.join(", ")}\n${formatHeartbeatUsage()}`;
+  return `Maintenance candidate review requires ${missing.join(", ")}\n${formatMaintenancePreviewUsage()}`;
 };
 
 const buildCandidateReview = (
-  state: HeartbeatParseState
-): HeartbeatCandidateReviewCommand | undefined => {
+  state: MaintenancePreviewParseState
+): MaintenanceCandidateReviewCommand | undefined => {
   if (
     state.reviewCandidateId === undefined ||
     state.reviewDecision === undefined ||
@@ -391,20 +390,20 @@ const buildCandidateReview = (
 };
 
 const nonEmptyCandidateKinds = (
-  candidateKinds: readonly HeartbeatCandidateKind[]
-): NonEmptyHeartbeatCandidateKinds | undefined => {
+  candidateKinds: readonly MaintenanceCandidateKind[]
+): NonEmptyMaintenanceCandidateKinds | undefined => {
   const [first, ...rest] = candidateKinds;
 
   return first === undefined ? undefined : [first, ...rest];
 };
 
-const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResult => {
+const buildMaintenancePreviewCommand = (state: MaintenancePreviewParseState): ParseArgsResult => {
   const candidateReview = buildCandidateReview(state);
   const candidateKinds = nonEmptyCandidateKinds(state.candidateKinds);
 
   return {
     command: {
-      kind: "heartbeatPreview",
+      kind: "maintenancePreview",
       ...optionalProperty("projectId", state.projectId),
       ...optionalProperty("memoryLimit", state.memoryLimit),
       ...optionalProperty("sourceClaimLimit", state.sourceClaimLimit),
@@ -420,24 +419,24 @@ const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResu
   };
 };
 
-export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => {
+export const parseMaintenancePreviewArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
 
   if (action === undefined || action === "--help" || action === "-h") {
     return {
       command: {
-        kind: "heartbeatPreviewHelp"
+        kind: "maintenancePreviewHelp"
       }
     };
   }
 
   if (action !== "preview") {
     return {
-      error: `Unsupported maintenance preview command: ${action}\n${formatHeartbeatUsage()}`
+      error: `Unsupported maintenance preview command: ${action}\n${formatMaintenancePreviewUsage()}`
     };
   }
 
-  const state: HeartbeatParseState = {
+  const state: MaintenancePreviewParseState = {
     projectId: undefined,
     memoryLimit: undefined,
     sourceClaimLimit: undefined,
@@ -457,11 +456,11 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
-    const parser = heartbeatOptionParsers[arg];
+    const parser = maintenancePreviewOptionParsers[arg];
 
     if (parser === undefined) {
       return {
-        error: `Unsupported maintenance preview argument: ${arg}\n${formatHeartbeatUsage()}`
+        error: `Unsupported maintenance preview argument: ${arg}\n${formatMaintenancePreviewUsage()}`
       };
     }
 
@@ -484,5 +483,5 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     };
   }
 
-  return buildHeartbeatPreviewCommand(state);
+  return buildMaintenancePreviewCommand(state);
 };

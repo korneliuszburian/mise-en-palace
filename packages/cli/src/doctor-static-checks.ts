@@ -22,7 +22,7 @@ import {
 } from "@krn/db/schema";
 import {
   maintenanceJobRuntimeContract
-} from "@krn/workers";
+} from "@krn/maintenance-preview";
 
 import type {
   DoctorCheck,
@@ -145,7 +145,7 @@ const packageManifestPaths = (repoRoot: string): string[] => [
   packagePath(repoRoot, "db", "package.json"),
   packagePath(repoRoot, "harness", "package.json"),
   packagePath(repoRoot, "schema", "package.json"),
-  packagePath(repoRoot, "workers", "package.json")
+  packagePath(repoRoot, "maintenance-preview", "package.json")
 ];
 
 const readDependencyText = async (repoRoot: string): Promise<string> => {

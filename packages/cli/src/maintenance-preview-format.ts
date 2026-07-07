@@ -5,23 +5,23 @@ import {
   formatProjectResolutionKind
 } from "./project-resolution-format.js";
 import type {
-  BrainHeartbeatCandidate,
-  BrainHeartbeatPreview,
+  MaintenancePreviewCandidate,
+  MaintenancePreview,
   KnowledgeAcquisitionActivationUtilityEvidence,
   KnowledgeAcquisitionActivationUtilitySignalEvidence,
   KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
-  WorkerJobBoundaryReadback
-} from "@krn/workers";
+  MaintenanceJobBoundaryReadback
+} from "@krn/maintenance-preview";
 
-interface HeartbeatPreviewOutputInput {
+interface MaintenancePreviewOutputInput {
   projectId: string;
   projectResolution: ProjectResolution | undefined;
   memoryRecordCount: number;
   sourceClaimCount: number;
   sourceClaimEdgeCount: number;
   candidateKinds: readonly string[];
-  preview: BrainHeartbeatPreview;
+  preview: MaintenancePreview;
 }
 
 const formatList = (values: readonly string[]): string[] =>
@@ -81,15 +81,15 @@ const formatAcquisitionEscalationPreview = (
     ))
 ];
 
-const formatWorkerWriteBoundary = (
-  writeBoundary: WorkerJobBoundaryReadback | undefined
+const formatMaintenanceWriteBoundary = (
+  writeBoundary: MaintenanceJobBoundaryReadback | undefined
 ): string[] => {
   if (writeBoundary === undefined) {
     return [];
   }
 
   return [
-    "  workerWriteBoundary:",
+    "  maintenanceWriteBoundary:",
     `  - jobType: ${writeBoundary.jobType}`,
     `  - memoryCoreGate: ${writeBoundary.memoryCoreGate}`,
     `  - status: ${writeBoundary.status}`,
@@ -102,10 +102,10 @@ const formatWorkerWriteBoundary = (
   ];
 };
 
-const candidateWorkerWriteBoundary = (
-  candidate: BrainHeartbeatCandidate
-): WorkerJobBoundaryReadback | undefined =>
-  "workerWriteBoundary" in candidate ? candidate.workerWriteBoundary : undefined;
+const candidateMaintenanceWriteBoundary = (
+  candidate: MaintenancePreviewCandidate
+): MaintenanceJobBoundaryReadback | undefined =>
+  "maintenanceWriteBoundary" in candidate ? candidate.maintenanceWriteBoundary : undefined;
 
 const formatProjectResolutionLines = (
   projectResolution: ProjectResolution | undefined
@@ -127,7 +127,7 @@ const formatProjectResolutionLines = (
   ];
 };
 
-const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
+const candidateTargetLines = (candidate: MaintenancePreviewCandidate): string[] => {
   if (candidate.kind === "memory_staleness_maintenance_candidate") {
     return [
       `  memoryRecordId: ${candidate.memoryRecordId}`,
@@ -211,17 +211,17 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
   ];
 };
 
-const candidateAction = (candidate: BrainHeartbeatCandidate): string =>
+const candidateAction = (candidate: MaintenancePreviewCandidate): string =>
   "action" in candidate
     ? candidate.action
     : candidate.decisionOptions.join(", ");
 
-const candidateReason = (candidate: BrainHeartbeatCandidate): string =>
+const candidateReason = (candidate: MaintenancePreviewCandidate): string =>
   "reason" in candidate
     ? candidate.reason
     : "Consensus preview preserves support, dissent, risk, and relation review focus for operator review.";
 
-const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => {
+const formatCandidate = (candidate: MaintenancePreviewCandidate): string[] => {
   const action = candidateAction(candidate);
 
   return [
@@ -240,13 +240,13 @@ const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => {
     ...formatList(candidate.evidenceRefs),
     `  doesNotProve: ${candidate.doesNotProve}`,
     `  mutation: ${candidate.mutation}`,
-    ...formatWorkerWriteBoundary(candidateWorkerWriteBoundary(candidate)),
+    ...formatMaintenanceWriteBoundary(candidateMaintenanceWriteBoundary(candidate)),
     "  forbiddenWrites:",
     ...formatList(candidate.forbiddenWrites)
   ];
 };
 
-const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
+const formatReviewEvalClosure = (preview: MaintenancePreview): string[] => [
   "Candidate review/eval closure:",
   `decision: ${preview.reviewEvalClosure.decision}`,
   `nextAction: ${preview.reviewEvalClosure.nextAction}`,
@@ -261,7 +261,7 @@ const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
   ...formatList(preview.reviewEvalClosure.forbiddenWrites)
 ];
 
-const formatRuntimeLoop = (preview: BrainHeartbeatPreview): string[] => [
+const formatRuntimeLoop = (preview: MaintenancePreview): string[] => [
   "Candidate routing:",
   `mode: ${preview.manualCandidateLoop.mode}`,
   `status: ${preview.manualCandidateLoop.status}`,
@@ -275,7 +275,7 @@ const formatRuntimeLoop = (preview: BrainHeartbeatPreview): string[] => [
   ...formatList(preview.manualCandidateLoop.forbiddenWrites)
 ];
 
-const formatCandidateReviewResult = (preview: BrainHeartbeatPreview): string[] => {
+const formatCandidateReviewResult = (preview: MaintenancePreview): string[] => {
   if (preview.candidateReviewResult === undefined) {
     return [];
   }
@@ -302,8 +302,8 @@ const formatCandidateReviewResult = (preview: BrainHeartbeatPreview): string[] =
   ];
 };
 
-export const formatHeartbeatPreview = (
-  input: HeartbeatPreviewOutputInput
+export const formatMaintenancePreview = (
+  input: MaintenancePreviewOutputInput
 ): string =>
   [
     "KRN Maintenance Candidate Preview",
@@ -351,8 +351,8 @@ export const formatHeartbeatPreview = (
     `- doesNotProve: ${input.preview.doesNotProve}`
   ].join("\n");
 
-export const jsonHeartbeatPreviewOutput = (
-  input: HeartbeatPreviewOutputInput
+export const jsonMaintenancePreviewOutput = (
+  input: MaintenancePreviewOutputInput
 ): string => JSON.stringify({
   ...input,
   preview: {

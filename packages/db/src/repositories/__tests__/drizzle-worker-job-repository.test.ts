@@ -15,7 +15,7 @@ const methodNames = [
 ] as const;
 
 describe("DrizzleWorkerJobRepository", () => {
-  it("exposes M26 worker job repository methods without worker runtime behavior", () => {
+  it("exposes M26 worker job repository methods without maintenance runtime behavior", () => {
     for (const methodName of methodNames) {
       expect(typeof DrizzleWorkerJobRepository.prototype[methodName]).toBe("function");
     }

@@ -1,7 +1,7 @@
 import {
   maintenanceJobTypes,
   workerJobStatuses
-} from "@krn/workers";
+} from "@krn/maintenance-preview";
 import { describe, expect, it } from "vitest";
 
 import { workerJobStatus } from "../../schema/index.js";
@@ -11,7 +11,7 @@ import {
 } from "../worker-job-types.js";
 
 describe("worker job repository type ownership", () => {
-  it("derives active job types from the workers package", () => {
+  it("derives active job types from the maintenance-preview package", () => {
     expect(workerJobTypes).toBe(maintenanceJobTypes);
     expect(workerJobTypes).toEqual([
       "embed_source_chunk",
@@ -22,7 +22,7 @@ describe("worker job repository type ownership", () => {
     ]);
   });
 
-  it("derives active lifecycle statuses from the workers package", () => {
+  it("derives active lifecycle statuses from the maintenance-preview package", () => {
     expect(workerJobLifecycleStatuses).toBe(workerJobStatuses);
     expect(workerJobLifecycleStatuses).toEqual([
       "queued",

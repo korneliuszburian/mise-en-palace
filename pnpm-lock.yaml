@@ -32,9 +32,9 @@ importers:
       '@krn/harness':
         specifier: workspace:*
         version: link:../harness
-      '@krn/workers':
+      '@krn/maintenance-preview':
         specifier: workspace:*
-        version: link:../workers
+        version: link:../maintenance-preview
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -80,9 +80,9 @@ importers:
       '@krn/harness':
         specifier: workspace:*
         version: link:../harness
-      '@krn/workers':
+      '@krn/maintenance-preview':
         specifier: workspace:*
-        version: link:../workers
+        version: link:../maintenance-preview
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@libsql/client@0.17.4)(@opentelemetry/api@1.9.1)(pg@8.22.0)(postgres@3.4.9)
@@ -107,7 +107,7 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.0)(vite@8.0.16(@types/node@26.0.0)(esbuild@0.28.1)(tsx@4.22.4)(yaml@2.9.0))
 
-  packages/workers:
+  packages/maintenance-preview:
     dependencies:
       '@krn/core':
         specifier: workspace:*

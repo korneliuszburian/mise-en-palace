@@ -131,7 +131,7 @@ export const evalProofBoundaryManifest = [
     ],
     doesNotProve: [
       "activation ranking quality is good",
-      "worker runtime execution exists",
+      "maintenance runtime execution exists",
       "autonomous reflection quality is good",
       "KRN is product-ready"
     ]
@@ -305,7 +305,7 @@ export const evalProofBoundaryManifest = [
       "the local full gate aggregated the current deterministic static, eval-adapter, DB-runtime, and product-loop smoke boundaries"
     ],
     doesNotProve: [
-      "worker runtime execution exists",
+      "maintenance runtime execution exists",
       "all DB smoke targets passed",
       "real LLM behavior is good",
       "KRN is product-ready"

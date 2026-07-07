@@ -6,18 +6,18 @@ import type {
 } from "@krn/core";
 
 import {
-  buildMemoryStalenessHeartbeatPreview
-} from "./memory-staleness-heartbeat-preview.js";
+  buildMemoryStalenessMaintenancePreview
+} from "./memory-staleness-maintenance-preview.js";
 import type {
-  MemoryStalenessHeartbeatCandidate
-} from "./memory-staleness-heartbeat-preview.js";
+  MemoryStalenessMaintenanceCandidate
+} from "./memory-staleness-maintenance-preview.js";
 import {
-  buildKnowledgeAcquisitionHeartbeatPreview
-} from "./knowledge-acquisition-heartbeat-preview.js";
+  buildKnowledgeAcquisitionMaintenancePreview
+} from "./knowledge-acquisition-maintenance-preview.js";
 import type {
-  KnowledgeAcquisitionHeartbeatCandidate,
+  KnowledgeAcquisitionMaintenanceCandidate,
   KnowledgeAcquisitionRequest
-} from "./knowledge-acquisition-heartbeat-preview.js";
+} from "./knowledge-acquisition-maintenance-preview.js";
 import {
   buildConsensusCandidateEvaluationPreview
 } from "./consensus-candidate-evaluation-preview.js";
@@ -27,52 +27,52 @@ import type {
   ConsensusCandidateEvaluationPreview
 } from "./consensus-candidate-evaluation-preview.js";
 import {
-  buildSourceRelationHeartbeatPreview
-} from "./source-relation-heartbeat-preview.js";
+  buildSourceRelationMaintenancePreview
+} from "./source-relation-maintenance-preview.js";
 import type {
-  SourceRelationHeartbeatCandidate
-} from "./source-relation-heartbeat-preview.js";
+  SourceRelationMaintenanceCandidate
+} from "./source-relation-maintenance-preview.js";
 
-export type BrainHeartbeatCandidate =
-  | MemoryStalenessHeartbeatCandidate
-  | SourceRelationHeartbeatCandidate
-  | KnowledgeAcquisitionHeartbeatCandidate
+export type MaintenancePreviewCandidate =
+  | MemoryStalenessMaintenanceCandidate
+  | SourceRelationMaintenanceCandidate
+  | KnowledgeAcquisitionMaintenanceCandidate
   | ConsensusCandidateEvaluation;
 
-export type BrainHeartbeatReviewEvalDecision =
+export type MaintenancePreviewReviewEvalDecision =
   | "ready_for_behavior_proof"
   | "needs_more_evidence"
   | "no_reviewable_candidates";
 
-export type BrainHeartbeatReviewEvalNextAction =
+export type MaintenancePreviewReviewEvalNextAction =
   | "add_golden_behavior_case"
   | "improve_candidate_evidence"
-  | "seed_or_select_heartbeat_candidate_state";
+  | "seed_or_select_maintenance_candidate_state";
 
-export type BrainHeartbeatRuntimeLoopStatus =
+export type MaintenancePreviewRuntimeLoopStatus =
   | "ready_for_operator_review"
   | "needs_candidate_evidence"
   | "no_candidates";
 
-export type BrainHeartbeatRuntimeLoopNextAction =
+export type MaintenancePreviewRuntimeLoopNextAction =
   | "review_candidates_and_capture_evidence"
   | "improve_candidate_evidence"
-  | "seed_or_select_heartbeat_candidate_state";
+  | "seed_or_select_maintenance_candidate_state";
 
-export type BrainHeartbeatCandidateReviewDecision =
+export type MaintenancePreviewCandidateReviewDecision =
   | "accept_for_manual_followup"
   | "defer_pending_evidence"
   | "reject_not_actionable";
 
-export type BrainHeartbeatCandidateReviewNextAction =
+export type MaintenancePreviewCandidateReviewNextAction =
   | "capture_review_evidence"
   | "request_more_candidate_evidence"
   | "record_rejection_evidence";
 
-export interface BrainHeartbeatReviewEvalClosure {
-  kind: "heartbeat_preview_review_eval_closure";
-  decision: BrainHeartbeatReviewEvalDecision;
-  nextAction: BrainHeartbeatReviewEvalNextAction;
+export interface MaintenancePreviewReviewEvalClosure {
+  kind: "maintenance_preview_review_eval_closure";
+  decision: MaintenancePreviewReviewEvalDecision;
+  nextAction: MaintenancePreviewReviewEvalNextAction;
   summary: string;
   candidateIds: readonly string[];
   evidenceRefs: readonly string[];
@@ -88,11 +88,11 @@ export interface BrainHeartbeatReviewEvalClosure {
   ];
 }
 
-export interface BrainHeartbeatRuntimeLoopReadback {
-  kind: "heartbeat_candidate_runtime_loop";
+export interface MaintenancePreviewRuntimeLoopReadback {
+  kind: "maintenance_candidate_runtime_loop";
   mode: "manual_candidate_only";
-  status: BrainHeartbeatRuntimeLoopStatus;
-  nextAction: BrainHeartbeatRuntimeLoopNextAction;
+  status: MaintenancePreviewRuntimeLoopStatus;
+  nextAction: MaintenancePreviewRuntimeLoopNextAction;
   summary: string;
   inspectedCandidates: number;
   reviewableCandidates: number;
@@ -109,24 +109,24 @@ export interface BrainHeartbeatRuntimeLoopReadback {
   ];
 }
 
-export interface BrainHeartbeatCandidateReviewInput {
+export interface MaintenancePreviewCandidateReviewInput {
   candidateId: string;
-  decision: BrainHeartbeatCandidateReviewDecision;
+  decision: MaintenancePreviewCandidateReviewDecision;
   reason: string;
   evidenceRef: string;
   reviewer?: string;
 }
 
-export interface BrainHeartbeatCandidateReviewResult {
-  kind: "heartbeat_candidate_review_result";
+export interface MaintenancePreviewCandidateReviewResult {
+  kind: "maintenance_candidate_review_result";
   candidateId: string;
   candidateFound: boolean;
-  decision: BrainHeartbeatCandidateReviewDecision;
-  nextAction: BrainHeartbeatCandidateReviewNextAction;
+  decision: MaintenancePreviewCandidateReviewDecision;
+  nextAction: MaintenancePreviewCandidateReviewNextAction;
   reason: string;
   reviewer?: string;
   evidenceRefs: readonly string[];
-  candidateReviewability?: BrainHeartbeatCandidate["reviewability"];
+  candidateReviewability?: MaintenancePreviewCandidate["reviewability"];
   mutation: "none";
   doesNotProve: string;
   forbiddenWrites: readonly [
@@ -140,7 +140,7 @@ export interface BrainHeartbeatCandidateReviewResult {
   ];
 }
 
-export interface BuildBrainHeartbeatPreviewInput {
+export interface BuildMaintenancePreviewInput {
   now: IsoTimestamp;
   evidenceRef: string;
   memoryRecords: readonly MemoryRecord[];
@@ -150,12 +150,12 @@ export interface BuildBrainHeartbeatPreviewInput {
   consensusCandidates?: readonly ConsensusCandidateEvaluationInput[];
   nearExpiryDays?: number;
   maxCandidates?: number;
-  candidateReview?: BrainHeartbeatCandidateReviewInput;
+  candidateReview?: MaintenancePreviewCandidateReviewInput;
 }
 
-export interface BrainHeartbeatPreview {
+export interface MaintenancePreview {
   generatedAt: IsoTimestamp;
-  candidates: readonly BrainHeartbeatCandidate[];
+  candidates: readonly MaintenancePreviewCandidate[];
   candidateCounts: {
     memoryStaleness: number;
     sourceRelation: number;
@@ -172,14 +172,14 @@ export interface BrainHeartbeatPreview {
   mutation: "none";
   proof: string;
   doesNotProve: string;
-  reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
-  manualCandidateLoop: BrainHeartbeatRuntimeLoopReadback;
+  reviewEvalClosure: MaintenancePreviewReviewEvalClosure;
+  manualCandidateLoop: MaintenancePreviewRuntimeLoopReadback;
   /**
    * Legacy alias retained for existing JSON consumers.
-   * Prefer manualCandidateLoop for new readback because no worker runtime exists.
+   * Prefer manualCandidateLoop for new readback because no maintenance runtime exists.
    */
-  runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
-  candidateReviewResult?: BrainHeartbeatCandidateReviewResult;
+  runtimeLoop: MaintenancePreviewRuntimeLoopReadback;
+  candidateReviewResult?: MaintenancePreviewCandidateReviewResult;
   priorityOrder: readonly [
     "memory_staleness",
     "source_relation",
@@ -230,19 +230,19 @@ const priorityOrder = [
 ] as const;
 
 const previewDoesNotProve =
-  "Brain heartbeat preview does not prove memory truth, source truth, candidate usefulness, autonomous worker execution, scheduling, consensus correctness, or Memory Core mutation.";
+  "Brain maintenance preview does not prove memory truth, source truth, candidate usefulness, autonomous maintenance execution, scheduling, consensus correctness, or Memory Core mutation.";
 
 const previewProof =
-  "Maintenance candidate preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
+  "Maintenance candidate preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or maintenance runtime state.";
 
 const reviewEvalClosureDoesNotProve =
-  "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.";
+  "Maintenance preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous maintenance execution, or Memory Core mutation.";
 
 const runtimeLoopDoesNotProve =
-  "Heartbeat runtime loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, worker daemon readiness, or Memory Core mutation.";
+  "Maintenance candidate loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.";
 
 const candidateReviewDoesNotProve =
-  "Heartbeat candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, worker daemon readiness, or Memory Core mutation.";
+  "Maintenance candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, maintenance daemon readiness, or Memory Core mutation.";
 
 const remainingBudget = (
   maxCandidates: number | undefined,
@@ -255,7 +255,7 @@ const remainingBudget = (
   return Math.max(0, maxCandidates - alreadySelected);
 };
 
-const hasReviewableEvidence = (candidate: BrainHeartbeatCandidate): boolean =>
+const hasReviewableEvidence = (candidate: MaintenancePreviewCandidate): boolean =>
   candidate.reviewability === "ready" &&
   candidate.evidenceRefs.length > 0 &&
   candidate.reviewabilityReasons.length > 0 &&
@@ -263,20 +263,20 @@ const hasReviewableEvidence = (candidate: BrainHeartbeatCandidate): boolean =>
   candidate.mutation === "none";
 
 const countReviewableCandidates = (
-  candidates: readonly BrainHeartbeatCandidate[]
+  candidates: readonly MaintenancePreviewCandidate[]
 ): number => candidates.filter(hasReviewableEvidence).length;
 
 const buildReviewEvalClosure = (
-  candidates: readonly BrainHeartbeatCandidate[],
+  candidates: readonly MaintenancePreviewCandidate[],
   evidenceRef: string
-): BrainHeartbeatReviewEvalClosure => {
+): MaintenancePreviewReviewEvalClosure => {
   if (candidates.length === 0) {
     return {
-      kind: "heartbeat_preview_review_eval_closure",
+      kind: "maintenance_preview_review_eval_closure",
       decision: "no_reviewable_candidates",
-      nextAction: "seed_or_select_heartbeat_candidate_state",
+      nextAction: "seed_or_select_maintenance_candidate_state",
       summary:
-        "No heartbeat candidates were emitted, so there is no behavior/eval candidate to close yet.",
+        "No maintenance candidates were emitted, so there is no behavior/eval candidate to close yet.",
       candidateIds: [],
       evidenceRefs: [evidenceRef],
       mutation: "none",
@@ -291,11 +291,11 @@ const buildReviewEvalClosure = (
 
   if (!allCandidatesReviewable) {
     return {
-      kind: "heartbeat_preview_review_eval_closure",
+      kind: "maintenance_preview_review_eval_closure",
       decision: "needs_more_evidence",
       nextAction: "improve_candidate_evidence",
       summary:
-        "Heartbeat preview emitted candidates, but at least one candidate is not ready for behavior/eval closure.",
+        "Maintenance preview emitted candidates, but at least one candidate is not ready for behavior/eval closure.",
       candidateIds,
       evidenceRefs,
       mutation: "none",
@@ -305,11 +305,11 @@ const buildReviewEvalClosure = (
   }
 
   return {
-    kind: "heartbeat_preview_review_eval_closure",
+    kind: "maintenance_preview_review_eval_closure",
     decision: "ready_for_behavior_proof",
     nextAction: "add_golden_behavior_case",
     summary:
-      "Heartbeat preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
+      "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
     candidateIds,
     evidenceRefs,
     mutation: "none",
@@ -319,31 +319,31 @@ const buildReviewEvalClosure = (
 };
 
 const buildRuntimeLoopReadback = (
-  candidates: readonly BrainHeartbeatCandidate[],
-  reviewEvalClosure: BrainHeartbeatReviewEvalClosure
-): BrainHeartbeatRuntimeLoopReadback => {
+  candidates: readonly MaintenancePreviewCandidate[],
+  reviewEvalClosure: MaintenancePreviewReviewEvalClosure
+): MaintenancePreviewRuntimeLoopReadback => {
   const reviewableCandidates = countReviewableCandidates(candidates);
   const statusByDecision = {
     ready_for_behavior_proof: "ready_for_operator_review",
     needs_more_evidence: "needs_candidate_evidence",
     no_reviewable_candidates: "no_candidates"
-  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, BrainHeartbeatRuntimeLoopStatus>;
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewRuntimeLoopStatus>;
   const nextActionByDecision = {
     ready_for_behavior_proof: "review_candidates_and_capture_evidence",
     needs_more_evidence: "improve_candidate_evidence",
-    no_reviewable_candidates: "seed_or_select_heartbeat_candidate_state"
-  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, BrainHeartbeatRuntimeLoopNextAction>;
+    no_reviewable_candidates: "seed_or_select_maintenance_candidate_state"
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewRuntimeLoopNextAction>;
   const summaryByDecision = {
     ready_for_behavior_proof:
-      "Heartbeat runtime loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+      "Maintenance candidate loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
     needs_more_evidence:
-      "Heartbeat runtime loop found maintenance candidates, but their evidence is not ready for operator review.",
+      "Maintenance candidate loop found maintenance candidates, but their evidence is not ready for operator review.",
     no_reviewable_candidates:
-      "Heartbeat runtime loop inspected current state but has no reviewable maintenance candidates to route."
-  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, string>;
+      "Maintenance candidate loop inspected current state but has no reviewable maintenance candidates to route."
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, string>;
 
   return {
-    kind: "heartbeat_candidate_runtime_loop",
+    kind: "maintenance_candidate_runtime_loop",
     mode: "manual_candidate_only",
     status: statusByDecision[reviewEvalClosure.decision],
     nextAction: nextActionByDecision[reviewEvalClosure.decision],
@@ -361,14 +361,14 @@ const nextActionByReviewDecision = {
   defer_pending_evidence: "request_more_candidate_evidence",
   reject_not_actionable: "record_rejection_evidence"
 } as const satisfies Record<
-  BrainHeartbeatCandidateReviewDecision,
-  BrainHeartbeatCandidateReviewNextAction
+  MaintenancePreviewCandidateReviewDecision,
+  MaintenancePreviewCandidateReviewNextAction
 >;
 
 const buildCandidateReviewResult = (
-  candidates: readonly BrainHeartbeatCandidate[],
-  input: BrainHeartbeatCandidateReviewInput | undefined
-): BrainHeartbeatCandidateReviewResult | undefined => {
+  candidates: readonly MaintenancePreviewCandidate[],
+  input: MaintenancePreviewCandidateReviewInput | undefined
+): MaintenancePreviewCandidateReviewResult | undefined => {
   if (input === undefined) {
     return undefined;
   }
@@ -376,7 +376,7 @@ const buildCandidateReviewResult = (
   const candidate = candidates.find((item) => item.id === input.candidateId);
 
   return {
-    kind: "heartbeat_candidate_review_result",
+    kind: "maintenance_candidate_review_result",
     candidateId: input.candidateId,
     candidateFound: candidate !== undefined,
     decision: input.decision,
@@ -391,10 +391,10 @@ const buildCandidateReviewResult = (
   };
 };
 
-export const buildBrainHeartbeatPreview = (
-  input: BuildBrainHeartbeatPreviewInput
-): BrainHeartbeatPreview => {
-  const memoryPreview = buildMemoryStalenessHeartbeatPreview({
+export const buildMaintenancePreview = (
+  input: BuildMaintenancePreviewInput
+): MaintenancePreview => {
+  const memoryPreview = buildMemoryStalenessMaintenancePreview({
     now: input.now,
     memoryRecords: input.memoryRecords,
     evidenceRef: input.evidenceRef,
@@ -402,7 +402,7 @@ export const buildBrainHeartbeatPreview = (
     ...(input.maxCandidates === undefined ? {} : { maxCandidates: input.maxCandidates })
   });
   const sourceBudget = remainingBudget(input.maxCandidates, memoryPreview.candidates.length);
-  const sourcePreview = buildSourceRelationHeartbeatPreview({
+  const sourcePreview = buildSourceRelationMaintenancePreview({
     now: input.now,
     sourceClaims: input.sourceClaims,
     sourceClaimEdges: input.sourceClaimEdges,
@@ -413,7 +413,7 @@ export const buildBrainHeartbeatPreview = (
     input.maxCandidates,
     memoryPreview.candidates.length + sourcePreview.candidates.length
   );
-  const acquisitionPreview = buildKnowledgeAcquisitionHeartbeatPreview({
+  const acquisitionPreview = buildKnowledgeAcquisitionMaintenancePreview({
     now: input.now,
     requests: input.knowledgeAcquisitionRequests ?? [],
     evidenceRef: input.evidenceRef,
@@ -468,9 +468,9 @@ export const buildBrainHeartbeatPreview = (
   };
 };
 
-export type MaintenanceCandidatePreview = BrainHeartbeatPreview;
-export type BuildMaintenanceCandidatePreviewInput = BuildBrainHeartbeatPreviewInput;
+export type MaintenanceCandidatePreview = MaintenancePreview;
+export type BuildMaintenanceCandidatePreviewInput = BuildMaintenancePreviewInput;
 
 export const buildMaintenanceCandidatePreview = (
   input: BuildMaintenanceCandidatePreviewInput
-): MaintenanceCandidatePreview => buildBrainHeartbeatPreview(input);
+): MaintenanceCandidatePreview => buildMaintenancePreview(input);

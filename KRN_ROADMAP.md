@@ -326,7 +326,7 @@ The resulting decision packet should contain:
 It must not become a dump of everything relevant. The packet is a control
 surface for Codex.
 
-### 6. Feedback, Heartbeat, And Dreaming
+### 6. Feedback, Maintenance, And Dreaming
 
 Execution evidence records whether the selected memory helped:
 
@@ -338,7 +338,7 @@ Execution evidence records whether the selected memory helped:
 - did a new better pattern appear;
 - did the task reveal a gap.
 
-Heartbeat/dreaming is maintenance, not magic. It proposes:
+Maintenance/dreaming is maintenance, not magic. It proposes:
 
 - demotion;
 - merge;
@@ -683,11 +683,11 @@ Done when:
 
 ### Phase 6: Maintenance Runtime
 
-Goal: add heartbeat/dreaming only after the local loop proves useful.
+Goal: add maintenance/dreaming only after the local loop proves useful.
 
 Work:
 
-1. Decide whether workers are real executors or contract/readback helpers.
+1. Decide whether maintenance contracts are real executors or contract/readback helpers.
 2. If real, build the smallest scheduler/executor that consults authority
    tables and records idempotent outcomes.
 3. If not real, downscope names and docs honestly.
@@ -724,7 +724,7 @@ The current P1 direction is:
 3. Build the notes-baseline decision-packet eval.
 4. Move usefulness feedback to store-backed events.
 5. Prove second-repo dry run.
-6. Revisit workers only after deciding whether they execute or only preview.
+6. Rename/downscope maintenance preview contracts so naming matches candidate-only behavior.
 
 Beads is the durable source for exact issue IDs, dependencies, and status.
 

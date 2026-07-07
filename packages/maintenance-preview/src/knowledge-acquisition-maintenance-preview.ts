@@ -11,10 +11,10 @@ export type KnowledgeAcquisitionSource =
   | "brain_search"
   | "source_artifact_preview";
 
-export type KnowledgeAcquisitionHeartbeatCandidateReason =
+export type KnowledgeAcquisitionMaintenanceCandidateReason =
   | "missing_evidence";
 
-export type KnowledgeAcquisitionHeartbeatAction =
+export type KnowledgeAcquisitionMaintenanceAction =
   | "propose_knowledge_acquisition";
 
 export interface KnowledgeAcquisitionLinkedDocumentEvidence {
@@ -82,11 +82,11 @@ export interface KnowledgeAcquisitionRequest {
   doesNotProve: string;
 }
 
-export interface KnowledgeAcquisitionHeartbeatCandidate {
+export interface KnowledgeAcquisitionMaintenanceCandidate {
   id: string;
   kind: "knowledge_acquisition_candidate";
-  action: KnowledgeAcquisitionHeartbeatAction;
-  reason: KnowledgeAcquisitionHeartbeatCandidateReason;
+  action: KnowledgeAcquisitionMaintenanceAction;
+  reason: KnowledgeAcquisitionMaintenanceCandidateReason;
   requestId: string;
   source: KnowledgeAcquisitionSource;
   query: string;
@@ -117,16 +117,16 @@ export interface KnowledgeAcquisitionHeartbeatCandidate {
   ];
 }
 
-export interface BuildKnowledgeAcquisitionHeartbeatPreviewInput {
+export interface BuildKnowledgeAcquisitionMaintenancePreviewInput {
   now: IsoTimestamp;
   requests: readonly KnowledgeAcquisitionRequest[];
   evidenceRef: string;
   maxCandidates?: number;
 }
 
-export interface KnowledgeAcquisitionHeartbeatPreview {
+export interface KnowledgeAcquisitionMaintenancePreview {
   generatedAt: IsoTimestamp;
-  candidates: readonly KnowledgeAcquisitionHeartbeatCandidate[];
+  candidates: readonly KnowledgeAcquisitionMaintenanceCandidate[];
   skippedRequestCount: number;
   mutation: "none";
   proof: string;
@@ -144,10 +144,10 @@ const forbiddenWrites = [
 ] as const;
 
 const previewDoesNotProve =
-  "Knowledge-acquisition heartbeat preview does not prove source truth, acquired knowledge quality, ranking quality, autonomous worker execution, crawler readiness, or Memory Core mutation.";
+  "Knowledge-acquisition maintenance preview does not prove source truth, acquired knowledge quality, ranking quality, autonomous maintenance execution, crawler readiness, or Memory Core mutation.";
 
 const previewProof =
-  "Knowledge-acquisition heartbeat preview turns explicit missing-evidence or target-fit gap readback into reviewable candidate-only acquisition work without mutating Memory Core, source truth, source decisions, eval candidates, worker jobs, or DB schema.";
+  "Knowledge-acquisition maintenance preview turns explicit missing-evidence or target-fit gap readback into reviewable candidate-only acquisition work without mutating Memory Core, source truth, source decisions, eval candidates, worker jobs, or DB schema.";
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
@@ -268,9 +268,9 @@ const missingReviewFields = (
 ];
 
 const buildCandidate = (
-  input: BuildKnowledgeAcquisitionHeartbeatPreviewInput,
+  input: BuildKnowledgeAcquisitionMaintenancePreviewInput,
   request: KnowledgeAcquisitionRequest
-): KnowledgeAcquisitionHeartbeatCandidate => {
+): KnowledgeAcquisitionMaintenanceCandidate => {
   const missingEvidence = nonEmptyStrings(request.missingEvidence);
   const queryShapeDiagnostics = nonEmptyStrings(request.queryShapeDiagnostics ?? []);
   const recommendedFollowUp = nonEmptyStrings(request.recommendedFollowUp ?? []);
@@ -306,7 +306,7 @@ const buildCandidate = (
   });
 
   return {
-    id: `knowledge-acquisition-heartbeat:${request.id}:missing_evidence`,
+    id: `knowledge-acquisition-maintenance:${request.id}:missing_evidence`,
     kind: "knowledge_acquisition_candidate",
     action: "propose_knowledge_acquisition",
     reason: "missing_evidence",
@@ -336,11 +336,11 @@ const buildCandidate = (
 const isActionableRequest = (request: KnowledgeAcquisitionRequest): boolean =>
   nonEmptyStrings(request.missingEvidence).length > 0;
 
-export const buildKnowledgeAcquisitionHeartbeatPreview = (
-  input: BuildKnowledgeAcquisitionHeartbeatPreviewInput
-): KnowledgeAcquisitionHeartbeatPreview => {
+export const buildKnowledgeAcquisitionMaintenancePreview = (
+  input: BuildKnowledgeAcquisitionMaintenancePreviewInput
+): KnowledgeAcquisitionMaintenancePreview => {
   const maxCandidates = Math.max(0, input.maxCandidates ?? input.requests.length);
-  const candidates: KnowledgeAcquisitionHeartbeatCandidate[] = [];
+  const candidates: KnowledgeAcquisitionMaintenanceCandidate[] = [];
 
   if (maxCandidates === 0) {
     return {

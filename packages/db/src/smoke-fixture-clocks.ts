@@ -18,7 +18,7 @@ export const smokeFixtureClocks = {
     past: "2026-06-01T00:00:00.000Z",
     expiredValidUntil: "2026-06-10T00:00:00.000Z"
   },
-  heartbeatWorkerBoundary: {
+  maintenanceBoundary: {
     now: "2026-07-01T12:00:00.000Z",
     expiredAt: "2026-06-01T12:00:00.000Z",
     validFrom: "2026-05-01T12:00:00.000Z"

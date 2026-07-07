@@ -9,12 +9,12 @@
     "source:towards-autonomous-memory-agents"
   ],
   "evidenceRefs": [
-    "packages/workers/src/knowledge-acquisition-heartbeat-preview.test.ts",
-    "packages/cli/src/run-heartbeat-preview-command.test.ts"
+    "packages/maintenance-preview/src/__tests__/knowledge-acquisition-maintenance-preview.test.ts",
+    "packages/cli/src/__tests__/run-maintenance-preview-command.test.ts"
   ],
   "consumers": [
-    "future heartbeat knowledge-acquisition review",
-    "future heartbeat/dreaming candidate runtime slices",
+    "future maintenance knowledge-acquisition review",
+    "future maintenance/dreaming candidate runtime slices",
     "future pattern/research brain acquisition gates",
     "future acquisition escalation eval candidates"
   ],

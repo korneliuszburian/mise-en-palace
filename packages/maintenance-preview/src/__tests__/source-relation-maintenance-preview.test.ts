@@ -7,8 +7,8 @@ import type {
 import { describe, expect, test } from "vitest";
 
 import {
-  buildSourceRelationHeartbeatPreview
-} from "../source-relation-heartbeat-preview.js";
+  buildSourceRelationMaintenancePreview
+} from "../source-relation-maintenance-preview.js";
 
 const now = "2026-06-29T04:30:00.000Z";
 
@@ -24,7 +24,7 @@ const sourceClaim = (
   doesNotProve: "This source claim does not prove source truth.",
   trustTier: "project-decision",
   supportType: "mechanism",
-  consumer: "source relation heartbeat preview test",
+  consumer: "source relation maintenance preview test",
   status: "accepted",
   metadata: {},
   createdAt: "2026-06-29T04:00:00.000Z",
@@ -40,7 +40,7 @@ const sourceClaimEdge = (
   toSourceClaimId: "source-claim-2" as SourceClaimId,
   kind: "contradicts",
   metadata: {
-    consumer: "source relation heartbeat preview test",
+    consumer: "source relation maintenance preview test",
     doesNotProve: "This edge does not prove source truth.",
     evidenceRefs: ["docs/reviews/controlled-dogfood/v336/REPORT.md"]
   },
@@ -48,23 +48,23 @@ const sourceClaimEdge = (
   ...overrides
 });
 
-describe("source relation heartbeat preview", () => {
+describe("source relation maintenance preview", () => {
   test("proposes a reviewable candidate for maintenance-class source relations without mutation", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.mutation).toBe("none");
-    expect(result.doesNotProve).toContain("autonomous worker execution");
+    expect(result.doesNotProve).toContain("autonomous maintenance execution");
     expect(result.candidates).toEqual([
       expect.objectContaining({
-        id: "source-relation-heartbeat:source-claim-edge-1:relation_needs_review",
+        id: "source-relation-maintenance:source-claim-edge-1:relation_needs_review",
         kind: "source_relation_maintenance_candidate",
         action: "review_source_relation",
         reason: "relation_needs_review",
@@ -85,7 +85,7 @@ describe("source relation heartbeat preview", () => {
       "Candidate has review evidence, application guidance, and doesNotProve boundary."
     ]);
     expect(result.candidates[0]?.evidenceRefs).toContain(
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     );
     expect(result.candidates[0]?.summary).toBe(
       "Review contradiction SourceClaimEdge source-claim-edge-1 between source-claim-1 and source-claim-2."
@@ -102,7 +102,7 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("distinguishes duplicate source relations from generic relation maintenance", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
@@ -133,7 +133,7 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("normalizes singular and plural relation evidence refs before candidate review", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
@@ -142,7 +142,7 @@ describe("source relation heartbeat preview", () => {
       sourceClaimEdges: [
         sourceClaimEdge({
           metadata: {
-            consumer: " source relation heartbeat preview test ",
+            consumer: " source relation maintenance preview test ",
             doesNotProve: " This edge does not prove source truth. ",
             evidenceRef: " docs/reviews/source-edge-a.md ",
             evidenceRefs: [
@@ -154,7 +154,7 @@ describe("source relation heartbeat preview", () => {
           }
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
@@ -162,7 +162,7 @@ describe("source relation heartbeat preview", () => {
       "docs/reviews/source-edge-b.md"
     ]);
     expect(result.candidates[0]?.evidenceRefs).toEqual([
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md",
+      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
       "docs/reviews/source-edge-a.md",
       "docs/reviews/source-edge-b.md"
     ]);
@@ -173,7 +173,7 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("prioritizes stale connected claims before relation-kind maintenance", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1", {
@@ -182,7 +182,7 @@ describe("source relation heartbeat preview", () => {
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -196,13 +196,13 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("does not treat omitted connected claims as stale", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -216,7 +216,7 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("flags weak relation evidence but does not create source truth", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
@@ -228,7 +228,7 @@ describe("source relation heartbeat preview", () => {
           metadata: {}
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates[0]).toEqual(
@@ -250,7 +250,7 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("skips healthy background relations", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
@@ -261,7 +261,7 @@ describe("source relation heartbeat preview", () => {
           kind: "supports"
         })
       ],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     });
 
     expect(result.candidates).toEqual([]);
@@ -269,14 +269,14 @@ describe("source relation heartbeat preview", () => {
   });
 
   test("honors maxCandidates zero without proposing maintenance work", () => {
-    const result = buildSourceRelationHeartbeatPreview({
+    const result = buildSourceRelationMaintenancePreview({
       now,
       sourceClaims: [
         sourceClaim("source-claim-1"),
         sourceClaim("source-claim-2")
       ],
       sourceClaimEdges: [sourceClaimEdge()],
-      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md",
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md",
       maxCandidates: 0
     });
 

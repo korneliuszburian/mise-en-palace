@@ -24,18 +24,18 @@ import type {
   KnowledgeAcquisitionActivationUtilityVerdict,
   KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest
-} from "@krn/workers";
+} from "@krn/maintenance-preview";
 
 import {
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
 
 const defaultAcquisitionConsumer =
-  "heartbeat knowledge acquisition preview";
+  "maintenance knowledge acquisition preview";
 const defaultAcquisitionFalsifier =
   "A source/brain search missing-evidence or generic-only target-fit readback should produce a candidate-only acquisition request without mutating Memory Core.";
 const defaultAcquisitionDoesNotProve =
-  "Missing-evidence or generic-only target-fit readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous worker execution, or Memory Core mutation.";
+  "Missing-evidence or generic-only target-fit readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous maintenance execution, or Memory Core mutation.";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -824,4 +824,3 @@ export const loadConsensusCandidateInputs = async (
   return recordArrayField(candidates, `${consensusCandidateFile}.candidates`)
     .map(consensusCandidateFromRecord);
 };
-

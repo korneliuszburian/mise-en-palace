@@ -1,15 +1,15 @@
 {
-  "patternId": "consensus-relation-heartbeat-review-boundary",
-  "name": "Consensus relation heartbeat review boundary",
+  "patternId": "consensus-relation-maintenance-review-boundary",
+  "name": "Consensus relation maintenance review boundary",
   "adoptionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
-  "decision": "KRN consensus/eval work should review relation-bearing candidates through heartbeat consensus_evaluation readback that exposes relationReviewFocus, relationReviewQuestion, reviewUsefulness, support/risk evidence refs, candidate reviewability, mutation none, and decision options before any consensus runtime, graph ranking, source truth mutation, or Memory Core mutation is introduced.",
+  "decision": "KRN consensus/eval work should review relation-bearing candidates through maintenance consensus_evaluation readback that exposes relationReviewFocus, relationReviewQuestion, reviewUsefulness, support/risk evidence refs, candidate reviewability, mutation none, and decision options before any consensus runtime, graph ranking, source truth mutation, or Memory Core mutation is introduced.",
   "sourceRefs": [
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/run-heartbeat-preview-command.test.ts"
+    "packages/cli/src/__tests__/run-maintenance-preview-command.test.ts"
   ],
   "consumers": [
     "future consensus/eval candidate review slices",

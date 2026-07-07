@@ -10,8 +10,8 @@ import type {
 import { describe, expect, test } from "vitest";
 
 import {
-  buildBrainHeartbeatPreview
-} from "../brain-heartbeat-preview.js";
+  buildMaintenancePreview
+} from "../maintenance-preview.js";
 
 const now = "2026-06-30T11:30:00.000Z";
 const evidenceRef =
@@ -27,7 +27,7 @@ const memoryRecord = (
   kind: "pattern",
   status: "active",
   summary: `Memory ${id}`,
-  body: "A bounded memory record for brain heartbeat preview tests.",
+  body: "A bounded memory record for brain maintenance preview tests.",
   owner: "krn",
   confidence: 90,
   applicationGuidance: "Use only while current evidence still supports this memory.",
@@ -50,12 +50,12 @@ const sourceClaim = (
   id: id as SourceClaimId,
   sourceArtifactId: "source-artifact-1" as SourceArtifactId,
   claim: `Claim ${id}`,
-  mechanism: "A bounded source claim carries mechanism for brain heartbeat preview tests.",
-  krnImplication: "Use this claim only as heartbeat preview input.",
+  mechanism: "A bounded source claim carries mechanism for brain maintenance preview tests.",
+  krnImplication: "Use this claim only as maintenance preview input.",
   doesNotProve: "This source claim does not prove source truth.",
   trustTier: "project-decision",
   supportType: "mechanism",
-  consumer: "brain heartbeat preview test",
+  consumer: "brain maintenance preview test",
   status: "accepted",
   metadata: {},
   createdAt: "2026-06-30T10:00:00.000Z",
@@ -71,7 +71,7 @@ const sourceClaimEdge = (
   toSourceClaimId: "source-claim-2" as SourceClaimId,
   kind: "duplicates",
   metadata: {
-    consumer: "brain heartbeat preview test",
+    consumer: "brain maintenance preview test",
     doesNotProve: "This edge does not prove source truth.",
     evidenceRefs: [evidenceRef]
   },
@@ -79,9 +79,9 @@ const sourceClaimEdge = (
   ...overrides
 });
 
-describe("brain heartbeat preview", () => {
+describe("brain maintenance preview", () => {
   test("guards review eval closure behavior proof without mutation", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [
@@ -97,19 +97,19 @@ describe("brain heartbeat preview", () => {
     });
 
     expect(result.reviewEvalClosure).toEqual({
-      kind: "heartbeat_preview_review_eval_closure",
+      kind: "maintenance_preview_review_eval_closure",
       decision: "ready_for_behavior_proof",
       nextAction: "add_golden_behavior_case",
       summary:
-        "Heartbeat preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
+        "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
       candidateIds: [
-        "memory-staleness-heartbeat:memory-expired:expired_memory",
-        "source-relation-heartbeat:source-claim-edge-1:relation_needs_review"
+        "memory-staleness-maintenance:memory-expired:expired_memory",
+        "source-relation-maintenance:source-claim-edge-1:relation_needs_review"
       ],
       evidenceRefs: [evidenceRef],
       mutation: "none",
       doesNotProve:
-        "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.",
+        "Maintenance preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous maintenance execution, or Memory Core mutation.",
       forbiddenWrites: [
         "memory_records",
         "anti_memory_records",
@@ -121,17 +121,17 @@ describe("brain heartbeat preview", () => {
     });
     expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
     expect(result.runtimeLoop).toEqual({
-      kind: "heartbeat_candidate_runtime_loop",
+      kind: "maintenance_candidate_runtime_loop",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
       summary:
-        "Heartbeat runtime loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+        "Maintenance candidate loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
       inspectedCandidates: 2,
       reviewableCandidates: 2,
       mutation: "none",
       doesNotProve:
-        "Heartbeat runtime loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, worker daemon readiness, or Memory Core mutation.",
+        "Maintenance candidate loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.",
       forbiddenWrites: [
         "memory_records",
         "anti_memory_records",
@@ -153,7 +153,7 @@ describe("brain heartbeat preview", () => {
     }
     expect(result.candidates[0]).toMatchObject({
       kind: "memory_staleness_maintenance_candidate",
-      workerWriteBoundary: {
+      maintenanceWriteBoundary: {
         jobType: "expire_stale_memory",
         memoryCoreGate: "must_create_reviewed_invalidation_candidate",
         status: "passed",
@@ -182,7 +182,7 @@ describe("brain heartbeat preview", () => {
   });
 
   test("guards activation utility acquisition eval proof without mutation", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [],
@@ -219,23 +219,23 @@ describe("brain heartbeat preview", () => {
           evidenceRefs: [
             "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
           ],
-          consumer: "heartbeat preview and future bounded eval/golden candidates",
+          consumer: "maintenance preview and future bounded eval/golden candidates",
           falsifier:
-            "Heartbeat preview drops activationUtilityEvidence or performs direct writes.",
+            "Maintenance preview drops activationUtilityEvidence or performs direct writes.",
           doesNotProve:
-            "This candidate does not prove source truth, ranking quality, semantic-aware Thompson sampling, autonomous worker execution, or Memory Core mutation safety."
+            "This candidate does not prove source truth, ranking quality, semantic-aware Thompson sampling, autonomous maintenance execution, or Memory Core mutation safety."
         }
       ]
     });
 
     expect(result.reviewEvalClosure).toMatchObject({
-      kind: "heartbeat_preview_review_eval_closure",
+      kind: "maintenance_preview_review_eval_closure",
       decision: "ready_for_behavior_proof",
       nextAction: "add_golden_behavior_case",
       mutation: "none"
     });
     expect(result.runtimeLoop).toMatchObject({
-      kind: "heartbeat_candidate_runtime_loop",
+      kind: "maintenance_candidate_runtime_loop",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
@@ -251,7 +251,7 @@ describe("brain heartbeat preview", () => {
     });
     expect(result.candidates).toEqual([
       expect.objectContaining({
-        id: "knowledge-acquisition-heartbeat:activation-utility-exploration:missing_evidence",
+        id: "knowledge-acquisition-maintenance:activation-utility-exploration:missing_evidence",
         kind: "knowledge_acquisition_candidate",
         action: "propose_knowledge_acquisition",
         reviewability: "ready",
@@ -286,7 +286,7 @@ describe("brain heartbeat preview", () => {
       })
     ]);
     expect(result.reviewEvalClosure.candidateIds).toEqual([
-      "knowledge-acquisition-heartbeat:activation-utility-exploration:missing_evidence"
+      "knowledge-acquisition-maintenance:activation-utility-exploration:missing_evidence"
     ]);
     expect(result.reviewEvalClosure.evidenceRefs).toEqual([
       evidenceRef,
@@ -297,8 +297,8 @@ describe("brain heartbeat preview", () => {
     expect(result.mutation).toBe("none");
   });
 
-  test("routes consensus relation review through candidate-only heartbeat readback", () => {
-    const result = buildBrainHeartbeatPreview({
+  test("routes consensus relation review through candidate-only maintenance readback", () => {
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [],
@@ -371,7 +371,7 @@ describe("brain heartbeat preview", () => {
   });
 
   test("aggregates memory staleness and source relation candidates without mutation", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [
@@ -414,8 +414,8 @@ describe("brain heartbeat preview", () => {
       mutation: "none"
     });
     expect(result.reviewEvalClosure.candidateIds).toEqual([
-      `memory-staleness-heartbeat:memory-expired:expired_memory`,
-      "source-relation-heartbeat:source-claim-edge-1:relation_needs_review"
+      `memory-staleness-maintenance:memory-expired:expired_memory`,
+      "source-relation-maintenance:source-claim-edge-1:relation_needs_review"
     ]);
     expect(result.reviewEvalClosure.evidenceRefs).toEqual([evidenceRef]);
     expect(result.reviewEvalClosure.doesNotProve).toContain("scheduler readiness");
@@ -445,9 +445,9 @@ describe("brain heartbeat preview", () => {
     ]);
   });
 
-  test("records one manual heartbeat candidate review result without mutation", () => {
-    const candidateId = "source-relation-heartbeat:source-claim-edge-1:relation_needs_review";
-    const result = buildBrainHeartbeatPreview({
+  test("records one manual maintenance candidate review result without mutation", () => {
+    const candidateId = "source-relation-maintenance:source-claim-edge-1:relation_needs_review";
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [],
@@ -459,7 +459,7 @@ describe("brain heartbeat preview", () => {
       candidateReview: {
         candidateId,
         decision: "defer_pending_evidence",
-        reason: "Relation evidence refs are empty in the current heartbeat candidate.",
+        reason: "Relation evidence refs are empty in the current maintenance candidate.",
         evidenceRef:
           "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md",
         reviewer: "krn-operator"
@@ -467,12 +467,12 @@ describe("brain heartbeat preview", () => {
     });
 
     expect(result.candidateReviewResult).toEqual({
-      kind: "heartbeat_candidate_review_result",
+      kind: "maintenance_candidate_review_result",
       candidateId,
       candidateFound: true,
       decision: "defer_pending_evidence",
       nextAction: "request_more_candidate_evidence",
-      reason: "Relation evidence refs are empty in the current heartbeat candidate.",
+      reason: "Relation evidence refs are empty in the current maintenance candidate.",
       reviewer: "krn-operator",
       evidenceRefs: [
         "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md"
@@ -480,7 +480,7 @@ describe("brain heartbeat preview", () => {
       candidateReviewability: "ready",
       mutation: "none",
       doesNotProve:
-        "Heartbeat candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, worker daemon readiness, or Memory Core mutation.",
+        "Maintenance candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, maintenance daemon readiness, or Memory Core mutation.",
       forbiddenWrites: [
         "memory_records",
         "anti_memory_records",
@@ -495,7 +495,7 @@ describe("brain heartbeat preview", () => {
   });
 
   test("applies one global candidate budget with memory staleness first", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       maxCandidates: 1,
@@ -528,7 +528,7 @@ describe("brain heartbeat preview", () => {
   });
 
   test("aggregates missing-evidence acquisition candidates without mutation", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [],
@@ -541,17 +541,17 @@ describe("brain heartbeat preview", () => {
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: ["candidate-only acquisition lane"],
           evidenceRefs: ["docs/KRN_SOURCES.md#towards-autonomous-memory-agents"],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Missing-evidence readback cannot create a reviewable candidate.",
           doesNotProve:
-            "This does not prove autonomous worker execution or Memory Core mutation safety."
+            "This does not prove autonomous maintenance execution or Memory Core mutation safety."
         }
       ]
     });
 
     expect(result.candidates).toEqual([
       expect.objectContaining({
-        id: "knowledge-acquisition-heartbeat:ama-missing-evidence:missing_evidence",
+        id: "knowledge-acquisition-maintenance:ama-missing-evidence:missing_evidence",
         kind: "knowledge_acquisition_candidate",
         action: "propose_knowledge_acquisition",
         reviewability: "ready",
@@ -585,7 +585,7 @@ describe("brain heartbeat preview", () => {
   });
 
   test("returns an empty candidate-only preview for healthy inputs", () => {
-    const result = buildBrainHeartbeatPreview({
+    const result = buildMaintenancePreview({
       now,
       evidenceRef,
       memoryRecords: [
@@ -620,13 +620,13 @@ describe("brain heartbeat preview", () => {
     expect(result.mutation).toBe("none");
     expect(result.reviewEvalClosure).toMatchObject({
       decision: "no_reviewable_candidates",
-      nextAction: "seed_or_select_heartbeat_candidate_state",
+      nextAction: "seed_or_select_maintenance_candidate_state",
       mutation: "none"
     });
     expect(result.runtimeLoop).toMatchObject({
       mode: "manual_candidate_only",
       status: "no_candidates",
-      nextAction: "seed_or_select_heartbeat_candidate_state",
+      nextAction: "seed_or_select_maintenance_candidate_state",
       inspectedCandidates: 0,
       reviewableCandidates: 0,
       mutation: "none"

@@ -1,6 +1,6 @@
-# KRN Workers
+# KRN Maintenance Preview
 
-`@krn/workers` is a contract package for maintenance job descriptions and
+`@krn/maintenance-preview` is a contract package for maintenance job descriptions and
 enqueue ports.
 
 Current truth:
@@ -27,7 +27,7 @@ Not built:
 - no memory compaction runtime;
 - no contradiction detection runtime;
 - no stale-memory expiration runtime;
-- no embedding worker runtime;
+- no embedding maintenance runtime;
 - no source-relation maintenance executor;
 - no memory-staleness maintenance executor;
 - no consensus agent runtime;

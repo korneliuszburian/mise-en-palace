@@ -3,7 +3,7 @@ import type {
 } from "postgres";
 import {
   describeMaintenanceJob
-} from "@krn/workers";
+} from "@krn/maintenance-preview";
 
 import {
   createSmokeDatabase,
@@ -48,7 +48,7 @@ interface CountRow {
   count: number;
 }
 
-interface WorkerJobBoundaryReadback {
+interface MaintenanceJobBoundaryReadback {
   writeBoundaryValidatedCount: number;
 }
 
@@ -156,7 +156,7 @@ const requireStatus = (
   }
 };
 
-const workerJobBoundaryReadback = (): WorkerJobBoundaryReadback => {
+const workerJobBoundaryReadback = (): MaintenanceJobBoundaryReadback => {
   const descriptions = workerJobTypes.map((jobType) => describeMaintenanceJob(jobType));
 
   return {

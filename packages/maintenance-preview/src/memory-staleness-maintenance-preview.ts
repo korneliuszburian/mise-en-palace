@@ -15,24 +15,24 @@ import {
   buildMaintenanceJobWriteBoundaryReadback
 } from "./job-types.js";
 import type {
-  WorkerJobBoundaryReadback
+  MaintenanceJobBoundaryReadback
 } from "./job-types.js";
 
-export type MemoryStalenessHeartbeatCandidateReason =
+export type MemoryStalenessMaintenanceCandidateReason =
   | "expired_memory"
   | "near_expiry_memory"
   | MemoryRecordReviewSignalKind;
 
-export type MemoryStalenessHeartbeatAction =
+export type MemoryStalenessMaintenanceAction =
   | "review_memory_invalidation"
   | "review_memory_refresh"
   | "review_memory_feedback";
 
-export interface MemoryStalenessHeartbeatCandidate {
+export interface MemoryStalenessMaintenanceCandidate {
   id: string;
   kind: "memory_staleness_maintenance_candidate";
-  action: MemoryStalenessHeartbeatAction;
-  reason: MemoryStalenessHeartbeatCandidateReason;
+  action: MemoryStalenessMaintenanceAction;
+  reason: MemoryStalenessMaintenanceCandidateReason;
   memoryRecordId: MemoryRecordId;
   memoryKey: string;
   memoryKind: MemoryRecord["kind"];
@@ -45,7 +45,7 @@ export interface MemoryStalenessHeartbeatCandidate {
   doesNotProve: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: readonly string[];
-  workerWriteBoundary: WorkerJobBoundaryReadback;
+  maintenanceWriteBoundary: MaintenanceJobBoundaryReadback;
   mutation: "none";
   forbiddenWrites: readonly [
     "memory_records",
@@ -55,7 +55,7 @@ export interface MemoryStalenessHeartbeatCandidate {
   ];
 }
 
-export interface BuildMemoryStalenessHeartbeatPreviewInput {
+export interface BuildMemoryStalenessMaintenancePreviewInput {
   now: IsoTimestamp;
   memoryRecords: readonly MemoryRecord[];
   evidenceRef: string;
@@ -63,9 +63,9 @@ export interface BuildMemoryStalenessHeartbeatPreviewInput {
   maxCandidates?: number;
 }
 
-export interface MemoryStalenessHeartbeatPreview {
+export interface MemoryStalenessMaintenancePreview {
   generatedAt: IsoTimestamp;
-  candidates: readonly MemoryStalenessHeartbeatCandidate[];
+  candidates: readonly MemoryStalenessMaintenanceCandidate[];
   skippedMemoryCount: number;
   mutation: "none";
   proof: string;
@@ -82,7 +82,7 @@ const forbiddenWrites = [
 ] as const;
 
 const previewDoesNotProve =
-  "Memory-staleness heartbeat preview does not prove memory truth, memory usefulness, automatic invalidation correctness, autonomous worker execution, or Memory Core mutation.";
+  "Memory-staleness maintenance preview does not prove memory truth, memory usefulness, automatic invalidation correctness, autonomous maintenance execution, or Memory Core mutation.";
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
@@ -94,11 +94,11 @@ const sourceLineageRefs = (record: MemoryRecord): readonly string[] =>
 
 const candidateReasonFromSignal = (
   signalKind: MemoryRecordReviewSignalKind
-): MemoryStalenessHeartbeatCandidateReason => signalKind;
+): MemoryStalenessMaintenanceCandidateReason => signalKind;
 
 const actionFromReason = (
-  reason: MemoryStalenessHeartbeatCandidateReason
-): MemoryStalenessHeartbeatAction => {
+  reason: MemoryStalenessMaintenanceCandidateReason
+): MemoryStalenessMaintenanceAction => {
   if (
     reason === "expired_memory" ||
     reason === "near_expiry_memory" ||
@@ -118,7 +118,7 @@ const staleReasonForRecord = (
   record: MemoryRecord,
   now: IsoTimestamp,
   nearExpiryDays: number
-): MemoryStalenessHeartbeatCandidateReason | undefined => {
+): MemoryStalenessMaintenanceCandidateReason | undefined => {
   const validUntil = parseTimestampMs(record.validUntil);
   const nowAt = parseTimestampMs(now);
 
@@ -142,10 +142,10 @@ const staleReasonForRecord = (
 };
 
 const buildCandidate = (
-  input: BuildMemoryStalenessHeartbeatPreviewInput,
+  input: BuildMemoryStalenessMaintenancePreviewInput,
   record: MemoryRecord,
-  reason: MemoryStalenessHeartbeatCandidateReason
-): MemoryStalenessHeartbeatCandidate => {
+  reason: MemoryStalenessMaintenanceCandidateReason
+): MemoryStalenessMaintenanceCandidate => {
   const action = actionFromReason(reason);
   const summary = `Review stale memory ${record.id} (${record.key}).`;
   const applicationGuidance =
@@ -164,7 +164,7 @@ const buildCandidate = (
   });
 
   return {
-    id: `memory-staleness-heartbeat:${record.id}:${reason}`,
+    id: `memory-staleness-maintenance:${record.id}:${reason}`,
     kind: "memory_staleness_maintenance_candidate",
     action,
     reason,
@@ -180,18 +180,18 @@ const buildCandidate = (
     doesNotProve: previewDoesNotProve,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
-    workerWriteBoundary: buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory"),
+    maintenanceWriteBoundary: buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory"),
     mutation: "none",
     forbiddenWrites
   };
 };
 
-export const buildMemoryStalenessHeartbeatPreview = (
-  input: BuildMemoryStalenessHeartbeatPreviewInput
-): MemoryStalenessHeartbeatPreview => {
+export const buildMemoryStalenessMaintenancePreview = (
+  input: BuildMemoryStalenessMaintenancePreviewInput
+): MemoryStalenessMaintenancePreview => {
   const maxCandidates = Math.max(0, input.maxCandidates ?? input.memoryRecords.length);
   const nearExpiryDays = input.nearExpiryDays ?? 7;
-  const candidates: MemoryStalenessHeartbeatCandidate[] = [];
+  const candidates: MemoryStalenessMaintenanceCandidate[] = [];
 
   if (maxCandidates === 0) {
     return {
@@ -200,7 +200,7 @@ export const buildMemoryStalenessHeartbeatPreview = (
       skippedMemoryCount: input.memoryRecords.length,
       mutation: "none",
       proof:
-        "Memory-staleness heartbeat preview inspects MemoryRecord validity and review signals to propose reviewable maintenance candidates only.",
+        "Memory-staleness maintenance preview inspects MemoryRecord validity and review signals to propose reviewable maintenance candidates only.",
       doesNotProve: previewDoesNotProve
     };
   }
@@ -225,7 +225,7 @@ export const buildMemoryStalenessHeartbeatPreview = (
     skippedMemoryCount: input.memoryRecords.length - candidates.length,
     mutation: "none",
     proof:
-      "Memory-staleness heartbeat preview inspects MemoryRecord validity and review signals to propose reviewable maintenance candidates only.",
+      "Memory-staleness maintenance preview inspects MemoryRecord validity and review signals to propose reviewable maintenance candidates only.",
     doesNotProve: previewDoesNotProve
   };
 };

@@ -1,16 +1,16 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  buildKnowledgeAcquisitionHeartbeatPreview
-} from "../knowledge-acquisition-heartbeat-preview.js";
+  buildKnowledgeAcquisitionMaintenancePreview
+} from "../knowledge-acquisition-maintenance-preview.js";
 
 const now = "2026-06-30T21:10:00.000Z";
 const evidenceRef =
   "docs/reviews/controlled-dogfood/2026-06-30-imr-05-store-backed-pattern-gate-ama/REPORT.md";
 
-describe("knowledge acquisition heartbeat preview", () => {
+describe("knowledge acquisition maintenance preview", () => {
   test("turns missing-evidence readback into a reviewable candidate without mutation", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -20,12 +20,12 @@ describe("knowledge acquisition heartbeat preview", () => {
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: [
             "source-search missing evidence should produce acquisition candidates",
-            "candidate-only heartbeat/dreaming behavior needs a local falsifier"
+            "candidate-only maintenance/dreaming behavior needs a local falsifier"
           ],
           evidenceRefs: [
             "docs/KRN_SOURCES.md#towards-autonomous-memory-agents"
           ],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier:
             "A missing-evidence run cannot create a reviewable acquisition candidate.",
           doesNotProve:
@@ -39,7 +39,7 @@ describe("knowledge acquisition heartbeat preview", () => {
     expect(result.doesNotProve).toContain("crawler readiness");
     expect(result.candidates).toEqual([
       expect.objectContaining({
-        id: "knowledge-acquisition-heartbeat:ama-missing-evidence:missing_evidence",
+        id: "knowledge-acquisition-maintenance:ama-missing-evidence:missing_evidence",
         kind: "knowledge_acquisition_candidate",
         action: "propose_knowledge_acquisition",
         reason: "missing_evidence",
@@ -60,7 +60,7 @@ describe("knowledge acquisition heartbeat preview", () => {
     ]);
     expect(result.candidates[0]?.missingEvidence).toEqual([
       "source-search missing evidence should produce acquisition candidates",
-      "candidate-only heartbeat/dreaming behavior needs a local falsifier"
+      "candidate-only maintenance/dreaming behavior needs a local falsifier"
     ]);
     expect(result.candidates[0]?.reviewabilityReasons).toEqual([
       "Candidate has review evidence, application guidance, and doesNotProve boundary."
@@ -95,7 +95,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("carries query diagnostics and recommended follow-up into acquisition candidates", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -111,7 +111,7 @@ describe("knowledge acquisition heartbeat preview", () => {
             "run source search against the narrower acquisition topic"
           ],
           evidenceRefs: [evidenceRef],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Diagnostics should be visible on the candidate.",
           doesNotProve: "This does not prove acquisition quality."
         }
@@ -135,7 +135,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("preserves source artifact preview acquisition source", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -155,7 +155,7 @@ describe("knowledge acquisition heartbeat preview", () => {
             "docs/source.md",
             "sha256:source-artifact"
           ],
-          consumer: "heartbeat knowledge acquisition preview",
+          consumer: "maintenance knowledge acquisition preview",
           falsifier:
             "A source artifact preview JSON file without artifact/chunk/candidate/readback state should not produce a reviewable acquisition request.",
           doesNotProve:
@@ -180,7 +180,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("preserves linked document evidence in acquisition candidates", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -197,7 +197,7 @@ describe("knowledge acquisition heartbeat preview", () => {
             ]
           },
           evidenceRefs: [evidenceRef],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Linked document evidence should be visible on the acquisition candidate.",
           doesNotProve: "This does not prove source truth."
         }
@@ -244,7 +244,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("preserves activation utility evidence in acquisition candidates", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -274,7 +274,7 @@ describe("knowledge acquisition heartbeat preview", () => {
               "Activation utility readback does not prove ranking quality or product readiness."
           },
           evidenceRefs: [evidenceRef],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Activation utility exploration evidence should be visible on the candidate.",
           doesNotProve: "This does not prove source truth."
         }
@@ -313,7 +313,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("keeps weak acquisition requests as needs_more_evidence", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -342,7 +342,7 @@ describe("knowledge acquisition heartbeat preview", () => {
   });
 
   test("skips requests without missing evidence", () => {
-    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
       evidenceRef,
       requests: [
@@ -352,7 +352,7 @@ describe("knowledge acquisition heartbeat preview", () => {
           query: "complete source search",
           missingEvidence: [],
           evidenceRefs: [evidenceRef],
-          consumer: "heartbeat/dreaming candidate runtime",
+          consumer: "maintenance/dreaming candidate runtime",
           falsifier: "Missing-evidence input should be required.",
           doesNotProve: "This does not prove retrieval quality."
         }

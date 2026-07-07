@@ -15,8 +15,8 @@ import {
   runHarnessCliCommand
 } from "./run-harness-cli-command.js";
 import {
-  runHeartbeatPreviewCommand
-} from "./run-heartbeat-preview-command.js";
+  runMaintenancePreviewCommand
+} from "./run-maintenance-preview-command.js";
 import {
   runMemoryCliCommand
 } from "./run-memory-cli-command.js";
@@ -148,13 +148,13 @@ const runDbAdapter: CliCommandAdapter = (command, context) =>
     formatCliError: context.formatCliError
   });
 
-const runHeartbeatAdapter: CliCommandAdapter = async (command, context) => {
-  if (command.kind !== "heartbeatPreview") {
+const runMaintenancePreviewAdapter: CliCommandAdapter = async (command, context) => {
+  if (command.kind !== "maintenancePreview") {
     return undefined;
   }
 
   return readbackCommandResult(
-    () => runHeartbeatPreviewCommand({
+    () => runMaintenancePreviewCommand({
       cwd: context.cwd,
       env: context.env,
       now: context.now,
@@ -164,7 +164,7 @@ const runHeartbeatAdapter: CliCommandAdapter = async (command, context) => {
         ? {}
         : { createDatabaseRuntime: context.createDatabaseRuntime })
     }),
-    "Unknown heartbeat preview error",
+    "Unknown maintenance preview error",
     context
   );
 };
@@ -196,7 +196,7 @@ const cliCommandAdapters: readonly CliCommandAdapter[] = [
   runSourceAdapter,
   runMemoryAdapter,
   runHarnessAdapter,
-  runHeartbeatAdapter,
+  runMaintenancePreviewAdapter,
   runDbAdapter
 ];
 

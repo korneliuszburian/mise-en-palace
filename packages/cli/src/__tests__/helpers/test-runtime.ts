@@ -129,9 +129,9 @@ const retainedPatternMemories: MemoryRecord[] = [
     "Use unknown-first parsing and explicit result-state narrowing for untrusted JSON or CLI inputs."
   ),
   retainedPatternMemory(
-    "consensus-relation-heartbeat-review-boundary",
-    "Consensus relation heartbeat review boundary",
-    "Use the consensus relation heartbeat review boundary for bounded consensus, relation, and heartbeat review work."
+    "consensus-relation-maintenance-review-boundary",
+    "Consensus relation maintenance review boundary",
+    "Use the consensus relation maintenance review boundary for bounded consensus, relation, and maintenance review work."
   ),
   retainedPatternMemory(
     "reference-implementation-recipe-clone-boundary",

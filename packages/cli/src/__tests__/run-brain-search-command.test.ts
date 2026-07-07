@@ -302,7 +302,7 @@ describe("runBrainSearchCommand", () => {
     });
   });
 
-  it("retries selected knowledge with a compact mechanism query after a heartbeat benchmark miss", async () => {
+  it("retries selected knowledge with a compact mechanism query after a maintenance benchmark miss", async () => {
     const knowledgeQueries: string[] = [];
     const result = await runBrainSearchCommand({
       cwd: "/repo",
@@ -313,7 +313,7 @@ describe("runBrainSearchCommand", () => {
       createId: (prefix) => `${prefix}-1`,
       command: {
         kind: "brainSearch",
-        query: "heartbeat dreaming source relation evidence",
+        query: "maintenance dreaming source relation evidence",
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         limit: 16,
@@ -323,17 +323,17 @@ describe("runBrainSearchCommand", () => {
       async runKnowledgeCards(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
-        if (runtime.filter.text === "heartbeat dreaming") {
+        if (runtime.filter.text === "maintenance dreaming") {
           return {
             stdout: JSON.stringify({
               returnedCards: 1,
               totalCards: 1,
               cards: [{
-                id: "pattern:heartbeat-candidate-only-runtime-boundary",
-                title: "Heartbeat candidate-only runtime boundary",
+                id: "pattern:maintenance-candidate-only-runtime-boundary",
+                title: "Maintenance candidate-only runtime boundary",
                 summary: "Heartbeat and dreaming work stays candidate-only before scheduler work.",
-                consumers: ["future heartbeat preview CLI/readback tests"],
-                falsifier: "A heartbeat slice adds automatic memory mutation.",
+                consumers: ["future maintenance preview CLI/readback tests"],
+                falsifier: "A maintenance slice adds automatic memory mutation.",
                 doesNotProve: "This does not prove autonomous dreaming.",
                 nextAction: "use"
               }],
@@ -386,17 +386,17 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(knowledgeQueries).toEqual([
-      "heartbeat dreaming source relation evidence",
-      "heartbeat dreaming"
+      "maintenance dreaming source relation evidence",
+      "maintenance dreaming"
     ]);
     expect(parsed).toMatchObject({
       brainKnowledgeQueries: [
-        "heartbeat dreaming source relation evidence",
-        "heartbeat dreaming"
+        "maintenance dreaming source relation evidence",
+        "maintenance dreaming"
       ],
       knowledgeCards: {
         selectedKnowledge: [{
-          id: "pattern:heartbeat-candidate-only-runtime-boundary"
+          id: "pattern:maintenance-candidate-only-runtime-boundary"
         }]
       },
       recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
@@ -1095,8 +1095,8 @@ describe("runBrainSearchCommand", () => {
                 label: "source_claim:190f1f72-4621-49b4-b93c-538ea2c581ef",
                 subjectId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
                 sourceClaimId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
-                claim: "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only.",
-                mechanism: "Accepted heartbeat review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
+                claim: "IMR-37 maintenance-routed activation utility candidate is accepted for manual source eval follow-up only.",
+                mechanism: "Accepted maintenance review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
                 krnImplication: "Natural source search should surface the retained follow-up evidence before opening new acquisition work.",
                 consumer: "IMR-40 natural source recall repair",
                 falsifier: "A small-limit natural source search cannot include this exact retained claim.",
@@ -1481,7 +1481,7 @@ describe("runBrainSearchCommand", () => {
       createId: (prefix) => `${prefix}-baseline`,
       command: {
         kind: "brainSearch",
-        query: "worker boundary maintenance contract",
+        query: "maintenance boundary maintenance contract",
         catalogFiles: [],
         storeOnly: false,
         limit: 4,
@@ -1540,7 +1540,7 @@ describe("runBrainSearchCommand", () => {
       createId: (prefix) => `${prefix}-source-grounded`,
       command: {
         kind: "brainSearch",
-        query: "worker boundary maintenance contract",
+        query: "maintenance boundary maintenance contract",
         catalogFiles: [],
         storeOnly: false,
         limit: 4,
@@ -1568,12 +1568,12 @@ describe("runBrainSearchCommand", () => {
               supportingClaims: [{
                 label: "source_claim:worker-boundary",
                 sourceClaimId: "worker-boundary",
-                claim: "Workers expose maintenance candidates, not Codex execution.",
-                mechanism: "Heartbeat previews surface reviewable maintenance work without mutating Memory Core.",
+                claim: "Maintenance preview exposes maintenance candidates, not Codex execution.",
+                mechanism: "Maintenance previews surface reviewable maintenance work without mutating Memory Core.",
                 krnImplication: "Worker guidance should block executor/runtime claims until plnv is resolved.",
                 consumer: "worker package decision",
-                falsifier: "Brain readback claims workers execute scheduled jobs.",
-                doesNotProve: "This does not prove worker runtime behavior."
+                falsifier: "Brain readback claims maintenance preview executes scheduled jobs.",
+                doesNotProve: "This does not prove maintenance runtime behavior."
               }],
               supportingDocuments: [{
                 label: "search_document:worker-boundary"
@@ -1599,7 +1599,7 @@ describe("runBrainSearchCommand", () => {
             },
             includedCandidates: [],
             proof: {
-              doesNotProve: ["source truth", "worker runtime behavior"]
+              doesNotProve: ["source truth", "maintenance runtime behavior"]
             }
           })
         };
@@ -1645,10 +1645,10 @@ describe("runBrainSearchCommand", () => {
       {
         query: "workers are candidate maintenance contracts not codex exec",
         claimId: "claim-workers-boundary",
-        claim: "Workers are candidate maintenance contracts, not Codex execution.",
-        mechanism: "Heartbeat previews produce candidate-only maintenance work and do not execute code.",
+        claim: "Maintenance preview exposes candidate maintenance contracts, not Codex execution.",
+        mechanism: "Maintenance previews produce candidate-only maintenance work and do not execute code.",
         krnImplication: "Brain answers about workers must not imply runtime enforcement before plnv.",
-        consumer: "worker boundary planning",
+        consumer: "maintenance boundary planning",
         falsifier: "A worker answer claims scheduler or executor behavior without plnv."
       },
       {

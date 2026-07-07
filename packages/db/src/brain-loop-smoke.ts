@@ -289,7 +289,7 @@ export const runBrainLoopSmokeCheck = async (
       title: "Use reviewed DB-backed brain loop memory",
       objective: "Prove persisted evidence and review can become reviewed Memory Core context for a next activation.",
       constraints: ["promote through MemoryReviewGate", "reuse promoted memory through activation"],
-      nonGoals: ["no activation scoring rewrite", "no worker runtime", "no schema migration"],
+      nonGoals: ["no activation scoring rewrite", "no maintenance runtime", "no schema migration"],
       acceptance: ["evidence readback", "reviewed memory promotion", "next activation includes memory"]
     },
     harnessPlan: {
@@ -342,7 +342,7 @@ export const runBrainLoopSmokeCheck = async (
         status: "passed",
         provenance: "operator_reported",
         assertedBy: "brain-loop-smoke",
-        doesNotProve: "This command does not prove product readiness, ranking quality, worker execution, or autonomous memory quality."
+        doesNotProve: "This command does not prove product readiness, ranking quality, maintenance execution, or autonomous memory quality."
       }],
       diffRisk: "low",
       reviewBurden: "DB smoke proof only.",
@@ -402,7 +402,7 @@ export const runBrainLoopSmokeCheck = async (
       claim: "A reviewed evidence bundle can become Memory Core context for a later activation.",
       mechanism: "Postgres persists evidence, review, feedback, a reviewable MemoryCandidate, MemoryReviewGate promotion, and activation trace readback.",
       krnImplication: "KRN can test the governed evidence-to-memory-to-activation loop against live DB repositories.",
-      doesNotProve: "This does not prove activation ranking quality, product readiness, worker runtime, or autonomous reflection quality.",
+      doesNotProve: "This does not prove activation ranking quality, product readiness, maintenance runtime, or autonomous reflection quality.",
       trustTier: "project-decision",
       supportType: "implementation-boundary",
       consumer: "E2E-02 brain loop smoke",
@@ -594,7 +594,7 @@ export const runBrainLoopSmokeCheck = async (
       taskContract: {
         title: "Reuse reviewed DB-backed brain loop memory",
         objective: "Automatically recall reviewed DB-backed brain loop memory in the next planning activation.",
-        constraints: ["use store-backed Memory Core", "do not create a worker runtime"],
+        constraints: ["use store-backed Memory Core", "do not create a maintenance runtime"],
         nonGoals: ["no dashboard", "no activation scoring rewrite"],
         acceptance: ["next planning activation includes or explicitly excludes the reviewed MemoryRecord"],
         metadata: {
@@ -688,7 +688,7 @@ export const runBrainLoopSmokeCheck = async (
       taskContract: {
         title: "Reject downgraded DB-backed brain loop memory",
         objective: "Show negative application feedback prevents hurt memory from re-entering activation context.",
-        constraints: ["use store-backed Memory Core", "do not create a worker runtime"],
+        constraints: ["use store-backed Memory Core", "do not create a maintenance runtime"],
         nonGoals: ["no dashboard", "no activation scoring rewrite"],
         acceptance: ["downgraded planning activation excludes the reviewed MemoryRecord"],
         metadata: {

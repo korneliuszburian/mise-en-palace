@@ -24,8 +24,8 @@ import {
   parseEvidenceArgs
 } from "./parse-evidence-args.js";
 import {
-  parseHeartbeatArgs
-} from "./parse-heartbeat-args.js";
+  parseMaintenancePreviewArgs
+} from "./parse-maintenance-preview-args.js";
 import {
   parseInitArgs
 } from "./parse-init-args.js";
@@ -112,7 +112,7 @@ export type CliCommand =
         | "brainLoop"
         | "brainSearch"
         | "runShow"
-        | "heartbeatWorkerBoundary"
+        | "maintenanceBoundary"
         | "codexAdapter"
         | "workerJobs"
         | "initConnect"
@@ -173,10 +173,10 @@ export type CliCommand =
       limit?: number;
     }
   | {
-      kind: "heartbeatPreviewHelp";
+      kind: "maintenancePreviewHelp";
     }
   | {
-      kind: "heartbeatPreview";
+      kind: "maintenancePreview";
       projectId?: string;
       memoryLimit?: number;
       sourceClaimLimit?: number;
@@ -530,7 +530,6 @@ const usage = [
   "krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "  legacy alias: krn knowledge cards ...",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
-  "  legacy alias: krn heartbeat preview ...",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
@@ -553,7 +552,7 @@ const usage = [
   "Internal/dev commands:",
   "krn db --help",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|heartbeat-worker-boundary|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "  note: DB readiness/smoke commands prove local runtime plumbing only; they are not product workflow or quality authority"
 ].join("\n");
 
@@ -584,8 +583,7 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
       : parseEvidenceArgs(rest),
   review: parseReviewArgs,
   knowledge: parseKnowledgeArgs,
-  heartbeat: parseHeartbeatArgs,
-  maintenance: parseHeartbeatArgs,
+  maintenance: parseMaintenancePreviewArgs,
   observe: parseObserveArgs,
   reflect: parseReflectArgs,
   codex: parseCodexArgs,

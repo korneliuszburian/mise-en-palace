@@ -159,10 +159,10 @@ expected compiler failure. It is normally a test-only tool.
 - renders Codex-facing artifacts;
 - does not own domain truth.
 
-`packages/workers`:
+`packages/maintenance-preview`:
 
-- owns bounded job contracts/skeletons only until execution slices explicitly
-  accept runtime worker behavior.
+- owns bounded maintenance job contracts and readbacks only;
+- must not imply autonomous scheduler, daemon, or runtime worker behavior.
 
 ## Boundary Verification
 

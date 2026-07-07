@@ -38,7 +38,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("KRN Brain Knowledge Readback");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Source: explicit files");
+    expect(result.stdout).toContain("Source: explicit_files");
     expect(result.stdout).toContain("Results: 1");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
@@ -209,20 +209,20 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:brain-knowledge-read-only-ui-boundary");
     expect(result.stdout).toContain("pattern:codex-hook-deterministic-guardrail-boundary");
     expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
-    expect(result.stdout).toContain("pattern:consensus-relation-heartbeat-review-boundary");
+    expect(result.stdout).toContain("pattern:consensus-relation-maintenance-review-boundary");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
     expect(result.stdout).toContain("pattern:graph-relation-readback-boundary");
-    expect(result.stdout).toContain("pattern:heartbeat-candidate-only-runtime-boundary");
+    expect(result.stdout).toContain("pattern:maintenance-candidate-only-runtime-boundary");
     expect(result.stdout).toContain("pattern:target-repo-write-authority-boundary");
     expect(result.stdout).toContain("pattern:untrusted-context-warning-boundary");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Brain knowledge UI/search remains read-only until usefulness proof");
     expect(result.stdout).toContain("Codex hook deterministic guardrail boundary");
     expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
-    expect(result.stdout).toContain("Consensus relation heartbeat review boundary");
+    expect(result.stdout).toContain("Consensus relation maintenance review boundary");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Graph relation readback boundary");
-    expect(result.stdout).toContain("Heartbeat candidate-only runtime boundary");
+    expect(result.stdout).toContain("Maintenance candidate-only runtime boundary");
     expect(result.stdout).toContain("Source-to-decision retention gate");
     expect(result.stdout).toContain("Target repo writes require explicit authority and rollback");
     expect(result.stdout).toContain("Untrusted selected context is labeled before Codex use");
@@ -399,38 +399,38 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the heartbeat candidate-only runtime pattern through the catalog", async () => {
+  it("searches the maintenance candidate-only runtime pattern through the catalog", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "heartbeat scheduler daemon automatic memory source mutation"
+        text: "maintenance scheduler daemon automatic memory source mutation"
       },
       format: "json"
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual(["pattern:heartbeat-candidate-only-runtime-boundary"]);
+    expect(cardIds(preview)).toEqual(["pattern:maintenance-candidate-only-runtime-boundary"]);
     expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the consensus relation heartbeat review pattern through the catalog", async () => {
+  it("searches the consensus relation maintenance review pattern through the catalog", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "consensus relation heartbeat review boundary"
+        text: "consensus relation maintenance review boundary"
       },
       format: "json"
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual(["pattern:consensus-relation-heartbeat-review-boundary"]);
+    expect(cardIds(preview)).toEqual(["pattern:consensus-relation-maintenance-review-boundary"]);
     expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(preview.mutation).toBe("none");
   });
@@ -738,7 +738,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "workers are not codex exec candidate maintenance contracts plnv"
+        text: "maintenance preview not Codex exec candidate contracts"
       },
       format: "json"
     });
@@ -779,11 +779,11 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:brain-knowledge-read-only-ui-boundary",
       "pattern:codex-hook-deterministic-guardrail-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
-      "pattern:consensus-relation-heartbeat-review-boundary",
+      "pattern:consensus-relation-maintenance-review-boundary",
       "pattern:cost-aware-acquisition-escalation-boundary",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
-      "pattern:heartbeat-candidate-only-runtime-boundary",
+      "pattern:maintenance-candidate-only-runtime-boundary",
       "pattern:krn-brain-layer-model-boundary",
       "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",

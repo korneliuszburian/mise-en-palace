@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessMaintenanceJobWriteBoundary,
-  buildBrainHeartbeatPreview,
+  buildMaintenancePreview,
   buildMaintenanceCandidatePreview,
   buildMaintenanceJobWriteBoundaryReadback,
   describeMaintenanceJob,
@@ -196,7 +196,7 @@ describe("maintenance worker skeleton", () => {
     );
   });
 
-  test("describes write boundary before any worker runtime exists", () => {
+  test("describes write boundary before any maintenance runtime exists", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 
     expect(descriptions).toEqual(
@@ -227,7 +227,7 @@ describe("maintenance worker skeleton", () => {
     );
   });
 
-  test("routes maintenance candidate preview through the legacy heartbeat builder", () => {
+  test("routes maintenance candidate preview through the maintenance preview builder", () => {
     const input = {
       now: isoNow,
       memoryRecords: [],
@@ -236,10 +236,10 @@ describe("maintenance worker skeleton", () => {
       evidenceRef: "worker-test"
     } as const;
 
-    expect(buildMaintenanceCandidatePreview(input)).toEqual(buildBrainHeartbeatPreview(input));
+    expect(buildMaintenanceCandidatePreview(input)).toEqual(buildMaintenancePreview(input));
   });
 
-  test("builds a worker boundary readback for heartbeat candidates", () => {
+  test("builds a maintenance boundary readback for maintenance candidates", () => {
     expect(buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory")).toEqual({
       jobType: "expire_stale_memory",
       memoryCoreGate: "must_create_reviewed_invalidation_candidate",
@@ -257,7 +257,7 @@ describe("maintenance worker skeleton", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Declared worker write boundary does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+        "Declared worker write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
     });
   });
 

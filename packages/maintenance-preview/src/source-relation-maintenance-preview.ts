@@ -14,28 +14,28 @@ import type {
   SourceRelationReviewFocus
 } from "@krn/core";
 
-export type SourceRelationHeartbeatCandidateReason =
+export type SourceRelationMaintenanceCandidateReason =
   | "relation_needs_review"
   | "relation_evidence_is_weak"
   | "connected_claim_is_stale";
 
-export type SourceRelationHeartbeatAction =
+export type SourceRelationMaintenanceAction =
   | "review_source_relation"
   | "review_relation_evidence"
   | "review_stale_connected_claim";
 
-export type SourceRelationHeartbeatReviewFocus = SourceRelationReviewFocus;
+export type SourceRelationMaintenanceReviewFocus = SourceRelationReviewFocus;
 
-export interface SourceRelationHeartbeatCandidate {
+export interface SourceRelationMaintenanceCandidate {
   id: string;
   kind: "source_relation_maintenance_candidate";
-  action: SourceRelationHeartbeatAction;
-  reason: SourceRelationHeartbeatCandidateReason;
+  action: SourceRelationMaintenanceAction;
+  reason: SourceRelationMaintenanceCandidateReason;
   sourceClaimEdgeId: SourceClaimEdge["id"];
   fromSourceClaimId: SourceClaimEdge["fromSourceClaimId"];
   toSourceClaimId: SourceClaimEdge["toSourceClaimId"];
   edgeKind: SourceClaimEdgeKind;
-  relationReviewFocus: SourceRelationHeartbeatReviewFocus;
+  relationReviewFocus: SourceRelationMaintenanceReviewFocus;
   relationReviewQuestion: string;
   summary: string;
   applicationGuidance: string;
@@ -54,7 +54,7 @@ export interface SourceRelationHeartbeatCandidate {
   ];
 }
 
-export interface BuildSourceRelationHeartbeatPreviewInput {
+export interface BuildSourceRelationMaintenancePreviewInput {
   now: IsoTimestamp;
   sourceClaims: readonly SourceClaim[];
   sourceClaimEdges: readonly SourceClaimEdge[];
@@ -62,9 +62,9 @@ export interface BuildSourceRelationHeartbeatPreviewInput {
   maxCandidates?: number;
 }
 
-export interface SourceRelationHeartbeatPreview {
+export interface SourceRelationMaintenancePreview {
   generatedAt: IsoTimestamp;
-  candidates: readonly SourceRelationHeartbeatCandidate[];
+  candidates: readonly SourceRelationMaintenanceCandidate[];
   skippedEdgeCount: number;
   mutation: "none";
   proof: string;
@@ -87,7 +87,7 @@ const forbiddenWrites = [
 ] as const;
 
 const previewDoesNotProve =
-  "Source-relation heartbeat preview does not prove source truth, edge correctness, production graph retrieval quality, autonomous worker execution, or Memory Core mutation.";
+  "Source-relation maintenance preview does not prove source truth, edge correctness, production graph retrieval quality, autonomous maintenance execution, or Memory Core mutation.";
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
@@ -97,8 +97,8 @@ const relationReviewFocusByReason = {
   connected_claim_is_stale: "stale_connected_claim",
   relation_evidence_is_weak: "relation_evidence"
 } as const satisfies Record<
-  SourceRelationHeartbeatCandidateReason,
-  SourceRelationHeartbeatReviewFocus | undefined
+  SourceRelationMaintenanceCandidateReason,
+  SourceRelationMaintenanceReviewFocus | undefined
 >;
 
 const relationReviewFocusByEdgeKind = {
@@ -111,7 +111,7 @@ const relationReviewFocusByEdgeKind = {
   narrows: "relation_evidence",
   invalidates: "invalidation",
   expires: "expiration"
-} as const satisfies Record<SourceClaimEdgeKind, SourceRelationHeartbeatReviewFocus>;
+} as const satisfies Record<SourceClaimEdgeKind, SourceRelationMaintenanceReviewFocus>;
 
 const relationReviewQuestionByFocus = {
   contradiction:
@@ -128,16 +128,16 @@ const relationReviewQuestionByFocus = {
     "Review concrete SourceClaimEdge evidence before accepting relation maintenance.",
   stale_connected_claim:
     "Review connected SourceClaim validity before relying on this source relation."
-} as const satisfies Record<SourceRelationHeartbeatReviewFocus, string>;
+} as const satisfies Record<SourceRelationMaintenanceReviewFocus, string>;
 
 const relationReviewFocusFor = (
-  reason: SourceRelationHeartbeatCandidateReason,
+  reason: SourceRelationMaintenanceCandidateReason,
   edgeKind: SourceClaimEdgeKind
-): SourceRelationHeartbeatReviewFocus =>
+): SourceRelationMaintenanceReviewFocus =>
   relationReviewFocusByReason[reason] ?? relationReviewFocusByEdgeKind[edgeKind];
 
 const relationReviewQuestionFor = (
-  focus: SourceRelationHeartbeatReviewFocus
+  focus: SourceRelationMaintenanceReviewFocus
 ): string => relationReviewQuestionByFocus[focus];
 
 const claimMapById = (
@@ -146,12 +146,12 @@ const claimMapById = (
   new Map(claims.map((claim) => [claim.id, claim]));
 
 const buildCandidate = (
-  input: BuildSourceRelationHeartbeatPreviewInput,
+  input: BuildSourceRelationMaintenancePreviewInput,
   edge: SourceClaimEdge,
-  reason: SourceRelationHeartbeatCandidateReason,
-  action: SourceRelationHeartbeatAction,
+  reason: SourceRelationMaintenanceCandidateReason,
+  action: SourceRelationMaintenanceAction,
   relationEvidenceRefs: readonly string[]
-): SourceRelationHeartbeatCandidate => {
+): SourceRelationMaintenanceCandidate => {
   const relationEvidenceRequest = relationEvidenceRefs.length === 0
     ? "Capture concrete SourceClaimEdge evidenceRefs before accepting relation maintenance."
     : "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance.";
@@ -173,7 +173,7 @@ const buildCandidate = (
   });
 
   return {
-    id: `source-relation-heartbeat:${edge.id}:${reason}`,
+    id: `source-relation-maintenance:${edge.id}:${reason}`,
     kind: "source_relation_maintenance_candidate",
     action,
     reason,
@@ -218,11 +218,11 @@ const connectedClaimIsStale = (
 };
 
 const chooseCandidateKind = (
-  input: BuildSourceRelationHeartbeatPreviewInput,
+  input: BuildSourceRelationMaintenancePreviewInput,
   edge: SourceClaimEdge,
   claimsById: ReadonlyMap<SourceClaimId, SourceClaim>,
   relationMetadata: SourceRelationMetadataReadback
-): Pick<SourceRelationHeartbeatCandidate, "action" | "reason"> | undefined => {
+): Pick<SourceRelationMaintenanceCandidate, "action" | "reason"> | undefined => {
   if (connectedClaimIsStale(edge, claimsById, input.now)) {
     return {
       action: "review_stale_connected_claim",
@@ -247,12 +247,12 @@ const chooseCandidateKind = (
   return undefined;
 };
 
-export const buildSourceRelationHeartbeatPreview = (
-  input: BuildSourceRelationHeartbeatPreviewInput
-): SourceRelationHeartbeatPreview => {
+export const buildSourceRelationMaintenancePreview = (
+  input: BuildSourceRelationMaintenancePreviewInput
+): SourceRelationMaintenancePreview => {
   const claimsById = claimMapById(input.sourceClaims);
   const maxCandidates = Math.max(0, input.maxCandidates ?? input.sourceClaimEdges.length);
-  const candidates: SourceRelationHeartbeatCandidate[] = [];
+  const candidates: SourceRelationMaintenanceCandidate[] = [];
 
   if (maxCandidates === 0) {
     return {
@@ -261,7 +261,7 @@ export const buildSourceRelationHeartbeatPreview = (
       skippedEdgeCount: input.sourceClaimEdges.length,
       mutation: "none",
       proof:
-        "Source-relation heartbeat preview inspects SourceClaimEdge rows and connected SourceClaims to propose reviewable maintenance candidates only.",
+        "Source-relation maintenance preview inspects SourceClaimEdge rows and connected SourceClaims to propose reviewable maintenance candidates only.",
       doesNotProve: previewDoesNotProve
     };
   }
@@ -295,7 +295,7 @@ export const buildSourceRelationHeartbeatPreview = (
     skippedEdgeCount: input.sourceClaimEdges.length - candidates.length,
     mutation: "none",
     proof:
-      "Source-relation heartbeat preview inspects SourceClaimEdge rows and connected SourceClaims to propose reviewable maintenance candidates only.",
+      "Source-relation maintenance preview inspects SourceClaimEdge rows and connected SourceClaims to propose reviewable maintenance candidates only.",
     doesNotProve: previewDoesNotProve
   };
 };

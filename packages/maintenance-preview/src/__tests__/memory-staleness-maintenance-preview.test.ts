@@ -6,12 +6,12 @@ import type {
 import { describe, expect, test } from "vitest";
 
 import {
-  buildMemoryStalenessHeartbeatPreview
-} from "../memory-staleness-heartbeat-preview.js";
+  buildMemoryStalenessMaintenancePreview
+} from "../memory-staleness-maintenance-preview.js";
 
 const now = "2026-06-29T05:00:00.000Z";
 const evidenceRef =
-  "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md";
+  "docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-maintenance-candidate-preview/REPORT.md";
 
 const memoryRecord = (
   id: string,
@@ -23,13 +23,13 @@ const memoryRecord = (
   kind: "pattern",
   status: "active",
   summary: `Memory ${id}`,
-  body: "A bounded memory record for heartbeat preview tests.",
+  body: "A bounded memory record for maintenance preview tests.",
   owner: "krn",
   confidence: 90,
   applicationGuidance: "Use only when current evidence still supports this memory.",
   invalidationRule: "Revisit when current evidence supersedes this memory.",
   sourceLineage: [{
-    sourceId: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+    sourceId: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
   }],
   isUserPreference: false,
   positiveFeedbackCount: 1,
@@ -41,9 +41,9 @@ const memoryRecord = (
   ...overrides
 });
 
-describe("memory staleness heartbeat preview", () => {
+describe("memory staleness maintenance preview", () => {
   test("proposes a reviewable invalidation candidate for expired memory without mutation", () => {
-    const result = buildMemoryStalenessHeartbeatPreview({
+    const result = buildMemoryStalenessMaintenancePreview({
       now,
       memoryRecords: [
         memoryRecord("memory-expired", {
@@ -57,12 +57,12 @@ describe("memory staleness heartbeat preview", () => {
     expect(result.doesNotProve).toContain("Memory Core mutation");
     expect(result.candidates).toEqual([
       expect.objectContaining({
-        id: "memory-staleness-heartbeat:memory-expired:expired_memory",
+        id: "memory-staleness-maintenance:memory-expired:expired_memory",
         kind: "memory_staleness_maintenance_candidate",
         action: "review_memory_invalidation",
         reason: "expired_memory",
         reviewability: "ready",
-        workerWriteBoundary: expect.objectContaining({
+        maintenanceWriteBoundary: expect.objectContaining({
           jobType: "expire_stale_memory",
           memoryCoreGate: "must_create_reviewed_invalidation_candidate",
           status: "passed",
@@ -92,12 +92,12 @@ describe("memory staleness heartbeat preview", () => {
     ]);
     expect(result.candidates[0]?.evidenceRefs).toContain(evidenceRef);
     expect(result.candidates[0]?.sourceLineageRefs).toEqual([
-      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+      "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-maintenance-candidate-preview/REPORT.md"
     ]);
   });
 
   test("proposes near-expiry memory review before it becomes stale", () => {
-    const result = buildMemoryStalenessHeartbeatPreview({
+    const result = buildMemoryStalenessMaintenancePreview({
       now,
       nearExpiryDays: 7,
       memoryRecords: [
@@ -118,7 +118,7 @@ describe("memory staleness heartbeat preview", () => {
   });
 
   test("uses existing memory review signals for stale high-confidence memory", () => {
-    const result = buildMemoryStalenessHeartbeatPreview({
+    const result = buildMemoryStalenessMaintenancePreview({
       now,
       memoryRecords: [
         memoryRecord("memory-stale-high-confidence", {
@@ -139,7 +139,7 @@ describe("memory staleness heartbeat preview", () => {
   });
 
   test("routes repeated negative feedback to memory feedback review", () => {
-    const result = buildMemoryStalenessHeartbeatPreview({
+    const result = buildMemoryStalenessMaintenancePreview({
       now,
       memoryRecords: [
         memoryRecord("memory-negative-feedback", {
@@ -163,7 +163,7 @@ describe("memory staleness heartbeat preview", () => {
       validUntil: "2026-08-01T00:00:00.000Z"
     });
 
-    const healthyResult = buildMemoryStalenessHeartbeatPreview({
+    const healthyResult = buildMemoryStalenessMaintenancePreview({
       now,
       memoryRecords: [healthy],
       evidenceRef
@@ -172,7 +172,7 @@ describe("memory staleness heartbeat preview", () => {
     expect(healthyResult.candidates).toEqual([]);
     expect(healthyResult.skippedMemoryCount).toBe(1);
 
-    const disabledResult = buildMemoryStalenessHeartbeatPreview({
+    const disabledResult = buildMemoryStalenessMaintenancePreview({
       now,
       memoryRecords: [
         memoryRecord("memory-expired", {

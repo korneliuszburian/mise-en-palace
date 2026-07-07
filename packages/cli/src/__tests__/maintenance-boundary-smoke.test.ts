@@ -37,17 +37,17 @@ const readRootPackageJson = async (
 };
 
 describe("runCli", () => {
-  it("exposes the heartbeat worker boundary smoke script", async () => {
+  it("exposes the maintenance boundary smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const packageJson = await readRootPackageJson(repoRoot);
 
-    expect(packageJson.scripts?.["db:smoke:heartbeat-worker-boundary"]).toBe(
-      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke heartbeat-worker-boundary"
+    expect(packageJson.scripts?.["db:smoke:maintenance-boundary"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke maintenance-boundary"
     );
   });
 
-  it("reports heartbeat worker boundary smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "heartbeat-worker-boundary"], {
+  it("reports maintenance boundary smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "maintenance-boundary"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -55,10 +55,10 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Heartbeat Worker Boundary Smoke");
+    expect(result.stdout).toContain("KRN Maintenance Boundary Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
     expect(result.stdout).toContain(
-      "Heartbeat worker boundary smoke: skipped (database not configured)"
+      "Maintenance boundary smoke: skipped (database not configured)"
     );
   });
 });

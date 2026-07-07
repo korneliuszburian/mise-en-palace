@@ -5,12 +5,12 @@ import {
 } from "vitest";
 
 import {
-  parseHeartbeatArgs
-} from "../parse-heartbeat-args.js";
+  parseMaintenancePreviewArgs
+} from "../parse-maintenance-preview-args.js";
 
-describe("parseHeartbeatArgs", () => {
-  it("parses heartbeat preview options", () => {
-    expect(parseHeartbeatArgs([
+describe("parseMaintenancePreviewArgs", () => {
+  it("parses maintenance preview options", () => {
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--project",
       "project-1",
@@ -45,7 +45,7 @@ describe("parseHeartbeatArgs", () => {
       "--json"
     ])).toEqual({
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         projectId: "project-1",
         memoryLimit: 5,
         sourceClaimLimit: 7,
@@ -68,28 +68,28 @@ describe("parseHeartbeatArgs", () => {
   });
 
   it("defaults to text preview", () => {
-    expect(parseHeartbeatArgs(["preview"])).toEqual({
+    expect(parseMaintenancePreviewArgs(["preview"])).toEqual({
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         format: "text"
       }
     });
   });
 
   it("rejects invalid numeric options", () => {
-    expect(parseHeartbeatArgs(["preview", "--max-candidates", "0"])).toEqual({
+    expect(parseMaintenancePreviewArgs(["preview", "--max-candidates", "0"])).toEqual({
       error: expect.stringContaining("--max-candidates must be a positive integer")
     });
   });
 
   it("rejects empty project", () => {
-    expect(parseHeartbeatArgs(["preview", "--project", " "])).toEqual({
+    expect(parseMaintenancePreviewArgs(["preview", "--project", " "])).toEqual({
       error: expect.stringContaining("--project cannot be empty")
     });
   });
 
   it("rejects empty acquisition readback file", () => {
-    expect(parseHeartbeatArgs([
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--acquisition-readback-file",
       " "
@@ -99,7 +99,7 @@ describe("parseHeartbeatArgs", () => {
   });
 
   it("rejects empty consensus candidate file", () => {
-    expect(parseHeartbeatArgs([
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--consensus-candidate-file",
       " "
@@ -109,7 +109,7 @@ describe("parseHeartbeatArgs", () => {
   });
 
   it("rejects unknown candidate kind", () => {
-    expect(parseHeartbeatArgs([
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--candidate-kind",
       "all"
@@ -119,7 +119,7 @@ describe("parseHeartbeatArgs", () => {
   });
 
   it("requires complete candidate review input", () => {
-    expect(parseHeartbeatArgs([
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--review-candidate-id",
       "candidate-1",
@@ -131,7 +131,7 @@ describe("parseHeartbeatArgs", () => {
   });
 
   it("rejects unknown candidate review decisions", () => {
-    expect(parseHeartbeatArgs([
+    expect(parseMaintenancePreviewArgs([
       "preview",
       "--review-candidate-id",
       "candidate-1",

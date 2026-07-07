@@ -57,10 +57,10 @@ describe("parseDbArgs", () => {
         target: "runShow"
       }
     });
-    expect(parseDbArgs(["smoke", "heartbeat-worker-boundary"])).toEqual({
+    expect(parseDbArgs(["smoke", "maintenance-boundary"])).toEqual({
       command: {
         kind: "dbSmoke",
-        target: "heartbeatWorkerBoundary"
+        target: "maintenanceBoundary"
       }
     });
   });

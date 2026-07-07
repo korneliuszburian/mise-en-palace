@@ -820,8 +820,8 @@ describe("runSourceSearchCommand", () => {
   it("scans enough source claims before ranking bounded source-search output", async () => {
     const exactClaim = sourceClaim({
       id: "190f1f72-4621-49b4-b93c-538ea2c581ef" as SourceClaim["id"],
-      claim: "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only.",
-      mechanism: "Accepted heartbeat review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
+      claim: "IMR-37 maintenance-routed activation utility candidate is accepted for manual source eval follow-up only.",
+      mechanism: "Accepted maintenance review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
       krnImplication: "Natural source search should surface the retained follow-up evidence before opening new acquisition work.",
       consumer: "IMR-40 natural source recall repair",
       falsifier: "A small-limit natural source search cannot include this exact retained claim."
@@ -845,7 +845,7 @@ describe("runSourceSearchCommand", () => {
       createId: (prefix) => `${prefix}-1`,
       command: {
         kind: "sourceSearch",
-        query: "IMR-37 heartbeat-routed activation utility candidate accepted manual source eval follow-up",
+        query: "IMR-37 maintenance-routed activation utility candidate accepted manual source eval follow-up",
         limit: 2,
         maxInclusions: 2,
         json: true
@@ -862,7 +862,7 @@ describe("runSourceSearchCommand", () => {
 
     expect(firstClaim.sourceClaimId).toBe("190f1f72-4621-49b4-b93c-538ea2c581ef");
     expect(firstClaim.claim).toBe(
-      "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only."
+      "IMR-37 maintenance-routed activation utility candidate is accepted for manual source eval follow-up only."
     );
   });
 

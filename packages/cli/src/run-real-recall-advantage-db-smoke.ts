@@ -96,17 +96,17 @@ const realDecisions: readonly RealRecallAdvantageDecision[] = [
     standardId: "standard:worker-contract-readback-only",
     query: "should KRN build a worker daemon or background loop for memory maintenance",
     claim:
-      "KRN workers must stay contract and readback only; reject a worker daemon, background loop, or job executor until a named product loop requires runtime execution.",
+      "KRN maintenance preview must stay contract and readback only; reject a worker daemon, background loop, or job executor until a named product loop requires runtime execution.",
     mechanism:
-      "A contract and readback only workers package keeps memory maintenance candidate-only and reviewable instead of implying an autonomous worker daemon, background loop, or job executor.",
+      "A contract and readback only maintenance-preview package keeps memory maintenance candidate-only and reviewable instead of implying an autonomous worker daemon, background loop, or job executor.",
     implication:
       "When asked whether to build a worker daemon or background loop for memory maintenance, KRN should select the contract and readback only decision.",
-    consumer: "worker runtime boundary",
+    consumer: "maintenance runtime boundary",
     falsifier:
       "A KRN slice adds a worker daemon, background loop, scheduler, or job executor without a named product loop that requires runtime execution.",
-    doesNotProve: "This does not prove the workers package will never need an executor.",
+    doesNotProve: "This does not prove the maintenance-preview package will never need an executor.",
     expectedDecision:
-      "Keep workers contract and readback only; do not build a worker daemon, background loop, or job executor without a named product loop.",
+      "Keep maintenance preview contract and readback only; do not build a worker daemon, background loop, or job executor without a named product loop.",
     distractorClaim:
       "KRN should run an automatic worker daemon and background loop for memory maintenance so the maintenance loop stays always running without operator action.",
     distractorSearchText:

@@ -74,7 +74,7 @@ KRN is a monorepo, not a monolith.
 - `packages/db` owns persistence.
 - `packages/cli` owns terminal/env/filesystem adapters.
 - `packages/codex-adapter` owns Codex-facing rendering.
-- `packages/workers` owns bounded job contracts until runtime worker behavior is explicitly accepted.
+- `packages/maintenance-preview` owns bounded maintenance job contracts and readbacks, not autonomous runtime behavior.
 
 Do not collapse these boundaries for convenience. If a function needs DB and CLI and domain policy at once, the design is probably hiding an adapter seam.
 
@@ -151,4 +151,3 @@ Do not merge:
 - file-backed runtime memory;
 - hidden chain-of-thought storage;
 - dashboard/API/MCP surfaces before their accepted gates.
-

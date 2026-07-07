@@ -30,8 +30,8 @@ import {
   formatReviewAssessUsage
 } from "./parse-review-args.js";
 import {
-  formatHeartbeatUsage
-} from "./parse-heartbeat-args.js";
+  formatMaintenancePreviewUsage
+} from "./parse-maintenance-preview-args.js";
 import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
@@ -146,7 +146,7 @@ const helpRenderers = {
   sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
   knowledgeCardsHelp: formatKnowledgeUsage,
-  heartbeatPreviewHelp: formatHeartbeatUsage,
+  maintenancePreviewHelp: formatMaintenancePreviewUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
   memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,

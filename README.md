@@ -50,7 +50,7 @@ mechanisms.
 ## Built
 
 - Strict pnpm TypeScript workspace with
-  `core/db/harness/codex-adapter/cli/workers` packages.
+  `core/db/harness/codex-adapter/cli/maintenance-preview` packages.
 - PostgreSQL/pgvector-oriented brain-store schema, migrations, repositories,
   readiness checks, and DB smoke commands.
 - CLI surfaces for planning, doctor/readiness, evidence capture, Codex brief

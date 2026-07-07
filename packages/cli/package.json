@@ -22,7 +22,7 @@
     "@krn/core": "workspace:*",
     "@krn/db": "workspace:*",
     "@krn/harness": "workspace:*",
-    "@krn/workers": "workspace:*",
+    "@krn/maintenance-preview": "workspace:*",
     "postgres": "^3.4.9"
   },
   "devDependencies": {

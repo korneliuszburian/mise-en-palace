@@ -693,7 +693,7 @@ export const deriveWorkerJobReadiness = (
   if (redisKafkaPresent || daemonPresent) {
     return {
       label: "Worker job readiness",
-      status: "blocked (forbidden worker runtime present)"
+      status: "blocked (forbidden maintenance runtime present)"
     };
   }
 

@@ -23,8 +23,8 @@ import type {
 } from "@krn/core";
 
 import {
-  runHeartbeatPreviewCommand
-} from "../run-heartbeat-preview-command.js";
+  runMaintenancePreviewCommand
+} from "../run-maintenance-preview-command.js";
 
 const now = "2026-06-30T12:00:00.000Z";
 const projectId = "11111111-1111-4111-8111-111111111111" as ProjectId;
@@ -37,7 +37,7 @@ const writeJsonFixture = async (
   name: string,
   value: unknown
 ): Promise<{ cwd: string; fileName: string; cleanup: () => Promise<void> }> => {
-  const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-readback-"));
+  const cwd = await mkdtemp(path.join(tmpdir(), "krn-maintenance-readback-"));
   const fileName = name;
 
   await writeFile(path.join(cwd, fileName), JSON.stringify(value, null, 2), "utf8");
@@ -70,14 +70,14 @@ const createEmptyDatabaseRuntime = async () => ({
 const memoryRecord: MemoryRecord = {
   id: memoryRecordId,
   projectId,
-  key: "heartbeat-preview-memory",
+  key: "maintenance-preview-memory",
   kind: "pattern",
   status: "active",
-  summary: "Heartbeat preview should inspect stale or near-expiry memory.",
-  body: "A bounded memory record for heartbeat CLI readback.",
+  summary: "Maintenance preview should inspect stale or near-expiry memory.",
+  body: "A bounded memory record for maintenance CLI readback.",
   owner: "krn",
   confidence: 80,
-  applicationGuidance: "Use for heartbeat preview tests only.",
+  applicationGuidance: "Use for maintenance preview tests only.",
   invalidationRule: "Refresh before July 2026.",
   sourceLineage: [
     {
@@ -102,12 +102,12 @@ const sourceClaim = (
   id,
   sourceArtifactId: `${id}-artifact` as SourceArtifactId,
   claim,
-  mechanism: "SourceClaimEdge rows can produce heartbeat maintenance candidates.",
+  mechanism: "SourceClaimEdge rows can produce maintenance candidates.",
   krnImplication: "Operators need relation maintenance readback before autonomous graph maintenance.",
   doesNotProve: "This does not prove source truth.",
   trustTier: "project-decision",
   supportType: "implementation-boundary",
-  consumer: "heartbeat preview test",
+  consumer: "maintenance preview test",
   status: "accepted",
   metadata: {},
   createdAt: now,
@@ -120,15 +120,15 @@ const sourceClaimEdge: SourceClaimEdge = {
   toSourceClaimId: relatedSourceClaimId,
   kind: "supports",
   metadata: {
-    consumer: "heartbeat preview test"
+    consumer: "maintenance preview test"
   },
   createdAt: now
 };
 
-describe("runHeartbeatPreviewCommand", () => {
-  it("renders read-only heartbeat candidates from persisted memory and source state", async () => {
+describe("runMaintenancePreviewCommand", () => {
+  it("renders read-only maintenance candidates from persisted memory and source state", async () => {
     let closeCount = 0;
-    const result = await runHeartbeatPreviewCommand({
+    const result = await runMaintenancePreviewCommand({
       cwd: "/repo",
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -136,7 +136,7 @@ describe("runHeartbeatPreviewCommand", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         projectId,
         memoryLimit: 5,
         sourceClaimLimit: 5,
@@ -163,8 +163,8 @@ describe("runHeartbeatPreviewCommand", () => {
             expect(readProjectId).toBe(projectId);
             expect(limit).toBe(5);
             return [
-              sourceClaim(sourceClaimId, "Heartbeat preview can inspect source edges."),
-              sourceClaim(relatedSourceClaimId, "Heartbeat preview can inspect related claims.")
+              sourceClaim(sourceClaimId, "Maintenance preview can inspect source edges."),
+              sourceClaim(relatedSourceClaimId, "Maintenance preview can inspect related claims.")
             ];
           },
           async listSourceClaimEdgesForClaim(id) {
@@ -186,8 +186,8 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("decision: needs_more_evidence");
     expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
     expect(result.stdout).toContain("candidateIds:");
-    expect(result.stdout).toContain(`memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
-    expect(result.stdout).toContain(`source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
+    expect(result.stdout).toContain(`memory-staleness-maintenance:${memoryRecordId}:near_expiry_memory`);
+    expect(result.stdout).toContain(`source-relation-maintenance:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("Candidate routing:");
     expect(result.stdout).toContain("mode: manual_candidate_only");
     expect(result.stdout).toContain("status: needs_candidate_evidence");
@@ -198,11 +198,11 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("memoryRecords: 1");
     expect(result.stdout).toContain("sourceClaims: 2");
     expect(result.stdout).toContain("sourceClaimEdges: 1");
-    expect(result.stdout).toContain(`candidate: memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
-    expect(result.stdout).toContain(`candidate: source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
+    expect(result.stdout).toContain(`candidate: memory-staleness-maintenance:${memoryRecordId}:near_expiry_memory`);
+    expect(result.stdout).toContain(`candidate: source-relation-maintenance:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("reviewability:");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
-    expect(result.stdout).toContain("workerWriteBoundary:");
+    expect(result.stdout).toContain("maintenanceWriteBoundary:");
     expect(result.stdout).toContain("jobType: expire_stale_memory");
     expect(result.stdout).toContain("memoryCoreGate: must_create_reviewed_invalidation_candidate");
     expect(result.stdout).toContain("status: passed");
@@ -226,21 +226,21 @@ describe("runHeartbeatPreviewCommand", () => {
   });
 
   it("requires database configuration", async () => {
-    await expect(runHeartbeatPreviewCommand({
+    await expect(runMaintenancePreviewCommand({
       cwd: "/repo",
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         format: "text"
       }
-    })).rejects.toThrow("KRN_DATABASE_URL is required for krn heartbeat preview");
+    })).rejects.toThrow("KRN_DATABASE_URL is required for krn maintenance preview");
   });
 
   it("renders a manual candidate review result without mutating truth", async () => {
-    const candidateId = `source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`;
-    const result = await runHeartbeatPreviewCommand({
+    const candidateId = `source-relation-maintenance:${sourceClaimEdgeId}:relation_evidence_is_weak`;
+    const result = await runMaintenancePreviewCommand({
       cwd: "/repo",
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -248,7 +248,7 @@ describe("runHeartbeatPreviewCommand", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         projectId,
         memoryLimit: 0,
         sourceClaimLimit: 2,
@@ -273,8 +273,8 @@ describe("runHeartbeatPreviewCommand", () => {
         sourceRepository: {
           async listClaimsForProject() {
             return [
-              sourceClaim(sourceClaimId, "Heartbeat preview can inspect source edges."),
-              sourceClaim(relatedSourceClaimId, "Heartbeat preview can inspect related claims.")
+              sourceClaim(sourceClaimId, "Maintenance preview can inspect source edges."),
+              sourceClaim(relatedSourceClaimId, "Maintenance preview can inspect related claims.")
             ];
           },
           async listSourceClaimEdgesForClaim() {
@@ -298,7 +298,7 @@ describe("runHeartbeatPreviewCommand", () => {
   });
 
   it("renders nextAction in json output", async () => {
-    const result = await runHeartbeatPreviewCommand({
+    const result = await runMaintenancePreviewCommand({
       cwd: "/repo",
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -306,14 +306,14 @@ describe("runHeartbeatPreviewCommand", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       command: {
-        kind: "heartbeatPreview",
+        kind: "maintenancePreview",
         projectId,
         memoryLimit: 1,
         sourceClaimLimit: 0,
         maxCandidates: 1,
         evidenceRef: "docs/reviews/controlled-dogfood/v364.md",
         candidateReview: {
-          candidateId: `memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`,
+          candidateId: `memory-staleness-maintenance:${memoryRecordId}:near_expiry_memory`,
           decision: "accept_for_manual_followup",
           reason: "Candidate has enough evidence for manual follow-up.",
           evidenceRef: "docs/reviews/controlled-dogfood/v373.md"
@@ -373,7 +373,7 @@ describe("runHeartbeatPreviewCommand", () => {
           {
             action: "review_memory_invalidation",
             nextAction: "review_memory_invalidation",
-            workerWriteBoundary: {
+            maintenanceWriteBoundary: {
               jobType: "expire_stale_memory",
               memoryCoreGate: "must_create_reviewed_invalidation_candidate",
               status: "passed",
@@ -448,7 +448,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -456,7 +456,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           memoryLimit: 0,
           sourceClaimLimit: 0,
@@ -508,7 +508,7 @@ describe("runHeartbeatPreviewCommand", () => {
       expect(result.stdout).toContain("2. source_search_review | cost: low");
       expect(result.stdout).toContain("3. bounded_external_research | cost: medium");
       expect(result.stdout).toContain("4. human_review | cost: high");
-      expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
+      expect(result.stdout).toContain("consumer: maintenance knowledge acquisition preview");
       expect(result.stdout).toContain("falsifier:");
       expect(result.stdout).toContain("reviewability: ready");
       expect(result.stdout).toContain("mutation: none");
@@ -567,7 +567,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -575,7 +575,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           memoryLimit: 0,
           sourceClaimLimit: 0,
@@ -652,7 +652,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -660,7 +660,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           memoryLimit: 0,
           sourceClaimLimit: 0,
@@ -767,7 +767,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -775,7 +775,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
           evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
@@ -849,7 +849,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -857,7 +857,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
           evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
@@ -917,7 +917,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -925,7 +925,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           memoryLimit: 0,
           sourceClaimLimit: 0,
@@ -947,7 +947,7 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
-  it("focuses heartbeat preview on knowledge acquisition candidates", async () => {
+  it("focuses maintenance preview on knowledge acquisition candidates", async () => {
     const fixture = await writeJsonFixture("brain-search.json", {
       kind: "krn.brainSearch.preview.v1",
       query: "focused acquisition",
@@ -962,7 +962,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -970,7 +970,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
           evidenceRef: "docs/reviews/controlled-dogfood/imr-09.md",
@@ -1044,7 +1044,7 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
-  it("renders consensus relation review candidates in heartbeat preview", async () => {
+  it("renders consensus relation review candidates in maintenance preview", async () => {
     const fixture = await writeJsonFixture("consensus-candidates.json", {
       candidates: [
         {
@@ -1081,7 +1081,7 @@ describe("runHeartbeatPreviewCommand", () => {
     });
 
     try {
-      const result = await runHeartbeatPreviewCommand({
+      const result = await runMaintenancePreviewCommand({
         cwd: fixture.cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -1089,7 +1089,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           maxCandidates: 1,
           evidenceRef: "docs/reviews/controlled-dogfood/cro-01.md",
@@ -1132,13 +1132,13 @@ describe("runHeartbeatPreviewCommand", () => {
   });
 
   it("rejects invalid acquisition readback JSON", async () => {
-    const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-invalid-readback-"));
+    const cwd = await mkdtemp(path.join(tmpdir(), "krn-maintenance-invalid-readback-"));
     const fileName = "broken.json";
 
     await writeFile(path.join(cwd, fileName), "{", "utf8");
 
     try {
-      await expect(runHeartbeatPreviewCommand({
+      await expect(runMaintenancePreviewCommand({
         cwd,
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -1146,7 +1146,7 @@ describe("runHeartbeatPreviewCommand", () => {
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "heartbeatPreview",
+          kind: "maintenancePreview",
           projectId,
           memoryLimit: 0,
           sourceClaimLimit: 0,

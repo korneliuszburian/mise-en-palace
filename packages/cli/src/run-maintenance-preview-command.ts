@@ -6,12 +6,12 @@ import type {
   SourceClaimEdgeId
 } from "@krn/core";
 import {
-  buildBrainHeartbeatPreview
-} from "@krn/workers";
+  buildMaintenancePreview
+} from "@krn/maintenance-preview";
 import type {
   KnowledgeAcquisitionRequest,
   ConsensusCandidateEvaluationInput
-} from "@krn/workers";
+} from "@krn/maintenance-preview";
 
 import {
   defaultWorkspaceSlug,
@@ -26,13 +26,13 @@ import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
-  formatHeartbeatPreview,
-  jsonHeartbeatPreviewOutput
-} from "./heartbeat-preview-format.js";
+  formatMaintenancePreview,
+  jsonMaintenancePreviewOutput
+} from "./maintenance-preview-format.js";
 import {
   loadConsensusCandidateInputs,
   loadKnowledgeAcquisitionRequests
-} from "./heartbeat-preview-readback.js";
+} from "./maintenance-preview-readback.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
@@ -40,10 +40,10 @@ import type {
   CliCommand
 } from "./parse-args.js";
 
-export type HeartbeatPreviewCommand = Extract<CliCommand, { kind: "heartbeatPreview" }>;
-type HeartbeatCandidateKind = NonNullable<HeartbeatPreviewCommand["candidateKinds"]>[number];
+export type MaintenancePreviewCommand = Extract<CliCommand, { kind: "maintenancePreview" }>;
+type MaintenanceCandidateKind = NonNullable<MaintenancePreviewCommand["candidateKinds"]>[number];
 
-interface HeartbeatPreviewDatabaseRuntime {
+interface MaintenancePreviewDatabaseRuntime {
   projectId: string;
   projectResolution?: ProjectResolution;
   memoryRepository: {
@@ -56,17 +56,17 @@ interface HeartbeatPreviewDatabaseRuntime {
   close(): Promise<void>;
 }
 
-export type CreateHeartbeatPreviewDatabaseRuntime = (
+export type CreateMaintenancePreviewDatabaseRuntime = (
   input: DatabaseRuntimeInput
-) => Promise<HeartbeatPreviewDatabaseRuntime>;
+) => Promise<MaintenancePreviewDatabaseRuntime>;
 
-export interface HeartbeatPreviewCommandRuntime extends BaseCommandRuntime {
+export interface MaintenancePreviewCommandRuntime extends BaseCommandRuntime {
   cwd: string;
-  command: HeartbeatPreviewCommand;
-  createDatabaseRuntime?: CreateHeartbeatPreviewDatabaseRuntime;
+  command: MaintenancePreviewCommand;
+  createDatabaseRuntime?: CreateMaintenancePreviewDatabaseRuntime;
 }
 
-export interface HeartbeatPreviewCommandResult {
+export interface MaintenancePreviewCommandResult {
   stdout: string;
 }
 
@@ -74,13 +74,13 @@ const defaultMemoryLimit = 50;
 const defaultSourceClaimLimit = 50;
 const defaultMaxCandidates = 10;
 const defaultEvidenceRef =
-  "krn heartbeat preview operator readback";
+  "krn maintenance preview operator readback";
 const defaultCandidateKinds = [
   "memory_staleness",
   "source_relation",
   "knowledge_acquisition",
   "consensus_evaluation"
-] as const satisfies readonly HeartbeatCandidateKind[];
+] as const satisfies readonly MaintenanceCandidateKind[];
 
 const uniqueSourceClaimEdges = (
   edges: readonly SourceClaimEdge[]
@@ -95,7 +95,7 @@ const uniqueSourceClaimEdges = (
 };
 
 const loadSourceClaimEdges = async (
-  sourceRepository: HeartbeatPreviewDatabaseRuntime["sourceRepository"],
+  sourceRepository: MaintenancePreviewDatabaseRuntime["sourceRepository"],
   sourceClaims: readonly SourceClaim[]
 ): Promise<SourceClaimEdge[]> => {
   const edges = await Promise.all(sourceClaims.map((sourceClaim) =>
@@ -106,21 +106,21 @@ const loadSourceClaimEdges = async (
 };
 
 const includesCandidateKind = (
-  candidateKinds: readonly HeartbeatCandidateKind[],
-  candidateKind: HeartbeatCandidateKind
+  candidateKinds: readonly MaintenanceCandidateKind[],
+  candidateKind: MaintenanceCandidateKind
 ): boolean => candidateKinds.includes(candidateKind);
 
 const selectedCandidateKinds = (
-  command: HeartbeatPreviewCommand
-): readonly HeartbeatCandidateKind[] =>
+  command: MaintenancePreviewCommand
+): readonly MaintenanceCandidateKind[] =>
   command.candidateKinds ?? defaultCandidateKinds;
 
 const loadMemoryRecordsForPreview = async (
   input: {
-    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    databaseRuntime: MaintenancePreviewDatabaseRuntime;
     projectId: ProjectId;
-    command: HeartbeatPreviewCommand;
-    candidateKinds: readonly HeartbeatCandidateKind[];
+    command: MaintenancePreviewCommand;
+    candidateKinds: readonly MaintenanceCandidateKind[];
   }
 ): Promise<MemoryRecord[]> =>
   includesCandidateKind(input.candidateKinds, "memory_staleness")
@@ -132,10 +132,10 @@ const loadMemoryRecordsForPreview = async (
 
 const loadSourceClaimsForPreview = async (
   input: {
-    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    databaseRuntime: MaintenancePreviewDatabaseRuntime;
     projectId: ProjectId;
-    command: HeartbeatPreviewCommand;
-    candidateKinds: readonly HeartbeatCandidateKind[];
+    command: MaintenancePreviewCommand;
+    candidateKinds: readonly MaintenanceCandidateKind[];
   }
 ): Promise<SourceClaim[]> =>
   includesCandidateKind(input.candidateKinds, "source_relation")
@@ -147,9 +147,9 @@ const loadSourceClaimsForPreview = async (
 
 const loadSourceClaimEdgesForPreview = async (
   input: {
-    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    databaseRuntime: MaintenancePreviewDatabaseRuntime;
     sourceClaims: readonly SourceClaim[];
-    candidateKinds: readonly HeartbeatCandidateKind[];
+    candidateKinds: readonly MaintenanceCandidateKind[];
   }
 ): Promise<SourceClaimEdge[]> =>
   includesCandidateKind(input.candidateKinds, "source_relation")
@@ -159,8 +159,8 @@ const loadSourceClaimEdgesForPreview = async (
 const loadKnowledgeAcquisitionRequestsForPreview = async (
   input: {
     cwd: string;
-    command: HeartbeatPreviewCommand;
-    candidateKinds: readonly HeartbeatCandidateKind[];
+    command: MaintenancePreviewCommand;
+    candidateKinds: readonly MaintenanceCandidateKind[];
   }
 ): Promise<KnowledgeAcquisitionRequest[]> =>
   includesCandidateKind(input.candidateKinds, "knowledge_acquisition")
@@ -173,8 +173,8 @@ const loadKnowledgeAcquisitionRequestsForPreview = async (
 const loadConsensusCandidatesForPreview = async (
   input: {
     cwd: string;
-    command: HeartbeatPreviewCommand;
-    candidateKinds: readonly HeartbeatCandidateKind[];
+    command: MaintenancePreviewCommand;
+    candidateKinds: readonly MaintenanceCandidateKind[];
   }
 ): Promise<ConsensusCandidateEvaluationInput[]> =>
   includesCandidateKind(input.candidateKinds, "consensus_evaluation")
@@ -184,13 +184,13 @@ const loadConsensusCandidatesForPreview = async (
     )
     : [];
 
-export const runHeartbeatPreviewCommand = async (
-  runtime: HeartbeatPreviewCommandRuntime
-): Promise<HeartbeatPreviewCommandResult> => {
+export const runMaintenancePreviewCommand = async (
+  runtime: MaintenancePreviewCommandRuntime
+): Promise<MaintenancePreviewCommandResult> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for krn heartbeat preview");
+    throw new Error("KRN_DATABASE_URL is required for krn maintenance preview");
   }
 
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
@@ -238,7 +238,7 @@ export const runHeartbeatPreviewCommand = async (
       command: runtime.command,
       candidateKinds
     });
-    const preview = buildBrainHeartbeatPreview({
+    const preview = buildMaintenancePreview({
       now: runtime.now(),
       evidenceRef: runtime.command.evidenceRef ?? defaultEvidenceRef,
       memoryRecords,
@@ -271,8 +271,8 @@ export const runHeartbeatPreviewCommand = async (
     return {
       stdout:
         runtime.command.format === "json"
-          ? jsonHeartbeatPreviewOutput(output)
-          : formatHeartbeatPreview(output)
+          ? jsonMaintenancePreviewOutput(output)
+          : formatMaintenancePreview(output)
     };
   } finally {
     await databaseRuntime.close();

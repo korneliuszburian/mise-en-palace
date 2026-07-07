@@ -290,17 +290,17 @@ describe("runCli", () => {
 
   it("retries retained-pattern planning with compact mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Use the retained consensus relation heartbeat review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-heartbeat-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
+      "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Retained pattern selection: selected");
-    expect(result.stdout).toContain("Retained pattern IDs: consensus-relation-heartbeat-review-boundary");
+    expect(result.stdout).toContain("Retained pattern IDs: consensus-relation-maintenance-review-boundary");
     expect(executionRunMetadata).toMatchObject({
       retainedPatternSelection: {
         status: "selected",
-        selectedPatternIds: ["consensus-relation-heartbeat-review-boundary"]
+        selectedPatternIds: ["consensus-relation-maintenance-review-boundary"]
       }
     });
   });

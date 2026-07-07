@@ -7,7 +7,7 @@ export {
   createHarnessCompilerSmokeRuntime
 } from "../db-smoke-support.js";
 export * from "../harness-evidence-smoke.js";
-export * from "../heartbeat-worker-boundary-smoke.js";
+export * from "../maintenance-boundary-smoke.js";
 export * from "../harness-persistence-readiness.js";
 export * from "../harness-plan-smoke.js";
 export * from "../init-connect-smoke.js";
