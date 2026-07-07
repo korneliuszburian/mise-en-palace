@@ -22,7 +22,9 @@ For TypeScript changes:
 - preserve strict type boundaries;
 - keep external data as `unknown` until validated;
 - avoid `any` unless isolated and justified;
-- run typecheck before claiming completion.
+- run typecheck before claiming completion;
+- use `rtk proxy pnpm typecheck` for the root workspace typecheck so RTK does
+  not collapse the command into a bare `tsc` invocation.
 
 For code quality:
 
