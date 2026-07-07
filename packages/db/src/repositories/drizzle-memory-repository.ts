@@ -21,7 +21,8 @@ import type {
   PromoteMemoryCandidateInput,
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
-  RecordMemoryApplicationInput
+  RecordMemoryApplicationInput,
+  SupersedeMemoryRecordInput
 } from "@krn/harness/repositories/internal";
 
 import type { KrnDatabase } from "../database.js";
@@ -731,6 +732,76 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           .returning(),
         "invalidateMemoryRecord"
       );
+
+      return mapMemoryRecord(row);
+    });
+  }
+
+  async supersedeMemoryRecord(input: SupersedeMemoryRecordInput): Promise<MemoryRecord> {
+    const reviewer = input.reviewer.trim();
+    const reason = input.reason.trim();
+
+    if (reviewer.length === 0) {
+      throw new Error("supersedeMemoryRecord requires reviewer");
+    }
+
+    if (reason.length === 0) {
+      throw new Error("supersedeMemoryRecord requires reason");
+    }
+
+    return this.db.transaction(async (tx) => {
+      const currentRow = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.memoryRecordId)
+      });
+      const replacementRow = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.supersededByMemoryRecordId)
+      });
+
+      if (currentRow === undefined) {
+        throw new Error(`MemoryRecord not found: ${input.memoryRecordId}`);
+      }
+
+      if (replacementRow === undefined) {
+        throw new Error(`Superseding MemoryRecord not found: ${input.supersededByMemoryRecordId}`);
+      }
+
+      const supersededAt =
+        input.supersededAt === undefined
+          ? new Date()
+          : fromIsoTimestamp(input.supersededAt);
+      const row = requireReturnedRow(
+        await tx
+          .update(memoryRecords)
+          .set({
+            status: "superseded",
+            invalidatedAt: supersededAt,
+            invalidationReason: reason,
+            metadata: {
+              ...currentRow.metadata,
+              ...(input.metadata ?? {}),
+              supersessionReview: {
+                reviewer,
+                reason,
+                supersededAt: supersededAt.toISOString(),
+                supersededByMemoryRecordId: input.supersededByMemoryRecordId
+              }
+            },
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, input.memoryRecordId))
+          .returning(),
+        "supersedeMemoryRecord"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "memory.record.superseded",
+        payload: {
+          ...smokePayload(input.metadata),
+          memoryRecordId: input.memoryRecordId,
+          supersededByMemoryRecordId: input.supersededByMemoryRecordId,
+          projectId: currentRow.projectId
+        }
+      });
 
       return mapMemoryRecord(row);
     });

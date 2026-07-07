@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
+  MemoryCandidate,
   MemoryFeedbackEvent,
   MemoryRecord,
   TaskContract
@@ -17,14 +18,20 @@ import {
 } from "../../activation/index.js";
 import type {
   CreateAntiMemoryCandidateInput,
+  CreateMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
-  PromoteAntiMemoryCandidateInput
+  PromoteAntiMemoryCandidateInput,
+  PromoteMemoryCandidateInput,
+  SupersedeMemoryRecordInput
 } from "../../repositories/memory-repository.js";
 import {
   promoteAntiMemoryCandidateThroughGate
 } from "../anti-memory-review-gate.js";
 import {
-  proposeMemoryConsolidation
+  applyReviewedMemoryRevision,
+  proposeMemoryRevision,
+  proposeMemoryConsolidation,
+  rejectMemoryRevision
 } from "../memory-consolidation.js";
 
 const now = "2026-07-07T12:00:00.000Z";
@@ -104,6 +111,80 @@ const feedbackEventFromInput = (
   ...(input.evidenceRef === undefined ? {} : { evidenceRef: input.evidenceRef }),
   metadata: input.metadata ?? {},
   createdAt: now
+});
+
+const memoryCandidateFromInput = (
+  input: CreateMemoryCandidateInput
+): MemoryCandidate => ({
+  id: "memory-candidate-1",
+  projectId: input.projectId,
+  ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+  ...(input.feedbackDeltaId === undefined ? {} : { feedbackDeltaId: input.feedbackDeltaId }),
+  proposedBy: input.proposedBy,
+  kind: input.kind,
+  status: input.status ?? "candidate",
+  summary: input.summary,
+  body: input.body,
+  owner: input.owner,
+  confidence: input.confidence,
+  applicationGuidance: input.applicationGuidance,
+  ...(input.invalidationRule === undefined ? {} : { invalidationRule: input.invalidationRule }),
+  sourceClaimIds: input.sourceClaimIds ?? [],
+  sourceLineage: input.sourceLineage,
+  isUserPreference: input.isUserPreference,
+  validFrom: input.validFrom ?? now,
+  ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
+  metadata: input.metadata ?? {},
+  createdAt: now,
+  updatedAt: now
+});
+
+const memoryRecordFromCandidate = (
+  candidate: MemoryCandidate,
+  input: PromoteMemoryCandidateInput
+): MemoryRecord => ({
+  id: "memory-refreshed-1",
+  projectId: candidate.projectId,
+  currentVersionId: "memory-version-refreshed-1",
+  key: input.recordKey ?? `memory:${candidate.id}`,
+  kind: candidate.kind,
+  status: "active",
+  summary: candidate.summary,
+  body: candidate.body,
+  owner: candidate.owner,
+  confidence: candidate.confidence,
+  applicationGuidance: candidate.applicationGuidance,
+  ...(candidate.invalidationRule === undefined ? {} : { invalidationRule: candidate.invalidationRule }),
+  sourceLineage: candidate.sourceLineage,
+  isUserPreference: candidate.isUserPreference,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: input.metadata ?? {},
+  validFrom: candidate.validFrom,
+  ...(candidate.validUntil === undefined ? {} : { validUntil: candidate.validUntil }),
+  createdAt: now,
+  updatedAt: now
+});
+
+const supersededMemoryRecordFromInput = (
+  record: MemoryRecord,
+  input: SupersedeMemoryRecordInput
+): MemoryRecord => ({
+  ...record,
+  status: "superseded",
+  invalidatedAt: input.supersededAt ?? now,
+  invalidationReason: input.reason,
+  metadata: {
+    ...record.metadata,
+    ...(input.metadata ?? {}),
+    supersessionReview: {
+      reviewer: input.reviewer,
+      reason: input.reason,
+      supersededAt: input.supersededAt ?? now,
+      supersededByMemoryRecordId: input.supersededByMemoryRecordId
+    }
+  },
+  updatedAt: now
 });
 
 const antiMemoryRecordFromCandidate = (
@@ -285,5 +366,211 @@ describe("proposeMemoryConsolidation", () => {
       antiMemoryRecordId: "anti-memory-record-1"
     });
     expect(filtered.conflictSets).toHaveLength(1);
+  });
+});
+
+describe("reviewed memory revision", () => {
+  it("rejects revision proposals without evidence before writing a candidate", async () => {
+    let writes = 0;
+
+    await expect(
+      proposeMemoryRevision({
+        memoryRepository: {
+          async createMemoryCandidate(input) {
+            writes += 1;
+            return memoryCandidateFromInput(input);
+          },
+          async createMemoryFeedbackEvent(input) {
+            writes += 1;
+            return feedbackEventFromInput(input);
+          }
+        },
+        draft: {
+          action: "refresh_memory",
+          sourceMemoryRecord: memoryRecord(),
+          summary: "Use the refreshed frontend bootstrap standard.",
+          body: "Refreshed frontend bootstrap body.",
+          applicationGuidance: "Use when starting new frontend projects.",
+          invalidationRule: "Revisit when project template changes.",
+          confidence: 90,
+          owner: "operator",
+          sourceLineage: [],
+          reason: "The prior memory was stale.",
+          evidenceRefs: [],
+          doesNotProve: "This revision does not prove broad frontend quality."
+        },
+        projectId: "project-1",
+        proposedBy: "maintenance-consolidation"
+      })
+    ).rejects.toThrow("Memory revision requires evidence refs");
+    expect(writes).toBe(0);
+  });
+
+  it("applies a reviewed refresh by promoting the replacement and superseding the old memory", async () => {
+    const originalRecord: MemoryRecord = {
+      ...memoryRecord(),
+      positiveFeedbackCount: 1,
+      negativeFeedbackCount: 0
+    };
+    let candidate: MemoryCandidate | undefined;
+    let supersedeInput: SupersedeMemoryRecordInput | undefined;
+    const proposal = await proposeMemoryRevision({
+      memoryRepository: {
+        async createMemoryCandidate(input) {
+          candidate = memoryCandidateFromInput(input);
+          return candidate;
+        },
+        async createMemoryFeedbackEvent(input) {
+          return feedbackEventFromInput(input);
+        }
+      },
+      draft: {
+        action: "refresh_memory",
+        sourceMemoryRecord: originalRecord,
+        summary: "Use the refreshed frontend bootstrap standard.",
+        body: "Use the current frontend boilerplate and testing standard.",
+        applicationGuidance: "Use when starting new frontend projects.",
+        invalidationRule: "Revisit when the frontend starter changes.",
+        confidence: 92,
+        owner: "operator",
+        sourceLineage: [{ sourceId: "source-claim-2" }],
+        sourceClaimIds: ["source-claim-2"],
+        reason: "The older frontend standard was superseded by current practice.",
+        evidenceRefs: ["feedback-delta-2"],
+        doesNotProve: "This revision does not prove the standard applies to every stack."
+      },
+      projectId: "project-1",
+      proposedBy: "maintenance-consolidation",
+      feedbackDeltaId: "feedback-delta-2",
+      metadata: {
+        smokeId: "memory-revision-test"
+      }
+    });
+
+    expect(proposal.memoryCandidate).toMatchObject({
+      summary: "Use the refreshed frontend bootstrap standard.",
+      metadata: {
+        memoryRevision: {
+          action: "refresh_memory",
+          sourceMemoryRecordId: "memory-stale-1",
+          evidenceRefs: ["feedback-delta-2", "source-claim-2"]
+        }
+      }
+    });
+    expect(proposal.feedbackEvent).toMatchObject({
+      memoryRecordId: "memory-stale-1",
+      eventType: "corrected",
+      direction: "correction"
+    });
+
+    const applied = await applyReviewedMemoryRevision({
+      memoryRepository: {
+        async promoteReviewedMemoryCandidate(input) {
+          if (candidate === undefined) {
+            throw new Error("missing memory candidate");
+          }
+
+          return memoryRecordFromCandidate(candidate, input);
+        },
+        async supersedeMemoryRecord(input) {
+          supersedeInput = input;
+          return supersededMemoryRecordFromInput(originalRecord, input);
+        }
+      },
+      proposal,
+      sourceMemoryRecordId: originalRecord.id,
+      reviewer: "operator",
+      reason: "Reviewed refresh replaces stale frontend standard.",
+      recordKey: "frontend-bootstrap-standard",
+      reviewedAt: now
+    });
+
+    expect(supersedeInput).toMatchObject({
+      memoryRecordId: "memory-stale-1",
+      supersededByMemoryRecordId: "memory-refreshed-1",
+      reviewer: "operator"
+    });
+    expect(applied.supersededMemoryRecord).toMatchObject({
+      id: "memory-stale-1",
+      status: "superseded",
+      metadata: {
+        replacementMemoryRecordId: "memory-refreshed-1"
+      }
+    });
+
+    const ranked = rankCandidates([
+      toMemoryCandidate(applied.supersededMemoryRecord),
+      toMemoryCandidate(applied.memoryRecord)
+    ], buildMemoryQuery(taskContract()));
+    const filtered = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [],
+      minimumTrustTier: "medium",
+      now
+    });
+
+    expect(filtered.candidates.some((item) =>
+      item.subjectId === "memory-refreshed-1" && item.exclusion === undefined
+    )).toBe(true);
+    expect(filtered.candidates.some((item) =>
+      item.subjectId === "memory-stale-1" &&
+      item.exclusion?.reason === "superseded"
+    )).toBe(true);
+  });
+
+  it("rejects a revision through the memory candidate review path", async () => {
+    const proposal = await proposeMemoryRevision({
+      memoryRepository: {
+        async createMemoryCandidate(input) {
+          return memoryCandidateFromInput(input);
+        },
+        async createMemoryFeedbackEvent(input) {
+          return feedbackEventFromInput(input);
+        }
+      },
+      draft: {
+        action: "merge_duplicate",
+        sourceMemoryRecord: memoryRecord(),
+        summary: "Merge duplicate frontend bootstrap memories.",
+        body: "Keep one canonical frontend bootstrap memory.",
+        applicationGuidance: "Use when duplicate memories compete.",
+        confidence: 80,
+        owner: "operator",
+        sourceLineage: [{ sourceId: "source-claim-3" }],
+        reason: "Two records appear to describe the same standard.",
+        evidenceRefs: ["review:duplicate-memory"],
+        doesNotProve: "This proposal does not prove the records are duplicates."
+      },
+      projectId: "project-1",
+      proposedBy: "maintenance-consolidation"
+    });
+    const rejected = await rejectMemoryRevision({
+      memoryRepository: {
+        async rejectMemoryCandidate(input) {
+          return {
+            ...proposal.memoryCandidate,
+            status: "rejected",
+            reviewer: input.reviewer,
+            rejectionReason: input.reason,
+            metadata: input.metadata ?? {},
+            updatedAt: now
+          };
+        }
+      },
+      proposal,
+      reviewer: "operator",
+      reason: "Records are similar but not duplicates."
+    });
+
+    expect(rejected).toMatchObject({
+      status: "rejected",
+      reviewer: "operator",
+      rejectionReason: "Records are similar but not duplicates.",
+      metadata: {
+        revisionRejection: {
+          reviewer: "operator"
+        }
+      }
+    });
   });
 });

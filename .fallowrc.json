@@ -36,6 +36,7 @@
         "listActiveMemory",
         "createMemoryCandidate",
         "invalidateMemoryRecord",
+        "supersedeMemoryRecord",
         "recordMemoryApplication",
         "createMemoryFeedbackEvent",
         "createAntiMemoryCandidate",

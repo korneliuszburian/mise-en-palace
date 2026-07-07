@@ -5,14 +5,21 @@ import type {
   IsoTimestamp,
   MemoryFeedbackEvent,
   MemoryFeedbackEventType,
+  MemoryCandidate,
+  MemoryRecord,
+  MemoryRecordKind,
   MemoryStalenessMaintenanceCandidate,
   ProjectId,
   SourceLineageRef
 } from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput,
+  CreateMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
-  MemoryRepository
+  MemoryRepository,
+  PromoteMemoryCandidateInput,
+  RejectMemoryCandidateInput,
+  SupersedeMemoryRecordInput
 } from "../repositories/memory-repository.js";
 
 export interface ProposeMemoryConsolidationInput {
@@ -33,6 +40,76 @@ export interface ProposeMemoryConsolidationInput {
 export interface ProposeMemoryConsolidationResult {
   antiMemoryCandidate: AntiMemoryCandidate;
   feedbackEvent: MemoryFeedbackEvent;
+}
+
+export type MemoryRevisionAction =
+  | "merge_duplicate"
+  | "refresh_memory"
+  | "supersede_memory";
+
+export interface MemoryRevisionDraft {
+  action: MemoryRevisionAction;
+  sourceMemoryRecord: MemoryRecord;
+  kind?: MemoryRecordKind;
+  summary: string;
+  body: string;
+  applicationGuidance: string;
+  invalidationRule?: string;
+  confidence: number;
+  owner: string;
+  sourceLineage: SourceLineageRef[];
+  sourceClaimIds?: readonly string[];
+  isUserPreference?: boolean;
+  validFrom?: IsoTimestamp;
+  validUntil?: IsoTimestamp;
+  reason: string;
+  evidenceRefs: readonly string[];
+  doesNotProve: string;
+}
+
+export interface ProposeMemoryRevisionInput {
+  memoryRepository: Pick<
+    MemoryRepository,
+    "createMemoryCandidate" | "createMemoryFeedbackEvent"
+  >;
+  draft: MemoryRevisionDraft;
+  projectId: ProjectId;
+  proposedBy: string;
+  executionRunId?: ExecutionRunId;
+  feedbackDeltaId?: FeedbackDeltaId;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ProposeMemoryRevisionResult {
+  memoryCandidate: MemoryCandidate;
+  feedbackEvent: MemoryFeedbackEvent;
+}
+
+export interface ApplyReviewedMemoryRevisionInput {
+  memoryRepository: Pick<
+    MemoryRepository,
+    "promoteReviewedMemoryCandidate" | "supersedeMemoryRecord"
+  >;
+  proposal: ProposeMemoryRevisionResult;
+  sourceMemoryRecordId: MemoryRecord["id"];
+  reviewer: string;
+  reason: string;
+  recordKey?: string;
+  reviewedAt?: IsoTimestamp;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ApplyReviewedMemoryRevisionResult {
+  memoryRecord: MemoryRecord;
+  supersededMemoryRecord: MemoryRecord;
+}
+
+export interface RejectMemoryRevisionInput {
+  memoryRepository: Pick<MemoryRepository, "rejectMemoryCandidate">;
+  proposal: ProposeMemoryRevisionResult;
+  reviewer: string;
+  reason: string;
+  metadata?: Record<string, unknown>;
 }
 
 const hasText = (value: string): boolean => value.trim().length > 0;
@@ -81,6 +158,81 @@ const feedbackDirection = (
   candidate: MemoryStalenessMaintenanceCandidate
 ): CreateMemoryFeedbackEventInput["direction"] =>
   candidate.action === "review_memory_refresh" ? "correction" : "negative";
+
+const revisionFeedbackEventType = (
+  action: MemoryRevisionAction
+): MemoryFeedbackEventType => {
+  if (action === "refresh_memory") {
+    return "corrected";
+  }
+
+  if (action === "merge_duplicate") {
+    return "demoted";
+  }
+
+  return "stale_detected";
+};
+
+const revisionEvidenceRefs = (
+  draft: MemoryRevisionDraft
+): string[] => uniqueText([
+  ...draft.evidenceRefs,
+  ...draft.sourceLineage.map((lineage) => lineage.sourceId)
+]);
+
+const revisionCandidateRunRefs = (
+  input: ProposeMemoryRevisionInput
+): Pick<CreateMemoryCandidateInput, "executionRunId" | "feedbackDeltaId"> => ({
+  ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+  ...(input.feedbackDeltaId === undefined ? {} : { feedbackDeltaId: input.feedbackDeltaId })
+});
+
+const revisionCandidateWindow = (
+  draft: MemoryRevisionDraft
+): Pick<CreateMemoryCandidateInput, "validFrom" | "validUntil"> => ({
+  validFrom: draft.validFrom ?? draft.sourceMemoryRecord.validFrom,
+  ...(draft.validUntil === undefined ? {} : { validUntil: draft.validUntil })
+});
+
+const revisionCandidateMetadata = (
+  input: ProposeMemoryRevisionInput,
+  evidenceRefs: readonly string[]
+): Record<string, unknown> => ({
+  ...(input.metadata ?? {}),
+  memoryRevision: {
+    action: input.draft.action,
+    sourceMemoryRecordId: input.draft.sourceMemoryRecord.id,
+    reason: input.draft.reason,
+    evidenceRefs,
+    doesNotProve: input.draft.doesNotProve
+  }
+});
+
+const revisionCandidateInput = (
+  input: ProposeMemoryRevisionInput,
+  evidenceRefs: readonly string[]
+): CreateMemoryCandidateInput => {
+  const { draft } = input;
+
+  return {
+    projectId: input.projectId,
+    ...revisionCandidateRunRefs(input),
+    proposedBy: requireText(input.proposedBy, "proposedBy"),
+    kind: draft.kind ?? draft.sourceMemoryRecord.kind,
+    status: "candidate",
+    summary: requireText(draft.summary, "summary"),
+    body: requireText(draft.body, "body"),
+    owner: requireText(draft.owner, "owner"),
+    confidence: draft.confidence,
+    applicationGuidance: requireText(draft.applicationGuidance, "applicationGuidance"),
+    ...(draft.invalidationRule === undefined ? {} : { invalidationRule: draft.invalidationRule }),
+    sourceClaimIds: [...(draft.sourceClaimIds ?? [])],
+    sourceLineage: draft.sourceLineage,
+    isUserPreference: draft.isUserPreference ?? draft.sourceMemoryRecord.isUserPreference,
+    ...revisionCandidateWindow(draft),
+    metadata: revisionCandidateMetadata(input, evidenceRefs)
+  };
+};
 
 const antiMemoryInput = (
   input: ProposeMemoryConsolidationInput,
@@ -184,4 +336,110 @@ export const proposeMemoryConsolidation = async (
     antiMemoryCandidate,
     feedbackEvent
   };
+};
+
+export const proposeMemoryRevision = async (
+  input: ProposeMemoryRevisionInput
+): Promise<ProposeMemoryRevisionResult> => {
+  const evidenceRefs = revisionEvidenceRefs(input.draft);
+
+  if (evidenceRefs.length === 0) {
+    throw new Error("Memory revision requires evidence refs");
+  }
+
+  const reason = requireText(input.draft.reason, "reason");
+  const memoryCandidate = await input.memoryRepository.createMemoryCandidate(
+    revisionCandidateInput(input, evidenceRefs)
+  );
+  const primaryEvidenceRef = evidenceRefs[0];
+
+  if (primaryEvidenceRef === undefined) {
+    throw new Error("Memory revision requires primary evidence ref");
+  }
+
+  const feedbackEvent = await input.memoryRepository.createMemoryFeedbackEvent({
+    memoryRecordId: input.draft.sourceMemoryRecord.id,
+    ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+    ...(input.feedbackDeltaId === undefined ? {} : { feedbackDeltaId: input.feedbackDeltaId }),
+    eventType: revisionFeedbackEventType(input.draft.action),
+    direction: "correction",
+    note: input.draft.summary,
+    reason,
+    evidenceRef: primaryEvidenceRef,
+    metadata: {
+      ...(input.metadata ?? {}),
+      memoryRevisionCandidateId: memoryCandidate.id,
+      sourceMemoryRecordId: input.draft.sourceMemoryRecord.id,
+      action: input.draft.action,
+      doesNotProve: input.draft.doesNotProve
+    }
+  });
+
+  return {
+    memoryCandidate,
+    feedbackEvent
+  };
+};
+
+export const applyReviewedMemoryRevision = async (
+  input: ApplyReviewedMemoryRevisionInput
+): Promise<ApplyReviewedMemoryRevisionResult> => {
+  const reviewer = requireText(input.reviewer, "reviewer");
+  const reason = requireText(input.reason, "reason");
+  const promotionInput: PromoteMemoryCandidateInput = {
+    candidateId: input.proposal.memoryCandidate.id,
+    reviewer,
+    decision: "accepted",
+    ...(input.recordKey === undefined ? {} : { recordKey: input.recordKey }),
+    metadata: {
+      ...input.proposal.memoryCandidate.metadata,
+      ...(input.metadata ?? {}),
+      revisionReview: {
+        reviewer,
+        reason,
+        sourceMemoryRecordId: input.sourceMemoryRecordId
+      }
+    }
+  };
+  const memoryRecord = await input.memoryRepository.promoteReviewedMemoryCandidate(promotionInput);
+  const supersedeInput: SupersedeMemoryRecordInput = {
+    memoryRecordId: input.sourceMemoryRecordId,
+    reviewer,
+    reason,
+    supersededByMemoryRecordId: memoryRecord.id,
+    ...(input.reviewedAt === undefined ? {} : { supersededAt: input.reviewedAt }),
+    metadata: {
+      ...(input.metadata ?? {}),
+      memoryRevisionCandidateId: input.proposal.memoryCandidate.id,
+      replacementMemoryRecordId: memoryRecord.id
+    }
+  };
+  const supersededMemoryRecord = await input.memoryRepository.supersedeMemoryRecord(supersedeInput);
+
+  return {
+    memoryRecord,
+    supersededMemoryRecord
+  };
+};
+
+export const rejectMemoryRevision = async (
+  input: RejectMemoryRevisionInput
+): Promise<MemoryCandidate> => {
+  const reviewer = requireText(input.reviewer, "reviewer");
+  const reason = requireText(input.reason, "reason");
+  const rejectInput: RejectMemoryCandidateInput = {
+    candidateId: input.proposal.memoryCandidate.id,
+    reviewer,
+    reason,
+    metadata: {
+      ...input.proposal.memoryCandidate.metadata,
+      ...(input.metadata ?? {}),
+      revisionRejection: {
+        reviewer,
+        reason
+      }
+    }
+  };
+
+  return input.memoryRepository.rejectMemoryCandidate(rejectInput);
 };

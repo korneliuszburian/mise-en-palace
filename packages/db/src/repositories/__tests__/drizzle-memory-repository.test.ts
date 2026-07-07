@@ -16,6 +16,7 @@ const methodNames = [
   "getMemoryRecordById",
   "listMemoryRecordsForProject",
   "invalidateMemoryRecord",
+  "supersedeMemoryRecord",
   "recordMemoryApplication",
   "createMemoryFeedbackEvent",
   "createAntiMemoryCandidate",

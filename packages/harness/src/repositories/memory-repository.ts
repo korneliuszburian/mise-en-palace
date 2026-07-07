@@ -82,6 +82,14 @@ export interface InvalidateMemoryRecordInput extends RepositoryMetadata {
   invalidatedAt?: string;
 }
 
+export interface SupersedeMemoryRecordInput extends RepositoryMetadata {
+  memoryRecordId: MemoryRecord["id"];
+  reviewer: string;
+  reason: string;
+  supersededByMemoryRecordId: MemoryRecord["id"];
+  supersededAt?: string;
+}
+
 export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   memoryRecordId: MemoryRecord["id"];
   executionRunId: ExecutionRunId;
@@ -164,6 +172,7 @@ export interface MemoryRepository {
   rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate>;
   listMemoryCandidates(projectId: ProjectId, limit: number): Promise<MemoryCandidate[]>;
   invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord>;
+  supersedeMemoryRecord(input: SupersedeMemoryRecordInput): Promise<MemoryRecord>;
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
@@ -191,6 +200,7 @@ export type MemoryCandidateReviewRepository = Pick<
   | "rejectMemoryCandidate"
   | "getMemoryRecordById"
   | "invalidateMemoryRecord"
+  | "supersedeMemoryRecord"
   | "recordMemoryApplication"
   | "createMemoryFeedbackEvent"
   | "listMemoryCandidates"
