@@ -16,7 +16,7 @@ import {
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
-const knowledgeFile = "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json";
+const knowledgeFile = "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json";
 const catalogFile = "corpus/brain-knowledge/catalog.json";
 
 describe("runBrainKnowledgeCommand", () => {
@@ -112,7 +112,7 @@ describe("runBrainKnowledgeCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain knowledge readback was produced from live DB state");
@@ -143,10 +143,10 @@ describe("runBrainKnowledgeCommand", () => {
 
     expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
     expect(result.stdout).toContain(
-      "corpus/brain-knowledge/catalog.json:patterns/source-to-decision-retention-gate.json"
+      "corpus/brain-knowledge/catalog.json:knowledge/source-to-decision-retention-gate.json"
     );
     expect(result.stdout).toContain(
-      "corpus/brain-knowledge/catalog.json:patterns/ts-boundary-unknown-first-result-state.json"
+      "corpus/brain-knowledge/catalog.json:knowledge/ts-boundary-unknown-first-result-state.json"
     );
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });

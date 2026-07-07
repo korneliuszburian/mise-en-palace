@@ -6,8 +6,8 @@
   "reviewability": "ready",
   "decision": "Use packages/harness/src/brain-knowledge-read-model.ts as a local reference implementation recipe for unknown-first brain-knowledge parser boundaries. Future similar parser work may clone the approach: external catalog JSON enters as unknown, finite status/action fields are narrowed with explicit sets, missing evidence-boundary fields reject the record, and tests cover invalid enum values, missing proof boundaries, usefulness-feedback readback, and deterministic text search. The exemplar guides implementation shape but does not replace tests, evidence capture, or source-to-decision mapping.",
   "sourceRefs": [
-    "corpus/brain-knowledge/patterns/reference-implementation-recipe-clone-boundary.json",
-    "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
+    "corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json",
+    "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
     "packages/harness/src/brain-knowledge-read-model.ts",
     "packages/harness/src/brain-knowledge-read-model.test.ts",
     "user-provided screenshots 2026-07-01: reference implementation, clone workflow, recipe hashing, and code-as-up-to-date-documentation practitioner notes"

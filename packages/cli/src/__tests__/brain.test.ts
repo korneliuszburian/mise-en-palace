@@ -241,7 +241,7 @@ describe("runCli", () => {
       "brain",
       "knowledge",
       "--knowledge-file",
-      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
+      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ], {
@@ -253,7 +253,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });

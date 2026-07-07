@@ -126,7 +126,7 @@ describe("parseBrainKnowledgeArgs", () => {
   it("parses brain knowledge decision files", () => {
     expect(parseBrainKnowledgeArgs([
       "--knowledge-file",
-      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
+      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -134,7 +134,7 @@ describe("parseBrainKnowledgeArgs", () => {
         kind: "brainKnowledge",
         cardFiles: [],
         knowledgeFiles: [
-          "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
+          "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json"
         ],
         catalogFiles: [],
         storeOnly: false,

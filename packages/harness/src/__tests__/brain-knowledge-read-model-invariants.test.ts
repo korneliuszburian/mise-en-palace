@@ -20,7 +20,7 @@ const readJsonRootFile = (path: string): unknown =>
 describe("Brain knowledge read model invariants", () => {
   it("keeps the TypeScript brain knowledge decision available as a concrete knowledge card", () => {
     const pattern = readJsonRootFile(
-      "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
+      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json"
     );
     const card = readJsonRootFile(
       "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"

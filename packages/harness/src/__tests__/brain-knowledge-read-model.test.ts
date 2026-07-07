@@ -25,13 +25,13 @@ const cardFixture = (): unknown =>
   readJsonRootFile("tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json");
 
 const patternDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
+  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
 
 const referenceImplementationPatternDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/patterns/reference-implementation-recipe-clone-boundary.json");
+  readJsonRootFile("corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json");
 
 const brainKnowledgeParserExemplarPatternDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/patterns/ts-boundary-brain-knowledge-parser-exemplar.json");
+  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-brain-knowledge-parser-exemplar.json");
 
 const parsedCardFixture = () => {
   const card = parseBrainKnowledgeReadModel(cardFixture());
