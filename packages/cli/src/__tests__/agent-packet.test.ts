@@ -3,11 +3,21 @@ import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories";
 
+import type {
+  DatabaseRuntime
+} from "../database-runtime.js";
+import {
+  createNoStoreCompilerDependencies
+} from "../no-store-repositories.js";
 import {
   runCli
 } from "../run-cli.js";
 
 const now = "2026-07-07T16:35:00.000Z";
+
+const notUsed = (method: string): never => {
+  throw new Error(`${method} should not be called`);
+};
 
 const aggregate: HarnessRunAggregate = {
   operatorIntent: {
@@ -190,16 +200,110 @@ describe("agent packet CLI", () => {
       },
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
-      createDatabaseRuntime: async () => ({
-        harnessRunRepository: {
+      createDatabaseRuntime: async (runtimeInput) => {
+        const dependencies = createNoStoreCompilerDependencies(runtimeInput);
+        const harnessRunRepository = {
+          ...dependencies.harnessRunRepository,
+          async createExecutionRun() {
+            return notUsed("createExecutionRun");
+          },
           async getHarnessRunByExecutionRunId(runId: string) {
             return runId === "run-agent-1" ? aggregate : undefined;
+          },
+          async createEvidenceBundle() {
+            return notUsed("createEvidenceBundle");
+          },
+          async createReviewAssessment() {
+            return notUsed("createReviewAssessment");
+          },
+          async createFeedbackDelta() {
+            return notUsed("createFeedbackDelta");
           }
-        },
-        async close() {
-          closed = true;
-        }
-      })
+        } satisfies DatabaseRuntime["harnessRunRepository"];
+        const sourceRepository = {
+          ...dependencies.sourceRepository,
+          async createSourceArtifact() {
+            return notUsed("createSourceArtifact");
+          },
+          async createSourceClaim() {
+            return notUsed("createSourceClaim");
+          },
+          async getSourceClaimById() {
+            return notUsed("getSourceClaimById");
+          },
+          async createSourceClaimEdge() {
+            return notUsed("createSourceClaimEdge");
+          },
+          async createSourceDecisionEdge() {
+            return notUsed("createSourceDecisionEdge");
+          },
+          async getSourceDecisionEdgeById() {
+            return notUsed("getSourceDecisionEdgeById");
+          },
+          async createSourceRejection() {
+            return notUsed("createSourceRejection");
+          }
+        } satisfies DatabaseRuntime["sourceRepository"];
+        const memoryRepository = {
+          async createMemoryCandidate() {
+            return notUsed("createMemoryCandidate");
+          },
+          async getMemoryCandidateById() {
+            return notUsed("getMemoryCandidateById");
+          },
+          async promoteReviewedMemoryCandidate() {
+            return notUsed("promoteReviewedMemoryCandidate");
+          },
+          async rejectMemoryCandidate() {
+            return notUsed("rejectMemoryCandidate");
+          },
+          async getMemoryRecordById() {
+            return notUsed("getMemoryRecordById");
+          },
+          async listMemoryRecordsForProject() {
+            return [];
+          },
+          async invalidateMemoryRecord() {
+            return notUsed("invalidateMemoryRecord");
+          },
+          async recordMemoryApplication() {
+            return notUsed("recordMemoryApplication");
+          },
+          async createMemoryFeedbackEvent() {
+            return notUsed("createMemoryFeedbackEvent");
+          },
+          async createAntiMemoryCandidate() {
+            return notUsed("createAntiMemoryCandidate");
+          },
+          async getAntiMemoryCandidateById() {
+            return notUsed("getAntiMemoryCandidateById");
+          },
+          async promoteReviewedAntiMemoryCandidate() {
+            return notUsed("promoteReviewedAntiMemoryCandidate");
+          },
+          async rejectAntiMemoryCandidate() {
+            return notUsed("rejectAntiMemoryCandidate");
+          },
+          async listActiveMemory() {
+            return [];
+          }
+        } satisfies DatabaseRuntime["memoryRepository"];
+
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository,
+          memoryRepository,
+          async close() {
+            closed = true;
+          }
+        };
+      }
     });
     const json: unknown = JSON.parse(result.stdout);
 

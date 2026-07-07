@@ -7,23 +7,23 @@ import {
 const now = "2026-07-07T14:50:00.000Z";
 
 describe("createNoStoreCompilerDependencies", () => {
-  it("keeps retrieval aliases callable after destructuring", async () => {
+  it("keeps retrieval methods callable after destructuring", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
     const {
-      createRetrievalRun,
-      createRetrievalCandidate,
-      createActivationDecision
+      startRetrievalRun,
+      addCandidate,
+      recordActivationDecision
     } = dependencies.retrievalRepository;
 
-    const retrievalRun = await createRetrievalRun({
+    const retrievalRun = await startRetrievalRun({
       projectId: "project-1",
       query: "governed memory recall",
       mode: "mixed"
     });
-    const candidate = await createRetrievalCandidate({
+    const candidate = await addCandidate({
       retrievalRunId: retrievalRun.id,
       kind: "memory",
       subjectType: "memory_record",
@@ -31,7 +31,7 @@ describe("createNoStoreCompilerDependencies", () => {
       trustTier: "project-decision",
       reason: "No-store preview selected retained memory."
     });
-    const decision = await createActivationDecision({
+    const decision = await recordActivationDecision({
       retrievalRunId: retrievalRun.id,
       retrievalCandidateId: candidate.id,
       subjectType: "memory_record",
