@@ -2,19 +2,15 @@ import {
   z
 } from "zod";
 
-export const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-export const RequiredTextSchema = z.string().trim().min(1);
-export const OptionalTextSchema = RequiredTextSchema.optional();
-export const TextListSchema = z.array(RequiredTextSchema).default([]);
-export const NonEmptyTextListSchema = z.array(RequiredTextSchema).min(1);
-
 export const privateReasoningMetadataKeys = new Set([
   "chainOfThought",
   "chain_of_thought",
   "reasoningTrace",
   "reasoning_trace",
   "privateReasoning",
-  "private_reasoning"
+  "private_reasoning",
+  "hiddenReasoning",
+  "hidden_reasoning"
 ]);
 
 export const rejectForbiddenMetadataKeys = (
@@ -35,3 +31,19 @@ export const rejectForbiddenMetadataKeys = (
     }
   }
 };
+
+export const PublicMetadataSchema = z.object({})
+  .catchall(z.unknown())
+  .superRefine((value, context) => {
+    rejectForbiddenMetadataKeys(value, context, {
+      keys: privateReasoningMetadataKeys,
+      message: "public metadata cannot store private reasoning"
+    });
+  })
+  .default({});
+
+export const MetadataSchema = PublicMetadataSchema;
+export const RequiredTextSchema = z.string().trim().min(1);
+export const OptionalTextSchema = RequiredTextSchema.optional();
+export const TextListSchema = z.array(RequiredTextSchema).default([]);
+export const NonEmptyTextListSchema = z.array(RequiredTextSchema).min(1);
