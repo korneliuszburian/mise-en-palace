@@ -46,6 +46,10 @@ describe("runSecondRepoDecisionPacketEval", () => {
         reusableKnowledgeDecisionCount: 3,
         rejectedPathCount: 5,
         staleDecisionCount: 5,
+        krnWinCount: 12,
+        notesWinCount: 0,
+        tieCount: 3,
+        decisiveComparisonCount: 12,
         selfRepoContaminationCount: 0
       }
     });
@@ -59,7 +63,8 @@ describe("runSecondRepoDecisionPacketEval", () => {
     });
     expect(result.proof.proves).toEqual(expect.arrayContaining([
       "the decision-packet eval runs on target-repo corpora outside the KRN repo",
-      "each target corpus includes stale and rejected-path readback"
+      "each target corpus includes stale and rejected-path readback",
+      "each target corpus reports KRN-vs-notes comparison outcomes"
     ]));
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "live Codex execution or obedience",
@@ -88,26 +93,38 @@ describe("runSecondRepoDecisionPacketEval", () => {
       reusableKnowledgeDecisionCount: 9,
       rejectedPathCount: 11,
       staleDecisionCount: 9,
+      krnWinCount: 31,
+      notesWinCount: 0,
+      tieCount: 14,
+      decisiveComparisonCount: 31,
       selfRepoContaminationCount: 0
     });
     expect(result.repoResults.map((repo) => ({
       targetRepo: repo.targetRepo,
       decisionPacketStatus: repo.decisionPacketStatus,
+      krnWinCount: repo.metrics.krnWinCount,
+      notesWinCount: repo.metrics.notesWinCount,
       selfRepoContaminationCount: repo.metrics.selfRepoContaminationCount
     }))).toEqual([
       {
         targetRepo: "weak-json-boundary-typescript",
         decisionPacketStatus: "pass",
+        krnWinCount: 12,
+        notesWinCount: 0,
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "env-config-contract-typescript",
         decisionPacketStatus: "pass",
+        krnWinCount: 9,
+        notesWinCount: 0,
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "async-job-boundary-typescript",
         decisionPacketStatus: "pass",
+        krnWinCount: 10,
+        notesWinCount: 0,
         selfRepoContaminationCount: 0
       }
     ]);

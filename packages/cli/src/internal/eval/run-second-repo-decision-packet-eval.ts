@@ -22,6 +22,10 @@ export interface SecondRepoTargetResult {
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
     readonly decisionPacketUsefulRate: number;
+    readonly krnWinCount: number;
+    readonly notesWinCount: number;
+    readonly tieCount: number;
+    readonly decisiveComparisonCount: number;
     readonly selfRepoContaminationCount: number;
   };
   readonly decisionPacketStatus: SecondRepoEvalStatus;
@@ -41,6 +45,10 @@ export interface SecondRepoDecisionPacketEvalResult {
     readonly reusableKnowledgeDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
+    readonly krnWinCount: number;
+    readonly notesWinCount: number;
+    readonly tieCount: number;
+    readonly decisiveComparisonCount: number;
     readonly selfRepoContaminationCount: number;
   };
   readonly proof: {
@@ -150,6 +158,10 @@ export const runSecondRepoDecisionPacketEval = async (
         rejectedPathCount,
         staleDecisionCount,
         decisionPacketUsefulRate: decisionPacket.metrics.usefulRate,
+        krnWinCount: decisionPacket.metrics.krnWinCount,
+        notesWinCount: decisionPacket.metrics.notesWinCount,
+        tieCount: decisionPacket.metrics.tieCount,
+        decisiveComparisonCount: decisionPacket.metrics.decisiveComparisonCount,
         selfRepoContaminationCount: selfRepoContaminationRefs.length
       },
       decisionPacketStatus: decisionPacket.status,
@@ -164,6 +176,10 @@ export const runSecondRepoDecisionPacketEval = async (
     reusableKnowledgeDecisionCount: sum.reusableKnowledgeDecisionCount + result.metrics.reusableKnowledgeDecisionCount,
     rejectedPathCount: sum.rejectedPathCount + result.metrics.rejectedPathCount,
     staleDecisionCount: sum.staleDecisionCount + result.metrics.staleDecisionCount,
+    krnWinCount: sum.krnWinCount + result.metrics.krnWinCount,
+    notesWinCount: sum.notesWinCount + result.metrics.notesWinCount,
+    tieCount: sum.tieCount + result.metrics.tieCount,
+    decisiveComparisonCount: sum.decisiveComparisonCount + result.metrics.decisiveComparisonCount,
     selfRepoContaminationCount: sum.selfRepoContaminationCount + result.metrics.selfRepoContaminationCount
   }), {
     caseCount: 0,
@@ -171,6 +187,10 @@ export const runSecondRepoDecisionPacketEval = async (
     reusableKnowledgeDecisionCount: 0,
     rejectedPathCount: 0,
     staleDecisionCount: 0,
+    krnWinCount: 0,
+    notesWinCount: 0,
+    tieCount: 0,
+    decisiveComparisonCount: 0,
     selfRepoContaminationCount: 0
   });
   const everyRepoPasses = repoResults.every((result) =>
@@ -199,6 +219,7 @@ export const runSecondRepoDecisionPacketEval = async (
         "each target corpus has repo-specific governing decisions",
         "each target corpus includes at least one reusable KRN TypeScript pattern",
         "each target corpus includes stale and rejected-path readback",
+        "each target corpus reports KRN-vs-notes comparison outcomes",
         "each target corpus avoids self-repo KRN plan/architecture evidence refs"
       ],
       doesNotProve: [
