@@ -9,8 +9,6 @@ import {
   buildSourceConsensusTimelineReadback,
   classifySourceAuthority,
   classifySourceClaimTaxonomy,
-  classifySourceSupportType,
-  classifySourceTrustTier,
   isSourceClaimTemporallyValid,
   rankSourceTrustTier,
   readSourceRelationMetadataReadback,
@@ -714,19 +712,19 @@ describe("source review signals", () => {
       sourceKind: "official",
       rank: 100
     });
-    expect(classifySourceTrustTier("high")).toEqual({
+    expect(classifySourceAuthority("high")).toMatchObject({
       authorityRank: "high",
       sourceKind: "unspecified"
     });
-    expect(classifySourceTrustTier("source-code")).toEqual({
+    expect(classifySourceAuthority("source-code")).toMatchObject({
       authorityRank: "high",
       sourceKind: "source-code"
     });
-    expect(classifySourceTrustTier("practitioner")).toEqual({
+    expect(classifySourceAuthority("practitioner")).toMatchObject({
       authorityRank: "medium",
       sourceKind: "practitioner"
     });
-    expect(classifySourceTrustTier("hypothesis")).toEqual({
+    expect(classifySourceAuthority("hypothesis")).toMatchObject({
       authorityRank: "low",
       sourceKind: "hypothesis"
     });
@@ -738,17 +736,17 @@ describe("source review signals", () => {
       use: "implementation-boundary",
       decisionGrade: true
     });
-    expect(classifySourceSupportType("supports")).toEqual({
+    expect(assessSourceSupportType("supports")).toEqual({
       relation: "supports",
       use: "relation-only",
       decisionGrade: false
     });
-    expect(classifySourceSupportType("contradicts")).toEqual({
+    expect(assessSourceSupportType("contradicts")).toEqual({
       relation: "contradicts",
       use: "rejection",
       decisionGrade: true
     });
-    expect(classifySourceSupportType("implementation-boundary")).toEqual({
+    expect(assessSourceSupportType("implementation-boundary")).toEqual({
       relation: "not_applicable",
       use: "implementation-boundary",
       decisionGrade: true

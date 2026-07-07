@@ -88,17 +88,15 @@ export interface SourceAuthority {
   rank: number;
 }
 
-export type SourceTrustTaxonomy = Omit<SourceAuthority, "rank">;
-
 export interface SourceSupportAssessment {
   relation: SourceSupportRelation;
   use: SourceUse;
   decisionGrade: boolean;
 }
 
-export type SourceSupportTaxonomy = SourceSupportAssessment;
-
-export interface SourceClaimTaxonomy extends SourceTrustTaxonomy {
+export interface SourceClaimTaxonomy {
+  authorityRank: SourceAuthorityRank;
+  sourceKind: SourceKind;
   supportRelation: SourceSupportRelation;
   sourceUse: SourceUse;
   decisionGrade: boolean;
@@ -343,17 +341,6 @@ export const classifySourceAuthority = (
   trustTier: SourceTrustTier
 ): SourceAuthority => sourceAuthorityByTrustTier[trustTier];
 
-export const classifySourceTrustTier = (
-  trustTier: SourceTrustTier
-): SourceTrustTaxonomy => {
-  const authority = classifySourceAuthority(trustTier);
-
-  return {
-    authorityRank: authority.authorityRank,
-    sourceKind: authority.sourceKind
-  };
-};
-
 export const sourceSupportAssessmentByType: Record<
   SourceSupportType,
   SourceSupportAssessment
@@ -419,18 +406,15 @@ export const assessSourceSupportType = (
   supportType: SourceSupportType
 ): SourceSupportAssessment => sourceSupportAssessmentByType[supportType];
 
-export const classifySourceSupportType = (
-  supportType: SourceSupportType
-): SourceSupportTaxonomy => assessSourceSupportType(supportType);
-
 export const classifySourceClaimTaxonomy = (
   claim: Pick<SourceClaim, "trustTier" | "supportType">
 ): SourceClaimTaxonomy => {
-  const trust = classifySourceTrustTier(claim.trustTier);
-  const support = classifySourceSupportType(claim.supportType);
+  const authority = classifySourceAuthority(claim.trustTier);
+  const support = assessSourceSupportType(claim.supportType);
 
   return {
-    ...trust,
+    authorityRank: authority.authorityRank,
+    sourceKind: authority.sourceKind,
     supportRelation: support.relation,
     sourceUse: support.use,
     decisionGrade: support.decisionGrade
@@ -439,7 +423,7 @@ export const classifySourceClaimTaxonomy = (
 
 export const decisionGradeSourceSupportTypes: readonly SourceSupportType[] =
   sourceSupportTypes.filter((supportType) =>
-    classifySourceSupportType(supportType).decisionGrade);
+    assessSourceSupportType(supportType).decisionGrade);
 
 const decisionGradeSourceSupportTypeSet = new Set<SourceSupportType>(
   decisionGradeSourceSupportTypes
