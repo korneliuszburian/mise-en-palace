@@ -32,7 +32,7 @@
       "title": "Second opinion validated JSON verdict",
       "statement": "Claude second opinion is advisory only after deterministic verdict validation and diff freshness binding.",
       "status": "current",
-      "evidenceRef": ".agents/deferred/skills/second-opinion-claude/SKILL.md",
+      "evidenceRef": ".agents/deffered/skills/second-opinion-claude/SKILL.md",
       "sourceClaimId": "source-claim:second-opinion-validated-json",
       "sourceDecisionEdgeId": "source-decision-edge:second-opinion-validated-json",
       "falsifier": "A prose envelope or stale diff can close a slice as approved.",

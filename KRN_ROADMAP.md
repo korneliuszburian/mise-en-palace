@@ -586,7 +586,7 @@ dependencies, acceptance criteria, and non-goals. The output should update the
 task graph, not create another prose forest.
 
 The old Claude-based repo skill is deferred under
-`.agents/deferred/skills/second-opinion-claude` until it can use a reviewer that
+`.agents/deffered/skills/second-opinion-claude` until it can use a reviewer that
 does not hallucinate basic repository facts.
 
 ## Near-Term Roadmap

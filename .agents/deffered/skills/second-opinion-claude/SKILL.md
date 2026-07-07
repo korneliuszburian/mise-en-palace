@@ -34,7 +34,7 @@ Choose one mode:
 1. Build a compact context pack:
 
    ```bash
-   rtk .agents/deferred/skills/second-opinion-claude/scripts/build_context_pack.sh \
+   rtk .agents/deffered/skills/second-opinion-claude/scripts/build_context_pack.sh \
      "slice title" \
      .local-lab/second-opinion/slice-title/prompt.md
    ```
@@ -53,7 +53,7 @@ Choose one mode:
 
    ```bash
    SECOND_OPINION_MAX_BUDGET_USD=0.50 \
-   rtk .agents/deferred/skills/second-opinion-claude/scripts/run_review.sh \
+   rtk .agents/deffered/skills/second-opinion-claude/scripts/run_review.sh \
      .local-lab/second-opinion/slice-title/prompt.md \
      .local-lab/second-opinion/slice-title/claude.json
    ```
@@ -76,7 +76,7 @@ Choose one mode:
    Re-check a committed verdict:
 
    ```bash
-   rtk .agents/deferred/skills/second-opinion-claude/scripts/validate_review.py check \
+   rtk .agents/deffered/skills/second-opinion-claude/scripts/validate_review.py check \
      .local-lab/second-opinion/slice-title/claude.json --base origin/main
    ```
 
@@ -125,7 +125,7 @@ would be fake precision.
 
    ```bash
    rtk env SECOND_OPINION_MAX_BUDGET_USD=10 \
-     .agents/deferred/skills/second-opinion-claude/scripts/run_strategy_review.sh \
+     .agents/deffered/skills/second-opinion-claude/scripts/run_strategy_review.sh \
      .local-lab/second-opinion/<topic>/question.md \
      .local-lab/second-opinion/<topic>/strategy.md
    ```
@@ -234,32 +234,32 @@ verdict or strategy decision.
 For skill changes:
 
 ```bash
-rtk bash -n .agents/deferred/skills/second-opinion-claude/scripts/build_context_pack.sh
-rtk bash -n .agents/deferred/skills/second-opinion-claude/scripts/run_review.sh
-rtk bash -n .agents/deferred/skills/second-opinion-claude/scripts/run_strategy_review.sh
-rtk .agents/deferred/skills/second-opinion-claude/scripts/validate_review.py check \
-  .agents/deferred/skills/second-opinion-claude/examples/approve.review.json
-rtk .agents/deferred/skills/second-opinion-claude/scripts/validate_review.py check \
-  .agents/deferred/skills/second-opinion-claude/examples/block.review.json
-! rtk .agents/deferred/skills/second-opinion-claude/scripts/validate_review.py check \
-  .agents/deferred/skills/second-opinion-claude/examples/invalid-extra-key.review.json
-! rtk .agents/deferred/skills/second-opinion-claude/scripts/validate_review.py check \
-  .agents/deferred/skills/second-opinion-claude/examples/invalid-review-version.review.json
-rtk .agents/deferred/skills/second-opinion-claude/scripts/build_context_pack.sh \
+rtk bash -n .agents/deffered/skills/second-opinion-claude/scripts/build_context_pack.sh
+rtk bash -n .agents/deffered/skills/second-opinion-claude/scripts/run_review.sh
+rtk bash -n .agents/deffered/skills/second-opinion-claude/scripts/run_strategy_review.sh
+rtk .agents/deffered/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/deffered/skills/second-opinion-claude/examples/approve.review.json
+rtk .agents/deffered/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/deffered/skills/second-opinion-claude/examples/block.review.json
+! rtk .agents/deffered/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/deffered/skills/second-opinion-claude/examples/invalid-extra-key.review.json
+! rtk .agents/deffered/skills/second-opinion-claude/scripts/validate_review.py check \
+  .agents/deffered/skills/second-opinion-claude/examples/invalid-review-version.review.json
+rtk .agents/deffered/skills/second-opinion-claude/scripts/build_context_pack.sh \
   "second-opinion smoke" .local-lab/second-opinion/smoke/prompt.md
 rtk rg -n "second-opinion-claude/SKILL.md|run_review.sh|build_context_pack.sh" \
   .local-lab/second-opinion/smoke/prompt.md
 rtk bash -lc "printf 'Question: Should KRN use one public brain CLI noun?\n' \
   > .local-lab/second-opinion/smoke/strategy-question.md"
 rtk env SECOND_OPINION_TIMEOUT_SECONDS=120 \
-  .agents/deferred/skills/second-opinion-claude/scripts/run_strategy_review.sh \
+  .agents/deffered/skills/second-opinion-claude/scripts/run_strategy_review.sh \
   .local-lab/second-opinion/smoke/strategy-question.md \
   .local-lab/second-opinion/smoke/strategy.md
 rtk rg -n "## Decision|## Beads|## Evidence Gaps" \
   .local-lab/second-opinion/smoke/strategy.md
 # Optional codex skill-creator structural check (needs pyyaml); non-fatal if absent.
 q="${CODEX_QUICK_VALIDATE:-/home/krn/.codex/skills/.system/skill-creator/scripts/quick_validate.py}"
-[[ -x "$q" ]] && rtk "$q" .agents/deferred/skills/second-opinion-claude 2>/dev/null \
+[[ -x "$q" ]] && rtk "$q" .agents/deffered/skills/second-opinion-claude 2>/dev/null \
   || echo "skip quick_validate (absent or missing pyyaml; set CODEX_QUICK_VALIDATE)"
 ```
 

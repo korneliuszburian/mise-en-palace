@@ -174,7 +174,7 @@ cannot be falsified locally, keep it out of active KRN guidance.
   broad automation surface.
 - Decision: keep `second-opinion-claude` deferred until a trustworthy reviewer
   backend is available; use the existing skill only as a parked lab artifact.
-- Consumer: `.agents/deferred/skills/second-opinion-claude/SKILL.md` and future
+- Consumer: `.agents/deffered/skills/second-opinion-claude/SKILL.md` and future
   larger KRN migration/audit-hardening handoffs after reactivation.
 - Falsifier: the review loop burns budget without finding actionable issues,
   encourages broad rewrites, or replaces local tests and source evidence with
