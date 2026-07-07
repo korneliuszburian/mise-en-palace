@@ -73,6 +73,16 @@ const sourceDecisionEdgeIdsFor = (
   candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
 ) ?? []);
 
+const staleDecisionIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+    outcome.outcome === "stale" && outcome.sourceDecisionId !== undefined
+      ? [outcome.sourceDecisionId]
+      : []
+  )
+));
+
 const compactDecisionPacket = (
   readModel: DecisionPacketReadModel
 ): DecisionPacket => {
@@ -89,7 +99,7 @@ const compactDecisionPacket = (
     memoryRefs: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "memory_record")
       .map((inclusion) => inclusion.subjectId)),
-    staleDecisionIds: [],
+    staleDecisionIds: staleDecisionIdsFor(readModel),
     rejectedPathIds: unique([
       ...inclusions
         .filter((inclusion) => inclusion.subjectType === "anti_memory_record")

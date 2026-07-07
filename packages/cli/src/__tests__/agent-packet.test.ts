@@ -120,7 +120,33 @@ const aggregate: HarnessRunAggregate = {
   },
   evidenceBundles: [],
   reviewAssessments: [],
-  feedbackDeltas: [],
+  feedbackDeltas: [{
+    id: "feedback-agent-1",
+    reviewAssessmentId: "review-agent-1",
+    status: "accepted",
+    memoryCandidates: [],
+    sourceDecisions: [],
+    evalCandidates: [],
+    metadata: {
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId: "source-decision-stale-agent-1",
+        outcome: "stale",
+        reason: "Prior source decision is stale for this packet.",
+        evidenceRefs: ["test:agent-packet-stale-decision"],
+        doesNotProve:
+          "Stale decision feedback does not prove the replacement decision is correct."
+      }, {
+        sourceDecisionId: "source-decision-helped-agent-1",
+        outcome: "helped",
+        reason: "Useful decision should not be reported as stale.",
+        evidenceRefs: ["test:agent-packet-helped-decision"],
+        doesNotProve:
+          "Helpful feedback does not prove source truth."
+      }]
+    },
+    createdAt: now,
+    updatedAt: now
+  }],
   runEvents: []
 };
 
@@ -161,6 +187,7 @@ describe("agent packet CLI", () => {
         sourceClaimIds: ["claim-agent-1"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         memoryRefs: ["memory-agent-1"],
+        staleDecisionIds: ["source-decision-stale-agent-1"],
         rejectedPathIds: ["memory-rejected-1"],
         brief: {
           includedContextCount: 2,
