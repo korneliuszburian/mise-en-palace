@@ -149,6 +149,20 @@ const aggregate: HarnessRunAggregate = {
         evidenceRefs: ["test:agent-packet-noise-decision"],
         doesNotProve:
           "Noise feedback does not prove future source usefulness."
+      }, {
+        sourceDecisionId: "source-decision-conflicted-agent-1",
+        outcome: "helped",
+        reason: "Conflicted decision should remain visible as governing.",
+        evidenceRefs: ["test:agent-packet-conflicted-helped"],
+        doesNotProve:
+          "Helpful feedback does not erase stale feedback."
+      }, {
+        sourceDecisionId: "source-decision-conflicted-agent-1",
+        outcome: "stale",
+        reason: "Conflicted decision should be flagged as stale authority.",
+        evidenceRefs: ["test:agent-packet-conflicted-stale"],
+        doesNotProve:
+          "Stale feedback does not identify the replacement decision."
       }]
     },
     createdAt: now,
@@ -191,13 +205,20 @@ describe("agent packet CLI", () => {
       },
       packet: {
         formatVersion: "krn.decisionPacket.v1",
-        governingDecisionIds: ["source-decision-helped-agent-1"],
+        governingDecisionIds: [
+          "source-decision-helped-agent-1",
+          "source-decision-conflicted-agent-1"
+        ],
         sourceClaimIds: ["claim-agent-1"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         memoryRefs: ["memory-agent-1"],
-        staleDecisionIds: ["source-decision-stale-agent-1"],
+        staleDecisionIds: [
+          "source-decision-stale-agent-1",
+          "source-decision-conflicted-agent-1"
+        ],
         rejectedPathIds: ["memory-rejected-1"],
         noiseDecisionIds: ["source-decision-noise-agent-1"],
+        severeStaleAuthorityIds: ["source-decision-conflicted-agent-1"],
         brief: {
           includedContextCount: 2,
           explicitExclusionCount: 1,

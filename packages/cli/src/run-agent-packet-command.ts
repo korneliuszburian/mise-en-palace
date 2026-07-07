@@ -97,15 +97,26 @@ const noiseDecisionIdsFor = (
   readModel: DecisionPacketReadModel
 ): string[] => sourceDecisionIdsWithUsefulness(readModel, ["noise"]);
 
+const severeStaleAuthorityIdsFor = (input: {
+  readonly governingDecisionIds: readonly string[];
+  readonly staleDecisionIds: readonly string[];
+}): string[] => {
+  const staleDecisionIds = new Set(input.staleDecisionIds);
+
+  return input.governingDecisionIds.filter((id) => staleDecisionIds.has(id));
+};
+
 const compactDecisionPacket = (
   readModel: DecisionPacketReadModel
 ): DecisionPacket => {
   const inclusions = readModel.context.inclusionDetails;
   const exclusions = readModel.context.exclusionDetails;
+  const governingDecisionIds = governingDecisionIdsFor(readModel);
+  const staleDecisionIds = staleDecisionIdsFor(readModel);
 
   return {
     formatVersion: decisionPacketFormatVersion,
-    governingDecisionIds: governingDecisionIdsFor(readModel),
+    governingDecisionIds,
     sourceClaimIds: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "source_claim")
       .map((inclusion) => inclusion.subjectId)),
@@ -113,7 +124,7 @@ const compactDecisionPacket = (
     memoryRefs: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "memory_record")
       .map((inclusion) => inclusion.subjectId)),
-    staleDecisionIds: staleDecisionIdsFor(readModel),
+    staleDecisionIds,
     rejectedPathIds: unique([
       ...inclusions
         .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
@@ -128,7 +139,10 @@ const compactDecisionPacket = (
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
     noiseDecisionIds: noiseDecisionIdsFor(readModel),
-    severeStaleAuthorityIds: [],
+    severeStaleAuthorityIds: severeStaleAuthorityIdsFor({
+      governingDecisionIds,
+      staleDecisionIds
+    }),
     brief: {
       includedContextCount: readModel.context.inclusions,
       observationPrefixCount: 0,
