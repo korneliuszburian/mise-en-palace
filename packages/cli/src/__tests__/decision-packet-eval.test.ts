@@ -38,6 +38,8 @@ describe("runDecisionPacketEval", () => {
       status: "pass",
       thresholds: {
         minimumUsefulRate: 0.8,
+        minimumKrnWinRate: 0.75,
+        maximumNotesWinRate: 0,
         maximumSevereStaleAuthorityInclusions: 0,
         maximumAverageNoiseDecisions: 2
       },
@@ -47,7 +49,16 @@ describe("runDecisionPacketEval", () => {
         noisyCount: 0,
         missCount: 0,
         staleAuthorityCount: 0,
+        notesUsableCount: 5,
+        notesUnsafeCount: 12,
+        notesMissCount: 0,
+        krnWinCount: 12,
+        notesWinCount: 0,
+        tieCount: 5,
+        decisiveComparisonCount: 12,
         usefulRate: 1,
+        krnWinRate: 1,
+        notesWinRate: 0,
         averageNoiseDecisions: 1.1176,
         severeStaleAuthorityInclusions: 0
       }
@@ -58,6 +69,19 @@ describe("runDecisionPacketEval", () => {
     )).toMatchObject({
       expectedDecisionId: "store-backed-memory-no-markdown",
       qualityLabel: "useful",
+      notesBaseline: {
+        qualityLabel: "unsafe",
+        topDecisionIds: [
+          "store-backed-memory-no-markdown",
+          "create-markdown-memory-files",
+          "markdown-runtime-memory"
+        ],
+        unsafeDecisionIds: [
+          "create-markdown-memory-files",
+          "markdown-runtime-memory"
+        ]
+      },
+      comparisonOutcome: "krn_win",
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         governingDecisionIds: expect.arrayContaining(["store-backed-memory-no-markdown"]),
