@@ -62,7 +62,7 @@ const sourceClaim = (
   mechanism: "Relational edges keep the first KRN brain store transactional.",
   krnImplication: "Memory can cite graph decisions without adding a graph DB.",
   doesNotProve: "This does not prove future graph workloads fit Postgres.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "MM-27",
   status: "accepted",
@@ -298,7 +298,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         sourceRepository: {
           async getSourceClaimById() {
             return sourceClaim({
-              trustTier: "practitioner",
+              sourceAuthority: "practitioner",
               consumer: "external-practitioner-note"
             });
           }
@@ -378,7 +378,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
       sourceRepository: {
         async getSourceClaimById() {
           return sourceClaim({
-            trustTier: "paper",
+            sourceAuthority: "paper",
             consumer: "research-to-brain"
           });
         }

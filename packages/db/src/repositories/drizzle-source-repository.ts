@@ -53,7 +53,7 @@ import {
 export {
   assessSourceClaimOverride,
   isSourceClaimTemporallyValid,
-  rankSourceTrustTier
+  rankSourceAuthority
 } from "@krn/core";
 export type {
   SourceClaimOverrideAssessment,
@@ -102,7 +102,7 @@ export const assertSourceClaimGovernance = (
     | "mechanism"
     | "krnImplication"
     | "doesNotProve"
-    | "trustTier"
+    | "sourceAuthority"
     | "supportType"
     | "consumer"
     | "falsifier"
@@ -112,7 +112,7 @@ export const assertSourceClaimGovernance = (
   requireText(input.mechanism, "SourceClaim requires mechanism");
   requireText(input.krnImplication, "SourceClaim requires krnImplication");
   requireText(input.doesNotProve, "SourceClaim requires doesNotProve");
-  requireText(input.trustTier, "SourceClaim requires trustTier");
+  requireText(input.sourceAuthority, "SourceClaim requires sourceAuthority");
   requireText(input.consumer, "SourceClaim requires consumer");
   requireText(input.falsifier, "SourceClaim requires falsifier");
   assertDecisionGradeSupportType(input.supportType, "SourceClaim");
@@ -197,7 +197,7 @@ export class DrizzleSourceRepository implements SourceRepository {
         .values({
           ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
           kind: input.kind,
-          trustTier: input.trustTier,
+          sourceAuthority: input.sourceAuthority,
           uri: input.uri,
           title: input.title,
           contentHash: input.contentHash,
@@ -244,7 +244,7 @@ export class DrizzleSourceRepository implements SourceRepository {
           mechanism: input.mechanism,
           krnImplication: input.krnImplication,
           doesNotProve: input.doesNotProve,
-          trustTier: input.trustTier,
+          sourceAuthority: input.sourceAuthority,
           supportType: input.supportType,
           consumer: input.consumer,
           ...(input.falsifier === undefined ? {} : { falsifier: input.falsifier }),
@@ -280,7 +280,7 @@ export class DrizzleSourceRepository implements SourceRepository {
         mechanism: sourceClaims.mechanism,
         krnImplication: sourceClaims.krnImplication,
         doesNotProve: sourceClaims.doesNotProve,
-        trustTier: sourceClaims.trustTier,
+        sourceAuthority: sourceClaims.sourceAuthority,
         supportType: sourceClaims.supportType,
         consumer: sourceClaims.consumer,
         falsifier: sourceClaims.falsifier,

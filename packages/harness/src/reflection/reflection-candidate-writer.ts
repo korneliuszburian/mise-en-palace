@@ -260,7 +260,7 @@ const createReflectionSourceClaims = async (
       mechanism: proposal.mechanism,
       krnImplication: proposal.krnImplication,
       doesNotProve: proposal.doesNotProve,
-      trustTier: proposal.trustTier,
+      sourceAuthority: proposal.sourceAuthority,
       supportType: proposal.supportType,
       consumer: proposal.consumer,
       ...(proposal.falsifier === undefined ? {} : { falsifier: proposal.falsifier }),

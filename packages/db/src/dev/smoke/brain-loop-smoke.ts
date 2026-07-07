@@ -409,7 +409,7 @@ export const runBrainLoopSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://brain-loop-smoke/${marker}`,
       title: "Brain loop smoke source",
       contentHash: `brain-loop-smoke-${marker}`,
@@ -424,7 +424,7 @@ export const runBrainLoopSmokeCheck = async (
       mechanism: "Postgres persists evidence, review, feedback, a reviewable MemoryCandidate, MemoryReviewGate promotion, and activation trace readback.",
       krnImplication: "KRN can test the governed evidence-to-memory-to-activation loop against live DB repositories.",
       doesNotProve: "This does not prove activation ranking quality, product readiness, maintenance runtime, or autonomous reflection quality.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "E2E-02 brain loop smoke",
       falsifier: "Brain loop smoke readback or cleanup fails.",
@@ -547,7 +547,7 @@ export const runBrainLoopSmokeCheck = async (
     const filtered = applyActivationFilters({
       candidates: retrieved.candidates,
       antiMemoryRecords: retrieved.antiMemoryRecords,
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const bounded = applyContextROI(filtered.candidates, {

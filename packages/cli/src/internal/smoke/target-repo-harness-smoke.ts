@@ -633,7 +633,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://target-repo-harness-smoke/${marker}`,
       title: "Target repo harness smoke memory source",
       contentHash: `target-repo-harness-smoke-${marker}`,
@@ -647,7 +647,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       mechanism: "A reviewed, project-scoped MemoryRecord is available before planning and can be selected as bounded context.",
       krnImplication: "Target-like runs can measure whether selected memory helped without automatically promoting new memory.",
       doesNotProve: "This does not prove memory usefulness on arbitrary external repositories.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "V03 target memory usefulness smoke",
       falsifier: "The smoke cannot activate the memory or record helped feedback for the run.",

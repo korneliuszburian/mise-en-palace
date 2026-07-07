@@ -346,7 +346,7 @@ const formatInclusionLine = (inclusion: ContextInclusion): string =>
     `- ${subjectRef(inclusion)}`,
     `reason=${inclusion.reason}`,
     `expected_use=${inclusion.expectedUse}`,
-    `trust=${inclusion.trustTier}`
+    `authority=${inclusion.sourceAuthority}`
   ].join(" | ");
 
 const formatExclusionLine = (exclusion: ContextExclusion): string =>
@@ -354,7 +354,7 @@ const formatExclusionLine = (exclusion: ContextExclusion): string =>
     `- ${subjectRef(exclusion)}`,
     `reason=${exclusion.reason}`,
     `explanation=${exclusion.explanation}`,
-    `trust=${exclusion.trustTier}`
+    `authority=${exclusion.sourceAuthority}`
   ].join(" | ");
 
 const formatActivationSummary = (

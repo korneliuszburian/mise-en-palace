@@ -35,7 +35,7 @@ const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
   mechanism: "A read-only project scan can compare accepted claims to decision edges.",
   krnImplication: "Operators can find decision-link gaps without mutating Beads or CI.",
   doesNotProve: "This does not prove the claim is false.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "source decision gap detector",
   falsifier: "The accepted claim with no edge is absent from gap output.",

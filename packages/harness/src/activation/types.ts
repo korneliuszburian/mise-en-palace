@@ -11,7 +11,7 @@ import type {
   SourceClaimReviewSignal,
   SourceContextTaxonomy,
   SourceClaimStatus,
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "@krn/core";
 import type {
   ObservationPrefix
@@ -61,7 +61,7 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;
   subjectId: string;
   text: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   reason: string;
   expectedUse: string;
   tokenEstimate: number;

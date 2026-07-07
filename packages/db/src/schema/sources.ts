@@ -29,7 +29,7 @@ export const sourceArtifactKind = pgEnum("source_artifact_kind", [
   "external_doc"
 ]);
 
-export const sourceTrustTier = pgEnum("source_trust_tier", [
+export const sourceAuthorityLabel = pgEnum("source_trust_tier", [
   "high",
   "medium",
   "low",
@@ -118,7 +118,7 @@ export const sourceArtifacts = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: nullableProjectIdColumn(),
     kind: sourceArtifactKind("kind").notNull(),
-    trustTier: sourceTrustTier("trust_tier").notNull(),
+    sourceAuthority: sourceAuthorityLabel("trust_tier").notNull(),
     uri: text("uri").notNull(),
     title: text("title").notNull(),
     contentHash: text("content_hash").notNull(),
@@ -131,7 +131,7 @@ export const sourceArtifacts = pgTable(
     uniqueIndex("source_artifacts_uri_hash_unique").on(table.uri, table.contentHash),
     index("source_artifacts_project_id_idx").on(table.projectId),
     index("source_artifacts_kind_idx").on(table.kind),
-    index("source_artifacts_trust_tier_idx").on(table.trustTier)
+    index("source_artifacts_trust_tier_idx").on(table.sourceAuthority)
   ]
 );
 
@@ -175,7 +175,7 @@ export const sourceClaims = pgTable(
     mechanism: text("mechanism").notNull(),
     krnImplication: text("krn_implication").notNull(),
     doesNotProve: text("does_not_prove").notNull(),
-    trustTier: sourceTrustTier("trust_tier").notNull(),
+    sourceAuthority: sourceAuthorityLabel("trust_tier").notNull(),
     supportType: sourceSupportType("support_type").notNull(),
     consumer: text("consumer").notNull(),
     falsifier: text("falsifier"),
@@ -189,7 +189,7 @@ export const sourceClaims = pgTable(
     index("source_claims_source_artifact_id_idx").on(table.sourceArtifactId),
     index("source_claims_source_chunk_id_idx").on(table.sourceChunkId),
     index("source_claims_execution_run_id_idx").on(table.executionRunId),
-    index("source_claims_trust_tier_idx").on(table.trustTier),
+    index("source_claims_trust_tier_idx").on(table.sourceAuthority),
     index("source_claims_support_type_idx").on(table.supportType),
     index("source_claims_consumer_idx").on(table.consumer),
     index("source_claims_status_idx").on(table.status)

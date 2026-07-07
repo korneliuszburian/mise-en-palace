@@ -37,7 +37,7 @@ export interface SourceSearchAnswerCandidate {
   subjectId: string;
   status: SourceSearchCandidateStatus;
   kind: RankedActivationCandidate["kind"];
-  trustTier: RankedActivationCandidate["trustTier"];
+  sourceAuthority: RankedActivationCandidate["sourceAuthority"];
   totalScore: number;
   lexicalScore: number;
   graphScore: number;
@@ -110,7 +110,7 @@ export const formatSourceSearchCandidate = (
     `- ${candidate.subjectType}:${candidate.subjectId}`,
     `  status: ${status}`,
     `  kind: ${candidate.kind}`,
-    `  trustTier: ${candidate.trustTier}`,
+    `  sourceAuthority: ${candidate.sourceAuthority}`,
     `  totalScore: ${candidate.totalScore}`,
     `  lexicalScore: ${candidate.lexicalScore}`,
     `  graphScore: ${candidate.graphScore}`,
@@ -173,7 +173,7 @@ export const sourceSearchCandidateToOutput = (
     subjectId: candidate.subjectId,
     status,
     kind: candidate.kind,
-    trustTier: candidate.trustTier,
+    sourceAuthority: candidate.sourceAuthority,
     totalScore: candidate.totalScore,
     lexicalScore: candidate.lexicalScore,
     graphScore: candidate.graphScore,

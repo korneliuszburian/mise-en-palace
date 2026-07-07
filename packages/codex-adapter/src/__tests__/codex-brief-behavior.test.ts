@@ -65,7 +65,7 @@ const contextAssembly: ContextAssembly = {
     reason: "C-03 dogfood proved brief review contract fields matter.",
     expectedUse: "Keep the Codex brief bounded and reviewable.",
     tokenEstimate: 80,
-    trustTier: "project-decision"
+    sourceAuthority: "project-decision"
   }],
   exclusions: [{
     subjectType: "source_claim",
@@ -73,7 +73,7 @@ const contextAssembly: ContextAssembly = {
     reason: "low_trust",
     explanation: "Promptfoo smoke is adapter evidence, not KRN behavior proof.",
     score: 20,
-    trustTier: "low"
+    sourceAuthority: "low"
   }],
   metadata: {},
   createdAt: now

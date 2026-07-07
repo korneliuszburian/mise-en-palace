@@ -23,7 +23,7 @@ export const RetrievalSubjectTypeSchema = z.enum([
   "run_event"
 ]);
 
-export const RetrievalTrustTierSchema = z.enum([
+export const RetrievalSourceAuthoritySchema = z.enum([
   "high",
   "medium",
   "low",
@@ -143,7 +143,7 @@ const SearchDocumentInputShapeSchema = z.object({
   reviewAssessmentId: OptionalIdSchema,
   sourceDecisionId: OptionalIdSchema,
   runEventId: OptionalIdSchema,
-  trustTier: RetrievalTrustTierSchema.default("medium"),
+  sourceAuthority: RetrievalSourceAuthoritySchema.default("medium"),
   validityStatus: RetrievalValidityStatusSchema.default("active"),
   language: RequiredTextSchema.default("english"),
   title: RequiredTextSchema,
@@ -181,7 +181,7 @@ export const RetrievalCandidateInputSchema = z.object({
   status: RetrievalCandidateStatusSchema.default("candidate"),
   subjectType: RetrievalSubjectTypeSchema,
   subjectId: RequiredTextSchema,
-  trustTier: RetrievalTrustTierSchema.default("medium"),
+  sourceAuthority: RetrievalSourceAuthoritySchema.default("medium"),
   lexicalScore: OptionalBoundedScoreSchema,
   vectorScore: OptionalBoundedScoreSchema,
   graphScore: OptionalBoundedScoreSchema,
@@ -266,7 +266,7 @@ export const ContextItemInputSchema = z.object({
   reason: RequiredTextSchema,
   expectedUse: RequiredTextSchema,
   tokenEstimate: NonNegativeIntegerSchema.optional(),
-  trustTier: RetrievalTrustTierSchema.default("medium"),
+  sourceAuthority: RetrievalSourceAuthoritySchema.default("medium"),
   metadata: MetadataSchema
 });
 
@@ -277,7 +277,7 @@ export const ContextExclusionInputSchema = z.object({
   reason: ContextExclusionReasonSchema,
   explanation: RequiredTextSchema,
   score: OptionalBoundedScoreSchema,
-  trustTier: RetrievalTrustTierSchema.default("medium"),
+  sourceAuthority: RetrievalSourceAuthoritySchema.default("medium"),
   metadata: MetadataSchema
 });
 

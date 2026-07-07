@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  sourceTrustTiers
+  sourceAuthorityLabels
 } from "../source.js";
 import {
   MetadataSchema,
@@ -17,7 +17,7 @@ export const SourceArtifactKindSchema = z.enum([
   "external_doc"
 ]);
 
-export const SourceTrustTierSchema = z.enum(sourceTrustTiers);
+export const SourceAuthorityLabelSchema = z.enum(sourceAuthorityLabels);
 
 export const SourceSupportTypeSchema = z.enum([
   "mechanism",
@@ -75,7 +75,7 @@ export const SourceArtifactInputSchema = z.object({
   title: RequiredTextSchema,
   uri: RequiredTextSchema.default("operator://source"),
   contentHash: RequiredTextSchema.optional(),
-  trustTier: SourceTrustTierSchema,
+  sourceAuthority: SourceAuthorityLabelSchema,
   metadata: MetadataSchema
 });
 
@@ -87,7 +87,7 @@ export const SourceClaimInputSchema = z.object({
   mechanism: RequiredTextSchema,
   krnImplication: RequiredTextSchema,
   doesNotProve: RequiredTextSchema,
-  trustTier: SourceTrustTierSchema,
+  sourceAuthority: SourceAuthorityLabelSchema,
   supportType: SourceSupportTypeSchema,
   consumer: RequiredTextSchema,
   falsifier: RequiredTextSchema,

@@ -6,7 +6,7 @@ import type {
   IsoTimestamp,
   ObservationConfidence,
   ObservationPriority,
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "@krn/core";
 
 export type CodexAdapterPlanStatus = "draft" | "ready" | "superseded";
@@ -101,7 +101,7 @@ export interface ExecutionBriefContextInclusion {
   subjectId: string;
   reason: string;
   expectedUse: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
 }
 
 export interface ExecutionBriefContextExclusion {
@@ -109,7 +109,7 @@ export interface ExecutionBriefContextExclusion {
   subjectId: string;
   reason: string;
   explanation: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
 }
 
 export interface ExecutionBriefObservationPrefixItem {

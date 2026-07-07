@@ -7,7 +7,7 @@ import type {
 import type { TaskContractId } from "./ids.js";
 import type {
   SourceContextTaxonomy,
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "./source.js";
 
 export const activationCandidateKinds = [
@@ -66,16 +66,16 @@ export interface ContextBudget {
 
 export interface ActivationPolicy {
   id?: string;
-  minimumTrustTier: SourceTrustTier;
+  minimumSourceAuthority: SourceAuthorityLabel;
   budget: ContextBudget;
   metadata?: Record<string, unknown>;
 }
 
 export interface TrustAssessment {
   accepted: boolean;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   reason: string;
-  minimumTrustTier?: ActivationPolicy["minimumTrustTier"];
+  minimumSourceAuthority?: ActivationPolicy["minimumSourceAuthority"];
 }
 
 export interface ContextROI {
@@ -91,7 +91,7 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;
   subjectId: string;
   text: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   reason: string;
   expectedUse: string;
   tokenEstimate: number;

@@ -105,7 +105,7 @@ const sourceClaim = (
   mechanism: "SourceClaimEdge rows can produce maintenance candidates.",
   krnImplication: "Operators need relation maintenance readback before autonomous graph maintenance.",
   doesNotProve: "This does not prove source truth.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "maintenance preview test",
   status: "accepted",

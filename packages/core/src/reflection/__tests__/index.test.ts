@@ -74,7 +74,7 @@ const output: ReflectionOutput = {
     mechanism: "Typed source range links identify raw evidence rows.",
     krnImplication: "Reflection can cite evidence without promoting memory.",
     doesNotProve: "This does not prove the claim is approved truth.",
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     supportType: "mechanism",
     consumer: "reflection candidate generation",
     evidence: {

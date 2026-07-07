@@ -56,7 +56,7 @@ const renderContextInclusion = (inclusion: ContextInclusion): string[] => [
   `  - ${contextSubjectRef(inclusion)}`,
   `    reason: ${inclusion.reason}`,
   `    expectedUse: ${inclusion.expectedUse}`,
-  `    trustTier: ${inclusion.trustTier}`,
+  `    sourceAuthority: ${inclusion.sourceAuthority}`,
   ...(inclusion.tokenEstimate === undefined ? [] : [`    tokenEstimate: ${inclusion.tokenEstimate}`])
 ];
 
@@ -64,7 +64,7 @@ const renderContextExclusion = (exclusion: ContextExclusion): string[] => [
   `  - ${contextSubjectRef(exclusion)}`,
   `    reason: ${exclusion.reason}`,
   `    explanation: ${exclusion.explanation}`,
-  `    trustTier: ${exclusion.trustTier}`,
+  `    sourceAuthority: ${exclusion.sourceAuthority}`,
   ...(exclusion.score === undefined ? [] : [`    score: ${exclusion.score}`])
 ];
 

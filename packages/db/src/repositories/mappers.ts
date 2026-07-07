@@ -22,13 +22,13 @@ import type {
   SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
-  SourceTrustTier,
+  SourceAuthorityLabel,
   TaskContract
 } from "@krn/core";
 import {
   evidenceCommandStatuses,
   toEvidenceCommandReadback,
-  sourceTrustTiers
+  sourceAuthorityLabels
 } from "@krn/core";
 import type {
   ActivationDecisionRecord,
@@ -127,7 +127,7 @@ type RetrievalSubjectMappingFields = Pick<
   | "sourceClaimId"
   | "memoryRecordId"
   | "antiMemoryRecordId"
-  | "trustTier"
+  | "sourceAuthority"
   | "validityStatus"
   | "metadataFilters"
   | "validFrom"
@@ -147,7 +147,7 @@ interface RetrievalSubjectMappingRow {
   sourceClaimId: string | null;
   memoryRecordId: string | null;
   antiMemoryRecordId: string | null;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   validityStatus: SearchDocumentRecord["validityStatus"];
   metadataFilters: unknown;
   validFrom: Date;
@@ -169,7 +169,7 @@ const mapRetrievalSubjectFields = (
   ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
   ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
   ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
-  trustTier: row.trustTier,
+  sourceAuthority: row.sourceAuthority,
   validityStatus: row.validityStatus,
   metadataFilters: metadataOrEmpty(row.metadataFilters),
   validFrom: toIsoTimestamp(row.validFrom),
@@ -203,7 +203,7 @@ const sourceDecisionStatuses: ReadonlySet<string> = new Set([
   "defer",
   "lab_test"
 ]);
-const sourceTrustTierSet: ReadonlySet<string> = new Set(sourceTrustTiers);
+const sourceAuthorityLabelSet: ReadonlySet<string> = new Set(sourceAuthorityLabels);
 
 const isOperatorIntentSource = (value: unknown): value is OperatorIntentSource =>
   typeof value === "string" && operatorIntentSources.has(value);
@@ -238,8 +238,8 @@ const asDiffRisk = (value: string): DiffRisk => {
   throw new Error(`Unknown evidence diff risk: ${value}`);
 };
 
-const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
-  typeof value === "string" && sourceTrustTierSet.has(value);
+const isSourceAuthorityLabel = (value: unknown): value is SourceAuthorityLabel =>
+  typeof value === "string" && sourceAuthorityLabelSet.has(value);
 
 const evidenceCommandStatusOrUndefined = (
   value: unknown
@@ -395,7 +395,7 @@ const contextInclusionsOrEmpty = (value: unknown): ContextInclusion[] => {
       typeof item.subjectId === "string" &&
       typeof item.reason === "string" &&
       typeof item.expectedUse === "string" &&
-      isSourceTrustTier(item.trustTier)
+      isSourceAuthorityLabel(item.sourceAuthority)
     );
   });
 };
@@ -417,7 +417,7 @@ const contextExclusionsOrEmpty = (value: unknown): ContextExclusion[] => {
       typeof item.subjectId === "string" &&
       typeof item.reason === "string" &&
       typeof item.explanation === "string" &&
-      isSourceTrustTier(item.trustTier)
+      isSourceAuthorityLabel(item.sourceAuthority)
     );
   });
 };
@@ -665,7 +665,7 @@ export const mapSourceArtifact = (row: SourceArtifactRow): SourceArtifactRecord 
   id: row.id,
   ...(row.projectId === null ? {} : { projectId: row.projectId }),
   kind: row.kind,
-  trustTier: row.trustTier,
+  sourceAuthority: row.sourceAuthority,
   uri: row.uri,
   title: row.title,
   contentHash: row.contentHash,
@@ -696,7 +696,7 @@ export const mapSourceClaim = (row: SourceClaimRow): SourceClaim => ({
   mechanism: row.mechanism,
   krnImplication: row.krnImplication,
   doesNotProve: row.doesNotProve,
-  trustTier: row.trustTier,
+  sourceAuthority: row.sourceAuthority,
   supportType: row.supportType,
   consumer: row.consumer,
   ...(row.falsifier === null ? {} : { falsifier: row.falsifier }),
@@ -842,7 +842,7 @@ export const mapRetrievalCandidate = (
   subjectType: row.subjectType,
   subjectId: row.subjectId,
   ...(row.searchDocumentId === null ? {} : { searchDocumentId: row.searchDocumentId }),
-  trustTier: row.trustTier,
+  sourceAuthority: row.sourceAuthority,
   ...(row.lexicalScore === null ? {} : { lexicalScore: row.lexicalScore }),
   ...(row.vectorScore === null ? {} : { vectorScore: row.vectorScore }),
   ...(row.graphScore === null ? {} : { graphScore: row.graphScore }),

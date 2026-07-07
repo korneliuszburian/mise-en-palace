@@ -17,7 +17,7 @@ import {
 
 export const formatSourceClaimAddUsage = (): string =>
   [
-    "Usage: krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" [--persist]",
+    "Usage: krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" [--persist]",
     "",
     "Required:",
     "--title",
@@ -25,7 +25,7 @@ export const formatSourceClaimAddUsage = (): string =>
     "--mechanism",
     "--does-not-prove",
     "--support-type",
-    "--trust-tier",
+    "--source-authority",
     "--consumer",
     "",
     "Optional:",
@@ -79,7 +79,7 @@ export const formatSourceDecisionGapsUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
     "",
     "Required:",
     "--file",
@@ -94,7 +94,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--krn-implication <text>",
     "--does-not-prove <text>",
     "--support-type <type>",
-    "--trust-tier <tier>",
+    "--source-authority <authority>",
     "--consumer <text>",
     "--falsifier <text>",
     "--graph-edge-to-source-claim-id <source-claim-id>",
@@ -237,7 +237,7 @@ const sourceClaimAddStringOptions = {
   "--mechanism": "mechanism",
   "--does-not-prove": "doesNotProve",
   "--support-type": "supportType",
-  "--trust-tier": "trustTier",
+  "--source-authority": "sourceAuthority",
   "--consumer": "consumer",
   "--uri": "uri",
   "--type": "type",
@@ -363,7 +363,7 @@ const hasSourceClaimAddRequiredFields = (
     sourceCommand.mechanism,
     sourceCommand.doesNotProve,
     sourceCommand.supportType,
-    sourceCommand.trustTier,
+    sourceCommand.sourceAuthority,
     sourceCommand.consumer
   ].every(hasText);
 
@@ -403,7 +403,7 @@ const sourceArtifactPreviewStringOptions = {
   "--krn-implication": "krnImplication",
   "--does-not-prove": "doesNotProve",
   "--support-type": "supportType",
-  "--trust-tier": "trustTier",
+  "--source-authority": "sourceAuthority",
   "--consumer": "consumer",
   "--falsifier": "falsifier",
   "--graph-edge-to-source-claim-id": "graphEdgeToSourceClaimId",
@@ -1029,8 +1029,8 @@ const parseSourceClaimAddToken = (
       supportType: (command, value) => {
         command.supportType = value;
       },
-      trustTier: (command, value) => {
-        command.trustTier = value;
+      sourceAuthority: (command, value) => {
+        command.sourceAuthority = value;
       },
       consumer: (command, value) => {
         command.consumer = value;

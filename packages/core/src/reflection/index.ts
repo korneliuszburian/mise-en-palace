@@ -156,7 +156,7 @@ export type ReflectionSourceClaimCandidateProposal = Pick<
   | "mechanism"
   | "krnImplication"
   | "doesNotProve"
-  | "trustTier"
+  | "sourceAuthority"
   | "supportType"
   | "consumer"
   | "metadata"

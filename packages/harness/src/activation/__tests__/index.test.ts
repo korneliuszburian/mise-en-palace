@@ -84,7 +84,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   mechanism: "Readiness checks compare expected Postgres state with configured runtime state.",
   krnImplication: "Doctor cannot imply memory exists before a configured Postgres store exists.",
   doesNotProve: "The exact production deployment posture is correct.",
-  trustTier: "high",
+  sourceAuthority: "high",
   supportType: "supports",
   consumer: "activation-engine-test",
   status: "accepted",
@@ -174,7 +174,7 @@ const searchDocument = (
   subjectType: "source_claim",
   subjectId: "source-claim-1",
   sourceClaimId: "source-claim-1",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   validityStatus: "active",
   language: "en",
   title: "Source graph crawler guidance",
@@ -297,7 +297,7 @@ describe("activation engine", () => {
     const query = buildSourceQuery(task);
     const source = toSourceClaimCandidate(sourceClaim({
       id: "claim-taxonomy",
-      trustTier: "source-code",
+      sourceAuthority: "source-code",
       supportType: "implementation-boundary"
     }));
     const [ranked] = rankCandidates([source], query);
@@ -328,7 +328,7 @@ describe("activation engine", () => {
       expect.objectContaining({
         subjectType: "source_claim",
         subjectId: "claim-taxonomy",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         sourceAuthorityRank: "high",
         sourceKind: "source-code",
         sourceSupportRelation: "not_applicable",
@@ -1124,7 +1124,7 @@ describe("activation engine", () => {
           appliesTo: "crawler-only"
         })
       ],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
 
@@ -1157,33 +1157,33 @@ describe("activation engine", () => {
     ]);
   });
 
-  it("uses core source trust ranking for rich activation trust tiers", () => {
+  it("uses core source trust ranking for rich activation source authorities", () => {
     const query = buildSourceQuery(task);
     const ranked = rankCandidates([
       toSourceClaimCandidate(sourceClaim({
         id: "claim-official",
-        trustTier: "official"
+        sourceAuthority: "official"
       })),
       toSourceClaimCandidate(sourceClaim({
         id: "claim-paper",
-        trustTier: "paper"
+        sourceAuthority: "paper"
       })),
       toSourceClaimCandidate(sourceClaim({
         id: "claim-secondary",
-        trustTier: "secondary"
+        sourceAuthority: "secondary"
       })),
       toSourceClaimCandidate(sourceClaim({
         id: "claim-hypothesis",
-        trustTier: "hypothesis"
+        sourceAuthority: "hypothesis"
       }))
     ], query);
 
     const highThreshold = new Map(
-      applyTrustFilter(ranked, { minimumTrustTier: "high" })
+      applyTrustFilter(ranked, { minimumSourceAuthority: "high" })
         .map((candidate) => [candidate.subjectId, candidate])
     );
     const mediumThreshold = new Map(
-      applyTrustFilter(ranked, { minimumTrustTier: "medium" })
+      applyTrustFilter(ranked, { minimumSourceAuthority: "medium" })
         .map((candidate) => [candidate.subjectId, candidate])
     );
 
@@ -1221,7 +1221,7 @@ describe("activation engine", () => {
     const result = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const bySubjectId = new Map(
@@ -1307,7 +1307,7 @@ describe("activation engine", () => {
     const result = applyActivationFilters({
       candidates: retrieved.candidates,
       antiMemoryRecords: retrieved.antiMemoryRecords,
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const bySubjectId = new Map(result.candidates.map((candidate) => [
@@ -1356,7 +1356,7 @@ describe("activation engine", () => {
     ];
 
     const ranked = rankCandidates(candidates, query);
-    const trusted = applyTrustFilter(ranked, { minimumTrustTier: "medium" });
+    const trusted = applyTrustFilter(ranked, { minimumSourceAuthority: "medium" });
     const current = applyTemporalFilter(trusted, now);
     const bounded = applyContextROI(current, { tokenBudget: 160, maxInclusions: 2 });
     const context = assembleContext({
@@ -1695,7 +1695,7 @@ describe("activation engine", () => {
     const context = assembleContext({
       id: "context-weak",
       harnessPlanId: "plan-1",
-      candidates: applyTrustFilter(ranked, { minimumTrustTier: "medium" }),
+      candidates: applyTrustFilter(ranked, { minimumSourceAuthority: "medium" }),
       createdAt: now
     });
 
@@ -1811,7 +1811,7 @@ describe("activation engine", () => {
     const result = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const bySubjectId = new Map(result.candidates.map((candidate) => [

@@ -10,7 +10,7 @@ import type {
 import {
   assessMemoryRecordReviewSignals,
   classifySourceClaimTaxonomy,
-  rankSourceTrustTier
+  rankSourceAuthority
 } from "@krn/core";
 
 import type {
@@ -33,7 +33,7 @@ import {
   sourceClaimEdgeRankDownDoesNotProve
 } from "./source-claim-edge-scoring.js";
 
-const confidenceToTrustTier = (confidence: number): ActivationCandidate["trustTier"] => {
+const confidenceToSourceAuthority = (confidence: number): ActivationCandidate["sourceAuthority"] => {
   if (confidence >= 85) {
     return "high";
   }
@@ -54,18 +54,18 @@ const lexicalScore = (candidateText: string, query: ActivationQuery): number => 
   return hits * 20;
 };
 
-const strongerTrustTier = (
-  left: ActivationCandidate["trustTier"],
-  right: ActivationCandidate["trustTier"]
-): ActivationCandidate["trustTier"] =>
-  rankSourceTrustTier(right) > rankSourceTrustTier(left) ? right : left;
+const strongerSourceAuthority = (
+  left: ActivationCandidate["sourceAuthority"],
+  right: ActivationCandidate["sourceAuthority"]
+): ActivationCandidate["sourceAuthority"] =>
+  rankSourceAuthority(right) > rankSourceAuthority(left) ? right : left;
 
-const activationTrustScore = (trustTier: ActivationCandidate["trustTier"]): number => {
-  if (rankSourceTrustTier(trustTier) >= rankSourceTrustTier("high")) {
+const activationTrustScore = (sourceAuthority: ActivationCandidate["sourceAuthority"]): number => {
+  if (rankSourceAuthority(sourceAuthority) >= rankSourceAuthority("high")) {
     return 30;
   }
 
-  if (rankSourceTrustTier(trustTier) >= rankSourceTrustTier("medium")) {
+  if (rankSourceAuthority(sourceAuthority) >= rankSourceAuthority("medium")) {
     return 20;
   }
 
@@ -107,7 +107,7 @@ const mergedFeedbackScore = (left: number, right: number): number =>
 const mergedScores = (
   left: RankedActivationCandidate,
   right: RankedActivationCandidate,
-  trustTier: ActivationCandidate["trustTier"]
+  sourceAuthority: ActivationCandidate["sourceAuthority"]
 ): MergedCandidateScores => ({
   lexical: Math.max(left.lexicalScore, right.lexicalScore),
   vector: Math.max(left.vectorScore, right.vectorScore),
@@ -115,7 +115,7 @@ const mergedScores = (
   temporal: Math.max(left.temporalScore, right.temporalScore),
   contextRoi: Math.max(left.contextRoiScore, right.contextRoiScore),
   feedback: mergedFeedbackScore(left.feedbackScore, right.feedbackScore),
-  trust: activationTrustScore(trustTier)
+  trust: activationTrustScore(sourceAuthority)
 });
 
 const mergedTotalScore = (scores: MergedCandidateScores): number =>
@@ -165,8 +165,8 @@ const mergeTwoCandidates = (
   right: RankedActivationCandidate
 ): RankedActivationCandidate => {
   const representative = preferredRepresentative(left, right);
-  const trustTier = strongerTrustTier(left.trustTier, right.trustTier);
-  const scores = mergedScores(left, right, trustTier);
+  const sourceAuthority = strongerSourceAuthority(left.sourceAuthority, right.sourceAuthority);
+  const scores = mergedScores(left, right, sourceAuthority);
   const searchDocumentIds = mergedSearchDocumentIds(left, right);
   const mergedCandidateIds = mergedMetadataStrings(
     left,
@@ -185,7 +185,7 @@ const mergeTwoCandidates = (
 
   return {
     ...representative,
-    trustTier,
+    sourceAuthority,
     tokenEstimate: Math.min(left.tokenEstimate, right.tokenEstimate),
     lexicalScore: scores.lexical,
     vectorScore: scores.vector,
@@ -373,7 +373,7 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
     subjectType: "memory_record",
     subjectId: record.id,
     text: [record.summary, record.body, record.applicationGuidance].join(" "),
-    trustTier: confidenceToTrustTier(record.confidence),
+    sourceAuthority: confidenceToSourceAuthority(record.confidence),
     reason: `Memory: ${record.summary}`,
     expectedUse: record.applicationGuidance,
     tokenEstimate: estimateTokens([record.summary, record.body].join(" ")),
@@ -407,7 +407,7 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
     subjectType: "source_claim",
     subjectId: claim.id,
     text: [claim.claim, claim.mechanism, claim.krnImplication, claim.doesNotProve].join(" "),
-    trustTier: claim.trustTier,
+    sourceAuthority: claim.sourceAuthority,
     sourceAuthorityRank: taxonomy.authorityRank,
     sourceKind: taxonomy.sourceKind,
     sourceSupportRelation: taxonomy.supportRelation,
@@ -442,7 +442,7 @@ export const toSearchCandidate = (document: SearchDocumentSearchResult): Activat
   subjectType: "search_document",
   subjectId: document.id,
   text: [document.title, document.body, document.searchText].join(" "),
-  trustTier: document.trustTier,
+  sourceAuthority: document.sourceAuthority,
   reason: `Search document: ${document.title}`,
   expectedUse: "Use when the search document directly matches the task query.",
   tokenEstimate: estimateTokens([document.title, document.body].join(" ")),
@@ -481,7 +481,7 @@ export const rankCandidates = (
       const temporal = candidate.temporalScore ?? 0;
       const contextRoi = candidate.contextRoiScore ?? 0;
       const feedback = candidate.feedbackScore ?? 0;
-      const trust = activationTrustScore(candidate.trustTier);
+      const trust = activationTrustScore(candidate.sourceAuthority);
 
       return {
         ...candidate,

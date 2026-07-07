@@ -4,7 +4,7 @@ import type {
   EvidenceCommand,
   EvidenceCommandReadback,
   FeedbackCandidateProposalKind,
-  SourceTrustTier,
+  SourceAuthorityLabel,
   SourceUsefulnessOutcome,
   TargetEvidence
 } from "@krn/core";
@@ -37,7 +37,7 @@ export interface DecisionPacketReadModelContextInclusion {
   subjectId: string;
   reason: string;
   expectedUse: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   tokenEstimate?: number;
 }
 
@@ -46,7 +46,7 @@ export interface DecisionPacketReadModelContextExclusion {
   subjectId: string;
   reason: string;
   explanation: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   score?: number;
 }
 
@@ -70,7 +70,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   status: string;
   subjectType: string;
   subjectId: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   lexicalScore?: number;
   vectorScore?: number;
   graphScore?: number;

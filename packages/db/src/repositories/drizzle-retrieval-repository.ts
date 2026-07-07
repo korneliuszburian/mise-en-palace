@@ -314,7 +314,7 @@ const searchDocumentInsertValues = (
     ...optionalColumn("reviewAssessmentId", input.reviewAssessmentId),
     ...optionalColumn("sourceDecisionId", input.sourceDecisionId),
     ...optionalColumn("runEventId", input.runEventId),
-    trustTier: input.trustTier ?? "medium",
+    sourceAuthority: input.sourceAuthority ?? "medium",
     validityStatus: input.validityStatus ?? "active",
     language,
     title: input.title,
@@ -340,7 +340,7 @@ const embeddingInsertValues = (
     ...optionalColumn("searchDocumentId", input.searchDocumentId),
     embedding: input.embedding,
     contentHash: input.contentHash,
-    trustTier: input.trustTier ?? "medium",
+    sourceAuthority: input.sourceAuthority ?? "medium",
     validityStatus: input.validityStatus ?? "active",
     metadataFilters: input.metadataFilters ?? {},
     ...optionalTimestampColumn("validFrom", input.validFrom),
@@ -358,7 +358,7 @@ const retrievalCandidateInsertValues = (
   subjectType: input.subjectType,
   subjectId: input.subjectId,
   ...optionalColumn("searchDocumentId", input.searchDocumentId),
-  trustTier: input.trustTier,
+  sourceAuthority: input.sourceAuthority,
   ...optionalColumn("lexicalScore", input.lexicalScore),
   ...optionalColumn("vectorScore", input.vectorScore),
   ...optionalColumn("graphScore", input.graphScore),
@@ -723,7 +723,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
             ...(inclusion.tokenEstimate === undefined
               ? {}
               : { tokenEstimate: inclusion.tokenEstimate }),
-            trustTier: inclusion.trustTier,
+            sourceAuthority: inclusion.sourceAuthority,
             metadata: {}
           }))
         );
@@ -738,7 +738,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
             reason: toContextExclusionReason(exclusion.reason),
             explanation: exclusion.explanation,
             ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
-            trustTier: exclusion.trustTier,
+            sourceAuthority: exclusion.sourceAuthority,
             metadata: {
               originalReason: exclusion.reason
             }

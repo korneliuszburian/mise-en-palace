@@ -187,7 +187,7 @@ export const createNoStoreCompilerDependencies = (
     subjectType: input.subjectType,
     subjectId: input.subjectId,
     ...optionalField("searchDocumentId", input.searchDocumentId),
-    trustTier: input.trustTier,
+    sourceAuthority: input.sourceAuthority,
     ...optionalField("lexicalScore", input.lexicalScore),
     ...optionalField("vectorScore", input.vectorScore),
     ...optionalField("graphScore", input.graphScore),

@@ -76,7 +76,7 @@ const contextInclusionResource = (
   subjectId: inclusion.subjectId,
   reason: inclusion.reason,
   expectedUse: inclusion.expectedUse,
-  trustTier: inclusion.trustTier,
+  sourceAuthority: inclusion.sourceAuthority,
   ...(inclusion.tokenEstimate === undefined ? {} : { tokenEstimate: inclusion.tokenEstimate })
 });
 
@@ -87,7 +87,7 @@ const contextExclusionResource = (
   subjectId: exclusion.subjectId,
   reason: exclusion.reason,
   explanation: exclusion.explanation,
-  trustTier: exclusion.trustTier,
+  sourceAuthority: exclusion.sourceAuthority,
   ...(exclusion.score === undefined ? {} : { score: exclusion.score })
 });
 
@@ -131,7 +131,7 @@ const activationCandidateResource = (
     status: candidate.status,
     subjectType: candidate.subjectType,
     subjectId: candidate.subjectId,
-    trustTier: candidate.trustTier,
+    sourceAuthority: candidate.sourceAuthority,
     ...activationCandidateScores(candidate),
     reason: candidate.reason,
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),

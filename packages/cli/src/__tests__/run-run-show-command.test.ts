@@ -114,7 +114,7 @@ const aggregate: HarnessRunAggregate = {
       reason: "Evidence readback should distinguish proof strength.",
       expectedUse: "Render proof boundary.",
       tokenEstimate: 20,
-      trustTier: "project-decision"
+      sourceAuthority: "project-decision"
     }],
     exclusions: [{
       subjectType: "source_claim",
@@ -122,7 +122,7 @@ const aggregate: HarnessRunAggregate = {
       reason: "low_trust",
       explanation: "Weak source excluded.",
       score: 10,
-      trustTier: "low"
+      sourceAuthority: "low"
     }],
     metadata: {
       activationRetrievalDiagnostics
@@ -138,7 +138,7 @@ const aggregate: HarnessRunAggregate = {
       status: "included",
       subjectType: "source_claim",
       subjectId: "claim-1",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       lexicalScore: 12,
       vectorScore: 0,
       graphScore: 9,
@@ -639,7 +639,7 @@ describe("runRunShowCommand", () => {
           reason: "Evidence readback should distinguish proof strength.",
           expectedUse: "Render proof boundary.",
           tokenEstimate: 20,
-          trustTier: "project-decision"
+          sourceAuthority: "project-decision"
         }],
         exclusionDetails: [{
           subjectType: "source_claim",
@@ -647,7 +647,7 @@ describe("runRunShowCommand", () => {
           reason: "low_trust",
           explanation: "Weak source excluded.",
           score: 10,
-          trustTier: "low"
+          sourceAuthority: "low"
         }],
         activationDiagnostics: {
           inputStatus: "empty_activation_store",

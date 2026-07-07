@@ -17,7 +17,7 @@ export interface SourceArtifactPreviewViewCommand {
   krnImplication?: string;
   doesNotProve?: string;
   supportType?: string;
-  trustTier?: string;
+  sourceAuthority?: string;
   consumer?: string;
   falsifier?: string;
   reviewedExtractionClaimCandidateId?: string;
@@ -42,7 +42,7 @@ interface CandidateField {
     | "krnImplication"
     | "doesNotProve"
     | "supportType"
-    | "trustTier"
+    | "sourceAuthority"
     | "consumer"
     | "falsifier"
   >;
@@ -89,7 +89,7 @@ const sourceClaimCandidateFields: readonly CandidateField[] = [
   { name: "krnImplication", label: "--krn-implication" },
   { name: "doesNotProve", label: "--does-not-prove" },
   { name: "supportType", label: "--support-type" },
-  { name: "trustTier", label: "--trust-tier" },
+  { name: "sourceAuthority", label: "--source-authority" },
   { name: "consumer", label: "--consumer" },
   { name: "falsifier", label: "--falsifier" }
 ] as const;
@@ -144,7 +144,7 @@ const searchDocumentCandidateView = (
   const candidate = parseSearchDocumentInput({
     subjectType: "source_artifact",
     subjectId: artifactHash,
-    trustTier: "source-code",
+    sourceAuthority: "source-code",
     language: "english",
     title: `Local source artifact: ${file}`,
     body: sourceArtifactPreviewChunkBody(chunks),
@@ -198,7 +198,7 @@ const formatSearchDocumentCandidate = (
     ...formatReviewabilityReasons(view.reviewability.reasons),
     `  subjectType: ${view.candidate.subjectType}`,
     `  subjectId: ${view.candidate.subjectId}`,
-    `  trustTier: ${view.candidate.trustTier}`,
+    `  sourceAuthority: ${view.candidate.sourceAuthority}`,
     `  title: ${view.candidate.title}`,
     `  evidenceRefs: ${view.evidenceRefs.join(", ")}`,
     `  doesNotProve: ${view.doesNotProve}`,
@@ -435,7 +435,7 @@ const parseOutputSourceClaimCandidate = (input: {
     krnImplication: input.command.krnImplication,
     doesNotProve: input.command.doesNotProve,
     supportType: input.command.supportType,
-    trustTier: input.command.trustTier,
+    sourceAuthority: input.command.sourceAuthority,
     consumer: input.command.consumer,
     falsifier: input.command.falsifier,
     metadata: {
@@ -918,7 +918,7 @@ const searchDocumentCandidateJson = (
     reviewabilityReasons: view.reviewability.reasons,
     subjectType: view.candidate.subjectType,
     subjectId: view.candidate.subjectId,
-    trustTier: view.candidate.trustTier,
+    sourceAuthority: view.candidate.sourceAuthority,
     title: view.candidate.title,
     evidenceRefs: view.evidenceRefs,
     doesNotProve: view.doesNotProve,

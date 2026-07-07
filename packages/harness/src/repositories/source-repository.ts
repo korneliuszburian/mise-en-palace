@@ -9,7 +9,7 @@ import type {
   SourceRejection,
   SourceClaimCreateStatus,
   SourceSupportType,
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "@krn/core";
 
 import type {
@@ -27,7 +27,7 @@ export interface CreateSourceClaimInput {
   mechanism: string;
   krnImplication: string;
   doesNotProve: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   supportType: SourceSupportType;
   consumer: string;
   falsifier?: string;

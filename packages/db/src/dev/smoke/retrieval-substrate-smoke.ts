@@ -142,7 +142,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://retrieval-substrate-smoke/${marker}`,
       title: "Retrieval substrate smoke source",
       contentHash: `retrieval-substrate-smoke-${marker}`,
@@ -157,7 +157,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       mechanism: "SearchDocument stores text/FTS data and Embedding stores a pgvector row linked to the document.",
       krnImplication: "M25 activation can rank and audit bounded context candidates.",
       doesNotProve: "This does not prove final ranking quality.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "M24 retrieval substrate smoke",
       falsifier: "Retrieval substrate smoke readback or cleanup fails.",
@@ -203,7 +203,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       sourceClaimId: sourceClaim.id,
       title: "Source graph Postgres edge tables",
       body: "Use Postgres source decision edges before adding a separate graph DB.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -215,7 +215,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       memoryRecordId: memoryRecord.id,
       title: "Retrieval substrate memory",
       body: "Memory records should become bounded retrieval candidates before activation.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -227,7 +227,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       evidenceBundleId: evidenceBundle.id,
       title: "Retrieval substrate evidence",
       body: "Evidence bundles can be indexed as retrieval documents for follow-up runs.",
-      trustTier: "medium",
+      sourceAuthority: "medium",
       metadata: {
         smokeId: marker
       }
@@ -239,7 +239,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       sourceDecisionId: sourceDecision.id,
       title: "Retrieval substrate decision",
       body: "Adopt Postgres and pgvector as the M24 retrieval substrate.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -271,7 +271,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       searchDocumentId: sourceDocument.id,
       embedding: deterministicSmokeVector(0),
       contentHash: `retrieval-smoke-${marker}`,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -284,7 +284,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       searchDocumentId: memoryDocument.id,
       embedding: deterministicSmokeVector(1),
       contentHash: `retrieval-smoke-distractor-${marker}`,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -334,7 +334,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       mode: "hybrid",
       budget: 1000,
       metadataFilters: {
-        trustTier: "project-decision"
+        sourceAuthority: "project-decision"
       },
       metadata: {
         smokeId: marker
@@ -347,7 +347,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       subjectType: "search_document",
       subjectId: sourceDocument.id,
       searchDocumentId: sourceDocument.id,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       lexicalScore: 95,
       vectorScore: 80,
       totalScore: 90,
@@ -364,7 +364,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       subjectType: "search_document",
       subjectId: memoryDocument.id,
       searchDocumentId: memoryDocument.id,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       lexicalScore: 30,
       contextRoiScore: 20,
       totalScore: 25,
@@ -414,7 +414,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
         reason: "Direct source graph retrieval proof.",
         expectedUse: "Guide M24 retrieval substrate implementation.",
         tokenEstimate: 220,
-        trustTier: "project-decision"
+        sourceAuthority: "project-decision"
       }],
       exclusions: [{
         subjectType: "search_document",
@@ -422,7 +422,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
         reason: "low_context_roi",
         explanation: "Lower ROI than the source claim for this query.",
         score: 25,
-        trustTier: "project-decision"
+        sourceAuthority: "project-decision"
       }]
     });
     const candidates = await retrievalRepository.listCandidatesForRetrievalRun(retrievalRun.id);

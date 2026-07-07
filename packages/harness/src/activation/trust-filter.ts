@@ -1,8 +1,8 @@
 import type {
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "@krn/core";
 import {
-  rankSourceTrustTier
+  rankSourceAuthority
 } from "@krn/core";
 import type {
   RankedActivationCandidate
@@ -12,7 +12,7 @@ import {
 } from "./types.js";
 
 export interface TrustFilterPolicy {
-  minimumTrustTier: SourceTrustTier;
+  minimumSourceAuthority: SourceAuthorityLabel;
 }
 
 export const applyTrustFilter = (
@@ -25,14 +25,14 @@ export const applyTrustFilter = (
     }
 
     if (
-      rankSourceTrustTier(candidate.trustTier) >=
-      rankSourceTrustTier(policy.minimumTrustTier)
+      rankSourceAuthority(candidate.sourceAuthority) >=
+      rankSourceAuthority(policy.minimumSourceAuthority)
     ) {
       return candidate;
     }
 
     return markExcluded(candidate, {
       reason: "low_trust",
-      explanation: `Candidate trust tier ${candidate.trustTier} is below ${policy.minimumTrustTier}.`
+      explanation: `Candidate source authority ${candidate.sourceAuthority} is below ${policy.minimumSourceAuthority}.`
     });
   });

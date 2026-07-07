@@ -188,7 +188,7 @@ const toOwnerFileCandidate = (
   subjectType: "search_document",
   subjectId: entry.id,
   text: [entry.path, entry.title, entry.summary, ...entry.terms].join(" "),
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   reason: `Owner-file recall: ${entry.path}`,
   expectedUse: `Inspect ${entry.path} when the task touches ${entry.title.toLowerCase()}.`,
   tokenEstimate: 48,
@@ -267,7 +267,7 @@ const toTargetSeedCandidate = (
       seed.reason,
       "target owner file source seed project scoped read model"
     ].join(" "),
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     reason: `Target source seed: ${seed.path}`,
     expectedUse: `Inspect ${boundaryLabel} path ${seed.path} when the task needs ${seed.reason}.`,
     tokenEstimate: 40,
@@ -318,7 +318,7 @@ const toTargetOwnerFileCandidate = (
       ownerFile.reason,
       "target owner file below named source root project scoped read model"
     ].join(" "),
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     reason: `Target owner file: ${ownerFile.path}`,
     expectedUse: `Inspect ${boundaryLabel} owner file ${ownerFile.path} for ${ownerFile.reason}.`,
     tokenEstimate: 56,
@@ -360,7 +360,7 @@ const toTargetTrustExclusionCandidate = (
         `${exclusion.pathPattern} ${exclusion.reason}`
       )
     ].join(" "),
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     reason: "Target trust exclusions for project-scoped planning",
     expectedUse: `Exclude or redact ${boundaryLabel} paths before using target context: ${patterns.join(", ")}.`,
     tokenEstimate: 64,

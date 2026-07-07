@@ -94,7 +94,7 @@ describe("owner-file recall", () => {
       kind: "search",
       subjectType: "search_document",
       subjectId: "11111111-1111-4111-8111-111111111001",
-      trustTier: "project-decision"
+      sourceAuthority: "project-decision"
     });
     expect(candidates[0]?.searchDocumentId).toBeUndefined();
   });

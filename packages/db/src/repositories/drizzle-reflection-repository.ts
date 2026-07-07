@@ -19,7 +19,7 @@ import type {
 } from "@krn/core";
 import {
   sourceSupportTypes,
-  sourceTrustTiers
+  sourceAuthorityLabels
 } from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
@@ -85,7 +85,7 @@ const memoryKinds = new Set<string>([
   "risk"
 ]);
 
-const sourceTrustTierSet = new Set<string>(sourceTrustTiers);
+const sourceAuthorityLabelSet = new Set<string>(sourceAuthorityLabels);
 
 const sourceSupportTypeSet = new Set<string>(sourceSupportTypes);
 
@@ -135,10 +135,10 @@ const isReflectionMemoryKind = (
 ): value is ReflectionMemoryCandidateProposal["kind"] =>
   typeof value === "string" && memoryKinds.has(value);
 
-const isReflectionSourceTrustTier = (
+const isReflectionSourceAuthorityLabel = (
   value: unknown
-): value is ReflectionSourceClaimCandidateProposal["trustTier"] =>
-  typeof value === "string" && sourceTrustTierSet.has(value);
+): value is ReflectionSourceClaimCandidateProposal["sourceAuthority"] =>
+  typeof value === "string" && sourceAuthorityLabelSet.has(value);
 
 const isReflectionSourceSupportType = (
   value: unknown
@@ -410,7 +410,7 @@ const reflectionSourceClaimCandidatesOrEmpty = (
     const mechanism = stringOrUndefined(item.mechanism);
     const krnImplication = stringOrUndefined(item.krnImplication);
     const doesNotProve = stringOrUndefined(item.doesNotProve);
-    const trustTier = stringOrUndefined(item.trustTier);
+    const sourceAuthority = stringOrUndefined(item.sourceAuthority);
     const supportType = stringOrUndefined(item.supportType);
     const consumer = stringOrUndefined(item.consumer);
     const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
@@ -424,7 +424,7 @@ const reflectionSourceClaimCandidatesOrEmpty = (
     };
 
     if (
-      !isReflectionSourceTrustTier(trustTier) ||
+      !isReflectionSourceAuthorityLabel(sourceAuthority) ||
       !isReflectionSourceSupportType(supportType) ||
       !hasDefinedValues(required)
     ) {
@@ -436,7 +436,7 @@ const reflectionSourceClaimCandidatesOrEmpty = (
       mechanism: required.mechanism,
       krnImplication: required.krnImplication,
       doesNotProve: required.doesNotProve,
-      trustTier,
+      sourceAuthority,
       supportType,
       consumer: required.consumer,
       ...(typeof item.falsifier === "string" ? { falsifier: item.falsifier } : {}),

@@ -58,7 +58,7 @@ export const createRetrievalCandidateRecord = (
     status: input.status ?? "candidate",
     subjectType: input.subjectType,
     subjectId: input.subjectId,
-    trustTier: input.trustTier,
+    sourceAuthority: input.sourceAuthority,
     reason: input.reason,
     metadata: input.metadata ?? {},
     createdAt: options.now

@@ -1,6 +1,6 @@
 import type {
   ContextAssembly,
-  SourceTrustTier
+  SourceAuthorityLabel
 } from "@krn/core";
 
 import type {
@@ -15,7 +15,7 @@ export interface ActivationRawRecallTrigger {
   subjectId: string;
   candidateId: string;
   reasons: readonly ActivationRawRecallReason[];
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   evidenceHints: readonly string[];
 }
 
@@ -23,7 +23,7 @@ export interface BuildActivationRawRecallTriggersInput {
   candidates: readonly RankedActivationCandidate[];
   contextAssembly: ContextAssembly;
   requireExactProof?: boolean;
-  lowTrustTiers?: readonly SourceTrustTier[];
+  lowSourceAuthorities?: readonly SourceAuthorityLabel[];
   exactProofKinds?: readonly ActivationCandidateKind[];
 }
 
@@ -44,7 +44,7 @@ export const buildActivationRawRecallTriggers = (
   input: BuildActivationRawRecallTriggersInput
 ): ActivationRawRecallTrigger[] => {
   const includedKeys = new Set(input.contextAssembly.inclusions.map(candidateKey));
-  const lowTrustTiers = new Set(input.lowTrustTiers ?? ["low"]);
+  const lowSourceAuthorities = new Set(input.lowSourceAuthorities ?? ["low"]);
   const exactProofKinds = new Set(input.exactProofKinds ?? ["source", "search"]);
 
   return input.candidates.flatMap((candidate) => {
@@ -58,7 +58,7 @@ export const buildActivationRawRecallTriggers = (
       reasons.push("exact_proof_required");
     }
 
-    if (lowTrustTiers.has(candidate.trustTier)) {
+    if (lowSourceAuthorities.has(candidate.sourceAuthority)) {
       reasons.push("low_trust");
     }
 
@@ -71,7 +71,7 @@ export const buildActivationRawRecallTriggers = (
       subjectId: candidate.subjectId,
       candidateId: candidate.id,
       reasons,
-      trustTier: candidate.trustTier,
+      sourceAuthority: candidate.sourceAuthority,
       evidenceHints: evidenceHintsFor(candidate)
     }];
   });

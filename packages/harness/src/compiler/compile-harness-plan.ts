@@ -111,7 +111,7 @@ const defaultSourceLimit = 25;
 const defaultSearchLimit = 25;
 const defaultAntiMemoryLimit = 25;
 const maxContextInclusions = 6;
-const minimumTrustTier = "medium";
+const minimumSourceAuthority = "medium";
 
 type RetrievedActivationCandidates = Awaited<ReturnType<typeof retrieveActivationCandidates>>;
 type ConflictDetectionResult = ReturnType<typeof detectConflicts>;
@@ -217,7 +217,7 @@ const filterActivationCandidates = (
           applyMemoryReviewSignalFilter(conflictResult.candidates)
         )
       ),
-      { minimumTrustTier }
+      { minimumSourceAuthority }
     ),
     createdAt
   ),

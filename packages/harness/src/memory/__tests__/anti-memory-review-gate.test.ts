@@ -53,7 +53,7 @@ const sourceClaim = (
   mechanism: "Memory Core writes go through Postgres-backed repositories.",
   krnImplication: "Markdown cannot be treated as runtime Memory Core.",
   doesNotProve: "This does not prove markdown cannot be source material.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "anti-memory-review-gate",
   status: "accepted",

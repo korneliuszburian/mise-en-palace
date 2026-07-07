@@ -182,7 +182,7 @@ export const runActivationSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://activation-smoke/${marker}`,
       title: "Activation smoke source",
       contentHash: `activation-smoke-${marker}`,
@@ -197,7 +197,7 @@ export const runActivationSmokeCheck = async (
       mechanism: "A noisy DB corpus forces the engine to rank, filter, include, exclude, and persist activation decisions.",
       krnImplication: "M25 activation can be checked through a live store-backed smoke command.",
       doesNotProve: "This does not prove production ranking quality.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "M25 activation smoke",
       falsifier: "Activation smoke readback or cleanup fails.",
@@ -214,7 +214,7 @@ export const runActivationSmokeCheck = async (
       mechanism: "A crawler would gather more source material.",
       krnImplication: "Activation could inspect more documents.",
       doesNotProve: "The crawler is within M25 scope.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "rejection",
       consumer: "M25 activation smoke",
       falsifier: "Anti-memory fails to block crawler scope.",
@@ -231,7 +231,7 @@ export const runActivationSmokeCheck = async (
       mechanism: "Broad context dumping is a tempting but unsafe shortcut.",
       krnImplication: "This would encourage broad context dumping.",
       doesNotProve: "The claim has a working mechanism.",
-      trustTier: "high",
+      sourceAuthority: "high",
       supportType: "risk",
       consumer: "M25 activation smoke",
       falsifier: "Source safety accepts a claim without mechanism.",
@@ -306,7 +306,7 @@ export const runActivationSmokeCheck = async (
       title: "Activation smoke search document",
       body: "Activation readiness uses search candidates, explicit exclusions, anti-memory conflict handling, bounded context, and persisted decisions.",
       searchText: sourceQuery.text,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         smokeId: marker
       }
@@ -341,7 +341,7 @@ export const runActivationSmokeCheck = async (
     const filterResult = applyActivationFilters({
       candidates: retrieved.candidates,
       antiMemoryRecords: retrieved.antiMemoryRecords,
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const filteredCandidates = applyContextROI(

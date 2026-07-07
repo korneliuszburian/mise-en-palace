@@ -151,14 +151,14 @@ describe("runCli", () => {
             subjectId: "source-claim-1",
             reason: "Source claim grounds adapter boundary.",
             expectedUse: "Use in the execution brief.",
-            trustTier: "project-decision"
+            sourceAuthority: "project-decision"
           },
           {
             subjectType: "memory_record",
             subjectId: "memory-record-1",
             reason: "Memory records prior adapter decision.",
             expectedUse: "Keep output bounded.",
-            trustTier: "high"
+            sourceAuthority: "high"
           }
         ],
         exclusions: [
@@ -167,7 +167,7 @@ describe("runCli", () => {
             subjectId: "anti-memory-1",
             reason: "unsafe",
             explanation: "Do not mutate memory while rendering a brief.",
-            trustTier: "high"
+            sourceAuthority: "high"
           }
         ],
         metadata: {},

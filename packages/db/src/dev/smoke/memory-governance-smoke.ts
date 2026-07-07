@@ -102,7 +102,7 @@ export const runMemoryGovernanceSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://memory-governance-smoke/${marker}`,
       title: "Memory governance smoke source",
       contentHash: `memory-governance-smoke-${marker}`,
@@ -117,7 +117,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       mechanism: "Postgres stores candidates, records, versions, applications, and anti-memory.",
       krnImplication: "KRN can audit how memory becomes active context.",
       doesNotProve: "This does not prove activation ranking quality.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "M23 memory governance smoke",
       falsifier: "Memory governance smoke readback or cleanup fails.",

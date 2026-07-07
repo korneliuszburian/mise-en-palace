@@ -91,7 +91,7 @@ const sourceClaim = (): SourceClaim => ({
   mechanism: "Evidence and review artifacts are observed before reflection proposes candidates.",
   krnImplication: "The brain loop must preserve evidence lineage until MemoryReviewGate accepts it.",
   doesNotProve: "This source claim does not prove autonomous reflection quality.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "brain-loop-integration-test",
   status: "accepted",

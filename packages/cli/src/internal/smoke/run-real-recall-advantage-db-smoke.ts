@@ -184,7 +184,7 @@ const createSmokeSourceArtifact = async (
   const sourceArtifact = await runtime.sourceRepository.createSourceArtifact({
     projectId,
     kind: "doc",
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     uri,
     title,
     contentHash,
@@ -206,7 +206,7 @@ interface SmokeSourceClaimSeed {
 }
 
 // Shared SourceClaim creation for governing and distractor seeds. Both pin
-// trustTier/supportType to the same project-decision/implementation-boundary
+// sourceAuthority/supportType to the same project-decision/implementation-boundary
 // pair; only the claim content and metadata differ.
 const createSmokeSourceClaim = async (
   runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>,
@@ -218,7 +218,7 @@ const createSmokeSourceClaim = async (
     mechanism: seed.mechanism,
     krnImplication: seed.krnImplication,
     doesNotProve: seed.doesNotProve,
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     supportType: "implementation-boundary",
     consumer: seed.consumer,
     falsifier: seed.falsifier,
@@ -385,7 +385,7 @@ const seedRealRecallClaim = async (
     subjectId: sourceClaimId,
     sourceArtifactId,
     sourceClaimId,
-    trustTier: "project-decision",
+    sourceAuthority: "project-decision",
     title: variant.searchTitle,
     body: variant.searchBody,
     searchText: variant.searchText,

@@ -206,7 +206,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   mechanism: "The claim affects implementation safety and needs raw evidence recall.",
   krnImplication: "Activation may include the claim only with a raw recall trigger.",
   doesNotProve: "This does not prove implementation correctness.",
-  trustTier: "high",
+  sourceAuthority: "high",
   supportType: "supports",
   consumer: "golden-real-behavior-gate",
   status: "accepted",
@@ -360,7 +360,7 @@ const runAntiMemoryBlock = (now: string): BehaviorFixtureProof => {
   const filtered = applyActivationFilters({
     candidates: ranked,
     antiMemoryRecords: [antiMemoryRecord({})],
-    minimumTrustTier: "low",
+    minimumSourceAuthority: "low",
     now
   });
   const context = assembleContext({
@@ -917,7 +917,7 @@ const assembleSourceArtifactPreviewReuseContext = (
         ))
       ),
       antiMemoryRecords: [],
-      minimumTrustTier: "low",
+      minimumSourceAuthority: "low",
       now
     }).candidates,
     {

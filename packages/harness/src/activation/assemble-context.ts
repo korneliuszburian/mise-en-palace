@@ -118,7 +118,7 @@ const toInclusion = (candidate: RankedActivationCandidate): ContextInclusion => 
   reason: candidate.reason,
   expectedUse: candidate.expectedUse,
   tokenEstimate: candidate.tokenEstimate,
-  trustTier: candidate.trustTier,
+  sourceAuthority: candidate.sourceAuthority,
   ...sourceTaxonomyContextFields(candidate)
 });
 
@@ -133,7 +133,7 @@ const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | u
     reason: candidate.exclusion.reason,
     explanation: candidate.exclusion.explanation,
     score: candidate.totalScore,
-    trustTier: candidate.trustTier,
+    sourceAuthority: candidate.sourceAuthority,
     ...sourceTaxonomyContextFields(candidate)
   };
 };

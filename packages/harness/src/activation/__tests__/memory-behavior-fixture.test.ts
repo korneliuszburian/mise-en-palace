@@ -88,7 +88,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   mechanism: "The claim affects implementation safety and needs raw evidence recall.",
   krnImplication: "Activation may include the claim only with a raw recall trigger.",
   doesNotProve: "The implementation is already correct.",
-  trustTier: "high",
+  sourceAuthority: "high",
   supportType: "supports",
   consumer: "golden-memory-behavior-test",
   status: "accepted",
@@ -197,7 +197,7 @@ describe("golden memory behavior cases", () => {
     const context = assembleContext({
       id: "context-weak",
       harnessPlanId: "plan-1",
-      candidates: applyTrustFilter(ranked, { minimumTrustTier: "medium" }),
+      candidates: applyTrustFilter(ranked, { minimumSourceAuthority: "medium" }),
       createdAt: now
     });
 
@@ -276,7 +276,7 @@ describe("golden memory behavior cases", () => {
     const filtered = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
     const context = assembleContext({
@@ -378,7 +378,7 @@ describe("golden memory behavior cases", () => {
     const filtered = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [antiMemoryRecord({})],
-      minimumTrustTier: "low",
+      minimumSourceAuthority: "low",
       now
     });
     const context = assembleContext({

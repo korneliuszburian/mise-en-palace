@@ -354,7 +354,7 @@ describe("proposeMemoryConsolidation", () => {
     const filtered = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [gateResult.antiMemoryRecord],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
 
@@ -505,7 +505,7 @@ describe("reviewed memory revision", () => {
     const filtered = applyActivationFilters({
       candidates: ranked,
       antiMemoryRecords: [],
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       now
     });
 

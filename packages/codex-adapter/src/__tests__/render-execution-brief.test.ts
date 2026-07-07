@@ -60,7 +60,7 @@ const contextAssembly: ContextAssembly = {
       reason: "Memory: Brain store is Postgres",
       expectedUse: "Use when planning doctor persistence checks.",
       tokenEstimate: 42,
-      trustTier: "high"
+      sourceAuthority: "high"
     },
     {
       subjectType: "source_claim",
@@ -68,7 +68,7 @@ const contextAssembly: ContextAssembly = {
       reason: "Source: Doctor readiness is store-backed",
       expectedUse: "Ground implementation boundaries.",
       tokenEstimate: 32,
-      trustTier: "project-decision"
+      sourceAuthority: "project-decision"
     }
   ],
   exclusions: [
@@ -76,9 +76,9 @@ const contextAssembly: ContextAssembly = {
       subjectType: "source_claim",
       subjectId: "claim-weak",
       reason: "low_trust",
-      explanation: "Candidate trust tier low is below medium.",
+      explanation: "Candidate source authority low is below medium.",
       score: 10,
-      trustTier: "low"
+      sourceAuthority: "low"
     },
     {
       subjectType: "anti_memory_record",
@@ -86,7 +86,7 @@ const contextAssembly: ContextAssembly = {
       reason: "unsafe",
       explanation: "Do not treat old markdown memory as runtime truth.",
       score: 100,
-      trustTier: "high"
+      sourceAuthority: "high"
     }
   ],
   observationPrefix: {
@@ -327,9 +327,9 @@ describe("renderExecutionBrief", () => {
         subjectType: "source_claim",
         subjectId: `claim-noise-${index}`,
         reason: "low_trust",
-        explanation: "Candidate trust tier low is below medium.",
+        explanation: "Candidate source authority low is below medium.",
         score: 10,
-        trustTier: "low"
+        sourceAuthority: "low"
       }))
     };
     const brief = createExecutionBrief({
@@ -361,7 +361,7 @@ describe("renderExecutionBrief", () => {
             reason: "Hypothesis source may help identify risk.",
             expectedUse: "Use only as a risk hypothesis.",
             tokenEstimate: 20,
-            trustTier: "hypothesis"
+            sourceAuthority: "hypothesis"
           }
         ]
       },
@@ -371,7 +371,7 @@ describe("renderExecutionBrief", () => {
     });
 
     expect(brief.untrustedContextWarnings).toEqual([
-      "source_claim:claim-hypothesis | trust=hypothesis | treat as untrusted selected context; verify before using as implementation authority"
+      "source_claim:claim-hypothesis | authority=hypothesis | treat as untrusted selected context; verify before using as implementation authority"
     ]);
 
     const rendered = renderExecutionBriefText(brief);

@@ -63,20 +63,20 @@ const aggregate: HarnessRunAggregate = {
       subjectId: "claim-agent-1",
       reason: "Agent needs governing source.",
       expectedUse: "Use before coding.",
-      trustTier: "project-decision"
+      sourceAuthority: "project-decision"
     }, {
       subjectType: "memory_record",
       subjectId: "memory-agent-1",
       reason: "Agent needs retained implementation guidance.",
       expectedUse: "Use while editing.",
-      trustTier: "medium"
+      sourceAuthority: "medium"
     }],
     exclusions: [{
       subjectType: "memory_record",
       subjectId: "memory-rejected-1",
       reason: "anti_memory",
       explanation: "Rejected path should be visible to the agent packet.",
-      trustTier: "medium"
+      sourceAuthority: "medium"
     }],
     metadata: {},
     createdAt: now
@@ -90,7 +90,7 @@ const aggregate: HarnessRunAggregate = {
       status: "included",
       subjectType: "source_claim",
       subjectId: "claim-agent-1",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       lexicalScore: 12,
       vectorScore: 0,
       graphScore: 9,

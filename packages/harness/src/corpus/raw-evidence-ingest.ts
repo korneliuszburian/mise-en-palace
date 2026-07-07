@@ -1,4 +1,4 @@
-import type { ProjectId, SourceTrustTier } from "@krn/core";
+import type { ProjectId, SourceAuthorityLabel } from "@krn/core";
 
 import type { RetrievalRepository } from "../repositories/retrieval-repository.js";
 import type { SourceRepository } from "../repositories/source-repository.js";
@@ -37,7 +37,7 @@ export interface RawEvidenceIngestInput extends RawEvidenceIdentity {
   retrievalRepository: Pick<RetrievalRepository, "createSearchDocument">;
   rawText: string;
   span: RawEvidenceSpan;
-  trustTier?: SourceTrustTier;
+  sourceAuthority?: SourceAuthorityLabel;
   language?: string;
   validUntil?: string;
   retrievalMetadata?: Record<string, unknown>;
@@ -142,7 +142,7 @@ export const ingestRawEvidenceSpan = async (
   const spanContent = extractCitableSpan(rawText, input.span);
   const spanHash = rawEvidenceChecksum(spanContent);
   const ref = citationRef(identity, input.span);
-  const trustTier = input.trustTier ?? "medium";
+  const sourceAuthority = input.sourceAuthority ?? "medium";
   const metadata = {
     rawEvidence: {
       sourceType: identity.sourceType,
@@ -163,7 +163,7 @@ export const ingestRawEvidenceSpan = async (
   const sourceArtifact = await input.sourceRepository.createSourceArtifact({
     ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
     kind: "external_doc",
-    trustTier,
+    sourceAuthority,
     uri: identity.uri,
     title: identity.title,
     contentHash: identity.sourceChecksum,
@@ -184,7 +184,7 @@ export const ingestRawEvidenceSpan = async (
     subjectId: sourceChunk.id,
     sourceArtifactId: sourceArtifact.id,
     sourceChunkId: sourceChunk.id,
-    trustTier,
+    sourceAuthority,
     language: input.language ?? "english",
     title: identity.title,
     body: spanContent,

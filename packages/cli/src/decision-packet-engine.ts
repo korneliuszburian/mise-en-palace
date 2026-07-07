@@ -83,7 +83,7 @@ const toSourceClaim = (decision: DecisionPacketRow): SourceClaim => ({
   mechanism: `Decision ${decision.id} is represented as source-backed engineering guidance.`,
   krnImplication: `Use decision ${decision.id} when the task matches ${decision.title}.`,
   doesNotProve: decision.doesNotProve,
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "decision",
   consumer: "decision-packet-eval",
   falsifier: decision.falsifier,
@@ -445,7 +445,7 @@ export const buildDecisionPacketWithEngine = async (
   const filtered = applyActivationFilters({
     candidates: retrieved.candidates,
     antiMemoryRecords: retrieved.antiMemoryRecords,
-    minimumTrustTier: "medium",
+    minimumSourceAuthority: "medium",
     now
   });
   const budgeted = budgetCandidates(filtered.candidates, fixture.topK);

@@ -42,12 +42,12 @@ export const sourceKinds = [
 
 export type SourceKind = typeof sourceKinds[number];
 
-export const sourceTrustTiers = [
+export const sourceAuthorityLabels = [
   ...sourceAuthorityRanks,
   ...sourceRankedKinds
 ] as const;
 
-export type SourceTrustTier = typeof sourceTrustTiers[number];
+export type SourceAuthorityLabel = typeof sourceAuthorityLabels[number];
 
 export const sourceSupportTypes = [
   "supports",
@@ -169,7 +169,7 @@ export interface SourceClaim {
   mechanism: string;
   krnImplication: string;
   doesNotProve: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   supportType: SourceSupportType;
   consumer: string;
   falsifier?: string;
@@ -264,7 +264,7 @@ export interface SourceRejection {
   rejectedAt: IsoTimestamp;
 }
 
-export const sourceAuthorityByTrustTier: Record<SourceTrustTier, SourceAuthority> = {
+export const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthority> = {
   high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
   medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
   low: { authorityRank: "low", sourceKind: "unspecified", rank: 25 },
@@ -282,8 +282,8 @@ export const sourceAuthorityByTrustTier: Record<SourceTrustTier, SourceAuthority
   hypothesis: { authorityRank: "low", sourceKind: "hypothesis", rank: 10 }
 };
 
-export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
-  sourceAuthorityByTrustTier[trustTier].rank;
+export const rankSourceAuthority = (sourceAuthority: SourceAuthorityLabel): number =>
+  sourceAuthorityByLabel[sourceAuthority].rank;
 
 const readTrimmedMetadataString = (
   metadata: Record<string, unknown>,
@@ -338,8 +338,8 @@ export const readSourceRelationMetadataReadback = (
 };
 
 export const classifySourceAuthority = (
-  trustTier: SourceTrustTier
-): SourceAuthority => sourceAuthorityByTrustTier[trustTier];
+  sourceAuthority: SourceAuthorityLabel
+): SourceAuthority => sourceAuthorityByLabel[sourceAuthority];
 
 export const sourceSupportAssessmentByType: Record<
   SourceSupportType,
@@ -407,9 +407,9 @@ export const assessSourceSupportType = (
 ): SourceSupportAssessment => sourceSupportAssessmentByType[supportType];
 
 export const classifySourceClaimTaxonomy = (
-  claim: Pick<SourceClaim, "trustTier" | "supportType">
+  claim: Pick<SourceClaim, "sourceAuthority" | "supportType">
 ): SourceClaimTaxonomy => {
-  const authority = classifySourceAuthority(claim.trustTier);
+  const authority = classifySourceAuthority(claim.sourceAuthority);
   const support = assessSourceSupportType(claim.supportType);
 
   return {
@@ -519,7 +519,7 @@ export const isSourceClaimTemporallyValid = (
 
 export type SourceClaimOverrideClaim = Pick<
   SourceClaim,
-  "id" | "status" | "trustTier" | "revisitWhen" | "createdAt"
+  "id" | "status" | "sourceAuthority" | "revisitWhen" | "createdAt"
 >;
 
 export type SourceClaimOverrideAssessment =
@@ -551,7 +551,7 @@ export const assessSourceClaimOverride = (input: {
     };
   }
 
-  const candidateTrustRank = rankSourceTrustTier(input.candidate.trustTier);
+  const candidateTrustRank = rankSourceAuthority(input.candidate.sourceAuthority);
   const strongerCurrentConsensus = input.currentConsensus.find((currentClaim) => {
     if (currentClaim.id === input.candidate.id || currentClaim.status !== "accepted") {
       return false;
@@ -561,7 +561,7 @@ export const assessSourceClaimOverride = (input: {
       return false;
     }
 
-    return rankSourceTrustTier(currentClaim.trustTier) > candidateTrustRank;
+    return rankSourceAuthority(currentClaim.sourceAuthority) > candidateTrustRank;
   });
 
   if (strongerCurrentConsensus !== undefined) {
@@ -599,7 +599,7 @@ export interface SourceConsensusTimelineEntry {
   claim: string;
   status: SourceClaimStatus;
   createdAt: IsoTimestamp;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   authorityRank: number;
   temporalValidity: SourceClaimTemporalValidity;
   state: SourceConsensusTimelineEntryState;
@@ -872,8 +872,8 @@ export const buildSourceConsensusTimelineReadback = (input: {
         claim: claim.claim,
         status: claim.status,
         createdAt: claim.createdAt,
-        trustTier: claim.trustTier,
-        authorityRank: rankSourceTrustTier(claim.trustTier),
+        sourceAuthority: claim.sourceAuthority,
+        authorityRank: rankSourceAuthority(claim.sourceAuthority),
         temporalValidity,
         state,
         ...(blockedByCurrentSourceClaimId === undefined

@@ -112,7 +112,7 @@ describe("noisy brain activation fixture", () => {
     );
     const bounded = applyContextROI(
       applyTemporalFilter(
-        applyTrustFilter(conflictResult.candidates, { minimumTrustTier: "medium" }),
+        applyTrustFilter(conflictResult.candidates, { minimumSourceAuthority: "medium" }),
         fixture.now
       ),
       {

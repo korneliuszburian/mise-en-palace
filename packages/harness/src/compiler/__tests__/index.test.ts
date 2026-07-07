@@ -79,7 +79,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   mechanism: "Doctor compares expected Postgres-backed KRN state with configured runtime state.",
   krnImplication: "Compiler plans for doctor work need source grounding and evidence commands.",
   doesNotProve: "The production deployment is already ready.",
-  trustTier: "high",
+  sourceAuthority: "high",
   supportType: "implementation-boundary",
   consumer: "compiler-test",
   falsifier: "A compiler plan includes this claim without decision support.",
@@ -132,7 +132,7 @@ const searchDocument = (
   projectId: "project-1",
   subjectType: "search_document",
   subjectId: "search-doc-1",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   validityStatus: "active",
   language: "english",
   title: "Activation readiness smoke",
@@ -638,7 +638,7 @@ describe("compileHarnessPlan", () => {
       sourceRepository: new FakeSourceRepository([
         sourceClaim({
           id: "claim-unsafe",
-          trustTier: "low"
+          sourceAuthority: "low"
         })
       ]),
       retrievalRepository,
@@ -876,7 +876,7 @@ describe("compileHarnessPlan", () => {
       mechanism: "A crawler would gather more source material.",
       krnImplication: "Activation would have more context.",
       doesNotProve: "That crawler scope is allowed.",
-      trustTier: "project-decision"
+      sourceAuthority: "project-decision"
     });
 
     const result = await compileHarnessPlan(

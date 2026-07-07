@@ -88,7 +88,7 @@ const rankedCandidate = (
   subjectType: "source_claim",
   subjectId: "claim-1",
   text: "KRN activation must source support decisions.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   reason: "Relevant source claim.",
   expectedUse: "Guide activation trace implementation.",
   tokenEstimate: 80,
@@ -122,7 +122,7 @@ describe("persistActivationTrace", () => {
         reason: "Use the grounded claim.",
         expectedUse: "Guide activation trace implementation.",
         tokenEstimate: 80,
-        trustTier: "project-decision"
+        sourceAuthority: "project-decision"
       }],
       exclusions: [],
       metadata: {},
@@ -160,7 +160,7 @@ describe("persistActivationTrace", () => {
         subjectId: "claim-1",
         candidateId: "candidate-1",
         reasons: ["exact_proof_required"],
-        trustTier: "project-decision",
+        sourceAuthority: "project-decision",
         evidenceHints: ["source_claim:claim-1", "claim-1", "doc-1", "doc-2"]
       }]
     });
@@ -191,7 +191,7 @@ describe("persistActivationTrace", () => {
         reason: "unsafe",
         explanation: "Anti-memory blocks this context.",
         score: 92,
-        trustTier: "project-decision"
+        sourceAuthority: "project-decision"
       }],
       activationAbstention: {
         reason: "unsafe_context",

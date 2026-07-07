@@ -35,7 +35,7 @@ import {
   sourceChunks,
   sourceClaims,
   sourceDecisions,
-  sourceTrustTier
+  sourceAuthorityLabel
 } from "./sources.js";
 import { tsvector } from "../sql/full-text-search.js";
 import { DEFAULT_EMBEDDING_DIMENSIONS } from "../sql/pgvector.js";
@@ -143,7 +143,7 @@ const retrievalSourceMemoryReferenceColumns = () => ({
 });
 
 const retrievalTrustValidityColumns = () => ({
-  trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
+  sourceAuthority: sourceAuthorityLabel("trust_tier").notNull().default("medium"),
   validityStatus: retrievalValidityStatus("validity_status").notNull().default("active")
 });
 
@@ -301,7 +301,7 @@ export const retrievalCandidates = pgTable(
     searchDocumentId: uuid("search_document_id").references(() => searchDocuments.id, {
       onDelete: "set null"
     }),
-    trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
+    sourceAuthority: sourceAuthorityLabel("trust_tier").notNull().default("medium"),
     lexicalScore: integer("lexical_score"),
     vectorScore: integer("vector_score"),
     graphScore: integer("graph_score"),
@@ -363,7 +363,7 @@ export const contextItems = pgTable(
     reason: text("reason").notNull(),
     expectedUse: text("expected_use").notNull(),
     tokenEstimate: integer("token_estimate"),
-    trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
+    sourceAuthority: sourceAuthorityLabel("trust_tier").notNull().default("medium"),
     metadata: metadataColumn(),
     createdAt: createdAtColumn()
   },
@@ -382,7 +382,7 @@ export const contextExclusions = pgTable(
     reason: contextExclusionReason("reason").notNull(),
     explanation: text("explanation").notNull(),
     score: integer("score"),
-    trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
+    sourceAuthority: sourceAuthorityLabel("trust_tier").notNull().default("medium"),
     metadata: metadataColumn(),
     createdAt: createdAtColumn()
   },

@@ -298,7 +298,7 @@ export const runCodexAdapterSmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://codex-adapter-smoke/${marker}`,
       title: "Codex adapter smoke source",
       contentHash: `codex-adapter-smoke-${marker}`,
@@ -315,7 +315,7 @@ export const runCodexAdapterSmokeCheck = async (
       krnImplication:
         "M26 Codex adapter readiness can be proven through a self-cleaning DB smoke command.",
       doesNotProve: "This does not prove Codex executed the work.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "M26 Codex adapter smoke",
       falsifier: "The smoke command cannot render objective, context, evidence, or proof boundaries.",

@@ -481,7 +481,7 @@ export const runBrainSearchDbSmokeCheck = async (
     const sourceArtifact = await runtime.sourceRepository.createSourceArtifact({
       projectId,
       kind: "doc",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `smoke://brain-search/${input.smokeId}`,
       title: "Brain search DB dogfood source",
       contentHash: `brain-search-${input.smokeId}`,
@@ -494,7 +494,7 @@ export const runBrainSearchDbSmokeCheck = async (
       krnImplication: firmPatternChallenge.implication,
       doesNotProve:
         firmPatternChallenge.doesNotProve,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: firmPatternChallenge.consumer,
       falsifier: firmPatternChallenge.falsifier,
@@ -543,7 +543,7 @@ export const runBrainSearchDbSmokeCheck = async (
       subjectId: sourceClaim.id,
       sourceArtifactId: sourceArtifact.id,
       sourceClaimId: sourceClaim.id,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       title: "Brain search DB dogfood SearchDocument",
       body:
         `SearchDocument for ${query}. ${firmPatternChallenge.expectedDecision} The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,

@@ -28,7 +28,7 @@ describe("createNoStoreCompilerDependencies", () => {
       kind: "memory",
       subjectType: "memory_record",
       subjectId: "memory-1",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       reason: "No-store preview selected retained memory."
     });
     const decision = await recordActivationDecision({

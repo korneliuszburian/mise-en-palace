@@ -37,7 +37,7 @@ export type CreateSourceDecisionGapsDatabaseRuntime = (
 interface SourceDecisionGap {
   sourceClaimId: SourceClaim["id"];
   claim: string;
-  trustTier: SourceClaim["trustTier"];
+  sourceAuthority: SourceClaim["sourceAuthority"];
   supportType: SourceClaim["supportType"];
   consumer: string;
   caveat: string;
@@ -85,7 +85,7 @@ const defaultLimit = 50;
 const sourceDecisionGapFor = (claim: SourceClaim): SourceDecisionGap => ({
   sourceClaimId: claim.id,
   claim: claim.claim,
-  trustTier: claim.trustTier,
+  sourceAuthority: claim.sourceAuthority,
   supportType: claim.supportType,
   consumer: claim.consumer,
   caveat:
@@ -117,7 +117,7 @@ const formatText = (report: SourceDecisionGapsReport): string =>
       : report.missingDecisionEdgeClaims.map((gap) =>
           [
             `- sourceClaim:${gap.sourceClaimId}`,
-            ` trustTier:${gap.trustTier}`,
+            ` sourceAuthority:${gap.sourceAuthority}`,
             ` supportType:${gap.supportType}`,
             ` consumer:${gap.consumer}`,
             ` claim:${gap.claim}`,

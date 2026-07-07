@@ -405,7 +405,7 @@ export type CliCommand =
       krnImplication?: string;
       doesNotProve?: string;
       supportType?: string;
-      trustTier?: string;
+      sourceAuthority?: string;
       consumer?: string;
       falsifier?: string;
       graphEdgeToSourceClaimId?: string;
@@ -427,7 +427,7 @@ export type CliCommand =
       mechanism?: string;
       doesNotProve?: string;
       supportType?: string;
-      trustTier?: string;
+      sourceAuthority?: string;
       consumer?: string;
       uri?: string;
       type?: string;
@@ -540,7 +540,7 @@ const usage = [
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
-  "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
+  "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --source-authority project-decision --consumer \"...\" [--persist]",
   "krn source claim edges --source-claim-id <id>",
   "krn source search --query \"...\" [--project <project-id>] [--limit <n>] [--max-inclusions <n>] [--json]",
   "krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",

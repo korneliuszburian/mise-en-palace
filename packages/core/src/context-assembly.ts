@@ -11,7 +11,7 @@ import type {
 } from "./observations/observation-kinds.js";
 import type {
   SourceContextTaxonomy,
-  SourceTrustTier,
+  SourceAuthorityLabel,
 } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 
@@ -43,7 +43,7 @@ export interface ContextInclusion extends SourceContextTaxonomy {
   reason: string;
   expectedUse: string;
   tokenEstimate?: number;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
 }
 
 export interface ContextExclusion extends SourceContextTaxonomy {
@@ -52,7 +52,7 @@ export interface ContextExclusion extends SourceContextTaxonomy {
   reason: string;
   explanation: string;
   score?: number;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
 }
 
 export type ContextObservationPrefixExclusionReason =

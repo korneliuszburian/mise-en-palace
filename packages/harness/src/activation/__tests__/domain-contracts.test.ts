@@ -24,12 +24,12 @@ describe("activation domain contracts", () => {
     };
     const policy: ActivationPolicy = {
       id: "policy-1",
-      minimumTrustTier: "medium",
+      minimumSourceAuthority: "medium",
       budget
     };
     const trust: TrustAssessment = {
       accepted: true,
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       reason: "Project decisions are trusted enough for activation."
     };
     const contextROI: ContextROI = {

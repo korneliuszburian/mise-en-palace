@@ -10,7 +10,7 @@ import {
   throwOnBlockingSourceDecisionSignals,
   assertSourceDecisionSourceClaimCanSupport,
   assessSourceClaimOverride,
-  rankSourceTrustTier,
+  rankSourceAuthority,
   sourceClaimStatusForDecisionStatus
 } from "../drizzle-source-repository.js";
 
@@ -45,7 +45,7 @@ describe("DrizzleSourceRepository", () => {
       mechanism: "Source claims are only useful when they name how evidence changes behavior.",
       krnImplication: "KRN must reject decorative source claims before persistence.",
       doesNotProve: "This does not prove retrieval quality.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "MM-34 source graph hardening",
       falsifier: "A claim can be persisted with no consumer or mechanism."
@@ -203,20 +203,20 @@ describe("DrizzleSourceRepository", () => {
     expect(() => throwOnBlockingSourceDecisionSignals(sourceDecision, "accepted")).not.toThrow();
   });
 
-  it("ranks source trust tiers deterministically", () => {
-    expect(rankSourceTrustTier("official")).toBeGreaterThan(rankSourceTrustTier("high"));
-    expect(rankSourceTrustTier("primary")).toBe(rankSourceTrustTier("official"));
-    expect(rankSourceTrustTier("project-decision")).toBe(rankSourceTrustTier("official"));
-    expect(rankSourceTrustTier("source-code")).toBe(rankSourceTrustTier("official"));
-    expect(rankSourceTrustTier("high")).toBeGreaterThan(rankSourceTrustTier("secondary"));
-    expect(rankSourceTrustTier("secondary")).toBeGreaterThan(rankSourceTrustTier("hypothesis"));
+  it("ranks source authorities deterministically", () => {
+    expect(rankSourceAuthority("official")).toBeGreaterThan(rankSourceAuthority("high"));
+    expect(rankSourceAuthority("primary")).toBe(rankSourceAuthority("official"));
+    expect(rankSourceAuthority("project-decision")).toBe(rankSourceAuthority("official"));
+    expect(rankSourceAuthority("source-code")).toBe(rankSourceAuthority("official"));
+    expect(rankSourceAuthority("high")).toBeGreaterThan(rankSourceAuthority("secondary"));
+    expect(rankSourceAuthority("secondary")).toBeGreaterThan(rankSourceAuthority("hypothesis"));
   });
 
   it("blocks a newer weak source from overriding stronger current consensus without reason", () => {
     const consensusClaim = {
       id: "source-claim-strong",
       status: "accepted",
-      trustTier: "official",
+      sourceAuthority: "official",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       createdAt: "2026-06-01T00:00:00.000Z",
       claim: "Memory promotion requires a review gate."
@@ -225,7 +225,7 @@ describe("DrizzleSourceRepository", () => {
     const weakClaim = {
       id: "source-claim-weak",
       status: "proposed",
-      trustTier: "hypothesis",
+      sourceAuthority: "hypothesis",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       createdAt: "2026-06-23T00:00:00.000Z",
       claim: "Memory promotion can skip review when recent."
@@ -257,7 +257,7 @@ describe("DrizzleSourceRepository", () => {
     const staleConsensusClaim = {
       id: "source-claim-stale",
       status: "accepted",
-      trustTier: "official",
+      sourceAuthority: "official",
       revisitWhen: "2026-06-01T00:00:00.000Z",
       createdAt: "2026-05-01T00:00:00.000Z",
       claim: "Observation prefix can be selected by priority alone."
@@ -266,7 +266,7 @@ describe("DrizzleSourceRepository", () => {
     const newerWeakClaim = {
       id: "source-claim-new",
       status: "proposed",
-      trustTier: "low",
+      sourceAuthority: "low",
       createdAt: "2026-06-23T00:00:00.000Z",
       claim: "Priority alone should not select observation prefix."
     } as const;

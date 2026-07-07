@@ -2,7 +2,7 @@ import type {
   AntiMemoryRecord,
   ActivationAbstentionReason,
   ContextAssembly,
-  SourceTrustTier,
+  SourceAuthorityLabel,
   TaskContract
 } from "@krn/core";
 import {
@@ -99,7 +99,7 @@ export interface PersistActivationTraceInput {
   metadata?: Record<string, unknown>;
   rawRecall?: {
     requireExactProof?: boolean;
-    lowTrustTiers?: readonly SourceTrustTier[];
+    lowSourceAuthorities?: readonly SourceAuthorityLabel[];
     exactProofKinds?: readonly ActivationCandidateKind[];
   };
 }
@@ -201,9 +201,9 @@ const buildTraceRawRecallTriggers = (
     ...(input.rawRecall?.requireExactProof === undefined
       ? {}
       : { requireExactProof: input.rawRecall.requireExactProof }),
-    ...(input.rawRecall?.lowTrustTiers === undefined
+    ...(input.rawRecall?.lowSourceAuthorities === undefined
       ? {}
-      : { lowTrustTiers: input.rawRecall.lowTrustTiers }),
+      : { lowSourceAuthorities: input.rawRecall.lowSourceAuthorities }),
     ...(input.rawRecall?.exactProofKinds === undefined
       ? {}
       : { exactProofKinds: input.rawRecall.exactProofKinds })
@@ -233,7 +233,7 @@ const persistRetrievalCandidates = async (
       subjectType: candidate.subjectType,
       subjectId: candidate.subjectId,
       ...(searchDocumentId === undefined ? {} : { searchDocumentId }),
-      trustTier: candidate.trustTier,
+      sourceAuthority: candidate.sourceAuthority,
       lexicalScore: candidate.lexicalScore,
       vectorScore: candidate.vectorScore,
       graphScore: candidate.graphScore,

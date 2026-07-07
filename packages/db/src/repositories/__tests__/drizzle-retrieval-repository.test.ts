@@ -19,7 +19,7 @@ const searchDocumentRow = {
   reviewAssessmentId: null,
   sourceDecisionId: null,
   runEventId: null,
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   validityStatus: "active",
   language: "english",
   title: "Vector retrieval provenance",

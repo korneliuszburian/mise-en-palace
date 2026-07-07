@@ -6,7 +6,7 @@ import type {
   ContextAssemblyId,
   ExecutionRunId,
   ProjectId,
-  SourceTrustTier,
+  SourceAuthorityLabel,
   TaskContractId
 } from "@krn/core";
 
@@ -33,7 +33,7 @@ import type {
 } from "./types.js";
 
 export interface CreateSearchDocumentInput extends SearchDocumentSubjectFields {
-  trustTier?: SourceTrustTier;
+  sourceAuthority?: SourceAuthorityLabel;
   validityStatus?: RetrievalValidityStatus;
   language?: string;
   title: string;
@@ -77,7 +77,7 @@ export interface CreateEmbeddingInput extends EmbeddingSubjectFields {
   embeddingModelId: EmbeddingModelId;
   embedding: number[];
   contentHash: string;
-  trustTier?: SourceTrustTier;
+  sourceAuthority?: SourceAuthorityLabel;
   validityStatus?: RetrievalValidityStatus;
   metadataFilters?: Record<string, unknown>;
   validFrom?: string;
@@ -115,7 +115,7 @@ export interface ActivationTraceRawRecallTrigger {
   subjectId: string;
   candidateId: string;
   reasons: readonly ActivationTraceRawRecallReason[];
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   evidenceHints: readonly string[];
 }
 

@@ -84,7 +84,7 @@ const sourceArtifactRecord = (
   id: "11111111-1111-4111-8111-111111111111",
   ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
   kind: input.kind,
-  trustTier: input.trustTier,
+  sourceAuthority: input.sourceAuthority,
   uri: input.uri,
   title: input.title,
   contentHash: input.contentHash,
@@ -107,7 +107,7 @@ const sourceClaimRecord = (
   mechanism: input.mechanism,
   krnImplication: input.krnImplication,
   doesNotProve: input.doesNotProve,
-  trustTier: input.trustTier,
+  sourceAuthority: input.sourceAuthority,
   supportType: input.supportType,
   consumer: input.consumer,
   ...(input.falsifier === undefined ? {} : { falsifier: input.falsifier }),
@@ -145,7 +145,7 @@ const searchDocumentRecord = (
   ...optionalSearchDocumentFields(input),
   subjectType: input.subjectType,
   subjectId: input.subjectId,
-  trustTier: input.trustTier ?? "medium",
+  sourceAuthority: input.sourceAuthority ?? "medium",
   validityStatus: input.validityStatus ?? "active",
   language: input.language ?? "english",
   title: input.title,
@@ -423,7 +423,7 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceClaimCandidate:");
     expect(result.stdout).toContain("status: incomplete");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
-    expect(result.stdout).toContain("missing: --mechanism, --krn-implication, --does-not-prove, --support-type, --trust-tier, --consumer, --falsifier");
+    expect(result.stdout).toContain("missing: --mechanism, --krn-implication, --does-not-prove, --support-type, --source-authority, --consumer, --falsifier");
     expect(result.stdout).toContain("No SourceClaim created");
   });
 
@@ -444,7 +444,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         krnImplication: "Use preview output as source candidate evidence before persistence.",
         doesNotProve: "This does not prove source truth.",
         supportType: "implementation-boundary",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         consumer: "ingest v0",
         falsifier: "Candidate output mutates SourceGraph."
       }
@@ -478,7 +478,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         krnImplication: "Use source claim edge candidates before graph runtime work.",
         doesNotProve: "This does not prove graph retrieval quality.",
         supportType: "implementation-boundary",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         consumer: "graph brain v0",
         falsifier: "Graph preview mutates accepted graph truth.",
         graphEdgeToSourceClaimId: "target-source-claim-1",
@@ -556,7 +556,7 @@ describe("runSourceArtifactPreviewCommand", () => {
               mechanism: "Preview persistence creates Artifact and Chunk rows before creating SourceClaim.",
               krnImplication: "Use explicit local artifact evidence as the first Ingest v0 source-claim review path.",
               doesNotProve: "This does not prove source truth.",
-              trustTier: "source-code",
+              sourceAuthority: "source-code",
               supportType: "implementation-boundary",
               consumer: "ingest v0",
               falsifier: "SourceClaim is not linked to the persisted SourceArtifact.",
@@ -610,7 +610,7 @@ describe("runSourceArtifactPreviewCommand", () => {
               subjectId: "11111111-1111-4111-8111-111111111111",
               sourceArtifactId: "11111111-1111-4111-8111-111111111111",
               sourceChunkId: "22222222-2222-4222-8222-222222222222",
-              trustTier: "source-code",
+              sourceAuthority: "source-code",
               validityStatus: "active",
               language: "english",
               title: "Local source artifact: source.md",
@@ -640,7 +640,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         krnImplication: "Use explicit local artifact evidence as the first Ingest v0 source-claim review path.",
         doesNotProve: "This does not prove source truth.",
         supportType: "implementation-boundary",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         consumer: "ingest v0",
         falsifier: "SourceClaim is not linked to the persisted SourceArtifact.",
         graphEdgeToSourceClaimId: targetSourceClaimId,
@@ -755,7 +755,7 @@ describe("runSourceArtifactPreviewCommand", () => {
               subjectId: "11111111-1111-4111-8111-111111111111",
               sourceArtifactId: "11111111-1111-4111-8111-111111111111",
               sourceChunkId: "22222222-2222-4222-8222-222222222222",
-              trustTier: "source-code",
+              sourceAuthority: "source-code",
               validityStatus: "active",
               language: "english",
               title: "Local source artifact: source.md",
@@ -858,7 +858,7 @@ describe("runSourceArtifactPreviewCommand", () => {
               subjectId: "11111111-1111-4111-8111-111111111111",
               sourceArtifactId: "11111111-1111-4111-8111-111111111111",
               sourceChunkId: "22222222-2222-4222-8222-222222222222",
-              trustTier: "source-code",
+              sourceAuthority: "source-code",
               validityStatus: "active",
               language: "english",
               title: "Local source artifact: source.md",
@@ -993,7 +993,7 @@ describe("runSourceArtifactPreviewCommand", () => {
                   mechanism: "Operator selected a ready extraction candidate and supplied governance fields.",
                   krnImplication: "Use reviewed extraction bridge before graph ranking work.",
                   doesNotProve: "This does not prove extracted claim truth.",
-                  trustTier: "source-code",
+                  sourceAuthority: "source-code",
                   supportType: "implementation-boundary",
                   consumer: "graph brain v0",
                   falsifier: "Deferred extraction candidates can be persisted.",
@@ -1029,7 +1029,7 @@ describe("runSourceArtifactPreviewCommand", () => {
               subjectId: "11111111-1111-4111-8111-111111111111",
               sourceArtifactId: "11111111-1111-4111-8111-111111111111",
               sourceChunkId: "22222222-2222-4222-8222-222222222222",
-              trustTier: "source-code",
+              sourceAuthority: "source-code",
               validityStatus: "active",
               language: "english",
               title: "Local source artifact: source.md",
@@ -1060,7 +1060,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         krnImplication: "Use reviewed extraction bridge before graph ranking work.",
         doesNotProve: "This does not prove extracted claim truth.",
         supportType: "implementation-boundary",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         consumer: "graph brain v0",
         falsifier: "Deferred extraction candidates can be persisted."
       }
@@ -1108,7 +1108,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         krnImplication: "Use reviewed extraction bridge before graph ranking work.",
         doesNotProve: "This does not prove extracted claim truth.",
         supportType: "implementation-boundary",
-        trustTier: "source-code",
+        sourceAuthority: "source-code",
         consumer: "graph brain v0",
         falsifier: "Deferred extraction candidates can be persisted."
       }

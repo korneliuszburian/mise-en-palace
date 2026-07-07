@@ -110,7 +110,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       uri: `operator://maintenance-boundary-smoke/${marker}`,
       title: "Maintenance boundary smoke source",
       contentHash: `maintenance-boundary-smoke-${marker}`,
@@ -129,7 +129,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
         "KRN can prove maintenance boundary through DB-backed candidate readback without adding a daemon, scheduler, queue runtime, or schema.",
       doesNotProve:
         "This smoke does not prove maintenance execution, scheduling readiness, memory truth, candidate usefulness, or product readiness.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "E2E-05 maintenance boundary smoke",
       falsifier:

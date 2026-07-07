@@ -97,7 +97,7 @@ const formatPreview = (
     `title: ${artifact.title}`,
     `uri: ${artifact.uri}`,
     `kind: ${artifact.kind}`,
-    `trustTier: ${artifact.trustTier}`,
+    `sourceAuthority: ${artifact.sourceAuthority}`,
     "",
     "Source claim preview:",
     `claim: ${claim.claim}`,
@@ -142,7 +142,7 @@ export const runSourceClaimAddCommand = async (
     title: command.title,
     uri,
     contentHash,
-    trustTier: command.trustTier,
+    sourceAuthority: command.sourceAuthority,
     metadata
   });
   const claimInput = parseSourceClaimInput({
@@ -151,7 +151,7 @@ export const runSourceClaimAddCommand = async (
     mechanism: command.mechanism,
     krnImplication: command.krnImplication ?? defaultKrnImplication(command),
     doesNotProve: command.doesNotProve,
-    trustTier: command.trustTier,
+    sourceAuthority: command.sourceAuthority,
     supportType: command.supportType,
     consumer: command.consumer,
     falsifier: command.falsifier,
@@ -185,7 +185,7 @@ export const runSourceClaimAddCommand = async (
     const sourceArtifact = await databaseRuntime.sourceRepository.createSourceArtifact({
       projectId: databaseRuntime.projectId,
       kind: artifactInput.kind,
-      trustTier: artifactInput.trustTier,
+      sourceAuthority: artifactInput.sourceAuthority,
       uri: artifactInput.uri,
       title: artifactInput.title,
       contentHash: artifactInput.contentHash ?? contentHash,
@@ -200,7 +200,7 @@ export const runSourceClaimAddCommand = async (
       mechanism: claimInput.mechanism,
       krnImplication: claimInput.krnImplication,
       doesNotProve: claimInput.doesNotProve,
-      trustTier: claimInput.trustTier,
+      sourceAuthority: claimInput.sourceAuthority,
       supportType: claimInput.supportType,
       consumer: claimInput.consumer,
       ...(claimInput.falsifier === undefined ? {} : { falsifier: claimInput.falsifier }),

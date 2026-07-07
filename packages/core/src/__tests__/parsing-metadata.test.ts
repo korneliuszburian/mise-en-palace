@@ -52,7 +52,7 @@ describe("public parser metadata boundaries", () => {
       mechanism: "Private reasoning keys can otherwise cross source boundaries.",
       krnImplication: "Source claim input must reject private reasoning metadata.",
       doesNotProve: "This does not prove all runtime metadata is public.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
       consumer: "metadata boundary parser",
       falsifier: "A source claim parser accepts privateReasoning metadata.",

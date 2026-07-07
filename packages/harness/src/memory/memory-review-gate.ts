@@ -102,7 +102,7 @@ const reviewedSourceClaims = async (
 const untrustedReviewedSourceClaims = (
   sourceClaims: readonly SourceClaim[]
 ): SourceClaim[] => sourceClaims.filter((sourceClaim) =>
-  !trustedPromotionSourceTiers.has(sourceClaim.trustTier)
+  !trustedPromotionSourceTiers.has(sourceClaim.sourceAuthority)
 );
 
 const assertUntrustedSourceReview = (

@@ -22,7 +22,7 @@ const sourceClaim = (
   mechanism: "A bounded source claim carries mechanism for graph maintenance preview.",
   krnImplication: "Use this claim only as relation preview input.",
   doesNotProve: "This source claim does not prove source truth.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "mechanism",
   consumer: "source relation maintenance preview test",
   status: "accepted",

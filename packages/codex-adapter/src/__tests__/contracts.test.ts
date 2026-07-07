@@ -34,7 +34,7 @@ describe("Codex adapter contracts", () => {
           subjectId: "memory-1",
           reason: "high-signal memory",
           expectedUse: "Keep brief bounded.",
-          trustTier: "high"
+          sourceAuthority: "high"
         }
       ],
       untrustedContextWarnings: [],
@@ -43,8 +43,8 @@ describe("Codex adapter contracts", () => {
           subjectType: "source_claim",
           subjectId: "claim-weak",
           reason: "low_trust",
-          explanation: "Candidate trust tier is too weak.",
-          trustTier: "low"
+          explanation: "Candidate source authority is too weak.",
+          sourceAuthority: "low"
         }
       ],
       sourceClaimsUsed: ["claim-strong"],

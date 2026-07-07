@@ -29,7 +29,7 @@ import {
 export interface ApplyActivationFiltersInput {
   candidates: readonly RankedActivationCandidate[];
   antiMemoryRecords: readonly AntiMemoryRecord[];
-  minimumTrustTier: TrustFilterPolicy["minimumTrustTier"];
+  minimumSourceAuthority: TrustFilterPolicy["minimumSourceAuthority"];
   now: string;
 }
 
@@ -126,7 +126,7 @@ export const applyActivationFilters = (
   const sourceReviewSafe = applySourceClaimReviewSignalFilter(memoryReviewSafe);
   const sourceAuthoritySafe = applySourceClaimAuthorityFilter(sourceReviewSafe);
   const trusted = applyTrustFilter(sourceAuthoritySafe, {
-    minimumTrustTier: input.minimumTrustTier
+    minimumSourceAuthority: input.minimumSourceAuthority
   });
   const current = applyTemporalFilter(trusted, input.now);
 

@@ -6,7 +6,7 @@ import type {
   RepoInstallationId,
   SourceArtifactId,
   SourceChunkId,
-  SourceTrustTier,
+  SourceAuthorityLabel,
   TaskContractId,
   WorkspaceId
 } from "@krn/core";
@@ -113,7 +113,7 @@ export interface SourceArtifactRecord {
   id: SourceArtifactId;
   projectId?: ProjectId;
   kind: "doc" | "file" | "url" | "paper" | "run" | "operator_input" | "external_doc";
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   uri: string;
   title: string;
   contentHash: string;
@@ -179,7 +179,7 @@ export interface SearchDocumentSubjectFields {
 
 export interface SearchDocumentRecord extends SearchDocumentSubjectFields {
   id: SearchDocumentId;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   validityStatus: RetrievalValidityStatus;
   language: string;
   title: string;
@@ -239,7 +239,7 @@ export interface EmbeddingRecord extends EmbeddingSubjectFields {
   id: EmbeddingId;
   embedding: number[];
   contentHash: string;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   validityStatus: RetrievalValidityStatus;
   metadataFilters: Record<string, unknown>;
   validFrom: IsoTimestamp;
@@ -273,7 +273,7 @@ export interface RetrievalCandidateFields {
   subjectType: RetrievalSubjectType;
   subjectId: string;
   searchDocumentId?: SearchDocumentId;
-  trustTier: SourceTrustTier;
+  sourceAuthority: SourceAuthorityLabel;
   lexicalScore?: number;
   vectorScore?: number;
   graphScore?: number;
@@ -374,7 +374,7 @@ export interface CreateProjectKernelInput extends RepositoryMetadata {
 export interface CreateSourceArtifactInput extends RepositoryMetadata {
   projectId?: ProjectId;
   kind: SourceArtifactRecord["kind"];
-  trustTier: SourceArtifactRecord["trustTier"];
+  sourceAuthority: SourceArtifactRecord["sourceAuthority"];
   uri: string;
   title: string;
   contentHash: string;

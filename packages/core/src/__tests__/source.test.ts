@@ -10,16 +10,16 @@ import {
   classifySourceAuthority,
   classifySourceClaimTaxonomy,
   isSourceClaimTemporallyValid,
-  rankSourceTrustTier,
+  rankSourceAuthority,
   readSourceRelationMetadataReadback,
   relatedSourceClaimIdForEdge,
   sourceAuthorityRanks,
-  sourceAuthorityByTrustTier,
+  sourceAuthorityByLabel,
   sourceKinds,
   sourceRankedKinds,
   sourceSupportAssessmentByType,
   sourceSupportTypes,
-  sourceTrustTiers,
+  sourceAuthorityLabels,
   type SourceClaimCreateStatus,
   type SourceClaimEdge,
   type SourceClaimLifecycleStatus,
@@ -38,7 +38,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   mechanism: "Source claims map evidence into concrete KRN behavior.",
   krnImplication: "KRN must reject decorative source claims before activation.",
   doesNotProve: "This does not prove source retrieval quality.",
-  trustTier: "project-decision",
+  sourceAuthority: "project-decision",
   supportType: "implementation-boundary",
   consumer: "C6-00 source review signal",
   falsifier: "Decorative source claims can guide activation.",
@@ -289,14 +289,14 @@ describe("source review signals", () => {
     const oldStandard = sourceClaim({
       id: "claim-old-standard",
       claim: "Frontend projects should use the legacy boilerplate.",
-      trustTier: "official",
+      sourceAuthority: "official",
       createdAt: "2026-05-01T08:00:00.000Z",
       updatedAt: "2026-05-01T08:00:00.000Z"
     });
     const currentStandard = sourceClaim({
       id: "claim-current-standard",
       claim: "Frontend projects should use the current app template.",
-      trustTier: "project-decision",
+      sourceAuthority: "project-decision",
       metadata: {
         evidenceRef: "source-artifact:frontend-template-current",
         sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
@@ -310,7 +310,7 @@ describe("source review signals", () => {
     const staleStandard = sourceClaim({
       id: "claim-stale-standard",
       claim: "Frontend projects should refresh old test standards.",
-      trustTier: "official",
+      sourceAuthority: "official",
       revisitWhen: "2026-06-01T00:00:00.000Z",
       createdAt: "2026-06-18T08:00:00.000Z",
       updatedAt: "2026-06-18T08:00:00.000Z"
@@ -318,7 +318,7 @@ describe("source review signals", () => {
     const invalidTimeStandard = sourceClaim({
       id: "claim-invalid-time-standard",
       claim: "Invalid temporal metadata must remain caveated.",
-      trustTier: "official",
+      sourceAuthority: "official",
       revisitWhen: "not-a-date",
       createdAt: "2026-06-19T08:00:00.000Z",
       updatedAt: "2026-06-19T08:00:00.000Z"
@@ -326,14 +326,14 @@ describe("source review signals", () => {
     const acceptedOnly = sourceClaim({
       id: "claim-accepted-only",
       claim: "Accepted-only source evidence needs a caveat.",
-      trustTier: "official",
+      sourceAuthority: "official",
       createdAt: "2026-06-22T08:00:00.000Z",
       updatedAt: "2026-06-22T08:00:00.000Z"
     });
     const newerWeakStandard = sourceClaim({
       id: "claim-newer-weak-standard",
       claim: "Frontend projects can skip the governed template because a newer comment said so.",
-      trustTier: "hypothesis",
+      sourceAuthority: "hypothesis",
       metadata: {
         rawEvidence: {
           citationRef: "forum_post:newer-weak-comment#char=0-91"
@@ -346,7 +346,7 @@ describe("source review signals", () => {
       id: "claim-rejected",
       claim: "Rejected source evidence remains historical.",
       status: "rejected",
-      trustTier: "hypothesis",
+      sourceAuthority: "hypothesis",
       createdAt: "2026-06-21T08:00:00.000Z",
       updatedAt: "2026-06-21T08:00:00.000Z"
     });
@@ -519,14 +519,14 @@ describe("source review signals", () => {
   });
 
   test("keeps source trust and override logic in the core domain", () => {
-    expect(sourceTrustTiers).toContain("official");
+    expect(sourceAuthorityLabels).toContain("official");
     expect(sourceAuthorityRanks).toEqual(["high", "medium", "low"]);
     expect(sourceRankedKinds).toContain("official");
     expect(sourceRankedKinds).not.toContain("unspecified");
     expect(sourceKinds).toContain("official");
     expect(sourceKinds).toContain("unspecified");
     expect(sourceSupportTypes).toContain("supports");
-    expect(sourceAuthorityByTrustTier.official).toEqual({
+    expect(sourceAuthorityByLabel.official).toEqual({
       authorityRank: "high",
       sourceKind: "official",
       rank: 100
@@ -536,20 +536,20 @@ describe("source review signals", () => {
       use: "implementation-boundary",
       decisionGrade: true
     });
-    expect(rankSourceTrustTier("official")).toBeGreaterThan(rankSourceTrustTier("high"));
-    expect(rankSourceTrustTier("project-decision")).toBe(rankSourceTrustTier("official"));
-    expect(rankSourceTrustTier("hypothesis")).toBeLessThan(rankSourceTrustTier("secondary"));
+    expect(rankSourceAuthority("official")).toBeGreaterThan(rankSourceAuthority("high"));
+    expect(rankSourceAuthority("project-decision")).toBe(rankSourceAuthority("official"));
+    expect(rankSourceAuthority("hypothesis")).toBeLessThan(rankSourceAuthority("secondary"));
 
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -563,13 +563,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-older-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-05-01T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-current-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -583,13 +583,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-invalid-now-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-invalid-now-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -602,14 +602,14 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-stale-candidate",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         revisitWhen: "2026-06-01T00:00:00.000Z",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-stale-candidate-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -624,13 +624,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-trivial-override-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-trivial-override-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -646,13 +646,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-unprovenanced-override-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-unprovenanced-override-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -667,13 +667,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-provenanced-override-weak",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-provenanced-override-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
       ],
@@ -688,13 +688,13 @@ describe("source review signals", () => {
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
         id: "source-claim-weak-against-invalid-current",
-        trustTier: "hypothesis",
+        sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"
       }),
       currentConsensus: [
         sourceClaim({
           id: "source-claim-invalid-current-official",
-          trustTier: "official",
+          sourceAuthority: "official",
           revisitWhen: "not-a-date",
           createdAt: "2026-06-01T08:00:00.000Z"
         })
@@ -706,7 +706,7 @@ describe("source review signals", () => {
     });
   });
 
-  test("projects source authority from the canonical trust table", () => {
+  test("projects source authority from the canonical authority table", () => {
     expect(classifySourceAuthority("official")).toEqual({
       authorityRank: "high",
       sourceKind: "official",
@@ -753,7 +753,7 @@ describe("source review signals", () => {
     });
 
     expect(classifySourceClaimTaxonomy(sourceClaim({
-      trustTier: "official",
+      sourceAuthority: "official",
       supportType: "risk"
     }))).toEqual({
       authorityRank: "high",

@@ -4,7 +4,7 @@ import * as sourceSchema from "../sources.js";
 
 describe("source graph schema", () => {
   it("exposes M22 source vocabulary and typed decision edges", () => {
-    expect(sourceSchema.sourceTrustTier.enumValues).toEqual(
+    expect(sourceSchema.sourceAuthorityLabel.enumValues).toEqual(
       expect.arrayContaining([
         "primary",
         "official",
