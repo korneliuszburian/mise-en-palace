@@ -153,7 +153,7 @@
       "title": "Notes baseline is real competitor",
       "statement": "Compare KRN against Codex plus maintained NOTES.md plus grep before claiming breakthrough usefulness.",
       "status": "current",
-      "evidenceRef": "docs/architecture/notes-baseline-eval-design.md:1",
+      "evidenceRef": "KRN_ROADMAP.md#evaluation-contract",
       "sourceClaimId": "source-claim:notes-baseline-is-real-competitor",
       "sourceDecisionEdgeId": "source-decision-edge:notes-baseline-is-real-competitor",
       "falsifier": "Notes and grep provide equal or better packets with less ceremony.",
