@@ -16,10 +16,15 @@ import {
   type IsoTimestamp
 } from "./time.js";
 
-export const sourceTrustTiers = [
+export const sourceAuthorityRanks = [
   "high",
   "medium",
-  "low",
+  "low"
+] as const;
+
+export type SourceAuthorityRank = typeof sourceAuthorityRanks[number];
+
+export const sourceRankedKinds = [
   "primary",
   "official",
   "project-decision",
@@ -30,20 +35,19 @@ export const sourceTrustTiers = [
   "hypothesis"
 ] as const;
 
+export const sourceKinds = [
+  "unspecified",
+  ...sourceRankedKinds
+] as const;
+
+export type SourceKind = typeof sourceKinds[number];
+
+export const sourceTrustTiers = [
+  ...sourceAuthorityRanks,
+  ...sourceRankedKinds
+] as const;
+
 export type SourceTrustTier = typeof sourceTrustTiers[number];
-
-export type SourceTrustLevel = "high" | "medium" | "low";
-
-export type SourceKind =
-  | "unspecified"
-  | "primary"
-  | "official"
-  | "project-decision"
-  | "source-code"
-  | "paper"
-  | "practitioner"
-  | "secondary"
-  | "hypothesis";
 
 export const sourceSupportTypes = [
   "supports",
@@ -79,7 +83,7 @@ export type SourceUse =
   | "implementation-boundary";
 
 export interface SourceAuthority {
-  trustLevel: SourceTrustLevel;
+  authorityRank: SourceAuthorityRank;
   sourceKind: SourceKind;
   rank: number;
 }
@@ -101,7 +105,7 @@ export interface SourceClaimTaxonomy extends SourceTrustTaxonomy {
 }
 
 export interface SourceContextTaxonomy {
-  sourceTrustLevel?: SourceTrustLevel;
+  sourceAuthorityRank?: SourceAuthorityRank;
   sourceKind?: SourceKind;
   sourceSupportRelation?: SourceSupportRelation;
   sourceUse?: SourceUse;
@@ -263,21 +267,21 @@ export interface SourceRejection {
 }
 
 export const sourceAuthorityByTrustTier: Record<SourceTrustTier, SourceAuthority> = {
-  high: { trustLevel: "high", sourceKind: "unspecified", rank: 85 },
-  medium: { trustLevel: "medium", sourceKind: "unspecified", rank: 60 },
-  low: { trustLevel: "low", sourceKind: "unspecified", rank: 25 },
-  primary: { trustLevel: "high", sourceKind: "primary", rank: 100 },
-  official: { trustLevel: "high", sourceKind: "official", rank: 100 },
+  high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
+  medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
+  low: { authorityRank: "low", sourceKind: "unspecified", rank: 25 },
+  primary: { authorityRank: "high", sourceKind: "primary", rank: 100 },
+  official: { authorityRank: "high", sourceKind: "official", rank: 100 },
   "project-decision": {
-    trustLevel: "high",
+    authorityRank: "high",
     sourceKind: "project-decision",
     rank: 100
   },
-  "source-code": { trustLevel: "high", sourceKind: "source-code", rank: 100 },
-  paper: { trustLevel: "high", sourceKind: "paper", rank: 85 },
-  practitioner: { trustLevel: "medium", sourceKind: "practitioner", rank: 60 },
-  secondary: { trustLevel: "medium", sourceKind: "secondary", rank: 60 },
-  hypothesis: { trustLevel: "low", sourceKind: "hypothesis", rank: 10 }
+  "source-code": { authorityRank: "high", sourceKind: "source-code", rank: 100 },
+  paper: { authorityRank: "high", sourceKind: "paper", rank: 85 },
+  practitioner: { authorityRank: "medium", sourceKind: "practitioner", rank: 60 },
+  secondary: { authorityRank: "medium", sourceKind: "secondary", rank: 60 },
+  hypothesis: { authorityRank: "low", sourceKind: "hypothesis", rank: 10 }
 };
 
 export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
@@ -345,7 +349,7 @@ export const classifySourceTrustTier = (
   const authority = classifySourceAuthority(trustTier);
 
   return {
-    trustLevel: authority.trustLevel,
+    authorityRank: authority.authorityRank,
     sourceKind: authority.sourceKind
   };
 };

@@ -15,7 +15,10 @@ import {
   rankSourceTrustTier,
   readSourceRelationMetadataReadback,
   relatedSourceClaimIdForEdge,
+  sourceAuthorityRanks,
   sourceAuthorityByTrustTier,
+  sourceKinds,
+  sourceRankedKinds,
   sourceSupportAssessmentByType,
   sourceSupportTypes,
   sourceTrustTiers,
@@ -519,9 +522,14 @@ describe("source review signals", () => {
 
   test("keeps source trust and override logic in the core domain", () => {
     expect(sourceTrustTiers).toContain("official");
+    expect(sourceAuthorityRanks).toEqual(["high", "medium", "low"]);
+    expect(sourceRankedKinds).toContain("official");
+    expect(sourceRankedKinds).not.toContain("unspecified");
+    expect(sourceKinds).toContain("official");
+    expect(sourceKinds).toContain("unspecified");
     expect(sourceSupportTypes).toContain("supports");
     expect(sourceAuthorityByTrustTier.official).toEqual({
-      trustLevel: "high",
+      authorityRank: "high",
       sourceKind: "official",
       rank: 100
     });
@@ -702,24 +710,24 @@ describe("source review signals", () => {
 
   test("projects source authority from the canonical trust table", () => {
     expect(classifySourceAuthority("official")).toEqual({
-      trustLevel: "high",
+      authorityRank: "high",
       sourceKind: "official",
       rank: 100
     });
     expect(classifySourceTrustTier("high")).toEqual({
-      trustLevel: "high",
+      authorityRank: "high",
       sourceKind: "unspecified"
     });
     expect(classifySourceTrustTier("source-code")).toEqual({
-      trustLevel: "high",
+      authorityRank: "high",
       sourceKind: "source-code"
     });
     expect(classifySourceTrustTier("practitioner")).toEqual({
-      trustLevel: "medium",
+      authorityRank: "medium",
       sourceKind: "practitioner"
     });
     expect(classifySourceTrustTier("hypothesis")).toEqual({
-      trustLevel: "low",
+      authorityRank: "low",
       sourceKind: "hypothesis"
     });
   });
@@ -750,7 +758,7 @@ describe("source review signals", () => {
       trustTier: "official",
       supportType: "risk"
     }))).toEqual({
-      trustLevel: "high",
+      authorityRank: "high",
       sourceKind: "official",
       supportRelation: "not_applicable",
       sourceUse: "risk",

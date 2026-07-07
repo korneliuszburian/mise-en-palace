@@ -303,12 +303,12 @@ describe("activation engine", () => {
     const [ranked] = rankCandidates([source], query);
 
     expect(ranked).toMatchObject({
-      sourceTrustLevel: "high",
+      sourceAuthorityRank: "high",
       sourceKind: "source-code",
       sourceSupportRelation: "not_applicable",
       sourceUse: "implementation-boundary",
       metadata: {
-        trustLevel: "high",
+        authorityRank: "high",
         sourceKind: "source-code",
         supportRelation: "not_applicable",
         sourceUse: "implementation-boundary",
@@ -329,7 +329,7 @@ describe("activation engine", () => {
         subjectType: "source_claim",
         subjectId: "claim-taxonomy",
         trustTier: "source-code",
-        sourceTrustLevel: "high",
+        sourceAuthorityRank: "high",
         sourceKind: "source-code",
         sourceSupportRelation: "not_applicable",
         sourceUse: "implementation-boundary"

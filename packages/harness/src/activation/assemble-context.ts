@@ -100,11 +100,11 @@ const sourceTaxonomyContextFields = (
   candidate: RankedActivationCandidate
 ): Pick<
   ContextInclusion,
-  "sourceTrustLevel" | "sourceKind" | "sourceSupportRelation" | "sourceUse"
+  "sourceAuthorityRank" | "sourceKind" | "sourceSupportRelation" | "sourceUse"
 > => ({
-  ...(candidate.sourceTrustLevel === undefined
+  ...(candidate.sourceAuthorityRank === undefined
     ? {}
-    : { sourceTrustLevel: candidate.sourceTrustLevel }),
+    : { sourceAuthorityRank: candidate.sourceAuthorityRank }),
   ...(candidate.sourceKind === undefined ? {} : { sourceKind: candidate.sourceKind }),
   ...(candidate.sourceSupportRelation === undefined
     ? {}
