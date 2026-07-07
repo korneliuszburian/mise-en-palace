@@ -77,17 +77,23 @@ export class DrizzleWorkerJobRepository implements WorkerJobRepository {
     id: string,
     input: MarkWorkerJobRunningInput = {}
   ): Promise<WorkerJobRecord> {
+    const claimAt = input.lockedAt === undefined ? now() : fromIsoTimestamp(input.lockedAt);
     const row = requireReturnedRow(
       await this.db
         .update(workerJobs)
         .set({
           status: "running",
-          lockedAt:
-            input.lockedAt === undefined ? now() : fromIsoTimestamp(input.lockedAt),
+          lockedAt: claimAt,
           ...(input.lockedBy === undefined ? {} : { lockedBy: input.lockedBy }),
           updatedAt: now()
         })
-        .where(eq(workerJobs.id, id))
+        .where(
+          and(
+            eq(workerJobs.id, id),
+            eq(workerJobs.status, "queued"),
+            lte(workerJobs.runAfter, claimAt)
+          )
+        )
         .returning(),
       "markWorkerJobRunning"
     );
