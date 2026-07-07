@@ -257,12 +257,14 @@ const missingReviewFields = (
   input: {
     missingEvidence: readonly string[];
     evidenceRefs: readonly string[];
+    query: string;
     consumer: string;
     falsifier: string;
   }
 ): readonly string[] => [
   ...(input.missingEvidence.length === 0 ? ["missingEvidence"] : []),
   ...(input.evidenceRefs.length === 0 ? ["evidenceRefs"] : []),
+  ...(hasText(input.query) ? [] : ["query"]),
   ...(hasText(input.consumer) ? [] : ["consumer"]),
   ...(hasText(input.falsifier) ? [] : ["falsifier"])
 ];
@@ -294,6 +296,7 @@ const buildCandidate = (
   const missingFields = missingReviewFields({
     missingEvidence,
     evidenceRefs,
+    query: request.query,
     consumer: request.consumer,
     falsifier: request.falsifier
   });

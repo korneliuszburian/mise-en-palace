@@ -341,6 +341,35 @@ describe("knowledge acquisition maintenance preview", () => {
     ]);
   });
 
+  test("requires an acquisition query before candidate review", () => {
+    const result = buildKnowledgeAcquisitionMaintenancePreview({
+      now,
+      evidenceRef,
+      requests: [
+        {
+          id: "blank-query-request",
+          source: "source_search",
+          query: "   ",
+          missingEvidence: ["missing source document"],
+          evidenceRefs: [evidenceRef],
+          consumer: "maintenance/dreaming candidate runtime",
+          falsifier: "Blank acquisition queries should not be review-ready.",
+          doesNotProve: "This does not prove acquisition quality."
+        }
+      ]
+    });
+
+    expect(result.candidates[0]).toEqual(
+      expect.objectContaining({
+        reviewability: "needs_more_evidence",
+        mutation: "none"
+      })
+    );
+    expect(result.candidates[0]?.reviewabilityReasons).toEqual([
+      "Missing fields: query."
+    ]);
+  });
+
   test("skips requests without missing evidence", () => {
     const result = buildKnowledgeAcquisitionMaintenancePreview({
       now,
