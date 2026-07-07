@@ -787,6 +787,31 @@ const sourceConsensusCaveats = (input: {
     : [`rejected_by:${input.rejectionIds.join(",")}`])
 ];
 
+const sourceConsensusEntryStateRank = {
+  current_authority: 0,
+  caveated_authority: 1,
+  historical: 2,
+  rejected: 3
+} as const satisfies Record<SourceConsensusTimelineEntryState, number>;
+
+const compareSourceConsensusTimelineEntries = (
+  left: SourceConsensusTimelineEntry,
+  right: SourceConsensusTimelineEntry
+): number => {
+  const stateDifference =
+    sourceConsensusEntryStateRank[left.state] - sourceConsensusEntryStateRank[right.state];
+
+  if (stateDifference !== 0) {
+    return stateDifference;
+  }
+
+  if (left.createdAt !== right.createdAt) {
+    return right.createdAt.localeCompare(left.createdAt);
+  }
+
+  return left.sourceClaimId.localeCompare(right.sourceClaimId);
+};
+
 const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -898,11 +923,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
         })
       };
     })
-    .sort((left, right) => (
-      left.createdAt === right.createdAt
-        ? left.sourceClaimId.localeCompare(right.sourceClaimId)
-        : left.createdAt.localeCompare(right.createdAt)
-    ));
+    .sort(compareSourceConsensusTimelineEntries);
 
   return {
     currentSourceClaimIds: entries

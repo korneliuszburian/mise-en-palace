@@ -399,21 +399,21 @@ describe("source review signals", () => {
     expect(readback.currentSourceClaimIds).toEqual(["claim-current-standard"]);
     expect(readback.caveatedSourceClaimIds).toEqual(["claim-accepted-only"]);
     expect(readback.historicalSourceClaimIds).toEqual([
-      "claim-old-standard",
-      "claim-stale-standard",
+      "claim-newer-weak-standard",
       "claim-invalid-time-standard",
-      "claim-newer-weak-standard"
+      "claim-stale-standard",
+      "claim-old-standard"
     ]);
     expect(readback.rejectedSourceClaimIds).toEqual(["claim-rejected"]);
 
     expect(readback.entries.map((entry) => entry.sourceClaimId)).toEqual([
-      "claim-old-standard",
-      "claim-stale-standard",
-      "claim-invalid-time-standard",
       "claim-current-standard",
-      "claim-rejected",
       "claim-accepted-only",
-      "claim-newer-weak-standard"
+      "claim-newer-weak-standard",
+      "claim-invalid-time-standard",
+      "claim-stale-standard",
+      "claim-old-standard",
+      "claim-rejected"
     ]);
     expect(readback.entries.find((entry) =>
       entry.sourceClaimId === "claim-current-standard"
