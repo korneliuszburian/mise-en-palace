@@ -296,6 +296,13 @@ describe("source review signals", () => {
       id: "claim-current-standard",
       claim: "Frontend projects should use the current app template.",
       trustTier: "project-decision",
+      metadata: {
+        evidenceRef: "source-artifact:frontend-template-current",
+        sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
+        rawEvidence: {
+          citationRef: "forum_post:frontend-template-consensus#char=12-84"
+        }
+      },
       createdAt: "2026-06-20T08:00:00.000Z",
       updatedAt: "2026-06-20T08:00:00.000Z"
     });
@@ -322,6 +329,18 @@ describe("source review signals", () => {
       createdAt: "2026-06-22T08:00:00.000Z",
       updatedAt: "2026-06-22T08:00:00.000Z"
     });
+    const newerWeakStandard = sourceClaim({
+      id: "claim-newer-weak-standard",
+      claim: "Frontend projects can skip the governed template because a newer comment said so.",
+      trustTier: "hypothesis",
+      metadata: {
+        rawEvidence: {
+          citationRef: "forum_post:newer-weak-comment#char=0-91"
+        }
+      },
+      createdAt: "2026-06-23T08:00:00.000Z",
+      updatedAt: "2026-06-23T08:00:00.000Z"
+    });
     const rejectedClaim = sourceClaim({
       id: "claim-rejected",
       claim: "Rejected source evidence remains historical.",
@@ -336,6 +355,7 @@ describe("source review signals", () => {
         currentStandard,
         oldStandard,
         acceptedOnly,
+        newerWeakStandard,
         rejectedClaim,
         staleStandard,
         invalidTimeStandard
@@ -358,6 +378,10 @@ describe("source review signals", () => {
         sourceDecisionEdge({
           id: "decision-edge-current",
           sourceClaimId: currentStandard.id
+        }),
+        sourceDecisionEdge({
+          id: "decision-edge-newer-weak",
+          sourceClaimId: newerWeakStandard.id
         })
       ],
       sourceRejections: [
@@ -374,7 +398,8 @@ describe("source review signals", () => {
     expect(readback.historicalSourceClaimIds).toEqual([
       "claim-old-standard",
       "claim-stale-standard",
-      "claim-invalid-time-standard"
+      "claim-invalid-time-standard",
+      "claim-newer-weak-standard"
     ]);
     expect(readback.rejectedSourceClaimIds).toEqual(["claim-rejected"]);
 
@@ -384,13 +409,17 @@ describe("source review signals", () => {
       "claim-invalid-time-standard",
       "claim-current-standard",
       "claim-rejected",
-      "claim-accepted-only"
+      "claim-accepted-only",
+      "claim-newer-weak-standard"
     ]);
     expect(readback.entries.find((entry) =>
       entry.sourceClaimId === "claim-current-standard"
     )).toMatchObject({
       state: "current_authority",
       decisionSupportEdgeIds: ["decision-edge-current"],
+      evidenceRefs: ["source-artifact:frontend-template-current"],
+      rawEvidenceCitationRefs: ["forum_post:frontend-template-consensus#char=12-84"],
+      sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
       dissentingSourceClaimIds: ["claim-rejected"],
       supersedesSourceClaimIds: ["claim-old-standard"],
       caveats: []
@@ -438,6 +467,15 @@ describe("source review signals", () => {
         "missing_source_decision_support",
         "rejected_by:rejection-rejected"
       ])
+    });
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-newer-weak-standard"
+    )).toMatchObject({
+      state: "historical",
+      blockedByCurrentSourceClaimId: "claim-current-standard",
+      decisionSupportEdgeIds: ["decision-edge-newer-weak"],
+      rawEvidenceCitationRefs: ["forum_post:newer-weak-comment#char=0-91"],
+      caveats: ["weaker_than_current_valid_consensus:claim-current-standard"]
     });
     expect(readback.doesNotProve).toContain("large-scale temporal consensus quality");
   });

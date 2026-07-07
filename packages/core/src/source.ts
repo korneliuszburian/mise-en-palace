@@ -616,7 +616,11 @@ export interface SourceConsensusTimelineEntry {
   authorityRank: number;
   temporalValidity: SourceClaimTemporalValidity;
   state: SourceConsensusTimelineEntryState;
+  blockedByCurrentSourceClaimId?: SourceClaim["id"];
   decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
+  evidenceRefs: readonly string[];
+  rawEvidenceCitationRefs: readonly string[];
+  sourceRanges: readonly string[];
   supportingSourceClaimIds: readonly SourceClaim["id"][];
   dissentingSourceClaimIds: readonly SourceClaim["id"][];
   supersededBySourceClaimIds: readonly SourceClaim["id"][];
@@ -735,6 +739,7 @@ const sourceConsensusEntryState = (input: {
   readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
   readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
   readonly rejectionIds: readonly SourceRejection["id"][];
+  readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
 }): SourceConsensusTimelineEntryState => {
   if (input.claim.status === "rejected" || input.rejectionIds.length > 0) {
     return "rejected";
@@ -743,7 +748,8 @@ const sourceConsensusEntryState = (input: {
   if (
     input.claim.status !== "accepted" ||
     input.temporalValidity.status !== "valid" ||
-    input.supersededBySourceClaimIds.length > 0
+    input.supersededBySourceClaimIds.length > 0 ||
+    input.blockedByCurrentSourceClaimId !== undefined
   ) {
     return "historical";
   }
@@ -758,6 +764,7 @@ const sourceConsensusCaveats = (input: {
   readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
   readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
   readonly rejectionIds: readonly SourceRejection["id"][];
+  readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
 }): readonly string[] => [
   ...(input.temporalValidity.status === "invalid_time"
     ? [`invalid_time:${input.temporalValidity.reason}`]
@@ -769,10 +776,32 @@ const sourceConsensusCaveats = (input: {
   ...(input.supersededBySourceClaimIds.length === 0
     ? []
     : [`superseded_by:${input.supersededBySourceClaimIds.join(",")}`]),
+  ...(input.blockedByCurrentSourceClaimId === undefined
+    ? []
+    : [`weaker_than_current_valid_consensus:${input.blockedByCurrentSourceClaimId}`]),
   ...(input.rejectionIds.length === 0
     ? []
     : [`rejected_by:${input.rejectionIds.join(",")}`])
 ];
+
+const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const readRawEvidenceCitationRef = (
+  metadata: Record<string, unknown>
+): string | undefined => {
+  const rawEvidence = metadata["rawEvidence"];
+
+  if (!isMetadataRecord(rawEvidence)) {
+    return undefined;
+  }
+
+  const citationRef = rawEvidence["citationRef"];
+
+  return typeof citationRef === "string" && citationRef.trim().length > 0
+    ? citationRef.trim()
+    : undefined;
+};
 
 export const buildSourceConsensusTimelineReadback = (input: {
   readonly sourceClaims: readonly SourceClaim[];
@@ -792,6 +821,17 @@ export const buildSourceConsensusTimelineReadback = (input: {
       const decisionSupportEdgeIds = (decisionEdgesByClaim.get(claim.id) ?? [])
         .map((edge) => edge.id);
       const temporalValidity = assessSourceClaimTemporalValidity(claim, input.now);
+      const overrideAssessment = assessSourceClaimOverride({
+        candidate: claim,
+        currentConsensus: input.sourceClaims,
+        now: input.now
+      });
+      const blockedByCurrentSourceClaimId =
+        overrideAssessment.allowed ? undefined : (
+          overrideAssessment.reason === "weaker_than_current_valid_consensus"
+            ? overrideAssessment.blockedBySourceClaimId
+            : undefined
+        );
       const supersededBySourceClaimIds = sourceClaimEndpointIdsByKind(
         incomingEdges,
         supersedingEdgeKinds,
@@ -809,8 +849,11 @@ export const buildSourceConsensusTimelineReadback = (input: {
         temporalValidity,
         decisionSupportEdgeIds,
         supersededBySourceClaimIds,
-        rejectionIds
+        rejectionIds,
+        blockedByCurrentSourceClaimId
       });
+      const claimMetadata = readSourceRelationMetadataReadback(claim.metadata);
+      const rawEvidenceCitationRef = readRawEvidenceCitationRef(claim.metadata);
 
       return {
         sourceClaimId: claim.id,
@@ -821,7 +864,15 @@ export const buildSourceConsensusTimelineReadback = (input: {
         authorityRank: rankSourceTrustTier(claim.trustTier),
         temporalValidity,
         state,
+        ...(blockedByCurrentSourceClaimId === undefined
+          ? {}
+          : { blockedByCurrentSourceClaimId }),
         decisionSupportEdgeIds,
+        evidenceRefs: claimMetadata.evidenceRefs,
+        rawEvidenceCitationRefs: rawEvidenceCitationRef === undefined
+          ? []
+          : [rawEvidenceCitationRef],
+        sourceRanges: claimMetadata.sourceRanges,
         supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
           incomingEdges,
           supportEdgeKinds,
@@ -839,7 +890,8 @@ export const buildSourceConsensusTimelineReadback = (input: {
           temporalValidity,
           decisionSupportEdgeIds,
           supersededBySourceClaimIds,
-          rejectionIds
+          rejectionIds,
+          blockedByCurrentSourceClaimId
         })
       };
     })
