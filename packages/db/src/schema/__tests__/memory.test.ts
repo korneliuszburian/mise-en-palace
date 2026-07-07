@@ -58,4 +58,14 @@ describe("memory governance schema", () => {
     expect("rejectionReason" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("createdFromCandidateId" in memorySchema.antiMemoryRecords).toBe(true);
   });
+
+  it("keeps required memory source lineage explicit at insert time", () => {
+    expect(memorySchema.memoryRecords.sourceLineage.hasDefault).toBe(false);
+    expect(memorySchema.memoryRecordVersions.sourceLineage.hasDefault).toBe(false);
+    expect(memorySchema.memoryCandidates.sourceLineage.hasDefault).toBe(false);
+
+    expect(memorySchema.memoryCandidates.sourceClaimIds.hasDefault).toBe(true);
+    expect(memorySchema.antiMemoryRecords.sourceLineage.hasDefault).toBe(true);
+    expect(memorySchema.antiMemoryRecords.invalidatedBySourceClaimIds.hasDefault).toBe(true);
+  });
 });

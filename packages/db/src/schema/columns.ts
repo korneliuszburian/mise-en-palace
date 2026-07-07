@@ -16,6 +16,9 @@ export const jsonObjectColumn = <TName extends string>(name: TName) =>
 export const jsonListColumn = <TName extends string>(name: TName) =>
   jsonb(name).$type<JsonList>().notNull().default(emptyJsonList);
 
+export const requiredJsonListColumn = <TName extends string>(name: TName) =>
+  jsonb(name).$type<JsonList>().notNull();
+
 export const metadataColumn = () => jsonObjectColumn("metadata");
 
 export const createdAtColumn = () =>

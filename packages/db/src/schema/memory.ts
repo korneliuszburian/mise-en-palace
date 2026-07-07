@@ -16,6 +16,7 @@ import {
   createdAtColumn,
   jsonListColumn,
   metadataColumn,
+  requiredJsonListColumn,
   updatedAtColumn
 } from "./columns.js";
 import {
@@ -177,7 +178,7 @@ export const memoryRecords = pgTable(
     kind: memoryRecordKind("kind").notNull(),
     status: memoryRecordStatus("status").notNull().default("active"),
     ...memoryGuidanceColumns(),
-    sourceLineage: jsonListColumn("source_lineage"),
+    sourceLineage: requiredJsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
@@ -223,7 +224,7 @@ export const memoryRecordVersions = pgTable(
     ...memoryGuidanceColumns(),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
     validUntil: timestamp("valid_until", { withTimezone: true }),
-    sourceLineage: jsonListColumn("source_lineage"),
+    sourceLineage: requiredJsonListColumn("source_lineage"),
     metadata: metadataColumn(),
     createdAt: createdAtColumn()
   },
@@ -260,7 +261,7 @@ export const memoryCandidates = pgTable(
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     ...memoryGuidanceColumns(),
     sourceClaimIds: jsonListColumn("source_claim_ids"),
-    sourceLineage: jsonListColumn("source_lineage"),
+    sourceLineage: requiredJsonListColumn("source_lineage"),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     ...memoryCandidateReviewColumns()
   },
