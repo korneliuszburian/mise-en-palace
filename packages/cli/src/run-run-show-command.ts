@@ -6,6 +6,7 @@ import {
   DrizzleHarnessRunRepository
 } from "@krn/db/adapters";
 import type {
+  HarnessRunAggregate,
   HarnessRunRepository
 } from "@krn/harness/repositories";
 
@@ -20,6 +21,7 @@ import {
   renderDecisionPacketReadModelText
 } from "./run-show-readback.js";
 import type {
+  DecisionPacketReadModel,
   DecisionPacketReadModelOutputFormat
 } from "./run-show-readback.js";
 
@@ -90,6 +92,29 @@ const resolveReadOnlyRuntime = async (
 export const runRunShowCommand = async (
   runtime: RunShowCommandRuntime
 ): Promise<RunShowCommandResult> => {
+  return readExecutionRunAggregate(runtime, (aggregate) => {
+    if (runtime.format === "json") {
+      return {
+        stdout: `${JSON.stringify(buildDecisionPacketReadModel(aggregate), null, 2)}\n`
+      };
+    }
+
+    return {
+      stdout: `${renderDecisionPacketReadModelText(aggregate)}\n`
+    };
+  });
+};
+
+export const readDecisionPacketReadModel = async (
+  runtime: RunShowCommandRuntime
+): Promise<DecisionPacketReadModel> => {
+  return readExecutionRunAggregate(runtime, buildDecisionPacketReadModel);
+};
+
+const readExecutionRunAggregate = async <TResult>(
+  runtime: RunShowCommandRuntime,
+  read: (aggregate: HarnessRunAggregate) => TResult
+): Promise<TResult> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
@@ -107,15 +132,7 @@ export const runRunShowCommand = async (
       throw new Error(`Execution run not found: ${runtime.runId}`);
     }
 
-    if (runtime.format === "json") {
-      return {
-        stdout: `${JSON.stringify(buildDecisionPacketReadModel(aggregate), null, 2)}\n`
-      };
-    }
-
-    return {
-      stdout: `${renderDecisionPacketReadModelText(aggregate)}\n`
-    };
+    return read(aggregate);
   } finally {
     await readRuntime.close();
   }

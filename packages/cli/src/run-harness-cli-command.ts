@@ -38,12 +38,16 @@ import type {
 import {
   runRunShowCommand
 } from "./run-run-show-command.js";
+import {
+  runAgentPacketCommand
+} from "./run-agent-packet-command.js";
 
 type HarnessCliCommand = Extract<
   CliCommand,
   | { kind: "plan" }
   | { kind: "reviewAssess" }
   | { kind: "runShow" }
+  | { kind: "agentPacket" }
   | { kind: "codexBrief" }
   | { kind: "evidenceCapture" }
   | { kind: "observeRun" }
@@ -97,9 +101,10 @@ const databaseRuntimeOption = (
 
 const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand => (
   command.kind === "plan" ||
-  command.kind === "reviewAssess" ||
-  command.kind === "runShow" ||
-  command.kind === "codexBrief" ||
+    command.kind === "reviewAssess" ||
+    command.kind === "runShow" ||
+    command.kind === "agentPacket" ||
+    command.kind === "codexBrief" ||
   command.kind === "evidenceCapture" ||
   command.kind === "observeRun" ||
   command.kind === "reflect"
@@ -110,6 +115,7 @@ const harnessFallbackMessages = {
   reviewAssess: "Unknown review assess error",
   runShow: "Unknown run show error",
   codexBrief: "Unknown Codex brief error",
+  agentPacket: "Unknown agent packet error",
   evidenceCapture: "Unknown evidence capture error",
   observeRun: "Unknown observe error",
   reflect: "Unknown reflect error"
@@ -144,7 +150,7 @@ const runReviewAssessCliCommand = (
   });
 
 const runReadbackHarnessCommand = (
-  command: Extract<HarnessCliCommand, { kind: "runShow" | "codexBrief" }>,
+  command: Extract<HarnessCliCommand, { kind: "runShow" | "agentPacket" | "codexBrief" }>,
   context: HarnessCliCommandContext
 ): Promise<HarnessCommandOutput> => {
   if (command.kind === "runShow") {
@@ -154,6 +160,16 @@ const runReadbackHarnessCommand = (
       createId: context.createId,
       runId: command.runId,
       format: command.format,
+      ...databaseRuntimeOption(context)
+    });
+  }
+
+  if (command.kind === "agentPacket") {
+    return runAgentPacketCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      runId: command.runId,
       ...databaseRuntimeOption(context)
     });
   }
@@ -231,7 +247,7 @@ const runSelectedHarnessCommand = (
     return runReviewAssessCliCommand(command, context);
   }
 
-  if (command.kind === "runShow" || command.kind === "codexBrief") {
+  if (command.kind === "runShow" || command.kind === "agentPacket" || command.kind === "codexBrief") {
     return runReadbackHarnessCommand(command, context);
   }
 

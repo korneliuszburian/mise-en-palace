@@ -15,6 +15,9 @@ import {
   parseCodexArgs
 } from "./parse-codex-args.js";
 import {
+  parseAgentArgs
+} from "./parse-agent-args.js";
+import {
   parseDbArgs
 } from "./parse-db-args.js";
 import {
@@ -154,6 +157,13 @@ export type CliCommand =
       kind: "runShow";
       runId: string;
       format: "text" | "json";
+    }
+  | {
+      kind: "agentPacketHelp";
+    }
+  | {
+      kind: "agentPacket";
+      runId: string;
     }
   | {
       kind: "brainKnowledgeHelp";
@@ -523,6 +533,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
+  "krn agent packet --run-id <id> [--json]",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
   "krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
@@ -576,6 +587,7 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
       : parseEvidenceArgs(rest),
   review: parseReviewArgs,
   maintenance: parseMaintenancePreviewArgs,
+  agent: parseAgentArgs,
   observe: parseObserveArgs,
   reflect: parseReflectArgs,
   codex: parseCodexArgs,

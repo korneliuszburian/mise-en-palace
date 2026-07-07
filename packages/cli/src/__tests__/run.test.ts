@@ -106,6 +106,22 @@ describe("runCli", () => {
         usage: "Usage: krn run show"
       },
       {
+        args: ["agent", "--help"],
+        usage: "Usage: krn agent packet"
+      },
+      {
+        args: ["agent", "-h"],
+        usage: "Usage: krn agent packet"
+      },
+      {
+        args: ["agent", "packet", "--help"],
+        usage: "Usage: krn agent packet"
+      },
+      {
+        args: ["agent", "packet", "-h"],
+        usage: "Usage: krn agent packet"
+      },
+      {
         args: ["db", "--help"],
         usage: "Usage: krn db readiness|smoke"
       },
