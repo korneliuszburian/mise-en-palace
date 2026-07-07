@@ -125,7 +125,17 @@ const aggregate: HarnessRunAggregate = {
     reviewAssessmentId: "review-agent-1",
     status: "accepted",
     memoryCandidates: [],
-    sourceDecisions: [],
+    sourceDecisions: [{
+      id: "source-decision-rejected-agent-1",
+      status: "reject",
+      decision: "Do not use the rejected packet path.",
+      rationale: "Rejected source decisions should be visible to headless agents.",
+      falsifier: "Agent packet omits the rejected source decision.",
+      consumer: "krn agent packet",
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    }],
     evalCandidates: [],
     metadata: {
       sourceUsefulnessOutcomes: [{
@@ -216,7 +226,10 @@ describe("agent packet CLI", () => {
           "source-decision-stale-agent-1",
           "source-decision-conflicted-agent-1"
         ],
-        rejectedPathIds: ["memory-rejected-1"],
+        rejectedPathIds: [
+          "memory-rejected-1",
+          "source-decision-rejected-agent-1"
+        ],
         noiseDecisionIds: ["source-decision-noise-agent-1"],
         severeStaleAuthorityIds: ["source-decision-conflicted-agent-1"],
         brief: {

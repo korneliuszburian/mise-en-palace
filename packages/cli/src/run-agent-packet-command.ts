@@ -97,6 +97,16 @@ const noiseDecisionIdsFor = (
   readModel: DecisionPacketReadModel
 ): string[] => sourceDecisionIdsWithUsefulness(readModel, ["noise"]);
 
+const rejectedSourceDecisionIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.candidates.flatMap((candidate) =>
+    candidate.kind === "source_decision_candidate" && candidate.status === "reject"
+      ? [candidate.id]
+      : []
+  )
+));
+
 const severeStaleAuthorityIdsFor = (input: {
   readonly governingDecisionIds: readonly string[];
   readonly staleDecisionIds: readonly string[];
@@ -131,7 +141,8 @@ const compactDecisionPacket = (
         .map((inclusion) => inclusion.subjectId),
       ...exclusions
         .filter((exclusion) => exclusion.reason === "anti_memory")
-        .map((exclusion) => exclusion.subjectId)
+        .map((exclusion) => exclusion.subjectId),
+      ...rejectedSourceDecisionIdsFor(readModel)
     ]),
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)
