@@ -229,7 +229,7 @@
           "outcome": "flag",
           "subject": "source_claim:source-claim-exact-proof",
           "rationale": "Exact-proof source claims may enter context only with raw evidence recall triggers.",
-          "evidenceRefs": ["docs/decisions/ADR-0014-activation-is-admission-control.md"]
+          "evidenceRefs": ["KRN_ROADMAP.md"]
         },
         "protectedFailureModes": [
           {
@@ -241,7 +241,7 @@
             "detection": "Raw recall triggers omit exact_proof_required for source_claim:source-claim-exact-proof."
           }
         ],
-        "sourceRefs": ["docs/decisions/ADR-0014-activation-is-admission-control.md"],
+        "sourceRefs": ["KRN_ROADMAP.md"],
         "metadata": {}
       }
     ],
@@ -280,7 +280,7 @@
             "detection": "ContextAssembly contains observationPrefix for observation-unsourced-prefix."
           }
         ],
-        "sourceRefs": ["docs/decisions/ADR-0013-observation-is-staging-not-memory.md"],
+        "sourceRefs": ["KRN_ROADMAP.md"],
         "metadata": {}
       },
       {

@@ -110,10 +110,10 @@ const sourceClaimEdge = (
   metadata: {
     consumer: "graph mini Brain-QA",
     doesNotProve: "This edge does not prove graph retrieval quality.",
-    evidenceRef: "docs/decisions/ADR-0021-temporal-claim-graph.md",
+    evidenceRef: "KRN_ROADMAP.md",
     sourceDecisionRef: "source-decision:temporal-claim-graph",
     sourceRanges: [
-      "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119",
+      "KRN_ROADMAP.md:112-119",
       "",
       "  ",
       123
@@ -747,12 +747,12 @@ describe("runSourceSearchCommand", () => {
     expect(relation.kind).toBe("narrows");
     expect(relation.consumer).toBe("graph mini Brain-QA");
     expect(relation.doesNotProve).toBe("This edge does not prove graph retrieval quality.");
-    expect(relation.evidenceRef).toBe("docs/decisions/ADR-0021-temporal-claim-graph.md");
+    expect(relation.evidenceRef).toBe("KRN_ROADMAP.md");
     expect(relation.sourceDecisionRef).toBe("source-decision:temporal-claim-graph");
     expect(relation.validFrom).toBe("2026-06-01T00:00:00.000Z");
     expect(relation.validUntil).toBe("2026-12-31T00:00:00.000Z");
     expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
-      "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
+      "KRN_ROADMAP.md:112-119"
     ]);
 
     const graphReadback = objectValue(answerPackage.graphReadback, "graphReadback");

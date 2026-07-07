@@ -126,11 +126,11 @@ describe("source review signals", () => {
       validFrom: " 2026-06-01T00:00:00.000Z ",
       validUntil: " 2026-12-31T00:00:00.000Z ",
       invalidatedAt: " 2027-01-01T00:00:00.000Z ",
-      file: " docs/decisions/ADR-0021-temporal-claim-graph.md ",
+      file: " KRN_ROADMAP.md ",
       contentHash: " sha256:source-edge ",
       sourceRanges: [
-        " docs/decisions/ADR-0021-temporal-claim-graph.md:112-119 ",
-        "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119",
+        " KRN_ROADMAP.md:112-119 ",
+        "KRN_ROADMAP.md:112-119",
         false
       ],
       unrelated: "must not leak"
@@ -142,13 +142,13 @@ describe("source review signals", () => {
         "docs/reviews/source-edge-a.md",
         "docs/reviews/source-edge-b.md"
       ],
-      file: "docs/decisions/ADR-0021-temporal-claim-graph.md",
+      file: "KRN_ROADMAP.md",
       contentHash: "sha256:source-edge",
       missingProofBoundaryFields: [],
       sourceDecisionRef: "source-decision:edge",
       scope: "relation-review",
       sourceRanges: [
-        "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
+        "KRN_ROADMAP.md:112-119"
       ],
       validFrom: "2026-06-01T00:00:00.000Z",
       validUntil: "2026-12-31T00:00:00.000Z",

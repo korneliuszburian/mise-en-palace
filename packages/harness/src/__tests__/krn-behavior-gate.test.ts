@@ -38,7 +38,7 @@ const task: BehaviorFixture = {
         mustNot: "ContextAssembly must not include stale memory.",
         detection: "ContextAssembly includes memory-smoke-stale."
       }],
-      sourceRefs: ["docs/decisions/ADR-0014-activation-is-admission-control.md"],
+      sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
     },
     {
@@ -61,7 +61,7 @@ const task: BehaviorFixture = {
         mustNot: "Activation must not include memory-stale-pattern.",
         detection: "ContextAssembly includes memory-stale-pattern."
       }],
-      sourceRefs: ["docs/decisions/ADR-0014-activation-is-admission-control.md"],
+      sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
     },
     {
@@ -84,7 +84,7 @@ const task: BehaviorFixture = {
         mustNot: "Activation must not include an exact-proof source claim without raw recall evidence hints.",
         detection: "Raw recall triggers omit exact_proof_required for source_claim:source-claim-exact-proof."
       }],
-      sourceRefs: ["docs/decisions/ADR-0014-activation-is-admission-control.md"],
+      sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
     },
     {
@@ -130,7 +130,7 @@ const task: BehaviorFixture = {
         mustNot: "ContextAssembly must not accept selected observation prefix items without source ranges.",
         detection: "ContextAssembly contains observationPrefix for observation-unsourced-prefix."
       }],
-      sourceRefs: ["docs/decisions/ADR-0013-observation-is-staging-not-memory.md"],
+      sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
     },
     {
@@ -228,7 +228,7 @@ const task: BehaviorFixture = {
         mustNot: "Reflection candidate generation must not accept memory_record targets.",
         detection: "buildReflectionCandidateGenerationPlan returns ready."
       }],
-      sourceRefs: ["docs/decisions/ADR-0013-observation-is-staging-not-memory.md"],
+      sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
     },
     {
