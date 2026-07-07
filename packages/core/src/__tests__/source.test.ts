@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, test } from "vitest";
 import {
   assessSourceClaimOverride,
   assessSourceClaimReviewSignals,
+  assessSourceClaimTemporalValidity,
   assessSourceDecisionReviewSignals,
   assessSourceSupportType,
   classifySourceAuthority,
@@ -180,11 +181,60 @@ describe("source review signals", () => {
   });
 
   test("fails closed for invalid source claim timestamps", () => {
-    expect(isSourceClaimTemporallyValid(sourceClaim({}), "not-a-date")).toBe(false);
-    expect(isSourceClaimTemporallyValid(sourceClaim({
+    const invalidNowClaim = sourceClaim({});
+    const invalidRevisitClaim = sourceClaim({
       revisitWhen: "not-a-date"
-    }), now)).toBe(false);
+    });
+
+    expect(assessSourceClaimTemporalValidity(invalidNowClaim, "not-a-date")).toEqual({
+      status: "invalid_time",
+      reason: "invalid_now"
+    });
+    expect(assessSourceClaimTemporalValidity(invalidRevisitClaim, now)).toEqual({
+      status: "invalid_time",
+      reason: "invalid_revisit_when"
+    });
+    expect(assessSourceClaimTemporalValidity(sourceClaim({
+      revisitWhen: "2026-06-01T00:00:00.000Z"
+    }), now)).toEqual({
+      status: "stale",
+      reason: "revisit_when_elapsed"
+    });
+    expect(assessSourceClaimTemporalValidity(sourceClaim({}), now)).toEqual({
+      status: "valid"
+    });
+
+    expect(isSourceClaimTemporallyValid(invalidNowClaim, "not-a-date")).toBe(false);
+    expect(isSourceClaimTemporallyValid(invalidRevisitClaim, now)).toBe(false);
     expect(isSourceClaimTemporallyValid(sourceClaim({}), now)).toBe(true);
+  });
+
+  test("blocks accepted source claims with invalid temporal metadata", () => {
+    expect(assessSourceClaimReviewSignals(sourceClaim({
+      revisitWhen: "not-a-date"
+    }), {
+      now
+    })).toEqual([
+      {
+        kind: "invalid_source_claim_time",
+        severity: "blocking",
+        sourceClaimId: "source-claim-1",
+        reason:
+          "Accepted SourceClaim has invalid temporal metadata and cannot be used as current authority."
+      }
+    ]);
+
+    expect(assessSourceClaimReviewSignals(sourceClaim({}), {
+      now: "not-a-date"
+    })).toEqual([
+      {
+        kind: "invalid_source_claim_time",
+        severity: "blocking",
+        sourceClaimId: "source-claim-1",
+        reason:
+          "Accepted SourceClaim has invalid temporal metadata and cannot be used as current authority."
+      }
+    ]);
   });
 
   test("reports source decisions without support or falsifiability", () => {

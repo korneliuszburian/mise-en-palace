@@ -458,31 +458,75 @@ const hasMeaningfulOverrideReason = (value: string | undefined): boolean => {
   return trimmed.split(/\s+/u).filter((word) => word.length >= 3).length >= 4;
 };
 
-export const isSourceClaimTemporallyValid = (
+export type SourceClaimTemporalValidity =
+  | {
+      readonly status: "valid";
+    }
+  | {
+      readonly status: "stale";
+      readonly reason: "revisit_when_elapsed";
+    }
+  | {
+      readonly status: "invalid_time";
+      readonly reason: "invalid_now" | "invalid_revisit_when";
+    }
+  | {
+      readonly status: "inactive";
+      readonly reason: "rejected_or_deprecated";
+    };
+
+export const assessSourceClaimTemporalValidity = (
   sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
   now: string
-): boolean => {
+): SourceClaimTemporalValidity => {
   if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
-    return false;
+    return {
+      status: "inactive",
+      reason: "rejected_or_deprecated"
+    };
   }
 
   const nowAt = parseTimestampMs(now);
 
   if (nowAt === undefined) {
-    return false;
+    return {
+      status: "invalid_time",
+      reason: "invalid_now"
+    };
   }
 
   if (sourceClaim.revisitWhen === undefined) {
-    return true;
+    return {
+      status: "valid"
+    };
   }
 
   const revisitAt = parseTimestampMs(sourceClaim.revisitWhen);
 
   if (revisitAt === undefined) {
-    return false;
+    return {
+      status: "invalid_time",
+      reason: "invalid_revisit_when"
+    };
   }
 
-  return revisitAt >= nowAt;
+  if (revisitAt < nowAt) {
+    return {
+      status: "stale",
+      reason: "revisit_when_elapsed"
+    };
+  }
+
+  return {
+    status: "valid"
+  };
+};
+
+export const isSourceClaimTemporallyValid = (
+  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
+  now: string
+): boolean => {
+  return assessSourceClaimTemporalValidity(sourceClaim, now).status === "valid";
 };
 
 export type SourceClaimOverrideClaim = Pick<
@@ -549,6 +593,7 @@ export const assessSourceClaimOverride = (input: {
 export type SourceClaimReviewSignalKind =
   | "missing_source_to_decision_fields"
   | "decorative_support_type"
+  | "invalid_source_claim_time"
   | "stale_accepted_claim"
   | "accepted_claim_without_decision";
 
@@ -596,18 +641,28 @@ export const assessSourceClaimReviewSignals = (
     });
   }
 
-  if (
-    claim.status === "accepted" &&
-    input.now !== undefined &&
-    !isSourceClaimTemporallyValid(claim, input.now)
-  ) {
-    signals.push({
-      kind: "stale_accepted_claim",
-      severity: "warning",
-      sourceClaimId: claim.id,
-      reason:
-        "Accepted SourceClaim is past revisitWhen and needs refresh, deprecation, or replacement before continued use."
-    });
+  if (claim.status === "accepted" && input.now !== undefined) {
+    const temporalValidity = assessSourceClaimTemporalValidity(claim, input.now);
+
+    if (temporalValidity.status === "invalid_time") {
+      signals.push({
+        kind: "invalid_source_claim_time",
+        severity: "blocking",
+        sourceClaimId: claim.id,
+        reason:
+          "Accepted SourceClaim has invalid temporal metadata and cannot be used as current authority."
+      });
+    }
+
+    if (temporalValidity.status === "stale") {
+      signals.push({
+        kind: "stale_accepted_claim",
+        severity: "warning",
+        sourceClaimId: claim.id,
+        reason:
+          "Accepted SourceClaim is past revisitWhen and needs refresh, deprecation, or replacement before continued use."
+      });
+    }
   }
 
   if (
