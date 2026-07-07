@@ -99,6 +99,11 @@ interface MergedCandidateScores {
   trust: number;
 }
 
+const mergedFeedbackScore = (left: number, right: number): number =>
+  left < 0 || right < 0
+    ? Math.min(left, right)
+    : Math.max(left, right);
+
 const mergedScores = (
   left: RankedActivationCandidate,
   right: RankedActivationCandidate,
@@ -109,7 +114,7 @@ const mergedScores = (
   graph: Math.max(left.graphScore, right.graphScore),
   temporal: Math.max(left.temporalScore, right.temporalScore),
   contextRoi: Math.max(left.contextRoiScore, right.contextRoiScore),
-  feedback: left.feedbackScore + right.feedbackScore,
+  feedback: mergedFeedbackScore(left.feedbackScore, right.feedbackScore),
   trust: activationTrustScore(trustTier)
 });
 

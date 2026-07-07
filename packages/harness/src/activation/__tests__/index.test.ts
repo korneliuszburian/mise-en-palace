@@ -1742,6 +1742,43 @@ describe("activation engine", () => {
     });
   });
 
+  it("does not inflate feedback score when merging duplicate activation candidates", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        {
+          ...toMemoryCandidate(memoryRecord({
+            id: "memory-feedback",
+            summary: "Doctor checks Postgres brain store readiness",
+            positiveFeedbackCount: 15
+          })),
+          feedbackScore: 30
+        },
+        {
+          ...toSearchCandidate(searchDocument({
+            id: "search-memory-feedback",
+            subjectType: "memory_record",
+            subjectId: "memory-feedback",
+            memoryRecordId: "memory-feedback",
+            title: "Doctor checks Postgres brain store readiness"
+          })),
+          feedbackScore: 30
+        }
+      ],
+      query
+    );
+    const [merged] = mergeActivationCandidates(ranked);
+
+    expect(merged).toMatchObject({
+      subjectType: "memory_record",
+      subjectId: "memory-feedback",
+      feedbackScore: 30
+    });
+    expect(merged?.totalScore).toBeLessThan(
+      (ranked[0]?.totalScore ?? 0) + 30
+    );
+  });
+
   it("excludes memory records with blocking review signals during activation filtering", () => {
     const query = buildMemoryQuery(task);
     const ranked = rankCandidates(
