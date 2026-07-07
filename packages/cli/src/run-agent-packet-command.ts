@@ -110,6 +110,31 @@ const sourceDecisionEdgeIdsFor = (
   candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
 ) ?? []);
 
+const sourceClaimIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.context.inclusionDetails
+  .filter((inclusion) => inclusion.subjectType === "source_claim")
+  .map((inclusion) => inclusion.subjectId));
+
+const sourceClaimIdsWithDecisionSupportFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.subjectType === "source_claim" &&
+  (candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds.length ?? 0) > 0
+    ? [candidate.subjectId]
+    : []
+) ?? []);
+
+const caveatedSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => {
+  const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
+
+  return sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
+    !supportedSourceClaimIds.has(sourceClaimId)
+  );
+};
+
 const sourceDecisionIdsWithUsefulness = (
   readModel: DecisionPacketReadModel,
   outcomes: readonly SourceUsefulnessOutcome[]
@@ -177,6 +202,7 @@ const compactDecisionPacket = (
   readModel: DecisionPacketReadModel
 ): DecisionPacket => {
   const inclusions = readModel.context.inclusionDetails;
+  const sourceClaimIds = sourceClaimIdsFor(readModel);
   const governingDecisionIds = governingDecisionIdsFor(readModel);
   const staleDecisionIds = staleDecisionIdsFor(readModel);
 
@@ -184,9 +210,8 @@ const compactDecisionPacket = (
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
     governingStatements: governingStatementsFor(readModel),
-    sourceClaimIds: unique(inclusions
-      .filter((inclusion) => inclusion.subjectType === "source_claim")
-      .map((inclusion) => inclusion.subjectId)),
+    sourceClaimIds,
+    caveatedSourceClaimIds: caveatedSourceClaimIdsFor(readModel),
     sourceDecisionEdgeIds: sourceDecisionEdgeIdsFor(readModel),
     sourceRejectionIds: rejectedSourceDecisionIdsFor(readModel),
     memoryRefs: unique(inclusions

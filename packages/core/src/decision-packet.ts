@@ -15,6 +15,7 @@ export interface DecisionPacket {
   governingDecisionIds: readonly string[];
   governingStatements: readonly string[];
   sourceClaimIds: readonly string[];
+  caveatedSourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
   sourceRejectionIds: readonly string[];
   memoryRefs: readonly string[];

@@ -37,6 +37,7 @@ const packetJson = {
     governingDecisionIds: ["frontend-project-standard-packet"],
     governingStatements: ["Use the governed frontend bootstrap standard."],
     sourceClaimIds: ["source-claim:frontend-project-standard-packet"],
+    caveatedSourceClaimIds: [],
     sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"],
     sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],
     memoryRefs: ["memory:decision:frontend-project-standard-packet"],

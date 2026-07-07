@@ -20,6 +20,10 @@ interface AgentPacketJson {
     readonly checksum: string;
     readonly evidenceRef: string;
   };
+  readonly packet: {
+    readonly sourceClaimIds: readonly string[];
+    readonly caveatedSourceClaimIds: readonly string[];
+  };
   readonly returnChannels: {
     readonly evidence: {
       readonly persistedCommand: string;
@@ -87,6 +91,12 @@ const aggregate: HarnessRunAggregate = {
       reason: "Agent needs governing source.",
       expectedUse: "Use before coding.",
       sourceAuthority: "project-decision"
+    }, {
+      subjectType: "source_claim",
+      subjectId: "claim-agent-caveated",
+      reason: "Agent may inspect accepted source evidence that lacks decision support.",
+      expectedUse: "Use only as caveated evidence.",
+      sourceAuthority: "medium"
     }, {
       subjectType: "memory_record",
       subjectId: "memory-agent-1",
@@ -386,7 +396,11 @@ describe("agent packet CLI", () => {
         governingStatements: expect.arrayContaining([
           "Use the refreshed frontend bootstrap standard for matching new frontend projects."
         ]),
-        sourceClaimIds: ["claim-agent-1"],
+        sourceClaimIds: [
+          "claim-agent-1",
+          "claim-agent-caveated"
+        ],
+        caveatedSourceClaimIds: ["claim-agent-caveated"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         sourceRejectionIds: ["source-decision-rejected-agent-1"],
         memoryRefs: ["memory-agent-1"],
@@ -401,9 +415,9 @@ describe("agent packet CLI", () => {
         noiseDecisionIds: ["source-decision-noise-agent-1"],
         severeStaleAuthorityIds: ["source-decision-conflicted-agent-1"],
         brief: {
-          includedContextCount: 2,
+          includedContextCount: 3,
           explicitExclusionCount: 1,
-          sourceClaimUseCount: 1,
+          sourceClaimUseCount: 2,
           memoryRecordUseCount: 1
         }
       },
@@ -454,6 +468,10 @@ describe("agent packet CLI", () => {
     }
 
     expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
+    expect(json.packet.sourceClaimIds).toContain("claim-agent-1");
+    expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
+    expect(json.packet.caveatedSourceClaimIds).toEqual(["claim-agent-caveated"]);
+    expect(json.packet.caveatedSourceClaimIds).not.toContain("claim-agent-1");
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
