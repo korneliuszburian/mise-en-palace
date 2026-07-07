@@ -1,18 +1,18 @@
 import { sql } from "drizzle-orm";
 
-import type { KrnDatabase } from "./database.js";
+import type { KrnDatabase } from "../../database.js";
 import {
   createSmokeDatabase,
   ensureSmokeBrainStoreReady,
   normalizeSmokeSlugPart
 } from "./db-smoke-support.js";
-import { DrizzleProjectRepository } from "./repositories/index.js";
+import { DrizzleProjectRepository } from "../../repositories/index.js";
 import {
   projectKernels,
   projects,
   repoInstallations,
   workspaces
-} from "./schema/index.js";
+} from "../../schema/index.js";
 
 export interface InitConnectSmokeInput {
   databaseUrl: string;

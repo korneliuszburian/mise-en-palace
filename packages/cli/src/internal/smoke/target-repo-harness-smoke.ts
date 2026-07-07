@@ -33,7 +33,7 @@ import {
   renderCodexBriefFromAggregate,
   sumCountRows,
   yesNo
-} from "./codex-brief-support.js";
+} from "../../codex-brief-support.js";
 
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;

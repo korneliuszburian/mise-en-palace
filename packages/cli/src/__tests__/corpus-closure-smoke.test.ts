@@ -6,7 +6,7 @@ import {
 
 import {
   runCorpusClosureSmoke
-} from "../run-corpus-closure-smoke.js";
+} from "../internal/eval/run-corpus-closure-smoke.js";
 
 const sourceDecisionGaps = (overrides: Record<string, unknown> = {}): string =>
   JSON.stringify({

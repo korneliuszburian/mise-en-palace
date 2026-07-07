@@ -11,7 +11,7 @@ import type {
 
 import type {
   DatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   isCliEntrypoint,
   writeJsonEvalResult
@@ -23,10 +23,10 @@ import {
   recordArray,
   stringValue,
   tupleArray
-} from "./eval-parse-support.js";
+} from "../../fixture-parse-support.js";
 import {
   runSourceSearchCommand
-} from "./run-source-search-command.js";
+} from "../../run-source-search-command.js";
 import {
   ndcgAtK,
   roundRankingMetric

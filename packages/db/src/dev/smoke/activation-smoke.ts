@@ -27,7 +27,7 @@ import {
   contextAssemblies,
   retrievalRuns,
   searchDocuments,
-} from "./schema/index.js";
+} from "../../schema/index.js";
 import {
   smokeFixtureClocks
 } from "./smoke-fixture-clocks.js";
@@ -36,7 +36,7 @@ import type {
   DrizzleMemoryRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
-} from "./repositories/index.js";
+} from "../../repositories/index.js";
 
 export interface ActivationSmokeInput {
   databaseUrl: string;

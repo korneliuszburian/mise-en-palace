@@ -1,6 +1,6 @@
 import {
   stringValue
-} from "./eval-parse-support.js";
+} from "./fixture-parse-support.js";
 
 export type DecisionCorpusStatus = "current" | "stale" | "rejected";
 

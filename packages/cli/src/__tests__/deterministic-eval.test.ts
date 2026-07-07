@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   runDeterministicEval
-} from "../run-deterministic-eval.js";
+} from "../internal/eval/run-deterministic-eval.js";
 
 const decisionPacketFixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json", import.meta.url)

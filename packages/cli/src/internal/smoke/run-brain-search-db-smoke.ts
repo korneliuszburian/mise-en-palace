@@ -5,10 +5,10 @@ import {
 } from "@krn/harness";
 import {
   runBrainSearchCommand
-} from "./run-brain-search-command.js";
+} from "../../run-brain-search-command.js";
 import {
   createDatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
@@ -421,7 +421,7 @@ export const runBrainSearchDbSmokeCheck = async (
     const sessionAEvidenceBundle = await runtime.harnessRunRepository.createEvidenceBundle({
       executionRunId: sessionAExecutionRun.id,
       status: "captured",
-      changedFiles: ["packages/cli/src/run-brain-search-db-smoke.ts"],
+      changedFiles: ["packages/cli/src/internal/smoke/run-brain-search-db-smoke.ts"],
       commands: [{
         command: "pnpm db:smoke:brain-search",
         status: "passed",

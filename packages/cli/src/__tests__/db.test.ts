@@ -5,7 +5,7 @@ import path from "node:path";
 import { runCli } from "../run-cli.js";
 import {
   assertAllRealRecallAdvantageWins
-} from "../run-real-recall-advantage-db-smoke.js";
+} from "../internal/smoke/run-real-recall-advantage-db-smoke.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 

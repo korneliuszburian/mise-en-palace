@@ -12,10 +12,10 @@ import {
 } from "./db-smoke-support.js";
 import {
   DrizzleWorkerJobRepository
-} from "./repositories/drizzle-worker-job-repository.js";
+} from "../../repositories/drizzle-worker-job-repository.js";
 import {
   workerJobTypes
-} from "./repositories/worker-job-types.js";
+} from "../../repositories/worker-job-types.js";
 import {
   smokeFixtureClocks
 } from "./smoke-fixture-clocks.js";
@@ -23,7 +23,7 @@ import type {
   EnqueueWorkerJobInput,
   WorkerJobRecord,
   WorkerJobType
-} from "./repositories/worker-job-types.js";
+} from "../../repositories/worker-job-types.js";
 
 export interface WorkerJobSmokeInput {
   databaseUrl: string;

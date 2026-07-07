@@ -10,7 +10,7 @@ import type {
   DrizzleMemoryRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
-} from "./repositories/index.js";
+} from "../../repositories/index.js";
 
 export interface RetrievalSubstrateSmokeInput {
   databaseUrl: string;
@@ -119,7 +119,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
     const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
       status: "captured",
-      changedFiles: ["packages/db/src/retrieval-substrate-smoke.ts"],
+      changedFiles: ["packages/db/src/dev/smoke/retrieval-substrate-smoke.ts"],
       commands: [{
         command: "pnpm db:smoke:retrieval-substrate",
         status: "passed"

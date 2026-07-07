@@ -14,7 +14,7 @@ import {
 } from "../decision-packet-fixture.js";
 import {
   runDecisionPacketEval
-} from "../run-decision-packet-eval.js";
+} from "../internal/eval/run-decision-packet-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json", import.meta.url)

@@ -5,10 +5,10 @@ import {
   buildImportedDecisionCorpus,
   loadDecisionCorpusImportFixture,
   runDecisionCorpusImport
-} from "../run-decision-corpus-import.js";
+} from "../internal/eval/run-decision-corpus-import.js";
 import {
   persistDecisionCorpusImport
-} from "../run-decision-corpus-import-db-smoke.js";
+} from "../internal/smoke/run-decision-corpus-import-db-smoke.js";
 import type {
   DatabaseRuntime
 } from "../database-runtime.js";

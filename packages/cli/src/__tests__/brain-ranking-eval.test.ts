@@ -5,7 +5,7 @@ import {
   loadBrainRankingEvalFixture,
   parseBrainRankingEvalFixture,
   runBrainRankingEval
-} from "../run-brain-ranking-eval.js";
+} from "../internal/eval/run-brain-ranking-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/brain-ranking/brain-ranking-eval.json", import.meta.url)

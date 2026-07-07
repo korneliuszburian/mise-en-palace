@@ -19,29 +19,29 @@ import {
 import {
   formatCodexAdapterSmokeReportLines,
   runCodexAdapterSmokeCheck
-} from "./codex-adapter-smoke.js";
+} from "./internal/smoke/codex-adapter-smoke.js";
 import {
   formatTargetRepoHarnessSmokeReportLines,
   runTargetRepoHarnessSmokeCheck
-} from "./target-repo-harness-smoke.js";
+} from "./internal/smoke/target-repo-harness-smoke.js";
 import {
   formatWorkerJobSmokeReportLines
-} from "./worker-job-smoke.js";
+} from "./internal/smoke/worker-job-smoke.js";
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
   runRunShowDbSmokeCheck
-} from "./run-show-db-smoke.js";
+} from "./internal/smoke/run-show-db-smoke.js";
 import {
   runBrainSearchDbSmokeCheck
-} from "./run-brain-search-db-smoke.js";
+} from "./internal/smoke/run-brain-search-db-smoke.js";
 import {
   runRealRecallAdvantageDbSmokeCheck
-} from "./run-real-recall-advantage-db-smoke.js";
+} from "./internal/smoke/run-real-recall-advantage-db-smoke.js";
 import {
   runDecisionCorpusImportDbSmokeCheck
-} from "./run-decision-corpus-import-db-smoke.js";
+} from "./internal/smoke/run-decision-corpus-import-db-smoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;

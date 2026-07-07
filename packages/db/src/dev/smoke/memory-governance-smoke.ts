@@ -12,7 +12,7 @@ import {
   memoryApplications,
   memoryRecordVersions,
   outboxEvents
-} from "./schema/index.js";
+} from "../../schema/index.js";
 
 export interface MemoryGovernanceSmokeInput {
   databaseUrl: string;

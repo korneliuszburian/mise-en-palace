@@ -134,7 +134,7 @@ const baselineOutput = (
     "deterministic-comparator:baseline-contract-derived"
   ],
   changedFiles: [
-    "packages/cli/src/run-codex-output-comparator-eval.ts"
+    "packages/cli/src/internal/eval/run-codex-output-comparator-eval.ts"
   ],
   doesNotProve: "Baseline output is a deterministic missing-evidence proxy, not live Codex execution."
 });
@@ -153,8 +153,8 @@ const krnOutput = (
     "pnpm eval:memory-advantage=passed"
   ],
   changedFiles: [
-    "packages/cli/src/run-memory-advantage-eval.ts",
-    "packages/cli/src/run-codex-output-comparator-eval.ts"
+    "packages/cli/src/internal/eval/run-memory-advantage-eval.ts",
+    "packages/cli/src/internal/eval/run-codex-output-comparator-eval.ts"
   ],
   doesNotProve: "KRN comparator output evidence shape does not prove live Codex followed the rendered brief."
 });

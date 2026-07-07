@@ -7,13 +7,13 @@ import {
   numberValue,
   recordArray,
   stringValue
-} from "./eval-parse-support.js";
+} from "../../fixture-parse-support.js";
 import {
   runSourceDecisionGapsCommand
-} from "./run-source-decision-gaps-command.js";
+} from "../../run-source-decision-gaps-command.js";
 import {
   runSourceSearchCommand
-} from "./run-source-search-command.js";
+} from "../../run-source-search-command.js";
 
 type CorpusClosureStatus = "pass" | "fail";
 

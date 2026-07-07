@@ -8,7 +8,7 @@ import {
   runMemoryAdvantageEval,
   loadMemoryAdvantageEvalFixture,
   parseMemoryAdvantageEvalFixture
-} from "../run-memory-advantage-eval.js";
+} from "../internal/eval/run-memory-advantage-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json", import.meta.url)

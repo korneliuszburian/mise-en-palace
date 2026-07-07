@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   workerJobSmokeTransitionPlan
-} from "../worker-job-smoke.js";
+} from "../dev/smoke/worker-job-smoke.js";
 
 describe("worker job smoke", () => {
   it("plans transition counts from the actual worker job count", () => {

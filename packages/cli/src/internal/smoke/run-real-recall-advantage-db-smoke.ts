@@ -2,7 +2,7 @@ import postgres from "postgres";
 
 import {
   createDatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,

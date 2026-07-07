@@ -2,7 +2,7 @@ import type postgres from "postgres";
 
 import {
   createDatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 
 type PostgresClient = ReturnType<typeof postgres>;
 type SmokeRuntime = Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;

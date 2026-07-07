@@ -17,7 +17,7 @@ import type {
 } from "@krn/harness/repositories";
 import type {
   RenderedCodexBrief
-} from "./codex-brief-support.js";
+} from "../../codex-brief-support.js";
 import {
   assertBrainStoreReady,
   countCodexInvocationEvents,
@@ -33,7 +33,7 @@ import {
   normalizeSmokeSlugPart,
   renderCodexBriefFromAggregate,
   sumCountRows
-} from "./codex-brief-support.js";
+} from "../../codex-brief-support.js";
 
 export interface CodexAdapterSmokeInput {
   databaseUrl: string;

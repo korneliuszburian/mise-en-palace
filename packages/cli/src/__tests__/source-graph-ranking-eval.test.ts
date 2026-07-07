@@ -5,7 +5,7 @@ import {
   loadSourceGraphRankingEvalFixture,
   parseSourceGraphRankingEvalFixture,
   runSourceGraphRankingEval
-} from "../run-source-graph-ranking-eval.js";
+} from "../internal/eval/run-source-graph-ranking-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json", import.meta.url)

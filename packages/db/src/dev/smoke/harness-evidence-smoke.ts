@@ -9,10 +9,10 @@ import {
 } from "./db-smoke-support.js";
 import {
   DrizzleProjectRepository
-} from "./repositories/index.js";
+} from "../../repositories/index.js";
 import {
   outboxEvents
-} from "./schema/index.js";
+} from "../../schema/index.js";
 export interface HarnessEvidenceSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;

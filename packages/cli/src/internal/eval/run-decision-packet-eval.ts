@@ -13,16 +13,16 @@ import type {
 } from "@krn/core";
 import {
   buildDecisionPacketWithEngine
-} from "./decision-packet-engine.js";
+} from "../../decision-packet-engine.js";
 import type {
   DecisionPacketRow,
   DecisionPacketCase,
   DecisionPacketEvalFixture,
   DecisionPacketNote
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 import {
   loadDecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 
 type PacketQualityLabel = "useful" | "noisy" | "stale_authority" | "miss";
 type DecisionPacketStatus = "pass" | "fail";

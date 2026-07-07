@@ -11,7 +11,7 @@ import {
 } from "./run-codex-decision-packet-obedience-eval.js";
 import {
   loadDecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 import {
   runSecondRepoDecisionPacketEval
 } from "./run-second-repo-decision-packet-eval.js";

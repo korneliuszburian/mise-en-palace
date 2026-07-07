@@ -3,7 +3,7 @@ import {
   ensureSmokeBrainStoreReady,
   normalizeSmokeSlugPart
 } from "./db-smoke-support.js";
-import { DrizzleProjectRepository } from "./repositories/index.js";
+import { DrizzleProjectRepository } from "../../repositories/index.js";
 
 export interface PersistenceSmokeInput {
   databaseUrl: string;

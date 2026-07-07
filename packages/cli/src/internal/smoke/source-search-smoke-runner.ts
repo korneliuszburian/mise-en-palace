@@ -1,9 +1,9 @@
 import type {
   createDatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   runSourceSearchCommand
-} from "./run-source-search-command.js";
+} from "../../run-source-search-command.js";
 
 interface SmokeSourceSearchInput {
   readonly databaseUrl: string;

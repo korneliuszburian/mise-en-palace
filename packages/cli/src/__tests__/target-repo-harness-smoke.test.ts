@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatTargetRepoHarnessSmokeReport
-} from "../target-repo-harness-smoke.js";
+} from "../internal/smoke/target-repo-harness-smoke.js";
 
 describe("targetRepoHarnessSmoke", () => {
   it("formats target repo harness smoke proof", () => {

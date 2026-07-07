@@ -14,7 +14,7 @@ import {
 import {
   outboxEvents,
   sourceRejections
-} from "./schema/index.js";
+} from "../../schema/index.js";
 
 export interface SourceGraphSmokeInput {
   databaseUrl: string;

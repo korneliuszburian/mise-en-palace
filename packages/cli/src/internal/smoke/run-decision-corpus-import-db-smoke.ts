@@ -10,21 +10,21 @@ import {
 } from "./smoke-runtime-cleanup.js";
 import {
   createDatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import type {
   DatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   loadDecisionCorpusImportFixture,
   buildImportedDecisionCorpus
-} from "./run-decision-corpus-import.js";
+} from "../eval/run-decision-corpus-import.js";
 import {
   loadDecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 import type {
   DecisionCorpusImportFixture,
   DecisionCorpusImportRow
-} from "./run-decision-corpus-import.js";
+} from "../eval/run-decision-corpus-import.js";
 import {
   runSmokeSourceSearch,
   sourceSearchIncludesClaim

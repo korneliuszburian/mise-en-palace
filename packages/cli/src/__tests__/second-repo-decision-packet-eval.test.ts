@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   runSecondRepoDecisionPacketEval
-} from "../run-second-repo-decision-packet-eval.js";
+} from "../internal/eval/run-second-repo-decision-packet-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json", import.meta.url)

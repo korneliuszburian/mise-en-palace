@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   runCodexOutputComparatorEval
-} from "../run-codex-output-comparator-eval.js";
+} from "../internal/eval/run-codex-output-comparator-eval.js";
 import {
   loadMemoryAdvantageEvalFixture
-} from "../run-memory-advantage-eval.js";
+} from "../internal/eval/run-memory-advantage-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json", import.meta.url)

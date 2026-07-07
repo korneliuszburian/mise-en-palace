@@ -7,7 +7,7 @@ import {
   recordArray,
   stringArrayValue,
   stringValue
-} from "./eval-parse-support.js";
+} from "./fixture-parse-support.js";
 import {
   parseDecisionCorpusBaseRow
 } from "./decision-corpus-status.js";

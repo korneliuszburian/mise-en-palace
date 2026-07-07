@@ -6,7 +6,7 @@ import {
 
 import {
   runRunShowCommand
-} from "./run-run-show-command.js";
+} from "../../run-run-show-command.js";
 
 export interface RunShowDbSmokeInput {
   databaseUrl: string;

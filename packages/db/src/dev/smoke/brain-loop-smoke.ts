@@ -22,7 +22,7 @@ import type {
   TaskContract
 } from "@krn/core";
 
-import type { KrnDatabase } from "./database.js";
+import type { KrnDatabase } from "../../database.js";
 import {
   assertSmokeReadbackChecks,
   cleanupBrainLoopSmokeRows,
@@ -35,7 +35,7 @@ import {
   memoryApplications,
   memoryRecordVersions,
   retrievalRuns
-} from "./schema/index.js";
+} from "../../schema/index.js";
 import {
   smokeFixtureClocks
 } from "./smoke-fixture-clocks.js";
@@ -336,7 +336,7 @@ export const runBrainLoopSmokeCheck = async (
     const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
       status: "captured",
-      changedFiles: ["packages/db/src/brain-loop-smoke.ts"],
+      changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
       commands: [{
         command: "pnpm db:smoke:brain-loop",
         status: "passed",

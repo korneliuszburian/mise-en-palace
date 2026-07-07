@@ -45,7 +45,7 @@ import {
 } from "./run-init-command.js";
 import {
   runTargetRepoHarnessSmokeCheck
-} from "./target-repo-harness-smoke.js";
+} from "./internal/smoke/target-repo-harness-smoke.js";
 
 const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
   const exists = await Promise.all(paths.map((targetPath) => pathExists(targetPath)));

@@ -14,16 +14,16 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 
-import type { KrnDatabase } from "./database.js";
-import { createKrnDatabase } from "./database.js";
-import { runMigrationReadinessCheck } from "./migration-readiness.js";
+import type { KrnDatabase } from "../../database.js";
+import { createKrnDatabase } from "../../database.js";
+import { runMigrationReadinessCheck } from "../../migration-readiness.js";
 import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
   DrizzleProjectRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
-} from "./repositories/index.js";
+} from "../../repositories/index.js";
 import {
   antiMemoryRecords,
   antiMemoryCandidates,
@@ -47,7 +47,7 @@ import {
   sourceDecisionEdges,
   sourceRejections,
   workspaces
-} from "./schema/index.js";
+} from "../../schema/index.js";
 
 type SmokeWorkspaceRecord = Awaited<
   ReturnType<DrizzleProjectRepository["createWorkspace"]>

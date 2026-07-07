@@ -20,10 +20,10 @@ import type {
 } from "./eval-fixture-support.js";
 import {
   runBrainSearchCommand
-} from "./run-brain-search-command.js";
+} from "../../run-brain-search-command.js";
 import type {
   BrainSearchCommand
-} from "./run-brain-search-command.js";
+} from "../../run-brain-search-command.js";
 import {
   ndcgAtK,
   roundRankingMetric

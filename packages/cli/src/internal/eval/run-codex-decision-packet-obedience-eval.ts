@@ -15,10 +15,10 @@ import {
   recordArray,
   stringArrayValue,
   stringValue
-} from "./eval-parse-support.js";
+} from "../../fixture-parse-support.js";
 import {
   loadDecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";

@@ -8,7 +8,7 @@ import {
 import {
   loadDecisionPacketEvalFixture,
   type DecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
+} from "../../decision-packet-fixture.js";
 
 type SecondRepoEvalStatus = "pass" | "fail";
 

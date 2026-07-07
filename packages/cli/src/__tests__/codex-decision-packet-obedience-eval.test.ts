@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   loadCodexDecisionPacketObedienceFixture,
   runCodexDecisionPacketObedienceEval
-} from "../run-codex-decision-packet-obedience-eval.js";
+} from "../internal/eval/run-codex-decision-packet-obedience-eval.js";
 
 const fixturePath = fileURLToPath(
   new URL(

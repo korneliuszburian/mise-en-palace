@@ -43,16 +43,16 @@ import type {
 } from "./eval-fixture-support.js";
 import {
   runBrainSearchCommand
-} from "./run-brain-search-command.js";
+} from "../../run-brain-search-command.js";
 import type {
   BrainSearchCommand
-} from "./run-brain-search-command.js";
+} from "../../run-brain-search-command.js";
 import type {
   DatabaseRuntime
-} from "./database-runtime.js";
+} from "../../database-runtime.js";
 import {
   createNoStoreCompilerDependencies
-} from "./no-store-repositories.js";
+} from "../../no-store-repositories.js";
 
 type MemoryAdvantageCompetency = "retrieval" | "learning" | "long_range" | "forgetting";
 type MemoryAdvantageNegativeClass =
