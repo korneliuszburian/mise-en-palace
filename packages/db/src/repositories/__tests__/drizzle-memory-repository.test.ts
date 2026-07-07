@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrizzleMemoryRepository,
+  activeMemorySelectionOrder,
   antiMemoryPromotionMetadata,
   assertAntiMemoryCandidateInvariants,
   assertMemoryCoreInvariants,
@@ -29,11 +30,59 @@ const methodNames = [
   "listAntiMemoryForRun"
 ] as const;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const orderColumnName = (order: unknown): string | undefined => {
+  if (!isRecord(order) || !Array.isArray(order["queryChunks"])) {
+    return undefined;
+  }
+
+  const column = order["queryChunks"].find((chunk) =>
+    isRecord(chunk) && typeof chunk["name"] === "string"
+  );
+
+  return isRecord(column) && typeof column["name"] === "string"
+    ? column["name"]
+    : undefined;
+};
+
+const orderDirection = (order: unknown): "asc" | "desc" | undefined => {
+  if (!isRecord(order) || !Array.isArray(order["queryChunks"])) {
+    return undefined;
+  }
+
+  const suffix = order["queryChunks"].flatMap((chunk) => {
+    if (!isRecord(chunk) || !Array.isArray(chunk["value"])) {
+      return [];
+    }
+
+    return chunk["value"].filter((item): item is string => typeof item === "string");
+  }).join("");
+
+  return suffix.includes("desc") ? "desc" : "asc";
+};
+
 describe("DrizzleMemoryRepository", () => {
   it("exposes M23 memory governance repository methods", () => {
     for (const methodName of methodNames) {
       expect(typeof DrizzleMemoryRepository.prototype[methodName]).toBe("function");
     }
+  });
+
+  it("orders active memory before limit by negative feedback, positive feedback, then recency", () => {
+    const order = activeMemorySelectionOrder();
+
+    expect(order.map(orderColumnName)).toEqual([
+      "negative_feedback_count",
+      "positive_feedback_count",
+      "updated_at"
+    ]);
+    expect(order.map(orderDirection)).toEqual([
+      "asc",
+      "desc",
+      "desc"
+    ]);
   });
 
   it("accepts governed memory core inputs with lineage and guidance", () => {

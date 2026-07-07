@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
@@ -84,6 +84,12 @@ export const antiMemoryPromotionMetadata = (
   createdFromCandidateId: candidate.id,
   invalidatedBySourceClaimIds: candidate.invalidatedBySourceClaimIds
 });
+
+export const activeMemorySelectionOrder = () => [
+  asc(memoryRecords.negativeFeedbackCount),
+  desc(memoryRecords.positiveFeedbackCount),
+  desc(memoryRecords.updatedAt)
+];
 
 interface MemoryCoreInvariantInput {
   summary: string;
@@ -478,7 +484,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async listActiveMemory(projectId: ProjectId, limit: number): Promise<MemoryRecord[]> {
     const rows = await this.db.query.memoryRecords.findMany({
       where: and(eq(memoryRecords.projectId, projectId), eq(memoryRecords.status, "active")),
-      orderBy: asc(memoryRecords.updatedAt),
+      orderBy: activeMemorySelectionOrder(),
       limit
     });
 
