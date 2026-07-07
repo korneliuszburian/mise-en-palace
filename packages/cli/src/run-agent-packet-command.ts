@@ -1,3 +1,6 @@
+import {
+  createHash
+} from "node:crypto";
 import type {
   DecisionPacket,
   SourceUsefulnessOutcome
@@ -35,6 +38,18 @@ interface AgentPacketReadModel {
   readonly request: {
     readonly runId: string;
   };
+  readonly packetIdentity: {
+    readonly packetId: string;
+    readonly checksumAlgorithm: "sha256";
+    readonly checksum: string;
+    readonly evidenceRef: string;
+    readonly generatedAt: string;
+    readonly sourceRunUpdatedAt: string;
+    readonly freshness: {
+      readonly status: "current_read_model_snapshot";
+      readonly doesNotProve: string;
+    };
+  };
   readonly packet: DecisionPacket;
   readonly readModel: DecisionPacketReadModel;
   readonly returnChannels: {
@@ -67,6 +82,27 @@ const missingAgentPacketDatabaseUrlMessage = [
 
 const unique = (values: readonly string[]): string[] =>
   [...new Set(values)];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+
+  if (isRecord(value)) {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+};
+
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const sourceDecisionEdgeIdsFor = (
   readModel: DecisionPacketReadModel
@@ -188,56 +224,95 @@ const compactDecisionPacket = (
   };
 };
 
+const packetIdentityFor = (
+  runId: string,
+  readModel: DecisionPacketReadModel,
+  packet: DecisionPacket,
+  generatedAt: string
+): AgentPacketReadModel["packetIdentity"] => {
+  const checksum = sha256Hex(canonicalJson({
+    packet,
+    request: {
+      runId
+    },
+    sourceRunUpdatedAt: readModel.run.updatedAt
+  }));
+
+  return {
+    packetId: `decision-packet:${runId}:${checksum.slice(0, 16)}`,
+    checksumAlgorithm: "sha256",
+    checksum,
+    evidenceRef: `packet:${checksum}`,
+    generatedAt,
+    sourceRunUpdatedAt: readModel.run.updatedAt,
+    freshness: {
+      status: "current_read_model_snapshot",
+      doesNotProve:
+        "Packet checksum binds feedback to this CLI readback snapshot; it does not prove the DB state stayed unchanged after the packet was rendered."
+    }
+  };
+};
+
 const buildAgentPacket = (
   runId: string,
-  readModel: DecisionPacketReadModel
-): AgentPacketReadModel => ({
-  kind: "krn.agentPacket.v1",
-  access: "read_only",
-  mutation: "none",
-  surface: "headless_cli",
-  request: {
-    runId
-  },
-  packet: compactDecisionPacket(readModel),
-  readModel,
-  returnChannels: {
-    evidence: {
-      command:
-        `krn evidence capture --run-id ${runId} --verification "<command>=passed"`,
-      persistedCommand:
-        `krn evidence capture --run-id ${runId} --verification "<command>=passed" --persist`,
-      doesNotProve:
-        "Evidence capture records supplied outcomes; it does not execute commands or prove Codex followed the packet."
+  readModel: DecisionPacketReadModel,
+  generatedAt: string
+): AgentPacketReadModel => {
+  const packet = compactDecisionPacket(readModel);
+  const packetIdentity = packetIdentityFor(runId, readModel, packet, generatedAt);
+  const packetChecksumOption = `--agent-packet-checksum ${packetIdentity.checksum}`;
+
+  return {
+    kind: "krn.agentPacket.v1",
+    access: "read_only",
+    mutation: "none",
+    surface: "headless_cli",
+    request: {
+      runId
     },
-    feedback: {
-      memoryRecordApplyExample:
-        `krn memory record apply --run-id ${runId} --memory-id <memory-id> --outcome helped --notes "<why>" --persist`,
-      sourceUsefulnessExample:
-        `krn evidence capture --run-id ${runId} --source-usefulness "claim:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
-      sourceDecisionUsefulnessExample:
-        `krn evidence capture --run-id ${runId} --source-usefulness "decision:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
-      knowledgeUsefulnessExample:
-        `krn evidence capture --run-id ${runId} --knowledge-usefulness "<brain-knowledge-id>=helped|<reason>|<evidence-ref>|<does-not-prove>" --persist`,
-      doesNotProve:
-        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates."
+    packetIdentity,
+    packet,
+    readModel,
+    returnChannels: {
+      evidence: {
+        command:
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --verification "<command>=passed"`,
+        persistedCommand:
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --verification "<command>=passed" --persist`,
+        doesNotProve:
+          "Evidence capture records supplied outcomes; it does not execute commands, prove Codex followed the packet, or prove the packet remained current after render time."
+      },
+      feedback: {
+        memoryRecordApplyExample:
+          `krn memory record apply --run-id ${runId} --memory-id <memory-id> --outcome helped --notes "packet=${packetIdentity.evidenceRef}; <why>" --persist`,
+        sourceUsefulnessExample:
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --source-usefulness "claim:<id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        sourceDecisionUsefulnessExample:
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --source-usefulness "decision:<id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        knowledgeUsefulnessExample:
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --knowledge-usefulness "<brain-knowledge-id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        doesNotProve:
+          "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum evidence only binds feedback to the rendered packet snapshot."
+      }
+    },
+    proof: {
+      proves: [
+        "a headless agent can request a read-only DecisionPacket contract through CLI JSON",
+        "the response names evidence and feedback return channels without invoking Codex or mutating memory",
+        "the agent surface exposes the compact DecisionPacket separately from the diagnostic read model",
+        "return-channel commands carry a packet checksum evidence ref for later freshness checks"
+      ],
+      doesNotProve: [
+        "MCP integration",
+        "live Codex obedience",
+        "that returned evidence commands were executed",
+        "memory/source promotion",
+        "product readiness",
+        "that the persisted run state stayed unchanged after this packet was rendered"
+      ]
     }
-  },
-  proof: {
-    proves: [
-      "a headless agent can request a read-only DecisionPacket contract through CLI JSON",
-      "the response names evidence and feedback return channels without invoking Codex or mutating memory",
-      "the agent surface exposes the compact DecisionPacket separately from the diagnostic read model"
-    ],
-    doesNotProve: [
-      "MCP integration",
-      "live Codex obedience",
-      "that returned evidence commands were executed",
-      "memory/source promotion",
-      "product readiness"
-    ]
-  }
-});
+  };
+};
 
 export const runAgentPacketCommand = async (
   runtime: AgentPacketCommandRuntime
@@ -260,6 +335,6 @@ export const runAgentPacketCommand = async (
   });
 
   return {
-    stdout: `${JSON.stringify(buildAgentPacket(runtime.runId, readModel), null, 2)}\n`
+    stdout: `${JSON.stringify(buildAgentPacket(runtime.runId, readModel, runtime.now()), null, 2)}\n`
   };
 };

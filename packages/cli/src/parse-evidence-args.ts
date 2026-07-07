@@ -17,7 +17,7 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--agent-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
@@ -483,6 +483,7 @@ const parseOptionAfterPendingCommand = (
 type EvidenceParseState = {
   persist: boolean;
   runId: string | undefined;
+  agentPacketChecksum: string | undefined;
   pendingCommand: Partial<EvidenceCommand> | undefined;
   commandOutcomes: EvidenceCommand[];
   intendedFiles: string[];
@@ -524,6 +525,7 @@ const evidenceOptionNames = [
   "--persist",
   "--run-id",
   "--run",
+  "--agent-packet-checksum",
   "--intended-file",
   "--target-repo",
   "--target-mode",
@@ -662,6 +664,13 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
+  "--agent-packet-checksum": requiredEvidenceHandler(
+    "--agent-packet-checksum",
+    "--agent-packet-checksum requires a non-empty checksum",
+    (state, value) => {
+      state.agentPacketChecksum = value;
+    }
+  ),
   "--intended-file": requiredEvidenceHandler(
     "--intended-file",
     "--intended-file requires a non-empty path",
@@ -1050,6 +1059,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   const state: EvidenceParseState = {
     persist: false,
     runId: undefined,
+    agentPacketChecksum: undefined,
     pendingCommand: undefined,
     commandOutcomes: [],
     intendedFiles: [],
@@ -1113,6 +1123,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       kind: "evidenceCapture",
       persist: state.persist,
       ...(state.runId === undefined ? {} : { runId: state.runId.trim() }),
+      ...(state.agentPacketChecksum === undefined ? {} : { agentPacketChecksum: state.agentPacketChecksum }),
       ...(state.intendedFiles.length === 0 ? {} : { intendedFiles: state.intendedFiles }),
       ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
       ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),

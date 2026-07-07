@@ -194,6 +194,9 @@ const runEvidenceCliCommand = (
     createId: context.createId,
     persist: command.persist,
     ...(command.runId === undefined ? {} : { runId: command.runId }),
+    ...(command.agentPacketChecksum === undefined
+      ? {}
+      : { agentPacketChecksum: command.agentPacketChecksum }),
     ...(command.intendedFiles === undefined ? {} : { intendedFiles: command.intendedFiles }),
     ...(command.commandOutcomes === undefined
       ? {}

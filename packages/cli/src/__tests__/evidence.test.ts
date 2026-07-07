@@ -766,6 +766,81 @@ describe("runCli", () => {
     });
   });
 
+  it("binds persisted usefulness feedback to the supplied agent packet checksum", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--agent-packet-checksum",
+        "current-packet",
+        "--source-usefulness",
+        "claim:source-claim-current=helped|Current packet source helped|packet:current-packet|Does not prove future source selection quality",
+        "--source-usefulness",
+        "claim:source-claim-stale=helped|Stale packet source allegedly helped|packet:stale-packet|Does not prove future source selection quality",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Agent packet: checksum=current-packet | evidenceRef=packet:current-packet");
+    expect(result.stdout).toContain("agentPacketEvidenceRef: packet:current-packet");
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      agentPacketChecksum: "current-packet",
+      agentPacketEvidenceRef: "packet:current-packet"
+    });
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      agentPacketChecksum: "current-packet",
+      agentPacketEvidenceRef: "packet:current-packet",
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-current",
+        outcome: "helped",
+        evidenceRefs: ["packet:current-packet"]
+      }, {
+        sourceClaimId: "source-claim-stale",
+        outcome: "unknown",
+        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
+        evidenceRefs: ["packet:stale-packet"]
+      }]
+    });
+  });
+
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
     const result = await runCli(
       [

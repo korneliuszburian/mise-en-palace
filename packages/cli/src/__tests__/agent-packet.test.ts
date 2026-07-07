@@ -15,6 +15,29 @@ import {
 
 const now = "2026-07-07T16:35:00.000Z";
 
+interface AgentPacketJson {
+  readonly packetIdentity: {
+    readonly checksum: string;
+    readonly evidenceRef: string;
+  };
+  readonly returnChannels: {
+    readonly evidence: {
+      readonly persistedCommand: string;
+    };
+    readonly feedback: {
+      readonly sourceUsefulnessExample: string;
+      readonly sourceDecisionUsefulnessExample: string;
+      readonly knowledgeUsefulnessExample: string;
+    };
+  };
+}
+
+const isAgentPacketJson = (value: unknown): value is AgentPacketJson =>
+  typeof value === "object" &&
+  value !== null &&
+  "packetIdentity" in value &&
+  "returnChannels" in value;
+
 const notUsed = (method: string): never => {
   throw new Error(`${method} should not be called`);
 };
@@ -343,6 +366,17 @@ describe("agent packet CLI", () => {
       request: {
         runId: "run-agent-1"
       },
+      packetIdentity: {
+        packetId: expect.stringMatching(/^decision-packet:run-agent-1:[a-f0-9]{16}$/u),
+        checksumAlgorithm: "sha256",
+        checksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        evidenceRef: expect.stringMatching(/^packet:[a-f0-9]{64}$/u),
+        generatedAt: now,
+        sourceRunUpdatedAt: now,
+        freshness: {
+          status: "current_read_model_snapshot"
+        }
+      },
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         governingDecisionIds: [
@@ -396,15 +430,15 @@ describe("agent packet CLI", () => {
       },
       returnChannels: {
         evidence: {
-          persistedCommand: "krn evidence capture --run-id run-agent-1 --verification \"<command>=passed\" --persist"
+          persistedCommand: expect.stringContaining(
+            "krn evidence capture --run-id run-agent-1 --agent-packet-checksum "
+          )
         },
         feedback: {
           memoryRecordApplyExample:
-            "krn memory record apply --run-id run-agent-1 --memory-id <memory-id> --outcome helped --notes \"<why>\" --persist",
-          sourceUsefulnessExample:
-            "krn evidence capture --run-id run-agent-1 --source-usefulness \"claim:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>\" --persist",
-          sourceDecisionUsefulnessExample:
-            "krn evidence capture --run-id run-agent-1 --source-usefulness \"decision:<id>=helped|<reason>|<evidence-ref>|<does-not-prove>\" --persist"
+            expect.stringContaining("packet=packet:"),
+          sourceUsefulnessExample: expect.stringContaining("packet:"),
+          sourceDecisionUsefulnessExample: expect.stringContaining("packet:")
         }
       },
       proof: {
@@ -414,6 +448,16 @@ describe("agent packet CLI", () => {
         doesNotProve: expect.arrayContaining(["MCP integration"])
       }
     });
+    expect(isAgentPacketJson(json)).toBe(true);
+    if (!isAgentPacketJson(json)) {
+      throw new Error("agent packet JSON did not expose packet identity");
+    }
+
+    expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
+    expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
+    expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
+    expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
+    expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(closed).toBe(true);
   });
 

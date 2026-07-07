@@ -10,7 +10,7 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--agent-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
     "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
@@ -30,11 +30,18 @@ describe("parseEvidenceArgs", () => {
   });
 
   it("parses evidence capture persist with a run id", () => {
-    expect(parseEvidenceArgs(["capture", "--run-id= run-1 ", "--persist"])).toEqual({
+    expect(parseEvidenceArgs([
+      "capture",
+      "--run-id= run-1 ",
+      "--agent-packet-checksum",
+      " abc123 ",
+      "--persist"
+    ])).toEqual({
       command: {
         kind: "evidenceCapture",
         persist: true,
-        runId: "run-1"
+        runId: "run-1",
+        agentPacketChecksum: "abc123"
       }
     });
   });

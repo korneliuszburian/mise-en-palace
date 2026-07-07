@@ -124,6 +124,7 @@ export type CliCommand =
       kind: "evidenceCapture";
       persist: boolean;
       runId?: string;
+      agentPacketChecksum?: string;
       intendedFiles?: readonly string[];
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
