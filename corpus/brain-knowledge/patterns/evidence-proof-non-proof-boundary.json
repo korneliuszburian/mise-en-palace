@@ -8,7 +8,7 @@
   "sourceRefs": [
     ".agents/skills/evidence-review-loop/SKILL.md",
     "packages/core/src/evidence-bundle.ts",
-    "packages/schema/src/evidence-capture.ts"
+    "packages/core/src/parsing/evidence-capture.ts"
   ],
   "evidenceRefs": [
     "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
