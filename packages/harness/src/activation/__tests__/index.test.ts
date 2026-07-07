@@ -1657,7 +1657,7 @@ describe("activation engine", () => {
           memoryRecord({
             status: "invalidated",
             invalidatedAt: "2026-06-10T00:00:00.000Z",
-            invalidationReason: "Superseded by ADR-0010"
+            invalidationReason: "Superseded by KRN_ROADMAP store-backed memory rule"
           })
         )
       ],

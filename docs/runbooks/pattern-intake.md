@@ -336,7 +336,7 @@ next_action: create a bounded type-boundary check only when source evidence find
 ```yaml
 source_id: target-dirty-context-evidence
 title: Target dirty state observed before repair
-url_or_ref: docs/runbooks/target-repo-testing.md
+url_or_ref: .agents/skills/target-repo-testing/SKILL.md
 trust_tier: high
 source_class: target-repo evidence
 mechanism: Dirty target files can belong to another operator and must not be normalized by KRN.

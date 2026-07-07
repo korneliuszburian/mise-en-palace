@@ -59,8 +59,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
   trigger, workflow, forbidden behavior, verification, consumer, and removal
   condition. Treat future brain skills as consumers of KRN memory/source/eval
   readbacks, not as prompt packs.
-- Consumer: `docs/architecture/skill-first-krn.md`,
-  `.agents/skills/*/SKILL.md`, and skill invariants.
+- Consumer: `KRN_ROADMAP.md` Skills Direction, `.agents/skills/*/SKILL.md`,
+  and skill invariants.
 - Falsifier: a retained skill cannot reduce repeated work, cannot name its
   KRN consumer, or claims brain/runtime authority without an executing
   memory/source/eval path.
@@ -745,7 +745,8 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Decision: keep worker runtime deferred, but retain PostgreSQL row locking as
   the first candidate locking mechanism for any future one-shot/manual worker
   executor proof.
-- Consumer: `docs/decisions/ADR-0015-worker-runtime-boundary.md`.
+- Consumer: `KRN_ROADMAP.md` Phase 6 Maintenance Runtime and the workers
+  boundary Bead queue.
 - Falsifier: a future worker proof cannot express safe claim, lock, retry,
   timeout, idempotency, and audit behavior over Postgres worker-job/outbox
   tables without a separate queue service.

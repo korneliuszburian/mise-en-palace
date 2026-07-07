@@ -40,8 +40,8 @@ methods, workers, source crawlers, dashboard, API, MCP, or a graph database.
 ## Source To Decision
 
 ```yaml
-source_id: adr-0010-postgres-brain-store
-title: ADR-0010 PostgreSQL Pgvector Brain Store
+source_id: krn-roadmap-store-backed-memory
+title: KRN roadmap store-backed memory rule
 trust_tier: high
 mechanism: KRN's first source graph, retrieval, memory, and run state must live
   in the canonical Postgres/Drizzle brain store before separate graph/search
@@ -201,9 +201,9 @@ exclude, or require raw recall.
 
 Rejected for the first temporal graph slice.
 
-Reason: ADR-0010 already chose Postgres as the first brain store. A graph DB may
-be reconsidered only after relational edges fail a concrete dogfood or target
-repo requirement.
+Reason: KRN_ROADMAP.md keeps runtime memory store-backed and rejects adding a
+separate graph database before relational edges fail a concrete dogfood or
+target repo requirement.
 
 ### Source Crawler
 
@@ -286,4 +286,3 @@ This ADR is violated if:
 - reflection writes accepted temporal truth directly;
 - a temporal edge lacks a consumer/scope and does-not-prove boundary;
 - schema exists but no dogfood source decision consumes the relation.
-
