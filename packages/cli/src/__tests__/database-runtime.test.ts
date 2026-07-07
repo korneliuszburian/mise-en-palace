@@ -118,6 +118,27 @@ describe("createDatabaseRuntime", () => {
     expect(mocks.client.end).toHaveBeenCalledTimes(1);
   });
 
+  it("closes the database client when runtime initialization fails after project resolution", async () => {
+    const { createDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.projectRepository.getProject.mockResolvedValue(project);
+    mocks.projectRepository.getLatestProjectKernel.mockResolvedValue(undefined);
+    mocks.projectRepository.listRepoInstallationsForProject.mockRejectedValue(
+      new Error("repo installation read failed")
+    );
+
+    await expect(createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      projectId: "project-1",
+      requireProjectKernelForExplicitProject: false,
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    })).rejects.toThrow("repo installation read failed");
+
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
   it("exposes source chunk persistence through the CLI database runtime", async () => {
     const { createDatabaseRuntime } = await import("../database-runtime.js");
     const sourceChunk = {

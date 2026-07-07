@@ -457,10 +457,10 @@ export interface ReflectDatabaseRuntime {
   close(): Promise<void>;
 }
 
-export const createDatabaseRuntime = async (
-  input: DatabaseRuntimeInput
+const createDatabaseRuntimeForClient = async (
+  input: DatabaseRuntimeInput,
+  client: PostgresClient
 ): Promise<DatabaseRuntime> => {
-  const client = postgres(input.databaseUrl, { max: 1 });
   const db = createKrnDatabase(client);
   const projectRepository = new DrizzleProjectRepository(db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
@@ -471,12 +471,10 @@ export const createDatabaseRuntime = async (
   const runtimeProject = await resolveRuntimeProject(projectRepository, input);
 
   if (runtimeProject.kind === "missing_explicit_project") {
-    await client.end();
     throw new Error(`Project not found for --project ${runtimeProject.explicitProjectId}`);
   }
 
   if (runtimeProject.kind === "unresolved") {
-    await client.end();
     throw new Error("Unable to resolve project for database runtime");
   }
 
@@ -494,7 +492,6 @@ export const createDatabaseRuntime = async (
     runtimeProject.explicitProjectId !== undefined &&
     projectKernel === undefined
   ) {
-    await client.end();
     throw new Error(`ProjectKernel not found for --project ${runtimeProject.explicitProjectId}`);
   }
 
@@ -549,6 +546,19 @@ export const createDatabaseRuntime = async (
     observationRepository,
     close: closePostgresClient(client)
   };
+};
+
+export const createDatabaseRuntime = async (
+  input: DatabaseRuntimeInput
+): Promise<DatabaseRuntime> => {
+  const client = postgres(input.databaseUrl, { max: 1 });
+
+  try {
+    return await createDatabaseRuntimeForClient(input, client);
+  } catch (error) {
+    await client.end();
+    throw error;
+  }
 };
 
 export const createObserveDatabaseRuntime = async (
