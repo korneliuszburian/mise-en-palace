@@ -39,6 +39,7 @@ export interface DecisionCorpusImportRow {
   readonly title: string;
   readonly statement: string;
   readonly status: ImportedDecisionStatus;
+  readonly taskScopes: readonly string[];
   readonly evidenceRef: string;
   readonly falsifier: string;
   readonly doesNotProve: string;
@@ -97,6 +98,9 @@ const parseImportDecision = (
   index: number
 ): DecisionCorpusImportRow => ({
   ...parseDecisionCorpusBaseRow(value, index),
+  taskScopes: value["taskScopes"] === undefined
+    ? []
+    : stringArrayValue(value["taskScopes"], `decisions[${index}].taskScopes`),
   noteText: stringValue(value["noteText"], `decisions[${index}].noteText`)
 });
 
@@ -156,7 +160,7 @@ const toDecision = (
   title: row.title,
   statement: row.statement,
   status: row.status,
-  taskScopes: [],
+  taskScopes: row.taskScopes,
   evidenceRef: row.evidenceRef,
   sourceClaimId: `source-claim:${row.id}`,
   sourceDecisionEdgeId: `source-decision-edge:${row.id}`,

@@ -15,6 +15,9 @@ import type {
 import {
   loadDecisionPacketEvalFixture
 } from "../decision-packet-fixture.js";
+import {
+  buildDecisionPacketWithEngine
+} from "../decision-packet-engine.js";
 
 const fixturePath = fileURLToPath(
   new URL(
@@ -59,12 +62,12 @@ describe("runDecisionCorpusImport", () => {
       fixtureVersion: "1",
       status: "pass",
       imported: {
-        decisionCount: 9,
-        noteCount: 9,
-        caseCount: 5,
-        currentDecisionCount: 5,
+        decisionCount: 11,
+        noteCount: 11,
+        caseCount: 6,
+        currentDecisionCount: 6,
         staleDecisionCount: 2,
-        rejectedDecisionCount: 2
+        rejectedDecisionCount: 3
       },
       decisionPacketStatus: "pass"
     });
@@ -74,17 +77,20 @@ describe("runDecisionCorpusImport", () => {
       "live-codex-packet-obedience-pilot",
       "third-repo-portability-before-breadth",
       "anti-vanity-naming-source-backed",
+      "memory-first-research-intake-loop",
       "manual-fixture-editing-only",
       "recorded-obedience-proves-live-codex",
       "import-without-link-validation",
-      "product-readiness-from-live-pilot"
+      "product-readiness-from-live-pilot",
+      "research-link-as-authority"
     ]);
     expect(result.importedCaseIds).toEqual([
       "decision-corpus-import-task",
       "db-backed-decision-corpus-import-task",
       "live-codex-packet-obedience-task",
       "third-repo-portability-task",
-      "anti-vanity-naming-task"
+      "anti-vanity-naming-task",
+      "research-refresh-intake-task"
     ]);
     expect(result.proof.proves).toContain(
       "the importer validates current, stale, and rejected decision links for imported cases"
@@ -98,9 +104,9 @@ describe("runDecisionCorpusImport", () => {
     expect(result.status).toBe("pass");
     expect(result.mergedCorpus).toMatchObject({
       name: "krn-decision-packet-imported-source-to-decision",
-      decisionCount: 46,
-      noteCount: 46,
-      caseCount: 23
+      decisionCount: 48,
+      noteCount: 48,
+      caseCount: 24
     });
   });
 
@@ -119,6 +125,31 @@ describe("runDecisionCorpusImport", () => {
     expect(merged.decisions.some((decision) => decision.id === "decision-corpus-import-path")).toBe(true);
     expect(merged.notes.some((note) => note.id === "note:decision-corpus-import-path")).toBe(true);
     expect(merged.cases.some((testCase) => testCase.id === "decision-corpus-import-task")).toBe(true);
+  });
+
+  it("keeps scoped research decisions out of unrelated decision packets", async () => {
+    const sourceFixture = fixture();
+    const merged = buildImportedDecisionCorpus(
+      {
+        ...sourceFixture,
+        baseFixturePath
+      },
+      baseFixture()
+    );
+    const researchCase = merged.cases.find((testCase) => testCase.id === "research-refresh-intake-task");
+    const unrelatedCase = merged.cases.find((testCase) => testCase.id === "anti-vanity-naming-task");
+
+    if (researchCase === undefined || unrelatedCase === undefined) {
+      throw new Error("missing decision corpus import task-scope cases");
+    }
+
+    const researchPacket = await buildDecisionPacketWithEngine(merged, researchCase);
+    const unrelatedPacket = await buildDecisionPacketWithEngine(merged, unrelatedCase);
+
+    expect(researchPacket.governingDecisionIds).toContain("memory-first-research-intake-loop");
+    expect(researchPacket.rejectedPathIds).toContain("research-link-as-authority");
+    expect(unrelatedPacket.governingDecisionIds).not.toContain("memory-first-research-intake-loop");
+    expect(unrelatedPacket.rejectedPathIds).not.toContain("research-link-as-authority");
   });
 
   it("rejects duplicate imported decision ids before merge", () => {
@@ -439,12 +470,13 @@ describe("runDecisionCorpusImport", () => {
       now
     });
 
-    expect(rows).toHaveLength(9);
-    expect(artifacts).toHaveLength(9);
-    expect(chunks).toHaveLength(9);
-    expect(decisions).toHaveLength(9);
-    expect(decisionEdges).toHaveLength(7);
+    expect(rows).toHaveLength(11);
+    expect(artifacts).toHaveLength(11);
+    expect(chunks).toHaveLength(11);
+    expect(decisions).toHaveLength(11);
+    expect(decisionEdges).toHaveLength(8);
     expect(searchDocuments).toMatchObject([
+      { validityStatus: "active" },
       { validityStatus: "active" },
       { validityStatus: "active" },
       { validityStatus: "active" },
@@ -453,17 +485,19 @@ describe("runDecisionCorpusImport", () => {
       { validityStatus: "invalidated" },
       { validityStatus: "invalidated" }
     ]);
-    expect(rejections).toHaveLength(2);
+    expect(rejections).toHaveLength(3);
     expect(rows.map((row) => [row.decisionId, row.sourceClaimStatus])).toEqual([
       ["decision-corpus-import-path", "accepted"],
       ["db-backed-decision-corpus-import", "accepted"],
       ["live-codex-packet-obedience-pilot", "accepted"],
       ["third-repo-portability-before-breadth", "accepted"],
       ["anti-vanity-naming-source-backed", "accepted"],
+      ["memory-first-research-intake-loop", "accepted"],
       ["manual-fixture-editing-only", "accepted"],
       ["recorded-obedience-proves-live-codex", "accepted"],
       ["import-without-link-validation", "rejected"],
-      ["product-readiness-from-live-pilot", "rejected"]
+      ["product-readiness-from-live-pilot", "rejected"],
+      ["research-link-as-authority", "rejected"]
     ]);
     expect(rows.find((row) => row.decisionId === "decision-corpus-import-path")?.sourceDecisionEdgeId)
       .toMatch(/^source-decision-edge-/u);

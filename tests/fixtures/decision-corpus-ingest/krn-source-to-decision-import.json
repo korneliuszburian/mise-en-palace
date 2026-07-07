@@ -57,6 +57,21 @@
       "noteText": "Anti-vanity naming source backed. Rename classes files commands persisted fields only with code evidence source-to-decision support and reviewability impact, not annoyance alone."
     },
     {
+      "id": "memory-first-research-intake-loop",
+      "title": "Memory-first research intake loop",
+      "statement": "Adopt practitioner research only as a bounded source-to-decision row with mechanism, KRN implication, consumer, falsifier, and task scope before it can influence decision packets.",
+      "status": "current",
+      "taskScopes": [
+        "research refresh governed patterns",
+        "source-to-decision research intake",
+        "memory loop source governance"
+      ],
+      "evidenceRef": "https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design",
+      "falsifier": "A research source can influence a decision packet without a task-matching scope, consumer, falsifier, or explicit rejected path.",
+      "doesNotProve": "Does not prove Mem0 architecture is correct for KRN, broad research quality, or automatic source authority.",
+      "noteText": "Memory first research intake loop. Practitioner research can shape KRN only through bounded source-to-decision rows with mechanism implication consumer falsifier task scope and rejected paths."
+    },
+    {
       "id": "manual-fixture-editing-only",
       "title": "Manual fixture editing only",
       "statement": "Maintain the decision-packet corpus only by hand-editing the monolithic notes-baseline JSON fixture.",
@@ -95,6 +110,16 @@
       "falsifier": "The live pilot report explicitly says it proves one bounded read-only run and does not prove product readiness or broad obedience.",
       "doesNotProve": "Rejected path only.",
       "noteText": "Product readiness from one live pilot. Claim broad product readiness or broad Codex obedience from a single bounded live decision-packet pilot."
+    },
+    {
+      "id": "research-link-as-authority",
+      "title": "Research link as authority",
+      "statement": "Treat a paper, blog post, course, or repository link as promoted KRN memory as soon as it sounds relevant.",
+      "status": "rejected",
+      "evidenceRef": "KRN_ROADMAP.md#decision-rule",
+      "falsifier": "Research intake requires source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier before promotion.",
+      "doesNotProve": "Rejected path only.",
+      "noteText": "Research link as authority. Treat a paper blog course or repo link as promoted memory just because it sounds relevant."
     }
   ],
   "cases": [
@@ -137,6 +162,14 @@
       "staleDecisionIds": ["manual-fixture-editing-only"],
       "rejectedDecisionIds": ["product-readiness-from-live-pilot"],
       "baselineFailureRationale": "A notes-only path can recall naming complaints, but it cannot force source-backed evidence and reject vanity readiness claims before a rename."
+    },
+    {
+      "id": "research-refresh-intake-task",
+      "task": "How should KRN absorb a Mem0-style memory-first research pattern into governed source-to-decision knowledge without treating a research link as authority?",
+      "expectedDecisionId": "memory-first-research-intake-loop",
+      "staleDecisionIds": ["manual-fixture-editing-only"],
+      "rejectedDecisionIds": ["research-link-as-authority"],
+      "baselineFailureRationale": "A notes-only path can mention memory-first loops, but it cannot require source-to-decision mechanism, consumer, falsifier, task scope, and rejected-link readback before packet use."
     }
   ]
 }
