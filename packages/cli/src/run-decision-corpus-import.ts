@@ -19,11 +19,17 @@ import {
   loadDecisionPacketEvalFixture,
   parseDecisionPacketEvalFixture
 } from "./decision-packet-fixture.js";
+import {
+  parseDecisionCorpusBaseRow
+} from "./decision-corpus-status.js";
+import type {
+  DecisionCorpusStatus
+} from "./decision-corpus-status.js";
 import type {
   DecisionPacketEvalFixture
 } from "./decision-packet-fixture.js";
 
-export type ImportedDecisionStatus = "current" | "stale" | "rejected";
+export type ImportedDecisionStatus = DecisionCorpusStatus;
 type ImportedDecision = DecisionPacketEvalFixture["decisions"][number];
 type ImportedNote = DecisionPacketEvalFixture["notes"][number];
 type ImportedCase = DecisionPacketEvalFixture["cases"][number];
@@ -86,32 +92,11 @@ export interface DecisionCorpusImportResult {
   };
 }
 
-const decisionStatuses = new Set<ImportedDecisionStatus>(["current", "stale", "rejected"]);
-
-const parseDecisionStatus = (
-  value: unknown,
-  label: string
-): ImportedDecisionStatus => {
-  const status = stringValue(value, label);
-
-  if (!decisionStatuses.has(status as ImportedDecisionStatus)) {
-    throw new Error(`${label} must be current, stale, or rejected`);
-  }
-
-  return status as ImportedDecisionStatus;
-};
-
 const parseImportDecision = (
   value: Record<string, unknown>,
   index: number
 ): DecisionCorpusImportRow => ({
-  id: stringValue(value["id"], `decisions[${index}].id`),
-  title: stringValue(value["title"], `decisions[${index}].title`),
-  statement: stringValue(value["statement"], `decisions[${index}].statement`),
-  status: parseDecisionStatus(value["status"], `decisions[${index}].status`),
-  evidenceRef: stringValue(value["evidenceRef"], `decisions[${index}].evidenceRef`),
-  falsifier: stringValue(value["falsifier"], `decisions[${index}].falsifier`),
-  doesNotProve: stringValue(value["doesNotProve"], `decisions[${index}].doesNotProve`),
+  ...parseDecisionCorpusBaseRow(value, index),
   noteText: stringValue(value["noteText"], `decisions[${index}].noteText`)
 });
 

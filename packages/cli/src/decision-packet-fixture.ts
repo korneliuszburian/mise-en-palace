@@ -8,8 +8,14 @@ import {
   stringArrayValue,
   stringValue
 } from "./eval-parse-support.js";
+import {
+  parseDecisionCorpusBaseRow
+} from "./decision-corpus-status.js";
+import type {
+  DecisionCorpusStatus
+} from "./decision-corpus-status.js";
 
-type DecisionStatus = "current" | "stale" | "rejected";
+type DecisionStatus = DecisionCorpusStatus;
 
 export interface DecisionPacketRow {
   readonly id: string;
@@ -58,8 +64,6 @@ export interface DecisionPacketEvalFixture {
   readonly cases: readonly DecisionPacketCase[];
 }
 
-const decisionStatuses = new Set<DecisionStatus>(["current", "stale", "rejected"]);
-
 const optionalStringArrayValue = (
   value: unknown,
   label: string
@@ -69,19 +73,6 @@ const optionalStringValue = (
   value: unknown,
   label: string
 ): string | undefined => value === undefined ? undefined : stringValue(value, label);
-
-const parseDecisionStatus = (
-  value: unknown,
-  label: string
-): DecisionStatus => {
-  const status = stringValue(value, label);
-
-  if (!decisionStatuses.has(status as DecisionStatus)) {
-    throw new Error(`${label} must be current, stale, or rejected`);
-  }
-
-  return status as DecisionStatus;
-};
 
 const parseDecision = (
   value: Record<string, unknown>,
@@ -95,19 +86,11 @@ const parseDecision = (
     value["sourceRejectionId"],
     `decisions[${index}].sourceRejectionId`
   );
-  const decision = {
-    id: stringValue(value["id"], `decisions[${index}].id`),
-    title: stringValue(value["title"], `decisions[${index}].title`),
-    statement: stringValue(value["statement"], `decisions[${index}].statement`),
-    status: parseDecisionStatus(value["status"], `decisions[${index}].status`),
-    evidenceRef: stringValue(value["evidenceRef"], `decisions[${index}].evidenceRef`),
-    sourceClaimId: stringValue(value["sourceClaimId"], `decisions[${index}].sourceClaimId`),
-    falsifier: stringValue(value["falsifier"], `decisions[${index}].falsifier`),
-    doesNotProve: stringValue(value["doesNotProve"], `decisions[${index}].doesNotProve`)
-  };
+  const decision = parseDecisionCorpusBaseRow(value, index);
 
   return {
     ...decision,
+    sourceClaimId: stringValue(value["sourceClaimId"], `decisions[${index}].sourceClaimId`),
     ...(sourceDecisionEdgeId === undefined ? {} : { sourceDecisionEdgeId }),
     ...(sourceRejectionId === undefined ? {} : { sourceRejectionId })
   };
