@@ -125,8 +125,10 @@ describe("internal agent packet MCP wrapper", () => {
           }
         },
         serverInfo: {
-          name: "krn-agent-packet-mcp"
-        }
+          name: "krn-agent-packet-mcp",
+          title: "Internal KRN Agent Packet MCP Wrapper"
+        },
+        instructions: expect.stringContaining("does not execute Codex, promote memory/source truth, or represent a KRN MCP product server")
       }
     });
 
