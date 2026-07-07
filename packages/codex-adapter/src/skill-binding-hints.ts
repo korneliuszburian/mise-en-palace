@@ -30,13 +30,3 @@ export const createCodexSkillBindingHints = (
     priority: requirement.priority,
     source: "capability_plan"
   }));
-
-export const renderSkillHints = (capabilityPlan: CapabilityPlan): string[] => {
-  const hints = new Set<string>();
-
-  for (const hint of createCodexSkillBindingHints(capabilityPlan)) {
-    hints.add(hint.skillName);
-  }
-
-  return [...hints];
-};

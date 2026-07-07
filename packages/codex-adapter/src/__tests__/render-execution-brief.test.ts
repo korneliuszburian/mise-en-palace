@@ -20,7 +20,7 @@ import {
 } from "../contracts.js";
 import {
   createCodexSkillBindingHints
-} from "../render-skill-hints.js";
+} from "../skill-binding-hints.js";
 
 const createdAt = "2026-06-21T12:00:00.000Z";
 

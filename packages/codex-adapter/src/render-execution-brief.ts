@@ -27,7 +27,7 @@ import {
 } from "./render-hook-expectations.js";
 import {
   createCodexSkillBindingHints
-} from "./render-skill-hints.js";
+} from "./skill-binding-hints.js";
 
 export interface RenderExecutionBriefInput {
   taskContract: TaskContract;
