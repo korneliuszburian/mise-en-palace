@@ -115,6 +115,19 @@ const hasDecisionBoundary = (
   nonEmpty(expectedDecision.doesNotProve) &&
   packet.nonProofs.length > 0;
 
+const hasSameIds = (
+  actual: readonly string[],
+  expected: readonly string[]
+): boolean => {
+  if (actual.length !== expected.length) {
+    return false;
+  }
+
+  const actualIds = new Set(actual);
+
+  return expected.every((id) => actualIds.has(id));
+};
+
 const packetReasons = (
   packet: DecisionPacketReadback,
   testCase: DecisionPacketCase
@@ -128,10 +141,10 @@ const packetReasons = (
   ...(packet.falsifiers.length > 0 && packet.doesNotProve.length > 0
     ? ["packet includes falsifier and doesNotProve boundaries"]
     : ["packet is missing falsifier or doesNotProve boundaries"]),
-  ...(testCase.staleDecisionIds.length === packet.staleDecisionIds.length
+  ...(hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds)
     ? ["packet excludes expected stale decisions with readback"]
     : ["packet misses stale-decision exclusion readback"]),
-  ...(testCase.rejectedDecisionIds.length === packet.rejectedPathIds.length
+  ...(hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds)
     ? ["packet includes expected rejected-path readback"]
     : ["packet misses rejected-path readback"]),
   ...(packet.severeStaleAuthorityIds.length === 0
@@ -142,7 +155,7 @@ const packetReasons = (
     : ["packet is too noisy for pre-code use"])
 ];
 
-const classifyPacket = (
+export const classifyDecisionPacketForEval = (
   packet: DecisionPacketReadback,
   testCase: DecisionPacketCase,
   expectedDecision: DecisionPacketDecision | undefined
@@ -157,8 +170,8 @@ const classifyPacket = (
 
   if (
     !hasDecisionBoundary(packet, expectedDecision) ||
-    testCase.staleDecisionIds.length !== packet.staleDecisionIds.length ||
-    testCase.rejectedDecisionIds.length !== packet.rejectedPathIds.length ||
+    !hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) ||
+    !hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) ||
     packet.noiseDecisionIds.length > maximumAverageNoiseDecisions
   ) {
     return "noisy";
@@ -237,7 +250,7 @@ const evaluateCase = async (
 ): Promise<DecisionPacketCaseResult> => {
   const packet = await buildDecisionPacketWithEngine(fixture, testCase);
   const expectedDecision = decisionById(fixture.decisions).get(testCase.expectedDecisionId);
-  const qualityLabel = classifyPacket(packet, testCase, expectedDecision);
+  const qualityLabel = classifyDecisionPacketForEval(packet, testCase, expectedDecision);
   const notesBaseline = evaluateNotesBaseline(fixture, testCase);
   const comparisonOutcome = compareAgainstNotesBaseline(
     qualityLabel,

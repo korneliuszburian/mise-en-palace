@@ -1,5 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import type {
+  DecisionPacket
+} from "@krn/core";
 import {
   describe,
   expect,
@@ -13,6 +16,7 @@ import {
   loadDecisionPacketEvalFixture
 } from "../decision-packet-fixture.js";
 import {
+  classifyDecisionPacketForEval,
   runDecisionPacketEval
 } from "../internal/eval/run-decision-packet-eval.js";
 
@@ -156,6 +160,45 @@ describe("runDecisionPacketEval", () => {
       qualityLabel: "noisy",
       reasons: expect.arrayContaining(["packet is missing SourceDecisionEdge refs"])
     });
+  });
+
+  it("fails when exclusion readback has the wrong decision id with the right count", () => {
+    const fixture = loadDecisionPacketEvalFixture(fixturePath);
+    const testCase = fixture.cases.find((item) => item.id === "memory-runtime-task");
+    const expectedDecision = fixture.decisions.find((decision) =>
+      decision.id === testCase?.expectedDecisionId
+    );
+
+    expect(testCase).toBeDefined();
+    expect(expectedDecision).toBeDefined();
+
+    if (testCase === undefined || expectedDecision === undefined) {
+      throw new Error("decision-packet fixture is missing memory-runtime-task setup");
+    }
+
+    const packet: DecisionPacket = {
+      formatVersion: "krn.decisionPacket.v1",
+      governingDecisionIds: ["store-backed-memory-no-markdown"],
+      sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
+      sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
+      memoryRefs: ["memory:decision:store-backed-memory-no-markdown"],
+      staleDecisionIds: ["cast-json-record"],
+      rejectedPathIds: ["prose-second-opinion"],
+      falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
+      doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
+      nonProofs: ["packet quality only"],
+      noiseDecisionIds: [],
+      severeStaleAuthorityIds: [],
+      brief: {
+        includedContextCount: 1,
+        observationPrefixCount: 1,
+        explicitExclusionCount: 2,
+        sourceClaimUseCount: 1,
+        memoryRecordUseCount: 1
+      }
+    };
+
+    expect(classifyDecisionPacketForEval(packet, testCase, expectedDecision)).toBe("noisy");
   });
 
   it("does not match task scopes by substring", async () => {
