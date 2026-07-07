@@ -33,6 +33,7 @@ import {
   feedbackDeltas,
   memoryApplications,
   memoryCandidates,
+  memoryFeedbackEvents,
   memoryRecords,
   memoryRecordVersions,
   outboxEvents,
@@ -267,6 +268,8 @@ export interface HarnessCompilerSmokeRowInput extends SmokeBaseMarkerInput {
 }
 
 export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
+  consolidationContextAssemblyId: string | undefined;
+  consolidationRetrievalRunId: string | undefined;
   downgradedContextAssemblyId: string | undefined;
   downgradedRetrievalRunId: string | undefined;
   feedbackDeltaId: string | undefined;
@@ -276,6 +279,7 @@ export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
 }
 
 export interface BrainLoopSmokeCleanupInput extends SmokeCleanupInput {
+  consolidationRetrievalRunId: string | undefined;
   downgradedRetrievalRunId: string | undefined;
   feedbackDeltaId: string | undefined;
   nextRetrievalRunId: string | undefined;
@@ -691,6 +695,7 @@ export const countMemoryGovernanceSmokeMarkerRows = async (
     () => countSmokeRows(input.db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, memoryApplications, sql`${memoryApplications.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, memoryFeedbackEvents, sql`${memoryFeedbackEvents.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, antiMemoryCandidates, sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${input.marker}`)
   ]
@@ -701,8 +706,13 @@ export const countBrainLoopSmokeMarkerRows = async (
 ): Promise<number> => sumSmokeCountTasks([
   () => countMemoryGovernanceSmokeMarkerRows(input),
   countOptionalSmokeContextSelectionRows(input.db, input.contextAssemblyId),
+  countOptionalSmokeContextSelectionRows(input.db, input.consolidationContextAssemblyId),
   countOptionalSmokeContextSelectionRows(input.db, input.nextContextAssemblyId),
   countOptionalSmokeContextSelectionRows(input.db, input.downgradedContextAssemblyId),
+  optionalSmokeCount(
+    input.consolidationRetrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
   optionalSmokeCount(
     input.nextRetrievalRunId,
     (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
@@ -970,6 +980,7 @@ export const cleanupMemoryGovernanceSmokeRows = async (
     beforeSourceClaimDeleteTasks: [
       deleteSmokeOutboxEventsTask(input),
       deleteSmokeRowsTask(input, memoryApplications, sql`${memoryApplications.metadata}->>'smokeId' = ${input.marker}`),
+      deleteSmokeRowsTask(input, memoryFeedbackEvents, sql`${memoryFeedbackEvents.metadata}->>'smokeId' = ${input.marker}`),
       deleteSmokeRowsTask(input, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${input.marker}`),
       deleteSmokeRowsTask(input, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`),
       deleteSmokeRowsTask(input, antiMemoryCandidates, sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${input.marker}`),
@@ -1007,6 +1018,12 @@ export const cleanupBrainLoopSmokeRows = async (
     .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`);
 
   await cleanupMemoryGovernanceSmokeRows(input);
+
+  if (input.consolidationRetrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.consolidationRetrievalRunId));
+  }
 
   if (input.nextRetrievalRunId !== undefined) {
     await input.db

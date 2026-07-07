@@ -27,6 +27,7 @@ export interface ProposeMemoryConsolidationInput {
   observedAt: IsoTimestamp;
   executionRunId?: ExecutionRunId;
   feedbackDeltaId?: FeedbackDeltaId;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ProposeMemoryConsolidationResult {
@@ -89,6 +90,7 @@ const antiMemoryInput = (
 ): CreateAntiMemoryCandidateInput => {
   const { candidate } = input;
   const metadata = {
+    ...(input.metadata ?? {}),
     maintenanceConsolidation: {
       candidateId: candidate.id,
       action: candidate.action,
@@ -169,6 +171,7 @@ export const proposeMemoryConsolidation = async (
     reason: invalidationIntent,
     evidenceRef: primaryEvidenceRef,
     metadata: {
+      ...(input.metadata ?? {}),
       maintenanceConsolidationCandidateId: candidate.id,
       antiMemoryCandidateId: antiMemoryCandidate.id,
       action: candidate.action,

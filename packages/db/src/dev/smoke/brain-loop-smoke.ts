@@ -9,12 +9,17 @@ import {
   assembleContext,
   compileHarnessPlan,
   persistActivationTrace,
+  promoteAntiMemoryCandidateThroughGate,
   promoteMemoryCandidateThroughGate,
+  proposeMemoryConsolidation,
   retrieveActivationCandidates
 } from "@krn/harness";
 import type {
   EvidenceContract
 } from "@krn/harness";
+import {
+  buildMemoryStalenessMaintenancePreview
+} from "@krn/core";
 import type {
   CapabilityPlan,
   ContextAssembly,
@@ -101,6 +106,16 @@ export interface BrainLoopSmokeReport {
   downgradedRunContextAssemblyId: string;
   downgradedRunMemoryExclusionCount: number;
   downgradedRunExcludedMemoryDecisionCount: number;
+  consolidationCandidateId: string;
+  consolidationAntiMemoryCandidateId: string;
+  consolidationMemoryFeedbackEventId: string;
+  consolidationAntiMemoryRecordId: string;
+  consolidationRunTaskContractId: string;
+  consolidationRunRetrievalRunId: string;
+  consolidationRunContextAssemblyId: string;
+  consolidationRunMemoryExclusionCount: number;
+  consolidationRunExcludedMemoryDecisionCount: number;
+  consolidationRunAntiMemoryConflictCount: number;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -110,6 +125,7 @@ const now = smokeFixtureClocks.brainLoop.now;
 const memoryOriginRepoInstallationId = "repo-installation-brain-loop-source";
 const nextRunRepoInstallationId = "repo-installation-brain-loop-consumer";
 const downgradedRunRepoInstallationId = "repo-installation-brain-loop-rejector";
+const consolidationRunRepoInstallationId = "repo-installation-brain-loop-consolidation";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -255,6 +271,8 @@ const sourceDecisionTraceTargets = (input: {
 export const runBrainLoopSmokeCheck = async (
   input: BrainLoopSmokeInput
 ): Promise<BrainLoopSmokeReport> => {
+  let consolidationContextAssemblyId: string | undefined;
+  let consolidationRetrievalRunId: string | undefined;
   let downgradedContextAssemblyId: string | undefined;
   let downgradedRetrievalRunId: string | undefined;
   let feedbackDeltaId: string | undefined;
@@ -270,6 +288,7 @@ export const runBrainLoopSmokeCheck = async (
     projectSlug: "brain-loop",
     cleanupRows: (cleanupInput) => cleanupBrainLoopSmokeRows({
       ...cleanupInput,
+      consolidationRetrievalRunId,
       downgradedRetrievalRunId,
       feedbackDeltaId,
       nextRetrievalRunId,
@@ -277,6 +296,8 @@ export const runBrainLoopSmokeCheck = async (
     }),
     countMarkerRows: (markerInput) => countBrainLoopSmokeMarkerRows({
       ...markerInput,
+      consolidationContextAssemblyId,
+      consolidationRetrievalRunId,
       downgradedContextAssemblyId,
       downgradedRetrievalRunId,
       feedbackDeltaId,
@@ -745,6 +766,108 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectId === memoryRecord.id &&
       decision.reason === "unsafe"
     ).length;
+    const maintenancePreview = buildMemoryStalenessMaintenancePreview({
+      now,
+      memoryRecords: [downgradedMemoryRecord],
+      evidenceRef: feedbackDelta.id
+    });
+    const consolidationCandidate = requireSmokeReadbackValue(
+      maintenancePreview.candidates[0],
+      "maintenance consolidation candidate",
+      "Brain loop smoke did not create a maintenance consolidation candidate"
+    );
+    const consolidationProposal = await proposeMemoryConsolidation({
+      memoryRepository,
+      candidate: consolidationCandidate,
+      projectId: project.id,
+      proposedBy: "brain-loop-smoke",
+      owner: "kernel",
+      observedAt: now,
+      executionRunId: executionRun.id,
+      feedbackDeltaId: feedbackDelta.id,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const consolidationGateResult = await promoteAntiMemoryCandidateThroughGate({
+      memoryRepository,
+      sourceRepository,
+      review: {
+        candidateId: consolidationProposal.antiMemoryCandidate.id,
+        reviewer: "brain-loop-smoke",
+        evidenceReviewedRef: feedbackDelta.id,
+        metadata: {
+          smokeId: marker,
+          consolidationCandidateId: consolidationCandidate.id
+        }
+      }
+    });
+    const consolidationCompile = await compileHarnessPlan({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      operatorIntent: {
+        source: "cli",
+        rawIntent: `consolidated brain loop recall ${marker}`,
+        metadata: {
+          smokeId: marker
+        }
+      },
+      taskContract: {
+        title: "Reject reviewed consolidation anti-memory",
+        objective: "Show reviewed maintenance consolidation anti-memory blocks stale Memory Core context.",
+        constraints: ["use store-backed anti-memory", "do not create a maintenance runtime"],
+        nonGoals: ["no daemon", "no autonomous memory promotion"],
+        acceptance: ["consolidation activation excludes the reviewed MemoryRecord through anti-memory"],
+        metadata: {
+          smokeId: marker,
+          proof: "memory_consolidation_anti_memory"
+        }
+      },
+      tokenBudget: 360,
+      targetReadModel: targetReadModelForRepo(consolidationRunRepoInstallationId),
+      metadata: {
+        smokeId: marker,
+        proof: "reviewed_memory_consolidation_next_compile"
+      }
+    }, {
+      harnessRunRepository,
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
+      now: () => now,
+      createId: (prefix) => `${prefix}-${marker}-consolidation`
+    });
+    consolidationContextAssemblyId = consolidationCompile.contextAssembly.id;
+    consolidationRetrievalRunId = stringMetadataValue(
+      consolidationCompile.contextAssembly.metadata,
+      "retrievalRunId"
+    );
+    const consolidationRunRetrievalRunId = requireSmokeReadbackValue(
+      consolidationRetrievalRunId,
+      "consolidation run retrievalRunId",
+      "Brain loop consolidation run did not persist retrieval metadata"
+    );
+    const consolidationRunMemoryExclusions = consolidationCompile.contextAssembly.exclusions.filter((item) =>
+      item.subjectType === "memory_record" &&
+      item.subjectId === memoryRecord.id &&
+      item.reason === "unsafe"
+    );
+    const consolidationRunActivationDecisions = await retrievalRepository.listActivationDecisionsForRun(
+      consolidationRunRetrievalRunId
+    );
+    const consolidationRunAntiMemoryConflictCount = consolidationRunActivationDecisions.filter((decision) =>
+      decision.decision === "conflict" &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === memoryRecord.id &&
+      decision.reason === "anti_memory_block" &&
+      stringMetadataValue(decision.metadata, "antiMemoryRecordId") ===
+        consolidationGateResult.antiMemoryRecord.id
+    ).length;
+    const consolidationRunExcludedMemoryDecisionCount = consolidationRunActivationDecisions.filter((decision) =>
+      (decision.decision === "excluded" || decision.decision === "conflict") &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === memoryRecord.id
+    ).length;
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
     const runSourceDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
       executionRun.id
@@ -894,6 +1017,35 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "cross-repo downgraded memory exclusion",
         passed: downgradedRunCrossRepoMemoryExclusion
+      },
+      {
+        label: "maintenance consolidation candidate ready",
+        passed: consolidationCandidate.reviewability === "ready"
+      },
+      {
+        label: "consolidation anti-memory candidate persisted",
+        passed: consolidationProposal.antiMemoryCandidate.id.length > 0
+      },
+      {
+        label: "consolidation feedback event persisted",
+        passed: consolidationProposal.feedbackEvent.memoryRecordId === memoryRecord.id
+      },
+      {
+        label: "consolidation anti-memory candidate accepted",
+        passed: consolidationGateResult.antiMemoryRecord.createdFromCandidateId ===
+          consolidationProposal.antiMemoryCandidate.id
+      },
+      {
+        label: "consolidation run excludes memory",
+        passed: consolidationRunMemoryExclusions.length === 1
+      },
+      {
+        label: "consolidation run activation anti-memory conflict",
+        passed: consolidationRunAntiMemoryConflictCount === 1
+      },
+      {
+        label: "consolidation run excluded memory decision",
+        passed: consolidationRunExcludedMemoryDecisionCount === 1
       }
     ], readbackError);
 
@@ -960,6 +1112,16 @@ export const runBrainLoopSmokeCheck = async (
       downgradedRunContextAssemblyId: downgradedCompile.contextAssembly.id,
       downgradedRunMemoryExclusionCount: downgradedRunMemoryExclusions.length,
       downgradedRunExcludedMemoryDecisionCount,
+      consolidationCandidateId: consolidationCandidate.id,
+      consolidationAntiMemoryCandidateId: consolidationProposal.antiMemoryCandidate.id,
+      consolidationMemoryFeedbackEventId: consolidationProposal.feedbackEvent.id,
+      consolidationAntiMemoryRecordId: consolidationGateResult.antiMemoryRecord.id,
+      consolidationRunTaskContractId: consolidationCompile.taskContract.id,
+      consolidationRunRetrievalRunId,
+      consolidationRunContextAssemblyId: consolidationCompile.contextAssembly.id,
+      consolidationRunMemoryExclusionCount: consolidationRunMemoryExclusions.length,
+      consolidationRunExcludedMemoryDecisionCount,
+      consolidationRunAntiMemoryConflictCount,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
