@@ -71,6 +71,20 @@ export interface RealRecallAdvantageDbSmokeReport {
   readonly cleanedUp: boolean;
 }
 
+export const assertAllRealRecallAdvantageWins = (
+  decisions: readonly Pick<RealRecallAdvantageDecisionResult, "decisionId" | "advantageWin">[]
+): void => {
+  const missed = decisions
+    .filter((result) => !result.advantageWin)
+    .map((result) => result.decisionId);
+
+  if (missed.length > 0) {
+    throw new Error(
+      `Real-recall eval requires every distractor-competition case to win; missed: ${missed.join(", ")}`
+    );
+  }
+};
+
 // Real KRN governing decisions extracted from repo docs/ADRs (KRN_ROADMAP.md,
 // naming-vocabulary-audit.md, kernel-next-priority-synthesis.md). These are the
 // actual standards the project adopted, not synthetic company-pattern fixtures.
@@ -595,17 +609,7 @@ export const runRealRecallAdvantageDbSmokeCheck = async (
     const baselineDistractorTopCount = decisionResults.filter((result) => result.baselinePickedDistractor).length;
     const groundedGoverningTopCount = decisionResults.filter((result) => result.groundedPickedGoverning).length;
 
-    // Require a majority of advantage wins (baseline picks the distractor, then
-    // grounded picks the governing claim). Threshold is a majority rather than
-    // all so the proof is not brittle to one case's lexical/boost balance.
-    if (advantageWinCount < Math.ceil(realDecisions.length / 2)) {
-      const missed = decisionResults
-        .filter((result) => !result.advantageWin)
-        .map((result) => result.decisionId);
-      throw new Error(
-        `Real-recall-advantage DB smoke lacked distractor-competition advantage wins; missed: ${missed.join(", ")}`
-      );
-    }
+    assertAllRealRecallAdvantageWins(decisionResults);
 
     const markerCleanup = await finalizeSmokeMarkerCleanup(
       client,

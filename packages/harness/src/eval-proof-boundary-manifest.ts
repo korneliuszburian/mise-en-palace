@@ -1,21 +1,3 @@
-export type EvalProofBoundaryScope =
-  | "local-static"
-  | "ci-fast"
-  | "ci-db"
-  | "db-runtime"
-  | "product-loop"
-  | "handoff";
-
-export interface EvalProofBoundaryEntry {
-  id: string;
-  command: string;
-  scriptName?: string;
-  owner: string;
-  requiredFor: readonly EvalProofBoundaryScope[];
-  proves: readonly string[];
-  doesNotProve: readonly string[];
-}
-
 export const evalProofBoundaryManifest = [
   {
     id: "workspace-typecheck",
@@ -155,6 +137,24 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
+    id: "real-recall-advantage-eval",
+    command: "pnpm eval:real-recall",
+    scriptName: "eval:real-recall",
+    owner: "DB-backed decision-linked recall falsifier",
+    requiredFor: ["product-loop", "db-runtime", "handoff"],
+    proves: [
+      "live DB source recall can seed lexical distractors and decision-linked governing claims in the current shell",
+      "every predeclared real-recall case makes baseline lexical recall pick the distractor and grounded recall pick the governing claim",
+      "marker cleanup completed for the real-recall scenario"
+    ],
+    doesNotProve: [
+      "general source ranking quality is good",
+      "raw recall beats a comprehensive notes dump",
+      "live Codex behavior is good",
+      "KRN is product-ready"
+    ]
+  },
+  {
     id: "alpha-verify-fast",
     command: "pnpm alpha:verify",
     scriptName: "alpha:verify",
@@ -202,4 +202,19 @@ export const evalProofBoundaryManifest = [
       "KRN is product-ready"
     ]
   }
-] as const satisfies readonly EvalProofBoundaryEntry[];
+] as const satisfies readonly {
+  id: string;
+  command: string;
+  scriptName?: string;
+  owner: string;
+  requiredFor: readonly (
+    | "local-static"
+    | "ci-fast"
+    | "ci-db"
+    | "db-runtime"
+    | "product-loop"
+    | "handoff"
+  )[];
+  proves: readonly string[];
+  doesNotProve: readonly string[];
+}[];

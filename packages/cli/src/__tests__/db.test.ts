@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { runCli } from "../run-cli.js";
+import {
+  assertAllRealRecallAdvantageWins
+} from "../run-real-recall-advantage-db-smoke.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
@@ -115,6 +118,22 @@ describe("runCli", () => {
     expect(packageJson.scripts?.["db:smoke:real-recall-advantage"]).toBe(
       "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke real-recall-advantage"
     );
+    expect(packageJson.scripts?.["eval:real-recall"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli eval:real-recall"
+    );
+  });
+
+  it("fails real recall eval when any distractor-competition case loses", () => {
+    expect(() => assertAllRealRecallAdvantageWins([
+      {
+        decisionId: "case-1",
+        advantageWin: true
+      },
+      {
+        decisionId: "case-2",
+        advantageWin: false
+      }
+    ])).toThrow("Real-recall eval requires every distractor-competition case to win; missed: case-2");
   });
 
   it("exposes the decision corpus import smoke script", async () => {
