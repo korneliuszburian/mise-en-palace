@@ -63,6 +63,9 @@ describe("runDecisionPacketEval", () => {
         sourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
+        brief: {
+          observationPrefixCount: 1
+        },
         staleDecisionIds: ["markdown-runtime-memory"],
         rejectedPathIds: ["create-markdown-memory-files"],
         severeStaleAuthorityIds: []

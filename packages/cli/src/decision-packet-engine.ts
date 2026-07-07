@@ -1,5 +1,6 @@
 import type {
   CapabilityPlan,
+  ContextObservationPrefix,
   HarnessPlan,
   MemoryRecord,
   SourceClaim,
@@ -43,6 +44,7 @@ export interface EngineDecisionPacket {
   readonly severeStaleAuthorityIds: readonly string[];
   readonly brief: {
     readonly includedContextCount: number;
+    readonly observationPrefixCount: number;
     readonly explicitExclusionCount: number;
     readonly sourceClaimUseCount: number;
     readonly memoryRecordUseCount: number;
@@ -243,6 +245,35 @@ const evidenceContractFor = (testCase: DecisionPacketCase): EvidenceContract => 
   }
 });
 
+const observationPrefixFor = (
+  testCase: DecisionPacketCase
+): ContextObservationPrefix | undefined => {
+  const items = testCase.observationPrefixItems ?? [];
+
+  return items.length === 0
+    ? undefined
+    : {
+        projectId,
+        taskContractId: `task-contract:${testCase.id}`,
+        text: items.map((item) => item.summary).join("\n"),
+        itemCount: items.length,
+        warningCount: 0,
+        exclusionCount: 0,
+        items: items.map((item, index) => ({
+          observationId: item.observationId,
+          kind: item.kind,
+          confidence: "high",
+          priority: "high",
+          summary: item.summary,
+          sourceRangeCount: 1,
+          reason: item.reason,
+          score: 100 - index
+        })),
+        warnings: [],
+        exclusions: []
+      };
+};
+
 const sourceClaimEdgesFor = (
   decisions: readonly DecisionPacketRow[]
 ): readonly SourceClaimEdge[] => {
@@ -393,10 +424,12 @@ export const buildDecisionPacketWithEngine = async (
     now
   });
   const budgeted = budgetCandidates(filtered.candidates, fixture.topK);
+  const observationPrefix = observationPrefixFor(testCase);
   const contextAssembly = assembleContext({
     id: `context-assembly:${testCase.id}`,
     harnessPlanId: `harness-plan:${testCase.id}`,
     candidates: budgeted,
+    ...(observationPrefix === undefined ? {} : { observationPrefix }),
     tokenBudget: 4_000,
     createdAt: now,
     metadata: {
@@ -449,6 +482,7 @@ export const buildDecisionPacketWithEngine = async (
     severeStaleAuthorityIds: governingDecisionIds.filter((id) => severeExpectedIds.has(id)),
     brief: {
       includedContextCount: brief.includedContext.length,
+      observationPrefixCount: brief.observationPrefix.length,
       explicitExclusionCount: brief.explicitExclusions.length,
       sourceClaimUseCount: brief.sourceClaimsUsed.length,
       memoryRecordUseCount: brief.memoryRecordsUsed.length

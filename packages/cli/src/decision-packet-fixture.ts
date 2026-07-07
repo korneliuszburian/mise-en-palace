@@ -30,12 +30,20 @@ export interface DecisionPacketNote {
   readonly text: string;
 }
 
+export interface DecisionPacketObservationPrefixItem {
+  readonly observationId: string;
+  readonly kind: string;
+  readonly summary: string;
+  readonly reason: string;
+}
+
 export interface DecisionPacketCase {
   readonly id: string;
   readonly task: string;
   readonly expectedDecisionId: string;
   readonly staleDecisionIds: readonly string[];
   readonly rejectedDecisionIds: readonly string[];
+  readonly observationPrefixItems?: readonly DecisionPacketObservationPrefixItem[];
   readonly baselineFailureRationale: string;
 }
 
@@ -114,6 +122,38 @@ const parseNote = (
   text: stringValue(value["text"], `notes[${index}].text`)
 });
 
+const parseObservationPrefixItem = (
+  value: Record<string, unknown>,
+  index: number,
+  caseIndex: number
+): DecisionPacketObservationPrefixItem => ({
+  observationId: stringValue(
+    value["observationId"],
+    `cases[${caseIndex}].observationPrefixItems[${index}].observationId`
+  ),
+  kind: stringValue(
+    value["kind"],
+    `cases[${caseIndex}].observationPrefixItems[${index}].kind`
+  ),
+  summary: stringValue(
+    value["summary"],
+    `cases[${caseIndex}].observationPrefixItems[${index}].summary`
+  ),
+  reason: stringValue(
+    value["reason"],
+    `cases[${caseIndex}].observationPrefixItems[${index}].reason`
+  )
+});
+
+const optionalObservationPrefixItems = (
+  value: unknown,
+  caseIndex: number
+): readonly DecisionPacketObservationPrefixItem[] =>
+  value === undefined
+    ? []
+    : recordArray(value, `cases[${caseIndex}].observationPrefixItems`)
+        .map((item, index) => parseObservationPrefixItem(item, index, caseIndex));
+
 const parseCase = (
   value: Record<string, unknown>,
   index: number
@@ -123,6 +163,7 @@ const parseCase = (
   expectedDecisionId: stringValue(value["expectedDecisionId"], `cases[${index}].expectedDecisionId`),
   staleDecisionIds: optionalStringArrayValue(value["staleDecisionIds"], `cases[${index}].staleDecisionIds`),
   rejectedDecisionIds: optionalStringArrayValue(value["rejectedDecisionIds"], `cases[${index}].rejectedDecisionIds`),
+  observationPrefixItems: optionalObservationPrefixItems(value["observationPrefixItems"], index),
   baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
 });
 

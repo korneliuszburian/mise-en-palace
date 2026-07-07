@@ -92,6 +92,34 @@ const contextAssembly: ContextAssembly = {
       trustTier: "high"
     }
   ],
+  observationPrefix: {
+    projectId: "project-1",
+    taskContractId: "task-1",
+    text: "Prior observation: doctor readiness failed when DB checks trusted markdown-only state.",
+    itemCount: 1,
+    warningCount: 1,
+    exclusionCount: 0,
+    items: [
+      {
+        observationId: "observation-1",
+        kind: "operator_feedback",
+        confidence: "high",
+        priority: "critical",
+        summary: "DB readiness should be proven from store-backed checks, not markdown notes.",
+        sourceRangeCount: 1,
+        reason: "Observation matches doctor readiness and has source range evidence.",
+        score: 98
+      }
+    ],
+    warnings: [
+      {
+        observationId: "observation-1",
+        warning: "gap",
+        summary: "Observation records the failure pattern but does not prove current DB readiness."
+      }
+    ],
+    exclusions: []
+  },
   metadata: {},
   createdAt
 };
@@ -168,6 +196,25 @@ describe("renderExecutionBrief", () => {
     expect(brief.formatVersion).toBe(executionBriefFormatVersion);
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
+    expect(brief.observationPrefix).toEqual([
+      {
+        observationId: "observation-1",
+        kind: "operator_feedback",
+        confidence: "high",
+        priority: "critical",
+        summary: "DB readiness should be proven from store-backed checks, not markdown notes.",
+        sourceRangeCount: 1,
+        reason: "Observation matches doctor readiness and has source range evidence.",
+        score: 98
+      }
+    ]);
+    expect(brief.observationPrefixWarnings).toEqual([
+      {
+        observationId: "observation-1",
+        warning: "gap",
+        summary: "Observation records the failure pattern but does not prove current DB readiness."
+      }
+    ]);
     expect(brief.untrustedContextWarnings).toEqual([]);
     expect(brief.antiMemoryWarnings).toEqual([
       "anti_memory_record:anti-1 | unsafe | Do not treat old markdown memory as runtime truth."
@@ -194,6 +241,12 @@ describe("renderExecutionBrief", () => {
       itemCount: 0,
       emptyBehavior: "omit_when_empty"
     });
+    expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
+      kind: "required",
+      rendered: true,
+      itemCount: 2,
+      emptyBehavior: "render_none"
+    });
   });
 
   it("renders a bounded Codex execution brief with exclusions and evidence", () => {
@@ -219,6 +272,10 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
+    expect(rendered).toContain("Observation Prefix:");
+    expect(rendered).toContain("observation:observation-1");
+    expect(rendered).toContain("source_ranges=1");
+    expect(rendered).toContain("warning:observation-1");
     expect(rendered).toContain("Untrusted Context Warnings:");
     expect(rendered).toContain("Constraints:");
     expect(rendered).toContain("- no runtime markdown memory");

@@ -13,6 +13,8 @@ import type {
   ExecutionBrief,
   ExecutionBriefContextExclusion,
   ExecutionBriefContextInclusion,
+  ExecutionBriefObservationPrefixItem,
+  ExecutionBriefObservationPrefixWarning,
   ExecutionBriefProfileReadback,
   ExecutionBriefSectionId,
   ExecutionBriefSectionReadback
@@ -133,6 +135,8 @@ const executionBriefSectionCounters = {
   non_goals: (brief) => brief.nonGoals.length,
   current_task_contract: scalarSectionItemCount,
   context_inclusions: (brief) => brief.includedContext.length,
+  observation_prefix: (brief) =>
+    brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
   explicit_exclusions: (brief) => brief.explicitExclusions.length,
   source_claims_used: (brief) => brief.sourceClaimsUsed.length,
@@ -268,6 +272,60 @@ const toContextExclusions = (
     trustTier: exclusion.trustTier
   }));
 
+const toObservationPrefix = (
+  contextAssembly: ContextAssembly
+): ExecutionBriefObservationPrefixItem[] =>
+  contextAssembly.observationPrefix?.items.map((item) => ({
+    observationId: item.observationId,
+    kind: item.kind,
+    confidence: item.confidence,
+    priority: item.priority,
+    summary: item.summary,
+    sourceRangeCount: item.sourceRangeCount,
+    reason: item.reason,
+    score: item.score
+  })) ?? [];
+
+const toObservationPrefixWarnings = (
+  contextAssembly: ContextAssembly
+): ExecutionBriefObservationPrefixWarning[] =>
+  contextAssembly.observationPrefix?.warnings.map((warning) => ({
+    observationId: warning.observationId,
+    warning: warning.warning,
+    summary: warning.summary
+  })) ?? [];
+
+const renderObservationPrefix = (
+  items: readonly ExecutionBriefObservationPrefixItem[],
+  warnings: readonly ExecutionBriefObservationPrefixWarning[]
+): string[] => {
+  if (items.length === 0 && warnings.length === 0) {
+    return ["- none"];
+  }
+
+  return [
+    ...items.map((item) =>
+      [
+        `- observation:${item.observationId}`,
+        `kind=${item.kind}`,
+        `priority=${item.priority}`,
+        `confidence=${item.confidence}`,
+        `source_ranges=${item.sourceRangeCount}`,
+        `score=${item.score}`,
+        `reason=${item.reason}`,
+        `summary=${item.summary}`
+      ].join(" | ")
+    ),
+    ...warnings.map((warning) =>
+      [
+        `- warning:${warning.observationId}`,
+        `type=${warning.warning}`,
+        `summary=${warning.summary}`
+      ].join(" | ")
+    )
+  ];
+};
+
 const sourceClaimsUsed = (
   inclusions: readonly ExecutionBriefContextInclusion[]
 ): string[] =>
@@ -298,6 +356,8 @@ const antiMemoryWarnings = (
 export const createExecutionBrief = (input: RenderExecutionBriefInput): ExecutionBrief => {
   const includedContext = toContextInclusions(input.contextAssembly);
   const explicitExclusions = toContextExclusions(input.contextAssembly);
+  const observationPrefix = toObservationPrefix(input.contextAssembly);
+  const observationPrefixWarnings = toObservationPrefixWarnings(input.contextAssembly);
 
   return {
     formatVersion: executionBriefFormatVersion,
@@ -312,6 +372,8 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       acceptance: input.taskContract.acceptance
     },
     includedContext,
+    observationPrefix,
+    observationPrefixWarnings,
     untrustedContextWarnings: untrustedContextWarnings(includedContext),
     explicitExclusions,
     sourceClaimsUsed: sourceClaimsUsed(includedContext),
@@ -410,6 +472,9 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "",
     "Context Inclusions:",
     ...renderContextInclusions(brief.includedContext),
+    "",
+    "Observation Prefix:",
+    ...renderObservationPrefix(brief.observationPrefix, brief.observationPrefixWarnings),
     "",
     "Untrusted Context Warnings:",
     ...renderList(brief.untrustedContextWarnings),

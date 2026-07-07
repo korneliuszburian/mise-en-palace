@@ -5,6 +5,8 @@ import type {
   DiffRisk,
   HarnessPlanId,
   IsoTimestamp,
+  ObservationConfidence,
+  ObservationPriority,
   SourceTrustTier
 } from "@krn/core";
 
@@ -85,6 +87,7 @@ export const executionBriefSectionProfiles = [
   { id: "non_goals", kind: "required", emptyBehavior: "render_none" },
   { id: "current_task_contract", kind: "required", emptyBehavior: "render_none" },
   { id: "context_inclusions", kind: "required", emptyBehavior: "render_none" },
+  { id: "observation_prefix", kind: "required", emptyBehavior: "render_none" },
   { id: "untrusted_context_warnings", kind: "diagnostic", emptyBehavior: "render_none" },
   { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
   { id: "source_claims_used", kind: "diagnostic", emptyBehavior: "render_none" },
@@ -166,6 +169,23 @@ export interface ExecutionBriefContextExclusion {
   trustTier: SourceTrustTier;
 }
 
+export interface ExecutionBriefObservationPrefixItem {
+  observationId: string;
+  kind: string;
+  confidence: ObservationConfidence;
+  priority: ObservationPriority;
+  summary: string;
+  sourceRangeCount: number;
+  reason: string;
+  score: number;
+}
+
+export interface ExecutionBriefObservationPrefixWarning {
+  observationId: string;
+  warning: "contested" | "conflict" | "gap";
+  summary: string;
+}
+
 export interface ExecutionBriefTaskContract {
   id: string;
   title: string;
@@ -188,6 +208,8 @@ export interface ExecutionBrief {
   nonGoals: string[];
   currentTaskContract: ExecutionBriefTaskContract;
   includedContext: ExecutionBriefContextInclusion[];
+  observationPrefix: ExecutionBriefObservationPrefixItem[];
+  observationPrefixWarnings: ExecutionBriefObservationPrefixWarning[];
   untrustedContextWarnings: string[];
   explicitExclusions: ExecutionBriefContextExclusion[];
   sourceClaimsUsed: string[];

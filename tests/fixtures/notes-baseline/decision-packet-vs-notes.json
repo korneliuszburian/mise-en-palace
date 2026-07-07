@@ -559,6 +559,14 @@
       "expectedDecisionId": "store-backed-memory-no-markdown",
       "staleDecisionIds": ["markdown-runtime-memory"],
       "rejectedDecisionIds": ["create-markdown-memory-files"],
+      "observationPrefixItems": [
+        {
+          "observationId": "observation:memory-runtime-markdown-regression",
+          "kind": "operator_note",
+          "summary": "Prior cleanup failed when markdown memory paths were treated as active runtime authority.",
+          "reason": "Observation is source-backed and matches the runtime memory task."
+        }
+      ],
       "baselineFailureRationale": "Notes grep can recall the current line, but it also returns stale and rejected markdown-memory paths without authority status."
     },
     {
