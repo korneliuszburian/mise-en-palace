@@ -191,9 +191,23 @@ describe("parseBrainKnowledgeArgs", () => {
     });
   });
 
-  it("requires a file source unless store-only is explicit", () => {
-    expect(parseBrainKnowledgeArgs([])).toEqual({
-      error: expect.stringContaining("Missing required --card-file, --pattern-file, or --catalog-file")
+  it("defaults to store-backed readback without file sources", () => {
+    expect(parseBrainKnowledgeArgs([
+      "--text",
+      "unknown-first",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "brainKnowledge",
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: [],
+        storeOnly: true,
+        filter: {
+          text: "unknown-first"
+        },
+        format: "json"
+      }
     });
   });
 

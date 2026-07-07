@@ -187,7 +187,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
-    expect(result.stdout).toContain("--store-only reads DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes");
+    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes");
   });
 
   it("renders brain knowledge through the preferred CLI readback", async () => {
@@ -260,12 +260,11 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
-  it("renders store-backed knowledge usefulness from feedback deltas", async () => {
+  it("defaults brain knowledge readback to store-backed usefulness from feedback deltas", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
       "knowledge",
-      "--store-only",
       "--usefulness-outcome",
       "helped",
       "--json"

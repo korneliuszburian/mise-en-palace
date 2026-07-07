@@ -21,11 +21,12 @@ const brainKnowledgeUsage = [
   "Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
+  "krn brain knowledge [--text unknown-first]",
   "krn brain knowledge --store-only [--text unknown-first]",
   "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
   "krn brain knowledge --pattern-file retained-pattern.json [--text unknown-first]",
   "krn brain knowledge --catalog-file retained-pattern-catalog.json [--text unknown-first]",
-  "  note: --store-only reads DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes; file options are explicit legacy fixture/seed previews",
+  "  note: no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes; file options are explicit legacy fixture/seed previews",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
@@ -342,13 +343,6 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
 const validateBrainKnowledgeSources = (
   state: BrainKnowledgeParseState
 ): ParseOptionResult<undefined> => {
-  if (!state.storeOnly && !hasExplicitBrainKnowledgeSource(state)) {
-    return {
-      ok: false,
-      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
-    };
-  }
-
   if (state.storeOnly && hasExplicitBrainKnowledgeSource(state)) {
     return {
       ok: false,
@@ -359,7 +353,7 @@ const validateBrainKnowledgeSources = (
   if (hasEmptyBrainKnowledgeSourcePath(state)) {
     return {
       ok: false,
-      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
+      error: `Brain knowledge file source options require non-empty paths\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -453,6 +447,10 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
     return {
       error: sourceValidation.error
     };
+  }
+
+  if (!hasExplicitBrainKnowledgeSource(state)) {
+    state.storeOnly = true;
   }
 
   return buildBrainKnowledgeCommand(state);
