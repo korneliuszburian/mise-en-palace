@@ -32,23 +32,18 @@ export const sourceTrustTiers = [
 
 export type SourceTrustTier = typeof sourceTrustTiers[number];
 
-export const sourceTrustLevels = ["high", "medium", "low"] as const;
+export type SourceTrustLevel = "high" | "medium" | "low";
 
-export type SourceTrustLevel = typeof sourceTrustLevels[number];
-
-export const sourceKinds = [
-  "unspecified",
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-] as const;
-
-export type SourceKind = typeof sourceKinds[number];
+export type SourceKind =
+  | "unspecified"
+  | "primary"
+  | "official"
+  | "project-decision"
+  | "source-code"
+  | "paper"
+  | "practitioner"
+  | "secondary"
+  | "hypothesis";
 
 export const sourceSupportTypes = [
   "supports",
@@ -66,39 +61,38 @@ export const sourceSupportTypes = [
 
 export type SourceSupportType = typeof sourceSupportTypes[number];
 
-export const sourceSupportRelations = [
-  "supports",
-  "contradicts",
-  "qualifies",
-  "does_not_support",
-  "not_applicable"
-] as const;
+export type SourceSupportRelation =
+  | "supports"
+  | "contradicts"
+  | "qualifies"
+  | "does_not_support"
+  | "not_applicable";
 
-export type SourceSupportRelation = typeof sourceSupportRelations[number];
+export type SourceUse =
+  | "background"
+  | "relation-only"
+  | "mechanism"
+  | "decision"
+  | "risk"
+  | "rejection"
+  | "eval-design"
+  | "implementation-boundary";
 
-export const sourceUses = [
-  "background",
-  "relation-only",
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary"
-] as const;
-
-export type SourceUse = typeof sourceUses[number];
-
-export interface SourceTrustTaxonomy {
+export interface SourceAuthority {
   trustLevel: SourceTrustLevel;
   sourceKind: SourceKind;
+  rank: number;
 }
 
-export interface SourceSupportTaxonomy {
+export type SourceTrustTaxonomy = Omit<SourceAuthority, "rank">;
+
+export interface SourceSupportAssessment {
   relation: SourceSupportRelation;
   use: SourceUse;
   decisionGrade: boolean;
 }
+
+export type SourceSupportTaxonomy = SourceSupportAssessment;
 
 export interface SourceClaimTaxonomy extends SourceTrustTaxonomy {
   supportRelation: SourceSupportRelation;
@@ -268,22 +262,26 @@ export interface SourceRejection {
   rejectedAt: IsoTimestamp;
 }
 
-const sourceTrustTierRanks: Record<SourceTrustTier, number> = {
-  official: 100,
-  primary: 100,
-  "project-decision": 100,
-  "source-code": 100,
-  paper: 85,
-  high: 85,
-  practitioner: 60,
-  secondary: 60,
-  medium: 60,
-  low: 25,
-  hypothesis: 10
+export const sourceAuthorityByTrustTier: Record<SourceTrustTier, SourceAuthority> = {
+  high: { trustLevel: "high", sourceKind: "unspecified", rank: 85 },
+  medium: { trustLevel: "medium", sourceKind: "unspecified", rank: 60 },
+  low: { trustLevel: "low", sourceKind: "unspecified", rank: 25 },
+  primary: { trustLevel: "high", sourceKind: "primary", rank: 100 },
+  official: { trustLevel: "high", sourceKind: "official", rank: 100 },
+  "project-decision": {
+    trustLevel: "high",
+    sourceKind: "project-decision",
+    rank: 100
+  },
+  "source-code": { trustLevel: "high", sourceKind: "source-code", rank: 100 },
+  paper: { trustLevel: "high", sourceKind: "paper", rank: 85 },
+  practitioner: { trustLevel: "medium", sourceKind: "practitioner", rank: 60 },
+  secondary: { trustLevel: "medium", sourceKind: "secondary", rank: 60 },
+  hypothesis: { trustLevel: "low", sourceKind: "hypothesis", rank: 10 }
 };
 
 export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
-  sourceTrustTierRanks[trustTier];
+  sourceAuthorityByTrustTier[trustTier].rank;
 
 const readTrimmedMetadataString = (
   metadata: Record<string, unknown>,
@@ -337,25 +335,25 @@ export const readSourceRelationMetadataReadback = (
   };
 };
 
-const sourceTrustTaxonomy: Record<SourceTrustTier, SourceTrustTaxonomy> = {
-  high: { trustLevel: "high", sourceKind: "unspecified" },
-  medium: { trustLevel: "medium", sourceKind: "unspecified" },
-  low: { trustLevel: "low", sourceKind: "unspecified" },
-  primary: { trustLevel: "high", sourceKind: "primary" },
-  official: { trustLevel: "high", sourceKind: "official" },
-  "project-decision": { trustLevel: "high", sourceKind: "project-decision" },
-  "source-code": { trustLevel: "high", sourceKind: "source-code" },
-  paper: { trustLevel: "high", sourceKind: "paper" },
-  practitioner: { trustLevel: "medium", sourceKind: "practitioner" },
-  secondary: { trustLevel: "medium", sourceKind: "secondary" },
-  hypothesis: { trustLevel: "low", sourceKind: "hypothesis" }
-};
+export const classifySourceAuthority = (
+  trustTier: SourceTrustTier
+): SourceAuthority => sourceAuthorityByTrustTier[trustTier];
 
 export const classifySourceTrustTier = (
   trustTier: SourceTrustTier
-): SourceTrustTaxonomy => sourceTrustTaxonomy[trustTier];
+): SourceTrustTaxonomy => {
+  const authority = classifySourceAuthority(trustTier);
 
-const sourceSupportTaxonomy: Record<SourceSupportType, SourceSupportTaxonomy> = {
+  return {
+    trustLevel: authority.trustLevel,
+    sourceKind: authority.sourceKind
+  };
+};
+
+export const sourceSupportAssessmentByType: Record<
+  SourceSupportType,
+  SourceSupportAssessment
+> = {
   supports: {
     relation: "supports",
     use: "relation-only",
@@ -413,9 +411,13 @@ const sourceSupportTaxonomy: Record<SourceSupportType, SourceSupportTaxonomy> = 
   }
 };
 
+export const assessSourceSupportType = (
+  supportType: SourceSupportType
+): SourceSupportAssessment => sourceSupportAssessmentByType[supportType];
+
 export const classifySourceSupportType = (
   supportType: SourceSupportType
-): SourceSupportTaxonomy => sourceSupportTaxonomy[supportType];
+): SourceSupportTaxonomy => assessSourceSupportType(supportType);
 
 export const classifySourceClaimTaxonomy = (
   claim: Pick<SourceClaim, "trustTier" | "supportType">

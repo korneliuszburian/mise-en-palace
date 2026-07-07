@@ -17,6 +17,10 @@ import type {
   GapReport,
   SourceLineageRef
 } from "@krn/core";
+import {
+  sourceSupportTypes,
+  sourceTrustTiers
+} from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
 import {
@@ -81,33 +85,9 @@ const memoryKinds = new Set<string>([
   "risk"
 ]);
 
-const sourceTrustTiers = new Set<string>([
-  "high",
-  "medium",
-  "low",
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-]);
+const sourceTrustTierSet = new Set<string>(sourceTrustTiers);
 
-const sourceSupportTypes = new Set<string>([
-  "supports",
-  "contradicts",
-  "qualifies",
-  "background",
-  "does_not_support",
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary"
-]);
+const sourceSupportTypeSet = new Set<string>(sourceSupportTypes);
 
 const reflectionFindingKinds = new Set<string>([
   "candidate_signal",
@@ -158,12 +138,12 @@ const isReflectionMemoryKind = (
 const isReflectionSourceTrustTier = (
   value: unknown
 ): value is ReflectionSourceClaimCandidateProposal["trustTier"] =>
-  typeof value === "string" && sourceTrustTiers.has(value);
+  typeof value === "string" && sourceTrustTierSet.has(value);
 
 const isReflectionSourceSupportType = (
   value: unknown
 ): value is ReflectionSourceClaimCandidateProposal["supportType"] =>
-  typeof value === "string" && sourceSupportTypes.has(value);
+  typeof value === "string" && sourceSupportTypeSet.has(value);
 
 const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {
