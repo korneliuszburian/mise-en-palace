@@ -543,6 +543,10 @@ export type SourceClaimOverrideAssessment =
       readonly allowed: false;
       readonly reason: "weaker_than_current_valid_consensus";
       readonly blockedBySourceClaimId: SourceClaim["id"];
+    }
+  | {
+      readonly allowed: false;
+      readonly reason: "candidate_not_current_authority";
     };
 
 export const assessSourceClaimOverride = (input: {
@@ -552,13 +556,10 @@ export const assessSourceClaimOverride = (input: {
   readonly overrideReason?: string;
   readonly overrideProvenanceRef?: string;
 }): SourceClaimOverrideAssessment => {
-  if (
-    hasMeaningfulOverrideReason(input.overrideReason) &&
-    hasText(input.overrideProvenanceRef)
-  ) {
+  if (assessSourceClaimTemporalValidity(input.candidate, input.now).status !== "valid") {
     return {
-      allowed: true,
-      reason: "explicit_override_reason"
+      allowed: false,
+      reason: "candidate_not_current_authority"
     };
   }
 
@@ -577,6 +578,16 @@ export const assessSourceClaimOverride = (input: {
   });
 
   if (strongerCurrentConsensus !== undefined) {
+    if (
+      hasMeaningfulOverrideReason(input.overrideReason) &&
+      hasText(input.overrideProvenanceRef)
+    ) {
+      return {
+        allowed: true,
+        reason: "explicit_override_reason"
+      };
+    }
+
     return {
       allowed: false,
       reason: "weaker_than_current_valid_consensus",

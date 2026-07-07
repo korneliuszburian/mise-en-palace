@@ -347,8 +347,29 @@ describe("source review signals", () => {
       now: "not-a-date"
     })).toEqual({
       allowed: false,
-      reason: "weaker_than_current_valid_consensus",
-      blockedBySourceClaimId: "source-claim-invalid-now-official"
+      reason: "candidate_not_current_authority"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-stale-candidate",
+        trustTier: "hypothesis",
+        revisitWhen: "2026-06-01T00:00:00.000Z",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-stale-candidate-official",
+          trustTier: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now,
+      overrideReason: "Official docs were superseded by an explicit project decision.",
+      overrideProvenanceRef: "source-decision:manual-review"
+    })).toEqual({
+      allowed: false,
+      reason: "candidate_not_current_authority"
     });
 
     expect(assessSourceClaimOverride({
@@ -413,6 +434,26 @@ describe("source review signals", () => {
     })).toEqual({
       allowed: true,
       reason: "explicit_override_reason"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
+        id: "source-claim-weak-against-invalid-current",
+        trustTier: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-invalid-current-official",
+          trustTier: "official",
+          revisitWhen: "not-a-date",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now
+    })).toEqual({
+      allowed: true,
+      reason: "no_stronger_valid_consensus"
     });
   });
 
