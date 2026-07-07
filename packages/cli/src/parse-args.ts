@@ -265,7 +265,7 @@ export type CliCommand =
       kind: "memoryRecordApplyHelp";
     }
   | {
-      kind: "memoryPatternSeedHelp";
+      kind: "memoryKnowledgeSeedHelp";
     }
   | {
       kind: "memoryAntiAddHelp";
@@ -326,7 +326,7 @@ export type CliCommand =
       metadata: Record<string, string>;
     }
   | {
-      kind: "memoryPatternSeed";
+      kind: "memoryKnowledgeSeed";
       persist: boolean;
       dryRun: boolean;
       catalogFile: string;

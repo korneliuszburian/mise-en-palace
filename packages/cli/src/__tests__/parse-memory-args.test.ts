@@ -461,7 +461,7 @@ describe("parseMemoryArgs", () => {
       error: expect.any(String)
     });
     expect(unsupportedShape.error).toContain("Usage: krn memory candidate add");
-    expect(unsupportedShape.error).toContain("Usage: krn memory pattern seed");
+    expect(unsupportedShape.error).toContain("Usage: krn memory knowledge seed");
     expect(unsupportedShape.error).toContain("Usage: krn memory anti add");
   });
 });

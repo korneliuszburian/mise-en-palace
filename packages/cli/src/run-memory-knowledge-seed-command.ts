@@ -20,20 +20,20 @@ import {
 import type { CreateMemoryCommandDatabaseRuntime } from "./memory-command-support.js";
 import type { CliCommand } from "./parse-args.js";
 
-type MemoryPatternSeedCommand = Extract<CliCommand, { kind: "memoryPatternSeed" }>;
+type MemoryKnowledgeSeedCommand = Extract<CliCommand, { kind: "memoryKnowledgeSeed" }>;
 
-export interface MemoryPatternSeedCommandRuntime extends BaseCommandRuntime {
+export interface MemoryKnowledgeSeedCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
-  command: MemoryPatternSeedCommand;
+  command: MemoryKnowledgeSeedCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
 
-export interface MemoryPatternSeedCommandResult {
+export interface MemoryKnowledgeSeedCommandResult {
   stdout: string;
 }
 
-const SEED_PROPOSED_BY = "krn memory brain knowledge seed";
-const SEED_REVIEWER = "krn memory brain knowledge seed";
+const SEED_PROPOSED_BY = "krn memory knowledge seed";
+const SEED_REVIEWER = "krn memory knowledge seed";
 
 const confidenceValue = (confidence: BrainKnowledgeDecision["confidence"]): number =>
   confidence === "high" ? 90 : confidence === "medium" ? 60 : confidence === "low" ? 30 : 0;
@@ -145,9 +145,9 @@ const existingKnowledgeIds = (records: readonly { metadata: Record<string, unkno
   return ids;
 };
 
-export const runMemoryPatternSeedCommand = async (
-  runtime: MemoryPatternSeedCommandRuntime
-): Promise<MemoryPatternSeedCommandResult> => {
+export const runMemoryKnowledgeSeedCommand = async (
+  runtime: MemoryKnowledgeSeedCommandRuntime
+): Promise<MemoryKnowledgeSeedCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const command = runtime.command;
   const loaded = await loadBrainKnowledgeDecisionsFromCatalog(cwd, command.catalogFile);
@@ -160,7 +160,7 @@ export const runMemoryPatternSeedCommand = async (
 
   const db = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory brain knowledge seed --persist"
+    "KRN_DATABASE_URL is required for krn memory knowledge seed --persist"
   );
 
   try {
@@ -200,13 +200,13 @@ export const runMemoryPatternSeedCommand = async (
 
 const formatSeedPreview = (
   loaded: LoadedBrainKnowledgeDecision[],
-  command: MemoryPatternSeedCommand,
+  command: MemoryKnowledgeSeedCommand,
   persisted: boolean,
   createdCount?: number,
   skippedCount?: number
 ): string => {
   const lines = [
-    "KRN Memory Brain Knowledge Seed",
+    "KRN Memory Knowledge Seed",
     `Catalog file: ${command.catalogFile}`,
     `Brain knowledge decisions in catalog: ${loaded.length}`,
     ...(command.dryRun ? ["Mode: dry-run (no writes)"] : [])

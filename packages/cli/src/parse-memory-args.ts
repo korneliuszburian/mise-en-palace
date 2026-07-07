@@ -136,9 +136,9 @@ export const formatMemoryAntiRejectUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
-export const formatMemoryPatternSeedUsage = (): string =>
+export const formatMemoryKnowledgeSeedUsage = (): string =>
   [
-    "Usage: krn memory pattern seed --file <catalog.json> [--persist] [--dry-run]",
+    "Usage: krn memory knowledge seed --file <catalog.json> [--persist] [--dry-run]",
     "",
     "Seeds brain knowledge decisions from a corpus catalog JSON into store-backed memory_records",
     "(kind=pattern) so the brain reads patterns from the DB instead of JSON files.",
@@ -152,7 +152,7 @@ const formatMemoryUsage = (): string =>
     formatMemoryCandidatePromoteUsage().trim(),
     formatMemoryCandidateRejectUsage().trim(),
     formatMemoryRecordApplyUsage().trim(),
-    formatMemoryPatternSeedUsage().trim(),
+    formatMemoryKnowledgeSeedUsage().trim(),
     formatMemoryAntiAddUsage().trim(),
     formatMemoryAntiPromoteUsage().trim(),
     formatMemoryAntiRejectUsage().trim()
@@ -165,7 +165,7 @@ type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
 type MemoryCandidatePromoteCommand = Extract<CliCommand, { kind: "memoryCandidatePromote" }>;
 type MemoryCandidateRejectCommand = Extract<CliCommand, { kind: "memoryCandidateReject" }>;
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
-type MemoryPatternSeedCommand = Extract<CliCommand, { kind: "memoryPatternSeed" }>;
+type MemoryKnowledgeSeedCommand = Extract<CliCommand, { kind: "memoryKnowledgeSeed" }>;
 type MemoryAntiPromoteCommand = Extract<CliCommand, { kind: "memoryAntiPromote" }>;
 type MemoryAntiRejectCommand = Extract<CliCommand, { kind: "memoryAntiReject" }>;
 type MemoryRejectCommand = MemoryCandidateRejectCommand | MemoryAntiRejectCommand;
@@ -599,10 +599,10 @@ const parseMemoryAntiRejectToken = (
 ): MemoryTokenParseResult =>
   parseMemoryRejectToken(rest, index, memoryCommand, formatMemoryAntiRejectUsage());
 
-const parseMemoryPatternSeedToken = (
+const parseMemoryKnowledgeSeedToken = (
   rest: readonly string[],
   index: number,
-  memoryCommand: MemoryPatternSeedCommand
+  memoryCommand: MemoryKnowledgeSeedCommand
 ): MemoryTokenParseResult => {
   const token = rest[index];
 
@@ -622,7 +622,7 @@ const parseMemoryPatternSeedToken = (
     const value = optionValue(rest, index, "--file");
 
     if (value.error !== undefined || value.value === undefined) {
-      return memoryError(value.error ?? "krn memory pattern seed --file requires a catalog.json path");
+      return memoryError(value.error ?? "krn memory knowledge seed --file requires a catalog.json path");
     }
 
     memoryCommand.catalogFile = value.value;
@@ -630,7 +630,7 @@ const parseMemoryPatternSeedToken = (
     return memoryNext(value.nextIndex);
   }
 
-  return memoryError(`Unknown krn memory pattern seed option: ${token ?? ""}`);
+  return memoryError(`Unknown krn memory knowledge seed option: ${token ?? ""}`);
 };
 
 const parseMemoryTokenLoop = (
@@ -929,17 +929,17 @@ const parseMemoryAntiRejectArgs = (rest: readonly string[]): ParseArgsResult => 
   };
 };
 
-const parseMemoryPatternSeedArgs = (rest: readonly string[]): ParseArgsResult => {
+const parseMemoryKnowledgeSeedArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
       command: {
-        kind: "memoryPatternSeedHelp"
+        kind: "memoryKnowledgeSeedHelp"
       }
     };
   }
 
-  const memoryCommand: MemoryPatternSeedCommand = {
-    kind: "memoryPatternSeed",
+  const memoryCommand: MemoryKnowledgeSeedCommand = {
+    kind: "memoryKnowledgeSeed",
     persist: false,
     dryRun: false,
     catalogFile: ""
@@ -947,9 +947,9 @@ const parseMemoryPatternSeedArgs = (rest: readonly string[]): ParseArgsResult =>
 
   const parsed = parseMemoryTokenLoop(
     rest,
-    (index) => parseMemoryPatternSeedToken(rest, index, memoryCommand),
+    (index) => parseMemoryKnowledgeSeedToken(rest, index, memoryCommand),
     {
-      kind: "memoryPatternSeedHelp"
+      kind: "memoryKnowledgeSeedHelp"
     }
   );
 
@@ -959,7 +959,7 @@ const parseMemoryPatternSeedArgs = (rest: readonly string[]): ParseArgsResult =>
 
   if (memoryCommand.catalogFile.length === 0) {
     return {
-      error: "krn memory pattern seed requires --file <catalog.json>"
+      error: "krn memory knowledge seed requires --file <catalog.json>"
     };
   }
 
@@ -975,7 +975,7 @@ const memorySubcommandParsers = new Map<string, (rest: readonly string[]) => Par
   ["candidate add", parseMemoryCandidateAddArgs],
   ["candidate promote", parseMemoryCandidatePromoteArgs],
   ["candidate reject", parseMemoryCandidateRejectArgs],
-  ["pattern seed", parseMemoryPatternSeedArgs],
+  ["knowledge seed", parseMemoryKnowledgeSeedArgs],
   ["record apply", parseMemoryRecordApplyArgs]
 ]);
 

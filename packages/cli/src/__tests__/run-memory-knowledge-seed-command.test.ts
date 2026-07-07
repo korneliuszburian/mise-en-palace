@@ -23,15 +23,15 @@ import type { DatabaseRuntime } from "../database-runtime.js";
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import {
   brainKnowledgeDecisionToMemoryCandidateInput,
-  runMemoryPatternSeedCommand
-} from "../run-memory-pattern-seed-command.js";
+  runMemoryKnowledgeSeedCommand
+} from "../run-memory-knowledge-seed-command.js";
 import {
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
 
 const now = "2026-07-06T00:00:00.000Z";
 
-const fixturePattern = (overrides: Partial<BrainKnowledgeDecision> = {}): BrainKnowledgeDecision => ({
+const fixtureKnowledge = (overrides: Partial<BrainKnowledgeDecision> = {}): BrainKnowledgeDecision => ({
   knowledgeId: "ts-boundary-unknown-first-result-state",
   name: "Unknown-first result state",
   decisionStatus: "adopt_now",
@@ -47,24 +47,24 @@ const fixturePattern = (overrides: Partial<BrainKnowledgeDecision> = {}): BrainK
   ...overrides
 });
 
-const writePatternCatalog = async (
+const writeKnowledgeCatalog = async (
   directory: string,
   pattern: BrainKnowledgeDecision
 ): Promise<void> => {
-  await mkdir(path.join(directory, "patterns"), { recursive: true });
+  await mkdir(path.join(directory, "knowledge"), { recursive: true });
   await writeFile(
     path.join(directory, "catalog.json"),
-    JSON.stringify({ knowledgeFiles: ["patterns/pattern.json"] }),
+    JSON.stringify({ knowledgeFiles: ["knowledge/knowledge.json"] }),
     "utf8"
   );
   await writeFile(
-    path.join(directory, "patterns", "pattern.json"),
+    path.join(directory, "knowledge", "knowledge.json"),
     JSON.stringify(pattern),
     "utf8"
   );
 };
 
-const memoryRecordWithPatternId = (knowledgeId: string): MemoryRecord => ({
+const memoryRecordWithKnowledgeId = (knowledgeId: string): MemoryRecord => ({
   id: `memory-record-${knowledgeId}`,
   projectId: "project-1",
   key: `pattern:${knowledgeId}`,
@@ -72,7 +72,7 @@ const memoryRecordWithPatternId = (knowledgeId: string): MemoryRecord => ({
   status: "active",
   summary: knowledgeId,
   body: knowledgeId,
-  owner: "krn memory brain knowledge seed",
+  owner: "krn memory knowledge seed",
   confidence: 90,
   applicationGuidance: knowledgeId,
   sourceLineage: [{ sourceId: "fixture" }],
@@ -90,7 +90,7 @@ const createSeedTestRuntime = (directory: string) => {
     now: () => now,
     createId: (prefix) => `${prefix}-1`
   });
-  const seededPatternIds = new Set<string>();
+  const seededKnowledgeIds = new Set<string>();
   const capturedCandidates: CreateMemoryCandidateInput[] = [];
   const capturedPromotions: PromoteMemoryCandidateInput[] = [];
   let closeCount = 0;
@@ -104,7 +104,7 @@ const createSeedTestRuntime = (directory: string) => {
     memoryRepository: {
       ...unusedMemoryRepository,
       async listMemoryRecordsForProject() {
-        return [...seededPatternIds].map(memoryRecordWithPatternId);
+        return [...seededKnowledgeIds].map(memoryRecordWithKnowledgeId);
       },
       async createMemoryCandidate(input) {
         capturedCandidates.push(input);
@@ -118,10 +118,10 @@ const createSeedTestRuntime = (directory: string) => {
         capturedPromotions.push(input);
 
         if (input.recordKey?.startsWith("pattern:") === true) {
-          seededPatternIds.add(input.recordKey.slice("pattern:".length));
+          seededKnowledgeIds.add(input.recordKey.slice("pattern:".length));
         }
 
-        return memoryRecordWithPatternId(input.recordKey ?? input.candidateId);
+        return memoryRecordWithKnowledgeId(input.recordKey ?? input.candidateId);
       }
     } as DatabaseRuntime["memoryRepository"],
     async close() {
@@ -141,7 +141,7 @@ const createSeedTestRuntime = (directory: string) => {
       now: () => now,
       createId: (prefix: string) => `${prefix}-1`,
       command: {
-        kind: "memoryPatternSeed",
+        kind: "memoryKnowledgeSeed",
         persist: true,
         dryRun: false,
         catalogFile: "catalog.json"
@@ -153,7 +153,7 @@ const createSeedTestRuntime = (directory: string) => {
 
 describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
   it("maps a brain knowledge to a kind=pattern memory candidate", () => {
-    const input = brainKnowledgeDecisionToMemoryCandidateInput(fixturePattern(), "project-1", now);
+    const input = brainKnowledgeDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
 
     expect(input.kind).toBe("pattern");
     expect(input.projectId).toBe("project-1");
@@ -162,7 +162,7 @@ describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
     expect(input.invalidationRule).toBe("A JSON.parse result assigned to a non-unknown type.");
     expect(input.confidence).toBe(90);
     expect(input.owner).toBe("@krn/core");
-    expect(input.proposedBy).toBe("krn memory brain knowledge seed");
+    expect(input.proposedBy).toBe("krn memory knowledge seed");
     expect(input.isUserPreference).toBe(false);
     expect(input.validFrom).toBe(now);
     expect(input.sourceLineage).toEqual([{ sourceId: "packages/core/src/metadata.ts" }]);
@@ -177,20 +177,20 @@ describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
   });
 });
 
-describe("runMemoryPatternSeedCommand", () => {
+describe("runMemoryKnowledgeSeedCommand", () => {
   it("previews brain knowledge decisions without opening the database", async () => {
-    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-pattern-seed-"));
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
-      await writePatternCatalog(directory, fixturePattern());
+      await writeKnowledgeCatalog(directory, fixtureKnowledge());
 
-      const result = await runMemoryPatternSeedCommand({
+      const result = await runMemoryKnowledgeSeedCommand({
         cwd: directory,
         env: {},
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         command: {
-          kind: "memoryPatternSeed",
+          kind: "memoryKnowledgeSeed",
           persist: false,
           dryRun: true,
           catalogFile: "catalog.json"
@@ -203,7 +203,7 @@ describe("runMemoryPatternSeedCommand", () => {
       expect(result.stdout).toContain("Mode: dry-run (no writes)");
       expect(result.stdout).toContain("Brain knowledge decisions in catalog: 1");
       expect(result.stdout).toContain(
-        "- ts-boundary-unknown-first-result-state (adopt_now) <- catalog.json:patterns/pattern.json"
+        "- ts-boundary-unknown-first-result-state (adopt_now) <- catalog.json:knowledge/knowledge.json"
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -211,10 +211,10 @@ describe("runMemoryPatternSeedCommand", () => {
   });
 
   it("persists brain knowledge decisions once and skips already seeded knowledge ids", async () => {
-    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-pattern-seed-"));
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
-      await writePatternCatalog(directory, fixturePattern());
+      await writeKnowledgeCatalog(directory, fixtureKnowledge());
 
       const {
         capturedCandidates,
@@ -223,8 +223,8 @@ describe("runMemoryPatternSeedCommand", () => {
         runtime
       } = createSeedTestRuntime(directory);
 
-      const firstRun = await runMemoryPatternSeedCommand(runtime);
-      const secondRun = await runMemoryPatternSeedCommand(runtime);
+      const firstRun = await runMemoryKnowledgeSeedCommand(runtime);
+      const secondRun = await runMemoryKnowledgeSeedCommand(runtime);
 
       expect(firstRun.stdout).toContain("Created: 1");
       expect(firstRun.stdout).toContain("Skipped (already seeded): 0");
@@ -244,7 +244,7 @@ describe("runMemoryPatternSeedCommand", () => {
       expect(capturedPromotions).toEqual([
         {
           candidateId: "memory-candidate-1",
-          reviewer: "krn memory brain knowledge seed",
+          reviewer: "krn memory knowledge seed",
           decision: "accepted",
           recordKey: "pattern:ts-boundary-unknown-first-result-state"
         }
