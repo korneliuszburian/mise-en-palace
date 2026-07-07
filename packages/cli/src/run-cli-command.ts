@@ -84,6 +84,11 @@ const runProjectAdapter: CliCommandAdapter = (command, context) =>
   runProjectCliCommand(command, {
     cwd: context.cwd,
     env: context.env,
+    now: context.now,
+    createId: context.createId,
+    ...(context.createDatabaseRuntime === undefined
+      ? {}
+      : { createDatabaseRuntime: context.createDatabaseRuntime }),
     ...(context.createInitConnectRuntime === undefined
       ? {}
       : { createInitConnectRuntime: context.createInitConnectRuntime }),

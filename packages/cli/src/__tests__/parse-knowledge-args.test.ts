@@ -28,6 +28,7 @@ describe("parseKnowledgeArgs", () => {
         ],
         patternFiles: [],
         catalogFiles: [],
+        storeOnly: false,
         filter: {
           kind: "pattern",
           status: "active",
@@ -52,6 +53,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: ["card.json"],
         patternFiles: [],
         catalogFiles: [],
+        storeOnly: false,
         filter: {},
         format: "json"
       }
@@ -74,6 +76,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
         filter: {
           usefulnessOutcome: "helped"
         },
@@ -97,6 +100,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
         filter: {
           usefulnessOutcome: "none"
         },
@@ -117,6 +121,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
         filter: {},
         format: "html"
       }
@@ -138,6 +143,7 @@ describe("parseKnowledgeArgs", () => {
           "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
         ],
         catalogFiles: [],
+        storeOnly: false,
         filter: {
           text: "unknown-first"
         },
@@ -159,6 +165,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: [],
         patternFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        storeOnly: false,
         filter: {
           text: "unknown-first"
         },
@@ -167,9 +174,45 @@ describe("parseKnowledgeArgs", () => {
     });
   });
 
-  it("requires a card file", () => {
+  it("parses store-only readback without file sources", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--store-only",
+      "--project",
+      "project-1",
+      "--usefulness-outcome",
+      "helped",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "knowledgeCards",
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: [],
+        storeOnly: true,
+        projectId: "project-1",
+        filter: {
+          usefulnessOutcome: "helped"
+        },
+        format: "json"
+      }
+    });
+  });
+
+  it("requires a file source unless store-only is explicit", () => {
     expect(parseKnowledgeArgs(["cards"])).toEqual({
       error: expect.stringContaining("Missing required --card-file, --pattern-file, or --catalog-file")
+    });
+  });
+
+  it("rejects store-only combined with file sources", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--store-only",
+      "--catalog-file",
+      "corpus/brain-knowledge/catalog.json"
+    ])).toEqual({
+      error: expect.stringContaining("--store-only cannot be combined")
     });
   });
 

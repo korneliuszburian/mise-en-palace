@@ -166,6 +166,8 @@ export type CliCommand =
       cardFiles: readonly string[];
       patternFiles: readonly string[];
       catalogFiles: readonly string[];
+      storeOnly: boolean;
+      projectId?: string;
       filter: BrainKnowledgeSearchFilter;
       format: "text" | "json" | "html";
       limit?: number;

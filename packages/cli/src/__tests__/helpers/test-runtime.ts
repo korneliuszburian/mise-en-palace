@@ -195,6 +195,9 @@ export const runPersistedPlanWithCapturedMetadata = async (
           },
           async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
             throw new Error("createFeedbackDelta should not be called");
+          },
+          async listFeedbackDeltasForProject() {
+            return [];
           }
         };
         const sourceRepository = {

@@ -1147,7 +1147,8 @@ const createMemoryAdvantageRuntime = (
       getHarnessRunByExecutionRunId: async () => throwingRepositoryMethod("getHarnessRunByExecutionRunId"),
       createEvidenceBundle: async () => throwingRepositoryMethod("createEvidenceBundle"),
       createReviewAssessment: async () => throwingRepositoryMethod("createReviewAssessment"),
-      createFeedbackDelta: async () => throwingRepositoryMethod("createFeedbackDelta")
+      createFeedbackDelta: async () => throwingRepositoryMethod("createFeedbackDelta"),
+      listFeedbackDeltasForProject: async () => []
     },
     sourceRepository: {
       createSourceArtifact: async () => throwingRepositoryMethod("createSourceArtifact"),

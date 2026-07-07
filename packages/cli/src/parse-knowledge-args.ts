@@ -18,15 +18,16 @@ import type {
 } from "./parse-args.js";
 
 const knowledgeUsage = [
-  "Usage: krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "Legacy alias: krn knowledge cards [same options]",
   "",
   "Read-only preview commands:",
+  "krn brain knowledge --store-only [--text unknown-first]",
   "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
   "krn brain knowledge --pattern-file retained-pattern.json [--text unknown-first]",
   "krn brain knowledge --catalog-file retained-pattern-catalog.json [--text unknown-first]",
-  "  note: brain knowledge readback reads explicit card or retained-pattern files only; it does not scan, rank, persist, or mutate Memory Core",
-  "  proof boundary: valid output proves only that supplied files match known read-model inputs and local filters"
+  "  note: --store-only reads DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes; file options are explicit legacy fixture/seed previews",
+  "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
 export const formatKnowledgeUsage = (): string => `${knowledgeUsage}\n`;
@@ -127,6 +128,8 @@ type KnowledgeParseState = {
   cardFiles: string[];
   patternFiles: string[];
   catalogFiles: string[];
+  storeOnly: boolean;
+  projectId: string | undefined;
   kind: BrainKnowledgeKind | undefined;
   status: BrainKnowledgeStatus | undefined;
   reviewability: BrainKnowledgeReviewability | undefined;
@@ -179,6 +182,35 @@ const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
     pushPathOption(args, index, "--pattern-file", state.patternFiles),
   "--catalog-file": (args, index, state) =>
     pushPathOption(args, index, "--catalog-file", state.catalogFiles),
+  "--store-only": (_args, index, state) => {
+    state.storeOnly = true;
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  },
+  "--project": (args, index, state) => {
+    const required = parseRequiredOption(args, index, "--project");
+
+    if (!required.ok) {
+      return required;
+    }
+
+    if (required.value.trim().length === 0) {
+      return {
+        ok: false,
+        error: `--project requires a non-empty project id\n${formatKnowledgeUsage()}`
+      };
+    }
+
+    state.projectId = required.value.trim();
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
   "--kind": (args, index, state) => {
     const parsed = parseAllowedOption(args, index, "--kind", brainKnowledgeKindValues, "kind");
 
@@ -311,22 +343,21 @@ const knowledgeOptionParsers: Record<string, KnowledgeOptionParser> = {
 const validateKnowledgeSources = (
   state: KnowledgeParseState
 ): ParseOptionResult<undefined> => {
-  if (
-    state.cardFiles.length === 0 &&
-    state.patternFiles.length === 0 &&
-    state.catalogFiles.length === 0
-  ) {
+  if (!state.storeOnly && !hasExplicitKnowledgeSource(state)) {
     return {
       ok: false,
       error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
     };
   }
 
-  if (
-    state.cardFiles.some((cardFile) => cardFile.length === 0) ||
-    state.patternFiles.some((patternFile) => patternFile.length === 0) ||
-    state.catalogFiles.some((catalogFile) => catalogFile.length === 0)
-  ) {
+  if (state.storeOnly && hasExplicitKnowledgeSource(state)) {
+    return {
+      ok: false,
+      error: `--store-only cannot be combined with --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+    };
+  }
+
+  if (hasEmptyKnowledgeSourcePath(state)) {
     return {
       ok: false,
       error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
@@ -339,6 +370,16 @@ const validateKnowledgeSources = (
   };
 };
 
+const hasExplicitKnowledgeSource = (state: KnowledgeParseState): boolean =>
+  state.cardFiles.length > 0 ||
+  state.patternFiles.length > 0 ||
+  state.catalogFiles.length > 0;
+
+const hasEmptyKnowledgeSourcePath = (state: KnowledgeParseState): boolean =>
+  state.cardFiles.some((cardFile) => cardFile.length === 0) ||
+  state.patternFiles.some((patternFile) => patternFile.length === 0) ||
+  state.catalogFiles.some((catalogFile) => catalogFile.length === 0);
+
 const buildKnowledgeCardsCommand = (
   state: KnowledgeParseState
 ): ParseArgsResult => ({
@@ -347,6 +388,8 @@ const buildKnowledgeCardsCommand = (
     cardFiles: state.cardFiles,
     patternFiles: state.patternFiles,
     catalogFiles: state.catalogFiles,
+    storeOnly: state.storeOnly,
+    ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
     filter: {
       ...(state.kind === undefined ? {} : { kind: state.kind }),
       ...(state.status === undefined ? {} : { status: state.status }),
@@ -380,6 +423,8 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     cardFiles: [],
     patternFiles: [],
     catalogFiles: [],
+    storeOnly: false,
+    projectId: undefined,
     kind: undefined,
     status: undefined,
     reviewability: undefined,

@@ -29,6 +29,7 @@ export interface KnowledgeCardsCommandRuntime {
   filter: BrainKnowledgeSearchFilter;
   format: KnowledgeCardsOutputFormat;
   limit?: number;
+  cardProvider?: () => Promise<BrainKnowledgeReadModel[]>;
   /**
    * Optional store-backed usefulness source (9xc1). When provided, the command
    * awaits it and merges the result into the usefulness feedback, so the
@@ -57,7 +58,7 @@ interface KnowledgeCardsPreviewResource {
   kind: "krn.brainKnowledge.cards.preview.v1";
   access: "read_only";
   mutation: "none";
-  source: "explicit_files";
+  source: "explicit_files" | "memory_store";
   usefulnessSource: "explicit_files" | "store_backed";
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
@@ -91,20 +92,36 @@ const proof = {
 } as const;
 
 const buildProof = (
+  source: "explicit_files" | "memory_store",
   usefulnessSource: "explicit_files" | "store_backed"
 ): { proves: string[]; doesNotProve: string[] } =>
-  usefulnessSource === "store_backed"
-    ? {
-        proves: [
-          "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
-          "usefulness feedback was read from store-backed feedback_delta records",
+  {
+    const proves = source === "memory_store"
+      ? [
+          "brain knowledge cards were read from DB-backed MemoryRecord rows",
+          "MemoryRecords were converted into BrainKnowledgeReadModel cards",
           "local readback filters were applied deterministically"
-        ],
-        doesNotProve: proof.doesNotProve.filter(
+        ]
+      : [
+          "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
+          "local readback filters were applied deterministically"
+        ];
+    const usefulnessProves = usefulnessSource === "store_backed"
+      ? ["usefulness feedback was read from store-backed feedback_delta records"]
+      : source === "memory_store"
+        ? []
+        : ["supplied usefulness feedback files parse with proof boundaries"];
+    const doesNotProve = source === "memory_store" || usefulnessSource === "store_backed"
+      ? proof.doesNotProve.filter(
           (item) => item !== "brain knowledge readback was produced from live DB state"
         )
-      }
-    : { proves: [...proof.proves], doesNotProve: [...proof.doesNotProve] };
+      : [...proof.doesNotProve];
+
+    return {
+      proves: [...proves, ...usefulnessProves],
+      doesNotProve
+    };
+  };
 
 const createLoadedKnowledgeCards = (): LoadedKnowledgeCards => ({
   cards: [],
@@ -213,6 +230,10 @@ const loadKnowledgeCards = async (
     await loadKnowledgeCatalogFile(cwd, catalogFile, loaded);
   }
 
+  if (runtime.cardProvider !== undefined) {
+    loaded.cards.push(...await runtime.cardProvider());
+  }
+
   return loaded;
 };
 
@@ -224,8 +245,10 @@ export const runKnowledgeCardsCommand = async (
   const storeUsefulness = runtime.usefulnessProvider === undefined
     ? []
     : await runtime.usefulnessProvider();
+  const source: "explicit_files" | "memory_store" =
+    runtime.cardProvider === undefined ? "explicit_files" : "memory_store";
   const usefulnessSource: "explicit_files" | "store_backed" =
-    storeUsefulness.length > 0 ? "store_backed" : "explicit_files";
+    runtime.usefulnessProvider === undefined ? "explicit_files" : "store_backed";
   const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(
     loaded.cards,
     [...loaded.feedback, ...storeUsefulness]
@@ -242,7 +265,7 @@ export const runKnowledgeCardsCommand = async (
     kind: "krn.brainKnowledge.cards.preview.v1",
     access: "read_only",
     mutation: "none",
-    source: "explicit_files",
+    source,
     usefulnessSource,
     filter: runtime.filter,
     cardFiles: loaded.cardFiles,
@@ -254,7 +277,7 @@ export const runKnowledgeCardsCommand = async (
     ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
     ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
     cards,
-    proof: buildProof(usefulnessSource)
+    proof: buildProof(source, usefulnessSource)
   };
 
   return {
@@ -282,7 +305,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     "KRN Brain Knowledge Readback",
     "Access: read-only",
     "Mutation: none",
-    "Source: explicit files",
+    `Source: ${resource.source}`,
     `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Brain knowledge files: ${formatList(resource.cardFiles)}`,
@@ -450,7 +473,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
   <main>
     <header>
       <h1>KRN Brain Knowledge Readback</h1>
-      <div class="meta">Access: read-only | Mutation: none | Source: explicit files</div>
+      <div class="meta">Access: read-only | Mutation: none | Source: ${escapeHtml(resource.source)}</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
       <div class="meta">Usefulness feedback files: ${escapeHtml(formatList(resource.usefulnessFeedbackFiles))}</div>
     </header>

@@ -1,4 +1,13 @@
 import type {
+  FeedbackDelta
+} from "@krn/core";
+import {
+  patternUsefulnessOutcomesFromMetadata
+} from "@krn/core";
+import {
+  brainKnowledgeUsefulnessFromPatternOutcomes
+} from "@krn/harness";
+import type {
   CliCommand
 } from "./parse-args.js";
 import type {
@@ -12,7 +21,24 @@ import type {
   CreateInitConnectRuntime
 } from "./run-init-command.js";
 import {
+  defaultProjectSlug,
+  defaultWorkspaceSlug,
+  createDatabaseRuntime
+} from "./database-runtime.js";
+import type {
+  DatabaseRuntime
+} from "./database-runtime.js";
+import {
+  findRepoRoot
+} from "./cli-file-boundary.js";
+import {
+  memoryRecordToKnowledgeCard
+} from "./memory-knowledge-card.js";
+import {
   runKnowledgeCardsCommand
+} from "./run-knowledge-cards-command.js";
+import type {
+  KnowledgeCardsCommandRuntime
 } from "./run-knowledge-cards-command.js";
 
 type ProjectCliCommand = Extract<
@@ -24,6 +50,9 @@ type ProjectCliCommand = Extract<
 interface ProjectCliCommandContext {
   cwd: string;
   env: CliRuntime["env"];
+  now: () => string;
+  createId: (prefix: string) => string;
+  createDatabaseRuntime?: CliRuntime["createDatabaseRuntime"];
   createInitConnectRuntime?: CreateInitConnectRuntime;
   formatCliError(message: string): string;
 }
@@ -57,10 +86,115 @@ const isProjectCliCommand = (command: CliCommand): command is ProjectCliCommand 
   command.kind === "knowledgeCards"
 );
 
+const trimmedEnvValue = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
+};
+
+const feedbackDeltasToPatternUsefulness = (
+  feedbackDeltas: readonly FeedbackDelta[]
+) =>
+  feedbackDeltas.flatMap((feedback) =>
+    brainKnowledgeUsefulnessFromPatternOutcomes(
+      patternUsefulnessOutcomesFromMetadata(feedback.metadata),
+      feedback.createdAt
+    )
+  );
+
+const createKnowledgeCardsStoreProviders = async (
+  command: Extract<ProjectCliCommand, { kind: "knowledgeCards" }>,
+  context: ProjectCliCommandContext
+): Promise<Pick<KnowledgeCardsCommandRuntime, "cardProvider" | "usefulnessProvider">> => {
+  const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
+
+  if (databaseUrl === undefined) {
+    if (command.storeOnly) {
+      throw new Error("KRN_DATABASE_URL is required for krn brain knowledge --store-only");
+    }
+
+    return {};
+  }
+
+  const createRuntime = context.createDatabaseRuntime ?? createDatabaseRuntime;
+
+  const withRuntime = async <T>(
+    read: (runtime: DatabaseRuntime) => Promise<T>
+  ): Promise<T> => {
+    const databaseRuntime = await createRuntime({
+      databaseUrl,
+      workspaceSlug: defaultWorkspaceSlug,
+      projectSlug: defaultProjectSlug,
+      ...(command.projectId === undefined ? {} : { projectId: command.projectId }),
+      requireProjectKernelForExplicitProject: false,
+      repoPathHint: await findRepoRoot(context.cwd),
+      now: context.now,
+      createId: context.createId
+    });
+
+    try {
+      return await read(databaseRuntime);
+    } finally {
+      await databaseRuntime.close();
+    }
+  };
+
+  const usefulnessProvider = async () =>
+    withRuntime(async (runtime) => {
+      const listFeedbackDeltasForProject =
+        runtime.harnessRunRepository.listFeedbackDeltasForProject;
+
+      if (listFeedbackDeltasForProject === undefined) {
+        return [];
+      }
+
+      const feedbackDeltas = await listFeedbackDeltasForProject(
+        runtime.projectId
+      );
+
+      return feedbackDeltasToPatternUsefulness(feedbackDeltas);
+    });
+
+  if (!command.storeOnly) {
+    return { usefulnessProvider };
+  }
+
+  return {
+    cardProvider: async () =>
+      withRuntime(async (runtime) => {
+        const records = await runtime.memoryRepository.listActiveMemory?.(
+          runtime.projectId,
+          command.limit ?? 100
+        );
+
+        return (records ?? []).map(memoryRecordToKnowledgeCard);
+      }),
+    usefulnessProvider
+  };
+};
+
 const projectFallbackMessages = {
   init: "Unknown init error",
   knowledgeCards: "Unknown brain knowledge error"
 } satisfies Record<ProjectCliCommand["kind"], string>;
+
+const runKnowledgeCardsProjectCommand = async (
+  command: Extract<ProjectCliCommand, { kind: "knowledgeCards" }>,
+  context: ProjectCliCommandContext
+): Promise<ProjectCommandOutput> => {
+  const storeProviders = await createKnowledgeCardsStoreProviders(command, context);
+
+  return runKnowledgeCardsCommand({
+    cwd: context.cwd,
+    cardFiles: command.cardFiles,
+    patternFiles: command.patternFiles,
+    catalogFiles: command.catalogFiles,
+    filter: command.filter,
+    format: command.format,
+    ...(command.limit === undefined ? {} : { limit: command.limit }),
+    ...storeProviders
+  });
+};
 
 const runSelectedProjectCommand = async (
   command: ProjectCliCommand,
@@ -80,15 +214,7 @@ const runSelectedProjectCommand = async (
     });
   }
 
-  return runKnowledgeCardsCommand({
-    cwd: context.cwd,
-    cardFiles: command.cardFiles,
-    patternFiles: command.patternFiles,
-    catalogFiles: command.catalogFiles,
-    filter: command.filter,
-    format: command.format,
-    ...(command.limit === undefined ? {} : { limit: command.limit })
-  });
+  return runKnowledgeCardsProjectCommand(command, context);
 };
 
 export const runProjectCliCommand = async (

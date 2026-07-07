@@ -110,6 +110,7 @@ export interface HarnessRunRepository {
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;
+  listFeedbackDeltasForProject(projectId: string, limit?: number): Promise<FeedbackDelta[]>;
   getHarnessRunByExecutionRunId(
     executionRunId: ExecutionRunId
   ): Promise<HarnessRunAggregate | undefined>;

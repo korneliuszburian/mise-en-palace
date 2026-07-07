@@ -1,7 +1,8 @@
 import {
   asc,
   eq,
-  inArray
+  inArray,
+  desc
 } from "drizzle-orm";
 import type {
   ContextAssembly,
@@ -430,6 +431,37 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         evalCandidates: input.evalCandidates
       };
     });
+  }
+
+  async listFeedbackDeltasForProject(projectId: string, limit = 100): Promise<FeedbackDelta[]> {
+    const rows = await this.db
+      .select({ feedbackDelta: feedbackDeltas })
+      .from(feedbackDeltas)
+      .innerJoin(
+        reviewAssessments,
+        eq(feedbackDeltas.reviewAssessmentId, reviewAssessments.id)
+      )
+      .innerJoin(
+        evidenceBundles,
+        eq(reviewAssessments.evidenceBundleId, evidenceBundles.id)
+      )
+      .innerJoin(
+        executionRuns,
+        eq(evidenceBundles.executionRunId, executionRuns.id)
+      )
+      .innerJoin(
+        harnessPlans,
+        eq(executionRuns.harnessPlanId, harnessPlans.id)
+      )
+      .innerJoin(
+        taskContracts,
+        eq(harnessPlans.taskContractId, taskContracts.id)
+      )
+      .where(eq(taskContracts.projectId, projectId))
+      .orderBy(desc(feedbackDeltas.createdAt))
+      .limit(limit);
+
+    return rows.map((row) => mapFeedbackDelta(row.feedbackDelta));
   }
 
   async getHarnessRunByExecutionRunId(

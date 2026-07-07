@@ -95,7 +95,10 @@ export interface DatabaseRuntime {
     | "createEvidenceBundle"
     | "createReviewAssessment"
     | "createFeedbackDelta"
-  >;
+  > & Partial<Pick<
+    HarnessRunRepository,
+    "listFeedbackDeltasForProject"
+  >>;
   sourceRepository: Pick<
     SourceRepository,
     | "createSourceArtifact"
@@ -524,6 +527,16 @@ const createDatabaseRuntimeForClient = async (
     listSourceRejectionsForClaim: (...args) =>
       sourceRepository.listSourceRejectionsForClaim(...args)
   };
+  const readbackHarnessRunRepository: DatabaseRuntime["harnessRunRepository"] = {
+    createExecutionRun: (...args) => harnessRunRepository.createExecutionRun(...args),
+    getHarnessRunByExecutionRunId: (...args) =>
+      harnessRunRepository.getHarnessRunByExecutionRunId(...args),
+    createEvidenceBundle: (...args) => harnessRunRepository.createEvidenceBundle(...args),
+    createReviewAssessment: (...args) => harnessRunRepository.createReviewAssessment(...args),
+    createFeedbackDelta: (...args) => harnessRunRepository.createFeedbackDelta(...args),
+    listFeedbackDeltasForProject: (...args) =>
+      harnessRunRepository.listFeedbackDeltasForProject(...args)
+  };
 
   return {
     workspaceId: runtimeProject.project.workspaceId,
@@ -539,7 +552,7 @@ const createDatabaseRuntimeForClient = async (
       now: input.now,
       createId: input.createId
     },
-    harnessRunRepository,
+    harnessRunRepository: readbackHarnessRunRepository,
     sourceRepository: sourceSearchSourceRepository,
     retrievalRepository: sourceSearchRetrievalRepository,
     memoryRepository,
