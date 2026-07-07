@@ -16,7 +16,7 @@ import {
   projectKernels,
   projects,
   repoInstallations,
-  workerJobs,
+  workerJobs as maintenanceQueueTable,
   workerJobStatus
 } from "@krn/db/schema";
 import {
@@ -178,7 +178,7 @@ const workerRepositoryMethods = [
 ] as const;
 
 const workerJobSchemaPresent = (): boolean =>
-  workerJobs !== undefined &&
+  maintenanceQueueTable !== undefined &&
   outboxEvents !== undefined &&
   workerJobStatus.enumValues.includes("skipped");
 
@@ -187,16 +187,16 @@ const workerJobRepositoryPresent = (): boolean =>
     hasFunction(DrizzleWorkerJobRepository.prototype[methodName])
   );
 
-export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
+export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const dependencyText = await readDependencyText(repoRoot);
   const schemaPresent = workerJobSchemaPresent();
   const repositoryPresent = workerJobRepositoryPresent();
   const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
-  const workerJobSmokeStatus = readScriptStatus(
+  const maintenanceQueueSmokeStatus = readScriptStatus(
     packageJson,
-    "db:smoke:worker-jobs",
-    "krn db smoke worker-jobs"
+    "db:smoke:maintenance-queue",
+    "krn db smoke maintenance-queue"
   );
   const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
     repoRoot
@@ -204,22 +204,22 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
 
   return [
     {
-      label: "Worker job schema",
+      label: "Maintenance queue schema",
       status: schemaPresent ? "present" : "missing",
       outcome: schemaPresent ? "present" : "missing",
       severity: passOrWarning(schemaPresent)
     },
     {
-      label: "Worker job repository",
+      label: "Maintenance queue repository",
       status: repositoryPresent ? "present" : "missing",
       outcome: repositoryPresent ? "present" : "missing",
       severity: passOrWarning(repositoryPresent)
     },
     {
-      label: "Worker job smoke",
-      status: workerJobSmokeStatus,
-      outcome: availableOutcome(workerJobSmokeStatus),
-      severity: passOrWarning(workerJobSmokeStatus.startsWith("available"))
+      label: "Maintenance queue smoke",
+      status: maintenanceQueueSmokeStatus,
+      outcome: availableOutcome(maintenanceQueueSmokeStatus),
+      severity: passOrWarning(maintenanceQueueSmokeStatus.startsWith("available"))
     },
     {
       label: "Redis/Kafka queue",

@@ -14,9 +14,9 @@ import {
 import type {
   EnqueueMaintenanceJobRequest,
   EnqueueMaintenanceJobResult,
+  MaintenanceQueueRecord,
   MaintenanceJob,
-  MaintenanceJobQueueRepository,
-  WorkerJobRecord
+  MaintenanceJobQueueRepository
 } from "../index.js";
 
 const isoNow = "2026-06-21T17:30:00.000Z";
@@ -29,8 +29,8 @@ class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
   ): Promise<EnqueueMaintenanceJobResult<TType>> {
     this.requests.push(request);
 
-    const workerJob = {
-      id: "worker-job-1",
+    const queueRecord = {
+      id: "maintenance-queue-1",
       jobType: request.job.jobType,
       status: "queued",
       payload: request.job.payload,
@@ -39,7 +39,7 @@ class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
       runAfter: request.runAfter ?? isoNow,
       createdAt: isoNow,
       updatedAt: isoNow
-    } as WorkerJobRecord<TType>;
+    } as MaintenanceQueueRecord<TType>;
 
     const outboxEvent = {
       id: "outbox-event-1",
@@ -47,7 +47,7 @@ class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
     } as const;
 
     return {
-      workerJob,
+      queueRecord,
       outboxEvent
     };
   }
@@ -98,7 +98,7 @@ describe("maintenance queue contract", () => {
     expect(parseMaintenanceJobType("expire_stale_memory")).toBe("expire_stale_memory");
   });
 
-  test("enqueues a typed worker job through one atomic queue port", async () => {
+  test("enqueues a typed maintenance queue record through one atomic queue port", async () => {
     const queue = new InMemoryMaintenanceJobQueue();
     const job: MaintenanceJob = {
       jobType: "compact_memory",
@@ -123,8 +123,8 @@ describe("maintenance queue contract", () => {
       }
     ]);
     expect(result).toEqual({
-      workerJob: expect.objectContaining({
-        id: "worker-job-1",
+      queueRecord: expect.objectContaining({
+        id: "maintenance-queue-1",
         jobType: "compact_memory",
         status: "queued"
       }),
@@ -153,8 +153,8 @@ describe("maintenance queue contract", () => {
       })
     );
 
-    const skippedRecord: WorkerJobRecord<"embed_memory_record"> = {
-      id: "worker-job-2",
+    const skippedRecord: MaintenanceQueueRecord<"embed_memory_record"> = {
+      id: "maintenance-queue-2",
       jobType: job.jobType,
       status: "skipped",
       payload: job.payload,

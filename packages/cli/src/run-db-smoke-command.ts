@@ -25,8 +25,8 @@ import {
   runTargetRepoHarnessSmokeCheck
 } from "./internal/smoke/target-repo-harness-smoke.js";
 import {
-  formatWorkerJobSmokeReportLines
-} from "./internal/smoke/worker-job-smoke.js";
+  formatMaintenanceQueueSmokeReportLines
+} from "./internal/smoke/maintenance-queue-smoke.js";
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
@@ -63,7 +63,7 @@ export interface DbSmokeRuntime {
     | "runShow"
     | "maintenanceBoundary"
     | "codexAdapter"
-    | "workerJobs"
+    | "maintenanceQueue"
     | "initConnect"
     | "targetRepoHarness"
     | "decisionCorpusImport"
@@ -161,10 +161,10 @@ const dbSmokeTargetMetadata = {
     skippedLine: "Codex adapter smoke: skipped (database not configured)",
     failureLabel: "Codex adapter smoke"
   },
-  workerJobs: {
-    title: "KRN Worker Job Smoke",
-    skippedLine: "Worker job smoke: skipped (database not configured)",
-    failureLabel: "Worker job smoke"
+  maintenanceQueue: {
+    title: "KRN Maintenance Queue Smoke",
+    skippedLine: "Maintenance queue smoke: skipped (database not configured)",
+    failureLabel: "Maintenance queue smoke"
   },
   initConnect: {
     title: "KRN Target Repo Init-Connect Smoke",
@@ -822,21 +822,21 @@ const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
-const runWorkerJobsSmokeTarget: DbSmokeTargetHandler = async (
+const runMaintenanceQueueSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
 ) => {
   const report = await runWorkerJobSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("worker-job-smoke")
+    smokeId: runtime.createId("maintenance-queue-smoke")
   });
 
   return smokeResultFromCleanup(
     context,
-    "KRN Worker Job Smoke",
+    "KRN Maintenance Queue Smoke",
     report.cleanedUp,
-    formatWorkerJobSmokeReportLines(report)
+    formatMaintenanceQueueSmokeReportLines(report)
   );
 };
 
@@ -946,7 +946,7 @@ const dbSmokeTargetHandlers = {
   runShow: runShowSmokeTarget,
   maintenanceBoundary: runMaintenanceBoundarySmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,
-  workerJobs: runWorkerJobsSmokeTarget,
+  maintenanceQueue: runMaintenanceQueueSmokeTarget,
   initConnect: runInitConnectSmokeTarget,
   targetRepoHarness: runTargetRepoHarnessSmokeTarget,
   decisionCorpusImport: runDecisionCorpusImportSmokeTarget,

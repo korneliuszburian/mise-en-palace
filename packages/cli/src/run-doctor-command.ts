@@ -19,16 +19,16 @@ import {
   deriveBrainStoreReadiness,
   deriveCodexAdapterReadiness,
   deriveHarnessPersistenceReadiness,
+  deriveMaintenanceQueueReadiness,
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness,
-  deriveTargetRepoReadiness,
-  deriveWorkerJobReadiness
+  deriveTargetRepoReadiness
 } from "./doctor-readiness.js";
 import {
+  checkMaintenanceQueue,
   checkCodexAdapter,
-  checkTargetRepoReadiness,
-  checkWorkerJobs
+  checkTargetRepoReadiness
 } from "./doctor-static-checks.js";
 
 export interface DoctorRuntime {
@@ -132,7 +132,7 @@ const doctorFailureRules: readonly DoctorFailureRule[] = [
       "Retrieval substrate readiness",
       "Activation readiness",
       "Codex adapter readiness",
-      "Worker job readiness",
+      "Maintenance queue readiness",
       "Target repo readiness"
     ]),
     matches: statusStartsWith("blocked")
@@ -198,7 +198,7 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     ...codexAdapterChecks,
     ...codexAdapterRuntimeProofChecks
   ];
-  const workerJobChecks = await checkWorkerJobs(repoRoot);
+  const maintenanceQueueChecks = await checkMaintenanceQueue(repoRoot);
   const targetRepoChecks = await checkTargetRepoReadiness(repoRoot);
   const checks = [
     ...postgresChecks,
@@ -221,8 +221,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     ),
     ...codexAdapterReadinessChecks,
     deriveCodexAdapterReadiness(postgresChecks, codexAdapterReadinessChecks),
-    ...workerJobChecks,
-    deriveWorkerJobReadiness(postgresChecks, workerJobChecks),
+    ...maintenanceQueueChecks,
+    deriveMaintenanceQueueReadiness(postgresChecks, maintenanceQueueChecks),
     ...targetRepoChecks,
     deriveTargetRepoReadiness(postgresChecks, targetRepoChecks),
     ...(await checkRepoFiles(repoRoot))

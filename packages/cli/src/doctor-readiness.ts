@@ -641,37 +641,37 @@ export const deriveCodexAdapterReadiness = (
   };
 };
 
-export const deriveWorkerJobReadiness = (
+export const deriveMaintenanceQueueReadiness = (
   postgresChecks: readonly DoctorCheck[],
-  workerJobChecks: readonly DoctorCheck[]
+  maintenanceQueueChecks: readonly DoctorCheck[]
 ): DoctorCheck => {
   const brainStore = readBrainStoreOutcomeFlags(postgresChecks);
   const schemaPresent = hasCheckOutcome(
-    workerJobChecks,
-    "Worker job schema",
+    maintenanceQueueChecks,
+    "Maintenance queue schema",
     "present",
     (status) => status === "present"
   );
   const repositoryPresent = hasCheckOutcome(
-    workerJobChecks,
-    "Worker job repository",
+    maintenanceQueueChecks,
+    "Maintenance queue repository",
     "present",
     (status) => status === "present"
   );
   const smokeAvailable = hasCheckOutcome(
-    workerJobChecks,
-    "Worker job smoke",
+    maintenanceQueueChecks,
+    "Maintenance queue smoke",
     "available",
     (status) => status?.startsWith("available") === true
   );
   const redisKafkaPresent = hasCheckOutcome(
-    workerJobChecks,
+    maintenanceQueueChecks,
     "Redis/Kafka queue",
     "present",
     (status) => status === "present"
   );
   const daemonPresent = hasCheckOutcome(
-    workerJobChecks,
+    maintenanceQueueChecks,
     "Broad worker daemon",
     "present",
     (status) => status === "present"
@@ -679,55 +679,55 @@ export const deriveWorkerJobReadiness = (
 
   if (redisKafkaPresent || daemonPresent) {
     return {
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "blocked (forbidden maintenance runtime present)"
     };
   }
 
   if (!schemaPresent) {
     return {
-      label: "Worker job readiness",
-      status: "incomplete (worker job schema missing)"
+      label: "Maintenance queue readiness",
+      status: "incomplete (maintenance queue schema missing)"
     };
   }
 
   if (!repositoryPresent) {
     return {
-      label: "Worker job readiness",
-      status: "incomplete (worker job repository missing)"
+      label: "Maintenance queue readiness",
+      status: "incomplete (maintenance queue repository missing)"
     };
   }
 
   if (!smokeAvailable) {
     return {
-      label: "Worker job readiness",
-      status: "incomplete (worker job smoke command missing)"
+      label: "Maintenance queue readiness",
+      status: "incomplete (maintenance queue smoke command missing)"
     };
   }
 
   if (brainStore.postgresNotConfigured) {
     return {
-      label: "Worker job readiness",
-      status: "preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
+      label: "Maintenance queue readiness",
+      status: "preview only (set KRN_DATABASE_URL and run maintenance queue smoke for proof)"
     };
   }
 
   if (brainStore.postgresUnreachable) {
     return {
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "blocked (Postgres unreachable)"
     };
   }
 
   if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "blocked (brain store not ready)"
     };
   }
 
   return {
-    label: "Worker job readiness",
+    label: "Maintenance queue readiness",
     status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
   };
 };

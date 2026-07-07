@@ -2,15 +2,17 @@ import type {
   MaintenanceJob,
   MaintenanceJobPayloadByType,
   MaintenanceJobType,
-  WorkerJobStatus,
   IsoTimestamp
 } from "@krn/core";
+import type {
+  MaintenanceQueueStatus
+} from "./job-types.js";
 
-export type WorkerJobRecord<TType extends MaintenanceJobType = MaintenanceJobType> = {
+export type MaintenanceQueueRecord<TType extends MaintenanceJobType = MaintenanceJobType> = {
   [K in TType]: {
     id: string;
     jobType: K;
-    status: WorkerJobStatus;
+    status: MaintenanceQueueStatus;
     payload: MaintenanceJobPayloadByType[K];
     attempts: number;
     maxAttempts: number;
@@ -23,7 +25,7 @@ export type WorkerJobRecord<TType extends MaintenanceJobType = MaintenanceJobTyp
   };
 }[TType];
 
-export interface WorkerOutboxEventReceipt {
+export interface MaintenanceQueueOutboxReceipt {
   id: string;
   topic: "worker_job.queued";
 }
@@ -37,8 +39,8 @@ export interface EnqueueMaintenanceJobRequest<
 }
 
 export interface EnqueueMaintenanceJobResult<TType extends MaintenanceJobType = MaintenanceJobType> {
-  workerJob: WorkerJobRecord<TType>;
-  outboxEvent: WorkerOutboxEventReceipt;
+  queueRecord: MaintenanceQueueRecord<TType>;
+  outboxEvent: MaintenanceQueueOutboxReceipt;
 }
 
 export interface MaintenanceJobQueueRepository {

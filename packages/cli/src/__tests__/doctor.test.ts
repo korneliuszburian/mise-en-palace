@@ -7,8 +7,8 @@ import {
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness,
-  deriveTargetRepoReadiness,
-  deriveWorkerJobReadiness
+  deriveMaintenanceQueueReadiness,
+  deriveTargetRepoReadiness
 } from "../doctor-readiness.js";
 import { runCli } from "../run-cli.js";
 
@@ -80,13 +80,15 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Codex adapter readiness: preview only (set KRN_DATABASE_URL and run codex adapter smoke for proof)"
     );
-    expect(result.stdout).toContain("Worker job schema: present");
-    expect(result.stdout).toContain("Worker job repository: present");
-    expect(result.stdout).toContain("Worker job smoke: available (pnpm db:smoke:worker-jobs)");
+    expect(result.stdout).toContain("Maintenance queue schema: present");
+    expect(result.stdout).toContain("Maintenance queue repository: present");
+    expect(result.stdout).toContain(
+      "Maintenance queue smoke: available (pnpm db:smoke:maintenance-queue)"
+    );
     expect(result.stdout).toContain("Redis/Kafka queue: absent");
     expect(result.stdout).toContain("Broad worker daemon: absent");
     expect(result.stdout).toContain(
-      "Worker job readiness: preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
+      "Maintenance queue readiness: preview only (set KRN_DATABASE_URL and run maintenance queue smoke for proof)"
     );
     expect(result.stdout).toContain(
       "Target repo init command: available (krn init --connect --repo <path> --persist)"
@@ -367,35 +369,35 @@ describe("runCli", () => {
     });
   });
 
-  it("distinguishes doctor worker job readiness blockers", () => {
+  it("distinguishes doctor maintenance queue readiness blockers", () => {
     const postgresReady = [
       { label: "Postgres config", status: "configured and reachable" },
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (7/7 applied)" }
     ];
-    const workerJobReady = [
-      { label: "Worker job schema", status: "present" },
-      { label: "Worker job repository", status: "present" },
-      { label: "Worker job smoke", status: "available (pnpm db:smoke:worker-jobs)" },
+    const maintenanceQueueReady = [
+      { label: "Maintenance queue schema", status: "present" },
+      { label: "Maintenance queue repository", status: "present" },
+      { label: "Maintenance queue smoke", status: "available (pnpm db:smoke:maintenance-queue)" },
       { label: "Redis/Kafka queue", status: "absent" },
       { label: "Broad worker daemon", status: "absent" }
     ];
 
     expect(
-      deriveWorkerJobReadiness(postgresReady, workerJobReady)
+      deriveMaintenanceQueueReadiness(postgresReady, maintenanceQueueReady)
     ).toEqual({
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
     });
 
     expect(
-      deriveWorkerJobReadiness(postgresReady, [
-        ...workerJobReady.slice(0, 3),
+      deriveMaintenanceQueueReadiness(postgresReady, [
+        ...maintenanceQueueReady.slice(0, 3),
         { label: "Redis/Kafka queue", status: "present" },
         { label: "Broad worker daemon", status: "absent" }
       ])
     ).toEqual({
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "blocked (forbidden maintenance runtime present)"
     });
   });

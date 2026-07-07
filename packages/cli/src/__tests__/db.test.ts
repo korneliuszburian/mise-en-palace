@@ -361,7 +361,8 @@ describe("runCli", () => {
     );
   });
 
-  it("reports worker job smoke missing configuration", async () => {    const result = await runCli(["db", "smoke", "worker-jobs"], {
+  it("reports maintenance queue smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "maintenance-queue"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -369,8 +370,8 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Worker Job Smoke");
+    expect(result.stdout).toContain("KRN Maintenance Queue Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
-    expect(result.stdout).toContain("Worker job smoke: skipped (database not configured)");
+    expect(result.stdout).toContain("Maintenance queue smoke: skipped (database not configured)");
   });
 });

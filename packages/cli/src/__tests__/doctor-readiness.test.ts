@@ -13,11 +13,11 @@ import {
   deriveBrainStoreReadiness,
   deriveCodexAdapterReadiness,
   deriveHarnessPersistenceReadiness,
+  deriveMaintenanceQueueReadiness,
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness,
-  deriveTargetRepoReadiness,
-  deriveWorkerJobReadiness
+  deriveTargetRepoReadiness
 } from "../doctor-readiness.js";
 import type {
   DoctorCheck
@@ -53,7 +53,7 @@ describe("doctorReadiness", () => {
     expect(deriveRetrievalSubstrateReadiness).toEqual(expect.any(Function));
     expect(deriveActivationReadiness).toEqual(expect.any(Function));
     expect(deriveCodexAdapterReadiness).toEqual(expect.any(Function));
-    expect(deriveWorkerJobReadiness).toEqual(expect.any(Function));
+    expect(deriveMaintenanceQueueReadiness).toEqual(expect.any(Function));
     expect(deriveTargetRepoReadiness).toEqual(expect.any(Function));
   });
 
@@ -148,22 +148,22 @@ describe("doctorReadiness", () => {
     });
   });
 
-  it("uses typed worker job outcomes instead of display wording", () => {
-    const workerJobChecks: DoctorCheck[] = [
+  it("uses typed maintenance queue outcomes instead of display wording", () => {
+    const maintenanceQueueChecks: DoctorCheck[] = [
       {
-        label: "Worker job schema",
+        label: "Maintenance queue schema",
         status: "schema ok after wording change",
         outcome: "present",
         severity: "pass"
       },
       {
-        label: "Worker job repository",
+        label: "Maintenance queue repository",
         status: "repository ok after wording change",
         outcome: "present",
         severity: "pass"
       },
       {
-        label: "Worker job smoke",
+        label: "Maintenance queue smoke",
         status: "smoke command ok after wording change",
         outcome: "available",
         severity: "pass"
@@ -182,14 +182,14 @@ describe("doctorReadiness", () => {
       }
     ];
 
-    expect(deriveWorkerJobReadiness(postgresReadyTyped, workerJobChecks)).toEqual({
-      label: "Worker job readiness",
+    expect(deriveMaintenanceQueueReadiness(postgresReadyTyped, maintenanceQueueChecks)).toEqual({
+      label: "Maintenance queue readiness",
       status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
     });
     expect(
-      deriveWorkerJobReadiness(
+      deriveMaintenanceQueueReadiness(
         postgresReadyTyped,
-        workerJobChecks.map((check) =>
+        maintenanceQueueChecks.map((check) =>
           check.label === "Redis/Kafka queue"
             ? {
                 label: "Redis/Kafka queue",
@@ -201,7 +201,7 @@ describe("doctorReadiness", () => {
         )
       )
     ).toEqual({
-      label: "Worker job readiness",
+      label: "Maintenance queue readiness",
       status: "blocked (forbidden maintenance runtime present)"
     });
   });

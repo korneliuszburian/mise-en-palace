@@ -10,14 +10,14 @@ import {
 
 import {
   checkCodexAdapter,
-  checkTargetRepoReadiness,
-  checkWorkerJobs
+  checkMaintenanceQueue,
+  checkTargetRepoReadiness
 } from "../doctor-static-checks.js";
 
 describe("doctorStaticChecks", () => {
   it("exports focused static doctor checks", () => {
     expect(checkCodexAdapter).toEqual(expect.any(Function));
-    expect(checkWorkerJobs).toEqual(expect.any(Function));
+    expect(checkMaintenanceQueue).toEqual(expect.any(Function));
     expect(checkTargetRepoReadiness).toEqual(expect.any(Function));
   });
 
@@ -25,7 +25,7 @@ describe("doctorStaticChecks", () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const checks = [
       ...await checkCodexAdapter(repoRoot),
-      ...await checkWorkerJobs(repoRoot),
+      ...await checkMaintenanceQueue(repoRoot),
       ...await checkTargetRepoReadiness(repoRoot)
     ];
     const typedLabels = new Set([
@@ -33,9 +33,9 @@ describe("doctorStaticChecks", () => {
       "Execution brief smoke",
       "Codex execution runner",
       "KRN MCP server",
-      "Worker job schema",
-      "Worker job repository",
-      "Worker job smoke",
+      "Maintenance queue schema",
+      "Maintenance queue repository",
+      "Maintenance queue smoke",
       "Redis/Kafka queue",
       "Broad worker daemon",
       "Target repo init command",
