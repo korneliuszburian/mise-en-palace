@@ -187,7 +187,28 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
-    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes");
+    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
+  });
+
+  it("explains the store-backed default DB requirement without file sources", async () => {
+    const result = await runCli([
+      "brain",
+      "knowledge",
+      "--text",
+      "unknown-first"
+    ], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn brain knowledge store-backed readback"
+    );
+    expect(result.stderr).toContain("No file source defaults to the store path");
+    expect(result.stderr).toContain("--card-file");
   });
 
   it("renders brain knowledge through the preferred CLI readback", async () => {

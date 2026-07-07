@@ -26,7 +26,7 @@ const brainKnowledgeUsage = [
   "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
   "krn brain knowledge --pattern-file retained-pattern.json [--text unknown-first]",
   "krn brain knowledge --catalog-file retained-pattern-catalog.json [--text unknown-first]",
-  "  note: no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes; file options are explicit legacy fixture/seed previews",
+  "  note: no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
