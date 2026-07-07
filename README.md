@@ -128,6 +128,10 @@ pnpm db:smoke:brain-loop
 git diff --check
 ```
 
+For a non-blocking whole-repo hygiene snapshot, run `pnpm quality:fallow:report`;
+it writes reports under `.local-lab/fallow/` and does not replace the fast CI
+gate.
+
 Do not claim DB runtime truth unless DB commands were run in the current
 environment.
 
