@@ -1,9 +1,10 @@
 # Notes-Baseline Eval Design (yb2n)
 
-Status: implemented make-or-break falsifier. The runner, fixture, and tests are
-`packages/cli/src/runNotesBaselineEval.ts`,
+Status: implemented make-or-break falsifier. The consolidated runner, fixture,
+and tests are
+`packages/cli/src/internal/eval/run-decision-packet-eval.ts`,
 `tests/fixtures/notes-baseline/decision-packet-vs-notes.json`, and
-`packages/cli/src/__tests__/notesBaselineEval.test.ts`.
+`packages/cli/src/__tests__/decision-packet-eval.test.ts`.
 
 ## The Subtle Question This Eval Must Answer
 
@@ -74,8 +75,9 @@ packet, that an operator would pay, or broad advantage across arbitrary repos
 
 ## Resolved Build Decisions
 
-- Runner: sibling runner (`runNotesBaselineEval`) so the notes-corpus and
-  scoring do not entangle the memory-eval fixture.
+- Runner: consolidated decision-packet runner (`runDecisionPacketEval`) so the
+  notes-corpus scoring stays with the packet falsifier and does not create a
+  parallel eval lane.
 - Corpus: `tests/fixtures/notes-baseline/decision-packet-vs-notes.json`.
 - Runtime: deterministic in-memory fixture, not live DB. The live-DB advantage
   remains covered by `db:smoke:real-recall-advantage`.
