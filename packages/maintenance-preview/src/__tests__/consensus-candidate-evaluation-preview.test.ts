@@ -125,6 +125,35 @@ describe("consensus candidate evaluation preview", () => {
     );
   });
 
+  test("deduplicates evidence refs in stable first-seen order", () => {
+    const result = buildConsensusCandidateEvaluationPreview({
+      generatedAt,
+      candidates: [{
+        candidateId: "candidate-duplicate-evidence",
+        candidateKind: "source_decision_candidate",
+        summary: "Evaluate candidate with repeated evidence refs.",
+        applicationGuidance: "Review only distinct evidence refs.",
+        evidenceRefs: [support.evidenceRef, "docs/reviews/manual-check.md"],
+        evidence: [
+          support,
+          {
+            ...dissent,
+            evidenceRef: support.evidenceRef
+          },
+          {
+            ...risk,
+            evidenceRef: "docs/reviews/manual-check.md"
+          }
+        ]
+      }]
+    });
+
+    expect(result.evaluations[0]?.evidenceRefs).toEqual([
+      support.evidenceRef,
+      "docs/reviews/manual-check.md"
+    ]);
+  });
+
   test("requires supporting evidence before a candidate is review-ready", () => {
     const result = buildConsensusCandidateEvaluationPreview({
       generatedAt,

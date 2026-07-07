@@ -124,6 +124,9 @@ const defaultApplicationGuidance =
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
+const uniqueStrings = (values: readonly string[]): readonly string[] =>
+  [...new Set(values)];
+
 const applicationGuidanceFor = (
   input: ConsensusCandidateEvaluationInput
 ): string => {
@@ -199,12 +202,12 @@ const buildEvaluation = (
   const dissentEvidenceRefs = evidenceRefsByPosition(input.evidence, "dissent");
   const riskEvidenceRefs = evidenceRefsByPosition(input.evidence, "risk");
   const applicationGuidance = applicationGuidanceFor(input);
-  const evidenceRefs = [
+  const evidenceRefs = uniqueStrings([
     ...(input.evidenceRefs ?? []),
     ...supportEvidenceRefs,
     ...dissentEvidenceRefs,
     ...riskEvidenceRefs
-  ].filter(hasText);
+  ].filter(hasText));
   const reviewability = assessCandidateReviewability({
     summary: input.summary,
     ...(input.body === undefined ? {} : { body: input.body }),
