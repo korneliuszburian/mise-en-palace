@@ -69,7 +69,7 @@ QG-04 must audit large files and decide whether they are justified or should be 
 KRN is a monorepo, not a monolith.
 
 - `packages/core` owns pure domain types/helpers.
-- `packages/schema` owns IO validation.
+- package-local parsers own IO validation at their adapter boundary.
 - `packages/harness` owns orchestration, selection, activation, audit, and gates.
 - `packages/db` owns persistence.
 - `packages/cli` owns terminal/env/filesystem adapters.

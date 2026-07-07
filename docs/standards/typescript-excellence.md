@@ -116,8 +116,7 @@ Production code must not contain:
 - `@ts-ignore`;
 - undocumented `@ts-expect-error`;
 - unchecked `JSON.parse`;
-- global `ts-reset` in `packages/core`, `packages/schema`, or public package
-  APIs.
+- global `ts-reset` in `packages/core` or public package APIs.
 
 `@ts-expect-error` is only acceptable when the line itself explains the
 expected compiler failure. It is normally a test-only tool.
@@ -132,11 +131,11 @@ expected compiler failure. It is normally a test-only tool.
 - no global `ts-reset`;
 - no `any`.
 
-`packages/schema`:
+Package-local IO parsers:
 
-- owns external IO validation;
-- returns typed values after parsing unknown input;
-- must not import DB/Drizzle adapters.
+- own validation at external boundaries;
+- return typed values after parsing unknown input;
+- must not import unrelated runtime adapters.
 
 `packages/db`:
 

@@ -67,8 +67,8 @@ KRN implication:
 - External input boundaries must parse or narrow before domain use.
 - Status/provenance values crossing IO boundaries should use narrow unions when
   the accepted values are finite.
-- Global `ts-reset` remains rejected for `packages/core`, `packages/schema`, and
-  public APIs unless a future ADR proves the boundary is application-only.
+- Global `ts-reset` remains rejected for `packages/core` and public APIs unless
+  a future ADR proves the boundary is application-only.
 
 Decision: adopt for external TypeScript boundary work.
 

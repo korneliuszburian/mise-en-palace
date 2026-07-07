@@ -240,7 +240,7 @@ B-00 changes no package source.
 B-01 may touch:
 
 - `packages/core/src/source.ts`;
-- `packages/schema/src/sourceClaim.ts` or related source schemas;
+- package-local source claim parsers or related source IO schemas;
 - `packages/db/src/schema/sources.ts`;
 - DB migration metadata;
 - source repository ports and Drizzle implementation;
