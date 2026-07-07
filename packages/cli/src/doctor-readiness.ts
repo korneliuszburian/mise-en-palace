@@ -567,12 +567,6 @@ export const deriveCodexAdapterReadiness = (
     "available",
     (status) => status?.startsWith("available") === true
   );
-  const hookProjectionPresent = hasCheckOutcome(
-    codexAdapterChecks,
-    "Hook expectation projection",
-    "present",
-    (status) => status === "present"
-  );
   const codexRunnerPresent = hasCheckOutcome(
     codexAdapterChecks,
     "Codex execution runner",
@@ -603,13 +597,6 @@ export const deriveCodexAdapterReadiness = (
     return {
       label: "Codex adapter readiness",
       status: "incomplete (Codex adapter renderer missing)"
-    };
-  }
-
-  if (!hookProjectionPresent) {
-    return {
-      label: "Codex adapter readiness",
-      status: "incomplete (hook expectation projection missing)"
     };
   }
 
@@ -650,7 +637,7 @@ export const deriveCodexAdapterReadiness = (
 
   return {
     label: "Codex adapter readiness",
-    status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
+    status: "ready (renderer, runtime proof, and forbidden surfaces checked)"
   };
 };
 

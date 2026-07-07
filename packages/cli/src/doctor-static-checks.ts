@@ -1,7 +1,6 @@
 import path from "node:path";
 
 import {
-  createCodexHookExpectationProjection,
   createExecutionBrief,
   renderExecutionBriefText
 } from "@krn/codex-adapter";
@@ -99,7 +98,6 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
     "db:smoke:codex-adapter",
     "krn db smoke codex-adapter"
   );
-  const hookProjectionPresent = hasFunction(createCodexHookExpectationProjection);
   const codexRunnerPresent = await hasCodexRunner(repoRoot);
   const mcpServerPresent = await hasMcpServer(repoRoot);
 
@@ -115,12 +113,6 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
       status: executionBriefSmokeStatus,
       outcome: availableOutcome(executionBriefSmokeStatus),
       severity: passOrWarning(executionBriefSmokeStatus.startsWith("available"))
-    },
-    {
-      label: "Hook expectation projection",
-      status: hookProjectionPresent ? "present" : "missing",
-      outcome: hookProjectionPresent ? "present" : "missing",
-      severity: passOrWarning(hookProjectionPresent)
     },
     {
       label: "Codex execution runner",

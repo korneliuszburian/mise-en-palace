@@ -311,14 +311,14 @@ export const runCodexAdapterSmokeCheck = async (
       claim:
         "Codex adapter smoke must render a bounded execution brief from persisted harness state.",
       mechanism:
-        "A persisted run with activated source, memory, exclusions, evidence, and hook expectations is read back and rendered by the adapter.",
+        "A persisted run with activated source, memory, exclusions, evidence, and proof boundaries is read back and rendered by the adapter.",
       krnImplication:
         "M26 Codex adapter readiness can be proven through a self-cleaning DB smoke command.",
       doesNotProve: "This does not prove Codex executed the work.",
       trustTier: "project-decision",
       supportType: "implementation-boundary",
       consumer: "M26 Codex adapter smoke",
-      falsifier: "The smoke command cannot render objective, context, evidence, or hook expectations.",
+      falsifier: "The smoke command cannot render objective, context, evidence, or proof boundaries.",
       revisitWhen: "Codex adapter output contract changes.",
       status: "proposed",
       metadata: {
@@ -345,7 +345,7 @@ export const runCodexAdapterSmokeCheck = async (
       status: "active",
       summary: "Codex adapter smoke must stay bounded",
       body:
-        "The smoke path should render objective, non-goals, explicit exclusions, evidence contract, source and memory references, and hook expectations without invoking Codex.",
+        "The smoke path should render objective, non-goals, explicit exclusions, evidence contract, source and memory references, and proof boundaries without invoking Codex.",
       owner: "kernel",
       confidence: 96,
       applicationGuidance: "Use when proving M26 Codex adapter smoke behavior.",
@@ -392,7 +392,7 @@ export const runCodexAdapterSmokeCheck = async (
         taskContract: {
           title: "Render Codex adapter smoke brief",
           objective:
-            "Render a persisted Codex execution brief with bounded context, explicit exclusions, evidence contract, and hook expectations.",
+            "Render a persisted Codex execution brief with bounded context, explicit exclusions, evidence contract, and proof boundaries.",
           constraints: [
             "no Codex invocation",
             "no MCP server",
@@ -409,7 +409,7 @@ export const runCodexAdapterSmokeCheck = async (
             "explicit exclusions rendered",
             "evidence contract rendered",
             "source and memory refs bounded",
-            "hook expectations rendered",
+            "proof boundaries rendered",
             "cleanup count zero"
           ],
           metadata: {

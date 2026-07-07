@@ -11,38 +11,6 @@ import type {
 
 export type CodexAdapterPlanStatus = "draft" | "ready" | "superseded";
 
-export const codexHookPhases = [
-  "SessionStart",
-  "PreToolUse",
-  "PostToolUse",
-  "PreCompact",
-  "Stop"
-] as const;
-
-export type CodexHookPhase = (typeof codexHookPhases)[number];
-
-export type CodexHookAction =
-  | "inject_pointer"
-  | "warn_or_deny"
-  | "record_signal"
-  | "require_handoff"
-  | "suggest_evidence_capture";
-
-export interface CodexHookExpectation {
-  phase: CodexHookPhase;
-  action: CodexHookAction;
-  reason: string;
-  required: boolean;
-  appliesTo?: string[];
-}
-
-export interface CodexHookExpectationProjection {
-  title: string;
-  expectations: CodexHookExpectation[];
-  rules: string[];
-  doesNotDo: string[];
-}
-
 export type CodexReferenceStatus = "active" | "planned" | "superseded";
 
 export const executionBriefFormatVersion = "krn.executionBrief.v1" as const;

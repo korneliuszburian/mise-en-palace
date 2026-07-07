@@ -87,12 +87,6 @@ describe("doctorReadiness", () => {
         severity: "pass"
       },
       {
-        label: "Hook expectation projection",
-        status: "hook projection ok after wording change",
-        outcome: "present",
-        severity: "pass"
-      },
-      {
         label: "Codex execution runner",
         status: "runner forbidden surface absent after wording change",
         outcome: "absent",
@@ -114,7 +108,7 @@ describe("doctorReadiness", () => {
 
     expect(deriveCodexAdapterReadiness(postgresReadyTyped, codexAdapterChecks)).toEqual({
       label: "Codex adapter readiness",
-      status: "ready (renderer, hook projection, runtime proof, and forbidden surfaces checked)"
+      status: "ready (renderer, runtime proof, and forbidden surfaces checked)"
     });
     expect(
       deriveCodexAdapterReadiness(

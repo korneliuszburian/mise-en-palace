@@ -31,7 +31,6 @@ describe("doctorStaticChecks", () => {
     const typedLabels = new Set([
       "Codex adapter renderer",
       "Execution brief smoke",
-      "Hook expectation projection",
       "Codex execution runner",
       "KRN MCP server",
       "Worker job schema",

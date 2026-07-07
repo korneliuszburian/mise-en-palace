@@ -75,7 +75,6 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Execution brief smoke: available (pnpm db:smoke:codex-adapter)"
     );
-    expect(result.stdout).toContain("Hook expectation projection: present");
     expect(result.stdout).toContain("Codex execution runner: absent");
     expect(result.stdout).toContain("KRN MCP server: absent");
     expect(result.stdout).toContain(

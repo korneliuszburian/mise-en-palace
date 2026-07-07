@@ -15,7 +15,7 @@ describe("codexAdapterSmoke", () => {
         "rendered-contract",
         "bounded-selected-context",
         "stale-memory-exclusion",
-        "hook-phases",
+        "proof-boundaries",
         "no-codex-invocation"
       ],
       codexInvocationCount: 0,
@@ -27,7 +27,7 @@ describe("codexAdapterSmoke", () => {
     expect(output).toContain("Execution run: execution-run-1");
     expect(output).toContain("Context assembly: context-assembly-1");
     expect(output).toContain(
-      "Boundary checks: persisted-readback, rendered-contract, bounded-selected-context, stale-memory-exclusion, hook-phases, no-codex-invocation"
+      "Boundary checks: persisted-readback, rendered-contract, bounded-selected-context, stale-memory-exclusion, proof-boundaries, no-codex-invocation"
     );
     expect(output).toContain("Codex invocations: 0");
     expect(output).toContain("Cleanup remaining marker count: 0");
