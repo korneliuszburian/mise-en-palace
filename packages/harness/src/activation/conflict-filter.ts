@@ -15,6 +15,35 @@ export interface ConflictDetectionResult {
   conflictSets: readonly ConflictSet[];
 }
 
+const antiMemoryPrecedence = (
+  left: AntiMemoryRecord,
+  right: AntiMemoryRecord
+): number => {
+  if (left.confidence !== right.confidence) {
+    return left.confidence - right.confidence;
+  }
+
+  const updatedAtOrder = left.updatedAt.localeCompare(right.updatedAt);
+  if (updatedAtOrder !== 0) {
+    return updatedAtOrder;
+  }
+
+  const createdAtOrder = left.createdAt.localeCompare(right.createdAt);
+  if (createdAtOrder !== 0) {
+    return createdAtOrder;
+  }
+
+  return right.id.localeCompare(left.id);
+};
+
+const strongerAntiMemory = (
+  left: AntiMemoryRecord | undefined,
+  right: AntiMemoryRecord
+): AntiMemoryRecord =>
+  left === undefined || antiMemoryPrecedence(right, left) > 0
+    ? right
+    : left;
+
 const sourceClaimIdsBlockedByAntiMemory = (
   antiMemoryRecords: readonly AntiMemoryRecord[]
 ): Map<string, AntiMemoryRecord> => {
@@ -22,7 +51,10 @@ const sourceClaimIdsBlockedByAntiMemory = (
 
   for (const antiMemory of antiMemoryRecords) {
     for (const sourceClaimId of antiMemory.invalidatedBySourceClaimIds) {
-      blocked.set(sourceClaimId, antiMemory);
+      blocked.set(
+        sourceClaimId,
+        strongerAntiMemory(blocked.get(sourceClaimId), antiMemory)
+      );
     }
   }
 

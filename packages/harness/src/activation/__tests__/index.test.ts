@@ -1957,6 +1957,52 @@ describe("activation engine", () => {
     ]));
   });
 
+  it("uses the strongest anti-memory record for repeated source invalidations", () => {
+    const query = buildSourceQuery(task);
+    const ranked = rankCandidates(
+      [
+        toSourceClaimCandidate(
+          sourceClaim({
+            id: "source-claim-repeat"
+          })
+        )
+      ],
+      query
+    );
+
+    const lowerConfidence = antiMemoryRecord({
+      id: "anti-low",
+      confidence: 20,
+      invalidatedBySourceClaimIds: ["source-claim-repeat"],
+      updatedAt: "2026-06-23T00:00:00.000Z"
+    });
+    const higherConfidence = antiMemoryRecord({
+      id: "anti-high",
+      confidence: 95,
+      invalidatedBySourceClaimIds: ["source-claim-repeat"],
+      updatedAt: "2026-06-22T00:00:00.000Z"
+    });
+
+    for (const antiMemoryRecords of [
+      [lowerConfidence, higherConfidence],
+      [higherConfidence, lowerConfidence]
+    ]) {
+      const result = detectConflicts(ranked, antiMemoryRecords);
+
+      expect(result.candidates[0]).toMatchObject({
+        subjectId: "source-claim-repeat",
+        antiMemoryRecordId: "anti-high",
+        conflictReason: "anti_memory_block",
+        exclusion: expect.objectContaining({ reason: "unsafe" })
+      });
+      expect(result.conflictSets).toEqual([
+        expect.objectContaining({
+          candidateIds: expect.arrayContaining(["source-claim-repeat", "anti-high"])
+        })
+      ]);
+    }
+  });
+
   it("excludes source claims without doesNotProve", () => {
     const query = buildSourceQuery(task);
     const ranked = rankCandidates(
