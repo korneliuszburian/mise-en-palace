@@ -194,6 +194,30 @@
       "doesNotProve": "Does not prove arbitrary frontend framework choice quality or live Codex obedience."
     },
     {
+      "id": "backend-service-standard-packet",
+      "title": "Backend service standard packet",
+      "statement": "For a normal new backend service, use the governed backend service standard: explicit API boundary, strict input validation, environment and persistence assumptions, focused contract tests, DB smoke expectations, and rejected ad hoc server scaffolds before coding.",
+      "status": "current",
+      "taskScopes": ["backend"],
+      "evidenceRef": "KRN_ROADMAP.md:new-project-setup",
+      "sourceClaimId": "source-claim:backend-service-standard-packet",
+      "sourceDecisionEdgeId": "source-decision-edge:backend-service-standard-packet",
+      "falsifier": "A new backend service task receives no current service standard packet, or notes plus grep selects stale server boilerplate without rejected-path readback.",
+      "doesNotProve": "Does not prove arbitrary backend framework choice quality or live Codex obedience."
+    },
+    {
+      "id": "package-library-standard-packet",
+      "title": "Package library standard packet",
+      "statement": "For a normal new workspace package, use the governed package standard: one clear public API, strict TypeScript boundaries, unknown-first external inputs, focused contract tests, typecheck and Fallow verification, and rejected helper or utils package sprawl before coding.",
+      "status": "current",
+      "taskScopes": ["package"],
+      "evidenceRef": "KRN_ROADMAP.md:new-project-setup",
+      "sourceClaimId": "source-claim:package-library-standard-packet",
+      "sourceDecisionEdgeId": "source-decision-edge:package-library-standard-packet",
+      "falsifier": "A new package task receives no current package standard packet, or notes plus grep selects stale utility-package boilerplate without rejected-path readback.",
+      "doesNotProve": "Does not prove arbitrary package API design quality or live Codex obedience."
+    },
+    {
       "id": "markdown-runtime-memory",
       "title": "Markdown runtime memory",
       "statement": "Create MEMORY.md files and use markdown as the active recall system for agent memory.",
@@ -302,6 +326,30 @@
       "sourceClaimId": "source-claim:generic-frontend-starter-default",
       "sourceDecisionEdgeId": "source-decision-edge:generic-frontend-starter-default",
       "falsifier": "The current project standard packet supersedes generic starter advice for normal new frontend setup.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "generic-backend-server-default",
+      "title": "Generic backend server default",
+      "statement": "For a new backend service, copy a generic server scaffold by default without checking current API boundaries, input validation, environment assumptions, persistence assumptions, contract tests, DB smokes, or rejected paths.",
+      "status": "stale",
+      "taskScopes": ["backend"],
+      "evidenceRef": "docs/materials/old-backend-server.md",
+      "sourceClaimId": "source-claim:generic-backend-server-default",
+      "sourceDecisionEdgeId": "source-decision-edge:generic-backend-server-default",
+      "falsifier": "The current backend service standard packet supersedes generic server scaffold advice for normal backend setup.",
+      "doesNotProve": "Historical note only."
+    },
+    {
+      "id": "generic-package-utils-default",
+      "title": "Generic package utils default",
+      "statement": "For a new workspace package, create a generic utils package by default without defining one public API, strict TypeScript boundaries, external input validation, contract tests, verification commands, or rejected sprawl paths.",
+      "status": "stale",
+      "taskScopes": ["package"],
+      "evidenceRef": "docs/materials/old-package-utils.md",
+      "sourceClaimId": "source-claim:generic-package-utils-default",
+      "sourceDecisionEdgeId": "source-decision-edge:generic-package-utils-default",
+      "falsifier": "The current package standard packet supersedes generic utils package advice for normal package setup.",
       "doesNotProve": "Historical note only."
     },
     {
@@ -414,6 +462,30 @@
       "sourceRejectionId": "source-rejection:install-latest-frontend-stack",
       "falsifier": "The task-standard packet names the current approved template and rejected boilerplate paths before coding.",
       "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "copy-random-backend-boilerplate",
+      "title": "Copy random backend boilerplate",
+      "statement": "For a normal new backend service, copy a random server boilerplate and wire routes, env, persistence, and tests opportunistically without applying the governed backend service packet.",
+      "status": "rejected",
+      "taskScopes": ["backend"],
+      "evidenceRef": "docs/rejections/copy-random-backend-boilerplate.md",
+      "sourceClaimId": "source-claim:copy-random-backend-boilerplate",
+      "sourceRejectionId": "source-rejection:copy-random-backend-boilerplate",
+      "falsifier": "The task-standard packet names API boundaries, validation, persistence assumptions, DB smokes, and rejected boilerplate paths before coding.",
+      "doesNotProve": "Rejected path record only."
+    },
+    {
+      "id": "create-generic-utils-package",
+      "title": "Create generic utils package",
+      "statement": "For a normal new workspace package, create a generic helper or utils package with broad exports and opportunistic tests before applying the governed package standard.",
+      "status": "rejected",
+      "taskScopes": ["package"],
+      "evidenceRef": "docs/rejections/create-generic-utils-package.md",
+      "sourceClaimId": "source-claim:create-generic-utils-package",
+      "sourceRejectionId": "source-rejection:create-generic-utils-package",
+      "falsifier": "The task-standard packet names the public API boundary, strict TypeScript input boundary, verification commands, and rejected helper sprawl before coding.",
+      "doesNotProve": "Rejected path record only."
     }
   ],
   "notes": [
@@ -503,6 +575,16 @@
       "text": "Frontend project standard packet. For a normal new frontend app use governed frontend bootstrap approved project template pnpm workspace conventions project UI constraints focused component and smoke tests deployment assumptions rejected boilerplate paths."
     },
     {
+      "id": "note-backend-service-standard-packet",
+      "decisionId": "backend-service-standard-packet",
+      "text": "Backend service standard packet. For a normal new backend service use governed backend service standard explicit API boundary strict input validation environment persistence assumptions focused contract tests DB smoke expectations rejected ad hoc server scaffolds."
+    },
+    {
+      "id": "note-package-library-standard-packet",
+      "decisionId": "package-library-standard-packet",
+      "text": "Package library standard packet. For a normal new workspace package use governed package standard one public API strict TypeScript boundaries unknown first external inputs focused contract tests typecheck Fallow verification rejected helper utils package sprawl."
+    },
+    {
       "id": "note-markdown-runtime-memory",
       "decisionId": "markdown-runtime-memory",
       "text": "Markdown runtime memory. Use MEMORY.md files and markdown as active recall system."
@@ -553,6 +635,16 @@
       "text": "Generic frontend starter default. For a new frontend app use a generic starter copied boilerplate default without checking current project template UI constraints test strategy deployment assumptions rejected paths."
     },
     {
+      "id": "note-generic-backend-server-default",
+      "decisionId": "generic-backend-server-default",
+      "text": "Generic backend server default. For a new backend service copy a generic server scaffold default without checking current API boundaries input validation environment persistence assumptions contract tests DB smokes rejected paths."
+    },
+    {
+      "id": "note-generic-package-utils-default",
+      "decisionId": "generic-package-utils-default",
+      "text": "Generic package utils default. For a new workspace package create a generic utils package default without defining one public API strict TypeScript boundaries external input validation contract tests verification commands rejected sprawl paths."
+    },
+    {
       "id": "note-create-markdown-memory-files",
       "decisionId": "create-markdown-memory-files",
       "text": "Create markdown memory files. Persist agent knowledge by writing markdown memory files."
@@ -601,6 +693,16 @@
       "id": "note-install-latest-frontend-stack",
       "decisionId": "install-latest-frontend-stack",
       "text": "Install latest frontend stack. For a normal new frontend app install latest fashionable framework latest component library latest testing stack copied boilerplate without applying governed frontend bootstrap packet."
+    },
+    {
+      "id": "note-copy-random-backend-boilerplate",
+      "decisionId": "copy-random-backend-boilerplate",
+      "text": "Copy random backend boilerplate. For a normal new backend service copy random server boilerplate routes env persistence tests opportunistically without applying governed backend service packet."
+    },
+    {
+      "id": "note-create-generic-utils-package",
+      "decisionId": "create-generic-utils-package",
+      "text": "Create generic utils package. For a normal new workspace package create a generic helper utils package broad exports opportunistic tests before applying governed package standard."
     }
   ],
   "cases": [
@@ -755,6 +857,38 @@
         }
       ],
       "baselineFailureRationale": "Notes grep matches the current frontend standard and the stale or rejected starter advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
+    },
+    {
+      "id": "new-backend-service-standard-task",
+      "task": "Create a normal new backend service: should Codex use the governed backend service standard explicit API boundary strict input validation environment persistence assumptions contract tests DB smokes and rejected boilerplate paths, or copy a random server scaffold routes env persistence tests opportunistically before coding?",
+      "expectedDecisionId": "backend-service-standard-packet",
+      "staleDecisionIds": ["generic-backend-server-default"],
+      "rejectedDecisionIds": ["copy-random-backend-boilerplate"],
+      "observationPrefixItems": [
+        {
+          "observationId": "observation:new-backend-service-setup",
+          "kind": "operator_intent",
+          "summary": "The operator wants normal backend-service setup memory, not an opportunistic boilerplate copy.",
+          "reason": "Observation scopes the task to current project-standard activation for a new backend service."
+        }
+      ],
+      "baselineFailureRationale": "Notes grep matches the current backend standard and the stale or rejected server scaffold advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
+    },
+    {
+      "id": "new-package-library-standard-task",
+      "task": "Create a normal new workspace package: should Codex use the governed package standard one public API strict TypeScript boundaries unknown first external inputs contract tests typecheck Fallow verification and rejected helper utils sprawl, or create a generic helper package broad exports opportunistic tests before coding?",
+      "expectedDecisionId": "package-library-standard-packet",
+      "staleDecisionIds": ["generic-package-utils-default"],
+      "rejectedDecisionIds": ["create-generic-utils-package"],
+      "observationPrefixItems": [
+        {
+          "observationId": "observation:new-package-library-setup",
+          "kind": "operator_intent",
+          "summary": "The operator wants normal workspace-package setup memory, not generic helper package sprawl.",
+          "reason": "Observation scopes the task to current project-standard activation for a new package."
+        }
+      ],
+      "baselineFailureRationale": "Notes grep matches the current package standard and the stale or rejected utility-package advice; KRN must select the current packet and expose the bad helper paths as non-governing."
     },
     {
       "id": "adapter-non-mutating-boundary-only-task",

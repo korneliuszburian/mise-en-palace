@@ -16,6 +16,7 @@ import {
   loadDecisionPacketEvalFixture
 } from "../decision-packet-fixture.js";
 import {
+  type DecisionPacketEvalResult,
   classifyDecisionPacketForEval,
   runDecisionPacketEval
 } from "../internal/eval/run-decision-packet-eval.js";
@@ -23,6 +24,16 @@ import {
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json", import.meta.url)
 );
+
+interface ProjectStandardCaseExpectation {
+  readonly id: string;
+  readonly expectedDecisionId: string;
+  readonly statement: string;
+  readonly sourceRejectionId: string;
+  readonly staleDecisionId: string;
+  readonly rejectedDecisionId: string;
+  readonly baselineFailureRationale: string;
+}
 
 const loadMutableFixture = (): {
   topK: number;
@@ -34,6 +45,51 @@ const loadMutableFixture = (): {
   decisions: Array<Record<string, unknown>>;
   notes: Array<Record<string, unknown>>;
   cases: Array<Record<string, unknown>>;
+};
+
+const expectProjectStandardCase = (
+  result: DecisionPacketEvalResult,
+  expected: ProjectStandardCaseExpectation
+): void => {
+  expect(result.cases.find((testCase) =>
+    testCase.id === expected.id
+  )).toMatchObject({
+    expectedDecisionId: expected.expectedDecisionId,
+    qualityLabel: "useful",
+    scores: {
+      taskUsefulness: 1,
+      evidenceFidelity: 1,
+      temporalCorrectness: 1,
+      rejectionRecall: 1,
+      nonProofBoundaries: 1,
+      total: 5
+    },
+    notesBaseline: {
+      qualityLabel: "unsafe",
+      topDecisionIds: expect.arrayContaining([
+        expected.expectedDecisionId,
+        expected.staleDecisionId,
+        expected.rejectedDecisionId
+      ]),
+      unsafeDecisionIds: expect.arrayContaining([
+        expected.staleDecisionId,
+        expected.rejectedDecisionId
+      ]),
+      failureRationale: expected.baselineFailureRationale
+    },
+    comparisonOutcome: "krn_win",
+    packet: {
+      governingDecisionIds: expect.arrayContaining([expected.expectedDecisionId]),
+      governingStatements: expect.arrayContaining([expected.statement]),
+      sourceRejectionIds: expect.arrayContaining([expected.sourceRejectionId]),
+      staleDecisionIds: [expected.staleDecisionId],
+      rejectedPathIds: [expected.rejectedDecisionId],
+      brief: {
+        observationPrefixCount: 1
+      },
+      severeStaleAuthorityIds: []
+    }
+  });
 };
 
 describe("runDecisionPacketEval", () => {
@@ -52,22 +108,22 @@ describe("runDecisionPacketEval", () => {
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
-        caseCount: 18,
-        usefulCount: 18,
+        caseCount: 20,
+        usefulCount: 20,
         noisyCount: 0,
         missCount: 0,
         staleAuthorityCount: 0,
         notesUsableCount: 5,
-        notesUnsafeCount: 13,
+        notesUnsafeCount: 15,
         notesMissCount: 0,
-        krnWinCount: 13,
+        krnWinCount: 15,
         notesWinCount: 0,
         tieCount: 5,
-        decisiveComparisonCount: 13,
+        decisiveComparisonCount: 15,
         usefulRate: 1,
         krnWinRate: 1,
         notesWinRate: 0,
-        averageNoiseDecisions: 1.1111,
+        averageNoiseDecisions: 1.1,
         severeStaleAuthorityInclusions: 0
       }
     });
@@ -118,48 +174,45 @@ describe("runDecisionPacketEval", () => {
         severeStaleAuthorityIds: []
       }
     });
-    expect(result.cases.find((testCase) =>
-      testCase.id === "new-frontend-project-standard-task"
-    )).toMatchObject({
-      expectedDecisionId: "frontend-project-standard-packet",
-      qualityLabel: "useful",
-      scores: {
-        taskUsefulness: 1,
-        evidenceFidelity: 1,
-        temporalCorrectness: 1,
-        rejectionRecall: 1,
-        nonProofBoundaries: 1,
-        total: 5
-      },
-      notesBaseline: {
-        qualityLabel: "unsafe",
-        topDecisionIds: expect.arrayContaining([
-          "frontend-project-standard-packet",
-          "generic-frontend-starter-default",
-          "install-latest-frontend-stack"
-        ]),
-        unsafeDecisionIds: expect.arrayContaining([
-          "generic-frontend-starter-default",
-          "install-latest-frontend-stack"
-        ]),
-        failureRationale:
+    const projectStandardCases: readonly ProjectStandardCaseExpectation[] = [
+      {
+        id: "new-frontend-project-standard-task",
+        expectedDecisionId: "frontend-project-standard-packet",
+        statement:
+          "For a normal new frontend app, use the governed frontend bootstrap standard: approved project template, pnpm workspace conventions, project UI constraints, focused component and smoke tests, deployment assumptions, and rejected boilerplate paths before coding.",
+        sourceRejectionId: "source-rejection:install-latest-frontend-stack",
+        staleDecisionId: "generic-frontend-starter-default",
+        rejectedDecisionId: "install-latest-frontend-stack",
+        baselineFailureRationale:
           "Notes grep matches the current frontend standard and the stale or rejected starter advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
       },
-      comparisonOutcome: "krn_win",
-      packet: {
-        governingDecisionIds: expect.arrayContaining(["frontend-project-standard-packet"]),
-        governingStatements: expect.arrayContaining([
-          "For a normal new frontend app, use the governed frontend bootstrap standard: approved project template, pnpm workspace conventions, project UI constraints, focused component and smoke tests, deployment assumptions, and rejected boilerplate paths before coding."
-        ]),
-        sourceRejectionIds: expect.arrayContaining(["source-rejection:install-latest-frontend-stack"]),
-        staleDecisionIds: ["generic-frontend-starter-default"],
-        rejectedPathIds: ["install-latest-frontend-stack"],
-        brief: {
-          observationPrefixCount: 1
-        },
-        severeStaleAuthorityIds: []
+      {
+        id: "new-backend-service-standard-task",
+        expectedDecisionId: "backend-service-standard-packet",
+        statement:
+          "For a normal new backend service, use the governed backend service standard: explicit API boundary, strict input validation, environment and persistence assumptions, focused contract tests, DB smoke expectations, and rejected ad hoc server scaffolds before coding.",
+        sourceRejectionId: "source-rejection:copy-random-backend-boilerplate",
+        staleDecisionId: "generic-backend-server-default",
+        rejectedDecisionId: "copy-random-backend-boilerplate",
+        baselineFailureRationale:
+          "Notes grep matches the current backend standard and the stale or rejected server scaffold advice; KRN must select the current packet and expose the bad boilerplate paths as non-governing."
+      },
+      {
+        id: "new-package-library-standard-task",
+        expectedDecisionId: "package-library-standard-packet",
+        statement:
+          "For a normal new workspace package, use the governed package standard: one clear public API, strict TypeScript boundaries, unknown-first external inputs, focused contract tests, typecheck and Fallow verification, and rejected helper or utils package sprawl before coding.",
+        sourceRejectionId: "source-rejection:create-generic-utils-package",
+        staleDecisionId: "generic-package-utils-default",
+        rejectedDecisionId: "create-generic-utils-package",
+        baselineFailureRationale:
+          "Notes grep matches the current package standard and the stale or rejected utility-package advice; KRN must select the current packet and expose the bad helper paths as non-governing."
       }
-    });
+    ];
+
+    for (const testCase of projectStandardCases) {
+      expectProjectStandardCase(result, testCase);
+    }
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining([
       "live Codex execution or obedience",
       "source truth",
@@ -182,7 +235,7 @@ describe("runDecisionPacketEval", () => {
 
     expect(result.status).toBe("fail");
     expect(result.metrics.usefulCount).toBe(0);
-    expect(result.metrics.noisyCount).toBe(18);
+    expect(result.metrics.noisyCount).toBe(20);
     expect(result.metrics.usefulRate).toBe(0);
     expect(result.cases[0]).toMatchObject({
       qualityLabel: "noisy",

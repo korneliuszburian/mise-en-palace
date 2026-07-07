@@ -171,8 +171,8 @@ const assertFixtureSize = (
     throw new Error("decision-packet fixture must contain at least one note per decision");
   }
 
-  if (fixture.cases.length < 15 || fixture.cases.length > 25) {
-    throw new Error("decision-packet fixture must contain 15-25 cases");
+  if (fixture.cases.length < 15 || fixture.cases.length > 30) {
+    throw new Error("decision-packet fixture must contain 15-30 cases");
   }
 };
 
