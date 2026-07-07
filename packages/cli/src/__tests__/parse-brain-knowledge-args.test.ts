@@ -25,7 +25,7 @@ describe("parseBrainKnowledgeArgs", () => {
         cardFiles: [
           "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
         ],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: [],
         storeOnly: false,
         filter: {
@@ -49,7 +49,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: ["card.json"],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: [],
         storeOnly: false,
         filter: {},
@@ -71,7 +71,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         filter: {
@@ -94,7 +94,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         filter: {
@@ -114,7 +114,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         filter: {},
@@ -123,9 +123,9 @@ describe("parseBrainKnowledgeArgs", () => {
     });
   });
 
-  it("parses retained pattern files", () => {
+  it("parses brain knowledge decision files", () => {
     expect(parseBrainKnowledgeArgs([
-      "--pattern-file",
+      "--knowledge-file",
       "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
@@ -133,7 +133,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [
+        knowledgeFiles: [
           "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
         ],
         catalogFiles: [],
@@ -156,7 +156,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: ["corpus/brain-knowledge/catalog.json"],
         storeOnly: false,
         filter: {
@@ -179,7 +179,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: [],
         storeOnly: true,
         projectId: "project-1",
@@ -200,7 +200,7 @@ describe("parseBrainKnowledgeArgs", () => {
       command: {
         kind: "brainKnowledge",
         cardFiles: [],
-        patternFiles: [],
+        knowledgeFiles: [],
         catalogFiles: [],
         storeOnly: true,
         filter: {

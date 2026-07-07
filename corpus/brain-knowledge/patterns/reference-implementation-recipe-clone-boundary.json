@@ -1,7 +1,7 @@
 {
-  "patternId": "reference-implementation-recipe-clone-boundary",
+  "knowledgeId": "reference-implementation-recipe-clone-boundary",
   "name": "Reference implementation recipe clone boundary",
-  "adoptionStatus": "lab",
+  "decisionStatus": "lab",
   "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN may lab-test reviewed reference implementations as executable recipes for repeated code patterns when the exemplar is local, versioned, source-to-decision mapped, covered by verification evidence, and paired with a falsifier. The exemplar can guide future implementation shape, but it must not replace tests, review gates, evidence capture, or proof/non-proof boundaries.",

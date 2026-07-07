@@ -1,7 +1,7 @@
 {
-  "patternId": "untrusted-context-warning-boundary",
+  "knowledgeId": "untrusted-context-warning-boundary",
   "name": "Untrusted selected context is labeled before Codex use",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "Codex-facing briefs should label untrusted or external selected context with deterministic warnings and proof boundaries instead of treating selected context as trusted execution truth.",

@@ -140,9 +140,9 @@ export const formatMemoryPatternSeedUsage = (): string =>
   [
     "Usage: krn memory pattern seed --file <catalog.json> [--persist] [--dry-run]",
     "",
-    "Seeds retained patterns from a corpus catalog JSON into store-backed memory_records",
+    "Seeds brain knowledge decisions from a corpus catalog JSON into store-backed memory_records",
     "(kind=pattern) so the brain reads patterns from the DB instead of JSON files.",
-    "Idempotent: re-runs skip patterns already seeded (matched by metadata.patternId).",
+    "Idempotent: re-runs skip patterns already seeded (matched by metadata.knowledgeId).",
     "--dry-run lists patterns without writing; --persist writes to the DB."
   ].join("\n") + "\n";
 

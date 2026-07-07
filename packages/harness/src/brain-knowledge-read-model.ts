@@ -140,16 +140,16 @@ export type BrainKnowledgeSearchFilter = {
   text?: string;
 };
 
-export type RetainedPatternAdoptionStatus =
+export type BrainKnowledgeDecisionStatus =
   | "adopt_now"
   | "lab"
   | "later"
   | "reject";
 
-export type RetainedPatternDecision = {
-  patternId: string;
+export type BrainKnowledgeDecision = {
+  knowledgeId: string;
   name: string;
-  adoptionStatus: RetainedPatternAdoptionStatus;
+  decisionStatus: BrainKnowledgeDecisionStatus;
   confidence: BrainKnowledgeConfidence;
   reviewability: BrainKnowledgeReviewability;
   decision: string;
@@ -164,7 +164,7 @@ export type RetainedPatternDecision = {
 
 type BrainKnowledgeReadModelRequiredFields = Omit<BrainKnowledgeReadModel, "usefulnessFeedback">;
 
-type RetainedPatternDecisionRequiredFields = Omit<RetainedPatternDecision, "observedAt">;
+type BrainKnowledgeDecisionRequiredFields = Omit<BrainKnowledgeDecision, "observedAt">;
 
 type BrainKnowledgeEvidenceBoundaryFields = Pick<
   BrainKnowledgeReadModelRequiredFields,
@@ -207,7 +207,7 @@ const knowledgeUsefulnessOutcomes = new Set<string>(
   brainKnowledgeUsefulnessOutcomeValues
 );
 
-const patternAdoptionStatuses = new Set<string>([
+const brainKnowledgeDecisionStatuses = new Set<string>([
   "adopt_now",
   "lab",
   "later",
@@ -234,10 +234,10 @@ const isBrainKnowledgeUsefulnessOutcome = (
 ): value is BrainKnowledgeUsefulnessOutcome =>
   typeof value === "string" && knowledgeUsefulnessOutcomes.has(value);
 
-const isRetainedPatternAdoptionStatus = (
+const isBrainKnowledgeDecisionStatus = (
   value: unknown
-): value is RetainedPatternAdoptionStatus =>
-  typeof value === "string" && patternAdoptionStatuses.has(value);
+): value is BrainKnowledgeDecisionStatus =>
+  typeof value === "string" && brainKnowledgeDecisionStatuses.has(value);
 
 const evidenceBoundaryFieldParsers: FieldParsers<BrainKnowledgeEvidenceBoundaryFields> = {
   reviewability: (record) =>
@@ -264,11 +264,11 @@ const brainKnowledgeReadModelFieldParsers: FieldParsers<BrainKnowledgeReadModelR
     isBrainKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
 };
 
-const retainedPatternDecisionFieldParsers: FieldParsers<RetainedPatternDecisionRequiredFields> = {
-  patternId: (record) => parseNonEmptyString(record["patternId"]),
+const brainKnowledgeDecisionFieldParsers: FieldParsers<BrainKnowledgeDecisionRequiredFields> = {
+  knowledgeId: (record) => parseNonEmptyString(record["knowledgeId"]),
   name: (record) => parseNonEmptyString(record["name"]),
-  adoptionStatus: (record) =>
-    isRetainedPatternAdoptionStatus(record["adoptionStatus"]) ? record["adoptionStatus"] : undefined,
+  decisionStatus: (record) =>
+    isBrainKnowledgeDecisionStatus(record["decisionStatus"]) ? record["decisionStatus"] : undefined,
   confidence: (record) =>
     isBrainKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
   decision: (record) => parseNonEmptyString(record["decision"]),
@@ -341,12 +341,12 @@ export function parseBrainKnowledgeUsefulnessFeedbackList(value: unknown): Brain
     : undefined;
 }
 
-export function parseRetainedPatternDecision(value: unknown): RetainedPatternDecision | undefined {
+export function parseBrainKnowledgeDecision(value: unknown): BrainKnowledgeDecision | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const requiredFields = parseObjectFields(value, retainedPatternDecisionFieldParsers);
+  const requiredFields = parseObjectFields(value, brainKnowledgeDecisionFieldParsers);
 
   return requiredFields !== undefined && optionalStringFields(value, ["observedAt"]) ? {
     ...requiredFields,
@@ -354,13 +354,13 @@ export function parseRetainedPatternDecision(value: unknown): RetainedPatternDec
   } : undefined;
 }
 
-export function brainKnowledgeCardFromRetainedPatternDecision(
-  pattern: RetainedPatternDecision
+export function brainKnowledgeCardFromDecision(
+  pattern: BrainKnowledgeDecision
 ): BrainKnowledgeReadModel {
   return {
-    id: `pattern:${pattern.patternId}`,
+    id: `pattern:${pattern.knowledgeId}`,
     kind: "pattern",
-    status: statusFromPatternAdoption(pattern.adoptionStatus),
+    status: statusFromBrainKnowledgeDecision(pattern.decisionStatus),
     title: pattern.name,
     summary: pattern.decision,
     confidence: pattern.confidence,
@@ -550,7 +550,7 @@ function isNewerFeedback(
   return previous.observedAt === undefined || candidate.observedAt >= previous.observedAt;
 }
 
-function statusFromPatternAdoption(status: RetainedPatternAdoptionStatus): BrainKnowledgeStatus {
+function statusFromBrainKnowledgeDecision(status: BrainKnowledgeDecisionStatus): BrainKnowledgeStatus {
   switch (status) {
     case "adopt_now":
       return "active";

@@ -112,7 +112,7 @@ const createBrainKnowledgeStoreProviders = async (
     if (command.storeOnly) {
       throw new Error(
         "KRN_DATABASE_URL is required for krn brain knowledge store-backed readback. " +
-        "No file source defaults to the store path; pass --card-file, --pattern-file, or --catalog-file for an explicit legacy fixture/seed preview."
+        "No file source defaults to the store path; pass --card-file, --knowledge-file, or --catalog-file for an explicit fixture/seed preview."
       );
     }
 
@@ -190,7 +190,7 @@ const runBrainKnowledgeProjectCommand = async (
   return runBrainKnowledgeCommand({
     cwd: context.cwd,
     cardFiles: command.cardFiles,
-    patternFiles: command.patternFiles,
+    knowledgeFiles: command.knowledgeFiles,
     catalogFiles: command.catalogFiles,
     filter: command.filter,
     format: command.format,

@@ -368,7 +368,7 @@ const sourceSearchKnowledgePacketFromFields = (
     ]),
     doesNotProve:
       fields.doesNotProve ??
-      "This source-search candidate does not prove a retained pattern is review-ready.",
+      "This source-search candidate does not prove a brain knowledge is review-ready.",
     nextAction: sourceKnowledgeNextAction[reviewability]
   };
 };
@@ -456,7 +456,7 @@ const storeOnlyRecommendation = (
   }
 
   return sourceEvidenceCount(resource.sourceSearch) > 0
-    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-retained pattern context is explicitly needed."
+    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-brain knowledge context is explicitly needed."
     : "Do not infer product truth from store-only brain search; seed or persist governed source evidence first.";
 };
 

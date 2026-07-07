@@ -1240,7 +1240,7 @@ const writeKnowledgeCatalog = async (
 
   await writeFile(catalogFile, JSON.stringify({
     cardFiles,
-    patternFiles: [],
+    knowledgeFiles: [],
     usefulnessFeedbackFiles: []
   }, null, 2), "utf8");
 

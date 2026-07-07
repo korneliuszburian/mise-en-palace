@@ -1,8 +1,8 @@
 import path from "node:path";
 
 import type { CreateMemoryCandidateInput } from "@krn/harness/repositories";
-import type { RetainedPatternDecision } from "@krn/harness";
-import { parseRetainedPatternDecision } from "@krn/harness";
+import type { BrainKnowledgeDecision } from "@krn/harness";
+import { parseBrainKnowledgeDecision } from "@krn/harness";
 
 import {
   noStorePreviewLabel,
@@ -32,10 +32,10 @@ export interface MemoryPatternSeedCommandResult {
   stdout: string;
 }
 
-const SEED_PROPOSED_BY = "krn memory pattern seed";
-const SEED_REVIEWER = "krn memory pattern seed";
+const SEED_PROPOSED_BY = "krn memory brain knowledge seed";
+const SEED_REVIEWER = "krn memory brain knowledge seed";
 
-const confidenceValue = (confidence: RetainedPatternDecision["confidence"]): number =>
+const confidenceValue = (confidence: BrainKnowledgeDecision["confidence"]): number =>
   confidence === "high" ? 90 : confidence === "medium" ? 60 : confidence === "low" ? 30 : 0;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -47,45 +47,45 @@ const sourceLineageFromRefs = (
   sourceRefs.map((sourceId) => ({ sourceId }));
 
 /**
- * Map a parsed retained-pattern decision into the store-backed memory candidate
+ * Map a parsed brain knowledge decision into the store-backed memory candidate
  * input. Pure + unit-testable; the seed command writes it via the proven
  * createMemoryCandidate + promoteReviewedMemoryCandidate path.
  */
-export const retainedPatternToMemoryCandidateInput = (
-  pattern: RetainedPatternDecision,
+export const brainKnowledgeDecisionToMemoryCandidateInput = (
+  decision: BrainKnowledgeDecision,
   projectId: string,
   now: string
 ): CreateMemoryCandidateInput => ({
   projectId,
   proposedBy: SEED_PROPOSED_BY,
   kind: "pattern",
-  summary: pattern.name,
-  body: pattern.decision,
-  owner: pattern.consumers[0] ?? SEED_PROPOSED_BY,
-  confidence: confidenceValue(pattern.confidence),
-  applicationGuidance: pattern.decision,
-  invalidationRule: pattern.falsifier,
-  sourceLineage: sourceLineageFromRefs(pattern.sourceRefs),
+  summary: decision.name,
+  body: decision.decision,
+  owner: decision.consumers[0] ?? SEED_PROPOSED_BY,
+  confidence: confidenceValue(decision.confidence),
+  applicationGuidance: decision.decision,
+  invalidationRule: decision.falsifier,
+  sourceLineage: sourceLineageFromRefs(decision.sourceRefs),
   isUserPreference: false,
   validFrom: now,
   metadata: {
-    patternId: pattern.patternId,
-    adoptionStatus: pattern.adoptionStatus,
-    reviewability: pattern.reviewability,
-    nextAction: pattern.nextAction,
-    doesNotProve: pattern.doesNotProve,
-    sourceRefs: pattern.sourceRefs
+    knowledgeId: decision.knowledgeId,
+    decisionStatus: decision.decisionStatus,
+    reviewability: decision.reviewability,
+    nextAction: decision.nextAction,
+    doesNotProve: decision.doesNotProve,
+    sourceRefs: decision.sourceRefs
   }
 });
 
-const recordKeyForPattern = (patternId: string): string => `pattern:${patternId}`;
+const recordKeyForKnowledge = (knowledgeId: string): string => `pattern:${knowledgeId}`;
 
-interface LoadedPattern {
-  readonly pattern: RetainedPatternDecision;
+interface LoadedBrainKnowledgeDecision {
+  readonly decision: BrainKnowledgeDecision;
   readonly sourceFile: string;
 }
 
-const patternFilesFromCatalog = (
+const knowledgeFilesFromCatalog = (
   catalogFile: string,
   value: unknown
 ): string[] => {
@@ -93,52 +93,52 @@ const patternFilesFromCatalog = (
     throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
   }
 
-  const patternFiles = value["patternFiles"];
+  const knowledgeFiles = value["knowledgeFiles"];
 
   if (
-    !Array.isArray(patternFiles) ||
-    patternFiles.length === 0 ||
-    !patternFiles.every((item) => typeof item === "string" && item.trim().length > 0)
+    !Array.isArray(knowledgeFiles) ||
+    knowledgeFiles.length === 0 ||
+    !knowledgeFiles.every((item) => typeof item === "string" && item.trim().length > 0)
   ) {
-    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (patternFiles must be a non-empty string array)`);
+    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (knowledgeFiles must be a non-empty string array)`);
   }
 
-  return patternFiles;
+  return knowledgeFiles;
 };
 
-const loadPatternsFromCatalog = async (
+const loadBrainKnowledgeDecisionsFromCatalog = async (
   cwd: string,
   catalogFile: string
-): Promise<LoadedPattern[]> => {
+): Promise<LoadedBrainKnowledgeDecision[]> => {
   const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
   const catalog = await readJsonObject(resolvedCatalogFile);
-  const patternFiles = patternFilesFromCatalog(catalogFile, catalog);
+  const knowledgeFiles = knowledgeFilesFromCatalog(catalogFile, catalog);
   const catalogDirectory = path.dirname(resolvedCatalogFile);
-  const loaded: LoadedPattern[] = [];
+  const loaded: LoadedBrainKnowledgeDecision[] = [];
 
-  for (const patternFile of patternFiles) {
-    const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
-    const parsed = await readJsonObject(resolvedPatternFile);
-    const pattern = parseRetainedPatternDecision(parsed);
+  for (const knowledgeFile of knowledgeFiles) {
+    const resolvedKnowledgeFile = path.resolve(catalogDirectory, knowledgeFile);
+    const parsed = await readJsonObject(resolvedKnowledgeFile);
+    const decision = parseBrainKnowledgeDecision(parsed);
 
-    if (pattern === undefined) {
-      throw new Error(`Invalid retained pattern decision file: ${catalogFile}:${patternFile}`);
+    if (decision === undefined) {
+      throw new Error(`Invalid brain knowledge decision file: ${catalogFile}:${knowledgeFile}`);
     }
 
-    loaded.push({ pattern, sourceFile: `${catalogFile}:${patternFile}` });
+    loaded.push({ decision, sourceFile: `${catalogFile}:${knowledgeFile}` });
   }
 
   return loaded;
 };
 
-const existingPatternIds = (records: readonly { metadata: Record<string, unknown> }[]): Set<string> => {
+const existingKnowledgeIds = (records: readonly { metadata: Record<string, unknown> }[]): Set<string> => {
   const ids = new Set<string>();
 
   for (const record of records) {
-    const patternId = record.metadata?.patternId;
+    const knowledgeId = record.metadata?.knowledgeId;
 
-    if (typeof patternId === "string") {
-      ids.add(patternId);
+    if (typeof knowledgeId === "string") {
+      ids.add(knowledgeId);
     }
   }
 
@@ -150,7 +150,7 @@ export const runMemoryPatternSeedCommand = async (
 ): Promise<MemoryPatternSeedCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const command = runtime.command;
-  const loaded = await loadPatternsFromCatalog(cwd, command.catalogFile);
+  const loaded = await loadBrainKnowledgeDecisionsFromCatalog(cwd, command.catalogFile);
 
   if (!command.persist || command.dryRun) {
     return {
@@ -160,33 +160,33 @@ export const runMemoryPatternSeedCommand = async (
 
   const db = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory pattern seed --persist"
+    "KRN_DATABASE_URL is required for krn memory brain knowledge seed --persist"
   );
 
   try {
     const projectId = db.projectId;
-    const existing = existingPatternIds(
+    const existing = existingKnowledgeIds(
       await db.memoryRepository.listMemoryRecordsForProject(projectId)
     );
     let createdCount = 0;
     let skippedCount = 0;
 
-    for (const { pattern } of loaded) {
-      if (existing.has(pattern.patternId)) {
+    for (const { decision } of loaded) {
+      if (existing.has(decision.knowledgeId)) {
         skippedCount += 1;
         continue;
       }
 
       const candidate = await db.memoryRepository.createMemoryCandidate(
-        retainedPatternToMemoryCandidateInput(pattern, projectId, runtime.now())
+        brainKnowledgeDecisionToMemoryCandidateInput(decision, projectId, runtime.now())
       );
       await db.memoryRepository.promoteReviewedMemoryCandidate({
         candidateId: candidate.id,
         reviewer: SEED_REVIEWER,
         decision: "accepted",
-        recordKey: recordKeyForPattern(pattern.patternId)
+        recordKey: recordKeyForKnowledge(decision.knowledgeId)
       });
-      existing.add(pattern.patternId);
+      existing.add(decision.knowledgeId);
       createdCount += 1;
     }
 
@@ -199,16 +199,16 @@ export const runMemoryPatternSeedCommand = async (
 };
 
 const formatSeedPreview = (
-  loaded: LoadedPattern[],
+  loaded: LoadedBrainKnowledgeDecision[],
   command: MemoryPatternSeedCommand,
   persisted: boolean,
   createdCount?: number,
   skippedCount?: number
 ): string => {
   const lines = [
-    "KRN Memory Pattern Seed",
+    "KRN Memory Brain Knowledge Seed",
     `Catalog file: ${command.catalogFile}`,
-    `Patterns in catalog: ${loaded.length}`,
+    `Brain knowledge decisions in catalog: ${loaded.length}`,
     ...(command.dryRun ? ["Mode: dry-run (no writes)"] : [])
   ];
 
@@ -220,10 +220,10 @@ const formatSeedPreview = (
     lines.push(noStorePreviewLabel);
   }
 
-  lines.push("", "Patterns:");
+  lines.push("", "Brain knowledge decisions:");
 
-  for (const { pattern, sourceFile } of loaded) {
-    lines.push(`- ${pattern.patternId} (${pattern.adoptionStatus}) <- ${sourceFile}`);
+  for (const { decision, sourceFile } of loaded) {
+    lines.push(`- ${decision.knowledgeId} (${decision.decisionStatus}) <- ${sourceFile}`);
   }
 
   return `${lines.join("\n")}\n`;

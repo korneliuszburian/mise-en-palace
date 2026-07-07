@@ -1,7 +1,7 @@
 {
-  "patternId": "codex-hook-deterministic-guardrail-boundary",
+  "knowledgeId": "codex-hook-deterministic-guardrail-boundary",
   "name": "Codex hook deterministic guardrail boundary",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "KRN may use Codex hooks for deterministic lifecycle guardrails around tool use, compaction, evidence reminders, and trust-boundary checks, but hooks must not become semantic source truth, review-gate authority, memory-promotion authority, or complete enforcement boundaries.",

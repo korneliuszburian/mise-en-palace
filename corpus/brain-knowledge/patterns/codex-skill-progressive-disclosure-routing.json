@@ -1,7 +1,7 @@
 {
-  "patternId": "codex-skill-progressive-disclosure-routing",
+  "knowledgeId": "codex-skill-progressive-disclosure-routing",
   "name": "Codex skill progressive-disclosure routing",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained brain knowledge when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",

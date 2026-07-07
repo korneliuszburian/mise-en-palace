@@ -7,10 +7,10 @@ import {
 } from "vitest";
 
 import {
-  brainKnowledgeCardFromRetainedPatternDecision,
+  brainKnowledgeCardFromDecision,
   cardsWithBrainKnowledgeUsefulnessFeedback,
   parseBrainKnowledgeReadModel,
-  parseRetainedPatternDecision,
+  parseBrainKnowledgeDecision,
   parseBrainKnowledgeUsefulnessFeedbackList,
   searchBrainKnowledgeCards
 } from "../brain-knowledge-read-model.js";
@@ -44,30 +44,30 @@ const parsedCardFixture = () => {
 };
 
 const parsedPatternDecisionFixture = () => {
-  const patternDecision = parseRetainedPatternDecision(patternDecisionFixture());
+  const patternDecision = parseBrainKnowledgeDecision(patternDecisionFixture());
 
   if (patternDecision === undefined) {
-    throw new Error("Expected retained pattern decision fixture to parse.");
+    throw new Error("Expected brain knowledge decision fixture to parse.");
   }
 
   return patternDecision;
 };
 
 const parsedReferenceImplementationPatternDecisionFixture = () => {
-  const patternDecision = parseRetainedPatternDecision(referenceImplementationPatternDecisionFixture());
+  const patternDecision = parseBrainKnowledgeDecision(referenceImplementationPatternDecisionFixture());
 
   if (patternDecision === undefined) {
-    throw new Error("Expected reference implementation retained pattern decision to parse.");
+    throw new Error("Expected reference implementation brain knowledge decision to parse.");
   }
 
   return patternDecision;
 };
 
 const parsedBrainKnowledgeParserExemplarPatternDecisionFixture = () => {
-  const patternDecision = parseRetainedPatternDecision(brainKnowledgeParserExemplarPatternDecisionFixture());
+  const patternDecision = parseBrainKnowledgeDecision(brainKnowledgeParserExemplarPatternDecisionFixture());
 
   if (patternDecision === undefined) {
-    throw new Error("Expected brain knowledge parser exemplar retained pattern decision to parse.");
+    throw new Error("Expected brain knowledge parser exemplar brain knowledge decision to parse.");
   }
 
   return patternDecision;
@@ -177,7 +177,7 @@ describe("Brain knowledge read model", () => {
         {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          summary: "The retained pattern guided an unknown-first boundary repair.",
+          summary: "The brain knowledge guided an unknown-first boundary repair.",
           evidenceRefs: ["docs/reviews/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
@@ -225,20 +225,20 @@ describe("Brain knowledge read model", () => {
     })).toEqual([]);
   });
 
-  it("produces the TypeScript boundary knowledge card from the retained pattern decision", () => {
+  it("produces the TypeScript boundary knowledge card from the brain knowledge decision", () => {
     const patternDecision = parsedPatternDecisionFixture();
     const expectedCard = parseBrainKnowledgeReadModel(cardFixture());
 
     if (expectedCard === undefined) {
-      throw new Error("Expected brain brain knowledge fixture to parse.");
+      throw new Error("Expected brain knowledge fixture to parse.");
     }
 
-    expect(brainKnowledgeCardFromRetainedPatternDecision(patternDecision)).toEqual(expectedCard);
+    expect(brainKnowledgeCardFromDecision(patternDecision)).toEqual(expectedCard);
   });
 
   it("keeps the reference implementation recipe pattern searchable but deferred", () => {
     const patternDecision = parsedReferenceImplementationPatternDecisionFixture();
-    const card = brainKnowledgeCardFromRetainedPatternDecision(patternDecision);
+    const card = brainKnowledgeCardFromDecision(patternDecision);
 
     expect(card).toMatchObject({
       id: "pattern:reference-implementation-recipe-clone-boundary",
@@ -255,7 +255,7 @@ describe("Brain knowledge read model", () => {
 
   it("keeps the brain knowledge parser exemplar searchable but deferred", () => {
     const patternDecision = parsedBrainKnowledgeParserExemplarPatternDecisionFixture();
-    const card = brainKnowledgeCardFromRetainedPatternDecision(patternDecision);
+    const card = brainKnowledgeCardFromDecision(patternDecision);
 
     expect(card).toMatchObject({
       id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
@@ -274,24 +274,24 @@ describe("Brain knowledge read model", () => {
     })).toEqual([card]);
   });
 
-  it("maps retained pattern adoption statuses to brain-knowledge status", () => {
+  it("maps brain knowledge decision statuses to brain-knowledge status", () => {
     const patternDecision = parsedPatternDecisionFixture();
 
-    expect(brainKnowledgeCardFromRetainedPatternDecision({
+    expect(brainKnowledgeCardFromDecision({
       ...patternDecision,
-      adoptionStatus: "adopt_now"
+      decisionStatus: "adopt_now"
     })).toMatchObject({ status: "active" });
-    expect(brainKnowledgeCardFromRetainedPatternDecision({
+    expect(brainKnowledgeCardFromDecision({
       ...patternDecision,
-      adoptionStatus: "lab"
+      decisionStatus: "lab"
     })).toMatchObject({ status: "deferred" });
-    expect(brainKnowledgeCardFromRetainedPatternDecision({
+    expect(brainKnowledgeCardFromDecision({
       ...patternDecision,
-      adoptionStatus: "later"
+      decisionStatus: "later"
     })).toMatchObject({ status: "deferred" });
-    expect(brainKnowledgeCardFromRetainedPatternDecision({
+    expect(brainKnowledgeCardFromDecision({
       ...patternDecision,
-      adoptionStatus: "reject"
+      decisionStatus: "reject"
     })).toMatchObject({ status: "rejected" });
   });
 
@@ -310,7 +310,7 @@ describe("Brain knowledge read model", () => {
         {
           cardId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          summary: "The retained pattern guided an unknown-first boundary repair.",
+          summary: "The brain knowledge guided an unknown-first boundary repair.",
           evidenceRefs: ["docs/reviews/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
@@ -327,7 +327,7 @@ describe("Brain knowledge read model", () => {
         id: "pattern:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: {
           outcome: "helped",
-          summary: "The retained pattern guided an unknown-first boundary repair.",
+          summary: "The brain knowledge guided an unknown-first boundary repair.",
           evidenceRefs: ["docs/reviews/newer.md"]
         }
       }

@@ -1,7 +1,7 @@
 {
-  "patternId": "source-to-decision-retention-gate",
+  "knowledgeId": "source-to-decision-retention-gate",
   "name": "Source-to-decision retention gate",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "A source or pattern may become retained KRN knowledge only when it states mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",

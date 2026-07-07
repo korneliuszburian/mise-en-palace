@@ -1,7 +1,7 @@
 {
-  "patternId": "target-repo-write-authority-boundary",
+  "knowledgeId": "target-repo-write-authority-boundary",
   "name": "Target repo writes require explicit authority and rollback",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",

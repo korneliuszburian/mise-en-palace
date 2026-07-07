@@ -18,7 +18,7 @@ const readJsonRootFile = (path: string): unknown =>
   JSON.parse(readRootFile(path));
 
 describe("Brain knowledge read model invariants", () => {
-  it("keeps the retained TypeScript pattern available as a concrete knowledge card", () => {
+  it("keeps the TypeScript brain knowledge decision available as a concrete knowledge card", () => {
     const pattern = readJsonRootFile(
       "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json"
     );
@@ -27,8 +27,8 @@ describe("Brain knowledge read model invariants", () => {
     );
 
     expect(pattern).toMatchObject({
-      patternId: "ts-boundary-unknown-first-result-state",
-      adoptionStatus: "adopt_now",
+      knowledgeId: "ts-boundary-unknown-first-result-state",
+      decisionStatus: "adopt_now",
       confidence: "high",
       reviewability: "ready",
       nextAction: "use"
@@ -69,19 +69,19 @@ describe("Brain knowledge read model invariants", () => {
       throw new Error("Brain knowledge catalog must be an object.");
     }
 
-    const patternFiles = catalog["patternFiles"];
+    const knowledgeFiles = catalog["knowledgeFiles"];
     const usefulnessFeedbackFiles = catalog["usefulnessFeedbackFiles"];
 
-    expect(Array.isArray(patternFiles)).toBe(true);
+    expect(Array.isArray(knowledgeFiles)).toBe(true);
     expect(Array.isArray(usefulnessFeedbackFiles)).toBe(true);
 
-    if (!Array.isArray(patternFiles) || !Array.isArray(usefulnessFeedbackFiles)) {
+    if (!Array.isArray(knowledgeFiles) || !Array.isArray(usefulnessFeedbackFiles)) {
       return;
     }
 
-    expect(patternFiles.length).toBeGreaterThan(0);
+    expect(knowledgeFiles.length).toBeGreaterThan(0);
 
-    for (const file of patternFiles) {
+    for (const file of knowledgeFiles) {
       expect(typeof file).toBe("string");
 
       if (typeof file !== "string") {

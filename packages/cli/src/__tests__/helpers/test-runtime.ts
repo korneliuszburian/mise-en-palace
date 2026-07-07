@@ -108,7 +108,7 @@ const brainKnowledgeMemory = (
   positiveFeedbackCount: 0,
   negativeFeedbackCount: 0,
   metadata: {
-    patternId: knowledgeId,
+    knowledgeId,
     falsifier: `A task matching ${knowledgeId} no longer benefits from this pattern.`,
     doesNotProve: "This brain knowledge memory does not prove source truth or broad ranking quality."
   },

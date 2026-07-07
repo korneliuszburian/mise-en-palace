@@ -16,7 +16,7 @@ import {
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
-const patternFile = "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json";
+const knowledgeFile = "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json";
 const catalogFile = "corpus/brain-knowledge/catalog.json";
 
 describe("runBrainKnowledgeCommand", () => {
@@ -24,7 +24,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [],
       filter: {
         kind: "pattern",
@@ -53,7 +53,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [],
       filter: {
         text: "unknown-first"
@@ -93,18 +93,18 @@ describe("runBrainKnowledgeCommand", () => {
     await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: ["package.json"],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [],
       filter: {},
       format: "text"
     })).rejects.toThrow("Invalid BrainKnowledgeReadModel card file: package.json");
   });
 
-  it("renders brain knowledge produced from retained pattern files", async () => {
+  it("renders brain knowledge produced from brain knowledge decision files", async () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [patternFile],
+      knowledgeFiles: [knowledgeFile],
       catalogFiles: [],
       filter: {
         text: "unknown-first"
@@ -112,28 +112,28 @@ describe("runBrainKnowledgeCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Pattern files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain knowledge readback was produced from live DB state");
   });
 
-  it("rejects invalid retained pattern files", async () => {
+  it("rejects invalid brain knowledge decision files", async () => {
     await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: ["package.json"],
+      knowledgeFiles: ["package.json"],
       catalogFiles: [],
       filter: {},
       format: "text"
-    })).rejects.toThrow("Invalid retained pattern decision file: package.json");
+    })).rejects.toThrow("Invalid brain knowledge decision file: package.json");
   });
 
   it("renders brain knowledge from explicit catalog files", async () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "unknown-first"
@@ -155,7 +155,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "unknown-first"
@@ -199,7 +199,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {},
       format: "html"
@@ -265,7 +265,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [patternCardPath, memoryCardPath],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [],
       filter: {},
       format: "html"
@@ -298,7 +298,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: cliPackageRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "unknown-first"
@@ -310,11 +310,11 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
 
-  it("searches the second retained pattern through the catalog", async () => {
+  it("searches the second brain knowledge through the catalog", async () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "retention gate"
@@ -331,7 +331,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "command provenance"
@@ -349,7 +349,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "progressive-disclosure"
@@ -367,7 +367,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "hook deterministic guardrail"
@@ -385,7 +385,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "SourceClaimEdge relationSupport GraphRAG"
@@ -403,7 +403,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "maintenance scheduler daemon automatic memory source mutation"
@@ -421,7 +421,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "consensus relation maintenance review boundary"
@@ -435,11 +435,11 @@ describe("runBrainKnowledgeCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("filters retained pattern cards by usefulness outcome", async () => {
+  it("filters brain knowledge cards by usefulness outcome", async () => {
     const helpedResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped"
@@ -449,7 +449,7 @@ describe("runBrainKnowledgeCommand", () => {
     const noiseResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "noise"
@@ -468,7 +468,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "none"
@@ -490,7 +490,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "none"
@@ -505,11 +505,11 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
 
-  it("filters retained pattern cards with no usefulness feedback", async () => {
+  it("filters brain knowledge cards with no usefulness feedback", async () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "none"
@@ -525,7 +525,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "none",
@@ -542,7 +542,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
@@ -563,7 +563,7 @@ describe("runBrainKnowledgeCommand", () => {
       "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
     );
     expect(preview.noMatchGuidance).toContain(
-      "If no retained pattern applies after retry, record an explicit rejected_or_deferred_patterns reason before coding."
+      "If no brain knowledge applies after retry, record an explicit rejected_or_deferred_knowledge reason before coding."
     );
     expect(preview.noMatchGuidance).toContain(
       "Zero results do not prove that no relevant pattern exists or that search ranking is good."
@@ -576,7 +576,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
@@ -589,7 +589,7 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("Total filtered results: 0");
     expect(result.stdout).toContain("No-match guidance:");
     expect(result.stdout).toContain("Try a shorter --text query");
-    expect(result.stdout).toContain("record an explicit rejected_or_deferred_patterns reason");
+    expect(result.stdout).toContain("record an explicit rejected_or_deferred_knowledge reason");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
 
@@ -597,7 +597,7 @@ describe("runBrainKnowledgeCommand", () => {
     const broadResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "brain qa source decision retrieval memory anti memory evidence graph"
@@ -607,7 +607,7 @@ describe("runBrainKnowledgeCommand", () => {
     const mechanismResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "source-to-decision"
@@ -638,7 +638,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
@@ -658,7 +658,7 @@ describe("runBrainKnowledgeCommand", () => {
     const typeScriptResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "explicit result state"
@@ -668,7 +668,7 @@ describe("runBrainKnowledgeCommand", () => {
     const sourceDecisionResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "retention gate"
@@ -693,7 +693,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "unknown first result state"
@@ -714,7 +714,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "brain knowledge parser exemplar unknown-first recipe"
@@ -735,7 +735,7 @@ describe("runBrainKnowledgeCommand", () => {
     const workerBoundaryResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "maintenance preview not Codex exec candidate contracts"
@@ -745,7 +745,7 @@ describe("runBrainKnowledgeCommand", () => {
     const namingBoundaryResult = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {
         text: "naming standard no vanity rename helper extraction rule"
@@ -768,7 +768,7 @@ describe("runBrainKnowledgeCommand", () => {
     const result = await runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: [catalogFile],
       filter: {},
       format: "json"
@@ -798,12 +798,12 @@ describe("runBrainKnowledgeCommand", () => {
     await expect(runBrainKnowledgeCommand({
       cwd: repoRoot,
       cardFiles: [],
-      patternFiles: [],
+      knowledgeFiles: [],
       catalogFiles: ["package.json"],
       filter: {},
       format: "text"
     })).rejects.toThrow(
-      "Invalid brain knowledge catalog file: package.json (catalog must include non-empty cardFiles, patternFiles, or usefulnessFeedbackFiles arrays)"
+      "Invalid brain knowledge catalog file: package.json (catalog must include non-empty cardFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays)"
     );
   });
 });

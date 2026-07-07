@@ -171,7 +171,7 @@ const runCatalogBrainKnowledgeReadback = async (
   input.runBrainKnowledge({
     cwd: input.runtime.cwd,
     cardFiles: [],
-    patternFiles: [],
+    knowledgeFiles: [],
     catalogFiles: input.catalogFiles,
     filter: {
       text: input.query

@@ -6,11 +6,11 @@ import type {
   BrainKnowledgeUsefulnessFeedback
 } from "@krn/harness";
 import {
-  brainKnowledgeCardFromRetainedPatternDecision,
+  brainKnowledgeCardFromDecision,
   cardsWithBrainKnowledgeUsefulnessFeedback,
   parseBrainKnowledgeReadModel,
   parseBrainKnowledgeUsefulnessFeedbackList,
-  parseRetainedPatternDecision,
+  parseBrainKnowledgeDecision,
   searchBrainKnowledgeCards
 } from "@krn/harness";
 import {
@@ -24,7 +24,7 @@ export type BrainKnowledgeOutputFormat = "text" | "json" | "html";
 export interface BrainKnowledgeCommandRuntime {
   cwd?: string;
   cardFiles: readonly string[];
-  patternFiles: readonly string[];
+  knowledgeFiles: readonly string[];
   catalogFiles: readonly string[];
   filter: BrainKnowledgeSearchFilter;
   format: BrainKnowledgeOutputFormat;
@@ -49,7 +49,7 @@ interface LoadedBrainKnowledgeCards {
   cards: BrainKnowledgeReadModel[];
   feedback: BrainKnowledgeUsefulnessFeedback[];
   cardFiles: string[];
-  patternFiles: string[];
+  knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
 }
@@ -62,7 +62,7 @@ interface BrainKnowledgePreviewResource {
   usefulnessSource: "explicit_files" | "store_backed";
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
-  patternFiles: string[];
+  knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
   totalCards: number;
@@ -78,14 +78,14 @@ interface BrainKnowledgePreviewResource {
 
 const proof = {
   proves: [
-    "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
+    "supplied files parse as BrainKnowledgeReadModel or brain knowledge decisions",
     "supplied usefulness feedback files parse with proof boundaries",
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
     "brain knowledge readback was produced from live DB state",
     "search ranking quality is good",
-    "retained patterns are complete",
+    "brain knowledge decisions are complete",
     "Memory Core, SourceDecision, candidates, or evidence were mutated",
     "KRN is product-ready"
   ]
@@ -103,7 +103,7 @@ const buildProof = (
           "local readback filters were applied deterministically"
         ]
       : [
-          "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
+          "supplied files parse as BrainKnowledgeReadModel or brain knowledge decisions",
           "local readback filters were applied deterministically"
         ];
     const usefulnessProves = usefulnessSource === "store_backed"
@@ -127,7 +127,7 @@ const createLoadedBrainKnowledgeCards = (): LoadedBrainKnowledgeCards => ({
   cards: [],
   feedback: [],
   cardFiles: [],
-  patternFiles: [],
+  knowledgeFiles: [],
   usefulnessFeedbackFiles: [],
   catalogFiles: []
 });
@@ -142,9 +142,9 @@ const loadExplicitBrainKnowledgeFiles = async (
     loaded.cardFiles.push(cardFile);
   }
 
-  for (const patternFile of runtime.patternFiles) {
-    await loadPatternFile(patternFile, await resolveRepoInputFile(cwd, patternFile), loaded.cards);
-    loaded.patternFiles.push(patternFile);
+  for (const knowledgeFile of runtime.knowledgeFiles) {
+    await loadKnowledgeFile(knowledgeFile, await resolveRepoInputFile(cwd, knowledgeFile), loaded.cards);
+    loaded.knowledgeFiles.push(knowledgeFile);
   }
 };
 
@@ -161,16 +161,16 @@ const loadCatalogCardFiles = async (
   }
 };
 
-const loadCatalogPatternFiles = async (
+const loadCatalogKnowledgeFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
   loaded: LoadedBrainKnowledgeCards
 ): Promise<void> => {
-  for (const patternFile of catalog.patternFiles) {
-    const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
-    await loadPatternFile(`${catalogFile}:${patternFile}`, resolvedPatternFile, loaded.cards);
-    loaded.patternFiles.push(`${catalogFile}:${patternFile}`);
+  for (const knowledgeFile of catalog.knowledgeFiles) {
+    const resolvedKnowledgeFile = path.resolve(catalogDirectory, knowledgeFile);
+    await loadKnowledgeFile(`${catalogFile}:${knowledgeFile}`, resolvedKnowledgeFile, loaded.cards);
+    loaded.knowledgeFiles.push(`${catalogFile}:${knowledgeFile}`);
   }
 };
 
@@ -204,7 +204,7 @@ const loadBrainKnowledgeCatalogFile = async (
 
   if (catalog === undefined) {
     const reason = result.status === "ok"
-      ? "catalog must include non-empty cardFiles, patternFiles, or usefulnessFeedbackFiles arrays"
+      ? "catalog must include non-empty cardFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays"
       : result.reason;
 
     throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (${reason})`);
@@ -213,7 +213,7 @@ const loadBrainKnowledgeCatalogFile = async (
   const catalogDirectory = path.dirname(resolvedCatalogFile);
 
   await loadCatalogCardFiles(catalogFile, catalogDirectory, catalog, loaded);
-  await loadCatalogPatternFiles(catalogFile, catalogDirectory, catalog, loaded);
+  await loadCatalogKnowledgeFiles(catalogFile, catalogDirectory, catalog, loaded);
   await loadCatalogUsefulnessFeedbackFiles(catalogFile, catalogDirectory, catalog, loaded);
   loaded.catalogFiles.push(catalogFile);
 };
@@ -269,7 +269,7 @@ export const runBrainKnowledgeCommand = async (
     usefulnessSource,
     filter: runtime.filter,
     cardFiles: loaded.cardFiles,
-    patternFiles: loaded.patternFiles,
+    knowledgeFiles: loaded.knowledgeFiles,
     usefulnessFeedbackFiles: loaded.usefulnessFeedbackFiles,
     catalogFiles: loaded.catalogFiles,
     totalCards: matchingCards.length,
@@ -309,7 +309,7 @@ const formatBrainKnowledgeTextPreview = (resource: BrainKnowledgePreviewResource
     `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Brain knowledge files: ${formatList(resource.cardFiles)}`,
-    `Pattern files: ${formatList(resource.patternFiles)}`,
+    `Knowledge files: ${formatList(resource.knowledgeFiles)}`,
     `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
     `Results: ${resource.cards.length}`,
     `Total filtered results: ${resource.totalCards}`,
@@ -544,12 +544,12 @@ const buildNoMatchGuidance = (filter: BrainKnowledgeSearchFilter): string[] => [
   "No brain knowledge entries matched the current filters.",
   ...(filter.text === undefined ? [] : [
     "Try a shorter --text query or split the query into one mechanism term.",
-    "If this is a Pattern Application Gate pre-coding query, run one broader query before concluding no retained pattern applies."
+    "If this is a brain-knowledge pre-coding query, run one broader query before concluding no selected knowledge applies."
   ]),
   ...(hasStructuredFilter(filter) ? [
     "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
   ] : []),
-  "If no retained pattern applies after retry, record an explicit rejected_or_deferred_patterns reason before coding.",
+  "If no brain knowledge applies after retry, record an explicit rejected_or_deferred_knowledge reason before coding.",
   "Zero results do not prove that no relevant pattern exists or that search ranking is good."
 ];
 
@@ -687,7 +687,7 @@ const escapeHtml = (value: string): string =>
 
 type KnowledgeCatalogInput = {
   cardFiles: string[];
-  patternFiles: string[];
+  knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
 };
 
@@ -697,21 +697,21 @@ const parseKnowledgeCatalog = (value: unknown): KnowledgeCatalogInput | undefine
   }
 
   const cardFiles = parseStringArray(value["cardFiles"]);
-  const patternFiles = parseStringArray(value["patternFiles"]);
+  const knowledgeFiles = parseStringArray(value["knowledgeFiles"]);
   const usefulnessFeedbackFiles = parseStringArray(value["usefulnessFeedbackFiles"] ?? []);
 
   if (
     cardFiles === undefined ||
-    patternFiles === undefined ||
+    knowledgeFiles === undefined ||
     usefulnessFeedbackFiles === undefined ||
-    (cardFiles.length === 0 && patternFiles.length === 0 && usefulnessFeedbackFiles.length === 0)
+    (cardFiles.length === 0 && knowledgeFiles.length === 0 && usefulnessFeedbackFiles.length === 0)
   ) {
     return undefined;
   }
 
   return {
     cardFiles,
-    patternFiles,
+    knowledgeFiles,
     usefulnessFeedbackFiles
   };
 };
@@ -731,19 +731,19 @@ const loadCardFile = async (
   cards.push(card);
 };
 
-const loadPatternFile = async (
+const loadKnowledgeFile = async (
   label: string,
   resolvedFile: string,
   cards: BrainKnowledgeReadModel[]
 ): Promise<void> => {
   const parsed = await readJsonObject(resolvedFile);
-  const pattern = parseRetainedPatternDecision(parsed);
+  const decision = parseBrainKnowledgeDecision(parsed);
 
-  if (pattern === undefined) {
-    throw new Error(`Invalid retained pattern decision file: ${label}`);
+  if (decision === undefined) {
+    throw new Error(`Invalid brain knowledge decision file: ${label}`);
   }
 
-  cards.push(brainKnowledgeCardFromRetainedPatternDecision(pattern));
+  cards.push(brainKnowledgeCardFromDecision(decision));
 };
 
 const loadUsefulnessFeedbackFile = async (

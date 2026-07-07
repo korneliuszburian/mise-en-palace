@@ -589,10 +589,10 @@ const readBrainKnowledgeSelection = async (
       cards,
       proof: {
         proves: [
-          "plan retained-pattern selection read active MemoryRecord rows from the resolved DB project"
+          "plan brain-knowledge selection read active MemoryRecord rows from the resolved DB project"
         ],
         doesNotProve: [
-          "DB-backed retained-pattern selection proves source truth",
+          "DB-backed brain-knowledge selection proves source truth",
           "Codex used the selected memory",
           "store-backed usefulness feedback has been applied"
         ]

@@ -1,7 +1,7 @@
 {
   "cardFiles": [],
   "usefulnessFeedbackFiles": [],
-  "patternFiles": [
+  "knowledgeFiles": [
     "patterns/brain-knowledge-read-only-ui-boundary.json",
     "patterns/codex-hook-deterministic-guardrail-boundary.json",
     "patterns/codex-skill-progressive-disclosure-routing.json",

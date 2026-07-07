@@ -307,7 +307,7 @@ describe("runCli", () => {
 
   it("retries brain knowledge planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Improve retained-pattern plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
+      "Improve brain-knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );
 
     expect(result.exitCode).toBe(0);

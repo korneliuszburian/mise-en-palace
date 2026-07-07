@@ -1,7 +1,7 @@
 {
-  "patternId": "ts-boundary-brain-knowledge-parser-exemplar",
+  "knowledgeId": "ts-boundary-brain-knowledge-parser-exemplar",
   "name": "Brain knowledge parser TypeScript exemplar",
-  "adoptionStatus": "lab",
+  "decisionStatus": "lab",
   "confidence": "medium",
   "reviewability": "ready",
   "decision": "Use packages/harness/src/brain-knowledge-read-model.ts as a local reference implementation recipe for unknown-first brain-knowledge parser boundaries. Future similar parser work may clone the approach: external catalog JSON enters as unknown, finite status/action fields are narrowed with explicit sets, missing evidence-boundary fields reject the record, and tests cover invalid enum values, missing proof boundaries, usefulness-feedback readback, and deterministic text search. The exemplar guides implementation shape but does not replace tests, evidence capture, or source-to-decision mapping.",

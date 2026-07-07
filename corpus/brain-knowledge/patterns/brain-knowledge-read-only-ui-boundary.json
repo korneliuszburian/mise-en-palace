@@ -1,7 +1,7 @@
 {
-  "patternId": "brain-knowledge-read-only-ui-boundary",
+  "knowledgeId": "brain-knowledge-read-only-ui-boundary",
   "name": "Brain knowledge UI/search remains read-only until usefulness proof",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "Brain knowledge UI/search should render read-only BrainKnowledgeReadModel cards with proof boundaries before any API, MCP, dashboard, DB search service, or mutation-capable surface is built.",

@@ -171,7 +171,7 @@ export type CliCommand =
   | {
       kind: "brainKnowledge";
       cardFiles: readonly string[];
-      patternFiles: readonly string[];
+      knowledgeFiles: readonly string[];
       catalogFiles: readonly string[];
       storeOnly: boolean;
       projectId?: string;
@@ -535,7 +535,7 @@ const usage = [
   "krn run show --run-id <id>",
   "krn agent packet --run-id <id> [--json]",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
-  "krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",

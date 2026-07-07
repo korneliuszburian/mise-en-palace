@@ -1636,7 +1636,7 @@ describe("runBrainSearchCommand", () => {
         missingEvidence: []
       },
       recommendedNextAction:
-        "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-retained pattern context is explicitly needed."
+        "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-brain knowledge context is explicitly needed."
     });
   });
 

@@ -1,7 +1,7 @@
 {
-  "patternId": "ts-boundary-unknown-first-result-state",
+  "knowledgeId": "ts-boundary-unknown-first-result-state",
   "name": "Unknown-first external boundary with explicit result state",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "External JSON/env/file/CLI/MCP inputs should enter as unknown, narrow near the boundary, and return explicit finite result states when callers need failure reasons.",

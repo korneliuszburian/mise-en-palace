@@ -18,14 +18,14 @@ import type {
 } from "./parse-args.js";
 
 const brainKnowledgeUsage = [
-  "Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain knowledge [--text unknown-first]",
   "krn brain knowledge --store-only [--text unknown-first]",
   "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
-  "krn brain knowledge --pattern-file retained-pattern.json [--text unknown-first]",
-  "krn brain knowledge --catalog-file retained-pattern-catalog.json [--text unknown-first]",
+  "krn brain knowledge --knowledge-file brain-knowledge-decision.json [--text unknown-first]",
+  "krn brain knowledge --catalog-file brain-knowledge-catalog.json [--text unknown-first]",
   "  note: no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
@@ -126,7 +126,7 @@ const parsePositiveInteger = (
 
 type BrainKnowledgeParseState = {
   cardFiles: string[];
-  patternFiles: string[];
+  knowledgeFiles: string[];
   catalogFiles: string[];
   storeOnly: boolean;
   projectId: string | undefined;
@@ -178,8 +178,8 @@ const pushPathOption = (
 const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = {
   "--card-file": (args, index, state) =>
     pushPathOption(args, index, "--card-file", state.cardFiles),
-  "--pattern-file": (args, index, state) =>
-    pushPathOption(args, index, "--pattern-file", state.patternFiles),
+  "--knowledge-file": (args, index, state) =>
+    pushPathOption(args, index, "--knowledge-file", state.knowledgeFiles),
   "--catalog-file": (args, index, state) =>
     pushPathOption(args, index, "--catalog-file", state.catalogFiles),
   "--store-only": (_args, index, state) => {
@@ -346,7 +346,7 @@ const validateBrainKnowledgeSources = (
   if (state.storeOnly && hasExplicitBrainKnowledgeSource(state)) {
     return {
       ok: false,
-      error: `--store-only cannot be combined with --card-file, --pattern-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
+      error: `--store-only cannot be combined with --card-file, --knowledge-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -365,12 +365,12 @@ const validateBrainKnowledgeSources = (
 
 const hasExplicitBrainKnowledgeSource = (state: BrainKnowledgeParseState): boolean =>
   state.cardFiles.length > 0 ||
-  state.patternFiles.length > 0 ||
+  state.knowledgeFiles.length > 0 ||
   state.catalogFiles.length > 0;
 
 const hasEmptyBrainKnowledgeSourcePath = (state: BrainKnowledgeParseState): boolean =>
   state.cardFiles.some((cardFile) => cardFile.length === 0) ||
-  state.patternFiles.some((patternFile) => patternFile.length === 0) ||
+  state.knowledgeFiles.some((knowledgeFile) => knowledgeFile.length === 0) ||
   state.catalogFiles.some((catalogFile) => catalogFile.length === 0);
 
 const buildBrainKnowledgeCommand = (
@@ -379,7 +379,7 @@ const buildBrainKnowledgeCommand = (
   command: {
     kind: "brainKnowledge",
     cardFiles: state.cardFiles,
-    patternFiles: state.patternFiles,
+    knowledgeFiles: state.knowledgeFiles,
     catalogFiles: state.catalogFiles,
     storeOnly: state.storeOnly,
     ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
@@ -406,7 +406,7 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
 
   const state: BrainKnowledgeParseState = {
     cardFiles: [],
-    patternFiles: [],
+    knowledgeFiles: [],
     catalogFiles: [],
     storeOnly: false,
     projectId: undefined,

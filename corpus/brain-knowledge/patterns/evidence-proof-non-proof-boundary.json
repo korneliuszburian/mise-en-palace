@@ -1,7 +1,7 @@
 {
-  "patternId": "evidence-proof-non-proof-boundary",
+  "knowledgeId": "evidence-proof-non-proof-boundary",
   "name": "Evidence proof and non-proof boundary",
-  "adoptionStatus": "adopt_now",
+  "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
   "decision": "Every evidence item that can influence review, memory, source, skill, policy, or eval decisions must state what it proves and what it does not prove, with command provenance kept visible.",

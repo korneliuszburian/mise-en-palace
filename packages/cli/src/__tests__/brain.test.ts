@@ -36,7 +36,7 @@ const storePatternMemory = (): MemoryRecord => ({
   positiveFeedbackCount: 1,
   negativeFeedbackCount: 0,
   metadata: {
-    patternId: "store-backed-usefulness",
+    knowledgeId: "store-backed-usefulness",
     doesNotProve: "This memory does not prove broad usefulness quality.",
     falsifier: "A runtime readback ignores feedback_delta usefulness outcomes."
   },
@@ -185,7 +185,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--pattern-file <path>|--catalog-file <path>]");
+    expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
     expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
   });
@@ -235,12 +235,12 @@ describe("runCli", () => {
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
   });
 
-  it("renders retained pattern files through the brain knowledge CLI readback", async () => {
+  it("renders brain knowledge decision files through the brain knowledge CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
       "knowledge",
-      "--pattern-file",
+      "--knowledge-file",
       "corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
@@ -253,7 +253,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Pattern files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Knowledge files: corpus/brain-knowledge/patterns/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });

@@ -59,11 +59,11 @@ export const memoryRecordToKnowledgeCard = (
   memory: MemoryRecord
 ): BrainKnowledgeReadModel => {
   const evidenceRefs = sourceLineageEvidenceRefs(memory);
-  const patternId = metadataString(memory.metadata, "patternId");
+  const knowledgeId = metadataString(memory.metadata, "knowledgeId");
 
   return {
-    id: patternId === undefined ? memory.id : `pattern:${patternId}`,
-    kind: patternId === undefined ? "memory" : "pattern",
+    id: knowledgeId === undefined ? memory.id : `pattern:${knowledgeId}`,
+    kind: knowledgeId === undefined ? "memory" : "pattern",
     status: memoryStatus(memory.status),
     title: memory.summary,
     summary: `${memory.body}\n\nApplication guidance: ${memory.applicationGuidance}`,
