@@ -143,7 +143,8 @@ export const evalProofBoundaryManifest = [
     owner: "DB-backed product-loop proof",
     requiredFor: ["product-loop", "db-runtime", "handoff"],
     proves: [
-      "live DB evidence/review/feedback/SourceDecision/MemoryReviewGate/memory/activation readback works for the bounded brain-loop scenario",
+      "live DB evidence/review/feedback/SourceDecision/MemoryReviewGate/memory/activation/Codex-brief readback works for the bounded brain-loop scenario",
+      "feedback can change later activation by including helped memory and excluding hurt memory in persisted next-run decisions",
       "marker cleanup completed for that scenario"
     ],
     doesNotProve: [

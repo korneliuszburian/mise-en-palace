@@ -12,6 +12,15 @@ import {
   promoteMemoryCandidateThroughGate,
   retrieveActivationCandidates
 } from "@krn/harness";
+import type {
+  EvidenceContract
+} from "@krn/harness";
+import type {
+  CapabilityPlan,
+  ContextAssembly,
+  HarnessPlan,
+  TaskContract
+} from "@krn/core";
 
 import type { KrnDatabase } from "./database.js";
 import {
@@ -35,6 +44,16 @@ export interface BrainLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
+  renderExecutionBrief(input: BrainLoopExecutionBriefInput): string;
+}
+
+export interface BrainLoopExecutionBriefInput {
+  taskContract: TaskContract;
+  harnessPlan: HarnessPlan;
+  contextAssembly: ContextAssembly;
+  capabilityPlan: CapabilityPlan;
+  evidenceContract: EvidenceContract;
+  nextAction: string;
 }
 
 export interface BrainLoopSmokeReport {
@@ -68,6 +87,9 @@ export interface BrainLoopSmokeReport {
   nextRunRepoInstallationIds: string[];
   nextRunCrossRepoMemoryInclusion: boolean;
   nextRunContextAssemblyId: string;
+  nextRunCodexBriefRendered: boolean;
+  nextRunCodexBriefIncludesMemory: boolean;
+  nextRunCodexBriefIncludesNonProofBoundary: boolean;
   nextRunMemoryInclusionCount: number;
   nextRunIncludedMemoryDecisionCount: number;
   downgradedMemoryNegativeFeedbackCount: number;
@@ -617,6 +639,19 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
+    const nextRunCodexBrief = input.renderExecutionBrief({
+      taskContract: nextCompile.taskContract,
+      harnessPlan: nextCompile.harnessPlan,
+      contextAssembly: nextCompile.contextAssembly,
+      capabilityPlan: nextCompile.capabilityPlan,
+      evidenceContract: nextCompile.evidenceContract,
+      nextAction: nextCompile.nextAction
+    });
+    const nextRunCodexBriefRendered = nextRunCodexBrief.trim().length > 0;
+    const nextRunCodexBriefIncludesMemory = nextRunCodexBrief.includes(memoryRecord.id);
+    const nextRunCodexBriefIncludesNonProofBoundary =
+      nextRunCodexBrief.includes("Codex executed the work.") &&
+      nextRunCodexBrief.includes("Memory was mutated.");
     const downgradedMemoryApplications: (typeof memoryApplication)[] = [];
 
     for (const attempt of [1, 2, 3]) {
@@ -821,6 +856,18 @@ export const runBrainLoopSmokeCheck = async (
         passed: nextRunIncludedMemoryDecisionCount === 1
       },
       {
+        label: "next run Codex brief rendered",
+        passed: nextRunCodexBriefRendered
+      },
+      {
+        label: "next run Codex brief includes memory",
+        passed: nextRunCodexBriefIncludesMemory
+      },
+      {
+        label: "next run Codex brief includes non-proof boundary",
+        passed: nextRunCodexBriefIncludesNonProofBoundary
+      },
+      {
         label: "cross-repo promoted memory inclusion",
         passed: nextRunCrossRepoMemoryInclusion
       },
@@ -899,6 +946,9 @@ export const runBrainLoopSmokeCheck = async (
       nextRunRepoInstallationIds,
       nextRunCrossRepoMemoryInclusion,
       nextRunContextAssemblyId: nextCompile.contextAssembly.id,
+      nextRunCodexBriefRendered,
+      nextRunCodexBriefIncludesMemory,
+      nextRunCodexBriefIncludesNonProofBoundary,
       nextRunMemoryInclusionCount: nextRunMemoryInclusions.length,
       nextRunIncludedMemoryDecisionCount,
       downgradedMemoryNegativeFeedbackCount: downgradedMemoryRecord.negativeFeedbackCount,

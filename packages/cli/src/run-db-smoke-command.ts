@@ -13,6 +13,10 @@ import {
   runWorkerJobSmokeCheck
 } from "@krn/db/dev";
 import {
+  createExecutionBrief,
+  renderExecutionBriefText
+} from "@krn/codex-adapter";
+import {
   formatCodexAdapterSmokeReportLines,
   runCodexAdapterSmokeCheck
 } from "./codex-adapter-smoke.js";
@@ -469,7 +473,8 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runBrainLoopSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("brain-loop-smoke")
+    smokeId: runtime.createId("brain-loop-smoke"),
+    renderExecutionBrief: (input) => renderExecutionBriefText(createExecutionBrief(input))
   });
 
   return smokeResultFromCleanup(
@@ -510,6 +515,9 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Next-run repo ids: ${report.nextRunRepoInstallationIds.join(", ")}`,
       `Next-run cross-repo memory inclusion: ${report.nextRunCrossRepoMemoryInclusion ? "yes" : "no"}`,
       `Next-run context assembly: ${report.nextRunContextAssemblyId}`,
+      `Next-run Codex brief rendered: ${report.nextRunCodexBriefRendered ? "yes" : "no"}`,
+      `Next-run Codex brief includes memory: ${report.nextRunCodexBriefIncludesMemory ? "yes" : "no"}`,
+      `Next-run Codex brief non-proof boundary: ${report.nextRunCodexBriefIncludesNonProofBoundary ? "yes" : "no"}`,
       `Next-run memory inclusions: ${report.nextRunMemoryInclusionCount}`,
       `Next-run included memory decisions: ${report.nextRunIncludedMemoryDecisionCount}`,
       `Downgraded memory negative feedback count: ${report.downgradedMemoryNegativeFeedbackCount}`,
