@@ -401,6 +401,39 @@ describe("parseMemoryArgs", () => {
     });
     expect(parseMemoryArgs([
       "candidate",
+      "add",
+      "--run-id",
+      "run-1",
+      "--kind",
+      "lesson",
+      "--content",
+      "Memory content",
+      "--confidence",
+      "high",
+      "--application-guidance",
+      "Use when planning",
+      "--invalidation-rule",
+      "Revisit when stale",
+      "--source-lineage="
+    ])).toEqual({
+      error: "--source-lineage requires a non-empty value"
+    });
+    expect(parseMemoryArgs([
+      "anti",
+      "add",
+      "--run-id",
+      "run-1",
+      "--rejected-claim",
+      "Bad memory",
+      "--source-lineage",
+      "source-1",
+      "--candidate-evidence-ref",
+      " "
+    ])).toEqual({
+      error: "--candidate-evidence-ref requires a non-empty value"
+    });
+    expect(parseMemoryArgs([
+      "candidate",
       "promote",
       "--candidate-id",
       "candidate-1",

@@ -182,6 +182,10 @@ interface MemoryDraftTokenConfig<TOption extends string, TKey extends string>
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
 
+const hasTextItem = (value: string): boolean => value.trim().length > 0;
+
+const hasTextItems = (values: readonly string[]): boolean => values.some(hasTextItem);
+
 const hasAcceptedDecision = (value: string | undefined): boolean =>
   value === "accepted";
 
@@ -196,7 +200,7 @@ const hasMemoryCandidateAddRequiredFields = (
     memoryCommand.applicationGuidance,
     memoryCommand.invalidationRule
   ].every(hasText) &&
-  (hasText(memoryCommand.sourceClaimId) || memoryCommand.sourceLineageIds.length > 0);
+  (hasText(memoryCommand.sourceClaimId) || hasTextItems(memoryCommand.sourceLineageIds));
 
 const hasMemoryCandidatePromoteRequiredFields = (
   memoryCommand: MemoryCandidatePromoteCommand
@@ -232,7 +236,10 @@ const hasMemoryAntiAddRequiredFields = (
     memoryCommand.runId,
     memoryCommand.rejectedClaim
   ].every(hasText) &&
-  (hasText(memoryCommand.invalidatedBySourceClaimId) || memoryCommand.sourceLineageIds.length > 0);
+  (
+    hasText(memoryCommand.invalidatedBySourceClaimId) ||
+    hasTextItems(memoryCommand.sourceLineageIds)
+  );
 
 const hasMemoryAntiPromoteRequiredFields = (
   memoryCommand: MemoryAntiPromoteCommand
@@ -348,7 +355,13 @@ const parseRepeatedDraftOption = (
     return memoryError(valueResult.error ?? fallbackUsage);
   }
 
-  target.push(valueResult.value.trim());
+  const value = valueResult.value.trim();
+
+  if (!hasTextItem(value)) {
+    return memoryError(`${option} requires a non-empty value`);
+  }
+
+  target.push(value);
 
   return memoryNext(valueResult.nextIndex);
 };
