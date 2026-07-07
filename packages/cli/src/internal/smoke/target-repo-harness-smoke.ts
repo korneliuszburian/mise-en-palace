@@ -25,6 +25,7 @@ import {
   countRunEventsBySmokeId,
   countSourceArtifactsBySmokeId,
   countSourceClaimsBySmokeId,
+  defaultCodexBriefAuthorityRefs,
   matchedOrMismatch,
   matchedWhen,
   metadataString,
@@ -721,8 +722,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-baseline-readback`,
       nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: "GOAL.md M27 target repo init-connect dogfood",
-      execPlanReference: "PLAN.md M27 Slice 09",
+      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
+      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
       missingContextMessage: "Target repo harness smoke failed to read back baseline run"
     });
     const baselineProof = assertTargetBaselineReadback({
@@ -830,8 +831,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-readback`,
       nextActionFallback: "Use this brief as the next Codex input.",
-      goalReference: "GOAL.md M27 target repo init-connect dogfood",
-      execPlanReference: "PLAN.md M27 Slice 09",
+      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
+      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
       missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
     const planProof = assertTargetPlanReadback({

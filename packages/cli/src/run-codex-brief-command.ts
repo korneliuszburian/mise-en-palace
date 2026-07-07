@@ -2,6 +2,7 @@ import type {
   CreateDatabaseRuntime
 } from "./run-plan-command.js";
 import {
+  defaultCodexBriefAuthorityRefs,
   renderCodexBriefFromAggregate,
   resolveReadOnlyHarnessRuntime
 } from "./codex-brief-support.js";
@@ -85,8 +86,8 @@ export const runCodexBriefCommand = async (
       includeTaskContractInCapabilityPlan: true,
       createdAt: runtime.now(),
       createId: runtime.createId,
-      goalReference: "GOAL.md active KRN canonical harness spine",
-      execPlanReference: "GOAL.md M26.03",
+      goalReference: defaultCodexBriefAuthorityRefs.goalReference,
+      execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference,
       nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });

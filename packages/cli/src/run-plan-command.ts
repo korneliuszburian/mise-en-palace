@@ -56,6 +56,9 @@ import {
   compactBrainKnowledgeBridgeQueries
 } from "./brain-knowledge-query.js";
 import {
+  defaultCodexBriefAuthorityRefs
+} from "./codex-brief-support.js";
+import {
   formatRetainedPatternSelectionLines,
   retainedPatternPlanSelectionMetadataKey,
   retainedPatternSelectionFromKnowledgeJson,
@@ -772,8 +775,8 @@ const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
     capabilityPlan: result.capabilityPlan,
     evidenceContract: result.evidenceContract,
     nextAction: result.nextAction,
-    goalReference: "GOAL.md active KRN canonical harness spine",
-    execPlanReference: "PLAN.md Milestone 13"
+    goalReference: defaultCodexBriefAuthorityRefs.goalReference,
+    execPlanReference: defaultCodexBriefAuthorityRefs.execPlanReference
   });
 
 const targetReadModelMetadata = (

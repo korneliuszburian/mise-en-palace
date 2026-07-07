@@ -93,6 +93,11 @@ export interface RenderedCodexBrief {
   evidenceContract: EvidenceContract;
 }
 
+export const defaultCodexBriefAuthorityRefs = {
+  goalReference: "KRN_ROADMAP.md product and architecture roadmap",
+  execPlanReference: "Beads active task graph"
+} as const;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
