@@ -162,8 +162,8 @@ const task: BehaviorFixture = {
       detection: "Rendered text lacks constraints, acceptance, review burden, rollback, context, exclusions, or does-not-prove sections."
     }],
     sourceRefs: [
-      "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
-      "docs/architecture/golden-task-promotion.md"
+      "packages/codex-adapter/src/render-execution-brief.ts",
+      "packages/codex-adapter/src/__tests__/codex-brief-behavior.test.ts"
     ],
     metadata: {}
   }],

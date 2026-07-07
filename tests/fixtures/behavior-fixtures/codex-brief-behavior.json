@@ -20,8 +20,8 @@
           "subject": "codex_execution_brief:review_contract",
           "rationale": "Codex-facing briefs must expose constraints, acceptance, review burden, rollback, selected context, exclusions, and proof limits without becoming the product brain.",
           "evidenceRefs": [
-            "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
-            "packages/codex-adapter/src/render-execution-brief.ts"
+            "packages/codex-adapter/src/render-execution-brief.ts",
+            "packages/codex-adapter/src/__tests__/codex-brief-behavior.test.ts"
           ]
         },
         "protectedFailureModes": [
@@ -35,8 +35,8 @@
           }
         ],
         "sourceRefs": [
-          "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
-          "docs/architecture/golden-task-promotion.md"
+          "packages/codex-adapter/src/render-execution-brief.ts",
+          "packages/codex-adapter/src/__tests__/codex-brief-behavior.test.ts"
         ],
         "metadata": {
           "promotionRule": "critical_invariant",

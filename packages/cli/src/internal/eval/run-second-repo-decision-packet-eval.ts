@@ -62,7 +62,6 @@ const selfRepoEvidencePrefixes = [
   "NOTES.md",
   ".beads/",
   "docs/KRN_",
-  "docs/architecture/",
   "docs/runs/",
   "packages/"
 ];
