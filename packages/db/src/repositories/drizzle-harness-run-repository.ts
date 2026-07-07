@@ -424,12 +424,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         }
       });
 
-      return {
-        ...mapFeedbackDelta(row),
-        memoryCandidates: input.memoryCandidates,
-        sourceDecisions: input.sourceDecisions,
-        evalCandidates: input.evalCandidates
-      };
+      return mapFeedbackDelta(row);
     });
   }
 
