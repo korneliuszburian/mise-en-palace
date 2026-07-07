@@ -568,13 +568,12 @@ export const assessSourceClaimOverride = (input: {
   }
 
   const candidateTrustRank = rankSourceTrustTier(input.candidate.trustTier);
-  const nowIsInvalid = parseTimestampMs(input.now) === undefined;
   const strongerCurrentConsensus = input.currentConsensus.find((currentClaim) => {
     if (currentClaim.id === input.candidate.id || currentClaim.status !== "accepted") {
       return false;
     }
 
-    if (!nowIsInvalid && !isSourceClaimTemporallyValid(currentClaim, input.now)) {
+    if (!isSourceClaimTemporallyValid(currentClaim, input.now)) {
       return false;
     }
 
