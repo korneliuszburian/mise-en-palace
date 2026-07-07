@@ -735,9 +735,10 @@ DecisionPacket and returning evidence/feedback. CLI keeps the contract local,
 scriptable, and testable; MCP can wrap that contract later without making the
 adapter or dashboard the product core.
 
-Current boundary: `mcp:agent-packet:internal` is an internal read-only wrapper
-over the CLI agent-packet contract, not a KRN MCP product server. It must not
-add selection policy, execute Codex, or promote memory/source truth.
+Current boundary: `mcp:decision-packet` is the minimal read-only KRN MCP product
+wrapper over the CLI `DecisionPacket` contract. It must not add selection
+policy, execute Codex, mutate target repositories, promote memory/source truth,
+or capture feedback by side effect.
 
 MCP product boundary decision:
 
@@ -765,8 +766,7 @@ Rejected alternatives:
 - Resource forest for every read model: rejected. It recreates the old context
   swamp as transport API.
 - Product name `krn_agent_packet`: rejected for the external boundary. The
-  product concept is the `DecisionPacket`; the current `agent-packet` wrapper is
-  an internal proof shim.
+  product concept is the `DecisionPacket`; MCP exposes `krn_decision_packet`.
 
 ## Current P1 Queue
 

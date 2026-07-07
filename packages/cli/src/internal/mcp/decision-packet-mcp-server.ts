@@ -51,20 +51,20 @@ type ToolCallResult = JsonObject & {
   readonly isError?: boolean;
 };
 
-export interface AgentPacketMcpRuntime {
+export interface DecisionPacketMcpRuntime {
   readonly env: Record<string, string | undefined>;
   now(): string;
   createId(prefix: string): string;
   readonly createDatabaseRuntime?: CreateRunShowDatabaseRuntime;
-  readonly runAgentPacket?: (
+  readonly runDecisionPacket?: (
     runtime: AgentPacketCommandRuntime
   ) => Promise<AgentPacketCommandResult>;
 }
 
 const protocolVersion = "2025-06-18";
-const serverName = "krn-agent-packet-mcp";
+const serverName = "krn-decision-packet-mcp";
 const serverVersion = "0.0.0";
-const agentPacketToolName = "krn_agent_packet";
+const decisionPacketToolName = "krn_decision_packet";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -135,10 +135,10 @@ const requestId = (
 ): JsonRpcId => message.id === undefined ? null : message.id;
 
 const toolDefinition = (): JsonValue => ({
-  name: agentPacketToolName,
-  title: "KRN Agent Decision Packet",
+  name: decisionPacketToolName,
+  title: "KRN DecisionPacket",
   description:
-    "Return the existing read-only KRN DecisionPacket contract and evidence/feedback return channels for a persisted run.",
+    "Return the read-only KRN DecisionPacket contract and evidence/feedback return channels for a persisted run.",
   inputSchema: {
     type: "object",
     properties: {
@@ -174,16 +174,16 @@ const initializeResult = (
     },
     serverInfo: {
       name: serverName,
-      title: "Internal KRN Agent Packet MCP Wrapper",
+      title: "KRN DecisionPacket MCP",
       version: serverVersion
     },
     instructions:
-      "Use krn_agent_packet to fetch a read-only DecisionPacket. Evidence and feedback remain explicit return channels; this internal wrapper does not execute Codex, promote memory/source truth, or represent a KRN MCP product server."
+      "Use krn_decision_packet to fetch a read-only KRN DecisionPacket for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Evidence and feedback remain explicit return channels in the response."
   };
 };
 
-const runAgentPacket = async (
-  runtime: AgentPacketMcpRuntime,
+const runDecisionPacket = async (
+  runtime: DecisionPacketMcpRuntime,
   runId: string
 ): Promise<ToolCallResult> => {
   const commandRuntime: AgentPacketCommandRuntime = {
@@ -195,36 +195,36 @@ const runAgentPacket = async (
       ? {}
       : { createDatabaseRuntime: runtime.createDatabaseRuntime })
   };
-  const result = await (runtime.runAgentPacket ?? runAgentPacketCommand)(commandRuntime);
+  const result = await (runtime.runDecisionPacket ?? runAgentPacketCommand)(commandRuntime);
   const parsed: unknown = JSON.parse(result.stdout);
 
   if (!isJsonValue(parsed)) {
-    return textResult("krn agent packet returned non-JSON tool content", true);
+    return textResult("krn decision packet command returned non-JSON tool content", true);
   }
 
   return jsonResult(parsed);
 };
 
 const runToolCall = async (
-  runtime: AgentPacketMcpRuntime,
+  runtime: DecisionPacketMcpRuntime,
   params: unknown
 ): Promise<ToolCallResult> => {
   if (!isRecord(params)) {
     return textResult("tools/call params must be an object", true);
   }
 
-  if (params["name"] !== agentPacketToolName) {
+  if (params["name"] !== decisionPacketToolName) {
     return textResult(`Unknown tool: ${String(params["name"])}`, true);
   }
 
   const args = params["arguments"];
 
   if (!isRecord(args) || typeof args["runId"] !== "string" || args["runId"].trim().length === 0) {
-    return textResult("krn_agent_packet requires a non-empty runId argument", true);
+    return textResult("krn_decision_packet requires a non-empty runId argument", true);
   }
 
   try {
-    return await runAgentPacket(runtime, args["runId"].trim());
+    return await runDecisionPacket(runtime, args["runId"].trim());
   } catch (error) {
     return textResult(error instanceof Error ? error.message : String(error), true);
   }
@@ -244,9 +244,9 @@ const parseRequest = (
       }
     : undefined;
 
-export const handleAgentPacketMcpMessage = async (
+export const handleDecisionPacketMcpMessage = async (
   value: unknown,
-  runtime: AgentPacketMcpRuntime
+  runtime: DecisionPacketMcpRuntime
 ): Promise<JsonRpcResponse | undefined> => {
   const message = parseRequest(value);
 
@@ -278,16 +278,16 @@ interface WritableOutput {
   write(chunk: string): void;
 }
 
-const defaultRuntime = (): AgentPacketMcpRuntime => ({
+const defaultRuntime = (): DecisionPacketMcpRuntime => ({
   env: process.env,
   now: () => new Date().toISOString(),
   createId: (prefix) => `${prefix}:${randomUUID()}`
 });
 
-export const serveAgentPacketMcpStdio = async (
+export const serveDecisionPacketMcpStdio = async (
   input: AsyncIterable<Buffer | string>,
   output: WritableOutput,
-  runtime: AgentPacketMcpRuntime = defaultRuntime()
+  runtime: DecisionPacketMcpRuntime = defaultRuntime()
 ): Promise<void> => {
   let buffer = "";
 
@@ -318,7 +318,7 @@ export const serveAgentPacketMcpStdio = async (
         continue;
       }
 
-      const reply = await handleAgentPacketMcpMessage(parsed, runtime);
+      const reply = await handleDecisionPacketMcpMessage(parsed, runtime);
 
       if (reply !== undefined) {
         output.write(`${JSON.stringify(reply)}\n`);
@@ -328,5 +328,5 @@ export const serveAgentPacketMcpStdio = async (
 };
 
 if (isCliEntrypoint(import.meta.url)) {
-  await serveAgentPacketMcpStdio(process.stdin, process.stdout);
+  await serveDecisionPacketMcpStdio(process.stdin, process.stdout);
 }

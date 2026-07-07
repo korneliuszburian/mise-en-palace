@@ -5,10 +5,10 @@ import {
 } from "vitest";
 
 import {
-  handleAgentPacketMcpMessage,
-  serveAgentPacketMcpStdio,
-  type AgentPacketMcpRuntime
-} from "../internal/mcp/agent-packet-mcp-server.js";
+  handleDecisionPacketMcpMessage,
+  serveDecisionPacketMcpStdio,
+  type DecisionPacketMcpRuntime
+} from "../internal/mcp/decision-packet-mcp-server.js";
 
 const now = "2026-07-07T22:00:00.000Z";
 
@@ -78,7 +78,7 @@ const packetJson = {
     }
   },
   proof: {
-    proves: ["Internal MCP wrapper returns the existing agent packet contract."],
+    proves: ["MCP wrapper returns the existing DecisionPacket contract."],
     doesNotProve: ["live Codex obedience", "memory/source promotion"]
   }
 };
@@ -87,21 +87,21 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const runtime = (
-  handler: AgentPacketMcpRuntime["runAgentPacket"] = async () => ({
+  handler: DecisionPacketMcpRuntime["runDecisionPacket"] = async () => ({
     stdout: `${JSON.stringify(packetJson)}\n`
   })
-): AgentPacketMcpRuntime => ({
+): DecisionPacketMcpRuntime => ({
   env: {
     KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
   },
   now: () => now,
   createId: (prefix) => `${prefix}:test`,
-  runAgentPacket: handler
+  runDecisionPacket: handler
 });
 
-describe("internal agent packet MCP wrapper", () => {
-  it("advertises a tools-only MCP wrapper and the agent packet tool", async () => {
-    const initialized = await handleAgentPacketMcpMessage({
+describe("DecisionPacket MCP wrapper", () => {
+  it("advertises a tools-only MCP wrapper and the decision packet tool", async () => {
+    const initialized = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
@@ -126,14 +126,14 @@ describe("internal agent packet MCP wrapper", () => {
           }
         },
         serverInfo: {
-          name: "krn-agent-packet-mcp",
-          title: "Internal KRN Agent Packet MCP Wrapper"
+          name: "krn-decision-packet-mcp",
+          title: "KRN DecisionPacket MCP"
         },
-        instructions: expect.stringContaining("does not execute Codex, promote memory/source truth, or represent a KRN MCP product server")
+        instructions: expect.stringContaining("does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect")
       }
     });
 
-    const listed = await handleAgentPacketMcpMessage({
+    const listed = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: 2,
       method: "tools/list"
@@ -143,7 +143,7 @@ describe("internal agent packet MCP wrapper", () => {
       result: {
         tools: [
           {
-            name: "krn_agent_packet",
+            name: "krn_decision_packet",
             inputSchema: {
               required: ["runId"],
               additionalProperties: false
@@ -158,14 +158,14 @@ describe("internal agent packet MCP wrapper", () => {
     });
   });
 
-  it("wraps the existing headless agent packet contract as structured tool output", async () => {
+  it("wraps the existing DecisionPacket contract as structured tool output", async () => {
     const seenRunIds: string[] = [];
-    const reply = await handleAgentPacketMcpMessage({
+    const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: "call-1",
       method: "tools/call",
       params: {
-        name: "krn_agent_packet",
+        name: "krn_decision_packet",
         arguments: {
           runId: "run-agent-1"
         }
@@ -207,12 +207,12 @@ describe("internal agent packet MCP wrapper", () => {
   });
 
   it("reports invalid tool input as a tool error instead of inventing a packet", async () => {
-    const reply = await handleAgentPacketMcpMessage({
+    const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: 3,
       method: "tools/call",
       params: {
-        name: "krn_agent_packet",
+        name: "krn_decision_packet",
         arguments: {}
       }
     }, runtime());
@@ -222,7 +222,7 @@ describe("internal agent packet MCP wrapper", () => {
         isError: true,
         content: [{
           type: "text",
-          text: "krn_agent_packet requires a non-empty runId argument"
+          text: "krn_decision_packet requires a non-empty runId argument"
         }]
       }
     });
@@ -231,12 +231,12 @@ describe("internal agent packet MCP wrapper", () => {
   it("serves newline-delimited JSON-RPC over stdio without non-MCP stdout", async () => {
     async function* input(): AsyncIterable<string> {
       yield "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}\n";
-      yield "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"krn_agent_packet\",\"arguments\":{\"runId\":\"run-agent-1\"}}}\n";
+      yield "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"krn_decision_packet\",\"arguments\":{\"runId\":\"run-agent-1\"}}}\n";
     }
 
     const output: string[] = [];
 
-    await serveAgentPacketMcpStdio(input(), {
+    await serveDecisionPacketMcpStdio(input(), {
       write: (chunk) => output.push(chunk)
     }, runtime());
 
@@ -247,7 +247,7 @@ describe("internal agent packet MCP wrapper", () => {
     expect(messages[0]).toMatchObject({
       result: {
         tools: [{
-          name: "krn_agent_packet"
+          name: "krn_decision_packet"
         }]
       }
     });

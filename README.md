@@ -86,8 +86,8 @@ mechanisms.
 
 - Dashboard.
 - API server.
-- KRN MCP product server. An internal read-only agent-packet MCP wrapper exists
-  only as a transport check over the CLI DecisionPacket contract.
+- Broad KRN MCP product server. The minimal read-only `krn_decision_packet`
+  MCP wrapper exists only as transport over the CLI DecisionPacket contract.
 - Plugin package.
 - Source crawler or research layer.
 - Broad benchmark lane.
