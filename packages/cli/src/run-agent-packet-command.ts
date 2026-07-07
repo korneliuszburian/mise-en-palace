@@ -1,4 +1,10 @@
 import type {
+  DecisionPacket
+} from "@krn/core";
+import {
+  decisionPacketFormatVersion
+} from "@krn/core";
+import type {
   DecisionPacketReadModel
 } from "./run-show-readback.js";
 import {
@@ -28,7 +34,8 @@ interface AgentPacketReadModel {
   readonly request: {
     readonly runId: string;
   };
-  readonly decisionPacket: DecisionPacketReadModel;
+  readonly packet: DecisionPacket;
+  readonly readModel: DecisionPacketReadModel;
   readonly returnChannels: {
     readonly evidence: {
       readonly command: string;
@@ -57,9 +64,60 @@ const missingAgentPacketDatabaseUrlMessage = [
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
 ].join("\n");
 
+const unique = (values: readonly string[]): string[] =>
+  [...new Set(values)];
+
+const compactDecisionPacket = (
+  readModel: DecisionPacketReadModel
+): DecisionPacket => {
+  const inclusions = readModel.context.inclusionDetails;
+  const exclusions = readModel.context.exclusionDetails;
+
+  return {
+    formatVersion: decisionPacketFormatVersion,
+    governingDecisionIds: [],
+    sourceClaimIds: unique(inclusions
+      .filter((inclusion) => inclusion.subjectType === "source_claim")
+      .map((inclusion) => inclusion.subjectId)),
+    sourceDecisionEdgeIds: unique(readModel.context.activationTrace?.candidates.flatMap(
+      (candidate) => candidate.sourceClaimEdgeInfluence?.edgeIds ?? []
+    ) ?? []),
+    memoryRefs: unique(inclusions
+      .filter((inclusion) => inclusion.subjectType === "memory_record")
+      .map((inclusion) => inclusion.subjectId)),
+    staleDecisionIds: [],
+    rejectedPathIds: unique([
+      ...inclusions
+        .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
+        .map((inclusion) => inclusion.subjectId),
+      ...exclusions
+        .filter((exclusion) => exclusion.reason === "anti_memory")
+        .map((exclusion) => exclusion.subjectId)
+    ]),
+    falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
+      bundle.commands.map((command) => command.command)
+    ),
+    doesNotProve: readModel.proof.doesNotProve,
+    nonProofs: readModel.proof.doesNotProve,
+    noiseDecisionIds: [],
+    severeStaleAuthorityIds: [],
+    brief: {
+      includedContextCount: readModel.context.inclusions,
+      observationPrefixCount: 0,
+      explicitExclusionCount: readModel.context.exclusions,
+      sourceClaimUseCount: inclusions.filter((inclusion) =>
+        inclusion.subjectType === "source_claim"
+      ).length,
+      memoryRecordUseCount: inclusions.filter((inclusion) =>
+        inclusion.subjectType === "memory_record"
+      ).length
+    }
+  };
+};
+
 const buildAgentPacket = (
   runId: string,
-  decisionPacket: DecisionPacketReadModel
+  readModel: DecisionPacketReadModel
 ): AgentPacketReadModel => ({
   kind: "krn.agentPacket.v1",
   access: "read_only",
@@ -68,7 +126,8 @@ const buildAgentPacket = (
   request: {
     runId
   },
-  decisionPacket,
+  packet: compactDecisionPacket(readModel),
+  readModel,
   returnChannels: {
     evidence: {
       command:
@@ -95,7 +154,7 @@ const buildAgentPacket = (
     proves: [
       "a headless agent can request a read-only DecisionPacket contract through CLI JSON",
       "the response names evidence and feedback return channels without invoking Codex or mutating memory",
-      "the agent surface wraps the DecisionPacket read model instead of making the Codex adapter the product core"
+      "the agent surface exposes the compact DecisionPacket separately from the diagnostic read model"
     ],
     doesNotProve: [
       "MCP integration",
@@ -116,7 +175,7 @@ export const runAgentPacketCommand = async (
     throw new Error(missingAgentPacketDatabaseUrlMessage);
   }
 
-  const decisionPacket = await readDecisionPacketReadModel({
+  const readModel = await readDecisionPacketReadModel({
     env: runtime.env,
     now: runtime.now,
     createId: runtime.createId,
@@ -128,6 +187,6 @@ export const runAgentPacketCommand = async (
   });
 
   return {
-    stdout: `${JSON.stringify(buildAgentPacket(runtime.runId, decisionPacket), null, 2)}\n`
+    stdout: `${JSON.stringify(buildAgentPacket(runtime.runId, readModel), null, 2)}\n`
   };
 };

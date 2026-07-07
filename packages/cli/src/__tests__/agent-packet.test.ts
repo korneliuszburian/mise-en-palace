@@ -54,8 +54,20 @@ const aggregate: HarnessRunAggregate = {
       reason: "Agent needs governing source.",
       expectedUse: "Use before coding.",
       trustTier: "project-decision"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "memory-agent-1",
+      reason: "Agent needs retained implementation guidance.",
+      expectedUse: "Use while editing.",
+      trustTier: "medium"
     }],
-    exclusions: [],
+    exclusions: [{
+      subjectType: "memory_record",
+      subjectId: "memory-rejected-1",
+      reason: "anti_memory",
+      explanation: "Rejected path should be visible to the agent packet.",
+      trustTier: "medium"
+    }],
     metadata: {},
     createdAt: now
   },
@@ -106,7 +118,19 @@ describe("agent packet CLI", () => {
       request: {
         runId: "run-agent-1"
       },
-      decisionPacket: {
+      packet: {
+        formatVersion: "krn.decisionPacket.v1",
+        sourceClaimIds: ["claim-agent-1"],
+        memoryRefs: ["memory-agent-1"],
+        rejectedPathIds: ["memory-rejected-1"],
+        brief: {
+          includedContextCount: 2,
+          explicitExclusionCount: 1,
+          sourceClaimUseCount: 1,
+          memoryRecordUseCount: 1
+        }
+      },
+      readModel: {
         kind: "krn.decisionPacket.readModel.v1",
         run: {
           id: "run-agent-1"
