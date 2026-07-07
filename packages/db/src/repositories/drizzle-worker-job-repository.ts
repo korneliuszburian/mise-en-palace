@@ -112,7 +112,7 @@ export class DrizzleWorkerJobRepository implements WorkerJobRepository {
           lastError: null,
           updatedAt: now()
         })
-        .where(eq(workerJobs.id, id))
+        .where(and(eq(workerJobs.id, id), eq(workerJobs.status, "running")))
         .returning(),
       "markWorkerJobSucceeded"
     );
@@ -132,7 +132,7 @@ export class DrizzleWorkerJobRepository implements WorkerJobRepository {
           lastError: error,
           updatedAt: now()
         })
-        .where(eq(workerJobs.id, id))
+        .where(and(eq(workerJobs.id, id), eq(workerJobs.status, "running")))
         .returning(),
       "markWorkerJobFailed"
     );
@@ -151,7 +151,7 @@ export class DrizzleWorkerJobRepository implements WorkerJobRepository {
           lastError: reason,
           updatedAt: now()
         })
-        .where(eq(workerJobs.id, id))
+        .where(and(eq(workerJobs.id, id), eq(workerJobs.status, "running")))
         .returning(),
       "markWorkerJobSkipped"
     );
