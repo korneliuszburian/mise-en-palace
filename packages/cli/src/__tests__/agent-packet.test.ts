@@ -71,6 +71,37 @@ const aggregate: HarnessRunAggregate = {
     metadata: {},
     createdAt: now
   },
+  activationTrace: {
+    retrievalRunId: "retrieval-agent-1",
+    candidates: [{
+      id: "retrieval-candidate-agent-1",
+      retrievalRunId: "retrieval-agent-1",
+      kind: "source",
+      status: "included",
+      subjectType: "source_claim",
+      subjectId: "claim-agent-1",
+      trustTier: "project-decision",
+      lexicalScore: 12,
+      vectorScore: 0,
+      graphScore: 9,
+      temporalScore: 0,
+      contextRoiScore: 80,
+      totalScore: 101,
+      score: 101,
+      reason: "Source claim was boosted by graph edge influence.",
+      metadata: {
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["source-claim-edge-agent-1"],
+          edgeKinds: ["narrows"],
+          seedSourceClaimIds: ["claim-seed-agent-1"],
+          doesNotProve:
+            "SourceClaimEdge influence does not prove SourceDecisionEdge support."
+        }
+      },
+      createdAt: now
+    }],
+    decisions: []
+  },
   executionRun: {
     id: "run-agent-1",
     harnessPlanId: "plan-agent-1",
@@ -121,6 +152,7 @@ describe("agent packet CLI", () => {
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         sourceClaimIds: ["claim-agent-1"],
+        sourceDecisionEdgeIds: [],
         memoryRefs: ["memory-agent-1"],
         rejectedPathIds: ["memory-rejected-1"],
         brief: {
@@ -137,6 +169,15 @@ describe("agent packet CLI", () => {
         },
         task: {
           objective: "Return a DecisionPacket to a headless agent."
+        },
+        context: {
+          activationTrace: {
+            candidates: [{
+              sourceClaimEdgeInfluence: {
+                edgeIds: ["source-claim-edge-agent-1"]
+              }
+            }]
+          }
         }
       },
       returnChannels: {

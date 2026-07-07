@@ -79,9 +79,7 @@ const compactDecisionPacket = (
     sourceClaimIds: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "source_claim")
       .map((inclusion) => inclusion.subjectId)),
-    sourceDecisionEdgeIds: unique(readModel.context.activationTrace?.candidates.flatMap(
-      (candidate) => candidate.sourceClaimEdgeInfluence?.edgeIds ?? []
-    ) ?? []),
+    sourceDecisionEdgeIds: [],
     memoryRefs: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "memory_record")
       .map((inclusion) => inclusion.subjectId)),
