@@ -196,6 +196,20 @@ describe("renderExecutionBrief", () => {
     expect(brief.formatVersion).toBe(executionBriefFormatVersion);
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
+    expect(brief.goalRefs).toEqual([
+      {
+        source: "Goal: canonical harness spine",
+        objective: "Make doctor report Postgres memory and source graph readiness",
+        status: "active"
+      }
+    ]);
+    expect(brief.execPlanRefs).toEqual([
+      {
+        source: "PLAN.md Milestone 14",
+        section: "Doctor brain-store readiness plan",
+        status: "active"
+      }
+    ]);
     expect(brief.observationPrefix).toEqual([
       {
         observationId: "observation-1",
@@ -316,7 +330,12 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- Codex executed the work.");
     expect(rendered).toContain("- MCP resources exist.");
     expect(rendered).toContain("Goal: canonical harness spine");
-    expect(rendered).toContain("PLAN.md Milestone 14");
+    expect(rendered).toContain(
+      "- Goal: canonical harness spine | objective=Make doctor report Postgres memory and source graph readiness | status=active"
+    );
+    expect(rendered).toContain(
+      "- PLAN.md Milestone 14 | section=Doctor brain-store readiness plan | status=active"
+    );
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {

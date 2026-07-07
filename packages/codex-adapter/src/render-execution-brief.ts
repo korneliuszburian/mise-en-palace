@@ -246,24 +246,30 @@ const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   )
 ];
 
-const toGoalRef = (goalReference: string | undefined): CodexGoalRef[] =>
+const toGoalRef = (
+  goalReference: string | undefined,
+  taskContract: TaskContract
+): CodexGoalRef[] =>
   goalReference === undefined
     ? []
     : [
         {
           source: goalReference,
-          objective: goalReference,
+          objective: taskContract.objective,
           status: "active"
         }
       ];
 
-const toExecPlanRef = (execPlanReference: string | undefined): CodexExecPlanRef[] =>
+const toExecPlanRef = (
+  execPlanReference: string | undefined,
+  harnessPlan: HarnessPlan
+): CodexExecPlanRef[] =>
   execPlanReference === undefined
     ? []
     : [
         {
           source: execPlanReference,
-          section: execPlanReference,
+          section: harnessPlan.summary,
           status: "active"
         }
       ];
@@ -409,8 +415,8 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     hookExpectations: createCodexHookExpectations(input.evidenceContract),
     skillBindingHints: createCodexSkillBindingHints(input.capabilityPlan),
     mcpResourceRefs: [],
-    goalRefs: toGoalRef(input.goalReference),
-    execPlanRefs: toExecPlanRef(input.execPlanReference),
+    goalRefs: toGoalRef(input.goalReference, input.taskContract),
+    execPlanRefs: toExecPlanRef(input.execPlanReference, input.harnessPlan),
     subagentProbeHints: [],
     stopCondition: "Stop before Codex execution or hidden state mutation.",
     rollbackExpectation: input.evidenceContract.rollbackPath,
