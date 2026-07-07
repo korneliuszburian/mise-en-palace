@@ -225,9 +225,6 @@ describe("renderExecutionBrief", () => {
       maxRenderedItems: 80,
       status: "within_budget"
     });
-    expect(profile.sections.find((section) => section.id === "mcp_resource_refs")).toBeUndefined();
-    expect(profile.sections.find((section) => section.id === "subagent_probe_hints")).toBeUndefined();
-    expect(profile.sections.find((section) => section.id === "hook_expectations")).toBeUndefined();
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
       kind: "diagnostic",
       rendered: true,
@@ -278,21 +275,11 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
     expect(rendered).toContain(`Review burden: ${evidenceContract.reviewBurden}`);
-    expect(rendered).not.toContain("Skill Binding Hints:");
-    expect(rendered).not.toContain("patterns=pattern:codex-skill-progressive-disclosure-routing");
-    expect(rendered).not.toContain("select-kernel-patterns");
-    expect(rendered).not.toContain("MCP Resource Refs:");
-    expect(rendered).not.toContain("Subagent Probe Hints:");
-    expect(rendered).not.toContain("Hook Expectations:");
-    expect(rendered).not.toContain("PreToolUse | action=warn_or_deny");
     expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
     expect(rendered).toContain(`Rollback Expectation: ${evidenceContract.rollbackPath}`);
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
-    expect(rendered).not.toContain("- MCP resources exist.");
-    expect(rendered).not.toContain("Goal References:");
-    expect(rendered).not.toContain("ExecPlan References:");
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {

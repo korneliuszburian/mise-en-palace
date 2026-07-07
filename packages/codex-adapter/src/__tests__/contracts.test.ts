@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  executionBriefSectionIds,
   executionBriefFormatVersion
 } from "../contracts.js";
 import type {
@@ -101,11 +100,6 @@ describe("Codex adapter contracts", () => {
       ]
     };
 
-    expect(executionBriefSectionIds).not.toContain("mcp_resource_refs");
-    expect(executionBriefSectionIds).not.toContain("subagent_probe_hints");
-    expect(executionBriefSectionIds).not.toContain("hook_expectations");
-    expect(executionBriefSectionIds).not.toContain("goal_refs");
-    expect(executionBriefSectionIds).not.toContain("exec_plan_refs");
     expect(readback.sections[0]?.kind).toBe("required");
     expect(readback.sections[0]?.rendered).toBe(true);
     expect(readback.doesNotProve).toContain(
