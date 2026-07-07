@@ -49,12 +49,12 @@ export type MaintenancePreviewReviewEvalNextAction =
   | "improve_candidate_evidence"
   | "seed_or_select_maintenance_candidate_state";
 
-export type MaintenancePreviewRuntimeLoopStatus =
+export type MaintenancePreviewCandidateLoopStatus =
   | "ready_for_operator_review"
   | "needs_candidate_evidence"
   | "no_candidates";
 
-export type MaintenancePreviewRuntimeLoopNextAction =
+export type MaintenancePreviewCandidateLoopNextAction =
   | "review_candidates_and_capture_evidence"
   | "improve_candidate_evidence"
   | "seed_or_select_maintenance_candidate_state";
@@ -88,11 +88,11 @@ export interface MaintenancePreviewReviewEvalClosure {
   ];
 }
 
-export interface MaintenancePreviewRuntimeLoopReadback {
-  kind: "maintenance_candidate_runtime_loop";
+export interface MaintenancePreviewCandidateLoopReadback {
+  kind: "maintenance_candidate_loop";
   mode: "manual_candidate_only";
-  status: MaintenancePreviewRuntimeLoopStatus;
-  nextAction: MaintenancePreviewRuntimeLoopNextAction;
+  status: MaintenancePreviewCandidateLoopStatus;
+  nextAction: MaintenancePreviewCandidateLoopNextAction;
   summary: string;
   inspectedCandidates: number;
   reviewableCandidates: number;
@@ -173,12 +173,7 @@ export interface MaintenancePreview {
   proof: string;
   doesNotProve: string;
   reviewEvalClosure: MaintenancePreviewReviewEvalClosure;
-  manualCandidateLoop: MaintenancePreviewRuntimeLoopReadback;
-  /**
-   * Legacy alias retained for existing JSON consumers.
-   * Prefer manualCandidateLoop for new readback because no maintenance runtime exists.
-   */
-  runtimeLoop: MaintenancePreviewRuntimeLoopReadback;
+  manualCandidateLoop: MaintenancePreviewCandidateLoopReadback;
   candidateReviewResult?: MaintenancePreviewCandidateReviewResult;
   priorityOrder: readonly [
     "memory_staleness",
@@ -212,7 +207,7 @@ const reviewEvalClosureForbiddenWrites = [
   "eval_candidates"
 ] as const;
 
-const runtimeLoopForbiddenWrites = [
+const candidateLoopForbiddenWrites = [
   "memory_records",
   "anti_memory_records",
   "source_claims",
@@ -233,12 +228,12 @@ const previewDoesNotProve =
   "Brain maintenance preview does not prove memory truth, source truth, candidate usefulness, autonomous maintenance execution, scheduling, consensus correctness, or Memory Core mutation.";
 
 const previewProof =
-  "Maintenance candidate preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or maintenance runtime state.";
+  "Maintenance candidate preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or queued maintenance jobs.";
 
 const reviewEvalClosureDoesNotProve =
   "Maintenance preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous maintenance execution, or Memory Core mutation.";
 
-const runtimeLoopDoesNotProve =
+const candidateLoopDoesNotProve =
   "Maintenance candidate loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.";
 
 const candidateReviewDoesNotProve =
@@ -309,7 +304,7 @@ const buildReviewEvalClosure = (
     decision: "ready_for_behavior_proof",
     nextAction: "add_golden_behavior_case",
     summary:
-      "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
+      "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before any automated maintenance path.",
     candidateIds,
     evidenceRefs,
     mutation: "none",
@@ -318,21 +313,21 @@ const buildReviewEvalClosure = (
   };
 };
 
-const buildRuntimeLoopReadback = (
+const buildCandidateLoopReadback = (
   candidates: readonly MaintenancePreviewCandidate[],
   reviewEvalClosure: MaintenancePreviewReviewEvalClosure
-): MaintenancePreviewRuntimeLoopReadback => {
+): MaintenancePreviewCandidateLoopReadback => {
   const reviewableCandidates = countReviewableCandidates(candidates);
   const statusByDecision = {
     ready_for_behavior_proof: "ready_for_operator_review",
     needs_more_evidence: "needs_candidate_evidence",
     no_reviewable_candidates: "no_candidates"
-  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewRuntimeLoopStatus>;
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateLoopStatus>;
   const nextActionByDecision = {
     ready_for_behavior_proof: "review_candidates_and_capture_evidence",
     needs_more_evidence: "improve_candidate_evidence",
     no_reviewable_candidates: "seed_or_select_maintenance_candidate_state"
-  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewRuntimeLoopNextAction>;
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateLoopNextAction>;
   const summaryByDecision = {
     ready_for_behavior_proof:
       "Maintenance candidate loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
@@ -343,7 +338,7 @@ const buildRuntimeLoopReadback = (
   } as const satisfies Record<MaintenancePreviewReviewEvalDecision, string>;
 
   return {
-    kind: "maintenance_candidate_runtime_loop",
+    kind: "maintenance_candidate_loop",
     mode: "manual_candidate_only",
     status: statusByDecision[reviewEvalClosure.decision],
     nextAction: nextActionByDecision[reviewEvalClosure.decision],
@@ -351,8 +346,8 @@ const buildRuntimeLoopReadback = (
     inspectedCandidates: candidates.length,
     reviewableCandidates,
     mutation: "none",
-    doesNotProve: runtimeLoopDoesNotProve,
-    forbiddenWrites: runtimeLoopForbiddenWrites
+    doesNotProve: candidateLoopDoesNotProve,
+    forbiddenWrites: candidateLoopForbiddenWrites
   };
 };
 
@@ -387,7 +382,7 @@ const buildCandidateReviewResult = (
     ...(candidate === undefined ? {} : { candidateReviewability: candidate.reviewability }),
     mutation: "none",
     doesNotProve: candidateReviewDoesNotProve,
-    forbiddenWrites: runtimeLoopForbiddenWrites
+    forbiddenWrites: candidateLoopForbiddenWrites
   };
 };
 
@@ -438,7 +433,7 @@ export const buildMaintenancePreview = (
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
   const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
-  const manualCandidateLoop = buildRuntimeLoopReadback(candidates, reviewEvalClosure);
+  const manualCandidateLoop = buildCandidateLoopReadback(candidates, reviewEvalClosure);
 
   return {
     generatedAt: input.now,
@@ -461,7 +456,6 @@ export const buildMaintenancePreview = (
     doesNotProve: previewDoesNotProve,
     reviewEvalClosure,
     manualCandidateLoop,
-    runtimeLoop: manualCandidateLoop,
     ...(candidateReviewResult === undefined ? {} : { candidateReviewResult }),
     priorityOrder,
     forbiddenWrites

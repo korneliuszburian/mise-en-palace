@@ -261,7 +261,7 @@ const formatReviewEvalClosure = (preview: MaintenancePreview): string[] => [
   ...formatList(preview.reviewEvalClosure.forbiddenWrites)
 ];
 
-const formatRuntimeLoop = (preview: MaintenancePreview): string[] => [
+const formatCandidateLoop = (preview: MaintenancePreview): string[] => [
   "Candidate routing:",
   `mode: ${preview.manualCandidateLoop.mode}`,
   `status: ${preview.manualCandidateLoop.status}`,
@@ -316,7 +316,7 @@ export const formatMaintenancePreview = (
     "",
     ...formatReviewEvalClosure(input.preview),
     "",
-    ...formatRuntimeLoop(input.preview),
+    ...formatCandidateLoop(input.preview),
     ...(input.preview.candidateReviewResult === undefined
       ? []
       : ["", ...formatCandidateReviewResult(input.preview)]),

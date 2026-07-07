@@ -355,14 +355,6 @@ describe("runMaintenancePreviewCommand", () => {
           reviewableCandidates: 1,
           mutation: "none"
         },
-        runtimeLoop: {
-          mode: "manual_candidate_only",
-          status: "ready_for_operator_review",
-          nextAction: "review_candidates_and_capture_evidence",
-          inspectedCandidates: 1,
-          reviewableCandidates: 1,
-          mutation: "none"
-        },
         candidateReviewResult: {
           candidateFound: true,
           decision: "accept_for_manual_followup",
@@ -1010,13 +1002,6 @@ describe("runMaintenancePreviewCommand", () => {
             mutation: "none"
           },
           manualCandidateLoop: {
-            status: "ready_for_operator_review",
-            nextAction: "review_candidates_and_capture_evidence",
-            inspectedCandidates: 1,
-            reviewableCandidates: 1,
-            mutation: "none"
-          },
-          runtimeLoop: {
             status: "ready_for_operator_review",
             nextAction: "review_candidates_and_capture_evidence",
             inspectedCandidates: 1,

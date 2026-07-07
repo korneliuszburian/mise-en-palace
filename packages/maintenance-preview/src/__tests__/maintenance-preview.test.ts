@@ -101,7 +101,7 @@ describe("brain maintenance preview", () => {
       decision: "ready_for_behavior_proof",
       nextAction: "add_golden_behavior_case",
       summary:
-        "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
+        "Maintenance preview emitted review-ready candidate output that can be protected by a bounded behavior proof before any automated maintenance path.",
       candidateIds: [
         "memory-staleness-maintenance:memory-expired:expired_memory",
         "source-relation-maintenance:source-claim-edge-1:relation_needs_review"
@@ -119,9 +119,8 @@ describe("brain maintenance preview", () => {
         "eval_candidates"
       ]
     });
-    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
-    expect(result.runtimeLoop).toEqual({
-      kind: "maintenance_candidate_runtime_loop",
+    expect(result.manualCandidateLoop).toEqual({
+      kind: "maintenance_candidate_loop",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
@@ -234,8 +233,8 @@ describe("brain maintenance preview", () => {
       nextAction: "add_golden_behavior_case",
       mutation: "none"
     });
-    expect(result.runtimeLoop).toMatchObject({
-      kind: "maintenance_candidate_runtime_loop",
+    expect(result.manualCandidateLoop).toMatchObject({
+      kind: "maintenance_candidate_loop",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
@@ -293,7 +292,7 @@ describe("brain maintenance preview", () => {
       "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
     ]);
     expect(result.reviewEvalClosure.forbiddenWrites).toContain("eval_candidates");
-    expect(result.runtimeLoop.forbiddenWrites).toContain("worker_jobs");
+    expect(result.manualCandidateLoop.forbiddenWrites).toContain("worker_jobs");
     expect(result.mutation).toBe("none");
   });
 
@@ -350,7 +349,7 @@ describe("brain maintenance preview", () => {
       candidateIds: ["consensus-candidate-evaluation:consensus-duplicate-source-relation"],
       mutation: "none"
     });
-    expect(result.runtimeLoop).toMatchObject({
+    expect(result.manualCandidateLoop).toMatchObject({
       status: "ready_for_operator_review",
       inspectedCandidates: 1,
       reviewableCandidates: 1,
@@ -575,13 +574,12 @@ describe("brain maintenance preview", () => {
       nextAction: "add_golden_behavior_case",
       mutation: "none"
     });
-    expect(result.runtimeLoop).toMatchObject({
+    expect(result.manualCandidateLoop).toMatchObject({
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       reviewableCandidates: 1,
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
   });
 
   test("returns an empty candidate-only preview for healthy inputs", () => {
@@ -623,7 +621,7 @@ describe("brain maintenance preview", () => {
       nextAction: "seed_or_select_maintenance_candidate_state",
       mutation: "none"
     });
-    expect(result.runtimeLoop).toMatchObject({
+    expect(result.manualCandidateLoop).toMatchObject({
       mode: "manual_candidate_only",
       status: "no_candidates",
       nextAction: "seed_or_select_maintenance_candidate_state",
@@ -631,7 +629,6 @@ describe("brain maintenance preview", () => {
       reviewableCandidates: 0,
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toEqual(result.runtimeLoop);
-    expect(result.runtimeLoop.forbiddenWrites).toContain("worker_jobs");
+    expect(result.manualCandidateLoop.forbiddenWrites).toContain("worker_jobs");
   });
 });

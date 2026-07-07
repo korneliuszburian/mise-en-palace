@@ -26,7 +26,7 @@ export const formatMaintenancePreviewUsage = (): string =>
     "--reviewer <name>",
     "--json",
     "",
-    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, maintenance runtime state, or DB schema."
+    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, queued maintenance jobs, or DB schema."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
