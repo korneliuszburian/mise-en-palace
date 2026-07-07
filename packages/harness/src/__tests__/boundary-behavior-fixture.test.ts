@@ -95,7 +95,7 @@ const boundaryCaseIds = (): string[] => {
 describe("golden boundary behavior cases", () => {
   it("declares MM-62 boundary behavior cases as fixtures", () => {
     expect(boundaryCaseIds()).toEqual([
-      "golden-case-audit-001-a",
+      "golden-case-capability-surface-001-a",
       "golden-case-context-001-a",
       "golden-case-source-001-a",
       "golden-case-type-001-a"

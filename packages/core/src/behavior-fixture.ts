@@ -15,7 +15,6 @@ export type BehaviorFixtureDomain =
   | "observation"
   | "reflection"
   | "anti_memory"
-  | "audit"
   | "type_boundary"
   | "capability";
 

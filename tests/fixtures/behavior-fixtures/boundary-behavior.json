@@ -3,10 +3,10 @@
     "id": "golden-task-boundary-001",
     "projectId": "project-1",
     "status": "draft",
-    "title": "Context, source, audit, and type boundaries hold",
+    "title": "Context, source, capability, and type boundaries hold",
     "description": "Protects KRN from broad context dumps, decorative sources, forbidden surfaces, and unchecked runtime input.",
     "owner": "boundary-eval",
-    "domains": ["context", "source", "audit", "type_boundary"],
+    "domains": ["context", "source", "capability", "type_boundary"],
     "cases": [
       {
         "id": "golden-case-context-001-a",
@@ -52,32 +52,32 @@
             "severity": "blocking",
             "title": "decorative source accepted",
             "mustNot": "A SourceClaim must not be accepted without doesNotProve.",
-            "detection": "Source grounding audit emits no blocking finding for a claim missing doesNotProve."
+            "detection": "Source grounding review emits no blocking finding for a claim missing doesNotProve."
           }
         ],
         "sourceRefs": ["KRN_ROADMAP.md#MM-62"],
         "metadata": {}
       },
       {
-        "id": "golden-case-audit-001-a",
-        "title": "audit finds forbidden surface",
+        "id": "golden-case-capability-surface-001-a",
+        "title": "forbidden capability surface is rejected",
         "input": {
           "path": "packages/research-foundry/src/index.ts"
         },
         "expectedBehavior": {
           "outcome": "flag",
           "subject": "repo_surface:research-foundry",
-          "rationale": "Audit must block rejected product subsystems before they enter the runtime surface.",
+          "rationale": "Capability governance must block rejected product subsystems before they enter the runtime surface.",
           "evidenceRefs": ["KRN_ROADMAP.md#MM-62"]
         },
         "protectedFailureModes": [
           {
-            "id": "failure-mode-audit-001-a",
-            "domain": "audit",
+            "id": "failure-mode-capability-surface-001-a",
+            "domain": "capability",
             "severity": "blocking",
             "title": "forbidden surface accepted",
-            "mustNot": "Audit must not pass when a rejected Research Foundry surface appears.",
-            "detection": "Repo surface audit emits no blocking finding for packages/research-foundry."
+            "mustNot": "Capability governance must not pass when a rejected Research Foundry surface appears.",
+            "detection": "Capability surface review emits no blocking finding for packages/research-foundry."
           }
         ],
         "sourceRefs": ["KRN_ROADMAP.md#MM-62"],

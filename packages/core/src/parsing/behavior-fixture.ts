@@ -33,7 +33,6 @@ export const BehaviorFixtureDomainSchema = z.enum([
   "observation",
   "reflection",
   "anti_memory",
-  "audit",
   "type_boundary",
   "capability"
 ]);
