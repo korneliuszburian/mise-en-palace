@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  runCliEntrypoint
+} from "../index.js";
+import {
   runCli
 } from "../run-cli.js";
 import {
@@ -286,5 +289,30 @@ describe("runCli", () => {
       expect(result.stdout).toBe("");
       expect(result.stderr).toContain(command.usage);
     }
+  });
+
+  it("prints a controlled failure when the process entrypoint sees an unexpected error", async () => {
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+
+    const exitCode = await runCliEntrypoint(
+      ["db", "readiness"],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      },
+      {
+        stdout: { write: (chunk) => { stdout.push(chunk); } },
+        stderr: { write: (chunk) => { stderr.push(chunk); } }
+      },
+      async () => {
+        throw new Error("simulated entrypoint failure");
+      }
+    );
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toEqual([]);
+    expect(stderr.join("")).toBe("KRN CLI failed: simulated entrypoint failure\n");
   });
 });
