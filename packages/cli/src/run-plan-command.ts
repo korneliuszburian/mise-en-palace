@@ -10,7 +10,8 @@ import {
   activationRetrievalDiagnosticsFromMetadata,
   assessTargetOwnerFileRecall,
   compileHarnessPlan,
-  formatActivationRetrievalDiagnostics
+  formatActivationRetrievalDiagnostics,
+  searchBrainKnowledgeCards
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
@@ -63,12 +64,12 @@ import {
 import type {
   RetainedPatternPlanSelection
 } from "./retained-pattern-selection.js";
-import {
-  runKnowledgeCardsCommand
-} from "./run-knowledge-cards-command.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
+import {
+  memoryRecordToKnowledgeCard
+} from "./memory-knowledge-card.js";
 
 export interface PlanCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
@@ -113,8 +114,6 @@ type TargetOwnerFile = NonNullable<TargetActivationReadModel["ownerFiles"]>[numb
 type HarnessCompileInput = ReturnType<typeof parseHarnessCompileInput>;
 type CompiledHarnessPlan = Awaited<ReturnType<typeof compileHarnessPlan>>;
 type TargetOwnerFileRecall = ReturnType<typeof assessTargetOwnerFileRecall>;
-
-const defaultBrainKnowledgeCatalogFile = "corpus/brain-knowledge/catalog.json";
 
 const targetTrustExclusions = [
   {
@@ -550,9 +549,6 @@ const formatPersistedIdentityLines = (
       ]
 );
 
-const helpedRetainedPatternReason =
-  "Retained brain knowledge with helped usefulness feedback matched the pre-coding plan query.";
-
 const withRetainedPatternSelectionReason = (
   selection: RetainedPatternPlanSelection,
   reason: string
@@ -561,46 +557,57 @@ const withRetainedPatternSelectionReason = (
   reason
 });
 
-const retainedPatternUsefulnessPasses = ["helped", undefined] as const;
-
-type RetainedPatternUsefulnessPass = (typeof retainedPatternUsefulnessPasses)[number];
-
-const retainedPatternFilter = (
-  query: string,
-  usefulnessOutcome: RetainedPatternUsefulnessPass
-) => ({
-  text: query,
-  ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome })
-});
-
 const readRetainedPatternSelection = async (
   query: string,
-  runtime: PlanCommandRuntime,
-  usefulnessOutcome: RetainedPatternUsefulnessPass
+  compilerRuntime: CompilerRuntimeResolution
 ): Promise<RetainedPatternPlanSelection> => {
-  const result = await runKnowledgeCardsCommand({
-    ...(runtime.cwd === undefined ? {} : { cwd: runtime.cwd }),
-    cardFiles: [],
-    patternFiles: [],
-    catalogFiles: [defaultBrainKnowledgeCatalogFile],
-    filter: retainedPatternFilter(query, usefulnessOutcome),
-    format: "json",
-    limit: 5
-  });
-  const selection = retainedPatternSelectionFromKnowledgeJson(query, result.stdout);
+  const records = await compilerRuntime.compilerDependencies.memoryRepository.listActiveMemory(
+    compilerRuntime.projectId,
+    20
+  );
+  const cards = searchBrainKnowledgeCards(
+    records.map(memoryRecordToKnowledgeCard),
+    {
+      text: query
+    }
+  ).slice(0, 5);
+  const selection = retainedPatternSelectionFromKnowledgeJson(
+    query,
+    JSON.stringify({
+      kind: "krn.brainKnowledge.cards.preview.v1",
+      access: "read_only",
+      mutation: "none",
+      source: "memory_store",
+      filter: {
+        text: query
+      },
+      totalCards: cards.length,
+      returnedCards: cards.length,
+      cards,
+      proof: {
+        proves: [
+          "plan retained-pattern selection read active MemoryRecord rows from the resolved DB project"
+        ],
+        doesNotProve: [
+          "DB-backed retained-pattern selection proves source truth",
+          "Codex used the selected memory",
+          "store-backed usefulness feedback has been applied"
+        ]
+      }
+    })
+  );
 
-  return usefulnessOutcome === "helped" && selection.status === "selected"
-    ? withRetainedPatternSelectionReason(selection, helpedRetainedPatternReason)
+  return selection.status === "selected"
+    ? withRetainedPatternSelectionReason(selection, "Retained store-backed memory matched the pre-coding plan query.")
     : selection;
 };
 
 const firstSelectedRetainedPattern = async (
   queries: readonly string[],
-  runtime: PlanCommandRuntime,
-  usefulnessOutcome: RetainedPatternUsefulnessPass
+  compilerRuntime: CompilerRuntimeResolution
 ): Promise<RetainedPatternPlanSelection | undefined> => {
   for (const query of queries) {
-    const selection = await readRetainedPatternSelection(query, runtime, usefulnessOutcome);
+    const selection = await readRetainedPatternSelection(query, compilerRuntime);
 
     if (selection.status === "selected") {
       return selection;
@@ -612,7 +619,7 @@ const firstSelectedRetainedPattern = async (
 
 const buildRetainedPatternSelection = async (
   task: string,
-  runtime: PlanCommandRuntime
+  compilerRuntime: CompilerRuntimeResolution
 ): Promise<RetainedPatternPlanSelection> => {
   const baseQueries = [task, task.replace(/-/gu, " ")];
   const queries = [...new Set(baseQueries.flatMap((query) => {
@@ -622,12 +629,10 @@ const buildRetainedPatternSelection = async (
   }))];
 
   try {
-    for (const usefulnessOutcome of retainedPatternUsefulnessPasses) {
-      const selection = await firstSelectedRetainedPattern(queries, runtime, usefulnessOutcome);
+    const selection = await firstSelectedRetainedPattern(queries, compilerRuntime);
 
-      if (selection !== undefined) {
-        return selection;
-      }
+    if (selection !== undefined) {
+      return selection;
     }
 
     return retainedPatternSelectionFromKnowledgeJson(
@@ -635,8 +640,8 @@ const buildRetainedPatternSelection = async (
       JSON.stringify({
         cards: [],
         proof: {
-          proves: ["brain knowledge catalog readback was executed with primary and compacted bridge queries"],
-          doesNotProve: ["brain knowledge catalog completeness", "pattern relevance"]
+          proves: ["store-backed MemoryRecord readback was executed with primary and compacted bridge queries"],
+          doesNotProve: ["memory store completeness", "pattern relevance"]
         }
       })
     );
@@ -870,16 +875,17 @@ export const runPlanCommand = async (
   task: string,
   runtime: PlanCommandRuntime
 ): Promise<PlanCommandResult> => {
-  const retainedPatternSelection = await buildRetainedPatternSelection(task, runtime);
-  const compileInput = withRetainedPatternSelectionMetadata(
-    buildHarnessCompileInput(task, runtime),
-    retainedPatternSelection
-  );
-  const workspaceSlug = compileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
-  const projectSlug = compileInput.operatorIntent.projectSlug ?? defaultProjectSlug;
+  const baseCompileInput = buildHarnessCompileInput(task, runtime);
+  const workspaceSlug = baseCompileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
+  const projectSlug = baseCompileInput.operatorIntent.projectSlug ?? defaultProjectSlug;
   const compilerRuntime = await resolveCompilerRuntime(runtime, workspaceSlug, projectSlug);
 
   try {
+    const retainedPatternSelection = await buildRetainedPatternSelection(task, compilerRuntime);
+    const compileInput = withRetainedPatternSelectionMetadata(
+      baseCompileInput,
+      retainedPatternSelection
+    );
     const targetReadModel = await buildTargetActivationReadModel(
       compilerRuntime.projectScopedMetadata
     );

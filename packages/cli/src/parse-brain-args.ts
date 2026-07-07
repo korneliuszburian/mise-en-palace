@@ -11,9 +11,8 @@ const brainSearchUsage = [
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
-  "krn brain search --query \"source-to-decision\" --catalog-file corpus/brain-knowledge/catalog.json --json",
-  "krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text unknown-first",
-  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback and uses --project or the default local/mise-en-palace DB project when KRN_DATABASE_URL is configured. It does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "krn brain search --query \"source-to-decision\" --project project-explicit --json",
+  "  note: brain search defaults to DB-backed MemoryRecord readback plus source-search. --catalog-file is an explicit legacy catalog preview mode; --store-only keeps file catalog readback disabled. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;
@@ -50,6 +49,7 @@ type BrainSearchParseState = {
   query: string | undefined;
   catalogFiles: string[];
   storeOnly: boolean;
+  storeOnlyExplicit: boolean;
   projectId: string | undefined;
   limit: number | undefined;
   maxInclusions: number | undefined;
@@ -151,6 +151,7 @@ const brainSearchOptionParsers: Record<string, BrainSearchOptionParser> = {
   "--catalog-file": (args, index, state) =>
     assignStringOption(args, index, "--catalog-file", (value) => {
       state.catalogFiles.push(value);
+      state.storeOnly = false;
     }),
   "--project": (args, index, state) => {
     const parsed = parseRequiredValue(args, index, "--project");
@@ -174,6 +175,7 @@ const brainSearchOptionParsers: Record<string, BrainSearchOptionParser> = {
   },
   "--store-only": (_args, index, state) => {
     state.storeOnly = true;
+    state.storeOnlyExplicit = true;
 
     return {
       ok: true,
@@ -245,7 +247,8 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
   const state: BrainSearchParseState = {
     query: undefined,
     catalogFiles: [],
-    storeOnly: false,
+    storeOnly: true,
+    storeOnlyExplicit: false,
     projectId: undefined,
     limit: undefined,
     maxInclusions: undefined,
@@ -270,7 +273,7 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  if (state.storeOnly && state.catalogFiles.length > 0) {
+  if (state.storeOnlyExplicit && state.catalogFiles.length > 0) {
     return {
       error: `--store-only cannot be combined with --catalog-file\n${formatBrainSearchUsage()}`
     };

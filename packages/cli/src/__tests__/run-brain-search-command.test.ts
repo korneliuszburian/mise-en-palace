@@ -190,7 +190,7 @@ describe("runBrainSearchCommand", () => {
 
     expect(result.stdout).toContain("KRN Brain Search Preview");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Brain knowledge readback: catalog_files");
+    expect(result.stdout).toContain("Brain knowledge readback: store_only");
     expect(result.stdout).toContain("Brain knowledge:");
     expect(result.stdout).toContain("cardIds: none");
     expect(result.stdout).toContain("graphAware: false");
@@ -1616,7 +1616,8 @@ describe("runBrainSearchCommand", () => {
         answerUsefulness: "not_useful",
         missingEvidence: ["governed SourceClaim evidence"]
       },
-      recommendedNextAction: "Do not infer product truth; narrow the query or ingest/review source evidence first."
+      recommendedNextAction:
+        "Do not infer product truth from store-only brain search; seed or persist governed source evidence first."
     });
     expect(sourceGroundedJson).toMatchObject({
       knowledgeCards: {
@@ -1635,7 +1636,7 @@ describe("runBrainSearchCommand", () => {
         missingEvidence: []
       },
       recommendedNextAction:
-        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+        "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-retained pattern context is explicitly needed."
     });
   });
 

@@ -51,6 +51,22 @@ describe("parseBrainArgs", () => {
     });
   });
 
+  it("defaults brain search to store-backed memory readback", () => {
+    expect(parseBrainArgs([
+      "search",
+      "--query",
+      "source-to-decision"
+    ])).toEqual({
+      command: {
+        kind: "brainSearch",
+        query: "source-to-decision",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "text"
+      }
+    });
+  });
+
   it("rejects an empty brain search project id", () => {
     const result = parseBrainArgs([
       "search",

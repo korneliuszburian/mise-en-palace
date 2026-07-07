@@ -5,6 +5,10 @@ import {
   createNoStoreCompilerDependencies
 } from "../../no-store-repositories.js";
 import type {
+  AntiMemoryRecord,
+  MemoryRecord
+} from "@krn/core";
+import type {
   CreateAntiMemoryCandidateInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
@@ -77,6 +81,72 @@ export const unusedMemoryRepository = {
   },
   async rejectAntiMemoryCandidate(_input: RejectAntiMemoryCandidateInput): Promise<never> {
     throw new Error("rejectAntiMemoryCandidate should not be called");
+  }
+};
+
+const retainedPatternMemory = (
+  patternId: string,
+  summary: string,
+  body: string
+): MemoryRecord => ({
+  id: `memory-${patternId}`,
+  projectId: "project-1",
+  key: `pattern:${patternId}`,
+  kind: "pattern",
+  status: "active",
+  summary,
+  body,
+  owner: "codex",
+  confidence: 95,
+  applicationGuidance: body,
+  invalidationRule: `Invalidate if ${patternId} stops matching KRN implementation practice.`,
+  sourceLineage: [{
+    sourceId: `source-${patternId}`,
+    note: `source:${patternId}`
+  }],
+  isUserPreference: false,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: {
+    patternId,
+    falsifier: `A task matching ${patternId} no longer benefits from this pattern.`,
+    doesNotProve: "This retained pattern memory does not prove source truth or broad ranking quality."
+  },
+  validFrom: now,
+  createdAt: now,
+  updatedAt: now
+});
+
+const retainedPatternMemories: MemoryRecord[] = [
+  retainedPatternMemory(
+    "ts-boundary-brain-knowledge-parser-exemplar",
+    "TypeScript parser exemplar metadata-boundary",
+    "Use the retained TypeScript parser exemplar for parser, metadata-boundary, and brain knowledge read-model work."
+  ),
+  retainedPatternMemory(
+    "ts-boundary-unknown-first-result-state",
+    "Unknown-first TypeScript result state",
+    "Use unknown-first parsing and explicit result-state narrowing for untrusted JSON or CLI inputs."
+  ),
+  retainedPatternMemory(
+    "consensus-relation-heartbeat-review-boundary",
+    "Consensus relation heartbeat review boundary",
+    "Use the consensus relation heartbeat review boundary for bounded consensus, relation, and heartbeat review work."
+  ),
+  retainedPatternMemory(
+    "reference-implementation-recipe-clone-boundary",
+    "Reference implementation recipe clone boundary",
+    "Use the reference implementation recipe when proving a local code exemplar without building clone runtime machinery."
+  )
+];
+
+export const retainedPatternMemoryRepository = {
+  ...unusedMemoryRepository,
+  async listActiveMemory(_projectId: string, limit: number): Promise<MemoryRecord[]> {
+    return retainedPatternMemories.slice(0, limit);
+  },
+  async listAntiMemoryForProject(_projectId: string): Promise<AntiMemoryRecord[]> {
+    return [];
   }
 };
 
@@ -157,11 +227,12 @@ export const runPersistedPlanWithCapturedMetadata = async (
           projectId: "project-1",
           compilerDependencies: {
             ...dependencies,
-            harnessRunRepository
+            harnessRunRepository,
+            memoryRepository: retainedPatternMemoryRepository
           },
           harnessRunRepository,
           sourceRepository,
-          memoryRepository: unusedMemoryRepository,
+          memoryRepository: retainedPatternMemoryRepository,
           async close() {
             return undefined;
           }

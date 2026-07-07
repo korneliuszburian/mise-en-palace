@@ -278,7 +278,7 @@ const evaluateCase = async (
   const command: BrainSearchCommand = {
     kind: "brainSearch",
     query: testCase.query,
-    catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+    catalogFiles: ["tests/fixtures/brain-ranking/brain-ranking-eval.json#knowledge-cards"],
     storeOnly: testCase.storeOnly,
     limit: 10,
     maxInclusions: 10,

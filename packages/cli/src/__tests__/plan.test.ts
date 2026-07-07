@@ -25,6 +25,7 @@ import type {
 import {
   now,
   runPersistedPlanWithCapturedMetadata,
+  retainedPatternMemoryRepository,
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
 
@@ -157,11 +158,12 @@ describe("runCli", () => {
             projectId: "project-1",
             compilerDependencies: {
               ...dependencies,
-              harnessRunRepository
+              harnessRunRepository,
+              memoryRepository: retainedPatternMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: unusedMemoryRepository,
+            memoryRepository: retainedPatternMemoryRepository,
             async close() {
               return undefined;
             }
@@ -250,11 +252,12 @@ describe("runCli", () => {
             projectId: "project-1",
             compilerDependencies: {
               ...dependencies,
-              harnessRunRepository
+              harnessRunRepository,
+              memoryRepository: retainedPatternMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: unusedMemoryRepository,
+            memoryRepository: retainedPatternMemoryRepository,
             async close() {
               return undefined;
             }
@@ -266,17 +269,12 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Retained pattern selection: selected");
+    expect(result.stdout).toContain("Retained pattern IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "Retained pattern IDs: ts-boundary-brain-knowledge-parser-exemplar, ts-boundary-unknown-first-result-state"
-    );
-    expect(result.stdout).toContain(
-      "Retained pattern reason: Retained brain knowledge matched the pre-coding plan query."
+      "Retained pattern reason: Retained store-backed memory matched the pre-coding plan query."
     );
     expect(result.stdout).toContain("Retained pattern targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Retained pattern recommended use: Use target-specific selectedKnowledge");
-    expect(result.stdout).toContain(
-      "- pattern=ts-boundary-brain-knowledge-parser-exemplar | card=pattern:ts-boundary-brain-knowledge-parser-exemplar"
-    );
     expect(result.stdout).toContain(
       "- pattern=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
     );
@@ -284,11 +282,8 @@ describe("runCli", () => {
       retainedPatternSelection: {
         status: "selected",
         reason:
-          "Retained brain knowledge matched the pre-coding plan query.",
-        selectedPatternIds: [
-          "ts-boundary-brain-knowledge-parser-exemplar",
-          "ts-boundary-unknown-first-result-state"
-        ]
+          "Retained store-backed memory matched the pre-coding plan query.",
+        selectedPatternIds: ["ts-boundary-unknown-first-result-state"]
       }
     });
   });
@@ -338,17 +333,12 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Retained pattern selection: selected");
     expect(result.stdout).toContain("Retained pattern query: prove reference implementation recipe");
-    expect(result.stdout).toContain(
-      "Retained pattern IDs: reference-implementation-recipe-clone-boundary, ts-boundary-brain-knowledge-parser-exemplar"
-    );
+    expect(result.stdout).toContain("Retained pattern IDs: reference-implementation-recipe-clone-boundary");
     expect(executionRunMetadata).toMatchObject({
       retainedPatternSelection: {
         status: "selected",
         query: "prove reference implementation recipe",
-        selectedPatternIds: [
-          "reference-implementation-recipe-clone-boundary",
-          "ts-boundary-brain-knowledge-parser-exemplar"
-        ]
+        selectedPatternIds: ["reference-implementation-recipe-clone-boundary"]
       }
     });
   });
