@@ -144,10 +144,11 @@ const aggregate: HarnessRunAggregate = {
       graphScore: 9,
       temporalScore: 0,
       contextRoiScore: 80,
-      totalScore: 101,
-      score: 101,
+      totalScore: 113,
+      score: 113,
       reason: "Relevant source claim. Edge-aware source graph context: narrows.",
       metadata: {
+        feedbackScore: 12,
         sourceClaimEdgeInfluence: {
           edgeIds: ["edge-1"],
           edgeKinds: ["narrows"],
@@ -167,7 +168,7 @@ const aggregate: HarnessRunAggregate = {
       subjectId: "claim-1",
       decision: "included",
       reason: "Evidence readback should distinguish proof strength.",
-      score: 101,
+      score: 113,
       contextBudgetCost: 20,
       expectedDecisionImpact: "Render proof boundary.",
       metadata: {
@@ -399,7 +400,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Activation trace:");
     expect(result.stdout).toContain("retrievalRunId: retrieval-1");
     expect(result.stdout).toContain("source_claim:claim-1 | status=included | kind=source");
-    expect(result.stdout).toContain("scores: lexical=12 vector=0 graph=9 temporal=0 contextRoi=80 total=101");
+    expect(result.stdout).toContain("scores: lexical=12 vector=0 graph=9 temporal=0 contextRoi=80 feedback=12 total=113");
     expect(result.stdout).toContain("sourceClaimEdgeInfluence:");
     expect(result.stdout).toContain("edgeIds: edge-1");
     expect(result.stdout).toContain("edgeKinds: narrows");
@@ -665,6 +666,7 @@ describe("runRunShowCommand", () => {
             subjectType: "source_claim",
             subjectId: "claim-1",
             graphScore: 9,
+            feedbackScore: 12,
             sourceClaimEdgeInfluence: {
               edgeIds: ["edge-1"],
               edgeKinds: ["narrows"],

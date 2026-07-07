@@ -27,6 +27,7 @@ import {
   candidateReviewabilityReasons,
   changedFileClassification,
   projectResolutionFromMetadata,
+  readMetadataFiniteNumber,
   sourceClaimEdgeInfluenceFromMetadata,
   sourceDecisionSupportBoostFromMetadata
 } from "./decision-packet-read-model-decoders.js";
@@ -97,6 +98,7 @@ type ActivationCandidateScoreField =
   | "graphScore"
   | "temporalScore"
   | "contextRoiScore"
+  | "feedbackScore"
   | "totalScore"
   | "score";
 
@@ -106,6 +108,7 @@ const activationCandidateScoreFields = [
   "graphScore",
   "temporalScore",
   "contextRoiScore",
+  "feedbackScore",
   "totalScore",
   "score"
 ] as const satisfies readonly ActivationCandidateScoreField[];
@@ -114,7 +117,9 @@ const activationCandidateScores = (
   candidate: RetrievalCandidateRecord
 ): Partial<Pick<DecisionPacketReadModelActivationCandidate, ActivationCandidateScoreField>> =>
   Object.fromEntries(activationCandidateScoreFields.flatMap((field) => {
-    const value = candidate[field];
+    const value = field === "feedbackScore"
+      ? readMetadataFiniteNumber(candidate.metadata, "feedbackScore")
+      : candidate[field];
 
     return value === undefined ? [] : [[field, value]];
   })) as Partial<Pick<DecisionPacketReadModelActivationCandidate, ActivationCandidateScoreField>>;

@@ -143,6 +143,15 @@ export const metadataArrayLength = (
   return Array.isArray(value) ? String(value.length) : "unknown";
 };
 
+export const readMetadataFiniteNumber = (
+  metadata: Record<string, unknown>,
+  key: string
+): number | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+};
+
 export const sourceClaimEdgeInfluenceFromMetadata = (
   metadata: Record<string, unknown>
 ): DecisionPacketReadModelSourceClaimEdgeInfluence | undefined => {

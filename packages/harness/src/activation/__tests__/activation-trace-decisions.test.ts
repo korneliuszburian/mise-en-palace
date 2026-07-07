@@ -20,12 +20,14 @@ class TraceRepository implements Pick<
   RetrievalRepository,
   "addCandidate" | "recordActivationDecision" | "storeContextSelection" | "completeRetrievalRun"
 > {
+  readonly candidates: Parameters<RetrievalRepository["addCandidate"]>[0][] = [];
   readonly decisions: RecordActivationDecisionInput[] = [];
   readonly completedRuns: CompleteRetrievalRunInput[] = [];
   private candidateCount = 0;
 
   async addCandidate(input: Parameters<RetrievalRepository["addCandidate"]>[0]) {
     this.candidateCount += 1;
+    this.candidates.push(input);
 
     return createRetrievalCandidateRecord(input, {
       id: `candidate-${this.candidateCount}`,
@@ -163,6 +165,42 @@ describe("persistActivationTrace", () => {
         sourceAuthority: "project-decision",
         evidenceHints: ["source_claim:claim-1", "claim-1", "doc-1", "doc-2"]
       }]
+    });
+  });
+
+  it("persists nonzero feedback score in candidate metadata for readback", async () => {
+    const repository = new TraceRepository();
+    const candidate = rankedCandidate({
+      feedbackScore: 12,
+      totalScore: 104
+    });
+    const contextAssembly: ContextAssembly = {
+      id: "context-1",
+      harnessPlanId: "plan-1",
+      status: "assembled",
+      inclusions: [{
+        subjectType: "source_claim",
+        subjectId: "claim-1",
+        reason: "Use the grounded claim.",
+        expectedUse: "Guide activation trace implementation.",
+        tokenEstimate: 80,
+        sourceAuthority: "project-decision"
+      }],
+      exclusions: [],
+      metadata: {},
+      createdAt: now
+    };
+
+    await persistActivationTrace({
+      retrievalRunId: "retrieval-1",
+      candidates: [candidate],
+      contextAssembly,
+      completedAt: now,
+      retrievalRepository: repository
+    });
+
+    expect(repository.candidates[0]?.metadata).toMatchObject({
+      feedbackScore: 12
     });
   });
 

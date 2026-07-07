@@ -34,6 +34,9 @@ import {
   decisionPacketReadModelDoesNotProve,
   decisionPacketReadModelProves
 } from "./decision-packet-read-model.js";
+import type {
+  DecisionPacketReadModelActivationCandidate
+} from "./decision-packet-read-model.js";
 
 const renderCommand = (command: EvidenceCommand): string[] => {
   const commandReadback = toEvidenceCommandReadback(command);
@@ -123,6 +126,37 @@ const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): strin
   ];
 };
 
+const activationCandidateScoreLine = (
+  candidate: DecisionPacketReadModelActivationCandidate
+): string =>
+  `    scores: lexical=${candidate.lexicalScore ?? 0} vector=${candidate.vectorScore ?? 0} graph=${candidate.graphScore ?? 0} temporal=${candidate.temporalScore ?? 0} contextRoi=${candidate.contextRoiScore ?? 0} feedback=${candidate.feedbackScore ?? 0} total=${candidate.totalScore ?? "unknown"}`;
+
+const renderActivationCandidateTrace = (
+  candidate: DecisionPacketReadModelActivationCandidate
+): string[] => [
+  `  - ${candidate.subjectType}:${candidate.subjectId} | status=${candidate.status} | kind=${candidate.kind}`,
+  activationCandidateScoreLine(candidate),
+  `    reason: ${candidate.reason}`,
+  ...(candidate.sourceClaimEdgeInfluence === undefined
+    ? []
+    : [
+        "    sourceClaimEdgeInfluence:",
+        `      edgeIds: ${candidate.sourceClaimEdgeInfluence.edgeIds.join(", ")}`,
+        `      edgeKinds: ${candidate.sourceClaimEdgeInfluence.edgeKinds.join(", ")}`,
+        `      seedSourceClaimIds: ${candidate.sourceClaimEdgeInfluence.seedSourceClaimIds.join(", ")}`,
+        `      doesNotProve: ${candidate.sourceClaimEdgeInfluence.doesNotProve}`
+      ]),
+  ...(candidate.sourceDecisionSupportBoost === undefined
+    ? []
+    : [
+        "    sourceDecisionSupportBoost:",
+        `      sourceDecisionEdgeIds: ${candidate.sourceDecisionSupportBoost.sourceDecisionEdgeIds.join(", ")}`,
+        `      confidence: ${candidate.sourceDecisionSupportBoost.confidence.join(", ")}`,
+        `      supportTypes: ${candidate.sourceDecisionSupportBoost.supportTypes.join(", ")}`,
+        `      doesNotProve: ${candidate.sourceDecisionSupportBoost.doesNotProve}`
+      ])
+];
+
 const renderActivationTrace = (
   aggregate: HarnessRunAggregate
 ): string[] => {
@@ -139,29 +173,7 @@ const renderActivationTrace = (
     "Activation trace:",
     `- retrievalRunId: ${trace.retrievalRunId}`,
     `- candidates: ${trace.candidates.length}`,
-    ...trace.candidates.flatMap((candidate) => [
-      `  - ${candidate.subjectType}:${candidate.subjectId} | status=${candidate.status} | kind=${candidate.kind}`,
-      `    scores: lexical=${candidate.lexicalScore ?? 0} vector=${candidate.vectorScore ?? 0} graph=${candidate.graphScore ?? 0} temporal=${candidate.temporalScore ?? 0} contextRoi=${candidate.contextRoiScore ?? 0} total=${candidate.totalScore ?? "unknown"}`,
-      `    reason: ${candidate.reason}`,
-      ...(candidate.sourceClaimEdgeInfluence === undefined
-        ? []
-        : [
-            "    sourceClaimEdgeInfluence:",
-            `      edgeIds: ${candidate.sourceClaimEdgeInfluence.edgeIds.join(", ")}`,
-            `      edgeKinds: ${candidate.sourceClaimEdgeInfluence.edgeKinds.join(", ")}`,
-            `      seedSourceClaimIds: ${candidate.sourceClaimEdgeInfluence.seedSourceClaimIds.join(", ")}`,
-            `      doesNotProve: ${candidate.sourceClaimEdgeInfluence.doesNotProve}`
-          ]),
-      ...(candidate.sourceDecisionSupportBoost === undefined
-        ? []
-        : [
-            "    sourceDecisionSupportBoost:",
-            `      sourceDecisionEdgeIds: ${candidate.sourceDecisionSupportBoost.sourceDecisionEdgeIds.join(", ")}`,
-            `      confidence: ${candidate.sourceDecisionSupportBoost.confidence.join(", ")}`,
-            `      supportTypes: ${candidate.sourceDecisionSupportBoost.supportTypes.join(", ")}`,
-            `      doesNotProve: ${candidate.sourceDecisionSupportBoost.doesNotProve}`
-          ])
-    ]),
+    ...trace.candidates.flatMap(renderActivationCandidateTrace),
     `- decisions: ${trace.decisions.length}`,
     ...trace.decisions.map((decision) =>
       `  - ${decision.subjectType}:${decision.subjectId} | decision=${decision.decision} | reason=${decision.reason}`

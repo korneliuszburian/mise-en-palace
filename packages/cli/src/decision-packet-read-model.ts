@@ -76,6 +76,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   graphScore?: number;
   temporalScore?: number;
   contextRoiScore?: number;
+  feedbackScore?: number;
   totalScore?: number;
   score?: number;
   reason: string;

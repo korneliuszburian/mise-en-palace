@@ -242,7 +242,10 @@ const persistRetrievalCandidates = async (
       totalScore: candidate.totalScore,
       score: candidate.totalScore,
       reason: candidate.exclusion?.explanation ?? candidate.reason,
-      metadata: candidate.metadata
+      metadata: {
+        ...candidate.metadata,
+        ...(candidate.feedbackScore === 0 ? {} : { feedbackScore: candidate.feedbackScore })
+      }
     });
 
     candidateRecordIds.set(key, record.id);
