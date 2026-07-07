@@ -397,7 +397,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   }
 
   async searchLexical(input: SearchLexicalInput): Promise<SearchDocumentSearchResult[]> {
-    const query = sql`websearch_to_tsquery('english', ${input.query})`;
+    const query = sql`websearch_to_tsquery(${searchDocuments.language}::regconfig, ${input.query})`;
     const lexicalScore = sql<number>`floor(ts_rank_cd(${searchDocuments.searchVector}, ${query}) * 1000)::int`;
     const rows = await this.db
       .select({

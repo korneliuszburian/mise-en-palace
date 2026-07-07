@@ -50,29 +50,34 @@ const embeddingModelRow = {
 const createSearchDb = (input: {
   lexicalRows?: readonly unknown[];
   vectorRows?: readonly unknown[];
+  onLexicalSelect?: (fields: unknown) => void;
   onVectorWhere?: (condition: unknown) => void;
 }) => ({
-  select: () => ({
-    from: () => ({
-      where: () => ({
-        orderBy: () => ({
-          limit: () => Promise.resolve(input.lexicalRows ?? [])
-        })
-      }),
-      innerJoin: () => ({
+  select: (fields: unknown) => {
+    input.onLexicalSelect?.(fields);
+
+    return {
+      from: () => ({
+        where: () => ({
+          orderBy: () => ({
+            limit: () => Promise.resolve(input.lexicalRows ?? [])
+          })
+        }),
         innerJoin: () => ({
-          where: (condition: unknown) => {
-            input.onVectorWhere?.(condition);
-            return {
-              orderBy: () => ({
-                limit: () => Promise.resolve(input.vectorRows ?? [])
-              })
-            };
-          }
+          innerJoin: () => ({
+            where: (condition: unknown) => {
+              input.onVectorWhere?.(condition);
+              return {
+                orderBy: () => ({
+                  limit: () => Promise.resolve(input.vectorRows ?? [])
+                })
+              };
+            }
+          })
         })
       })
-    })
-  })
+    };
+  }
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -105,6 +110,42 @@ const sqlParamValues = (
   }
 
   return [];
+};
+
+const sqlDebugText = (
+  value: unknown,
+  seen: WeakSet<object> = new WeakSet()
+): string => {
+  if (Array.isArray(value)) {
+    return value.map((item) => sqlDebugText(item, seen)).join("");
+  }
+
+  if (!isRecord(value)) {
+    return typeof value === "string" ? value : "";
+  }
+
+  if (seen.has(value)) {
+    return "";
+  }
+  seen.add(value);
+
+  const queryChunks = value["queryChunks"];
+
+  if (Array.isArray(queryChunks)) {
+    return queryChunks.map((item) => sqlDebugText(item, seen)).join("");
+  }
+
+  const chunkValue = value["value"];
+
+  if (Array.isArray(chunkValue)) {
+    return chunkValue.map((item) => sqlDebugText(item, seen)).join("");
+  }
+
+  if (typeof value["columnType"] === "string" && typeof value["name"] === "string") {
+    return value["name"];
+  }
+
+  return "";
 };
 
 const methodNames = [
@@ -189,6 +230,29 @@ describe("DrizzleRetrievalRepository", () => {
     });
 
     expect(sqlParamValues(vectorWhere)).toContain("embedding-model-1");
+  });
+
+  it("uses each search document language for lexical query parsing", async () => {
+    let lexicalSelect: unknown;
+    const repository = new DrizzleRetrievalRepository(createSearchDb({
+      lexicalRows: [],
+      onLexicalSelect(fields) {
+        lexicalSelect = fields;
+      }
+    }) as never);
+
+    await repository.searchLexical({
+      query: "zażółć gęślą jaźń",
+      limit: 1
+    });
+
+    const renderedSql = sqlDebugText(
+      isRecord(lexicalSelect) ? lexicalSelect["lexicalScore"] : undefined
+    );
+
+    expect(renderedSql).toContain("websearch_to_tsquery(");
+    expect(renderedSql).toContain("language::regconfig");
+    expect(renderedSql).not.toContain("'english'");
   });
 
   it("exposes embedding model provenance for vector and hybrid results but not lexical-only results", async () => {
