@@ -52,6 +52,7 @@ const createSearchDb = (input: {
   vectorRows?: readonly unknown[];
   onLexicalSelect?: (fields: unknown) => void;
   onVectorWhere?: (condition: unknown) => void;
+  onVectorOrderBy?: (orderBy: unknown) => void;
 }) => ({
   select: (fields: unknown) => {
     input.onLexicalSelect?.(fields);
@@ -68,9 +69,12 @@ const createSearchDb = (input: {
             where: (condition: unknown) => {
               input.onVectorWhere?.(condition);
               return {
-                orderBy: () => ({
-                  limit: () => Promise.resolve(input.vectorRows ?? [])
-                })
+                orderBy: (orderBy: unknown) => {
+                  input.onVectorOrderBy?.(orderBy);
+                  return {
+                    limit: () => Promise.resolve(input.vectorRows ?? [])
+                  };
+                }
               };
             }
           })
@@ -230,6 +234,27 @@ describe("DrizzleRetrievalRepository", () => {
     });
 
     expect(sqlParamValues(vectorWhere)).toContain("embedding-model-1");
+  });
+
+  it("orders vector search by raw cosine distance for pgvector index eligibility", async () => {
+    let vectorOrderBy: unknown;
+    const repository = new DrizzleRetrievalRepository(createSearchDb({
+      vectorRows: [],
+      onVectorOrderBy(orderBy) {
+        vectorOrderBy = orderBy;
+      }
+    }) as never);
+
+    await repository.searchVector({
+      embeddingModelId: "embedding-model-1",
+      embedding: Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0),
+      limit: 1
+    });
+
+    const renderedSql = sqlDebugText(vectorOrderBy);
+
+    expect(renderedSql).toContain("<=>");
+    expect(renderedSql).not.toContain("floor(");
   });
 
   it("uses each search document language for lexical query parsing", async () => {

@@ -1,5 +1,6 @@
 import {
   and,
+  asc,
   desc,
   eq,
   inArray,
@@ -111,10 +112,14 @@ const vectorLiteral = (embedding: readonly number[], label: string): string => {
   return `[${embedding.join(",")}]`;
 };
 
-const vectorScoreExpression = (embedding: readonly number[]): SQL<number> => {
+const vectorDistanceExpression = (embedding: readonly number[]): SQL<number> => {
   const queryVector = vectorLiteral(embedding, "searchVector embedding");
 
-  return sql<number>`floor(greatest(0, (1 - (${embeddings.embedding} <=> ${queryVector}::vector)) * 1000))::int`;
+  return sql<number>`${embeddings.embedding} <=> ${queryVector}::vector`;
+};
+
+const vectorScoreExpression = (distance: SQL<number>): SQL<number> => {
+  return sql<number>`floor(greatest(0, (1 - (${distance})) * 1000))::int`;
 };
 
 const requireEmbeddingModelId = (
@@ -423,7 +428,8 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
 
   async searchVector(input: SearchVectorInput): Promise<SearchDocumentSearchResult[]> {
     const embeddingModelId = requireEmbeddingModelId(input.embeddingModelId, "searchVector");
-    const vectorScore = vectorScoreExpression(input.embedding);
+    const vectorDistance = vectorDistanceExpression(input.embedding);
+    const vectorScore = vectorScoreExpression(vectorDistance);
     const rows = await this.db
       .select({
         document: searchDocuments,
@@ -441,7 +447,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
           eq(embeddings.embeddingModelId, embeddingModelId)
         )
       )
-      .orderBy(desc(vectorScore))
+      .orderBy(asc(vectorDistance))
       .limit(input.limit ?? 10);
 
     return rows.map((row) => ({
