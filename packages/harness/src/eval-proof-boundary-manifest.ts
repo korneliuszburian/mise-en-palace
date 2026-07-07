@@ -155,6 +155,130 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
+    id: "decision-packet-engine-eval",
+    command: "pnpm eval:decision-packet",
+    scriptName: "eval:decision-packet",
+    owner: "deterministic decision-packet fixture engine",
+    requiredFor: ["local-static", "product-loop", "handoff"],
+    proves: [
+      "predeclared decision-packet cases run through the real activation/filtering/assembly/brief engine path",
+      "the fixture packets include governing decisions, SourceDecisionEdge refs, rejected-path readback, falsifiers, and non-proof boundaries",
+      "the fixture corpus satisfies the configured useful-rate, noise, and stale-authority thresholds"
+    ],
+    doesNotProve: [
+      "live Codex execution or obedience",
+      "source truth",
+      "broad arbitrary-repo packet quality",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "recorded-codex-decision-packet-obedience-eval",
+    command: "pnpm eval:codex-decision-packet-obedience",
+    scriptName: "eval:codex-decision-packet-obedience",
+    owner: "recorded Codex output evidence-shape comparator",
+    requiredFor: ["local-static", "handoff"],
+    proves: [
+      "recorded Codex output fixtures preserve the expected governing decision, stale boundary, rejected path, and non-proof signals",
+      "recorded output evidence has the expected public evidence shape",
+      "the paired decision-packet fixture still passes before recorded-output comparison"
+    ],
+    doesNotProve: [
+      "Codex will obey future briefs",
+      "the recorded output was generated in the current shell",
+      "the implementation was correct",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "recorded-codex-live-pilot-eval",
+    command: "pnpm eval:codex-decision-packet-obedience:live-pilot",
+    scriptName: "eval:codex-decision-packet-obedience:live-pilot",
+    owner: "recorded live-pilot Codex output comparator",
+    requiredFor: ["local-static"],
+    proves: [
+      "the recorded live-pilot fixture still satisfies the Codex decision-packet obedience evidence-shape comparator",
+      "the paired decision-packet fixture still passes before recorded live-pilot comparison"
+    ],
+    doesNotProve: [
+      "a live Codex call ran in the current shell",
+      "future Codex output will obey KRN briefs",
+      "the live-pilot sample generalizes",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "second-repo-decision-packet-eval",
+    command: "pnpm eval:second-repo-decision-packet",
+    scriptName: "eval:second-repo-decision-packet",
+    owner: "deterministic target-repo decision-packet fixtures",
+    requiredFor: ["local-static", "product-loop", "handoff"],
+    proves: [
+      "target-repo fixture corpora pass the decision-packet eval path",
+      "each target corpus includes repo-specific governing decisions, reusable KRN patterns, stale decisions, and rejected-path readback",
+      "the target corpora avoid self-repo KRN plan/architecture evidence references"
+    ],
+    doesNotProve: [
+      "arbitrary repository portability",
+      "live target-repo execution",
+      "commercial validation",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "decision-corpus-import-eval",
+    command: "pnpm eval:decision-corpus-import",
+    scriptName: "eval:decision-corpus-import",
+    owner: "source-to-decision corpus import fixture",
+    requiredFor: ["local-static", "handoff"],
+    proves: [
+      "compact source-to-decision import rows convert into decision-packet corpus rows",
+      "the importer rejects duplicate ids and collisions with the base corpus before merge",
+      "imported current, stale, and rejected decision links keep the merged decision-packet eval passing"
+    ],
+    doesNotProve: [
+      "DB ingestion",
+      "source truth",
+      "automatic source promotion",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "corpus-closure-eval",
+    command: "pnpm eval:corpus-closure",
+    scriptName: "eval:corpus-closure",
+    owner: "DB-backed source decision closure smoke",
+    requiredFor: ["db-runtime", "product-loop"],
+    proves: [
+      "the current dogfood DB corpus has accepted SourceClaims and no pending unadopted SourceClaims in source-decision gaps readback",
+      "the current dogfood DB corpus has no accepted SourceClaims missing SourceDecisionEdge readback",
+      "canonical source-search queries surface at least one SourceDecisionEdge-linked supporting claim in the top 3"
+    ],
+    doesNotProve: [
+      "source truth",
+      "broad arbitrary-repo retrieval quality",
+      "Codex obedience",
+      "KRN is product-ready"
+    ]
+  },
+  {
+    id: "decision-packet-determinism-eval",
+    command: "pnpm eval:determinism",
+    scriptName: "eval:determinism",
+    owner: "decision-packet family deterministic regression check",
+    requiredFor: ["local-static", "handoff"],
+    proves: [
+      "decision-packet, target-repo decision-packet, and recorded Codex obedience fixtures are bit-identical across consecutive runs",
+      "the decision-packet family evals are stable enough to serve as deterministic regression gates"
+    ],
+    doesNotProve: [
+      "production retrieval quality",
+      "source truth",
+      "LLM output quality",
+      "KRN is product-ready"
+    ]
+  },
+  {
     id: "alpha-verify-fast",
     command: "pnpm alpha:verify",
     scriptName: "alpha:verify",
