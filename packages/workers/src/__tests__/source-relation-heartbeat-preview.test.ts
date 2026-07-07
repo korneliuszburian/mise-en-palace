@@ -195,6 +195,26 @@ describe("source relation heartbeat preview", () => {
     );
   });
 
+  test("does not treat omitted connected claims as stale", () => {
+    const result = buildSourceRelationHeartbeatPreview({
+      now,
+      sourceClaims: [
+        sourceClaim("source-claim-1")
+      ],
+      sourceClaimEdges: [sourceClaimEdge()],
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
+    });
+
+    expect(result.candidates[0]).toEqual(
+      expect.objectContaining({
+        action: "review_source_relation",
+        reason: "relation_needs_review",
+        relationReviewFocus: "contradiction",
+        reviewability: "ready"
+      })
+    );
+  });
+
   test("flags weak relation evidence but does not create source truth", () => {
     const result = buildSourceRelationHeartbeatPreview({
       now,

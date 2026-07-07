@@ -207,9 +207,11 @@ const connectedClaimIsStale = (
   const from = claimsById.get(edge.fromSourceClaimId);
   const to = claimsById.get(edge.toSourceClaimId);
 
+  if (from === undefined || to === undefined) {
+    return false;
+  }
+
   return (
-    from === undefined ||
-    to === undefined ||
     !isSourceClaimTemporallyValid(from, now) ||
     !isSourceClaimTemporallyValid(to, now)
   );
