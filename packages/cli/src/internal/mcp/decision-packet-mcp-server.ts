@@ -108,6 +108,53 @@ const jsonResult = (
   isError: false
 });
 
+const isJsonObject = (
+  value: JsonValue | undefined
+): value is JsonObject =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const stringArray = (
+  value: JsonValue | undefined
+): string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string")
+    ? [...value]
+    : [];
+
+const appendUnique = (
+  values: string[],
+  value: string
+): string[] =>
+  values.includes(value) ? values : [...values, value];
+
+const annotateMcpTransportProof = (
+  value: JsonValue
+): JsonValue => {
+  if (!isJsonObject(value) || value["kind"] !== "krn.decisionPacketReadback.v1") {
+    return value;
+  }
+
+  const proof = value["proof"];
+
+  if (!isJsonObject(proof)) {
+    return value;
+  }
+
+  return {
+    ...value,
+    proof: {
+      ...proof,
+      proves: appendUnique(
+        stringArray(proof["proves"]),
+        "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
+      ),
+      doesNotProve: appendUnique(
+        stringArray(proof["doesNotProve"]).filter((item) => item !== "MCP integration"),
+        "broad MCP product readiness"
+      )
+    }
+  };
+};
+
 const response = (
   id: JsonRpcId,
   result: JsonValue
@@ -202,7 +249,7 @@ const runDecisionPacket = async (
     return textResult("krn decision packet command returned non-JSON tool content", true);
   }
 
-  return jsonResult(parsed);
+  return jsonResult(annotateMcpTransportProof(parsed));
 };
 
 const runToolCall = async (

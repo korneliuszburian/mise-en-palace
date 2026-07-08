@@ -13,7 +13,7 @@ import {
 const now = "2026-07-07T22:00:00.000Z";
 
 const packetJson = {
-  kind: "krn.decisionPacket.v1",
+  kind: "krn.decisionPacketReadback.v1",
   access: "read_only",
   mutation: "none",
   surface: "headless_cli",
@@ -123,8 +123,8 @@ const packetJson = {
     }
   },
   proof: {
-    proves: ["MCP wrapper returns the existing DecisionPacket contract."],
-    doesNotProve: ["live Codex obedience", "memory/source promotion"]
+    proves: ["a headless consumer can request a read-only DecisionPacket contract through CLI JSON"],
+    doesNotProve: ["MCP integration", "live Codex obedience", "memory/source promotion"]
   }
 };
 
@@ -230,7 +230,7 @@ describe("DecisionPacket MCP wrapper", () => {
       result: {
         isError: false,
         structuredContent: {
-          kind: "krn.decisionPacket.v1",
+          kind: "krn.decisionPacketReadback.v1",
           packetIdentity: {
             checksum: "a".repeat(64),
             evidenceRef: `packet:${"a".repeat(64)}`
@@ -244,7 +244,10 @@ describe("DecisionPacket MCP wrapper", () => {
             }
           },
           proof: {
-            doesNotProve: expect.arrayContaining(["memory/source promotion"])
+            proves: expect.arrayContaining([
+              "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
+            ]),
+            doesNotProve: expect.arrayContaining(["memory/source promotion", "broad MCP product readiness"])
           },
           packet: {
             abstentionScore: {
@@ -305,10 +308,33 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(isRecord(toolCall) && isRecord(toolCall["result"])
       ? toolCall["result"]["structuredContent"]
       : undefined).toMatchObject({
-        kind: "krn.decisionPacket.v1",
+        kind: "krn.decisionPacketReadback.v1",
         packetIdentity: {
           checksum: "a".repeat(64)
         }
       });
+  });
+
+  it("replaces the CLI-only MCP non-proof with the transport proof", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-2",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1"
+        }
+      }
+    }, runtime());
+    const result = isRecord(reply) ? reply["result"] : undefined;
+    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
+    const proof = isRecord(structuredContent) ? structuredContent["proof"] : undefined;
+    const proves = isRecord(proof) && Array.isArray(proof["proves"]) ? proof["proves"] : [];
+    const doesNotProve = isRecord(proof) && Array.isArray(proof["doesNotProve"]) ? proof["doesNotProve"] : [];
+
+    expect(proves).toContain("DecisionPacket was served through the read-only krn_decision_packet MCP tool");
+    expect(doesNotProve).not.toContain("MCP integration");
+    expect(doesNotProve).toContain("broad MCP product readiness");
   });
 });
