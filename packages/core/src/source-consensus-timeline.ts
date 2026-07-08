@@ -257,6 +257,71 @@ const blockedByCurrentSourceClaimIdFor = (input: {
     : undefined;
 };
 
+const sourceClaimCanDriveRankDown = (input: {
+  readonly claim: SourceClaim;
+  readonly sourceClaims: readonly SourceClaim[];
+  readonly incomingEdges: readonly SourceClaimEdge[];
+  readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
+  readonly rejectionIds: readonly SourceRejection["id"][];
+  readonly sourceClaimStatusById: ReadonlyMap<SourceClaim["id"], SourceClaimStatus>;
+  readonly now: IsoTimestamp;
+}): boolean => {
+  const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
+  const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
+    input.incomingEdges,
+    dissentEdgeKinds,
+    "from",
+    input.sourceClaimStatusById,
+    "accepted"
+  );
+  const authorityAssessment = assessSourceClaimAuthority({
+    claim: input.claim,
+    now: input.now,
+    decisionSupportEdgeIds: input.decisionSupportEdgeIds,
+    acceptedDissentingSourceClaimIds,
+    rejectionIds: input.rejectionIds,
+    ...(blockedByCurrentSourceClaimId === undefined
+      ? {}
+      : { blockedByCurrentSourceClaimId })
+  });
+
+  return authorityAssessment.status === "accepted";
+};
+
+const sourceClaimIdsWithRankDownAuthority = (input: {
+  readonly sourceClaims: readonly SourceClaim[];
+  readonly incomingEdgesByClaim: ReadonlyMap<SourceClaim["id"], readonly SourceClaimEdge[]>;
+  readonly decisionEdgesByClaim: ReadonlyMap<SourceClaim["id"], readonly SourceDecisionEdge[]>;
+  readonly rejectionsByClaim: ReadonlyMap<SourceClaim["id"], readonly SourceRejection[]>;
+  readonly sourceClaimStatusById: ReadonlyMap<SourceClaim["id"], SourceClaimStatus>;
+  readonly now: IsoTimestamp;
+}): ReadonlySet<SourceClaim["id"]> =>
+  new Set(input.sourceClaims
+    .filter((claim) => sourceClaimCanDriveRankDown({
+      claim,
+      sourceClaims: input.sourceClaims,
+      incomingEdges: input.incomingEdgesByClaim.get(claim.id) ?? [],
+      decisionSupportEdgeIds: (input.decisionEdgesByClaim.get(claim.id) ?? [])
+        .map((edge) => edge.id),
+      rejectionIds: (input.rejectionsByClaim.get(claim.id) ?? [])
+        .map((rejection) => rejection.id),
+      sourceClaimStatusById: input.sourceClaimStatusById,
+      now: input.now
+    }))
+    .map((claim) => claim.id));
+
+const sourceClaimEndpointIdsByKindAndRankDownAuthority = (
+  edges: readonly SourceClaimEdge[],
+  kinds: ReadonlySet<SourceClaimEdgeKind>,
+  endpoint: "from" | "to",
+  rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>
+): readonly SourceClaim["id"][] =>
+  sourceClaimEndpointIdsByKind(
+    edges.filter((edge) => rankDownAuthoritySourceClaimIds.has(edge.fromSourceClaimId)),
+    kinds,
+    endpoint
+  );
+
 const sourceConsensusTimelineEntryForClaim = (input: {
   readonly claim: SourceClaim;
   readonly sourceClaims: readonly SourceClaim[];
@@ -265,13 +330,15 @@ const sourceConsensusTimelineEntryForClaim = (input: {
   readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
   readonly rejectionIds: readonly SourceRejection["id"][];
   readonly sourceClaimStatusById: ReadonlyMap<SourceClaim["id"], SourceClaimStatus>;
+  readonly rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>;
   readonly now: IsoTimestamp;
 }): SourceConsensusTimelineEntry => {
   const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
-  const supersededBySourceClaimIds = sourceClaimEndpointIdsByKind(
+  const supersededBySourceClaimIds = sourceClaimEndpointIdsByKindAndRankDownAuthority(
     input.incomingEdges,
     supersedingEdgeKinds,
-    "from"
+    "from",
+    input.rankDownAuthoritySourceClaimIds
   );
   const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
     input.incomingEdges,
@@ -348,6 +415,14 @@ export const buildSourceConsensusTimelineReadback = (input: {
     claim.id,
     claim.status
   ]));
+  const rankDownAuthoritySourceClaimIds = sourceClaimIdsWithRankDownAuthority({
+    sourceClaims: input.sourceClaims,
+    incomingEdgesByClaim,
+    decisionEdgesByClaim,
+    rejectionsByClaim,
+    sourceClaimStatusById,
+    now: input.now
+  });
   const entries = input.sourceClaims
     .map((claim): SourceConsensusTimelineEntry => sourceConsensusTimelineEntryForClaim({
       claim,
@@ -359,6 +434,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
       rejectionIds: (rejectionsByClaim.get(claim.id) ?? [])
         .map((rejection) => rejection.id),
       sourceClaimStatusById,
+      rankDownAuthoritySourceClaimIds,
       now: input.now
     }))
     .sort(compareSourceConsensusTimelineEntries);

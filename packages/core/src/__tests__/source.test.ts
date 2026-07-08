@@ -453,6 +453,12 @@ describe("source review signals", () => {
           fromSourceClaimId: rejectedClaim.id,
           toSourceClaimId: currentStandard.id,
           kind: "contradicts"
+        }),
+        sourceClaimEdge({
+          id: "edge-rejected-supersedes-current",
+          fromSourceClaimId: rejectedClaim.id,
+          toSourceClaimId: currentStandard.id,
+          kind: "supersedes"
         })
       ],
       sourceDecisionEdges: [
@@ -508,6 +514,7 @@ describe("source review signals", () => {
       rawEvidenceCitationRefs: ["forum_post:frontend-template-consensus#char=12-84"],
       sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
       dissentingSourceClaimIds: ["claim-rejected"],
+      supersededBySourceClaimIds: [],
       supersedesSourceClaimIds: ["claim-old-standard"],
       caveats: []
     });
