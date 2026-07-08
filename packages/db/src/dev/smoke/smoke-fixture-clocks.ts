@@ -26,7 +26,8 @@ export const smokeFixtureClocks = {
   maintenanceQueues: {
     olderThan: "2026-06-01T00:00:00.000Z",
     runAfter: "2026-06-01T00:00:00.000Z",
-    lockedAt: "2026-06-22T06:00:00.000Z"
+    lockedAt: "2026-06-22T06:00:00.000Z",
+    recoveryLockedBefore: "2026-06-22T06:01:00.000Z"
   },
   targetRepoHarness: {
     now: "2026-06-22T07:00:00.000Z"

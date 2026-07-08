@@ -74,6 +74,7 @@ const methodNames = [
   "claimMaintenanceQueueRecord",
   "recordMaintenanceQueueSuccess",
   "recordMaintenanceQueueRetry",
+  "recoverStaleMaintenanceQueueRecord",
   "recordMaintenanceQueueDeadLetter",
   "recordMaintenanceQueueSkip",
   "cleanupTestMaintenanceQueues"
@@ -109,10 +110,13 @@ const maintenanceQueueRow = (
 };
 
 const createUpdateDb = (row: ReturnType<typeof maintenanceQueueRow>) => {
-  const updateCall: { whereCondition?: unknown } = {};
+  const updateCall: { setValue?: unknown; whereCondition?: unknown } = {};
   const db = {
     update: (_table: unknown) => ({
-      set: (_value: unknown) => ({
+      set: (value: unknown) => {
+        updateCall.setValue = value;
+
+        return {
         where: (condition: unknown) => {
           updateCall.whereCondition = condition;
 
@@ -120,7 +124,8 @@ const createUpdateDb = (row: ReturnType<typeof maintenanceQueueRow>) => {
             returning: async () => [row]
           };
         }
-      })
+        };
+      }
     })
   } as unknown as KrnDatabase;
 
@@ -244,5 +249,36 @@ describe("DrizzleMaintenanceQueueRepository", () => {
     expect(sqlTextFragments(updateCall.whereCondition)).toEqual(
       expect.arrayContaining(["attempts", "max_attempts"])
     );
+  });
+
+  it("guards stale recovery to running records locked before the cutoff", async () => {
+    const lockedBefore = "2026-07-07T00:10:00.000Z";
+    const runAfter = "2026-07-07T00:15:00.000Z";
+    const { db, updateCall } = createUpdateDb(maintenanceQueueRow("queued"));
+    const repository = new DrizzleMaintenanceQueueRepository(db);
+
+    await repository.recoverStaleMaintenanceQueueRecord("maintenance-queue-1", {
+      lockedBefore,
+      error: "Recovered stale maintenance lock",
+      runAfter
+    });
+
+    expect(sqlParamValues(updateCall.whereCondition)).toEqual(
+      expect.arrayContaining([
+        "maintenance-queue-1",
+        "running",
+        new Date(lockedBefore)
+      ])
+    );
+    expect(sqlTextFragments(updateCall.whereCondition)).toEqual(
+      expect.arrayContaining(["locked_at"])
+    );
+    expect(updateCall.setValue).toEqual(expect.objectContaining({
+      status: "queued",
+      lockedAt: null,
+      lockedBy: null,
+      lastError: "Recovered stale maintenance lock",
+      runAfter: new Date(runAfter)
+    }));
   });
 });

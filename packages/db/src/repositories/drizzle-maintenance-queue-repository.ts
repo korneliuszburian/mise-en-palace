@@ -24,6 +24,7 @@ import type {
   EnqueueMaintenanceQueueInput,
   MaintenanceQueueRecord,
   MaintenanceQueueRepository,
+  RecoverStaleMaintenanceQueueRecordInput,
   RecordMaintenanceQueueRetryInput
 } from "./maintenance-queue-types.js";
 
@@ -139,6 +140,37 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         )
         .returning(),
       "recordMaintenanceQueueRetry"
+    );
+
+    return mapMaintenanceQueue(row);
+  }
+
+  async recoverStaleMaintenanceQueueRecord(
+    id: string,
+    input: RecoverStaleMaintenanceQueueRecordInput
+  ): Promise<MaintenanceQueueRecord> {
+    const lockedBefore = fromIsoTimestamp(input.lockedBefore);
+    const runAfter = input.runAfter === undefined ? now() : fromIsoTimestamp(input.runAfter);
+    const row = requireReturnedRow(
+      await this.db
+        .update(maintenanceQueues)
+        .set({
+          status: "queued",
+          lockedAt: null,
+          lockedBy: null,
+          lastError: input.error,
+          runAfter,
+          updatedAt: now()
+        })
+        .where(
+          and(
+            eq(maintenanceQueues.id, id),
+            eq(maintenanceQueues.status, "running"),
+            lte(maintenanceQueues.lockedAt, lockedBefore)
+          )
+        )
+        .returning(),
+      "recoverStaleMaintenanceQueueRecord"
     );
 
     return mapMaintenanceQueue(row);

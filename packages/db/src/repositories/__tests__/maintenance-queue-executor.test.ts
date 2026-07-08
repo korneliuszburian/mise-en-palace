@@ -11,6 +11,7 @@ import {
   createFeedbackDeltaMaintenanceHandler
 } from "../feedback-delta-maintenance-handler.js";
 import {
+  recoverStaleMaintenanceQueueRecord,
   runMaintenanceQueueRecord
 } from "../maintenance-queue-executor.js";
 import type {
@@ -20,11 +21,13 @@ import type {
   EnqueueMaintenanceQueueInput,
   MaintenanceQueueRecord,
   MaintenanceQueueRepository,
+  RecoverStaleMaintenanceQueueRecordInput,
   RecordMaintenanceQueueRetryInput
 } from "../maintenance-queue-types.js";
 
 const isoNow = "2026-07-08T10:00:00.000Z";
 const retryAt = "2026-07-08T10:05:00.000Z";
+const staleLockCutoff = "2026-07-08T10:10:00.000Z";
 
 const runningRecord = (
   input: Pick<MaintenanceQueueRecord, "jobType" | "payload"> &
@@ -102,6 +105,18 @@ class FakeMaintenanceQueueRepository implements MaintenanceQueueRepository {
       ...unlockedRecord(this.claimedRecord, "queued", input.error),
       attempts: this.claimedRecord.attempts + 1,
       runAfter: input.runAfter ?? isoNow
+    };
+  }
+
+  async recoverStaleMaintenanceQueueRecord(
+    id: string,
+    input: RecoverStaleMaintenanceQueueRecordInput
+  ): Promise<MaintenanceQueueRecord> {
+    this.calls.push(`recover-stale:${id}`);
+
+    return {
+      ...unlockedRecord(this.claimedRecord, "queued", input.error),
+      runAfter: input.runAfter ?? this.claimedRecord.runAfter
     };
   }
 
@@ -259,6 +274,48 @@ describe("runMaintenanceQueueRecord", () => {
     expect(result.record.attempts).toBe(1);
     expect(result.record.runAfter).toBe(retryAt);
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "retry:maintenance-queue-1"]);
+  });
+
+  it("recovers a stale running record without executing a handler or mutating truth", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "embed_memory_record",
+        payload: {
+          memoryRecordId: "memory-1",
+          reason: "refresh memory embedding",
+          embeddingModelId: "text-embedding-3-small"
+        }
+      })
+    );
+
+    const result = await recoverStaleMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      recovery: {
+        lockedBefore: staleLockCutoff,
+        error: "Recovered stale maintenance lock after process exit",
+        runAfter: retryAt
+      }
+    });
+
+    expect(result.status).toBe("recovered");
+    expect(result.record.status).toBe("queued");
+    expect(result.record.lockedAt).toBeUndefined();
+    expect(result.record.lockedBy).toBeUndefined();
+    expect(result.record.lastError).toBe("Recovered stale maintenance lock after process exit");
+    expect(result.record.runAfter).toBe(retryAt);
+    expect(result.staleLockCutoff).toBe(staleLockCutoff);
+    expect(result.proves).toEqual([
+      "A single running maintenance record was recovered through an explicit repository call.",
+      "The recovery was guarded by a stale locked_at cutoff.",
+      "The recovered record returned to queued state with lock metadata cleared."
+    ]);
+    expect(result.doesNotProve).toEqual(expect.arrayContaining([
+      "Stale maintenance recovery does not prove autonomous scheduler or daemon readiness.",
+      "Stale maintenance recovery does not prove handler idempotency after a process crash.",
+      "Stale maintenance recovery does not directly promote memory records or source claims."
+    ]));
+    expect(repository.calls).toEqual(["recover-stale:maintenance-queue-1"]);
   });
 
   it("dead-letters a failed record when no attempts remain", async () => {

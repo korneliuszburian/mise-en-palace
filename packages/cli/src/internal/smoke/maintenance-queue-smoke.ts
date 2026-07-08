@@ -9,6 +9,7 @@ export const formatMaintenanceQueueSmokeReportLines = (
   `Maintenance queue records enqueued: ${report.enqueuedRecordCount}`,
   `Queued records read back: ${report.queuedReadbackCount}`,
   `Queue record claims persisted: ${report.claimedRecordCount}`,
+  `Stale running records recovered: ${report.recoveredRecordCount}`,
   `Queue success records persisted: ${report.successRecordedCount}`,
   `Queue skip records persisted: ${report.skipRecordedCount}`,
   `Queue retry records persisted: ${report.retryRecordedCount}`,

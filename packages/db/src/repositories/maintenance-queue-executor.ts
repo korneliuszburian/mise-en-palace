@@ -14,7 +14,8 @@ import type {
 import type {
   ClaimMaintenanceQueueRecordInput,
   MaintenanceQueueRecord,
-  MaintenanceQueueRepository
+  MaintenanceQueueRepository,
+  RecoverStaleMaintenanceQueueRecordInput
 } from "./maintenance-queue-types.js";
 
 export type MaintenanceQueueHandlerOutcome =
@@ -50,11 +51,19 @@ export interface RunMaintenanceQueueRecordInput {
   claim?: ClaimMaintenanceQueueRecordInput;
 }
 
+export interface RecoverStaleMaintenanceQueueRecordExecutionInput {
+  repository: MaintenanceQueueRepository;
+  recordId: string;
+  recovery: RecoverStaleMaintenanceQueueRecordInput;
+}
+
 export type MaintenanceQueueExecutorStatus =
   | "succeeded"
   | "skipped"
   | "retried"
   | "dead_lettered";
+
+export type MaintenanceQueueRecoveryStatus = "recovered";
 
 export interface MaintenanceQueueExecutorReadback {
   status: MaintenanceQueueExecutorStatus;
@@ -62,6 +71,17 @@ export interface MaintenanceQueueExecutorReadback {
   record: MaintenanceQueueRecord;
   writeBoundary: MaintenanceQueueWriteBoundaryReadback;
   handlerWriteBoundary?: MaintenanceQueueRuntimeWriteBoundaryAssessment;
+  queueRecordKeyUniqueness: "db_unique_queue_key";
+  proves: readonly string[];
+  doesNotProve: readonly string[];
+}
+
+export interface MaintenanceQueueRecoveryReadback {
+  status: MaintenanceQueueRecoveryStatus;
+  jobType: MaintenanceJobType;
+  record: MaintenanceQueueRecord;
+  writeBoundary: MaintenanceQueueWriteBoundaryReadback;
+  staleLockCutoff: IsoTimestamp;
   queueRecordKeyUniqueness: "db_unique_queue_key";
   proves: readonly string[];
   doesNotProve: readonly string[];
@@ -81,6 +101,18 @@ const executorDoesNotProve = [
   "Explicit maintenance record execution relies on the DB queue_key constraint for enqueue deduplication.",
   "Handler side effects still require focused tests or DB smoke evidence.",
   "Maintenance execution does not directly promote memory records or source claims."
+] as const;
+
+const staleRecoveryProofs = [
+  "A single running maintenance record was recovered through an explicit repository call.",
+  "The recovery was guarded by a stale locked_at cutoff.",
+  "The recovered record returned to queued state with lock metadata cleared."
+] as const;
+
+const staleRecoveryDoesNotProve = [
+  "Stale maintenance recovery does not prove autonomous scheduler or daemon readiness.",
+  "Stale maintenance recovery does not prove handler idempotency after a process crash.",
+  "Stale maintenance recovery does not directly promote memory records or source claims."
 ] as const;
 
 const findHandler = (
@@ -230,4 +262,24 @@ export const runMaintenanceQueueRecord = async (
       handlerWriteBoundary
     );
   }
+};
+
+export const recoverStaleMaintenanceQueueRecord = async (
+  input: RecoverStaleMaintenanceQueueRecordExecutionInput
+): Promise<MaintenanceQueueRecoveryReadback> => {
+  const record = await input.repository.recoverStaleMaintenanceQueueRecord(
+    input.recordId,
+    input.recovery
+  );
+
+  return {
+    status: "recovered",
+    jobType: record.jobType,
+    record,
+    writeBoundary: buildMaintenanceQueueWriteBoundaryReadback(record.jobType),
+    staleLockCutoff: input.recovery.lockedBefore,
+    queueRecordKeyUniqueness: "db_unique_queue_key",
+    proves: staleRecoveryProofs,
+    doesNotProve: staleRecoveryDoesNotProve
+  };
 };

@@ -36,6 +36,7 @@ export interface MaintenanceQueueSmokeReport {
   enqueuedRecordCount: number;
   queuedReadbackCount: number;
   claimedRecordCount: number;
+  recoveredRecordCount: number;
   successRecordedCount: number;
   skipRecordedCount: number;
   retryRecordedCount: number;
@@ -297,6 +298,28 @@ export const runMaintenanceQueueSmokeCheck = async (
     }
 
     let claimedRecordCount = 0;
+    let recoveredRecordCount = 0;
+    const staleRecoveryTarget = enqueuedRecords[0];
+    if (staleRecoveryTarget !== undefined) {
+      const staleClaim = await repository.claimMaintenanceQueueRecord(staleRecoveryTarget.id, {
+        lockedBy: "maintenance-queue-smoke-stale-claim",
+        lockedAt: smokeFixtureClocks.maintenanceQueues.lockedAt
+      });
+      requireStatus(staleClaim, "running", "stale recovery claim");
+      claimedRecordCount += 1;
+
+      const recoveredRecord = await repository.recoverStaleMaintenanceQueueRecord(
+        staleRecoveryTarget.id,
+        {
+          lockedBefore: smokeFixtureClocks.maintenanceQueues.recoveryLockedBefore,
+          error: "Recovered stale maintenance queue smoke record",
+          runAfter: smokeFixtureClocks.maintenanceQueues.runAfter
+        }
+      );
+      requireStatus(recoveredRecord, "queued", "stale recovery record");
+      recoveredRecordCount = 1;
+    }
+
     const settlementCounts: Record<MaintenanceQueueSmokeSettlementKind, number> = {
       success: 0,
       skip: 0,
@@ -317,7 +340,7 @@ export const runMaintenanceQueueSmokeCheck = async (
     }
 
     if (
-      claimedRecordCount !== enqueuedRecords.length ||
+      claimedRecordCount !== enqueuedRecords.length + recoveredRecordCount ||
       settlementCounts.success !== settlementPlan.success ||
       settlementCounts.skip !== settlementPlan.skip ||
       settlementCounts.retry !== settlementPlan.retry ||
@@ -335,6 +358,7 @@ export const runMaintenanceQueueSmokeCheck = async (
       enqueuedRecordCount: enqueuedRecords.length,
       queuedReadbackCount,
       claimedRecordCount,
+      recoveredRecordCount,
       successRecordedCount: settlementCounts.success,
       skipRecordedCount: settlementCounts.skip,
       retryRecordedCount: settlementCounts.retry,

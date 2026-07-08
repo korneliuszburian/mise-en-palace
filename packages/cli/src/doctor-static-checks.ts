@@ -175,6 +175,7 @@ const maintenanceQueueRepositoryMethods = [
   "recordMaintenanceQueueSuccess",
   "recordMaintenanceQueueSkip",
   "recordMaintenanceQueueRetry",
+  "recoverStaleMaintenanceQueueRecord",
   "recordMaintenanceQueueDeadLetter",
   "cleanupTestMaintenanceQueues"
 ] as const;
