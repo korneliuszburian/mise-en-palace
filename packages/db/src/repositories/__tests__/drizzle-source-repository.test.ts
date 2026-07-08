@@ -115,11 +115,39 @@ describe("DrizzleSourceRepository", () => {
       metadata: {
         consumer: "B-01 temporal claim edge implementation",
         doesNotProve: "This edge does not prove the newer claim is globally true.",
+        evidenceRef: "source-artifact:temporal-edge#L1-L4",
         scope: "source graph temporal read model"
       }
     } as const;
 
     expect(() => assertSourceClaimEdgeGovernance(valid)).not.toThrow();
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      metadata: {
+        consumer: valid.metadata.consumer,
+        doesNotProve: valid.metadata.doesNotProve,
+        scope: valid.metadata.scope
+      }
+    })).toThrow("SourceClaimEdge invalidates requires metadata.evidenceRef or metadata.sourceDecisionRef");
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      kind: "supersedes",
+      metadata: {
+        consumer: valid.metadata.consumer,
+        doesNotProve: valid.metadata.doesNotProve,
+        sourceDecisionRef: "source-decision-edge:temporal-support",
+        scope: valid.metadata.scope
+      }
+    })).not.toThrow();
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      kind: "supports",
+      metadata: {
+        consumer: valid.metadata.consumer,
+        doesNotProve: valid.metadata.doesNotProve,
+        scope: valid.metadata.scope
+      }
+    })).not.toThrow();
     expect(() => assertSourceClaimEdgeGovernance({
       ...valid,
       metadata: {

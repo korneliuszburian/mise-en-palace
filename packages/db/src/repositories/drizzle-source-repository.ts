@@ -4,6 +4,7 @@ import type {
   ProjectId,
   SourceClaim,
   SourceClaimEdge,
+  SourceClaimEdgeKind,
   SourceClaimLifecycleStatus,
   SourceDecision,
   SourceDecisionEdge,
@@ -80,6 +81,16 @@ const assertDecisionGradeSupportType = (
     throw new Error(`${label} supportType cannot be decorative`);
   }
 };
+
+const sourceClaimEdgeKindsRequiringSupportRef = new Set<SourceClaimEdgeKind>([
+  "contradicts",
+  "expires",
+  "invalidates",
+  "supersedes"
+]);
+
+const hasText = (value: string | undefined): boolean =>
+  value !== undefined && value.trim().length > 0;
 
 export const throwOnBlockingSourceDecisionSignals = (
   sourceDecision: SourceDecision,
@@ -185,6 +196,16 @@ export const assertSourceClaimEdgeGovernance = (
   requireText(input.kind, "SourceClaimEdge requires kind");
   requireText(input.metadata.consumer, "SourceClaimEdge requires metadata.consumer");
   requireText(input.metadata.doesNotProve, "SourceClaimEdge requires metadata.doesNotProve");
+
+  if (
+    sourceClaimEdgeKindsRequiringSupportRef.has(input.kind) &&
+    !hasText(input.metadata.evidenceRef) &&
+    !hasText(input.metadata.sourceDecisionRef)
+  ) {
+    throw new Error(
+      `SourceClaimEdge ${input.kind} requires metadata.evidenceRef or metadata.sourceDecisionRef`
+    );
+  }
 };
 
 export class DrizzleSourceRepository implements SourceRepository {
