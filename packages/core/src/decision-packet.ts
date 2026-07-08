@@ -1,3 +1,17 @@
+import type {
+  FeedbackCandidateProposalKind,
+  SourceUsefulnessOutcome
+} from "./feedback-delta.js";
+import type {
+  ContextSubjectType
+} from "./context-assembly.js";
+import type {
+  ProjectStandardDecisionReadback
+} from "./memory.js";
+import type {
+  SourceAuthorityLabel
+} from "./source.js";
+
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
 
 export type DecisionPacketFormatVersion = typeof decisionPacketFormatVersion;
@@ -183,3 +197,459 @@ export interface DecisionPacket {
   severeStaleAuthorityIds: readonly string[];
   brief: DecisionPacketBriefSummary;
 }
+
+export interface DecisionPacketReadModelInput {
+  run: {
+    id: string;
+    updatedAt: string;
+  };
+  context: {
+    inclusions: number;
+    exclusions: number;
+    inclusionDetails: readonly DecisionPacketContextInclusionInput[];
+    activationTrace?: DecisionPacketActivationTraceInput;
+  };
+  evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
+  feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
+  proof: {
+    doesNotProve: readonly string[];
+  };
+}
+
+export interface DecisionPacketContextInclusionInput {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  sourceAuthority: SourceAuthorityLabel;
+}
+
+export interface DecisionPacketActivationTraceInput {
+  candidates: readonly DecisionPacketActivationCandidateInput[];
+  decisions: readonly DecisionPacketActivationDecisionInput[];
+}
+
+export interface DecisionPacketActivationCandidateInput {
+  subjectType: string;
+  subjectId: string;
+  projectStandardDecision?: ProjectStandardDecisionReadback;
+  sourceDecisionSupportBoost?: {
+    sourceDecisionEdgeIds: readonly string[];
+  };
+}
+
+export interface DecisionPacketActivationDecisionInput {
+  reason: string;
+  antiMemoryRecordId?: string;
+}
+
+export interface DecisionPacketEvidenceBundleInput {
+  commands: readonly {
+    command: string;
+  }[];
+}
+
+export interface DecisionPacketFeedbackDeltaInput {
+  candidates: readonly {
+    kind: FeedbackCandidateProposalKind;
+    id: string;
+    status: string;
+  }[];
+  sourceUsefulnessOutcomes: readonly {
+    sourceClaimId?: string;
+    sourceDecisionId?: string;
+    outcome: SourceUsefulnessOutcome;
+    reason: string;
+  }[];
+}
+
+export interface DecisionPacketIdentity {
+  packetId: string;
+  checksumAlgorithm: "sha256";
+  checksum: string;
+  evidenceRef: string;
+  generatedAt: string;
+  sourceRunUpdatedAt: string;
+  freshness: {
+    status: "current_read_model_snapshot";
+    doesNotProve: string;
+  };
+}
+
+export interface DecisionPacketReturnChannels {
+  evidence: {
+    command: string;
+    persistedCommand: string;
+    doesNotProve: string;
+  };
+  feedback: {
+    memoryRecordApplyExample: string;
+    sourceUsefulnessExample: string;
+    sourceDecisionUsefulnessExample: string;
+    knowledgeUsefulnessExample: string;
+    doesNotProve: string;
+  };
+}
+
+export interface DecisionPacketContractReadback {
+  kind: "krn.decisionPacketReadback.v1";
+  access: "read_only";
+  mutation: "none";
+  surface: "headless_cli";
+  request: {
+    runId: string;
+  };
+  packetIdentity: DecisionPacketIdentity;
+  packet: DecisionPacket;
+  returnChannels: DecisionPacketReturnChannels;
+  proof: {
+    proves: readonly string[];
+    doesNotProve: readonly string[];
+  };
+}
+
+export type DecisionPacketSha256Hex = (value: string) => string;
+
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+};
+
+const sourceDecisionEdgeIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
+) ?? []);
+
+const sourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.inclusionDetails
+  .filter((inclusion) => inclusion.subjectType === "source_claim")
+  .map((inclusion) => inclusion.subjectId));
+
+const sourceClaimIdsWithDecisionSupportFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.subjectType === "source_claim" &&
+  (candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds.length ?? 0) > 0
+    ? [candidate.subjectId]
+    : []
+) ?? []);
+
+const sourceClaimIdsWithUsefulness = (
+  readModel: DecisionPacketReadModelInput,
+  outcomes: readonly SourceUsefulnessOutcome[]
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+    outcome.sourceClaimId !== undefined && outcomes.includes(outcome.outcome)
+      ? [outcome.sourceClaimId]
+      : []
+  )
+));
+
+const caveatedSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => {
+  const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
+  const maintenanceFeedbackSourceClaimIds = new Set(
+    sourceClaimIdsWithUsefulness(readModel, ["noise", "stale", "unknown"])
+  );
+
+  return sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
+    !supportedSourceClaimIds.has(sourceClaimId) ||
+    maintenanceFeedbackSourceClaimIds.has(sourceClaimId)
+  );
+};
+
+const sourceDecisionIdsWithUsefulness = (
+  readModel: DecisionPacketReadModelInput,
+  outcomes: readonly SourceUsefulnessOutcome[]
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+    outcome.sourceDecisionId !== undefined && outcomes.includes(outcome.outcome)
+      ? [outcome.sourceDecisionId]
+      : []
+  )
+));
+
+const rejectedSourceDecisionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.candidates.flatMap((candidate) =>
+    candidate.kind === "source_decision_candidate" && candidate.status === "reject"
+      ? [candidate.id]
+      : []
+  )
+));
+
+const verificationCommandsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.evidenceBundles.flatMap((bundle) =>
+  bundle.commands.map((command) => command.command)
+));
+
+const taskStandardDecisionsFor = (
+  readModel: DecisionPacketReadModelInput
+): DecisionPacketTaskStandard[] => {
+  const decisions = readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.projectStandardDecision === undefined
+      ? []
+      : [{
+          memoryRecordId: candidate.projectStandardDecision.memoryRecordId,
+          key: candidate.projectStandardDecision.key,
+          sourceRefs: candidate.projectStandardDecision.sourceRefs,
+          mechanism: candidate.projectStandardDecision.mechanism,
+          krnImplication: candidate.projectStandardDecision.krnImplication,
+          decision: candidate.projectStandardDecision.decision,
+          consumer: candidate.projectStandardDecision.consumer,
+          falsifier: candidate.projectStandardDecision.falsifier,
+          validFrom: candidate.projectStandardDecision.validFrom,
+          ...(candidate.projectStandardDecision.validUntil === undefined
+            ? {}
+            : { validUntil: candidate.projectStandardDecision.validUntil }),
+          ...(candidate.projectStandardDecision.rejectedPath === undefined
+            ? {}
+            : { rejectedPath: candidate.projectStandardDecision.rejectedPath }),
+          doesNotProve: candidate.projectStandardDecision.doesNotProve
+        }]
+  ) ?? [];
+  const byKey = new Map<string, DecisionPacketTaskStandard>();
+
+  for (const decision of decisions) {
+    const key = `${decision.key}:${decision.validFrom}:${decision.decision}`;
+
+    if (!byKey.has(key)) {
+      byKey.set(key, decision);
+    }
+  }
+
+  return [...byKey.values()];
+};
+
+const governingStatementsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique([
+  ...readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
+  ) ?? [],
+  ...readModel.feedbackDeltas.flatMap((feedback) =>
+    feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+      ["selected", "used", "helped"].includes(outcome.outcome) ? [outcome.reason] : []
+    )
+  )
+]);
+
+const antiMemoryBlockedPathIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.activationTrace?.decisions.flatMap((decision) =>
+  decision.reason === "anti_memory_block" && decision.antiMemoryRecordId !== undefined
+    ? [decision.antiMemoryRecordId]
+    : []
+) ?? []);
+
+const severeStaleAuthorityIdsFor = (input: {
+  readonly governingDecisionIds: readonly string[];
+  readonly staleDecisionIds: readonly string[];
+}): string[] => {
+  const staleDecisionIds = new Set(input.staleDecisionIds);
+
+  return input.governingDecisionIds.filter((id) => staleDecisionIds.has(id));
+};
+
+export const buildDecisionPacketFromReadModel = (
+  readModel: DecisionPacketReadModelInput
+): DecisionPacket => {
+  const inclusions = readModel.context.inclusionDetails;
+  const sourceClaimIds = sourceClaimIdsFor(readModel);
+  const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
+  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel);
+  const governingDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"]);
+  const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
+  const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
+  const rejectedPathIds = unique([
+    ...inclusions
+      .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
+      .map((inclusion) => inclusion.subjectId),
+    ...antiMemoryBlockedPathIdsFor(readModel),
+    ...sourceRejectionIds
+  ]);
+  const evidenceGaps = governingDecisionIds.length === 0
+    ? [{
+        id: `evidence-gap:${readModel.run.id}:no-governing-decision`,
+        reason: "No governed decision is present in this read-only packet.",
+        verificationRequired:
+          "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+      }]
+    : [];
+  const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
+    governingDecisionIds,
+    staleDecisionIds
+  });
+  const sourceConsensus = buildDecisionPacketSourceConsensus({
+    sourceClaimIds,
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
+    staleDecisionIds,
+    rejectedPathIds,
+    sourceRejectionIds,
+    conflictedDecisionIds: severeStaleAuthorityIds,
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+  });
+
+  return {
+    formatVersion: decisionPacketFormatVersion,
+    governingDecisionIds,
+    governingStatements: governingStatementsFor(readModel),
+    taskStandardDecisions: taskStandardDecisionsFor(readModel),
+    sourceClaimIds,
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
+    sourceRejectionIds,
+    memoryRefs: unique(inclusions
+      .filter((inclusion) => inclusion.subjectType === "memory_record")
+      .map((inclusion) => inclusion.subjectId)),
+    staleDecisionIds,
+    rejectedPathIds,
+    falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
+      bundle.commands.map((command) => command.command)
+    ),
+    verificationCommands: verificationCommandsFor(readModel),
+    evidenceGaps,
+    sourceConsensus,
+    abstentionScore: buildDecisionPacketAbstentionScore({
+      governingDecisionIds,
+      sourceConsensus
+    }),
+    doesNotProve: readModel.proof.doesNotProve,
+    nonProofs: readModel.proof.doesNotProve,
+    noiseDecisionIds: sourceDecisionIdsWithUsefulness(readModel, ["noise"]),
+    severeStaleAuthorityIds,
+    brief: {
+      includedContextCount: readModel.context.inclusions,
+      observationPrefixCount: 0,
+      explicitExclusionCount: readModel.context.exclusions,
+      sourceClaimUseCount: inclusions.filter((inclusion) =>
+        inclusion.subjectType === "source_claim"
+      ).length,
+      memoryRecordUseCount: inclusions.filter((inclusion) =>
+        inclusion.subjectType === "memory_record"
+      ).length
+    }
+  };
+};
+
+export const buildDecisionPacketIdentity = (input: {
+  readonly runId: string;
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly packet: DecisionPacket;
+  readonly generatedAt: string;
+  readonly sha256Hex: DecisionPacketSha256Hex;
+}): DecisionPacketIdentity => {
+  const checksum = input.sha256Hex(canonicalJson({
+    packet: input.packet,
+    request: {
+      runId: input.runId
+    },
+    sourceRunUpdatedAt: input.readModel.run.updatedAt
+  }));
+
+  return {
+    packetId: `decision-packet:${input.runId}:${checksum.slice(0, 16)}`,
+    checksumAlgorithm: "sha256",
+    checksum,
+    evidenceRef: `packet:${checksum}`,
+    generatedAt: input.generatedAt,
+    sourceRunUpdatedAt: input.readModel.run.updatedAt,
+    freshness: {
+      status: "current_read_model_snapshot",
+      doesNotProve:
+        "Packet checksum binds feedback to this readback snapshot; it does not prove the DB state stayed unchanged after the packet was rendered."
+    }
+  };
+};
+
+export const buildDecisionPacketReturnChannels = (input: {
+  readonly runId: string;
+  readonly packetIdentity: DecisionPacketIdentity;
+}): DecisionPacketReturnChannels => {
+  const packetChecksumOption = `--decision-packet-checksum ${input.packetIdentity.checksum}`;
+
+  return {
+    evidence: {
+      command:
+        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --verification "<command>=passed"`,
+      persistedCommand:
+        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --verification "<command>=passed" --persist`,
+      doesNotProve:
+        "Evidence capture records supplied outcomes; it does not execute commands, prove Codex followed the packet, or prove the packet remained current after render time."
+    },
+    feedback: {
+      memoryRecordApplyExample:
+        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> --outcome helped --notes "packet=${input.packetIdentity.evidenceRef}; <why>" --persist`,
+      sourceUsefulnessExample:
+        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+      sourceDecisionUsefulnessExample:
+        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "decision:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+      knowledgeUsefulnessExample:
+        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+      doesNotProve:
+        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum evidence only binds feedback to the rendered packet snapshot."
+    }
+  };
+};
+
+export const buildDecisionPacketContractReadback = (input: {
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly generatedAt: string;
+  readonly sha256Hex: DecisionPacketSha256Hex;
+}): DecisionPacketContractReadback => {
+  const runId = input.readModel.run.id;
+  const packet = buildDecisionPacketFromReadModel(input.readModel);
+  const packetIdentity = buildDecisionPacketIdentity({
+    runId,
+    readModel: input.readModel,
+    packet,
+    generatedAt: input.generatedAt,
+    sha256Hex: input.sha256Hex
+  });
+
+  return {
+    kind: "krn.decisionPacketReadback.v1",
+    access: "read_only",
+    mutation: "none",
+    surface: "headless_cli",
+    request: {
+      runId
+    },
+    packetIdentity,
+    packet,
+    returnChannels: buildDecisionPacketReturnChannels({
+      runId,
+      packetIdentity
+    }),
+    proof: {
+      proves: [
+        "a headless consumer can request a read-only DecisionPacket contract through CLI JSON",
+        "the response names evidence and feedback return channels without invoking Codex or mutating memory",
+        "the DecisionPacket command exposes the compact DecisionPacket separately from the diagnostic read model",
+        "return-channel commands carry a packet checksum evidence ref for later freshness checks"
+      ],
+      doesNotProve: [
+        "MCP integration",
+        "live Codex obedience",
+        "that returned evidence commands were executed",
+        "memory/source promotion",
+        "product readiness",
+        "that the persisted run state stayed unchanged after this packet was rendered"
+      ]
+    }
+  };
+};
