@@ -11,7 +11,7 @@ import type {
   KnowledgeAcquisitionActivationUtilitySignalEvidence,
   KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
-  MaintenanceJobBoundaryReadback
+  MaintenanceQueueWriteBoundaryReadback
 } from "@krn/maintenance-preview";
 
 interface MaintenancePreviewOutputInput {
@@ -82,7 +82,7 @@ const formatAcquisitionEscalationPreview = (
 ];
 
 const formatMaintenanceWriteBoundary = (
-  writeBoundary: MaintenanceJobBoundaryReadback | undefined
+  writeBoundary: MaintenanceQueueWriteBoundaryReadback | undefined
 ): string[] => {
   if (writeBoundary === undefined) {
     return [];
@@ -91,9 +91,9 @@ const formatMaintenanceWriteBoundary = (
   return [
     "  maintenanceWriteBoundary:",
     `  - jobType: ${writeBoundary.jobType}`,
-    `  - memoryCoreGate: ${writeBoundary.memoryCoreGate}`,
+    `  - memoryBoundary: ${writeBoundary.memoryBoundary}`,
     `  - status: ${writeBoundary.status}`,
-    `  - idempotencyKey: ${writeBoundary.idempotencyKey}`,
+    `  - queueRecordKeyTemplate: ${writeBoundary.queueRecordKeyTemplate}`,
     "  - allowedWrites:",
     ...formatList(writeBoundary.allowedWrites),
     "  - forbiddenWrites:",
@@ -104,7 +104,7 @@ const formatMaintenanceWriteBoundary = (
 
 const candidateMaintenanceWriteBoundary = (
   candidate: MaintenancePreviewCandidate
-): MaintenanceJobBoundaryReadback | undefined =>
+): MaintenanceQueueWriteBoundaryReadback | undefined =>
   "maintenanceWriteBoundary" in candidate ? candidate.maintenanceWriteBoundary : undefined;
 
 const formatProjectResolutionLines = (

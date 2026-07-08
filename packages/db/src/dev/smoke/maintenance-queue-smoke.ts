@@ -48,7 +48,7 @@ interface CountRow {
   count: number;
 }
 
-interface MaintenanceJobBoundaryReadback {
+interface MaintenanceQueueBoundaryReadback {
   writeBoundaryValidatedCount: number;
 }
 
@@ -156,7 +156,7 @@ const requireStatus = (
   }
 };
 
-const maintenanceQueueBoundaryReadback = (): MaintenanceJobBoundaryReadback => {
+const maintenanceQueueBoundaryReadback = (): MaintenanceQueueBoundaryReadback => {
   const descriptions = maintenanceQueueTypes.map((jobType) => describeMaintenanceJob(jobType));
 
   return {

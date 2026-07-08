@@ -64,7 +64,7 @@ describe("memory staleness maintenance preview", () => {
         reviewability: "ready",
         maintenanceWriteBoundary: expect.objectContaining({
           jobType: "expire_stale_memory",
-          memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+          memoryBoundary: "must_create_reviewed_invalidation_candidate",
           status: "passed",
           allowedWrites: [
             "maintenance_queue_records",

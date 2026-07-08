@@ -16,10 +16,10 @@ import {
 } from "./time.js";
 
 import {
-  buildMaintenanceJobWriteBoundaryReadback
+  buildMaintenanceQueueWriteBoundaryReadback
 } from "./maintenance-job.js";
 import type {
-  MaintenanceJobBoundaryReadback
+  MaintenanceQueueWriteBoundaryReadback
 } from "./maintenance-job.js";
 
 export type MemoryStalenessMaintenanceCandidateReason =
@@ -49,7 +49,7 @@ export interface MemoryStalenessMaintenanceCandidate {
   doesNotProve: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: readonly string[];
-  maintenanceWriteBoundary: MaintenanceJobBoundaryReadback;
+  maintenanceWriteBoundary: MaintenanceQueueWriteBoundaryReadback;
   mutation: "none";
   forbiddenWrites: readonly [
     "memory_records",
@@ -184,7 +184,7 @@ const buildCandidate = (
     doesNotProve: previewDoesNotProve,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
-    maintenanceWriteBoundary: buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory"),
+    maintenanceWriteBoundary: buildMaintenanceQueueWriteBoundaryReadback("expire_stale_memory"),
     mutation: "none",
     forbiddenWrites
   };

@@ -100,34 +100,34 @@ export interface MaintenanceJobDescription {
   outboxTopic: MaintenanceJobPersistenceContract["outboxTopic"];
   executionMode: MaintenanceJobPersistenceContract["executionMode"];
   inputSchema: string;
-  idempotencyKey: string;
+  queueRecordKeyTemplate: string;
   recordSettlementTopic: MaintenanceJobPersistenceContract["recordSettlementTopic"];
   failureRecordStatus: MaintenanceJobPersistenceContract["failureRecordStatus"];
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
-  memoryCoreGate: MaintenanceJobMemoryCoreGate;
+  memoryBoundary: MaintenanceJobMemoryBoundary;
 }
 
-export interface MaintenanceJobWriteBoundaryViolation {
+export interface MaintenanceQueueWriteBoundaryViolation {
   code:
-    | "disallowed_write_for_memory_core_gate"
-    | "missing_required_write_for_memory_core_gate"
+    | "disallowed_write_for_memory_boundary"
+    | "missing_required_write_for_memory_boundary"
     | "missing_required_forbidden_write";
   message: string;
 }
 
-export interface MaintenanceJobWriteBoundaryAssessment {
+export interface MaintenanceQueueWriteBoundaryAssessment {
   jobType: MaintenanceJobType;
-  memoryCoreGate: MaintenanceJobMemoryCoreGate;
+  memoryBoundary: MaintenanceJobMemoryBoundary;
   status: "passed" | "failed";
-  violations: readonly MaintenanceJobWriteBoundaryViolation[];
+  violations: readonly MaintenanceQueueWriteBoundaryViolation[];
 }
 
-export interface MaintenanceJobBoundaryReadback {
+export interface MaintenanceQueueWriteBoundaryReadback {
   jobType: MaintenanceJobType;
-  memoryCoreGate: MaintenanceJobMemoryCoreGate;
-  status: MaintenanceJobWriteBoundaryAssessment["status"];
-  idempotencyKey: string;
+  memoryBoundary: MaintenanceJobMemoryBoundary;
+  status: MaintenanceQueueWriteBoundaryAssessment["status"];
+  queueRecordKeyTemplate: string;
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
   doesNotProve: string;
@@ -154,7 +154,7 @@ export type MaintenanceJobForbiddenWrite =
   | "source_claims"
   | "source_decisions";
 
-export type MaintenanceJobMemoryCoreGate =
+export type MaintenanceJobMemoryBoundary =
   | "no_memory_core_write"
   | "read_memory_record_only"
   | "write_memory_candidate_only"
@@ -162,12 +162,12 @@ export type MaintenanceJobMemoryCoreGate =
   | "must_create_reviewed_invalidation_candidate"
   | "must_not_promote_memory_record";
 
-interface MaintenanceJobWriteBoundary {
+interface MaintenanceQueueWriteBoundary {
   inputSchema: string;
-  idempotencyKey: string;
+  queueRecordKeyTemplate: string;
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
-  memoryCoreGate: MaintenanceJobMemoryCoreGate;
+  memoryBoundary: MaintenanceJobMemoryBoundary;
 }
 
 const commonForbiddenWrites = [
@@ -182,7 +182,7 @@ const requiredForbiddenWrites = [
   "anti_memory_records"
 ] as const satisfies readonly MaintenanceJobForbiddenWrite[];
 
-const allowedWritesByMemoryCoreGate = {
+const allowedWritesByMemoryBoundary = {
   no_memory_core_write: ["maintenance_queue_records", "outbox_events", "embeddings"],
   read_memory_record_only: ["maintenance_queue_records", "outbox_events", "embeddings"],
   write_memory_candidate_only: [
@@ -207,52 +207,52 @@ const allowedWritesByMemoryCoreGate = {
     "memory_candidates",
     "reflection_records"
   ]
-} as const satisfies Record<MaintenanceJobMemoryCoreGate, readonly MaintenanceJobAllowedWrite[]>;
+} as const satisfies Record<MaintenanceJobMemoryBoundary, readonly MaintenanceJobAllowedWrite[]>;
 
-const requiredWritesByMemoryCoreGate = {
+const requiredWritesByMemoryBoundary = {
   no_memory_core_write: [],
   read_memory_record_only: [],
   write_memory_candidate_only: ["memory_candidates"],
   write_reflection_record_only: ["reflection_records"],
   must_create_reviewed_invalidation_candidate: ["memory_candidates"],
   must_not_promote_memory_record: []
-} as const satisfies Record<MaintenanceJobMemoryCoreGate, readonly MaintenanceJobAllowedWrite[]>;
+} as const satisfies Record<MaintenanceJobMemoryBoundary, readonly MaintenanceJobAllowedWrite[]>;
 
-const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceJobWriteBoundary> = {
+const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceQueueWriteBoundary> = {
   embed_source_chunk: {
     inputSchema: "EmbedSourceChunkPayload",
-    idempotencyKey: "embed_source_chunk:{sourceChunkId}:{embeddingModelId}",
+    queueRecordKeyTemplate: "embed_source_chunk:{sourceChunkId}:{embeddingModelId}",
     allowedWrites: ["maintenance_queue_records", "outbox_events", "embeddings"],
     forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "no_memory_core_write"
+    memoryBoundary: "no_memory_core_write"
   },
   embed_memory_record: {
     inputSchema: "EmbedMemoryRecordPayload",
-    idempotencyKey: "embed_memory_record:{memoryRecordId}:{embeddingModelId}",
+    queueRecordKeyTemplate: "embed_memory_record:{memoryRecordId}:{embeddingModelId}",
     allowedWrites: ["maintenance_queue_records", "outbox_events", "embeddings"],
     forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "read_memory_record_only"
+    memoryBoundary: "read_memory_record_only"
   },
   compact_memory: {
     inputSchema: "CompactMemoryPayload",
-    idempotencyKey: "compact_memory:{projectId}:{memoryRecordId}",
+    queueRecordKeyTemplate: "compact_memory:{projectId}:{memoryRecordId}",
     allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "write_memory_candidate_only"
+    memoryBoundary: "write_memory_candidate_only"
   },
   detect_contradiction: {
     inputSchema: "DetectContradictionPayload",
-    idempotencyKey: "detect_contradiction:{projectId}:{memoryRecordId}:{sourceClaimId}",
+    queueRecordKeyTemplate: "detect_contradiction:{projectId}:{memoryRecordId}:{sourceClaimId}",
     allowedWrites: ["maintenance_queue_records", "outbox_events", "reflection_records"],
     forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "write_reflection_record_only"
+    memoryBoundary: "write_reflection_record_only"
   },
   expire_stale_memory: {
     inputSchema: "ExpireStaleMemoryPayload",
-    idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+    queueRecordKeyTemplate: "expire_stale_memory:{projectId}:{olderThan}",
     allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "must_create_reviewed_invalidation_candidate"
+    memoryBoundary: "must_create_reviewed_invalidation_candidate"
   }
 };
 
@@ -265,34 +265,34 @@ export const describeMaintenanceJob = (
     label: labels[jobType],
     ...maintenanceJobPersistenceContract,
     inputSchema: writeBoundary.inputSchema,
-    idempotencyKey: writeBoundary.idempotencyKey,
+    queueRecordKeyTemplate: writeBoundary.queueRecordKeyTemplate,
     allowedWrites: writeBoundary.allowedWrites,
     forbiddenWrites: writeBoundary.forbiddenWrites,
-    memoryCoreGate: writeBoundary.memoryCoreGate
+    memoryBoundary: writeBoundary.memoryBoundary
   };
 
-  assertMaintenanceJobWriteBoundary(description);
+  assertMaintenanceQueueWriteBoundary(description);
 
   return description;
 };
 
-export const assessMaintenanceJobWriteBoundary = (
+export const assessMaintenanceQueueWriteBoundary = (
   description: MaintenanceJobDescription
-): MaintenanceJobWriteBoundaryAssessment => {
+): MaintenanceQueueWriteBoundaryAssessment => {
   const allowedForGate = new Set<MaintenanceJobAllowedWrite>(
-    allowedWritesByMemoryCoreGate[description.memoryCoreGate]
+    allowedWritesByMemoryBoundary[description.memoryBoundary]
   );
   const requiredForGate = new Set<MaintenanceJobAllowedWrite>(
-    requiredWritesByMemoryCoreGate[description.memoryCoreGate]
+    requiredWritesByMemoryBoundary[description.memoryBoundary]
   );
   const forbiddenWrites = new Set<MaintenanceJobForbiddenWrite>(description.forbiddenWrites);
-  const violations: MaintenanceJobWriteBoundaryViolation[] = [];
+  const violations: MaintenanceQueueWriteBoundaryViolation[] = [];
 
   for (const write of description.allowedWrites) {
     if (!allowedForGate.has(write)) {
       violations.push({
-        code: "disallowed_write_for_memory_core_gate",
-        message: `${description.jobType} allows ${write} but gate ${description.memoryCoreGate} does not.`
+        code: "disallowed_write_for_memory_boundary",
+        message: `${description.jobType} allows ${write} but memory boundary ${description.memoryBoundary} does not.`
       });
     }
   }
@@ -300,8 +300,8 @@ export const assessMaintenanceJobWriteBoundary = (
   for (const write of requiredForGate) {
     if (!description.allowedWrites.includes(write)) {
       violations.push({
-        code: "missing_required_write_for_memory_core_gate",
-        message: `${description.jobType} gate ${description.memoryCoreGate} requires ${write}.`
+        code: "missing_required_write_for_memory_boundary",
+        message: `${description.jobType} memory boundary ${description.memoryBoundary} requires ${write}.`
       });
     }
   }
@@ -317,16 +317,16 @@ export const assessMaintenanceJobWriteBoundary = (
 
   return {
     jobType: description.jobType,
-    memoryCoreGate: description.memoryCoreGate,
+    memoryBoundary: description.memoryBoundary,
     status: violations.length === 0 ? "passed" : "failed",
     violations
   };
 };
 
-export const assertMaintenanceJobWriteBoundary = (
+export const assertMaintenanceQueueWriteBoundary = (
   description: MaintenanceJobDescription
 ): void => {
-  const assessment = assessMaintenanceJobWriteBoundary(description);
+  const assessment = assessMaintenanceQueueWriteBoundary(description);
 
   if (assessment.status === "failed") {
     throw new Error(
@@ -337,20 +337,20 @@ export const assertMaintenanceJobWriteBoundary = (
   }
 };
 
-export const buildMaintenanceJobWriteBoundaryReadback = (
+export const buildMaintenanceQueueWriteBoundaryReadback = (
   jobType: MaintenanceJobType
-): MaintenanceJobBoundaryReadback => {
+): MaintenanceQueueWriteBoundaryReadback => {
   const description = describeMaintenanceJob(jobType);
-  const assessment = assessMaintenanceJobWriteBoundary(description);
+  const assessment = assessMaintenanceQueueWriteBoundary(description);
 
   return {
     jobType,
-    memoryCoreGate: description.memoryCoreGate,
+    memoryBoundary: description.memoryBoundary,
     status: assessment.status,
-    idempotencyKey: description.idempotencyKey,
+    queueRecordKeyTemplate: description.queueRecordKeyTemplate,
     allowedWrites: description.allowedWrites,
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:
-      "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
+      "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, unique enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
   };
 };

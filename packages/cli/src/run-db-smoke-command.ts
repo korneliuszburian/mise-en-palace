@@ -815,7 +815,7 @@ const runMaintenanceBoundarySmokeTarget: DbSmokeTargetHandler = async (
       `Candidate mutation: ${report.candidateMutation}`,
       `Memory staleness candidates: ${report.memoryStalenessCandidateCount}`,
       `Maintenance boundary jobType: ${report.maintenanceJobType}`,
-      `Maintenance boundary memoryCoreGate: ${report.maintenanceMemoryCoreGate}`,
+      `Maintenance boundary memoryBoundary: ${report.maintenanceMemoryBoundary}`,
       `Maintenance boundary status: ${report.maintenanceWriteBoundaryStatus}`,
       `Maintenance boundary mutation: ${report.maintenanceWriteBoundaryMutation}`,
       `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,

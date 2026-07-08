@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  assessMaintenanceJobWriteBoundary,
+  assessMaintenanceQueueWriteBoundary,
   buildMaintenancePreview,
   buildMaintenanceCandidatePreview,
-  buildMaintenanceJobWriteBoundaryReadback,
+  buildMaintenanceQueueWriteBoundaryReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
   maintenanceJobPersistenceContract,
@@ -52,7 +52,7 @@ describe("maintenance queue contract", () => {
     expect(describeMaintenanceJob(fromExternalInput)).toEqual(
       expect.objectContaining({
         jobType: "compact_memory",
-        memoryCoreGate: "write_memory_candidate_only"
+        memoryBoundary: "write_memory_candidate_only"
       })
     );
   });
@@ -116,15 +116,15 @@ describe("maintenance queue contract", () => {
 
     expect(sourceChunkJob.payload.embeddingModelId).toBe("text-embedding-3-small");
     expect(memoryRecordJob.payload.embeddingModelId).toBe("text-embedding-3-small");
-    expect(describeMaintenanceJob("embed_source_chunk").idempotencyKey).toContain(
+    expect(describeMaintenanceJob("embed_source_chunk").queueRecordKeyTemplate).toContain(
       "{embeddingModelId}"
     );
-    expect(describeMaintenanceJob("embed_memory_record").idempotencyKey).toContain(
+    expect(describeMaintenanceJob("embed_memory_record").queueRecordKeyTemplate).toContain(
       "{embeddingModelId}"
     );
   });
 
-  test("describes write boundary before any maintenance executor exists", () => {
+  test("describes queue write boundary before any maintenance executor exists", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 
     expect(descriptions).toEqual(
@@ -134,9 +134,9 @@ describe("maintenance queue contract", () => {
           failureRecordStatus: "failed",
           recordSettlementTopic: "maintenance_queue.record_settled",
           executionMode: "persistence_only",
-          memoryCoreGate: expect.any(String),
+          memoryBoundary: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),
-          idempotencyKey: expect.stringContaining(type),
+          queueRecordKeyTemplate: expect.stringContaining(type),
           allowedWrites: expect.arrayContaining(["maintenance_queue_records", "outbox_events"]),
           forbiddenWrites: expect.arrayContaining(["memory_records"])
         })
@@ -151,7 +151,7 @@ describe("maintenance queue contract", () => {
           "source_claims",
           "source_decisions"
         ],
-        memoryCoreGate: "write_memory_candidate_only"
+        memoryBoundary: "write_memory_candidate_only"
       })
     );
   });
@@ -169,11 +169,11 @@ describe("maintenance queue contract", () => {
   });
 
   test("builds a maintenance boundary readback for maintenance candidates", () => {
-    expect(buildMaintenanceJobWriteBoundaryReadback("expire_stale_memory")).toEqual({
+    expect(buildMaintenanceQueueWriteBoundaryReadback("expire_stale_memory")).toEqual({
       jobType: "expire_stale_memory",
-      memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+      memoryBoundary: "must_create_reviewed_invalidation_candidate",
       status: "passed",
-      idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+      queueRecordKeyTemplate: "expire_stale_memory:{projectId}:{olderThan}",
       allowedWrites: [
         "maintenance_queue_records",
         "outbox_events",
@@ -186,26 +186,26 @@ describe("maintenance queue contract", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
+        "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, unique enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
     });
   });
 
-  test("fails maintenance queue write boundary when a gate allows the wrong write", () => {
+  test("fails maintenance queue write boundary when a memory boundary allows the wrong write", () => {
     const invalidDescription = {
       ...describeMaintenanceJob("embed_source_chunk"),
       allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
-      memoryCoreGate: "no_memory_core_write"
+      memoryBoundary: "no_memory_core_write"
     } as const;
 
-    expect(assessMaintenanceJobWriteBoundary(invalidDescription)).toEqual({
+    expect(assessMaintenanceQueueWriteBoundary(invalidDescription)).toEqual({
       jobType: "embed_source_chunk",
-      memoryCoreGate: "no_memory_core_write",
+      memoryBoundary: "no_memory_core_write",
       status: "failed",
       violations: [
         {
-          code: "disallowed_write_for_memory_core_gate",
+          code: "disallowed_write_for_memory_boundary",
           message:
-            "embed_source_chunk allows memory_candidates but gate no_memory_core_write does not."
+            "embed_source_chunk allows memory_candidates but memory boundary no_memory_core_write does not."
         }
       ]
     });

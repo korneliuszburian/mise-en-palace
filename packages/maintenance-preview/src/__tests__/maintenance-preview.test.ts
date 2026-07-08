@@ -154,9 +154,9 @@ describe("brain maintenance preview", () => {
       kind: "memory_staleness_maintenance_candidate",
       maintenanceWriteBoundary: {
         jobType: "expire_stale_memory",
-        memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+        memoryBoundary: "must_create_reviewed_invalidation_candidate",
         status: "passed",
-        idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+        queueRecordKeyTemplate: "expire_stale_memory:{projectId}:{olderThan}",
         allowedWrites: [
           "maintenance_queue_records",
           "outbox_events",

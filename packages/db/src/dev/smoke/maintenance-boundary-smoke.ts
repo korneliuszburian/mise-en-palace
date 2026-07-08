@@ -34,7 +34,7 @@ export interface MaintenanceBoundarySmokeReport {
   candidateReviewability: string;
   candidateMutation: string;
   maintenanceJobType: string;
-  maintenanceMemoryCoreGate: string;
+  maintenanceMemoryBoundary: string;
   maintenanceWriteBoundaryStatus: string;
   maintenanceWriteBoundaryMutation: "none";
   memoryRecordCount: number;
@@ -187,9 +187,9 @@ export const runMaintenanceBoundarySmokeCheck = async (
         passed: candidate?.maintenanceWriteBoundary.jobType === "expire_stale_memory"
       },
       {
-        label: "maintenance memory core gate",
+        label: "maintenance memory boundary",
         passed:
-          candidate?.maintenanceWriteBoundary.memoryCoreGate ===
+          candidate?.maintenanceWriteBoundary.memoryBoundary ===
           "must_create_reviewed_invalidation_candidate"
       },
       { label: "maintenance boundary passed", passed: candidate?.maintenanceWriteBoundary.status === "passed" },
@@ -224,7 +224,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
       candidateReviewability: emittedCandidate.reviewability,
       candidateMutation: emittedCandidate.mutation,
       maintenanceJobType: emittedCandidate.maintenanceWriteBoundary.jobType,
-      maintenanceMemoryCoreGate: emittedCandidate.maintenanceWriteBoundary.memoryCoreGate,
+      maintenanceMemoryBoundary: emittedCandidate.maintenanceWriteBoundary.memoryBoundary,
       maintenanceWriteBoundaryStatus: emittedCandidate.maintenanceWriteBoundary.status,
       maintenanceWriteBoundaryMutation: preview.mutation,
       memoryRecordCount: memoryRecords.length,

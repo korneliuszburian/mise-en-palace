@@ -16,7 +16,7 @@ describe("event and maintenance queue schema", () => {
   test("maps maintenance queue contract names to maintenance SQL columns", () => {
     expect(eventsSchema.maintenanceQueues).toHaveProperty("jobType");
     expect(eventsSchema.maintenanceQueues).toHaveProperty("runAfter");
-    expect(eventsSchema.maintenanceQueues).not.toHaveProperty("idempotencyKey");
+    expect(eventsSchema.maintenanceQueues).not.toHaveProperty("queueRecordKeyTemplate");
     expect(eventsSchema.maintenanceQueues.jobType.name).toBe("job_type");
     expect(eventsSchema.maintenanceQueues.runAfter.name).toBe("run_after");
   });

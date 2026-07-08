@@ -204,9 +204,11 @@ describe("runMaintenancePreviewCommand", () => {
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
     expect(result.stdout).toContain("maintenanceWriteBoundary:");
     expect(result.stdout).toContain("jobType: expire_stale_memory");
-    expect(result.stdout).toContain("memoryCoreGate: must_create_reviewed_invalidation_candidate");
+    expect(result.stdout).toContain("memoryBoundary: must_create_reviewed_invalidation_candidate");
     expect(result.stdout).toContain("status: passed");
-    expect(result.stdout).toContain("idempotencyKey: expire_stale_memory:{projectId}:{olderThan}");
+    expect(result.stdout).toContain(
+      "queueRecordKeyTemplate: expire_stale_memory:{projectId}:{olderThan}"
+    );
     expect(result.stdout).toContain("memory_candidates");
     expect(result.stdout).toContain("Missing fields: relationEvidenceRefs.");
     expect(result.stdout).toContain("relationReviewFocus: relation_evidence");
@@ -367,9 +369,9 @@ describe("runMaintenancePreviewCommand", () => {
             nextAction: "review_memory_invalidation",
             maintenanceWriteBoundary: {
               jobType: "expire_stale_memory",
-              memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+              memoryBoundary: "must_create_reviewed_invalidation_candidate",
               status: "passed",
-              idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+              queueRecordKeyTemplate: "expire_stale_memory:{projectId}:{olderThan}",
               allowedWrites: [
                 "maintenance_queue_records",
                 "outbox_events",
