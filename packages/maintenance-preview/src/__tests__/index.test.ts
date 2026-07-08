@@ -12,46 +12,11 @@ import {
   parseMaintenanceJobType
 } from "../index.js";
 import type {
-  EnqueueMaintenanceJobRequest,
-  EnqueueMaintenanceJobResult,
   MaintenanceQueueRecord,
-  MaintenanceJob,
-  MaintenanceJobQueueRepository
+  MaintenanceJob
 } from "../index.js";
 
 const isoNow = "2026-06-21T17:30:00.000Z";
-
-class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
-  readonly requests: EnqueueMaintenanceJobRequest[] = [];
-
-  async enqueue<TType extends MaintenanceJob["jobType"]>(
-    request: EnqueueMaintenanceJobRequest<TType>
-  ): Promise<EnqueueMaintenanceJobResult<TType>> {
-    this.requests.push(request);
-
-    const queueRecord = {
-      id: "maintenance-queue-1",
-      jobType: request.job.jobType,
-      status: "queued",
-      payload: request.job.payload,
-      attempts: 0,
-      maxAttempts: request.maxAttempts ?? 3,
-      runAfter: request.runAfter ?? isoNow,
-      createdAt: isoNow,
-      updatedAt: isoNow
-    } as MaintenanceQueueRecord<TType>;
-
-    const outboxEvent = {
-      id: "outbox-event-1",
-      topic: "maintenance_queue.queued"
-    } as const;
-
-    return {
-      queueRecord,
-      outboxEvent
-    };
-  }
-}
 
 describe("maintenance queue contract", () => {
   test("describes the supported KRN maintenance jobs as persistence-only", () => {
@@ -96,43 +61,6 @@ describe("maintenance queue contract", () => {
     expect(parseMaintenanceJobType("run_everything_now")).toBeUndefined();
     expect(parseMaintenanceJobType({ jobType: "compact_memory" })).toBeUndefined();
     expect(parseMaintenanceJobType("expire_stale_memory")).toBe("expire_stale_memory");
-  });
-
-  test("enqueues a typed maintenance queue record through one atomic queue port", async () => {
-    const queue = new InMemoryMaintenanceJobQueue();
-    const job: MaintenanceJob = {
-      jobType: "compact_memory",
-      payload: {
-        projectId: "project-1",
-        memoryRecordId: "memory-1",
-        reason: "summarize stale high-confidence project memories"
-      }
-    };
-
-    const result = await queue.enqueue({
-      job,
-      runAfter: "2026-06-21T18:00:00.000Z",
-      maxAttempts: 2
-    });
-
-    expect(queue.requests).toEqual([
-      {
-        job,
-        runAfter: "2026-06-21T18:00:00.000Z",
-        maxAttempts: 2
-      }
-    ]);
-    expect(result).toEqual({
-      queueRecord: expect.objectContaining({
-        id: "maintenance-queue-1",
-        jobType: "compact_memory",
-        status: "queued"
-      }),
-      outboxEvent: {
-        id: "outbox-event-1",
-        topic: "maintenance_queue.queued"
-      }
-    });
   });
 
   test("describes embed memory record jobs and skipped lifecycle status", () => {
