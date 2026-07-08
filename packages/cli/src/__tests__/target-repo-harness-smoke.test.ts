@@ -26,7 +26,17 @@ describe("targetRepoHarnessSmoke", () => {
       groundedApproximateTokens: 300,
       evidenceBundleId: "evidence-bundle-1",
       evidenceReadbackMatched: true,
-      commandProofBoundary: "weak_default_not_run",
+      commandProofBoundary: "target_command_packet_bound",
+      decisionPacketSurface: "mcp:krn_decision_packet",
+      decisionPacketChecksum: "packet-checksum-1",
+      decisionPacketEvidenceRef: "packet:packet-checksum-1",
+      decisionPacketMcpReadbackMatched: true,
+      decisionPacketMemoryIncluded: true,
+      decisionPacketReturnChannelBound: true,
+      consumerTargetCommand: "pnpm --dir tests/fixtures/target-repos/typescript-basic test",
+      consumerTargetCommandStatus: "passed",
+      consumerEvidenceBoundToPacket: true,
+      sourceDecisionUsefulnessOutcome: "helped",
       reviewAssessmentId: "review-assessment-1",
       reviewAssessmentReadbackMatched: true,
       feedbackDeltaId: "feedback-delta-1",
@@ -63,7 +73,17 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Grounded approximate tokens: 300");
     expect(output).toContain("Evidence bundle: evidence-bundle-1");
     expect(output).toContain("Evidence readback: matched");
-    expect(output).toContain("Command proof boundary: weak_default_not_run");
+    expect(output).toContain("Command proof boundary: target_command_packet_bound");
+    expect(output).toContain("DecisionPacket surface: mcp:krn_decision_packet");
+    expect(output).toContain("DecisionPacket checksum: packet-checksum-1");
+    expect(output).toContain("DecisionPacket evidence ref: packet:packet-checksum-1");
+    expect(output).toContain("DecisionPacket MCP readback: matched");
+    expect(output).toContain("DecisionPacket memory included: yes");
+    expect(output).toContain("DecisionPacket return channel bound: yes");
+    expect(output).toContain("Consumer target command: pnpm --dir tests/fixtures/target-repos/typescript-basic test");
+    expect(output).toContain("Consumer target command status: passed");
+    expect(output).toContain("Consumer evidence bound to packet: yes");
+    expect(output).toContain("Source decision usefulness outcome: helped");
     expect(output).toContain("Review assessment: review-assessment-1");
     expect(output).toContain("Review assessment readback: matched");
     expect(output).toContain("Feedback delta: feedback-delta-1");

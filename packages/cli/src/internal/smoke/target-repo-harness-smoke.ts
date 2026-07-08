@@ -1,3 +1,9 @@
+import {
+  execFile
+} from "node:child_process";
+import {
+  promisify
+} from "node:util";
 import type {
   Sql
 } from "postgres";
@@ -11,9 +17,28 @@ import {
 import type {
   HarnessRunAggregate
 } from "@krn/harness/repositories";
+import type {
+  EvidenceCommand,
+  SourceUsefulnessOutcomeFeedback
+} from "@krn/core";
 import {
   toEvidenceCommandReadback
 } from "@krn/core";
+import type {
+  DatabaseRuntime
+} from "../../database-runtime.js";
+import {
+  runEvidenceCaptureCommand
+} from "../../run-evidence-capture-command.js";
+import {
+  handleDecisionPacketMcpMessage
+} from "../mcp/decision-packet-mcp-server.js";
+import {
+  isRecord,
+  readRequiredRecord,
+  readRequiredString,
+  readRequiredStringArray
+} from "./json-readers.js";
 import {
   assertBrainStoreReady,
   createSmokeIdFactory,
@@ -24,7 +49,8 @@ import {
   countRetrievalRunById,
   countRunEventsBySmokeId,
   countSourceArtifactsBySmokeId,
-  countSourceClaimsBySmokeId,  matchedOrMismatch,
+  countSourceClaimsBySmokeId,
+  matchedOrMismatch,
   matchedWhen,
   metadataString,
   normalizeSmokeSlugPart,
@@ -33,6 +59,8 @@ import {
   sumCountRows,
   yesNo
 } from "../../codex-brief-support.js";
+
+const execFileAsync = promisify(execFile);
 
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;
@@ -61,7 +89,17 @@ export interface TargetRepoHarnessSmokeReport {
   groundedApproximateTokens: number;
   evidenceBundleId: string;
   evidenceReadbackMatched: boolean;
-  commandProofBoundary: "weak_default_not_run";
+  commandProofBoundary: "target_command_packet_bound";
+  decisionPacketSurface: "mcp:krn_decision_packet";
+  decisionPacketChecksum: string;
+  decisionPacketEvidenceRef: string;
+  decisionPacketMcpReadbackMatched: boolean;
+  decisionPacketMemoryIncluded: boolean;
+  decisionPacketReturnChannelBound: boolean;
+  consumerTargetCommand: string;
+  consumerTargetCommandStatus: "passed";
+  consumerEvidenceBoundToPacket: boolean;
+  sourceDecisionUsefulnessOutcome: "helped";
   reviewAssessmentId: string;
   reviewAssessmentReadbackMatched: boolean;
   feedbackDeltaId: string;
@@ -108,6 +146,23 @@ interface TargetEvidenceReadbackProof {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+}
+
+interface DecisionPacketConsumerProof {
+  checksum: string;
+  evidenceRef: string;
+  memoryIncluded: boolean;
+  returnChannelBound: boolean;
+}
+
+interface TargetCommandProof {
+  command: string;
+  evidenceCommand: EvidenceCommand;
+}
+
+interface PacketBoundTargetEvidenceProof extends TargetEvidenceReadbackProof {
+  consumerEvidenceBoundToPacket: boolean;
+  targetCommand: string;
 }
 
 type EvidenceReadbackBundle = HarnessRunAggregate["evidenceBundles"][number];
@@ -392,15 +447,6 @@ const findById = <T extends IdRecord>(
   id: string
 ): T | undefined => items.find((item) => item.id === id);
 
-const commandsAreWeakDefaultNotRun = (
-  evidenceBundle: EvidenceReadbackBundle | undefined
-): boolean =>
-  evidenceBundle?.commands.every((command) => {
-    const evidenceCommand = toEvidenceCommandReadback(command);
-
-    return evidenceCommand.status === "not_run" && evidenceCommand.provenance === "default_template";
-  }) ?? false;
-
 const feedbackDeltaHasNoMutations = (
   feedbackDelta: FeedbackReadbackDelta | undefined
 ): boolean =>
@@ -408,6 +454,199 @@ const feedbackDeltaHasNoMutations = (
   feedbackDelta.memoryCandidates.length === 0 &&
   feedbackDelta.sourceDecisions.length === 0 &&
   feedbackDelta.evalCandidates.length === 0;
+
+const sourceUsefulnessOutcome = (input: {
+  readonly decisionId: string;
+  readonly evidenceRef: string;
+  readonly reason: string;
+}): SourceUsefulnessOutcomeFeedback => ({
+  sourceDecisionId: input.decisionId,
+  outcome: "helped",
+  reason: input.reason,
+  evidenceRefs: [input.evidenceRef],
+  doesNotProve:
+    "Target-repo consumer proof does not prove arbitrary Codex obedience or source truth outside this packet-bound run."
+});
+
+const createDecisionPacketConsumerRuntime = (input: {
+  readonly compilerDependencies: DatabaseRuntime["compilerDependencies"];
+  readonly harnessRunRepository: DatabaseRuntime["harnessRunRepository"];
+  readonly memoryRepository: DatabaseRuntime["memoryRepository"];
+  readonly projectId: string;
+  readonly retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>;
+  readonly sourceRepository: DatabaseRuntime["sourceRepository"];
+  readonly workspaceId: string;
+}): DatabaseRuntime => ({
+  workspaceId: input.workspaceId,
+  projectId: input.projectId,
+  compilerDependencies: input.compilerDependencies,
+  harnessRunRepository: input.harnessRunRepository,
+  sourceRepository: input.sourceRepository,
+  retrievalRepository: input.retrievalRepository,
+  memoryRepository: input.memoryRepository,
+  async close(): Promise<void> {
+    // The smoke owns the shared SQL client and closes it after cleanup.
+  }
+});
+
+const readMcpDecisionPacketProof = async (input: {
+  readonly databaseUrl: string;
+  readonly decisionRuntime: DatabaseRuntime;
+  readonly executionRunId: string;
+  readonly memoryRecordId: string;
+  readonly now: string;
+  readonly createId: (prefix: string) => string;
+}): Promise<DecisionPacketConsumerProof> => {
+  const reply = await handleDecisionPacketMcpMessage({
+    jsonrpc: "2.0",
+    id: "target-consumer-packet",
+    method: "tools/call",
+    params: {
+      name: "krn_decision_packet",
+      arguments: {
+        runId: input.executionRunId
+      }
+    }
+  }, {
+    env: {
+      KRN_DATABASE_URL: input.databaseUrl
+    },
+    now: () => input.now,
+    createId: input.createId,
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+
+  if (!isRecord(reply) || !isRecord(reply.result) || reply.result.isError === true) {
+    throw new Error("Target repo harness smoke failed to fetch DecisionPacket through MCP");
+  }
+
+  const structuredContent = reply.result.structuredContent;
+
+  if (!isRecord(structuredContent)) {
+    throw new Error("Target repo harness smoke MCP response missed structured DecisionPacket content");
+  }
+
+  const packetIdentity = readRequiredRecord(
+    structuredContent,
+    "packetIdentity",
+    "Target repo harness smoke expected packetIdentity object in DecisionPacket MCP output"
+  );
+  const packet = readRequiredRecord(
+    structuredContent,
+    "packet",
+    "Target repo harness smoke expected packet object in DecisionPacket MCP output"
+  );
+  const returnChannels = readRequiredRecord(
+    structuredContent,
+    "returnChannels",
+    "Target repo harness smoke expected returnChannels object in DecisionPacket MCP output"
+  );
+  const evidence = readRequiredRecord(
+    returnChannels,
+    "evidence",
+    "Target repo harness smoke expected evidence object in DecisionPacket MCP output"
+  );
+  const feedback = readRequiredRecord(
+    returnChannels,
+    "feedback",
+    "Target repo harness smoke expected feedback object in DecisionPacket MCP output"
+  );
+  const checksum = readRequiredString(
+    packetIdentity,
+    "checksum",
+    "Target repo harness smoke expected checksum string in DecisionPacket MCP output"
+  );
+  const evidenceRef = readRequiredString(
+    packetIdentity,
+    "evidenceRef",
+    "Target repo harness smoke expected evidenceRef string in DecisionPacket MCP output"
+  );
+  const memoryRefs = readRequiredStringArray(
+    packet,
+    "memoryRefs",
+    "Target repo harness smoke expected memoryRefs string array in DecisionPacket MCP output"
+  );
+  const persistedCommand = readRequiredString(
+    evidence,
+    "persistedCommand",
+    "Target repo harness smoke expected persistedCommand string in DecisionPacket MCP output"
+  );
+  const sourceDecisionUsefulnessExample = readRequiredString(
+    feedback,
+    "sourceDecisionUsefulnessExample",
+    "Target repo harness smoke expected sourceDecisionUsefulnessExample string in DecisionPacket MCP output"
+  );
+
+  return {
+    checksum,
+    evidenceRef,
+    memoryIncluded: memoryRefs.includes(input.memoryRecordId),
+    returnChannelBound:
+      evidenceRef === `packet:${checksum}` &&
+      persistedCommand.includes(checksum) &&
+      sourceDecisionUsefulnessExample.includes(evidenceRef)
+  };
+};
+
+const runTargetFixtureCommand = async (
+  targetRepoPath: string,
+  marker: string
+): Promise<TargetCommandProof> => {
+  const command = `pnpm --dir ${targetRepoPath} test`;
+
+  await execFileAsync("pnpm", ["--dir", targetRepoPath, "test"], {
+    cwd: process.cwd()
+  });
+
+  return {
+    command,
+    evidenceCommand: {
+      command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: smokeFixtureClocks.targetRepoHarness.now,
+      outputRef: `target-command:${marker}:typescript-basic-test`,
+      assertedBy: "target-repo-harness-smoke",
+      doesNotProve:
+        "Target fixture typecheck proves this fixture command passed; it does not prove arbitrary target repos or live Codex edits."
+    }
+  };
+};
+
+const commandBundleHasTargetProof = (
+  evidenceBundle: EvidenceReadbackBundle | undefined,
+  targetCommand: string
+): boolean =>
+  evidenceBundle?.commands.some((command) => {
+    const evidenceCommand = toEvidenceCommandReadback(command);
+
+    return evidenceCommand.command === targetCommand &&
+      evidenceCommand.kind === "command_runner" &&
+      evidenceCommand.status === "passed";
+  }) ?? false;
+
+const feedbackDeltaHasPacketBoundSourceDecisionOutcome = (
+  feedbackDelta: FeedbackReadbackDelta | undefined,
+  input: {
+    readonly decisionPacketChecksum: string;
+    readonly sourceDecisionId: string;
+  }
+): boolean => {
+  if (feedbackDelta === undefined) {
+    return false;
+  }
+
+  const outcomes = feedbackDelta.metadata["sourceUsefulnessOutcomes"];
+
+  return feedbackDelta.metadata["decisionPacketChecksum"] === input.decisionPacketChecksum &&
+    Array.isArray(outcomes) &&
+    outcomes.some((outcome) =>
+      isRecord(outcome) &&
+      outcome["sourceDecisionId"] === input.sourceDecisionId &&
+      outcome["outcome"] === "helped"
+    );
+};
 
 const readbackProofIds = (
   aggregate: HarnessRunAggregate,
@@ -434,7 +673,12 @@ const readbackProofIds = (
 
 const assertTargetEvidenceReadback = (
   aggregate: HarnessRunAggregate | undefined,
-  expected: TargetEvidenceReadbackProof
+  expected: TargetEvidenceReadbackProof,
+  input: {
+    readonly decisionPacketChecksum: string;
+    readonly sourceDecisionId: string;
+    readonly targetCommand: string;
+  }
 ): TargetEvidenceReadbackProof => {
   if (aggregate === undefined) {
     throw new Error("Target repo harness smoke failed to read back evidence aggregate");
@@ -446,13 +690,110 @@ const assertTargetEvidenceReadback = (
 
   if (
     proofIds === undefined ||
-    !commandsAreWeakDefaultNotRun(readBackEvidenceBundle) ||
-    !feedbackDeltaHasNoMutations(readBackFeedbackDelta)
+    !commandBundleHasTargetProof(readBackEvidenceBundle, input.targetCommand) ||
+    !feedbackDeltaHasNoMutations(readBackFeedbackDelta) ||
+    !feedbackDeltaHasPacketBoundSourceDecisionOutcome(readBackFeedbackDelta, {
+      decisionPacketChecksum: input.decisionPacketChecksum,
+      sourceDecisionId: input.sourceDecisionId
+    })
   ) {
     throw new Error("Target repo harness smoke evidence readback did not preserve proof boundaries");
   }
 
   return proofIds;
+};
+
+const capturePacketBoundTargetEvidence = async (input: {
+  readonly createId: (prefix: string) => string;
+  readonly databaseUrl: string;
+  readonly decisionPacketProof: DecisionPacketConsumerProof;
+  readonly decisionRuntime: DatabaseRuntime;
+  readonly executionRunId: string;
+  readonly harnessRunRepository: DatabaseRuntime["harnessRunRepository"];
+  readonly marker: string;
+  readonly now: string;
+  readonly sourceDecisionId: string;
+  readonly targetRepoPath: string;
+}): Promise<PacketBoundTargetEvidenceProof> => {
+  const targetCommandProof = await runTargetFixtureCommand(input.targetRepoPath, input.marker);
+  const evidenceCapture = await runEvidenceCaptureCommand({
+    env: {
+      KRN_DATABASE_URL: input.databaseUrl
+    },
+    cwd: process.cwd(),
+    now: () => input.now,
+    createId: input.createId,
+    persist: true,
+    runId: input.executionRunId,
+    decisionPacketChecksum: input.decisionPacketProof.checksum,
+    commandOutcomes: [targetCommandProof.evidenceCommand],
+    targetEvidence: {
+      targetRepo: input.targetRepoPath,
+      mode: "observation_only",
+      dirtyBefore: "clean",
+      dirtyAfter: "clean",
+      ownedChanges: "external",
+      targetStatusFreshness: "fresh_current_task",
+      targetPatchLifecycle: "none",
+      allowedWrites: [],
+      forbiddenWrites: ["target source edits"],
+      changedFiles: [],
+      commands: [targetCommandProof.command],
+      doesNotProve: [
+        "Target command proof does not prove live Codex followed the DecisionPacket.",
+        "No target repository files were edited in this consumer proof."
+      ]
+    },
+    sourceUsefulnessOutcomes: [
+      sourceUsefulnessOutcome({
+        decisionId: input.sourceDecisionId,
+        evidenceRef: input.decisionPacketProof.evidenceRef,
+        reason:
+          "MCP DecisionPacket selected target fixture memory before the headless target command passed."
+      })
+    ],
+    readGitStatus: async () => "",
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+  const evidenceAggregate =
+    await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const evidenceBundle = evidenceAggregate?.evidenceBundles.at(-1);
+  const reviewAssessment = evidenceAggregate?.reviewAssessments.at(-1);
+  const feedbackDelta = evidenceAggregate?.feedbackDeltas.at(-1);
+
+  if (
+    evidenceBundle === undefined ||
+    reviewAssessment === undefined ||
+    feedbackDelta === undefined
+  ) {
+    throw new Error("Target repo harness smoke did not persist packet-bound evidence");
+  }
+
+  const proof = assertTargetEvidenceReadback(
+    evidenceAggregate,
+    {
+      evidenceBundleId: evidenceBundle.id,
+      reviewAssessmentId: reviewAssessment.id,
+      feedbackDeltaId: feedbackDelta.id
+    },
+    {
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      sourceDecisionId: input.sourceDecisionId,
+      targetCommand: targetCommandProof.command
+    }
+  );
+  const consumerEvidenceBoundToPacket =
+    evidenceCapture.stdout.includes(`decisionPacketEvidenceRef: ${input.decisionPacketProof.evidenceRef}`);
+
+  if (!consumerEvidenceBoundToPacket) {
+    throw new Error("Target repo harness smoke evidence output did not bind to the DecisionPacket checksum");
+  }
+
+  return {
+    ...proof,
+    consumerEvidenceBoundToPacket,
+    targetCommand: targetCommandProof.command
+  };
 };
 
 const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
@@ -476,6 +817,16 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Evidence bundle: ${report.evidenceBundleId}`,
   `Evidence readback: ${matchedWhen(report.evidenceReadbackMatched)}`,
   `Command proof boundary: ${report.commandProofBoundary}`,
+  `DecisionPacket surface: ${report.decisionPacketSurface}`,
+  `DecisionPacket checksum: ${report.decisionPacketChecksum}`,
+  `DecisionPacket evidence ref: ${report.decisionPacketEvidenceRef}`,
+  `DecisionPacket MCP readback: ${matchedWhen(report.decisionPacketMcpReadbackMatched)}`,
+  `DecisionPacket memory included: ${yesNo(report.decisionPacketMemoryIncluded)}`,
+  `DecisionPacket return channel bound: ${yesNo(report.decisionPacketReturnChannelBound)}`,
+  `Consumer target command: ${report.consumerTargetCommand}`,
+  `Consumer target command status: ${report.consumerTargetCommandStatus}`,
+  `Consumer evidence bound to packet: ${yesNo(report.consumerEvidenceBoundToPacket)}`,
+  `Source decision usefulness outcome: ${report.sourceDecisionUsefulnessOutcome}`,
   `Review assessment: ${report.reviewAssessmentId}`,
   `Review assessment readback: ${matchedWhen(report.reviewAssessmentReadbackMatched)}`,
   `Feedback delta: ${report.feedbackDeltaId}`,
@@ -719,7 +1070,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       aggregate: baselineAggregate,
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-baseline-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Target repo harness smoke failed to read back baseline run"
+      nextActionFallback: "Use this brief as the next Codex input.",
+      missingContextMessage: "Target repo harness smoke failed to read back baseline run"
     });
     const baselineProof = assertTargetBaselineReadback({
       aggregate: baselineAggregate,
@@ -825,7 +1177,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       aggregate,
       createdAt: now,
       createId: (prefix) => `${prefix}-${marker}-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Target repo harness smoke failed to read back persisted run"
+      nextActionFallback: "Use this brief as the next Codex input.",
+      missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
     const planProof = assertTargetPlanReadback({
       aggregate,
@@ -881,64 +1234,48 @@ export const runTargetRepoHarnessSmokeCheck = async (
       throw new Error("Target repo harness smoke mutated MemoryRecord content/status metadata");
     }
 
-    const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
+    const compilerDependencies = {
+      harnessRunRepository,
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
+      now: () => now,
+      createId: createSmokeId
+    };
+    const decisionRuntime = createDecisionPacketConsumerRuntime({
+      compilerDependencies,
+      harnessRunRepository,
+      memoryRepository,
+      projectId: project.id,
+      retrievalRepository,
+      sourceRepository,
+      workspaceId: workspace.id
+    });
+    const decisionPacketProof = await readMcpDecisionPacketProof({
+      databaseUrl: input.databaseUrl,
+      decisionRuntime,
       executionRunId: executionRun.id,
-      status: "captured",
-      changedFiles: [],
-      commands: [
-        { command: "target fixture pnpm typecheck", status: "not_run" },
-        { command: "target fixture pnpm test", status: "not_run" },
-        { command: "git diff --check", status: "not_run" }
-      ],
-      diffRisk: "low",
-      reviewBurden: "Review target repo harness smoke linkage and cleanup proof.",
-      rollbackPath: "Revert the target repo harness smoke implementation commit.",
-      event: {
-        sequence: 2,
-        type: "smoke.target_repo_harness.evidence_captured",
-        message: "Target repo harness smoke evidence captured",
-        payload: {
-          smokeId: marker,
-          projectId: project.id,
-          executionRunId: executionRun.id
-        }
-      },
-      metadata: {
-        smokeId: marker,
-        projectId: project.id,
-        command: "db:smoke:target-repo-harness"
-      }
+      memoryRecordId: memoryRecord.id,
+      now,
+      createId: createSmokeId
     });
-    const reviewAssessment = await harnessRunRepository.createReviewAssessment({
-      evidenceBundleId: evidenceBundle.id,
-      status: "pending",
-      reviewer: "krn-cli-smoke",
-      summary: "Target repo harness smoke evidence captured.",
-      findings: [],
-      metadata: {
-        smokeId: marker,
-        projectId: project.id
-      }
+
+    if (!decisionPacketProof.memoryIncluded || !decisionPacketProof.returnChannelBound) {
+      throw new Error("Target repo harness smoke DecisionPacket MCP proof was not packet-bound");
+    }
+
+    const evidenceProof = await capturePacketBoundTargetEvidence({
+      createId: createSmokeId,
+      databaseUrl: input.databaseUrl,
+      decisionPacketProof,
+      decisionRuntime,
+      executionRunId: executionRun.id,
+      harnessRunRepository,
+      marker,
+      now,
+      sourceDecisionId: sourceDecision.id,
+      targetRepoPath: input.targetRepoPath
     });
-    const feedbackDelta = await harnessRunRepository.createFeedbackDelta({
-      reviewAssessmentId: reviewAssessment.id,
-      status: "candidate",
-      memoryCandidates: [],
-      sourceDecisions: [],
-      evalCandidates: [],
-      metadata: {
-        smokeId: marker,
-        projectId: project.id
-      }
-    });
-    const evidenceProof = assertTargetEvidenceReadback(
-      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
-      {
-        evidenceBundleId: evidenceBundle.id,
-        reviewAssessmentId: reviewAssessment.id,
-        feedbackDeltaId: feedbackDelta.id
-      }
-    );
 
     const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunIds);
 
@@ -960,13 +1297,24 @@ export const runTargetRepoHarnessSmokeCheck = async (
       codexBriefMemoryRendered: planProof.memoryRendered,
       groundedContextBytes: planProof.contextBytes,
       groundedApproximateTokens: planProof.approximateTokens,
-      evidenceBundleId: evidenceBundle.id,
-      evidenceReadbackMatched: evidenceProof.evidenceBundleId === evidenceBundle.id,
-      commandProofBoundary: "weak_default_not_run",
-      reviewAssessmentId: reviewAssessment.id,
-      reviewAssessmentReadbackMatched: evidenceProof.reviewAssessmentId === reviewAssessment.id,
-      feedbackDeltaId: feedbackDelta.id,
-      feedbackDeltaReadbackMatched: evidenceProof.feedbackDeltaId === feedbackDelta.id,
+      evidenceBundleId: evidenceProof.evidenceBundleId,
+      evidenceReadbackMatched: true,
+      commandProofBoundary: "target_command_packet_bound",
+      decisionPacketSurface: "mcp:krn_decision_packet",
+      decisionPacketChecksum: decisionPacketProof.checksum,
+      decisionPacketEvidenceRef: decisionPacketProof.evidenceRef,
+      decisionPacketMcpReadbackMatched:
+        decisionPacketProof.memoryIncluded && decisionPacketProof.returnChannelBound,
+      decisionPacketMemoryIncluded: decisionPacketProof.memoryIncluded,
+      decisionPacketReturnChannelBound: decisionPacketProof.returnChannelBound,
+      consumerTargetCommand: evidenceProof.targetCommand,
+      consumerTargetCommandStatus: "passed",
+      consumerEvidenceBoundToPacket: evidenceProof.consumerEvidenceBoundToPacket,
+      sourceDecisionUsefulnessOutcome: "helped",
+      reviewAssessmentId: evidenceProof.reviewAssessmentId,
+      reviewAssessmentReadbackMatched: true,
+      feedbackDeltaId: evidenceProof.feedbackDeltaId,
+      feedbackDeltaReadbackMatched: true,
       memorySeedRecordId: memoryRecord.id,
       memoryIncluded: planProof.memoryIncluded,
       memoryApplicationId: memoryApplication.id,

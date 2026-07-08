@@ -31,6 +31,14 @@ import {
 import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
+import {
+  isRecord,
+  readRecordArray,
+  readRequiredRecord,
+  readRequiredString,
+  readString,
+  readStringArray
+} from "./json-readers.js";
 
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
@@ -119,83 +127,18 @@ interface ReturnLoopCheck {
   passed: boolean;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const readRecord = (
-  value: Record<string, unknown>,
-  key: string
-): Record<string, unknown> | undefined => {
-  const field = value[key];
-
-  return isRecord(field) ? field : undefined;
-};
-
-const readString = (
-  value: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const field = value[key];
-
-  return typeof field === "string" ? field : undefined;
-};
-
-const readStringArray = (
-  value: Record<string, unknown>,
-  key: string
-): readonly string[] => {
-  const field = value[key];
-
-  return Array.isArray(field)
-    ? field.filter((item): item is string => typeof item === "string")
-    : [];
-};
-
-const readRecordArray = (
-  value: Record<string, unknown>,
-  key: string
-): readonly Record<string, unknown>[] => {
-  const field = value[key];
-
-  return Array.isArray(field)
-    ? field.filter(isRecord)
-    : [];
-};
-
-const readRequiredRecord = (
-  value: Record<string, unknown>,
-  key: string
-): Record<string, unknown> => {
-  const field = readRecord(value, key);
-
-  if (field === undefined) {
-    throw new Error(`DecisionPacket smoke readback missed ${key}`);
-  }
-
-  return field;
-};
-
-const readRequiredString = (
-  value: Record<string, unknown>,
-  key: string
-): string => {
-  const field = readString(value, key);
-
-  if (field === undefined) {
-    throw new Error(`DecisionPacket smoke readback missed ${key}`);
-  }
-
-  return field;
-};
-
 const readPacketIdentity = (
   parsed: Record<string, unknown>
 ): DecisionPacketSmokeJson["packetIdentity"] => {
-  const packetIdentity = readRequiredRecord(parsed, "packetIdentity");
+  const packetIdentity = readRequiredRecord(
+    parsed,
+    "packetIdentity",
+    "DecisionPacket smoke readback missed packetIdentity"
+  );
 
   return {
-    checksum: readRequiredString(packetIdentity, "checksum"),
-    evidenceRef: readRequiredString(packetIdentity, "evidenceRef")
+    checksum: readRequiredString(packetIdentity, "checksum", "DecisionPacket smoke readback missed checksum"),
+    evidenceRef: readRequiredString(packetIdentity, "evidenceRef", "DecisionPacket smoke readback missed evidenceRef")
   };
 };
 
@@ -203,15 +146,15 @@ const readPacket = (
   parsed: Record<string, unknown>
 ): DecisionPacketSmokeJson["packet"] => ({
   governingDecisionIds: readStringArray(
-    readRequiredRecord(parsed, "packet"),
+    readRequiredRecord(parsed, "packet", "DecisionPacket smoke readback missed packet"),
     "governingDecisionIds"
   ),
   memoryRefs: readStringArray(
-    readRequiredRecord(parsed, "packet"),
+    readRequiredRecord(parsed, "packet", "DecisionPacket smoke readback missed packet"),
     "memoryRefs"
   ),
   staleDecisionIds: readStringArray(
-    readRequiredRecord(parsed, "packet"),
+    readRequiredRecord(parsed, "packet", "DecisionPacket smoke readback missed packet"),
     "staleDecisionIds"
   )
 });
