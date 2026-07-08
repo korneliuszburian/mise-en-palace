@@ -10,6 +10,11 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  sourceAuthorityLabels,
+  sourceSupportTypes
+} from "@krn/core";
+
+import {
   createdAtColumn,
   metadataColumn,
   updatedAtColumn
@@ -29,33 +34,9 @@ export const sourceArtifactKind = pgEnum("source_artifact_kind", [
   "external_doc"
 ]);
 
-export const sourceAuthorityLabel = pgEnum("source_trust_tier", [
-  "high",
-  "medium",
-  "low",
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-]);
+export const sourceAuthorityLabel = pgEnum("source_trust_tier", sourceAuthorityLabels);
 
-export const sourceSupportType = pgEnum("source_support_type", [
-  "supports",
-  "contradicts",
-  "qualifies",
-  "background",
-  "does_not_support",
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary"
-]);
+export const sourceSupportType = pgEnum("source_support_type", sourceSupportTypes);
 
 export const sourceClaimStatus = pgEnum("source_claim_status", [
   "proposed",
