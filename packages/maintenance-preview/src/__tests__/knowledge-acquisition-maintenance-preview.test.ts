@@ -20,12 +20,12 @@ describe("knowledge acquisition maintenance preview", () => {
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: [
             "source-search missing evidence should produce acquisition candidates",
-            "candidate-only maintenance/dreaming behavior needs a local falsifier"
+            "candidate-only maintenance preview behavior needs a local falsifier"
           ],
           evidenceRefs: [
             "KRN_ROADMAP.md#research-intake"
           ],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier:
             "A missing-evidence run cannot create a reviewable acquisition candidate.",
           doesNotProve:
@@ -60,7 +60,7 @@ describe("knowledge acquisition maintenance preview", () => {
     ]);
     expect(result.candidates[0]?.missingEvidence).toEqual([
       "source-search missing evidence should produce acquisition candidates",
-      "candidate-only maintenance/dreaming behavior needs a local falsifier"
+      "candidate-only maintenance preview behavior needs a local falsifier"
     ]);
     expect(result.candidates[0]?.reviewabilityReasons).toEqual([
       "Candidate has review evidence, application guidance, and doesNotProve boundary."
@@ -111,7 +111,7 @@ describe("knowledge acquisition maintenance preview", () => {
             "run source search against the narrower acquisition topic"
           ],
           evidenceRefs: [evidenceRef],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Diagnostics should be visible on the candidate.",
           doesNotProve: "This does not prove acquisition quality."
         }
@@ -197,7 +197,7 @@ describe("knowledge acquisition maintenance preview", () => {
             ]
           },
           evidenceRefs: [evidenceRef],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Linked document evidence should be visible on the acquisition candidate.",
           doesNotProve: "This does not prove source truth."
         }
@@ -274,7 +274,7 @@ describe("knowledge acquisition maintenance preview", () => {
               "Activation utility readback does not prove ranking quality or product readiness."
           },
           evidenceRefs: [evidenceRef],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Activation utility exploration evidence should be visible on the candidate.",
           doesNotProve: "This does not prove source truth."
         }
@@ -352,7 +352,7 @@ describe("knowledge acquisition maintenance preview", () => {
           query: "   ",
           missingEvidence: ["missing source document"],
           evidenceRefs: [evidenceRef],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Blank acquisition queries should not be review-ready.",
           doesNotProve: "This does not prove acquisition quality."
         }
@@ -381,7 +381,7 @@ describe("knowledge acquisition maintenance preview", () => {
           query: "complete source search",
           missingEvidence: [],
           evidenceRefs: [evidenceRef],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Missing-evidence input should be required.",
           doesNotProve: "This does not prove retrieval quality."
         }

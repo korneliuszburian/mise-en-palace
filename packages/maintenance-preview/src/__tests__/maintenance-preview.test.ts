@@ -15,7 +15,7 @@ import {
 
 const now = "2026-06-30T11:30:00.000Z";
 const evidenceRef =
-  "review-evidence/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md";
+  "review-evidence/controlled-dogfood/2026-06-30-v363-maintenance-preview-candidate-generator/REPORT.md";
 
 const memoryRecord = (
   id: string,
@@ -540,7 +540,7 @@ describe("brain maintenance preview", () => {
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: ["candidate-only acquisition lane"],
           evidenceRefs: ["KRN_ROADMAP.md#research-intake"],
-          consumer: "maintenance/dreaming candidate runtime",
+          consumer: "maintenance preview candidate review loop",
           falsifier: "Missing-evidence readback cannot create a reviewable candidate.",
           doesNotProve:
             "This does not prove autonomous maintenance execution or Memory Core mutation safety."
