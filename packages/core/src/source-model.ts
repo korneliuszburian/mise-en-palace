@@ -143,38 +143,57 @@ export interface SourceContextTaxonomy {
   sourceUse?: SourceUse;
 }
 
-export type SourceClaimCreateStatus = "proposed";
+export const sourceClaimCreateStatuses = ["proposed"] as const;
 
-export type SourceClaimLifecycleStatus = "accepted" | "rejected" | "deprecated";
+export type SourceClaimCreateStatus = (typeof sourceClaimCreateStatuses)[number];
 
-export type SourceClaimStatus = SourceClaimCreateStatus | SourceClaimLifecycleStatus;
+export const sourceClaimLifecycleStatuses = ["accepted", "rejected", "deprecated"] as const;
 
-export type SourceDecisionStatus = "adopt" | "reject" | "defer" | "lab_test";
+export type SourceClaimLifecycleStatus = (typeof sourceClaimLifecycleStatuses)[number];
 
-export type SourceDecisionTargetType =
-  | "harness_run"
-  | "task_contract"
-  | "harness_plan"
-  | "context_assembly"
-  | "evidence_bundle"
-  | "review_assessment"
-  | "feedback_delta"
-  | "architecture_decision"
-  | "memory_record"
-  | "eval_candidate";
+export const sourceClaimStatuses = [
+  ...sourceClaimCreateStatuses,
+  ...sourceClaimLifecycleStatuses
+] as const;
 
-export type SourceDecisionEdgeConfidence = "low" | "medium" | "high";
+export type SourceClaimStatus = (typeof sourceClaimStatuses)[number];
 
-export type SourceClaimEdgeKind =
-  | "supports"
-  | "contradicts"
-  | "qualifies"
-  | "depends_on"
-  | "supersedes"
-  | "duplicates"
-  | "narrows"
-  | "invalidates"
-  | "expires";
+export const sourceDecisionStatuses = ["adopt", "reject", "defer", "lab_test"] as const;
+
+export type SourceDecisionStatus = (typeof sourceDecisionStatuses)[number];
+
+export const sourceDecisionTargetTypes = [
+  "harness_run",
+  "task_contract",
+  "harness_plan",
+  "context_assembly",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "architecture_decision",
+  "memory_record",
+  "eval_candidate"
+] as const;
+
+export type SourceDecisionTargetType = (typeof sourceDecisionTargetTypes)[number];
+
+export const sourceDecisionEdgeConfidences = ["low", "medium", "high"] as const;
+
+export type SourceDecisionEdgeConfidence = (typeof sourceDecisionEdgeConfidences)[number];
+
+export const sourceClaimEdgeKinds = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "depends_on",
+  "supersedes",
+  "duplicates",
+  "narrows",
+  "invalidates",
+  "expires"
+] as const;
+
+export type SourceClaimEdgeKind = (typeof sourceClaimEdgeKinds)[number];
 
 export type SourceRelationReviewFocus =
   | "contradiction"
@@ -185,14 +204,17 @@ export type SourceRelationReviewFocus =
   | "relation_evidence"
   | "stale_connected_claim";
 
-export type SourceRejectionReason =
-  | "no_mechanism"
-  | "no_consumer"
-  | "decorative"
-  | "stale"
-  | "conflicting"
-  | "unsupported"
-  | "duplicate";
+export const sourceRejectionReasons = [
+  "no_mechanism",
+  "no_consumer",
+  "decorative",
+  "stale",
+  "conflicting",
+  "unsupported",
+  "duplicate"
+] as const;
+
+export type SourceRejectionReason = (typeof sourceRejectionReasons)[number];
 
 export interface SourceClaim {
   id: SourceClaimId;

@@ -11,6 +11,12 @@ import {
 
 import {
   sourceAuthorityLabels,
+  sourceClaimEdgeKinds,
+  sourceClaimStatuses,
+  sourceDecisionEdgeConfidences,
+  sourceDecisionStatuses,
+  sourceDecisionTargetTypes,
+  sourceRejectionReasons,
   sourceSupportTypes
 } from "@krn/core";
 
@@ -38,60 +44,23 @@ export const sourceAuthorityLabel = pgEnum("source_trust_tier", sourceAuthorityL
 
 export const sourceSupportType = pgEnum("source_support_type", sourceSupportTypes);
 
-export const sourceClaimStatus = pgEnum("source_claim_status", [
-  "proposed",
-  "accepted",
-  "rejected",
-  "deprecated"
-]);
+export const sourceClaimStatus = pgEnum("source_claim_status", sourceClaimStatuses);
 
-export const sourceClaimEdgeKind = pgEnum("source_claim_edge_kind", [
-  "supports",
-  "contradicts",
-  "qualifies",
-  "depends_on",
-  "supersedes",
-  "duplicates",
-  "narrows",
-  "invalidates",
-  "expires"
-]);
+export const sourceClaimEdgeKind = pgEnum("source_claim_edge_kind", sourceClaimEdgeKinds);
 
-export const sourceDecisionStatus = pgEnum("source_decision_status", [
-  "adopt",
-  "reject",
-  "defer",
-  "lab_test"
-]);
+export const sourceDecisionStatus = pgEnum("source_decision_status", sourceDecisionStatuses);
 
-export const sourceDecisionTargetType = pgEnum("source_decision_target_type", [
-  "harness_run",
-  "task_contract",
-  "harness_plan",
-  "context_assembly",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "architecture_decision",
-  "memory_record",
-  "eval_candidate"
-]);
+export const sourceDecisionTargetType = pgEnum(
+  "source_decision_target_type",
+  sourceDecisionTargetTypes
+);
 
-export const sourceDecisionEdgeConfidence = pgEnum("source_decision_edge_confidence", [
-  "low",
-  "medium",
-  "high"
-]);
+export const sourceDecisionEdgeConfidence = pgEnum(
+  "source_decision_edge_confidence",
+  sourceDecisionEdgeConfidences
+);
 
-export const sourceRejectionReason = pgEnum("source_rejection_reason", [
-  "no_mechanism",
-  "no_consumer",
-  "decorative",
-  "stale",
-  "conflicting",
-  "unsupported",
-  "duplicate"
-]);
+export const sourceRejectionReason = pgEnum("source_rejection_reason", sourceRejectionReasons);
 
 export const sourceArtifacts = pgTable(
   "source_artifacts",

@@ -1,7 +1,13 @@
 import { z } from "zod";
 import {
   decisionGradeSourceSupportTypes,
-  sourceAuthorityLabels
+  sourceAuthorityLabels,
+  sourceClaimCreateStatuses,
+  sourceClaimStatuses,
+  sourceDecisionEdgeConfidences,
+  sourceDecisionStatuses,
+  sourceDecisionTargetTypes,
+  sourceRejectionReasons
 } from "../source.js";
 import {
   MetadataSchema,
@@ -22,46 +28,17 @@ export const SourceAuthorityLabelSchema = z.enum(sourceAuthorityLabels);
 
 export const SourceSupportTypeSchema = z.enum(decisionGradeSourceSupportTypes);
 
-export const SourceClaimStatusSchema = z.enum([
-  "proposed",
-  "accepted",
-  "rejected",
-  "deprecated"
-]);
+export const SourceClaimStatusSchema = z.enum(sourceClaimStatuses);
 
-export const SourceClaimCreateStatusSchema = z.enum(["proposed"]);
+export const SourceClaimCreateStatusSchema = z.enum(sourceClaimCreateStatuses);
 
-export const SourceDecisionStatusSchema = z.enum([
-  "adopt",
-  "reject",
-  "defer",
-  "lab_test"
-]);
+export const SourceDecisionStatusSchema = z.enum(sourceDecisionStatuses);
 
-export const SourceDecisionTargetTypeSchema = z.enum([
-  "harness_run",
-  "task_contract",
-  "harness_plan",
-  "context_assembly",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "architecture_decision",
-  "memory_record",
-  "eval_candidate"
-]);
+export const SourceDecisionTargetTypeSchema = z.enum(sourceDecisionTargetTypes);
 
-export const SourceDecisionEdgeConfidenceSchema = z.enum(["low", "medium", "high"]);
+export const SourceDecisionEdgeConfidenceSchema = z.enum(sourceDecisionEdgeConfidences);
 
-export const SourceRejectionReasonSchema = z.enum([
-  "no_mechanism",
-  "no_consumer",
-  "decorative",
-  "stale",
-  "conflicting",
-  "unsupported",
-  "duplicate"
-]);
+export const SourceRejectionReasonSchema = z.enum(sourceRejectionReasons);
 
 export const SourceArtifactInputSchema = z.object({
   projectId: RequiredTextSchema.optional(),
