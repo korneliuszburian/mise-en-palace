@@ -11,6 +11,16 @@ import type {
   WorkspaceId
 } from "@krn/core";
 import type { IsoTimestamp } from "@krn/core";
+import type {
+  EmbeddingModelStatus,
+  RetrievalActivationDecisionStatus,
+  RetrievalCandidateKind,
+  RetrievalCandidateStatus,
+  RetrievalRunMode,
+  RetrievalRunStatus,
+  RetrievalSubjectType,
+  RetrievalValidityStatus
+} from "../retrieval-model.js";
 
 export type SearchDocumentId = string;
 export type EmbeddingModelId = string;
@@ -135,32 +145,17 @@ export interface SourceChunkRecord {
   createdAt: IsoTimestamp;
 }
 
-export type RetrievalSubjectType =
-  | "source_artifact"
-  | "source_chunk"
-  | "source_claim"
-  | "memory_record"
-  | "anti_memory_record"
-  | "task_contract"
-  | "search_document"
-  | "evidence_bundle"
-  | "review_assessment"
-  | "architecture_decision"
-  | "run_event";
+export type ActivationDecisionStatus = RetrievalActivationDecisionStatus;
 
-export type RetrievalRunStatus = "running" | "completed" | "abstained" | "failed";
-export type RetrievalRunMode = "lexical" | "vector" | "hybrid" | "graph" | "mixed";
-export type RetrievalCandidateKind = "memory" | "anti_memory" | "source" | "search";
-export type RetrievalCandidateStatus = "candidate" | "included" | "excluded";
-export type RetrievalValidityStatus = "active" | "expired" | "invalidated";
-export type EmbeddingModelStatus = "active" | "deprecated" | "disabled";
-export type ActivationDecisionStatus =
-  | "included"
-  | "excluded"
-  | "abstained"
-  | "deferred"
-  | "conflict"
-  | "stale";
+export type {
+  EmbeddingModelStatus,
+  RetrievalCandidateKind,
+  RetrievalCandidateStatus,
+  RetrievalRunMode,
+  RetrievalRunStatus,
+  RetrievalSubjectType,
+  RetrievalValidityStatus
+};
 
 export interface SearchDocumentSubjectFields {
   projectId?: ProjectId;

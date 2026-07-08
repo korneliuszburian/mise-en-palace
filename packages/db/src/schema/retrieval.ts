@@ -10,6 +10,18 @@ import {
 import { vector } from "drizzle-orm/pg-core/columns/vector_extension/vector";
 
 import {
+  contextExclusionReasons,
+  embeddingModelStatuses,
+  retrievalActivationDecisionStatuses,
+  retrievalCandidateKinds,
+  retrievalCandidateStatuses,
+  retrievalRunModes,
+  retrievalRunStatuses,
+  retrievalSubjectTypes,
+  retrievalValidityStatuses
+} from "@krn/core";
+
+import {
   antiMemoryRecords,
   memoryRecords
 } from "./memory.js";
@@ -40,80 +52,32 @@ import {
 import { tsvector } from "../sql/full-text-search.js";
 import { DEFAULT_EMBEDDING_DIMENSIONS } from "../sql/pgvector.js";
 
-export const embeddingModelStatus = pgEnum("embedding_model_status", [
-  "active",
-  "deprecated",
-  "disabled"
-]);
+export const embeddingModelStatus = pgEnum("embedding_model_status", embeddingModelStatuses);
 
-export const retrievalSubjectType = pgEnum("retrieval_subject_type", [
-  "source_artifact",
-  "source_chunk",
-  "source_claim",
-  "memory_record",
-  "anti_memory_record",
-  "task_contract",
-  "search_document",
-  "evidence_bundle",
-  "review_assessment",
-  "architecture_decision",
-  "run_event"
-]);
+export const retrievalSubjectType = pgEnum("retrieval_subject_type", retrievalSubjectTypes);
 
-export const retrievalValidityStatus = pgEnum("retrieval_validity_status", [
-  "active",
-  "expired",
-  "invalidated"
-]);
+export const retrievalValidityStatus = pgEnum(
+  "retrieval_validity_status",
+  retrievalValidityStatuses
+);
 
-export const retrievalRunStatus = pgEnum("retrieval_run_status", [
-  "running",
-  "completed",
-  "abstained",
-  "failed"
-]);
+export const retrievalRunStatus = pgEnum("retrieval_run_status", retrievalRunStatuses);
 
-export const retrievalRunMode = pgEnum("retrieval_run_mode", [
-  "lexical",
-  "vector",
-  "hybrid",
-  "graph",
-  "mixed"
-]);
+export const retrievalRunMode = pgEnum("retrieval_run_mode", retrievalRunModes);
 
-export const retrievalCandidateKind = pgEnum("retrieval_candidate_kind", [
-  "memory",
-  "anti_memory",
-  "source",
-  "search"
-]);
+export const retrievalCandidateKind = pgEnum("retrieval_candidate_kind", retrievalCandidateKinds);
 
-export const retrievalCandidateStatus = pgEnum("retrieval_candidate_status", [
-  "candidate",
-  "included",
-  "excluded"
-]);
+export const retrievalCandidateStatus = pgEnum(
+  "retrieval_candidate_status",
+  retrievalCandidateStatuses
+);
 
-export const activationDecisionStatus = pgEnum("activation_decision_status", [
-  "included",
-  "excluded",
-  "abstained",
-  "deferred",
-  "conflict",
-  "stale"
-]);
+export const activationDecisionStatus = pgEnum(
+  "activation_decision_status",
+  retrievalActivationDecisionStatuses
+);
 
-export const contextExclusionReason = pgEnum("context_exclusion_reason", [
-  "stale",
-  "invalidated",
-  "low_trust",
-  "low_context_roi",
-  "over_budget",
-  "duplicate",
-  "irrelevant",
-  "unsafe",
-  "superseded"
-]);
+export const contextExclusionReason = pgEnum("context_exclusion_reason", contextExclusionReasons);
 
 const projectScopeColumn = () => ({
   projectId: nullableProjectIdColumn()

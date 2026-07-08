@@ -31,6 +31,15 @@ import type {
   SearchDocumentSearchResult,
   SearchDocumentSubjectFields
 } from "./types.js";
+import type {
+  ActivationDecisionSourceSupportState,
+  ActivationTraceRawRecallReason
+} from "../retrieval-model.js";
+
+export type {
+  ActivationDecisionSourceSupportState,
+  ActivationTraceRawRecallReason
+} from "../retrieval-model.js";
 
 export interface CreateSearchDocumentInput extends SearchDocumentSubjectFields {
   sourceAuthority?: SourceAuthorityLabel;
@@ -102,8 +111,6 @@ export type CompleteRetrievalRunStatus = Extract<
   "completed" | "abstained" | "failed"
 >;
 
-export type ActivationTraceRawRecallReason = "exact_proof_required" | "low_trust";
-
 export interface ActivationTraceRawRecall {
   required: boolean;
   reasons: readonly ActivationTraceRawRecallReason[];
@@ -118,12 +125,6 @@ export interface ActivationTraceRawRecallTrigger {
   sourceAuthority: SourceAuthorityLabel;
   evidenceHints: readonly string[];
 }
-
-export type ActivationDecisionSourceSupportState =
-  | "not_applicable"
-  | "source_claim_supported"
-  | "source_claim_missing_mechanism"
-  | "source_claim_missing_does_not_prove";
 
 export interface CompleteRetrievalRunInput {
   retrievalRunId: RetrievalRunId;

@@ -22,6 +22,7 @@ export * from "./parsing/index.js";
 export * from "./review-assessment.js";
 export * from "./review-outcome.js";
 export * from "./reflection/index.js";
+export * from "./retrieval-model.js";
 export * from "./source.js";
 export * from "./source-artifact-preview-extraction.js";
 export * from "./task-contract.js";

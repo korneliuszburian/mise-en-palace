@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+import {
+  activationAbstentionReasons,
+  activationDecisionInputStatuses,
+  activationDecisionSourceSupportStates,
+  activationTraceRawRecallReasons,
+  contextExclusionReasons,
+  nonStaleContextExclusionReasons,
+  retrievalActivationDecisionStatuses,
+  retrievalCandidateKinds,
+  retrievalCandidateStatuses,
+  retrievalRunModes,
+  retrievalSubjectTypes,
+  retrievalValidityStatuses
+} from "../retrieval-model.js";
 import { sourceAuthorityLabels } from "../source-model.js";
 import {
   MetadataSchema,
@@ -11,100 +25,31 @@ const BoundedScoreSchema = z.number().int().min(0).max(1000);
 const OptionalBoundedScoreSchema = BoundedScoreSchema.optional();
 const NonNegativeIntegerSchema = z.number().int().min(0);
 
-export const RetrievalSubjectTypeSchema = z.enum([
-  "source_artifact",
-  "source_chunk",
-  "source_claim",
-  "memory_record",
-  "anti_memory_record",
-  "task_contract",
-  "search_document",
-  "evidence_bundle",
-  "review_assessment",
-  "architecture_decision",
-  "run_event"
-]);
+export const RetrievalSubjectTypeSchema = z.enum(retrievalSubjectTypes);
 
 export const RetrievalSourceAuthoritySchema = z.enum(sourceAuthorityLabels);
 
-export const RetrievalValidityStatusSchema = z.enum([
-  "active",
-  "expired",
-  "invalidated"
-]);
+export const RetrievalValidityStatusSchema = z.enum(retrievalValidityStatuses);
 
-export const RetrievalRunModeSchema = z.enum([
-  "lexical",
-  "vector",
-  "hybrid",
-  "graph",
-  "mixed"
-]);
+export const RetrievalRunModeSchema = z.enum(retrievalRunModes);
 
-export const RetrievalCandidateTypeSchema = z.enum([
-  "memory",
-  "anti_memory",
-  "source",
-  "search"
-]);
+export const RetrievalCandidateTypeSchema = z.enum(retrievalCandidateKinds);
 
-export const RetrievalCandidateStatusSchema = z.enum([
-  "candidate",
-  "included",
-  "excluded"
-]);
+export const RetrievalCandidateStatusSchema = z.enum(retrievalCandidateStatuses);
 
-export const ActivationDecisionSchema = z.enum([
-  "included",
-  "excluded",
-  "abstained",
-  "deferred",
-  "conflict",
-  "stale"
-]);
+export const ActivationDecisionSchema = z.enum(retrievalActivationDecisionStatuses);
 
-export const ActivationDecisionInputDecisionSchema = z.enum([
-  "included",
-  "excluded",
-  "deferred",
-  "conflict",
-  "stale"
-]);
+export const ActivationDecisionInputDecisionSchema = z.enum(activationDecisionInputStatuses);
 
-export const ContextExclusionReasonSchema = z.enum([
-  "stale",
-  "invalidated",
-  "low_trust",
-  "low_context_roi",
-  "over_budget",
-  "duplicate",
-  "irrelevant",
-  "unsafe",
-  "superseded"
-]);
+export const ContextExclusionReasonSchema = z.enum(contextExclusionReasons);
 
-export const NonStaleContextExclusionReasonSchema = z.enum([
-  "invalidated",
-  "low_trust",
-  "low_context_roi",
-  "over_budget",
-  "duplicate",
-  "irrelevant",
-  "unsafe",
-  "superseded"
-]);
+export const NonStaleContextExclusionReasonSchema = z.enum(nonStaleContextExclusionReasons);
 
-export const ActivationDecisionSourceSupportStateSchema = z.enum([
-  "not_applicable",
-  "source_claim_supported",
-  "source_claim_missing_mechanism",
-  "source_claim_missing_does_not_prove"
-]);
+export const ActivationDecisionSourceSupportStateSchema = z.enum(
+  activationDecisionSourceSupportStates
+);
 
-export const ActivationTraceRawRecallReasonSchema = z.enum([
-  "exact_proof_required",
-  "low_trust"
-]);
+export const ActivationTraceRawRecallReasonSchema = z.enum(activationTraceRawRecallReasons);
 
 export const ActivationTraceRawRecallSchema = z.object({
   required: z.boolean(),
@@ -112,13 +57,7 @@ export const ActivationTraceRawRecallSchema = z.object({
   evidenceHints: z.array(RequiredTextSchema).default([])
 });
 
-export const ActivationAbstentionReasonSchema = z.enum([
-  "no_candidates",
-  "weak_context",
-  "all_excluded",
-  "over_budget",
-  "unsafe_context"
-]);
+export const ActivationAbstentionReasonSchema = z.enum(activationAbstentionReasons);
 
 const SearchDocumentInputShapeSchema = z.object({
   projectId: OptionalIdSchema,

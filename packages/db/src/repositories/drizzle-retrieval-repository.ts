@@ -33,6 +33,10 @@ import type {
   StartRetrievalRunInput,
   StoreContextSelectionInput
 } from "@krn/core/repositories/internal";
+import {
+  contextExclusionReasons as contextExclusionReasonValues,
+  type ContextExclusionReason
+} from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
 import {
@@ -60,20 +64,6 @@ import {
   mapRetrievalRun,
   mapSearchDocument
 } from "./mappers.js";
-
-const contextExclusionReasonValues = [
-  "stale",
-  "invalidated",
-  "low_trust",
-  "low_context_roi",
-  "over_budget",
-  "duplicate",
-  "irrelevant",
-  "unsafe",
-  "superseded"
-] as const;
-
-type ContextExclusionReason = typeof contextExclusionReasonValues[number];
 
 const contextExclusionReasons = new Set<string>(contextExclusionReasonValues);
 
