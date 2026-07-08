@@ -1,142 +1,76 @@
 # KRN Kernel
 
-KRN is a Codex Operating Layer / AI Engineering Control Plane.
+KRN is a temporal Memory Core for Codex.
 
-Codex executes. KRN supplies bounded context, service/store-backed memory,
-source grounding, policy, skills, eval expectations, traces, review gates, and
-feedback.
+Codex edits code. KRN decides which remembered context is relevant, current,
+trusted, rejected, stale, or unknown; renders a bounded decision packet; observes
+the result; and feeds review/usefulness evidence back into store-backed memory.
 
-This repository is a kernel workspace and KRN harness implementation, not a
-dashboard-first application.
+This repo is the kernel workspace, not a dashboard, docs archive, or markdown
+memory substrate.
 
-## Start Here
+## Start
 
 1. Read `AGENTS.md`.
 2. Read `KRN_ROADMAP.md`.
-3. Read repo-local skills only when the task matches their scope.
-4. Use Beads for durable task state when the Beads workspace is available.
-5. Treat docs folders as temporary source artifacts, fixtures, or runbooks, not
-   the brain.
+3. Use Beads for active work.
+4. Load repo-local skills only when their trigger matches the task.
 
 ## Current Truth
 
-`KRN_ROADMAP.md` is the product and architecture roadmap. Beads is the active
-task graph. Detailed execution history, outcomes, and next-task synthesis belong
-in Beads and verified store/corpus/eval paths, not markdown report forests.
+- Product direction: `KRN_ROADMAP.md`.
+- Operating rules: `AGENTS.md`.
+- Durable task graph: Beads.
+- Runtime memory: DB/corpus/eval read models, not markdown folders.
+- Local scratch: `.local-lab/` is ignored and disposable.
 
-Current status:
+Current status: controlled internal alpha for technical operators. Not
+product-ready.
 
-- controlled-internal-alpha for technical operators: yes / stronger;
-- product-ready: no;
-- widened internal alpha: no;
-- real second-operator proof: blocked/deferred.
+Built enough to keep:
 
-The current work loop is continuous and evidence-driven:
+- strict pnpm TypeScript workspace;
+- DB-backed source, memory, evidence, review, retrieval, feedback, and
+  maintenance paths;
+- activation and DecisionPacket read models;
+- Codex brief rendering;
+- minimal read-only `krn_decision_packet` MCP transport;
+- deterministic behavior gates and DB smokes.
 
-```text
-controlled scenario
-  -> evidence
-  -> finding
-  -> condensation decision
-  -> rule / skill / guard / eval / memory candidate / source decision / repair
-  -> update Beads and store-backed candidates
-  -> continue
-```
+Still not built:
 
-The legacy audit/anti-slop direction remains closed. Do not rebuild it as a
-guardrail layer; keep useful Memory/Source/Evidence invariants in their native
-mechanisms.
-
-## Built
-
-- Strict pnpm TypeScript workspace with
-  `core/db/harness/codex-adapter/cli/maintenance-preview` packages.
-- PostgreSQL/pgvector-oriented brain-store schema, migrations, repositories,
-  readiness checks, and DB smoke commands.
-- CLI surfaces for planning, doctor/readiness, evidence capture, Codex brief
-  rendering, init/connect, manual observation, reflection, source, memory, and
-  review workflows.
-- Legacy AuditBundle domain/IO/repository contracts are removed. Empty legacy
-  `audit_bundles` / `audit_findings` tables were dropped by migration `0012`
-  after row-count and provenance review.
-- Observation core contracts, IO schemas, DB schema, repository adapter,
-  evidence/source-range linkage, deterministic observer input builder, manual
-  `krn observe --run <id> [--persist]`, and observation prefix selection.
-- Reflection contracts, records, input selection, gap/contradiction reporting,
-  and manual `krn reflect`.
-- MemoryCandidate, MemoryReviewGate, AntiMemory, source graph, activation,
-  evidence/review feedback, GoldenTask, and Promptfoo adapter primitives.
-
-## Built But Not Proven End-To-End
-
-- The full loop
-  `evidence -> observation -> reflection -> candidates -> review -> memory -> activation -> golden proof`
-  is not complete as one governed product path.
-- Reflection currently records/report candidates but must not be described as
-  autonomous memory mutation or dreaming runtime.
-- Maintenance queue records are persisted contracts/skeletons; production background
-  execution is not built.
-- Promptfoo is adopted only as a bounded eval runner/result adapter. The local
-  Promptfoo smoke proves runner integration and result mapping only; it does
-  not prove KRN memory behavior.
-- DB package code exists, but live DB runtime truth depends on running DB
-  commands in the current shell with `KRN_DATABASE_URL` configured.
-
-## Not Built
-
-- Dashboard.
-- API server.
-- Broad KRN MCP product server. The minimal read-only `krn_decision_packet`
-  MCP wrapper exists only as transport over the CLI DecisionPacket contract.
-- Plugin package.
-- Source crawler or research layer.
-- Broad benchmark lane.
-- Broad subagent system or runtime agent zoo.
-- Runtime memory in markdown or `.krn`.
-- Separate vector DB, graph DB, Redis, or Kafka.
-- Productized anti-slop subsystem, quality engine, or autonomous audit layer.
+- dashboard or product API;
+- broad MCP product server;
+- autonomous worker daemon;
+- large-scale ingest pipeline;
+- final temporal consensus engine;
+- markdown-backed runtime memory.
 
 ## Verification
 
-Common local checks:
+Fast local gate:
 
 ```sh
 pnpm alpha:verify
 ```
 
-`pnpm alpha:verify` is the fast local gate: typecheck, tests, and `krn doctor`.
-It does not prove Fallow, Promptfoo, KRN behavior/docs smoke, or DB runtime
-truth.
-
-Full local verification, when local DB env is configured:
+Full local gate, when Postgres is available:
 
 ```sh
 pnpm alpha:verify:full
 ```
 
-The full gate aggregates:
+Common focused checks:
 
 ```sh
 pnpm typecheck
 pnpm test
-pnpm krn doctor
 pnpm quality:fallow:ci
-pnpm eval:krn:smoke
-pnpm db:ready
 pnpm --filter @krn/db db:check
-pnpm db:smoke
-pnpm db:smoke:brain-loop
+pnpm db:smoke:maintenance-queue
 git diff --check
 ```
 
-For a non-blocking whole-repo hygiene snapshot, run `pnpm quality:fallow:report`;
-it writes reports under `.local-lab/fallow/` and does not replace the fast CI
-gate.
-
-Do not claim DB runtime truth unless DB commands were run in the current
-environment.
-
-Gate proof boundaries are checked by the harness docs-lint manifest in
-`packages/harness/src/eval-proof-boundary-manifest.ts`. It is not a public
-`@krn/harness` runtime API, and no verification command should be described as
-proving more than that manifest allows.
+Do not claim DB runtime truth unless the relevant DB command ran in the current
+environment with `KRN_DATABASE_URL` configured or the default local compose DB
+was reachable.
