@@ -735,6 +735,12 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Selector maintenance anti-memory candidate: ${report.selectorMaintenanceAntiMemoryCandidateId}`,
   `Selector maintenance feedback event: ${report.selectorMaintenanceFeedbackEventId}`,
   `Selector maintenance candidate linked to feedback delta: ${yesNo(report.selectorMaintenanceCandidateLinkedToFeedbackDelta)}`,
+  `Feedback maintenance queue record: ${report.feedbackMaintenanceQueueRecordId}`,
+  `Feedback maintenance queue status: ${report.feedbackMaintenanceQueueStatus}`,
+  `Feedback maintenance handler boundary passed: ${yesNo(report.feedbackMaintenanceHandlerBoundaryPassed)}`,
+  `Feedback maintenance anti-memory candidate: ${report.feedbackMaintenanceAntiMemoryCandidateId}`,
+  `Feedback maintenance candidate linked to feedback delta: ${yesNo(report.feedbackMaintenanceCandidateLinkedToFeedbackDelta)}`,
+  `Feedback maintenance direct mutation delta: ${report.feedbackMaintenanceDirectMutationDelta}`,
   `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
   ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
 ];

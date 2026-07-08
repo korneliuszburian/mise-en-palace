@@ -26,6 +26,11 @@ import {
   createCompiledSmokeExecution,
   createHarnessCompilerSmokeRuntime
 } from "@krn/db/dev";
+import {
+  DrizzleMaintenanceQueueRepository,
+  createFeedbackDeltaMaintenanceHandler,
+  runMaintenanceQueueRecord
+} from "@krn/db/adapters";
 import type {
   DatabaseRuntime
 } from "../../database-runtime.js";
@@ -82,6 +87,12 @@ export interface DecisionPacketReturnLoopSmokeReport {
   selectorMaintenanceAntiMemoryCandidateId: string;
   selectorMaintenanceFeedbackEventId: string;
   selectorMaintenanceCandidateLinkedToFeedbackDelta: boolean;
+  feedbackMaintenanceQueueRecordId: string;
+  feedbackMaintenanceQueueStatus: string;
+  feedbackMaintenanceHandlerBoundaryPassed: boolean;
+  feedbackMaintenanceAntiMemoryCandidateId: string;
+  feedbackMaintenanceCandidateLinkedToFeedbackDelta: boolean;
+  feedbackMaintenanceDirectMutationDelta: number;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -132,6 +143,15 @@ interface SelectorFeedbackProofResult {
   maintenanceAntiMemoryCandidateId: string;
   maintenanceFeedbackEventId: string;
   maintenanceCandidateLinkedToFeedbackDelta: boolean;
+}
+
+interface FeedbackMaintenanceProofResult {
+  queueRecordId: string;
+  queueStatus: string;
+  handlerBoundaryPassed: boolean;
+  antiMemoryCandidateId: string;
+  candidateLinkedToFeedbackDelta: boolean;
+  directMutationDelta: number;
 }
 
 interface ReturnLoopCheck {
@@ -439,6 +459,23 @@ const deleteFeedbackOutboxRows = async (
   }
 ): Promise<void> => {
   for (const feedbackDeltaId of input.feedbackDeltaIds) {
+    const antiMemoryCandidateRows = await input.client<{ id: string }[]>`
+      select id::text as id
+      from anti_memory_candidates
+      where feedback_delta_id = ${feedbackDeltaId}
+    `;
+
+    for (const row of antiMemoryCandidateRows) {
+      await input.client`
+        delete from outbox_events
+        where payload->>'antiMemoryCandidateId' = ${row.id}
+      `;
+    }
+
+    await input.client`
+      delete from anti_memory_candidates
+      where feedback_delta_id = ${feedbackDeltaId}
+    `;
     await input.client`
       delete from outbox_events
       where payload->>'feedbackDeltaId' = ${feedbackDeltaId}
@@ -462,9 +499,136 @@ const countFeedbackOutboxRows = async (
     `;
 
     count += rows[0]?.count ?? 0;
+
+    const antiMemoryCandidateRows = await input.client<{ id: string }[]>`
+      select id::text as id
+      from anti_memory_candidates
+      where feedback_delta_id = ${feedbackDeltaId}
+    `;
+
+    count += antiMemoryCandidateRows.length;
+
+    for (const row of antiMemoryCandidateRows) {
+      const outboxRows = await input.client<{ count: number }[]>`
+        select count(*)::int as count
+        from outbox_events
+        where payload->>'antiMemoryCandidateId' = ${row.id}
+      `;
+
+      count += outboxRows[0]?.count ?? 0;
+    }
   }
 
   return count;
+};
+
+const countFeedbackMaintenanceForbiddenRows = async (
+  input: {
+    readonly client: Sql;
+    readonly marker: string;
+  }
+): Promise<number> => {
+  const rows = await input.client<{ count: number }[]>`
+    select (
+      (select count(*)::int from memory_records where metadata->>'smokeId' = ${input.marker}) +
+      (select count(*)::int from anti_memory_records where metadata->>'smokeId' = ${input.marker}) +
+      (select count(*)::int from source_claims where metadata->>'smokeId' = ${input.marker}) +
+      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${input.marker})
+    ) as count
+  `;
+
+  return rows[0]?.count ?? 0;
+};
+
+const findFeedbackMaintenanceAntiMemoryCandidate = async (
+  input: {
+    readonly client: Sql;
+    readonly feedbackDeltaId: string;
+  }
+): Promise<{ id: string; feedbackDeltaId: string | null } | undefined> => {
+  const rows = await input.client<{ id: string; feedback_delta_id: string | null }[]>`
+    select id::text as id, feedback_delta_id::text as feedback_delta_id
+    from anti_memory_candidates
+    where feedback_delta_id = ${input.feedbackDeltaId}
+    order by created_at asc
+    limit 1
+  `;
+  const row = rows[0];
+
+  if (row === undefined) {
+    return undefined;
+  }
+
+  return {
+    id: row.id,
+    feedbackDeltaId: row.feedback_delta_id
+  };
+};
+
+const runFeedbackMaintenanceProof = async (
+  input: {
+    readonly client: Sql;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly feedbackDelta: FeedbackDelta;
+    readonly repositories: {
+      readonly maintenanceQueueRepository: DrizzleMaintenanceQueueRepository;
+      readonly harnessRunRepository: HarnessRunRepository;
+      readonly memoryRepository: MemoryRepository;
+    };
+  }
+): Promise<FeedbackMaintenanceProofResult> => {
+  const directMutationCountBefore = await countFeedbackMaintenanceForbiddenRows({
+    client: input.client,
+    marker: input.marker
+  });
+  const queueRecord = await input.repositories.maintenanceQueueRepository.enqueueMaintenanceQueue({
+    jobType: "review_feedback_delta",
+    payload: {
+      projectId: input.projectId,
+      feedbackDeltaId: input.feedbackDelta.id,
+      reason: "Prove feedback delta maintenance creates reviewable anti-memory candidates only."
+    },
+    runAfter: "2026-07-07T12:00:00.000Z"
+  });
+  const readback = await runMaintenanceQueueRecord({
+    repository: input.repositories.maintenanceQueueRepository,
+    recordId: queueRecord.id,
+    claim: {
+      lockedAt: "2026-07-07T12:00:00.000Z",
+      lockedBy: "decision-packet-return-loop-smoke"
+    },
+    handlers: [
+      createFeedbackDeltaMaintenanceHandler({
+        harnessRunRepository: input.repositories.harnessRunRepository,
+        memoryRepository: input.repositories.memoryRepository,
+        now: () => "2026-07-07T12:00:00.000Z"
+      })
+    ]
+  });
+  const candidate = await findFeedbackMaintenanceAntiMemoryCandidate({
+    client: input.client,
+    feedbackDeltaId: input.feedbackDelta.id
+  });
+  const directMutationCountAfter = await countFeedbackMaintenanceForbiddenRows({
+    client: input.client,
+    marker: input.marker
+  });
+
+  if (candidate === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke did not create feedback maintenance anti-memory candidate"
+    );
+  }
+
+  return {
+    queueRecordId: queueRecord.id,
+    queueStatus: readback.status,
+    handlerBoundaryPassed: readback.handlerWriteBoundary?.status === "passed",
+    antiMemoryCandidateId: candidate.id,
+    candidateLinkedToFeedbackDelta: candidate.feedbackDeltaId === input.feedbackDelta.id,
+    directMutationDelta: directMutationCountAfter - directMutationCountBefore
+  };
 };
 
 const runSelectorFeedbackProof = async (
@@ -795,6 +959,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   let retrievalRunId: string | undefined;
   let selectorRetrievalRunId: string | undefined;
   const feedbackDeltaIds: string[] = [];
+  const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
 
   const cleanup = async (): Promise<number> => {
@@ -804,6 +969,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       marker,
       retrievalRunIds: selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]
     });
+    if (maintenanceQueueIds.length > 0) {
+      await new DrizzleMaintenanceQueueRepository(db).cleanupTestMaintenanceQueues({
+        maintenanceQueueIds
+      });
+    }
 
     const baseRemaining = await cleanupHarnessCompilerSmokeRows({
       db,
@@ -816,13 +986,20 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       client,
       feedbackDeltaIds
     });
+    const maintenanceQueueRemaining = maintenanceQueueIds.length === 0
+      ? 0
+      : (await client<{ count: number }[]>`
+          select count(*)::int as count
+          from maintenance_queue_records
+          where id in ${client(maintenanceQueueIds)}
+        `)[0]?.count ?? 0;
     const selectorProofRemaining = await countSelectorProofRows({
       client,
       marker,
       retrievalRunIds: selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]
     });
 
-    return baseRemaining + feedbackOutboxRemaining + selectorProofRemaining;
+    return baseRemaining + feedbackOutboxRemaining + selectorProofRemaining + maintenanceQueueRemaining;
   };
 
   try {
@@ -1010,6 +1187,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const mismatchedFeedbackStayedOutOfNextPacket =
       !nextPacket.packet.governingDecisionIds.includes(mismatchedDecisionId) &&
       !nextPacket.packet.staleDecisionIds.includes(mismatchedDecisionId);
+    const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
+    const feedbackMaintenanceProof = await runFeedbackMaintenanceProof({
+      client,
+      marker,
+      projectId: project.id,
+      feedbackDelta: staleFeedbackDelta,
+      repositories: {
+        maintenanceQueueRepository,
+        harnessRunRepository,
+        memoryRepository
+      }
+    });
+
+    maintenanceQueueIds.push(feedbackMaintenanceProof.queueRecordId);
+
     const selectorProof = await runSelectorFeedbackProof({
       baseRuntime,
       commandRuntime,
@@ -1037,6 +1229,22 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "next packet includes matching decision", passed: nextPacketIncludesMatchingDecision },
       { label: "selector packet includes helped memory", passed: selectorProof.includesHelpedMemory },
       { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
+      {
+        label: "feedback maintenance queue succeeded",
+        passed: feedbackMaintenanceProof.queueStatus === "succeeded"
+      },
+      {
+        label: "feedback maintenance handler boundary passed",
+        passed: feedbackMaintenanceProof.handlerBoundaryPassed
+      },
+      {
+        label: "feedback maintenance anti-memory candidate linked to feedback delta",
+        passed: feedbackMaintenanceProof.candidateLinkedToFeedbackDelta
+      },
+      {
+        label: "feedback maintenance did not directly mutate durable truth",
+        passed: feedbackMaintenanceProof.directMutationDelta === 0
+      },
       {
         label: "selector maintenance candidate linked to feedback delta",
         passed: selectorProof.maintenanceCandidateLinkedToFeedbackDelta
@@ -1079,6 +1287,13 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       selectorMaintenanceFeedbackEventId: selectorProof.maintenanceFeedbackEventId,
       selectorMaintenanceCandidateLinkedToFeedbackDelta:
         selectorProof.maintenanceCandidateLinkedToFeedbackDelta,
+      feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,
+      feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
+      feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,
+      feedbackMaintenanceAntiMemoryCandidateId: feedbackMaintenanceProof.antiMemoryCandidateId,
+      feedbackMaintenanceCandidateLinkedToFeedbackDelta:
+        feedbackMaintenanceProof.candidateLinkedToFeedbackDelta,
+      feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0
     };
