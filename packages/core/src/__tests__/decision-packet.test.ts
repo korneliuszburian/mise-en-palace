@@ -154,9 +154,16 @@ describe("DecisionPacket builder", () => {
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
     expect(packet.severeStaleAuthorityIds).toEqual(["source-decision-conflicted"]);
     expect(packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
+    expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
+      "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
+      "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-caveated",
+      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
+    ]);
+    expect(packet.sourceConsensus.evidenceGapIds).toEqual(packet.evidenceGaps.map((gap) => gap.id));
     expect(packet.abstentionScore).toMatchObject({
       status: "abstain",
       reasons: [
+        "evidence_gap",
         "missing_decision_linked_source",
         "caveated_source_authority",
         "stale_authority"

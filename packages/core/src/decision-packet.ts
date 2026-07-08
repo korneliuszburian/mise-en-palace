@@ -464,6 +464,36 @@ const severeStaleAuthorityIdsFor = (input: {
   return input.governingDecisionIds.filter((id) => staleDecisionIds.has(id));
 };
 
+const evidenceGapsFor = (input: {
+  readonly runId: string;
+  readonly governingDecisionIds: readonly string[];
+  readonly caveatedSourceClaimIds: readonly string[];
+  readonly severeStaleAuthorityIds: readonly string[];
+}): DecisionPacketEvidenceGap[] => [
+  ...(input.governingDecisionIds.length === 0
+    ? [{
+        id: `evidence-gap:${input.runId}:no-governing-decision`,
+        reason: "No governed decision is present in this read-only packet.",
+        verificationRequired:
+          "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+      }]
+    : []),
+  ...input.caveatedSourceClaimIds.map((sourceClaimId): DecisionPacketEvidenceGap => ({
+    id: `evidence-gap:${input.runId}:caveated-source-authority:${sourceClaimId}`,
+    reason:
+      `SourceClaim ${sourceClaimId} is included without current decision-linked authority or has maintenance feedback caveats.`,
+    verificationRequired:
+      "Link the claim to a current SourceDecisionEdge or refresh/review the source claim before treating it as governing authority."
+  })),
+  ...input.severeStaleAuthorityIds.map((sourceDecisionId): DecisionPacketEvidenceGap => ({
+    id: `evidence-gap:${input.runId}:stale-authority:${sourceDecisionId}`,
+    reason:
+      `SourceDecision ${sourceDecisionId} is both governing and stale, so the packet cannot treat it as clean current authority.`,
+    verificationRequired:
+      "Promote a replacement decision, demote the stale decision, or record explicit reviewed evidence explaining why it remains current."
+  }))
+];
+
 export const buildDecisionPacketFromReadModel = (
   readModel: DecisionPacketReadModelInput
 ): DecisionPacket => {
@@ -481,17 +511,15 @@ export const buildDecisionPacketFromReadModel = (
     ...antiMemoryBlockedPathIdsFor(readModel),
     ...sourceRejectionIds
   ]);
-  const evidenceGaps = governingDecisionIds.length === 0
-    ? [{
-        id: `evidence-gap:${readModel.run.id}:no-governing-decision`,
-        reason: "No governed decision is present in this read-only packet.",
-        verificationRequired:
-          "Capture or promote source-backed decision evidence before treating this packet as task guidance."
-      }]
-    : [];
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
     governingDecisionIds,
     staleDecisionIds
+  });
+  const evidenceGaps = evidenceGapsFor({
+    runId: readModel.run.id,
+    governingDecisionIds,
+    caveatedSourceClaimIds,
+    severeStaleAuthorityIds
   });
   const sourceConsensus = buildDecisionPacketSourceConsensus({
     sourceClaimIds,

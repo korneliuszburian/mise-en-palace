@@ -462,17 +462,26 @@ describe("decision packet CLI", () => {
           ],
           sourceRejectionIds: ["source-decision-rejected-agent-1"],
           conflictedDecisionIds: ["source-decision-conflicted-agent-1"],
-          evidenceGapIds: []
+          evidenceGapIds: [
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
+            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+          ]
         },
         abstentionScore: {
           status: "abstain",
-          score: 10,
+          score: 0,
           reasons: [
+            "evidence_gap",
             "missing_decision_linked_source",
             "caveated_source_authority",
             "stale_authority"
           ],
-          evidenceGapIds: []
+          evidenceGapIds: [
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
+            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+          ]
         },
         memoryRefs: ["memory-agent-1"],
         staleDecisionIds: [
