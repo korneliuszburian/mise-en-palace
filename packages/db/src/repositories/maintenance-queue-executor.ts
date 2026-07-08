@@ -63,13 +63,23 @@ export interface MaintenanceQueueExecutorReadback {
   writeBoundary: MaintenanceQueueWriteBoundaryReadback;
   handlerWriteBoundary?: MaintenanceQueueRuntimeWriteBoundaryAssessment;
   queueRecordKeyUniqueness: "db_unique_queue_key";
+  proves: readonly string[];
   doesNotProve: readonly string[];
 }
+
+const executorBaseProofs = [
+  "A single queued maintenance record was claimed through the repository before settlement.",
+  "The claimed payload was parsed for its job type before handler dispatch.",
+  "The record was settled through the repository lifecycle after executor handling."
+] as const;
+
+const handlerBoundaryProof =
+  "Handler declared writes were checked against the job memory boundary before handler execution.";
 
 const executorDoesNotProve = [
   "Explicit maintenance record execution does not prove autonomous scheduler or daemon readiness.",
   "Explicit maintenance record execution relies on the DB queue_key constraint for enqueue deduplication.",
-  "Handler-declared writes are checked before handler execution, but handler side effects still require focused tests or DB smoke evidence.",
+  "Handler side effects still require focused tests or DB smoke evidence.",
   "Maintenance execution does not directly promote memory records or source claims."
 ] as const;
 
@@ -94,6 +104,10 @@ const buildReadback = (
   writeBoundary,
   ...(handlerWriteBoundary === undefined ? {} : { handlerWriteBoundary }),
   queueRecordKeyUniqueness: "db_unique_queue_key",
+  proves: [
+    ...executorBaseProofs,
+    ...(handlerWriteBoundary === undefined ? [] : [handlerBoundaryProof])
+  ],
   doesNotProve: executorDoesNotProve
 });
 

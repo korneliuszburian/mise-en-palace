@@ -210,6 +210,17 @@ describe("runMaintenanceQueueRecord", () => {
     expect(result.status).toBe("succeeded");
     expect(result.record.status).toBe("succeeded");
     expect(result.queueRecordKeyUniqueness).toBe("db_unique_queue_key");
+    expect(result.proves).toEqual([
+      "A single queued maintenance record was claimed through the repository before settlement.",
+      "The claimed payload was parsed for its job type before handler dispatch.",
+      "The record was settled through the repository lifecycle after executor handling.",
+      "Handler declared writes were checked against the job memory boundary before handler execution."
+    ]);
+    expect(result.doesNotProve).toEqual(expect.arrayContaining([
+      "Explicit maintenance record execution does not prove autonomous scheduler or daemon readiness.",
+      "Handler side effects still require focused tests or DB smoke evidence.",
+      "Maintenance execution does not directly promote memory records or source claims."
+    ]));
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
@@ -320,6 +331,9 @@ describe("runMaintenanceQueueRecord", () => {
     expect(handlerRan).toBe(false);
     expect(result.status).toBe("dead_lettered");
     expect(result.handlerWriteBoundary?.status).toBe("failed");
+    expect(result.proves).toContain(
+      "Handler declared writes were checked against the job memory boundary before handler execution."
+    );
     expect(result.record.status).toBe("dead_letter");
   });
 
@@ -351,6 +365,9 @@ describe("runMaintenanceQueueRecord", () => {
 
     expect(result.status).toBe("dead_lettered");
     expect(result.record.lastError).toBe("Invalid maintenance payload for embed_source_chunk");
+    expect(result.proves).not.toContain(
+      "Handler declared writes were checked against the job memory boundary before handler execution."
+    );
     expect(repository.calls).toEqual([
       "claim:maintenance-queue-1",
       "dead-letter:maintenance-queue-1"
