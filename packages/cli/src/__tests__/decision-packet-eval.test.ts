@@ -471,6 +471,11 @@ describe("runDecisionPacketEval", () => {
       sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
       caveatedSourceClaimIds: [],
       sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
+      sourceDecisionTargets: [{
+        targetType: "architecture_decision",
+        targetId: "store-backed-memory-no-markdown",
+        sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"]
+      }],
       sourceRejectionIds: [],
       memoryRefs: ["memory:decision:store-backed-memory-no-markdown"],
       caveatedMemoryRefs: [],
@@ -486,6 +491,11 @@ describe("runDecisionPacketEval", () => {
         decisionLinkedSourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
         caveatedSourceClaimIds: [],
         sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
+        sourceDecisionTargets: [{
+          targetType: "architecture_decision",
+          targetId: "store-backed-memory-no-markdown",
+          sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"]
+        }],
         staleDecisionIds: ["cast-json-record"],
         rejectedPathIds: ["prose-second-opinion"],
         sourceRejectionIds: [],

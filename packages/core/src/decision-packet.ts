@@ -9,7 +9,8 @@ import type {
   ProjectStandardDecisionReadback
 } from "./memory.js";
 import type {
-  SourceAuthorityLabel
+  SourceAuthorityLabel,
+  SourceDecisionTargetType
 } from "./source.js";
 
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
@@ -49,12 +50,19 @@ export interface DecisionPacketSourceConsensus {
   decisionLinkedSourceClaimIds: readonly string[];
   caveatedSourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
+  sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   staleDecisionIds: readonly string[];
   rejectedPathIds: readonly string[];
   sourceRejectionIds: readonly string[];
   conflictedDecisionIds: readonly string[];
   evidenceGapIds: readonly string[];
   doesNotProve: string;
+}
+
+export interface DecisionPacketSourceDecisionTarget {
+  targetType: SourceDecisionTargetType;
+  targetId: string;
+  sourceDecisionEdgeIds: readonly string[];
 }
 
 export type DecisionPacketAbstentionStatus =
@@ -85,6 +93,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
   readonly sourceDecisionEdgeIds: readonly string[];
+  readonly sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   readonly staleDecisionIds: readonly string[];
   readonly rejectedPathIds: readonly string[];
   readonly sourceRejectionIds: readonly string[];
@@ -99,6 +108,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
     )),
     caveatedSourceClaimIds: unique(input.caveatedSourceClaimIds),
     sourceDecisionEdgeIds: unique(input.sourceDecisionEdgeIds),
+    sourceDecisionTargets: input.sourceDecisionTargets,
     staleDecisionIds: unique(input.staleDecisionIds),
     rejectedPathIds: unique(input.rejectedPathIds),
     sourceRejectionIds: unique(input.sourceRejectionIds),
@@ -190,6 +200,7 @@ export interface DecisionPacket {
   sourceClaimIds: readonly string[];
   caveatedSourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
+  sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   sourceRejectionIds: readonly string[];
   memoryRefs: readonly string[];
   caveatedMemoryRefs: readonly string[];
@@ -245,6 +256,11 @@ export interface DecisionPacketActivationCandidateInput {
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceDecisionSupportBoost?: {
     sourceDecisionEdgeIds: readonly string[];
+    targets: readonly {
+      sourceDecisionEdgeId: string;
+      targetType: SourceDecisionTargetType;
+      targetId: string;
+    }[];
   };
 }
 
@@ -345,6 +361,40 @@ const sourceDecisionEdgeIdsFor = (
 ): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
   candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
 ) ?? []);
+
+const sourceDecisionTargetsFor = (
+  readModel: DecisionPacketReadModelInput
+): DecisionPacketSourceDecisionTarget[] => {
+  const targetByKey = new Map<string, {
+    targetType: SourceDecisionTargetType;
+    targetId: string;
+    sourceDecisionEdgeIds: string[];
+  }>();
+
+  for (const target of readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.sourceDecisionSupportBoost?.targets ?? []
+  ) ?? []) {
+    const key = `${target.targetType}:${target.targetId}`;
+    const existing = targetByKey.get(key);
+
+    targetByKey.set(key, {
+      targetType: target.targetType,
+      targetId: target.targetId,
+      sourceDecisionEdgeIds: unique([
+        ...(existing?.sourceDecisionEdgeIds ?? []),
+        target.sourceDecisionEdgeId
+      ])
+    });
+  }
+
+  return [...targetByKey.values()];
+};
+
+const architectureDecisionTargetIdsFor = (
+  sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[]
+): string[] => unique(sourceDecisionTargets.flatMap((target) =>
+  target.targetType === "architecture_decision" ? [target.targetId] : []
+));
 
 const sourceClaimIdsFor = (
   readModel: DecisionPacketReadModelInput
@@ -551,7 +601,11 @@ export const buildDecisionPacketFromReadModel = (
   const sourceClaimIds = sourceClaimIdsFor(readModel);
   const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
   const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel);
-  const governingDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"]);
+  const sourceDecisionTargets = sourceDecisionTargetsFor(readModel);
+  const governingDecisionIds = unique([
+    ...architectureDecisionTargetIdsFor(sourceDecisionTargets),
+    ...sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"])
+  ]);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
   const memoryRefs = memoryRefsFor(readModel);
   const staleKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["stale"]);
@@ -583,6 +637,7 @@ export const buildDecisionPacketFromReadModel = (
     sourceClaimIds,
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
+    sourceDecisionTargets,
     staleDecisionIds,
     rejectedPathIds,
     sourceRejectionIds,
@@ -598,6 +653,7 @@ export const buildDecisionPacketFromReadModel = (
     sourceClaimIds,
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
+    sourceDecisionTargets,
     sourceRejectionIds,
     memoryRefs,
     caveatedMemoryRefs,

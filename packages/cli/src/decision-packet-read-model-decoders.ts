@@ -4,6 +4,7 @@ import {
 } from "@krn/core";
 import type { CandidateReviewability } from "@krn/core";
 import type { ProjectStandardDecisionReadback } from "@krn/core";
+import type { SourceDecisionTargetType } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/core/repositories";
 
 import type {
@@ -13,7 +14,8 @@ import type {
 import type {
   DecisionPacketReadModelChangedFiles,
   DecisionPacketReadModelSourceClaimEdgeInfluence,
-  DecisionPacketReadModelSourceDecisionSupportBoost
+  DecisionPacketReadModelSourceDecisionSupportBoost,
+  DecisionPacketReadModelSourceDecisionSupportTarget
 } from "./decision-packet-read-model.js";
 
 type MetadataRecordParseResult =
@@ -72,6 +74,23 @@ const isProjectResolutionKind = (value: string): value is ProjectResolutionKind 
     default:
       return false;
   }
+};
+
+const sourceDecisionTargetTypes = [
+  "harness_run",
+  "task_contract",
+  "harness_plan",
+  "context_assembly",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "architecture_decision",
+  "memory_record",
+  "eval_candidate"
+] as const satisfies readonly SourceDecisionTargetType[];
+
+const isSourceDecisionTargetType = (value: string): value is SourceDecisionTargetType => {
+  return sourceDecisionTargetTypes.some((targetType) => targetType === value);
 };
 
 export const projectResolutionFromMetadata = (
@@ -184,6 +203,43 @@ export const sourceClaimEdgeInfluenceFromMetadata = (
   };
 };
 
+const sourceDecisionSupportTargetsFromMetadata = (
+  metadata: Record<string, unknown>
+): DecisionPacketReadModelSourceDecisionSupportTarget[] => {
+  const value = metadata["targets"];
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    const record = metadataRecordValue(item);
+
+    if (record === undefined) {
+      return [];
+    }
+
+    const sourceDecisionEdgeId = readMetadataString(record, "sourceDecisionEdgeId");
+    const targetType = readMetadataString(record, "targetType");
+    const targetId = readMetadataString(record, "targetId");
+
+    if (
+      sourceDecisionEdgeId === undefined ||
+      targetType === undefined ||
+      !isSourceDecisionTargetType(targetType) ||
+      targetId === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      sourceDecisionEdgeId,
+      targetType,
+      targetId
+    }];
+  });
+};
+
 export const sourceDecisionSupportBoostFromMetadata = (
   metadata: Record<string, unknown>
 ): DecisionPacketReadModelSourceDecisionSupportBoost | undefined => {
@@ -194,12 +250,14 @@ export const sourceDecisionSupportBoostFromMetadata = (
   }
 
   const sourceDecisionEdgeIds = readMetadataStringList(value, "sourceDecisionEdgeIds");
+  const targets = sourceDecisionSupportTargetsFromMetadata(value);
   const confidence = readMetadataStringList(value, "confidence");
   const supportTypes = readMetadataStringList(value, "supportTypes");
   const doesNotProve = readMetadataString(value, "doesNotProve");
 
   if (
     sourceDecisionEdgeIds.length === 0 ||
+    targets.length === 0 ||
     confidence.length === 0 ||
     supportTypes.length === 0 ||
     doesNotProve === undefined
@@ -209,6 +267,7 @@ export const sourceDecisionSupportBoostFromMetadata = (
 
   return {
     sourceDecisionEdgeIds,
+    targets,
     confidence,
     supportTypes,
     doesNotProve

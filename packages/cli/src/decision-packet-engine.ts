@@ -546,6 +546,15 @@ export const buildDecisionPacketWithEngine = async (
   const sourceDecisionEdgeIds = unique(supportedGoverningRows.flatMap((decision) =>
     nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
   ));
+  const sourceDecisionTargets = supportedGoverningRows.flatMap((decision) =>
+    nonEmpty(decision.sourceDecisionEdgeId)
+      ? [{
+          targetType: "architecture_decision" as const,
+          targetId: decision.id,
+          sourceDecisionEdgeIds: [decision.sourceDecisionEdgeId]
+        }]
+      : []
+  );
   const staleDecisionIds = excludedDecisionIds(fixture, brief, testCase.staleDecisionIds);
   const rejectedPathIds = excludedDecisionIds(fixture, brief, testCase.rejectedDecisionIds);
   const sourceRejectionIds = unique(rejectedRows(fixture, rejectedPathIds).flatMap((decision) =>
@@ -566,13 +575,17 @@ export const buildDecisionPacketWithEngine = async (
   const severeStaleAuthorityIds = supportedGoverningDecisionIds.filter((id) =>
     severeExpectedIds.has(id)
   );
-  const sourceConsensus = buildDecisionPacketSourceConsensus({
+  const sourceConsensusBase = {
     sourceClaimIds,
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
+    sourceDecisionTargets,
     staleDecisionIds,
     rejectedPathIds,
-    sourceRejectionIds,
+    sourceRejectionIds
+  };
+  const sourceConsensus = buildDecisionPacketSourceConsensus({
+    ...sourceConsensusBase,
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
   });
@@ -585,6 +598,7 @@ export const buildDecisionPacketWithEngine = async (
     sourceClaimIds,
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
+    sourceDecisionTargets,
     sourceRejectionIds,
     caveatedMemoryRefs: [],
     memoryRefs: unique(memoryRows

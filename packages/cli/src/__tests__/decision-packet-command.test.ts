@@ -166,6 +166,11 @@ const aggregate: HarnessRunAggregate = {
         },
         sourceDecisionSupportBoost: {
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+          targets: [{
+            sourceDecisionEdgeId: "source-decision-edge-agent-1",
+            targetType: "architecture_decision",
+            targetId: "frontend-bootstrap-standard"
+          }],
           confidence: ["high"],
           supportTypes: ["decision"],
           doesNotProve:
@@ -433,6 +438,7 @@ describe("decision packet CLI", () => {
       packet: {
         formatVersion: "krn.decisionPacket.v1",
         governingDecisionIds: [
+          "frontend-bootstrap-standard",
           "source-decision-helped-agent-1",
           "source-decision-conflicted-agent-1"
         ],
@@ -452,6 +458,11 @@ describe("decision packet CLI", () => {
           "claim-agent-caveated"
         ],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+        sourceDecisionTargets: [{
+          targetType: "architecture_decision",
+          targetId: "frontend-bootstrap-standard",
+          sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
+        }],
         sourceRejectionIds: ["source-decision-rejected-agent-1"],
         sourceConsensus: {
           decisionLinkedSourceClaimIds: [],
@@ -460,6 +471,11 @@ describe("decision packet CLI", () => {
             "claim-agent-caveated"
           ],
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+          sourceDecisionTargets: [{
+            targetType: "architecture_decision",
+            targetId: "frontend-bootstrap-standard",
+            sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
+          }],
           staleDecisionIds: [
             "source-decision-stale-agent-1",
             "source-decision-conflicted-agent-1"
@@ -532,7 +548,12 @@ describe("decision packet CLI", () => {
                 edgeIds: ["source-claim-edge-agent-1"]
               },
               sourceDecisionSupportBoost: {
-                sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
+                sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+                targets: [{
+                  sourceDecisionEdgeId: "source-decision-edge-agent-1",
+                  targetType: "architecture_decision",
+                  targetId: "frontend-bootstrap-standard"
+                }]
               }
             }]
           }

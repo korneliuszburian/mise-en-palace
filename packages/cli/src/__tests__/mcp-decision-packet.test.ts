@@ -52,6 +52,11 @@ const packetJson = {
     sourceClaimIds: ["source-claim:frontend-project-standard-packet"],
     caveatedSourceClaimIds: [],
     sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"],
+    sourceDecisionTargets: [{
+      targetType: "architecture_decision",
+      targetId: "frontend-project-standard-packet",
+      sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"]
+    }],
     sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],
     memoryRefs: ["memory:decision:frontend-project-standard-packet"],
     staleDecisionIds: ["generic-frontend-starter-default"],
@@ -63,6 +68,11 @@ const packetJson = {
       decisionLinkedSourceClaimIds: ["source-claim:frontend-project-standard-packet"],
       caveatedSourceClaimIds: [],
       sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"],
+      sourceDecisionTargets: [{
+        targetType: "architecture_decision",
+        targetId: "frontend-project-standard-packet",
+        sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"]
+      }],
       staleDecisionIds: ["generic-frontend-starter-default"],
       rejectedPathIds: ["install-latest-frontend-stack"],
       sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],

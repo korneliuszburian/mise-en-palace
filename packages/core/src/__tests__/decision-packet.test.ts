@@ -48,7 +48,12 @@ const readModel = {
         subjectType: "source_claim",
         subjectId: "claim-current",
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-current"]
+          sourceDecisionEdgeIds: ["source-decision-edge-current"],
+          targets: [{
+            sourceDecisionEdgeId: "source-decision-edge-current",
+            targetType: "architecture_decision",
+            targetId: "source-decision-current"
+          }]
         },
         projectStandardDecision: {
           kind: "krn.projectStandardDecision.v1",
@@ -163,6 +168,11 @@ describe("DecisionPacket builder", () => {
       "claim-caveated"
     ]);
     expect(packet.sourceDecisionEdgeIds).toEqual(["source-decision-edge-current"]);
+    expect(packet.sourceDecisionTargets).toEqual([{
+      targetType: "architecture_decision",
+      targetId: "source-decision-current",
+      sourceDecisionEdgeIds: ["source-decision-edge-current"]
+    }]);
     expect(packet.memoryRefs).toEqual(["memory-current"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
     expect(packet.staleDecisionIds).toEqual([

@@ -162,6 +162,18 @@ const sourceDecisionSupportScore = (
     : 0)
 ));
 
+const sourceDecisionSupportTargets = (
+  support: readonly SourceSearchDecisionSupport[]
+): readonly {
+  sourceDecisionEdgeId: string;
+  targetType: SourceDecisionEdge["targetType"];
+  targetId: string;
+}[] => support.map((item) => ({
+  sourceDecisionEdgeId: item.sourceDecisionEdgeId,
+  targetType: item.targetType,
+  targetId: item.targetId
+}));
+
 export const applySourceDecisionSupportBoost = (
   candidates: readonly RankedActivationCandidate[],
   sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
@@ -199,6 +211,7 @@ export const applySourceDecisionSupportBoost = (
         sourceDecisionSupportBoost: {
           score,
           sourceDecisionEdgeIds: support.map((item) => item.sourceDecisionEdgeId),
+          targets: sourceDecisionSupportTargets(support),
           confidence: support.map((item) => item.confidence),
           supportTypes: support.map((item) => item.supportType),
           doesNotProve:

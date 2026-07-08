@@ -7,6 +7,7 @@ import type {
   FeedbackRecommendationReadback,
   ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
+  SourceDecisionTargetType,
   SourceUsefulnessOutcome,
   TargetEvidence
 } from "@krn/core";
@@ -61,9 +62,16 @@ export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
 
 export interface DecisionPacketReadModelSourceDecisionSupportBoost {
   sourceDecisionEdgeIds: string[];
+  targets: DecisionPacketReadModelSourceDecisionSupportTarget[];
   confidence: string[];
   supportTypes: string[];
   doesNotProve: string;
+}
+
+export interface DecisionPacketReadModelSourceDecisionSupportTarget {
+  sourceDecisionEdgeId: string;
+  targetType: SourceDecisionTargetType;
+  targetId: string;
 }
 
 export interface DecisionPacketReadModelActivationCandidate {
