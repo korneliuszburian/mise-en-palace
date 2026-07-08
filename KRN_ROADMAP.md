@@ -565,6 +565,8 @@ The target is a small set of sharp skills:
 - Beads workflow;
 - source-to-decision mapping;
 - evidence review;
+- codebase design;
+- code review;
 - activation/context work;
 - type-safety;
 - target-repo testing;
