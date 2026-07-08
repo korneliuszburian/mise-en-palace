@@ -29,14 +29,21 @@ a runtime consumer, falsifier, and owner.
 1. Map current caller -> interface -> implementation -> persistence/runtime path.
 2. Run the deletion test: if deleting the module removes complexity, it is
    likely middle-man; if complexity reappears across callers, it earns depth.
-3. Count adapters: one adapter is usually a hypothetical seam; two real adapters
+3. Classify dependencies before adding a seam:
+   - in-process: deepen directly and test through the interface;
+   - local-substitutable: use the real local substitute, not a mock layer;
+   - remote-owned: define a port only when production and test adapters both
+     earn the seam;
+   - true external: inject the dependency and mock only that boundary.
+4. Count adapters: one adapter is usually a hypothetical seam; two real adapters
    can justify a seam.
-4. Prefer one direct domain model over adapter chains, duplicate read models, or
+5. Prefer one direct domain model over adapter chains, duplicate read models, or
    compatibility aliases.
-5. Test at the highest public seam that proves behavior.
-6. Reject tests that freeze file topology, prose, command lists, or ceremony.
-7. Reject new abstractions without a runtime consumer, falsifier, and owner.
-8. State the smallest design decision before editing.
+6. Test at the highest public seam that proves behavior; replace shallow tests
+   with seam tests instead of layering both.
+7. Reject tests that freeze file topology, prose, command lists, or ceremony.
+8. Reject new abstractions without a runtime consumer, falsifier, and owner.
+9. State the smallest design decision before editing.
 
 ## Output
 
