@@ -13,11 +13,6 @@ import {
   rankSourceAuthority,
   readSourceRelationMetadataReadback,
   relatedSourceClaimIdForEdge,
-  sourceAuthorityRanks,
-  sourceAuthorityByLabel,
-  sourceKinds,
-  sourceRankedKinds,
-  sourceSupportAssessmentByType,
   sourceSupportTypes,
   sourceAuthorityLabels,
   type SourceClaimCreateStatus,
@@ -519,19 +514,19 @@ describe("source review signals", () => {
   });
 
   test("keeps source trust and override logic in the core domain", () => {
-    expect(sourceAuthorityLabels).toContain("official");
-    expect(sourceAuthorityRanks).toEqual(["high", "medium", "low"]);
-    expect(sourceRankedKinds).toContain("official");
-    expect(sourceRankedKinds).not.toContain("unspecified");
-    expect(sourceKinds).toContain("official");
-    expect(sourceKinds).toContain("unspecified");
-    expect(sourceSupportTypes).toContain("supports");
-    expect(sourceAuthorityByLabel.official).toEqual({
+    expect(new Set(sourceAuthorityLabels).has("official")).toBe(true);
+    expect(new Set(sourceSupportTypes).has("supports")).toBe(true);
+    expect(classifySourceAuthority("official")).toEqual({
       authorityRank: "high",
       sourceKind: "official",
       rank: 100
     });
-    expect(sourceSupportAssessmentByType["implementation-boundary"]).toEqual({
+    expect(classifySourceAuthority("high")).toEqual({
+      authorityRank: "high",
+      sourceKind: "unspecified",
+      rank: 85
+    });
+    expect(assessSourceSupportType("implementation-boundary")).toEqual({
       relation: "not_applicable",
       use: "implementation-boundary",
       decisionGrade: true

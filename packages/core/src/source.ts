@@ -16,7 +16,7 @@ import {
   type IsoTimestamp
 } from "./time.js";
 
-export const sourceAuthorityRanks = [
+const sourceAuthorityRanks = [
   "high",
   "medium",
   "low"
@@ -24,7 +24,7 @@ export const sourceAuthorityRanks = [
 
 export type SourceAuthorityRank = typeof sourceAuthorityRanks[number];
 
-export const sourceRankedKinds = [
+const sourceRankedKinds = [
   "primary",
   "official",
   "project-decision",
@@ -35,7 +35,7 @@ export const sourceRankedKinds = [
   "hypothesis"
 ] as const;
 
-export const sourceKinds = [
+const sourceKinds = [
   "unspecified",
   ...sourceRankedKinds
 ] as const;
@@ -264,7 +264,7 @@ export interface SourceRejection {
   rejectedAt: IsoTimestamp;
 }
 
-export const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthority> = {
+const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthority> = {
   high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
   medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
   low: { authorityRank: "low", sourceKind: "unspecified", rank: 25 },
@@ -282,8 +282,12 @@ export const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthorit
   hypothesis: { authorityRank: "low", sourceKind: "hypothesis", rank: 10 }
 };
 
+export const classifySourceAuthority = (
+  sourceAuthority: SourceAuthorityLabel
+): SourceAuthority => sourceAuthorityByLabel[sourceAuthority];
+
 export const rankSourceAuthority = (sourceAuthority: SourceAuthorityLabel): number =>
-  sourceAuthorityByLabel[sourceAuthority].rank;
+  classifySourceAuthority(sourceAuthority).rank;
 
 const readTrimmedMetadataString = (
   metadata: Record<string, unknown>,
@@ -337,11 +341,7 @@ export const readSourceRelationMetadataReadback = (
   };
 };
 
-export const classifySourceAuthority = (
-  sourceAuthority: SourceAuthorityLabel
-): SourceAuthority => sourceAuthorityByLabel[sourceAuthority];
-
-export const sourceSupportAssessmentByType: Record<
+const sourceSupportAssessmentByType: Record<
   SourceSupportType,
   SourceSupportAssessment
 > = {
