@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+import { sourceAuthorityLabels } from "../source-model.js";
 import {
   MetadataSchema,
   OptionalTextSchema,
@@ -23,19 +25,7 @@ export const RetrievalSubjectTypeSchema = z.enum([
   "run_event"
 ]);
 
-export const RetrievalSourceAuthoritySchema = z.enum([
-  "high",
-  "medium",
-  "low",
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-]);
+export const RetrievalSourceAuthoritySchema = z.enum(sourceAuthorityLabels);
 
 export const RetrievalValidityStatusSchema = z.enum([
   "active",
