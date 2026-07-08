@@ -167,7 +167,7 @@ export const describeExecutionBriefProfile = (
     },
     doesNotProve: [
       "Brief profile classification proves only adapter rendering intent.",
-      "Omitted diagnostic or reserved sections do not prove their underlying resources do not exist.",
+      "Omitted optional sections do not prove their underlying resources do not exist.",
       "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
     ]
   };
@@ -178,8 +178,8 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
   const requiredSections = profile.sections
     .filter((section) => section.kind === "required")
     .map((section) => section.id);
-  const diagnosticSections = profile.sections
-    .filter((section) => section.kind === "diagnostic")
+  const optionalSections = profile.sections
+    .filter((section) => section.kind === "optional")
     .map((section) => section.id);
 
   return [
@@ -187,7 +187,7 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
     `- profile=${profile.profile} | format=${profile.formatVersion}`,
     `- budget=${profile.budget.status} | rendered_sections=${profile.budget.renderedSections}/${profile.budget.maxRenderedSections} | rendered_items=${profile.budget.renderedItems}/${profile.budget.maxRenderedItems}`,
     `- required=${renderJoinedValues(requiredSections)}`,
-    `- diagnostic=${renderJoinedValues(diagnosticSections)}`,
+    `- optional=${renderJoinedValues(optionalSections)}`,
     `- does_not_prove=${profile.doesNotProve.join(" | ")}`
   ];
 };

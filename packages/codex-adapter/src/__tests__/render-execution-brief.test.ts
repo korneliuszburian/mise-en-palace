@@ -221,12 +221,12 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 19,
+      maxRenderedSections: 18,
       maxRenderedItems: 80,
       status: "within_budget"
     });
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
-      kind: "diagnostic",
+      kind: "optional",
       rendered: true,
       itemCount: 2,
       emptyBehavior: "omit_when_empty"

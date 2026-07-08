@@ -17,16 +17,11 @@ export type ExecutionBriefFormatVersion = typeof executionBriefFormatVersion;
 
 export type ExecutionBriefProfileName = "default";
 
-export type ExecutionBriefSectionKind = "required" | "diagnostic" | "reserved";
+export type ExecutionBriefSectionKind = "required" | "optional";
 
 export type ExecutionBriefSectionEmptyBehavior = "render_none" | "omit_when_empty";
 
 export type ExecutionBriefProfileBudgetStatus = "within_budget" | "over_budget";
-
-export const executionBriefProfileBudget = {
-  maxRenderedSections: 19,
-  maxRenderedItems: 80
-} as const;
 
 export const executionBriefSectionProfiles = [
   { id: "title", kind: "required", emptyBehavior: "render_none" },
@@ -35,12 +30,12 @@ export const executionBriefSectionProfiles = [
   { id: "non_goals", kind: "required", emptyBehavior: "render_none" },
   { id: "current_task_contract", kind: "required", emptyBehavior: "render_none" },
   { id: "context_inclusions", kind: "required", emptyBehavior: "render_none" },
-  { id: "observation_prefix", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "untrusted_context_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "observation_prefix", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "untrusted_context_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
-  { id: "source_claims_used", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "memory_records_used", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
-  { id: "anti_memory_warnings", kind: "diagnostic", emptyBehavior: "omit_when_empty" },
+  { id: "source_claims_used", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "memory_records_used", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "anti_memory_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
   { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
   { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
@@ -52,6 +47,11 @@ export const executionBriefSectionProfiles = [
   kind: ExecutionBriefSectionKind;
   emptyBehavior: ExecutionBriefSectionEmptyBehavior;
 }[];
+
+export const executionBriefProfileBudget = {
+  maxRenderedSections: executionBriefSectionProfiles.length,
+  maxRenderedItems: 80
+} as const;
 
 export type ExecutionBriefSectionId = (typeof executionBriefSectionProfiles)[number]["id"];
 
