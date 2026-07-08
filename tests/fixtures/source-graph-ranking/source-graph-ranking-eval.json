@@ -13,7 +13,7 @@
   "minimumNdcgAtK": 0.95,
   "rows": [
     ["claim-memory-feedback", "memory feedback helped hurt stale activation downgrade", "Memory feedback outcomes should guide future activation without direct Memory Core mutation."],
-    ["claim-pattern-usefulness", "knowledge usefulness evidenceRef helped retained pattern", "Knowledge usefulness needs evidenceRef, outcome, reason, and non-proof before helped feedback."],
+    ["claim-knowledge-usefulness", "knowledge usefulness evidenceRef helped retained knowledge", "Knowledge usefulness needs evidenceRef, outcome, reason, and non-proof before helped feedback."],
     ["claim-source-decision", "source decision mechanism consumer falsifier retention gate", "Source decisions require mechanism, KRN implication, consumer, falsifier, and non-proof."],
     ["claim-decision-link", "accepted sourceclaim sourcedecisionedge linked support missing caveat", "Accepted claims need visible SourceDecisionEdge support or a missing-link caveat."],
     ["claim-graph-relation", "source graph relation edge temporal readback", "SourceClaimEdge relation support is graph readback, not source truth."],
@@ -60,7 +60,7 @@
   ],
   "queries": [
     ["memory-feedback", "hurt stale activation feedback", ["source_claim:claim-memory-feedback"], "A generic memory row can match feedback wording while missing hurt-to-exclusion semantics."],
-    ["pattern-usefulness", "knowledge usefulness evidenceRef helped", ["source_claim:claim-pattern-usefulness"], "A generic pattern row can mention usefulness without evidenceRef and non-proof requirements."],
+    ["knowledge-usefulness", "knowledge usefulness evidenceRef helped", ["source_claim:claim-knowledge-usefulness"], "A generic knowledge row can mention usefulness without evidenceRef and non-proof requirements."],
     ["source-decision", "mechanism consumer falsifier source decision", ["source_claim:claim-source-decision"], "A source decision row can match source vocabulary while missing mechanism, consumer, and falsifier."],
     ["decision-link", "accepted sourceclaim sourcedecisionedge support", ["source_claim:claim-decision-link"], "Accepted SourceClaim wording can look governed without visible SourceDecisionEdge support."],
     ["graph-relation", "temporal source graph relation edge", ["source_claim:claim-graph-relation"], "Relation-edge wording can be mistaken for source truth instead of graph readback; the flat no-relation path can select the claim but cannot explain the adjacent SourceClaimEdge support.", true],

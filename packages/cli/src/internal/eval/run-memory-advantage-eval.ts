@@ -110,7 +110,7 @@ interface MemoryAdvantageCaseFixture {
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
   readonly interdependentSession?: boolean;
-  readonly companyPatternChallenge: CompanyPatternChallengeFixture | undefined;
+  readonly rememberedStandardChallenge: RememberedStandardChallengeFixture | undefined;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -123,7 +123,7 @@ interface MemoryAdvantageCaseFixture {
   readonly expectedSelectedKnowledgeId: string;
 }
 
-interface CompanyPatternChallengeFixture {
+interface RememberedStandardChallengeFixture {
   readonly standardId: string;
   readonly expectedDecision: string;
   readonly baselineFailureMode: string;
@@ -189,7 +189,7 @@ interface MemoryAdvantageCaseReadback {
   readonly competency: MemoryAdvantageCompetency;
   readonly heldOut: boolean;
   readonly interdependentSession: boolean;
-  readonly companyPatternChallenge: CompanyPatternChallengeFixture | undefined;
+  readonly rememberedStandardChallenge: RememberedStandardChallengeFixture | undefined;
   readonly query: string;
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
@@ -422,8 +422,8 @@ export interface MemoryAdvantageEvalResult {
     readonly implementationDecisionRejectionProtectionCount: number;
     readonly implementationDecisionRegressionCount: number;
     readonly executionContractCaseCount: number;
-    readonly companyPatternChallengeCaseCount: number;
-    readonly companyPatternChallengeWinCount: number;
+    readonly rememberedStandardChallengeCaseCount: number;
+    readonly rememberedStandardChallengeWinCount: number;
     readonly sourceDisabledAblationCaseCount: number;
     readonly sourceRequiredCaseCount: number;
     readonly sourceZeroDeltaCaseCount: number;
@@ -710,23 +710,23 @@ const parseExecutionContract = (
   };
 };
 
-const parseCompanyPatternChallenge = (
+const parseRememberedStandardChallenge = (
   value: unknown,
   label: string
-): CompanyPatternChallengeFixture | undefined => {
+): RememberedStandardChallengeFixture | undefined => {
   if (value === undefined) {
     return undefined;
   }
 
   if (!isRecord(value)) {
-    throw new Error(`${label}.companyPatternChallenge must be an object`);
+    throw new Error(`${label}.rememberedStandardChallenge must be an object`);
   }
 
   return {
-    standardId: requiredString(value, "standardId", `${label}.companyPatternChallenge`),
-    expectedDecision: requiredString(value, "expectedDecision", `${label}.companyPatternChallenge`),
-    baselineFailureMode: requiredString(value, "baselineFailureMode", `${label}.companyPatternChallenge`),
-    falsifier: requiredString(value, "falsifier", `${label}.companyPatternChallenge`)
+    standardId: requiredString(value, "standardId", `${label}.rememberedStandardChallenge`),
+    expectedDecision: requiredString(value, "expectedDecision", `${label}.rememberedStandardChallenge`),
+    baselineFailureMode: requiredString(value, "baselineFailureMode", `${label}.rememberedStandardChallenge`),
+    falsifier: requiredString(value, "falsifier", `${label}.rememberedStandardChallenge`)
   };
 };
 
@@ -779,7 +779,7 @@ const parseCase = (
   const falsificationClass = value["falsificationClass"] === undefined
     ? undefined
     : requiredEnum(value, "falsificationClass", label, memoryFalsificationClasses);
-  const companyPatternChallenge = parseCompanyPatternChallenge(value["companyPatternChallenge"], label);
+  const rememberedStandardChallenge = parseRememberedStandardChallenge(value["rememberedStandardChallenge"], label);
   const codingTask = parseCodingTask(value["codingTask"], label);
   const executionContract = parseExecutionContract(value["executionContract"], label);
   const parsedCase: MemoryAdvantageCaseFixture = {
@@ -787,7 +787,7 @@ const parseCase = (
     competency: requiredEnum(value, "competency", label, memoryCompetencies),
     heldOut: value["heldOut"] === true,
     ...(value["interdependentSession"] === true ? { interdependentSession: true } : {}),
-    companyPatternChallenge,
+    rememberedStandardChallenge,
     query: requiredString(value, "query", label),
     distractorClasses: requiredStringArray(value, "distractorClasses", label),
     baselineFailureRationale: requiredString(value, "baselineFailureRationale", label),
@@ -1211,7 +1211,7 @@ const writeKnowledgeCatalog = async (
   const catalogFile = join(root, "catalog.json");
   const readModels = selectableMemoryReadModels(catalogReadModels).map((readModel) => ({
     id: readModel.id,
-    kind: "pattern",
+    kind: "procedure",
     status: "active",
     title: readModel.title,
     summary: readModel.summary,
@@ -1461,7 +1461,7 @@ const buildCodingTaskDecision = (
     return undefined;
   }
 
-  // Source claims are decision-grade evidence in this proxy; they must be evaluated before memory patterns.
+  // Source claims are decision-grade evidence in this proxy; they must be evaluated before retained memory knowledge.
   const krnSelectedKnowledgeIds = [
     ...krnMemory.selectedSourceClaimIds,
     ...krnMemory.selectedKnowledgeIds
@@ -2299,7 +2299,7 @@ const evaluateCase = async (
     competency: testCase.competency,
     heldOut: testCase.heldOut,
     interdependentSession: testCase.interdependentSession === true,
-    companyPatternChallenge: testCase.companyPatternChallenge,
+    rememberedStandardChallenge: testCase.rememberedStandardChallenge,
     query: testCase.query,
     distractorClasses: testCase.distractorClasses,
     baselineFailureRationale: testCase.baselineFailureRationale,
@@ -2472,11 +2472,11 @@ export const runMemoryAdvantageEval = async (
       executionContractCaseCount: cases.filter((testCase) =>
         testCase["execution_contract_decision"] !== undefined
       ).length,
-      companyPatternChallengeCaseCount: cases.filter((testCase) =>
-        testCase.companyPatternChallenge !== undefined
+      rememberedStandardChallengeCaseCount: cases.filter((testCase) =>
+        testCase.rememberedStandardChallenge !== undefined
       ).length,
-      companyPatternChallengeWinCount: cases.filter((testCase) =>
-        testCase.companyPatternChallenge !== undefined && testCase.advantageDelta.result === "win"
+      rememberedStandardChallengeWinCount: cases.filter((testCase) =>
+        testCase.rememberedStandardChallenge !== undefined && testCase.advantageDelta.result === "win"
       ).length,
       sourceDisabledAblationCaseCount: cases.length,
       sourceRequiredCaseCount: cases.filter((testCase) =>
@@ -2502,9 +2502,9 @@ export const runMemoryAdvantageEval = async (
         "falsification cases report neutral no-advantage deltas when simple lexical retrieval already selects the expected knowledge",
         "non-winning advantage deltas carry limitation classifications with deterministic simple-retrieval, KRN, and expected-result proof tuples",
         "at least one interdependent-style case can break the earlier memory-advantage shape by showing the baseline selects the same evidence-shaped contract",
-        "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
-        "firm-pattern challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence",
-        "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
+        "remembered-standard memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present",
+        "retained-standard challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence",
+        "at least one remembered-standard case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief",
         "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases",
         "negative memory/source cases can name their stale or adversarial class and surface explicit excluded ids with reasons",
         "the expected memory/source id is present in selectedKnowledge for hit cases",
@@ -2545,7 +2545,7 @@ export const runMemoryAdvantageEval = async (
 
 const main = async (): Promise<MemoryAdvantageEvalResult> => {
   const fixturePath =
-    process.argv[2] ?? "tests/fixtures/memory-advantage/company-pattern-memory-advantage.json";
+    process.argv[2] ?? "tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json";
   return runMemoryAdvantageEval(loadMemoryAdvantageEvalFixture(fixturePath));
 };
 

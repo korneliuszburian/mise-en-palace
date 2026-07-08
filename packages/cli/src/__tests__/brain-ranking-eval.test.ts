@@ -20,10 +20,10 @@ describe("runBrainRankingEval", () => {
       status: "pass",
       topK: 5,
       corpus: {
-        name: "company-brain-pattern-ranking",
+        name: "company-brain-knowledge-ranking",
         caseCount: 11,
         distractorClasses: [
-          "adjacent-governance-pattern",
+          "adjacent-governance-noise",
           "target-specific-vs-generic",
           "catalog-vs-source",
           "obsolete-negative-memory"
@@ -50,14 +50,14 @@ describe("runBrainRankingEval", () => {
     expect(result.cases.find((testCase) =>
       testCase.id === "plan-brief-memory-advantage"
     )).toMatchObject({
-      distractorClasses: ["adjacent-governance-pattern"],
+      distractorClasses: ["adjacent-governance-noise"],
       baselineFailureRationale: "A local-test closure packet can mention plans and briefs but misses rendered Codex brief memory/source evidence."
     });
     const planBriefCase = result.cases.find((testCase) =>
       testCase.id === "plan-brief-memory-advantage"
     );
-    expect(planBriefCase?.selectedKnowledgeIds[0]).toBe("pattern:plan-brief-memory-advantage-comparator");
-    expect(planBriefCase?.selectedKnowledgeIds).toContain("pattern:local-tests-alone-closeout");
+    expect(planBriefCase?.selectedKnowledgeIds[0]).toBe("knowledge:plan-brief-memory-advantage-comparator");
+    expect(planBriefCase?.selectedKnowledgeIds).toContain("knowledge:local-tests-alone-closeout");
     expect(result.proof.proves).toContain(
       "brain search reports recall@k over expected proxy-labeled selectedKnowledge ids"
     );

@@ -172,7 +172,7 @@ const selectionMetadataFieldParsers: FieldParsers<KnowledgePlanSelectionMetadata
 };
 
 const knowledgeIdFromReadModelId = (id: string): string =>
-  id.startsWith("pattern:") ? id.slice("pattern:".length) : id;
+  id.startsWith("knowledge:") ? id.slice("knowledge:".length) : id;
 
 const readModelTargetFitText = (record: Record<string, unknown>): string =>
   [

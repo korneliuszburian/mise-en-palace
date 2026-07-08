@@ -407,7 +407,7 @@ describe("runMaintenanceQueueRecord", () => {
         doesNotProve: "Helped feedback does not prove permanent truth."
       }],
       knowledgeUsefulnessOutcomes: [{
-        knowledgeId: "pattern:stale-standard-1",
+        knowledgeId: "knowledge:stale-standard-1",
         outcome: "stale",
         reason: "DecisionPacket selected a standard that newer evidence superseded.",
         evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
@@ -477,11 +477,11 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
-      appliesTo: "pattern:stale-standard-1",
+      appliesTo: "knowledge:stale-standard-1",
       metadata: {
         outcome: "stale",
-        knowledgeId: "pattern:stale-standard-1",
-        subjectRef: "memory_record:pattern:stale-standard-1",
+        knowledgeId: "knowledge:stale-standard-1",
+        subjectRef: "memory_record:knowledge:stale-standard-1",
         mutation: "none"
       }
     });

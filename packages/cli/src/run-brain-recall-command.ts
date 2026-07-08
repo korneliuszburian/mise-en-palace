@@ -258,11 +258,11 @@ export const runBrainRecallCommand = async (
     runtime.readModelProvider === undefined ? "explicit_files" : "memory_store";
   const usefulnessSource: "explicit_files" | "store_backed" =
     runtime.usefulnessProvider === undefined ? "explicit_files" : "store_backed";
-  const cardsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
+  const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
     loaded.readModels,
     [...loaded.feedback, ...storeUsefulness]
   );
-  const matchingReadModels = searchKnowledgeReadModels(cardsWithFeedback, runtime.filter);
+  const matchingReadModels = searchKnowledgeReadModels(readModelsWithFeedback, runtime.filter);
   const readModels = runtime.limit === undefined
     ? matchingReadModels
     : matchingReadModels.slice(0, runtime.limit);
@@ -562,7 +562,7 @@ const buildNoMatchGuidance = (filter: KnowledgeSearchFilter): string[] => [
     "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
   ] : []),
   "If no recalled memory applies after retry, record an explicit rejected_or_deferred_memory reason before coding.",
-  "Zero results do not prove that no relevant pattern exists or that search ranking is good."
+  "Zero results do not prove that no relevant knowledge exists or that search ranking is good."
 ];
 
 const hasStructuredFilter = (filter: KnowledgeSearchFilter): boolean =>

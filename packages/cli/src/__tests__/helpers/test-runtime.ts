@@ -91,7 +91,7 @@ const brainRecallMemory = (
 ): MemoryRecord => ({
   id: `memory-${knowledgeId}`,
   projectId: "project-1",
-  key: `pattern:${knowledgeId}`,
+  key: `knowledge:${knowledgeId}`,
   kind: "pattern",
   status: "active",
   summary,

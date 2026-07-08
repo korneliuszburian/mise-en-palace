@@ -214,7 +214,7 @@ export const buildSourceSearchAnswerPackage = (input: {
   ).length;
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
-      ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
+      ? "Use the supporting claims/documents as a Knowledge Application Gate, then verify the selected knowledge against the target slice."
       : supportingClaims.length > 0
         ? "Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
         : supportingDocuments.length > 0

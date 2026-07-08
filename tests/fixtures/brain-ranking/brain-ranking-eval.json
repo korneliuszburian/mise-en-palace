@@ -1,8 +1,8 @@
 {
   "version": "1",
-  "corpusName": "company-brain-pattern-ranking",
+  "corpusName": "company-brain-knowledge-ranking",
   "distractorClasses": [
-    "adjacent-governance-pattern",
+    "adjacent-governance-noise",
     "target-specific-vs-generic",
     "catalog-vs-source",
     "obsolete-negative-memory"
@@ -13,14 +13,14 @@
   "minimumNdcgAtK": 1,
   "cases": [
     {
-      "id": "helped-feedback-pattern",
+      "id": "helped-feedback-knowledge",
       "query": "helped feedback memory application downgrade",
-      "distractorClasses": ["adjacent-governance-pattern"],
+      "distractorClasses": ["adjacent-governance-noise"],
       "baselineFailureRationale": "A generic memory feedback packet can mention helped/hurt without preserving activation downgrade semantics.",
-      "expectedSelectedKnowledgeIds": ["pattern:helped-feedback-memory-application"],
+      "expectedSelectedKnowledgeIds": ["knowledge:helped-feedback-memory-application"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:helped-feedback-memory-application",
+          "id": "knowledge:helped-feedback-memory-application",
           "title": "Helped feedback memory application",
           "summary": "Memory application feedback records helped, hurt, neutral, and stale outcomes without automatic promotion.",
           "consumers": ["memory feedback gate"],
@@ -36,10 +36,10 @@
       "query": "hurt feedback activation exclusion downgrade",
       "distractorClasses": ["obsolete-negative-memory"],
       "baselineFailureRationale": "A naive recall can reuse hurt memory wording without excluding it before activation.",
-      "expectedSelectedKnowledgeIds": ["pattern:hurt-feedback-activation-exclusion"],
+      "expectedSelectedKnowledgeIds": ["knowledge:hurt-feedback-activation-exclusion"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:hurt-feedback-activation-exclusion",
+          "id": "knowledge:hurt-feedback-activation-exclusion",
           "title": "Hurt feedback activation exclusion",
           "summary": "Repeated hurt feedback should downgrade future activation instead of silently reusing stale context.",
           "consumers": ["activation filter regression"],
@@ -51,19 +51,19 @@
       "sourceClaims": []
     },
     {
-      "id": "pattern-usefulness-evidence",
+      "id": "knowledge-usefulness-evidence",
       "query": "knowledge usefulness evidenceRef helped outcome",
-      "distractorClasses": ["adjacent-governance-pattern"],
+      "distractorClasses": ["adjacent-governance-noise"],
       "baselineFailureRationale": "A loose usefulness match can select helped feedback without evidenceRef and doesNotProve requirements.",
-      "expectedSelectedKnowledgeIds": ["pattern:pattern-usefulness-evidence-link"],
+      "expectedSelectedKnowledgeIds": ["knowledge:knowledge-usefulness-evidence-link"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:pattern-usefulness-evidence-link",
+          "id": "knowledge:knowledge-usefulness-evidence-link",
           "title": "Knowledge usefulness evidence link",
           "summary": "Retained knowledge usefulness needs outcome, reason, evidenceRef, and doesNotProve before helped feedback.",
           "consumers": ["knowledge usefulness feedback"],
           "falsifier": "A knowledge usefulness capture omits evidenceRef but records helped feedback.",
-          "doesNotProve": "This does not prove automatic pattern learning.",
+          "doesNotProve": "This does not prove automatic knowledge learning.",
           "nextAction": "use"
         }
       ],
@@ -72,12 +72,12 @@
     {
       "id": "source-to-decision-retention",
       "query": "source decision mechanism consumer falsifier",
-      "distractorClasses": ["adjacent-governance-pattern"],
+      "distractorClasses": ["adjacent-governance-noise"],
       "baselineFailureRationale": "A source-decision query can match generic source vocabulary while missing consumer and falsifier.",
-      "expectedSelectedKnowledgeIds": ["pattern:source-to-decision-retention-gate"],
+      "expectedSelectedKnowledgeIds": ["knowledge:source-to-decision-retention-gate"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:source-to-decision-retention-gate",
+          "id": "knowledge:source-to-decision-retention-gate",
           "title": "Source-to-decision retention gate",
           "summary": "Retained sources must name source, mechanism, KRN implication, decision, consumer, falsifier, and non-proof.",
           "consumers": ["source retention review"],
@@ -93,10 +93,10 @@
       "query": "source graph relation edge temporal readback",
       "distractorClasses": ["catalog-vs-source"],
       "baselineFailureRationale": "Graph relation terminology can be confused with source truth unless the boundary packet remains selected.",
-      "expectedSelectedKnowledgeIds": ["pattern:graph-relation-readback-boundary"],
+      "expectedSelectedKnowledgeIds": ["knowledge:graph-relation-readback-boundary"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:graph-relation-readback-boundary",
+          "id": "knowledge:graph-relation-readback-boundary",
           "title": "Graph relation readback boundary",
           "summary": "Expose SourceClaimEdge relation readback without treating graph relation support as source truth.",
           "consumers": ["source graph eval"],
@@ -122,10 +122,10 @@
       "query": "accepted sourceclaim sourcedecisionedge support missing link",
       "distractorClasses": ["catalog-vs-source"],
       "baselineFailureRationale": "Accepted SourceClaim wording can outrank decision-link provenance if the missing-link caveat is not retained.",
-      "expectedSelectedKnowledgeIds": ["pattern:accepted-source-decision-link-readback"],
+      "expectedSelectedKnowledgeIds": ["knowledge:accepted-source-decision-link-readback"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:accepted-source-decision-link-readback",
+          "id": "knowledge:accepted-source-decision-link-readback",
           "title": "Accepted source decision link readback",
           "summary": "Accepted SourceClaims need visible SourceDecisionEdge support or an explicit missing-link caveat in readback.",
           "consumers": ["source search answer package"],
@@ -149,12 +149,12 @@
     {
       "id": "second-opinion-governed-review",
       "query": "second opinion claude governed verdict diff hash",
-      "distractorClasses": ["adjacent-governance-pattern"],
+      "distractorClasses": ["adjacent-governance-noise"],
       "baselineFailureRationale": "A review process packet can match second-opinion wording while missing governed JSON and diff freshness.",
-      "expectedSelectedKnowledgeIds": ["pattern:second-opinion-governed-review"],
+      "expectedSelectedKnowledgeIds": ["knowledge:second-opinion-governed-review"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:second-opinion-governed-review",
+          "id": "knowledge:second-opinion-governed-review",
           "title": "Second opinion governed review",
           "summary": "Headless Claude review must return validator-governed JSON with diff freshness and evidence refs.",
           "consumers": ["large slice closure"],
@@ -170,10 +170,10 @@
       "query": "target repo owner file recall below roots",
       "distractorClasses": ["target-specific-vs-generic"],
       "baselineFailureRationale": "Generic target repo planning can outrank explicit owner-file read-model evidence.",
-      "expectedSelectedKnowledgeIds": ["pattern:target-owner-file-read-model"],
+      "expectedSelectedKnowledgeIds": ["knowledge:target-owner-file-read-model"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:target-owner-file-read-model",
+          "id": "knowledge:target-owner-file-read-model",
           "title": "Target owner-file read model",
           "summary": "Target owner-file recall should use explicit read-model evidence below named target roots.",
           "consumers": ["target repo planning"],
@@ -227,7 +227,7 @@
           "claim": "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
           "mechanism": "Generic governance packets keep source decisions reviewable.",
           "krnImplication": "Treat this as a guardrail, not target evidence.",
-          "consumer": "pattern application gate",
+          "consumer": "knowledge application gate",
           "falsifier": "A retained decision omits the falsifier field.",
           "doesNotProve": "This does not prove EKOLOGUS source evidence."
         }
@@ -236,12 +236,12 @@
     {
       "id": "plan-brief-memory-advantage",
       "query": "plan brief memory advantage comparator rendered codex brief",
-      "distractorClasses": ["adjacent-governance-pattern"],
+      "distractorClasses": ["adjacent-governance-noise"],
       "baselineFailureRationale": "A local-test closure packet can mention plans and briefs but misses rendered Codex brief memory/source evidence.",
-      "expectedSelectedKnowledgeIds": ["pattern:plan-brief-memory-advantage-comparator"],
+      "expectedSelectedKnowledgeIds": ["knowledge:plan-brief-memory-advantage-comparator"],
       "knowledgeReadModels": [
         {
-          "id": "pattern:plan-brief-memory-advantage-comparator",
+          "id": "knowledge:plan-brief-memory-advantage-comparator",
           "title": "Plan brief memory advantage comparator",
           "summary": "Memory advantage eval must prove no-memory plan brief miss and KRN memory/source rendered Codex brief hit.",
           "consumers": ["memory advantage eval"],
@@ -250,7 +250,7 @@
           "nextAction": "use"
         },
         {
-          "id": "pattern:local-tests-alone-closeout",
+          "id": "knowledge:local-tests-alone-closeout",
           "title": "Local tests alone closeout",
           "summary": "Focused local tests can close a tiny slice but do not replace second-opinion or plan brief proof for larger kernel eval changes.",
           "consumers": ["small maintenance slice"],

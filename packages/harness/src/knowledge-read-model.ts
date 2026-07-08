@@ -1,7 +1,7 @@
 export const knowledgeKindValues = [
   "source_claim",
   "source_decision",
-  "pattern",
+  "procedure",
   "memory",
   "memory_candidate",
   "anti_memory_candidate",
@@ -368,31 +368,31 @@ export function parseKnowledgeDecision(value: unknown): KnowledgeDecision | unde
 }
 
 export function knowledgeReadModelFromDecision(
-  pattern: KnowledgeDecision
+  knowledge: KnowledgeDecision
 ): KnowledgeReadModel {
   return {
-    id: `pattern:${pattern.knowledgeId}`,
-    kind: "pattern",
-    status: statusFromKnowledgeDecision(pattern.decisionStatus),
-    title: pattern.name,
-    summary: pattern.decision,
-    ...(pattern.mechanism === undefined ? {} : { mechanism: pattern.mechanism }),
-    ...(pattern.krnImplication === undefined ? {} : { krnImplication: pattern.krnImplication }),
-    confidence: pattern.confidence,
-    reviewability: pattern.reviewability,
-    sourceRefs: pattern.sourceRefs,
-    evidenceRefs: pattern.evidenceRefs,
-    consumers: pattern.consumers,
-    falsifier: pattern.falsifier,
-    doesNotProve: pattern.doesNotProve,
+    id: `knowledge:${knowledge.knowledgeId}`,
+    kind: "procedure",
+    status: statusFromKnowledgeDecision(knowledge.decisionStatus),
+    title: knowledge.name,
+    summary: knowledge.decision,
+    ...(knowledge.mechanism === undefined ? {} : { mechanism: knowledge.mechanism }),
+    ...(knowledge.krnImplication === undefined ? {} : { krnImplication: knowledge.krnImplication }),
+    confidence: knowledge.confidence,
+    reviewability: knowledge.reviewability,
+    sourceRefs: knowledge.sourceRefs,
+    evidenceRefs: knowledge.evidenceRefs,
+    consumers: knowledge.consumers,
+    falsifier: knowledge.falsifier,
+    doesNotProve: knowledge.doesNotProve,
     temporal: {
       kind: "current",
-      ...(pattern.observedAt === undefined ? {} : { observedAt: pattern.observedAt })
+      ...(knowledge.observedAt === undefined ? {} : { observedAt: knowledge.observedAt })
     },
     dissent: {
       kind: "none"
     },
-    nextAction: pattern.nextAction
+    nextAction: knowledge.nextAction
   };
 }
 

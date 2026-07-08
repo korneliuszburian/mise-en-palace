@@ -4,23 +4,23 @@
   "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
-  "decision": "A source or pattern may become retained KRN knowledge only when it states mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
-  "mechanism": "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or pattern to state why it changes KRN behavior and how it can be falsified.",
+  "decision": "A source or knowledge decision may become retained KRN knowledge only when it states mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
+  "mechanism": "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or knowledge decision to state why it changes KRN behavior and how it can be falsified.",
   "krnImplication": "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory.",
   "sourceRefs": [
     "KRN_ROADMAP.md#decision-rule",
-    "legacy-pattern-selection-gate",
+    "legacy-knowledge-selection-gate",
     ".agents/skills/source-to-decision/SKILL.md"
   ],
   "evidenceRefs": [
     "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
-    "future pattern intake",
+    "future knowledge intake",
     "future research condensation",
     "future knowledge catalog reviews"
   ],
-  "falsifier": "A retained source, pattern, or catalog row can omit mechanism, consumer, falsifier, or does-not-prove while still passing the relevant pattern/readback guard.",
+  "falsifier": "A retained source, knowledge decision, or catalog row can omit mechanism, consumer, falsifier, or does-not-prove while still passing the relevant knowledge readback guard.",
   "doesNotProve": "This knowledge decision does not prove source truth, research completeness, ranking quality, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"

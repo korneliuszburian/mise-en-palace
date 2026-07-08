@@ -45,7 +45,7 @@ const task: BehaviorFixture = {
       id: "golden-case-memory-smoke-002",
       title: "anti-memory blocks tempting stale pattern",
       input: {
-        task: "Use stale pattern guidance for a memory update."
+        task: "Use stale knowledge guidance for a memory update."
       },
       expectedBehavior: {
         outcome: "exclude",

@@ -102,10 +102,10 @@
         "metadata": {}
       },
       {
-        "id": "golden-case-evidence-pattern-usefulness-001-d",
+        "id": "golden-case-evidence-knowledge-usefulness-001-d",
         "title": "retained knowledge usefulness remains tied to evidence refs",
         "input": {
-          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality\"",
+          "command": "krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --knowledge-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future knowledge recall quality\"",
           "gitStatus": "package cwd changed implementation file with explicit knowledge usefulness feedback"
         },
         "expectedBehavior": {
@@ -119,7 +119,7 @@
         },
         "protectedFailureModes": [
           {
-            "id": "failure-mode-evidence-pattern-usefulness-001-d",
+            "id": "failure-mode-evidence-knowledge-usefulness-001-d",
             "domain": "capability",
             "severity": "blocking",
             "title": "knowledge usefulness is recorded without evidence refs or non-proof boundary",

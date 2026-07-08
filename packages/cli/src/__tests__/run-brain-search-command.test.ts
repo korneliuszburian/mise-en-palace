@@ -40,10 +40,10 @@ describe("runBrainSearchCommand", () => {
             returnedReadModels: 1,
             totalReadModels: 1,
             readModels: [{
-              id: "pattern:source-to-decision-retention-gate",
+              id: "knowledge:source-to-decision-retention-gate",
               title: "Source-to-decision retention gate",
               summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
-              consumers: ["pattern application gate"],
+              consumers: ["knowledge application gate"],
               falsifier: "A future slice retains a source with no consumer.",
               doesNotProve: "This readModel does not prove source truth.",
               nextAction: "use"
@@ -103,12 +103,12 @@ describe("runBrainSearchCommand", () => {
       knowledgeReadModels: {
         returnedReadModels: 1,
         totalReadModels: 1,
-        readModelIds: ["pattern:source-to-decision-retention-gate"],
+        readModelIds: ["knowledge:source-to-decision-retention-gate"],
         selectedKnowledge: [{
-          id: "pattern:source-to-decision-retention-gate",
+          id: "knowledge:source-to-decision-retention-gate",
           title: "Source-to-decision retention gate",
           summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
-          consumers: ["pattern application gate"],
+          consumers: ["knowledge application gate"],
           falsifier: "A future slice retains a source with no consumer.",
           doesNotProve: "This readModel does not prove source truth.",
           nextAction: "use"
@@ -232,7 +232,7 @@ describe("runBrainSearchCommand", () => {
               returnedReadModels: 1,
               totalReadModels: 1,
               readModels: [{
-                id: "pattern:graph-relation-readback-boundary",
+                id: "knowledge:graph-relation-readback-boundary",
                 title: "Graph relation readback boundary",
                 summary: "Expose graph readback without treating it as source truth.",
                 consumers: ["future Brain-QA graph relation cases"],
@@ -299,10 +299,10 @@ describe("runBrainSearchCommand", () => {
       ],
       knowledgeReadModels: {
         selectedKnowledge: [{
-          id: "pattern:graph-relation-readback-boundary"
+          id: "knowledge:graph-relation-readback-boundary"
         }]
       },
-      recommendedNextAction: "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+      recommendedNextAction: "Use the matching knowledge and source-search answer package as evidence before changing code."
     });
   });
 
@@ -333,7 +333,7 @@ describe("runBrainSearchCommand", () => {
               returnedReadModels: 1,
               totalReadModels: 1,
               readModels: [{
-                id: "pattern:maintenance-candidate-only-runtime-boundary",
+                id: "knowledge:maintenance-candidate-only-runtime-boundary",
                 title: "Maintenance candidate-only runtime boundary",
                 summary: "Heartbeat and dreaming work stays candidate-only before scheduler work.",
                 consumers: ["future maintenance preview CLI/readback tests"],
@@ -400,10 +400,10 @@ describe("runBrainSearchCommand", () => {
       ],
       knowledgeReadModels: {
         selectedKnowledge: [{
-          id: "pattern:maintenance-candidate-only-runtime-boundary"
+          id: "knowledge:maintenance-candidate-only-runtime-boundary"
         }]
       },
-      recommendedNextAction: "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+      recommendedNextAction: "Use the matching knowledge and source-search answer package as evidence before changing code."
     });
   });
 
@@ -435,7 +435,7 @@ describe("runBrainSearchCommand", () => {
               returnedReadModels: 1,
               totalReadModels: 1,
               readModels: [{
-                id: "pattern:reference-implementation-recipe-clone-boundary",
+                id: "knowledge:reference-implementation-recipe-clone-boundary",
                 title: "Reference implementation recipe boundary",
                 summary: "Clone a local exemplar shape only as a bounded implementation recipe.",
                 consumers: ["future local exemplar work"],
@@ -506,7 +506,7 @@ describe("runBrainSearchCommand", () => {
       ],
       knowledgeReadModels: {
         selectedKnowledge: [{
-          id: "pattern:reference-implementation-recipe-clone-boundary"
+          id: "knowledge:reference-implementation-recipe-clone-boundary"
         }]
       }
     });
@@ -606,7 +606,7 @@ describe("runBrainSearchCommand", () => {
                 consumer: "IMR-00 pattern brain",
                 falsifier: "Store-backed search with governed source evidence returns empty selectedKnowledge.",
                 doesNotProve: "This does not prove ranking quality.",
-                expectedUse: "Use source-backed knowledge as a pre-coding pattern gate."
+                expectedUse: "Use source-backed knowledge as a pre-coding knowledge gate."
               }],
               supportingDocuments: [{ label: "doc" }],
               relationSupport: [],
@@ -915,7 +915,7 @@ describe("runBrainSearchCommand", () => {
                 claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
                 mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
                 krnImplication: "Treat this as a guardrail, not target repo evidence.",
-                consumer: "pattern application gate",
+                consumer: "knowledge application gate",
                 falsifier: "A retained decision omits the falsifier field.",
                 doesNotProve: "This does not prove target repo source recall."
               }, {
@@ -1007,7 +1007,7 @@ describe("runBrainSearchCommand", () => {
                 claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
                 mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
                 krnImplication: "Treat this as a guardrail, not target repo evidence.",
-                consumer: "pattern application gate",
+                consumer: "knowledge application gate",
                 falsifier: "A retained decision omits the falsifier field.",
                 doesNotProve: "This does not prove target repo source recall."
               }, {
@@ -1015,7 +1015,7 @@ describe("runBrainSearchCommand", () => {
                 claim: "KRN guardrails should keep proof boundaries visible before code changes.",
                 mechanism: "Generic proof packets prevent overclaiming.",
                 krnImplication: "Use this as a generic review guardrail.",
-                consumer: "pattern application gate",
+                consumer: "knowledge application gate",
                 falsifier: "A future run treats proof boundaries as target evidence.",
                 doesNotProve: "This does not prove EKOLOGUS source evidence."
               }],
@@ -1111,7 +1111,7 @@ describe("runBrainSearchCommand", () => {
                 consumer: "IMR-40 natural source recall repair",
                 falsifier: "A small-limit natural source search cannot include this exact retained claim.",
                 doesNotProve: "This does not prove source truth, eval promotion, or product readiness.",
-                expectedUse: "Use retained follow-up evidence as a source-backed pattern gate."
+                expectedUse: "Use retained follow-up evidence as a source-backed knowledge gate."
               }],
               supportingDocuments: [{ label: "doc" }],
               sourceDecisionSupport: [{
@@ -1161,7 +1161,7 @@ describe("runBrainSearchCommand", () => {
         verdict: "selected_knowledge_sufficient"
       },
       recommendedNextAction:
-        "Use source-backed selected knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+        "Use source-backed selected knowledge as a Knowledge Application Gate; do not treat it as file-catalog coverage."
     });
   });
 
@@ -1676,7 +1676,7 @@ describe("runBrainSearchCommand", () => {
         claim: "Retained sources must map source to mechanism, KRN implication, decision, consumer, and falsifier.",
         mechanism: "The source-to-decision gate rejects decorative sources without consumers and falsifiers.",
         krnImplication: "Brain answers should cite governed source decisions before treating external material as useful.",
-        consumer: "pattern intake",
+        consumer: "knowledge intake",
         falsifier: "A retained source is used in a slice without a consumer or falsifier."
       },
       {

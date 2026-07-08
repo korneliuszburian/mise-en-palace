@@ -68,6 +68,6 @@ describe("runDeterministicEval", () => {
     expect(result.proof.proves).toContain(
       "fixed recorded Codex decision-packet obedience fixture output is bit-identical across consecutive runs"
     );
-    expect(result.proof.doesNotProve).toContain("arbitrary company-pattern memory advantage");
+    expect(result.proof.doesNotProve).toContain("arbitrary remembered-standard memory advantage");
   });
 });

@@ -481,23 +481,23 @@ const storeBackedRecommendation = (
 const catalogRecommendation = (
   resource: BrainSearchRecommendationResource
 ): string => {
-  const hasReturnedCards = resource.knowledgeReadModels.returnedReadModels > 0;
+  const hasReturnedReadModels = resource.knowledgeReadModels.returnedReadModels > 0;
   const hasSelectedKnowledge = resource.knowledgeReadModels.selectedKnowledge.length > 0;
   const hasSourceEvidence = sourceEvidenceCount(resource.sourceSearch) > 0;
 
-  if (hasReturnedCards && hasSourceEvidence) {
-    return "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
+  if (hasReturnedReadModels && hasSourceEvidence) {
+    return "Use the matching knowledge and source-search answer package as evidence before changing code.";
   }
 
-  if (!hasReturnedCards && hasSelectedKnowledge) {
-    return "Use source-backed selected knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage.";
+  if (!hasReturnedReadModels && hasSelectedKnowledge) {
+    return "Use source-backed selected knowledge as a Knowledge Application Gate; do not treat it as file-catalog coverage.";
   }
 
   if (hasSourceEvidence) {
-    return "Use source-search evidence cautiously and run a narrower brain recall query before retaining a pattern.";
+    return "Use source-search evidence cautiously and run a narrower brain recall query before retaining knowledge.";
   }
 
-  if (hasReturnedCards) {
+  if (hasReturnedReadModels) {
     return "Use the matching knowledge as guidance, but gather source evidence before implementation claims.";
   }
 

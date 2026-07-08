@@ -7,7 +7,7 @@ import {
 } from "../internal/eval/run-memory-advantage-eval.js";
 
 const fixturePath = fileURLToPath(
-  new URL("../../../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json", import.meta.url)
+  new URL("../../../../tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json", import.meta.url)
 );
 
 describe("memory advantage implementation decision readback", () => {
@@ -21,7 +21,7 @@ describe("memory advantage implementation decision readback", () => {
     expect(result.metrics.implementationDecisionRejectionProtectionCount).toBe(10);
     expect(result.metrics.implementationDecisionRegressionCount).toBe(0);
     expect(caseById.get("heldout-coding-task-json-boundary")?.["implementation_decision"]).toMatchObject({
-      decision_before_memory: "select:pattern:cast-json-record-in-command-runner",
+      decision_before_memory: "select:knowledge:cast-json-record-in-command-runner",
       decision_after_krn: "select:source:unknown-first-json-metadata-boundary",
       selectedEvidenceRefs: [
         "evidence:unknown-first-json-metadata-boundary",
@@ -29,7 +29,7 @@ describe("memory advantage implementation decision readback", () => {
         "feedback:unknown-first-json-metadata-boundary-helped"
       ],
       selectedEvidenceIds: [
-        "memory:pattern:cast-json-record-in-command-runner",
+        "memory:knowledge:cast-json-record-in-command-runner",
         "source:unknown-first-json-metadata-boundary"
       ],
       decisionChanged: true,
@@ -39,7 +39,7 @@ describe("memory advantage implementation decision readback", () => {
         "This deterministic proxy does not prove live Codex would follow the decision without an execution-output evidence check."
     });
     expect(caseById.get("heldout-coding-decision-idempotency-key")?.["implementation_decision"]).toMatchObject({
-      decision_before_memory: "select:pattern:fire-and-forget-write-no-key",
+      decision_before_memory: "select:knowledge:fire-and-forget-write-no-key",
       decision_after_krn: "select:source:idempotency-key-on-writes",
       selectedEvidenceRefs: [
         "evidence:idempotency-key-on-writes",
@@ -47,7 +47,7 @@ describe("memory advantage implementation decision readback", () => {
         "feedback:idempotency-key-on-writes-helped"
       ],
       selectedEvidenceIds: [
-        "memory:pattern:fire-and-forget-write-no-key",
+        "memory:knowledge:fire-and-forget-write-no-key",
         "source:idempotency-key-on-writes"
       ],
       decisionChanged: true,
@@ -57,21 +57,21 @@ describe("memory advantage implementation decision readback", () => {
         "This deterministic proxy does not prove live Codex would follow the decision without an execution-output evidence check."
     });
     expect(caseById.get("heldout-coding-decision-retry-backoff")?.["implementation_decision"]).toMatchObject({
-      decision_before_memory: "select:pattern:naive-tight-retry-loop",
+      decision_before_memory: "select:knowledge:naive-tight-retry-loop",
       decision_after_krn: "select:source:bounded-exponential-backoff-jitter",
       decisionChanged: true,
       decisionChangeClass: "win"
     });
     expect(caseById.get("neutral-single-turn-typecheck")?.["implementation_decision"]).toMatchObject({
-      decision_before_memory: "select:pattern:neutral-run-typecheck",
-      decision_after_krn: "select:pattern:neutral-run-typecheck",
+      decision_before_memory: "select:knowledge:neutral-run-typecheck",
+      decision_after_krn: "select:knowledge:neutral-run-typecheck",
       selectedEvidenceRefs: [
         "evidence:neutral-single-turn-typecheck",
         "review:neutral-single-turn-typecheck",
         "feedback:neutral-single-turn-typecheck-neutral"
       ],
       selectedEvidenceIds: [
-        "memory:pattern:neutral-run-typecheck",
+        "memory:knowledge:neutral-run-typecheck",
         "source:neutral-run-typecheck"
       ],
       decisionChanged: false,
@@ -90,7 +90,7 @@ describe("memory advantage implementation decision readback", () => {
         "feedback:temporal-stale-source-claim-decision-link-helped"
       ],
       selectedEvidenceIds: [
-        "memory:pattern:source-decision-edge-ranking-current",
+        "memory:knowledge:source-decision-edge-ranking-current",
         "source:current-source-decision-edge-ranking",
         "excluded-source:source:old-crawler-first-without-decision-edge"
       ],

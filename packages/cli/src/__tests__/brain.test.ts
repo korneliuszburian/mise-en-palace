@@ -19,7 +19,7 @@ const now = "2026-06-21T12:00:00.000Z";
 const storePatternMemory = (): MemoryRecord => ({
   id: "memory-record-1" as MemoryRecord["id"],
   projectId: "project-1" as MemoryRecord["projectId"],
-  key: "pattern:store-backed-usefulness",
+  key: "knowledge:store-backed-usefulness",
   kind: "pattern",
   status: "active",
   summary: "Store-backed usefulness pattern",
@@ -46,7 +46,7 @@ const storePatternMemory = (): MemoryRecord => ({
 });
 
 const patternFeedbackDelta = (
-  knowledgeId = "pattern:store-backed-usefulness"
+  knowledgeId = "knowledge:store-backed-usefulness"
 ): FeedbackDelta => ({
   id: "feedback-delta-1" as FeedbackDelta["id"],
   reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
@@ -68,7 +68,7 @@ const patternFeedbackDelta = (
 });
 
 const createBrainRecallDatabaseRuntime = (
-  feedbackPatternId = "pattern:store-backed-usefulness"
+  feedbackPatternId = "knowledge:store-backed-usefulness"
 ) => async (_input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => ({
   workspaceId: "workspace-1",
   projectId: "project-1",
@@ -230,7 +230,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("KRN Brain Recall");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
   });
@@ -254,7 +254,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Decision files: tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
 
@@ -277,7 +277,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Catalog files: tests/fixtures/brain-knowledge/corpus/catalog.json");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
 
@@ -319,7 +319,7 @@ describe("runCli", () => {
     expect(resource.usefulnessSource).toBe("store_backed");
     expect(resource.readModels).toHaveLength(1);
     expect(resource.readModels[0]).toMatchObject({
-      id: "pattern:store-backed-usefulness",
+      id: "knowledge:store-backed-usefulness",
       usefulnessFeedback: {
         outcome: "helped",
         evidenceRefs: ["test:brain recall store-backed"]
@@ -346,7 +346,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       createDatabaseRuntime: createBrainRecallDatabaseRuntime(
-        "pattern:ts-boundary-unknown-first-result-state"
+        "knowledge:ts-boundary-unknown-first-result-state"
       )
     });
     const resource = JSON.parse(result.stdout) as {
@@ -366,7 +366,7 @@ describe("runCli", () => {
     expect(resource.usefulnessSource).toBe("store_backed");
     expect(resource.readModels).toEqual([
       expect.objectContaining({
-        id: "pattern:ts-boundary-unknown-first-result-state",
+        id: "knowledge:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: expect.objectContaining({
           outcome: "helped"
         })
@@ -397,7 +397,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("KRN Brain Recall");
     expect(result.stdout).toContain("type=\"search\"");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Proof Boundaries");
   });
 });

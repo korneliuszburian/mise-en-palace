@@ -436,7 +436,7 @@ describe("golden memory behavior cases", () => {
         confidence: 98
       }))
     ], buildMemoryQuery(task({
-      objective: "Use stale pattern guidance for a memory update."
+      objective: "Use stale knowledge guidance for a memory update."
     })));
     const filtered = applyActivationFilters({
       candidates: ranked,

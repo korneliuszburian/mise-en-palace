@@ -259,9 +259,9 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("evidenceRef: evidence-bundle-1");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
   expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
-  expect(stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
+  expect(stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
   expect(stdout).toContain("reason: Knowledge selected the unknown-first parser shape");
-  expect(stdout).toContain("doesNotProve: Does not prove future pattern recall quality");
+  expect(stdout).toContain("doesNotProve: Does not prove future knowledge recall quality");
 };
 
 const expectPersistedEvidenceCandidates = (capture: EvidencePersistenceCapture): void => {
@@ -304,11 +304,11 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       doesNotProve: "Does not prove future source selector quality"
     }],
     knowledgeUsefulnessOutcomes: [{
-      knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+      knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
       outcome: "helped",
       reason: "Knowledge selected the unknown-first parser shape",
       evidenceRefs: ["evidence-bundle-1"],
-      doesNotProve: "Does not prove future pattern recall quality"
+      doesNotProve: "Does not prove future knowledge recall quality"
     }]
   });
   expect(capture.evidenceBundle?.reviewBurden).toBe(
@@ -653,7 +653,7 @@ describe("runCli", () => {
         "--source-usefulness",
         "claim:source-claim-1=helped|Source claim kept pattern-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
         "--knowledge-usefulness",
-        "pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-bundle-1|Does not prove future pattern recall quality",
+        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-bundle-1|Does not prove future knowledge recall quality",
         "--persist"
       ],
       {
@@ -711,7 +711,7 @@ describe("runCli", () => {
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
         "--knowledge-usefulness",
-        "pattern:ts-boundary-unknown-first-result-state=helped|Pattern allegedly helped without current proof|stale-proof-ref|Does not prove future pattern recall quality",
+        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge allegedly helped without current proof|stale-proof-ref|Does not prove future knowledge recall quality",
         "--source-usefulness",
         "claim:source-claim-1=helped|Source allegedly helped without current proof|stale-source-ref|Does not prove future source selection quality",
         "--persist"
@@ -744,7 +744,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
-    expect(result.stdout).toContain("outcome=unknown knowledge=pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
       "Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof."
     );
@@ -757,11 +757,11 @@ describe("runCli", () => {
         doesNotProve: "Does not prove future source selection quality"
       }],
       knowledgeUsefulnessOutcomes: [{
-        knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "unknown",
         reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
         evidenceRefs: ["stale-proof-ref"],
-        doesNotProve: "Does not prove future pattern recall quality"
+        doesNotProve: "Does not prove future knowledge recall quality"
       }]
     });
   });

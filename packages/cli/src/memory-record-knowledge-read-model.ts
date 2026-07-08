@@ -87,8 +87,8 @@ export const memoryRecordToKnowledgeReadModel = (
   const krnImplication = metadataString(memory.metadata, "krnImplication");
 
   return {
-    id: knowledgeId === undefined ? memory.id : `pattern:${knowledgeId}`,
-    kind: knowledgeId === undefined ? "memory" : "pattern",
+    id: knowledgeId === undefined ? memory.id : `knowledge:${knowledgeId}`,
+    kind: knowledgeId === undefined ? "memory" : "procedure",
     status: memoryStatus(memory.status),
     title: memory.summary,
     summary: `${memory.body}\n\nApplication guidance: ${memory.applicationGuidance}`,

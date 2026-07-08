@@ -8,7 +8,7 @@ import {
 } from "../knowledge-selection.js";
 
 const validKnowledgeReadModel = {
-  id: "pattern:ts-boundary-knowledge-parser-exemplar",
+  id: "knowledge:ts-boundary-knowledge-parser-exemplar",
   title: "Knowledge parser TypeScript exemplar",
   reviewability: "ready",
   nextAction: "review",

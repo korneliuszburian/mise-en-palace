@@ -67,7 +67,7 @@ const aggregate: HarnessRunAggregate = {
         source: "knowledge_catalog",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
         selectedKnowledge: [{
-          id: "pattern:ts-boundary-unknown-first-result-state",
+          id: "knowledge:ts-boundary-unknown-first-result-state",
           knowledgeId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
@@ -96,7 +96,7 @@ const aggregate: HarnessRunAggregate = {
           "Selected knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
         proof: {
           proves: ["knowledge catalog selected knowledge for the plan query"],
-          doesNotProve: ["future pattern recall quality"]
+          doesNotProve: ["future knowledge recall quality"]
         }
       }
     },
@@ -354,12 +354,12 @@ const aggregate: HarnessRunAggregate = {
         evidenceRefs: ["feedback-1"]
       }],
       knowledgeUsefulnessOutcomes: [{
-        knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "helped",
         reason: "Knowledge selected the unknown-first parser shape for the implementation.",
         evidenceRefs: ["evidence-1", "feedback-1"],
         doesNotProve:
-          "This pattern outcome does not prove future pattern recall or TypeScript quality."
+          "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
       }, {
         knowledgeId: "pattern-incomplete",
         outcome: "helped",
@@ -421,7 +421,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
+      "knowledge=ts-boundary-unknown-first-result-state | readModel=knowledge:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
     );
     expect(result.stdout).toContain(
       "Selected KRN context does not prove: Selected knowledge does not prove implementation correctness"
@@ -490,12 +490,12 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("recommendation: supersede | requiresReview=true");
     expect(result.stdout).not.toContain("claim-incomplete");
     expect(result.stdout).toContain("knowledge usefulness outcomes:");
-    expect(result.stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
       "reason: Knowledge selected the unknown-first parser shape for the implementation."
     );
     expect(result.stdout).toContain(
-      "doesNotProve: This pattern outcome does not prove future pattern recall or TypeScript quality."
+      "doesNotProve: This knowledge outcome does not prove future knowledge recall or TypeScript quality."
     );
     expect(result.stdout).not.toContain("pattern-incomplete");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
@@ -650,7 +650,7 @@ describe("runRunShowCommand", () => {
         source: "knowledge_catalog",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
         selectedKnowledge: [{
-          id: "pattern:ts-boundary-unknown-first-result-state",
+          id: "knowledge:ts-boundary-unknown-first-result-state",
           knowledgeId: "ts-boundary-unknown-first-result-state",
           title: "Unknown-first TypeScript boundary",
           reviewability: "ready",
@@ -784,12 +784,12 @@ describe("runRunShowCommand", () => {
             "This stale outcome does not alter or deprecate SourceClaim truth."
         }],
         knowledgeUsefulnessOutcomes: [{
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           reason: "Knowledge selected the unknown-first parser shape for the implementation.",
           evidenceRefs: ["evidence-1", "feedback-1"],
           doesNotProve:
-            "This pattern outcome does not prove future pattern recall or TypeScript quality."
+            "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
         }]
       }],
       proof: {
@@ -878,7 +878,7 @@ describe("runRunShowCommand", () => {
     expect(parsed.feedbackDeltas[0]?.knowledgeUsefulnessOutcomes[0]?.recommendation)
       .toMatchObject({
         subjectKind: "memory_record",
-        subjectId: "pattern:ts-boundary-unknown-first-result-state",
+        subjectId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "helped",
         mutation: "none",
         recommendations: [expect.objectContaining({ action: "retain" })]

@@ -47,14 +47,14 @@ const fixtureKnowledge = (overrides: Partial<KnowledgeDecision> = {}): Knowledge
   evidenceRefs: ["tests/fixtures/ts-boundary.json"],
   consumers: ["@krn/core", "@krn/cli"],
   falsifier: "A JSON.parse result assigned to a non-unknown type.",
-  doesNotProve: "Seed import does not prove the pattern is current or applied.",
+  doesNotProve: "Seed import does not prove the knowledge is current or applied.",
   nextAction: "use",
   ...overrides
 });
 
 const writeKnowledgeCatalog = async (
   directory: string,
-  pattern: KnowledgeDecision
+  knowledge: KnowledgeDecision
 ): Promise<void> => {
   await mkdir(path.join(directory, "knowledge"), { recursive: true });
   await writeFile(
@@ -64,7 +64,7 @@ const writeKnowledgeCatalog = async (
   );
   await writeFile(
     path.join(directory, "knowledge", "knowledge.json"),
-    JSON.stringify(pattern),
+    JSON.stringify(knowledge),
     "utf8"
   );
 };
@@ -72,7 +72,7 @@ const writeKnowledgeCatalog = async (
 const memoryRecordWithKnowledgeId = (knowledgeId: string): MemoryRecord => ({
   id: `memory-record-${knowledgeId}`,
   projectId: "project-1",
-  key: `pattern:${knowledgeId}`,
+  key: `knowledge:${knowledgeId}`,
   kind: "pattern",
   status: "active",
   summary: knowledgeId,
@@ -122,8 +122,8 @@ const createSeedTestRuntime = (directory: string) => {
       async promoteReviewedMemoryCandidate(input) {
         capturedPromotions.push(input);
 
-        if (input.recordKey?.startsWith("pattern:") === true) {
-          seededKnowledgeIds.add(input.recordKey.slice("pattern:".length));
+        if (input.recordKey?.startsWith("knowledge:") === true) {
+          seededKnowledgeIds.add(input.recordKey.slice("knowledge:".length));
         }
 
         return memoryRecordWithKnowledgeId(input.recordKey ?? input.candidateId);
@@ -260,7 +260,7 @@ const createStoreBackedSeedRuntime = (directory: string) => {
 };
 
 describe("brainRecallDecisionToMemoryCandidateInput", () => {
-  it("maps a brain recall to a kind=pattern memory candidate", () => {
+  it("maps a brain recall decision to a procedural memory candidate", () => {
     const input = brainRecallDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
 
     expect(input.kind).toBe("pattern");
@@ -286,7 +286,7 @@ describe("brainRecallDecisionToMemoryCandidateInput", () => {
     expect(metadata.krnImplication).toBe("Seeded knowledge must retain the parser boundary through DB-backed memory readback.");
     expect(metadata.nextAction).toBe("use");
     expect(metadata.falsifier).toBe("A JSON.parse result assigned to a non-unknown type.");
-    expect(metadata.doesNotProve).toBe("Seed import does not prove the pattern is current or applied.");
+    expect(metadata.doesNotProve).toBe("Seed import does not prove the knowledge is current or applied.");
     expect(metadata.sourceRefs).toEqual(["packages/core/src/metadata.ts"]);
     expect(metadata.evidenceRefs).toEqual(["tests/fixtures/ts-boundary.json"]);
     expect(metadata.consumers).toEqual(["@krn/core", "@krn/cli"]);
@@ -367,7 +367,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           candidateId: "memory-candidate-1",
           reviewer: "krn memory knowledge seed",
           decision: "accepted",
-          recordKey: "pattern:ts-boundary-unknown-first-result-state"
+          recordKey: "knowledge:ts-boundary-unknown-first-result-state"
         }
       ]);
     } finally {
@@ -441,15 +441,15 @@ describe("runMemoryKnowledgeSeedCommand", () => {
         brainRecallReadback: "store_backed",
         brainRecallQueries: ["db backed memory readback"],
         knowledgeReadModels: {
-          readModelIds: ["pattern:ts-boundary-unknown-first-result-state"],
+          readModelIds: ["knowledge:ts-boundary-unknown-first-result-state"],
           selectedKnowledge: [{
-            id: "pattern:ts-boundary-unknown-first-result-state",
+            id: "knowledge:ts-boundary-unknown-first-result-state",
             source: "memory_store",
             mechanism: "Unknown-first parsing prevents external JSON from entering domain code unchecked.",
             krnImplication: "Seeded knowledge must retain the parser boundary through DB-backed memory readback.",
             consumers: ["@krn/core", "@krn/cli"],
             falsifier: "A JSON.parse result assigned to a non-unknown type.",
-            doesNotProve: "Seed import does not prove the pattern is current or applied."
+            doesNotProve: "Seed import does not prove the knowledge is current or applied."
           }]
         }
       });

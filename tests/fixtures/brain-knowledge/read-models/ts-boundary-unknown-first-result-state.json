@@ -1,6 +1,6 @@
 {
-  "id": "pattern:ts-boundary-unknown-first-result-state",
-  "kind": "pattern",
+  "id": "knowledge:ts-boundary-unknown-first-result-state",
+  "kind": "procedure",
   "status": "active",
   "title": "Unknown-first external boundary with explicit result state",
   "summary": "External JSON/env/file/CLI/MCP inputs should enter as unknown, narrow near the boundary, and return explicit finite result states when callers need failure reasons.",
@@ -15,11 +15,11 @@
     "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
-    "V258 Pattern Enforcement Gate",
+    "V258 Knowledge Application Gate",
     "future TypeScript target repair trials",
     "future UI/search read model"
   ],
-  "falsifier": "A replayable target repair can trust parsed external input directly or represent invalid input as null/boolean while the pattern gate still passes.",
+  "falsifier": "A replayable target repair can trust parsed external input directly or represent invalid input as null/boolean while the knowledge gate still passes.",
   "doesNotProve": "This knowledge decision does not prove real target transfer, complete TypeScript quality, automatic skill selection, or product readiness.",
   "temporal": {
     "kind": "current",

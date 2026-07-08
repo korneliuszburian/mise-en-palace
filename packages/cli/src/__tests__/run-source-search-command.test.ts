@@ -574,7 +574,7 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("missing evidence:");
     expect(result.stdout).toContain("- none detected by current diagnostics");
-    expect(result.stdout).toContain("recommended next action: Use the supporting claims/documents as a Pattern Application Gate");
+    expect(result.stdout).toContain("recommended next action: Use the supporting claims/documents as a Knowledge Application Gate");
     expect(result.stdout).toContain(`source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain(`search_document:${searchDocumentId}`);
     expect(result.stdout).toContain("Included candidates:");
@@ -630,7 +630,7 @@ describe("runSourceSearchCommand", () => {
       "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
     ]);
     expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([]);
-    expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
+    expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Knowledge Application Gate");
     expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([]);
     expect(arrayValue(answerPackage.doesNotProve, "doesNotProve")).toContain(
       "source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation"

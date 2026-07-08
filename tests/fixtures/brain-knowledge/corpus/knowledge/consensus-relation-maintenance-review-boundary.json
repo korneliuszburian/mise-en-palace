@@ -14,7 +14,7 @@
   "consumers": [
     "future consensus/eval candidate review slices",
     "future graph relation duplicate/contradiction review gates",
-    "future source-to-decision pattern application gates",
+    "future source-to-decision knowledge application gates",
     "future mini Brain-QA consensus relation cases"
   ],
   "falsifier": "A future consensus/eval or graph relation candidate still requires raw JSON, implementation code, or historical reports to identify relation focus, review question, support/risk evidence, review usefulness, decision options, or mutation boundaries.",

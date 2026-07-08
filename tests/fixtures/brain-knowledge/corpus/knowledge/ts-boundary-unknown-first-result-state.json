@@ -14,11 +14,11 @@
     "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
-    "V258 Pattern Enforcement Gate",
+    "V258 Knowledge Application Gate",
     "future TypeScript target repair trials",
     "future UI/search read model"
   ],
-  "falsifier": "A replayable target repair can trust parsed external input directly or represent invalid input as null/boolean while the pattern gate still passes.",
+  "falsifier": "A replayable target repair can trust parsed external input directly or represent invalid input as null/boolean while the knowledge gate still passes.",
   "doesNotProve": "This knowledge decision does not prove real target transfer, complete TypeScript quality, automatic skill selection, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"

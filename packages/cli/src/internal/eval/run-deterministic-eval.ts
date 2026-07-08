@@ -119,7 +119,7 @@ export const runDeterministicEval = async (input: {
         "production retrieval quality",
         "source truth",
         "LLM output quality",
-        "arbitrary company-pattern memory advantage",
+        "arbitrary remembered-standard memory advantage",
         "product readiness"
       ]
     }

@@ -175,8 +175,8 @@ const createSmokeId = (smokeId: string) => createUniqueSmokeCreateId(smokeId);
 
 const smokeSource = "krn db smoke brain-search";
 
-const firmPatternChallenge = {
-  id: "firm-pattern-store-backed-memory-no-markdown",
+const retainedStandardChallenge = {
+  id: "retained-standard-store-backed-memory-no-markdown",
   standardId: "standard:store-backed-memory",
   expectedDecision: "Use store-backed memory/source evidence; do not create runtime markdown memory files.",
   baselineFailureMode:
@@ -313,7 +313,7 @@ export const runBrainSearchDbSmokeCheck = async (
   const client = postgres(input.databaseUrl, { max: 1 });
   const createId = createSmokeId(input.smokeId);
   const smokeToken = input.smokeId.replace(/[^a-zA-Z0-9]/gu, "").toLowerCase();
-  const query = `${firmPatternChallenge.query} db smoke marker ${smokeToken}`;
+  const query = `${retainedStandardChallenge.query} db smoke marker ${smokeToken}`;
   let runtime: Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
 
   try {
@@ -358,18 +358,18 @@ export const runBrainSearchDbSmokeCheck = async (
       projectId,
       operatorIntent: {
         source: "cli",
-        rawIntent: `teach KRN memory from reviewed firm-pattern evidence ${query}`,
+        rawIntent: `teach KRN memory from reviewed retained-standard evidence ${query}`,
         metadata: {
           ...metadata,
-          challengeCaseId: firmPatternChallenge.id,
-          challengeStandardId: firmPatternChallenge.standardId,
+          challengeCaseId: retainedStandardChallenge.id,
+          challengeStandardId: retainedStandardChallenge.standardId,
           session: "A"
         }
       },
       taskContract: {
-        title: "Teach DB-backed brain search from reviewed firm-pattern evidence",
+        title: "Teach DB-backed brain search from reviewed retained-standard evidence",
         objective:
-          `Persist the ${firmPatternChallenge.standardId} decision so a later brain-search run can retrieve it from live repositories.`,
+          `Persist the ${retainedStandardChallenge.standardId} decision so a later brain-search run can retrieve it from live repositories.`,
         constraints: [
           "use DB-backed source and memory repositories",
           "prove the store-backed memory decision beats the markdown runtime-memory shortcut",
@@ -382,20 +382,20 @@ export const runBrainSearchDbSmokeCheck = async (
         acceptance: [
           "Session B store-backed brain search selects the Session A MemoryRecord",
           "Session B source-search support remains decision-linked",
-          "Session B readback states the firm-pattern expected decision and falsifier"
+          "Session B readback states the retained-standard expected decision and falsifier"
         ],
         metadata: {
           ...metadata,
-          challengeCaseId: firmPatternChallenge.id,
-          challengeExpectedDecision: firmPatternChallenge.expectedDecision,
-          challengeFalsifier: firmPatternChallenge.falsifier,
+          challengeCaseId: retainedStandardChallenge.id,
+          challengeExpectedDecision: retainedStandardChallenge.expectedDecision,
+          challengeFalsifier: retainedStandardChallenge.falsifier,
           session: "A"
         }
       },
       tokenBudget: 360,
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
+        challengeCaseId: retainedStandardChallenge.id,
         proof: "db_backed_multi_session_memory_advantage_session_a"
       }
     }, runtime.compilerDependencies);
@@ -444,8 +444,8 @@ export const runBrainSearchDbSmokeCheck = async (
       },
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
-        baselineFailureMode: firmPatternChallenge.baselineFailureMode,
+        challengeCaseId: retainedStandardChallenge.id,
+        baselineFailureMode: retainedStandardChallenge.baselineFailureMode,
         session: "A",
         doesNotProve:
           "Session A evidence capture does not prove Session B will retrieve or use memory."
@@ -459,8 +459,8 @@ export const runBrainSearchDbSmokeCheck = async (
       findings: [],
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
-        expectedDecision: firmPatternChallenge.expectedDecision,
+        challengeCaseId: retainedStandardChallenge.id,
+        expectedDecision: retainedStandardChallenge.expectedDecision,
         session: "A",
         reviewBurden: "low"
       }
@@ -473,7 +473,7 @@ export const runBrainSearchDbSmokeCheck = async (
       evalCandidates: [],
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
+        challengeCaseId: retainedStandardChallenge.id,
         session: "A",
         memoryRecordMutation: "candidate_only_until_promotion"
       }
@@ -489,34 +489,34 @@ export const runBrainSearchDbSmokeCheck = async (
     });
     const sourceClaim = await runtime.sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
-      claim: `${firmPatternChallenge.claim} Marker: ${query}.`,
-      mechanism: firmPatternChallenge.mechanism,
-      krnImplication: firmPatternChallenge.implication,
+      claim: `${retainedStandardChallenge.claim} Marker: ${query}.`,
+      mechanism: retainedStandardChallenge.mechanism,
+      krnImplication: retainedStandardChallenge.implication,
       doesNotProve:
-        firmPatternChallenge.doesNotProve,
+        retainedStandardChallenge.doesNotProve,
       sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
-      consumer: firmPatternChallenge.consumer,
-      falsifier: firmPatternChallenge.falsifier,
+      consumer: retainedStandardChallenge.consumer,
+      falsifier: retainedStandardChallenge.falsifier,
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
-        selectedKnowledgeId: firmPatternChallenge.selectedKnowledgeId
+        challengeCaseId: retainedStandardChallenge.id,
+        selectedKnowledgeId: retainedStandardChallenge.selectedKnowledgeId
       }
     });
     const sourceDecision = await runtime.sourceRepository.createSourceDecision?.({
       projectId,
       sourceClaimId: sourceClaim.id,
       status: "adopt",
-      decision: firmPatternChallenge.expectedDecision,
+      decision: retainedStandardChallenge.expectedDecision,
       rationale:
-        "The firm-pattern claim has mechanism, implication, consumer, falsifier, and non-proof boundary.",
-      falsifier: firmPatternChallenge.falsifier,
-      consumer: firmPatternChallenge.consumer,
+        "The retained-standard claim has mechanism, implication, consumer, falsifier, and non-proof boundary.",
+      falsifier: retainedStandardChallenge.falsifier,
+      consumer: retainedStandardChallenge.consumer,
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
-        standardId: firmPatternChallenge.standardId
+        challengeCaseId: retainedStandardChallenge.id,
+        standardId: retainedStandardChallenge.standardId
       }
     });
 
@@ -530,10 +530,10 @@ export const runBrainSearchDbSmokeCheck = async (
       targetId: `brain-search-dogfood-${input.smokeId}`,
       supportType: "implementation-boundary",
       confidence: "high",
-      notes: "Decision-linked support for the store-backed memory firm-pattern DB replay.",
+      notes: "Decision-linked support for the store-backed memory retained-standard DB replay.",
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
+        challengeCaseId: retainedStandardChallenge.id,
         sourceDecisionId: sourceDecision.id
       }
     });
@@ -546,15 +546,15 @@ export const runBrainSearchDbSmokeCheck = async (
       sourceAuthority: "project-decision",
       title: "Brain search DB dogfood SearchDocument",
       body:
-        `SearchDocument for ${query}. ${firmPatternChallenge.expectedDecision} The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,
+        `SearchDocument for ${query}. ${retainedStandardChallenge.expectedDecision} The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,
       searchText:
-        `${query} ${firmPatternChallenge.standardId} ${firmPatternChallenge.expectedDecision} source claim source decision edge selected knowledge`,
+        `${query} ${retainedStandardChallenge.standardId} ${retainedStandardChallenge.expectedDecision} source claim source decision edge selected knowledge`,
       metadataFilters: {
         smokeId: input.smokeId
       },
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
+        challengeCaseId: retainedStandardChallenge.id,
         sourceDecisionId: sourceDecision.id
       }
     });
@@ -570,11 +570,11 @@ export const runBrainSearchDbSmokeCheck = async (
       kind: "pattern",
       summary: "Use store-backed memory instead of runtime markdown memory",
       body:
-        `When the operator asks whether KRN runtime memory should use MEMORY.md files or store-backed memory/source evidence, select ${firmPatternChallenge.expectedDecision}`,
-      owner: firmPatternChallenge.consumer,
+        `When the operator asks whether KRN runtime memory should use MEMORY.md files or store-backed memory/source evidence, select ${retainedStandardChallenge.expectedDecision}`,
+      owner: retainedStandardChallenge.consumer,
       confidence: 95,
       applicationGuidance:
-        "Use this persisted MemoryRecord as the memory side of the DB-backed firm-pattern advantage proof.",
+        "Use this persisted MemoryRecord as the memory side of the DB-backed retained-standard advantage proof.",
       invalidationRule:
         "Invalidate if store-backed brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
       sourceLineage: [
@@ -588,10 +588,10 @@ export const runBrainSearchDbSmokeCheck = async (
       validFrom: input.now,
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
-        challengeStandardId: firmPatternChallenge.standardId,
-        expectedDecision: firmPatternChallenge.expectedDecision,
-        baselineFailureMode: firmPatternChallenge.baselineFailureMode,
+        challengeCaseId: retainedStandardChallenge.id,
+        challengeStandardId: retainedStandardChallenge.standardId,
+        expectedDecision: retainedStandardChallenge.expectedDecision,
+        baselineFailureMode: retainedStandardChallenge.baselineFailureMode,
         sessionAEvidenceBundleId: sessionAEvidenceBundle.id,
         sessionAReviewAssessmentId: sessionAReviewAssessment.id,
         sessionAFeedbackDeltaId: sessionAFeedbackDelta.id,
@@ -607,7 +607,7 @@ export const runBrainSearchDbSmokeCheck = async (
       recordKey: `brain-search-memory-${input.smokeId}`,
       metadata: {
         ...metadata,
-        challengeCaseId: firmPatternChallenge.id,
+        challengeCaseId: retainedStandardChallenge.id,
         sessionAExecutionRunId: sessionAExecutionRun.id,
         sessionAFeedbackDeltaId: sessionAFeedbackDelta.id
       }
@@ -678,11 +678,11 @@ export const runBrainSearchDbSmokeCheck = async (
     return {
       smokeId: input.smokeId,
       projectId,
-      challengeCaseId: firmPatternChallenge.id,
-      challengeStandardId: firmPatternChallenge.standardId,
-      challengeExpectedDecision: firmPatternChallenge.expectedDecision,
-      challengeBaselineFailureMode: firmPatternChallenge.baselineFailureMode,
-      challengeFalsifier: firmPatternChallenge.falsifier,
+      challengeCaseId: retainedStandardChallenge.id,
+      challengeStandardId: retainedStandardChallenge.standardId,
+      challengeExpectedDecision: retainedStandardChallenge.expectedDecision,
+      challengeBaselineFailureMode: retainedStandardChallenge.baselineFailureMode,
+      challengeFalsifier: retainedStandardChallenge.falsifier,
       query,
       sessionATaskContractId: sessionACompile.taskContract.id,
       sessionAHarnessPlanId: sessionACompile.harnessPlan.id,

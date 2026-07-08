@@ -276,7 +276,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "- knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | readModel=knowledge:ts-boundary-unknown-first-result-state"
     );
     expect(executionRunMetadata).toMatchObject({
       knowledgeSelection: {
@@ -291,7 +291,7 @@ describe("runCli", () => {
 
   it("retries brain recall planning with compact mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
+      "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether knowledge:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
 
     expect(result.exitCode).toBe(0);
@@ -308,7 +308,7 @@ describe("runCli", () => {
 
   it("retries brain recall planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
+      "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select knowledge:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );
 
     expect(result.exitCode).toBe(0);

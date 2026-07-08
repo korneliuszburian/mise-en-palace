@@ -356,7 +356,7 @@ const runAntiMemoryBlock = (now: string): BehaviorFixtureProof => {
       body: "This stale pattern should be tempting but blocked.",
       confidence: 98
     }))
-  ], buildMemoryQuery(taskContract(now, "Use stale pattern guidance for a memory update.")));
+  ], buildMemoryQuery(taskContract(now, "Use stale knowledge guidance for a memory update.")));
   const filtered = applyActivationFilters({
     candidates: ranked,
     antiMemoryRecords: [antiMemoryRecord({})],

@@ -27,7 +27,7 @@ describe("runBrainRecallCommand", () => {
       decisionFiles: [],
       catalogFiles: [],
       filter: {
-        kind: "pattern",
+        kind: "procedure",
         status: "active",
         reviewability: "ready",
         text: "unknown-first"
@@ -41,7 +41,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("Source: explicit_files");
     expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("sourceRefs:");
     expect(result.stdout).toContain("evidenceRefs:");
@@ -84,7 +84,7 @@ describe("runBrainRecallCommand", () => {
     }
     expect(readModels).toHaveLength(1);
     expect(isRecord(readModels[0]) ? readModels[0]["id"] : undefined).toBe(
-      "pattern:ts-boundary-unknown-first-result-state"
+      "knowledge:ts-boundary-unknown-first-result-state"
     );
     expect(isRecord(proof) && Array.isArray(proof["doesNotProve"])
       ? proof["doesNotProve"]
@@ -115,7 +115,7 @@ describe("runBrainRecallCommand", () => {
     });
 
     expect(result.stdout).toContain("Decision files: tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain recall readback was produced from live DB state");
     expect(result.stdout).toContain("does not prove: explicit file or catalog-backed knowledge is runtime memory");
@@ -152,7 +152,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain(
       "tests/fixtures/brain-knowledge/corpus/catalog.json:knowledge/ts-boundary-unknown-first-result-state.json"
     );
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
   });
 
   it("renders self-contained html preview with proof boundaries", async () => {
@@ -175,15 +175,15 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("id=\"reviewabilityFilter\"");
     expect(result.stdout).toContain("id=\"usefulnessOutcomeFilter\"");
     expect(result.stdout).toContain("id=\"nextActionFilter\"");
-    expect(result.stdout).toContain("Kind: pattern");
+    expect(result.stdout).toContain("Kind: procedure");
     expect(result.stdout).toContain("Status: active");
     expect(result.stdout).toContain("Reviewability: ready");
     expect(result.stdout).toContain("Next action: use");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
-    expect(result.stdout).toContain("data-kind=\"pattern\"");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("data-kind=\"procedure\"");
     expect(result.stdout).toContain("data-status=\"active\"");
     expect(result.stdout).toContain("data-reviewability=\"ready\"");
     expect(result.stdout).toContain("data-usefulness-outcome=");
@@ -210,15 +210,15 @@ describe("runBrainRecallCommand", () => {
       format: "html"
     });
 
-    expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
-    expect(result.stdout).toContain("pattern:knowledge-read-only-preview-boundary");
-    expect(result.stdout).toContain("pattern:consensus-relation-maintenance-review-boundary");
-    expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
-    expect(result.stdout).toContain("pattern:graph-relation-readback-boundary");
-    expect(result.stdout).toContain("pattern:maintenance-candidate-only-runtime-boundary");
-    expect(result.stdout).toContain("pattern:target-repo-write-authority-boundary");
-    expect(result.stdout).toContain("pattern:untrusted-context-warning-boundary");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:evidence-proof-non-proof-boundary");
+    expect(result.stdout).toContain("knowledge:knowledge-read-only-preview-boundary");
+    expect(result.stdout).toContain("knowledge:consensus-relation-maintenance-review-boundary");
+    expect(result.stdout).toContain("knowledge:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("knowledge:graph-relation-readback-boundary");
+    expect(result.stdout).toContain("knowledge:maintenance-candidate-only-runtime-boundary");
+    expect(result.stdout).toContain("knowledge:target-repo-write-authority-boundary");
+    expect(result.stdout).toContain("knowledge:untrusted-context-warning-boundary");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Brain recall readback/search remains read-only until usefulness proof");
     expect(result.stdout).toContain("Consensus relation maintenance review boundary");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
@@ -240,12 +240,12 @@ describe("runBrainRecallCommand", () => {
 
   it("executes static html text and field filters in a DOM-capable smoke", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-preview-"));
-    const patternReadModelPath = path.join(directory, "pattern-readModel.json");
+    const patternReadModelPath = path.join(directory, "procedure-readModel.json");
     const memoryReadModelPath = path.join(directory, "memory-readModel.json");
 
     await writeFile(patternReadModelPath, JSON.stringify(knowledgeReadModel({
-      id: "pattern:skill-routing",
-      kind: "pattern",
+      id: "knowledge:skill-routing",
+      kind: "procedure",
       status: "active",
       title: "Skill routing",
       summary: "Use progressive-disclosure skills for repeated workflows.",
@@ -276,12 +276,12 @@ describe("runBrainRecallCommand", () => {
     expect(smoke.count()).toBe("Results: 2");
 
     smoke.setSearch("skill");
-    expect(smoke.visibleIds()).toEqual(["pattern:skill-routing"]);
+    expect(smoke.visibleIds()).toEqual(["knowledge:skill-routing"]);
     expect(smoke.count()).toBe("Results: 1");
 
     smoke.setSearch("");
     smoke.setFilter("usefulnessOutcomeFilter", "helped");
-    expect(smoke.visibleIds()).toEqual(["pattern:skill-routing"]);
+    expect(smoke.visibleIds()).toEqual(["knowledge:skill-routing"]);
     expect(smoke.count()).toBe("Results: 1");
 
     smoke.setFilter("usefulnessOutcomeFilter", "");
@@ -308,7 +308,7 @@ describe("runBrainRecallCommand", () => {
     });
 
     expect(result.stdout).toContain("Catalog files: tests/fixtures/brain-knowledge/corpus/catalog.json");
-    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
   });
 
   it("searches the second brain recall through the catalog", async () => {
@@ -324,7 +324,7 @@ describe("runBrainRecallCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("knowledge:source-to-decision-retention-gate");
     expect(result.stdout).toContain("Source-to-decision retention gate");
   });
 
@@ -341,7 +341,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:evidence-proof-non-proof-boundary"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:evidence-proof-non-proof-boundary"]);
     expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(preview.mutation).toBe("none");
   });
@@ -359,7 +359,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:graph-relation-readback-boundary"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:graph-relation-readback-boundary"]);
     expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(preview.mutation).toBe("none");
   });
@@ -377,7 +377,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:maintenance-candidate-only-runtime-boundary"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:maintenance-candidate-only-runtime-boundary"]);
     expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(preview.mutation).toBe("none");
   });
@@ -395,7 +395,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:consensus-relation-maintenance-review-boundary"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:consensus-relation-maintenance-review-boundary"]);
     expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(preview.mutation).toBe("none");
   });
@@ -500,7 +500,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:untrusted-context-warning-boundary"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:untrusted-context-warning-boundary"]);
   });
 
   it("renders no-match guidance for over-filtered pattern queries", async () => {
@@ -511,7 +511,7 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall pattern gate source slice operator UX TypeScript"
+        text: "brain recall knowledge gate source slice operator UX TypeScript"
       },
       format: "json"
     });
@@ -531,7 +531,7 @@ describe("runBrainRecallCommand", () => {
       "If no recalled memory applies after retry, record an explicit rejected_or_deferred_memory reason before coding."
     );
     expect(preview.noMatchGuidance).toContain(
-      "Zero results do not prove that no relevant pattern exists or that search ranking is good."
+      "Zero results do not prove that no relevant knowledge exists or that search ranking is good."
     );
     expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(preview.mutation).toBe("none");
@@ -545,7 +545,7 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall pattern gate source slice operator UX TypeScript"
+        text: "brain recall knowledge gate source slice operator UX TypeScript"
       },
       format: "text"
     });
@@ -592,7 +592,7 @@ describe("runBrainRecallCommand", () => {
     expect(broadPreview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(broadPreview.mutation).toBe("none");
 
-    expect(readModelIds(mechanismPreview)).toContain("pattern:source-to-decision-retention-gate");
+    expect(readModelIds(mechanismPreview)).toContain("knowledge:source-to-decision-retention-gate");
     expect(mechanismPreview.totalReadModels).toBeGreaterThan(0);
     expect(mechanismPreview.returnedReadModels).toBeGreaterThan(0);
     expect(mechanismPreview.proof.doesNotProve).toContain("search ranking quality is good");
@@ -607,7 +607,7 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall pattern gate source slice operator UX TypeScript"
+        text: "brain recall knowledge gate source slice operator UX TypeScript"
       },
       format: "html"
     });
@@ -644,8 +644,8 @@ describe("runBrainRecallCommand", () => {
     const typeScriptPreview = parsePreviewResource(typeScriptResult.stdout);
     const sourceDecisionPreview = parsePreviewResource(sourceDecisionResult.stdout);
 
-    expect(readModelIds(typeScriptPreview)).toEqual(["pattern:ts-boundary-unknown-first-result-state"]);
-    expect(readModelIds(sourceDecisionPreview)).toEqual(["pattern:source-to-decision-retention-gate"]);
+    expect(readModelIds(typeScriptPreview)).toEqual(["knowledge:ts-boundary-unknown-first-result-state"]);
+    expect(readModelIds(sourceDecisionPreview)).toEqual(["knowledge:source-to-decision-retention-gate"]);
     expect(typeScriptPreview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(sourceDecisionPreview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(typeScriptPreview.access).toBe("read_only");
@@ -667,7 +667,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:ts-boundary-unknown-first-result-state"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:ts-boundary-unknown-first-result-state"]);
     expect(preview.totalReadModels).toBe(1);
     expect(preview.returnedReadModels).toBe(1);
     expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
@@ -688,7 +688,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toEqual(["pattern:ts-boundary-knowledge-parser-exemplar"]);
+    expect(readModelIds(preview)).toEqual(["knowledge:ts-boundary-knowledge-parser-exemplar"]);
     expect(preview.totalReadModels).toBe(1);
     expect(preview.returnedReadModels).toBe(1);
     expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
@@ -721,8 +721,8 @@ describe("runBrainRecallCommand", () => {
     const workerBoundaryPreview = parsePreviewResource(workerBoundaryResult.stdout);
     const namingBoundaryPreview = parsePreviewResource(namingBoundaryResult.stdout);
 
-    expect(readModelIds(workerBoundaryPreview)).toEqual(["pattern:krn-brain-layer-model-boundary"]);
-    expect(readModelIds(namingBoundaryPreview)).toEqual(["pattern:krn-brain-layer-model-boundary"]);
+    expect(readModelIds(workerBoundaryPreview)).toEqual(["knowledge:krn-brain-layer-model-boundary"]);
+    expect(readModelIds(namingBoundaryPreview)).toEqual(["knowledge:krn-brain-layer-model-boundary"]);
     expect(workerBoundaryPreview.proof.doesNotProve).toContain("search ranking quality is good");
     expect(namingBoundaryPreview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(workerBoundaryPreview.access).toBe("read_only");
@@ -741,19 +741,19 @@ describe("runBrainRecallCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(readModelIds(preview).sort()).toEqual([
-      "pattern:knowledge-read-only-preview-boundary",
-      "pattern:consensus-relation-maintenance-review-boundary",
-      "pattern:cost-aware-acquisition-escalation-boundary",
-      "pattern:evidence-proof-non-proof-boundary",
-      "pattern:graph-relation-readback-boundary",
-      "pattern:maintenance-candidate-only-runtime-boundary",
-      "pattern:krn-brain-layer-model-boundary",
-      "pattern:reference-implementation-recipe-clone-boundary",
-      "pattern:source-to-decision-retention-gate",
-      "pattern:target-repo-write-authority-boundary",
-      "pattern:ts-boundary-knowledge-parser-exemplar",
-      "pattern:untrusted-context-warning-boundary",
-      "pattern:ts-boundary-unknown-first-result-state"
+      "knowledge:knowledge-read-only-preview-boundary",
+      "knowledge:consensus-relation-maintenance-review-boundary",
+      "knowledge:cost-aware-acquisition-escalation-boundary",
+      "knowledge:evidence-proof-non-proof-boundary",
+      "knowledge:graph-relation-readback-boundary",
+      "knowledge:maintenance-candidate-only-runtime-boundary",
+      "knowledge:krn-brain-layer-model-boundary",
+      "knowledge:reference-implementation-recipe-clone-boundary",
+      "knowledge:source-to-decision-retention-gate",
+      "knowledge:target-repo-write-authority-boundary",
+      "knowledge:ts-boundary-knowledge-parser-exemplar",
+      "knowledge:untrusted-context-warning-boundary",
+      "knowledge:ts-boundary-unknown-first-result-state"
     ].sort());
   });
 

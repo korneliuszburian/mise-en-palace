@@ -109,7 +109,7 @@ describe("runCli", () => {
             selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
             selectedKnowledge: [
               {
-                id: "pattern:ts-boundary-unknown-first-result-state",
+                id: "knowledge:ts-boundary-unknown-first-result-state",
                 knowledgeId: "ts-boundary-unknown-first-result-state",
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
@@ -270,7 +270,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context: selected");
     expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "- knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | readModel=knowledge:ts-boundary-unknown-first-result-state"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).toContain("Source Claims Used:");

@@ -19,14 +19,14 @@ const readJsonRootFile = (path: string): unknown =>
 
 describe("Knowledge read model invariants", () => {
   it("keeps the TypeScript knowledge decision available as a concrete knowledge read model", () => {
-    const pattern = readJsonRootFile(
+    const knowledge = readJsonRootFile(
       "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json"
     );
     const readModel = readJsonRootFile(
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json"
     );
 
-    expect(pattern).toMatchObject({
+    expect(knowledge).toMatchObject({
       knowledgeId: "ts-boundary-unknown-first-result-state",
       decisionStatus: "adopt_now",
       confidence: "high",
@@ -35,8 +35,8 @@ describe("Knowledge read model invariants", () => {
     });
 
     expect(readModel).toMatchObject({
-      id: "pattern:ts-boundary-unknown-first-result-state",
-      kind: "pattern",
+      id: "knowledge:ts-boundary-unknown-first-result-state",
+      kind: "procedure",
       status: "active",
       confidence: "high",
       reviewability: "ready",

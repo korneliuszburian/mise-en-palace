@@ -10,7 +10,7 @@ describe("parseBrainRecallArgs", () => {
       "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/readModels/ts-boundary-unknown-first-result-state.json",
       "--kind",
-      "pattern",
+      "procedure",
       "--status",
       "active",
       "--reviewability",
@@ -29,7 +29,7 @@ describe("parseBrainRecallArgs", () => {
         catalogFiles: [],
         storeOnly: false,
         filter: {
-          kind: "pattern",
+          kind: "procedure",
           status: "active",
           reviewability: "ready",
           usefulnessOutcome: "helped",

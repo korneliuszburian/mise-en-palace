@@ -11,7 +11,7 @@ import {
 } from "../internal/eval/run-memory-advantage-eval.js";
 
 const fixturePath = fileURLToPath(
-  new URL("../../../../tests/fixtures/memory-advantage/company-pattern-memory-advantage.json", import.meta.url)
+  new URL("../../../../tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json", import.meta.url)
 );
 
 const mutableFixtureCase = (
@@ -60,7 +60,7 @@ const expectInterdependentFixtureError = (
   expect(() => parseMemoryAdvantageEvalFixture(malformedFixture)).toThrow(expectedMessage);
 };
 
-const expectCompanyPatternChallengeFixtureError = (
+const expectRememberedStandardChallengeFixtureError = (
   mutate: (testCase: Record<string, unknown>) => void,
   expectedMessage: string
 ): void => {
@@ -90,7 +90,7 @@ describe("runMemoryAdvantageEval", () => {
     expect(result.status).toBe("pass");
     expect(result.cases).toHaveLength(25);
     expect(result.corpus).toMatchObject({
-      name: "company-pattern-memory-advantage-heldout",
+      name: "remembered-standard-memory-advantage-heldout",
       caseCount: 25,
       heldOutCaseCount: 21,
       distractorClasses: [
@@ -115,8 +115,8 @@ describe("runMemoryAdvantageEval", () => {
       distractorClassCount: 7,
       codingTaskCaseCount: 1,
       executionContractCaseCount: 3,
-      companyPatternChallengeCaseCount: 7,
-      companyPatternChallengeWinCount: 6,
+      rememberedStandardChallengeCaseCount: 7,
+      rememberedStandardChallengeWinCount: 6,
       interdependentSessionCaseCount: 2,
       sourceDisabledAblationCaseCount: 25,
       sourceRequiredCaseCount: 23,
@@ -149,8 +149,8 @@ describe("runMemoryAdvantageEval", () => {
           "heldout-source-search-command-boundary",
           "neutral-short-context-external-review",
           "neutral-retrieval-not-needed-docs",
-          "firm-pattern-source-to-decision-chain",
-          "firm-pattern-no-decorative-skills"
+          "retained-standard-source-to-decision-chain",
+          "retained-standard-no-decorative-skills"
         ]
       },
       learning: {
@@ -162,7 +162,7 @@ describe("runMemoryAdvantageEval", () => {
           "heldout-multi-session-codex-output-evidence",
           "neutral-single-turn-typecheck",
           "neutral-breaks-codex-output-evidence-advantage",
-          "firm-pattern-narrow-verification-not-every-command",
+          "retained-standard-narrow-verification-not-every-command",
           "heldout-coding-decision-idempotency-key"
         ]
       },
@@ -171,9 +171,9 @@ describe("runMemoryAdvantageEval", () => {
         caseIds: [
           "long-range-source-authority-boundary",
           "heldout-ranking-corpus-quality",
-          "firm-pattern-store-backed-memory-no-markdown",
-          "firm-pattern-no-guard-only-treadmill",
-          "firm-pattern-no-worker-daemon-without-product-loop",
+          "retained-standard-store-backed-memory-no-markdown",
+          "retained-standard-no-guard-only-treadmill",
+          "retained-standard-no-worker-daemon-without-product-loop",
           "heldout-coding-decision-retry-backoff"
         ]
       },
@@ -203,9 +203,9 @@ describe("runMemoryAdvantageEval", () => {
         reviewRef: "review:external-review-policy-adoption",
         feedbackRef: "feedback:external-review-policy-adoption-helped",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:external-review-advisory-after-large-slice"],
+        createdMemoryIds: ["memory:knowledge:external-review-advisory-after-large-slice"],
         excludedMemoryIds: [],
-        distractorMemoryIds: ["memory:pattern:close-large-migration-from-local-tests"],
+        distractorMemoryIds: ["memory:knowledge:close-large-migration-from-local-tests"],
         createdSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         distractorSourceClaimIds: []
       },
@@ -227,12 +227,12 @@ describe("runMemoryAdvantageEval", () => {
         result: "distractor_selected",
         selectedKnowledgeIds: [
           "source:external-review-advisory-after-large-slice",
-          "pattern:close-large-migration-from-local-tests",
-          "pattern:external-review-advisory-after-large-slice"
+          "knowledge:close-large-migration-from-local-tests",
+          "knowledge:external-review-advisory-after-large-slice"
         ],
         selectedMemoryIds: [
-          "pattern:close-large-migration-from-local-tests",
-          "pattern:external-review-advisory-after-large-slice"
+          "knowledge:close-large-migration-from-local-tests",
+          "knowledge:external-review-advisory-after-large-slice"
         ],
         selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         selectedContextSize: {
@@ -244,7 +244,7 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_plan_brief": {
         baselineClass: "no_memory_no_source",
         result: "miss",
-        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
+        requiredKnowledgeId: "knowledge:external-review-advisory-after-large-slice",
         selectedMemoryRecordIds: [],
         selectedSourceClaimIds: [],
         renderedMemoryRecordIds: [],
@@ -264,9 +264,9 @@ describe("runMemoryAdvantageEval", () => {
       "krn_memory": {
         result: "hit",
         answerUsefulness: "useful",
-        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
-        selectedKnowledgeIds: ["pattern:external-review-advisory-after-large-slice"],
-        selectedMemoryIds: ["pattern:external-review-advisory-after-large-slice"],
+        requiredKnowledgeId: "knowledge:external-review-advisory-after-large-slice",
+        selectedKnowledgeIds: ["knowledge:external-review-advisory-after-large-slice"],
+        selectedMemoryIds: ["knowledge:external-review-advisory-after-large-slice"],
         selectedSources: ["catalog_file"],
         selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         selectedContextSize: {
@@ -281,8 +281,8 @@ describe("runMemoryAdvantageEval", () => {
         selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
         sourceDisabled: {
           result: "miss",
-          selectedKnowledgeIds: ["pattern:external-review-advisory-after-large-slice"],
-          selectedMemoryIds: ["pattern:external-review-advisory-after-large-slice"],
+          selectedKnowledgeIds: ["knowledge:external-review-advisory-after-large-slice"],
+          selectedMemoryIds: ["knowledge:external-review-advisory-after-large-slice"],
           selectedContextSize: {
             bytes: expect.any(Number),
             approximateTokens: expect.any(Number),
@@ -296,7 +296,7 @@ describe("runMemoryAdvantageEval", () => {
       "krn_plan_brief": {
         baselineClass: "no_memory_no_source",
         result: "hit",
-        requiredKnowledgeId: "pattern:external-review-advisory-after-large-slice",
+        requiredKnowledgeId: "knowledge:external-review-advisory-after-large-slice",
         contextSize: {
           bytes: expect.any(Number),
           approximateTokens: expect.any(Number),
@@ -314,13 +314,13 @@ describe("runMemoryAdvantageEval", () => {
       "included SearchDocument evidence in the answer package for this query"
     ]);
     expect(retrievalCase?.["krn_memory"].selectedKnowledgeIds).toContain(
-      "pattern:external-review-advisory-after-large-slice"
+      "knowledge:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["baseline_simple_retrieval"].selectedMemoryIds[0]).toBe(
-      "pattern:close-large-migration-from-local-tests"
+      "knowledge:close-large-migration-from-local-tests"
     );
     expect(retrievalCase?.["krn_memory"].selectedContextSize.bytes).toBeGreaterThan(0);
     expect(retrievalCase?.["krn_memory"].selectedContextSize.approximateTokens).toBeGreaterThan(0);
@@ -329,13 +329,13 @@ describe("runMemoryAdvantageEval", () => {
     expect(retrievalCase?.["krn_plan_brief"].renderedBriefSize.approximateTokens).toBeGreaterThan(0);
     expect(retrievalCase?.["krn_plan_brief"].contextInclusionCount).toBeGreaterThanOrEqual(2);
     expect(retrievalCase?.["krn_plan_brief"].selectedMemoryRecordIds).toContain(
-      "memory:pattern:external-review-advisory-after-large-slice"
+      "memory:knowledge:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].selectedSourceClaimIds).toContain(
       "source:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].renderedMemoryRecordIds).toContain(
-      "memory:pattern:external-review-advisory-after-large-slice"
+      "memory:knowledge:external-review-advisory-after-large-slice"
     );
     expect(retrievalCase?.["krn_plan_brief"].renderedSourceClaimIds).toContain(
       "source:external-review-advisory-after-large-slice"
@@ -345,7 +345,7 @@ describe("runMemoryAdvantageEval", () => {
       testCase.caseId === "learn-company-review-standard"
     );
     expect(learningCase?.["krn_memory"].selectedKnowledgeIds).toContain(
-      "pattern:company-review-standard-after-eval-change"
+      "knowledge:company-review-standard-after-eval-change"
     );
     expect(learningCase?.["krn_memory"].selectedSourceClaimIds).toContain(
       "source:company-review-standard-after-eval-change"
@@ -356,13 +356,13 @@ describe("runMemoryAdvantageEval", () => {
       priorReviewRef: "review:memory-eval-review-standard",
       applicationOutcome: "helped",
       laterTaskQuery: "when a slice changes KRN memory eval behavior what company review standard should Codex apply before closing",
-      requiredKnowledgeId: "pattern:company-review-standard-after-eval-change",
+      requiredKnowledgeId: "knowledge:company-review-standard-after-eval-change",
       baselineNoMemoryResult: "miss",
       simpleRetrievalResult: "top_match_selected",
-      simpleRetrievalTopKnowledgeId: "pattern:company-review-standard-after-eval-change",
+      simpleRetrievalTopKnowledgeId: "knowledge:company-review-standard-after-eval-change",
       simpleRetrievalWeakerThanKrn: false,
       krnResult: "hit",
-      selectedMemoryIds: ["pattern:company-review-standard-after-eval-change"],
+      selectedMemoryIds: ["knowledge:company-review-standard-after-eval-change"],
       selectedSourceClaimIds: ["source:company-review-standard-after-eval-change"],
       proofStatus: "pass"
     });
@@ -376,13 +376,13 @@ describe("runMemoryAdvantageEval", () => {
       priorFeedbackRef: "feedback:brain-search-project-selector-helped",
       priorEvidenceRef: "evidence:brain-search-project-selector",
       priorReviewRef: "review:brain-search-project-selector",
-      requiredKnowledgeId: "pattern:brain-search-explicit-project-selector",
+      requiredKnowledgeId: "knowledge:brain-search-explicit-project-selector",
       baselineNoMemoryResult: "miss",
       simpleRetrievalResult: "distractor_selected",
       simpleRetrievalTopKnowledgeId: "source:brain-search-explicit-project-selector",
       simpleRetrievalWeakerThanKrn: true,
       krnResult: "hit",
-      selectedMemoryIds: ["pattern:brain-search-explicit-project-selector"],
+      selectedMemoryIds: ["knowledge:brain-search-explicit-project-selector"],
       selectedSourceClaimIds: ["source:brain-search-explicit-project-selector"],
       proofStatus: "pass"
     });
@@ -397,26 +397,26 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:unknown-first-json-metadata-boundary",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:unknown-first-json-metadata-boundary"],
-        distractorMemoryIds: ["memory:pattern:cast-json-record-in-command-runner"],
+        createdMemoryIds: ["memory:knowledge:unknown-first-json-metadata-boundary"],
+        distractorMemoryIds: ["memory:knowledge:cast-json-record-in-command-runner"],
         createdSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
       },
       "baseline_simple_retrieval": {
         result: "distractor_selected",
         selectedKnowledgeIds: [
-          "pattern:cast-json-record-in-command-runner",
+          "knowledge:cast-json-record-in-command-runner",
           "source:unknown-first-json-metadata-boundary",
-          "pattern:unknown-first-json-metadata-boundary"
+          "knowledge:unknown-first-json-metadata-boundary"
         ],
         selectedMemoryIds: [
-          "pattern:cast-json-record-in-command-runner",
-          "pattern:unknown-first-json-metadata-boundary"
+          "knowledge:cast-json-record-in-command-runner",
+          "knowledge:unknown-first-json-metadata-boundary"
         ],
         selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
       },
       "krn_memory": {
         result: "hit",
-        selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+        selectedMemoryIds: ["knowledge:cast-json-record-in-command-runner"],
         selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"],
         requiredKnowledgeId: "source:unknown-first-json-metadata-boundary"
       },
@@ -435,18 +435,18 @@ describe("runMemoryAdvantageEval", () => {
           baselineClass: "simple_lexical_retrieval",
           decisionId: "decision:cast-json-record",
           selectedKnowledgeIds: [
-            "pattern:cast-json-record-in-command-runner",
+            "knowledge:cast-json-record-in-command-runner",
             "source:unknown-first-json-metadata-boundary",
-            "pattern:unknown-first-json-metadata-boundary"
+            "knowledge:unknown-first-json-metadata-boundary"
           ]
         },
         krn: {
           decisionId: "decision:unknown-first-parser",
           selectedKnowledgeIds: [
             "source:unknown-first-json-metadata-boundary",
-            "pattern:cast-json-record-in-command-runner"
+            "knowledge:cast-json-record-in-command-runner"
           ],
-          selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+          selectedMemoryIds: ["knowledge:cast-json-record-in-command-runner"],
           selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
         },
         status: "pass"
@@ -456,7 +456,7 @@ describe("runMemoryAdvantageEval", () => {
         objective: "Implement CLI JSON metadata readback for a command that receives untrusted parsed JSON.",
         expectedKrnContractId: "contract:unknown-first-parser",
         derivationOrder: "source_claims_first",
-        proof: "The baseline contract and KRN contract are derived from selected ids; KRN evaluates accepted source claims before memory patterns.",
+        proof: "The baseline contract and KRN contract are derived from selected ids; KRN evaluates accepted source claims before retained memory knowledge.",
         doesNotProve: "This does not prove Codex implemented the contract, only that KRN memory/source changes the deterministic execution-contract decision.",
         selectedContextSize: {
           bytes: expect.any(Number),
@@ -467,13 +467,13 @@ describe("runMemoryAdvantageEval", () => {
           baselineClass: "simple_lexical_retrieval",
           contractId: "contract:cast-json-record",
           decisionOrderedKnowledgeIds: [
-            "pattern:cast-json-record-in-command-runner",
+            "knowledge:cast-json-record-in-command-runner",
             "source:unknown-first-json-metadata-boundary",
-            "pattern:unknown-first-json-metadata-boundary"
+            "knowledge:unknown-first-json-metadata-boundary"
           ],
           selectedMemoryIds: [
-            "pattern:cast-json-record-in-command-runner",
-            "pattern:unknown-first-json-metadata-boundary"
+            "knowledge:cast-json-record-in-command-runner",
+            "knowledge:unknown-first-json-metadata-boundary"
           ],
           selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
         },
@@ -481,9 +481,9 @@ describe("runMemoryAdvantageEval", () => {
           contractId: "contract:unknown-first-parser",
           decisionOrderedKnowledgeIds: [
             "source:unknown-first-json-metadata-boundary",
-            "pattern:cast-json-record-in-command-runner"
+            "knowledge:cast-json-record-in-command-runner"
           ],
-          selectedMemoryIds: ["pattern:cast-json-record-in-command-runner"],
+          selectedMemoryIds: ["knowledge:cast-json-record-in-command-runner"],
           selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"]
         },
         status: "pass"
@@ -492,7 +492,7 @@ describe("runMemoryAdvantageEval", () => {
         priorFeedbackRef: "feedback:unknown-first-json-metadata-boundary-helped",
         priorEvidenceRef: "evidence:unknown-first-json-metadata-boundary",
         priorReviewRef: "review:unknown-first-json-metadata-boundary",
-        simpleRetrievalTopKnowledgeId: "pattern:cast-json-record-in-command-runner",
+        simpleRetrievalTopKnowledgeId: "knowledge:cast-json-record-in-command-runner",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "hit",
         selectedSourceClaimIds: ["source:unknown-first-json-metadata-boundary"],
@@ -556,12 +556,12 @@ describe("runMemoryAdvantageEval", () => {
       "neutral-single-turn-typecheck",
       "neutral-retrieval-not-needed-docs",
       "neutral-breaks-codex-output-evidence-advantage",
-      "firm-pattern-store-backed-memory-no-markdown",
-      "firm-pattern-source-to-decision-chain",
-      "firm-pattern-narrow-verification-not-every-command",
-      "firm-pattern-no-guard-only-treadmill",
-      "firm-pattern-no-worker-daemon-without-product-loop",
-      "firm-pattern-no-decorative-skills",
+      "retained-standard-store-backed-memory-no-markdown",
+      "retained-standard-source-to-decision-chain",
+      "retained-standard-narrow-verification-not-every-command",
+      "retained-standard-no-guard-only-treadmill",
+      "retained-standard-no-worker-daemon-without-product-loop",
+      "retained-standard-no-decorative-skills",
       "heldout-coding-decision-idempotency-key",
       "heldout-coding-decision-retry-backoff"
     ]);
@@ -594,9 +594,9 @@ describe("runMemoryAdvantageEval", () => {
       "source:secret-review-context-denylist",
       "source:current-source-decision-edge-ranking",
       "source:runtime-secret-context-denylist",
-      "pattern:source-search-command-boundary",
-      "pattern:brain-search-explicit-project-selector",
-      "pattern:ranking-corpus-quality-readback",
+      "knowledge:source-search-command-boundary",
+      "knowledge:brain-search-explicit-project-selector",
+      "knowledge:ranking-corpus-quality-readback",
       "source:unknown-first-json-metadata-boundary",
       "source:codex-output-evidence-shape-required",
       "source:store-backed-memory-no-markdown",
@@ -608,38 +608,38 @@ describe("runMemoryAdvantageEval", () => {
       "source:idempotency-key-on-writes",
       "source:bounded-exponential-backoff-jitter"
     ]);
-    const firmPatternChallengeCases = result.cases.filter((testCase) =>
-      testCase.companyPatternChallenge !== undefined
+    const retainedStandardChallengeCases = result.cases.filter((testCase) =>
+      testCase.rememberedStandardChallenge !== undefined
     );
-    expect(firmPatternChallengeCases).toHaveLength(7);
-    expect(firmPatternChallengeCases.map((testCase) => testCase.caseId)).toEqual([
+    expect(retainedStandardChallengeCases).toHaveLength(7);
+    expect(retainedStandardChallengeCases.map((testCase) => testCase.caseId)).toEqual([
       "neutral-single-turn-typecheck",
-      "firm-pattern-store-backed-memory-no-markdown",
-      "firm-pattern-source-to-decision-chain",
-      "firm-pattern-narrow-verification-not-every-command",
-      "firm-pattern-no-guard-only-treadmill",
-      "firm-pattern-no-worker-daemon-without-product-loop",
-      "firm-pattern-no-decorative-skills"
+      "retained-standard-store-backed-memory-no-markdown",
+      "retained-standard-source-to-decision-chain",
+      "retained-standard-narrow-verification-not-every-command",
+      "retained-standard-no-guard-only-treadmill",
+      "retained-standard-no-worker-daemon-without-product-loop",
+      "retained-standard-no-decorative-skills"
     ]);
-    expect(firmPatternChallengeCases.every((testCase) =>
+    expect(retainedStandardChallengeCases.every((testCase) =>
       testCase["baseline_no_memory"].result === "miss" &&
       testCase["krn_memory"].result === "hit" &&
-      testCase.companyPatternChallenge?.standardId.startsWith("standard:") === true &&
-      testCase.companyPatternChallenge.expectedDecision.length > 0 &&
-      testCase.companyPatternChallenge.baselineFailureMode.length > 0 &&
-      testCase.companyPatternChallenge.falsifier.length > 0
+      testCase.rememberedStandardChallenge?.standardId.startsWith("standard:") === true &&
+      testCase.rememberedStandardChallenge.expectedDecision.length > 0 &&
+      testCase.rememberedStandardChallenge.baselineFailureMode.length > 0 &&
+      testCase.rememberedStandardChallenge.falsifier.length > 0
     )).toBe(true);
-    const firmPatternChallengeWins = firmPatternChallengeCases.filter((testCase) =>
+    const retainedStandardChallengeWins = retainedStandardChallengeCases.filter((testCase) =>
       testCase.advantageDelta.result === "win"
     );
-    expect(firmPatternChallengeWins).toHaveLength(6);
-    expect(firmPatternChallengeWins.every((testCase) =>
+    expect(retainedStandardChallengeWins).toHaveLength(6);
+    expect(retainedStandardChallengeWins.every((testCase) =>
       testCase["baseline_simple_retrieval"].result === "distractor_selected"
     )).toBe(true);
-    const firmPatternNeutralCase = firmPatternChallengeCases.find((testCase) =>
+    const retainedStandardNeutralCase = retainedStandardChallengeCases.find((testCase) =>
       testCase.caseId === "neutral-single-turn-typecheck"
     );
-    expect(firmPatternNeutralCase?.advantageDelta).toMatchObject({
+    expect(retainedStandardNeutralCase?.advantageDelta).toMatchObject({
       result: "neutral",
       simpleRetrievalAlreadySufficient: true
     });
@@ -694,8 +694,8 @@ describe("runMemoryAdvantageEval", () => {
         reviewRef: "review:external-f2fw-r1-r2",
         feedbackRef: "feedback:codex-output-evidence-shape-helped",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:codex-output-evidence-shape-required"],
-        distractorMemoryIds: ["memory:pattern:summary-only-krn-context-claim"],
+        createdMemoryIds: ["memory:knowledge:codex-output-evidence-shape-required"],
+        distractorMemoryIds: ["memory:knowledge:summary-only-krn-context-claim"],
         createdSourceClaimIds: ["source:codex-output-evidence-shape-required"]
       },
       "baseline_no_memory": {
@@ -704,9 +704,9 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_simple_retrieval": {
         result: "distractor_selected",
         selectedKnowledgeIds: [
-          "pattern:summary-only-krn-context-claim",
+          "knowledge:summary-only-krn-context-claim",
           "source:codex-output-evidence-shape-required",
-          "pattern:codex-output-evidence-shape-required"
+          "knowledge:codex-output-evidence-shape-required"
         ]
       },
       "krn_memory": {
@@ -734,7 +734,7 @@ describe("runMemoryAdvantageEval", () => {
         requiredKnowledgeId: "source:codex-output-evidence-shape-required",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "distractor_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:summary-only-krn-context-claim",
+        simpleRetrievalTopKnowledgeId: "knowledge:summary-only-krn-context-claim",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "hit",
         proofStatus: "pass"
@@ -755,8 +755,8 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:obsolete-mandatory-reviewer-rule",
         applicationOutcome: "hurt",
-        createdMemoryIds: ["memory:pattern:routine-dependency-pin-cleanup"],
-        excludedMemoryIds: ["memory:pattern:obsolete-mandatory-reviewer-rule"],
+        createdMemoryIds: ["memory:knowledge:routine-dependency-pin-cleanup"],
+        excludedMemoryIds: ["memory:knowledge:obsolete-mandatory-reviewer-rule"],
         distractorMemoryIds: [],
         createdSourceClaimIds: [],
         distractorSourceClaimIds: []
@@ -776,8 +776,8 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_simple_retrieval": {
         baselineClass: "simple_lexical_retrieval",
         result: "top_match_selected",
-        selectedKnowledgeIds: ["pattern:obsolete-mandatory-reviewer-rule"],
-        selectedMemoryIds: ["pattern:obsolete-mandatory-reviewer-rule"],
+        selectedKnowledgeIds: ["knowledge:obsolete-mandatory-reviewer-rule"],
+        selectedMemoryIds: ["knowledge:obsolete-mandatory-reviewer-rule"],
         selectedSourceClaimIds: [],
         selectedContextSize: {
           bytes: expect.any(Number),
@@ -801,13 +801,13 @@ describe("runMemoryAdvantageEval", () => {
           approximateTokens: 0,
           method: "utf8_bytes_div_4"
         },
-        writtenKnowledgeIds: ["pattern:routine-dependency-pin-cleanup"],
-        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
+        writtenKnowledgeIds: ["knowledge:routine-dependency-pin-cleanup"],
+        requiredKnowledgeId: "knowledge:obsolete-mandatory-reviewer-rule",
         supportingClaims: 0,
         supportingDocuments: 0,
         exclusions: [
           {
-            memoryId: "memory:pattern:obsolete-mandatory-reviewer-rule",
+            memoryId: "memory:knowledge:obsolete-mandatory-reviewer-rule",
             reason: "stale memory contradicted by current external-review advisory policy"
           }
         ]
@@ -824,15 +824,15 @@ describe("runMemoryAdvantageEval", () => {
       },
       "krn_plan_brief": {
         result: "miss",
-        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule"
+        requiredKnowledgeId: "knowledge:obsolete-mandatory-reviewer-rule"
       },
       "reviewed_feedback_effect": {
         priorFeedbackRef: "feedback:obsolete-mandatory-reviewer-rule-hurt",
         applicationOutcome: "hurt",
-        requiredKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
+        requiredKnowledgeId: "knowledge:obsolete-mandatory-reviewer-rule",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "top_match_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:obsolete-mandatory-reviewer-rule",
+        simpleRetrievalTopKnowledgeId: "knowledge:obsolete-mandatory-reviewer-rule",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "miss",
         selectedMemoryIds: [],
@@ -852,8 +852,8 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:adversarial-secret-context-rule",
         applicationOutcome: "hurt",
-        createdMemoryIds: ["memory:pattern:secret-path-denylist-for-review-context"],
-        excludedMemoryIds: ["memory:pattern:paste-secret-env-files-for-review"],
+        createdMemoryIds: ["memory:knowledge:secret-path-denylist-for-review-context"],
+        excludedMemoryIds: ["memory:knowledge:paste-secret-env-files-for-review"],
         createdSourceClaimIds: []
       },
       "baseline_no_memory": {
@@ -863,12 +863,12 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_simple_retrieval": {
         result: "top_match_selected",
         selectedKnowledgeIds: [
-          "pattern:paste-secret-env-files-for-review",
-          "pattern:secret-path-denylist-for-review-context"
+          "knowledge:paste-secret-env-files-for-review",
+          "knowledge:secret-path-denylist-for-review-context"
         ],
         selectedMemoryIds: [
-          "pattern:paste-secret-env-files-for-review",
-          "pattern:secret-path-denylist-for-review-context"
+          "knowledge:paste-secret-env-files-for-review",
+          "knowledge:secret-path-denylist-for-review-context"
         ]
       },
       "krn_memory": {
@@ -876,10 +876,10 @@ describe("runMemoryAdvantageEval", () => {
         selectedKnowledgeIds: [],
         selectedMemoryIds: [],
         selectedSourceClaimIds: [],
-        requiredKnowledgeId: "pattern:paste-secret-env-files-for-review",
+        requiredKnowledgeId: "knowledge:paste-secret-env-files-for-review",
         exclusions: [
           {
-            memoryId: "memory:pattern:paste-secret-env-files-for-review",
+            memoryId: "memory:knowledge:paste-secret-env-files-for-review",
             reason: "adversarial unsupported memory would send secret-bearing files into review context"
           }
         ]
@@ -888,7 +888,7 @@ describe("runMemoryAdvantageEval", () => {
         priorFeedbackRef: "feedback:adversarial-secret-context-rule-hurt",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "top_match_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:paste-secret-env-files-for-review",
+        simpleRetrievalTopKnowledgeId: "knowledge:paste-secret-env-files-for-review",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "miss",
         proofStatus: "pass"
@@ -906,8 +906,8 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:adversarial-memory-source-conflict",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
-        excludedMemoryIds: ["memory:pattern:paste-secret-env-files-for-review-source-conflict"],
+        createdMemoryIds: ["memory:knowledge:secret-review-context-denylist-source-backed"],
+        excludedMemoryIds: ["memory:knowledge:paste-secret-env-files-for-review-source-conflict"],
         createdSourceClaimIds: ["source:secret-review-context-denylist"]
       },
       "baseline_no_memory": {
@@ -917,27 +917,27 @@ describe("runMemoryAdvantageEval", () => {
       "baseline_simple_retrieval": {
         result: "distractor_selected",
         selectedKnowledgeIds: [
-          "pattern:paste-secret-env-files-for-review-source-conflict",
-          "pattern:secret-review-context-denylist-source-backed",
+          "knowledge:paste-secret-env-files-for-review-source-conflict",
+          "knowledge:secret-review-context-denylist-source-backed",
           "source:secret-review-context-denylist"
         ],
         selectedMemoryIds: [
-          "pattern:paste-secret-env-files-for-review-source-conflict",
-          "pattern:secret-review-context-denylist-source-backed"
+          "knowledge:paste-secret-env-files-for-review-source-conflict",
+          "knowledge:secret-review-context-denylist-source-backed"
         ],
         selectedSourceClaimIds: ["source:secret-review-context-denylist"]
       },
       "krn_memory": {
         result: "hit",
-        selectedKnowledgeIds: ["pattern:secret-review-context-denylist-source-backed"],
-        selectedMemoryIds: ["pattern:secret-review-context-denylist-source-backed"],
+        selectedKnowledgeIds: ["knowledge:secret-review-context-denylist-source-backed"],
+        selectedMemoryIds: ["knowledge:secret-review-context-denylist-source-backed"],
         selectedSourceClaimIds: ["source:secret-review-context-denylist"],
         requiredKnowledgeId: "source:secret-review-context-denylist",
         supportingClaims: 1,
         supportingDocuments: 1,
         exclusions: [
           {
-            memoryId: "memory:pattern:paste-secret-env-files-for-review-source-conflict",
+            memoryId: "memory:knowledge:paste-secret-env-files-for-review-source-conflict",
             reason: "adversarial memory conflicts with accepted source evidence for secret-path denylisting"
           }
         ]
@@ -945,9 +945,9 @@ describe("runMemoryAdvantageEval", () => {
       "krn_plan_brief": {
         result: "hit",
         requiredKnowledgeId: "source:secret-review-context-denylist",
-        selectedMemoryRecordIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
+        selectedMemoryRecordIds: ["memory:knowledge:secret-review-context-denylist-source-backed"],
         selectedSourceClaimIds: ["source:secret-review-context-denylist"],
-        renderedMemoryRecordIds: ["memory:pattern:secret-review-context-denylist-source-backed"],
+        renderedMemoryRecordIds: ["memory:knowledge:secret-review-context-denylist-source-backed"],
         renderedSourceClaimIds: ["source:secret-review-context-denylist"]
       },
       "reviewed_feedback_effect": {
@@ -956,19 +956,19 @@ describe("runMemoryAdvantageEval", () => {
         priorReviewRef: "review:adversarial-memory-source-conflict",
         baselineNoMemoryResult: "miss",
         simpleRetrievalResult: "distractor_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:paste-secret-env-files-for-review-source-conflict",
+        simpleRetrievalTopKnowledgeId: "knowledge:paste-secret-env-files-for-review-source-conflict",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "hit",
-        selectedMemoryIds: ["pattern:secret-review-context-denylist-source-backed"],
+        selectedMemoryIds: ["knowledge:secret-review-context-denylist-source-backed"],
         selectedSourceClaimIds: ["source:secret-review-context-denylist"],
         proofStatus: "pass"
       }
     });
     expect(adversarialSourceConflictCase?.["krn_memory"].selectedKnowledgeIds).not.toContain(
-      "pattern:paste-secret-env-files-for-review-source-conflict"
+      "knowledge:paste-secret-env-files-for-review-source-conflict"
     );
     expect(adversarialSourceConflictCase?.["krn_memory"].selectedMemoryIds).not.toContain(
-      "pattern:paste-secret-env-files-for-review-source-conflict"
+      "knowledge:paste-secret-env-files-for-review-source-conflict"
     );
     const temporalStaleSourceCase = result.cases.find((testCase) =>
       testCase.caseId === "temporal-stale-source-claim-decision-link"
@@ -982,7 +982,7 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:temporal-stale-source-claim-decision-link",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        createdMemoryIds: ["memory:knowledge:source-decision-edge-ranking-current"],
         excludedMemoryIds: [],
         createdSourceClaimIds: ["source:current-source-decision-edge-ranking"],
         excludedSourceClaimIds: ["source:old-crawler-first-without-decision-edge"]
@@ -992,9 +992,9 @@ describe("runMemoryAdvantageEval", () => {
         selectedKnowledgeIds: [
           "source:old-crawler-first-without-decision-edge",
           "source:current-source-decision-edge-ranking",
-          "pattern:source-decision-edge-ranking-current"
+          "knowledge:source-decision-edge-ranking-current"
         ],
-        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedMemoryIds: ["knowledge:source-decision-edge-ranking-current"],
         selectedSourceClaimIds: [
           "source:old-crawler-first-without-decision-edge",
           "source:current-source-decision-edge-ranking"
@@ -1002,8 +1002,8 @@ describe("runMemoryAdvantageEval", () => {
       },
       "krn_memory": {
         result: "hit",
-        selectedKnowledgeIds: ["pattern:source-decision-edge-ranking-current"],
-        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedKnowledgeIds: ["knowledge:source-decision-edge-ranking-current"],
+        selectedMemoryIds: ["knowledge:source-decision-edge-ranking-current"],
         selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
         requiredKnowledgeId: "source:current-source-decision-edge-ranking",
         supportingClaims: 1,
@@ -1019,9 +1019,9 @@ describe("runMemoryAdvantageEval", () => {
       "krn_plan_brief": {
         result: "hit",
         requiredKnowledgeId: "source:current-source-decision-edge-ranking",
-        selectedMemoryRecordIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        selectedMemoryRecordIds: ["memory:knowledge:source-decision-edge-ranking-current"],
         selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
-        renderedMemoryRecordIds: ["memory:pattern:source-decision-edge-ranking-current"],
+        renderedMemoryRecordIds: ["memory:knowledge:source-decision-edge-ranking-current"],
         renderedSourceClaimIds: ["source:current-source-decision-edge-ranking"]
       },
       "reviewed_feedback_effect": {
@@ -1033,7 +1033,7 @@ describe("runMemoryAdvantageEval", () => {
         simpleRetrievalTopKnowledgeId: "source:old-crawler-first-without-decision-edge",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "hit",
-        selectedMemoryIds: ["pattern:source-decision-edge-ranking-current"],
+        selectedMemoryIds: ["knowledge:source-decision-edge-ranking-current"],
         selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
         proofStatus: "pass"
       }
@@ -1058,17 +1058,17 @@ describe("runMemoryAdvantageEval", () => {
       priorSession: {
         id: "session:runtime-memory-source-contradiction",
         applicationOutcome: "helped",
-        createdMemoryIds: ["memory:pattern:paste-secrets-from-old-memory-runtime-conflict"],
-        excludedMemoryIds: ["memory:pattern:paste-secrets-from-old-memory-runtime-conflict"],
+        createdMemoryIds: ["memory:knowledge:paste-secrets-from-old-memory-runtime-conflict"],
+        excludedMemoryIds: ["memory:knowledge:paste-secrets-from-old-memory-runtime-conflict"],
         createdSourceClaimIds: ["source:runtime-secret-context-denylist"]
       },
       "baseline_simple_retrieval": {
         result: "distractor_selected",
         selectedKnowledgeIds: [
-          "pattern:paste-secrets-from-old-memory-runtime-conflict",
+          "knowledge:paste-secrets-from-old-memory-runtime-conflict",
           "source:runtime-secret-context-denylist"
         ],
-        selectedMemoryIds: ["pattern:paste-secrets-from-old-memory-runtime-conflict"],
+        selectedMemoryIds: ["knowledge:paste-secrets-from-old-memory-runtime-conflict"],
         selectedSourceClaimIds: ["source:runtime-secret-context-denylist"]
       },
       "krn_memory": {
@@ -1077,7 +1077,7 @@ describe("runMemoryAdvantageEval", () => {
         requiredKnowledgeId: "source:runtime-secret-context-denylist",
         exclusions: [
           {
-            memoryId: "memory:pattern:paste-secrets-from-old-memory-runtime-conflict",
+            memoryId: "memory:knowledge:paste-secrets-from-old-memory-runtime-conflict",
             reason: "contradicts_source_claim source:runtime-secret-context-denylist: accepted source evidence forbids sending secret-bearing file bodies to review context"
           }
         ]
@@ -1087,7 +1087,7 @@ describe("runMemoryAdvantageEval", () => {
         priorEvidenceRef: "evidence:runtime-memory-source-contradiction",
         priorReviewRef: "review:runtime-memory-source-contradiction",
         simpleRetrievalResult: "distractor_selected",
-        simpleRetrievalTopKnowledgeId: "pattern:paste-secrets-from-old-memory-runtime-conflict",
+        simpleRetrievalTopKnowledgeId: "knowledge:paste-secrets-from-old-memory-runtime-conflict",
         simpleRetrievalWeakerThanKrn: true,
         krnResult: "hit",
         selectedSourceClaimIds: ["source:runtime-secret-context-denylist"],
@@ -1095,7 +1095,7 @@ describe("runMemoryAdvantageEval", () => {
       }
     });
     expect(runtimeContradictionCase?.["krn_memory"].selectedMemoryIds).not.toContain(
-      "pattern:paste-secrets-from-old-memory-runtime-conflict"
+      "knowledge:paste-secrets-from-old-memory-runtime-conflict"
     );
     expect(result.proof.proves).toContain(
       "the memory advantage output reports corpus metadata, per-case baseline failure rationale, and aggregate context-size cost proxies"
@@ -1116,13 +1116,13 @@ describe("runMemoryAdvantageEval", () => {
       "non-winning advantage deltas carry limitation classifications with deterministic simple-retrieval, KRN, and expected-result proof tuples"
     );
     expect(result.proof.proves).toContain(
-      "company-pattern memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"
+      "remembered-standard memory/source inputs from the in-memory eval store are selected through real brain/source command paths while distractors can be present"
     );
     expect(result.proof.proves).toContain(
-      "firm-pattern challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence"
+      "retained-standard challenge cases state the remembered standard, expected decision, baseline failure mode, and falsifier before counting as memory advantage evidence"
     );
     expect(result.proof.proves).toContain(
-      "at least one company-pattern case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief"
+      "at least one remembered-standard case fails the no-memory plan/brief baseline and passes when KRN memory/source context reaches the rendered Codex brief"
     );
     expect(result.proof.proves).toContain(
       "retrieval, learning, long_range, and forgetting competencies are covered by named deterministic cases"
@@ -1248,25 +1248,25 @@ describe("runMemoryAdvantageEval", () => {
     }, "cases[12].priorSession must be an object");
   });
 
-  it("rejects company-pattern challenge fixture drift before evaluation", () => {
-    expectCompanyPatternChallengeFixtureError((testCase) => {
-      testCase["companyPatternChallenge"] = "not-object";
-    }, "cases[14].companyPatternChallenge must be an object");
-    expectCompanyPatternChallengeFixtureError((testCase) => {
-      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+  it("rejects remembered-standard challenge fixture drift before evaluation", () => {
+    expectRememberedStandardChallengeFixtureError((testCase) => {
+      testCase["rememberedStandardChallenge"] = "not-object";
+    }, "cases[14].rememberedStandardChallenge must be an object");
+    expectRememberedStandardChallengeFixtureError((testCase) => {
+      const challenge = testCase["rememberedStandardChallenge"] as Record<string, unknown>;
       delete challenge["standardId"];
-    }, "cases[14].companyPatternChallenge.standardId must be a non-empty string");
-    expectCompanyPatternChallengeFixtureError((testCase) => {
-      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+    }, "cases[14].rememberedStandardChallenge.standardId must be a non-empty string");
+    expectRememberedStandardChallengeFixtureError((testCase) => {
+      const challenge = testCase["rememberedStandardChallenge"] as Record<string, unknown>;
       delete challenge["expectedDecision"];
-    }, "cases[14].companyPatternChallenge.expectedDecision must be a non-empty string");
-    expectCompanyPatternChallengeFixtureError((testCase) => {
-      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+    }, "cases[14].rememberedStandardChallenge.expectedDecision must be a non-empty string");
+    expectRememberedStandardChallengeFixtureError((testCase) => {
+      const challenge = testCase["rememberedStandardChallenge"] as Record<string, unknown>;
       delete challenge["baselineFailureMode"];
-    }, "cases[14].companyPatternChallenge.baselineFailureMode must be a non-empty string");
-    expectCompanyPatternChallengeFixtureError((testCase) => {
-      const challenge = testCase["companyPatternChallenge"] as Record<string, unknown>;
+    }, "cases[14].rememberedStandardChallenge.baselineFailureMode must be a non-empty string");
+    expectRememberedStandardChallengeFixtureError((testCase) => {
+      const challenge = testCase["rememberedStandardChallenge"] as Record<string, unknown>;
       delete challenge["falsifier"];
-    }, "cases[14].companyPatternChallenge.falsifier must be a non-empty string");
+    }, "cases[14].rememberedStandardChallenge.falsifier must be a non-empty string");
   });
 });

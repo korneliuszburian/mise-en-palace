@@ -87,7 +87,7 @@ export const brainRecallDecisionToMemoryCandidateInput = (
   }
 });
 
-const recordKeyForKnowledge = (knowledgeId: string): string => `pattern:${knowledgeId}`;
+const recordKeyForKnowledge = (knowledgeId: string): string => `knowledge:${knowledgeId}`;
 
 interface LoadedKnowledgeDecision {
   readonly decision: KnowledgeDecision;

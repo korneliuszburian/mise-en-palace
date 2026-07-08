@@ -91,8 +91,8 @@ describe("Knowledge read model", () => {
     const readModel = parseKnowledgeReadModel(readModelFixture());
 
     expect(readModel).toMatchObject({
-      id: "pattern:ts-boundary-unknown-first-result-state",
-      kind: "pattern",
+      id: "knowledge:ts-boundary-unknown-first-result-state",
+      kind: "procedure",
       status: "active",
       reviewability: "ready",
       confidence: "high",
@@ -102,8 +102,8 @@ describe("Knowledge read model", () => {
 
   it("rejects readModels missing required evidence boundaries", () => {
     const readModel = parseKnowledgeReadModel({
-      id: "pattern:missing-evidence",
-      kind: "pattern",
+      id: "knowledge:missing-evidence",
+      kind: "procedure",
       status: "active",
       title: "Missing evidence",
       summary: "This should not parse.",
@@ -151,7 +151,7 @@ describe("Knowledge read model", () => {
     }
 
     expect(searchKnowledgeReadModels([readModel], {
-      kind: "pattern",
+      kind: "procedure",
       status: "active",
       reviewability: "ready",
       text: "unknown-first"
@@ -188,7 +188,7 @@ describe("Knowledge read model", () => {
     const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "The knowledge read model guided an unknown-first boundary repair.",
           evidenceRefs: ["review-evidence/newer.md"],
@@ -254,8 +254,8 @@ describe("Knowledge read model", () => {
     const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
     expect(readModel).toMatchObject({
-      id: "pattern:reference-implementation-recipe-clone-boundary",
-      kind: "pattern",
+      id: "knowledge:reference-implementation-recipe-clone-boundary",
+      kind: "procedure",
       status: "deferred",
       confidence: "medium",
       reviewability: "ready",
@@ -271,8 +271,8 @@ describe("Knowledge read model", () => {
     const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
     expect(readModel).toMatchObject({
-      id: "pattern:ts-boundary-knowledge-parser-exemplar",
-      kind: "pattern",
+      id: "knowledge:ts-boundary-knowledge-parser-exemplar",
+      kind: "procedure",
       status: "deferred",
       confidence: "medium",
       reviewability: "ready",
@@ -292,8 +292,8 @@ describe("Knowledge read model", () => {
     const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
     expect(readModel).toMatchObject({
-      id: "pattern:source-to-decision-retention-gate",
-      mechanism: "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or pattern to state why it changes KRN behavior and how it can be falsified.",
+      id: "knowledge:source-to-decision-retention-gate",
+      mechanism: "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or knowledge decision to state why it changes KRN behavior and how it can be falsified.",
       krnImplication: "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory."
     });
     expect(searchKnowledgeReadModels([readModel], {
@@ -331,7 +331,7 @@ describe("Knowledge read model", () => {
     const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Older feedback should not win.",
           evidenceRefs: ["review-evidence/older.md"],
@@ -339,7 +339,7 @@ describe("Knowledge read model", () => {
           observedAt: "2026-06-27"
         },
         {
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "The knowledge read model guided an unknown-first boundary repair.",
           evidenceRefs: ["review-evidence/newer.md"],
@@ -355,7 +355,7 @@ describe("Knowledge read model", () => {
 
     expect(knowledgeReadModelsWithUsefulnessFeedback([readModel], feedback)).toMatchObject([
       {
-        id: "pattern:ts-boundary-unknown-first-result-state",
+        id: "knowledge:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: {
           outcome: "helped",
           summary: "The knowledge read model guided an unknown-first boundary repair.",
@@ -369,7 +369,7 @@ describe("Knowledge read model", () => {
     expect(parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          knowledgeId: "pattern:missing-boundary",
+          knowledgeId: "knowledge:missing-boundary",
           outcome: "helped",
           summary: "Missing doesNotProve should fail.",
           evidenceRefs: ["review-evidence/report.md"]
@@ -383,14 +383,14 @@ describe("Knowledge read model", () => {
     const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "Untimestamped feedback should win only against untimestamped feedback.",
           evidenceRefs: ["review-evidence/untimestamped.md"],
           doesNotProve: "This feedback does not prove product readiness."
         },
         {
-          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Timestamped feedback should win against untimestamped feedback.",
           evidenceRefs: ["review-evidence/timestamped.md"],

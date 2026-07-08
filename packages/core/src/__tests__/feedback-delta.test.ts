@@ -8,7 +8,7 @@ describe("feedback recommendation readback", () => {
   it("turns stale and hurt feedback into reviewable recommendations without mutating memory", () => {
     const staleReadback = buildFeedbackRecommendationReadback({
       subjectKind: "memory_record",
-      subjectId: "pattern:frontend-bootstrap-old",
+      subjectId: "knowledge:frontend-bootstrap-old",
       outcome: "stale",
       reason: "A newer source-backed decision replaced this starter.",
       evidenceRefs: ["feedback-delta-1", "source-claim-2"],

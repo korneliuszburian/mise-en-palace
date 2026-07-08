@@ -139,10 +139,10 @@ const knowledgeUsefulnessExpectation: OutputExpectation = {
     "- M packages/cli/src/run-evidence-capture-command.ts",
     "pnpm typecheck: passed | provenance=operator_reported",
     "knowledgeUsefulnessOutcomes:",
-    "outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state",
+    "outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state",
     "reason: Knowledge selected the unknown-first parser shape",
     "evidenceRef: packages/cli/src/run-evidence-capture-command.ts",
-    "doesNotProve: Does not prove future pattern recall quality"
+    "doesNotProve: Does not prove future knowledge recall quality"
   ],
   excludes: [
     "Memory mutation: applied"
@@ -222,7 +222,7 @@ describe("evidence capture behavior fixture", () => {
       "--verification",
       "pnpm typecheck=passed",
       "--knowledge-usefulness",
-      "pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future pattern recall quality"
+      "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future knowledge recall quality"
     ], {
       env: {},
       cwd: process.cwd(),
@@ -266,7 +266,7 @@ describe("evidence capture behavior fixture", () => {
             : targetEvidenceOutput
         ),
         proof(
-          "golden-case-evidence-pattern-usefulness-001-d",
+          "golden-case-evidence-knowledge-usefulness-001-d",
           knowledgeUsefulnessPassed,
           knowledgeUsefulnessPassed
             ? "Real CLI evidence capture rendered retained knowledge usefulness with knowledge id, evidence ref, reason, and does-not-prove boundary."
