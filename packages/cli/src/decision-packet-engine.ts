@@ -1,4 +1,5 @@
 import {
+  buildDecisionPacketAbstentionScore,
   buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion,
   type CapabilityPlan,
@@ -565,6 +566,16 @@ export const buildDecisionPacketWithEngine = async (
   const severeStaleAuthorityIds = supportedGoverningDecisionIds.filter((id) =>
     severeExpectedIds.has(id)
   );
+  const sourceConsensus = buildDecisionPacketSourceConsensus({
+    sourceClaimIds,
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
+    staleDecisionIds,
+    rejectedPathIds,
+    sourceRejectionIds,
+    conflictedDecisionIds: severeStaleAuthorityIds,
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+  });
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -583,15 +594,10 @@ export const buildDecisionPacketWithEngine = async (
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
     verificationCommands: evidenceContract.commands.map((command) => command.command),
     evidenceGaps,
-    sourceConsensus: buildDecisionPacketSourceConsensus({
-      sourceClaimIds,
-      caveatedSourceClaimIds,
-      sourceDecisionEdgeIds,
-      staleDecisionIds,
-      rejectedPathIds,
-      sourceRejectionIds,
-      conflictedDecisionIds: severeStaleAuthorityIds,
-      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    sourceConsensus,
+    abstentionScore: buildDecisionPacketAbstentionScore({
+      governingDecisionIds: supportedGoverningDecisionIds,
+      sourceConsensus
     }),
     doesNotProve: unique(supportedGoverningRows.map((decision) => decision.doesNotProve).filter(nonEmpty)),
     nonProofs: [

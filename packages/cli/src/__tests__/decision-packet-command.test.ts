@@ -28,6 +28,11 @@ interface DecisionPacketJson {
     readonly sourceClaimIds: readonly string[];
     readonly caveatedSourceClaimIds: readonly string[];
     readonly verificationCommands: readonly string[];
+    readonly abstentionScore: {
+      readonly status: string;
+      readonly score: number;
+      readonly reasons: readonly string[];
+    };
   };
   readonly returnChannels: {
     readonly evidence: {
@@ -446,6 +451,15 @@ describe("decision packet CLI", () => {
           conflictedDecisionIds: ["source-decision-conflicted-agent-1"],
           evidenceGapIds: []
         },
+        abstentionScore: {
+          status: "weak_context",
+          score: 45,
+          reasons: [
+            "caveated_source_authority",
+            "stale_authority"
+          ],
+          evidenceGapIds: []
+        },
         memoryRefs: ["memory-agent-1"],
         staleDecisionIds: [
           "source-decision-stale-agent-1",
@@ -519,6 +533,8 @@ describe("decision packet CLI", () => {
     expect(json.packet.taskStandardDecisions[0]?.decision).toBe(
       "Use the refreshed frontend bootstrap standard for matching new frontend projects."
     );
+    expect(json.packet.abstentionScore.status).toBe("weak_context");
+    expect(json.packet.abstentionScore.reasons).toContain("stale_authority");
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);

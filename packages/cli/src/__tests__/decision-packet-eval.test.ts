@@ -93,6 +93,11 @@ const expectProjectStandardCase = (
       staleDecisionIds: [expected.staleDecisionId],
       rejectedPathIds: [expected.rejectedDecisionId],
       verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
+      abstentionScore: {
+        status: "ready",
+        score: 100,
+        reasons: []
+      },
       brief: {
         observationPrefixCount: 1
       },
@@ -211,6 +216,11 @@ describe("runDecisionPacketEval", () => {
         rejectedPathIds: ["create-markdown-memory-files"],
         verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
         evidenceGaps: [],
+        abstentionScore: {
+          status: "ready",
+          score: 100,
+          reasons: []
+        },
         severeStaleAuthorityIds: []
       }
     });
@@ -251,7 +261,16 @@ describe("runDecisionPacketEval", () => {
           reason: "No current governed decision matched this task strongly enough to guide Codex.",
           verificationRequired:
             "Capture or promote source-backed decision evidence before turning this task into governing context."
-        }]
+        }],
+        abstentionScore: {
+          status: "abstain",
+          score: 0,
+          reasons: [
+            "missing_governing_decision",
+            "evidence_gap"
+          ],
+          evidenceGapIds: ["evidence-gap:unsupported-mobile-release-task:no-governing-decision"]
+        }
       },
       reasons: expect.arrayContaining([
         "packet abstains from governing advice for unsupported task",
@@ -439,6 +458,14 @@ describe("runDecisionPacketEval", () => {
         doesNotProve:
           "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
       },
+      abstentionScore: {
+        status: "ready",
+        score: 100,
+        reasons: [],
+        evidenceGapIds: [],
+        doesNotProve:
+          "DecisionPacket abstention score is a deterministic packet-readiness signal; it does not prove source truth, live Codex obedience, or that missing rejected paths are required for every task."
+      },
       doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
       nonProofs: ["packet quality only"],
       noiseDecisionIds: [],
@@ -544,7 +571,11 @@ describe("runDecisionPacketEval", () => {
       },
       packet: {
         governingDecisionIds: expect.arrayContaining(["unsupported-mobile-release-shortcut"]),
-        evidenceGaps: []
+        evidenceGaps: [],
+        abstentionScore: {
+          status: "weak_context",
+          reasons: ["missing_rejected_path_evidence"]
+        }
       },
       reasons: expect.arrayContaining([
         "packet gives governing advice for unsupported task",
@@ -589,7 +620,11 @@ describe("runDecisionPacketEval", () => {
     )).toMatchObject({
       qualityLabel: "stale_authority",
       packet: {
-        severeStaleAuthorityIds: expect.arrayContaining(["markdown-runtime-memory"])
+        severeStaleAuthorityIds: expect.arrayContaining(["markdown-runtime-memory"]),
+        abstentionScore: {
+          status: "weak_context",
+          reasons: expect.arrayContaining(["stale_authority"])
+        }
       },
       reasons: expect.arrayContaining(["packet includes stale or rejected authority as governing context"])
     });

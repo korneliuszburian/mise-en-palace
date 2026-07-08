@@ -7,6 +7,7 @@ import type {
   SourceUsefulnessOutcome
 } from "@krn/core";
 import {
+  buildDecisionPacketAbstentionScore,
   buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion
 } from "@krn/core";
@@ -273,6 +274,16 @@ const compactDecisionPacket = (
     governingDecisionIds,
     staleDecisionIds
   });
+  const sourceConsensus = buildDecisionPacketSourceConsensus({
+    sourceClaimIds,
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
+    staleDecisionIds,
+    rejectedPathIds,
+    sourceRejectionIds,
+    conflictedDecisionIds: severeStaleAuthorityIds,
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+  });
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -293,15 +304,10 @@ const compactDecisionPacket = (
     ),
     verificationCommands: verificationCommandsFor(readModel),
     evidenceGaps,
-    sourceConsensus: buildDecisionPacketSourceConsensus({
-      sourceClaimIds,
-      caveatedSourceClaimIds,
-      sourceDecisionEdgeIds,
-      staleDecisionIds,
-      rejectedPathIds,
-      sourceRejectionIds,
-      conflictedDecisionIds: severeStaleAuthorityIds,
-      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    sourceConsensus,
+    abstentionScore: buildDecisionPacketAbstentionScore({
+      governingDecisionIds,
+      sourceConsensus
     }),
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,

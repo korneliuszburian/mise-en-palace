@@ -58,6 +58,27 @@ const packetJson = {
     rejectedPathIds: ["install-latest-frontend-stack"],
     falsifiers: ["DecisionPacket omits the governed frontend standard."],
     verificationCommands: ["pnpm --filter frontend test"],
+    evidenceGaps: [],
+    sourceConsensus: {
+      decisionLinkedSourceClaimIds: ["source-claim:frontend-project-standard-packet"],
+      caveatedSourceClaimIds: [],
+      sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"],
+      staleDecisionIds: ["generic-frontend-starter-default"],
+      rejectedPathIds: ["install-latest-frontend-stack"],
+      sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],
+      conflictedDecisionIds: [],
+      evidenceGapIds: [],
+      doesNotProve:
+        "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
+    },
+    abstentionScore: {
+      status: "ready",
+      score: 100,
+      reasons: [],
+      evidenceGapIds: [],
+      doesNotProve:
+        "DecisionPacket abstention score is a deterministic packet-readiness signal; it does not prove source truth, live Codex obedience, or that missing rejected paths are required for every task."
+    },
     doesNotProve: ["live Codex obedience"],
     nonProofs: ["live Codex obedience"],
     noiseDecisionIds: [],
@@ -214,6 +235,12 @@ describe("DecisionPacket MCP wrapper", () => {
           },
           proof: {
             doesNotProve: expect.arrayContaining(["memory/source promotion"])
+          },
+          packet: {
+            abstentionScore: {
+              status: "ready",
+              reasons: []
+            }
           }
         }
       }
