@@ -327,7 +327,7 @@ describe("runCli", () => {
 
   it("selects reference implementation recipe knowledge for exemplar tasks", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Prove the retained reference-implementation recipe pattern through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions"
+      "Prove the retained reference-implementation recipe through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions"
     );
 
     expect(result.exitCode).toBe(0);

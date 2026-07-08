@@ -24,7 +24,7 @@ living engineering memory that can answer, for the current task:
 - which evidence supports the answer;
 - where the evidence is weak, contested, stale, or missing;
 - what Codex should do now;
-- how to verify whether the remembered pattern helped.
+- how to verify whether the remembered knowledge helped.
 
 For an ordinary task like "start a new frontend project", KRN should recall the
 right template, package choices, UI conventions, testing standard, deployment
@@ -90,7 +90,7 @@ Not product-ready:
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
-- no final temporal consensus engine;
+- no complete temporal consensus engine;
 - no markdown-backed runtime memory.
 
 The next phase is not a UI phase. It is the phase where KRN builds enough
@@ -124,8 +124,8 @@ repo.
 
 Scratch reasoning, exploratory research, and failed hunches disappear unless
 they change a decision or create a falsifiable follow-up. A promoted standard or
-pattern needs a current consumer, validity boundary, source/evidence refs, and a
-falsifier in the store-backed memory path.
+knowledge decision needs a current consumer, validity boundary, source/evidence
+refs, and a falsifier in the store-backed memory path.
 
 Large source corpora stay as raw evidence outside active context. The brain
 stores spans, claims, relations, decisions, temporal state, and usefulness
@@ -140,7 +140,7 @@ Repo JSON and markdown are allowed only as:
 - handoffs;
 - temporary migration aids.
 
-They are not the final memory substrate.
+They are not the target memory substrate.
 
 ## Authority Surfaces
 
@@ -165,7 +165,7 @@ target scheduled for deletion.
 
 ## Decision Rule
 
-Every retained source, pattern, standard, or architecture rule must map through:
+Every retained source, knowledge decision, standard, or architecture rule must map through:
 
 ```txt
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
@@ -290,7 +290,7 @@ conflict, authority, recency, owner expertise, task scope, and observed outcome.
 For engineering work, consensus examples include:
 
 - "This frontend template is current for new SaaS tools."
-- "This database migration pattern was rejected because rollback was unsafe."
+- "This database migration procedure was rejected because rollback was unsafe."
 - "This test style is accepted for CLI command tests but not runtime source."
 - "This package was removed; do not reintroduce it without new evidence."
 - "This naming convention is preferred, but exceptions exist for public API
@@ -345,7 +345,7 @@ Execution evidence records whether the selected memory helped:
 - did it cause churn;
 - did tests prove the intended behavior;
 - did review reject the memory as stale or wrong;
-- did a new better pattern appear;
+- did a better knowledge decision appear;
 - did the task reveal a gap.
 
 Maintenance/dreaming is maintenance, not magic. It proposes:
@@ -391,14 +391,14 @@ KRN should activate:
 
 - repo map;
 - owner files;
-- existing local patterns;
+- existing local knowledge and procedures;
 - risky boundaries;
 - previous similar tasks;
 - failed shortcuts;
 - minimal verification commands;
 - dirty-state constraints.
 
-The packet should prevent Codex from inventing a pattern that conflicts with the
+The packet should prevent Codex from inventing knowledge that conflicts with the
 repo.
 
 ### Architecture Decision
@@ -430,15 +430,15 @@ with a consumer and proof path graduate into standards.
 Input: "We are doing another task like the one last week."
 
 KRN should recall the prior decision packet, evidence outcome, review feedback,
-and whether the pattern helped. It should also detect if the old packet is
+and whether the selected knowledge helped. It should also detect if the old packet is
 stale because dependencies, project goals, or coding standards changed.
 
 ## Data Model Direction
 
-The final memory model should be store-backed and compact:
+The target memory model should be store-backed and compact:
 
 - evidence items: raw cited spans and command/review artifacts;
-- claims: normalized remembered statements with lifecycle and validity;
+- claims: canonical remembered statements with lifecycle and validity;
 - decisions: accepted or rejected governance outcomes;
 - relations: typed edges between entities, claims, standards, repos, and tasks;
 - activations: what was selected for a task and why;
@@ -655,7 +655,7 @@ Done when:
 
 - a useful or harmful activation changes the next run through the store path;
 - repo files are not the durable feedback database;
-- KRN can explain why a pattern was demoted or retained.
+- KRN can explain why knowledge was demoted or retained.
 
 ### Phase 4: Task-Standard Activation
 
@@ -803,7 +803,7 @@ The useful-kernel-before-surface tranche is complete:
 
 This proves a useful internal-alpha kernel loop, not broad product readiness,
 commercial validation, arbitrary repository portability, live Codex obedience,
-or final temporal consensus.
+or complete temporal consensus.
 
 The current P1 hardening direction is Phase 5/6 cleanup:
 

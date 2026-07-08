@@ -22,7 +22,7 @@ const task: BehaviorFixture = {
       id: "golden-case-memory-smoke-001",
       title: "stale memory abstains",
       input: {
-        task: "Use the stale memory update pattern."
+        task: "Use the stale memory update procedure."
       },
       expectedBehavior: {
         outcome: "abstain",
@@ -43,13 +43,13 @@ const task: BehaviorFixture = {
     },
     {
       id: "golden-case-memory-smoke-002",
-      title: "anti-memory blocks tempting stale pattern",
+      title: "anti-memory blocks tempting stale knowledge",
       input: {
         task: "Use stale knowledge guidance for a memory update."
       },
       expectedBehavior: {
         outcome: "exclude",
-        subject: "memory_record:memory-stale-pattern",
+        subject: "memory_record:memory-stale-knowledge",
         rationale: "Active anti-memory must block the matching memory key.",
         evidenceRefs: ["packages/harness/src/krn-behavior-gate.ts"]
       },
@@ -58,8 +58,8 @@ const task: BehaviorFixture = {
         domain: "anti_memory",
         severity: "blocking",
         title: "anti-memory block bypassed",
-        mustNot: "Activation must not include memory-stale-pattern.",
-        detection: "ContextAssembly includes memory-stale-pattern."
+        mustNot: "Activation must not include memory-stale-knowledge.",
+        detection: "ContextAssembly includes memory-stale-knowledge."
       }],
       sourceRefs: ["KRN_ROADMAP.md"],
       metadata: {}
@@ -405,7 +405,7 @@ describe("KRN deterministic behavior gate", () => {
       "Real relation-grounded QA readback showed baseline insufficient and edge-aware context grounded the answer.",
       "Real activation behavior included exact-proof source claim only with raw recall trigger.",
       "Real activation behavior abstained on stale memory and produced stale exclusion.",
-      "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
+      "Real activation behavior blocked memory-stale-knowledge with anti-memory conflict evidence.",
       "Real context assembly rejected selected observation prefix item without source ranges.",
       "Real reflection behavior blocked direct MemoryRecord target generation.",
       "Real source artifact preview extraction produced a reviewable claim that shaped later source activation context.",

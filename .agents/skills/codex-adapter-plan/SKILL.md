@@ -25,7 +25,7 @@ Use this skill at the Codex boundary, not inside core domain logic.
    not import adapter.
 7. If the work changes skill hints, Codex-facing execution instructions,
    `AGENTS.md` pointers, or reusable brief guidance, query the retained skill
-   routing pattern first when the catalog is available:
+   routing knowledge first when the catalog is available:
 
    ```sh
    pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text progressive-disclosure
@@ -42,7 +42,7 @@ Use this skill at the Codex boundary, not inside core domain logic.
 - Capability or skill hints.
 - Evidence contract.
 - Non-goals and stop conditions.
-- Retained skill-routing pattern applied or explicitly rejected when the brief
+- Retained skill-routing knowledge applied or explicitly rejected when the brief
   changes skill hints or reusable Codex instructions.
 
 ## Forbidden

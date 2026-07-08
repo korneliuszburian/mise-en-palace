@@ -7,7 +7,7 @@ import type { ActivationQuery } from "./types.js";
 
 const sourceToDecisionQueryTerms = [
   "source mechanism krn implication decision rejection consumer falsifier does-not-prove boundary",
-  "retained knowledge pattern reviewable decision chain",
+  "retained knowledge reviewable decision chain",
   "preserve research local evidence decorative source notes reuse"
 ] as const;
 

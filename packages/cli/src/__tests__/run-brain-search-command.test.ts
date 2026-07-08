@@ -146,7 +146,7 @@ describe("runBrainSearchCommand", () => {
       createId: (prefix) => `${prefix}-1`,
       command: {
         kind: "brainSearch",
-        query: "missing pattern",
+        query: "missing knowledge",
         catalogFiles: [],
         storeOnly: false,
         format: "text"
@@ -419,7 +419,7 @@ describe("runBrainSearchCommand", () => {
       command: {
         kind: "brainSearch",
         query:
-          "prove retained reference implementation recipe pattern through local code exemplar",
+          "prove retained reference implementation recipe through local code exemplar",
         catalogFiles: ["tests/fixtures/brain-knowledge/corpus/catalog.json"],
         storeOnly: false,
         limit: 16,
@@ -492,14 +492,14 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(knowledgeQueries).toEqual([
-      "prove retained reference implementation recipe pattern through local code exemplar",
+      "prove retained reference implementation recipe through local code exemplar",
       "prove reference implementation recipe",
       "prove reference implementation",
       "reference implementation recipe"
     ]);
     expect(parsed).toMatchObject({
       brainRecallQueries: [
-        "prove retained reference implementation recipe pattern through local code exemplar",
+        "prove retained reference implementation recipe through local code exemplar",
         "prove reference implementation recipe",
         "prove reference implementation",
         "reference implementation recipe"
@@ -603,7 +603,7 @@ describe("runBrainSearchCommand", () => {
                 claim: "Store-backed brain search should derive selected knowledge from source evidence.",
                 mechanism: "Source search already returns governed SourceClaim fields.",
                 krnImplication: "Brain search can surface selected knowledge without file-backed catalog readModels.",
-                consumer: "IMR-00 pattern brain",
+                consumer: "IMR-00 brain knowledge",
                 falsifier: "Store-backed search with governed source evidence returns empty selectedKnowledge.",
                 doesNotProve: "This does not prove ranking quality.",
                 expectedUse: "Use source-backed knowledge as a pre-coding knowledge gate."
@@ -642,7 +642,7 @@ describe("runBrainSearchCommand", () => {
           summary: "Brain search can surface selected knowledge without file-backed catalog readModels.",
           source: "source_search",
           reviewability: "ready",
-          consumers: ["IMR-00 pattern brain"],
+          consumers: ["IMR-00 brain knowledge"],
           falsifier: "Store-backed search with governed source evidence returns empty selectedKnowledge.",
           doesNotProve: "This does not prove ranking quality.",
           nextAction: "use"
@@ -906,7 +906,7 @@ describe("runBrainSearchCommand", () => {
                 sourceClaimId: "target-claim",
                 claim: "EKOLOGUS Brain README defines the current quality gate.",
                 mechanism: "A persisted second-repo README source artifact can be searched directly.",
-                krnImplication: "Use target-specific source evidence before generic KRN patterns.",
+                krnImplication: "Use target-specific source evidence before generic KRN knowledge.",
                 consumer: "IMR-47 multi-repo Brain-QA",
                 falsifier: "EKOLOGUS source search returns no target-specific README evidence.",
                 doesNotProve: "This does not prove broad target repo readiness."
@@ -920,7 +920,7 @@ describe("runBrainSearchCommand", () => {
                 doesNotProve: "This does not prove target repo source recall."
               }, {
                 sourceClaimId: "adjacent-claim",
-                claim: "Graph relation source readback pattern supports selected knowledge review.",
+                claim: "Graph relation source readback supports selected knowledge review.",
                 mechanism: "SourceClaimEdge relation summaries expose adjacent graph evidence.",
                 krnImplication: "Use as adjacent context only when target-specific evidence is absent.",
                 consumer: "graph brain readback",

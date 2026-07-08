@@ -361,9 +361,9 @@ const aggregate: HarnessRunAggregate = {
         doesNotProve:
           "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
       }, {
-        knowledgeId: "pattern-incomplete",
+        knowledgeId: "knowledge-incomplete",
         outcome: "helped",
-        reason: "Missing doesNotProve should drop this malformed pattern row.",
+        reason: "Missing doesNotProve should drop this malformed knowledge row.",
         evidenceRefs: ["feedback-1"]
       }]
     },
@@ -497,7 +497,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain(
       "doesNotProve: This knowledge outcome does not prove future knowledge recall or TypeScript quality."
     );
-    expect(result.stdout).not.toContain("pattern-incomplete");
+    expect(result.stdout).not.toContain("knowledge-incomplete");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
     expect(result.stdout).toContain("reviewabilityReason: Missing source claim.");
     expect(result.stdout).not.toContain("reviewability: see candidate metadata or source evidence");

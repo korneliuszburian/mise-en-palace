@@ -428,9 +428,9 @@ export function searchKnowledgeReadModels(
   readModels: KnowledgeReadModel[],
   filter: KnowledgeSearchFilter
 ): KnowledgeReadModel[] {
-  const normalizedFilter = searchRuntimeFilter(filter);
+  const runtimeFilter = searchRuntimeFilter(filter);
 
-  return readModels.filter((readModel) => matchesKnowledgeSearch(readModel, normalizedFilter));
+  return readModels.filter((readModel) => matchesKnowledgeSearch(readModel, runtimeFilter));
 }
 
 function tokenizeSearchText(value: string): string[] {

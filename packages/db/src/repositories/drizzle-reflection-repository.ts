@@ -81,7 +81,6 @@ const memoryKinds = new Set<string>([
   "preference",
   "constraint",
   "procedure",
-  "pattern",
   "risk"
 ]);
 

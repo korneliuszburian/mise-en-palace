@@ -95,7 +95,7 @@
     },
     {
       "id": "reuse-typescript-unknown-first",
-      "title": "EC09 reuse unknown-first TypeScript pattern",
+      "title": "EC09 reuse unknown-first TypeScript knowledge",
       "statement": "Reuse KRN TypeScript practice: external config input stays unknown until a narrow parser proves shape.",
       "status": "current",
       "evidenceRef": ".agents/skills/typescript-type-safety/SKILL.md",

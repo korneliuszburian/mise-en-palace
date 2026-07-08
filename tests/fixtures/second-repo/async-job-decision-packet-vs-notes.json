@@ -95,7 +95,7 @@
     },
     {
       "id": "reuse-typescript-unknown-first",
-      "title": "AJ09 reuse unknown-first TypeScript pattern",
+      "title": "AJ09 reuse unknown-first TypeScript knowledge",
       "statement": "Reuse KRN TypeScript practice: external job input stays unknown until a narrow parser proves shape.",
       "status": "current",
       "evidenceRef": ".agents/skills/typescript-type-safety/SKILL.md",

@@ -19,13 +19,13 @@ const behaviorFixture = (overrides: Partial<BehaviorFixture>): BehaviorFixture =
     id: "golden-case-1",
     title: "active anti-memory blocks stale memory",
     input: {
-      task: "Plan a memory promotion for a stale pattern.",
+      task: "Plan a memory promotion for a stale knowledge.",
       scope: "project:project-1"
     },
     expectedBehavior: {
       outcome: "exclude",
-      subject: "memory_record:stale-pattern",
-      rationale: "Active anti-memory invalidates the stale pattern.",
+      subject: "memory_record:stale-knowledge",
+      rationale: "Active anti-memory invalidates the stale knowledge.",
       evidenceRefs: ["run-evidence/2026-06-23-memory-dogfood.md"]
     },
     protectedFailureModes: [{
@@ -34,7 +34,7 @@ const behaviorFixture = (overrides: Partial<BehaviorFixture>): BehaviorFixture =
       severity: "blocking",
       title: "stale memory enters context",
       mustNot: "ContextAssembly must not include invalidated memory.",
-      detection: "Included context item references memory_record:stale-pattern."
+      detection: "Included context item references memory_record:stale-knowledge."
     }],
     sourceRefs: ["KRN_ROADMAP.md#MM-59"],
     metadata: {}

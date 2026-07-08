@@ -228,7 +228,7 @@ export const evalProofBoundaryManifest = [
     requiredFor: ["local-static", "product-loop", "handoff"],
     proves: [
       "target-repo fixture corpora pass the decision-packet eval path",
-      "each target corpus includes repo-specific governing decisions, reusable KRN patterns, stale decisions, and rejected-path readback",
+      "each target corpus includes repo-specific governing decisions, reusable KRN knowledge, stale decisions, and rejected-path readback",
       "the target corpora avoid self-repo KRN plan/architecture evidence references"
     ],
     doesNotProve: [

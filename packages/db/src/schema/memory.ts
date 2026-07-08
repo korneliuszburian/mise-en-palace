@@ -126,7 +126,6 @@ export const memoryRecordKind = pgEnum("memory_record_kind", [
   "preference",
   "constraint",
   "procedure",
-  "pattern",
   "risk"
 ]);
 

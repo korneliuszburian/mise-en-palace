@@ -22,16 +22,16 @@ Use this skill before or during TypeScript changes.
 4. Avoid `any`; isolate and justify it if unavoidable.
 5. Avoid double assertions unless no better option exists.
 6. Put runtime validation near external boundaries.
-7. If the work touches an external input boundary, query the retained pattern
+7. If the work touches an external input boundary, query the retained knowledge
    catalog before implementation when the catalog is available:
 
    ```sh
    pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
    ```
 
-   Use the catalog result as read-only pattern context. If the command is not
+   Use the catalog result as read-only knowledge context. If the command is not
    available, record that catalog readback was not used; do not fall back to a
-   markdown pattern file as runtime authority.
+   markdown knowledge file as runtime authority.
 8. State whether `ts-boundary-unknown-first-result-state` applies.
 9. Decide whether `ts-type-critic` should review.
 10. Run typecheck before completion.
@@ -39,7 +39,7 @@ Use this skill before or during TypeScript changes.
 ## Output
 
 - Boundary classification.
-- Pattern ID applied or rejected, when a retained TypeScript pattern is relevant.
+- Knowledge ID applied or rejected, when retained TypeScript knowledge is relevant.
 - Validation or narrowing location.
 - Public type changes.
 - Any justified type-safety exception.
@@ -57,7 +57,7 @@ Use this skill before or during TypeScript changes.
 - Do not trust `JSON.parse`, `fetch().json()`, file reads, env vars, CLI args,
   MCP responses, connector responses, plugin output, or user config.
 - Do not introduce unreviewed `any`.
-- Do not apply a retained pattern by vibe; name the pattern ID, consumer, and
+- Do not apply retained knowledge by vibe; name the knowledge ID, consumer, and
   falsifier or explicitly reject it for the slice.
 - Do not claim completion without typecheck once TypeScript exists.
 

@@ -1741,23 +1741,23 @@ describe("activation engine", () => {
     expect(context.exclusions.map((item) => item.subjectId)).toContain("memory-low");
   });
 
-  it("prioritizes explicitly named retained source-to-decision pattern claims over unrelated target context", () => {
+  it("prioritizes explicitly named retained source-to-decision knowledge claims over unrelated target context", () => {
     const sourceQuery = buildSourceQuery({
       ...task,
-      id: "task-sbv-pattern-priority",
-      title: "Continue SBV retained pattern priority",
-      objective: "Continue SBV-00 after source-to-decision usefulness feedback: choose the next implementation slice for the shared brain vertical using retained pattern evidence, not multi-repo bookkeeping",
-      constraints: ["use retained source-to-decision pattern evidence"],
+      id: "task-sbv-knowledge-priority",
+      title: "Continue SBV retained knowledge priority",
+      objective: "Continue SBV-00 after source-to-decision usefulness feedback: choose the next implementation slice for the shared brain vertical using retained knowledge evidence, not multi-repo bookkeeping",
+      constraints: ["use retained source-to-decision knowledge evidence"],
       nonGoals: ["do not continue EKOLOGUS target-specific work"],
       acceptance: ["retained source-to-decision SourceClaim is included before unrelated target context"]
     });
     const retainedPattern = toSourceClaimCandidate(
       sourceClaim({
-        id: "claim-source-to-decision-pattern",
+        id: "claim-source-to-decision-knowledge",
         claim: "Retained KRN knowledge must preserve source, mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
-        mechanism: "The source-to-decision pattern turns research and local evidence into a reviewable decision chain instead of decorative source notes.",
-        krnImplication: "Use this retained pattern when a shared brain vertical task explicitly names source-to-decision reuse.",
-        doesNotProve: "This does not prove the retained pattern is product truth or that every source claim should be selected."
+        mechanism: "The source-to-decision knowledge turns research and local evidence into a reviewable decision chain instead of decorative source notes.",
+        krnImplication: "Use this retained knowledge when a shared brain vertical task explicitly names source-to-decision reuse.",
+        doesNotProve: "This does not prove the retained knowledge is product truth or that every source claim should be selected."
       })
     );
     const unrelatedTargetPacket = toSourceClaimCandidate(
@@ -1765,7 +1765,7 @@ describe("activation engine", () => {
         id: "claim-ekologus-target",
         claim: "EKOLOGUS target context improved a previous implementation slice with evidence and usefulness feedback.",
         mechanism: "The target packet matched prior multi-repo work and implementation evidence.",
-        krnImplication: "Use only for EKOLOGUS-specific target work, not shared brain vertical pattern priority.",
+        krnImplication: "Use only for EKOLOGUS-specific target work, not shared brain vertical knowledge priority.",
         doesNotProve: "This does not prove EKOLOGUS context is relevant to non-EKOLOGUS shared-brain tasks."
       })
     );
@@ -1776,7 +1776,7 @@ describe("activation engine", () => {
     );
 
     expect(bounded.find((candidate) => candidate.exclusion === undefined)?.subjectId)
-      .toBe("claim-source-to-decision-pattern");
+      .toBe("claim-source-to-decision-knowledge");
     expect(bounded.find((candidate) => candidate.subjectId === "claim-ekologus-target"))
       .toMatchObject({
         exclusion: expect.objectContaining({

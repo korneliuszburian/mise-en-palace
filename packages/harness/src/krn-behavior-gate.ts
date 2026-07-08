@@ -182,12 +182,12 @@ const memoryRecord = (overrides: Partial<MemoryRecord>): MemoryRecord => ({
 const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
   id: "anti-memory-1",
   projectId: "project-1",
-  key: "stale-pattern",
-  rejectedClaim: "Use stale memory update patterns as trusted guidance.",
-  reason: "The pattern was rejected by reviewed anti-memory.",
+  key: "stale-knowledge",
+  rejectedClaim: "Use stale memory update procedures as trusted guidance.",
+  reason: "The knowledge was rejected by reviewed anti-memory.",
   invalidatedBySourceClaimIds: [],
-  appliesTo: "stale-pattern",
-  summary: "Block stale memory pattern.",
+  appliesTo: "stale-knowledge",
+  summary: "Block stale memory knowledge.",
   body: "Activation must exclude this stale memory key.",
   owner: "memory-eval",
   confidence: 95,
@@ -322,7 +322,7 @@ const runStaleMemoryAbstention = (now: string): BehaviorFixtureProof => {
       confidence: 95,
       validUntil: "2026-06-01T00:00:00.000Z"
     }))
-  ], buildMemoryQuery(taskContract(now, "Use the stale memory update pattern.")));
+  ], buildMemoryQuery(taskContract(now, "Use the stale memory update procedure.")));
   const context = assembleContext({
     id: "context-real-gate-stale-memory",
     harnessPlanId: "plan-real-gate",
@@ -350,10 +350,10 @@ const runStaleMemoryAbstention = (now: string): BehaviorFixtureProof => {
 const runAntiMemoryBlock = (now: string): BehaviorFixtureProof => {
   const ranked = rankCandidates([
     toMemoryCandidate(memoryRecord({
-      id: "memory-stale-pattern",
-      key: "stale-pattern",
-      summary: "Stale pattern appears highly relevant for memory updates.",
-      body: "This stale pattern should be tempting but blocked.",
+      id: "memory-stale-knowledge",
+      key: "stale-knowledge",
+      summary: "Stale knowledge appears highly relevant for memory updates.",
+      body: "This stale knowledge should be tempting but blocked.",
       confidence: 98
     }))
   ], buildMemoryQuery(taskContract(now, "Use stale knowledge guidance for a memory update.")));
@@ -370,12 +370,12 @@ const runAntiMemoryBlock = (now: string): BehaviorFixtureProof => {
     createdAt: now
   });
   const unsafeExclusion = context.exclusions.some((exclusion) =>
-    exclusion.subjectId === "memory-stale-pattern" &&
+    exclusion.subjectId === "memory-stale-knowledge" &&
     exclusion.reason === "unsafe"
   );
   const conflict = filtered.conflictSets.some((conflictSet) =>
     conflictSet.reason === "anti_memory_block" &&
-    conflictSet.candidateIds.includes("memory-stale-pattern") &&
+    conflictSet.candidateIds.includes("memory-stale-knowledge") &&
     conflictSet.candidateIds.includes("anti-memory-1")
   );
   const passed =
@@ -387,8 +387,8 @@ const runAntiMemoryBlock = (now: string): BehaviorFixtureProof => {
     "golden-case-memory-smoke-002",
     passed ? "passed" : "failed",
     passed
-      ? "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence."
-      : "Real activation behavior did not block memory-stale-pattern with anti-memory conflict evidence."
+      ? "Real activation behavior blocked memory-stale-knowledge with anti-memory conflict evidence."
+      : "Real activation behavior did not block memory-stale-knowledge with anti-memory conflict evidence."
   );
 };
 

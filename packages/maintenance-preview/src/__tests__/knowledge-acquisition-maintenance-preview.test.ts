@@ -6,7 +6,7 @@ import {
 
 const now = "2026-06-30T21:10:00.000Z";
 const evidenceRef =
-  "review-evidence/controlled-dogfood/2026-06-30-imr-05-store-backed-pattern-gate-ama/REPORT.md";
+  "review-evidence/controlled-dogfood/2026-06-30-imr-05-store-backed-knowledge-gate-ama/REPORT.md";
 
 describe("knowledge acquisition maintenance preview", () => {
   test("turns missing-evidence readback into a reviewable candidate without mutation", () => {

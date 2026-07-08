@@ -60,13 +60,13 @@
       },
       {
         "id": "golden-case-anti-memory-001-a",
-        "title": "anti-memory blocks rejected observation pattern",
+        "title": "anti-memory blocks rejected observation knowledge",
         "input": {
-          "observation": "observe-run rejected pattern"
+          "observation": "observe-run rejected knowledge"
         },
         "expectedBehavior": {
           "outcome": "exclude",
-          "subject": "observation_prefix:observation-rejected-pattern",
+          "subject": "observation_prefix:observation-rejected-knowledge",
           "rationale": "Anti-memory must block matching observation prefix items before they become context.",
           "evidenceRefs": ["KRN_ROADMAP.md#MM-63"]
         },
@@ -75,9 +75,9 @@
             "id": "failure-mode-anti-memory-001-a",
             "domain": "anti_memory",
             "severity": "blocking",
-            "title": "rejected observation pattern enters prefix",
+            "title": "rejected observation knowledge enters prefix",
             "mustNot": "Observation prefix must not include an item targeted by active anti-memory.",
-            "detection": "selectObservationPrefix includes observation-rejected-pattern instead of anti_memory exclusion."
+            "detection": "selectObservationPrefix includes observation-rejected-knowledge instead of anti_memory exclusion."
           }
         ],
         "sourceRefs": ["KRN_ROADMAP.md#MM-63"],

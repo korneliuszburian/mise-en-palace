@@ -114,7 +114,7 @@ describe("runCli", () => {
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
                 nextAction: "use",
-                doesNotProve: "This pattern does not prove implementation correctness."
+                doesNotProve: "This knowledge does not prove implementation correctness."
               }
             ],
             reason: "Knowledge read model matched the pre-coding plan query.",

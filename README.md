@@ -43,7 +43,7 @@ Still not built:
 - broad MCP product server;
 - autonomous worker daemon;
 - large-scale ingest pipeline;
-- final temporal consensus engine;
+- complete temporal consensus engine;
 - markdown-backed runtime memory.
 
 ## Verification

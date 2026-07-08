@@ -106,7 +106,7 @@ const task: TaskContract = {
   operatorIntentId: "intent-1",
   projectId: "project-1",
   title: "Use observation prefix safely",
-  objective: "Use observe run evidence without activating rejected patterns.",
+  objective: "Use observe run evidence without activating rejected knowledge.",
   constraints: ["observation is not memory"],
   nonGoals: ["do not promote memory from reflection"],
   acceptance: ["anti-memory blocks rejected observation prefix"],
@@ -121,10 +121,10 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   projectId: "project-1",
   key: "observe-run",
   rejectedClaim: "Rejected observe-run observation should enter context.",
-  reason: "The observation pattern was rejected by reviewed anti-memory.",
+  reason: "The observation knowledge was rejected by reviewed anti-memory.",
   invalidatedBySourceClaimIds: [],
   appliesTo: "observe-run",
-  summary: "Block rejected observation prefix pattern",
+  summary: "Block rejected observation prefix knowledge",
   body: "Do not activate observations matching observe-run.",
   owner: "memory-review",
   confidence: 90,
@@ -211,12 +211,12 @@ describe("golden observation and reflection behavior cases", () => {
     });
   });
 
-  it("blocks rejected observation prefix patterns with anti-memory", () => {
+  it("blocks rejected observation prefix knowledge with anti-memory", () => {
     const prefix = selectObservationPrefix({
       task,
       projectId: "project-1",
       observations: [observation({
-        id: "observation-rejected-pattern"
+        id: "observation-rejected-knowledge"
       })],
       antiMemoryRecords: [antiMemoryRecord({})],
       now
@@ -224,7 +224,7 @@ describe("golden observation and reflection behavior cases", () => {
 
     expect(prefix.items).toHaveLength(0);
     expect(prefix.exclusions).toEqual([expect.objectContaining({
-      observationId: "observation-rejected-pattern",
+      observationId: "observation-rejected-knowledge",
       reason: "anti_memory"
     })]);
   });

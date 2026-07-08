@@ -112,7 +112,7 @@ const contextAssembly: ContextAssembly = {
       {
         observationId: "observation-1",
         warning: "gap",
-        summary: "Observation records the failure pattern but does not prove current DB readiness."
+        summary: "Observation records the failure knowledge but does not prove current DB readiness."
       }
     ],
     exclusions: []
@@ -217,7 +217,7 @@ describe("renderExecutionBrief", () => {
       {
         observationId: "observation-1",
         warning: "gap",
-        summary: "Observation records the failure pattern but does not prove current DB readiness."
+        summary: "Observation records the failure knowledge but does not prove current DB readiness."
       }
     ]);
     expect(brief.untrustedContextWarnings).toEqual([]);

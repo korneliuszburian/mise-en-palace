@@ -16,13 +16,13 @@ import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
-const storePatternMemory = (): MemoryRecord => ({
+const storeKnowledgeMemory = (): MemoryRecord => ({
   id: "memory-record-1" as MemoryRecord["id"],
   projectId: "project-1" as MemoryRecord["projectId"],
   key: "knowledge:store-backed-usefulness",
   kind: "procedure",
   status: "active",
-  summary: "Store-backed usefulness pattern",
+  summary: "Store-backed usefulness knowledge",
   body: "Use store-backed feedback_delta events for usefulness readback.",
   owner: "krn",
   confidence: 95,
@@ -45,7 +45,7 @@ const storePatternMemory = (): MemoryRecord => ({
   updatedAt: now
 });
 
-const patternFeedbackDelta = (
+const knowledgeFeedbackDelta = (
   knowledgeId = "knowledge:store-backed-usefulness"
 ): FeedbackDelta => ({
   id: "feedback-delta-1" as FeedbackDelta["id"],
@@ -58,7 +58,7 @@ const patternFeedbackDelta = (
     knowledgeUsefulnessOutcomes: [{
       knowledgeId,
       outcome: "helped",
-      reason: "The pattern changed the implementation decision.",
+      reason: "The knowledge changed the implementation decision.",
       evidenceRefs: ["test:brain recall store-backed"],
       doesNotProve: "One helped event does not prove broad usefulness."
     }]
@@ -68,7 +68,7 @@ const patternFeedbackDelta = (
 });
 
 const createBrainRecallDatabaseRuntime = (
-  feedbackPatternId = "knowledge:store-backed-usefulness"
+  feedbackKnowledgeId = "knowledge:store-backed-usefulness"
 ) => async (_input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => ({
   workspaceId: "workspace-1",
   projectId: "project-1",
@@ -93,7 +93,7 @@ const createBrainRecallDatabaseRuntime = (
       throw new Error("createFeedbackDelta should not be called");
     },
     async listFeedbackDeltasForProject() {
-      return [patternFeedbackDelta(feedbackPatternId)];
+      return [knowledgeFeedbackDelta(feedbackKnowledgeId)];
     }
   },
   sourceRepository: {
@@ -145,10 +145,10 @@ const createBrainRecallDatabaseRuntime = (
       return undefined;
     },
     async listMemoryRecordsForProject() {
-      return [storePatternMemory()];
+      return [storeKnowledgeMemory()];
     },
     async listActiveMemory() {
-      return [storePatternMemory()];
+      return [storeKnowledgeMemory()];
     },
     async invalidateMemoryRecord() {
       throw new Error("invalidateMemoryRecord should not be called");

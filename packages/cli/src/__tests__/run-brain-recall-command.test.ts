@@ -240,10 +240,10 @@ describe("runBrainRecallCommand", () => {
 
   it("executes static html text and field filters in a DOM-capable smoke", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-preview-"));
-    const patternReadModelPath = path.join(directory, "procedure-readModel.json");
+    const procedureReadModelPath = path.join(directory, "procedure-readModel.json");
     const memoryReadModelPath = path.join(directory, "memory-readModel.json");
 
-    await writeFile(patternReadModelPath, JSON.stringify(knowledgeReadModel({
+    await writeFile(procedureReadModelPath, JSON.stringify(knowledgeReadModel({
       id: "knowledge:skill-routing",
       kind: "procedure",
       status: "active",
@@ -265,7 +265,7 @@ describe("runBrainRecallCommand", () => {
 
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
-      readModelFiles: [patternReadModelPath, memoryReadModelPath],
+      readModelFiles: [procedureReadModelPath, memoryReadModelPath],
       decisionFiles: [],
       catalogFiles: [],
       filter: {},
@@ -328,7 +328,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("Source-to-decision retention gate");
   });
 
-  it("searches the evidence proof boundary pattern through the catalog", async () => {
+  it("searches the evidence proof boundary knowledge through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -346,7 +346,7 @@ describe("runBrainRecallCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the graph relation readback pattern through the catalog", async () => {
+  it("searches the graph relation readback knowledge through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -364,7 +364,7 @@ describe("runBrainRecallCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the maintenance candidate-only runtime pattern through the catalog", async () => {
+  it("searches the maintenance candidate-only runtime knowledge through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -382,7 +382,7 @@ describe("runBrainRecallCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the consensus relation maintenance review pattern through the catalog", async () => {
+  it("searches the consensus relation maintenance review knowledge through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -503,7 +503,7 @@ describe("runBrainRecallCommand", () => {
     expect(readModelIds(preview)).toEqual(["knowledge:untrusted-context-warning-boundary"]);
   });
 
-  it("renders no-match guidance for over-filtered pattern queries", async () => {
+  it("renders no-match guidance for over-filtered knowledge queries", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],

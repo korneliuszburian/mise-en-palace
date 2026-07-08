@@ -12,12 +12,12 @@
         "id": "golden-case-memory-002-b",
         "title": "stale memory is excluded",
         "input": {
-          "task": "Plan a memory update using the stale pattern."
+          "task": "Plan a memory update using the stale knowledge."
         },
         "expectedBehavior": {
           "outcome": "exclude",
-          "subject": "memory_record:stale-pattern",
-          "rationale": "Active anti-memory invalidates the stale pattern.",
+          "subject": "memory_record:stale-knowledge",
+          "rationale": "Active anti-memory invalidates the stale knowledge.",
           "evidenceRefs": ["run-evidence/2026-06-23-memory-dogfood.md"]
         },
         "protectedFailureModes": [
@@ -25,9 +25,9 @@
             "id": "failure-mode-memory-002-b",
             "domain": "anti_memory",
             "severity": "blocking",
-            "title": "stale pattern enters context",
+            "title": "stale knowledge enters context",
             "mustNot": "Context must not include invalidated memory.",
-            "detection": "Included context item references memory_record:stale-pattern."
+            "detection": "Included context item references memory_record:stale-knowledge."
           },
           {
             "id": "failure-mode-memory-002-a",
@@ -70,7 +70,7 @@
         "id": "golden-case-memory-smoke-001",
         "title": "stale memory smoke abstains",
         "input": {
-          "task": "Use the stale memory update pattern."
+          "task": "Use the stale memory update procedure."
         },
         "expectedBehavior": {
           "outcome": "abstain",
@@ -93,14 +93,14 @@
       },
       {
         "id": "golden-case-memory-smoke-002",
-        "title": "anti-memory blocks tempting stale pattern",
+        "title": "anti-memory blocks tempting stale knowledge",
         "input": {
           "task": "Use stale knowledge guidance for a memory update."
         },
         "expectedBehavior": {
           "outcome": "exclude",
-          "subject": "memory_record:memory-stale-pattern",
-          "rationale": "Active anti-memory must block a high-confidence stale pattern even when it lexically matches the task.",
+          "subject": "memory_record:memory-stale-knowledge",
+          "rationale": "Active anti-memory must block a high-confidence stale knowledge even when it lexically matches the task.",
           "evidenceRefs": ["KRN_ROADMAP.md#MM-61-lite"]
         },
         "protectedFailureModes": [
@@ -109,8 +109,8 @@
             "domain": "anti_memory",
             "severity": "blocking",
             "title": "anti-memory block bypassed",
-            "mustNot": "Activation must not include memory_record:memory-stale-pattern when active anti-memory targets its key.",
-            "detection": "ContextAssembly includes memory_record:memory-stale-pattern or omits anti_memory_block conflict evidence."
+            "mustNot": "Activation must not include memory_record:memory-stale-knowledge when active anti-memory targets its key.",
+            "detection": "ContextAssembly includes memory_record:memory-stale-knowledge or omits anti_memory_block conflict evidence."
           }
         ],
         "sourceRefs": ["KRN_ROADMAP.md#MM-61-lite"],

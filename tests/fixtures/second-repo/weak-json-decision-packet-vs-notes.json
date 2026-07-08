@@ -139,7 +139,7 @@
     },
     {
       "id": "reuse-typescript-unknown-first",
-      "title": "WJ13 reuse unknown-first TypeScript pattern",
+      "title": "WJ13 reuse unknown-first TypeScript knowledge",
       "statement": "Reuse KRN TypeScript practice: external input stays unknown until a narrow parser proves shape.",
       "status": "current",
       "evidenceRef": ".agents/skills/typescript-type-safety/SKILL.md",
@@ -516,7 +516,7 @@
       "expectedDecisionId": "reuse-typescript-unknown-first",
       "staleDecisionIds": ["stale-any-json-parse"],
       "rejectedDecisionIds": ["reject-parent-kernel-edit"],
-      "baselineFailureRationale": "Notes can recall reusable pattern text while mixing it with stale any-cast guidance."
+      "baselineFailureRationale": "Notes can recall reusable knowledge text while mixing it with stale any-cast guidance."
     },
     {
       "id": "wj14-reuse-result-state",

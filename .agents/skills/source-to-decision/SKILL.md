@@ -31,8 +31,8 @@ Use this skill to prevent source hoarding.
 Use this lane for official docs, papers, practitioner writing, course material,
 competitor docs, local evidence, and user-provided research.
 
-Before retaining or applying a source/pattern, query the explicit brain
-knowledge catalog when retained pattern context is relevant:
+Before retaining or applying a source or knowledge decision, query the explicit
+brain knowledge catalog when retained knowledge context is relevant:
 
 ```sh
 pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
@@ -42,7 +42,7 @@ Use catalog results as read-only context. They can guide adoption, rejection,
 consumer routing, and falsifiers, but they do not promote memory, mutate source
 truth, rank knowledge, or prove product readiness.
 
-For multi-source, course, paper, practitioner-pattern, or operator-facing
+For multi-source, course, paper, practitioner method, or operator-facing
 intake, keep this skill as the trigger/gate and route durable follow-up through
 Beads, store-backed source candidates, eval candidates, or a focused skill
 update. Do not create a markdown research runbook as the source of truth.
@@ -113,12 +113,12 @@ source_usefulness_feedback:
 - Do not create a research archive, source crawler, or broad research backlog
   from a source that has no immediate consumer.
 
-## Continuous Pattern Gate
+## Continuous Knowledge Gate
 
 Use this gate at every non-trivial KRN slice, not only research-labeled tasks.
 
-Before adopting, rejecting, or implementing a pattern, classify whether the
-slice touches one of these pattern surfaces:
+Before adopting, rejecting, or implementing retained knowledge, classify whether
+the slice touches one of these knowledge surfaces:
 
 ```txt
 infra / storage / migrations / queues
@@ -185,7 +185,7 @@ reject:
   source is decorative, unsupported, stale, or mismatched to KRN
 ```
 
-Do not proceed from pattern to implementation unless the consumer and falsifier
+Do not proceed from retained knowledge to implementation unless the consumer and falsifier
 are explicit.
 
 ## Usefulness Feedback Closure

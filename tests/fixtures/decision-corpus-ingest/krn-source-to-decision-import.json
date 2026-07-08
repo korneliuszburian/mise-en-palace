@@ -62,7 +62,7 @@
       "statement": "Adopt practitioner research only as a bounded source-to-decision row with mechanism, KRN implication, consumer, falsifier, and task scope before it can influence decision packets.",
       "status": "current",
       "taskScopes": [
-        "research refresh governed patterns",
+        "research refresh governed knowledge",
         "source-to-decision research intake",
         "memory loop source governance"
       ],
@@ -157,7 +157,7 @@
     },
     {
       "id": "anti-vanity-naming-task",
-      "task": "When should KRN rename annoying normalized final new class file command names without drifting into vanity naming churn?",
+      "task": "When should KRN rename vague lifecycle class file command names without drifting into vanity naming churn?",
       "expectedDecisionId": "anti-vanity-naming-source-backed",
       "staleDecisionIds": ["manual-fixture-editing-only"],
       "rejectedDecisionIds": ["product-readiness-from-live-pilot"],
@@ -165,7 +165,7 @@
     },
     {
       "id": "research-refresh-intake-task",
-      "task": "How should KRN absorb a Mem0-style memory-first research pattern into governed source-to-decision knowledge without treating a research link as authority?",
+      "task": "How should KRN absorb a Mem0-style memory-first research method into governed source-to-decision knowledge without treating a research link as authority?",
       "expectedDecisionId": "memory-first-research-intake-loop",
       "staleDecisionIds": ["manual-fixture-editing-only"],
       "rejectedDecisionIds": ["research-link-as-authority"],

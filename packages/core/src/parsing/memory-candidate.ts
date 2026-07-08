@@ -11,7 +11,6 @@ export const MemoryRecordKindSchema = z.enum([
   "preference",
   "constraint",
   "procedure",
-  "pattern",
   "risk"
 ]);
 

@@ -27,7 +27,6 @@ export type MemoryRecordKind =
   | "preference"
   | "constraint"
   | "procedure"
-  | "pattern"
   | "risk";
 
 export type MemoryRecordStatus =

@@ -255,7 +255,7 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("sourceDecisionCandidates:");
   expect(stdout).toContain("sourceUsefulnessOutcomes:");
   expect(stdout).toContain("outcome=helped sourceClaim=source-claim-1 sourceDecision=none");
-  expect(stdout).toContain("reason: Source claim kept pattern-intake proof boundaries visible");
+  expect(stdout).toContain("reason: Source claim kept knowledge-intake proof boundaries visible");
   expect(stdout).toContain("evidenceRef: evidence-bundle-1");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
   expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
@@ -299,7 +299,7 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
     sourceUsefulnessOutcomes: [{
       sourceClaimId: "source-claim-1",
       outcome: "helped",
-      reason: "Source claim kept pattern-intake proof boundaries visible",
+      reason: "Source claim kept knowledge-intake proof boundaries visible",
       evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
       doesNotProve: "Does not prove future source selector quality"
     }],
@@ -651,7 +651,7 @@ describe("runCli", () => {
         "--target-command",
         "wilq-seo scripts/test.sh",
         "--source-usefulness",
-        "claim:source-claim-1=helped|Source claim kept pattern-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
+        "claim:source-claim-1=helped|Source claim kept knowledge-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
         "--knowledge-usefulness",
         "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-bundle-1|Does not prove future knowledge recall quality",
         "--persist"

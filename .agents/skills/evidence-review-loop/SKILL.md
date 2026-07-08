@@ -44,7 +44,7 @@ state without mutating memory automatically.
 - Review burden.
 - Rollback path.
 - Feedback candidates.
-- Source usefulness outcomes when source/pattern input shaped the run.
+- Source usefulness outcomes when source/knowledge input shaped the run.
 - Observe-before-reflect sequencing status for persisted same-run loops.
 - Persistence status.
 

@@ -107,7 +107,6 @@ export type ReflectionMemoryCandidateKind =
   | "preference"
   | "constraint"
   | "procedure"
-  | "pattern"
   | "risk";
 
 export type ReflectionCandidateEvidenceProvenance =

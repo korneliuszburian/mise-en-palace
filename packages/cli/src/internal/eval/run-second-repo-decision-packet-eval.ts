@@ -102,7 +102,7 @@ const secondRepoEvalGaps = [
   "live Codex execution or obedience",
   "arbitrary repository portability",
   "source truth",
-  "that every reusable pattern transfers cleanly",
+  "that every reusable knowledge decision transfers cleanly",
   "repo-specificity beyond id prefix plus target-repo evidenceRef convention"
 ] as const;
 
@@ -267,7 +267,7 @@ export const runSecondRepoDecisionPacketEval = async (
       proves: [
         "the decision-packet eval runs on target-repo corpora outside the KRN repo",
         "each target corpus has repo-specific governing decisions",
-        "each target corpus includes at least one reusable KRN TypeScript pattern",
+        "each target corpus includes at least one reusable KRN TypeScript knowledge decision",
         "each target corpus includes stale and rejected-path readback",
         "each target corpus reports KRN-vs-notes comparison outcomes",
         "each target corpus avoids self-repo KRN plan/architecture evidence refs"

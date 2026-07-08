@@ -66,12 +66,12 @@ const memoryRecord = (overrides: Partial<MemoryRecord>): MemoryRecord => ({
 const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
   id: "anti-memory-1",
   projectId: "project-1",
-  key: "stale-pattern",
-  rejectedClaim: "Use stale memory update patterns as trusted guidance.",
-  reason: "The pattern was rejected by reviewed anti-memory.",
+  key: "stale-knowledge",
+  rejectedClaim: "Use stale memory update procedures as trusted guidance.",
+  reason: "The knowledge was rejected by reviewed anti-memory.",
   invalidatedBySourceClaimIds: [],
-  appliesTo: "stale-pattern",
-  summary: "Block stale memory pattern",
+  appliesTo: "stale-knowledge",
+  summary: "Block stale memory knowledge",
   body: "Activation must exclude this stale memory key.",
   owner: "memory-eval",
   confidence: 95,
@@ -89,13 +89,13 @@ const antiMemoryCandidate = (
   id: "anti-memory-candidate-1",
   projectId: "project-1",
   proposedBy: "maintenance:review_feedback_delta",
-  key: "stale-pattern",
+  key: "stale-knowledge",
   status: "candidate",
-  rejectedClaim: "Use stale memory update patterns as trusted guidance.",
-  reason: "Feedback marked the pattern stale but review has not promoted anti-memory.",
+  rejectedClaim: "Use stale memory update procedures as trusted guidance.",
+  reason: "Feedback marked the knowledge stale but review has not promoted anti-memory.",
   invalidatedBySourceClaimIds: [],
-  appliesTo: "stale-pattern",
-  summary: "Review stale memory pattern feedback",
+  appliesTo: "stale-knowledge",
+  summary: "Review stale memory knowledge feedback",
   body: "Pending feedback-maintenance anti-memory candidate.",
   owner: "maintenance-feedback",
   confidence: 75,
@@ -339,7 +339,7 @@ describe("golden memory behavior cases", () => {
     const ranked = rankCandidates([
       toMemoryCandidate(memoryRecord({
         id: "memory-pending-review",
-        key: "stale-pattern",
+        key: "stale-knowledge",
         summary: "Reviewed memory supports rollback path",
         body: "Use this rollback path guidance for memory dogfood work.",
         applicationGuidance: "Use when planning rollback path for memory dogfood."
@@ -364,7 +364,7 @@ describe("golden memory behavior cases", () => {
         pendingAntiMemoryReview: {
           antiMemoryCandidateIds: ["anti-memory-candidate-1"],
           feedbackDeltaIds: ["feedback-delta-1"],
-          subjectRefs: ["applies_to:stale-pattern"],
+          subjectRefs: ["applies_to:stale-knowledge"],
           doesNotProve: expect.stringContaining("do not block activation")
         }
       }
@@ -409,7 +409,7 @@ describe("golden memory behavior cases", () => {
         validUntil: "2026-06-01T00:00:00.000Z"
       }))
     ], buildMemoryQuery(task({
-      objective: "Use the stale memory update pattern."
+      objective: "Use the stale memory update procedure."
     })));
     const context = assembleContext({
       id: "context-smoke-stale",
@@ -426,13 +426,13 @@ describe("golden memory behavior cases", () => {
     })]);
   });
 
-  it("smoke case: active anti-memory blocks a tempting stale pattern", () => {
+  it("smoke case: active anti-memory blocks a tempting stale knowledge", () => {
     const ranked = rankCandidates([
       toMemoryCandidate(memoryRecord({
-        id: "memory-stale-pattern",
-        key: "stale-pattern",
-        summary: "Stale pattern appears highly relevant for memory updates.",
-        body: "This stale pattern should be tempting but blocked.",
+        id: "memory-stale-knowledge",
+        key: "stale-knowledge",
+        summary: "Stale knowledge appears highly relevant for memory updates.",
+        body: "This stale knowledge should be tempting but blocked.",
         confidence: 98
       }))
     ], buildMemoryQuery(task({
@@ -453,12 +453,12 @@ describe("golden memory behavior cases", () => {
 
     expect(context.inclusions).toHaveLength(0);
     expect(context.exclusions).toEqual([expect.objectContaining({
-      subjectId: "memory-stale-pattern",
+      subjectId: "memory-stale-knowledge",
       reason: "unsafe"
     })]);
     expect(filtered.conflictSets).toEqual([expect.objectContaining({
       reason: "anti_memory_block",
-      candidateIds: expect.arrayContaining(["memory-stale-pattern", "anti-memory-1"])
+      candidateIds: expect.arrayContaining(["memory-stale-knowledge", "anti-memory-1"])
     })]);
   });
 

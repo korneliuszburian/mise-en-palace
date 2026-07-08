@@ -44,7 +44,7 @@ const kindAliases = new Map<string, string>([
   ["architecture-boundary", "constraint"]
 ]);
 
-const normalizeKind = (kind: string | undefined): string | undefined => {
+const memoryKindFromCli = (kind: string | undefined): string | undefined => {
   const candidate = kind?.trim();
 
   if (candidate === undefined || candidate.length === 0) {
@@ -138,7 +138,7 @@ export const runMemoryCandidateAddCommand = async (
   runtime: MemoryCandidateAddCommandRuntime
 ): Promise<MemoryCandidateAddCommandResult> => {
   const command = runtime.command;
-  const canonicalMemoryKind = normalizeKind(command.memoryKind);
+  const canonicalMemoryKind = memoryKindFromCli(command.memoryKind);
 
   if (canonicalMemoryKind !== undefined && !MemoryRecordKindSchema.safeParse(canonicalMemoryKind).success) {
     throw new Error(`Unsupported memory kind: ${command.memoryKind}`);

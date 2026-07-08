@@ -247,7 +247,7 @@ describe("source graph mappers", () => {
       executionRunId: "run-1",
       claim: "Source claims should link to runs.",
       mechanism: "Run linkage makes source decisions auditable.",
-      krnImplication: "KRN can show why a run used a source pattern.",
+      krnImplication: "KRN can show why a run used source knowledge.",
       doesNotProve: "This does not prove retrieval quality.",
       sourceAuthority: "project-decision",
       supportType: "implementation-boundary",

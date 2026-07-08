@@ -36,7 +36,6 @@ const memoryRecordKinds = new Set<string>([
   "preference",
   "constraint",
   "procedure",
-  "pattern",
   "risk"
 ]);
 

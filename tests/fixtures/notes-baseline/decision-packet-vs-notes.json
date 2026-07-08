@@ -106,13 +106,13 @@
       "doesNotProve": "Does not prove Codex follows the brief."
     },
     {
-      "id": "pattern-intake-consumer-falsifier",
-      "title": "Pattern intake needs consumer and falsifier",
-      "statement": "Retain external patterns only through source, mechanism, KRN implication, decision or rejection, consumer, and falsifier.",
+      "id": "knowledge-intake-consumer-falsifier",
+      "title": "Knowledge intake needs consumer and falsifier",
+      "statement": "Retain external knowledge only through source, mechanism, KRN implication, decision or rejection, consumer, and falsifier.",
       "status": "current",
       "evidenceRef": "KRN_ROADMAP.md:65",
-      "sourceClaimId": "source-claim:pattern-intake-consumer-falsifier",
-      "sourceDecisionEdgeId": "source-decision-edge:pattern-intake-consumer-falsifier",
+      "sourceClaimId": "source-claim:knowledge-intake-consumer-falsifier",
+      "sourceDecisionEdgeId": "source-decision-edge:knowledge-intake-consumer-falsifier",
       "falsifier": "A source is retained because it sounds impressive but has no consumer or falsifier.",
       "doesNotProve": "Does not prove every future retained source is correct."
     },
@@ -536,9 +536,9 @@
       "text": "Codex adapter non mutating brief. Rendering a brief must not mutate memory, source, or evidence."
     },
     {
-      "id": "note-pattern-intake-consumer-falsifier",
-      "decisionId": "pattern-intake-consumer-falsifier",
-      "text": "Pattern intake needs consumer and falsifier. Keep source mechanism implication decision consumer falsifier."
+      "id": "note-knowledge-intake-consumer-falsifier",
+      "decisionId": "knowledge-intake-consumer-falsifier",
+      "text": "Knowledge intake needs consumer and falsifier. Keep source mechanism implication decision consumer falsifier."
     },
     {
       "id": "note-no-dashboard-before-brain-proof",
@@ -788,9 +788,9 @@
       "baselineFailureRationale": "Notes recall non-mutating adapter behavior, but do not expose what broad product surface work is rejected."
     },
     {
-      "id": "pattern-intake-task",
+      "id": "knowledge-intake-task",
       "task": "When importing a paper course or practitioner source, what chain makes it retainable: consumer falsifier or impressive source text?",
-      "expectedDecisionId": "pattern-intake-consumer-falsifier",
+      "expectedDecisionId": "knowledge-intake-consumer-falsifier",
       "staleDecisionIds": [],
       "rejectedDecisionIds": ["copy-ledger-into-plan"],
       "baselineFailureRationale": "Notes recall the chain but do not expose anti-decoration rejection metadata."
