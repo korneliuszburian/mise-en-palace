@@ -179,7 +179,7 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
     .filter((section) => section.kind === "required")
     .map((section) => section.id);
   const optionalSections = profile.sections
-    .filter((section) => section.kind === "optional")
+    .filter((section) => section.kind === "optional" && section.rendered)
     .map((section) => section.id);
 
   return [
@@ -187,7 +187,7 @@ const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
     `- profile=${profile.profile} | format=${profile.formatVersion}`,
     `- budget=${profile.budget.status} | rendered_sections=${profile.budget.renderedSections}/${profile.budget.maxRenderedSections} | rendered_items=${profile.budget.renderedItems}/${profile.budget.maxRenderedItems}`,
     `- required=${renderJoinedValues(requiredSections)}`,
-    `- optional=${renderJoinedValues(optionalSections)}`,
+    `- rendered_optional=${renderJoinedValues(optionalSections)}`,
     `- does_not_prove=${profile.doesNotProve.join(" | ")}`
   ];
 };

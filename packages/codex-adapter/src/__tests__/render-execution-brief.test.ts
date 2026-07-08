@@ -121,6 +121,17 @@ const contextAssembly: ContextAssembly = {
   createdAt
 };
 
+const minimalContextAssembly: ContextAssembly = {
+  id: "context-minimal",
+  harnessPlanId: "plan-1",
+  status: "assembled",
+  tokenBudget: 200,
+  inclusions: [],
+  exclusions: [],
+  metadata: {},
+  createdAt
+};
+
 const capabilityPlan: CapabilityPlan = {
   id: "capability-1",
   harnessPlanId: "plan-1",
@@ -280,6 +291,44 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
+  });
+
+  it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
+    const brief = createExecutionBrief({
+      taskContract,
+      contextAssembly: minimalContextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Implement the smallest missing doctor check."
+    });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(rendered).toContain("Brief Profile:");
+    expect(rendered).toContain("- rendered_optional=none");
+    expect(rendered).toContain("Objective: Make doctor report Postgres memory and source graph readiness");
+    expect(rendered).toContain("Current Task Contract:");
+    expect(rendered).toContain("Context Inclusions:");
+    expect(rendered).toContain("- none");
+    expect(rendered).toContain("Explicit Exclusions:");
+    expect(rendered).toContain("Tool Boundaries:");
+    expect(rendered).toContain("Evidence Contract:");
+    expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
+    expect(rendered).toContain("What This Does Not Prove:");
+
+    expect(rendered).not.toContain("Observation Prefix:");
+    expect(rendered).not.toContain("Untrusted Context Warnings:");
+    expect(rendered).not.toContain("Source Claims Used:");
+    expect(rendered).not.toContain("Memory Records Used:");
+    expect(rendered).not.toContain("Anti-memory Warnings:");
+    expect(rendered).not.toContain("Hook Expectations:");
+    expect(rendered).not.toContain("Skill Hints:");
+    expect(rendered).not.toContain("MCP Resource Refs:");
+    expect(rendered).not.toContain("MCP Resource References:");
+    expect(rendered).not.toContain("Subagent Probe Hints:");
+    expect(rendered).not.toContain("Goal Refs:");
+    expect(rendered).not.toContain("Goal References:");
+    expect(rendered).not.toContain("ExecPlan Refs:");
+    expect(rendered).not.toContain("Execution Plan Refs:");
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {
