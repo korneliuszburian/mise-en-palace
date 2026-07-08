@@ -119,7 +119,7 @@ export interface FeedbackRecommendation {
 
 export interface FeedbackRecommendationReadback {
   kind: "krn.feedbackRecommendation.v1";
-  subjectKind: "source_claim" | "source_decision" | "brain_knowledge" | "memory_record";
+  subjectKind: "source_claim" | "source_decision" | "memory_record";
   subjectId: string;
   outcome: FeedbackRecommendationOutcome;
   reason: string;

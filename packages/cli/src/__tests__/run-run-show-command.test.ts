@@ -875,6 +875,14 @@ describe("runRunShowCommand", () => {
           expect.objectContaining({ action: "supersede" })
         ]
       });
+    expect(parsed.feedbackDeltas[0]?.knowledgeUsefulnessOutcomes[0]?.recommendation)
+      .toMatchObject({
+        subjectKind: "memory_record",
+        subjectId: "pattern:ts-boundary-unknown-first-result-state",
+        outcome: "helped",
+        mutation: "none",
+        recommendations: [expect.objectContaining({ action: "retain" })]
+      });
     expect(parsed.evidenceBundles[0]?.commands[0]?.doesNotProve).toBe(
       "This command result does not prove memory quality, source truth, review correctness, or production readiness."
     );

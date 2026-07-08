@@ -327,7 +327,7 @@ export const decisionPacketReadModelKnowledgeUsefulnessOutcomes = (
     reason: outcome.reason,
     evidenceRefs: outcome.evidenceRefs,
     recommendation: buildFeedbackRecommendationReadback({
-      subjectKind: "brain_knowledge",
+      subjectKind: "memory_record",
       subjectId: outcome.knowledgeId,
       outcome: outcome.outcome,
       reason: outcome.reason,
