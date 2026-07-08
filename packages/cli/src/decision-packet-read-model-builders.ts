@@ -1,5 +1,6 @@
 import {
   brainKnowledgeUsefulnessOutcomesFromMetadata,
+  buildFeedbackRecommendationReadback,
   readMetadataObjectList,
   readMetadataString,
   sourceUsefulnessOutcomesFromMetadata,
@@ -282,14 +283,40 @@ export const decisionPacketReadModelCandidates = (
 export const decisionPacketReadModelSourceUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): DecisionPacketReadModelSourceUsefulnessOutcome[] =>
-  sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
-    ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),
-    ...(outcome.sourceDecisionId === undefined ? {} : { sourceDecisionId: outcome.sourceDecisionId }),
-    outcome: outcome.outcome,
-    reason: outcome.reason,
-    evidenceRefs: outcome.evidenceRefs,
-    doesNotProve: outcome.doesNotProve
-  }));
+  sourceUsefulnessOutcomesFromMetadata(feedback.metadata).flatMap((outcome) => {
+    const subject = outcome.sourceDecisionId === undefined
+      ? outcome.sourceClaimId === undefined
+        ? undefined
+        : {
+            subjectKind: "source_claim" as const,
+            subjectId: outcome.sourceClaimId
+          }
+      : {
+          subjectKind: "source_decision" as const,
+          subjectId: outcome.sourceDecisionId
+        };
+
+    if (subject === undefined) {
+      return [];
+    }
+
+    return [{
+      ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),
+      ...(outcome.sourceDecisionId === undefined ? {} : { sourceDecisionId: outcome.sourceDecisionId }),
+      outcome: outcome.outcome,
+      reason: outcome.reason,
+      evidenceRefs: outcome.evidenceRefs,
+      recommendation: buildFeedbackRecommendationReadback({
+        subjectKind: subject.subjectKind,
+        subjectId: subject.subjectId,
+        outcome: outcome.outcome,
+        reason: outcome.reason,
+        evidenceRefs: outcome.evidenceRefs,
+        doesNotProve: outcome.doesNotProve
+      }),
+      doesNotProve: outcome.doesNotProve
+    }];
+  });
 
 export const decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes = (
   feedback: FeedbackDelta
@@ -299,6 +326,14 @@ export const decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes = (
     outcome: outcome.outcome,
     reason: outcome.reason,
     evidenceRefs: outcome.evidenceRefs,
+    recommendation: buildFeedbackRecommendationReadback({
+      subjectKind: "brain_knowledge",
+      subjectId: outcome.brainKnowledgeId,
+      outcome: outcome.outcome,
+      reason: outcome.reason,
+      evidenceRefs: outcome.evidenceRefs,
+      doesNotProve: outcome.doesNotProve
+    }),
     doesNotProve: outcome.doesNotProve
   }));
 

@@ -484,6 +484,10 @@ describe("runRunShowCommand", () => {
       "doesNotProve: This source outcome does not prove the source selector will choose the same claim in future runs."
     );
     expect(result.stdout).toContain("outcome=stale sourceClaim=claim-weak sourceDecision=none");
+    expect(result.stdout).toContain("recommendationMutation: none");
+    expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
+    expect(result.stdout).toContain("recommendation: refresh | requiresReview=true");
+    expect(result.stdout).toContain("recommendation: supersede | requiresReview=true");
     expect(result.stdout).not.toContain("claim-incomplete");
     expect(result.stdout).toContain("knowledge usefulness outcomes:");
     expect(result.stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
@@ -852,6 +856,25 @@ describe("runRunShowCommand", () => {
       "memory quality, source truth, review correctness, or product readiness",
       "Memory Core mutation"
     ]);
+    expect(parsed.feedbackDeltas[0]?.sourceUsefulnessOutcomes[0]?.recommendation)
+      .toMatchObject({
+        subjectKind: "source_decision",
+        subjectId: "source-decision-candidate-1",
+        outcome: "helped",
+        mutation: "none",
+        recommendations: [expect.objectContaining({ action: "retain" })]
+      });
+    expect(parsed.feedbackDeltas[0]?.sourceUsefulnessOutcomes[1]?.recommendation)
+      .toMatchObject({
+        subjectKind: "source_claim",
+        subjectId: "claim-weak",
+        outcome: "stale",
+        mutation: "none",
+        recommendations: [
+          expect.objectContaining({ action: "refresh" }),
+          expect.objectContaining({ action: "supersede" })
+        ]
+      });
     expect(parsed.evidenceBundles[0]?.commands[0]?.doesNotProve).toBe(
       "This command result does not prove memory quality, source truth, review correctness, or production readiness."
     );

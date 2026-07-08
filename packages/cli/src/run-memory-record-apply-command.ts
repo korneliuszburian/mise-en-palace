@@ -1,9 +1,12 @@
 import {
+  buildFeedbackRecommendationReadback,
   parseMemoryApplicationInput,
   parseMemoryFeedbackEventInput
 } from "@krn/core";
 import type {
   AntiMemoryCandidate,
+  FeedbackRecommendationOutcome,
+  FeedbackRecommendationReadback,
   MemoryApplication,
   MemoryApplicationOutcome,
   MemoryFeedbackEvent,
@@ -58,10 +61,50 @@ const feedbackEventTypeForOutcome = (
   return undefined;
 };
 
+const feedbackRecommendationOutcome = (
+  outcome: MemoryApplicationOutcome
+): FeedbackRecommendationOutcome => outcome === "hurt" ? "hurt" : outcome;
+
+const memoryFeedbackDoesNotProve =
+  "This feedback recommendation does not mutate Memory Core, prove memory truth, or prove future activation quality.";
+
+const memoryFeedbackRecommendationReadback = (input: {
+  memoryRecordId: string;
+  outcome: MemoryApplicationOutcome;
+  reason: string;
+  evidenceRefs?: readonly string[];
+}): FeedbackRecommendationReadback =>
+  buildFeedbackRecommendationReadback({
+    subjectKind: "memory_record",
+    subjectId: input.memoryRecordId,
+    outcome: feedbackRecommendationOutcome(input.outcome),
+    reason: input.reason,
+    ...(input.evidenceRefs === undefined ? {} : { evidenceRefs: input.evidenceRefs }),
+    doesNotProve: memoryFeedbackDoesNotProve
+  });
+
+const formatFeedbackRecommendation = (
+  readback: FeedbackRecommendationReadback
+): string[] => [
+  "Feedback recommendation:",
+  `recommendationOutcome: ${readback.outcome}`,
+  ...readback.recommendations.map((recommendation) =>
+    `recommendation: ${recommendation.action} | requiresReview=${recommendation.requiresReview} | ${recommendation.reason}`
+  ),
+  `recommendationMutation: ${readback.mutation}`,
+  `recommendationDoesNotProve: ${readback.doesNotProve}`
+];
+
 const formatPreview = (
   application: ReturnType<typeof parseMemoryApplicationInput>
-): string =>
-  [
+): string => {
+  const recommendation = memoryFeedbackRecommendationReadback({
+    memoryRecordId: application.memoryRecordId,
+    outcome: application.outcome,
+    reason: application.notes ?? application.expectedUse
+  });
+
+  return [
     "KRN Memory Record Apply",
     "Persistence: disabled (no-store preview; use --persist to write)",
     "DB writes: none",
@@ -72,6 +115,7 @@ const formatPreview = (
     `outcome: ${application.outcome}`,
     `notes: ${application.notes}`,
     "Memory Core mutation: none",
+    ...formatFeedbackRecommendation(recommendation),
     feedbackEventTypeForOutcome(application.outcome) === undefined
       ? "Feedback event: none"
       : "Feedback event: would be recorded",
@@ -79,11 +123,13 @@ const formatPreview = (
       ? "Follow-up candidate: none"
       : "Follow-up candidate: anti-memory candidate would be proposed"
   ].join("\n");
+};
 
 const formatPersisted = (
   application: MemoryApplication,
   feedbackEventId: string | undefined,
-  antiMemoryCandidate: AntiMemoryCandidate | undefined
+  antiMemoryCandidate: AntiMemoryCandidate | undefined,
+  recommendation: FeedbackRecommendationReadback
 ): string =>
   [
     "KRN Memory Record Apply",
@@ -95,6 +141,7 @@ const formatPersisted = (
     ...(application.executionRunId === undefined ? [] : [`runId: ${application.executionRunId}`]),
     ...(application.outcome === undefined ? [] : [`outcome: ${application.outcome}`]),
     "Memory Core mutation: none",
+    ...formatFeedbackRecommendation(recommendation),
     feedbackEventId === undefined
       ? "Feedback event: none"
       : `memoryFeedbackEvent: ${feedbackEventId}`,
@@ -228,16 +275,37 @@ export const runMemoryRecordApplyCommand = async (
     });
 
     const feedbackEventType = feedbackEventTypeForOutcome(applicationInput.outcome);
+    const baseRecommendationInput = {
+      memoryRecordId: applicationInput.memoryRecordId,
+      outcome: applicationInput.outcome,
+      reason: applicationInput.notes ?? applicationInput.expectedUse
+    } as const;
 
     if (feedbackEventType === undefined) {
       return {
-        stdout: formatPersisted(memoryApplication, undefined, undefined)
+        stdout: formatPersisted(
+          memoryApplication,
+          undefined,
+          undefined,
+          memoryFeedbackRecommendationReadback({
+            ...baseRecommendationInput,
+            evidenceRefs: [`memory-application:${memoryApplication.id}`]
+          })
+        )
       };
     }
 
     if (applicationInput.outcome !== "hurt" && applicationInput.outcome !== "stale") {
       return {
-        stdout: formatPersisted(memoryApplication, undefined, undefined)
+        stdout: formatPersisted(
+          memoryApplication,
+          undefined,
+          undefined,
+          memoryFeedbackRecommendationReadback({
+            ...baseRecommendationInput,
+            evidenceRefs: [`memory-application:${memoryApplication.id}`]
+          })
+        )
       };
     }
 
@@ -278,9 +346,17 @@ export const runMemoryRecordApplyCommand = async (
       outcome: applicationInput.outcome,
       notes: applicationInput.notes
     });
+    const recommendation = memoryFeedbackRecommendationReadback({
+      ...baseRecommendationInput,
+      evidenceRefs: [
+        `memory-application:${memoryApplication.id}`,
+        `memory-feedback-event:${feedbackEvent.id}`,
+        ...(antiMemoryCandidate === undefined ? [] : [`anti-memory-candidate:${antiMemoryCandidate.id}`])
+      ]
+    });
 
     return {
-      stdout: formatPersisted(memoryApplication, feedbackEvent.id, antiMemoryCandidate)
+      stdout: formatPersisted(memoryApplication, feedbackEvent.id, antiMemoryCandidate, recommendation)
     };
   } finally {
     await databaseRuntime.close();

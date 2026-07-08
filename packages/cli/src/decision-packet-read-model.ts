@@ -4,6 +4,7 @@ import type {
   EvidenceCommand,
   EvidenceCommandReadback,
   FeedbackCandidateProposalKind,
+  FeedbackRecommendationReadback,
   ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
   SourceUsefulnessOutcome,
@@ -185,6 +186,7 @@ export interface DecisionPacketReadModelSourceUsefulnessOutcome {
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
+  recommendation: FeedbackRecommendationReadback;
   doesNotProve: string;
 }
 
@@ -193,6 +195,7 @@ export interface DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome {
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
+  recommendation: FeedbackRecommendationReadback;
   doesNotProve: string;
 }
 

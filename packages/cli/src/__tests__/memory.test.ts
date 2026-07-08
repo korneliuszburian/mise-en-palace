@@ -944,6 +944,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("outcome: helped");
     expect(result.stdout).toContain("Memory Core mutation: none");
+    expect(result.stdout).toContain("recommendationOutcome: helped");
+    expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
+    expect(result.stdout).toContain("recommendationMutation: none");
     expect(result.stdout).toContain("Feedback event: none");
     expect(result.stdout).toContain("Follow-up candidate: none");
   });
@@ -1086,6 +1089,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryRecord: memory-record-1");
     expect(result.stdout).toContain("outcome: helped");
     expect(result.stdout).toContain("Memory Core mutation: none");
+    expect(result.stdout).toContain("recommendationOutcome: helped");
+    expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
+    expect(result.stdout).toContain("recommendationMutation: none");
     expect(result.stdout).toContain("Feedback event: none");
     expect(result.stdout).toContain("Follow-up candidate: none");
     expect(capturedApplication).toMatchObject({
@@ -1097,12 +1103,13 @@ describe("runCli", () => {
   });
 
   it.each([
-    ["stale", "stale_detected", 70],
-    ["hurt", "demoted", 60]
+    ["stale", "stale_detected", 70, ["refresh", "supersede"]],
+    ["hurt", "demoted", 60, ["demote", "delete"]]
   ] as const)("persists %s memory record apply and creates feedback event", async (
     outcome,
     eventType,
-    expectedConfidence
+    expectedConfidence,
+    expectedRecommendationActions
   ) => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
@@ -1231,6 +1238,11 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Candidate reviewability: review");
     expect(result.stdout).toContain("Memory Core mutation: none");
     expect(result.stdout).toContain(`outcome: ${outcome}`);
+    expect(result.stdout).toContain(`recommendationOutcome: ${outcome}`);
+    expect(result.stdout).toContain("recommendationMutation: none");
+    for (const action of expectedRecommendationActions) {
+      expect(result.stdout).toContain(`recommendation: ${action} | requiresReview=true`);
+    }
     expect(capturedFeedbackEvent).toMatchObject({
       memoryRecordId: "memory-record-1",
       executionRunId: "execution-run-1",

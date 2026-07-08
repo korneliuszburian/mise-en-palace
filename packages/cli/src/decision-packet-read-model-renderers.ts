@@ -35,7 +35,9 @@ import {
   decisionPacketReadModelProves
 } from "./decision-packet-read-model.js";
 import type {
-  DecisionPacketReadModelActivationCandidate
+  DecisionPacketReadModelActivationCandidate,
+  DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome,
+  DecisionPacketReadModelSourceUsefulnessOutcome
 } from "./decision-packet-read-model.js";
 
 const renderCommand = (command: EvidenceCommand): string[] => {
@@ -205,6 +207,7 @@ const renderSourceUsefulnessOutcomes = (
     ...outcomes.flatMap((outcome) => [
       `  - outcome=${outcome.outcome} sourceClaim=${outcome.sourceClaimId ?? "none"} sourceDecision=${outcome.sourceDecisionId ?? "none"}`,
       `    reason: ${outcome.reason}`,
+      ...renderFeedbackRecommendation(outcome),
       ...(outcome.evidenceRefs.length === 0
         ? ["    evidenceRef: none"]
         : outcome.evidenceRefs.map((evidenceRef) => `    evidenceRef: ${evidenceRef}`)),
@@ -227,6 +230,7 @@ const renderBrainKnowledgeUsefulnessOutcomes = (
     ...outcomes.flatMap((outcome) => [
       `  - outcome=${outcome.outcome} knowledge=${outcome.brainKnowledgeId}`,
       `    reason: ${outcome.reason}`,
+      ...renderFeedbackRecommendation(outcome),
       ...(outcome.evidenceRefs.length === 0
         ? ["    evidenceRef: none"]
         : outcome.evidenceRefs.map((evidenceRef) => `    evidenceRef: ${evidenceRef}`)),
@@ -234,6 +238,17 @@ const renderBrainKnowledgeUsefulnessOutcomes = (
     ])
   ];
 };
+
+const renderFeedbackRecommendation = (
+  outcome:
+    | DecisionPacketReadModelSourceUsefulnessOutcome
+    | DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome
+): string[] => [
+  `    recommendationMutation: ${outcome.recommendation.mutation}`,
+  ...outcome.recommendation.recommendations.map((recommendation) =>
+    `    recommendation: ${recommendation.action} | requiresReview=${recommendation.requiresReview} | ${recommendation.reason}`
+  )
+];
 
 const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   const summary = summarizeFeedbackCandidateProposals(feedback);

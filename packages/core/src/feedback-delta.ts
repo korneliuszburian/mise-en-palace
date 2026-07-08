@@ -98,6 +98,37 @@ export interface BrainKnowledgeUsefulnessOutcomeFeedback {
   doesNotProve: string;
 }
 
+export type FeedbackRecommendationOutcome =
+  | SourceUsefulnessOutcome
+  | "hurt"
+  | "rejected";
+
+export type FeedbackRecommendationAction =
+  | "retain"
+  | "demote"
+  | "refresh"
+  | "delete"
+  | "supersede"
+  | "add_evidence";
+
+export interface FeedbackRecommendation {
+  action: FeedbackRecommendationAction;
+  reason: string;
+  requiresReview: boolean;
+}
+
+export interface FeedbackRecommendationReadback {
+  kind: "krn.feedbackRecommendation.v1";
+  subjectKind: "source_claim" | "source_decision" | "brain_knowledge" | "memory_record";
+  subjectId: string;
+  outcome: FeedbackRecommendationOutcome;
+  reason: string;
+  recommendations: readonly FeedbackRecommendation[];
+  evidenceRefs: readonly string[];
+  mutation: "none";
+  doesNotProve: string;
+}
+
 const sourceUsefulnessOutcomes = new Set<string>([
   "selected",
   "used",
@@ -112,6 +143,84 @@ export const isSourceUsefulnessOutcome = (
   value: unknown
 ): value is SourceUsefulnessOutcome =>
   typeof value === "string" && sourceUsefulnessOutcomes.has(value);
+
+export const feedbackRecommendationsForOutcome = (
+  outcome: FeedbackRecommendationOutcome
+): readonly FeedbackRecommendation[] => {
+  switch (outcome) {
+    case "selected":
+    case "used":
+    case "helped":
+      return [{
+        action: "retain",
+        reason: "Feedback says this knowledge remained useful for the run.",
+        requiresReview: false
+      }];
+    case "neutral":
+      return [{
+        action: "retain",
+        reason: "Feedback does not justify demotion; keep as weakly useful until stronger evidence appears.",
+        requiresReview: true
+      }];
+    case "noise":
+      return [{
+        action: "demote",
+        reason: "Feedback says this knowledge was selected but did not help the task.",
+        requiresReview: true
+      }];
+    case "stale":
+      return [{
+        action: "refresh",
+        reason: "Feedback says this knowledge may still be useful as history but needs current evidence.",
+        requiresReview: true
+      }, {
+        action: "supersede",
+        reason: "Feedback says a newer decision may need to replace this guidance for future activation.",
+        requiresReview: true
+      }];
+    case "hurt":
+      return [{
+        action: "demote",
+        reason: "Feedback says applying this memory hurt the task.",
+        requiresReview: true
+      }, {
+        action: "delete",
+        reason: "Feedback may justify removing this memory from active authority after review.",
+        requiresReview: true
+      }];
+    case "rejected":
+      return [{
+        action: "delete",
+        reason: "Feedback says this candidate or knowledge path was rejected and should not guide activation.",
+        requiresReview: true
+      }];
+    case "unknown":
+      return [{
+        action: "add_evidence",
+        reason: "Feedback did not establish usefulness; require evidence before retaining or demoting.",
+        requiresReview: true
+      }];
+  }
+};
+
+export const buildFeedbackRecommendationReadback = (input: {
+  subjectKind: FeedbackRecommendationReadback["subjectKind"];
+  subjectId: string;
+  outcome: FeedbackRecommendationOutcome;
+  reason: string;
+  evidenceRefs?: readonly string[];
+  doesNotProve: string;
+}): FeedbackRecommendationReadback => ({
+  kind: "krn.feedbackRecommendation.v1",
+  subjectKind: input.subjectKind,
+  subjectId: input.subjectId,
+  outcome: input.outcome,
+  reason: input.reason,
+  recommendations: feedbackRecommendationsForOutcome(input.outcome),
+  evidenceRefs: [...(input.evidenceRefs ?? [])],
+  mutation: "none",
+  doesNotProve: input.doesNotProve
+});
 
 const sourceUsefulnessOutcomeField = (
   input: Record<string, unknown>
