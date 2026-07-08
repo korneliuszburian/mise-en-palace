@@ -1,8 +1,8 @@
 {
   "knowledgeId": "graph-relation-readback-boundary",
   "name": "Graph relation readback boundary",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN graph-brain work may expose existing SourceClaimEdge relation counts, relation support, graph-aware caveats, and query-shape diagnostics through read-only source and brain search, but relation readback must not be treated as proof of entity extraction, graph ranking quality, source truth, or GraphRAG-quality reasoning.",
   "sourceRefs": [
@@ -19,5 +19,5 @@
   "falsifier": "A future graph-brain slice treats SourceClaimEdge relation counts, graphReadback, or relationSupport as proof of entity extraction, source truth, graph retrieval quality, or product-ready GraphRAG behavior.",
   "doesNotProve": "This knowledge decision does not prove graph ranking quality, entity extraction, relation correctness, source truth, GraphRAG-quality reasoning, or KRN product readiness.",
   "observedAt": "2026-06-30",
-  "nextAction": "use"
+  "nextAction": "review"
 }

@@ -836,7 +836,7 @@ const outcomeHasCurrentEvidenceRef = (
 const downgradeReason = (reason: string): string =>
   `Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof. Original reason: ${reason}`;
 
-const normalizeSourceUsefulnessOutcomesForEvidence = (
+const downgradeSourceUsefulnessOutcomesWithoutCurrentEvidence = (
   outcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   currentEvidenceRefs: ReadonlySet<string>
 ): readonly SourceUsefulnessOutcomeFeedback[] | undefined =>
@@ -850,7 +850,7 @@ const normalizeSourceUsefulnessOutcomesForEvidence = (
         }
   );
 
-const normalizeKnowledgeUsefulnessOutcomesForEvidence = (
+const downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence = (
   outcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
   currentEvidenceRefs: ReadonlySet<string>
 ): readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined =>
@@ -942,11 +942,11 @@ const persistEvidenceCapture = async (
       commands,
       decisionPacketChecksum
     );
-    const evidenceLinkedSourceUsefulnessOutcomes = normalizeSourceUsefulnessOutcomesForEvidence(
+    const evidenceLinkedSourceUsefulnessOutcomes = downgradeSourceUsefulnessOutcomesWithoutCurrentEvidence(
       sourceUsefulnessOutcomes,
       currentEvidenceRefs
     );
-    const evidenceLinkedKnowledgeUsefulnessOutcomes = normalizeKnowledgeUsefulnessOutcomesForEvidence(
+    const evidenceLinkedKnowledgeUsefulnessOutcomes = downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence(
       knowledgeUsefulnessOutcomes,
       currentEvidenceRefs
     );

@@ -1,8 +1,8 @@
 {
   "knowledgeId": "untrusted-context-warning-boundary",
   "name": "Untrusted selected context is labeled before Codex use",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "Codex-facing briefs should label untrusted or external selected context with deterministic warnings and proof boundaries instead of treating selected context as trusted execution truth.",
   "sourceRefs": [
@@ -23,5 +23,5 @@
   "falsifier": "A future Codex brief renders untrusted external source or memory text without a warning label or proof boundary and adapter tests still pass.",
   "doesNotProve": "This knowledge decision does not prove prompt-injection resistance, safe Codex execution, source truth, or product readiness.",
   "observedAt": "2026-06-28",
-  "nextAction": "use"
+  "nextAction": "review"
 }

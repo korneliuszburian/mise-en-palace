@@ -1,8 +1,8 @@
 {
   "knowledgeId": "target-repo-write-authority-boundary",
   "name": "Target repo writes require explicit authority and rollback",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",
   "sourceRefs": [
@@ -20,5 +20,5 @@
   "falsifier": "A future target-repo task writes to a living or fixture target without explicit mode, dirty-state handling, allowed/forbidden writes, rollback, and verification while tests still pass.",
   "doesNotProve": "This knowledge decision does not prove target writes are safe by default, external target readiness, second-operator proof, or product readiness.",
   "observedAt": "2026-06-28",
-  "nextAction": "use"
+  "nextAction": "review"
 }

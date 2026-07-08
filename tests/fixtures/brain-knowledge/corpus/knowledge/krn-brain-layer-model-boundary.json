@@ -1,8 +1,8 @@
 {
   "knowledgeId": "krn-brain-layer-model-boundary",
   "name": "KRN brain layer boundary",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN should behave as a governed RAG, memory, source, review, and feedback layer around Codex execution: Codex executes, while KRN selects bounded context, exposes source-grounded evidence, records proof boundaries, and keeps maintenance preview as candidate-only contracts until a named product loop requires execution. Maintenance preview is not Codex exec; it is candidate maintenance contract readback. The naming standard is no vanity rename: apply the helper extraction rule only when it removes duplication, names a reviewed domain concept, moves boundary logic, or reduces unsafe casts/parser drift.",
   "sourceRefs": [
@@ -20,5 +20,5 @@
   "falsifier": "A future plan, brief, or brain/search readback treats maintenance preview as Codex execution, claims maintenance runtime enforcement before plnv is explicitly un-deferred, performs a vanity naming sweep without review-cost evidence, or extracts helpers that do not remove duplication, name a domain concept, move boundary logic, or reduce unsafe casts/parser drift.",
   "doesNotProve": "This knowledge decision does not prove retrieval ranking quality, source truth, maintenance runtime, product readiness, or that every current KRN file already follows the brain layer model.",
   "observedAt": "2026-07-04",
-  "nextAction": "use"
+  "nextAction": "review"
 }

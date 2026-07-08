@@ -54,19 +54,40 @@ const fixtureKnowledge = (overrides: Partial<KnowledgeDecision> = {}): Knowledge
 
 const writeKnowledgeCatalog = async (
   directory: string,
-  knowledge: KnowledgeDecision
+  knowledge: KnowledgeDecision | readonly KnowledgeDecision[]
 ): Promise<void> => {
+  const decisions = Array.isArray(knowledge) ? knowledge : [knowledge];
+  const knowledgeFiles = decisions.map((_, index) =>
+    index === 0 ? "knowledge/knowledge.json" : `knowledge/knowledge-${index + 1}.json`
+  );
+
   await mkdir(path.join(directory, "knowledge"), { recursive: true });
   await writeFile(
     path.join(directory, "catalog.json"),
-    JSON.stringify({ knowledgeFiles: ["knowledge/knowledge.json"] }),
+    JSON.stringify({ knowledgeFiles }),
     "utf8"
   );
-  await writeFile(
-    path.join(directory, "knowledge", "knowledge.json"),
-    JSON.stringify(knowledge),
-    "utf8"
-  );
+
+  for (const [index, decision] of decisions.entries()) {
+    await writeFile(
+      path.join(directory, knowledgeFiles[index] ?? "knowledge/knowledge.json"),
+      JSON.stringify(decision),
+      "utf8"
+    );
+  }
+};
+
+const deferredKnowledge = (): KnowledgeDecision => {
+  const decision = fixtureKnowledge({
+    knowledgeId: "future-parser-experiment",
+    name: "Future parser experiment",
+    decisionStatus: "lab",
+    confidence: "medium",
+    decision: "Review the parser experiment before retaining it.",
+    nextAction: "review"
+  });
+
+  return decision;
 };
 
 const memoryRecordWithKnowledgeId = (knowledgeId: string): MemoryRecord => ({
@@ -344,8 +365,10 @@ describe("runMemoryKnowledgeSeedCommand", () => {
 
       expect(firstRun.stdout).toContain("Created: 1");
       expect(firstRun.stdout).toContain("Skipped (already seeded): 0");
+      expect(firstRun.stdout).toContain("Deferred (not adopt_now): 0");
       expect(secondRun.stdout).toContain("Created: 0");
       expect(secondRun.stdout).toContain("Skipped (already seeded): 1");
+      expect(secondRun.stdout).toContain("Deferred (not adopt_now): 0");
       expect(closeCount()).toBe(2);
       expect(capturedCandidates).toHaveLength(1);
       expect(capturedCandidates[0]?.metadata).toBeDefined();
@@ -362,6 +385,41 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           consumers: ["@krn/core", "@krn/cli"]
         }
       });
+      expect(capturedPromotions).toEqual([
+        {
+          candidateId: "memory-candidate-1",
+          reviewer: "krn memory knowledge seed",
+          decision: "accepted",
+          recordKey: "knowledge:ts-boundary-unknown-first-result-state"
+        }
+      ]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("does not promote deferred knowledge decisions from a bootstrap catalog", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
+
+    try {
+      await writeKnowledgeCatalog(directory, [fixtureKnowledge(), deferredKnowledge()]);
+
+      const {
+        capturedCandidates,
+        capturedPromotions,
+        closeCount,
+        runtime
+      } = createSeedTestRuntime(directory);
+
+      const result = await runMemoryKnowledgeSeedCommand(runtime);
+
+      expect(result.stdout).toContain("Knowledge decisions in catalog: 2");
+      expect(result.stdout).toContain("Created: 1");
+      expect(result.stdout).toContain("Skipped (already seeded): 0");
+      expect(result.stdout).toContain("Deferred (not adopt_now): 1");
+      expect(closeCount()).toBe(1);
+      expect(capturedCandidates).toHaveLength(1);
+      expect(capturedCandidates[0]?.metadata?.knowledgeId).toBe("ts-boundary-unknown-first-result-state");
       expect(capturedPromotions).toEqual([
         {
           candidateId: "memory-candidate-1",

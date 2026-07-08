@@ -154,6 +154,9 @@ const existingKnowledgeIds = (records: readonly { metadata: Record<string, unkno
   return ids;
 };
 
+const shouldSeedKnowledgeDecision = (decision: KnowledgeDecision): boolean =>
+  decision.decisionStatus === "adopt_now";
+
 export const runMemoryKnowledgeSeedCommand = async (
   runtime: MemoryKnowledgeSeedCommandRuntime
 ): Promise<MemoryKnowledgeSeedCommandResult> => {
@@ -179,8 +182,14 @@ export const runMemoryKnowledgeSeedCommand = async (
     );
     let createdCount = 0;
     let skippedCount = 0;
+    let deferredCount = 0;
 
     for (const { decision } of loaded) {
+      if (!shouldSeedKnowledgeDecision(decision)) {
+        deferredCount += 1;
+        continue;
+      }
+
       if (existing.has(decision.knowledgeId)) {
         skippedCount += 1;
         continue;
@@ -200,7 +209,7 @@ export const runMemoryKnowledgeSeedCommand = async (
     }
 
     return {
-      stdout: formatSeedPreview(loaded, command, true, createdCount, skippedCount)
+      stdout: formatSeedPreview(loaded, command, true, createdCount, skippedCount, deferredCount)
     };
   } finally {
     await db.close();
@@ -212,7 +221,8 @@ const formatSeedPreview = (
   command: MemoryKnowledgeSeedCommand,
   persisted: boolean,
   createdCount?: number,
-  skippedCount?: number
+  skippedCount?: number,
+  deferredCount?: number
 ): string => {
   const lines = [
     "KRN Memory Knowledge Seed",
@@ -224,6 +234,7 @@ const formatSeedPreview = (
   if (persisted) {
     lines.push(`Created: ${createdCount ?? 0}`);
     lines.push(`Skipped (already seeded): ${skippedCount ?? 0}`);
+    lines.push(`Deferred (not adopt_now): ${deferredCount ?? 0}`);
     lines.push(persistenceLine(postgresPersistedLabel));
   } else {
     lines.push(noStorePreviewLabel);

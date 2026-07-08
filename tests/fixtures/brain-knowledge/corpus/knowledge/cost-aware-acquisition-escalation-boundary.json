@@ -1,8 +1,8 @@
 {
   "knowledgeId": "cost-aware-acquisition-escalation-boundary",
   "name": "Cost-aware acquisition escalation boundary",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN knowledge-acquisition candidates should expose a candidate-only low-to-high cost escalation path: review linked document evidence first when linkedDocumentEvidence exists, then source-search review, then bounded external research, and human review only when cheaper evidence remains insufficient. Missing-evidence-only candidates must start at source_search_review.",
   "sourceRefs": [
@@ -21,5 +21,5 @@
   "falsifier": "A future acquisition candidate opens bounded external research, human review, autonomous acquisition, source truth mutation, or Memory Core mutation before exhausting cheaper linked-document or store-backed source-search review; or a missing-evidence-only candidate starts at linked_document_review.",
   "doesNotProve": "This retained memory does not prove source truth, acquisition success, retrieval ranking quality, autonomous worker safety, Memory Core usefulness, or KRN product readiness.",
   "observedAt": "2026-07-01",
-  "nextAction": "use"
+  "nextAction": "review"
 }

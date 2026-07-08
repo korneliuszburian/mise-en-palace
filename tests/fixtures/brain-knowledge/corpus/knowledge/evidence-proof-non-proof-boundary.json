@@ -1,8 +1,8 @@
 {
   "knowledgeId": "evidence-proof-non-proof-boundary",
   "name": "Evidence proof and non-proof boundary",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "Every evidence item that can influence review, memory, source, skill, policy, or eval decisions must state what it proves and what it does not prove, with command provenance kept visible.",
   "sourceRefs": [
@@ -21,5 +21,5 @@
   "falsifier": "A future evidence, review, memory/source candidate, or knowledge read model can influence a decision while omitting command provenance or a does-not-prove boundary and tests still pass.",
   "doesNotProve": "This knowledge decision does not prove command truth, review correctness, memory quality, source truth, ranking quality, or product readiness.",
   "observedAt": "2026-06-28",
-  "nextAction": "use"
+  "nextAction": "review"
 }

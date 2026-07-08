@@ -1,8 +1,8 @@
 {
   "knowledgeId": "knowledge-read-only-preview-boundary",
   "name": "Brain recall readback/search remains read-only until usefulness proof",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "Brain recall readback/search should render read-only KnowledgeReadModel rows with proof boundaries before any API, MCP, dashboard, DB search service, or mutation-capable surface is built.",
   "sourceRefs": [
@@ -22,5 +22,5 @@
   "falsifier": "A future brain recall readback/search slice mutates Memory Core, SourceDecision, candidate status, or evidence, or adds API/MCP/dashboard before static preview usefulness fails or becomes insufficient.",
   "doesNotProve": "This knowledge decision does not prove browser UX polish, search ranking quality, catalog completeness, product readiness, or that API/MCP/dashboard will never be needed.",
   "observedAt": "2026-06-28",
-  "nextAction": "use"
+  "nextAction": "review"
 }

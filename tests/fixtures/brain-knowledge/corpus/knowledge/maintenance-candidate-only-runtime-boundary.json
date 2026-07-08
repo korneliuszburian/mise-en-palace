@@ -1,8 +1,8 @@
 {
   "knowledgeId": "maintenance-candidate-only-runtime-boundary",
   "name": "Maintenance candidate-only runtime boundary",
-  "decisionStatus": "adopt_now",
-  "confidence": "high",
+  "decisionStatus": "lab",
+  "confidence": "medium",
   "reviewability": "ready",
   "decision": "KRN maintenance and dreaming work should run as a candidate-only maintenance/readback loop that reports readiness, reviewability, missing evidence, next action, and forbidden writes before any scheduler, daemon, source-truth mutation, or Memory Core mutation is introduced.",
   "sourceRefs": [
@@ -19,5 +19,5 @@
   "falsifier": "A future maintenance or dreaming slice adds a scheduler, daemon, automatic memory/source mutation, or review-ready maintenance candidate without explicit evidence refs and reviewability reasons.",
   "doesNotProve": "This knowledge decision does not prove maintenance scheduling, autonomous dreaming, candidate truth, source truth, Memory Core mutation safety, or KRN product readiness.",
   "observedAt": "2026-06-30",
-  "nextAction": "use"
+  "nextAction": "review"
 }
