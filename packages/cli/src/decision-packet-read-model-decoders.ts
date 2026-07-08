@@ -4,6 +4,7 @@ import {
 } from "@krn/core";
 import type { CandidateReviewability } from "@krn/core";
 import type { ProjectStandardDecisionReadback } from "@krn/core";
+import type { SourceClaimEdgeKind } from "@krn/core";
 import type { SourceDecisionTargetType } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/core/repositories";
 
@@ -94,6 +95,21 @@ const isSourceDecisionTargetType = (value: string): value is SourceDecisionTarge
   return sourceDecisionTargetTypes.some((targetType) => targetType === value);
 };
 
+const sourceClaimEdgeKinds = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "depends_on",
+  "supersedes",
+  "duplicates",
+  "narrows",
+  "invalidates",
+  "expires"
+] as const satisfies readonly SourceClaimEdgeKind[];
+
+const isSourceClaimEdgeKind = (value: string): value is SourceClaimEdgeKind =>
+  sourceClaimEdgeKinds.some((edgeKind) => edgeKind === value);
+
 export const projectResolutionFromMetadata = (
   metadata: Record<string, unknown>
 ): ProjectResolution | undefined => {
@@ -183,7 +199,11 @@ export const sourceClaimEdgeInfluenceFromMetadata = (
   }
 
   const edgeIds = readMetadataStringList(value, "edgeIds");
-  const edgeKinds = readMetadataStringList(value, "edgeKinds");
+  const edgeKinds = readMetadataStringList(value, "edgeKinds").filter(isSourceClaimEdgeKind);
+  const missingRelationSupportEdgeIds = readMetadataStringList(
+    value,
+    "missingRelationSupportEdgeIds"
+  );
   const seedSourceClaimIds = readMetadataStringList(value, "seedSourceClaimIds");
   const doesNotProve = readMetadataString(value, "doesNotProve");
 
@@ -199,6 +219,7 @@ export const sourceClaimEdgeInfluenceFromMetadata = (
   return {
     edgeIds,
     edgeKinds,
+    ...(missingRelationSupportEdgeIds.length === 0 ? {} : { missingRelationSupportEdgeIds }),
     seedSourceClaimIds,
     doesNotProve
   };

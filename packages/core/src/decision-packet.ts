@@ -10,6 +10,7 @@ import type {
 } from "./memory.js";
 import type {
   SourceAuthorityLabel,
+  SourceClaimEdgeKind,
   SourceDecisionTargetType
 } from "./source.js";
 
@@ -254,6 +255,13 @@ export interface DecisionPacketActivationCandidateInput {
   subjectType: string;
   subjectId: string;
   projectStandardDecision?: ProjectStandardDecisionReadback;
+  sourceClaimEdgeInfluence?: {
+    edgeIds: readonly string[];
+    edgeKinds: readonly SourceClaimEdgeKind[];
+    missingRelationSupportEdgeIds?: readonly string[];
+    seedSourceClaimIds: readonly string[];
+    doesNotProve: string;
+  };
   sourceDecisionSupportBoost?: {
     sourceDecisionEdgeIds: readonly string[];
     targets: readonly {
@@ -623,6 +631,45 @@ const evidenceGapsFor = (input: {
   }))
 ];
 
+const sourceRelationSupportEvidenceGapsFor = (input: {
+  readonly runId: string;
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly includedSourceClaimIds: readonly string[];
+}): DecisionPacketEvidenceGap[] => {
+  const includedSourceClaimIds = new Set(input.includedSourceClaimIds);
+
+  return input.readModel.context.activationTrace?.candidates.flatMap((candidate) => {
+    if (
+      candidate.subjectType !== "source_claim" ||
+      !includedSourceClaimIds.has(candidate.subjectId)
+    ) {
+      return [];
+    }
+
+    return candidate.sourceClaimEdgeInfluence?.missingRelationSupportEdgeIds?.map((edgeId) => ({
+      id: `evidence-gap:${input.runId}:source-relation-support:${candidate.subjectId}:${edgeId}`,
+      reason:
+        `SourceClaim ${candidate.subjectId} was selected through SourceClaimEdge ${edgeId}, but that relation has no evidenceRef, evidenceRefs, or sourceDecisionRef support.`,
+      verificationRequired:
+        "Capture relation metadata evidenceRef/evidenceRefs/sourceDecisionRef, or demote/remove the relation before treating it as governing packet context."
+    })) ?? [];
+  }) ?? [];
+};
+
+const uniqueEvidenceGaps = (
+  evidenceGaps: readonly DecisionPacketEvidenceGap[]
+): DecisionPacketEvidenceGap[] => {
+  const byId = new Map<string, DecisionPacketEvidenceGap>();
+
+  for (const evidenceGap of evidenceGaps) {
+    if (!byId.has(evidenceGap.id)) {
+      byId.set(evidenceGap.id, evidenceGap);
+    }
+  }
+
+  return [...byId.values()];
+};
+
 export const buildDecisionPacketFromReadModel = (
   readModel: DecisionPacketReadModelInput
 ): DecisionPacket => {
@@ -656,13 +703,20 @@ export const buildDecisionPacketFromReadModel = (
     governingDecisionIds,
     staleDecisionIds
   });
-  const evidenceGaps = evidenceGapsFor({
-    runId: readModel.run.id,
-    governingDecisionIds,
-    caveatedSourceClaimIds,
-    caveatedMemoryRefs,
-    severeStaleAuthorityIds
-  });
+  const evidenceGaps = uniqueEvidenceGaps([
+    ...evidenceGapsFor({
+      runId: readModel.run.id,
+      governingDecisionIds,
+      caveatedSourceClaimIds,
+      caveatedMemoryRefs,
+      severeStaleAuthorityIds
+    }),
+    ...sourceRelationSupportEvidenceGapsFor({
+      runId: readModel.run.id,
+      readModel,
+      includedSourceClaimIds: sourceClaimIds
+    })
+  ]);
   const sourceConsensus = buildDecisionPacketSourceConsensus({
     sourceClaimIds,
     caveatedSourceClaimIds,

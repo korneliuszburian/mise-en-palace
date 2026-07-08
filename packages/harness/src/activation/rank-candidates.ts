@@ -11,7 +11,8 @@ import {
   assessMemoryRecordReviewSignals,
   classifySourceClaimTaxonomy,
   projectStandardDecisionFromMemoryRecord,
-  rankSourceAuthority
+  rankSourceAuthority,
+  readSourceRelationMetadataReadback
 } from "@krn/core";
 
 import type {
@@ -243,6 +244,7 @@ export const applySourceClaimEdgeInfluence = (
     edgeIds: string[];
     edgeKinds: SourceClaimEdge["kind"][];
     graphScore: number;
+    missingRelationSupportEdgeIds: string[];
     seedSourceClaimIds: SourceClaim["id"][];
   }>();
 
@@ -258,11 +260,18 @@ export const applySourceClaimEdgeInfluence = (
       ? edge.toSourceClaimId
       : edge.fromSourceClaimId;
     const weightedGraphScore = sourceClaimEdgeInfluenceScore(edge.kind, baseGraphScore);
+    const relationMetadata = readSourceRelationMetadataReadback(edge.metadata);
+    const hasRelationSupport =
+      relationMetadata.evidenceRefs.length > 0 || relationMetadata.sourceDecisionRef !== undefined;
 
     influenceBySourceClaimId.set(connectedSourceClaimId, {
       edgeIds: [...(existing?.edgeIds ?? []), edge.id],
       edgeKinds: [...(existing?.edgeKinds ?? []), edge.kind],
       graphScore: Math.max(existing?.graphScore ?? 0, weightedGraphScore),
+      missingRelationSupportEdgeIds: [
+        ...(existing?.missingRelationSupportEdgeIds ?? []),
+        ...(hasRelationSupport ? [] : [edge.id])
+      ],
       seedSourceClaimIds: [...(existing?.seedSourceClaimIds ?? []), seedSourceClaimId]
     });
   }
@@ -277,6 +286,7 @@ export const applySourceClaimEdgeInfluence = (
     if (influence === undefined) {
       return candidate;
     }
+    const missingRelationSupportEdgeIds = [...new Set(influence.missingRelationSupportEdgeIds)];
 
     return {
       ...candidate,
@@ -288,6 +298,9 @@ export const applySourceClaimEdgeInfluence = (
         sourceClaimEdgeInfluence: {
           edgeIds: [...new Set(influence.edgeIds)],
           edgeKinds: [...new Set(influence.edgeKinds)],
+          ...(missingRelationSupportEdgeIds.length === 0
+            ? {}
+            : { missingRelationSupportEdgeIds }),
           seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
           doesNotProve: sourceClaimEdgeInfluenceDoesNotProve
         }

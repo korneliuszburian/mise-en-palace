@@ -7,6 +7,7 @@ import type {
   FeedbackRecommendationReadback,
   ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
+  SourceClaimEdgeKind,
   SourceDecisionTargetType,
   SourceUsefulnessOutcome,
   TargetEvidence
@@ -55,7 +56,8 @@ export interface DecisionPacketReadModelContextExclusion {
 
 export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
   edgeIds: string[];
-  edgeKinds: string[];
+  edgeKinds: SourceClaimEdgeKind[];
+  missingRelationSupportEdgeIds?: string[];
   seedSourceClaimIds: string[];
   doesNotProve: string;
 }

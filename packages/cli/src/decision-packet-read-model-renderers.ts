@@ -155,6 +155,9 @@ const renderActivationCandidateTrace = (
         "    sourceClaimEdgeInfluence:",
         `      edgeIds: ${candidate.sourceClaimEdgeInfluence.edgeIds.join(", ")}`,
         `      edgeKinds: ${candidate.sourceClaimEdgeInfluence.edgeKinds.join(", ")}`,
+        ...(candidate.sourceClaimEdgeInfluence.missingRelationSupportEdgeIds === undefined
+          ? []
+          : [`      missingRelationSupportEdgeIds: ${candidate.sourceClaimEdgeInfluence.missingRelationSupportEdgeIds.join(", ")}`]),
         `      seedSourceClaimIds: ${candidate.sourceClaimEdgeInfluence.seedSourceClaimIds.join(", ")}`,
         `      doesNotProve: ${candidate.sourceClaimEdgeInfluence.doesNotProve}`
       ]),

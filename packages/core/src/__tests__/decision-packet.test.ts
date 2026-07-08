@@ -151,6 +151,62 @@ const readModel = {
   }
 } satisfies DecisionPacketReadModelInput;
 
+const relationReadModel = (
+  missingRelationSupportEdgeIds: readonly string[]
+): DecisionPacketReadModelInput => ({
+  run: {
+    id: "run-relation-consensus",
+    updatedAt: now
+  },
+  context: {
+    inclusions: 2,
+    exclusions: 0,
+    inclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-relation-current",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "anti_memory_record",
+      subjectId: "anti-memory-superseded-relation",
+      sourceAuthority: "project-decision"
+    }],
+    activationTrace: {
+      candidates: [{
+        subjectType: "source_claim",
+        subjectId: "claim-relation-current",
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-relation-current"],
+          edgeKinds: ["supports"],
+          missingRelationSupportEdgeIds,
+          seedSourceClaimIds: ["claim-relation-seed"],
+          doesNotProve:
+            "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        },
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["source-decision-edge-relation"],
+          targets: [{
+            sourceDecisionEdgeId: "source-decision-edge-relation",
+            targetType: "architecture_decision",
+            targetId: "source-decision-relation-current"
+          }]
+        }
+      }],
+      decisions: [{
+        reason: "anti_memory_block",
+        antiMemoryRecordId: "anti-memory-superseded-relation"
+      }]
+    }
+  },
+  evidenceBundles: [],
+  feedbackDeltas: [],
+  proof: {
+    doesNotProve: [
+      "source truth",
+      "live Codex obedience"
+    ]
+  }
+});
+
 describe("DecisionPacket builder", () => {
   it("builds governed packet signals from read model evidence", () => {
     const packet = buildDecisionPacketFromReadModel(readModel);
@@ -216,6 +272,43 @@ describe("DecisionPacket builder", () => {
         "caveated_memory_authority",
         "stale_authority"
       ]
+    });
+  });
+
+  it("keeps decision-linked relation evidence usable when the relation has support", () => {
+    const packet = buildDecisionPacketFromReadModel(relationReadModel([]));
+
+    expect(packet.sourceConsensus.decisionLinkedSourceClaimIds).toEqual([
+      "claim-relation-current"
+    ]);
+    expect(packet.sourceConsensus.evidenceGapIds).toEqual([]);
+    expect(packet.evidenceGaps).toEqual([]);
+    expect(packet.abstentionScore).toMatchObject({
+      status: "ready",
+      reasons: []
+    });
+  });
+
+  it("abstains when selected relation evidence has no support ref", () => {
+    const packet = buildDecisionPacketFromReadModel(
+      relationReadModel(["edge-relation-current"])
+    );
+
+    expect(packet.sourceConsensus.decisionLinkedSourceClaimIds).toEqual([
+      "claim-relation-current"
+    ]);
+    expect(packet.evidenceGaps).toEqual([{
+      id:
+        "evidence-gap:run-relation-consensus:source-relation-support:claim-relation-current:edge-relation-current",
+      reason:
+        "SourceClaim claim-relation-current was selected through SourceClaimEdge edge-relation-current, but that relation has no evidenceRef, evidenceRefs, or sourceDecisionRef support.",
+      verificationRequired:
+        "Capture relation metadata evidenceRef/evidenceRefs/sourceDecisionRef, or demote/remove the relation before treating it as governing packet context."
+    }]);
+    expect(packet.sourceConsensus.evidenceGapIds).toEqual(packet.evidenceGaps.map((gap) => gap.id));
+    expect(packet.abstentionScore).toMatchObject({
+      status: "abstain",
+      reasons: ["evidence_gap"]
     });
   });
 
