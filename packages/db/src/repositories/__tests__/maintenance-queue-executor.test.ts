@@ -387,6 +387,19 @@ describe("runMaintenanceQueueRecord", () => {
         reason: "Useful source should stay retained.",
         evidenceRefs: ["packet:abc"],
         doesNotProve: "Helped feedback does not prove permanent truth."
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "pattern:stale-standard-1",
+        outcome: "stale",
+        reason: "DecisionPacket selected a standard that newer evidence superseded.",
+        evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
+        doesNotProve: "This feedback does not prove the standard is false globally."
+      }, {
+        knowledgeId: "memory:helped-standard-1",
+        outcome: "helped",
+        reason: "Useful knowledge should stay retained.",
+        evidenceRefs: ["packet:abc"],
+        doesNotProve: "Helped feedback does not prove permanent truth."
       }]
     });
 
@@ -422,7 +435,7 @@ describe("runMaintenanceQueueRecord", () => {
       "source_claims",
       "source_decisions"
     ]));
-    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(2);
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(3);
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       proposedBy: "maintenance:review_feedback_delta",
@@ -441,6 +454,16 @@ describe("runMaintenanceQueueRecord", () => {
       metadata: {
         outcome: "unknown",
         sourceDecisionId: "source-decision-unknown-1"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: [],
+      appliesTo: "brain_knowledge:pattern:stale-standard-1",
+      metadata: {
+        outcome: "stale",
+        knowledgeId: "pattern:stale-standard-1",
+        mutation: "none"
       }
     });
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
