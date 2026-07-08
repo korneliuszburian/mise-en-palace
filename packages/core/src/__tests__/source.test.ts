@@ -889,6 +889,28 @@ describe("source review signals", () => {
 
     expect(assessSourceClaimOverride({
       candidate: sourceClaim({
+        id: "source-claim-review-provenance-override-weak",
+        sourceAuthority: "hypothesis",
+        createdAt: "2026-06-24T08:00:00.000Z"
+      }),
+      currentConsensus: [
+        sourceClaim({
+          id: "source-claim-review-provenance-override-official",
+          sourceAuthority: "official",
+          createdAt: "2026-06-01T08:00:00.000Z"
+        })
+      ],
+      now,
+      overrideReason: "Official docs were superseded by an explicit project decision.",
+      overrideProvenanceRef: "review:manual-review"
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-review-provenance-override-official"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: sourceClaim({
         id: "source-claim-provenanced-override-weak",
         sourceAuthority: "hypothesis",
         createdAt: "2026-06-24T08:00:00.000Z"

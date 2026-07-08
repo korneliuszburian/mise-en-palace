@@ -23,6 +23,16 @@ const hasMeaningfulOverrideReason = (value: string | undefined): boolean => {
   return trimmed.split(/\s+/u).filter((word) => word.length >= 3).length >= 4;
 };
 
+const sourceDecisionOverrideProvenancePrefix = "source-decision:";
+
+const hasSourceDecisionOverrideProvenance = (value: string | undefined): boolean => {
+  const trimmed = value?.trim();
+
+  return trimmed !== undefined &&
+    trimmed.startsWith(sourceDecisionOverrideProvenancePrefix) &&
+    hasSourceText(trimmed.slice(sourceDecisionOverrideProvenancePrefix.length));
+};
+
 export type SourceClaimTemporalValidity =
   | {
       readonly status: "valid";
@@ -144,7 +154,7 @@ export const assessSourceClaimOverride = (input: {
   if (strongerCurrentConsensus !== undefined) {
     if (
       hasMeaningfulOverrideReason(input.overrideReason) &&
-      hasSourceText(input.overrideProvenanceRef)
+      hasSourceDecisionOverrideProvenance(input.overrideProvenanceRef)
     ) {
       return {
         allowed: true,
