@@ -43,6 +43,7 @@ import {
   runDecisionCorpusImportDbSmokeCheck
 } from "./internal/smoke/run-decision-corpus-import-db-smoke.js";
 import {
+  type DecisionPacketReturnLoopSmokeReport,
   runDecisionPacketReturnLoopSmokeCheck
 } from "./internal/smoke/decision-packet-return-loop-smoke.js";
 
@@ -222,6 +223,9 @@ const cleanupStatusLines = (cleanedUp: boolean, label: string): string[] => [
   `Cleanup: ${cleanedUp ? "completed" : "not completed"}`,
   `${label}: ${cleanedUp ? "passed" : "failed"}`
 ];
+
+const yesNo = (value: boolean): "yes" | "no" =>
+  value ? "yes" : "no";
 
 const smokeResultFromCleanup = (
   context: DbSmokeCommandContext,
@@ -697,6 +701,44 @@ const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const formatDecisionPacketReturnLoopSmokeLines = (
+  report: DecisionPacketReturnLoopSmokeReport
+): string[] => [
+  `Workspace smoke row: ${report.workspaceSlug}`,
+  `Project smoke row: ${report.projectSlug}`,
+  `Execution run: ${report.executionRunId}`,
+  `Packet checksum: ${report.packetChecksum}`,
+  `Packet evidence ref: ${report.packetEvidenceRef}`,
+  `Return channel checksum binding: ${yesNo(report.returnChannelHasChecksum)}`,
+  `Matching feedback delta: ${report.matchingFeedbackDeltaId}`,
+  `Matching feedback outcome: ${report.matchingFeedbackOutcome}`,
+  `Matching feedback authoritative: ${yesNo(report.matchingFeedbackRemainedAuthoritative)}`,
+  `Stale feedback delta: ${report.staleFeedbackDeltaId}`,
+  `Stale feedback outcome: ${report.staleFeedbackOutcome}`,
+  `Stale feedback demoted decision: ${yesNo(report.staleFeedbackDemotedDecision)}`,
+  `Mismatched feedback delta: ${report.mismatchedFeedbackDeltaId}`,
+  `Mismatched feedback outcome: ${report.mismatchedFeedbackOutcome}`,
+  `Mismatched feedback downgraded: ${yesNo(report.mismatchedFeedbackDowngraded)}`,
+  `Mismatched feedback stayed out of next packet: ${yesNo(report.mismatchedFeedbackStayedOutOfNextPacket)}`,
+  `Next packet governing decisions: ${report.nextPacketGoverningDecisionIds.join(", ")}`,
+  `Next packet stale decisions: ${report.nextPacketStaleDecisionIds.join(", ")}`,
+  `Next packet includes matching decision: ${yesNo(report.nextPacketIncludesMatchingDecision)}`,
+  `Selector proof run: ${report.selectorProofRunId}`,
+  `Selector helped memory: ${report.selectorHelpedMemoryRecordId}`,
+  `Selector stale memory: ${report.selectorStaleMemoryRecordId}`,
+  `Selector helped memory application: ${report.selectorHelpedMemoryApplicationId}`,
+  `Selector stale memory applications: ${report.selectorStaleMemoryApplicationIds.join(", ")}`,
+  `Selector packet memory refs: ${report.selectorPacketMemoryRefs.join(", ")}`,
+  `Selector packet includes helped memory: ${yesNo(report.selectorPacketIncludesHelpedMemory)}`,
+  `Selector packet excludes stale memory: ${yesNo(report.selectorPacketExcludesStaleMemory)}`,
+  `Selector maintenance candidate: ${report.selectorMaintenanceCandidateId}`,
+  `Selector maintenance anti-memory candidate: ${report.selectorMaintenanceAntiMemoryCandidateId}`,
+  `Selector maintenance feedback event: ${report.selectorMaintenanceFeedbackEventId}`,
+  `Selector maintenance candidate linked to feedback delta: ${yesNo(report.selectorMaintenanceCandidateLinkedToFeedbackDelta)}`,
+  `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
+  ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
+];
+
 const runDecisionPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -711,37 +753,7 @@ const runDecisionPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
     context,
     "KRN Decision Packet Return Loop Smoke",
     report.cleanedUp,
-    [
-      `Workspace smoke row: ${report.workspaceSlug}`,
-      `Project smoke row: ${report.projectSlug}`,
-      `Execution run: ${report.executionRunId}`,
-      `Packet checksum: ${report.packetChecksum}`,
-      `Packet evidence ref: ${report.packetEvidenceRef}`,
-      `Return channel checksum binding: ${report.returnChannelHasChecksum ? "yes" : "no"}`,
-      `Matching feedback delta: ${report.matchingFeedbackDeltaId}`,
-      `Matching feedback outcome: ${report.matchingFeedbackOutcome}`,
-      `Matching feedback authoritative: ${report.matchingFeedbackRemainedAuthoritative ? "yes" : "no"}`,
-      `Stale feedback delta: ${report.staleFeedbackDeltaId}`,
-      `Stale feedback outcome: ${report.staleFeedbackOutcome}`,
-      `Stale feedback demoted decision: ${report.staleFeedbackDemotedDecision ? "yes" : "no"}`,
-      `Mismatched feedback delta: ${report.mismatchedFeedbackDeltaId}`,
-      `Mismatched feedback outcome: ${report.mismatchedFeedbackOutcome}`,
-      `Mismatched feedback downgraded: ${report.mismatchedFeedbackDowngraded ? "yes" : "no"}`,
-      `Mismatched feedback stayed out of next packet: ${report.mismatchedFeedbackStayedOutOfNextPacket ? "yes" : "no"}`,
-      `Next packet governing decisions: ${report.nextPacketGoverningDecisionIds.join(", ")}`,
-      `Next packet stale decisions: ${report.nextPacketStaleDecisionIds.join(", ")}`,
-      `Next packet includes matching decision: ${report.nextPacketIncludesMatchingDecision ? "yes" : "no"}`,
-      `Selector proof run: ${report.selectorProofRunId}`,
-      `Selector helped memory: ${report.selectorHelpedMemoryRecordId}`,
-      `Selector stale memory: ${report.selectorStaleMemoryRecordId}`,
-      `Selector helped memory application: ${report.selectorHelpedMemoryApplicationId}`,
-      `Selector stale memory applications: ${report.selectorStaleMemoryApplicationIds.join(", ")}`,
-      `Selector packet memory refs: ${report.selectorPacketMemoryRefs.join(", ")}`,
-      `Selector packet includes helped memory: ${report.selectorPacketIncludesHelpedMemory ? "yes" : "no"}`,
-      `Selector packet excludes stale memory: ${report.selectorPacketExcludesStaleMemory ? "yes" : "no"}`,
-      `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
-      ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
-    ]
+    formatDecisionPacketReturnLoopSmokeLines(report)
   );
 };
 

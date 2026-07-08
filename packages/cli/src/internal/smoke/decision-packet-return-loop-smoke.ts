@@ -5,6 +5,9 @@ import type {
   FeedbackDelta,
   SourceUsefulnessOutcomeFeedback
 } from "@krn/core";
+import {
+  buildMemoryStalenessMaintenancePreview
+} from "@krn/core";
 import type {
   HarnessCompilerDependencies
 } from "@krn/harness";
@@ -15,7 +18,8 @@ import type {
   SourceRepository
 } from "@krn/harness/repositories/internal";
 import {
-  compileHarnessPlan
+  compileHarnessPlan,
+  proposeMemoryConsolidation
 } from "@krn/harness";
 import {
   cleanupHarnessCompilerSmokeRows,
@@ -74,6 +78,10 @@ export interface DecisionPacketReturnLoopSmokeReport {
   selectorPacketMemoryRefs: readonly string[];
   selectorPacketIncludesHelpedMemory: boolean;
   selectorPacketExcludesStaleMemory: boolean;
+  selectorMaintenanceCandidateId: string;
+  selectorMaintenanceAntiMemoryCandidateId: string;
+  selectorMaintenanceFeedbackEventId: string;
+  selectorMaintenanceCandidateLinkedToFeedbackDelta: boolean;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -120,6 +128,10 @@ interface SelectorFeedbackProofResult {
   packetMemoryRefs: readonly string[];
   includesHelpedMemory: boolean;
   excludesStaleMemory: boolean;
+  maintenanceCandidateId: string;
+  maintenanceAntiMemoryCandidateId: string;
+  maintenanceFeedbackEventId: string;
+  maintenanceCandidateLinkedToFeedbackDelta: boolean;
 }
 
 interface ReturnLoopCheck {
@@ -341,6 +353,10 @@ const deleteSelectorProofRows = async (
   }
 ): Promise<void> => {
   await input.client`
+    delete from outbox_events
+    where payload->>'smokeId' = ${input.marker}
+  `;
+  await input.client`
     delete from memory_applications
     where metadata->>'smokeId' = ${input.marker}
   `;
@@ -354,6 +370,10 @@ const deleteSelectorProofRows = async (
   `;
   await input.client`
     delete from memory_records
+    where metadata->>'smokeId' = ${input.marker}
+  `;
+  await input.client`
+    delete from anti_memory_candidates
     where metadata->>'smokeId' = ${input.marker}
   `;
   await input.client`
@@ -388,11 +408,13 @@ const countSelectorProofRows = async (
     select (
       (select count(*)::int from memory_applications where metadata->>'smokeId' = ${input.marker}) +
       (select count(*)::int from memory_feedback_events where metadata->>'smokeId' = ${input.marker}) +
+      (select count(*)::int from anti_memory_candidates where metadata->>'smokeId' = ${input.marker}) +
       (select count(*)::int from memory_record_versions where metadata->>'smokeId' = ${input.marker}) +
       (select count(*)::int from memory_records where metadata->>'smokeId' = ${input.marker}) +
       (select count(*)::int from memory_candidates where metadata->>'smokeId' = ${input.marker}) +
       (select count(*)::int from source_decision_edges where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${input.marker})
+      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${input.marker}) +
+      (select count(*)::int from outbox_events where payload->>'smokeId' = ${input.marker})
     ) as count
   `;
   let count = rows[0]?.count ?? 0;
@@ -455,6 +477,7 @@ const runSelectorFeedbackProof = async (
     };
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
+    readonly feedbackDeltaId: string;
     readonly marker: string;
     readonly projectId: string;
     readonly repositories: {
@@ -619,6 +642,49 @@ const runSelectorFeedbackProof = async (
     selectorStaleMemoryApplicationIds.push(staleApplication.id);
   }
 
+  const selectorStaleMemoryWithFeedback = await memoryRepository.getMemoryRecordById(
+    selectorStaleMemory.id
+  );
+
+  if (selectorStaleMemoryWithFeedback === undefined) {
+    throw new Error("DecisionPacket return-loop smoke lost stale selector memory after feedback");
+  }
+
+  const maintenancePreview = buildMemoryStalenessMaintenancePreview({
+    now: "2026-07-07T12:00:00.000Z",
+    memoryRecords: [selectorStaleMemoryWithFeedback],
+    evidenceRef: input.feedbackDeltaId,
+    maxCandidates: 1
+  });
+  const maintenanceCandidate = maintenancePreview.candidates.find((candidate) =>
+    candidate.memoryRecordId === selectorStaleMemory.id &&
+    candidate.reason === "unresolved_negative_feedback"
+  );
+
+  if (maintenanceCandidate === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke did not create an unresolved negative feedback maintenance candidate"
+    );
+  }
+
+  const maintenanceProposal = await proposeMemoryConsolidation({
+    memoryRepository,
+    candidate: maintenanceCandidate,
+    projectId: input.projectId,
+    proposedBy: "decision-packet-return-loop-smoke",
+    owner: "kernel",
+    observedAt: "2026-07-07T12:00:00.000Z",
+    executionRunId: input.executionRunId,
+    feedbackDeltaId: input.feedbackDeltaId,
+    metadata: {
+      smokeId: input.marker,
+      selectorFeedbackProof: "maintenance-consolidation"
+    }
+  });
+  const maintenanceCandidateLinkedToFeedbackDelta =
+    maintenanceProposal.antiMemoryCandidate.feedbackDeltaId === input.feedbackDeltaId &&
+    maintenanceProposal.feedbackEvent.feedbackDeltaId === input.feedbackDeltaId;
+
   const selectorCompile = await compileHarnessPlan({
     workspaceId: input.workspaceId,
     projectId: input.projectId,
@@ -705,7 +771,11 @@ const runSelectorFeedbackProof = async (
     staleMemoryApplicationIds: selectorStaleMemoryApplicationIds,
     packetMemoryRefs: selectorPacket.packet.memoryRefs,
     includesHelpedMemory,
-    excludesStaleMemory
+    excludesStaleMemory,
+    maintenanceCandidateId: maintenanceCandidate.id,
+    maintenanceAntiMemoryCandidateId: maintenanceProposal.antiMemoryCandidate.id,
+    maintenanceFeedbackEventId: maintenanceProposal.feedbackEvent.id,
+    maintenanceCandidateLinkedToFeedbackDelta
   };
 };
 
@@ -944,6 +1014,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       baseRuntime,
       commandRuntime,
       executionRunId: executionRun.id,
+      feedbackDeltaId: staleFeedbackDelta.id,
       marker,
       projectId: project.id,
       repositories: {
@@ -965,7 +1036,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfNextPacket },
       { label: "next packet includes matching decision", passed: nextPacketIncludesMatchingDecision },
       { label: "selector packet includes helped memory", passed: selectorProof.includesHelpedMemory },
-      { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory }
+      { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
+      {
+        label: "selector maintenance candidate linked to feedback delta",
+        passed: selectorProof.maintenanceCandidateLinkedToFeedbackDelta
+      }
     ]);
 
     const cleanupRemainingMarkerCount = await cleanup();
@@ -999,6 +1074,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       selectorPacketMemoryRefs: selectorProof.packetMemoryRefs,
       selectorPacketIncludesHelpedMemory: selectorProof.includesHelpedMemory,
       selectorPacketExcludesStaleMemory: selectorProof.excludesStaleMemory,
+      selectorMaintenanceCandidateId: selectorProof.maintenanceCandidateId,
+      selectorMaintenanceAntiMemoryCandidateId: selectorProof.maintenanceAntiMemoryCandidateId,
+      selectorMaintenanceFeedbackEventId: selectorProof.maintenanceFeedbackEventId,
+      selectorMaintenanceCandidateLinkedToFeedbackDelta:
+        selectorProof.maintenanceCandidateLinkedToFeedbackDelta,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0
     };
