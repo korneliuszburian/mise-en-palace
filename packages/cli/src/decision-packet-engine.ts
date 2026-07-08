@@ -571,7 +571,13 @@ export const buildDecisionPacketWithEngine = async (
         verificationRequired:
           "Capture or promote source-backed decision evidence before turning this task into governing context."
       }]
-    : [];
+    : caveatedSourceClaimIds.map((sourceClaimId) => ({
+        id: `evidence-gap:${testCase.id}:caveated-source-authority:${sourceClaimId}`,
+        reason:
+          `SourceClaim ${sourceClaimId} is included without current decision-linked authority.`,
+        verificationRequired:
+          "Link the claim to a current SourceDecisionEdge or remove it from governing packet context."
+      }));
   const severeStaleAuthorityIds = supportedGoverningDecisionIds.filter((id) =>
     severeExpectedIds.has(id)
   );

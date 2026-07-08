@@ -347,7 +347,14 @@ describe("runDecisionPacketEval", () => {
       scores: {
         evidenceFidelity: 0,
         sourceSupport: 0,
-        total: 5
+        total: 4
+      },
+      packet: {
+        evidenceGaps: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.stringContaining(":caveated-source-authority:")
+          })
+        ])
       },
       reasons: expect.arrayContaining([
         "packet is missing SourceDecisionEdge refs",
