@@ -779,23 +779,39 @@ Rejected alternatives:
 - Treating the MCP tool name as the product name: rejected. The product concept
   is the `DecisionPacket`; MCP exposes `krn_decision_packet` only as transport.
 
-## Current P1 Queue
+## Current Tranche Status
 
-The governed product-loop tranche has completed its implementation children:
-source temporal/override hardening, DB-backed DecisionPacket return loop,
-source-support taxonomy cleanup, maintenance-preview downscope, and the first
-bounded MCP consumer proof. The remaining action for that tranche is this
-roadmap refresh and Beads closure.
+The useful-kernel-before-surface tranche is complete:
 
-The next P1 direction is:
+1. The notes-baseline DecisionPacket falsifier is hardened with explicit
+   abstention coverage.
+2. Store-backed usefulness feedback can change later activation and
+   DecisionPacket selection.
+3. Task-standard activation covers normal frontend, backend, and package
+   coding tasks with current standards, rejected paths, and verification
+   commands.
+4. The second-repo fixture proof runs across three target-repo corpora without
+   KRN self-repo contamination.
+5. Broader MCP/API/dashboard expansion is rejected for now; the only product
+   transport is the read-only `krn_decision_packet` wrapper.
 
-1. Build the notes-baseline DecisionPacket falsifier.
-2. Move usefulness feedback and demotion/supersession effects deeper into the
-   store-backed path.
-3. Make task-standard activation work for normal coding tasks.
-4. Prove the loop against a second repo.
-5. Decide whether any broader MCP/API surface is justified by a current
-   consumer after the local kernel wins.
+This proves a useful internal-alpha kernel loop, not broad product readiness,
+commercial validation, arbitrary repository portability, live Codex obedience,
+or final temporal consensus.
+
+The next P1 direction is Phase 5/6 hardening:
+
+1. Tighten source and temporal consensus so accepted, stale, superseded,
+   rejected, and unsupported claims affect activation exactly as the roadmap
+   says.
+2. Push feedback-driven demotion, supersession, and rejection deeper into
+   store-backed memory/source maintenance paths.
+3. Decide maintenance runtime truth: build the smallest executor with authority
+   enforcement, or downscope remaining execution-shaped language.
+4. Close corpus/documentation slop by converting useful source-to-decision rows
+   into store/eval inputs and deleting decorative files.
+5. Reconsider broader MCP/API only when a real consumer needs more than the
+   current read-only packet fetch.
 
 Beads is the durable source for exact issue IDs, dependencies, and status.
 
