@@ -75,6 +75,10 @@ Built enough to keep:
 - source and memory activation;
 - DB-backed source, memory, evidence, review, retrieval, and feedback paths;
 - Codex brief rendering;
+- one DB-backed DecisionPacket return loop with evidence, review, feedback, and
+  explicit memory/source non-promotion boundaries;
+- a minimal read-only `krn_decision_packet` MCP transport with one bounded
+  target-repo consumer proof;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -82,7 +86,7 @@ Not product-ready:
 
 - no dashboard/API or broad MCP product surface beyond the minimal read-only
   `krn_decision_packet` wrapper;
-- no external operator proof;
+- no external operator/product proof beyond the bounded target-repo harness;
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
@@ -728,18 +732,24 @@ inside this repo.
 Chosen first surface:
 
 - headless CLI request/response commands for agent use;
-- MCP wrapper only after the CLI contract proves useful;
+- minimal MCP wrapper only as read-only transport over the CLI
+  `DecisionPacket` contract;
 - no dashboard or broad API until an external operator needs it.
 
 Reason: the first real consumer is a headless coding agent asking for a
 DecisionPacket and returning evidence/feedback. CLI keeps the contract local,
-scriptable, and testable; MCP can wrap that contract later without making the
-adapter or dashboard the product core.
+scriptable, and testable; the current MCP wrapper proves transport only and must
+not make the adapter or dashboard the product core.
 
 Current boundary: `mcp:decision-packet` is the minimal read-only KRN MCP product
 wrapper over the CLI `DecisionPacket` contract. It must not add selection
 policy, execute Codex, mutate target repositories, promote memory/source truth,
 or capture feedback by side effect.
+
+Current proof: a bounded target-repo harness can fetch `krn_decision_packet`,
+execute a fixture command, and return evidence/review/feedback through explicit
+channels with packet checksum binding. This proves the minimal consumer loop; it
+does not prove broad MCP product readiness.
 
 MCP product boundary decision:
 
@@ -756,8 +766,8 @@ MCP product boundary decision:
   effect.
 - Server instructions: concise, self-contained, and focused on "fetch the
   packet, follow its return channels, do not treat MCP as authority."
-- Blocker before product MCP: the packet must expose an explicit abstention
-  scorer so MCP does not turn weak memory into confident guidance.
+- Blocker before any broader MCP surface: the packet must expose an explicit
+  abstention scorer so MCP does not turn weak memory into confident guidance.
 
 Rejected alternatives:
 
@@ -771,14 +781,21 @@ Rejected alternatives:
 
 ## Current P1 Queue
 
-The current P1 direction is:
+The governed product-loop tranche has completed its implementation children:
+source temporal/override hardening, DB-backed DecisionPacket return loop,
+source-support taxonomy cleanup, maintenance-preview downscope, and the first
+bounded MCP consumer proof. The remaining action for that tranche is this
+roadmap refresh and Beads closure.
 
-1. Finish this roadmap slice and keep it as the architecture source.
-2. Collapse remaining roadmap authority and docs dependencies.
-3. Build the notes-baseline decision-packet eval.
-4. Move usefulness feedback to store-backed events.
-5. Prove second-repo dry run.
-6. Run the first external consumer proof through the minimal DecisionPacket surface.
+The next P1 direction is:
+
+1. Build the notes-baseline DecisionPacket falsifier.
+2. Move usefulness feedback and demotion/supersession effects deeper into the
+   store-backed path.
+3. Make task-standard activation work for normal coding tasks.
+4. Prove the loop against a second repo.
+5. Decide whether any broader MCP/API surface is justified by a current
+   consumer after the local kernel wins.
 
 Beads is the durable source for exact issue IDs, dependencies, and status.
 
