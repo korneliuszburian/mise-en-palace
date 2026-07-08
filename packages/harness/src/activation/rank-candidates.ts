@@ -421,6 +421,7 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
     hasMechanism: claim.mechanism.trim().length > 0,
     doesNotProve: claim.doesNotProve,
     sourceClaimStatus: claim.status,
+    ...(claim.revisitWhen === undefined ? {} : { validUntil: claim.revisitWhen }),
     metadata: {
       sourceArtifactId: claim.sourceArtifactId,
       sourceClaimStatus: claim.status,

@@ -1330,6 +1330,86 @@ describe("activation engine", () => {
     });
   });
 
+  it("excludes stale accepted source claims even when decision-linked", async () => {
+    const currentClaim = sourceClaim({
+      id: "claim-current",
+      claim: "Current source claims can guide activation.",
+      supportType: "implementation-boundary",
+      revisitWhen: "2026-07-01T00:00:00.000Z",
+      falsifier: "A current decision-linked source claim is excluded as stale."
+    });
+    const staleClaim = sourceClaim({
+      id: "claim-stale",
+      claim: "Stale source claims should not guide activation.",
+      supportType: "implementation-boundary",
+      revisitWhen: "2026-06-01T00:00:00.000Z",
+      falsifier: "A stale decision-linked source claim reaches active authority."
+    });
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 0,
+        source: 10,
+        search: 0,
+        antiMemory: 0
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [currentClaim, staleClaim];
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return [sourceDecisionEdge({
+              id: `edge-${sourceClaimId}`,
+              sourceClaimId
+            })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+    const result = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("claim-current")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("claim-stale")).toMatchObject({
+      validUntil: "2026-06-01T00:00:00.000Z",
+      sourceClaimReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "stale_accepted_claim",
+          severity: "warning"
+        })
+      ]),
+      exclusion: {
+        reason: "stale",
+        explanation: "Candidate validity window has expired."
+      }
+    });
+  });
+
   it("selects a small high-signal working set from noisy candidates", () => {
     const query = buildMemoryQuery(task);
     const candidates = [
