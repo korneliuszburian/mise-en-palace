@@ -94,7 +94,7 @@ export const maintenanceJobPersistenceContract = {
   queueStore: "maintenance_queue_records",
   outboxTable: "outbox_events",
   outboxTopic: "maintenance_queue.queued",
-  executionMode: "persistence_only",
+  executionMode: "explicit_record_executor",
   recordSettlementTopic: "maintenance_queue.record_settled",
   deadLetterRecordStatus: "dead_letter"
 } as const;

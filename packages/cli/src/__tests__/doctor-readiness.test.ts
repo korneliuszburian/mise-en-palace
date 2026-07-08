@@ -169,6 +169,12 @@ describe("doctorReadiness", () => {
         severity: "pass"
       },
       {
+        label: "Maintenance record executor",
+        status: "executor ok after wording change",
+        outcome: "present",
+        severity: "pass"
+      },
+      {
         label: "Redis/Kafka queue",
         status: "queue forbidden surface absent after wording change",
         outcome: "absent",
@@ -184,7 +190,8 @@ describe("doctorReadiness", () => {
 
     expect(deriveMaintenanceQueueReadiness(postgresReadyTyped, maintenanceQueueChecks)).toEqual({
       label: "Maintenance queue readiness",
-      status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+      status:
+        "ready (schema, repository, explicit record executor, smoke command, and forbidden daemon checks present)"
     });
     expect(
       deriveMaintenanceQueueReadiness(
@@ -202,7 +209,7 @@ describe("doctorReadiness", () => {
       )
     ).toEqual({
       label: "Maintenance queue readiness",
-      status: "blocked (forbidden maintenance runtime present)"
+      status: "blocked (forbidden autonomous maintenance runtime present)"
     });
   });
 

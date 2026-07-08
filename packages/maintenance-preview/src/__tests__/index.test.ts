@@ -21,7 +21,7 @@ import type {
 const isoNow = "2026-06-21T17:30:00.000Z";
 
 describe("maintenance queue contract", () => {
-  test("describes the supported KRN maintenance jobs as persistence-only", () => {
+  test("describes the supported KRN maintenance jobs as explicit record execution", () => {
     expect(maintenanceJobTypes).toEqual([
       "embed_source_chunk",
       "embed_memory_record",
@@ -80,7 +80,7 @@ describe("maintenance queue contract", () => {
       expect.objectContaining({
         jobType: "embed_memory_record",
         label: "Embed memory record",
-        executionMode: "persistence_only"
+        executionMode: "explicit_record_executor"
       })
     );
 
@@ -136,7 +136,7 @@ describe("maintenance queue contract", () => {
           jobType: type,
           deadLetterRecordStatus: "dead_letter",
           recordSettlementTopic: "maintenance_queue.record_settled",
-          executionMode: "persistence_only",
+          executionMode: "explicit_record_executor",
           memoryBoundary: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),
           queueRecordKeyTemplate: expect.stringContaining(type),

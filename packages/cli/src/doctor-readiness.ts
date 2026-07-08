@@ -664,6 +664,12 @@ export const deriveMaintenanceQueueReadiness = (
     "available",
     (status) => status?.startsWith("available") === true
   );
+  const recordExecutorPresent = hasCheckOutcome(
+    maintenanceQueueChecks,
+    "Maintenance record executor",
+    "present",
+    (status) => status?.startsWith("present") === true
+  );
   const redisKafkaPresent = hasCheckOutcome(
     maintenanceQueueChecks,
     "Redis/Kafka queue",
@@ -680,7 +686,7 @@ export const deriveMaintenanceQueueReadiness = (
   if (redisKafkaPresent || daemonPresent) {
     return {
       label: "Maintenance queue readiness",
-      status: "blocked (forbidden maintenance runtime present)"
+      status: "blocked (forbidden autonomous maintenance runtime present)"
     };
   }
 
@@ -702,6 +708,13 @@ export const deriveMaintenanceQueueReadiness = (
     return {
       label: "Maintenance queue readiness",
       status: "incomplete (maintenance queue smoke command missing)"
+    };
+  }
+
+  if (!recordExecutorPresent) {
+    return {
+      label: "Maintenance queue readiness",
+      status: "incomplete (explicit maintenance record executor missing)"
     };
   }
 
@@ -728,7 +741,8 @@ export const deriveMaintenanceQueueReadiness = (
 
   return {
     label: "Maintenance queue readiness",
-    status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+    status:
+      "ready (schema, repository, explicit record executor, smoke command, and forbidden daemon checks present)"
   };
 };
 

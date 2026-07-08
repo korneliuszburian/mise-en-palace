@@ -85,6 +85,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Maintenance queue smoke: available (pnpm db:smoke:maintenance-queue)"
     );
+    expect(result.stdout).toContain("Maintenance record executor: present (explicit per-record)");
     expect(result.stdout).toContain("Redis/Kafka queue: absent");
     expect(result.stdout).toContain("Autonomous maintenance daemon: absent");
     expect(result.stdout).toContain(
@@ -379,6 +380,7 @@ describe("runCli", () => {
       { label: "Maintenance queue schema", status: "present" },
       { label: "Maintenance queue repository", status: "present" },
       { label: "Maintenance queue smoke", status: "available (pnpm db:smoke:maintenance-queue)" },
+      { label: "Maintenance record executor", status: "present (explicit per-record)" },
       { label: "Redis/Kafka queue", status: "absent" },
       { label: "Autonomous maintenance daemon", status: "absent" }
     ];
@@ -387,18 +389,19 @@ describe("runCli", () => {
       deriveMaintenanceQueueReadiness(postgresReady, maintenanceQueueReady)
     ).toEqual({
       label: "Maintenance queue readiness",
-      status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+      status:
+        "ready (schema, repository, explicit record executor, smoke command, and forbidden daemon checks present)"
     });
 
     expect(
       deriveMaintenanceQueueReadiness(postgresReady, [
-        ...maintenanceQueueReady.slice(0, 3),
+        ...maintenanceQueueReady.slice(0, 4),
         { label: "Redis/Kafka queue", status: "present" },
         { label: "Autonomous maintenance daemon", status: "absent" }
       ])
     ).toEqual({
       label: "Maintenance queue readiness",
-      status: "blocked (forbidden maintenance runtime present)"
+      status: "blocked (forbidden autonomous maintenance runtime present)"
     });
   });
 

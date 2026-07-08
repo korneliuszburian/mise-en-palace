@@ -6,7 +6,8 @@ import {
 } from "@krn/codex-adapter";
 import {
   DrizzleProjectRepository,
-  DrizzleMaintenanceQueueRepository
+  DrizzleMaintenanceQueueRepository,
+  runMaintenanceQueueRecord
 } from "@krn/db/adapters";
 import {
   runInitConnectSmokeCheck
@@ -188,6 +189,10 @@ const maintenanceQueueRepositoryPresent = (): boolean =>
     hasFunction(DrizzleMaintenanceQueueRepository.prototype[methodName])
   );
 
+const maintenanceRecordExecutorPresent = (): boolean =>
+  hasFunction(runMaintenanceQueueRecord) &&
+  maintenanceJobPersistenceContract.executionMode === "explicit_record_executor";
+
 export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const dependencyText = await readDependencyText(repoRoot);
@@ -199,9 +204,8 @@ export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorChe
     "db:smoke:maintenance-queue",
     "krn db smoke maintenance-queue"
   );
-  const autonomousMaintenanceDaemonPresent = await hasAutonomousMaintenanceDaemon(
-    repoRoot
-  ) || maintenanceJobPersistenceContract.executionMode !== "persistence_only";
+  const recordExecutorPresent = maintenanceRecordExecutorPresent();
+  const autonomousMaintenanceDaemonPresent = await hasAutonomousMaintenanceDaemon(repoRoot);
 
   return [
     {
@@ -221,6 +225,12 @@ export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorChe
       status: maintenanceQueueSmokeStatus,
       outcome: availableOutcome(maintenanceQueueSmokeStatus),
       severity: passOrWarning(maintenanceQueueSmokeStatus.startsWith("available"))
+    },
+    {
+      label: "Maintenance record executor",
+      status: recordExecutorPresent ? "present (explicit per-record)" : "missing",
+      outcome: recordExecutorPresent ? "present" : "missing",
+      severity: passOrWarning(recordExecutorPresent)
     },
     {
       label: "Redis/Kafka queue",

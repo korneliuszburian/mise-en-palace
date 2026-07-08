@@ -127,7 +127,7 @@ const createUpdateDb = (row: ReturnType<typeof maintenanceQueueRow>) => {
 };
 
 describe("DrizzleMaintenanceQueueRepository", () => {
-  it("exposes M26 maintenance queue repository methods without maintenance runtime behavior", () => {
+  it("exposes maintenance queue repository methods separately from record execution", () => {
     for (const methodName of methodNames) {
       expect(typeof DrizzleMaintenanceQueueRepository.prototype[methodName]).toBe("function");
     }
