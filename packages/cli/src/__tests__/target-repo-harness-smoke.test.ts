@@ -30,6 +30,8 @@ describe("targetRepoHarnessSmoke", () => {
       decisionPacketSurface: "mcp:krn_decision_packet",
       decisionPacketChecksum: "packet-checksum-1",
       decisionPacketEvidenceRef: "packet:packet-checksum-1",
+      decisionPacketMcpInitialized: true,
+      decisionPacketMcpToolListed: true,
       decisionPacketMcpReadbackMatched: true,
       decisionPacketMemoryIncluded: true,
       decisionPacketReturnChannelBound: true,
@@ -77,6 +79,8 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("DecisionPacket surface: mcp:krn_decision_packet");
     expect(output).toContain("DecisionPacket checksum: packet-checksum-1");
     expect(output).toContain("DecisionPacket evidence ref: packet:packet-checksum-1");
+    expect(output).toContain("DecisionPacket MCP initialized: matched");
+    expect(output).toContain("DecisionPacket MCP tool listed: matched");
     expect(output).toContain("DecisionPacket MCP readback: matched");
     expect(output).toContain("DecisionPacket memory included: yes");
     expect(output).toContain("DecisionPacket return channel bound: yes");

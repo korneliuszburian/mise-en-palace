@@ -1,5 +1,6 @@
 import {
-  execFile
+  execFile,
+  spawn
 } from "node:child_process";
 import {
   promisify
@@ -30,9 +31,6 @@ import type {
 import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
-import {
-  handleDecisionPacketMcpMessage
-} from "../mcp/decision-packet-mcp-server.js";
 import {
   isRecord,
   readRequiredRecord,
@@ -65,6 +63,7 @@ const execFileAsync = promisify(execFile);
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
+  repoRoot: string;
   smokeId: string;
   targetRepoPath: string;
 }
@@ -93,6 +92,8 @@ export interface TargetRepoHarnessSmokeReport {
   decisionPacketSurface: "mcp:krn_decision_packet";
   decisionPacketChecksum: string;
   decisionPacketEvidenceRef: string;
+  decisionPacketMcpInitialized: boolean;
+  decisionPacketMcpToolListed: boolean;
   decisionPacketMcpReadbackMatched: boolean;
   decisionPacketMemoryIncluded: boolean;
   decisionPacketReturnChannelBound: boolean;
@@ -149,6 +150,8 @@ interface TargetEvidenceReadbackProof {
 }
 
 interface DecisionPacketConsumerProof {
+  initialized: boolean;
+  toolListed: boolean;
   checksum: string;
   evidenceRef: string;
   memoryIncluded: boolean;
@@ -489,41 +492,216 @@ const createDecisionPacketConsumerRuntime = (input: {
   }
 });
 
-const readMcpDecisionPacketProof = async (input: {
-  readonly databaseUrl: string;
-  readonly decisionRuntime: DatabaseRuntime;
-  readonly executionRunId: string;
-  readonly memoryRecordId: string;
-  readonly now: string;
-  readonly createId: (prefix: string) => string;
-}): Promise<DecisionPacketConsumerProof> => {
-  const reply = await handleDecisionPacketMcpMessage({
+const decisionPacketMcpRequests = (runId: string): readonly Record<string, unknown>[] => [
+  {
     jsonrpc: "2.0",
-    id: "target-consumer-packet",
+    id: "initialize",
+    method: "initialize",
+    params: {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: {
+        name: "krn-target-repo-harness-smoke",
+        version: "0.0.0"
+      }
+    }
+  },
+  {
+    jsonrpc: "2.0",
+    method: "notifications/initialized"
+  },
+  {
+    jsonrpc: "2.0",
+    id: "tools-list",
+    method: "tools/list"
+  },
+  {
+    jsonrpc: "2.0",
+    id: "tools-call",
     method: "tools/call",
     params: {
       name: "krn_decision_packet",
       arguments: {
-        runId: input.executionRunId
+        runId
       }
     }
-  }, {
-    env: {
-      KRN_DATABASE_URL: input.databaseUrl
-    },
-    now: () => input.now,
-    createId: input.createId,
-    createDatabaseRuntime: async () => input.decisionRuntime
-  });
+  }
+];
 
-  if (!isRecord(reply) || !isRecord(reply.result) || reply.result.isError === true) {
-    throw new Error("Target repo harness smoke failed to fetch DecisionPacket through MCP");
+const responseById = (
+  responses: readonly Record<string, unknown>[],
+  id: string
+): Record<string, unknown> => {
+  const response = responses.find((item) => item["id"] === id);
+
+  if (response === undefined) {
+    throw new Error(`Target repo harness smoke external MCP client missed response ${id}`);
   }
 
-  const structuredContent = reply.result.structuredContent;
+  if (response["error"] !== undefined) {
+    throw new Error(`Target repo harness smoke external MCP client returned error for ${id}`);
+  }
+
+  return response;
+};
+
+const parseMcpResponseLine = (line: string): Record<string, unknown> => {
+  const parsed: unknown = JSON.parse(line);
+
+  if (!isRecord(parsed)) {
+    throw new Error("Target repo harness smoke external MCP response was not an object");
+  }
+
+  return parsed;
+};
+
+const runExternalDecisionPacketMcpClient = async (input: {
+  readonly databaseUrl: string;
+  readonly repoRoot: string;
+  readonly runId: string;
+}): Promise<readonly Record<string, unknown>[]> => {
+  const child = spawn(
+    "pnpm",
+    ["--silent", "--filter", "@krn/cli", "mcp:decision-packet"],
+    {
+      cwd: input.repoRoot,
+      env: {
+        ...process.env,
+        KRN_DATABASE_URL: input.databaseUrl
+      },
+      stdio: ["pipe", "pipe", "pipe"]
+    }
+  );
+  const requests = decisionPacketMcpRequests(input.runId)
+    .map((request) => JSON.stringify(request))
+    .join("\n") + "\n";
+  const expectedResponses = 3;
+  const timeoutMs = 20_000;
+  let stdoutBuffer = "";
+  let stderrBuffer = "";
+  let settled = false;
+
+  return await new Promise<readonly Record<string, unknown>[]>((resolve, reject) => {
+    const responses: Record<string, unknown>[] = [];
+    const fail = (error: Error): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      child.kill("SIGTERM");
+      reject(error);
+    };
+    const finish = (): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      child.kill("SIGTERM");
+      resolve(responses);
+    };
+    const timeout = setTimeout(() => {
+      fail(new Error(
+        `Target repo harness smoke external MCP client timed out after ${timeoutMs}ms. stderr: ${stderrBuffer}`
+      ));
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutBuffer += chunk.toString();
+
+      for (;;) {
+        const lineEnd = stdoutBuffer.indexOf("\n");
+
+        if (lineEnd === -1) {
+          break;
+        }
+        const line = stdoutBuffer.slice(0, lineEnd).trim();
+        stdoutBuffer = stdoutBuffer.slice(lineEnd + 1);
+
+        if (line.length === 0) {
+          continue;
+        }
+
+        try {
+          responses.push(parseMcpResponseLine(line));
+        } catch (error) {
+          fail(error instanceof Error ? error : new Error(String(error)));
+          return;
+        }
+
+        if (responses.length >= expectedResponses) {
+          finish();
+          return;
+        }
+      }
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderrBuffer += chunk.toString();
+    });
+    child.on("error", (error) => {
+      fail(error);
+    });
+    child.on("exit", (code) => {
+      if (!settled && responses.length < expectedResponses) {
+        fail(new Error(
+          `Target repo harness smoke external MCP client exited with ${code ?? "signal"} before all responses. stderr: ${stderrBuffer}`
+        ));
+      }
+    });
+
+    if (child.stdin === null) {
+      fail(new Error("Target repo harness smoke external MCP client stdin was unavailable"));
+      return;
+    }
+    child.stdin.end(requests);
+  });
+};
+
+const readMcpDecisionPacketProof = async (input: {
+  readonly databaseUrl: string;
+  readonly executionRunId: string;
+  readonly memoryRecordId: string;
+  readonly repoRoot: string;
+}): Promise<DecisionPacketConsumerProof> => {
+  const responses = await runExternalDecisionPacketMcpClient({
+    databaseUrl: input.databaseUrl,
+    repoRoot: input.repoRoot,
+    runId: input.executionRunId
+  });
+  const initialize = readRequiredRecord(
+    responseById(responses, "initialize"),
+    "result",
+    "Target repo harness smoke expected external MCP initialize result"
+  );
+  const instructions = readRequiredString(
+    initialize,
+    "instructions",
+    "Target repo harness smoke expected external MCP instructions"
+  );
+  const toolsList = readRequiredRecord(
+    responseById(responses, "tools-list"),
+    "result",
+    "Target repo harness smoke expected external MCP tools/list result"
+  );
+  const tools = Array.isArray(toolsList["tools"]) ? toolsList["tools"] : [];
+  const toolListed = tools.some((tool) =>
+    isRecord(tool) && tool["name"] === "krn_decision_packet"
+  );
+  const callResult = readRequiredRecord(
+    responseById(responses, "tools-call"),
+    "result",
+    "Target repo harness smoke expected external MCP tools/call result"
+  );
+
+  if (callResult["isError"] === true) {
+    throw new Error("Target repo harness smoke external MCP tools/call returned an error");
+  }
+
+  const structuredContent = callResult["structuredContent"];
 
   if (!isRecord(structuredContent)) {
-    throw new Error("Target repo harness smoke MCP response missed structured DecisionPacket content");
+    throw new Error("Target repo harness smoke external MCP response missed structured DecisionPacket content");
   }
 
   const packetIdentity = readRequiredRecord(
@@ -578,6 +756,8 @@ const readMcpDecisionPacketProof = async (input: {
   );
 
   return {
+    initialized: instructions.includes("Use krn_decision_packet"),
+    toolListed,
     checksum,
     evidenceRef,
     memoryIncluded: memoryRefs.includes(input.memoryRecordId),
@@ -820,6 +1000,8 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `DecisionPacket surface: ${report.decisionPacketSurface}`,
   `DecisionPacket checksum: ${report.decisionPacketChecksum}`,
   `DecisionPacket evidence ref: ${report.decisionPacketEvidenceRef}`,
+  `DecisionPacket MCP initialized: ${matchedWhen(report.decisionPacketMcpInitialized)}`,
+  `DecisionPacket MCP tool listed: ${matchedWhen(report.decisionPacketMcpToolListed)}`,
   `DecisionPacket MCP readback: ${matchedWhen(report.decisionPacketMcpReadbackMatched)}`,
   `DecisionPacket memory included: ${yesNo(report.decisionPacketMemoryIncluded)}`,
   `DecisionPacket return channel bound: ${yesNo(report.decisionPacketReturnChannelBound)}`,
@@ -1253,14 +1435,17 @@ export const runTargetRepoHarnessSmokeCheck = async (
     });
     const decisionPacketProof = await readMcpDecisionPacketProof({
       databaseUrl: input.databaseUrl,
-      decisionRuntime,
       executionRunId: executionRun.id,
       memoryRecordId: memoryRecord.id,
-      now,
-      createId: createSmokeId
+      repoRoot: input.repoRoot
     });
 
-    if (!decisionPacketProof.memoryIncluded || !decisionPacketProof.returnChannelBound) {
+    if (
+      !decisionPacketProof.initialized ||
+      !decisionPacketProof.toolListed ||
+      !decisionPacketProof.memoryIncluded ||
+      !decisionPacketProof.returnChannelBound
+    ) {
       throw new Error("Target repo harness smoke DecisionPacket MCP proof was not packet-bound");
     }
 
@@ -1303,6 +1488,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       decisionPacketSurface: "mcp:krn_decision_packet",
       decisionPacketChecksum: decisionPacketProof.checksum,
       decisionPacketEvidenceRef: decisionPacketProof.evidenceRef,
+      decisionPacketMcpInitialized: decisionPacketProof.initialized,
+      decisionPacketMcpToolListed: decisionPacketProof.toolListed,
       decisionPacketMcpReadbackMatched:
         decisionPacketProof.memoryIncluded && decisionPacketProof.returnChannelBound,
       decisionPacketMemoryIncluded: decisionPacketProof.memoryIncluded,

@@ -931,6 +931,7 @@ const runTargetRepoHarnessSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runTargetRepoHarnessSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
+    repoRoot: context.repoRoot,
     smokeId: runtime.createId("target-repo-harness-smoke"),
     targetRepoPath: targetRepoFixturePath(context)
   });
