@@ -310,7 +310,7 @@ describe("runMemoryAdvantageEval", () => {
       }
     });
     expect(retrievalCase?.["baseline_no_memory"].missingEvidence).toEqual([
-      "governed SourceClaim evidence in the answer package for this query",
+      "SourceClaim evidence in the answer package for this query",
       "included SearchDocument evidence in the answer package for this query"
     ]);
     expect(retrievalCase?.["krn_memory"].selectedKnowledgeIds).toContain(

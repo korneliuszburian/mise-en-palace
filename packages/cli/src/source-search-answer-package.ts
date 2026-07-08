@@ -58,7 +58,7 @@ export const buildSourceSearchMissingEvidence = (input: {
   linkedDocumentCount?: number;
 }): readonly string[] => [
   ...(input.supportingClaimCount === 0
-    ? ["governed SourceClaim evidence in the answer package for this query"]
+    ? ["SourceClaim evidence in the answer package for this query"]
     : []),
   ...(input.supportingDocumentCount === 0
     ? input.supportingClaimCount > 0
@@ -74,15 +74,21 @@ export const buildSourceSearchMissingEvidence = (input: {
 export const classifySourceSearchAnswerUsefulness = (input: {
   supportingClaimCount: number;
   supportingDocumentCount: number;
+  decisionLinkedClaimCount?: number;
 }): {
   answerUsefulness: SourceSearchAnswerUsefulness;
   reasons: readonly string[];
 } => {
+  const sourceClaimEvidenceReason =
+    input.decisionLinkedClaimCount !== undefined && input.decisionLinkedClaimCount > 0
+      ? "Answer package includes decision-linked SourceClaim evidence."
+      : "Answer package includes accepted SourceClaim evidence without decision-linked authority.";
+
   if (input.supportingClaimCount > 0 && input.supportingDocumentCount > 0) {
     return {
       answerUsefulness: "useful",
       reasons: [
-        "Answer package includes governed SourceClaim evidence.",
+        sourceClaimEvidenceReason,
         "Answer package includes SearchDocument retrieval evidence."
       ]
     };
@@ -92,7 +98,7 @@ export const classifySourceSearchAnswerUsefulness = (input: {
     return {
       answerUsefulness: "partly_useful_missing_document",
       reasons: [
-        "Answer package includes governed SourceClaim evidence.",
+        sourceClaimEvidenceReason,
         "Answer package is missing included SearchDocument evidence."
       ]
     };
@@ -103,7 +109,7 @@ export const classifySourceSearchAnswerUsefulness = (input: {
       answerUsefulness: "partly_useful_missing_claim",
       reasons: [
         "Answer package includes SearchDocument retrieval evidence.",
-        "Answer package is missing governed SourceClaim evidence."
+        "Answer package is missing SourceClaim evidence."
       ]
     };
   }
@@ -111,7 +117,7 @@ export const classifySourceSearchAnswerUsefulness = (input: {
   return {
     answerUsefulness: "not_useful",
     reasons: [
-      "Answer package has no governed SourceClaim evidence.",
+      "Answer package has no SourceClaim evidence.",
       "Answer package has no included SearchDocument evidence."
     ]
   };
@@ -177,7 +183,10 @@ export const buildSourceSearchAnswerPackage = (input: {
   });
   const answerUsefulness = classifySourceSearchAnswerUsefulness({
     supportingClaimCount: supportingClaims.length,
-    supportingDocumentCount: supportingDocuments.length
+    supportingDocumentCount: supportingDocuments.length,
+    decisionLinkedClaimCount: supportingClaims.filter(
+      (candidate) => candidate.sourceDecisionSupportState === "linked"
+    ).length
   });
   const graphReadback = buildGraphReadback({
     supportingClaims,
@@ -209,7 +218,7 @@ export const buildSourceSearchAnswerPackage = (input: {
       : supportingClaims.length > 0
         ? "Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
         : supportingDocuments.length > 0
-          ? "Inspect the documents and verify whether a governed SourceClaim should exist before relying on them."
+          ? "Inspect the documents and verify whether a SourceClaim should exist before relying on them."
           : "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";
   const doesNotProve = [
     input.diagnostics.doesNotProve,

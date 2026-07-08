@@ -421,13 +421,13 @@ describe("runSourceSearchCommand", () => {
       supportingClaimCount: 0,
       supportingDocumentCount: 1
     })).toEqual([
-      "governed SourceClaim evidence in the answer package for this query"
+      "SourceClaim evidence in the answer package for this query"
     ]);
     expect(buildSourceSearchMissingEvidence({
       supportingClaimCount: 0,
       supportingDocumentCount: 0
     })).toEqual([
-      "governed SourceClaim evidence in the answer package for this query",
+      "SourceClaim evidence in the answer package for this query",
       "included SearchDocument evidence in the answer package for this query"
     ]);
   });
@@ -439,7 +439,7 @@ describe("runSourceSearchCommand", () => {
     })).toEqual({
       answerUsefulness: "useful",
       reasons: [
-        "Answer package includes governed SourceClaim evidence.",
+        "Answer package includes accepted SourceClaim evidence without decision-linked authority.",
         "Answer package includes SearchDocument retrieval evidence."
       ]
     });
@@ -457,7 +457,7 @@ describe("runSourceSearchCommand", () => {
     })).toEqual({
       answerUsefulness: "not_useful",
       reasons: [
-        "Answer package has no governed SourceClaim evidence.",
+        "Answer package has no SourceClaim evidence.",
         "Answer package has no included SearchDocument evidence."
       ]
     });
@@ -492,11 +492,11 @@ describe("runSourceSearchCommand", () => {
     expect(answerPackage.neutralOrNoise).toHaveLength(1);
     expect(answerPackage.answerUsefulness).toBe("not_useful");
     expect(answerPackage.answerUsefulnessReasons).toEqual([
-      "Answer package has no governed SourceClaim evidence.",
+      "Answer package has no SourceClaim evidence.",
       "Answer package has no included SearchDocument evidence."
     ]);
     expect(answerPackage.missingEvidence).toEqual([
-      "governed SourceClaim evidence in the answer package for this query",
+      "SourceClaim evidence in the answer package for this query",
       "included SearchDocument evidence in the answer package for this query"
     ]);
   });
@@ -554,7 +554,7 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Answer package preview:");
     expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
     expect(result.stdout).toContain("answer usefulness: useful");
-    expect(result.stdout).toContain("- Answer package includes governed SourceClaim evidence.");
+    expect(result.stdout).toContain("- Answer package includes accepted SourceClaim evidence without decision-linked authority.");
     expect(result.stdout).toContain("- Answer package includes SearchDocument retrieval evidence.");
     expect(result.stdout).toContain("query shape diagnostics:");
     expect(result.stdout).toContain("- none detected by current diagnostics");
@@ -624,7 +624,7 @@ describe("runSourceSearchCommand", () => {
     expect(answerPackage.answer).toContain("1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
     expect(answerPackage.answerUsefulness).toBe("useful");
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toEqual([
-      "Answer package includes governed SourceClaim evidence.",
+      "Answer package includes accepted SourceClaim evidence without decision-linked authority.",
       "Answer package includes SearchDocument retrieval evidence.",
       "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims.",
       "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
@@ -945,6 +945,9 @@ describe("runSourceSearchCommand", () => {
     );
     const decisionSupport = objectValue(sourceDecisionSupport[0], "first source decision support");
 
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
+      "Answer package includes decision-linked SourceClaim evidence."
+    );
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
       "Answer package includes SourceDecisionEdge decision support."
     );
@@ -1598,7 +1601,7 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Answer package preview:");
     expect(result.stdout).toContain("answer: Source search found 0 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
     expect(result.stdout).toContain("answer usefulness: not_useful");
-    expect(result.stdout).toContain("- governed SourceClaim evidence in the answer package for this query");
+    expect(result.stdout).toContain("- SourceClaim evidence in the answer package for this query");
     expect(result.stdout).toContain("- included SearchDocument evidence in the answer package for this query");
     expect(result.stdout).toContain("recommended next action: Narrow the query or ingest a bounded local artifact");
     expect(result.stdout).toContain("No-match guidance:");
