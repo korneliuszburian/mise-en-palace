@@ -581,6 +581,297 @@ export const assessSourceClaimOverride = (input: {
   };
 };
 
+export type SourceClaimAuthorityStatus =
+  | "accepted"
+  | "caveated"
+  | "blocked"
+  | "stale"
+  | "rejected"
+  | "evidence_gap";
+
+export type SourceClaimAuthorityReason =
+  | "current_decision_linked_authority"
+  | "accepted_with_dissenting_source_claims"
+  | "candidate_not_accepted"
+  | "rejected_or_deprecated"
+  | "invalid_time"
+  | "stale"
+  | "missing_source_to_decision_fields"
+  | "decorative_support_type"
+  | "missing_source_decision_support"
+  | "superseded_by_current_claim"
+  | "weaker_than_current_valid_consensus"
+  | "rejected_by_source_rejection";
+
+export interface SourceClaimAuthorityAssessment {
+  status: SourceClaimAuthorityStatus;
+  reasons: readonly SourceClaimAuthorityReason[];
+  caveats: readonly string[];
+  temporalValidity: SourceClaimTemporalValidity;
+  blockedByCurrentSourceClaimId?: SourceClaim["id"];
+}
+
+export interface AssessSourceClaimAuthorityInput {
+  readonly claim: SourceClaim;
+  readonly now: IsoTimestamp;
+  readonly sourceDecisionSupportCount?: number;
+  readonly decisionSupportEdgeIds?: readonly SourceDecisionEdge["id"][];
+  readonly supersededBySourceClaimIds?: readonly SourceClaim["id"][];
+  readonly acceptedDissentingSourceClaimIds?: readonly SourceClaim["id"][];
+  readonly rejectionIds?: readonly SourceRejection["id"][];
+  readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
+}
+
+const authoritySupportCount = (
+  input: Pick<AssessSourceClaimAuthorityInput, "sourceDecisionSupportCount" | "decisionSupportEdgeIds">
+): number | undefined =>
+  input.sourceDecisionSupportCount ?? input.decisionSupportEdgeIds?.length;
+
+const uniqueSourceClaimAuthorityReasons = (
+  values: readonly SourceClaimAuthorityReason[]
+): readonly SourceClaimAuthorityReason[] => [...new Set(values)];
+
+const sourceClaimLifecycleAuthorityReasons = (
+  claim: Pick<SourceClaim, "status">
+): readonly SourceClaimAuthorityReason[] => {
+  if (claim.status !== "accepted") {
+    return [
+      claim.status === "proposed"
+        ? "candidate_not_accepted"
+        : "rejected_or_deprecated"
+    ];
+  }
+
+  return [];
+};
+
+const sourceClaimTextAuthorityReasons = (
+  claim: Pick<SourceClaim, "mechanism" | "krnImplication" | "doesNotProve" | "consumer" | "falsifier" | "supportType">
+): readonly SourceClaimAuthorityReason[] => [
+  ...(!hasText(claim.mechanism) ||
+  !hasText(claim.krnImplication) ||
+  !hasText(claim.doesNotProve) ||
+  !hasText(claim.consumer) ||
+  !hasText(claim.falsifier)
+    ? ["missing_source_to_decision_fields" as const]
+    : []),
+  ...(!isDecisionGradeSourceSupportType(claim.supportType)
+    ? ["decorative_support_type" as const]
+    : [])
+];
+
+const sourceClaimTemporalAuthorityReason = (
+  temporalValidity: SourceClaimTemporalValidity
+): SourceClaimAuthorityReason | undefined => {
+  if (temporalValidity.status === "invalid_time") {
+    return "invalid_time";
+  }
+
+  if (temporalValidity.status === "stale") {
+    return "stale";
+  }
+
+  return undefined;
+};
+
+const sourceClaimTemporalAuthorityCaveats = (
+  temporalValidity: SourceClaimTemporalValidity
+): readonly string[] => {
+  if (temporalValidity.status === "invalid_time") {
+    return [`invalid_time:${temporalValidity.reason}`];
+  }
+
+  if (temporalValidity.status === "stale") {
+    return ["stale"];
+  }
+
+  return [];
+};
+
+const sourceClaimStructuralAuthorityReasons = (
+  input: Pick<
+    AssessSourceClaimAuthorityInput,
+    "supersededBySourceClaimIds" | "acceptedDissentingSourceClaimIds" | "rejectionIds" | "blockedByCurrentSourceClaimId"
+  > & {
+    readonly sourceDecisionSupportCount?: number | undefined;
+  }
+): readonly SourceClaimAuthorityReason[] => [
+  ...(input.sourceDecisionSupportCount === 0
+    ? ["missing_source_decision_support" as const]
+    : []),
+  ...((input.supersededBySourceClaimIds ?? []).length > 0
+    ? ["superseded_by_current_claim" as const]
+    : []),
+  ...((input.acceptedDissentingSourceClaimIds ?? []).length > 0
+    ? ["accepted_with_dissenting_source_claims" as const]
+    : []),
+  ...(input.blockedByCurrentSourceClaimId === undefined
+    ? []
+    : ["weaker_than_current_valid_consensus" as const]),
+  ...((input.rejectionIds ?? []).length > 0
+    ? ["rejected_by_source_rejection" as const]
+    : [])
+];
+
+const stringIfPresent = (value: string | undefined): readonly string[] =>
+  value === undefined ? [] : [value];
+
+const sourceClaimListCaveat = (
+  prefix: string,
+  ids: readonly string[] | undefined
+): string | undefined => {
+  if (ids === undefined || ids.length === 0) {
+    return undefined;
+  }
+
+  return `${prefix}:${ids.join(",")}`;
+};
+
+const sourceDecisionSupportCaveat = (
+  sourceDecisionSupportCount: number | undefined
+): string | undefined =>
+  sourceDecisionSupportCount === 0 ? "missing_source_decision_support" : undefined;
+
+const sourceClaimStructuralAuthorityCaveats = (
+  input: Pick<
+    AssessSourceClaimAuthorityInput,
+    "supersededBySourceClaimIds" | "acceptedDissentingSourceClaimIds" | "rejectionIds" | "blockedByCurrentSourceClaimId"
+  > & {
+    readonly sourceDecisionSupportCount?: number | undefined;
+  }
+): readonly string[] => [
+  ...stringIfPresent(sourceDecisionSupportCaveat(input.sourceDecisionSupportCount)),
+  ...stringIfPresent(sourceClaimListCaveat("superseded_by", input.supersededBySourceClaimIds)),
+  ...stringIfPresent(sourceClaimListCaveat("dissenting_source_claims", input.acceptedDissentingSourceClaimIds)),
+  ...stringIfPresent(input.blockedByCurrentSourceClaimId === undefined
+    ? undefined
+    : `weaker_than_current_valid_consensus:${input.blockedByCurrentSourceClaimId}`),
+  ...stringIfPresent(sourceClaimListCaveat("rejected_by", input.rejectionIds))
+];
+
+const sourceClaimIsRejectedAuthority = (input: {
+  readonly claim: Pick<SourceClaim, "status">;
+  readonly rejectionIds: readonly SourceRejection["id"][];
+}): boolean =>
+  input.claim.status === "rejected" ||
+  input.claim.status === "deprecated" ||
+  input.rejectionIds.length > 0;
+
+const sourceClaimIsBlockedAuthority = (input: {
+  readonly claim: Pick<SourceClaim, "status">;
+  readonly temporalValidity: SourceClaimTemporalValidity;
+  readonly reasons: readonly SourceClaimAuthorityReason[];
+  readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
+  readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
+}): boolean =>
+  input.claim.status !== "accepted" ||
+  input.temporalValidity.status === "invalid_time" ||
+  input.reasons.includes("missing_source_to_decision_fields") ||
+  input.reasons.includes("decorative_support_type") ||
+  input.supersededBySourceClaimIds.length > 0 ||
+  input.blockedByCurrentSourceClaimId !== undefined;
+
+const sourceClaimAuthorityStatus = (input: {
+  readonly claim: Pick<SourceClaim, "status">;
+  readonly temporalValidity: SourceClaimTemporalValidity;
+  readonly reasons: readonly SourceClaimAuthorityReason[];
+  readonly sourceDecisionSupportCount?: number | undefined;
+  readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
+  readonly acceptedDissentingSourceClaimIds: readonly SourceClaim["id"][];
+  readonly rejectionIds: readonly SourceRejection["id"][];
+  readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
+}): SourceClaimAuthorityStatus => {
+  if (sourceClaimIsRejectedAuthority(input)) {
+    return "rejected";
+  }
+
+  if (sourceClaimIsBlockedAuthority(input)) {
+    return "blocked";
+  }
+
+  if (input.temporalValidity.status === "stale") {
+    return "stale";
+  }
+
+  if (input.sourceDecisionSupportCount === 0) {
+    return "evidence_gap";
+  }
+
+  if (input.acceptedDissentingSourceClaimIds.length > 0) {
+    return "caveated";
+  }
+
+  return "accepted";
+};
+
+export const assessSourceClaimAuthority = (
+  input: AssessSourceClaimAuthorityInput
+): SourceClaimAuthorityAssessment => {
+  const temporalValidity = assessSourceClaimTemporalValidity(input.claim, input.now);
+  const sourceDecisionSupportCount = authoritySupportCount(input);
+  const supersededBySourceClaimIds = input.supersededBySourceClaimIds ?? [];
+  const acceptedDissentingSourceClaimIds = input.acceptedDissentingSourceClaimIds ?? [];
+  const rejectionIds = input.rejectionIds ?? [];
+  const temporalReason = sourceClaimTemporalAuthorityReason(temporalValidity);
+  const reasons = uniqueSourceClaimAuthorityReasons([
+    ...sourceClaimLifecycleAuthorityReasons(input.claim),
+    ...(temporalReason === undefined ? [] : [temporalReason]),
+    ...sourceClaimTextAuthorityReasons(input.claim),
+    ...sourceClaimStructuralAuthorityReasons({
+      sourceDecisionSupportCount,
+      supersededBySourceClaimIds,
+      acceptedDissentingSourceClaimIds,
+      rejectionIds,
+      ...(input.blockedByCurrentSourceClaimId === undefined
+        ? {}
+        : { blockedByCurrentSourceClaimId: input.blockedByCurrentSourceClaimId })
+    })
+  ]);
+  const caveats = uniqueStrings([
+    ...sourceClaimTemporalAuthorityCaveats(temporalValidity),
+    ...sourceClaimStructuralAuthorityCaveats({
+      sourceDecisionSupportCount,
+      supersededBySourceClaimIds,
+      acceptedDissentingSourceClaimIds,
+      rejectionIds,
+      ...(input.blockedByCurrentSourceClaimId === undefined
+        ? {}
+        : { blockedByCurrentSourceClaimId: input.blockedByCurrentSourceClaimId })
+    })
+  ]);
+  const status = sourceClaimAuthorityStatus({
+    claim: input.claim,
+    temporalValidity,
+    reasons,
+    sourceDecisionSupportCount,
+    supersededBySourceClaimIds,
+    acceptedDissentingSourceClaimIds,
+    rejectionIds,
+    ...(input.blockedByCurrentSourceClaimId === undefined
+      ? {}
+      : { blockedByCurrentSourceClaimId: input.blockedByCurrentSourceClaimId })
+  });
+
+  if (status === "accepted") {
+    return {
+      status,
+      reasons: ["current_decision_linked_authority"],
+      caveats,
+      temporalValidity
+    };
+  }
+
+  return {
+    status,
+    reasons,
+    caveats,
+    temporalValidity,
+    ...(input.blockedByCurrentSourceClaimId === undefined
+      ? {}
+      : { blockedByCurrentSourceClaimId: input.blockedByCurrentSourceClaimId })
+  };
+};
+
 export type SourceConsensusTimelineEntryState =
   | "current_authority"
   | "caveated_authority"
@@ -728,62 +1019,21 @@ const sourceClaimEndpointIdsByKindAndStatus = (
   );
 
 const sourceConsensusEntryState = (input: {
-  readonly claim: SourceClaim;
-  readonly temporalValidity: SourceClaimTemporalValidity;
-  readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
-  readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
-  readonly acceptedDissentingSourceClaimIds: readonly SourceClaim["id"][];
-  readonly rejectionIds: readonly SourceRejection["id"][];
-  readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
+  readonly authorityAssessment: SourceClaimAuthorityAssessment;
 }): SourceConsensusTimelineEntryState => {
-  if (input.claim.status === "rejected" || input.rejectionIds.length > 0) {
-    return "rejected";
+  switch (input.authorityAssessment.status) {
+    case "accepted":
+      return "current_authority";
+    case "caveated":
+    case "evidence_gap":
+      return "caveated_authority";
+    case "blocked":
+    case "stale":
+      return "historical";
+    case "rejected":
+      return "rejected";
   }
-
-  if (
-    input.claim.status !== "accepted" ||
-    input.temporalValidity.status !== "valid" ||
-    input.supersededBySourceClaimIds.length > 0 ||
-    input.blockedByCurrentSourceClaimId !== undefined
-  ) {
-    return "historical";
-  }
-
-  return input.decisionSupportEdgeIds.length > 0
-    ? input.acceptedDissentingSourceClaimIds.length > 0
-      ? "caveated_authority"
-      : "current_authority"
-    : "caveated_authority";
 };
-
-const sourceConsensusCaveats = (input: {
-  readonly temporalValidity: SourceClaimTemporalValidity;
-  readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
-  readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
-  readonly acceptedDissentingSourceClaimIds: readonly SourceClaim["id"][];
-  readonly rejectionIds: readonly SourceRejection["id"][];
-  readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
-}): readonly string[] => [
-  ...(input.temporalValidity.status === "invalid_time"
-    ? [`invalid_time:${input.temporalValidity.reason}`]
-    : []),
-  ...(input.temporalValidity.status === "stale" ? ["stale"] : []),
-  ...(input.decisionSupportEdgeIds.length === 0
-    ? ["missing_source_decision_support"]
-    : []),
-  ...(input.supersededBySourceClaimIds.length === 0
-    ? []
-    : [`superseded_by:${input.supersededBySourceClaimIds.join(",")}`]),
-  ...(input.acceptedDissentingSourceClaimIds.length === 0
-    ? []
-    : [`dissenting_source_claims:${input.acceptedDissentingSourceClaimIds.join(",")}`]),
-  ...(input.blockedByCurrentSourceClaimId === undefined
-    ? []
-    : [`weaker_than_current_valid_consensus:${input.blockedByCurrentSourceClaimId}`]),
-  ...(input.rejectionIds.length === 0
-    ? []
-    : [`rejected_by:${input.rejectionIds.join(",")}`])
-];
 
 const sourceConsensusEntryStateRank = {
   current_authority: 0,
@@ -845,6 +1095,99 @@ const isUnknownSourceConsensusEntry = (
   );
 };
 
+const blockedByCurrentSourceClaimIdFor = (input: {
+  readonly claim: SourceClaim;
+  readonly sourceClaims: readonly SourceClaim[];
+  readonly now: IsoTimestamp;
+}): SourceClaim["id"] | undefined => {
+  const overrideAssessment = assessSourceClaimOverride({
+    candidate: input.claim,
+    currentConsensus: input.sourceClaims,
+    now: input.now
+  });
+
+  return !overrideAssessment.allowed &&
+    overrideAssessment.reason === "weaker_than_current_valid_consensus"
+    ? overrideAssessment.blockedBySourceClaimId
+    : undefined;
+};
+
+const sourceConsensusTimelineEntryForClaim = (input: {
+  readonly claim: SourceClaim;
+  readonly sourceClaims: readonly SourceClaim[];
+  readonly incomingEdges: readonly SourceClaimEdge[];
+  readonly outgoingEdges: readonly SourceClaimEdge[];
+  readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
+  readonly rejectionIds: readonly SourceRejection["id"][];
+  readonly sourceClaimStatusById: ReadonlyMap<SourceClaim["id"], SourceClaimStatus>;
+  readonly now: IsoTimestamp;
+}): SourceConsensusTimelineEntry => {
+  const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
+  const supersededBySourceClaimIds = sourceClaimEndpointIdsByKind(
+    input.incomingEdges,
+    supersedingEdgeKinds,
+    "from"
+  );
+  const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
+    input.incomingEdges,
+    dissentEdgeKinds,
+    "from",
+    input.sourceClaimStatusById,
+    "accepted"
+  );
+  const authorityAssessment = assessSourceClaimAuthority({
+    claim: input.claim,
+    now: input.now,
+    decisionSupportEdgeIds: input.decisionSupportEdgeIds,
+    supersededBySourceClaimIds,
+    acceptedDissentingSourceClaimIds,
+    rejectionIds: input.rejectionIds,
+    ...(blockedByCurrentSourceClaimId === undefined
+      ? {}
+      : { blockedByCurrentSourceClaimId })
+  });
+  const claimMetadata = readSourceRelationMetadataReadback(input.claim.metadata);
+  const rawEvidenceCitationRef = readRawEvidenceCitationRef(input.claim.metadata);
+
+  return {
+    sourceClaimId: input.claim.id,
+    claim: input.claim.claim,
+    status: input.claim.status,
+    createdAt: input.claim.createdAt,
+    sourceAuthority: input.claim.sourceAuthority,
+    authorityRank: rankSourceAuthority(input.claim.sourceAuthority),
+    temporalValidity: authorityAssessment.temporalValidity,
+    state: sourceConsensusEntryState({ authorityAssessment }),
+    ...(blockedByCurrentSourceClaimId === undefined
+      ? {}
+      : { blockedByCurrentSourceClaimId }),
+    decisionSupportEdgeIds: input.decisionSupportEdgeIds,
+    evidenceRefs: claimMetadata.evidenceRefs,
+    rawEvidenceCitationRefs: rawEvidenceCitationRef === undefined
+      ? []
+      : [rawEvidenceCitationRef],
+    sourceRanges: claimMetadata.sourceRanges,
+    supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
+      input.incomingEdges,
+      supportEdgeKinds,
+      "from"
+    ),
+    dissentingSourceClaimIds: sourceClaimEndpointIdsByKind(
+      input.incomingEdges,
+      dissentEdgeKinds,
+      "from"
+    ),
+    supersededBySourceClaimIds,
+    supersedesSourceClaimIds: sourceClaimEndpointIdsByKind(
+      input.outgoingEdges,
+      supersedingEdgeKinds,
+      "to"
+    ),
+    rejectionIds: input.rejectionIds,
+    caveats: authorityAssessment.caveats
+  };
+};
+
 export const buildSourceConsensusTimelineReadback = (input: {
   readonly sourceClaims: readonly SourceClaim[];
   readonly sourceClaimEdges: readonly SourceClaimEdge[];
@@ -861,95 +1204,18 @@ export const buildSourceConsensusTimelineReadback = (input: {
     claim.status
   ]));
   const entries = input.sourceClaims
-    .map((claim): SourceConsensusTimelineEntry => {
-      const incomingEdges = incomingEdgesByClaim.get(claim.id) ?? [];
-      const outgoingEdges = outgoingEdgesByClaim.get(claim.id) ?? [];
-      const decisionSupportEdgeIds = (decisionEdgesByClaim.get(claim.id) ?? [])
-        .map((edge) => edge.id);
-      const temporalValidity = assessSourceClaimTemporalValidity(claim, input.now);
-      const overrideAssessment = assessSourceClaimOverride({
-        candidate: claim,
-        currentConsensus: input.sourceClaims,
-        now: input.now
-      });
-      const blockedByCurrentSourceClaimId =
-        overrideAssessment.allowed ? undefined : (
-          overrideAssessment.reason === "weaker_than_current_valid_consensus"
-            ? overrideAssessment.blockedBySourceClaimId
-            : undefined
-        );
-      const supersededBySourceClaimIds = sourceClaimEndpointIdsByKind(
-        incomingEdges,
-        supersedingEdgeKinds,
-        "from"
-      );
-      const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
-        incomingEdges,
-        dissentEdgeKinds,
-        "from",
-        sourceClaimStatusById,
-        "accepted"
-      );
-      const supersedesSourceClaimIds = sourceClaimEndpointIdsByKind(
-        outgoingEdges,
-        supersedingEdgeKinds,
-        "to"
-      );
-      const rejectionIds = (rejectionsByClaim.get(claim.id) ?? [])
-        .map((rejection) => rejection.id);
-      const state = sourceConsensusEntryState({
-        claim,
-        temporalValidity,
-        decisionSupportEdgeIds,
-        supersededBySourceClaimIds,
-        acceptedDissentingSourceClaimIds,
-        rejectionIds,
-        blockedByCurrentSourceClaimId
-      });
-      const claimMetadata = readSourceRelationMetadataReadback(claim.metadata);
-      const rawEvidenceCitationRef = readRawEvidenceCitationRef(claim.metadata);
-
-      return {
-        sourceClaimId: claim.id,
-        claim: claim.claim,
-        status: claim.status,
-        createdAt: claim.createdAt,
-        sourceAuthority: claim.sourceAuthority,
-        authorityRank: rankSourceAuthority(claim.sourceAuthority),
-        temporalValidity,
-        state,
-        ...(blockedByCurrentSourceClaimId === undefined
-          ? {}
-          : { blockedByCurrentSourceClaimId }),
-        decisionSupportEdgeIds,
-        evidenceRefs: claimMetadata.evidenceRefs,
-        rawEvidenceCitationRefs: rawEvidenceCitationRef === undefined
-          ? []
-          : [rawEvidenceCitationRef],
-        sourceRanges: claimMetadata.sourceRanges,
-        supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
-          incomingEdges,
-          supportEdgeKinds,
-          "from"
-        ),
-        dissentingSourceClaimIds: sourceClaimEndpointIdsByKind(
-          incomingEdges,
-          dissentEdgeKinds,
-          "from"
-        ),
-        supersededBySourceClaimIds,
-        supersedesSourceClaimIds,
-        rejectionIds,
-        caveats: sourceConsensusCaveats({
-          temporalValidity,
-          decisionSupportEdgeIds,
-          supersededBySourceClaimIds,
-          acceptedDissentingSourceClaimIds,
-          rejectionIds,
-          blockedByCurrentSourceClaimId
-        })
-      };
-    })
+    .map((claim): SourceConsensusTimelineEntry => sourceConsensusTimelineEntryForClaim({
+      claim,
+      sourceClaims: input.sourceClaims,
+      incomingEdges: incomingEdgesByClaim.get(claim.id) ?? [],
+      outgoingEdges: outgoingEdgesByClaim.get(claim.id) ?? [],
+      decisionSupportEdgeIds: (decisionEdgesByClaim.get(claim.id) ?? [])
+        .map((edge) => edge.id),
+      rejectionIds: (rejectionsByClaim.get(claim.id) ?? [])
+        .map((rejection) => rejection.id),
+      sourceClaimStatusById,
+      now: input.now
+    }))
     .sort(compareSourceConsensusTimelineEntries);
 
   return {

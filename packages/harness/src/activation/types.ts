@@ -10,6 +10,8 @@ import type {
   ProjectId,
   SourceClaim,
   SourceClaimEdge,
+  SourceClaimAuthorityReason,
+  SourceClaimAuthorityStatus,
   SourceClaimReviewSignal,
   SourceContextTaxonomy,
   SourceClaimStatus,
@@ -84,6 +86,8 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   searchDocumentIds?: readonly string[];
   sourceClaimId?: string;
   sourceClaimStatus?: SourceClaimStatus;
+  sourceClaimAuthorityStatus?: SourceClaimAuthorityStatus;
+  sourceClaimAuthorityReasons?: readonly SourceClaimAuthorityReason[];
   sourceClaimReviewSignals?: readonly SourceClaimReviewSignal[];
   sourceClaimEdgeRankDown?: {
     readonly edgeIds: readonly string[];

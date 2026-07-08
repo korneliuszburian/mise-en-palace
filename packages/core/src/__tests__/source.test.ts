@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 
 import {
+  assessSourceClaimAuthority,
   assessSourceClaimOverride,
   assessSourceClaimReviewSignals,
   assessSourceClaimTemporalValidity,
@@ -279,6 +280,89 @@ describe("source review signals", () => {
           "Accepted SourceClaim has invalid temporal metadata and cannot be used as current authority."
       }
     ]);
+  });
+
+  test("assesses source authority through one fail-closed gate", () => {
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({}),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "accepted",
+      reasons: ["current_decision_linked_authority"],
+      caveats: []
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        revisitWhen: "not-a-date"
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "blocked",
+      reasons: expect.arrayContaining(["invalid_time"]),
+      caveats: ["invalid_time:invalid_revisit_when"]
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        revisitWhen: "2026-06-01T00:00:00.000Z"
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "stale",
+      reasons: ["stale"],
+      caveats: ["stale"]
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        status: "rejected"
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "rejected",
+      reasons: ["rejected_or_deprecated"]
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({}),
+      now,
+      decisionSupportEdgeIds: []
+    })).toMatchObject({
+      status: "evidence_gap",
+      reasons: ["missing_source_decision_support"],
+      caveats: ["missing_source_decision_support"]
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        supportType: "background"
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "blocked",
+      reasons: ["decorative_support_type"]
+    });
+
+    expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        id: "source-claim-weaker",
+        sourceAuthority: "hypothesis"
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"],
+      blockedByCurrentSourceClaimId: "source-claim-official"
+    })).toMatchObject({
+      status: "blocked",
+      reasons: ["weaker_than_current_valid_consensus"],
+      caveats: ["weaker_than_current_valid_consensus:source-claim-official"],
+      blockedByCurrentSourceClaimId: "source-claim-official"
+    });
   });
 
   test("builds a temporal source consensus timeline readback", () => {

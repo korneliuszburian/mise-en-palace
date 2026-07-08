@@ -6,6 +6,7 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
+  assessSourceClaimAuthority,
   assessSourceClaimReviewSignals,
   activationExclusionReasons
 } from "@krn/core";
@@ -514,13 +515,34 @@ export const retrieveActivationCandidates = async (
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
-      applySourceClaimEdgeInfluence(sourceClaims.map((claim) => ({
-        ...toSourceClaimCandidate(claim),
-        sourceClaimReviewSignals: assessSourceClaimReviewSignals(claim, {
+      applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
+        const sourceDecisionSupportCount = sourceDecisionCountsByClaimId.get(claim.id) ?? 0;
+        const authorityAssessment = assessSourceClaimAuthority({
+          claim,
           now: input.taskContract.updatedAt,
-          sourceDecisionCount: sourceDecisionCountsByClaimId.get(claim.id) ?? 0
-        })
-      })), {
+          sourceDecisionSupportCount
+        });
+        const sourceClaimReviewSignals = assessSourceClaimReviewSignals(claim, {
+          now: input.taskContract.updatedAt,
+          sourceDecisionCount: sourceDecisionSupportCount
+        });
+        const candidate = toSourceClaimCandidate(claim);
+
+        return {
+          ...candidate,
+          sourceClaimAuthorityStatus: authorityAssessment.status,
+          sourceClaimAuthorityReasons: authorityAssessment.reasons,
+          sourceClaimReviewSignals,
+          metadata: {
+            ...candidate.metadata,
+            sourceClaimAuthority: {
+              status: authorityAssessment.status,
+              reasons: authorityAssessment.reasons,
+              caveats: authorityAssessment.caveats
+            }
+          }
+        };
+      }), {
         edges: sourceClaimEdges,
         seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
       }),

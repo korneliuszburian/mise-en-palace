@@ -1421,8 +1421,14 @@ describe("activation engine", () => {
       candidate
     ]));
 
+    expect(bySubjectId.get("claim-linked")).toMatchObject({
+      sourceClaimAuthorityStatus: "accepted",
+      sourceClaimAuthorityReasons: ["current_decision_linked_authority"]
+    });
     expect(bySubjectId.get("claim-linked")?.exclusion).toBeUndefined();
     expect(bySubjectId.get("claim-unlinked")).toMatchObject({
+      sourceClaimAuthorityStatus: "evidence_gap",
+      sourceClaimAuthorityReasons: ["missing_source_decision_support"],
       sourceClaimReviewSignals: expect.arrayContaining([
         expect.objectContaining({
           kind: "accepted_claim_without_decision",
@@ -1503,6 +1509,8 @@ describe("activation engine", () => {
     expect(bySubjectId.get("claim-current")?.exclusion).toBeUndefined();
     expect(bySubjectId.get("claim-stale")).toMatchObject({
       validUntil: "2026-06-01T00:00:00.000Z",
+      sourceClaimAuthorityStatus: "stale",
+      sourceClaimAuthorityReasons: ["stale"],
       sourceClaimReviewSignals: expect.arrayContaining([
         expect.objectContaining({
           kind: "stale_accepted_claim",
@@ -1511,7 +1519,7 @@ describe("activation engine", () => {
       ]),
       exclusion: {
         reason: "stale",
-        explanation: "Candidate validity window has expired."
+        explanation: expect.stringContaining("SourceClaim authority status stale")
       }
     });
   });
@@ -1545,6 +1553,8 @@ describe("activation engine", () => {
 
     expect(bySubjectId.get("claim-valid-time")?.exclusion).toBeUndefined();
     expect(bySubjectId.get("claim-invalid-time")).toMatchObject({
+      sourceClaimAuthorityStatus: "blocked",
+      sourceClaimAuthorityReasons: expect.arrayContaining(["invalid_time"]),
       sourceClaimReviewSignals: expect.arrayContaining([
         expect.objectContaining({
           kind: "invalid_source_claim_time",
