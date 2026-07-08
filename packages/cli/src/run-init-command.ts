@@ -63,7 +63,6 @@ export interface SourceSeedProposal {
     | "docs_root"
     | "eval_workspace"
     | "invariant_test"
-    | "mcp_workspace"
     | "script_root"
     | "source_root"
     | "test_root"
@@ -264,11 +263,6 @@ const sourceSeedCandidates = [
     path: "evals",
     kind: "eval_workspace",
     reason: "seed eval, acceptance report, and test owner-file recall"
-  },
-  {
-    path: "mcp",
-    kind: "mcp_workspace",
-    reason: "seed MCP package and tool owner-file recall"
   },
   {
     path: "scripts",

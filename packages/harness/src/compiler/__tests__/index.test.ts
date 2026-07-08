@@ -1024,9 +1024,9 @@ describe("compileHarnessPlan", () => {
               reason: "seed eval, acceptance report, and test owner-file recall"
             },
             {
-              path: "mcp",
-              kind: "mcp_workspace",
-              reason: "seed MCP package and tool owner-file recall"
+              path: "scripts",
+              kind: "script_root",
+              reason: "seed operator script and automation owner-file recall"
             }
           ],
           trustExclusions: [
@@ -1099,7 +1099,7 @@ describe("compileHarnessPlan", () => {
         ownerFileRecall: {
           status: "missing_owner_file_read_model",
           reason: "target_read_model_has_no_owner_files",
-          sourceSeedPaths: ["evals", "mcp"],
+          sourceSeedPaths: ["evals", "scripts"],
           ownerFilePaths: []
         }
       }

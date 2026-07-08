@@ -154,7 +154,6 @@ const sourceSeedKinds = [
   "agent_instructions",
   "docs_root",
   "eval_workspace",
-  "mcp_workspace",
   "script_root",
   "source_root",
   "test_root"

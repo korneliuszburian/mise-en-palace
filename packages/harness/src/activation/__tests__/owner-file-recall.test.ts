@@ -119,9 +119,9 @@ describe("owner-file recall", () => {
           reason: "seed eval, acceptance report, and test owner-file recall"
         },
         {
-          path: "mcp",
-          kind: "mcp_workspace",
-          reason: "seed MCP package and tool owner-file recall"
+          path: "scripts",
+          kind: "script_root",
+          reason: "seed operator script and automation owner-file recall"
         }
       ],
       ownerFiles: [],
