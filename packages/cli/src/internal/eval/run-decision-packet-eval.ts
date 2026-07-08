@@ -564,6 +564,7 @@ export const runDecisionPacketEval = async (
         "DecisionPacketEvalCase.v1 is the canonical case/scorer model for deterministic DecisionPacket eval wrappers",
         "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
+        "normal coding task packets expose taskStandardDecisions and verificationCommands before Codex starts implementation",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
         "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
         "packet scoring reports consensus/conflict as a separate axis over stale, rejected, caveated, and unsupported governing context",

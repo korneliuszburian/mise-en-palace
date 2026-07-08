@@ -21,8 +21,13 @@ interface DecisionPacketJson {
     readonly evidenceRef: string;
   };
   readonly packet: {
+    readonly taskStandardDecisions: readonly {
+      readonly decision: string;
+      readonly rejectedPath?: string;
+    }[];
     readonly sourceClaimIds: readonly string[];
     readonly caveatedSourceClaimIds: readonly string[];
+    readonly verificationCommands: readonly string[];
   };
   readonly returnChannels: {
     readonly evidence: {
@@ -187,7 +192,25 @@ const aggregate: HarnessRunAggregate = {
     createdAt: now,
     updatedAt: now
   },
-  evidenceBundles: [],
+  evidenceBundles: [{
+    id: "evidence-agent-1",
+    executionRunId: "run-agent-1",
+    status: "captured",
+    changedFiles: ["packages/frontend/src/App.tsx"],
+    commands: [{
+      command: "pnpm --filter frontend test",
+      status: "passed",
+      provenance: "operator_reported",
+      doesNotProve:
+        "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    }],
+    diffRisk: "medium",
+    reviewBurden: "Review frontend bootstrap output against the current project standard.",
+    rollbackPath: "Revert the frontend bootstrap slice.",
+    metadata: {},
+    createdAt: now,
+    updatedAt: now
+  }],
   reviewAssessments: [],
   feedbackDeltas: [{
     id: "feedback-agent-1",
@@ -396,6 +419,10 @@ describe("decision packet CLI", () => {
         governingStatements: expect.arrayContaining([
           "Use the refreshed frontend bootstrap standard for matching new frontend projects."
         ]),
+        taskStandardDecisions: [expect.objectContaining({
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects."
+        })],
         sourceClaimIds: [
           "claim-agent-1",
           "claim-agent-caveated"
@@ -414,6 +441,7 @@ describe("decision packet CLI", () => {
         ],
         noiseDecisionIds: ["source-decision-noise-agent-1"],
         severeStaleAuthorityIds: ["source-decision-conflicted-agent-1"],
+        verificationCommands: ["pnpm --filter frontend test"],
         brief: {
           includedContextCount: 3,
           explicitExclusionCount: 1,
@@ -472,6 +500,10 @@ describe("decision packet CLI", () => {
     expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
     expect(json.packet.caveatedSourceClaimIds).toEqual(["claim-agent-caveated"]);
     expect(json.packet.caveatedSourceClaimIds).not.toContain("claim-agent-1");
+    expect(json.packet.taskStandardDecisions[0]?.decision).toBe(
+      "Use the refreshed frontend bootstrap standard for matching new frontend projects."
+    );
+    expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(json.packetIdentity.evidenceRef);

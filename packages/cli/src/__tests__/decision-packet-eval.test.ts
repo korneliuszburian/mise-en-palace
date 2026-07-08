@@ -84,9 +84,13 @@ const expectProjectStandardCase = (
     packet: {
       governingDecisionIds: expect.arrayContaining([expected.expectedDecisionId]),
       governingStatements: expect.arrayContaining([expected.statement]),
+      taskStandardDecisions: [expect.objectContaining({
+        decision: expected.statement
+      })],
       sourceRejectionIds: expect.arrayContaining([expected.sourceRejectionId]),
       staleDecisionIds: [expected.staleDecisionId],
       rejectedPathIds: [expected.rejectedDecisionId],
+      verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
       brief: {
         observationPrefixCount: 1
       },
@@ -192,6 +196,7 @@ describe("runDecisionPacketEval", () => {
         },
         staleDecisionIds: ["markdown-runtime-memory"],
         rejectedPathIds: ["create-markdown-memory-files"],
+        verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
         evidenceGaps: [],
         severeStaleAuthorityIds: []
       }
@@ -382,6 +387,23 @@ describe("runDecisionPacketEval", () => {
       governingStatements: [
         "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
       ],
+      taskStandardDecisions: [{
+        memoryRecordId: "memory:decision:store-backed-memory-no-markdown",
+        key: "decision-packet:store-backed-memory-no-markdown",
+        sourceRefs: [
+          "source-claim:store-backed-memory-no-markdown",
+          "source:roadmap:runtime-memory"
+        ],
+        mechanism:
+          "Task-scoped runtime memory guidance activates the store-backed memory standard.",
+        krnImplication: "DecisionPacket should expose the standard before Codex relies on memory.",
+        decision: "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory.",
+        consumer: "decision-packet-eval",
+        falsifier: "A runtime task needs a markdown memory folder to recall KRN knowledge.",
+        validFrom: "2026-07-07T00:00:00.000Z",
+        rejectedPath: "Do not use markdown as runtime memory.",
+        doesNotProve: "Does not prove broad memory retrieval quality or live Codex obedience."
+      }],
       sourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
       caveatedSourceClaimIds: [],
       sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
@@ -390,6 +412,7 @@ describe("runDecisionPacketEval", () => {
       staleDecisionIds: ["cast-json-record"],
       rejectedPathIds: ["prose-second-opinion"],
       falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
+      verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
       evidenceGaps: [],
       doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
       nonProofs: ["packet quality only"],

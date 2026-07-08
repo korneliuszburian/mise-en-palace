@@ -3,6 +3,7 @@ import {
   type CapabilityPlan,
   type ContextObservationPrefix,
   type DecisionPacket,
+  type DecisionPacketTaskStandard,
   type MemoryRecord,
   type SourceClaim,
   type SourceClaimEdge,
@@ -461,6 +462,24 @@ const rejectedRows = (
   );
 };
 
+const taskStandardDecisionsFor = (
+  decisions: readonly DecisionPacketRow[]
+): readonly DecisionPacketTaskStandard[] => decisions
+  .filter((decision) => decision.taskScopes.length > 0)
+  .map((decision): DecisionPacketTaskStandard => ({
+    memoryRecordId: `memory:decision:${decision.id}`,
+    key: `decision-packet:${decision.id}`,
+    sourceRefs: unique([decision.sourceClaimId, decision.evidenceRef]),
+    mechanism:
+      `Task scopes (${decision.taskScopes.join(", ")}) activate this governed decision for matching coding work.`,
+    krnImplication: "DecisionPacket should expose this standard before Codex starts implementation.",
+    decision: decision.statement,
+    consumer: "decision-packet-eval",
+    falsifier: decision.falsifier,
+    validFrom: now,
+    doesNotProve: decision.doesNotProve
+  }));
+
 export const buildDecisionPacketWithEngine = async (
   fixture: DecisionPacketEvalFixture,
   testCase: DecisionPacketCase
@@ -496,11 +515,12 @@ export const buildDecisionPacketWithEngine = async (
       activationCandidateCount: retrieved.candidates.length
     }
   });
+  const evidenceContract = evidenceContractFor(testCase);
   const brief = createExecutionBrief({
     taskContract: taskContractFor(testCase),
     contextAssembly,
     capabilityPlan: capabilityPlanFor(testCase),
-    evidenceContract: evidenceContractFor(testCase),
+    evidenceContract,
     nextAction: "Use the governed decision packet before coding."
   });
   const decisionsById = decisionById(fixture.decisions);
@@ -531,6 +551,7 @@ export const buildDecisionPacketWithEngine = async (
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds: supportedGoverningDecisionIds,
     governingStatements: unique(supportedGoverningRows.map((decision) => decision.statement).filter(nonEmpty)),
+    taskStandardDecisions: taskStandardDecisionsFor(supportedGoverningRows),
     sourceClaimIds: unique(supportedGoverningRows.map((decision) => decision.sourceClaimId)),
     caveatedSourceClaimIds: unique(supportedGoverningRows
       .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
@@ -545,6 +566,7 @@ export const buildDecisionPacketWithEngine = async (
     staleDecisionIds,
     rejectedPathIds,
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
+    verificationCommands: evidenceContract.commands.map((command) => command.command),
     evidenceGaps: supportedGoverningDecisionIds.length === 0
       ? [{
           id: `evidence-gap:${testCase.id}:no-governing-decision`,

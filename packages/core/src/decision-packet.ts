@@ -16,10 +16,26 @@ export interface DecisionPacketEvidenceGap {
   verificationRequired: string;
 }
 
+export interface DecisionPacketTaskStandard {
+  memoryRecordId: string;
+  key: string;
+  sourceRefs: readonly string[];
+  mechanism: string;
+  krnImplication: string;
+  decision: string;
+  consumer: string;
+  falsifier: string;
+  validFrom: string;
+  validUntil?: string;
+  rejectedPath?: string;
+  doesNotProve: string;
+}
+
 export interface DecisionPacket {
   formatVersion: DecisionPacketFormatVersion;
   governingDecisionIds: readonly string[];
   governingStatements: readonly string[];
+  taskStandardDecisions: readonly DecisionPacketTaskStandard[];
   sourceClaimIds: readonly string[];
   caveatedSourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
@@ -28,6 +44,7 @@ export interface DecisionPacket {
   staleDecisionIds: readonly string[];
   rejectedPathIds: readonly string[];
   falsifiers: readonly string[];
+  verificationCommands: readonly string[];
   evidenceGaps: readonly DecisionPacketEvidenceGap[];
   doesNotProve: readonly string[];
   nonProofs: readonly string[];

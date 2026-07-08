@@ -3,6 +3,7 @@ import {
 } from "node:crypto";
 import type {
   DecisionPacket,
+  DecisionPacketTaskStandard,
   SourceUsefulnessOutcome
 } from "@krn/core";
 import {
@@ -168,6 +169,50 @@ const rejectedSourceDecisionIdsFor = (
   )
 ));
 
+const verificationCommandsFor = (
+  readModel: DecisionPacketReadModel
+): string[] => unique(readModel.evidenceBundles.flatMap((bundle) =>
+  bundle.commands.map((command) => command.command)
+));
+
+const taskStandardDecisionsFor = (
+  readModel: DecisionPacketReadModel
+): DecisionPacketTaskStandard[] => {
+  const decisions = readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.projectStandardDecision === undefined
+      ? []
+      : [{
+          memoryRecordId: candidate.projectStandardDecision.memoryRecordId,
+          key: candidate.projectStandardDecision.key,
+          sourceRefs: candidate.projectStandardDecision.sourceRefs,
+          mechanism: candidate.projectStandardDecision.mechanism,
+          krnImplication: candidate.projectStandardDecision.krnImplication,
+          decision: candidate.projectStandardDecision.decision,
+          consumer: candidate.projectStandardDecision.consumer,
+          falsifier: candidate.projectStandardDecision.falsifier,
+          validFrom: candidate.projectStandardDecision.validFrom,
+          ...(candidate.projectStandardDecision.validUntil === undefined
+            ? {}
+            : { validUntil: candidate.projectStandardDecision.validUntil }),
+          ...(candidate.projectStandardDecision.rejectedPath === undefined
+            ? {}
+            : { rejectedPath: candidate.projectStandardDecision.rejectedPath }),
+          doesNotProve: candidate.projectStandardDecision.doesNotProve
+        }]
+  ) ?? [];
+  const byKey = new Map<string, DecisionPacketTaskStandard>();
+
+  for (const decision of decisions) {
+    const key = `${decision.key}:${decision.validFrom}:${decision.decision}`;
+
+    if (!byKey.has(key)) {
+      byKey.set(key, decision);
+    }
+  }
+
+  return [...byKey.values()];
+};
+
 const governingStatementsFor = (
   readModel: DecisionPacketReadModel
 ): string[] => unique([
@@ -210,6 +255,7 @@ const compactDecisionPacket = (
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds,
     governingStatements: governingStatementsFor(readModel),
+    taskStandardDecisions: taskStandardDecisionsFor(readModel),
     sourceClaimIds,
     caveatedSourceClaimIds: caveatedSourceClaimIdsFor(readModel),
     sourceDecisionEdgeIds: sourceDecisionEdgeIdsFor(readModel),
@@ -228,6 +274,7 @@ const compactDecisionPacket = (
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)
     ),
+    verificationCommands: verificationCommandsFor(readModel),
     evidenceGaps: governingDecisionIds.length === 0
       ? [{
           id: `evidence-gap:${readModel.run.id}:no-governing-decision`,

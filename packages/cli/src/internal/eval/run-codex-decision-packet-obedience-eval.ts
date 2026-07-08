@@ -174,19 +174,23 @@ const outputEvidence = (
 const renderDecisionPacketBrief = (
   packet: {
     readonly governingDecisionIds: readonly string[];
+    readonly taskStandardDecisions: readonly { readonly decision: string }[];
     readonly staleDecisionIds: readonly string[];
     readonly rejectedPathIds: readonly string[];
     readonly sourceDecisionEdgeIds: readonly string[];
     readonly falsifiers: readonly string[];
+    readonly verificationCommands: readonly string[];
     readonly nonProofs: readonly string[];
   }
 ): string => [
   "KRN Decision Packet Brief",
   `governingDecisionIds: ${packet.governingDecisionIds.join(", ")}`,
+  `taskStandardDecisions: ${packet.taskStandardDecisions.map((decision) => decision.decision).join(" | ")}`,
   `sourceDecisionEdgeIds: ${packet.sourceDecisionEdgeIds.join(", ")}`,
   `staleDecisionIds: ${packet.staleDecisionIds.join(", ")}`,
   `rejectedPathIds: ${packet.rejectedPathIds.join(", ")}`,
   `falsifiers: ${packet.falsifiers.join(" | ")}`,
+  `verificationCommands: ${packet.verificationCommands.join(" | ")}`,
   `nonProofs: ${packet.nonProofs.join(" | ")}`
 ].join("\n");
 
