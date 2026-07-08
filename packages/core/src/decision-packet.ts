@@ -66,6 +66,7 @@ export type DecisionPacketAbstentionReason =
   | "missing_governing_decision"
   | "missing_decision_linked_source"
   | "caveated_source_authority"
+  | "caveated_memory_authority"
   | "stale_authority"
   | "missing_rejected_path_evidence"
   | "evidence_gap";
@@ -140,6 +141,13 @@ export const buildDecisionPacketAbstentionScore = (input: {
     score -= 20;
   }
 
+  if (input.sourceConsensus.evidenceGapIds.some((id) =>
+    id.includes(":caveated-memory-authority:")
+  )) {
+    reasons.push("caveated_memory_authority");
+    score -= 20;
+  }
+
   if (input.sourceConsensus.conflictedDecisionIds.length > 0) {
     reasons.push("stale_authority");
     score -= 35;
@@ -184,7 +192,11 @@ export interface DecisionPacket {
   sourceDecisionEdgeIds: readonly string[];
   sourceRejectionIds: readonly string[];
   memoryRefs: readonly string[];
+  caveatedMemoryRefs: readonly string[];
   staleDecisionIds: readonly string[];
+  staleKnowledgeIds: readonly string[];
+  noiseKnowledgeIds: readonly string[];
+  unknownKnowledgeIds: readonly string[];
   rejectedPathIds: readonly string[];
   falsifiers: readonly string[];
   verificationCommands: readonly string[];
@@ -256,6 +268,11 @@ export interface DecisionPacketFeedbackDeltaInput {
   sourceUsefulnessOutcomes: readonly {
     sourceClaimId?: string;
     sourceDecisionId?: string;
+    outcome: SourceUsefulnessOutcome;
+    reason: string;
+  }[];
+  knowledgeUsefulnessOutcomes: readonly {
+    knowledgeId: string;
     outcome: SourceUsefulnessOutcome;
     reason: string;
   }[];
@@ -380,6 +397,31 @@ const sourceDecisionIdsWithUsefulness = (
   )
 ));
 
+const memoryRefsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.inclusionDetails
+  .filter((inclusion) => inclusion.subjectType === "memory_record")
+  .map((inclusion) => inclusion.subjectId));
+
+const knowledgeIdsWithUsefulness = (
+  readModel: DecisionPacketReadModelInput,
+  outcomes: readonly SourceUsefulnessOutcome[]
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
+    outcomes.includes(outcome.outcome) ? [outcome.knowledgeId] : []
+  )
+));
+
+const memoryRefsWithKnowledgeUsefulness = (
+  readModel: DecisionPacketReadModelInput,
+  outcomes: readonly SourceUsefulnessOutcome[]
+): string[] => {
+  const memoryRefs = new Set(memoryRefsFor(readModel));
+  const knowledgeIds = knowledgeIdsWithUsefulness(readModel, outcomes);
+
+  return knowledgeIds.filter((knowledgeId) => memoryRefs.has(knowledgeId));
+};
+
 const rejectedSourceDecisionIdsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
@@ -468,6 +510,7 @@ const evidenceGapsFor = (input: {
   readonly runId: string;
   readonly governingDecisionIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
+  readonly caveatedMemoryRefs: readonly string[];
   readonly severeStaleAuthorityIds: readonly string[];
 }): DecisionPacketEvidenceGap[] => [
   ...(input.governingDecisionIds.length === 0
@@ -484,6 +527,13 @@ const evidenceGapsFor = (input: {
       `SourceClaim ${sourceClaimId} is included without current decision-linked authority or has maintenance feedback caveats.`,
     verificationRequired:
       "Link the claim to a current SourceDecisionEdge or refresh/review the source claim before treating it as governing authority."
+  })),
+  ...input.caveatedMemoryRefs.map((memoryRef): DecisionPacketEvidenceGap => ({
+    id: `evidence-gap:${input.runId}:caveated-memory-authority:${memoryRef}`,
+    reason:
+      `MemoryRef ${memoryRef} is included but has stale, noisy, or unknown knowledge usefulness feedback.`,
+    verificationRequired:
+      "Review the memory feedback, refresh or demote the memory, or capture stronger usefulness evidence before treating it as clean authority."
   })),
   ...input.severeStaleAuthorityIds.map((sourceDecisionId): DecisionPacketEvidenceGap => ({
     id: `evidence-gap:${input.runId}:stale-authority:${sourceDecisionId}`,
@@ -503,6 +553,13 @@ export const buildDecisionPacketFromReadModel = (
   const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel);
   const governingDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"]);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
+  const memoryRefs = memoryRefsFor(readModel);
+  const staleKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["stale"]);
+  const noiseKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["noise"]);
+  const unknownKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["unknown"]);
+  const caveatedMemoryRefs = unique([
+    ...memoryRefsWithKnowledgeUsefulness(readModel, ["stale", "noise", "unknown"])
+  ]);
   const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
   const rejectedPathIds = unique([
     ...inclusions
@@ -519,6 +576,7 @@ export const buildDecisionPacketFromReadModel = (
     runId: readModel.run.id,
     governingDecisionIds,
     caveatedSourceClaimIds,
+    caveatedMemoryRefs,
     severeStaleAuthorityIds
   });
   const sourceConsensus = buildDecisionPacketSourceConsensus({
@@ -541,10 +599,12 @@ export const buildDecisionPacketFromReadModel = (
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
     sourceRejectionIds,
-    memoryRefs: unique(inclusions
-      .filter((inclusion) => inclusion.subjectType === "memory_record")
-      .map((inclusion) => inclusion.subjectId)),
+    memoryRefs,
+    caveatedMemoryRefs,
     staleDecisionIds,
+    staleKnowledgeIds,
+    noiseKnowledgeIds,
+    unknownKnowledgeIds,
     rejectedPathIds,
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)

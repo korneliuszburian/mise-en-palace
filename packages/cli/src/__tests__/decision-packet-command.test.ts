@@ -235,9 +235,9 @@ const aggregate: HarnessRunAggregate = {
     }],
     evalCandidates: [],
     metadata: {
-      sourceUsefulnessOutcomes: [{
-        sourceDecisionId: "source-decision-stale-agent-1",
-        outcome: "stale",
+        sourceUsefulnessOutcomes: [{
+          sourceDecisionId: "source-decision-stale-agent-1",
+          outcome: "stale",
         reason: "Prior source decision is stale for this packet.",
         evidenceRefs: ["test:decision-packet-stale-decision"],
         doesNotProve:
@@ -275,10 +275,18 @@ const aggregate: HarnessRunAggregate = {
         outcome: "stale",
         reason: "Conflicted decision should be flagged as stale authority.",
         evidenceRefs: ["test:decision-packet-conflicted-stale"],
-        doesNotProve:
-          "Stale feedback does not identify the replacement decision."
-      }]
-    },
+          doesNotProve:
+            "Stale feedback does not identify the replacement decision."
+        }],
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "memory-agent-1",
+          outcome: "stale",
+          reason: "Retained frontend bootstrap memory needs refreshed evidence before reuse.",
+          evidenceRefs: ["test:decision-packet-stale-knowledge"],
+          doesNotProve:
+            "Stale knowledge feedback does not mutate memory without review."
+        }]
+      },
     createdAt: now,
     updatedAt: now
   }],
@@ -465,6 +473,7 @@ describe("decision packet CLI", () => {
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
             "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
           ]
         },
@@ -475,15 +484,21 @@ describe("decision packet CLI", () => {
             "evidence_gap",
             "missing_decision_linked_source",
             "caveated_source_authority",
+            "caveated_memory_authority",
             "stale_authority"
           ],
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
             "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
           ]
         },
         memoryRefs: ["memory-agent-1"],
+        caveatedMemoryRefs: ["memory-agent-1"],
+        staleKnowledgeIds: ["memory-agent-1"],
+        noiseKnowledgeIds: [],
+        unknownKnowledgeIds: [],
         staleDecisionIds: [
           "source-decision-stale-agent-1",
           "source-decision-conflicted-agent-1"

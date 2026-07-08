@@ -586,10 +586,14 @@ export const buildDecisionPacketWithEngine = async (
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
     sourceRejectionIds,
+    caveatedMemoryRefs: [],
     memoryRefs: unique(memoryRows
       .filter((decision) => supportedGoverningDecisionIds.includes(decision.id))
       .map((decision) => `memory:decision:${decision.id}`)),
     staleDecisionIds,
+    staleKnowledgeIds: [],
+    noiseKnowledgeIds: [],
+    unknownKnowledgeIds: [],
     rejectedPathIds,
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
     verificationCommands: evidenceContract.commands.map((command) => command.command),

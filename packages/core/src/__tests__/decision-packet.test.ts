@@ -109,6 +109,23 @@ const readModel = {
       sourceClaimId: "claim-current",
       outcome: "stale",
       reason: "Current source claim needs refresh before reuse."
+    }],
+    knowledgeUsefulnessOutcomes: [{
+      knowledgeId: "memory-current",
+      outcome: "stale",
+      reason: "Current memory needs refresh before reuse."
+    }, {
+      knowledgeId: "memory-noise",
+      outcome: "noise",
+      reason: "Noisy memory was not included in this packet."
+    }, {
+      knowledgeId: "memory-unknown",
+      outcome: "unknown",
+      reason: "Unknown memory usefulness needs evidence."
+    }, {
+      knowledgeId: "memory-helped",
+      outcome: "helped",
+      reason: "Helpful knowledge feedback is not itself a governing statement."
     }]
   }],
   proof: {
@@ -130,6 +147,9 @@ describe("DecisionPacket builder", () => {
     expect(packet.governingStatements).toContain(
       "Use the current frontend template for matching app setup tasks."
     );
+    expect(packet.governingStatements).not.toContain(
+      "Helpful knowledge feedback is not itself a governing statement."
+    );
     expect(packet.taskStandardDecisions).toEqual([expect.objectContaining({
       key: "frontend-template",
       rejectedPath: "Do not use the superseded template."
@@ -143,10 +163,15 @@ describe("DecisionPacket builder", () => {
       "claim-caveated"
     ]);
     expect(packet.sourceDecisionEdgeIds).toEqual(["source-decision-edge-current"]);
+    expect(packet.memoryRefs).toEqual(["memory-current"]);
+    expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
     expect(packet.staleDecisionIds).toEqual([
       "source-decision-stale",
       "source-decision-conflicted"
     ]);
+    expect(packet.staleKnowledgeIds).toEqual(["memory-current"]);
+    expect(packet.noiseKnowledgeIds).toEqual(["memory-noise"]);
+    expect(packet.unknownKnowledgeIds).toEqual(["memory-unknown"]);
     expect(packet.rejectedPathIds).toEqual([
       "anti-memory-superseded-template",
       "source-decision-rejected"
@@ -157,6 +182,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-caveated",
+      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current",
       "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
     ]);
     expect(packet.sourceConsensus.evidenceGapIds).toEqual(packet.evidenceGaps.map((gap) => gap.id));
@@ -166,6 +192,7 @@ describe("DecisionPacket builder", () => {
         "evidence_gap",
         "missing_decision_linked_source",
         "caveated_source_authority",
+        "caveated_memory_authority",
         "stale_authority"
       ]
     });
