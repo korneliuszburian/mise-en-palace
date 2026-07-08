@@ -731,6 +731,14 @@ const runDecisionPacketReturnLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Next packet governing decisions: ${report.nextPacketGoverningDecisionIds.join(", ")}`,
       `Next packet stale decisions: ${report.nextPacketStaleDecisionIds.join(", ")}`,
       `Next packet includes matching decision: ${report.nextPacketIncludesMatchingDecision ? "yes" : "no"}`,
+      `Selector proof run: ${report.selectorProofRunId}`,
+      `Selector helped memory: ${report.selectorHelpedMemoryRecordId}`,
+      `Selector stale memory: ${report.selectorStaleMemoryRecordId}`,
+      `Selector helped memory application: ${report.selectorHelpedMemoryApplicationId}`,
+      `Selector stale memory applications: ${report.selectorStaleMemoryApplicationIds.join(", ")}`,
+      `Selector packet memory refs: ${report.selectorPacketMemoryRefs.join(", ")}`,
+      `Selector packet includes helped memory: ${report.selectorPacketIncludesHelpedMemory ? "yes" : "no"}`,
+      `Selector packet excludes stale memory: ${report.selectorPacketExcludesStaleMemory ? "yes" : "no"}`,
       `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
     ]
