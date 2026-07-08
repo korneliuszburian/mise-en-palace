@@ -8,6 +8,8 @@ import type {
   MemoryRecordReviewSignal,
   MemoryRecordStatus,
   ProjectId,
+  SourceClaim,
+  SourceClaimEdge,
   SourceClaimReviewSignal,
   SourceContextTaxonomy,
   SourceClaimStatus,
@@ -83,6 +85,13 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   sourceClaimId?: string;
   sourceClaimStatus?: SourceClaimStatus;
   sourceClaimReviewSignals?: readonly SourceClaimReviewSignal[];
+  sourceClaimEdgeRankDown?: {
+    readonly edgeIds: readonly string[];
+    readonly edgeKinds: readonly SourceClaimEdge["kind"][];
+    readonly governingSourceClaimIds: readonly SourceClaim["id"][];
+    readonly graphPenalty: number;
+    readonly doesNotProve: string;
+  };
   memoryRecordId?: string;
   memoryReviewSignals?: readonly MemoryRecordReviewSignal[];
   antiMemoryRecordId?: string;

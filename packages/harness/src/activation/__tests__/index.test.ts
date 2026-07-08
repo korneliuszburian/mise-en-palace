@@ -109,6 +109,50 @@ const sourceDecisionEdge = (
   ...overrides
 });
 
+const retrieveDecisionLinkedSourceCandidates = async (
+  claims: readonly SourceClaim[],
+  edges: readonly SourceClaimEdge[] = []
+) => retrieveActivationCandidates({
+  taskContract: task,
+  limits: {
+    memory: 0,
+    source: 10,
+    search: 0,
+    antiMemory: 0
+  },
+  repositories: {
+    memoryRepository: {
+      async listActiveMemory() {
+        return [];
+      },
+      async listAntiMemoryForProject() {
+        return [];
+      }
+    },
+    sourceRepository: {
+      async listClaimsForProject() {
+        return [...claims];
+      },
+      async listSourceClaimEdgesForClaim(sourceClaimId) {
+        return edges.filter((edge) =>
+          edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
+        );
+      },
+      async listSourceDecisionEdgesForClaim(sourceClaimId) {
+        return [sourceDecisionEdge({
+          id: `edge-${sourceClaimId}`,
+          sourceClaimId
+        })];
+      }
+    },
+    retrievalRepository: {
+      async searchLexical() {
+        return [];
+      }
+    }
+  }
+});
+
 const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
   id: "anti-memory-1",
   projectId: "project-1",
@@ -1470,6 +1514,121 @@ describe("activation engine", () => {
         explanation: "Candidate validity window has expired."
       }
     });
+  });
+
+  it("blocks accepted source claims with invalid temporal metadata", async () => {
+    const validClaim = sourceClaim({
+      id: "claim-valid-time",
+      claim: "Valid temporal source claims can guide activation.",
+      supportType: "implementation-boundary",
+      revisitWhen: "2026-07-01T00:00:00.000Z",
+      falsifier: "A valid decision-linked claim is excluded for temporal metadata."
+    });
+    const invalidClaim = sourceClaim({
+      id: "claim-invalid-time",
+      claim: "Invalid temporal source claims should not guide activation.",
+      supportType: "implementation-boundary",
+      revisitWhen: "not-a-timestamp",
+      falsifier: "An invalid-time claim reaches active authority."
+    });
+    const retrieved = await retrieveDecisionLinkedSourceCandidates([validClaim, invalidClaim]);
+    const result = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("claim-valid-time")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("claim-invalid-time")).toMatchObject({
+      sourceClaimReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "invalid_source_claim_time",
+          severity: "blocking"
+        })
+      ]),
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("invalid_source_claim_time")
+      }
+    });
+  });
+
+  it("excludes source claims superseded by accepted source graph consensus", async () => {
+    const currentClaim = sourceClaim({
+      id: "claim-current-consensus",
+      claim: "Current source graph consensus should guide activation.",
+      supportType: "implementation-boundary",
+      falsifier: "Current consensus is excluded despite decision support."
+    });
+    const supersededClaim = sourceClaim({
+      id: "claim-superseded-consensus",
+      claim: "Superseded source graph consensus should not guide activation.",
+      supportType: "implementation-boundary",
+      falsifier: "A superseded claim reaches uncaveated activation authority."
+    });
+    const supersedesEdge: SourceClaimEdge = {
+      id: "edge-current-supersedes-old",
+      fromSourceClaimId: currentClaim.id,
+      toSourceClaimId: supersededClaim.id,
+      kind: "supersedes",
+      metadata: {
+        consumer: "activation-engine-test",
+        doesNotProve: "This edge does not prove source truth outside the fixture."
+      },
+      createdAt: now
+    };
+    const retrieved = await retrieveDecisionLinkedSourceCandidates(
+      [currentClaim, supersededClaim],
+      [supersedesEdge]
+    );
+    const result = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const context = assembleContext({
+      id: "context-source-consensus",
+      harnessPlanId: "plan-source-consensus",
+      candidates: result.candidates,
+      createdAt: now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("claim-current-consensus")?.exclusion).toBeUndefined();
+    expect(bySubjectId.get("claim-superseded-consensus")).toMatchObject({
+      sourceClaimEdgeRankDown: {
+        edgeIds: ["edge-current-supersedes-old"],
+        edgeKinds: ["supersedes"],
+        governingSourceClaimIds: ["claim-current-consensus"]
+      },
+      exclusion: {
+        reason: "superseded",
+        explanation: expect.stringContaining("cannot activate as uncaveated authority")
+      }
+    });
+    expect(context.inclusions.map((inclusion) => inclusion.subjectId)).toContain(
+      "claim-current-consensus"
+    );
+    expect(context.inclusions.map((inclusion) => inclusion.subjectId)).not.toContain(
+      "claim-superseded-consensus"
+    );
+    expect(context.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: "claim-superseded-consensus",
+        reason: "superseded",
+        explanation: expect.stringContaining("edge-current-supersedes-old")
+      })
+    ]));
   });
 
   it("selects a small high-signal working set from noisy candidates", () => {

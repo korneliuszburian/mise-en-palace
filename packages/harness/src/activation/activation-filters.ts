@@ -2,6 +2,7 @@ import type {
   AntiMemoryRecord,
   ConflictSet,
   MemoryRecordReviewSignal,
+  SourceClaimEdge,
   SourceClaimReviewSignal
 } from "@krn/core";
 
@@ -19,6 +20,7 @@ import {
   sourceClaimAuthorityExclusion
 } from "./source-claim-authority.js";
 import type {
+  ActivationExclusion,
   ActivationExclusionReason,
   RankedActivationCandidate
 } from "./types.js";
@@ -118,6 +120,53 @@ export const applySourceClaimAuthorityFilter = (
     return exclusion === undefined ? candidate : markExcluded(candidate, exclusion);
   });
 
+const sourceClaimGraphConsensusExclusionReason = (
+  edgeKinds: readonly SourceClaimEdge["kind"][]
+): ActivationExclusionReason => {
+  if (edgeKinds.some((kind) => kind === "supersedes" || kind === "invalidates")) {
+    return "superseded";
+  }
+
+  if (edgeKinds.includes("expires")) {
+    return "stale";
+  }
+
+  return "unsafe";
+};
+
+const sourceClaimGraphConsensusExclusion = (
+  candidate: RankedActivationCandidate
+): ActivationExclusion | undefined => {
+  if (candidate.subjectType !== "source_claim") {
+    return undefined;
+  }
+
+  const rankDown = candidate.sourceClaimEdgeRankDown;
+
+  if (rankDown === undefined || rankDown.edgeKinds.length === 0) {
+    return undefined;
+  }
+
+  return {
+    reason: sourceClaimGraphConsensusExclusionReason(rankDown.edgeKinds),
+    explanation:
+      `Source graph consensus caveat ${rankDown.edgeKinds.join(", ")} via edge(s) ${rankDown.edgeIds.join(", ")} from accepted claim(s) ${rankDown.governingSourceClaimIds.join(", ")}; cannot activate as uncaveated authority.`
+  };
+};
+
+export const applySourceClaimGraphConsensusFilter = (
+  candidates: readonly RankedActivationCandidate[]
+): RankedActivationCandidate[] =>
+  candidates.map((candidate) => {
+    if (candidate.exclusion !== undefined) {
+      return candidate;
+    }
+
+    const exclusion = sourceClaimGraphConsensusExclusion(candidate);
+
+    return exclusion === undefined ? candidate : markExcluded(candidate, exclusion);
+  });
+
 export const applyActivationFilters = (
   input: ApplyActivationFiltersInput
 ): ApplyActivationFiltersResult => {
@@ -125,7 +174,8 @@ export const applyActivationFilters = (
   const memoryReviewSafe = applyMemoryReviewSignalFilter(conflictResult.candidates);
   const sourceReviewSafe = applySourceClaimReviewSignalFilter(memoryReviewSafe);
   const sourceAuthoritySafe = applySourceClaimAuthorityFilter(sourceReviewSafe);
-  const trusted = applyTrustFilter(sourceAuthoritySafe, {
+  const sourceConsensusSafe = applySourceClaimGraphConsensusFilter(sourceAuthoritySafe);
+  const trusted = applyTrustFilter(sourceConsensusSafe, {
     minimumSourceAuthority: input.minimumSourceAuthority
   });
   const current = applyTemporalFilter(trusted, input.now);

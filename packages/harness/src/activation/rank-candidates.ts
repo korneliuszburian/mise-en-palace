@@ -345,21 +345,23 @@ export const applySourceClaimEdgeRankDown = (
     if (rankDown === undefined) {
       return candidate;
     }
+    const sourceClaimEdgeRankDown = {
+      edgeIds: [...new Set(rankDown.edgeIds)],
+      edgeKinds: [...new Set(rankDown.edgeKinds)],
+      governingSourceClaimIds: [...new Set(rankDown.governingSourceClaimIds)],
+      graphPenalty,
+      doesNotProve: sourceClaimEdgeRankDownDoesNotProve
+    };
 
     return {
       ...candidate,
       graphScore: (candidate.graphScore ?? 0) - graphPenalty,
       reason: `${candidate.reason} Source graph rank-down: ${rankDown.edgeKinds.join(", ")} edge from accepted claim.`,
       expectedUse: `${candidate.expectedUse} Treat as lower-priority source evidence until the graph relation is reviewed.`,
+      sourceClaimEdgeRankDown,
       metadata: {
         ...candidate.metadata,
-        sourceClaimEdgeRankDown: {
-          edgeIds: [...new Set(rankDown.edgeIds)],
-          edgeKinds: [...new Set(rankDown.edgeKinds)],
-          governingSourceClaimIds: [...new Set(rankDown.governingSourceClaimIds)],
-          graphPenalty,
-          doesNotProve: sourceClaimEdgeRankDownDoesNotProve
-        }
+        sourceClaimEdgeRankDown
       }
     };
   });
