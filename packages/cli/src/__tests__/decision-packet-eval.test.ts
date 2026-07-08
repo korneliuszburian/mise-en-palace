@@ -63,8 +63,9 @@ const expectProjectStandardCase = (
       sourceSupport: 1,
       rejectionRecall: 1,
       abstention: 1,
+      consensusConflict: 1,
       nonProofBoundaries: 1,
-      total: 7
+      total: 8
     },
     notesBaseline: {
       qualityLabel: "unsafe",
@@ -111,6 +112,7 @@ describe("runDecisionPacketEval", () => {
         maximumCaveatedSourceClaimInclusions: 0,
         maximumMissingAbstentions: 0,
         minimumAbstentionScore: 1,
+        minimumAverageConsensusConflictScore: 1,
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
@@ -134,6 +136,7 @@ describe("runDecisionPacketEval", () => {
         krnWinRate: 1,
         notesWinRate: 0,
         abstentionScore: 1,
+        averageConsensusConflictScore: 1,
         averageNoiseDecisions: 0.6667,
         severeStaleAuthorityInclusions: 0,
         caveatedSourceClaimInclusions: 0,
@@ -154,8 +157,9 @@ describe("runDecisionPacketEval", () => {
         sourceSupport: 1,
         rejectionRecall: 1,
         abstention: 1,
+        consensusConflict: 1,
         nonProofBoundaries: 1,
-        total: 7
+        total: 8
       },
       notesBaseline: {
         qualityLabel: "unsafe",
@@ -209,8 +213,9 @@ describe("runDecisionPacketEval", () => {
         sourceSupport: 1,
         rejectionRecall: 1,
         abstention: 1,
+        consensusConflict: 1,
         nonProofBoundaries: 1,
-        total: 7
+        total: 8
       },
       notesBaseline: {
         qualityLabel: "unsupported",
@@ -486,7 +491,8 @@ describe("runDecisionPacketEval", () => {
       scores: {
         taskUsefulness: 0,
         evidenceFidelity: 0,
-        abstention: 0
+        abstention: 0,
+        consensusConflict: 0
       },
       packet: {
         governingDecisionIds: expect.arrayContaining(["unsupported-mobile-release-shortcut"]),

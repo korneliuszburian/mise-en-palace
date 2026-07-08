@@ -28,6 +28,7 @@ export interface DecisionPacketScoreBreakdown {
   readonly sourceSupport: number;
   readonly rejectionRecall: number;
   readonly abstention: number;
+  readonly consensusConflict: number;
   readonly nonProofBoundaries: number;
   readonly total: number;
 }
@@ -61,6 +62,7 @@ export interface DecisionPacketEvalResult {
     readonly maximumCaveatedSourceClaimInclusions: number;
     readonly maximumMissingAbstentions: number;
     readonly minimumAbstentionScore: number;
+    readonly minimumAverageConsensusConflictScore: number;
     readonly maximumAverageNoiseDecisions: number;
   };
   readonly metrics: {
@@ -84,6 +86,7 @@ export interface DecisionPacketEvalResult {
     readonly krnWinRate: number;
     readonly notesWinRate: number;
     readonly abstentionScore: number;
+    readonly averageConsensusConflictScore: number;
     readonly averageNoiseDecisions: number;
     readonly severeStaleAuthorityInclusions: number;
     readonly caveatedSourceClaimInclusions: number;

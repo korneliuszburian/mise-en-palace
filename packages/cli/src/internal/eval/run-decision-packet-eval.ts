@@ -46,6 +46,7 @@ const maximumSevereStaleAuthorityInclusions = 0;
 const maximumCaveatedSourceClaimInclusions = 0;
 const maximumMissingAbstentions = 0;
 const minimumAbstentionScore = 1;
+const minimumAverageConsensusConflictScore = 1;
 const maximumAverageNoiseDecisions = 2;
 
 const decisionById = (
@@ -217,6 +218,19 @@ const scoreAbstention = (
   ? score(packet.governingDecisionIds.length === 0 && hasEvidenceGap)
   : score(packet.evidenceGaps.length === 0);
 
+const scoreConsensusConflict = (
+  fixture: DecisionPacketEvalFixture,
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase
+): number => score(
+  (expectsAbstention(testCase) ? packet.governingDecisionIds.length === 0 : true) &&
+  packet.severeStaleAuthorityIds.length === 0 &&
+  packet.caveatedSourceClaimIds.length === 0 &&
+  hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) &&
+  hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) &&
+  hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase))
+);
+
 const scoreNonProofBoundaries = (
   packet: DecisionPacketEvalCaseReadback["packet"],
   testCase: DecisionPacketCase
@@ -248,6 +262,7 @@ const scoreDecisionPacket = (
     hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase))
   );
   const abstention = scoreAbstention(packet, testCase, hasEvidenceGap);
+  const consensusConflict = scoreConsensusConflict(fixture, packet, testCase);
   const nonProofBoundaries = scoreNonProofBoundaries(packet, testCase);
 
   return {
@@ -257,6 +272,7 @@ const scoreDecisionPacket = (
     sourceSupport,
     rejectionRecall,
     abstention,
+    consensusConflict,
     nonProofBoundaries,
     total:
       taskUsefulness +
@@ -265,6 +281,7 @@ const scoreDecisionPacket = (
       sourceSupport +
       rejectionRecall +
       abstention +
+      consensusConflict +
       nonProofBoundaries
   };
 };
@@ -470,6 +487,9 @@ export const runDecisionPacketEval = async (
   const abstentionScore = abstentionCaseCount === 0
     ? 1
     : rate(correctAbstentionCount, abstentionCaseCount);
+  const averageConsensusConflictScore = average(cases.map((testCase) =>
+    testCase.scores.consensusConflict
+  ));
   const averageNoiseDecisions = average(cases.map((testCase) => testCase.packet.noiseDecisionIds.length));
   const severeStaleAuthorityInclusions = cases.reduce(
     (sum, testCase) => sum + testCase.packet.severeStaleAuthorityIds.length,
@@ -490,6 +510,7 @@ export const runDecisionPacketEval = async (
     caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions &&
     missingAbstentions <= maximumMissingAbstentions &&
     abstentionScore >= minimumAbstentionScore &&
+    averageConsensusConflictScore >= minimumAverageConsensusConflictScore &&
     averageNoiseDecisions <= maximumAverageNoiseDecisions
       ? "pass"
       : "fail";
@@ -507,6 +528,7 @@ export const runDecisionPacketEval = async (
       maximumCaveatedSourceClaimInclusions,
       maximumMissingAbstentions,
       minimumAbstentionScore,
+      minimumAverageConsensusConflictScore,
       maximumAverageNoiseDecisions
     },
     metrics: {
@@ -530,6 +552,7 @@ export const runDecisionPacketEval = async (
       krnWinRate,
       notesWinRate,
       abstentionScore,
+      averageConsensusConflictScore,
       averageNoiseDecisions,
       severeStaleAuthorityInclusions,
       caveatedSourceClaimInclusions,
@@ -543,8 +566,9 @@ export const runDecisionPacketEval = async (
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
         "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
+        "packet scoring reports consensus/conflict as a separate axis over stale, rejected, caveated, and unsupported governing context",
         "abstentionScore is a top-level scorer gate for unsupported cases before broad MCP transport can rely on DecisionPacket guidance",
-        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, zero missing-abstention, minimum abstention-score, and noise thresholds"
+        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, zero missing-abstention, minimum abstention-score, minimum consensus/conflict score, and noise thresholds"
       ],
       doesNotProve: [
         "live Codex execution or obedience",
