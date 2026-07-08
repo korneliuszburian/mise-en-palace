@@ -128,13 +128,28 @@ const sourceClaimIdsWithDecisionSupportFor = (
     : []
 ) ?? []);
 
+const sourceClaimIdsWithUsefulness = (
+  readModel: DecisionPacketReadModel,
+  outcomes: readonly SourceUsefulnessOutcome[]
+): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
+    outcome.sourceClaimId !== undefined && outcomes.includes(outcome.outcome)
+      ? [outcome.sourceClaimId]
+      : []
+  )
+));
+
 const caveatedSourceClaimIdsFor = (
   readModel: DecisionPacketReadModel
 ): string[] => {
   const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
+  const maintenanceFeedbackSourceClaimIds = new Set(
+    sourceClaimIdsWithUsefulness(readModel, ["noise", "stale", "unknown"])
+  );
 
   return sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
-    !supportedSourceClaimIds.has(sourceClaimId)
+    !supportedSourceClaimIds.has(sourceClaimId) ||
+    maintenanceFeedbackSourceClaimIds.has(sourceClaimId)
   );
 };
 

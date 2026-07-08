@@ -250,6 +250,13 @@ const aggregate: HarnessRunAggregate = {
         doesNotProve:
           "Helpful feedback does not prove source truth."
       }, {
+        sourceClaimId: "claim-agent-1",
+        outcome: "stale",
+        reason: "Source claim evidence needs refresh before it can stay confident guidance.",
+        evidenceRefs: ["test:decision-packet-stale-source-claim"],
+        doesNotProve:
+          "Stale source-claim feedback does not mutate SourceClaim truth."
+      }, {
         sourceDecisionId: "source-decision-noise-agent-1",
         outcome: "noise",
         reason: "Noisy decision should be visible without governing the packet.",
@@ -432,12 +439,18 @@ describe("decision packet CLI", () => {
           "claim-agent-1",
           "claim-agent-caveated"
         ],
-        caveatedSourceClaimIds: ["claim-agent-caveated"],
+        caveatedSourceClaimIds: [
+          "claim-agent-1",
+          "claim-agent-caveated"
+        ],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         sourceRejectionIds: ["source-decision-rejected-agent-1"],
         sourceConsensus: {
-          decisionLinkedSourceClaimIds: ["claim-agent-1"],
-          caveatedSourceClaimIds: ["claim-agent-caveated"],
+          decisionLinkedSourceClaimIds: [],
+          caveatedSourceClaimIds: [
+            "claim-agent-1",
+            "claim-agent-caveated"
+          ],
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
           staleDecisionIds: [
             "source-decision-stale-agent-1",
@@ -452,9 +465,10 @@ describe("decision packet CLI", () => {
           evidenceGapIds: []
         },
         abstentionScore: {
-          status: "weak_context",
-          score: 45,
+          status: "abstain",
+          score: 10,
           reasons: [
+            "missing_decision_linked_source",
             "caveated_source_authority",
             "stale_authority"
           ],
@@ -528,12 +542,15 @@ describe("decision packet CLI", () => {
     expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
     expect(json.packet.sourceClaimIds).toContain("claim-agent-1");
     expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
-    expect(json.packet.caveatedSourceClaimIds).toEqual(["claim-agent-caveated"]);
-    expect(json.packet.caveatedSourceClaimIds).not.toContain("claim-agent-1");
+    expect(json.packet.caveatedSourceClaimIds).toEqual([
+      "claim-agent-1",
+      "claim-agent-caveated"
+    ]);
     expect(json.packet.taskStandardDecisions[0]?.decision).toBe(
       "Use the refreshed frontend bootstrap standard for matching new frontend projects."
     );
-    expect(json.packet.abstentionScore.status).toBe("weak_context");
+    expect(json.packet.abstentionScore.status).toBe("abstain");
+    expect(json.packet.abstentionScore.reasons).toContain("missing_decision_linked_source");
     expect(json.packet.abstentionScore.reasons).toContain("stale_authority");
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
