@@ -7,7 +7,7 @@ import {
 describe("parseBrainRecallArgs", () => {
   it("parses brain recall readback preview", () => {
     expect(parseBrainRecallArgs([
-      "--read-model-file",
+      "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/readModels/ts-boundary-unknown-first-result-state.json",
       "--kind",
       "pattern",
@@ -42,7 +42,7 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses json format", () => {
     expect(parseBrainRecallArgs([
-      "--read-model-file",
+      "--fixture-read-model-file",
       "readModel.json",
       "--json"
     ])).toEqual({
@@ -60,8 +60,8 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses a positive result limit", () => {
     expect(parseBrainRecallArgs([
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--usefulness-outcome",
       "helped",
       "--limit",
@@ -72,7 +72,7 @@ describe("parseBrainRecallArgs", () => {
         kind: "brainRecall",
         readModelFiles: [],
         decisionFiles: [],
-        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        catalogFiles: ["tests/fixtures/brain-knowledge/corpus/catalog.json"],
         storeOnly: false,
         filter: {
           usefulnessOutcome: "helped"
@@ -85,8 +85,8 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses missing usefulness feedback filter", () => {
     expect(parseBrainRecallArgs([
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--usefulness-outcome",
       "none",
       "--json"
@@ -95,7 +95,7 @@ describe("parseBrainRecallArgs", () => {
         kind: "brainRecall",
         readModelFiles: [],
         decisionFiles: [],
-        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        catalogFiles: ["tests/fixtures/brain-knowledge/corpus/catalog.json"],
         storeOnly: false,
         filter: {
           usefulnessOutcome: "none"
@@ -107,15 +107,15 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses html format", () => {
     expect(parseBrainRecallArgs([
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--html"
     ])).toEqual({
       command: {
         kind: "brainRecall",
         readModelFiles: [],
         decisionFiles: [],
-        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        catalogFiles: ["tests/fixtures/brain-knowledge/corpus/catalog.json"],
         storeOnly: false,
         filter: {},
         format: "html"
@@ -125,8 +125,8 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses knowledge decision files", () => {
     expect(parseBrainRecallArgs([
-      "--decision-file",
-      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
+      "--fixture-decision-file",
+      "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -134,7 +134,7 @@ describe("parseBrainRecallArgs", () => {
         kind: "brainRecall",
         readModelFiles: [],
         decisionFiles: [
-          "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json"
+          "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json"
         ],
         catalogFiles: [],
         storeOnly: false,
@@ -148,8 +148,8 @@ describe("parseBrainRecallArgs", () => {
 
   it("parses catalog files", () => {
     expect(parseBrainRecallArgs([
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -157,7 +157,7 @@ describe("parseBrainRecallArgs", () => {
         kind: "brainRecall",
         readModelFiles: [],
         decisionFiles: [],
-        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
+        catalogFiles: ["tests/fixtures/brain-knowledge/corpus/catalog.json"],
         storeOnly: false,
         filter: {
           text: "unknown-first"
@@ -167,9 +167,8 @@ describe("parseBrainRecallArgs", () => {
     });
   });
 
-  it("parses store-only readback without file sources", () => {
+  it("parses project-scoped store-backed readback without file sources", () => {
     expect(parseBrainRecallArgs([
-      "--store-only",
       "--project",
       "project-1",
       "--usefulness-outcome",
@@ -211,19 +210,20 @@ describe("parseBrainRecallArgs", () => {
     });
   });
 
-  it("rejects store-only combined with file sources", () => {
-    expect(parseBrainRecallArgs([
-      "--store-only",
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json"
-    ])).toEqual({
-      error: expect.stringContaining("--store-only cannot be combined")
-    });
+  it("rejects legacy file and redundant store-only flags", () => {
+    for (const flag of ["--catalog-file", "--store-only"]) {
+      expect(parseBrainRecallArgs([
+        flag,
+        ...(flag === "--catalog-file" ? ["tests/fixtures/brain-knowledge/corpus/catalog.json"] : [])
+      ])).toEqual({
+        error: expect.stringContaining(`Unsupported brain recall argument: ${flag}`)
+      });
+    }
   });
 
   it("rejects unknown filters", () => {
     expect(parseBrainRecallArgs([
-      "--read-model-file",
+      "--fixture-read-model-file",
       "readModel.json",
       "--kind",
       "everything"
@@ -234,7 +234,7 @@ describe("parseBrainRecallArgs", () => {
 
   it("rejects unknown usefulness outcome filters", () => {
     expect(parseBrainRecallArgs([
-      "--read-model-file",
+      "--fixture-read-model-file",
       "readModel.json",
       "--usefulness-outcome",
       "maybe"
@@ -245,7 +245,7 @@ describe("parseBrainRecallArgs", () => {
 
   it("rejects unknown status filters", () => {
     expect(parseBrainRecallArgs([
-      "--read-model-file",
+      "--fixture-read-model-file",
       "readModel.json",
       "--status",
       "draft"
@@ -257,7 +257,7 @@ describe("parseBrainRecallArgs", () => {
   it("rejects invalid result limits", () => {
     for (const limit of ["0", "-1", "1.5", "many"]) {
       expect(parseBrainRecallArgs([
-        "--read-model-file",
+        "--fixture-read-model-file",
         "readModel.json",
         "--limit",
         limit

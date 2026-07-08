@@ -25,16 +25,16 @@ const readModelFixture = (): unknown =>
   readJsonRootFile("tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json");
 
 const knowledgeDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
+  readJsonRootFile("tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
 
 const referenceImplementationKnowledgeDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json");
+  readJsonRootFile("tests/fixtures/brain-knowledge/corpus/knowledge/reference-implementation-recipe-clone-boundary.json");
 
 const knowledgeParserExemplarKnowledgeDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-knowledge-parser-exemplar.json");
+  readJsonRootFile("tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-knowledge-parser-exemplar.json");
 
 const sourceToDecisionKnowledgeDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/knowledge/source-to-decision-retention-gate.json");
+  readJsonRootFile("tests/fixtures/brain-knowledge/corpus/knowledge/source-to-decision-retention-gate.json");
 
 const parsedReadModelFixture = () => {
   const readModel = parseKnowledgeReadModel(readModelFixture());

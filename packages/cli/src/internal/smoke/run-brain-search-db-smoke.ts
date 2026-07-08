@@ -380,7 +380,7 @@ export const runBrainSearchDbSmokeCheck = async (
           "do not claim broad memory ranking quality"
         ],
         acceptance: [
-          "Session B store-only brain search selects the Session A MemoryRecord",
+          "Session B store-backed brain search selects the Session A MemoryRecord",
           "Session B source-search support remains decision-linked",
           "Session B readback states the firm-pattern expected decision and falsifier"
         ],
@@ -576,7 +576,7 @@ export const runBrainSearchDbSmokeCheck = async (
       applicationGuidance:
         "Use this persisted MemoryRecord as the memory side of the DB-backed firm-pattern advantage proof.",
       invalidationRule:
-        "Invalidate if store-only brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
+        "Invalidate if store-backed brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
       sourceLineage: [
         {
           sourceId: sourceClaim.id,

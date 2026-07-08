@@ -26,7 +26,7 @@ export interface BrainSearchPreviewResource {
   access: "read_only";
   mutation: "none";
   query: string;
-  brainRecallReadback: "catalog_files" | "store_only";
+  brainRecallReadback: "fixture_catalog" | "store_backed";
   brainRecallQueries: readonly string[];
   knowledgeReadModels: {
     totalReadModels: number;
@@ -422,7 +422,7 @@ const selectedKnowledgePackets = (input: {
 }): readonly BrainSearchKnowledgePacket[] => {
   const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
-  if (input.brainRecallReadback === "store_only") {
+  if (input.brainRecallReadback === "store_backed") {
     const storePackets = knowledgePackets(input.readModels, input.query, "memory_store");
 
     return storePackets.length > 0
@@ -454,10 +454,10 @@ const nonTargetSpecificRecommendation = (
   return undefined;
 };
 
-const storeOnlyRecommendation = (
+const storeBackedRecommendation = (
   resource: BrainSearchRecommendationResource
 ): string | undefined => {
-  if (resource.brainRecallReadback !== "store_only") {
+  if (resource.brainRecallReadback !== "store_backed") {
     return undefined;
   }
 
@@ -474,8 +474,8 @@ const storeOnlyRecommendation = (
   }
 
   return sourceEvidenceCount(resource.sourceSearch) > 0
-    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-backed knowledge context is explicitly needed."
-    : "Do not infer product truth from store-only brain search; seed or persist governed source evidence first.";
+    ? "Use the store-backed source/search evidence cautiously; use fixture-catalog brain search only for explicit test/import readbacks."
+    : "Do not infer product truth from store-backed brain search; seed or persist governed source evidence first.";
 };
 
 const catalogRecommendation = (
@@ -515,10 +515,10 @@ const buildRecommendedNextAction = (
     return targetFitRecommendation;
   }
 
-  const storeOnly = storeOnlyRecommendation(resource);
+  const storeBacked = storeBackedRecommendation(resource);
 
-  if (storeOnly !== undefined) {
-    return storeOnly;
+  if (storeBacked !== undefined) {
+    return storeBacked;
   }
 
   return catalogRecommendation(resource);
@@ -606,17 +606,17 @@ export const buildBrainSearchPreviewResource = (
     recommendedNextAction: "",
     proof: {
       proves: [
-        input.brainRecallReadback === "store_only"
-          ? "brain recall catalog readback was explicitly skipped for this query"
-          : "existing brain recall catalog readback was executed as bootstrap/fixture input for this query",
+        input.brainRecallReadback === "store_backed"
+          ? "brain recall fixture catalog readback is unavailable in product brain search"
+          : "existing brain recall fixture catalog readback was executed as bootstrap/fixture input for this query",
         "existing source-search answer package was executed for this query",
         "brain search combined both readbacks without mutating KRN state"
       ],
       doesNotProve: [
         "source truth",
         "brain recall catalog completeness",
-        ...(input.brainRecallReadback === "catalog_files"
-          ? ["catalog-file knowledge is runtime memory"]
+        ...(input.brainRecallReadback === "fixture_catalog"
+          ? ["fixture catalog knowledge is runtime memory"]
           : []),
         "ranking quality",
         "semantic search quality",

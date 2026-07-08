@@ -5,13 +5,11 @@ import {
 } from "../parse-brain-args.js";
 
 describe("parseBrainArgs", () => {
-  it("parses brain search preview args", () => {
+  it("parses store-backed brain search args", () => {
     expect(parseBrainArgs([
       "search",
       "--query",
       "source-to-decision",
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
       "--limit",
       "5",
       "--max-inclusions",
@@ -21,8 +19,8 @@ describe("parseBrainArgs", () => {
       command: {
         kind: "brainSearch",
         query: "source-to-decision",
-        catalogFiles: ["corpus/brain-knowledge/catalog.json"],
-        storeOnly: false,
+        catalogFiles: [],
+        storeOnly: true,
         limit: 5,
         maxInclusions: 3,
         format: "json"
@@ -30,12 +28,11 @@ describe("parseBrainArgs", () => {
     });
   });
 
-  it("parses store-only brain search", () => {
+  it("parses project-scoped brain search", () => {
     expect(parseBrainArgs([
       "search",
       "--query",
       "source-to-decision",
-      "--store-only",
       "--project",
       "project-explicit",
       "--json"
@@ -79,17 +76,27 @@ describe("parseBrainArgs", () => {
     expect(result.error).toContain("--project requires a non-empty project id");
   });
 
-  it("rejects store-only with catalog files", () => {
+  it("rejects legacy catalog files in brain search", () => {
     const result = parseBrainArgs([
       "search",
       "--query",
       "source-to-decision",
-      "--store-only",
       "--catalog-file",
-      "corpus/brain-knowledge/catalog.json"
+      "tests/fixtures/brain-knowledge/corpus/catalog.json"
     ]);
 
-    expect(result.error).toContain("--store-only cannot be combined with --catalog-file");
+    expect(result.error).toContain("Unsupported brain search argument: --catalog-file");
+  });
+
+  it("rejects redundant store-only in brain search", () => {
+    const result = parseBrainArgs([
+      "search",
+      "--query",
+      "source-to-decision",
+      "--store-only"
+    ]);
+
+    expect(result.error).toContain("Unsupported brain search argument: --store-only");
   });
 
   it("requires a query", () => {

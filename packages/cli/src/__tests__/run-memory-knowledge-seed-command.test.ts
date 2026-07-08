@@ -375,7 +375,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
     }
   });
 
-  it("feeds seeded corpus knowledge back through store-only brain search", async () => {
+  it("feeds seeded corpus knowledge back through store-backed brain search", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
@@ -404,7 +404,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           format: "json"
         },
         async runBrainRecall(): Promise<never> {
-          throw new Error("store-only brain search should not read file catalogs");
+          throw new Error("store-backed brain search should not read file catalogs");
         },
         async runSourceSearch() {
           return {
@@ -438,7 +438,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       const parsed: unknown = JSON.parse(search.stdout);
 
       expect(parsed).toMatchObject({
-        brainRecallReadback: "store_only",
+        brainRecallReadback: "store_backed",
         brainRecallQueries: ["db backed memory readback"],
         knowledgeReadModels: {
           readModelIds: ["pattern:ts-boundary-unknown-first-result-state"],

@@ -59,7 +59,7 @@ const patternFeedbackDelta = (
       knowledgeId,
       outcome: "helped",
       reason: "The pattern changed the implementation decision.",
-      evidenceRefs: ["test:brain recall store-only"],
+      evidenceRefs: ["test:brain recall store-backed"],
       doesNotProve: "One helped event does not prove broad usefulness."
     }]
   },
@@ -185,9 +185,9 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>]");
+    expect(result.stdout).toContain("Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
-    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
+    expect(result.stdout).toContain("no fixture source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
   });
 
   it("explains the store-backed default DB requirement without file sources", async () => {
@@ -207,8 +207,8 @@ describe("runCli", () => {
     expect(result.stderr).toContain(
       "KRN_DATABASE_URL is required for krn brain recall store-backed readback"
     );
-    expect(result.stderr).toContain("No file source defaults to the store path");
-    expect(result.stderr).toContain("--read-model-file");
+    expect(result.stderr).toContain("No fixture source defaults to the store path");
+    expect(result.stderr).toContain("--fixture-read-model-file");
   });
 
   it("renders brain recall through the preferred CLI readback", async () => {
@@ -216,7 +216,7 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "recall",
-      "--read-model-file",
+      "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
@@ -240,8 +240,8 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "recall",
-      "--decision-file",
-      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
+      "--fixture-decision-file",
+      "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ], {
@@ -253,7 +253,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Decision files: corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Decision files: tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
@@ -263,8 +263,8 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "recall",
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--text",
       "unknown-first"
     ], {
@@ -276,7 +276,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: tests/fixtures/brain-knowledge/corpus/catalog.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
   });
@@ -322,7 +322,7 @@ describe("runCli", () => {
       id: "pattern:store-backed-usefulness",
       usefulnessFeedback: {
         outcome: "helped",
-        evidenceRefs: ["test:brain recall store-only"]
+        evidenceRefs: ["test:brain recall store-backed"]
       }
     });
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");
@@ -333,7 +333,7 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "recall",
-      "--read-model-file",
+      "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
       "--usefulness-outcome",
       "helped",
@@ -379,8 +379,8 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "recall",
-      "--catalog-file",
-      "corpus/brain-knowledge/catalog.json",
+      "--fixture-catalog-file",
+      "tests/fixtures/brain-knowledge/corpus/catalog.json",
       "--text",
       "unknown-first",
       "--html"

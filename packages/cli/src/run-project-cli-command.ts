@@ -112,7 +112,7 @@ const createKnowledgeStoreProviders = async (
     if (command.storeOnly) {
       throw new Error(
         "KRN_DATABASE_URL is required for krn brain recall store-backed readback. " +
-        "No file source defaults to the store path; pass --read-model-file, --decision-file, or --catalog-file for an explicit fixture/seed preview."
+        "No fixture source defaults to the store path; pass --fixture-read-model-file, --fixture-decision-file, or --fixture-catalog-file for an explicit test/import readback."
       );
     }
 

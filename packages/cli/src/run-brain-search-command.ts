@@ -61,7 +61,7 @@ type BrainRecallReadback = {
 
 const maxBrainSearchCompactQueryRetries = 6;
 
-const skippedStoreOnlyReadback = (reason?: string): BrainRecallReadback => ({
+const emptyStoreMemoryReadback = (reason?: string): BrainRecallReadback => ({
   result: {
     stdout: JSON.stringify({
       totalReadModels: 0,
@@ -69,7 +69,7 @@ const skippedStoreOnlyReadback = (reason?: string): BrainRecallReadback => ({
       readModels: [],
       proof: {
         doesNotProve: [
-          "brain recall catalog readback was explicitly skipped by --store-only",
+          "brain recall fixture catalog readback is unavailable in product brain search",
           ...(reason === undefined ? [] : [reason])
         ]
       }
@@ -87,7 +87,7 @@ const runStoreMemoryReadback = async (
   const databaseUrl = input.runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    return skippedStoreOnlyReadback();
+    return emptyStoreMemoryReadback();
   }
 
   const createRuntime = input.runtime.createDatabaseRuntime ?? createDatabaseRuntime;
@@ -109,7 +109,7 @@ const runStoreMemoryReadback = async (
     const limit = input.runtime.command.limit ?? 20;
 
     if (typeof databaseRuntime.memoryRepository.listActiveMemory !== "function") {
-      return skippedStoreOnlyReadback(
+      return emptyStoreMemoryReadback(
         "DB memory-store readback was unavailable because the runtime did not expose active MemoryRecord listing."
       );
     }
@@ -135,14 +135,14 @@ const runStoreMemoryReadback = async (
           readModels,
           proof: {
             proves: [
-              "store-only brain search read active MemoryRecord rows from the configured DB project",
+              "store-backed brain search read active MemoryRecord rows from the configured DB project",
               "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection"
             ],
             doesNotProve: [
               "DB-backed memory selection proves source truth",
               "Codex used the selected memory",
               "memory ranking quality is broad or production-ready",
-              "catalog-file knowledge was consulted"
+              "fixture catalog knowledge was consulted"
             ]
           }
         })
@@ -150,7 +150,7 @@ const runStoreMemoryReadback = async (
       queries: [input.query]
     };
   } catch (error) {
-    return skippedStoreOnlyReadback(
+    return emptyStoreMemoryReadback(
       `DB memory-store readback was unavailable: ${
         error instanceof Error ? error.message : "unknown error"
       }`
@@ -169,10 +169,10 @@ const runCatalogBrainRecallReadback = async (
   }
 ): Promise<BrainRecallCommandResult> =>
   input.runBrainRecall({
-      cwd: input.runtime.cwd,
-      readModelFiles: [],
-      decisionFiles: [],
-      catalogFiles: input.catalogFiles,
+    cwd: input.runtime.cwd,
+    readModelFiles: [],
+    decisionFiles: [],
+    catalogFiles: input.catalogFiles,
     filter: {
       text: input.query
     },
@@ -198,7 +198,7 @@ const runBrainRecallReadback = async (
           runtime: input.runtime,
           query: input.query
         })
-      : skippedStoreOnlyReadback();
+      : emptyStoreMemoryReadback();
   }
 
   const primaryResult = await runCatalogBrainRecallReadback(input);
@@ -281,7 +281,7 @@ export const runBrainSearchCommand = async (
   ]);
   const resource = buildBrainSearchPreviewResource({
     query,
-    brainRecallReadback: useStoreReadback ? "store_only" : "catalog_files",
+    brainRecallReadback: useStoreReadback ? "store_backed" : "fixture_catalog",
     brainRecallQueries: knowledgeResult.queries,
     knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "brain recall"),
     sourceJson: parseJsonObject(sourceResult.stdout, "source search")

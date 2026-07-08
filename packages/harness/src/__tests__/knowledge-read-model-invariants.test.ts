@@ -20,7 +20,7 @@ const readJsonRootFile = (path: string): unknown =>
 describe("Knowledge read model invariants", () => {
   it("keeps the TypeScript knowledge decision available as a concrete knowledge read model", () => {
     const pattern = readJsonRootFile(
-      "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json"
+      "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json"
     );
     const readModel = readJsonRootFile(
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json"
@@ -63,7 +63,7 @@ describe("Knowledge read model invariants", () => {
   });
 
   it("keeps the explicit knowledge catalog pointed only at corpus files that still exist", () => {
-    const catalog = readJsonRootFile("corpus/brain-knowledge/catalog.json");
+    const catalog = readJsonRootFile("tests/fixtures/brain-knowledge/corpus/catalog.json");
 
     if (!isRecord(catalog)) {
       throw new Error("Knowledge catalog must be an object.");
@@ -88,10 +88,10 @@ describe("Knowledge read model invariants", () => {
         continue;
       }
 
-      const absolute = new URL(`../../../../corpus/brain-knowledge/${file}`, import.meta.url);
+      const absolute = new URL(`../../../../tests/fixtures/brain-knowledge/corpus/${file}`, import.meta.url);
 
       expect(existsSync(absolute), file).toBe(true);
-      expect(readJsonRootFile(`corpus/brain-knowledge/${file}`), file).toEqual(expect.any(Object));
+      expect(readJsonRootFile(`tests/fixtures/brain-knowledge/corpus/${file}`), file).toEqual(expect.any(Object));
     }
 
     for (const file of usefulnessFeedbackFiles) {
@@ -101,9 +101,9 @@ describe("Knowledge read model invariants", () => {
         continue;
       }
 
-      const absolute = new URL(`../../../../corpus/brain-knowledge/${file}`, import.meta.url);
+      const absolute = new URL(`../../../../tests/fixtures/brain-knowledge/corpus/${file}`, import.meta.url);
       const parsed = parseKnowledgeUsefulnessFeedbackList(
-        readJsonRootFile(`corpus/brain-knowledge/${file}`)
+        readJsonRootFile(`tests/fixtures/brain-knowledge/corpus/${file}`)
       );
 
       expect(existsSync(absolute), file).toBe(true);

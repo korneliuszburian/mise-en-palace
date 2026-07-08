@@ -185,7 +185,7 @@
       "sourceClaims": []
     },
     {
-      "id": "store-only-source-evidence",
+      "id": "store-backed-source-evidence",
       "query": "store only source evidence selected knowledge",
       "storeOnly": true,
       "distractorClasses": ["catalog-vs-source"],

@@ -9,14 +9,14 @@ import type {
 } from "./parse-args.js";
 
 const brainSearchUsage = [
-  "Usage: krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
-  "Usage: krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain search --query \"...\" [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
+  "Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
   "krn brain recall --text \"unknown-first\"",
   "krn brain search --query \"source-to-decision\" --project project-explicit --json",
-  "  note: brain search defaults to DB-backed MemoryRecord readback plus source-search. --catalog-file is an explicit legacy catalog preview mode; --store-only keeps file catalog readback disabled. It does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "  note: brain search uses DB-backed MemoryRecord readback plus source-search. File catalogs are fixture/import inputs for brain recall and memory knowledge seed, not product brain search memory. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;
@@ -51,9 +51,6 @@ const parsePositiveInteger = (
 
 type BrainSearchParseState = {
   query: string | undefined;
-  catalogFiles: string[];
-  storeOnly: boolean;
-  storeOnlyExplicit: boolean;
   projectId: string | undefined;
   limit: number | undefined;
   maxInclusions: number | undefined;
@@ -97,26 +94,6 @@ type BrainSearchOptionParser = (
   state: BrainSearchParseState
  ) => BrainSearchOptionResult;
 
-const assignStringOption = (
-  args: readonly string[],
-  index: number,
-  optionName: string,
-  assign: (value: string) => void
-): BrainSearchOptionResult => {
-  const parsed = parseRequiredValue(args, index, optionName);
-
-  if (!parsed.ok) {
-    return parsed;
-  }
-
-  assign(parsed.value);
-
-  return {
-    ok: true,
-    nextIndex: parsed.nextIndex
-  };
-};
-
 const assignPositiveIntegerOption = (
   args: readonly string[],
   index: number,
@@ -148,15 +125,20 @@ const assignPositiveIntegerOption = (
 };
 
 const brainSearchOptionParsers: Record<string, BrainSearchOptionParser> = {
-  "--query": (args, index, state) =>
-    assignStringOption(args, index, "--query", (value) => {
-      state.query = value;
-    }),
-  "--catalog-file": (args, index, state) =>
-    assignStringOption(args, index, "--catalog-file", (value) => {
-      state.catalogFiles.push(value);
-      state.storeOnly = false;
-    }),
+  "--query": (args, index, state) => {
+    const parsed = parseRequiredValue(args, index, "--query");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.query = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
   "--project": (args, index, state) => {
     const parsed = parseRequiredValue(args, index, "--project");
 
@@ -175,15 +157,6 @@ const brainSearchOptionParsers: Record<string, BrainSearchOptionParser> = {
     return {
       ok: true,
       nextIndex: parsed.nextIndex
-    };
-  },
-  "--store-only": (_args, index, state) => {
-    state.storeOnly = true;
-    state.storeOnlyExplicit = true;
-
-    return {
-      ok: true,
-      nextIndex: index
     };
   },
   "--limit": (args, index, state) =>
@@ -231,9 +204,6 @@ const brainSearchHelp = (): ParseArgsResult => ({
 
 const createBrainSearchParseState = (): BrainSearchParseState => ({
   query: undefined,
-  catalogFiles: [],
-  storeOnly: true,
-  storeOnlyExplicit: false,
   projectId: undefined,
   limit: undefined,
   maxInclusions: undefined,
@@ -274,13 +244,6 @@ const validateBrainSearchState = (
     };
   }
 
-  if (state.storeOnlyExplicit && state.catalogFiles.length > 0) {
-    return {
-      ok: false,
-      error: `--store-only cannot be combined with --catalog-file\n${formatBrainSearchUsage()}`
-    };
-  }
-
   return {
     ok: true,
     query
@@ -295,8 +258,8 @@ const buildBrainSearchCommand = (
     command: {
       kind: "brainSearch",
       query,
-      catalogFiles: state.catalogFiles,
-      storeOnly: state.storeOnly,
+      catalogFiles: [],
+      storeOnly: true,
       format: state.format,
       ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
       ...(state.limit === undefined ? {} : { limit: state.limit }),

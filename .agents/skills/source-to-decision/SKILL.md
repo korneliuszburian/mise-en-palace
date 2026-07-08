@@ -35,7 +35,7 @@ Before retaining or applying a source/pattern, query the explicit brain
 knowledge catalog when retained pattern context is relevant:
 
 ```sh
-pnpm --filter @krn/cli krn brain recall --catalog-file corpus/brain-knowledge/catalog.json --text source-to-decision
+pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
 ```
 
 Use catalog results as read-only context. They can guide adoption, rejection,

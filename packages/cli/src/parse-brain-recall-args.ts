@@ -18,15 +18,14 @@ import type {
 } from "./parse-args.js";
 
 const brainRecallUsage = [
-  "Usage: krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain recall [--text unknown-first]",
-  "krn brain recall --store-only [--text unknown-first]",
-  "krn brain recall --read-model-file docs-or-fixture-read-model.json [--text unknown-first]",
-  "krn brain recall --decision-file brain-decision.json [--text unknown-first]",
-  "krn brain recall --catalog-file brain-recall-catalog.json [--text unknown-first]",
-  "  note: no file source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
+  "krn brain recall --fixture-read-model-file tests/fixtures/brain-knowledge/read-models/example.json [--text unknown-first]",
+  "krn brain recall --fixture-decision-file tests/fixtures/brain-knowledge/corpus/knowledge/example.json [--text unknown-first]",
+  "krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json [--text unknown-first]",
+  "  note: no fixture source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; fixture file options are explicit test/import readbacks, not product memory",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
@@ -84,12 +83,12 @@ const parseAllowedOption = <T extends string>(
     return required;
   }
 
-    if (!isAllowed(required.value, allowed)) {
-      return {
-        ok: false,
-        error: `Unsupported brain recall ${label}: ${required.value}\n${formatBrainRecallUsage()}`
-      };
-    }
+  if (!isAllowed(required.value, allowed)) {
+    return {
+      ok: false,
+      error: `Unsupported brain recall ${label}: ${required.value}\n${formatBrainRecallUsage()}`
+    };
+  }
 
   return {
     ok: true,
@@ -176,20 +175,12 @@ const pushPathOption = (
 };
 
 const brainRecallOptionParsers: Record<string, BrainRecallOptionParser> = {
-  "--read-model-file": (args, index, state) =>
-    pushPathOption(args, index, "--read-model-file", state.readModelFiles),
-  "--decision-file": (args, index, state) =>
-    pushPathOption(args, index, "--decision-file", state.decisionFiles),
-  "--catalog-file": (args, index, state) =>
-    pushPathOption(args, index, "--catalog-file", state.catalogFiles),
-  "--store-only": (_args, index, state) => {
-    state.storeOnly = true;
-
-    return {
-      ok: true,
-      nextIndex: index
-    };
-  },
+  "--fixture-read-model-file": (args, index, state) =>
+    pushPathOption(args, index, "--fixture-read-model-file", state.readModelFiles),
+  "--fixture-decision-file": (args, index, state) =>
+    pushPathOption(args, index, "--fixture-decision-file", state.decisionFiles),
+  "--fixture-catalog-file": (args, index, state) =>
+    pushPathOption(args, index, "--fixture-catalog-file", state.catalogFiles),
   "--project": (args, index, state) => {
     const required = parseRequiredOption(args, index, "--project");
 
@@ -343,13 +334,6 @@ const brainRecallOptionParsers: Record<string, BrainRecallOptionParser> = {
 const validateBrainRecallSources = (
   state: BrainRecallParseState
 ): ParseOptionResult<undefined> => {
-  if (state.storeOnly && hasExplicitBrainRecallSource(state)) {
-    return {
-      ok: false,
-      error: `--store-only cannot be combined with --read-model-file, --decision-file, or --catalog-file\n${formatBrainRecallUsage()}`
-    };
-  }
-
   if (hasEmptyBrainRecallSourcePath(state)) {
     return {
       ok: false,

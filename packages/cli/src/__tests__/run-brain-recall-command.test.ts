@@ -16,8 +16,8 @@ import {
 const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
 const cliPackageRoot = fileURLToPath(new URL("../..", import.meta.url));
 const readModelFile = "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json";
-const knowledgeFile = "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json";
-const catalogFile = "corpus/brain-knowledge/catalog.json";
+const knowledgeFile = "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json";
+const catalogFile = "tests/fixtures/brain-knowledge/corpus/catalog.json";
 
 describe("runBrainRecallCommand", () => {
   it("renders a read-only brain recall preview", async () => {
@@ -114,7 +114,7 @@ describe("runBrainRecallCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Decision files: corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("Decision files: tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain recall readback was produced from live DB state");
@@ -144,13 +144,13 @@ describe("runBrainRecallCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: tests/fixtures/brain-knowledge/corpus/catalog.json");
     expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
     expect(result.stdout).toContain(
-      "corpus/brain-knowledge/catalog.json:knowledge/source-to-decision-retention-gate.json"
+      "tests/fixtures/brain-knowledge/corpus/catalog.json:knowledge/source-to-decision-retention-gate.json"
     );
     expect(result.stdout).toContain(
-      "corpus/brain-knowledge/catalog.json:knowledge/ts-boundary-unknown-first-result-state.json"
+      "tests/fixtures/brain-knowledge/corpus/catalog.json:knowledge/ts-boundary-unknown-first-result-state.json"
     );
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
@@ -307,7 +307,7 @@ describe("runBrainRecallCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Catalog files: tests/fixtures/brain-knowledge/corpus/catalog.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
 

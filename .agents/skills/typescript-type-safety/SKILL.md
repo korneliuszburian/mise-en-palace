@@ -26,7 +26,7 @@ Use this skill before or during TypeScript changes.
    catalog before implementation when the catalog is available:
 
    ```sh
-   pnpm --filter @krn/cli krn brain recall --catalog-file corpus/brain-knowledge/catalog.json --text unknown-first
+   pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
    ```
 
    Use the catalog result as read-only pattern context. If the command is not
