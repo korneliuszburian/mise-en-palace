@@ -701,17 +701,23 @@ Goal: add maintenance/dreaming only after the local loop proves useful.
 
 Work:
 
-1. Decide whether maintenance contracts are real executors or contract/readback helpers.
-2. If real, build the smallest scheduler/executor that consults authority
-   tables and records idempotent outcomes.
-3. If not real, downscope names and docs honestly.
-4. Maintenance proposes memory changes; it does not silently promote truth.
+1. Keep maintenance execution explicit and per-record.
+2. Persist queue records with deterministic queue keys, claim/settle/retry/
+   dead-letter lifecycle, and write-boundary readbacks.
+3. Check handler-declared writes against job memory boundaries before handler
+   execution.
+4. Maintenance proposes memory/source candidates; it does not silently promote
+   truth.
+5. Reject daemon, scheduler, and always-on dreaming language until a runtime
+   consumer and falsifier justify them.
 
 Done when:
 
 - runtime authority matches naming;
 - maintenance jobs have real consumers;
-- no package pretends to enforce a boundary it only describes.
+- no package pretends to enforce a boundary it only describes;
+- crashes, stuck running records, and scheduler recovery are not implied unless
+  a dedicated executor recovery path proves them.
 
 ### Phase 7: External Product Surface
 
@@ -799,15 +805,15 @@ This proves a useful internal-alpha kernel loop, not broad product readiness,
 commercial validation, arbitrary repository portability, live Codex obedience,
 or final temporal consensus.
 
-The next P1 direction is Phase 5/6 hardening:
+The current P1 hardening direction is Phase 5/6 cleanup:
 
-1. Tighten source and temporal consensus so accepted, stale, superseded,
-   rejected, and unsupported claims affect activation exactly as the roadmap
-   says.
-2. Push feedback-driven demotion, supersession, and rejection deeper into
-   store-backed memory/source maintenance paths.
-3. Decide maintenance runtime truth: build the smallest executor with authority
-   enforcement, or downscope remaining execution-shaped language.
+1. Keep source and temporal consensus aligned with activation: accepted, stale,
+   superseded, rejected, and unsupported claims must affect packets exactly as
+   the roadmap says.
+2. Keep feedback-driven demotion, supersession, and rejection in store-backed
+   memory/source maintenance paths, with no direct truth mutation.
+3. Keep maintenance runtime truth explicit: per-record executor yes; daemon,
+   scheduler, and autonomous promotion no.
 4. Close corpus/documentation slop by converting useful source-to-decision rows
    into store/eval inputs and deleting decorative files.
 5. Reconsider broader MCP/API only when a real consumer needs more than the
