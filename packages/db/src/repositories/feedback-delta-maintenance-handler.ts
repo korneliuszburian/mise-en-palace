@@ -46,7 +46,7 @@ export interface CreateFeedbackDeltaMaintenanceHandlerInput {
   readonly now?: () => IsoTimestamp;
 }
 
-const reviewableFeedbackOutcomes = new Set(["noise", "stale", "unknown"]);
+const reviewableFeedbackOutcomes = new Set(["noise", "stale", "hurt", "rejected", "unknown"]);
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 

@@ -79,6 +79,8 @@ export type SourceUsefulnessOutcome =
   | "neutral"
   | "noise"
   | "stale"
+  | "hurt"
+  | "rejected"
   | "unknown";
 
 export interface SourceUsefulnessOutcomeFeedback {
@@ -136,6 +138,8 @@ const sourceUsefulnessOutcomes = new Set<string>([
   "neutral",
   "noise",
   "stale",
+  "hurt",
+  "rejected",
   "unknown"
 ]);
 

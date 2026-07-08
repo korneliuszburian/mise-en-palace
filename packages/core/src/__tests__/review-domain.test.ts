@@ -77,6 +77,20 @@ describe("source usefulness outcome feedback", () => {
         doesNotProve:
           "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
       }, {
+        sourceClaimId: "source-claim-hurt",
+        outcome: "hurt",
+        reason: "Source claim hurt the task outcome.",
+        evidenceRefs: ["feedback-2"],
+        doesNotProve:
+          "Hurt feedback does not delete source authority without review."
+      }, {
+        sourceDecisionId: "source-decision-rejected",
+        outcome: "rejected",
+        reason: "Reviewer rejected this source decision path.",
+        evidenceRefs: ["feedback-3"],
+        doesNotProve:
+          "Rejected usefulness feedback does not mutate source decisions directly."
+      }, {
         sourceClaimId: "source-claim-invalid",
         outcome: "helped",
         reason: "Missing doesNotProve should be rejected."
@@ -105,6 +119,20 @@ describe("source usefulness outcome feedback", () => {
       evidenceRefs: ["context-1"],
       doesNotProve:
         "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
+    }, {
+      sourceClaimId: "source-claim-hurt",
+      outcome: "hurt",
+      reason: "Source claim hurt the task outcome.",
+      evidenceRefs: ["feedback-2"],
+      doesNotProve:
+        "Hurt feedback does not delete source authority without review."
+    }, {
+      sourceDecisionId: "source-decision-rejected",
+      outcome: "rejected",
+      reason: "Reviewer rejected this source decision path.",
+      evidenceRefs: ["feedback-3"],
+      doesNotProve:
+        "Rejected usefulness feedback does not mutate source decisions directly."
     }, {
       sourceClaimId: "source-claim-unknown",
       outcome: "unknown",

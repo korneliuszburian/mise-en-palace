@@ -289,6 +289,58 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("treats hurt and rejected usefulness feedback as maintenance caveats", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-hurt-feedback",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 2,
+        exclusions: 0,
+        inclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-hurt",
+          sourceAuthority: "project-decision"
+        }, {
+          subjectType: "memory_record",
+          subjectId: "memory-hurt",
+          sourceAuthority: "project-decision"
+        }]
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [{
+        candidates: [],
+        sourceUsefulnessOutcomes: [{
+          sourceClaimId: "claim-hurt",
+          outcome: "hurt",
+          reason: "This source claim led to the wrong implementation path."
+        }, {
+          sourceDecisionId: "source-decision-feedback-rejected",
+          outcome: "rejected",
+          reason: "Reviewer rejected this decision path."
+        }],
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "memory-hurt",
+          outcome: "hurt",
+          reason: "This memory caused the wrong setup."
+        }]
+      }],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.caveatedSourceClaimIds).toEqual(["claim-hurt"]);
+    expect(packet.caveatedMemoryRefs).toEqual(["memory-hurt"]);
+    expect(packet.rejectedPathIds).toContain("source-decision-feedback-rejected");
+    expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
+      "evidence-gap:run-hurt-feedback:no-governing-decision",
+      "evidence-gap:run-hurt-feedback:caveated-source-authority:claim-hurt",
+      "evidence-gap:run-hurt-feedback:caveated-memory-authority:memory-hurt"
+    ]);
+  });
+
   it("abstains when selected relation evidence has no support ref", () => {
     const packet = buildDecisionPacketFromReadModel(
       relationReadModel(["edge-relation-current"])

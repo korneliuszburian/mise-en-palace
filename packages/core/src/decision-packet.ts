@@ -90,6 +90,20 @@ export interface DecisionPacketAbstentionScore {
 
 const unique = <T extends string>(values: readonly T[]): T[] => [...new Set(values)];
 
+const usefulFeedbackOutcomes = [
+  "selected",
+  "used",
+  "helped"
+] as const satisfies readonly SourceUsefulnessOutcome[];
+
+const maintenanceFeedbackOutcomes = [
+  "noise",
+  "stale",
+  "unknown",
+  "hurt",
+  "rejected"
+] as const satisfies readonly SourceUsefulnessOutcome[];
+
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -441,7 +455,7 @@ const caveatedSourceClaimIdsFor = (
 ): string[] => {
   const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
   const maintenanceFeedbackSourceClaimIds = new Set(
-    sourceClaimIdsWithUsefulness(readModel, ["noise", "stale", "unknown"])
+    sourceClaimIdsWithUsefulness(readModel, maintenanceFeedbackOutcomes)
   );
   const pendingAntiMemoryReviewSourceClaimIds = new Set(
     readModel.context.activationTrace?.candidates.flatMap((candidate) =>
@@ -618,7 +632,7 @@ const evidenceGapsFor = (input: {
   ...input.caveatedMemoryRefs.map((memoryRef): DecisionPacketEvidenceGap => ({
     id: `evidence-gap:${input.runId}:caveated-memory-authority:${memoryRef}`,
     reason:
-      `MemoryRef ${memoryRef} is included but has stale, noisy, or unknown knowledge usefulness feedback.`,
+      `MemoryRef ${memoryRef} is included but has stale, noisy, harmful, rejected, or unknown knowledge usefulness feedback.`,
     verificationRequired:
       "Review the memory feedback, refresh or demote the memory, or capture stronger usefulness evidence before treating it as clean authority."
   })),
@@ -680,7 +694,7 @@ export const buildDecisionPacketFromReadModel = (
   const sourceDecisionTargets = sourceDecisionTargetsFor(readModel);
   const governingDecisionIds = unique([
     ...architectureDecisionTargetIdsFor(sourceDecisionTargets),
-    ...sourceDecisionIdsWithUsefulness(readModel, ["selected", "used", "helped"])
+    ...sourceDecisionIdsWithUsefulness(readModel, usefulFeedbackOutcomes)
   ]);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
   const memoryRefs = memoryRefsFor(readModel);
@@ -688,7 +702,7 @@ export const buildDecisionPacketFromReadModel = (
   const noiseKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["noise"]);
   const unknownKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["unknown"]);
   const caveatedMemoryRefs = unique([
-    ...memoryRefsWithKnowledgeUsefulness(readModel, ["stale", "noise", "unknown"]),
+    ...memoryRefsWithKnowledgeUsefulness(readModel, maintenanceFeedbackOutcomes),
     ...memoryRefsWithPendingAntiMemoryReview(readModel)
   ]);
   const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
@@ -697,7 +711,8 @@ export const buildDecisionPacketFromReadModel = (
       .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
       .map((inclusion) => inclusion.subjectId),
     ...antiMemoryBlockedPathIdsFor(readModel),
-    ...sourceRejectionIds
+    ...sourceRejectionIds,
+    ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
   ]);
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
     governingDecisionIds,

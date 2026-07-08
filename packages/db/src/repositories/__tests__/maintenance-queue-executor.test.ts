@@ -400,6 +400,12 @@ describe("runMaintenanceQueueRecord", () => {
         evidenceRefs: ["packet:abc"],
         doesNotProve: "Unknown usefulness does not prove the source decision is wrong."
       }, {
+        sourceDecisionId: "source-decision-hurt-1",
+        outcome: "hurt",
+        reason: "The source decision caused the wrong maintenance action.",
+        evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
+        doesNotProve: "Hurt feedback does not delete source authority without review."
+      }, {
         sourceClaimId: "source-claim-helped-1",
         outcome: "helped",
         reason: "Useful source should stay retained.",
@@ -412,6 +418,12 @@ describe("runMaintenanceQueueRecord", () => {
         reason: "DecisionPacket selected a standard that newer evidence superseded.",
         evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
         doesNotProve: "This feedback does not prove the standard is false globally."
+      }, {
+        knowledgeId: "knowledge:rejected-standard-1",
+        outcome: "rejected",
+        reason: "Reviewer rejected this retained knowledge path.",
+        evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
+        doesNotProve: "Rejected feedback does not mutate Memory Core without review."
       }, {
         knowledgeId: "memory:helped-standard-1",
         outcome: "helped",
@@ -453,7 +465,7 @@ describe("runMaintenanceQueueRecord", () => {
       "source_claims",
       "source_decisions"
     ]));
-    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(3);
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(5);
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       proposedBy: "maintenance:review_feedback_delta",
@@ -477,11 +489,34 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
+      appliesTo: "source_decision:source-decision-hurt-1",
+      metadata: {
+        outcome: "hurt",
+        sourceDecisionId: "source-decision-hurt-1",
+        recommendationActions: ["demote", "delete"],
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[3]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: [],
       appliesTo: "knowledge:stale-standard-1",
       metadata: {
         outcome: "stale",
         knowledgeId: "knowledge:stale-standard-1",
         subjectRef: "memory_record:knowledge:stale-standard-1",
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[4]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: [],
+      appliesTo: "knowledge:rejected-standard-1",
+      metadata: {
+        outcome: "rejected",
+        knowledgeId: "knowledge:rejected-standard-1",
+        recommendationActions: ["delete"],
+        subjectRef: "memory_record:knowledge:rejected-standard-1",
         mutation: "none"
       }
     });

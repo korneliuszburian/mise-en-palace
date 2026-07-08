@@ -89,6 +89,8 @@ export const knowledgeUsefulnessOutcomeValues = [
   "neutral",
   "noise",
   "stale",
+  "hurt",
+  "rejected",
   "unknown"
 ] as const;
 
