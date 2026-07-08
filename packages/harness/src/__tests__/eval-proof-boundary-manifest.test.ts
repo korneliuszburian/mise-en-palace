@@ -10,10 +10,13 @@ import {
 
 describe("eval proof boundary manifest", () => {
   it("keeps every gate tied to proof and non-proof boundaries", () => {
+    const validTiers = new Set(["required", "db", "live_manual"]);
+
     for (const entry of evalProofBoundaryManifest) {
       expect(entry.id.trim().length).toBeGreaterThan(0);
       expect(entry.command.trim().length).toBeGreaterThan(0);
       expect(entry.owner.trim().length).toBeGreaterThan(0);
+      expect(validTiers.has(entry.tier)).toBe(true);
       expect(entry.requiredFor.length).toBeGreaterThan(0);
       expect(entry.proves.length).toBeGreaterThan(0);
       expect(entry.doesNotProve.length).toBeGreaterThan(0);

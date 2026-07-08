@@ -37,6 +37,8 @@ describe("runSecondRepoDecisionPacketEval", () => {
     expect(result).toMatchObject({
       kind: "krn.secondRepoDecisionPacket.eval.v1",
       status: "pass",
+      sourceEvalKind: "krn.decisionPacket.eval.v1",
+      sourceScorerModel: "DecisionPacketEvalCase.v1",
       targetRepo: "weak-json-boundary-typescript",
       targetRepos: ["weak-json-boundary-typescript"],
       targetTrial: {

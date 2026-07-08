@@ -137,6 +137,6 @@ Do not claim DB runtime truth unless DB commands were run in the current
 environment.
 
 Gate proof boundaries are checked by the harness docs-lint manifest in
-`packages/harness/src/evalProofBoundaryManifest.ts`. It is not a public
+`packages/harness/src/eval-proof-boundary-manifest.ts`. It is not a public
 `@krn/harness` runtime API, and no verification command should be described as
 proving more than that manifest allows.

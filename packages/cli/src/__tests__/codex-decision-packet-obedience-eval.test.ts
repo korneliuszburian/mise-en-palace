@@ -32,6 +32,7 @@ describe("runCodexDecisionPacketObedienceEval", () => {
       fixtureVersion: "1",
       status: "pass",
       sourceEvalKind: "krn.decisionPacket.eval.v1",
+      sourceScorerModel: "DecisionPacketEvalCase.v1",
       metrics: {
         caseCount: 2,
         passedCaseCount: 2,

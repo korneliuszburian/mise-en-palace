@@ -2,6 +2,12 @@ import type {
   DecisionPacket
 } from "@krn/core";
 
+export const decisionPacketEvalKind = "krn.decisionPacket.eval.v1" as const;
+export const decisionPacketEvalScorerModel = "DecisionPacketEvalCase.v1" as const;
+
+export type DecisionPacketEvalKind = typeof decisionPacketEvalKind;
+export type DecisionPacketEvalScorerModel = typeof decisionPacketEvalScorerModel;
+
 export type DecisionPacketStatus = "pass" | "fail";
 export type PacketQualityLabel = "useful" | "abstained" | "noisy" | "stale_authority" | "miss";
 export type NotesBaselineLabel = "usable" | "unsafe" | "unsupported" | "miss";
@@ -43,7 +49,8 @@ export interface DecisionPacketEvalCaseReadback {
 }
 
 export interface DecisionPacketEvalResult {
-  readonly kind: "krn.decisionPacket.eval.v1";
+  readonly kind: DecisionPacketEvalKind;
+  readonly scorerModel: DecisionPacketEvalScorerModel;
   readonly fixtureVersion: "1";
   readonly status: DecisionPacketStatus;
   readonly thresholds: {

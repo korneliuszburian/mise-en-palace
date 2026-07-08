@@ -23,9 +23,13 @@ import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import type {
-  DecisionPacketEvalCaseReadback
+  DecisionPacketEvalCaseReadback,
+  DecisionPacketEvalKind,
+  DecisionPacketEvalScorerModel
 } from "./decision-packet-eval-shape.js";
 import {
+  decisionPacketEvalKind,
+  decisionPacketEvalScorerModel,
   isPassingDecisionPacketCase
 } from "./decision-packet-eval-shape.js";
 
@@ -73,7 +77,8 @@ export interface CodexDecisionPacketObedienceEvalResult {
   readonly kind: "krn.codexDecisionPacketObedience.eval.v1";
   readonly fixtureVersion: "1";
   readonly status: ObedienceStatus;
-  readonly sourceEvalKind: "krn.decisionPacket.eval.v1";
+  readonly sourceEvalKind: DecisionPacketEvalKind;
+  readonly sourceScorerModel: DecisionPacketEvalScorerModel;
   readonly metrics: {
     readonly caseCount: number;
     readonly passedCaseCount: number;
@@ -340,7 +345,8 @@ export const runCodexDecisionPacketObedienceEval = async (
     kind: "krn.codexDecisionPacketObedience.eval.v1",
     fixtureVersion: fixture.version,
     status,
-    sourceEvalKind: decisionPacket.kind,
+    sourceEvalKind: decisionPacketEvalKind,
+    sourceScorerModel: decisionPacketEvalScorerModel,
     metrics: metricsForCases(cases),
     cases,
     proof: {

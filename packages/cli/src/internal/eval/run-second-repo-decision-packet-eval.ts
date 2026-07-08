@@ -9,6 +9,14 @@ import {
   loadDecisionPacketEvalFixture,
   type DecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
+import type {
+  DecisionPacketEvalKind,
+  DecisionPacketEvalScorerModel
+} from "./decision-packet-eval-shape.js";
+import {
+  decisionPacketEvalKind,
+  decisionPacketEvalScorerModel
+} from "./decision-packet-eval-shape.js";
 
 type SecondRepoEvalStatus = "pass" | "fail";
 
@@ -35,6 +43,8 @@ export interface SecondRepoTargetResult {
 export interface SecondRepoDecisionPacketEvalResult {
   readonly kind: "krn.secondRepoDecisionPacket.eval.v1";
   readonly status: SecondRepoEvalStatus;
+  readonly sourceEvalKind: DecisionPacketEvalKind;
+  readonly sourceScorerModel: DecisionPacketEvalScorerModel;
   readonly targetRepo: string;
   readonly targetRepos: readonly string[];
   readonly targetTrial: {
@@ -228,6 +238,8 @@ export const runSecondRepoDecisionPacketEval = async (
   return {
     kind: "krn.secondRepoDecisionPacket.eval.v1",
     status,
+    sourceEvalKind: decisionPacketEvalKind,
+    sourceScorerModel: decisionPacketEvalScorerModel,
     targetRepo: targetRepos[0] ?? "none",
     targetRepos,
     targetTrial: {

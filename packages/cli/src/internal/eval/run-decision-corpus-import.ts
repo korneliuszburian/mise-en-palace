@@ -15,6 +15,14 @@ import {
 import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
+import type {
+  DecisionPacketEvalKind,
+  DecisionPacketEvalScorerModel
+} from "./decision-packet-eval-shape.js";
+import {
+  decisionPacketEvalKind,
+  decisionPacketEvalScorerModel
+} from "./decision-packet-eval-shape.js";
 import {
   loadDecisionPacketEvalFixture,
   parseDecisionPacketEvalFixture
@@ -70,6 +78,8 @@ export interface DecisionCorpusImportResult {
   readonly kind: "krn.decisionCorpusImport.v1";
   readonly fixtureVersion: "1";
   readonly status: "pass" | "fail";
+  readonly sourceEvalKind: DecisionPacketEvalKind;
+  readonly sourceScorerModel: DecisionPacketEvalScorerModel;
   readonly imported: {
     readonly decisionCount: number;
     readonly noteCount: number;
@@ -308,6 +318,8 @@ export const runDecisionCorpusImport = async (
     kind: "krn.decisionCorpusImport.v1",
     fixtureVersion: fixture.version,
     status,
+    sourceEvalKind: decisionPacketEvalKind,
+    sourceScorerModel: decisionPacketEvalScorerModel,
     imported: {
       decisionCount: fixture.decisions.length,
       noteCount: fixture.decisions.length,

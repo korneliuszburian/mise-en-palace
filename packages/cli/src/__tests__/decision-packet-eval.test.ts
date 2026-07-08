@@ -100,6 +100,7 @@ describe("runDecisionPacketEval", () => {
 
     expect(result).toMatchObject({
       kind: "krn.decisionPacket.eval.v1",
+      scorerModel: "DecisionPacketEvalCase.v1",
       fixtureVersion: "1",
       status: "pass",
       thresholds: {

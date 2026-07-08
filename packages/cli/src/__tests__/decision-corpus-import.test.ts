@@ -59,6 +59,8 @@ describe("runDecisionCorpusImport", () => {
 
     expect(result).toMatchObject({
       kind: "krn.decisionCorpusImport.v1",
+      sourceEvalKind: "krn.decisionPacket.eval.v1",
+      sourceScorerModel: "DecisionPacketEvalCase.v1",
       fixtureVersion: "1",
       status: "pass",
       imported: {

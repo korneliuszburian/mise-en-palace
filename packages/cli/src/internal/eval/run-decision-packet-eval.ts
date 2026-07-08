@@ -17,7 +17,9 @@ import type {
 } from "./decision-packet-eval-shape.js";
 import {
   comparePacketAgainstNotesBaseline,
-  decisionPacketCaseStatus
+  decisionPacketCaseStatus,
+  decisionPacketEvalKind,
+  decisionPacketEvalScorerModel
 } from "./decision-packet-eval-shape.js";
 import {
   buildDecisionPacketWithEngine
@@ -482,7 +484,8 @@ export const runDecisionPacketEval = async (
       : "fail";
 
   return {
-    kind: "krn.decisionPacket.eval.v1",
+    kind: decisionPacketEvalKind,
+    scorerModel: decisionPacketEvalScorerModel,
     fixtureVersion: fixture.version,
     status,
     thresholds: {
@@ -520,6 +523,7 @@ export const runDecisionPacketEval = async (
     cases,
     proof: {
       proves: [
+        "DecisionPacketEvalCase.v1 is the canonical case/scorer model for deterministic DecisionPacket eval wrappers",
         "deterministic pre-code task packets are built through retrieveActivationCandidates, applyActivationFilters, packet budgeting, assembleContext, and createExecutionBrief",
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",

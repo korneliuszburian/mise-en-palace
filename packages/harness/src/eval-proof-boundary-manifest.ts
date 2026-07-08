@@ -4,6 +4,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm typecheck",
     scriptName: "typecheck",
     owner: "TypeScript package boundaries",
+    tier: "required",
     requiredFor: ["local-static", "ci-fast", "handoff"],
     proves: [
       "workspace packages compile under their configured strict TypeScript settings",
@@ -21,6 +22,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm test",
     scriptName: "test",
     owner: "deterministic package behavior",
+    tier: "required",
     requiredFor: ["local-static", "ci-fast", "handoff"],
     proves: [
       "Vitest unit and deterministic harness tests pass",
@@ -38,6 +40,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm quality:fallow:ci",
     scriptName: "quality:fallow:ci",
     owner: "changed-file quality audit",
+    tier: "required",
     requiredFor: ["ci-fast", "handoff"],
     proves: [
       "Fallow found no configured issues in changed JS/TS files",
@@ -55,6 +58,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:krn:smoke",
     scriptName: "eval:krn:smoke",
     owner: "deterministic KRN behavior and docs guard matrix",
+    tier: "required",
     requiredFor: ["ci-fast", "handoff"],
     proves: [
       "behavior smoke and docs lint guards pass for active plan, context hygiene, source-map, skills, behavior-gate matrix, TypeScript-boundary, CLI run-readback, and Codex brief golden invariants",
@@ -72,6 +76,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm db:ready",
     scriptName: "db:ready",
     owner: "live Postgres/pgvector runtime readiness",
+    tier: "db",
     requiredFor: ["ci-db", "db-runtime"],
     proves: [
       "the current DB connection can be reached",
@@ -89,6 +94,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm --filter @krn/db db:check",
     scriptName: "db:check",
     owner: "Drizzle schema/migration consistency",
+    tier: "db",
     requiredFor: ["ci-db", "db-runtime"],
     proves: [
       "Drizzle can validate the current schema/migration state",
@@ -106,6 +112,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm db:smoke",
     scriptName: "db:smoke",
     owner: "baseline DB persistence smoke",
+    tier: "db",
     requiredFor: ["ci-db", "db-runtime", "handoff"],
     proves: [
       "the baseline DB persistence smoke can create, read back, and clean marker rows",
@@ -123,6 +130,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm db:smoke:brain-loop",
     scriptName: "db:smoke:brain-loop",
     owner: "DB-backed product-loop proof",
+    tier: "db",
     requiredFor: ["product-loop", "db-runtime", "handoff"],
     proves: [
       "live DB evidence/review/feedback/SourceDecision/MemoryReviewGate/memory/activation/Codex-brief readback works for the bounded brain-loop scenario",
@@ -141,6 +149,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:real-recall",
     scriptName: "eval:real-recall",
     owner: "DB-backed decision-linked recall falsifier",
+    tier: "db",
     requiredFor: ["product-loop", "db-runtime", "handoff"],
     proves: [
       "live DB source recall can seed lexical distractors and decision-linked governing claims in the current shell",
@@ -159,6 +168,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:decision-packet",
     scriptName: "eval:decision-packet",
     owner: "deterministic decision-packet fixture engine",
+    tier: "required",
     requiredFor: ["local-static", "product-loop", "handoff"],
     proves: [
       "predeclared decision-packet cases run through the real activation/filtering/assembly/brief engine path",
@@ -177,6 +187,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:codex-decision-packet-obedience",
     scriptName: "eval:codex-decision-packet-obedience",
     owner: "recorded Codex output evidence-shape comparator",
+    tier: "required",
     requiredFor: ["local-static", "handoff"],
     proves: [
       "recorded Codex output fixtures preserve the expected governing decision, stale boundary, rejected path, and non-proof signals",
@@ -195,6 +206,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:codex-decision-packet-obedience:live-pilot",
     scriptName: "eval:codex-decision-packet-obedience:live-pilot",
     owner: "recorded live-pilot Codex output comparator",
+    tier: "live_manual",
     requiredFor: ["local-static"],
     proves: [
       "the recorded live-pilot fixture still satisfies the Codex decision-packet obedience evidence-shape comparator",
@@ -212,6 +224,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:second-repo-decision-packet",
     scriptName: "eval:second-repo-decision-packet",
     owner: "deterministic target-repo decision-packet fixtures",
+    tier: "required",
     requiredFor: ["local-static", "product-loop", "handoff"],
     proves: [
       "target-repo fixture corpora pass the decision-packet eval path",
@@ -230,6 +243,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:decision-corpus-import",
     scriptName: "eval:decision-corpus-import",
     owner: "source-to-decision corpus import fixture",
+    tier: "required",
     requiredFor: ["local-static", "handoff"],
     proves: [
       "compact source-to-decision import rows convert into decision-packet corpus rows",
@@ -248,6 +262,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:corpus-closure",
     scriptName: "eval:corpus-closure",
     owner: "DB-backed source decision closure smoke",
+    tier: "db",
     requiredFor: ["db-runtime", "product-loop"],
     proves: [
       "the current dogfood DB corpus has accepted SourceClaims and no pending unadopted SourceClaims in source-decision gaps readback",
@@ -266,6 +281,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm eval:determinism",
     scriptName: "eval:determinism",
     owner: "decision-packet family deterministic regression check",
+    tier: "required",
     requiredFor: ["local-static", "handoff"],
     proves: [
       "decision-packet, target-repo decision-packet, and recorded Codex obedience fixtures are bit-identical across consecutive runs",
@@ -283,6 +299,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm alpha:verify",
     scriptName: "alpha:verify",
     owner: "local fast alpha check",
+    tier: "required",
     requiredFor: ["local-static"],
     proves: [
       "workspace typecheck, workspace tests, and krn doctor completed for the current shell"
@@ -299,6 +316,7 @@ export const evalProofBoundaryManifest = [
     command: "pnpm alpha:verify:full",
     scriptName: "alpha:verify:full",
     owner: "local full alpha verification gate",
+    tier: "db",
     requiredFor: ["db-runtime", "product-loop", "handoff"],
     proves: [
       "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, KRN behavior/docs smoke, DB readiness, Drizzle check, baseline DB smoke, DB brain-loop smoke, and diff check completed in the current shell",
@@ -315,6 +333,7 @@ export const evalProofBoundaryManifest = [
     id: "diff-whitespace-check",
     command: "git diff --check",
     owner: "git diff hygiene",
+    tier: "required",
     requiredFor: ["ci-fast", "ci-db", "handoff"],
     proves: [
       "the current diff has no git-detected whitespace errors"
@@ -331,6 +350,7 @@ export const evalProofBoundaryManifest = [
   command: string;
   scriptName?: string;
   owner: string;
+  tier: "required" | "db" | "live_manual";
   requiredFor: readonly (
     | "local-static"
     | "ci-fast"
