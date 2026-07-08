@@ -20,7 +20,7 @@ const storePatternMemory = (): MemoryRecord => ({
   id: "memory-record-1" as MemoryRecord["id"],
   projectId: "project-1" as MemoryRecord["projectId"],
   key: "knowledge:store-backed-usefulness",
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary: "Store-backed usefulness pattern",
   body: "Use store-backed feedback_delta events for usefulness readback.",

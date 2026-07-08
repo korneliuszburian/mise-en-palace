@@ -567,7 +567,7 @@ export const runBrainSearchDbSmokeCheck = async (
       executionRunId: sessionAExecutionRun.id,
       feedbackDeltaId: sessionAFeedbackDelta.id,
       proposedBy: "krn db smoke brain-search",
-      kind: "pattern",
+      kind: "procedure",
       summary: "Use store-backed memory instead of runtime markdown memory",
       body:
         `When the operator asks whether KRN runtime memory should use MEMORY.md files or store-backed memory/source evidence, select ${retainedStandardChallenge.expectedDecision}`,

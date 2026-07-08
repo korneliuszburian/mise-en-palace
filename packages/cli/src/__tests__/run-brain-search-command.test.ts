@@ -673,7 +673,7 @@ describe("runBrainSearchCommand", () => {
       id: "memory-record-1",
       projectId: "project-1",
       key: "memory:external-review-loop",
-      kind: "pattern",
+      kind: "procedure",
       status: "active",
       summary: "Treat external review as advisory evidence after larger slices",
       body: "KRN may use external review after larger migration or authority slices, but local code and verification decide factual claims.",

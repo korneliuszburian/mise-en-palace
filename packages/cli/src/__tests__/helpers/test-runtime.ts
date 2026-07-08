@@ -92,7 +92,7 @@ const brainRecallMemory = (
   id: `memory-${knowledgeId}`,
   projectId: "project-1",
   key: `knowledge:${knowledgeId}`,
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary,
   body,

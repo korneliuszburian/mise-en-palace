@@ -73,7 +73,7 @@ const memoryRecordWithKnowledgeId = (knowledgeId: string): MemoryRecord => ({
   id: `memory-record-${knowledgeId}`,
   projectId: "project-1",
   key: `knowledge:${knowledgeId}`,
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary: knowledgeId,
   body: knowledgeId,
@@ -263,7 +263,7 @@ describe("brainRecallDecisionToMemoryCandidateInput", () => {
   it("maps a brain recall decision to a procedural memory candidate", () => {
     const input = brainRecallDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
 
-    expect(input.kind).toBe("pattern");
+    expect(input.kind).toBe("procedure");
     expect(input.projectId).toBe("project-1");
     expect(input.summary).toBe("Unknown-first result state");
     expect(input.body).toBe("Keep JSON.parse results unknown until validated.");
@@ -351,7 +351,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       expect(capturedCandidates[0]?.metadata).toBeDefined();
       expect(capturedCandidates[0]).toMatchObject({
         projectId: "project-1",
-        kind: "pattern",
+        kind: "procedure",
         sourceLineage: [{
           sourceId: "packages/core/src/metadata.ts",
           note: "tests/fixtures/ts-boundary.json"

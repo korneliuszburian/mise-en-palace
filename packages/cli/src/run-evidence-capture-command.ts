@@ -325,7 +325,7 @@ const buildMemoryCandidateProposals = (
 
   return [{
     id: runtime.createId("memory-candidate-proposal"),
-    kind: "pattern",
+    kind: "procedure",
     status: "proposed",
     summary: "Review changed files for reusable memory.",
     body: `Changed files may contain reusable KRN operating knowledge: ${changedFilePaths.join(", ")}`,

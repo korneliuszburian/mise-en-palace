@@ -71,7 +71,7 @@ const memoryRecord: MemoryRecord = {
   id: memoryRecordId,
   projectId,
   key: "maintenance-preview-memory",
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary: "Maintenance preview should inspect stale or near-expiry memory.",
   body: "A bounded memory record for maintenance CLI readback.",

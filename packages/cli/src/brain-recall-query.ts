@@ -29,8 +29,6 @@ const brainRecallTaskNoiseTerms = new Set([
   "no",
   "of",
   "or",
-  "pattern",
-  "patterns",
   "record",
   "retained",
   "selected",

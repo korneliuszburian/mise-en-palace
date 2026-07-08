@@ -62,7 +62,7 @@ export const brainRecallDecisionToMemoryCandidateInput = (
 ): CreateMemoryCandidateInput => ({
   projectId,
   proposedBy: SEED_PROPOSED_BY,
-  kind: "pattern",
+  kind: "procedure",
   summary: decision.name,
   body: decision.decision,
   owner: decision.consumers[0] ?? SEED_PROPOSED_BY,

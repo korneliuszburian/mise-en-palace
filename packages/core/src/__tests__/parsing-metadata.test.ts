@@ -50,7 +50,7 @@ describe("public parser metadata boundaries", () => {
     expectPrivateReasoningMetadataRejection(() => parseMemoryCandidateInput({
       executionRunId: "execution-run-1",
       proposedBy: "codex",
-      kind: "pattern",
+      kind: "procedure",
       summary: "Use unknown-first parsing at public boundaries.",
       body: "External JSON enters as unknown and is parsed before domain use.",
       owner: "kernel",

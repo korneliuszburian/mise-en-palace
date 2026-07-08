@@ -20,7 +20,7 @@ const memoryRecord = (
   id: id as MemoryRecordId,
   projectId: "project-1" as ProjectId,
   key: id,
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary: `Memory ${id}`,
   body: "A bounded memory record for maintenance preview tests.",

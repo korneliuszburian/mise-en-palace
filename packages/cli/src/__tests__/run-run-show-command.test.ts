@@ -297,7 +297,7 @@ const aggregate: HarnessRunAggregate = {
       executionRunId: "run-1",
       feedbackDeltaId: "feedback-1",
       proposedBy: "krn evidence capture",
-      kind: "pattern",
+      kind: "procedure",
       status: "proposed",
       summary: "Review changed files for reusable memory.",
       body: "Changed files may contain reusable KRN operating knowledge.",

@@ -1038,7 +1038,7 @@ const memoryRecordFromReadModel = (
   id: `memory:${readModel.id}`,
   projectId,
   key: readModel.id,
-  kind: "pattern",
+  kind: "procedure",
   status: "active",
   summary: readModel.title,
   body: readModel.summary,
