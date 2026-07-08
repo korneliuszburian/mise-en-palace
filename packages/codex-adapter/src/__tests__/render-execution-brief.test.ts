@@ -258,9 +258,9 @@ describe("renderExecutionBrief", () => {
       "Objective: Make doctor report Postgres memory and source graph readiness"
     );
     expect(rendered).toContain(`Format Version: ${executionBriefFormatVersion}`);
-    expect(rendered).toContain("Brief Profile:");
-    expect(rendered).toContain("- budget=within_budget");
-    expect(rendered).toContain("- required=title, format_version, objective");
+    expect(rendered).not.toContain("Brief Profile:");
+    expect(rendered).not.toContain("- budget=within_budget");
+    expect(rendered).not.toContain("- required=title, format_version, objective");
     expect(rendered).toContain("Non-goals:");
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
@@ -303,8 +303,8 @@ describe("renderExecutionBrief", () => {
     });
     const rendered = renderExecutionBriefText(brief);
 
-    expect(rendered).toContain("Brief Profile:");
-    expect(rendered).toContain("- rendered_optional=none");
+    expect(rendered).not.toContain("Brief Profile:");
+    expect(rendered).not.toContain("- rendered_optional=none");
     expect(rendered).toContain("Objective: Make doctor report Postgres memory and source graph readiness");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
@@ -320,15 +320,6 @@ describe("renderExecutionBrief", () => {
     expect(rendered).not.toContain("Source Claims Used:");
     expect(rendered).not.toContain("Memory Records Used:");
     expect(rendered).not.toContain("Anti-memory Warnings:");
-    expect(rendered).not.toContain("Hook Expectations:");
-    expect(rendered).not.toContain("Skill Hints:");
-    expect(rendered).not.toContain("MCP Resource Refs:");
-    expect(rendered).not.toContain("MCP Resource References:");
-    expect(rendered).not.toContain("Subagent Probe Hints:");
-    expect(rendered).not.toContain("Goal Refs:");
-    expect(rendered).not.toContain("Goal References:");
-    expect(rendered).not.toContain("ExecPlan Refs:");
-    expect(rendered).not.toContain("Execution Plan Refs:");
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {

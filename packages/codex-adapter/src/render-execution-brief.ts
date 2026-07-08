@@ -30,9 +30,6 @@ export interface RenderExecutionBriefInput {
 const renderList = (items: readonly string[]): string[] =>
   items.length === 0 ? ["- none"] : items.map((item) => `- ${item}`);
 
-const renderJoinedValues = (items: readonly string[]): string =>
-  items.length === 0 ? "none" : items.join(", ");
-
 const renderContextInclusions = (
   inclusions: readonly ExecutionBriefContextInclusion[]
 ): string[] => {
@@ -171,25 +168,6 @@ export const describeExecutionBriefProfile = (
       "Rendered section presence does not prove Codex followed the brief or prompt quality improved."
     ]
   };
-};
-
-const renderExecutionBriefProfile = (brief: ExecutionBrief): string[] => {
-  const profile = describeExecutionBriefProfile(brief);
-  const requiredSections = profile.sections
-    .filter((section) => section.kind === "required")
-    .map((section) => section.id);
-  const optionalSections = profile.sections
-    .filter((section) => section.kind === "optional" && section.rendered)
-    .map((section) => section.id);
-
-  return [
-    "Brief Profile:",
-    `- profile=${profile.profile} | format=${profile.formatVersion}`,
-    `- budget=${profile.budget.status} | rendered_sections=${profile.budget.renderedSections}/${profile.budget.maxRenderedSections} | rendered_items=${profile.budget.renderedItems}/${profile.budget.maxRenderedItems}`,
-    `- required=${renderJoinedValues(requiredSections)}`,
-    `- rendered_optional=${renderJoinedValues(optionalSections)}`,
-    `- does_not_prove=${profile.doesNotProve.join(" | ")}`
-  ];
 };
 
 const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
@@ -361,7 +339,6 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const lines = [
     brief.title,
     `Format Version: ${brief.formatVersion}`,
-    ...renderExecutionBriefProfile(brief),
     "",
     `Objective: ${brief.objective}`,
     "",

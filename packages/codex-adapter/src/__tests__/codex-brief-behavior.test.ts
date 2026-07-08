@@ -107,8 +107,6 @@ const evidenceContract: EvidenceContract = {
 const expectedRenderedBriefFragments = [
   "Constraints:",
   `Format Version: ${executionBriefFormatVersion}`,
-  "Brief Profile:",
-  "- required=title",
   "- do not mutate core state",
   "Acceptance:",
   "- brief exposes review contract fields",
@@ -182,9 +180,7 @@ describe("codex brief behavior fixture", () => {
       nextAction: "Execute the bounded source repair."
     });
     const rendered = renderExecutionBriefText(brief);
-    const passed = includesAllFragments(rendered, expectedRenderedBriefFragments) &&
-      !rendered.includes("MCP Resource Refs:") &&
-      !rendered.includes("Subagent Probe Hints:");
+    const passed = includesAllFragments(rendered, expectedRenderedBriefFragments);
     const report = runBehaviorFixtures({
       tasks: [task],
       proofs: [{

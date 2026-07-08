@@ -28,7 +28,7 @@ Use this skill at the Codex boundary, not inside core domain logic.
    routing pattern first when the catalog is available:
 
    ```sh
-   pnpm --filter @krn/cli krn brain knowledge --catalog-file corpus/brain-knowledge/catalog.json --text progressive-disclosure
+   pnpm --filter @krn/cli krn brain recall --catalog-file corpus/brain-knowledge/catalog.json --text progressive-disclosure
    ```
 
    Use the result as read-only context. It can guide skill routing and
