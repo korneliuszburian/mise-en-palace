@@ -7,6 +7,7 @@ export {
   isMaintenanceJobType,
   maintenanceJobPersistenceContract,
   maintenanceJobTypes,
+  maintenanceQueueRecordKeyForJob,
   maintenanceQueueStatuses,
   parseMaintenanceJob,
   parseMaintenanceJobType

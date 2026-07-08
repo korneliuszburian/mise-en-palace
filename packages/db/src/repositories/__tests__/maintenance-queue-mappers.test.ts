@@ -12,6 +12,7 @@ describe("maintenance queue mappers", () => {
       mapMaintenanceQueue({
         id: "maintenance-queue-1",
         jobType: "embed_memory_record",
+        queueKey: "embed_memory_record:memory-1:text-embedding-3-small",
         status: "queued",
         payload: {
           memoryRecordId: "memory-1",
@@ -30,6 +31,7 @@ describe("maintenance queue mappers", () => {
     ).toEqual({
       id: "maintenance-queue-1",
       jobType: "embed_memory_record",
+      queueKey: "embed_memory_record:memory-1:text-embedding-3-small",
       status: "queued",
       payload: {
         memoryRecordId: "memory-1",

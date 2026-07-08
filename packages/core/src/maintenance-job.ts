@@ -142,6 +142,53 @@ export interface MaintenanceQueueWriteBoundaryReadback {
   doesNotProve: string;
 }
 
+const queueKeyPart = (value: string | number | undefined): string =>
+  value === undefined ? "-" : String(value);
+
+export const maintenanceQueueRecordKeyForJob = (
+  job: MaintenanceJob
+): string => {
+  switch (job.jobType) {
+    case "embed_source_chunk":
+      return [
+        "embed_source_chunk",
+        queueKeyPart(job.payload.sourceChunkId),
+        queueKeyPart(job.payload.embeddingModelId)
+      ].join(":");
+    case "embed_memory_record":
+      return [
+        "embed_memory_record",
+        queueKeyPart(job.payload.memoryRecordId),
+        queueKeyPart(job.payload.embeddingModelId)
+      ].join(":");
+    case "compact_memory":
+      return [
+        "compact_memory",
+        queueKeyPart(job.payload.projectId),
+        queueKeyPart(job.payload.memoryRecordId)
+      ].join(":");
+    case "detect_contradiction":
+      return [
+        "detect_contradiction",
+        queueKeyPart(job.payload.projectId),
+        queueKeyPart(job.payload.memoryRecordId),
+        queueKeyPart(job.payload.sourceClaimId)
+      ].join(":");
+    case "expire_stale_memory":
+      return [
+        "expire_stale_memory",
+        queueKeyPart(job.payload.projectId),
+        queueKeyPart(job.payload.olderThan)
+      ].join(":");
+    case "review_feedback_delta":
+      return [
+        "review_feedback_delta",
+        queueKeyPart(job.payload.projectId),
+        queueKeyPart(job.payload.feedbackDeltaId)
+      ].join(":");
+  }
+};
+
 export interface MaintenanceQueueRuntimeWriteBoundaryViolation {
   code:
     | "disallowed_runtime_write"

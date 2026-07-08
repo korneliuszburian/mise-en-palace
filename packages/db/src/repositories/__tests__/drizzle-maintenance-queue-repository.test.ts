@@ -88,6 +88,7 @@ const maintenanceQueueRow = (
     id: "maintenance-queue-1",
     type: "compact_memory",
     jobType: "compact_memory",
+    queueKey: "compact_memory:project-1:-",
     status,
     payload: {
       projectId: "project-1"
@@ -147,6 +148,41 @@ describe("DrizzleMaintenanceQueueRepository", () => {
     expect(sqlParamValues(updateCall.whereCondition)).toEqual(
       expect.arrayContaining(["maintenance-queue-1", "queued", rowTimestamp])
     );
+  });
+
+  it("persists deterministic queue keys when enqueuing maintenance work", async () => {
+    const row = maintenanceQueueRow("queued");
+    const insertCall: { values?: unknown } = {};
+    const db = {
+      insert: (_table: unknown) => ({
+        values: (value: unknown) => {
+          insertCall.values = value;
+
+          return {
+            returning: async () => [{
+              ...row,
+              ...(value as Record<string, unknown>)
+            }]
+          };
+        }
+      })
+    } as unknown as KrnDatabase;
+    const repository = new DrizzleMaintenanceQueueRepository(db);
+
+    const record = await repository.enqueueMaintenanceQueue({
+      jobType: "review_feedback_delta",
+      payload: {
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-delta-1",
+        reason: "turn stale feedback into anti-memory candidates"
+      }
+    });
+
+    expect(insertCall.values).toEqual(expect.objectContaining({
+      jobType: "review_feedback_delta",
+      queueKey: "review_feedback_delta:project-1:feedback-delta-1"
+    }));
+    expect(record.queueKey).toBe("review_feedback_delta:project-1:feedback-delta-1");
   });
 
   it.each([

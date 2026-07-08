@@ -6,6 +6,9 @@ import {
   lte,
   sql
 } from "drizzle-orm";
+import {
+  maintenanceQueueRecordKeyForJob
+} from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
 import { maintenanceQueues } from "../schema/index.js";
@@ -39,6 +42,7 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         .insert(maintenanceQueues)
         .values({
           jobType: input.jobType,
+          queueKey: maintenanceQueueRecordKeyForJob(input),
           payload: maintenanceQueuePayloadJson(input.payload),
           ...(input.runAfter === undefined
             ? {}

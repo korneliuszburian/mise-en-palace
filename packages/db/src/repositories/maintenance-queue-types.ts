@@ -42,6 +42,7 @@ export interface RecordMaintenanceQueueRetryInput {
 export interface MaintenanceQueueRecord {
   id: string;
   jobType: MaintenanceQueueType;
+  queueKey: string;
   status: MaintenanceQueueLifecycleStatus;
   payload: Record<string, unknown>;
   attempts: number;

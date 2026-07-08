@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm/sql";
 import {
+  check,
   index,
   integer,
   pgEnum,
@@ -96,6 +98,7 @@ export const maintenanceQueues = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     jobType: text("job_type").notNull(),
+    queueKey: text("queue_key").notNull(),
     status: maintenanceQueueStatus("status").notNull().default("queued"),
     payload: jsonObjectColumn("payload"),
     attempts: attemptsColumn(),
@@ -109,6 +112,11 @@ export const maintenanceQueues = pgTable(
   },
   (table) => [
     index("maintenance_queue_records_job_type_idx").on(table.jobType),
-    index("maintenance_queue_records_status_run_after_idx").on(table.status, table.runAfter)
+    uniqueIndex("maintenance_queue_records_queue_key_unique").on(table.queueKey),
+    index("maintenance_queue_records_status_run_after_idx").on(table.status, table.runAfter),
+    check(
+      "maintenance_queue_records_queue_key_non_empty",
+      sql`length(trim(${table.queueKey})) > 0`
+    )
   ]
 );

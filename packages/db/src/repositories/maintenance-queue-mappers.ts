@@ -48,6 +48,7 @@ const toMaintenanceQueueLifecycleStatus = (value: string): MaintenanceQueueLifec
 export const mapMaintenanceQueue = (row: MaintenanceQueueRow): MaintenanceQueueRecord => ({
   id: row.id,
   jobType: toMaintenanceQueueType(row.jobType),
+  queueKey: row.queueKey,
   status: toMaintenanceQueueLifecycleStatus(row.status),
   payload: metadataOrEmpty(row.payload),
   attempts: row.attempts,

@@ -8,6 +8,7 @@ import {
   buildMaintenanceQueueWriteBoundaryReadback,
   describeMaintenanceJob,
   isMaintenanceJobType,
+  maintenanceQueueRecordKeyForJob,
   maintenanceJobPersistenceContract,
   maintenanceJobTypes,
   parseMaintenanceJob,
@@ -87,6 +88,7 @@ describe("maintenance queue contract", () => {
     const skippedRecord: MaintenanceQueueRecord<"embed_memory_record"> = {
       id: "maintenance-queue-2",
       jobType: job.jobType,
+      queueKey: "embed_memory_record:memory-1:text-embedding-3-small",
       status: "skipped",
       payload: job.payload,
       attempts: 0,
@@ -124,6 +126,59 @@ describe("maintenance queue contract", () => {
     );
     expect(describeMaintenanceJob("embed_memory_record").queueRecordKeyTemplate).toContain(
       "{embeddingModelId}"
+    );
+    expect(maintenanceQueueRecordKeyForJob(sourceChunkJob)).toBe(
+      "embed_source_chunk:source-chunk-1:text-embedding-3-small"
+    );
+    expect(maintenanceQueueRecordKeyForJob(memoryRecordJob)).toBe(
+      "embed_memory_record:memory-1:text-embedding-3-small"
+    );
+  });
+
+  test("builds deterministic queue record keys from job identity fields", () => {
+    const first = parseMaintenanceJob("review_feedback_delta", {
+      projectId: "project-1",
+      feedbackDeltaId: "feedback-delta-1",
+      reason: "turn stale feedback into candidates"
+    });
+    const second = parseMaintenanceJob("review_feedback_delta", {
+      projectId: "project-1",
+      feedbackDeltaId: "feedback-delta-1",
+      reason: "different enqueue explanation"
+    });
+    const compactProject = parseMaintenanceJob("compact_memory", {
+      projectId: "project-1",
+      reason: "compact project memory"
+    });
+    const expireStale = parseMaintenanceJob("expire_stale_memory", {
+      projectId: "project-1",
+      reason: "expire stale project memory",
+      olderThan: "2026-06-21T17:30:00.000Z"
+    });
+
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(compactProject).toBeDefined();
+    expect(expireStale).toBeDefined();
+
+    if (
+      first === undefined ||
+      second === undefined ||
+      compactProject === undefined ||
+      expireStale === undefined
+    ) {
+      throw new Error("expected valid maintenance jobs");
+    }
+
+    expect(maintenanceQueueRecordKeyForJob(first)).toBe(
+      "review_feedback_delta:project-1:feedback-delta-1"
+    );
+    expect(maintenanceQueueRecordKeyForJob(second)).toBe(
+      maintenanceQueueRecordKeyForJob(first)
+    );
+    expect(maintenanceQueueRecordKeyForJob(compactProject)).toBe("compact_memory:project-1:-");
+    expect(maintenanceQueueRecordKeyForJob(expireStale)).toBe(
+      "expire_stale_memory:project-1:2026-06-21T17:30:00.000Z"
     );
   });
 

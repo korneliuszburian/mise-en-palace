@@ -32,6 +32,7 @@ const runningRecord = (
 ): MaintenanceQueueRecord => ({
   id: "maintenance-queue-1",
   jobType: input.jobType,
+  queueKey: `${input.jobType}:queue-key`,
   status: "running",
   payload: input.payload,
   attempts: input.attempts ?? 0,
@@ -208,7 +209,7 @@ describe("runMaintenanceQueueRecord", () => {
 
     expect(result.status).toBe("succeeded");
     expect(result.record.status).toBe("succeeded");
-    expect(result.queueRecordKeyUniqueness).toBe("not_enforced_by_executor");
+    expect(result.queueRecordKeyUniqueness).toBe("db_unique_queue_key");
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
