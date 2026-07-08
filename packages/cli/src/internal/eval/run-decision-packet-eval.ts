@@ -45,6 +45,7 @@ const minimumUsefulRate = 0.8;
 const maximumSevereStaleAuthorityInclusions = 0;
 const maximumCaveatedSourceClaimInclusions = 0;
 const maximumMissingAbstentions = 0;
+const minimumAbstentionScore = 1;
 const maximumAverageNoiseDecisions = 2;
 
 const decisionById = (
@@ -457,9 +458,18 @@ export const runDecisionPacketEval = async (
     testCase.comparisonOutcome === "tie"
   ).length;
   const decisiveComparisonCount = krnWinCount + notesWinCount;
+  const abstentionCaseCount = cases.filter((testCase) =>
+    testCase.expectedEvidenceGap !== undefined
+  ).length;
+  const correctAbstentionCount = cases.filter((testCase) =>
+    testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel === "abstained"
+  ).length;
   const usefulRate = rate(usefulCount, cases.length);
   const krnWinRate = rate(krnWinCount, decisiveComparisonCount);
   const notesWinRate = rate(notesWinCount, decisiveComparisonCount);
+  const abstentionScore = abstentionCaseCount === 0
+    ? 1
+    : rate(correctAbstentionCount, abstentionCaseCount);
   const averageNoiseDecisions = average(cases.map((testCase) => testCase.packet.noiseDecisionIds.length));
   const severeStaleAuthorityInclusions = cases.reduce(
     (sum, testCase) => sum + testCase.packet.severeStaleAuthorityIds.length,
@@ -479,6 +489,7 @@ export const runDecisionPacketEval = async (
     severeStaleAuthorityInclusions <= maximumSevereStaleAuthorityInclusions &&
     caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions &&
     missingAbstentions <= maximumMissingAbstentions &&
+    abstentionScore >= minimumAbstentionScore &&
     averageNoiseDecisions <= maximumAverageNoiseDecisions
       ? "pass"
       : "fail";
@@ -495,6 +506,7 @@ export const runDecisionPacketEval = async (
       maximumSevereStaleAuthorityInclusions,
       maximumCaveatedSourceClaimInclusions,
       maximumMissingAbstentions,
+      minimumAbstentionScore,
       maximumAverageNoiseDecisions
     },
     metrics: {
@@ -512,9 +524,12 @@ export const runDecisionPacketEval = async (
       notesWinCount,
       tieCount,
       decisiveComparisonCount,
+      abstentionCaseCount,
+      correctAbstentionCount,
       usefulRate,
       krnWinRate,
       notesWinRate,
+      abstentionScore,
       averageNoiseDecisions,
       severeStaleAuthorityInclusions,
       caveatedSourceClaimInclusions,
@@ -528,7 +543,8 @@ export const runDecisionPacketEval = async (
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
         "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
-        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, and zero missing-abstention thresholds"
+        "abstentionScore is a top-level scorer gate for unsupported cases before broad MCP transport can rely on DecisionPacket guidance",
+        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, zero missing-abstention, minimum abstention-score, and noise thresholds"
       ],
       doesNotProve: [
         "live Codex execution or obedience",

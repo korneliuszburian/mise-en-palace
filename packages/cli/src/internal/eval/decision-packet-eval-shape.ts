@@ -60,6 +60,7 @@ export interface DecisionPacketEvalResult {
     readonly maximumSevereStaleAuthorityInclusions: number;
     readonly maximumCaveatedSourceClaimInclusions: number;
     readonly maximumMissingAbstentions: number;
+    readonly minimumAbstentionScore: number;
     readonly maximumAverageNoiseDecisions: number;
   };
   readonly metrics: {
@@ -77,9 +78,12 @@ export interface DecisionPacketEvalResult {
     readonly notesWinCount: number;
     readonly tieCount: number;
     readonly decisiveComparisonCount: number;
+    readonly abstentionCaseCount: number;
+    readonly correctAbstentionCount: number;
     readonly usefulRate: number;
     readonly krnWinRate: number;
     readonly notesWinRate: number;
+    readonly abstentionScore: number;
     readonly averageNoiseDecisions: number;
     readonly severeStaleAuthorityInclusions: number;
     readonly caveatedSourceClaimInclusions: number;

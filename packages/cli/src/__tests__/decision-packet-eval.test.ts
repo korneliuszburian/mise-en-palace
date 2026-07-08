@@ -110,6 +110,7 @@ describe("runDecisionPacketEval", () => {
         maximumSevereStaleAuthorityInclusions: 0,
         maximumCaveatedSourceClaimInclusions: 0,
         maximumMissingAbstentions: 0,
+        minimumAbstentionScore: 1,
         maximumAverageNoiseDecisions: 2
       },
       metrics: {
@@ -127,9 +128,12 @@ describe("runDecisionPacketEval", () => {
         notesWinCount: 0,
         tieCount: 5,
         decisiveComparisonCount: 16,
+        abstentionCaseCount: 1,
+        correctAbstentionCount: 1,
         usefulRate: 0.9524,
         krnWinRate: 1,
         notesWinRate: 0,
+        abstentionScore: 1,
         averageNoiseDecisions: 0.6667,
         severeStaleAuthorityInclusions: 0,
         caveatedSourceClaimInclusions: 0,
@@ -438,6 +442,61 @@ describe("runDecisionPacketEval", () => {
     expect(result.cases.find((testCase) =>
       testCase.id === "memory-runtime-task"
     )?.packet.governingDecisionIds).not.toContain("time-scope-runtime-leak");
+  });
+
+  it("fails when an unsupported task receives governing advice instead of abstaining", async () => {
+    const rawFixture = loadMutableFixture();
+
+    rawFixture.topK = rawFixture.decisions.length + 1;
+    rawFixture.decisions.push({
+      id: "unsupported-mobile-release-shortcut",
+      title: "Unsupported mobile release shortcut",
+      statement:
+        "Create native mobile release pipelines with app store certificates and signing profiles without captured KRN evidence.",
+      status: "current",
+      taskScopes: [
+        "native mobile release pipeline",
+        "app store certificates",
+        "fastlane profiles",
+        "ios android signing"
+      ],
+      evidenceRef: "test:unsupported-mobile-release-shortcut",
+      sourceClaimId: "source-claim:unsupported-mobile-release-shortcut",
+      sourceDecisionEdgeId: "source-decision-edge:unsupported-mobile-release-shortcut",
+      falsifier: "An unsupported mobile-release task receives governing advice instead of an evidence gap.",
+      doesNotProve: "Does not prove KRN has source-backed mobile release standards."
+    });
+    rawFixture.notes.push({
+      id: "note-unsupported-mobile-release-shortcut",
+      decisionId: "unsupported-mobile-release-shortcut",
+      text: "Native mobile release pipeline app store certificates fastlane profiles ios android signing shortcut."
+    });
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+
+    expect(result.status).toBe("fail");
+    expect(result.metrics.abstentionCaseCount).toBe(1);
+    expect(result.metrics.correctAbstentionCount).toBe(0);
+    expect(result.metrics.abstentionScore).toBe(0);
+    expect(result.metrics.missingAbstentions).toBe(1);
+    expect(result.cases.find((testCase) =>
+      testCase.id === "unsupported-mobile-release-task"
+    )).toMatchObject({
+      qualityLabel: "noisy",
+      scores: {
+        taskUsefulness: 0,
+        evidenceFidelity: 0,
+        abstention: 0
+      },
+      packet: {
+        governingDecisionIds: expect.arrayContaining(["unsupported-mobile-release-shortcut"]),
+        evidenceGaps: []
+      },
+      reasons: expect.arrayContaining([
+        "packet gives governing advice for unsupported task",
+        "packet misses expected evidence-gap abstention"
+      ])
+    });
   });
 
   it("fails when a stale decision reaches the governed packet", async () => {
