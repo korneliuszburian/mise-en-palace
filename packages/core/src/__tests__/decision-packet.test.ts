@@ -43,6 +43,11 @@ const readModel = {
       subjectId: "memory-current",
       sourceAuthority: "medium"
     }],
+    exclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-superseded",
+      reason: "superseded"
+    }],
     activationTrace: {
       candidates: [{
         subjectType: "source_claim",
@@ -250,6 +255,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.unknownKnowledgeIds).toEqual(["memory-unknown"]);
     expect(packet.rejectedPathIds).toEqual([
       "anti-memory-superseded-template",
+      "claim-superseded",
       "source-decision-rejected"
     ]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);

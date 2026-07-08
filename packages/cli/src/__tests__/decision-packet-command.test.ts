@@ -120,6 +120,12 @@ const aggregate: HarnessRunAggregate = {
       reason: "unsafe",
       explanation: "Rejected path should be visible to the decision packet.",
       sourceAuthority: "medium"
+    }, {
+      subjectType: "source_claim",
+      subjectId: "claim-agent-superseded",
+      reason: "superseded",
+      explanation: "Superseded source claim should be visible as a rejected packet path.",
+      sourceAuthority: "project-decision"
     }],
     metadata: {},
     createdAt: now
@@ -482,6 +488,7 @@ describe("decision packet CLI", () => {
           ],
           rejectedPathIds: [
             "anti-memory-agent-1",
+            "claim-agent-superseded",
             "source-decision-rejected-agent-1"
           ],
           sourceRejectionIds: ["source-decision-rejected-agent-1"],
@@ -521,6 +528,7 @@ describe("decision packet CLI", () => {
         ],
         rejectedPathIds: [
           "anti-memory-agent-1",
+          "claim-agent-superseded",
           "source-decision-rejected-agent-1"
         ],
         noiseDecisionIds: ["source-decision-noise-agent-1"],
@@ -528,7 +536,7 @@ describe("decision packet CLI", () => {
         verificationCommands: ["pnpm --filter frontend test"],
         brief: {
           includedContextCount: 3,
-          explicitExclusionCount: 1,
+          explicitExclusionCount: 2,
           sourceClaimUseCount: 2,
           memoryRecordUseCount: 1
         }

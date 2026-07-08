@@ -245,6 +245,7 @@ export interface DecisionPacketReadModelInput {
     inclusions: number;
     exclusions: number;
     inclusionDetails: readonly DecisionPacketContextInclusionInput[];
+    exclusionDetails?: readonly DecisionPacketContextExclusionInput[];
     activationTrace?: DecisionPacketActivationTraceInput;
   };
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
@@ -258,6 +259,12 @@ export interface DecisionPacketContextInclusionInput {
   subjectType: ContextSubjectType;
   subjectId: string;
   sourceAuthority: SourceAuthorityLabel;
+}
+
+export interface DecisionPacketContextExclusionInput {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  reason: string;
 }
 
 export interface DecisionPacketActivationTraceInput {
@@ -598,6 +605,22 @@ const antiMemoryBlockedPathIdsFor = (
     : []
 ) ?? []);
 
+const rejectedSourceClaimExclusionReasons = new Set([
+  "invalidated",
+  "stale",
+  "superseded",
+  "unsafe"
+]);
+
+const rejectedSourceClaimExclusionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.exclusionDetails
+  ?.filter((exclusion) =>
+    exclusion.subjectType === "source_claim" &&
+    rejectedSourceClaimExclusionReasons.has(exclusion.reason)
+  )
+  .map((exclusion) => exclusion.subjectId) ?? []);
+
 const severeStaleAuthorityIdsFor = (input: {
   readonly governingDecisionIds: readonly string[];
   readonly staleDecisionIds: readonly string[];
@@ -711,6 +734,7 @@ export const buildDecisionPacketFromReadModel = (
       .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
       .map((inclusion) => inclusion.subjectId),
     ...antiMemoryBlockedPathIdsFor(readModel),
+    ...rejectedSourceClaimExclusionIdsFor(readModel),
     ...sourceRejectionIds,
     ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
   ]);
