@@ -4,7 +4,15 @@ import type {
 } from "./ids.js";
 import type { IsoTimestamp } from "./time.js";
 
-export type HarnessPlanStatus = "draft" | "ready" | "running" | "completed" | "blocked";
+export const harnessPlanStatuses = [
+  "draft",
+  "ready",
+  "running",
+  "completed",
+  "blocked"
+] as const;
+
+export type HarnessPlanStatus = typeof harnessPlanStatuses[number];
 
 export interface HarnessPlan {
   id: HarnessPlanId;

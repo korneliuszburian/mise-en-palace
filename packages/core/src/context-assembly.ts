@@ -22,11 +22,19 @@ export const contextAssemblyCurrentStatuses = [
 
 export type ContextAssemblyCurrentStatus = typeof contextAssemblyCurrentStatuses[number];
 
-export type ContextAssemblyHistoricalStatus = "stale" | "superseded";
+export const contextAssemblyHistoricalStatuses = [
+  "stale",
+  "superseded"
+] as const;
 
-export type ContextAssemblyStatus =
-  | ContextAssemblyCurrentStatus
-  | ContextAssemblyHistoricalStatus;
+export type ContextAssemblyHistoricalStatus = typeof contextAssemblyHistoricalStatuses[number];
+
+export const contextAssemblyStatuses = [
+  ...contextAssemblyCurrentStatuses,
+  ...contextAssemblyHistoricalStatuses
+] as const;
+
+export type ContextAssemblyStatus = typeof contextAssemblyStatuses[number];
 
 export type ContextSubjectType =
   | "source_artifact"

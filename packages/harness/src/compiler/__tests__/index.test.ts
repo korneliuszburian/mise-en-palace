@@ -158,6 +158,7 @@ class FakeHarnessRunRepository implements HarnessRunRepository {
       source: input.source,
       rawIntent: input.rawIntent,
       ...(input.normalizedIntent === undefined ? {} : { normalizedIntent: input.normalizedIntent }),
+      status: "received",
       metadata: input.metadata ?? {},
       createdAt: now
     };

@@ -24,13 +24,24 @@ import type {
   ReviewOutcomeSummary
 } from "./review-outcome.js";
 
-export type FeedbackDeltaCreateStatus = "candidate";
+export const feedbackDeltaCreateStatuses = ["candidate"] as const;
 
-export type FeedbackDeltaLifecycleStatus = "accepted" | "rejected" | "applied";
+export type FeedbackDeltaCreateStatus = typeof feedbackDeltaCreateStatuses[number];
 
-export type FeedbackDeltaStatus =
-  | FeedbackDeltaCreateStatus
-  | FeedbackDeltaLifecycleStatus;
+export const feedbackDeltaLifecycleStatuses = [
+  "accepted",
+  "rejected",
+  "applied"
+] as const;
+
+export type FeedbackDeltaLifecycleStatus = typeof feedbackDeltaLifecycleStatuses[number];
+
+export const feedbackDeltaStatuses = [
+  ...feedbackDeltaCreateStatuses,
+  ...feedbackDeltaLifecycleStatuses
+] as const;
+
+export type FeedbackDeltaStatus = typeof feedbackDeltaStatuses[number];
 
 export interface FeedbackDelta {
   id: FeedbackDeltaId;

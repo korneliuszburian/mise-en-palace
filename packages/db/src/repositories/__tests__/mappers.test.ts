@@ -82,6 +82,7 @@ describe("DB mapper enum narrowing", () => {
         source: "spreadsheet",
         rawIntent: "Run the kernel.",
         normalizedIntent: null,
+        status: "received",
         metadata: {},
         createdAt
       })

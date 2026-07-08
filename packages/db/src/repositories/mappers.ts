@@ -531,6 +531,7 @@ export const mapOperatorIntent = (row: OperatorIntentRow): OperatorIntent => ({
   source: asOperatorIntentSource(row.source),
   rawIntent: row.rawIntent,
   ...(row.normalizedIntent === null ? {} : { normalizedIntent: row.normalizedIntent }),
+  status: row.status,
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt)
 });

@@ -10,6 +10,17 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  contextAssemblyStatuses,
+  evidenceBundleStatuses,
+  executionRunStatuses,
+  feedbackDeltaStatuses,
+  harnessPlanStatuses,
+  operatorIntentStatuses,
+  reviewAssessmentStatuses,
+  taskContractStatuses
+} from "@krn/core";
+
+import {
   createdAtColumn,
   jsonListColumn,
   jsonObjectColumn,
@@ -17,66 +28,21 @@ import {
   updatedAtColumn
 } from "./columns.js";
 
-export const operatorIntentStatus = pgEnum("operator_intent_status", [
-  "received",
-  "contracted",
-  "planned",
-  "executed",
-  "reviewed",
-  "closed"
-]);
+export const operatorIntentStatus = pgEnum("operator_intent_status", operatorIntentStatuses);
 
-export const taskContractStatus = pgEnum("task_contract_status", [
-  "draft",
-  "active",
-  "superseded",
-  "closed"
-]);
+export const taskContractStatus = pgEnum("task_contract_status", taskContractStatuses);
 
-export const harnessPlanStatus = pgEnum("harness_plan_status", [
-  "draft",
-  "ready",
-  "running",
-  "completed",
-  "blocked"
-]);
+export const harnessPlanStatus = pgEnum("harness_plan_status", harnessPlanStatuses);
 
-export const contextAssemblyStatus = pgEnum("context_assembly_status", [
-  "assembled",
-  "abstained",
-  "stale",
-  "superseded"
-]);
+export const contextAssemblyStatus = pgEnum("context_assembly_status", contextAssemblyStatuses);
 
-export const executionRunStatus = pgEnum("execution_run_status", [
-  "planned",
-  "running",
-  "succeeded",
-  "failed",
-  "blocked",
-  "cancelled"
-]);
+export const executionRunStatus = pgEnum("execution_run_status", executionRunStatuses);
 
-export const evidenceBundleStatus = pgEnum("evidence_bundle_status", [
-  "draft",
-  "captured",
-  "verified",
-  "rejected"
-]);
+export const evidenceBundleStatus = pgEnum("evidence_bundle_status", evidenceBundleStatuses);
 
-export const reviewAssessmentStatus = pgEnum("review_assessment_status", [
-  "pending",
-  "accepted",
-  "changes_requested",
-  "rejected"
-]);
+export const reviewAssessmentStatus = pgEnum("review_assessment_status", reviewAssessmentStatuses);
 
-export const feedbackDeltaStatus = pgEnum("feedback_delta_status", [
-  "candidate",
-  "accepted",
-  "rejected",
-  "applied"
-]);
+export const feedbackDeltaStatus = pgEnum("feedback_delta_status", feedbackDeltaStatuses);
 
 export const workspaces = pgTable(
   "workspaces",

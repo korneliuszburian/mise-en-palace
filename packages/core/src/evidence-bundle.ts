@@ -8,7 +8,14 @@ import {
 } from "./metadata.js";
 import type { IsoTimestamp } from "./time.js";
 
-export type EvidenceBundleStatus = "draft" | "captured" | "verified" | "rejected";
+export const evidenceBundleStatuses = [
+  "draft",
+  "captured",
+  "verified",
+  "rejected"
+] as const;
+
+export type EvidenceBundleStatus = typeof evidenceBundleStatuses[number];
 export type EvidenceCommandStatus = "passed" | "failed" | "skipped" | "missing" | "not_run";
 export const evidenceCommandStatuses = [
   "passed",

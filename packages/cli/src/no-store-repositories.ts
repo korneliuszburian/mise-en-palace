@@ -62,6 +62,7 @@ export const createNoStoreCompilerDependencies = (
         source: input.source,
         rawIntent: input.rawIntent,
         ...optionalField("normalizedIntent", input.normalizedIntent),
+        status: "received",
         metadata: input.metadata ?? {},
         createdAt: runtime.now()
       };

@@ -1,6 +1,8 @@
 import type {
   ContextAssemblyId,
   ExecutionRunId,
+  HarnessPlanStatus,
+  OperatorIntentSource,
   OperatorIntentId,
   ProjectId,
   RepoInstallationId,
@@ -305,7 +307,7 @@ export interface ActivationDecisionRecord {
 export interface CreateOperatorIntentInput extends RepositoryMetadata {
   workspaceId: WorkspaceId;
   projectId?: ProjectId;
-  source: "goal" | "cli" | "api" | "codex" | "operator";
+  source: OperatorIntentSource;
   rawIntent: string;
   normalizedIntent?: string;
 }
@@ -323,7 +325,7 @@ export interface CreateTaskContractInput extends RepositoryMetadata {
 export interface CreateHarnessPlanInput extends RepositoryMetadata {
   taskContractId: TaskContractId;
   version: number;
-  status?: "draft" | "ready" | "running" | "completed" | "blocked";
+  status?: HarnessPlanStatus;
   summary: string;
   nextAction?: string;
 }

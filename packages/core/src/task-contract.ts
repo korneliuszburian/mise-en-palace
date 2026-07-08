@@ -5,7 +5,14 @@ import type {
 } from "./ids.js";
 import type { IsoTimestamp } from "./time.js";
 
-export type TaskContractStatus = "draft" | "active" | "superseded" | "closed";
+export const taskContractStatuses = [
+  "draft",
+  "active",
+  "superseded",
+  "closed"
+] as const;
+
+export type TaskContractStatus = typeof taskContractStatuses[number];
 
 export interface TaskContract {
   id: TaskContractId;
