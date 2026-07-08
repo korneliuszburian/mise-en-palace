@@ -16,65 +16,46 @@ import {
   type IsoTimestamp
 } from "./time.js";
 
-const sourceAuthorityRanks = [
-  "high",
-  "medium",
-  "low"
-] as const;
+// Canonical authority taxonomy. The label is the persisted/input value; rank
+// and kind are projections used by activation, override policy, and readbacks.
+const sourceAuthorityByLabel = {
+  high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
+  medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
+  low: { authorityRank: "low", sourceKind: "unspecified", rank: 25 },
+  primary: { authorityRank: "high", sourceKind: "primary", rank: 100 },
+  official: { authorityRank: "high", sourceKind: "official", rank: 100 },
+  "project-decision": {
+    authorityRank: "high",
+    sourceKind: "project-decision",
+    rank: 100
+  },
+  "source-code": { authorityRank: "high", sourceKind: "source-code", rank: 100 },
+  paper: { authorityRank: "high", sourceKind: "paper", rank: 85 },
+  practitioner: { authorityRank: "medium", sourceKind: "practitioner", rank: 60 },
+  secondary: { authorityRank: "medium", sourceKind: "secondary", rank: 60 },
+  hypothesis: { authorityRank: "low", sourceKind: "hypothesis", rank: 10 }
+} as const;
 
-export type SourceAuthorityRank = typeof sourceAuthorityRanks[number];
+export type SourceAuthorityLabel = keyof typeof sourceAuthorityByLabel;
 
-const sourceRankedKinds = [
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-] as const;
+export type SourceAuthorityRank =
+  (typeof sourceAuthorityByLabel)[SourceAuthorityLabel]["authorityRank"];
 
-const sourceKinds = [
-  "unspecified",
-  ...sourceRankedKinds
-] as const;
+export type SourceKind =
+  (typeof sourceAuthorityByLabel)[SourceAuthorityLabel]["sourceKind"];
 
-export type SourceKind = typeof sourceKinds[number];
-
-export const sourceAuthorityLabels = [
-  ...sourceAuthorityRanks,
-  ...sourceRankedKinds
-] as const;
-
-export type SourceAuthorityLabel = typeof sourceAuthorityLabels[number];
-
-export type SourceSupportRelation =
-  | "supports"
-  | "contradicts"
-  | "qualifies"
-  | "does_not_support"
-  | "not_applicable";
-
-export type SourceUse =
-  | "background"
-  | "relation-only"
-  | "mechanism"
-  | "decision"
-  | "risk"
-  | "rejection"
-  | "eval-design"
-  | "implementation-boundary";
-
-export interface SourceSupportAssessment {
-  relation: SourceSupportRelation;
-  use: SourceUse;
-  decisionGrade: boolean;
+export interface SourceAuthority {
+  authorityRank: SourceAuthorityRank;
+  sourceKind: SourceKind;
+  rank: number;
 }
 
-// Canonical support taxonomy. Public source-claim inputs and reflection source
-// candidates derive decision-grade support from this table instead of restating
-// a separate allowlist.
+export const sourceAuthorityLabels = Object.keys(
+  sourceAuthorityByLabel
+) as [SourceAuthorityLabel, ...SourceAuthorityLabel[]];
+
+// Canonical support taxonomy. The support type is the persisted/input value;
+// relation/use/decisionGrade are projections used by review and activation.
 const sourceSupportAssessmentByType = {
   supports: {
     relation: "supports",
@@ -131,23 +112,28 @@ const sourceSupportAssessmentByType = {
     use: "implementation-boundary",
     decisionGrade: true
   }
-} as const satisfies Record<string, SourceSupportAssessment>;
+} as const;
 
 export type SourceSupportType = keyof typeof sourceSupportAssessmentByType;
 
+export type SourceSupportRelation =
+  (typeof sourceSupportAssessmentByType)[SourceSupportType]["relation"];
+
+export type SourceUse =
+  (typeof sourceSupportAssessmentByType)[SourceSupportType]["use"];
+
+export interface SourceSupportAssessment {
+  relation: SourceSupportRelation;
+  use: SourceUse;
+  decisionGrade: boolean;
+}
+
 export const sourceSupportTypes = Object.keys(
   sourceSupportAssessmentByType
-) as readonly SourceSupportType[];
+) as [SourceSupportType, ...SourceSupportType[]];
 
-export const decisionGradeSourceSupportTypes: readonly SourceSupportType[] =
-  sourceSupportTypes.filter((supportType) =>
-    sourceSupportAssessmentByType[supportType].decisionGrade);
-
-export interface SourceAuthority {
-  authorityRank: SourceAuthorityRank;
-  sourceKind: SourceKind;
-  rank: number;
-}
+export const decisionGradeSourceSupportTypes = sourceSupportTypes.filter((supportType) =>
+  sourceSupportAssessmentByType[supportType].decisionGrade);
 
 export interface SourceClaimTaxonomy {
   authorityRank: SourceAuthorityRank;
@@ -318,27 +304,6 @@ export interface SourceRejection {
   metadata: Record<string, unknown>;
   rejectedAt: IsoTimestamp;
 }
-
-// Canonical authority ranking. Activation, override policy, and persistence
-// readback call through classifySourceAuthority/rankSourceAuthority instead of
-// maintaining package-local trust ladders.
-const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthority> = {
-  high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
-  medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
-  low: { authorityRank: "low", sourceKind: "unspecified", rank: 25 },
-  primary: { authorityRank: "high", sourceKind: "primary", rank: 100 },
-  official: { authorityRank: "high", sourceKind: "official", rank: 100 },
-  "project-decision": {
-    authorityRank: "high",
-    sourceKind: "project-decision",
-    rank: 100
-  },
-  "source-code": { authorityRank: "high", sourceKind: "source-code", rank: 100 },
-  paper: { authorityRank: "high", sourceKind: "paper", rank: 85 },
-  practitioner: { authorityRank: "medium", sourceKind: "practitioner", rank: 60 },
-  secondary: { authorityRank: "medium", sourceKind: "secondary", rank: 60 },
-  hypothesis: { authorityRank: "low", sourceKind: "hypothesis", rank: 10 }
-};
 
 export const classifySourceAuthority = (
   sourceAuthority: SourceAuthorityLabel
