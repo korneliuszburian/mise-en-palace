@@ -212,8 +212,6 @@ describe("runBrainRecallCommand", () => {
 
     expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
     expect(result.stdout).toContain("pattern:knowledge-read-only-preview-boundary");
-    expect(result.stdout).toContain("pattern:codex-hook-deterministic-guardrail-boundary");
-    expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:consensus-relation-maintenance-review-boundary");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
     expect(result.stdout).toContain("pattern:graph-relation-readback-boundary");
@@ -222,8 +220,6 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("pattern:untrusted-context-warning-boundary");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Brain recall readback/search remains read-only until usefulness proof");
-    expect(result.stdout).toContain("Codex hook deterministic guardrail boundary");
-    expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Consensus relation maintenance review boundary");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Graph relation readback boundary");
@@ -350,42 +346,6 @@ describe("runBrainRecallCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("searches the Codex skill routing pattern through the catalog", async () => {
-    const result = await runBrainRecallCommand({
-      cwd: repoRoot,
-      readModelFiles: [],
-      decisionFiles: [],
-      catalogFiles: [catalogFile],
-      filter: {
-        text: "progressive-disclosure"
-      },
-      format: "json"
-    });
-    const preview = parsePreviewResource(result.stdout);
-
-    expect(readModelIds(preview)).toEqual(["pattern:codex-skill-progressive-disclosure-routing"]);
-    expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
-    expect(preview.mutation).toBe("none");
-  });
-
-  it("searches the Codex hook guardrail pattern through the catalog", async () => {
-    const result = await runBrainRecallCommand({
-      cwd: repoRoot,
-      readModelFiles: [],
-      decisionFiles: [],
-      catalogFiles: [catalogFile],
-      filter: {
-        text: "hook deterministic guardrail"
-      },
-      format: "json"
-    });
-    const preview = parsePreviewResource(result.stdout);
-
-    expect(readModelIds(preview)).toEqual(["pattern:codex-hook-deterministic-guardrail-boundary"]);
-    expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
-    expect(preview.mutation).toBe("none");
-  });
-
   it("searches the graph relation readback pattern through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
@@ -483,7 +443,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalReadModels).toBe(15);
+    expect(preview.totalReadModels).toBe(13);
     expect(preview.returnedReadModels).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.readModels).toHaveLength(2);
@@ -505,7 +465,7 @@ describe("runBrainRecallCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 15");
+    expect(result.stdout).toContain("Total filtered results: 13");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -523,7 +483,7 @@ describe("runBrainRecallCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(readModelIds(preview)).toHaveLength(15);
+    expect(readModelIds(preview)).toHaveLength(13);
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
@@ -782,8 +742,6 @@ describe("runBrainRecallCommand", () => {
 
     expect(readModelIds(preview).sort()).toEqual([
       "pattern:knowledge-read-only-preview-boundary",
-      "pattern:codex-hook-deterministic-guardrail-boundary",
-      "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:consensus-relation-maintenance-review-boundary",
       "pattern:cost-aware-acquisition-escalation-boundary",
       "pattern:evidence-proof-non-proof-boundary",

@@ -3,8 +3,6 @@
   "usefulnessFeedbackFiles": [],
   "knowledgeFiles": [
     "knowledge/knowledge-read-only-preview-boundary.json",
-    "knowledge/codex-hook-deterministic-guardrail-boundary.json",
-    "knowledge/codex-skill-progressive-disclosure-routing.json",
     "knowledge/consensus-relation-maintenance-review-boundary.json",
     "knowledge/cost-aware-acquisition-escalation-boundary.json",
     "knowledge/evidence-proof-non-proof-boundary.json",
