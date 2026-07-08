@@ -17,8 +17,8 @@ import { mapMaintenanceQueue } from "./maintenance-queue-mappers.js";
 import type {
   CleanupTestMaintenanceQueuesInput,
   CleanupTestMaintenanceQueuesResult,
+  ClaimMaintenanceQueueRecordInput,
   EnqueueMaintenanceQueueInput,
-  MarkMaintenanceQueueRunningInput,
   MaintenanceQueueRecord,
   MaintenanceQueueRepository
 } from "./maintenance-queue-types.js";
@@ -61,9 +61,9 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
     return rows.map(mapMaintenanceQueue);
   }
 
-  async markMaintenanceQueueRunning(
+  async claimMaintenanceQueueRecord(
     id: string,
-    input: MarkMaintenanceQueueRunningInput = {}
+    input: ClaimMaintenanceQueueRecordInput = {}
   ): Promise<MaintenanceQueueRecord> {
     const claimAt = input.lockedAt === undefined ? now() : fromIsoTimestamp(input.lockedAt);
     const row = requireReturnedRow(
@@ -83,13 +83,13 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
           )
         )
         .returning(),
-      "markMaintenanceQueueRunning"
+      "claimMaintenanceQueueRecord"
     );
 
     return mapMaintenanceQueue(row);
   }
 
-  async markMaintenanceQueueSucceeded(id: string): Promise<MaintenanceQueueRecord> {
+  async recordMaintenanceQueueSuccess(id: string): Promise<MaintenanceQueueRecord> {
     const row = requireReturnedRow(
       await this.db
         .update(maintenanceQueues)
@@ -102,13 +102,13 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         })
         .where(and(eq(maintenanceQueues.id, id), eq(maintenanceQueues.status, "running")))
         .returning(),
-      "markMaintenanceQueueSucceeded"
+      "recordMaintenanceQueueSuccess"
     );
 
     return mapMaintenanceQueue(row);
   }
 
-  async markMaintenanceQueueFailed(id: string, error: string): Promise<MaintenanceQueueRecord> {
+  async recordMaintenanceQueueFailure(id: string, error: string): Promise<MaintenanceQueueRecord> {
     const row = requireReturnedRow(
       await this.db
         .update(maintenanceQueues)
@@ -122,13 +122,13 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         })
         .where(and(eq(maintenanceQueues.id, id), eq(maintenanceQueues.status, "running")))
         .returning(),
-      "markMaintenanceQueueFailed"
+      "recordMaintenanceQueueFailure"
     );
 
     return mapMaintenanceQueue(row);
   }
 
-  async markMaintenanceQueueSkipped(id: string, reason: string): Promise<MaintenanceQueueRecord> {
+  async recordMaintenanceQueueSkip(id: string, reason: string): Promise<MaintenanceQueueRecord> {
     const row = requireReturnedRow(
       await this.db
         .update(maintenanceQueues)
@@ -141,7 +141,7 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         })
         .where(and(eq(maintenanceQueues.id, id), eq(maintenanceQueues.status, "running")))
         .returning(),
-      "markMaintenanceQueueSkipped"
+      "recordMaintenanceQueueSkip"
     );
 
     return mapMaintenanceQueue(row);

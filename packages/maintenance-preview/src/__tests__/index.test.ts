@@ -131,8 +131,8 @@ describe("maintenance queue contract", () => {
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
           jobType: type,
-          terminalFailureStatus: "failed",
-          completionTopic: "maintenance_queue.completed",
+          failureRecordStatus: "failed",
+          recordSettlementTopic: "maintenance_queue.record_settled",
           executionMode: "persistence_only",
           memoryCoreGate: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),

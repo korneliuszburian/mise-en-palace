@@ -38,10 +38,10 @@ const sqlParamValues = (
 const methodNames = [
   "enqueueMaintenanceQueue",
   "listQueuedMaintenanceQueues",
-  "markMaintenanceQueueRunning",
-  "markMaintenanceQueueSucceeded",
-  "markMaintenanceQueueFailed",
-  "markMaintenanceQueueSkipped",
+  "claimMaintenanceQueueRecord",
+  "recordMaintenanceQueueSuccess",
+  "recordMaintenanceQueueFailure",
+  "recordMaintenanceQueueSkip",
   "cleanupTestMaintenanceQueues"
 ] as const;
 
@@ -63,7 +63,7 @@ const maintenanceQueueRow = (
     availableAt: timestamp,
     runAfter: timestamp,
     lockedAt: status === "running" ? timestamp : null,
-    lockedBy: status === "running" ? "maintenance-runner-1" : null,
+    lockedBy: status === "running" ? "maintenance-queue-claim-1" : null,
     lastError: status === "failed" || status === "skipped" ? "terminal reason" : null,
     createdAt: timestamp,
     updatedAt: timestamp
@@ -96,15 +96,15 @@ describe("DrizzleMaintenanceQueueRepository", () => {
     }
   });
 
-  it("guards running transition to queued jobs available at claim time", async () => {
+  it("guards record claim to queued jobs available at claim time", async () => {
     const claimAt = "2026-07-07T00:00:00.000Z";
     const rowTimestamp = new Date(claimAt);
     const { db, updateCall } = createUpdateDb(maintenanceQueueRow("running"));
     const repository = new DrizzleMaintenanceQueueRepository(db);
 
-    await repository.markMaintenanceQueueRunning("maintenance-queue-1", {
+    await repository.claimMaintenanceQueueRecord("maintenance-queue-1", {
       lockedAt: claimAt,
-      lockedBy: "maintenance-runner-1"
+      lockedBy: "maintenance-queue-claim-1"
     });
 
     expect(sqlParamValues(updateCall.whereCondition)).toEqual(
@@ -117,22 +117,22 @@ describe("DrizzleMaintenanceQueueRepository", () => {
       label: "succeeded",
       status: "succeeded",
       run: (repository: DrizzleMaintenanceQueueRepository) =>
-        repository.markMaintenanceQueueSucceeded("maintenance-queue-1")
+        repository.recordMaintenanceQueueSuccess("maintenance-queue-1")
     },
     {
       label: "failed",
       status: "failed",
       run: (repository: DrizzleMaintenanceQueueRepository) =>
-        repository.markMaintenanceQueueFailed("maintenance-queue-1", "terminal reason")
+        repository.recordMaintenanceQueueFailure("maintenance-queue-1", "terminal reason")
     },
     {
       label: "skipped",
       status: "skipped",
       run: (repository: DrizzleMaintenanceQueueRepository) =>
-        repository.markMaintenanceQueueSkipped("maintenance-queue-1", "terminal reason")
+        repository.recordMaintenanceQueueSkip("maintenance-queue-1", "terminal reason")
     }
   ] as const)(
-    "guards $label transition to already-running jobs",
+    "guards $label record settlement to already-claimed records",
     async ({ status, run }) => {
       const { db, updateCall } = createUpdateDb(maintenanceQueueRow(status));
       const repository = new DrizzleMaintenanceQueueRepository(db);

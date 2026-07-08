@@ -33,12 +33,12 @@ export interface MaintenanceQueueSmokeInput {
 
 export interface MaintenanceQueueSmokeReport {
   writeBoundaryValidatedCount: number;
-  enqueuedJobCount: number;
+  enqueuedRecordCount: number;
   queuedReadbackCount: number;
-  runningTransitionCount: number;
-  succeededCount: number;
-  skippedCount: number;
-  failedCount: number;
+  claimedRecordCount: number;
+  successRecordedCount: number;
+  skipRecordedCount: number;
+  failureRecordedCount: number;
   cleanupDeletedCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -52,23 +52,23 @@ interface MaintenanceJobBoundaryReadback {
   writeBoundaryValidatedCount: number;
 }
 
-export interface MaintenanceQueueSmokeTransitionPlan {
-  succeeded: number;
-  skipped: number;
-  failed: number;
+export interface MaintenanceQueueSmokeSettlementPlan {
+  success: number;
+  skip: number;
+  failure: number;
 }
 
-export const maintenanceQueueSmokeTransitionPlan = (
+export const maintenanceQueueSmokeSettlementPlan = (
   jobCount: number
-): MaintenanceQueueSmokeTransitionPlan => {
-  const succeeded = Math.min(2, jobCount);
-  const skipped = Math.min(2, Math.max(jobCount - succeeded, 0));
-  const failed = Math.max(jobCount - succeeded - skipped, 0);
+): MaintenanceQueueSmokeSettlementPlan => {
+  const success = Math.min(2, jobCount);
+  const skip = Math.min(2, Math.max(jobCount - success, 0));
+  const failure = Math.max(jobCount - success - skip, 0);
 
   return {
-    succeeded,
-    skipped,
-    failed
+    success,
+    skip,
+    failure
   };
 };
 
@@ -182,7 +182,7 @@ export const runMaintenanceQueueSmokeCheck = async (
   try {
     await deleteMarkerRows(client, marker);
 
-    const enqueuedJobs: MaintenanceQueueRecord[] = [];
+    const enqueuedRecords: MaintenanceQueueRecord[] = [];
     const writeBoundary = maintenanceQueueBoundaryReadback();
 
     for (const [index, jobType] of maintenanceQueueTypes.entries()) {
@@ -193,84 +193,84 @@ export const runMaintenanceQueueSmokeCheck = async (
 
       requireStatus(job, "queued", "enqueue");
       maintenanceQueueIds.push(job.id);
-      enqueuedJobs.push(job);
+      enqueuedRecords.push(job);
     }
 
-    const queuedJobs = await repository.listQueuedMaintenanceQueues(1000);
-    const queuedJobIds = new Set(queuedJobs.map((job) => job.id));
-    const queuedReadbackCount = maintenanceQueueIds.filter((id) => queuedJobIds.has(id)).length;
+    const queuedRecords = await repository.listQueuedMaintenanceQueues(1000);
+    const queuedRecordIds = new Set(queuedRecords.map((record) => record.id));
+    const queuedReadbackCount = maintenanceQueueIds.filter((id) => queuedRecordIds.has(id)).length;
 
-    if (queuedReadbackCount !== enqueuedJobs.length) {
-      throw new Error("Maintenance queue smoke did not read back every queued job");
+    if (queuedReadbackCount !== enqueuedRecords.length) {
+      throw new Error("Maintenance queue smoke did not read back every queued record");
     }
 
-    let runningTransitionCount = 0;
-    let succeededCount = 0;
-    let skippedCount = 0;
-    let failedCount = 0;
-    const transitionPlan = maintenanceQueueSmokeTransitionPlan(enqueuedJobs.length);
+    let claimedRecordCount = 0;
+    let successRecordedCount = 0;
+    let skipRecordedCount = 0;
+    let failureRecordedCount = 0;
+    const settlementPlan = maintenanceQueueSmokeSettlementPlan(enqueuedRecords.length);
 
-    for (const [index, job] of enqueuedJobs.entries()) {
-      const runningJob = await repository.markMaintenanceQueueRunning(job.id, {
-        lockedBy: "maintenance-queue-smoke",
+    for (const [index, record] of enqueuedRecords.entries()) {
+      const claimedRecord = await repository.claimMaintenanceQueueRecord(record.id, {
+        lockedBy: "maintenance-queue-smoke-claim",
         lockedAt: smokeFixtureClocks.maintenanceQueues.lockedAt
       });
 
-      requireStatus(runningJob, "running", "running transition");
-      runningTransitionCount += 1;
+      requireStatus(claimedRecord, "running", "record claim");
+      claimedRecordCount += 1;
 
-      if (index < transitionPlan.succeeded) {
-        const succeededJob = await repository.markMaintenanceQueueSucceeded(job.id);
-        requireStatus(succeededJob, "succeeded", "succeeded transition");
-        succeededCount += 1;
+      if (index < settlementPlan.success) {
+        const successRecord = await repository.recordMaintenanceQueueSuccess(record.id);
+        requireStatus(successRecord, "succeeded", "success record");
+        successRecordedCount += 1;
         continue;
       }
 
-      if (index < transitionPlan.succeeded + transitionPlan.skipped) {
-        const skippedJob = await repository.markMaintenanceQueueSkipped(
-          job.id,
+      if (index < settlementPlan.success + settlementPlan.skip) {
+        const skipRecord = await repository.recordMaintenanceQueueSkip(
+          record.id,
           "Skipped by maintenance queue smoke"
         );
-        requireStatus(skippedJob, "skipped", "skipped transition");
-        skippedCount += 1;
+        requireStatus(skipRecord, "skipped", "skip record");
+        skipRecordedCount += 1;
         continue;
       }
 
-      const failedJob = await repository.markMaintenanceQueueFailed(
-        job.id,
+      const failureRecord = await repository.recordMaintenanceQueueFailure(
+        record.id,
         "Failed by maintenance queue smoke"
       );
 
-      requireStatus(failedJob, "failed", "failed transition");
+      requireStatus(failureRecord, "failed", "failure record");
 
-      if (failedJob.attempts !== runningJob.attempts + 1) {
-        throw new Error("Maintenance queue smoke failed transition did not increment attempts");
+      if (failureRecord.attempts !== claimedRecord.attempts + 1) {
+        throw new Error("Maintenance queue smoke failure record did not increment attempts");
       }
 
-      failedCount += 1;
+      failureRecordedCount += 1;
     }
 
     if (
-      runningTransitionCount !== enqueuedJobs.length ||
-      succeededCount !== transitionPlan.succeeded ||
-      skippedCount !== transitionPlan.skipped ||
-      failedCount !== transitionPlan.failed
+      claimedRecordCount !== enqueuedRecords.length ||
+      successRecordedCount !== settlementPlan.success ||
+      skipRecordedCount !== settlementPlan.skip ||
+      failureRecordedCount !== settlementPlan.failure
     ) {
-      throw new Error("Maintenance queue smoke transition counts did not match expected proof");
+      throw new Error("Maintenance queue smoke record settlement counts did not match expected proof");
     }
 
     const cleanup = await repository.cleanupTestMaintenanceQueues({ maintenanceQueueIds });
     const remainingMarkerCount = await countMarkerRows(client, marker);
-    cleanedUp = cleanup.deletedCount === enqueuedJobs.length && remainingMarkerCount === 0;
+    cleanedUp = cleanup.deletedCount === enqueuedRecords.length && remainingMarkerCount === 0;
 
     return {
       writeBoundaryValidatedCount: writeBoundary.writeBoundaryValidatedCount,
-      enqueuedJobCount: enqueuedJobs.length,
+      enqueuedRecordCount: enqueuedRecords.length,
       queuedReadbackCount,
-      runningTransitionCount,
-      succeededCount,
-      skippedCount,
-      failedCount,
+      claimedRecordCount,
+      successRecordedCount,
+      skipRecordedCount,
+      failureRecordedCount,
       cleanupDeletedCount: cleanup.deletedCount,
       remainingMarkerCount,
       cleanedUp

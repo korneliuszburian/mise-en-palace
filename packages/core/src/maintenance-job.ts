@@ -86,8 +86,8 @@ export const maintenanceJobPersistenceContract = {
   outboxTable: "outbox_events",
   outboxTopic: "maintenance_queue.queued",
   executionMode: "persistence_only",
-  completionTopic: "maintenance_queue.completed",
-  terminalFailureStatus: "failed"
+  recordSettlementTopic: "maintenance_queue.record_settled",
+  failureRecordStatus: "failed"
 } as const;
 
 export type MaintenanceJobPersistenceContract = typeof maintenanceJobPersistenceContract;
@@ -101,8 +101,8 @@ export interface MaintenanceJobDescription {
   executionMode: MaintenanceJobPersistenceContract["executionMode"];
   inputSchema: string;
   idempotencyKey: string;
-  completionTopic: MaintenanceJobPersistenceContract["completionTopic"];
-  terminalFailureStatus: MaintenanceJobPersistenceContract["terminalFailureStatus"];
+  recordSettlementTopic: MaintenanceJobPersistenceContract["recordSettlementTopic"];
+  failureRecordStatus: MaintenanceJobPersistenceContract["failureRecordStatus"];
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
   memoryCoreGate: MaintenanceJobMemoryCoreGate;

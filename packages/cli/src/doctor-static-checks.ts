@@ -170,10 +170,10 @@ const hasAutonomousMaintenanceDaemon = async (
 const maintenanceQueueRepositoryMethods = [
   "enqueueMaintenanceQueue",
   "listQueuedMaintenanceQueues",
-  "markMaintenanceQueueRunning",
-  "markMaintenanceQueueSucceeded",
-  "markMaintenanceQueueSkipped",
-  "markMaintenanceQueueFailed",
+  "claimMaintenanceQueueRecord",
+  "recordMaintenanceQueueSuccess",
+  "recordMaintenanceQueueSkip",
+  "recordMaintenanceQueueFailure",
   "cleanupTestMaintenanceQueues"
 ] as const;
 

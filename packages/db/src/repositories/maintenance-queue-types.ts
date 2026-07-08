@@ -29,7 +29,7 @@ export type EnqueueMaintenanceQueueInput<TType extends MaintenanceQueueType = Ma
   };
 }[TType];
 
-export interface MarkMaintenanceQueueRunningInput {
+export interface ClaimMaintenanceQueueRecordInput {
   lockedAt?: IsoTimestamp;
   lockedBy?: string;
 }
@@ -60,13 +60,13 @@ export interface CleanupTestMaintenanceQueuesResult {
 export interface MaintenanceQueueRepository {
   enqueueMaintenanceQueue(input: EnqueueMaintenanceQueueInput): Promise<MaintenanceQueueRecord>;
   listQueuedMaintenanceQueues(limit: number): Promise<MaintenanceQueueRecord[]>;
-  markMaintenanceQueueRunning(
+  claimMaintenanceQueueRecord(
     id: string,
-    input?: MarkMaintenanceQueueRunningInput
+    input?: ClaimMaintenanceQueueRecordInput
   ): Promise<MaintenanceQueueRecord>;
-  markMaintenanceQueueSucceeded(id: string): Promise<MaintenanceQueueRecord>;
-  markMaintenanceQueueFailed(id: string, error: string): Promise<MaintenanceQueueRecord>;
-  markMaintenanceQueueSkipped(id: string, reason: string): Promise<MaintenanceQueueRecord>;
+  recordMaintenanceQueueSuccess(id: string): Promise<MaintenanceQueueRecord>;
+  recordMaintenanceQueueFailure(id: string, error: string): Promise<MaintenanceQueueRecord>;
+  recordMaintenanceQueueSkip(id: string, reason: string): Promise<MaintenanceQueueRecord>;
   cleanupTestMaintenanceQueues(
     input: CleanupTestMaintenanceQueuesInput
   ): Promise<CleanupTestMaintenanceQueuesResult>;
