@@ -13,6 +13,15 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  memoryApplicationOutcomes,
+  memoryCandidateStatuses,
+  memoryFeedbackDirections,
+  memoryFeedbackEventTypes,
+  memoryRecordKinds,
+  memoryRecordStatuses
+} from "@krn/core";
+
+import {
   createdAtColumn,
   jsonListColumn,
   metadataColumn,
@@ -121,51 +130,17 @@ const memoryRunAnchorColumns = () => ({
   executionRunId: executionRunIdColumn()
 });
 
-export const memoryRecordKind = pgEnum("memory_record_kind", [
-  "fact",
-  "preference",
-  "constraint",
-  "procedure",
-  "risk"
-]);
+export const memoryRecordKind = pgEnum("memory_record_kind", memoryRecordKinds);
 
-export const memoryRecordStatus = pgEnum("memory_record_status", [
-  "active",
-  "deprecated",
-  "stale",
-  "invalidated",
-  "superseded"
-]);
+export const memoryRecordStatus = pgEnum("memory_record_status", memoryRecordStatuses);
 
-export const memoryCandidateStatus = pgEnum("memory_candidate_status", [
-  "proposed",
-  "candidate",
-  "accepted",
-  "rejected",
-  "applied",
-  "superseded"
-]);
+export const memoryCandidateStatus = pgEnum("memory_candidate_status", memoryCandidateStatuses);
 
-export const memoryFeedbackDirection = pgEnum("memory_feedback_direction", [
-  "positive",
-  "negative",
-  "correction"
-]);
+export const memoryFeedbackDirection = pgEnum("memory_feedback_direction", memoryFeedbackDirections);
 
-export const memoryApplicationOutcome = pgEnum("memory_application_outcome", [
-  "helped",
-  "hurt",
-  "neutral",
-  "stale"
-]);
+export const memoryApplicationOutcome = pgEnum("memory_application_outcome", memoryApplicationOutcomes);
 
-export const memoryFeedbackEventType = pgEnum("memory_feedback_event_type", [
-  "strengthened",
-  "demoted",
-  "invalidated",
-  "corrected",
-  "stale_detected"
-]);
+export const memoryFeedbackEventType = pgEnum("memory_feedback_event_type", memoryFeedbackEventTypes);
 
 export const memoryRecords = pgTable(
   "memory_records",

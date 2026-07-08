@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  memoryApplicationOutcomes,
+  memoryCandidateStatuses,
+  memoryFeedbackDirections,
+  memoryFeedbackEventTypes,
+  memoryRecordKinds,
+  memoryRecordStatuses
+} from "@krn/core";
+
 import * as memorySchema from "../memory.js";
 
 describe("memory governance schema", () => {
-  it("exposes M23 review and promotion vocabulary", () => {
-    expect(memorySchema.memoryCandidateStatus.enumValues).toEqual(
-      expect.arrayContaining(["proposed", "accepted", "rejected", "superseded"])
-    );
-    expect(memorySchema.memoryRecordStatus.enumValues).toEqual(
-      expect.arrayContaining(["active", "deprecated", "invalidated"])
-    );
-    expect("memoryApplicationOutcome" in memorySchema).toBe(true);
-    expect("memoryFeedbackEventType" in memorySchema).toBe(true);
+  it("keeps DB memory enums aligned with the core memory model", () => {
+    expect(memorySchema.memoryRecordKind.enumValues).toEqual(memoryRecordKinds);
+    expect(memorySchema.memoryRecordStatus.enumValues).toEqual(memoryRecordStatuses);
+    expect(memorySchema.memoryCandidateStatus.enumValues).toEqual(memoryCandidateStatuses);
+    expect(memorySchema.memoryFeedbackDirection.enumValues).toEqual(memoryFeedbackDirections);
+    expect(memorySchema.memoryApplicationOutcome.enumValues).toEqual(memoryApplicationOutcomes);
+    expect(memorySchema.memoryFeedbackEventType.enumValues).toEqual(memoryFeedbackEventTypes);
   });
 
   it("exposes M23 memory candidate lineage and review fields", () => {

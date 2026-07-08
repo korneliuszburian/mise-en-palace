@@ -22,37 +22,75 @@ import {
   readMetadataStringList
 } from "./metadata.js";
 
-export type MemoryRecordKind =
-  | "fact"
-  | "preference"
-  | "constraint"
-  | "procedure"
-  | "risk";
+export const memoryRecordKinds = [
+  "fact",
+  "preference",
+  "constraint",
+  "procedure",
+  "risk"
+] as const;
 
-export type MemoryRecordStatus =
-  | "active"
-  | "deprecated"
-  | "stale"
-  | "invalidated"
-  | "superseded";
-export type MemoryCandidateCreateStatus = "proposed" | "candidate";
-export type MemoryCandidateLifecycleStatus =
-  | "accepted"
-  | "rejected"
-  | "applied"
-  | "superseded";
-export type MemoryCandidateStatus =
-  | MemoryCandidateCreateStatus
-  | MemoryCandidateLifecycleStatus;
+export const memoryRecordStatuses = [
+  "active",
+  "deprecated",
+  "stale",
+  "invalidated",
+  "superseded"
+] as const;
+
+export const memoryCandidateCreateStatuses = [
+  "proposed",
+  "candidate"
+] as const;
+
+export const memoryCandidateLifecycleStatuses = [
+  "accepted",
+  "rejected",
+  "applied",
+  "superseded"
+] as const;
+
+export const memoryCandidateStatuses = [
+  ...memoryCandidateCreateStatuses,
+  ...memoryCandidateLifecycleStatuses
+] as const;
+
+export const memoryPromotionDecisions = [
+  "accepted",
+  "rejected"
+] as const;
+
+export const memoryApplicationOutcomes = [
+  "helped",
+  "hurt",
+  "neutral",
+  "stale"
+] as const;
+
+export const memoryFeedbackDirections = [
+  "positive",
+  "negative",
+  "correction"
+] as const;
+
+export const memoryFeedbackEventTypes = [
+  "strengthened",
+  "demoted",
+  "invalidated",
+  "corrected",
+  "stale_detected"
+] as const;
+
+export type MemoryRecordKind = typeof memoryRecordKinds[number];
+export type MemoryRecordStatus = typeof memoryRecordStatuses[number];
+export type MemoryCandidateCreateStatus = typeof memoryCandidateCreateStatuses[number];
+export type MemoryCandidateLifecycleStatus = typeof memoryCandidateLifecycleStatuses[number];
+export type MemoryCandidateStatus = typeof memoryCandidateStatuses[number];
 export type AntiMemoryCandidateStatus = MemoryCandidateStatus;
-export type MemoryApplicationOutcome = "helped" | "hurt" | "neutral" | "stale";
-export type MemoryFeedbackDirection = "positive" | "negative" | "correction";
-export type MemoryFeedbackEventType =
-  | "strengthened"
-  | "demoted"
-  | "invalidated"
-  | "corrected"
-  | "stale_detected";
+export type MemoryPromotionDecision = typeof memoryPromotionDecisions[number];
+export type MemoryApplicationOutcome = typeof memoryApplicationOutcomes[number];
+export type MemoryFeedbackDirection = typeof memoryFeedbackDirections[number];
+export type MemoryFeedbackEventType = typeof memoryFeedbackEventTypes[number];
 
 export interface SourceLineageRef {
   sourceId: string;

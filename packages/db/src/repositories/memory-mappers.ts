@@ -8,6 +8,10 @@ import type {
   MemoryRecord,
   SourceLineageRef
 } from "@krn/core";
+import {
+  memoryCandidateStatuses,
+  memoryRecordKinds
+} from "@krn/core";
 import type {
   antiMemoryCandidates,
   antiMemoryRecords,
@@ -31,22 +35,9 @@ type MemoryCandidateRow = InferSelectModel<typeof memoryCandidates>;
 type AntiMemoryCandidateRow = InferSelectModel<typeof antiMemoryCandidates>;
 type AntiMemoryRecordRow = InferSelectModel<typeof antiMemoryRecords>;
 
-const memoryRecordKinds = new Set<string>([
-  "fact",
-  "preference",
-  "constraint",
-  "procedure",
-  "risk"
-]);
+const memoryRecordKindValues = new Set<string>(memoryRecordKinds);
 
-const memoryCandidateStatuses = new Set<string>([
-  "proposed",
-  "candidate",
-  "accepted",
-  "rejected",
-  "applied",
-  "superseded"
-]);
+const memoryCandidateStatusValues = new Set<string>(memoryCandidateStatuses);
 
 const requiredMemoryCandidateStringFields = [
   "id",
@@ -66,13 +57,13 @@ const hasStringFields = (
 ): boolean => fields.every((field) => typeof item[field] === "string");
 
 const isMemoryRecordKind = (value: unknown): value is MemoryCandidate["kind"] =>
-  typeof value === "string" && memoryRecordKinds.has(value);
+  typeof value === "string" && memoryRecordKindValues.has(value);
 
 const isMemoryCandidateStatus = (
   value: unknown
 ): value is MemoryCandidate["status"] =>
   typeof value === "string" &&
-  memoryCandidateStatuses.has(value);
+  memoryCandidateStatusValues.has(value);
 
 type MemoryCandidateJson = Record<string, unknown> &
   Record<typeof requiredMemoryCandidateStringFields[number], string> & {

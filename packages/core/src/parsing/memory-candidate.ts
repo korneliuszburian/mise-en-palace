@@ -1,52 +1,33 @@
 import { z } from "zod";
 import {
+  memoryApplicationOutcomes,
+  memoryCandidateCreateStatuses,
+  memoryCandidateStatuses,
+  memoryFeedbackDirections,
+  memoryFeedbackEventTypes,
+  memoryPromotionDecisions,
+  memoryRecordKinds
+} from "../memory.js";
+import {
   MetadataSchema,
   OptionalTextSchema,
   RequiredTextSchema,
   TextListSchema
 } from "./schema-primitives.js";
 
-export const MemoryRecordKindSchema = z.enum([
-  "fact",
-  "preference",
-  "constraint",
-  "procedure",
-  "risk"
-]);
+export const MemoryRecordKindSchema = z.enum(memoryRecordKinds);
 
-export const MemoryCandidateStatusSchema = z.enum([
-  "proposed",
-  "candidate",
-  "accepted",
-  "rejected",
-  "applied",
-  "superseded"
-]);
+export const MemoryCandidateStatusSchema = z.enum(memoryCandidateStatuses);
 
-export const MemoryCandidateCreateStatusSchema = z.enum(["proposed", "candidate"]);
+export const MemoryCandidateCreateStatusSchema = z.enum(memoryCandidateCreateStatuses);
 
-export const MemoryPromotionDecisionSchema = z.enum(["accepted", "rejected"]);
+export const MemoryPromotionDecisionSchema = z.enum(memoryPromotionDecisions);
 
-export const MemoryApplicationOutcomeSchema = z.enum([
-  "helped",
-  "hurt",
-  "neutral",
-  "stale"
-]);
+export const MemoryApplicationOutcomeSchema = z.enum(memoryApplicationOutcomes);
 
-export const MemoryFeedbackDirectionSchema = z.enum([
-  "positive",
-  "negative",
-  "correction"
-]);
+export const MemoryFeedbackDirectionSchema = z.enum(memoryFeedbackDirections);
 
-export const MemoryFeedbackEventTypeSchema = z.enum([
-  "strengthened",
-  "demoted",
-  "invalidated",
-  "corrected",
-  "stale_detected"
-]);
+export const MemoryFeedbackEventTypeSchema = z.enum(memoryFeedbackEventTypes);
 
 export const SourceLineageItemSchema = z.object({
   sourceId: RequiredTextSchema,
