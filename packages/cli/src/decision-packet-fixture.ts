@@ -67,6 +67,7 @@ export interface DecisionPacketEvalFixture {
   readonly topK: number;
   readonly minimumKrnWinRate: number;
   readonly maximumNotesWinRate: number;
+  readonly minimumAbstentionCaseCount: number;
   readonly decisions: readonly DecisionPacketRow[];
   readonly notes: readonly DecisionPacketNote[];
   readonly cases: readonly DecisionPacketCase[];
@@ -282,6 +283,9 @@ export const parseDecisionPacketEvalFixture = (
     topK: numberValue(value["topK"], "topK"),
     minimumKrnWinRate: numberValue(value["minimumKrnWinRate"], "minimumKrnWinRate"),
     maximumNotesWinRate: numberValue(value["maximumNotesWinRate"], "maximumNotesWinRate"),
+    minimumAbstentionCaseCount: value["minimumAbstentionCaseCount"] === undefined
+      ? 0
+      : numberValue(value["minimumAbstentionCaseCount"], "minimumAbstentionCaseCount"),
     decisions,
     notes,
     cases

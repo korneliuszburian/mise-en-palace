@@ -4,6 +4,7 @@
   "topK": 3,
   "minimumKrnWinRate": 0.75,
   "maximumNotesWinRate": 0,
+  "minimumAbstentionCaseCount": 1,
   "decisions": [
     {
       "id": "store-backed-memory-no-markdown",

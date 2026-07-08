@@ -510,6 +510,7 @@ export const runDecisionPacketEval = async (
     caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions &&
     missingAbstentions <= maximumMissingAbstentions &&
     abstentionScore >= minimumAbstentionScore &&
+    abstentionCaseCount >= fixture.minimumAbstentionCaseCount &&
     averageConsensusConflictScore >= minimumAverageConsensusConflictScore &&
     averageNoiseDecisions <= maximumAverageNoiseDecisions
       ? "pass"
@@ -528,6 +529,7 @@ export const runDecisionPacketEval = async (
       maximumCaveatedSourceClaimInclusions,
       maximumMissingAbstentions,
       minimumAbstentionScore,
+      minimumAbstentionCaseCount: fixture.minimumAbstentionCaseCount,
       minimumAverageConsensusConflictScore,
       maximumAverageNoiseDecisions
     },
@@ -569,7 +571,7 @@ export const runDecisionPacketEval = async (
         "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
         "packet scoring reports consensus/conflict as a separate axis over stale, rejected, caveated, and unsupported governing context",
         "abstentionScore is a top-level scorer gate for unsupported cases before broad MCP transport can rely on DecisionPacket guidance",
-        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, zero missing-abstention, minimum abstention-score, minimum consensus/conflict score, and noise thresholds"
+        "packet quality is gated by predeclared useful-rate, KRN-vs-notes win-rate, notes-win-rate, zero severe stale-authority, zero caveated source-claim, zero missing-abstention, minimum abstention case count, minimum abstention-score, minimum consensus/conflict score, and noise thresholds"
       ],
       doesNotProve: [
         "live Codex execution or obedience",

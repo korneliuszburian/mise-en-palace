@@ -295,6 +295,7 @@ export const buildImportedDecisionCorpus = (
     topK: fixture.topK,
     minimumKrnWinRate: fixture.minimumKrnWinRate,
     maximumNotesWinRate: fixture.maximumNotesWinRate,
+    minimumAbstentionCaseCount: base.minimumAbstentionCaseCount,
     decisions: [...base.decisions, ...importedDecisions],
     notes: [...base.notes, ...importedNotes],
     cases: [...base.cases, ...importedCases]

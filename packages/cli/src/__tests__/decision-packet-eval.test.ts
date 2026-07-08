@@ -37,11 +37,13 @@ interface ProjectStandardCaseExpectation {
 
 const loadMutableFixture = (): {
   topK: number;
+  minimumAbstentionCaseCount?: number;
   decisions: Array<Record<string, unknown>>;
   notes: Array<Record<string, unknown>>;
   cases: Array<Record<string, unknown>>;
 } => JSON.parse(readFileSync(fixturePath, "utf8")) as {
   topK: number;
+  minimumAbstentionCaseCount?: number;
   decisions: Array<Record<string, unknown>>;
   notes: Array<Record<string, unknown>>;
   cases: Array<Record<string, unknown>>;
@@ -116,6 +118,7 @@ describe("runDecisionPacketEval", () => {
         maximumCaveatedSourceClaimInclusions: 0,
         maximumMissingAbstentions: 0,
         minimumAbstentionScore: 1,
+        minimumAbstentionCaseCount: 1,
         minimumAverageConsensusConflictScore: 1,
         maximumAverageNoiseDecisions: 2
       },
@@ -526,6 +529,21 @@ describe("runDecisionPacketEval", () => {
         "packet misses expected evidence-gap abstention"
       ])
     });
+  });
+
+  it("fails when the notes-baseline fixture loses abstention coverage", async () => {
+    const rawFixture = loadMutableFixture();
+
+    rawFixture.cases = rawFixture.cases.filter((testCase) =>
+      testCase["expectedEvidenceGap"] === undefined);
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+
+    expect(result.status).toBe("fail");
+    expect(result.thresholds.minimumAbstentionCaseCount).toBe(1);
+    expect(result.metrics.abstentionCaseCount).toBe(0);
+    expect(result.metrics.correctAbstentionCount).toBe(0);
+    expect(result.metrics.abstentionScore).toBe(1);
   });
 
   it("fails when a stale decision reaches the governed packet", async () => {

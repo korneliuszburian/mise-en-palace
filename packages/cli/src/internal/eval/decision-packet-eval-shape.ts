@@ -62,6 +62,7 @@ export interface DecisionPacketEvalResult {
     readonly maximumCaveatedSourceClaimInclusions: number;
     readonly maximumMissingAbstentions: number;
     readonly minimumAbstentionScore: number;
+    readonly minimumAbstentionCaseCount: number;
     readonly minimumAverageConsensusConflictScore: number;
     readonly maximumAverageNoiseDecisions: number;
   };
