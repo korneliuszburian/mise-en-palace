@@ -2,10 +2,10 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
-  applySourceClaimAuthorityFilter,
   applyContextROI,
   buildActivationQuery,
-  retrieveActivationCandidates
+  retrieveActivationCandidates,
+  type RankedActivationCandidate
 } from "@krn/harness";
 import {
   createDatabaseRuntime
@@ -62,6 +62,46 @@ export type CreateSourceSearchDatabaseRuntime = (
 const defaultLimit = 20;
 const defaultMaxInclusions = 6;
 const defaultSourceClaimScanFloor = 30;
+
+const sourceSearchSourceClaimCanReadBack = (
+  candidate: RankedActivationCandidate
+): boolean => {
+  if (candidate.subjectType !== "source_claim") {
+    return true;
+  }
+
+  if (candidate.sourceClaimAuthorityStatus !== undefined) {
+    return candidate.sourceClaimAuthorityStatus === "accepted" ||
+      candidate.sourceClaimAuthorityStatus === "caveated" ||
+      candidate.sourceClaimAuthorityStatus === "evidence_gap";
+  }
+
+  return candidate.sourceClaimStatus === "accepted";
+};
+
+const sourceSearchSourceClaimExclusionReason = (
+  candidate: RankedActivationCandidate
+): "stale" | "unsafe" =>
+  candidate.sourceClaimAuthorityStatus === "stale" ? "stale" : "unsafe";
+
+const applySourceSearchEvidenceFilter = (
+  candidates: readonly RankedActivationCandidate[]
+): RankedActivationCandidate[] =>
+  candidates.map((candidate) => {
+    if (candidate.exclusion !== undefined || sourceSearchSourceClaimCanReadBack(candidate)) {
+      return candidate;
+    }
+
+    return {
+      ...candidate,
+      exclusion: {
+        reason: sourceSearchSourceClaimExclusionReason(candidate),
+        explanation: candidate.subjectType === "source_claim" && candidate.sourceClaimStatus !== "accepted"
+          ? `Source claims require accepted status before activation; ${candidate.sourceClaimStatus ?? "unknown"} claims remain review candidates, not source-search evidence. SourceClaim authority status ${candidate.sourceClaimAuthorityStatus ?? "unknown"}.`
+          : `Source search can read back accepted, caveated, or evidence-gap SourceClaims only; ${candidate.sourceClaimAuthorityStatus ?? candidate.sourceClaimStatus ?? "unknown"} is not reviewable as source-search evidence.`
+      }
+    };
+  });
 
 const createSearchTaskContract = (
   runtime: SourceSearchCommandRuntime,
@@ -172,7 +212,7 @@ export const runSourceSearchCommand = async (
         retrievalRepository
       }
     });
-    const authoritySafe = applySourceClaimAuthorityFilter(retrieved.candidates);
+    const authoritySafe = applySourceSearchEvidenceFilter(retrieved.candidates);
     const sourceDecisionSupportCandidates = authoritySafe.filter(
       (candidate) => candidate.exclusion === undefined
     );
