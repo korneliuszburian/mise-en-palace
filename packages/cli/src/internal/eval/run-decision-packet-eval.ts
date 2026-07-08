@@ -10,8 +10,10 @@ import {
 } from "./eval-text-scoring.js";
 import type {
   DecisionPacketEvalCaseReadback,
+  DecisionPacketEvalCandidateReadback,
   DecisionPacketEvalResult,
   DecisionPacketScoreBreakdown,
+  DecisionPacketEvalFailureClass,
   NotesBaselineResult,
   PacketQualityLabel
 } from "./decision-packet-eval-shape.js";
@@ -48,6 +50,9 @@ const maximumMissingAbstentions = 0;
 const minimumAbstentionScore = 1;
 const minimumAverageConsensusConflictScore = 1;
 const maximumAverageNoiseDecisions = 2;
+const evalCandidateCreatedAt = "2026-07-08T00:00:00.000Z";
+const evalCandidateDoesNotProve =
+  "DecisionPacket eval candidates identify reviewable deterministic failures; they do not prove source truth, live Codex behavior, production retrieval quality, or that the proposed fix is correct.";
 
 const decisionById = (
   decisions: readonly DecisionPacketDecision[]
@@ -431,6 +436,231 @@ const evaluateCase = async (
   };
 };
 
+const failureClassForCase = (
+  testCase: DecisionPacketEvalCaseReadback
+): DecisionPacketEvalFailureClass | undefined => {
+  if (testCase.status === "pass") {
+    return undefined;
+  }
+
+  if (testCase.qualityLabel === "stale_authority") {
+    return "stale_authority";
+  }
+
+  if (testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel !== "abstained") {
+    return "missing_abstention";
+  }
+
+  if (testCase.scores.evidenceFidelity === 0) {
+    return "missing_evidence_fidelity";
+  }
+
+  if (testCase.scores.sourceSupport === 0) {
+    return "missing_source_support";
+  }
+
+  if (testCase.scores.rejectionRecall === 0) {
+    return "missing_rejected_path";
+  }
+
+  if (testCase.qualityLabel === "miss") {
+    return "missed_packet";
+  }
+
+  return "noisy_packet";
+};
+
+const evalCandidateId = (
+  caseId: string,
+  failureClass: DecisionPacketEvalFailureClass
+): string => `eval-candidate:decision-packet:${caseId}:${failureClass}`;
+
+const caseEvidenceRefs = (
+  fixture: DecisionPacketEvalFixture,
+  testCase: DecisionPacketEvalCaseReadback,
+  failureClass: DecisionPacketEvalFailureClass
+): readonly string[] => [
+  `fixture:decision-packet:${fixture.version}:case:${testCase.id}`,
+  `eval:${decisionPacketEvalKind}:case:${testCase.id}`,
+  `failure:${failureClass}`,
+  ...(testCase.expectedDecisionId === undefined
+    ? []
+    : [`expectedDecision:${testCase.expectedDecisionId}`]),
+  ...(testCase.expectedEvidenceGap === undefined
+    ? []
+    : [`expectedEvidenceGap:${testCase.expectedEvidenceGap.id}`])
+];
+
+const buildCaseEvalCandidate = (
+  fixture: DecisionPacketEvalFixture,
+  testCase: DecisionPacketEvalCaseReadback
+): DecisionPacketEvalCandidateReadback | undefined => {
+  const failureClass = failureClassForCase(testCase);
+
+  if (failureClass === undefined) {
+    return undefined;
+  }
+
+  const evidenceRefs = caseEvidenceRefs(fixture, testCase, failureClass);
+
+  return {
+    id: evalCandidateId(testCase.id, failureClass),
+    status: "candidate",
+    caseId: testCase.id,
+    failureClass,
+    title: `DecisionPacket eval failure: ${testCase.id}`,
+    scenario: testCase.task,
+    expectedSignal:
+      `Fix ${failureClass} so DecisionPacket eval case ${testCase.id} returns passing governed guidance or an explicit abstention.`,
+    sourceEvidence: [...evidenceRefs],
+    evidenceRefs,
+    metadata: {
+      kind: decisionPacketEvalKind,
+      scorerModel: decisionPacketEvalScorerModel,
+      fixtureVersion: fixture.version,
+      caseId: testCase.id,
+      failureClass,
+      qualityLabel: testCase.qualityLabel,
+      comparisonOutcome: testCase.comparisonOutcome,
+      scores: testCase.scores,
+      reasons: testCase.reasons,
+      expectedDecisionId: testCase.expectedDecisionId ?? null,
+      expectedEvidenceGapId: testCase.expectedEvidenceGap?.id ?? null,
+      packetSignalIds: {
+        governingDecisionIds: testCase.packet.governingDecisionIds,
+        staleDecisionIds: testCase.packet.staleDecisionIds,
+        rejectedPathIds: testCase.packet.rejectedPathIds,
+        caveatedSourceClaimIds: testCase.packet.caveatedSourceClaimIds,
+        severeStaleAuthorityIds: testCase.packet.severeStaleAuthorityIds,
+        evidenceGapIds: testCase.packet.evidenceGaps.map((gap) => gap.id)
+      },
+      doesNotProve: evalCandidateDoesNotProve
+    },
+    createdAt: evalCandidateCreatedAt,
+    doesNotProve: evalCandidateDoesNotProve
+  };
+};
+
+interface DecisionPacketEvalMetricsForCandidates {
+  readonly usefulRate: number;
+  readonly krnWinRate: number;
+  readonly notesWinRate: number;
+  readonly severeStaleAuthorityInclusions: number;
+  readonly caveatedSourceClaimInclusions: number;
+  readonly missingAbstentions: number;
+  readonly abstentionScore: number;
+  readonly abstentionCaseCount: number;
+  readonly averageConsensusConflictScore: number;
+  readonly averageNoiseDecisions: number;
+}
+
+interface DecisionPacketEvalThresholdCheck {
+  readonly id: string;
+  readonly passed: (
+    fixture: DecisionPacketEvalFixture,
+    metrics: DecisionPacketEvalMetricsForCandidates
+  ) => boolean;
+}
+
+const evalThresholdChecks: readonly DecisionPacketEvalThresholdCheck[] = [
+  {
+    id: "minimumUsefulRate",
+    passed: (_fixture, metrics) => metrics.usefulRate >= minimumUsefulRate
+  },
+  {
+    id: "minimumKrnWinRate",
+    passed: (fixture, metrics) => metrics.krnWinRate >= fixture.minimumKrnWinRate
+  },
+  {
+    id: "maximumNotesWinRate",
+    passed: (fixture, metrics) => metrics.notesWinRate <= fixture.maximumNotesWinRate
+  },
+  {
+    id: "maximumSevereStaleAuthorityInclusions",
+    passed: (_fixture, metrics) =>
+      metrics.severeStaleAuthorityInclusions <= maximumSevereStaleAuthorityInclusions
+  },
+  {
+    id: "maximumCaveatedSourceClaimInclusions",
+    passed: (_fixture, metrics) =>
+      metrics.caveatedSourceClaimInclusions <= maximumCaveatedSourceClaimInclusions
+  },
+  {
+    id: "maximumMissingAbstentions",
+    passed: (_fixture, metrics) => metrics.missingAbstentions <= maximumMissingAbstentions
+  },
+  {
+    id: "minimumAbstentionScore",
+    passed: (_fixture, metrics) => metrics.abstentionScore >= minimumAbstentionScore
+  },
+  {
+    id: "minimumAbstentionCaseCount",
+    passed: (fixture, metrics) =>
+      metrics.abstentionCaseCount >= fixture.minimumAbstentionCaseCount
+  },
+  {
+    id: "minimumAverageConsensusConflictScore",
+    passed: (_fixture, metrics) =>
+      metrics.averageConsensusConflictScore >= minimumAverageConsensusConflictScore
+  },
+  {
+    id: "maximumAverageNoiseDecisions",
+    passed: (_fixture, metrics) => metrics.averageNoiseDecisions <= maximumAverageNoiseDecisions
+  }
+];
+
+const thresholdViolations = (
+  fixture: DecisionPacketEvalFixture,
+  metrics: DecisionPacketEvalMetricsForCandidates
+): readonly string[] =>
+  evalThresholdChecks
+    .filter((check) => !check.passed(fixture, metrics))
+    .map((check) => check.id);
+
+const buildThresholdEvalCandidate = (
+  fixture: DecisionPacketEvalFixture,
+  violations: readonly string[],
+  metrics: DecisionPacketEvalMetricsForCandidates
+): DecisionPacketEvalCandidateReadback | undefined => {
+  if (violations.length === 0) {
+    return undefined;
+  }
+
+  const caseId = "decision-packet-eval-suite";
+  const failureClass = "threshold_violation";
+  const evidenceRefs = [
+    `fixture:decision-packet:${fixture.version}:suite`,
+    `eval:${decisionPacketEvalKind}:thresholds`,
+    ...violations.map((violation) => `threshold:${violation}`)
+  ];
+
+  return {
+    id: evalCandidateId(caseId, failureClass),
+    status: "candidate",
+    caseId,
+    failureClass,
+    title: "DecisionPacket eval threshold violation",
+    scenario:
+      "DecisionPacket eval suite thresholds failed even though individual cases may not have produced a case-level failure.",
+    expectedSignal:
+      `Restore DecisionPacket eval thresholds: ${violations.join(", ")}.`,
+    sourceEvidence: [...evidenceRefs],
+    evidenceRefs,
+    metadata: {
+      kind: decisionPacketEvalKind,
+      scorerModel: decisionPacketEvalScorerModel,
+      fixtureVersion: fixture.version,
+      caseId,
+      failureClass,
+      thresholdViolations: violations,
+      metrics,
+      doesNotProve: evalCandidateDoesNotProve
+    },
+    createdAt: evalCandidateCreatedAt,
+    doesNotProve: evalCandidateDoesNotProve
+  };
+};
+
 const average = (
   values: readonly number[]
 ): number => values.length === 0
@@ -502,6 +732,32 @@ export const runDecisionPacketEval = async (
   const missingAbstentions = cases.filter((testCase) =>
     testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel !== "abstained"
   ).length;
+  const metricsForCandidates = {
+    usefulRate,
+    krnWinRate,
+    notesWinRate,
+    severeStaleAuthorityInclusions,
+    caveatedSourceClaimInclusions,
+    missingAbstentions,
+    abstentionScore,
+    abstentionCaseCount,
+    averageConsensusConflictScore,
+    averageNoiseDecisions
+  };
+  const caseEvalCandidates = cases.flatMap((testCase) => {
+    const candidate = buildCaseEvalCandidate(fixture, testCase);
+
+    return candidate === undefined ? [] : [candidate];
+  });
+  const thresholdEvalCandidate = buildThresholdEvalCandidate(
+    fixture,
+    thresholdViolations(fixture, metricsForCandidates),
+    metricsForCandidates
+  );
+  const evalCandidates = [
+    ...caseEvalCandidates,
+    ...(thresholdEvalCandidate === undefined ? [] : [thresholdEvalCandidate])
+  ];
   const status =
     usefulRate >= minimumUsefulRate &&
     krnWinRate >= fixture.minimumKrnWinRate &&
@@ -561,6 +817,7 @@ export const runDecisionPacketEval = async (
       missingAbstentions
     },
     cases,
+    evalCandidates,
     proof: {
       proves: [
         "DecisionPacketEvalCase.v1 is the canonical case/scorer model for deterministic DecisionPacket eval wrappers",

@@ -1,5 +1,6 @@
 import type {
-  DecisionPacket
+  DecisionPacket,
+  EvalCandidateProposal
 } from "@krn/core";
 
 export const decisionPacketEvalKind = "krn.decisionPacket.eval.v1" as const;
@@ -12,6 +13,15 @@ export type DecisionPacketStatus = "pass" | "fail";
 export type PacketQualityLabel = "useful" | "abstained" | "noisy" | "stale_authority" | "miss";
 export type NotesBaselineLabel = "usable" | "unsafe" | "unsupported" | "miss";
 export type BaselineComparisonOutcome = "krn_win" | "notes_win" | "tie";
+export type DecisionPacketEvalFailureClass =
+  | "missing_abstention"
+  | "missing_evidence_fidelity"
+  | "missing_rejected_path"
+  | "missing_source_support"
+  | "missed_packet"
+  | "noisy_packet"
+  | "stale_authority"
+  | "threshold_violation";
 
 export interface NotesBaselineResult {
   readonly qualityLabel: NotesBaselineLabel;
@@ -47,6 +57,13 @@ export interface DecisionPacketEvalCaseReadback {
   readonly status: DecisionPacketStatus;
   readonly reasons: readonly string[];
   readonly packet: DecisionPacket;
+}
+
+export interface DecisionPacketEvalCandidateReadback extends EvalCandidateProposal {
+  readonly caseId: string;
+  readonly failureClass: DecisionPacketEvalFailureClass;
+  readonly evidenceRefs: readonly string[];
+  readonly doesNotProve: string;
 }
 
 export interface DecisionPacketEvalResult {
@@ -94,6 +111,7 @@ export interface DecisionPacketEvalResult {
     readonly missingAbstentions: number;
   };
   readonly cases: readonly DecisionPacketEvalCaseReadback[];
+  readonly evalCandidates: readonly DecisionPacketEvalCandidateReadback[];
   readonly proof: {
     readonly proves: readonly string[];
     readonly doesNotProve: readonly string[];

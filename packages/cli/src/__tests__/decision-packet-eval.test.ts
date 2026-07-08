@@ -153,7 +153,8 @@ describe("runDecisionPacketEval", () => {
         severeStaleAuthorityInclusions: 0,
         caveatedSourceClaimInclusions: 0,
         missingAbstentions: 0
-      }
+      },
+      evalCandidates: []
     });
     expect(result.cases.filter((testCase) => testCase.qualityLabel === "useful")).toHaveLength(20);
     expect(result.cases.filter((testCase) => testCase.qualityLabel === "abstained")).toHaveLength(1);
@@ -353,6 +354,29 @@ describe("runDecisionPacketEval", () => {
         "packet includes caveated source claims without decision support"
       ])
     });
+    expect(result.evalCandidates.find((candidate) =>
+      candidate.caseId === "memory-runtime-task"
+    )).toMatchObject({
+      status: "candidate",
+      caseId: "memory-runtime-task",
+      failureClass: "missing_evidence_fidelity",
+      sourceEvidence: expect.arrayContaining([
+        "fixture:decision-packet:1:case:memory-runtime-task",
+        "eval:krn.decisionPacket.eval.v1:case:memory-runtime-task",
+        "failure:missing_evidence_fidelity",
+        "expectedDecision:store-backed-memory-no-markdown"
+      ]),
+      evidenceRefs: expect.arrayContaining([
+        "fixture:decision-packet:1:case:memory-runtime-task"
+      ]),
+      metadata: expect.objectContaining({
+        caseId: "memory-runtime-task",
+        failureClass: "missing_evidence_fidelity",
+        qualityLabel: "noisy",
+        doesNotProve: expect.stringContaining("live Codex behavior")
+      }),
+      doesNotProve: expect.stringContaining("live Codex behavior")
+    });
   });
 
   it("fails when unsupported source claims reach the governed packet", async () => {
@@ -395,6 +419,14 @@ describe("runDecisionPacketEval", () => {
       },
       reasons: expect.arrayContaining([
         "packet includes caveated source claims without decision support"
+      ])
+    });
+    expect(result.evalCandidates.find((candidate) =>
+      candidate.caseId === "memory-runtime-task"
+    )).toMatchObject({
+      failureClass: "missing_source_support",
+      evidenceRefs: expect.arrayContaining([
+        "failure:missing_source_support"
       ])
     });
   });
@@ -582,6 +614,15 @@ describe("runDecisionPacketEval", () => {
         "packet misses expected evidence-gap abstention"
       ])
     });
+    expect(result.evalCandidates.find((candidate) =>
+      candidate.caseId === "unsupported-mobile-release-task"
+    )).toMatchObject({
+      failureClass: "missing_abstention",
+      evidenceRefs: expect.arrayContaining([
+        "expectedEvidenceGap:evidence-gap:unsupported-mobile-release-task:no-governing-decision"
+      ]),
+      expectedSignal: expect.stringContaining("missing_abstention")
+    });
   });
 
   it("fails when the notes-baseline fixture loses abstention coverage", async () => {
@@ -597,6 +638,17 @@ describe("runDecisionPacketEval", () => {
     expect(result.metrics.abstentionCaseCount).toBe(0);
     expect(result.metrics.correctAbstentionCount).toBe(0);
     expect(result.metrics.abstentionScore).toBe(1);
+    expect(result.evalCandidates).toEqual([
+      expect.objectContaining({
+        caseId: "decision-packet-eval-suite",
+        failureClass: "threshold_violation",
+        evidenceRefs: expect.arrayContaining([
+          "threshold:minimumAbstentionCaseCount"
+        ]),
+        expectedSignal:
+          "Restore DecisionPacket eval thresholds: minimumAbstentionCaseCount."
+      })
+    ]);
   });
 
   it("fails when a stale decision reaches the governed packet", async () => {
@@ -627,6 +679,14 @@ describe("runDecisionPacketEval", () => {
         }
       },
       reasons: expect.arrayContaining(["packet includes stale or rejected authority as governing context"])
+    });
+    expect(result.evalCandidates.find((candidate) =>
+      candidate.caseId === "memory-runtime-task"
+    )).toMatchObject({
+      failureClass: "stale_authority",
+      evidenceRefs: expect.arrayContaining([
+        "failure:stale_authority"
+      ])
     });
   });
 });
