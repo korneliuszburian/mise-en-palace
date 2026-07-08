@@ -18,7 +18,8 @@ describe("maintenance queue repository type ownership", () => {
       "embed_memory_record",
       "compact_memory",
       "detect_contradiction",
-      "expire_stale_memory"
+      "expire_stale_memory",
+      "review_feedback_delta"
     ]);
   });
 

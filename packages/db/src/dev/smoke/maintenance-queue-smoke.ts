@@ -141,6 +141,17 @@ const enqueueInputForJobType = (
     };
   }
 
+  if (jobType === "review_feedback_delta") {
+    return {
+      jobType,
+      payload: {
+        ...basePayload,
+        projectId: `project-${marker}`,
+        feedbackDeltaId: `feedback-delta-${marker}`
+      }
+    };
+  }
+
   return {
     jobType,
     payload: {

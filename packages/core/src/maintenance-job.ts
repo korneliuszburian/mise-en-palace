@@ -1,4 +1,5 @@
 import type {
+  FeedbackDeltaId,
   MemoryRecordId,
   ProjectId,
   SourceChunkId,
@@ -11,7 +12,8 @@ export const maintenanceJobTypes = [
   "embed_memory_record",
   "compact_memory",
   "detect_contradiction",
-  "expire_stale_memory"
+  "expire_stale_memory",
+  "review_feedback_delta"
 ] as const;
 
 export type MaintenanceJobType = (typeof maintenanceJobTypes)[number];
@@ -56,12 +58,19 @@ export interface ExpireStaleMemoryPayload {
   olderThan: IsoTimestamp;
 }
 
+export interface ReviewFeedbackDeltaPayload {
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  reason: string;
+}
+
 export type MaintenanceJobPayloadByType = {
   embed_source_chunk: EmbedSourceChunkPayload;
   embed_memory_record: EmbedMemoryRecordPayload;
   compact_memory: CompactMemoryPayload;
   detect_contradiction: DetectContradictionPayload;
   expire_stale_memory: ExpireStaleMemoryPayload;
+  review_feedback_delta: ReviewFeedbackDeltaPayload;
 };
 
 export type MaintenanceJob<TType extends MaintenanceJobType = MaintenanceJobType> = {
@@ -154,7 +163,8 @@ const labels: Record<MaintenanceJobType, string> = {
   embed_memory_record: "Embed memory record",
   compact_memory: "Compact memory",
   detect_contradiction: "Detect contradiction",
-  expire_stale_memory: "Expire stale memory"
+  expire_stale_memory: "Expire stale memory",
+  review_feedback_delta: "Review feedback delta"
 };
 
 export type MaintenanceJobAllowedWrite =
@@ -162,6 +172,7 @@ export type MaintenanceJobAllowedWrite =
   | "outbox_events"
   | "embeddings"
   | "memory_candidates"
+  | "anti_memory_candidates"
   | "reflection_records";
 
 export type MaintenanceJobForbiddenWrite =
@@ -174,6 +185,7 @@ export type MaintenanceJobMemoryBoundary =
   | "no_memory_core_write"
   | "read_memory_record_only"
   | "write_memory_candidate_only"
+  | "write_feedback_candidate_only"
   | "write_reflection_record_only"
   | "must_create_reviewed_invalidation_candidate"
   | "must_not_promote_memory_record";
@@ -206,6 +218,12 @@ const allowedWritesByMemoryBoundary = {
     "outbox_events",
     "memory_candidates"
   ],
+  write_feedback_candidate_only: [
+    "maintenance_queue_records",
+    "outbox_events",
+    "memory_candidates",
+    "anti_memory_candidates"
+  ],
   write_reflection_record_only: [
     "maintenance_queue_records",
     "outbox_events",
@@ -229,6 +247,7 @@ const requiredWritesByMemoryBoundary = {
   no_memory_core_write: [],
   read_memory_record_only: [],
   write_memory_candidate_only: ["memory_candidates"],
+  write_feedback_candidate_only: ["anti_memory_candidates"],
   write_reflection_record_only: ["reflection_records"],
   must_create_reviewed_invalidation_candidate: ["memory_candidates"],
   must_not_promote_memory_record: []
@@ -269,6 +288,18 @@ const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceQueueWriteBound
     allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
     memoryBoundary: "must_create_reviewed_invalidation_candidate"
+  },
+  review_feedback_delta: {
+    inputSchema: "ReviewFeedbackDeltaPayload",
+    queueRecordKeyTemplate: "review_feedback_delta:{projectId}:{feedbackDeltaId}",
+    allowedWrites: [
+      "maintenance_queue_records",
+      "outbox_events",
+      "memory_candidates",
+      "anti_memory_candidates"
+    ],
+    forbiddenWrites: commonForbiddenWrites,
+    memoryBoundary: "write_feedback_candidate_only"
   }
 };
 
@@ -500,12 +531,30 @@ const parseExpireStaleMemoryJob: MaintenanceJobPayloadParser = (payload, reason)
   };
 };
 
+const parseReviewFeedbackDeltaJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const projectId = nonEmptyString(payload["projectId"]);
+  const feedbackDeltaId = nonEmptyString(payload["feedbackDeltaId"]);
+  if (projectId === undefined || feedbackDeltaId === undefined) {
+    return undefined;
+  }
+
+  return {
+    jobType: "review_feedback_delta",
+    payload: {
+      projectId,
+      feedbackDeltaId,
+      reason
+    }
+  };
+};
+
 const maintenanceJobPayloadParsers = {
   embed_source_chunk: parseEmbedSourceChunkJob,
   embed_memory_record: parseEmbedMemoryRecordJob,
   compact_memory: parseCompactMemoryJob,
   detect_contradiction: parseDetectContradictionJob,
-  expire_stale_memory: parseExpireStaleMemoryJob
+  expire_stale_memory: parseExpireStaleMemoryJob,
+  review_feedback_delta: parseReviewFeedbackDeltaJob
 } as const satisfies Record<MaintenanceJobType, MaintenanceJobPayloadParser>;
 
 export const parseMaintenanceJob = (

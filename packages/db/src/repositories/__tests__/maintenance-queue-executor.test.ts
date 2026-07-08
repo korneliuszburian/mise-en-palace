@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
+import type {
+  AntiMemoryCandidate,
+  FeedbackDelta
+} from "@krn/core";
+import type {
+  CreateAntiMemoryCandidateInput
+} from "@krn/harness/repositories/internal";
 
+import {
+  createFeedbackDeltaMaintenanceHandler
+} from "../feedback-delta-maintenance-handler.js";
 import {
   runMaintenanceQueueRecord
 } from "../maintenance-queue-executor.js";
@@ -118,6 +128,50 @@ class FakeMaintenanceQueueRepository implements MaintenanceQueueRepository {
     throw new Error("cleanupTestMaintenanceQueues is not used by executor tests");
   }
 }
+
+class FakeFeedbackMaintenanceMemoryRepository {
+  readonly createdAntiMemoryCandidates: CreateAntiMemoryCandidateInput[] = [];
+
+  async createAntiMemoryCandidate(
+    input: CreateAntiMemoryCandidateInput
+  ): Promise<AntiMemoryCandidate> {
+    this.createdAntiMemoryCandidates.push(input);
+
+    return {
+      id: `anti-memory-candidate-${this.createdAntiMemoryCandidates.length}`,
+      projectId: input.projectId,
+      feedbackDeltaId: input.feedbackDeltaId ?? "feedback-delta-test",
+      proposedBy: input.proposedBy,
+      key: input.key,
+      status: input.status ?? "candidate",
+      rejectedClaim: input.rejectedClaim ?? "",
+      reason: input.reason ?? "",
+      invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+      appliesTo: input.appliesTo ?? "",
+      summary: input.summary,
+      body: input.body,
+      owner: input.owner,
+      confidence: input.confidence,
+      sourceLineage: input.sourceLineage,
+      validFrom: input.validFrom ?? isoNow,
+      metadata: input.metadata ?? {},
+      createdAt: isoNow,
+      updatedAt: isoNow
+    };
+  }
+}
+
+const feedbackDelta = (metadata: Record<string, unknown>): FeedbackDelta => ({
+  id: "feedback-delta-1",
+  reviewAssessmentId: "review-1",
+  status: "candidate",
+  memoryCandidates: [],
+  sourceDecisions: [],
+  evalCandidates: [],
+  metadata,
+  createdAt: isoNow,
+  updatedAt: isoNow
+});
 
 describe("runMaintenanceQueueRecord", () => {
   it("claims a record, validates payload, checks declared writes, and records success", async () => {
@@ -300,5 +354,95 @@ describe("runMaintenanceQueueRecord", () => {
       "claim:maintenance-queue-1",
       "dead-letter:maintenance-queue-1"
     ]);
+  });
+
+  it("turns stale source feedback into reviewable anti-memory candidates", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "review_feedback_delta",
+        payload: {
+          projectId: "project-1",
+          feedbackDeltaId: "feedback-delta-1",
+          reason: "review stale source feedback"
+        }
+      })
+    );
+    const memoryRepository = new FakeFeedbackMaintenanceMemoryRepository();
+    const feedback = feedbackDelta({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-stale-1",
+        outcome: "stale",
+        reason: "DecisionPacket selected source guidance that no longer matched the task.",
+        evidenceRefs: ["packet:abc", "test:feedback-maintenance"],
+        doesNotProve: "This feedback does not prove the source claim is false globally."
+      }, {
+        sourceDecisionId: "source-decision-unknown-1",
+        outcome: "unknown",
+        reason: "The run did not establish whether the source decision helped.",
+        evidenceRefs: ["packet:abc"],
+        doesNotProve: "Unknown usefulness does not prove the source decision is wrong."
+      }, {
+        sourceClaimId: "source-claim-helped-1",
+        outcome: "helped",
+        reason: "Useful source should stay retained.",
+        evidenceRefs: ["packet:abc"],
+        doesNotProve: "Helped feedback does not prove permanent truth."
+      }]
+    });
+
+    const result = await runMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      handlers: [
+        createFeedbackDeltaMaintenanceHandler({
+          harnessRunRepository: {
+            async listFeedbackDeltasForProject(projectId, limit) {
+              expect(projectId).toBe("project-1");
+              expect(limit).toBe(500);
+
+              return [feedback];
+            }
+          },
+          memoryRepository,
+          now: () => isoNow
+        })
+      ]
+    });
+
+    expect(result.status).toBe("succeeded");
+    expect(result.handlerWriteBoundary).toMatchObject({
+      jobType: "review_feedback_delta",
+      memoryBoundary: "write_feedback_candidate_only",
+      status: "passed",
+      declaredWrites: ["anti_memory_candidates"]
+    });
+    expect(result.writeBoundary.forbiddenWrites).toEqual(expect.arrayContaining([
+      "memory_records",
+      "anti_memory_records",
+      "source_claims",
+      "source_decisions"
+    ]));
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(2);
+    expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      proposedBy: "maintenance:review_feedback_delta",
+      invalidatedBySourceClaimIds: ["source-claim-stale-1"],
+      appliesTo: "source_claim:source-claim-stale-1",
+      metadata: {
+        kind: "krn.feedbackMaintenanceCandidate.v1",
+        outcome: "stale",
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[1]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: [],
+      appliesTo: "source_decision:source-decision-unknown-1",
+      metadata: {
+        outcome: "unknown",
+        sourceDecisionId: "source-decision-unknown-1"
+      }
+    });
+    expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 });

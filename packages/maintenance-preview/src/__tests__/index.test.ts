@@ -27,7 +27,8 @@ describe("maintenance queue contract", () => {
       "embed_memory_record",
       "compact_memory",
       "detect_contradiction",
-      "expire_stale_memory"
+      "expire_stale_memory",
+      "review_feedback_delta"
     ]);
 
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
@@ -156,6 +157,23 @@ describe("maintenance queue contract", () => {
         memoryBoundary: "write_memory_candidate_only"
       })
     );
+    expect(describeMaintenanceJob("review_feedback_delta")).toEqual(
+      expect.objectContaining({
+        allowedWrites: [
+          "maintenance_queue_records",
+          "outbox_events",
+          "memory_candidates",
+          "anti_memory_candidates"
+        ],
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions"
+        ],
+        memoryBoundary: "write_feedback_candidate_only"
+      })
+    );
   });
 
   test("parses maintenance job payloads from unknown records before execution", () => {
@@ -178,6 +196,26 @@ describe("maintenance queue contract", () => {
         projectId: "project-1",
         reason: "stale standard",
         olderThan: "not-a-time"
+      })
+    ).toBeUndefined();
+    expect(
+      parseMaintenanceJob("review_feedback_delta", {
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-delta-1",
+        reason: "turn stale feedback into reviewable candidates"
+      })
+    ).toEqual({
+      jobType: "review_feedback_delta",
+      payload: {
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-delta-1",
+        reason: "turn stale feedback into reviewable candidates"
+      }
+    });
+    expect(
+      parseMaintenanceJob("review_feedback_delta", {
+        projectId: "project-1",
+        reason: "missing feedback delta id"
       })
     ).toBeUndefined();
   });
@@ -211,6 +249,36 @@ describe("maintenance queue contract", () => {
           code: "missing_required_runtime_write",
           message:
             "compact_memory handler must declare memory_candidates for memory boundary write_memory_candidate_only."
+        }
+      ]
+    });
+    expect(
+      assessMaintenanceQueueRuntimeWriteBoundary("review_feedback_delta", [
+        "anti_memory_candidates"
+      ])
+    ).toEqual({
+      jobType: "review_feedback_delta",
+      memoryBoundary: "write_feedback_candidate_only",
+      status: "passed",
+      declaredWrites: ["anti_memory_candidates"],
+      violations: []
+    });
+    expect(
+      assessMaintenanceQueueRuntimeWriteBoundary("review_feedback_delta", ["source_claims"])
+    ).toEqual({
+      jobType: "review_feedback_delta",
+      memoryBoundary: "write_feedback_candidate_only",
+      status: "failed",
+      declaredWrites: ["source_claims"],
+      violations: [
+        {
+          code: "forbidden_runtime_write",
+          message: "review_feedback_delta handler declares forbidden write source_claims."
+        },
+        {
+          code: "missing_required_runtime_write",
+          message:
+            "review_feedback_delta handler must declare anti_memory_candidates for memory boundary write_feedback_candidate_only."
         }
       ]
     });

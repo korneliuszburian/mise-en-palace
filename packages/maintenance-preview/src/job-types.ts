@@ -31,5 +31,6 @@ export type {
   MaintenanceQueueWriteBoundaryAssessment,
   MaintenanceQueueWriteBoundaryReadback,
   MaintenanceQueueWriteBoundaryViolation,
-  MaintenanceQueueStatus
+  MaintenanceQueueStatus,
+  ReviewFeedbackDeltaPayload
 } from "@krn/core";
