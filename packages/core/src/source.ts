@@ -716,11 +716,23 @@ const sourceClaimEndpointIdsByKind = (
   return [...new Set(sourceClaimIds)];
 };
 
+const sourceClaimEndpointIdsByKindAndStatus = (
+  edges: readonly SourceClaimEdge[],
+  kinds: ReadonlySet<SourceClaimEdgeKind>,
+  endpoint: "from" | "to",
+  sourceClaimStatusById: ReadonlyMap<SourceClaim["id"], SourceClaimStatus>,
+  status: SourceClaimStatus
+): readonly SourceClaim["id"][] =>
+  sourceClaimEndpointIdsByKind(edges, kinds, endpoint).filter((sourceClaimId) =>
+    sourceClaimStatusById.get(sourceClaimId) === status
+  );
+
 const sourceConsensusEntryState = (input: {
   readonly claim: SourceClaim;
   readonly temporalValidity: SourceClaimTemporalValidity;
   readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
   readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
+  readonly acceptedDissentingSourceClaimIds: readonly SourceClaim["id"][];
   readonly rejectionIds: readonly SourceRejection["id"][];
   readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
 }): SourceConsensusTimelineEntryState => {
@@ -738,7 +750,9 @@ const sourceConsensusEntryState = (input: {
   }
 
   return input.decisionSupportEdgeIds.length > 0
-    ? "current_authority"
+    ? input.acceptedDissentingSourceClaimIds.length > 0
+      ? "caveated_authority"
+      : "current_authority"
     : "caveated_authority";
 };
 
@@ -746,6 +760,7 @@ const sourceConsensusCaveats = (input: {
   readonly temporalValidity: SourceClaimTemporalValidity;
   readonly decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
   readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
+  readonly acceptedDissentingSourceClaimIds: readonly SourceClaim["id"][];
   readonly rejectionIds: readonly SourceRejection["id"][];
   readonly blockedByCurrentSourceClaimId: SourceClaim["id"] | undefined;
 }): readonly string[] => [
@@ -759,6 +774,9 @@ const sourceConsensusCaveats = (input: {
   ...(input.supersededBySourceClaimIds.length === 0
     ? []
     : [`superseded_by:${input.supersededBySourceClaimIds.join(",")}`]),
+  ...(input.acceptedDissentingSourceClaimIds.length === 0
+    ? []
+    : [`dissenting_source_claims:${input.acceptedDissentingSourceClaimIds.join(",")}`]),
   ...(input.blockedByCurrentSourceClaimId === undefined
     ? []
     : [`weaker_than_current_valid_consensus:${input.blockedByCurrentSourceClaimId}`]),
@@ -838,6 +856,10 @@ export const buildSourceConsensusTimelineReadback = (input: {
   const outgoingEdgesByClaim = sourceClaimEdgesBySource(input.sourceClaimEdges);
   const decisionEdgesByClaim = sourceDecisionEdgesByClaim(input.sourceDecisionEdges);
   const rejectionsByClaim = sourceRejectionsByClaim(input.sourceRejections ?? []);
+  const sourceClaimStatusById = new Map(input.sourceClaims.map((claim) => [
+    claim.id,
+    claim.status
+  ]));
   const entries = input.sourceClaims
     .map((claim): SourceConsensusTimelineEntry => {
       const incomingEdges = incomingEdgesByClaim.get(claim.id) ?? [];
@@ -861,6 +883,13 @@ export const buildSourceConsensusTimelineReadback = (input: {
         supersedingEdgeKinds,
         "from"
       );
+      const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
+        incomingEdges,
+        dissentEdgeKinds,
+        "from",
+        sourceClaimStatusById,
+        "accepted"
+      );
       const supersedesSourceClaimIds = sourceClaimEndpointIdsByKind(
         outgoingEdges,
         supersedingEdgeKinds,
@@ -873,6 +902,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
         temporalValidity,
         decisionSupportEdgeIds,
         supersededBySourceClaimIds,
+        acceptedDissentingSourceClaimIds,
         rejectionIds,
         blockedByCurrentSourceClaimId
       });
@@ -914,6 +944,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
           temporalValidity,
           decisionSupportEdgeIds,
           supersededBySourceClaimIds,
+          acceptedDissentingSourceClaimIds,
           rejectionIds,
           blockedByCurrentSourceClaimId
         })

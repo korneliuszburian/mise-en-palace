@@ -483,6 +483,57 @@ describe("source review signals", () => {
     expect(readback.doesNotProve).toContain("large-scale temporal consensus quality");
   });
 
+  test("caveats current authority when an accepted source claim dissents", () => {
+    const currentStandard = sourceClaim({
+      id: "claim-current-standard",
+      claim: "Frontend projects should use the current app template.",
+      createdAt: "2026-06-20T08:00:00.000Z",
+      updatedAt: "2026-06-20T08:00:00.000Z"
+    });
+    const dissentingClaim = sourceClaim({
+      id: "claim-dissenting-standard",
+      claim: "Frontend projects should not use the current app template.",
+      createdAt: "2026-06-21T08:00:00.000Z",
+      updatedAt: "2026-06-21T08:00:00.000Z"
+    });
+    const readback = buildSourceConsensusTimelineReadback({
+      sourceClaims: [
+        currentStandard,
+        dissentingClaim
+      ],
+      sourceClaimEdges: [
+        sourceClaimEdge({
+          id: "edge-dissenting-contradicts-current",
+          fromSourceClaimId: dissentingClaim.id,
+          toSourceClaimId: currentStandard.id,
+          kind: "contradicts"
+        })
+      ],
+      sourceDecisionEdges: [
+        sourceDecisionEdge({
+          id: "decision-edge-current",
+          sourceClaimId: currentStandard.id
+        })
+      ],
+      now
+    });
+
+    expect(readback.currentSourceClaimIds).toEqual([]);
+    expect(readback.caveatedSourceClaimIds).toEqual(expect.arrayContaining([
+      "claim-current-standard",
+      "claim-dissenting-standard"
+    ]));
+    expect(readback.caveatedSourceClaimIds).toHaveLength(2);
+    expect(readback.entries.find((entry) =>
+      entry.sourceClaimId === "claim-current-standard"
+    )).toMatchObject({
+      state: "caveated_authority",
+      decisionSupportEdgeIds: ["decision-edge-current"],
+      dissentingSourceClaimIds: ["claim-dissenting-standard"],
+      caveats: ["dissenting_source_claims:claim-dissenting-standard"]
+    });
+  });
+
   test("reports source decisions without support or falsifiability", () => {
     expect(assessSourceDecisionReviewSignals(sourceDecision({
       sourceClaimId: undefined,

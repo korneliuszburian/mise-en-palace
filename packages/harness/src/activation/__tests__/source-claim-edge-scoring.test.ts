@@ -29,11 +29,13 @@ describe("source claim edge scoring policy", () => {
 
   it("keeps rank-down relation kinds separate from positive influence weights", () => {
     expect(sourceClaimEdgeRankDownKinds).toEqual([
+      "contradicts",
       "invalidates",
       "expires",
       "supersedes"
     ]);
     expect(defaultSourceClaimEdgeRankDownScore).toBe(60);
+    expect(isSourceClaimEdgeRankDownKind("contradicts")).toBe(true);
     expect(isSourceClaimEdgeRankDownKind("invalidates")).toBe(true);
     expect(isSourceClaimEdgeRankDownKind("duplicates")).toBe(false);
     expect(isSourceClaimEdgeRankDownKind("supports")).toBe(false);

@@ -606,6 +606,68 @@ describe("activation engine", () => {
     );
   });
 
+  it("ranks down source claims contradicted by accepted source graph edges", () => {
+    const acceptedDissent = sourceClaim({
+      id: "claim-accepted-dissent",
+      claim: "Current source graph evidence contradicts the older KRN source claim.",
+      mechanism: "A reviewed SourceClaimEdge can mark a connected claim contested.",
+      krnImplication: "Prefer the dissenting claim until the contradicted claim is reviewed."
+    });
+    const contestedClaim = sourceClaim({
+      id: "claim-contested",
+      claim: "KRN should treat every accepted source claim as confident authority.",
+      mechanism: "This older claim matched query terms before the contradiction relation existed.",
+      krnImplication: "This should rank below the accepted dissenting claim."
+    });
+    const contradictsEdge: SourceClaimEdge = {
+      id: "edge-contradicts-contested",
+      fromSourceClaimId: acceptedDissent.id,
+      toSourceClaimId: contestedClaim.id,
+      kind: "contradicts",
+      metadata: {
+        consumer: "source graph ranking",
+        doesNotProve: "This edge does not prove source truth."
+      },
+      createdAt: now
+    };
+    const ranked = rankCandidates(
+      applySourceClaimEdgeRankDown([
+        {
+          ...toSourceClaimCandidate(acceptedDissent),
+          lexicalScore: 40
+        },
+        {
+          ...toSourceClaimCandidate(contestedClaim),
+          lexicalScore: 45
+        }
+      ], {
+        edges: [contradictsEdge],
+        sourceClaims: [
+          acceptedDissent,
+          contestedClaim
+        ],
+        graphPenalty: 30
+      }),
+      buildSourceQuery(task)
+    );
+    const contestedRank = ranked.find((candidate) => candidate.subjectId === contestedClaim.id);
+
+    expect(contestedRank).toMatchObject({
+      graphScore: -30,
+      metadata: {
+        sourceClaimEdgeRankDown: {
+          edgeIds: ["edge-contradicts-contested"],
+          edgeKinds: ["contradicts"],
+          governingSourceClaimIds: ["claim-accepted-dissent"],
+          graphPenalty: 30
+        }
+      }
+    });
+    expect(ranked.map((candidate) => candidate.subjectId).indexOf(acceptedDissent.id)).toBeLessThan(
+      ranked.map((candidate) => candidate.subjectId).indexOf(contestedClaim.id)
+    );
+  });
+
   it("uses edge-selected source context to ground a tiny graph-brain QA answer", () => {
     const query = buildSourceQuery({
       ...task,

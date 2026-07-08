@@ -18,6 +18,7 @@ export const sourceClaimEdgeKindWeights = {
 } satisfies Record<SourceClaimEdge["kind"], number>;
 
 export const sourceClaimEdgeRankDownKinds = [
+  "contradicts",
   "invalidates",
   "expires",
   "supersedes"
