@@ -8,7 +8,7 @@ import {
   buildBrainSearchPreviewResource,
   formatBrainSearchPreviewText,
   parseJsonObject,
-  returnedBrainKnowledgeCardCount
+  returnedKnowledgeReadModelCount
 } from "./brain-search-readback.js";
 import {
   runBrainKnowledgeCommand
@@ -37,8 +37,8 @@ import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
-  memoryRecordToKnowledgeCard
-} from "./memory-knowledge-card.js";
+  memoryRecordToKnowledgeReadModel
+} from "./memory-record-knowledge-read-model.js";
 
 export type BrainSearchCommand = Extract<CliCommand, { kind: "brainSearch" }>;
 
@@ -64,12 +64,12 @@ const maxBrainSearchCompactQueryRetries = 6;
 const skippedStoreOnlyReadback = (reason?: string): BrainKnowledgeReadback => ({
   result: {
     stdout: JSON.stringify({
-      totalCards: 0,
-      returnedCards: 0,
-      cards: [],
+      totalReadModels: 0,
+      returnedReadModels: 0,
+      readModels: [],
       proof: {
         doesNotProve: [
-          "brain knowledge catalog readback was explicitly skipped by --store-only",
+          "knowledge catalog readback was explicitly skipped by --store-only",
           ...(reason === undefined ? [] : [reason])
         ]
       }
@@ -118,31 +118,31 @@ const runStoreMemoryReadback = async (
       databaseRuntime.projectId,
       limit
     );
-    const cards = records.map(memoryRecordToKnowledgeCard);
+    const readModels = records.map(memoryRecordToKnowledgeReadModel);
 
     return {
       result: {
         stdout: JSON.stringify({
-          kind: "krn.brainKnowledge.cards.preview.v1",
+          kind: "krn.brain.knowledge.readback.v1",
           access: "read_only",
           mutation: "none",
           source: "memory_store",
           filter: {
             text: input.query
           },
-          totalCards: cards.length,
-          returnedCards: cards.length,
-          cards,
+          totalReadModels: readModels.length,
+          returnedReadModels: readModels.length,
+          readModels,
           proof: {
             proves: [
               "store-only brain search read active MemoryRecord rows from the configured DB project",
-              "MemoryRecords were converted to BrainKnowledgeReadModel packets before brain-search selection"
+              "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection"
             ],
             doesNotProve: [
               "DB-backed memory selection proves source truth",
               "Codex used the selected memory",
               "memory ranking quality is broad or production-ready",
-              "catalog-file brain knowledge was consulted"
+              "catalog-file knowledge was consulted"
             ]
           }
         })
@@ -170,7 +170,7 @@ const runCatalogBrainKnowledgeReadback = async (
 ): Promise<BrainKnowledgeCommandResult> =>
   input.runBrainKnowledge({
     cwd: input.runtime.cwd,
-    cardFiles: [],
+    readModelFiles: [],
     knowledgeFiles: [],
     catalogFiles: input.catalogFiles,
     filter: {
@@ -204,7 +204,7 @@ const runBrainKnowledgeReadback = async (
   const primaryResult = await runCatalogBrainKnowledgeReadback(input);
   const primaryJson = parseJsonObject(primaryResult.stdout, "brain knowledge");
 
-  if (returnedBrainKnowledgeCardCount(primaryJson) > 0) {
+  if (returnedKnowledgeReadModelCount(primaryJson) > 0) {
     return {
       result: primaryResult,
       queries: [input.query]
@@ -223,7 +223,7 @@ const runBrainKnowledgeReadback = async (
     });
     const compactJson = parseJsonObject(compactResult.stdout, "brain knowledge compact retry");
 
-    if (returnedBrainKnowledgeCardCount(compactJson) > 0) {
+    if (returnedKnowledgeReadModelCount(compactJson) > 0) {
       return {
         result: compactResult,
         queries: attemptedQueries

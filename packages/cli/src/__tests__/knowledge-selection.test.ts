@@ -1,29 +1,29 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatBrainKnowledgeSelectionLines,
-  brainKnowledgeSelectionFromReadbackJson,
-  brainKnowledgeSelectionFromMetadata,
-  unavailableBrainKnowledgeSelection
-} from "../brain-knowledge-selection.js";
+  formatKnowledgeSelectionLines,
+  knowledgeSelectionFromReadbackJson,
+  knowledgeSelectionFromMetadata,
+  unavailableKnowledgeSelection
+} from "../knowledge-selection.js";
 
-const validKnowledgeCard = {
-  id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
-  title: "Brain knowledge parser TypeScript exemplar",
+const validKnowledgeReadModel = {
+  id: "pattern:ts-boundary-knowledge-parser-exemplar",
+  title: "Knowledge parser TypeScript exemplar",
   reviewability: "ready",
   nextAction: "review",
   doesNotProve: "This exemplar does not prove broad TypeScript quality."
 };
 
 const validSelectionMetadata = {
-  kind: "krn.brainKnowledgePlanSelection.v1",
+  kind: "krn.knowledge.selection.v1",
   status: "selected",
   query: "unknown-first parser exemplar",
-  source: "brain_knowledge_catalog",
-  selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
+  source: "knowledge_catalog",
+  selectedKnowledgeIds: ["ts-boundary-knowledge-parser-exemplar"],
   selectedKnowledge: [{
-    ...validKnowledgeCard,
-    knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
+    ...validKnowledgeReadModel,
+    knowledgeId: "ts-boundary-knowledge-parser-exemplar",
     targetFit: "target_specific",
     targetFitReasons: ["matched distinctive query token(s): parser, exemplar."]
   }],
@@ -41,33 +41,33 @@ const validSelectionMetadata = {
   },
   recommendedNextAction:
     "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
-  reason: "Brain knowledge matched the pre-coding plan query.",
+  reason: "Knowledge read model matched the pre-coding plan query.",
   doesNotProve:
-    "Selected brain knowledge does not prove implementation correctness.",
+    "Selected knowledge does not prove implementation correctness.",
   proof: {
-    proves: ["brain knowledge catalog selected a brain knowledge"],
+    proves: ["knowledge catalog selected a knowledge read model"],
     doesNotProve: ["implementation correctness"]
   }
 };
 
-describe("brainKnowledgeSelection", () => {
-  it("parses brain knowledge cards through finite reviewability and action fields", () => {
-    const result = brainKnowledgeSelectionFromReadbackJson(
+describe("knowledgeSelection", () => {
+  it("parses knowledge read models through finite reviewability and action fields", () => {
+    const result = knowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
       JSON.stringify({
-        cards: [validKnowledgeCard],
+        readModels: [validKnowledgeReadModel],
         proof: {
-          proves: ["brain knowledge catalog selected a brain knowledge"],
+          proves: ["knowledge catalog selected a knowledge read model"],
           doesNotProve: ["implementation correctness"]
         }
       })
     );
 
     expect(result.status).toBe("selected");
-    expect(result.source).toBe("brain_knowledge_catalog");
+    expect(result.source).toBe("knowledge_catalog");
     expect(result.selectedKnowledge).toEqual([{
-      ...validKnowledgeCard,
-      knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
+      ...validKnowledgeReadModel,
+      knowledgeId: "ts-boundary-knowledge-parser-exemplar",
       targetFit: "target_specific",
       targetFitReasons: ["matched distinctive query token(s): parser, exemplar."]
     }]);
@@ -76,13 +76,13 @@ describe("brainKnowledgeSelection", () => {
   });
 
   it("preserves store-backed readback source for plan metadata", () => {
-    const result = brainKnowledgeSelectionFromReadbackJson(
+    const result = knowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
       JSON.stringify({
         source: "memory_store",
-        cards: [validKnowledgeCard],
+        readModels: [validKnowledgeReadModel],
         proof: {
-          proves: ["memory store selected a brain knowledge"],
+          proves: ["memory store selected a knowledge read model"],
           doesNotProve: ["source truth"]
         }
       })
@@ -90,15 +90,15 @@ describe("brainKnowledgeSelection", () => {
 
     expect(result.status).toBe("selected");
     expect(result.source).toBe("memory_store");
-    expect(result.proof.proves).toContain("memory store selected a brain knowledge");
+    expect(result.proof.proves).toContain("memory store selected a knowledge read model");
   });
 
-  it("rejects brain knowledge cards with prose next actions", () => {
-    const result = brainKnowledgeSelectionFromReadbackJson(
+  it("rejects knowledge read models with prose next actions", () => {
+    const result = knowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
       JSON.stringify({
-        cards: [{
-          ...validKnowledgeCard,
+        readModels: [{
+          ...validKnowledgeReadModel,
           nextAction: "Use before editing TypeScript IO boundaries."
         }]
       })
@@ -111,12 +111,12 @@ describe("brainKnowledgeSelection", () => {
 
   it("rejects metadata when selected knowledge items drift from the exemplar enums", () => {
     expect(
-      brainKnowledgeSelectionFromMetadata({
-        brainKnowledgeSelection: {
+      knowledgeSelectionFromMetadata({
+        knowledgeSelection: {
           ...validSelectionMetadata,
           selectedKnowledge: [{
-            ...validKnowledgeCard,
-            knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
+            ...validKnowledgeReadModel,
+            knowledgeId: "ts-boundary-knowledge-parser-exemplar",
             reviewability: "good_enough"
           }]
         }
@@ -124,16 +124,16 @@ describe("brainKnowledgeSelection", () => {
     ).toBeUndefined();
   });
 
-  it("parses valid brain knowledge metadata packets", () => {
+  it("parses valid knowledge selection metadata packets", () => {
     expect(
-      brainKnowledgeSelectionFromMetadata({
-        brainKnowledgeSelection: validSelectionMetadata
+      knowledgeSelectionFromMetadata({
+        knowledgeSelection: validSelectionMetadata
       })
     ).toMatchObject({
       status: "selected",
-      selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"],
+      selectedKnowledgeIds: ["ts-boundary-knowledge-parser-exemplar"],
       selectedKnowledge: [{
-        knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
+        knowledgeId: "ts-boundary-knowledge-parser-exemplar",
         reviewability: "ready",
         nextAction: "review"
       }]
@@ -141,8 +141,8 @@ describe("brainKnowledgeSelection", () => {
   });
 
   it("preserves explicit target-fit summary metadata instead of recomputing it", () => {
-    const result = brainKnowledgeSelectionFromMetadata({
-      brainKnowledgeSelection: {
+    const result = knowledgeSelectionFromMetadata({
+      knowledgeSelection: {
         ...validSelectionMetadata,
         targetFitSummary: {
           verdict: "generic_only_selected_knowledge",
@@ -164,16 +164,16 @@ describe("brainKnowledgeSelection", () => {
     expect(result?.recommendedNextAction).toBe("stored target-fit summary was preserved");
   });
 
-  it("formats unavailable brain knowledge readback with empty-target-fit guidance", () => {
-    const selection = unavailableBrainKnowledgeSelection(
+  it("formats unavailable knowledge readback with empty-target-fit guidance", () => {
+    const selection = unavailableKnowledgeSelection(
       "unknown-first parser exemplar",
       "brain knowledge command failed"
     );
 
     expect(selection.targetFitSummary.verdict).toBe("no_selected_knowledge");
     expect(selection.recommendedNextAction).toBe(selection.targetFitSummary.recommendedUse);
-    expect(formatBrainKnowledgeSelectionLines(selection)).toContain(
-      "Selected KRN context recommended use: Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first."
+    expect(formatKnowledgeSelectionLines(selection)).toContain(
+      "Selected KRN context recommended use: Do not infer selected knowledge sufficiency; use source/search evidence or acquire governed evidence first."
     );
   });
 });

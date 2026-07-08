@@ -11,7 +11,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/run-knowledge-cards-command.test.ts"
+    "packages/cli/src/__tests__/run-brain-knowledge-command.test.ts"
   ],
   "consumers": [
     "future Codex hook policy slices",
@@ -19,7 +19,7 @@
     "future hook-related eval/golden candidates"
   ],
   "falsifier": "A future KRN hook is treated as full enforcement, memory/source truth, or review-gate authority, or a hook decision ignores trust review, concurrent matching, event scope, or unsupported handler limits.",
-  "doesNotProve": "This card does not prove hooks are configured, hooks are sufficient security boundaries, Codex will always run the intended hook, or KRN is product-ready.",
+  "doesNotProve": "This knowledge decision does not prove hooks are configured, hooks are sufficient security boundaries, Codex will always run the intended hook, or KRN is product-ready.",
   "observedAt": "2026-06-30",
   "nextAction": "use"
 }

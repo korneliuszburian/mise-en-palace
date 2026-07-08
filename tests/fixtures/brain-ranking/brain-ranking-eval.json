@@ -18,7 +18,7 @@
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A generic memory feedback packet can mention helped/hurt without preserving activation downgrade semantics.",
       "expectedSelectedKnowledgeIds": ["pattern:helped-feedback-memory-application"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:helped-feedback-memory-application",
           "title": "Helped feedback memory application",
@@ -37,7 +37,7 @@
       "distractorClasses": ["obsolete-negative-memory"],
       "baselineFailureRationale": "A naive recall can reuse hurt memory wording without excluding it before activation.",
       "expectedSelectedKnowledgeIds": ["pattern:hurt-feedback-activation-exclusion"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:hurt-feedback-activation-exclusion",
           "title": "Hurt feedback activation exclusion",
@@ -56,7 +56,7 @@
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A loose usefulness match can select helped feedback without evidenceRef and doesNotProve requirements.",
       "expectedSelectedKnowledgeIds": ["pattern:pattern-usefulness-evidence-link"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:pattern-usefulness-evidence-link",
           "title": "Knowledge usefulness evidence link",
@@ -75,7 +75,7 @@
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A source-decision query can match generic source vocabulary while missing consumer and falsifier.",
       "expectedSelectedKnowledgeIds": ["pattern:source-to-decision-retention-gate"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:source-to-decision-retention-gate",
           "title": "Source-to-decision retention gate",
@@ -94,7 +94,7 @@
       "distractorClasses": ["catalog-vs-source"],
       "baselineFailureRationale": "Graph relation terminology can be confused with source truth unless the boundary packet remains selected.",
       "expectedSelectedKnowledgeIds": ["pattern:graph-relation-readback-boundary"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:graph-relation-readback-boundary",
           "title": "Graph relation readback boundary",
@@ -123,7 +123,7 @@
       "distractorClasses": ["catalog-vs-source"],
       "baselineFailureRationale": "Accepted SourceClaim wording can outrank decision-link provenance if the missing-link caveat is not retained.",
       "expectedSelectedKnowledgeIds": ["pattern:accepted-source-decision-link-readback"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:accepted-source-decision-link-readback",
           "title": "Accepted source decision link readback",
@@ -152,7 +152,7 @@
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A review process packet can match second-opinion wording while missing governed JSON and diff freshness.",
       "expectedSelectedKnowledgeIds": ["pattern:second-opinion-governed-review"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:second-opinion-governed-review",
           "title": "Second opinion governed review",
@@ -171,7 +171,7 @@
       "distractorClasses": ["target-specific-vs-generic"],
       "baselineFailureRationale": "Generic target repo planning can outrank explicit owner-file read-model evidence.",
       "expectedSelectedKnowledgeIds": ["pattern:target-owner-file-read-model"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:target-owner-file-read-model",
           "title": "Target owner-file read model",
@@ -189,15 +189,15 @@
       "query": "store only source evidence selected knowledge",
       "storeOnly": true,
       "distractorClasses": ["catalog-vs-source"],
-      "baselineFailureRationale": "A catalog-only baseline has no card, so the case requires source-search selected knowledge.",
+      "baselineFailureRationale": "A catalog-only baseline has no readModel, so the case requires source-search selected knowledge.",
       "expectedSelectedKnowledgeIds": ["store-source-claim"],
-      "knowledgeCards": [],
+      "knowledgeReadModels": [],
       "sourceClaims": [
         {
           "sourceClaimId": "store-source-claim",
           "claim": "Store-only brain search can derive selected knowledge from governed source evidence.",
           "mechanism": "Source search returns accepted SourceClaim fields with reviewability metadata.",
-          "krnImplication": "Brain search can surface source-backed context without file catalog cards.",
+          "krnImplication": "Brain search can surface source-backed context without file catalog readModels.",
           "consumer": "store-backed brain search",
           "falsifier": "Store-only brain search returns empty selectedKnowledge despite ready source evidence.",
           "doesNotProve": "This does not prove broad ranking quality."
@@ -211,7 +211,7 @@
       "distractorClasses": ["target-specific-vs-generic"],
       "baselineFailureRationale": "Generic retained KRN guardrails mention quality gates but are not EKOLOGUS target evidence.",
       "expectedSelectedKnowledgeIds": ["ekologus-target-claim"],
-      "knowledgeCards": [],
+      "knowledgeReadModels": [],
       "sourceClaims": [
         {
           "sourceClaimId": "ekologus-target-claim",
@@ -239,7 +239,7 @@
       "distractorClasses": ["adjacent-governance-pattern"],
       "baselineFailureRationale": "A local-test closure packet can mention plans and briefs but misses rendered Codex brief memory/source evidence.",
       "expectedSelectedKnowledgeIds": ["pattern:plan-brief-memory-advantage-comparator"],
-      "knowledgeCards": [
+      "knowledgeReadModels": [
         {
           "id": "pattern:plan-brief-memory-advantage-comparator",
           "title": "Plan brief memory advantage comparator",

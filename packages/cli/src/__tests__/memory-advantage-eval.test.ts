@@ -1044,7 +1044,7 @@ describe("runMemoryAdvantageEval", () => {
     const runtimeContradictionRawCase = rawFixture.cases.find((testCase) =>
       testCase.id === "runtime-memory-source-contradiction-review-context"
     );
-    expect(runtimeContradictionRawCase?.priorSession).not.toHaveProperty("excludedMemoryCards");
+    expect(runtimeContradictionRawCase?.priorSession).not.toHaveProperty("excludedMemoryReadModels");
     expect(runtimeContradictionRawCase?.priorSession).not.toHaveProperty("excludedSourceClaims");
     const runtimeContradictionCase = result.cases.find((testCase) =>
       testCase.caseId === "runtime-memory-source-contradiction-review-context"
@@ -1155,7 +1155,7 @@ describe("runMemoryAdvantageEval", () => {
       "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four"
     );
     expect(result.proof.doesNotProve).toContain(
-      "card or source-claim content payload size; selected-context size measures selection identifier overhead only"
+      "readModel or source-claim content payload size; selected-context size measures selection identifier overhead only"
     );
     expect(result.proof.doesNotProve).toContain("automatic Memory Core promotion from evidence or feedback");
     expect(result.proof.doesNotProve).toContain("live Postgres runtime behavior");

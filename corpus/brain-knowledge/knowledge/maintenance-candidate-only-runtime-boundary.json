@@ -9,7 +9,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/run-knowledge-cards-command.test.ts"
+    "packages/cli/src/__tests__/run-brain-knowledge-command.test.ts"
   ],
   "consumers": [
     "future maintenance/dreaming repair slices",
@@ -17,7 +17,7 @@
     "future candidate reviewability and missing-evidence gates"
   ],
   "falsifier": "A future maintenance or dreaming slice adds a scheduler, daemon, automatic memory/source mutation, or review-ready maintenance candidate without explicit evidence refs and reviewability reasons.",
-  "doesNotProve": "This card does not prove maintenance scheduling, autonomous dreaming, candidate truth, source truth, Memory Core mutation safety, or KRN product readiness.",
+  "doesNotProve": "This knowledge decision does not prove maintenance scheduling, autonomous dreaming, candidate truth, source truth, Memory Core mutation safety, or KRN product readiness.",
   "observedAt": "2026-06-30",
   "nextAction": "use"
 }

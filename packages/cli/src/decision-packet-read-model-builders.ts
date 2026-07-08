@@ -1,5 +1,5 @@
 import {
-  brainKnowledgeUsefulnessOutcomesFromMetadata,
+  knowledgeUsefulnessOutcomesFromMetadata,
   buildFeedbackRecommendationReadback,
   readMetadataObjectList,
   readMetadataString,
@@ -48,7 +48,7 @@ import type {
   DecisionPacketReadModelContext,
   DecisionPacketReadModelEvidenceBundle,
   DecisionPacketReadModelFeedbackDelta,
-  DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome,
+  DecisionPacketReadModelKnowledgeUsefulnessOutcome,
   DecisionPacketReadModelProof,
   DecisionPacketReadModel,
   DecisionPacketReadModelReviewAssessment,
@@ -57,8 +57,8 @@ import type {
   DecisionPacketReadModelTask
 } from "./decision-packet-read-model.js";
 import {
-  brainKnowledgeSelectionFromMetadata
-} from "./brain-knowledge-selection.js";
+  knowledgeSelectionFromMetadata
+} from "./knowledge-selection.js";
 import type { ProjectResolution } from "./database-runtime.js";
 
 const commandResource = (command: EvidenceCommand): DecisionPacketReadModelCommand => {
@@ -318,17 +318,17 @@ export const decisionPacketReadModelSourceUsefulnessOutcomes = (
     }];
   });
 
-export const decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes = (
+export const decisionPacketReadModelKnowledgeUsefulnessOutcomes = (
   feedback: FeedbackDelta
-): DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome[] =>
-  brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
-    brainKnowledgeId: outcome.brainKnowledgeId,
+): DecisionPacketReadModelKnowledgeUsefulnessOutcome[] =>
+  knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
+    knowledgeId: outcome.knowledgeId,
     outcome: outcome.outcome,
     reason: outcome.reason,
     evidenceRefs: outcome.evidenceRefs,
     recommendation: buildFeedbackRecommendationReadback({
       subjectKind: "brain_knowledge",
-      subjectId: outcome.brainKnowledgeId,
+      subjectId: outcome.knowledgeId,
       outcome: outcome.outcome,
       reason: outcome.reason,
       evidenceRefs: outcome.evidenceRefs,
@@ -431,7 +431,7 @@ const feedbackDeltaResource = (
     },
     candidates: decisionPacketReadModelCandidates(feedback),
     sourceUsefulnessOutcomes: decisionPacketReadModelSourceUsefulnessOutcomes(feedback),
-    brainKnowledgeUsefulnessOutcomes: decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes(feedback)
+    knowledgeUsefulnessOutcomes: decisionPacketReadModelKnowledgeUsefulnessOutcomes(feedback)
   };
 };
 
@@ -440,18 +440,18 @@ const proofResource = (): DecisionPacketReadModelProof => ({
   doesNotProve: [...decisionPacketReadModelDoesNotProve]
 });
 
-export const brainKnowledgeSelectionResource = (
+export const knowledgeSelectionResource = (
   aggregate: HarnessRunAggregate
-): ReturnType<typeof brainKnowledgeSelectionFromMetadata> =>
-  brainKnowledgeSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
-  brainKnowledgeSelectionFromMetadata(aggregate.executionRun.metadata);
+): ReturnType<typeof knowledgeSelectionFromMetadata> =>
+  knowledgeSelectionFromMetadata(aggregate.harnessPlan.metadata) ??
+  knowledgeSelectionFromMetadata(aggregate.executionRun.metadata);
 
 export const buildDecisionPacketReadModel = (
   aggregate: HarnessRunAggregate
 ): DecisionPacketReadModel => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
-  const brainKnowledgeSelection = brainKnowledgeSelectionResource(aggregate);
+  const knowledgeSelection = knowledgeSelectionResource(aggregate);
 
   return {
     kind: "krn.decisionPacket.readModel.v1",
@@ -459,7 +459,7 @@ export const buildDecisionPacketReadModel = (
     mutation: "none",
     run: runResource(aggregate, projectResolution),
     task: taskResource(aggregate),
-    ...(brainKnowledgeSelection === undefined ? {} : { brainKnowledgeSelection }),
+    ...(knowledgeSelection === undefined ? {} : { knowledgeSelection }),
     context: contextResource(aggregate, activationTrace),
     evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),

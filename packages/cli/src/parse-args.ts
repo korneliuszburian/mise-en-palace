@@ -1,12 +1,12 @@
 import type {
   EvidenceCommand,
-  BrainKnowledgeUsefulnessOutcomeFeedback,
+  KnowledgeUsefulnessOutcomeFeedback,
   SourceClaimEdgeKind,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
 } from "@krn/core";
 import type {
-  BrainKnowledgeSearchFilter
+  KnowledgeSearchFilter
 } from "@krn/harness";
 import {
   parseBrainArgs
@@ -130,7 +130,7 @@ export type CliCommand =
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
       sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
-      brainKnowledgeUsefulnessOutcomes?: readonly BrainKnowledgeUsefulnessOutcomeFeedback[];
+      knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
     }
   | {
       kind: "evidenceCaptureHelp";
@@ -172,12 +172,12 @@ export type CliCommand =
     }
   | {
       kind: "brainKnowledge";
-      cardFiles: readonly string[];
+      readModelFiles: readonly string[];
       knowledgeFiles: readonly string[];
       catalogFiles: readonly string[];
       storeOnly: boolean;
       projectId?: string;
-      filter: BrainKnowledgeSearchFilter;
+      filter: KnowledgeSearchFilter;
       format: "text" | "json" | "html";
       limit?: number;
     }
@@ -525,7 +525,7 @@ const usage = [
   "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
   "krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "krn doctor",
-  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]",
+  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "  source usefulness: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "  knowledge usefulness: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
@@ -537,7 +537,7 @@ const usage = [
   "krn run show --run-id <id>",
   "krn decision packet --run-id <id> [--json]",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
-  "krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",

@@ -12,14 +12,14 @@
     ".agents/skills/typescript-type-safety/SKILL.md"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future Codex skill updates",
     "future pattern-to-skill routing"
   ],
   "falsifier": "A repeated KRN workflow still requires copying long prompt blocks into chat, root plans, or AGENTS.md, or a relevant skill cannot query retained brain knowledge before implementation.",
-  "doesNotProve": "This card does not prove automatic skill selection, that many skills are useful by default, that Codex will always load the right skill, or product readiness.",
+  "doesNotProve": "This knowledge decision does not prove automatic skill selection, that many skills are useful by default, that Codex will always load the right skill, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"
 }

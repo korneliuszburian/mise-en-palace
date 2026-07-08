@@ -133,12 +133,12 @@ const targetEvidenceExpectation: OutputExpectation = {
   ]
 };
 
-const brainKnowledgeUsefulnessExpectation: OutputExpectation = {
+const knowledgeUsefulnessExpectation: OutputExpectation = {
   includes: [
     "Changed files:\nintended:",
     "- M packages/cli/src/run-evidence-capture-command.ts",
     "pnpm typecheck: passed | provenance=operator_reported",
-    "brainKnowledgeUsefulnessOutcomes:",
+    "knowledgeUsefulnessOutcomes:",
     "outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state",
     "reason: Knowledge selected the unknown-first parser shape",
     "evidenceRef: packages/cli/src/run-evidence-capture-command.ts",
@@ -214,7 +214,7 @@ describe("evidence capture behavior fixture", () => {
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => ""
     });
-    const brainKnowledgeUsefulnessResult = await runCli([
+    const knowledgeUsefulnessResult = await runCli([
       "evidence",
       "capture",
       "--intended-file",
@@ -233,13 +233,13 @@ describe("evidence capture behavior fixture", () => {
     const classifiedOutput = classifiedResult.stdout;
     const unclassifiedOutput = unclassifiedResult.stdout;
     const targetEvidenceOutput = targetEvidenceResult.stdout;
-    const brainKnowledgeUsefulnessOutput = brainKnowledgeUsefulnessResult.stdout;
+    const knowledgeUsefulnessOutput = knowledgeUsefulnessResult.stdout;
     const classifiedPassed = cliOutputMatches(classifiedResult, classifiedExpectation);
     const unclassifiedPassed = cliOutputMatches(unclassifiedResult, unclassifiedExpectation);
     const targetEvidencePassed = cliOutputMatches(targetEvidenceResult, targetEvidenceExpectation);
-    const brainKnowledgeUsefulnessPassed = cliOutputMatches(
-      brainKnowledgeUsefulnessResult,
-      brainKnowledgeUsefulnessExpectation
+    const knowledgeUsefulnessPassed = cliOutputMatches(
+      knowledgeUsefulnessResult,
+      knowledgeUsefulnessExpectation
     );
     const report = runBehaviorFixtures({
       tasks,
@@ -267,10 +267,10 @@ describe("evidence capture behavior fixture", () => {
         ),
         proof(
           "golden-case-evidence-pattern-usefulness-001-d",
-          brainKnowledgeUsefulnessPassed,
-          brainKnowledgeUsefulnessPassed
-            ? "Real CLI evidence capture rendered retained knowledge usefulness with brain knowledge id, evidence ref, reason, and does-not-prove boundary."
-            : brainKnowledgeUsefulnessOutput
+          knowledgeUsefulnessPassed,
+          knowledgeUsefulnessPassed
+            ? "Real CLI evidence capture rendered retained knowledge usefulness with knowledge id, evidence ref, reason, and does-not-prove boundary."
+            : knowledgeUsefulnessOutput
         )
       ]
     });

@@ -110,7 +110,7 @@ const brainKnowledgeMemory = (
   metadata: {
     knowledgeId,
     falsifier: `A task matching ${knowledgeId} no longer benefits from this pattern.`,
-    doesNotProve: "This brain knowledge memory does not prove source truth or broad ranking quality."
+    doesNotProve: "This knowledge memory does not prove source truth or broad ranking quality."
   },
   validFrom: now,
   createdAt: now,
@@ -119,9 +119,9 @@ const brainKnowledgeMemory = (
 
 const brainKnowledgeMemories: MemoryRecord[] = [
   brainKnowledgeMemory(
-    "ts-boundary-brain-knowledge-parser-exemplar",
+    "ts-boundary-knowledge-parser-exemplar",
     "TypeScript parser exemplar metadata-boundary",
-    "Use the retained TypeScript parser exemplar for parser, metadata-boundary, and brain knowledge read-model work."
+    "Use the retained TypeScript parser exemplar for parser, metadata-boundary, and knowledge read-model work."
   ),
   brainKnowledgeMemory(
     "ts-boundary-unknown-first-result-state",

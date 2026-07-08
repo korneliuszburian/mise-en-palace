@@ -13,15 +13,15 @@
     ".agents/skills/source-to-decision/SKILL.md"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future pattern intake",
     "future research condensation",
-    "future brain knowledge catalog reviews"
+    "future knowledge catalog reviews"
   ],
-  "falsifier": "A retained source, pattern, or catalog card can omit mechanism, consumer, falsifier, or does-not-prove while still passing the relevant pattern/readback guard.",
-  "doesNotProve": "This card does not prove source truth, research completeness, ranking quality, or product readiness.",
+  "falsifier": "A retained source, pattern, or catalog row can omit mechanism, consumer, falsifier, or does-not-prove while still passing the relevant pattern/readback guard.",
+  "doesNotProve": "This knowledge decision does not prove source truth, research completeness, ranking quality, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"
 }

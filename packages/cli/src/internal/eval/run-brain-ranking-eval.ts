@@ -6,7 +6,7 @@ import {
 } from "./eval-main.js";
 import {
   parseBrainSearchPreviewSections,
-  parseEvalKnowledgeCards,
+  parseEvalKnowledgeReadModels,
   parseEvalSourceClaims,
   isRecord,
   recordArray,
@@ -15,7 +15,7 @@ import {
   requiredString
 } from "./eval-fixture-support.js";
 import type {
-  EvalKnowledgeCardFixture,
+  EvalKnowledgeReadModelFixture,
   EvalSourceClaimFixture
 } from "./eval-fixture-support.js";
 import {
@@ -29,7 +29,7 @@ import {
   roundRankingMetric
 } from "./ranking-eval-metrics.js";
 
-type BrainRankingCardFixture = EvalKnowledgeCardFixture;
+type BrainRankingReadModelFixture = EvalKnowledgeReadModelFixture;
 type BrainRankingSourceClaimFixture = EvalSourceClaimFixture;
 
 interface BrainRankingCaseFixture {
@@ -39,7 +39,7 @@ interface BrainRankingCaseFixture {
   readonly distractorClasses: readonly string[];
   readonly baselineFailureRationale: string;
   readonly expectedSelectedKnowledgeIds: readonly string[];
-  readonly knowledgeCards: readonly BrainRankingCardFixture[];
+  readonly knowledgeReadModels: readonly BrainRankingReadModelFixture[];
   readonly sourceClaims: readonly BrainRankingSourceClaimFixture[];
 }
 
@@ -155,7 +155,7 @@ const parseCase = (
       "expectedSelectedKnowledgeIds",
       label
     ),
-    knowledgeCards: parseEvalKnowledgeCards(value, "knowledgeCards", label),
+    knowledgeReadModels: parseEvalKnowledgeReadModels(value, "knowledgeReadModels", label),
     sourceClaims: parseEvalSourceClaims(value, "sourceClaims", label)
   };
 };
@@ -234,13 +234,13 @@ const sourceSearchPayload = (
   });
 
 const knowledgePayload = (
-  cards: readonly BrainRankingCardFixture[]
+  readModels: readonly BrainRankingReadModelFixture[]
 ): string =>
   JSON.stringify({
-    kind: "krn.brainKnowledge.cards.preview.v1",
-    returnedCards: cards.length,
-    totalCards: cards.length,
-    cards,
+    kind: "krn.brain.knowledge.readback.v1",
+    returnedReadModels: readModels.length,
+    totalReadModels: readModels.length,
+    readModels,
     proof: {
       doesNotProve: ["brain-knowledge catalog completeness", "semantic ranking quality"]
     }
@@ -278,7 +278,7 @@ const evaluateCase = async (
   const command: BrainSearchCommand = {
     kind: "brainSearch",
     query: testCase.query,
-    catalogFiles: ["tests/fixtures/brain-ranking/brain-ranking-eval.json#knowledge-cards"],
+    catalogFiles: ["tests/fixtures/brain-ranking/brain-ranking-eval.json#knowledge-readModels"],
     storeOnly: testCase.storeOnly,
     limit: 10,
     maxInclusions: 10,
@@ -292,7 +292,7 @@ const evaluateCase = async (
     command,
     async runBrainKnowledge() {
       return {
-        stdout: knowledgePayload(testCase.knowledgeCards)
+        stdout: knowledgePayload(testCase.knowledgeReadModels)
       };
     },
     async runSourceSearch() {

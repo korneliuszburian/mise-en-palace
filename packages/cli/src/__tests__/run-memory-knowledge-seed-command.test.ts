@@ -13,7 +13,7 @@ import type {
   MemoryCandidate,
   MemoryRecord
 } from "@krn/core";
-import type { BrainKnowledgeDecision } from "@krn/harness";
+import type { KnowledgeDecision } from "@krn/harness";
 import type {
   CreateMemoryCandidateInput,
   PromoteMemoryCandidateInput
@@ -34,7 +34,7 @@ import {
 
 const now = "2026-07-06T00:00:00.000Z";
 
-const fixtureKnowledge = (overrides: Partial<BrainKnowledgeDecision> = {}): BrainKnowledgeDecision => ({
+const fixtureKnowledge = (overrides: Partial<KnowledgeDecision> = {}): KnowledgeDecision => ({
   knowledgeId: "ts-boundary-unknown-first-result-state",
   name: "Unknown-first result state",
   decisionStatus: "adopt_now",
@@ -54,7 +54,7 @@ const fixtureKnowledge = (overrides: Partial<BrainKnowledgeDecision> = {}): Brai
 
 const writeKnowledgeCatalog = async (
   directory: string,
-  pattern: BrainKnowledgeDecision
+  pattern: KnowledgeDecision
 ): Promise<void> => {
   await mkdir(path.join(directory, "knowledge"), { recursive: true });
   await writeFile(
@@ -294,7 +294,7 @@ describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
 });
 
 describe("runMemoryKnowledgeSeedCommand", () => {
-  it("previews brain knowledge decisions without opening the database", async () => {
+  it("previews knowledge decisions without opening the database", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
@@ -317,7 +317,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       });
 
       expect(result.stdout).toContain("Mode: dry-run (no writes)");
-      expect(result.stdout).toContain("Brain knowledge decisions in catalog: 1");
+      expect(result.stdout).toContain("Knowledge decisions in catalog: 1");
       expect(result.stdout).toContain(
         "- ts-boundary-unknown-first-result-state (adopt_now) <- catalog.json:knowledge/knowledge.json"
       );
@@ -326,7 +326,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
     }
   });
 
-  it("persists brain knowledge decisions once and skips already seeded knowledge ids", async () => {
+  it("persists knowledge decisions once and skips already seeded knowledge ids", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
@@ -440,8 +440,8 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       expect(parsed).toMatchObject({
         brainKnowledgeReadback: "store_only",
         brainKnowledgeQueries: ["db backed memory readback"],
-        knowledgeCards: {
-          cardIds: ["pattern:ts-boundary-unknown-first-result-state"],
+        knowledgeReadModels: {
+          readModelIds: ["pattern:ts-boundary-unknown-first-result-state"],
           selectedKnowledge: [{
             id: "pattern:ts-boundary-unknown-first-result-state",
             source: "memory_store",

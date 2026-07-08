@@ -408,7 +408,7 @@ const buildDecisionPacket = (
         sourceDecisionUsefulnessExample:
           `krn evidence capture --run-id ${runId} ${packetChecksumOption} --source-usefulness "decision:<id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
         knowledgeUsefulnessExample:
-          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --knowledge-usefulness "<brain-knowledge-id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+          `krn evidence capture --run-id ${runId} ${packetChecksumOption} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
         doesNotProve:
           "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum evidence only binds feedback to the rendered packet snapshot."
       }

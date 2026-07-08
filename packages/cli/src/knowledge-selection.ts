@@ -1,10 +1,10 @@
 import type {
-  BrainKnowledgeNextAction,
-  BrainKnowledgeReviewability
+  KnowledgeNextAction,
+  KnowledgeReviewability
 } from "@krn/harness";
 import {
-  brainKnowledgeNextActionValues,
-  brainKnowledgeReviewabilityValues
+  knowledgeNextActionValues,
+  knowledgeReviewabilityValues
 } from "@krn/harness";
 import {
   classifyTargetFit,
@@ -17,33 +17,33 @@ import type {
   TargetFitSummary
 } from "@krn/core";
 
-export type BrainKnowledgePlanSelectionStatus =
+export type KnowledgePlanSelectionStatus =
   | "selected"
   | "rejected_or_deferred"
   | "unavailable";
 
-export type BrainKnowledgePlanSelectionSource =
-  | "brain_knowledge_catalog"
+export type KnowledgePlanSelectionSource =
+  | "knowledge_catalog"
   | "memory_store";
 
-export interface BrainKnowledgePlanItem {
+export interface KnowledgePlanItem {
   id: string;
   knowledgeId: string;
   title: string;
-  reviewability: BrainKnowledgeReviewability;
-  nextAction: BrainKnowledgeNextAction;
+  reviewability: KnowledgeReviewability;
+  nextAction: KnowledgeNextAction;
   doesNotProve: string;
   targetFit: TargetFit;
   targetFitReasons: readonly string[];
 }
 
-export interface BrainKnowledgePlanSelection {
-  kind: "krn.brainKnowledgePlanSelection.v1";
-  status: BrainKnowledgePlanSelectionStatus;
+export interface KnowledgePlanSelection {
+  kind: "krn.knowledge.selection.v1";
+  status: KnowledgePlanSelectionStatus;
   query: string;
-  source: BrainKnowledgePlanSelectionSource;
+  source: KnowledgePlanSelectionSource;
   selectedKnowledgeIds: string[];
-  selectedKnowledge: BrainKnowledgePlanItem[];
+  selectedKnowledge: KnowledgePlanItem[];
   targetFitSummary: TargetFitSummary;
   recommendedNextAction: string;
   reason: string;
@@ -54,7 +54,7 @@ export interface BrainKnowledgePlanSelection {
   };
 }
 
-export const brainKnowledgePlanSelectionMetadataKey = "brainKnowledgeSelection";
+export const knowledgePlanSelectionMetadataKey = "knowledgeSelection";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -63,13 +63,13 @@ type FieldParsers<T extends object> = {
   [Key in keyof T]-?: (record: Record<string, unknown>) => T[Key] | undefined;
 };
 
-type BrainKnowledgePlanItemFields = Omit<
-  BrainKnowledgePlanItem,
+type KnowledgePlanItemFields = Omit<
+  KnowledgePlanItem,
   "knowledgeId" | "targetFit" | "targetFitReasons"
 >;
 
-type BrainKnowledgePlanSelectionMetadataFields = Pick<
-  BrainKnowledgePlanSelection,
+type KnowledgePlanSelectionMetadataFields = Pick<
+  KnowledgePlanSelection,
   "kind" | "status" | "query" | "source" | "selectedKnowledgeIds" | "reason" | "doesNotProve"
 >;
 
@@ -80,16 +80,16 @@ const selectionStatuses = new Set<string>([
 ]);
 
 const selectionSources = new Set<string>([
-  "brain_knowledge_catalog",
+  "knowledge_catalog",
   "memory_store"
 ]);
 
 const planItemReviewabilities = new Set<string>(
-  brainKnowledgeReviewabilityValues
+  knowledgeReviewabilityValues
 );
 
 const planItemNextActions = new Set<string>(
-  brainKnowledgeNextActionValues
+  knowledgeNextActionValues
 );
 
 const planItemTargetFits = new Set<string>(targetFitValues);
@@ -99,22 +99,22 @@ const parseNonEmptyString = (value: unknown): string | undefined =>
 
 const isSelectionStatus = (
   value: unknown
-): value is BrainKnowledgePlanSelectionStatus =>
+): value is KnowledgePlanSelectionStatus =>
   typeof value === "string" && selectionStatuses.has(value);
 
 const isSelectionSource = (
   value: unknown
-): value is BrainKnowledgePlanSelection["source"] =>
+): value is KnowledgePlanSelection["source"] =>
   typeof value === "string" && selectionSources.has(value);
 
 const isPlanItemReviewability = (
   value: unknown
-): value is BrainKnowledgeReviewability =>
+): value is KnowledgeReviewability =>
   typeof value === "string" && planItemReviewabilities.has(value);
 
 const isPlanItemNextAction = (
   value: unknown
-): value is BrainKnowledgeNextAction =>
+): value is KnowledgeNextAction =>
   typeof value === "string" && planItemNextActions.has(value);
 
 const isPlanItemTargetFit = (value: unknown): value is TargetFit =>
@@ -146,7 +146,7 @@ const parseObjectFields = <T extends object>(
   return Object.fromEntries(entries) as T;
 };
 
-const planItemFieldParsers: FieldParsers<BrainKnowledgePlanItemFields> = {
+const planItemFieldParsers: FieldParsers<KnowledgePlanItemFields> = {
   id: (record) => parseNonEmptyString(record["id"]),
   title: (record) => parseNonEmptyString(record["title"]),
   reviewability: (record) =>
@@ -156,10 +156,10 @@ const planItemFieldParsers: FieldParsers<BrainKnowledgePlanItemFields> = {
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
-const selectionMetadataFieldParsers: FieldParsers<BrainKnowledgePlanSelectionMetadataFields> = {
+const selectionMetadataFieldParsers: FieldParsers<KnowledgePlanSelectionMetadataFields> = {
   kind: (record) =>
-    record["kind"] === "krn.brainKnowledgePlanSelection.v1"
-      ? "krn.brainKnowledgePlanSelection.v1"
+    record["kind"] === "krn.knowledge.selection.v1"
+      ? "krn.knowledge.selection.v1"
       : undefined,
   status: (record) =>
     isSelectionStatus(record["status"]) ? record["status"] : undefined,
@@ -171,10 +171,10 @@ const selectionMetadataFieldParsers: FieldParsers<BrainKnowledgePlanSelectionMet
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
-const knowledgeIdFromCardId = (id: string): string =>
+const knowledgeIdFromReadModelId = (id: string): string =>
   id.startsWith("pattern:") ? id.slice("pattern:".length) : id;
 
-const cardTargetFitText = (record: Record<string, unknown>): string =>
+const readModelTargetFitText = (record: Record<string, unknown>): string =>
   [
     record["id"],
     record["title"],
@@ -191,7 +191,7 @@ const cardTargetFitText = (record: Record<string, unknown>): string =>
 const planItemFromRecord = (
   record: Record<string, unknown>,
   knowledgeId: string | undefined
-): BrainKnowledgePlanItem | undefined => {
+): KnowledgePlanItem | undefined => {
   const requiredFields = parseObjectFields(record, planItemFieldParsers);
 
   if (requiredFields === undefined) {
@@ -200,18 +200,18 @@ const planItemFromRecord = (
 
   return {
     ...requiredFields,
-    knowledgeId: knowledgeId ?? knowledgeIdFromCardId(requiredFields.id),
+    knowledgeId: knowledgeId ?? knowledgeIdFromReadModelId(requiredFields.id),
     targetFit: isPlanItemTargetFit(record["targetFit"]) ? record["targetFit"] : "unknown",
     targetFitReasons: parseStringArray(record["targetFitReasons"]) ?? [
-      "target-fit metadata was not present on this brain knowledge item."
+      "target-fit metadata was not present on this knowledge read model."
     ]
   };
 };
 
-const planItemFromCard = (
+const planItemFromReadModel = (
   value: unknown,
   query: string
-): BrainKnowledgePlanItem | undefined => {
+): KnowledgePlanItem | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -222,20 +222,20 @@ const planItemFromCard = (
     return undefined;
   }
 
-  // Target fit is query-relative plan evidence; selectedKnowledge cards do not own it.
+  // Target fit is query-relative plan evidence; selectedKnowledge readModels do not own it.
   return {
     ...item,
     ...classifyTargetFit({
       query,
-      text: cardTargetFitText(value),
-      emptyTextReason: "brain knowledge card has no classifiable target-fit text."
+      text: readModelTargetFitText(value),
+      emptyTextReason: "knowledge read model has no classifiable target-fit text."
     })
   };
 };
 
 const proofFromRecord = (
   value: unknown
-): BrainKnowledgePlanSelection["proof"] => {
+): KnowledgePlanSelection["proof"] => {
   if (!isRecord(value)) {
     return {
       proves: [],
@@ -251,22 +251,22 @@ const proofFromRecord = (
 
 const selectionSourceFromReadback = (
   record: Record<string, unknown> | undefined
-): BrainKnowledgePlanSelectionSource =>
-  record?.["source"] === "memory_store" ? "memory_store" : "brain_knowledge_catalog";
+): KnowledgePlanSelectionSource =>
+  record?.["source"] === "memory_store" ? "memory_store" : "knowledge_catalog";
 
-const readbackLabelFor = (source: BrainKnowledgePlanSelectionSource): string =>
+const readbackLabelFor = (source: KnowledgePlanSelectionSource): string =>
   source === "memory_store" ? "memory-store readback" : "catalog readback";
 
-export const brainKnowledgeSelectionFromReadbackJson = (
+export const knowledgeSelectionFromReadbackJson = (
   query: string,
   text: string
-): BrainKnowledgePlanSelection => {
+): KnowledgePlanSelection => {
   const parsed: unknown = JSON.parse(text);
   const record = isRecord(parsed) ? parsed : undefined;
   const source = selectionSourceFromReadback(record);
-  const cards = Array.isArray(record?.cards) ? record.cards : [];
-  const selectedKnowledge = cards.flatMap((card) => {
-    const item = planItemFromCard(card, query);
+  const readModels = Array.isArray(record?.readModels) ? record.readModels : [];
+  const selectedKnowledge = readModels.flatMap((readModel) => {
+    const item = planItemFromReadModel(readModel, query);
 
     return item === undefined ? [] : [item];
   });
@@ -274,7 +274,7 @@ export const brainKnowledgeSelectionFromReadbackJson = (
 
   if (selectedKnowledge.length === 0) {
     return {
-      kind: "krn.brainKnowledgePlanSelection.v1",
+      kind: "krn.knowledge.selection.v1",
       status: "rejected_or_deferred",
       query,
       source,
@@ -282,15 +282,15 @@ export const brainKnowledgeSelectionFromReadbackJson = (
       selectedKnowledge: [],
       targetFitSummary,
       recommendedNextAction: targetFitSummary.recommendedUse,
-      reason: "No brain knowledge matched the pre-coding plan query.",
+      reason: "No knowledge read model matched the pre-coding plan query.",
       doesNotProve:
-        `No matched brain knowledge does not prove no relevant knowledge exists; it proves only that this ${readbackLabelFor(source)} did not select one.`,
+        `No matched knowledge read model does not prove no relevant knowledge exists; it proves only that this ${readbackLabelFor(source)} did not select one.`,
       proof: proofFromRecord(record?.proof)
     };
   }
 
   return {
-    kind: "krn.brainKnowledgePlanSelection.v1",
+    kind: "krn.knowledge.selection.v1",
     status: "selected",
     query,
     source,
@@ -298,22 +298,22 @@ export const brainKnowledgeSelectionFromReadbackJson = (
     selectedKnowledge,
     targetFitSummary,
     recommendedNextAction: targetFitSummary.recommendedUse,
-    reason: "Brain knowledge matched the pre-coding plan query.",
+    reason: "Knowledge read model matched the pre-coding plan query.",
     doesNotProve:
-      "Selected brain knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
+      "Selected knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
     proof: proofFromRecord(record?.proof)
   };
 };
 
-export const unavailableBrainKnowledgeSelection = (
+export const unavailableKnowledgeSelection = (
   query: string,
   reason: string,
-  source: BrainKnowledgePlanSelectionSource = "memory_store"
-): BrainKnowledgePlanSelection => {
+  source: KnowledgePlanSelectionSource = "memory_store"
+): KnowledgePlanSelection => {
   const targetFitSummary = summarizeTargetFit([]);
 
   return {
-    kind: "krn.brainKnowledgePlanSelection.v1",
+    kind: "krn.knowledge.selection.v1",
     status: "unavailable",
     query,
     source,
@@ -323,11 +323,11 @@ export const unavailableBrainKnowledgeSelection = (
     recommendedNextAction: targetFitSummary.recommendedUse,
     reason,
     doesNotProve:
-      "Unavailable brain knowledge readback does not prove no relevant knowledge exists; run brain knowledge readback before making selection claims.",
+      "Unavailable knowledge readback does not prove no relevant knowledge exists; run knowledge readback before making selection claims.",
     proof: {
-      proves: ["plan recorded an explicit brain-knowledge readback failure"],
+      proves: ["plan recorded an explicit knowledge readback failure"],
       doesNotProve: [
-        "brain knowledge catalog completeness",
+        "knowledge catalog completeness",
         "knowledge relevance",
         "implementation correctness"
       ]
@@ -335,7 +335,7 @@ export const unavailableBrainKnowledgeSelection = (
   }
 };
 
-const planItemFromMetadata = (value: unknown): BrainKnowledgePlanItem | undefined => {
+const planItemFromMetadata = (value: unknown): KnowledgePlanItem | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -345,10 +345,10 @@ const planItemFromMetadata = (value: unknown): BrainKnowledgePlanItem | undefine
   return knowledgeId === undefined ? undefined : planItemFromRecord(value, knowledgeId);
 };
 
-export const brainKnowledgeSelectionFromMetadata = (
+export const knowledgeSelectionFromMetadata = (
   metadata: Record<string, unknown> | undefined
-): BrainKnowledgePlanSelection | undefined => {
-  const value = metadata?.[brainKnowledgePlanSelectionMetadataKey];
+): KnowledgePlanSelection | undefined => {
+  const value = metadata?.[knowledgePlanSelectionMetadataKey];
 
   if (!isRecord(value)) {
     return undefined;
@@ -382,8 +382,8 @@ export const brainKnowledgeSelectionFromMetadata = (
   };
 };
 
-export const formatBrainKnowledgeSelectionLines = (
-  selection: BrainKnowledgePlanSelection | undefined
+export const formatKnowledgeSelectionLines = (
+  selection: KnowledgePlanSelection | undefined
 ): string[] => {
   if (selection === undefined) {
     return [
@@ -403,7 +403,7 @@ export const formatBrainKnowledgeSelectionLines = (
     ...selection.selectedKnowledge.map((knowledge) =>
       [
         `- knowledge=${knowledge.knowledgeId}`,
-        `card=${knowledge.id}`,
+        `readModel=${knowledge.id}`,
         `reviewability=${knowledge.reviewability}`,
         `targetFit=${knowledge.targetFit}`,
         `title=${knowledge.title}`,

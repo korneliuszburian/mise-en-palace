@@ -258,7 +258,7 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("reason: Source claim kept pattern-intake proof boundaries visible");
   expect(stdout).toContain("evidenceRef: evidence-bundle-1");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
-  expect(stdout).toContain("brainKnowledgeUsefulnessOutcomes:");
+  expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
   expect(stdout).toContain("outcome=helped knowledge=pattern:ts-boundary-unknown-first-result-state");
   expect(stdout).toContain("reason: Knowledge selected the unknown-first parser shape");
   expect(stdout).toContain("doesNotProve: Does not prove future pattern recall quality");
@@ -303,8 +303,8 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
       doesNotProve: "Does not prove future source selector quality"
     }],
-    brainKnowledgeUsefulnessOutcomes: [{
-      brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+    knowledgeUsefulnessOutcomes: [{
+      knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
       outcome: "helped",
       reason: "Knowledge selected the unknown-first parser shape",
       evidenceRefs: ["evidence-bundle-1"],
@@ -399,7 +399,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
@@ -756,8 +756,8 @@ describe("runCli", () => {
         evidenceRefs: ["stale-source-ref"],
         doesNotProve: "Does not prove future source selection quality"
       }],
-      brainKnowledgeUsefulnessOutcomes: [{
-        brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
         outcome: "unknown",
         reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
         evidenceRefs: ["stale-proof-ref"],

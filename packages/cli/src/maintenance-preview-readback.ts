@@ -221,7 +221,7 @@ const hasUsefulSourceEvidence = (sourceSearch: JsonRecord): boolean =>
 const targetFitSummaryFromBrainSearch = (
   readback: JsonRecord
 ): TargetFitSummary | undefined =>
-  parseTargetFitSummary(recordValue(readback["knowledgeCards"])?.["targetFitSummary"]);
+  parseTargetFitSummary(recordValue(readback["knowledgeReadModels"])?.["targetFitSummary"]);
 
 const genericOnlyTargetFitMissingEvidence = (
   input: {

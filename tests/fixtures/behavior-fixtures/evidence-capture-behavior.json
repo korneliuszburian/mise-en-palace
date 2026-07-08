@@ -123,8 +123,8 @@
             "domain": "capability",
             "severity": "blocking",
             "title": "knowledge usefulness is recorded without evidence refs or non-proof boundary",
-            "mustNot": "Evidence capture must not render retained knowledge usefulness as helped feedback unless the brain knowledge id, evidence ref, reason, and does-not-prove boundary are visible.",
-            "detection": "CLI output omits brainKnowledgeUsefulnessOutcomes, the brain knowledge id, evidenceRef, or doesNotProve."
+            "mustNot": "Evidence capture must not render retained knowledge usefulness as helped feedback unless the knowledge id, evidence ref, reason, and does-not-prove boundary are visible.",
+            "detection": "CLI output omits knowledgeUsefulnessOutcomes, the knowledge id, evidenceRef, or doesNotProve."
           }
         ],
         "sourceRefs": [

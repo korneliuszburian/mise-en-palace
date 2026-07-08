@@ -11,7 +11,7 @@
     "source:ts-reset"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "V258 Pattern Enforcement Gate",
@@ -19,7 +19,7 @@
     "future UI/search read model"
   ],
   "falsifier": "A replayable target repair can trust parsed external input directly or represent invalid input as null/boolean while the pattern gate still passes.",
-  "doesNotProve": "This card does not prove real target transfer, complete TypeScript quality, automatic skill selection, or product readiness.",
+  "doesNotProve": "This knowledge decision does not prove real target transfer, complete TypeScript quality, automatic skill selection, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"
 }

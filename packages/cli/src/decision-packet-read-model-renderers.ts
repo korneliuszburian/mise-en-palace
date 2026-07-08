@@ -17,7 +17,7 @@ import type { HarnessRunAggregate } from "@krn/harness/repositories";
 
 import type { ProjectResolution } from "./database-runtime.js";
 import { formatProjectResolutionKind } from "./project-resolution-format.js";
-import { formatBrainKnowledgeSelectionLines } from "./brain-knowledge-selection.js";
+import { formatKnowledgeSelectionLines } from "./knowledge-selection.js";
 import {
   metadataArrayLength,
   projectResolutionFromMetadata
@@ -25,9 +25,9 @@ import {
 import {
   activationDiagnosticsResource,
   activationTraceResource,
-  brainKnowledgeSelectionResource,
+  knowledgeSelectionResource,
   decisionPacketReadModelCandidates,
-  decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes,
+  decisionPacketReadModelKnowledgeUsefulnessOutcomes,
   decisionPacketReadModelSourceUsefulnessOutcomes
 } from "./decision-packet-read-model-builders.js";
 import {
@@ -36,7 +36,7 @@ import {
 } from "./decision-packet-read-model.js";
 import type {
   DecisionPacketReadModelActivationCandidate,
-  DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome,
+  DecisionPacketReadModelKnowledgeUsefulnessOutcome,
   DecisionPacketReadModelSourceUsefulnessOutcome
 } from "./decision-packet-read-model.js";
 
@@ -216,10 +216,10 @@ const renderSourceUsefulnessOutcomes = (
   ];
 };
 
-const renderBrainKnowledgeUsefulnessOutcomes = (
+const renderKnowledgeUsefulnessOutcomes = (
   feedback: FeedbackDelta
 ): string[] => {
-  const outcomes = decisionPacketReadModelBrainKnowledgeUsefulnessOutcomes(feedback);
+  const outcomes = decisionPacketReadModelKnowledgeUsefulnessOutcomes(feedback);
 
   if (outcomes.length === 0) {
     return ["  knowledge usefulness outcomes: none"];
@@ -228,7 +228,7 @@ const renderBrainKnowledgeUsefulnessOutcomes = (
   return [
     "  knowledge usefulness outcomes:",
     ...outcomes.flatMap((outcome) => [
-      `  - outcome=${outcome.outcome} knowledge=${outcome.brainKnowledgeId}`,
+      `  - outcome=${outcome.outcome} knowledge=${outcome.knowledgeId}`,
       `    reason: ${outcome.reason}`,
       ...renderFeedbackRecommendation(outcome),
       ...(outcome.evidenceRefs.length === 0
@@ -242,7 +242,7 @@ const renderBrainKnowledgeUsefulnessOutcomes = (
 const renderFeedbackRecommendation = (
   outcome:
     | DecisionPacketReadModelSourceUsefulnessOutcome
-    | DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome
+    | DecisionPacketReadModelKnowledgeUsefulnessOutcome
 ): string[] => [
   `    recommendationMutation: ${outcome.recommendation.mutation}`,
   ...outcome.recommendation.recommendations.map((recommendation) =>
@@ -263,7 +263,7 @@ const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
     `  memoryRecordMutation: ${summary.memoryRecordMutation}`,
     `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates}, source_claim=${summary.counts.sourceClaimCandidates}, source_decision=${summary.counts.sourceDecisionCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
     ...renderSourceUsefulnessOutcomes(feedback),
-    ...renderBrainKnowledgeUsefulnessOutcomes(feedback),
+    ...renderKnowledgeUsefulnessOutcomes(feedback),
     ...(
       candidateDetails.length === 0
         ? ["  candidate details: none"]
@@ -357,11 +357,11 @@ const renderContextSection = (
   ...renderActivationTrace(aggregate)
 ];
 
-const renderBrainKnowledgeSelection = (
+const renderKnowledgeSelection = (
   aggregate: HarnessRunAggregate
 ): string[] => [
   "Selected KRN Context:",
-  ...formatBrainKnowledgeSelectionLines(brainKnowledgeSelectionResource(aggregate))
+  ...formatKnowledgeSelectionLines(knowledgeSelectionResource(aggregate))
 ];
 
 const renderReviewAssessments = (
@@ -398,7 +398,7 @@ export const renderDecisionPacketReadModelText = (
     "",
     ...renderTaskSection(aggregate, projectResolution),
     "",
-    ...renderBrainKnowledgeSelection(aggregate),
+    ...renderKnowledgeSelection(aggregate),
     "",
     ...renderContextSection(aggregate, activationDiagnostics),
     "",

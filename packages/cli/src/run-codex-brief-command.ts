@@ -5,9 +5,9 @@ import {  renderCodexBriefFromAggregate,
   resolveReadOnlyHarnessRuntime
 } from "./codex-brief-support.js";
 import {
-  formatBrainKnowledgeSelectionLines,
-  brainKnowledgeSelectionFromMetadata
-} from "./brain-knowledge-selection.js";
+  formatKnowledgeSelectionLines,
+  knowledgeSelectionFromMetadata
+} from "./knowledge-selection.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
@@ -86,7 +86,7 @@ export const runCodexBriefCommand = async (
       createId: runtime.createId,      nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
-    const brainKnowledgeSelection = brainKnowledgeSelectionFromMetadata(
+    const knowledgeSelection = knowledgeSelectionFromMetadata(
       aggregate.harnessPlan.metadata
     );
 
@@ -94,7 +94,7 @@ export const runCodexBriefCommand = async (
       stdout: renderText(
         runtime.runId,
         renderedBrief,
-        formatBrainKnowledgeSelectionLines(brainKnowledgeSelection)
+        formatKnowledgeSelectionLines(knowledgeSelection)
       )
     };
   } finally {

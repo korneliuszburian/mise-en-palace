@@ -101,11 +101,11 @@ describe("runCli", () => {
         status: "ready",
         summary: "render persisted Codex brief",
         metadata: {
-          brainKnowledgeSelection: {
-            kind: "krn.brainKnowledgePlanSelection.v1",
+          knowledgeSelection: {
+            kind: "krn.knowledge.selection.v1",
             status: "selected",
             query: "unknown-first boundary",
-            source: "brain_knowledge_catalog",
+            source: "knowledge_catalog",
             selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
             selectedKnowledge: [
               {
@@ -117,9 +117,9 @@ describe("runCli", () => {
                 doesNotProve: "This pattern does not prove implementation correctness."
               }
             ],
-            reason: "Brain knowledge matched the pre-coding plan query.",
+            reason: "Knowledge read model matched the pre-coding plan query.",
             doesNotProve:
-              "Selected brain knowledge do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+              "Selected knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
             proof: {
               proves: ["local readback filters were applied deterministically"],
               doesNotProve: ["ranking quality is good"]
@@ -270,7 +270,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context: selected");
     expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).toContain("Source Claims Used:");

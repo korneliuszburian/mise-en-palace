@@ -183,7 +183,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
-  it("persists selected brain knowledge IDs for plan --persist", async () => {
+  it("persists selected knowledge IDs for plan --persist", async () => {
     let executionRunMetadata: Record<string, unknown> | undefined;
     const result = await runCli(
       ["plan", "--task", "unknown first", "--persist"],
@@ -271,19 +271,19 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context: selected");
     expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "Selected KRN context reason: Store-backed brain knowledge matched the pre-coding plan query."
+      "Selected KRN context reason: Store-backed knowledge read model matched the pre-coding plan query."
     );
     expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "- knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state"
+      "- knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state"
     );
     expect(executionRunMetadata).toMatchObject({
-      brainKnowledgeSelection: {
+      knowledgeSelection: {
         status: "selected",
         source: "memory_store",
         reason:
-          "Store-backed brain knowledge matched the pre-coding plan query.",
+          "Store-backed knowledge read model matched the pre-coding plan query.",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"]
       }
     });
@@ -299,7 +299,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context: selected");
     expect(result.stdout).toContain("Selected KRN context IDs: consensus-relation-maintenance-review-boundary");
     expect(executionRunMetadata).toMatchObject({
-      brainKnowledgeSelection: {
+      knowledgeSelection: {
         status: "selected",
         selectedKnowledgeIds: ["consensus-relation-maintenance-review-boundary"]
       }
@@ -308,19 +308,19 @@ describe("runCli", () => {
 
   it("retries brain knowledge planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
-      "Improve brain-knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
+      "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Selected KRN context: selected");
     expect(result.stdout).toContain("Selected KRN context query: typescript parser exemplar");
-    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-brain-knowledge-parser-exemplar");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-knowledge-parser-exemplar");
     expect(executionRunMetadata).toMatchObject({
-      brainKnowledgeSelection: {
+      knowledgeSelection: {
         status: "selected",
         query: "typescript parser exemplar",
-        selectedKnowledgeIds: ["ts-boundary-brain-knowledge-parser-exemplar"]
+        selectedKnowledgeIds: ["ts-boundary-knowledge-parser-exemplar"]
       }
     });
   });
@@ -336,7 +336,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Selected KRN context query: prove reference implementation recipe");
     expect(result.stdout).toContain("Selected KRN context IDs: reference-implementation-recipe-clone-boundary");
     expect(executionRunMetadata).toMatchObject({
-      brainKnowledgeSelection: {
+      knowledgeSelection: {
         status: "selected",
         query: "prove reference implementation recipe",
         selectedKnowledgeIds: ["reference-implementation-recipe-clone-boundary"]

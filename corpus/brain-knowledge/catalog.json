@@ -1,8 +1,8 @@
 {
-  "cardFiles": [],
+  "readModelFiles": [],
   "usefulnessFeedbackFiles": [],
   "knowledgeFiles": [
-    "knowledge/brain-knowledge-read-only-ui-boundary.json",
+    "knowledge/knowledge-read-only-preview-boundary.json",
     "knowledge/codex-hook-deterministic-guardrail-boundary.json",
     "knowledge/codex-skill-progressive-disclosure-routing.json",
     "knowledge/consensus-relation-maintenance-review-boundary.json",
@@ -12,7 +12,7 @@
     "knowledge/maintenance-candidate-only-runtime-boundary.json",
     "knowledge/krn-brain-layer-model-boundary.json",
     "knowledge/reference-implementation-recipe-clone-boundary.json",
-    "knowledge/ts-boundary-brain-knowledge-parser-exemplar.json",
+    "knowledge/ts-boundary-knowledge-parser-exemplar.json",
     "knowledge/source-to-decision-retention-gate.json",
     "knowledge/target-repo-write-authority-boundary.json",
     "knowledge/untrusted-context-warning-boundary.json",

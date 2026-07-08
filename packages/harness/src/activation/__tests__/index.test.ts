@@ -979,7 +979,7 @@ describe("activation engine", () => {
     });
   });
 
-  it("keeps selected brain knowledge as the primary utility signal when present", () => {
+  it("keeps selected knowledge as the primary utility signal when present", () => {
     const readback = buildActivationUtilityLabReadback({
       selectedKnowledgeCount: 1,
       answerUsefulness: "useful",
@@ -998,7 +998,7 @@ describe("activation engine", () => {
       },
       verdict: "selected_knowledge_sufficient",
       recommendedNextAction:
-        "Use selected brain knowledge first; linked evidence can remain supporting context."
+        "Use selected knowledge first; linked evidence can remain supporting context."
     });
   });
 

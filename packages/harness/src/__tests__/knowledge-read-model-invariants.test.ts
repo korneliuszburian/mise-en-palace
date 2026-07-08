@@ -9,7 +9,7 @@ import {
   it
 } from "vitest";
 
-import { parseBrainKnowledgeUsefulnessFeedbackList } from "../brain-knowledge-read-model.js";
+import { parseKnowledgeUsefulnessFeedbackList } from "../knowledge-read-model.js";
 
 const readRootFile = (path: string): string =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), "utf8");
@@ -17,13 +17,13 @@ const readRootFile = (path: string): string =>
 const readJsonRootFile = (path: string): unknown =>
   JSON.parse(readRootFile(path));
 
-describe("Brain knowledge read model invariants", () => {
-  it("keeps the TypeScript brain knowledge decision available as a concrete knowledge card", () => {
+describe("Knowledge read model invariants", () => {
+  it("keeps the TypeScript knowledge decision available as a concrete knowledge read model", () => {
     const pattern = readJsonRootFile(
       "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json"
     );
-    const card = readJsonRootFile(
-      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
+    const readModel = readJsonRootFile(
+      "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json"
     );
 
     expect(pattern).toMatchObject({
@@ -34,7 +34,7 @@ describe("Brain knowledge read model invariants", () => {
       nextAction: "use"
     });
 
-    expect(card).toMatchObject({
+    expect(readModel).toMatchObject({
       id: "pattern:ts-boundary-unknown-first-result-state",
       kind: "pattern",
       status: "active",
@@ -49,24 +49,24 @@ describe("Brain knowledge read model invariants", () => {
       nextAction: "use"
     });
 
-    if (!isRecord(card)) {
-      throw new Error("Brain brain knowledge fixture must be an object.");
+    if (!isRecord(readModel)) {
+      throw new Error("Knowledge read model fixture must be an object.");
     }
 
-    expectNonEmptyString(card, "title");
-    expectNonEmptyString(card, "summary");
-    expectNonEmptyString(card, "falsifier");
-    expectNonEmptyString(card, "doesNotProve");
-    expectNonEmptyStringArray(card, "sourceRefs");
-    expectNonEmptyStringArray(card, "evidenceRefs");
-    expectNonEmptyStringArray(card, "consumers");
+    expectNonEmptyString(readModel, "title");
+    expectNonEmptyString(readModel, "summary");
+    expectNonEmptyString(readModel, "falsifier");
+    expectNonEmptyString(readModel, "doesNotProve");
+    expectNonEmptyStringArray(readModel, "sourceRefs");
+    expectNonEmptyStringArray(readModel, "evidenceRefs");
+    expectNonEmptyStringArray(readModel, "consumers");
   });
 
-  it("keeps the explicit brain knowledge catalog pointed only at corpus files that still exist", () => {
+  it("keeps the explicit knowledge catalog pointed only at corpus files that still exist", () => {
     const catalog = readJsonRootFile("corpus/brain-knowledge/catalog.json");
 
     if (!isRecord(catalog)) {
-      throw new Error("Brain knowledge catalog must be an object.");
+      throw new Error("Knowledge catalog must be an object.");
     }
 
     const knowledgeFiles = catalog["knowledgeFiles"];
@@ -102,7 +102,7 @@ describe("Brain knowledge read model invariants", () => {
       }
 
       const absolute = new URL(`../../../../corpus/brain-knowledge/${file}`, import.meta.url);
-      const parsed = parseBrainKnowledgeUsefulnessFeedbackList(
+      const parsed = parseKnowledgeUsefulnessFeedbackList(
         readJsonRootFile(`corpus/brain-knowledge/${file}`)
       );
 

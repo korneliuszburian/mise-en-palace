@@ -2,10 +2,10 @@ import type {
   MemoryRecord
 } from "@krn/core";
 import type {
-  BrainKnowledgeReadModel
+  KnowledgeReadModel
 } from "@krn/harness";
 
-const memoryConfidence = (confidence: number): BrainKnowledgeReadModel["confidence"] => {
+const memoryConfidence = (confidence: number): KnowledgeReadModel["confidence"] => {
   if (confidence >= 80) {
     return "high";
   }
@@ -21,7 +21,7 @@ const assertNever = (value: never): never => {
   throw new Error(`Unsupported MemoryRecord status: ${String(value)}`);
 };
 
-const memoryStatus = (status: MemoryRecord["status"]): BrainKnowledgeReadModel["status"] => {
+const memoryStatus = (status: MemoryRecord["status"]): KnowledgeReadModel["status"] => {
   switch (status) {
     case "active":
       return "active";
@@ -76,9 +76,9 @@ const sourceLineageEvidenceRefs = (
       : [source.note]
   ));
 
-export const memoryRecordToKnowledgeCard = (
+export const memoryRecordToKnowledgeReadModel = (
   memory: MemoryRecord
-): BrainKnowledgeReadModel => {
+): KnowledgeReadModel => {
   const evidenceRefs =
     metadataStringArray(memory.metadata, "evidenceRefs") ??
     sourceLineageEvidenceRefs(memory);

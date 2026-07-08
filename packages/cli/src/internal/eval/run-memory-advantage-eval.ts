@@ -29,7 +29,7 @@ import {
 } from "./eval-main.js";
 import {
   parseBrainSearchPreviewSections,
-  parseEvalKnowledgeCards,
+  parseEvalKnowledgeReadModels,
   parseEvalSourceClaims,
   isRecord,
   recordArray,
@@ -38,7 +38,7 @@ import {
   requiredStringArray
 } from "./eval-fixture-support.js";
 import type {
-  EvalKnowledgeCardFixture,
+  EvalKnowledgeReadModelFixture,
   EvalSourceClaimFixture
 } from "./eval-fixture-support.js";
 import {
@@ -97,13 +97,13 @@ interface MemoryAdvantageRuntimeMemoryExclusionFixture {
   readonly reason: string;
 }
 
-interface MemoryAdvantageCardFixture extends EvalKnowledgeCardFixture {
+interface MemoryAdvantageReadModelFixture extends EvalKnowledgeReadModelFixture {
   readonly runtimeExclusion?: MemoryAdvantageRuntimeMemoryExclusionFixture;
 }
 
 type MemoryAdvantageSourceClaimFixture = EvalSourceClaimFixture;
-type MemoryAdvantageCatalogCardFixture =
-  MemoryAdvantageCardFixture | MemoryAdvantageExcludedMemoryFixture;
+type MemoryAdvantageCatalogReadModelFixture =
+  MemoryAdvantageReadModelFixture | MemoryAdvantageExcludedMemoryFixture;
 
 interface MemoryAdvantageCaseFixture {
   readonly id: string;
@@ -161,15 +161,15 @@ interface MemoryAdvantagePriorSessionFixture {
   readonly reviewRef: string;
   readonly feedbackRef: string;
   readonly applicationOutcome: string;
-  readonly memoryCards: readonly MemoryAdvantageCardFixture[];
-  readonly excludedMemoryCards: readonly MemoryAdvantageExcludedMemoryFixture[];
-  readonly distractorMemoryCards: readonly MemoryAdvantageCardFixture[];
+  readonly memoryReadModels: readonly MemoryAdvantageReadModelFixture[];
+  readonly excludedMemoryReadModels: readonly MemoryAdvantageExcludedMemoryFixture[];
+  readonly distractorMemoryReadModels: readonly MemoryAdvantageReadModelFixture[];
   readonly sourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
   readonly excludedSourceClaims: readonly MemoryAdvantageExcludedSourceClaimFixture[];
   readonly distractorSourceClaims: readonly MemoryAdvantageSourceClaimFixture[];
 }
 
-interface MemoryAdvantageExcludedMemoryFixture extends MemoryAdvantageCardFixture {
+interface MemoryAdvantageExcludedMemoryFixture extends MemoryAdvantageReadModelFixture {
   readonly exclusionReason: string;
 }
 
@@ -489,17 +489,17 @@ const requiredEnum = <TValue extends string>(
   return value as TValue;
 };
 
-const parseExcludedMemoryCards = (
+const parseExcludedMemoryReadModels = (
   record: Record<string, unknown>,
   key: string,
   label: string
 ): readonly MemoryAdvantageExcludedMemoryFixture[] => {
-  const cards = parseEvalKnowledgeCards(record, key, label);
+  const readModels = parseEvalKnowledgeReadModels(record, key, label);
 
-  return mapParsedCardsWithRaw(record, key, label, cards, "must be an object", (card, rawCard, index) => {
+  return mapParsedReadModelsWithRaw(record, key, label, readModels, "must be an object", (readModel, rawReadModel, index) => {
     return {
-      ...card,
-      exclusionReason: requiredString(rawCard, "exclusionReason", `${label}.${key}[${index}]`)
+      ...readModel,
+      exclusionReason: requiredString(rawReadModel, "exclusionReason", `${label}.${key}[${index}]`)
     };
   });
 };
@@ -529,43 +529,43 @@ const parseRuntimeMemoryExclusion = (
   };
 };
 
-const parseMemoryAdvantageCards = (
+const parseMemoryAdvantageReadModels = (
   record: Record<string, unknown>,
   key: string,
   label: string
-): readonly MemoryAdvantageCardFixture[] => {
-  const cards = parseEvalKnowledgeCards(record, key, label);
+): readonly MemoryAdvantageReadModelFixture[] => {
+  const readModels = parseEvalKnowledgeReadModels(record, key, label);
 
-  return mapParsedCardsWithRaw(record, key, label, cards, "must be present", (card, rawCard, index) => {
-    const runtimeExclusion = parseRuntimeMemoryExclusion(rawCard["runtimeExclusion"], `${label}.${key}[${index}]`);
+  return mapParsedReadModelsWithRaw(record, key, label, readModels, "must be present", (readModel, rawReadModel, index) => {
+    const runtimeExclusion = parseRuntimeMemoryExclusion(rawReadModel["runtimeExclusion"], `${label}.${key}[${index}]`);
 
     return runtimeExclusion === undefined
-      ? card
+      ? readModel
       : {
-          ...card,
+          ...readModel,
           runtimeExclusion
         };
   });
 };
 
-const mapParsedCardsWithRaw = <TCard extends EvalKnowledgeCardFixture, TResult>(
+const mapParsedReadModelsWithRaw = <TReadModel extends EvalKnowledgeReadModelFixture, TResult>(
   record: Record<string, unknown>,
   key: string,
   label: string,
-  cards: readonly TCard[],
+  readModels: readonly TReadModel[],
   missingMessage: string,
-  mapCard: (card: TCard, rawCard: Record<string, unknown>, index: number) => TResult
+  mapReadModel: (readModel: TReadModel, rawReadModel: Record<string, unknown>, index: number) => TResult
 ): readonly TResult[] => {
-  const rawCards = recordArray(record, key, label);
+  const rawReadModels = recordArray(record, key, label);
 
-  return cards.map((card, index) => {
-    const rawCard = rawCards[index];
+  return readModels.map((readModel, index) => {
+    const rawReadModel = rawReadModels[index];
 
-    if (rawCard === undefined) {
+    if (rawReadModel === undefined) {
       throw new Error(`${label}.${key}[${index}] ${missingMessage}`);
     }
 
-    return mapCard(card, rawCard, index);
+    return mapReadModel(readModel, rawReadModel, index);
   });
 };
 
@@ -590,12 +590,12 @@ const parseExcludedSourceClaims = (
   });
 };
 
-const parseOptionalEvalKnowledgeCards = (
+const parseOptionalEvalKnowledgeReadModels = (
   record: Record<string, unknown>,
   key: string,
   label: string
-): readonly MemoryAdvantageCardFixture[] =>
-  record[key] === undefined ? [] : parseMemoryAdvantageCards(record, key, label);
+): readonly MemoryAdvantageReadModelFixture[] =>
+  record[key] === undefined ? [] : parseMemoryAdvantageReadModels(record, key, label);
 
 const parseOptionalEvalSourceClaims = (
   record: Record<string, unknown>,
@@ -604,12 +604,12 @@ const parseOptionalEvalSourceClaims = (
 ): readonly MemoryAdvantageSourceClaimFixture[] =>
   record[key] === undefined ? [] : parseEvalSourceClaims(record, key, label);
 
-const parseOptionalExcludedMemoryCards = (
+const parseOptionalExcludedMemoryReadModels = (
   record: Record<string, unknown>,
   key: string,
   label: string
 ): readonly MemoryAdvantageExcludedMemoryFixture[] =>
-  record[key] === undefined ? [] : parseExcludedMemoryCards(record, key, label);
+  record[key] === undefined ? [] : parseExcludedMemoryReadModels(record, key, label);
 
 const parseOptionalExcludedSourceClaims = (
   record: Record<string, unknown>,
@@ -730,15 +730,15 @@ const parseCompanyPatternChallenge = (
   };
 };
 
-const assertNoMemoryCardLifecycleConflict = (
+const assertNoMemoryReadModelLifecycleConflict = (
   priorSession: MemoryAdvantagePriorSessionFixture,
   label: string
 ): void => {
-  const activeIds = new Set(priorSession.memoryCards.map((card) => card.id));
-  const conflictingCard = priorSession.excludedMemoryCards.find((card) => activeIds.has(card.id));
+  const activeIds = new Set(priorSession.memoryReadModels.map((readModel) => readModel.id));
+  const conflictingReadModel = priorSession.excludedMemoryReadModels.find((readModel) => activeIds.has(readModel.id));
 
-  if (conflictingCard !== undefined) {
-    throw new Error(`${label}.priorSession cannot mark ${conflictingCard.id} as both active and excluded`);
+  if (conflictingReadModel !== undefined) {
+    throw new Error(`${label}.priorSession cannot mark ${conflictingReadModel.id} as both active and excluded`);
   }
 };
 
@@ -770,7 +770,7 @@ const parseCase = (
     throw new Error(`${label}.priorSession must be an object`);
   }
 
-  const memoryCards = parseMemoryAdvantageCards(priorSession, "memoryCards", `${label}.priorSession`);
+  const memoryReadModels = parseMemoryAdvantageReadModels(priorSession, "memoryReadModels", `${label}.priorSession`);
   const sourceClaims = parseEvalSourceClaims(priorSession, "sourceClaims", `${label}.priorSession`);
 
   const negativeClass = value["negativeClass"] === undefined
@@ -802,15 +802,15 @@ const parseCase = (
       reviewRef: requiredString(priorSession, "reviewRef", `${label}.priorSession`),
       feedbackRef: requiredString(priorSession, "feedbackRef", `${label}.priorSession`),
       applicationOutcome: requiredString(priorSession, "applicationOutcome", `${label}.priorSession`),
-      memoryCards,
-      excludedMemoryCards: parseOptionalExcludedMemoryCards(
+      memoryReadModels,
+      excludedMemoryReadModels: parseOptionalExcludedMemoryReadModels(
         priorSession,
-        "excludedMemoryCards",
+        "excludedMemoryReadModels",
         `${label}.priorSession`
       ),
-      distractorMemoryCards: parseOptionalEvalKnowledgeCards(
+      distractorMemoryReadModels: parseOptionalEvalKnowledgeReadModels(
         priorSession,
-        "distractorMemoryCards",
+        "distractorMemoryReadModels",
         `${label}.priorSession`
       ),
       sourceClaims,
@@ -829,7 +829,7 @@ const parseCase = (
     expectedSelectedKnowledgeId: requiredString(value, "expectedSelectedKnowledgeId", label)
   };
 
-  assertNoMemoryCardLifecycleConflict(parsedCase.priorSession, label);
+  assertNoMemoryReadModelLifecycleConflict(parsedCase.priorSession, label);
   assertInterdependentSessionCase(parsedCase, label);
   return parsedCase;
 };
@@ -921,7 +921,7 @@ const tokenScore = (query: string, text: string): number => {
 const selectedMemoryIds = (
   selectedKnowledgeIds: readonly string[]
 ): readonly string[] =>
-  // Brain-search emits source-search packets with source-prefixed ids; catalog memory cards keep their fixture ids.
+  // Brain-search emits source-search packets with source-prefixed ids; catalog memory readModels keep their fixture ids.
   selectedKnowledgeIds.filter((id) => !id.startsWith("source:"));
 
 const approximateSelectedContextSize = (
@@ -964,11 +964,11 @@ const assertLexicalOverlap = (
   testCase: MemoryAdvantageCaseFixture
 ): void => {
   const query = testCase.query;
-  const hasCardOverlap = testCase.priorSession.memoryCards.some((card) =>
-    tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
+  const hasMemoryReadModelOverlap = testCase.priorSession.memoryReadModels.some((readModel) =>
+    tokenScore(query, [readModel.title, readModel.summary, readModel.nextAction].join(" ")) > 0
   );
-  const hasExcludedCardOverlap = testCase.priorSession.excludedMemoryCards.some((card) =>
-    tokenScore(query, [card.title, card.summary, card.nextAction].join(" ")) > 0
+  const hasExcludedReadModelOverlap = testCase.priorSession.excludedMemoryReadModels.some((readModel) =>
+    tokenScore(query, [readModel.title, readModel.summary, readModel.nextAction].join(" ")) > 0
   );
   const hasClaimOverlap = testCase.priorSession.sourceClaims.some((claim) =>
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
@@ -977,14 +977,14 @@ const assertLexicalOverlap = (
     tokenScore(query, [claim.claim, claim.mechanism, claim.krnImplication].join(" ")) > 0
   );
 
-  if (testCase.expectedKrnResult === "hit" && (!(hasCardOverlap || hasExcludedCardOverlap) || !hasClaimOverlap)) {
+  if (testCase.expectedKrnResult === "hit" && (!(hasMemoryReadModelOverlap || hasExcludedReadModelOverlap) || !hasClaimOverlap)) {
     throw new Error(
-      `${testCase.id} must have lexical overlap with a retained or excluded memory card and source claim text`
+      `${testCase.id} must have lexical overlap with a retained or excluded memory readModel and source claim text`
     );
   }
 
-  if (testCase.expectedKrnResult === "miss" && !(hasExcludedCardOverlap || hasExcludedClaimOverlap)) {
-    throw new Error(`${testCase.id} must have lexical overlap with an excluded memory card or source claim`);
+  if (testCase.expectedKrnResult === "miss" && !(hasExcludedReadModelOverlap || hasExcludedClaimOverlap)) {
+    throw new Error(`${testCase.id} must have lexical overlap with an excluded memory readModel or source claim`);
   }
 };
 
@@ -1032,20 +1032,20 @@ const searchDocumentFromClaim = (
   updatedAt: now
 });
 
-const memoryRecordFromCard = (
-  card: MemoryAdvantageCardFixture
+const memoryRecordFromReadModel = (
+  readModel: MemoryAdvantageReadModelFixture
 ): MemoryRecord => ({
-  id: `memory:${card.id}`,
+  id: `memory:${readModel.id}`,
   projectId,
-  key: card.id,
+  key: readModel.id,
   kind: "pattern",
   status: "active",
-  summary: card.title,
-  body: card.summary,
+  summary: readModel.title,
+  body: readModel.summary,
   owner: "memory-advantage-eval",
   confidence: 95,
-  applicationGuidance: card.nextAction,
-  sourceLineage: card.consumers.map((consumer) => ({
+  applicationGuidance: readModel.nextAction,
+  sourceLineage: readModel.consumers.map((consumer) => ({
     sourceId: consumer,
     note: "memory advantage eval fixture"
   })),
@@ -1055,28 +1055,28 @@ const memoryRecordFromCard = (
   negativeFeedbackCount: 0,
   metadata: {
     eval: "memory-advantage",
-    doesNotProve: card.doesNotProve,
-    falsifier: card.falsifier
+    doesNotProve: readModel.doesNotProve,
+    falsifier: readModel.falsifier
   },
   createdAt: now,
   updatedAt: now
 });
 
-const isExcludedMemoryCard = (
-  card: MemoryAdvantageCatalogCardFixture
-): card is MemoryAdvantageExcludedMemoryFixture =>
-  "exclusionReason" in card;
+const isExcludedMemoryReadModel = (
+  readModel: MemoryAdvantageCatalogReadModelFixture
+): readModel is MemoryAdvantageExcludedMemoryFixture =>
+  "exclusionReason" in readModel;
 
 const hasRuntimeExclusion = (
-  card: MemoryAdvantageCardFixture
+  readModel: MemoryAdvantageReadModelFixture
 ): boolean =>
-  card.runtimeExclusion !== undefined;
+  readModel.runtimeExclusion !== undefined;
 
-const selectableMemoryCards = (
-  cards: readonly MemoryAdvantageCatalogCardFixture[]
-): readonly MemoryAdvantageCardFixture[] =>
-  cards.filter((card): card is MemoryAdvantageCardFixture =>
-    !isExcludedMemoryCard(card) && !hasRuntimeExclusion(card)
+const selectableMemoryReadModels = (
+  readModels: readonly MemoryAdvantageCatalogReadModelFixture[]
+): readonly MemoryAdvantageReadModelFixture[] =>
+  readModels.filter((readModel): readModel is MemoryAdvantageReadModelFixture =>
+    !isExcludedMemoryReadModel(readModel) && !hasRuntimeExclusion(readModel)
   );
 
 const throwingRepositoryMethod = (method: string): never => {
@@ -1108,12 +1108,12 @@ const sourceDecisionEdgesForEvalClaim = (
     : [];
 
 const createMemoryAdvantageRuntime = (
-  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  readModels: readonly MemoryAdvantageCatalogReadModelFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[]
 ): DatabaseRuntime => {
   const claims = sourceClaims.map(sourceClaimFromFixture);
   const documents = claims.map(searchDocumentFromClaim);
-  const memories = selectableMemoryCards(cards).map(memoryRecordFromCard);
+  const memories = selectableMemoryReadModels(readModels).map(memoryRecordFromReadModel);
   const createRuntimeId = (prefix: string) => `${prefix}-memory-advantage-store`;
   const baseCompilerDependencies = createNoStoreCompilerDependencies({
     now: () => now,
@@ -1201,27 +1201,27 @@ const createMemoryAdvantageRuntime = (
 };
 
 const writeKnowledgeCatalog = async (
-  cards: readonly MemoryAdvantageCatalogCardFixture[]
+  catalogReadModels: readonly MemoryAdvantageCatalogReadModelFixture[]
 ): Promise<{
   readonly root: string;
   readonly catalogFile: string;
-  readonly writtenCardIds: readonly string[];
+  readonly writtenReadModelIds: readonly string[];
 }> => {
   const root = await mkdtemp(join(tmpdir(), "krn-memory-advantage-"));
   const catalogFile = join(root, "catalog.json");
-  const readModelCards = selectableMemoryCards(cards).map((card) => ({
-    id: card.id,
+  const readModels = selectableMemoryReadModels(catalogReadModels).map((readModel) => ({
+    id: readModel.id,
     kind: "pattern",
     status: "active",
-    title: card.title,
-    summary: card.summary,
+    title: readModel.title,
+    summary: readModel.summary,
     confidence: "high",
     reviewability: "ready",
-    sourceRefs: card.consumers,
-    evidenceRefs: [`fixture:${card.id}`],
-    consumers: card.consumers,
-    falsifier: card.falsifier,
-    doesNotProve: card.doesNotProve,
+    sourceRefs: readModel.consumers,
+    evidenceRefs: [`fixture:${readModel.id}`],
+    consumers: readModel.consumers,
+    falsifier: readModel.falsifier,
+    doesNotProve: readModel.doesNotProve,
     temporal: {
       kind: "current",
       observedAt: "2026-07-04"
@@ -1229,17 +1229,17 @@ const writeKnowledgeCatalog = async (
     dissent: {
       kind: "none"
     },
-    nextAction: card.nextAction
+    nextAction: readModel.nextAction
   }));
-  const cardFiles = await Promise.all(readModelCards.map(async (card, index) => {
-    const cardFile = `card-${index + 1}.json`;
+  const readModelFiles = await Promise.all(readModels.map(async (readModel, index) => {
+    const readModelFile = `readModel-${index + 1}.json`;
 
-    await writeFile(join(root, cardFile), JSON.stringify(card, null, 2), "utf8");
-    return cardFile;
+    await writeFile(join(root, readModelFile), JSON.stringify(readModel, null, 2), "utf8");
+    return readModelFile;
   }));
 
   await writeFile(catalogFile, JSON.stringify({
-    cardFiles,
+    readModelFiles,
     knowledgeFiles: [],
     usefulnessFeedbackFiles: []
   }, null, 2), "utf8");
@@ -1247,21 +1247,21 @@ const writeKnowledgeCatalog = async (
   return {
     root,
     catalogFile,
-    writtenCardIds: readModelCards.map((card) => card.id)
+    writtenReadModelIds: readModels.map((readModel) => readModel.id)
   };
 };
 
 const runCaseVariant = async (
   testCase: MemoryAdvantageCaseFixture,
-  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  readModels: readonly MemoryAdvantageCatalogReadModelFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
   idSuffix: string,
   storeOnly: boolean
 ): Promise<BrainSearchPreviewReadback> => {
   const knowledgeStore =
-    storeOnly || selectableMemoryCards(cards).length === 0
+    storeOnly || selectableMemoryReadModels(readModels).length === 0
       ? undefined
-      : await writeKnowledgeCatalog(cards);
+      : await writeKnowledgeCatalog(readModels);
   const command: BrainSearchCommand = {
     kind: "brainSearch",
     query: testCase.query,
@@ -1281,13 +1281,13 @@ const runCaseVariant = async (
       now: () => now,
       createId: (prefix) => `${prefix}-memory-advantage-${idSuffix}`,
       command,
-      createDatabaseRuntime: async () => createMemoryAdvantageRuntime(cards, sourceClaims)
+      createDatabaseRuntime: async () => createMemoryAdvantageRuntime(readModels, sourceClaims)
     });
 
     return parseBrainSearchPreview(
       result.stdout,
       `${testCase.id}.${idSuffix}`,
-      knowledgeStore?.writtenCardIds ?? []
+      knowledgeStore?.writtenReadModelIds ?? []
     );
   } finally {
     if (knowledgeStore !== undefined) {
@@ -1320,19 +1320,19 @@ const isKrnHit = (
 const buildMemoryExclusions = (
   testCase: MemoryAdvantageCaseFixture
 ): readonly MemoryAdvantageMemoryExclusionReadback[] => {
-  const explicitExclusions = testCase.priorSession.excludedMemoryCards.map((card) => ({
-    memoryId: `memory:${card.id}`,
-    reason: card.exclusionReason
+  const explicitExclusions = testCase.priorSession.excludedMemoryReadModels.map((readModel) => ({
+    memoryId: `memory:${readModel.id}`,
+    reason: readModel.exclusionReason
   }));
   const runtimeExclusions = [
-    ...testCase.priorSession.memoryCards,
-    ...testCase.priorSession.distractorMemoryCards
-  ].flatMap((card) =>
-    card.runtimeExclusion === undefined
+    ...testCase.priorSession.memoryReadModels,
+    ...testCase.priorSession.distractorMemoryReadModels
+  ].flatMap((readModel) =>
+    readModel.runtimeExclusion === undefined
       ? []
       : [{
-          memoryId: `memory:${card.id}`,
-          reason: `${card.runtimeExclusion.relation} ${card.runtimeExclusion.sourceClaimId}: ${card.runtimeExclusion.reason}`
+          memoryId: `memory:${readModel.id}`,
+          reason: `${readModel.runtimeExclusion.relation} ${readModel.runtimeExclusion.sourceClaimId}: ${readModel.runtimeExclusion.reason}`
         }]
   );
 
@@ -1360,13 +1360,13 @@ const simpleRetrievalCandidates = (
   testCase: MemoryAdvantageCaseFixture
 ): readonly SimpleRetrievalCandidate[] => {
   const memoryCandidates = [
-    ...testCase.priorSession.memoryCards,
-    ...testCase.priorSession.excludedMemoryCards,
-    ...testCase.priorSession.distractorMemoryCards
-  ].map((card): SimpleRetrievalCandidate => ({
-    id: card.id,
+    ...testCase.priorSession.memoryReadModels,
+    ...testCase.priorSession.excludedMemoryReadModels,
+    ...testCase.priorSession.distractorMemoryReadModels
+  ].map((readModel): SimpleRetrievalCandidate => ({
+    id: readModel.id,
     kind: "memory",
-    score: tokenScore(testCase.query, [card.title, card.summary, card.nextAction].join(" "))
+    score: tokenScore(testCase.query, [readModel.title, readModel.summary, readModel.nextAction].join(" "))
   }));
   const sourceClaimCandidates = [
     ...testCase.priorSession.sourceClaims,
@@ -1854,7 +1854,7 @@ const buildSourceContribution = (
     contribution,
     zeroDeltaSourceClaimIds,
     pruneCandidateSourceClaimIds,
-    proof: "Source contribution is measured by rerunning the case with SourceClaim/SearchDocument inputs disabled while keeping memory cards available.",
+    proof: "Source contribution is measured by rerunning the case with SourceClaim/SearchDocument inputs disabled while keeping memory readModels available.",
     doesNotProve: "This ablation does not prove source truth, optimal ranking, latency cost, or that a zero-delta source should be deleted automatically."
   };
 };
@@ -2048,15 +2048,15 @@ const planBriefResult = (
 };
 
 const planBriefContextPayloadParts = (
-  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  readModels: readonly MemoryAdvantageCatalogReadModelFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
   memoryRecordIds: readonly string[],
   sourceClaimIds: readonly string[]
 ): readonly string[] => {
   const memoryById = new Map(
-    selectableMemoryCards(cards).map((card) => [
-      `memory:${card.id}`,
-      [card.title, card.summary, card.nextAction].join("\n")
+    selectableMemoryReadModels(readModels).map((readModel) => [
+      `memory:${readModel.id}`,
+      [readModel.title, readModel.summary, readModel.nextAction].join("\n")
     ])
   );
   const sourceClaimById = new Map(
@@ -2080,11 +2080,11 @@ const planBriefContextPayloadParts = (
 
 const compilePlanBriefReadback = async (
   testCase: MemoryAdvantageCaseFixture,
-  cards: readonly MemoryAdvantageCatalogCardFixture[],
+  readModels: readonly MemoryAdvantageCatalogReadModelFixture[],
   sourceClaims: readonly MemoryAdvantageSourceClaimFixture[],
   baseline: boolean
 ): Promise<PlanBriefReadback> => {
-  const runtime = createMemoryAdvantageRuntime(cards, sourceClaims);
+  const runtime = createMemoryAdvantageRuntime(readModels, sourceClaims);
   const compiled = await compileHarnessPlan({
     workspaceId: runtime.workspaceId,
     projectId: runtime.projectId,
@@ -2146,7 +2146,7 @@ const compilePlanBriefReadback = async (
     renderedSourceClaimIds: brief.sourceClaimsUsed,
     contextInclusionCount: compiled.contextAssembly.inclusions.length,
     contextSize: approximateSelectedContextSizeFromParts(planBriefContextPayloadParts(
-      cards,
+      readModels,
       sourceClaims,
       memoryRecordIds,
       sourceClaimIds
@@ -2207,9 +2207,9 @@ const evaluateCase = async (
   const krnMemory = await runCaseVariant(
     testCase,
     [
-      ...testCase.priorSession.memoryCards,
-      ...testCase.priorSession.distractorMemoryCards,
-      ...testCase.priorSession.excludedMemoryCards
+      ...testCase.priorSession.memoryReadModels,
+      ...testCase.priorSession.distractorMemoryReadModels,
+      ...testCase.priorSession.excludedMemoryReadModels
     ],
     [
       ...testCase.priorSession.sourceClaims,
@@ -2221,9 +2221,9 @@ const evaluateCase = async (
   const sourceDisabled = await runCaseVariant(
     testCase,
     [
-      ...testCase.priorSession.memoryCards,
-      ...testCase.priorSession.distractorMemoryCards,
-      ...testCase.priorSession.excludedMemoryCards
+      ...testCase.priorSession.memoryReadModels,
+      ...testCase.priorSession.distractorMemoryReadModels,
+      ...testCase.priorSession.excludedMemoryReadModels
     ],
     [],
     "source-disabled",
@@ -2232,9 +2232,9 @@ const evaluateCase = async (
   const krnPlanBrief = await compilePlanBriefReadback(
     testCase,
     [
-      ...testCase.priorSession.memoryCards,
-      ...testCase.priorSession.distractorMemoryCards,
-      ...testCase.priorSession.excludedMemoryCards
+      ...testCase.priorSession.memoryReadModels,
+      ...testCase.priorSession.distractorMemoryReadModels,
+      ...testCase.priorSession.excludedMemoryReadModels
     ],
     [
       ...testCase.priorSession.sourceClaims,
@@ -2316,9 +2316,9 @@ const evaluateCase = async (
       reviewRef: testCase.priorSession.reviewRef,
       feedbackRef: testCase.priorSession.feedbackRef,
       applicationOutcome: testCase.priorSession.applicationOutcome,
-      createdMemoryIds: testCase.priorSession.memoryCards.map((card) => `memory:${card.id}`),
+      createdMemoryIds: testCase.priorSession.memoryReadModels.map((readModel) => `memory:${readModel.id}`),
       excludedMemoryIds: exclusions.map((exclusion) => exclusion.memoryId),
-      distractorMemoryIds: testCase.priorSession.distractorMemoryCards.map((card) => `memory:${card.id}`),
+      distractorMemoryIds: testCase.priorSession.distractorMemoryReadModels.map((readModel) => `memory:${readModel.id}`),
       createdSourceClaimIds: testCase.priorSession.sourceClaims.map((claim) => claim.sourceClaimId),
       excludedSourceClaimIds: sourceExclusions.map((exclusion) => exclusion.sourceClaimId),
       distractorSourceClaimIds: testCase.priorSession.distractorSourceClaims.map((claim) => claim.sourceClaimId)
@@ -2514,7 +2514,7 @@ export const runMemoryAdvantageEval = async (
         "coding-task cases can derive baseline and KRN implementation decisions mechanically from selected memory/source ids",
         "baseline class and approximate selected-context readback size are reported for each case",
         "the eval fixture can pass declared stale or unsupported memory/source evidence into the case runner, exclude it before KRN selection, and surface the explicit exclusion reason",
-        "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryCards or excludedSourceClaims",
+        "the eval fixture can derive one contradiction exclusion from runtime memory metadata without using excludedMemoryReadModels or excludedSourceClaims",
         "execution-contract cases can report baseline and KRN contract choices mechanically derived from selected memory/source ids",
         "source contribution readback reruns each case with SourceClaim/SearchDocument inputs disabled and reports required, zero-delta, and source prune candidate classes",
         "broad product claims are blocked when any case is neutral against or loses to the cheaper simple lexical baseline",
@@ -2528,7 +2528,7 @@ export const runMemoryAdvantageEval = async (
         "runtime stale-memory or stale-source detection for arbitrary production MemoryRecord or SourceClaim rows",
         "arbitrary contradiction discovery without explicit runtime relation metadata",
         "exact tokenizer cost or model-specific context pricing; selected-context size uses local utf8 bytes divided by four",
-        "card or source-claim content payload size; selected-context size measures selection identifier overhead only",
+        "readModel or source-claim content payload size; selected-context size measures selection identifier overhead only",
         "automatic Memory Core promotion from evidence or feedback",
         "live Postgres runtime behavior",
         "LLM output quality",

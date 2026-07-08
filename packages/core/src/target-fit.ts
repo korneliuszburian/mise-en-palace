@@ -179,7 +179,7 @@ export const summarizeTargetFit = (
       noise,
       unknown,
       recommendedUse:
-        "Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first.",
+        "Do not infer selected knowledge sufficiency; use source/search evidence or acquire governed evidence first.",
       doesNotProve:
         "No selectedKnowledge packets does not prove the query has no relevant KRN knowledge."
     };

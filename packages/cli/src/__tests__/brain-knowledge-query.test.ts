@@ -32,7 +32,7 @@ describe("brainKnowledgeQuery", () => {
   it("keeps later parser exemplar windows for long planning tasks", () => {
     expect(
       compactBrainKnowledgeBridgeQueries(
-        "Improve brain-knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-brain-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
+        "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
       )
     ).toContain("typescript parser exemplar");
   });

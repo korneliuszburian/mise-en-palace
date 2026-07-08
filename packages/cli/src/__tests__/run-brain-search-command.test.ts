@@ -36,20 +36,20 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            kind: "krn.brainKnowledge.cards.preview.v1",
-            returnedCards: 1,
-            totalCards: 1,
-            cards: [{
+            kind: "krn.brain.knowledge.readback.v1",
+            returnedReadModels: 1,
+            totalReadModels: 1,
+            readModels: [{
               id: "pattern:source-to-decision-retention-gate",
               title: "Source-to-decision retention gate",
               summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
               consumers: ["pattern application gate"],
               falsifier: "A future slice retains a source with no consumer.",
-              doesNotProve: "This card does not prove source truth.",
+              doesNotProve: "This readModel does not prove source truth.",
               nextAction: "use"
             }],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -100,17 +100,17 @@ describe("runBrainSearchCommand", () => {
       mutation: "none",
       query: "source-to-decision",
       brainKnowledgeReadback: "catalog_files",
-      knowledgeCards: {
-        returnedCards: 1,
-        totalCards: 1,
-        cardIds: ["pattern:source-to-decision-retention-gate"],
+      knowledgeReadModels: {
+        returnedReadModels: 1,
+        totalReadModels: 1,
+        readModelIds: ["pattern:source-to-decision-retention-gate"],
         selectedKnowledge: [{
           id: "pattern:source-to-decision-retention-gate",
           title: "Source-to-decision retention gate",
           summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
           consumers: ["pattern application gate"],
           falsifier: "A future slice retains a source with no consumer.",
-          doesNotProve: "This card does not prove source truth.",
+          doesNotProve: "This readModel does not prove source truth.",
           nextAction: "use"
         }]
       },
@@ -130,11 +130,11 @@ describe("runBrainSearchCommand", () => {
         includedCandidates: 1
       }
     });
-    expect(JSON.stringify(parsed)).toContain("matching brain knowledge");
+    expect(JSON.stringify(parsed)).toContain("matching knowledge");
     expect(JSON.stringify(parsed)).toContain(
-      "existing brain-knowledge catalog readback was executed as bootstrap/fixture input for this query"
+      "existing knowledge catalog readback was executed as bootstrap/fixture input for this query"
     );
-    expect(JSON.stringify(parsed)).toContain("catalog-file brain knowledge is runtime memory");
+    expect(JSON.stringify(parsed)).toContain("catalog-file knowledge is runtime memory");
     expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
   });
 
@@ -154,11 +154,11 @@ describe("runBrainSearchCommand", () => {
       async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -194,9 +194,9 @@ describe("runBrainSearchCommand", () => {
 
     expect(result.stdout).toContain("KRN Brain Search Preview");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Brain knowledge readback: store_only");
-    expect(result.stdout).toContain("Brain knowledge:");
-    expect(result.stdout).toContain("cardIds: none");
+    expect(result.stdout).toContain("Knowledge readback: store_only");
+    expect(result.stdout).toContain("Knowledge read models:");
+    expect(result.stdout).toContain("readModelIds: none");
     expect(result.stdout).toContain("graphAware: false");
     expect(result.stdout).toContain("sourceDecisionSupport: 0");
     expect(result.stdout).toContain("graphCaveat: entity extraction is not available in this bounded readback");
@@ -229,9 +229,9 @@ describe("runBrainSearchCommand", () => {
         if (runtime.filter.text === "graph sourceclaimedge") {
           return {
             stdout: JSON.stringify({
-              returnedCards: 1,
-              totalCards: 1,
-              cards: [{
+              returnedReadModels: 1,
+              totalReadModels: 1,
+              readModels: [{
                 id: "pattern:graph-relation-readback-boundary",
                 title: "Graph relation readback boundary",
                 summary: "Expose graph readback without treating it as source truth.",
@@ -249,9 +249,9 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
               doesNotProve: ["search ranking quality is good"]
             }
@@ -297,12 +297,12 @@ describe("runBrainSearchCommand", () => {
         "graph sourceclaimedge relation temporal source relations",
         "graph sourceclaimedge"
       ],
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [{
           id: "pattern:graph-relation-readback-boundary"
         }]
       },
-      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+      recommendedNextAction: "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code."
     });
   });
 
@@ -330,9 +330,9 @@ describe("runBrainSearchCommand", () => {
         if (runtime.filter.text === "maintenance dreaming") {
           return {
             stdout: JSON.stringify({
-              returnedCards: 1,
-              totalCards: 1,
-              cards: [{
+              returnedReadModels: 1,
+              totalReadModels: 1,
+              readModels: [{
                 id: "pattern:maintenance-candidate-only-runtime-boundary",
                 title: "Maintenance candidate-only runtime boundary",
                 summary: "Heartbeat and dreaming work stays candidate-only before scheduler work.",
@@ -350,9 +350,9 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
               doesNotProve: ["search ranking quality is good"]
             }
@@ -398,12 +398,12 @@ describe("runBrainSearchCommand", () => {
         "maintenance dreaming source relation evidence",
         "maintenance dreaming"
       ],
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [{
           id: "pattern:maintenance-candidate-only-runtime-boundary"
         }]
       },
-      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+      recommendedNextAction: "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code."
     });
   });
 
@@ -432,9 +432,9 @@ describe("runBrainSearchCommand", () => {
         if (runtime.filter.text === "reference implementation recipe") {
           return {
             stdout: JSON.stringify({
-              returnedCards: 1,
-              totalCards: 1,
-              cards: [{
+              returnedReadModels: 1,
+              totalReadModels: 1,
+              readModels: [{
                 id: "pattern:reference-implementation-recipe-clone-boundary",
                 title: "Reference implementation recipe boundary",
                 summary: "Clone a local exemplar shape only as a bounded implementation recipe.",
@@ -452,9 +452,9 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
               doesNotProve: ["search ranking quality is good"]
             }
@@ -504,7 +504,7 @@ describe("runBrainSearchCommand", () => {
         "prove reference implementation",
         "reference implementation recipe"
       ],
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [{
           id: "pattern:reference-implementation-recipe-clone-boundary"
         }]
@@ -531,9 +531,9 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
               doesNotProve: ["search ranking quality is good"]
             }
@@ -602,7 +602,7 @@ describe("runBrainSearchCommand", () => {
                 sourceClaimId: "claim-1",
                 claim: "Store-only brain search should derive selected knowledge from source evidence.",
                 mechanism: "Source search already returns governed SourceClaim fields.",
-                krnImplication: "Brain search can surface selected knowledge without file-backed catalog cards.",
+                krnImplication: "Brain search can surface selected knowledge without file-backed catalog readModels.",
                 consumer: "IMR-00 pattern brain",
                 falsifier: "Store-only search with governed source evidence returns empty selectedKnowledge.",
                 doesNotProve: "This does not prove ranking quality.",
@@ -634,12 +634,12 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
-      knowledgeCards: {
-        returnedCards: 0,
+      knowledgeReadModels: {
+        returnedReadModels: 0,
         selectedKnowledge: [{
           id: "claim-1",
           title: "Store-only brain search should derive selected knowledge from source evidence.",
-          summary: "Brain search can surface selected knowledge without file-backed catalog cards.",
+          summary: "Brain search can surface selected knowledge without file-backed catalog readModels.",
           source: "source_search",
           reviewability: "ready",
           consumers: ["IMR-00 pattern brain"],
@@ -648,7 +648,7 @@ describe("runBrainSearchCommand", () => {
           nextAction: "use"
         }],
         doesNotProve: [
-          "brain knowledge catalog readback was explicitly skipped by --store-only"
+          "knowledge catalog readback was explicitly skipped by --store-only"
         ]
       },
       sourceSearch: {
@@ -658,7 +658,7 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "brain knowledge catalog readback was explicitly skipped for this query",
+          "knowledge catalog readback was explicitly skipped for this query",
           "existing source-search answer package was executed for this query",
           "brain search combined both readbacks without mutating KRN state"
         ]
@@ -788,9 +788,9 @@ describe("runBrainSearchCommand", () => {
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
       brainKnowledgeQueries: ["external review after large slice"],
-      knowledgeCards: {
-        returnedCards: 1,
-        cardIds: ["memory-record-1"],
+      knowledgeReadModels: {
+        returnedReadModels: 1,
+        readModelIds: ["memory-record-1"],
         selectedKnowledge: [{
           id: "memory-record-1",
           source: "memory_store",
@@ -867,11 +867,11 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
-      knowledgeCards: {
-        returnedCards: 0,
+      knowledgeReadModels: {
+        returnedReadModels: 0,
         selectedKnowledge: [],
         doesNotProve: [
-          "brain knowledge catalog readback was explicitly skipped by --store-only",
+          "knowledge catalog readback was explicitly skipped by --store-only",
           "DB memory-store readback was unavailable: database unavailable"
         ]
       }
@@ -952,7 +952,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [
           expect.objectContaining({
             id: "target-claim",
@@ -1044,7 +1044,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      knowledgeCards: {
+      knowledgeReadModels: {
         targetFitSummary: {
           verdict: "generic_only_selected_knowledge",
           targetSpecific: 0,
@@ -1087,11 +1087,11 @@ describe("runBrainSearchCommand", () => {
       async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -1142,8 +1142,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "catalog_files",
-      knowledgeCards: {
-        returnedCards: 0,
+      knowledgeReadModels: {
+        returnedReadModels: 0,
         selectedKnowledge: [{
           id: "190f1f72-4621-49b4-b93c-538ea2c581ef",
           source: "source_search",
@@ -1161,7 +1161,7 @@ describe("runBrainSearchCommand", () => {
         verdict: "selected_knowledge_sufficient"
       },
       recommendedNextAction:
-        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+        "Use source-backed selected knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
     });
   });
 
@@ -1221,8 +1221,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
-      knowledgeCards: {
-        returnedCards: 0,
+      knowledgeReadModels: {
+        returnedReadModels: 0,
         selectedKnowledge: [{
           id: "weak-claim",
           source: "source_search",
@@ -1285,8 +1285,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(parsed).toMatchObject({
       brainKnowledgeReadback: "store_only",
-      knowledgeCards: {
-        returnedCards: 0,
+      knowledgeReadModels: {
+        returnedReadModels: 0,
         selectedKnowledge: []
       },
       sourceSearch: {
@@ -1295,7 +1295,7 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "brain knowledge catalog readback was explicitly skipped for this query",
+          "knowledge catalog readback was explicitly skipped for this query",
           "existing source-search answer package was executed for this query",
           "brain search combined both readbacks without mutating KRN state"
         ]
@@ -1323,11 +1323,11 @@ describe("runBrainSearchCommand", () => {
       async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -1373,7 +1373,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: []
       },
       sourceSearch: {
@@ -1501,12 +1501,12 @@ describe("runBrainSearchCommand", () => {
       async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brainKnowledge.cards.preview.v1",
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            kind: "krn.brain.knowledge.readback.v1",
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -1560,12 +1560,12 @@ describe("runBrainSearchCommand", () => {
       async runBrainKnowledge() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brainKnowledge.cards.preview.v1",
-            returnedCards: 0,
-            totalCards: 0,
-            cards: [],
+            kind: "krn.brain.knowledge.readback.v1",
+            returnedReadModels: 0,
+            totalReadModels: 0,
+            readModels: [],
             proof: {
-              doesNotProve: ["brain-knowledge catalog completeness"]
+              doesNotProve: ["knowledge catalog completeness"]
             }
           })
         };
@@ -1619,7 +1619,7 @@ describe("runBrainSearchCommand", () => {
     const sourceGroundedJson: unknown = JSON.parse(sourceGrounded.stdout);
 
     expect(baselineJson).toMatchObject({
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: []
       },
       sourceSearch: {
@@ -1630,7 +1630,7 @@ describe("runBrainSearchCommand", () => {
         "Do not infer product truth from store-only brain search; seed or persist governed source evidence first."
     });
     expect(sourceGroundedJson).toMatchObject({
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [{
           id: "worker-boundary",
           source: "source_search",
@@ -1646,7 +1646,7 @@ describe("runBrainSearchCommand", () => {
         missingEvidence: []
       },
       recommendedNextAction:
-        "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-brain knowledge context is explicitly needed."
+        "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-backed knowledge context is explicitly needed."
     });
   });
 
@@ -1770,7 +1770,7 @@ describe("runBrainSearchCommand", () => {
       expect(parsed).toMatchObject({
         query: entry.query,
         brainKnowledgeReadback: "store_only",
-        knowledgeCards: {
+        knowledgeReadModels: {
           selectedKnowledge: [{
             id: entry.claimId,
             source: "source_search",

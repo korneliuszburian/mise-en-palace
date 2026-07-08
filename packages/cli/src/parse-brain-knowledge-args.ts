@@ -1,14 +1,14 @@
 import type {
-  BrainKnowledgeKind,
-  BrainKnowledgeReviewability,
-  BrainKnowledgeStatus,
-  BrainKnowledgeUsefulnessOutcomeFilter
+  KnowledgeKind,
+  KnowledgeReviewability,
+  KnowledgeStatus,
+  KnowledgeUsefulnessOutcomeFilter
 } from "@krn/harness";
 import {
-  brainKnowledgeKindValues,
-  brainKnowledgeReviewabilityValues,
-  brainKnowledgeStatusValues,
-  brainKnowledgeUsefulnessOutcomeFilterValues
+  knowledgeKindValues,
+  knowledgeReviewabilityValues,
+  knowledgeStatusValues,
+  knowledgeUsefulnessOutcomeFilterValues
 } from "@krn/harness";
 import {
   optionValue
@@ -18,15 +18,15 @@ import type {
 } from "./parse-args.js";
 
 const brainKnowledgeUsage = [
-  "Usage: krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain knowledge [--text unknown-first]",
   "krn brain knowledge --store-only [--text unknown-first]",
-  "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
+  "krn brain knowledge --read-model-file docs-or-fixture-read-model.json [--text unknown-first]",
   "krn brain knowledge --knowledge-file brain-knowledge-decision.json [--text unknown-first]",
   "krn brain knowledge --catalog-file brain-knowledge-catalog.json [--text unknown-first]",
-  "  note: no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
+  "  note: no file source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
@@ -87,7 +87,7 @@ const parseAllowedOption = <T extends string>(
   if (!isAllowed(required.value, allowed)) {
     return {
       ok: false,
-      error: `Unsupported brain knowledge ${label}: ${required.value}\n${formatBrainKnowledgeUsage()}`
+      error: `Unsupported knowledge ${label}: ${required.value}\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -105,7 +105,7 @@ const parsePositiveInteger = (
   if (!/^[1-9]\d*$/u.test(trimmed)) {
     return {
       ok: false,
-      error: `Unsupported brain knowledge limit: ${value}`
+      error: `Unsupported knowledge limit: ${value}`
     };
   }
 
@@ -114,7 +114,7 @@ const parsePositiveInteger = (
   if (!Number.isSafeInteger(parsed)) {
     return {
       ok: false,
-      error: `Unsupported brain knowledge limit: ${value}`
+      error: `Unsupported knowledge limit: ${value}`
     };
   }
 
@@ -125,15 +125,15 @@ const parsePositiveInteger = (
 };
 
 type BrainKnowledgeParseState = {
-  cardFiles: string[];
+  readModelFiles: string[];
   knowledgeFiles: string[];
   catalogFiles: string[];
   storeOnly: boolean;
   projectId: string | undefined;
-  kind: BrainKnowledgeKind | undefined;
-  status: BrainKnowledgeStatus | undefined;
-  reviewability: BrainKnowledgeReviewability | undefined;
-  usefulnessOutcome: BrainKnowledgeUsefulnessOutcomeFilter | undefined;
+  kind: KnowledgeKind | undefined;
+  status: KnowledgeStatus | undefined;
+  reviewability: KnowledgeReviewability | undefined;
+  usefulnessOutcome: KnowledgeUsefulnessOutcomeFilter | undefined;
   text: string | undefined;
   format: "text" | "json" | "html";
   limit: number | undefined;
@@ -176,8 +176,8 @@ const pushPathOption = (
 };
 
 const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = {
-  "--card-file": (args, index, state) =>
-    pushPathOption(args, index, "--card-file", state.cardFiles),
+  "--read-model-file": (args, index, state) =>
+    pushPathOption(args, index, "--read-model-file", state.readModelFiles),
   "--knowledge-file": (args, index, state) =>
     pushPathOption(args, index, "--knowledge-file", state.knowledgeFiles),
   "--catalog-file": (args, index, state) =>
@@ -212,7 +212,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
     };
   },
   "--kind": (args, index, state) => {
-    const parsed = parseAllowedOption(args, index, "--kind", brainKnowledgeKindValues, "kind");
+    const parsed = parseAllowedOption(args, index, "--kind", knowledgeKindValues, "kind");
 
     if (!parsed.ok) {
       return parsed;
@@ -230,7 +230,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
       args,
       index,
       "--status",
-      brainKnowledgeStatusValues,
+      knowledgeStatusValues,
       "status"
     );
 
@@ -250,7 +250,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
       args,
       index,
       "--reviewability",
-      brainKnowledgeReviewabilityValues,
+      knowledgeReviewabilityValues,
       "reviewability"
     );
 
@@ -270,7 +270,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
       args,
       index,
       "--usefulness-outcome",
-      brainKnowledgeUsefulnessOutcomeFilterValues,
+      knowledgeUsefulnessOutcomeFilterValues,
       "usefulness outcome"
     );
 
@@ -346,14 +346,14 @@ const validateBrainKnowledgeSources = (
   if (state.storeOnly && hasExplicitBrainKnowledgeSource(state)) {
     return {
       ok: false,
-      error: `--store-only cannot be combined with --card-file, --knowledge-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
+      error: `--store-only cannot be combined with --read-model-file, --knowledge-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
     };
   }
 
   if (hasEmptyBrainKnowledgeSourcePath(state)) {
     return {
       ok: false,
-      error: `Brain knowledge file source options require non-empty paths\n${formatBrainKnowledgeUsage()}`
+      error: `Knowledge file source options require non-empty paths\n${formatBrainKnowledgeUsage()}`
     };
   }
 
@@ -364,12 +364,12 @@ const validateBrainKnowledgeSources = (
 };
 
 const hasExplicitBrainKnowledgeSource = (state: BrainKnowledgeParseState): boolean =>
-  state.cardFiles.length > 0 ||
+  state.readModelFiles.length > 0 ||
   state.knowledgeFiles.length > 0 ||
   state.catalogFiles.length > 0;
 
 const hasEmptyBrainKnowledgeSourcePath = (state: BrainKnowledgeParseState): boolean =>
-  state.cardFiles.some((cardFile) => cardFile.length === 0) ||
+  state.readModelFiles.some((readModelFile) => readModelFile.length === 0) ||
   state.knowledgeFiles.some((knowledgeFile) => knowledgeFile.length === 0) ||
   state.catalogFiles.some((catalogFile) => catalogFile.length === 0);
 
@@ -378,7 +378,7 @@ const buildBrainKnowledgeCommand = (
 ): ParseArgsResult => ({
   command: {
     kind: "brainKnowledge",
-    cardFiles: state.cardFiles,
+    readModelFiles: state.readModelFiles,
     knowledgeFiles: state.knowledgeFiles,
     catalogFiles: state.catalogFiles,
     storeOnly: state.storeOnly,
@@ -405,7 +405,7 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
   }
 
   const state: BrainKnowledgeParseState = {
-    cardFiles: [],
+    readModelFiles: [],
     knowledgeFiles: [],
     catalogFiles: [],
     storeOnly: false,
@@ -426,7 +426,7 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
 
     if (parser === undefined) {
       return {
-        error: `Unsupported brain knowledge argument: ${arg}\n${formatBrainKnowledgeUsage()}`
+        error: `Unsupported knowledge argument: ${arg}\n${formatBrainKnowledgeUsage()}`
       };
     }
 

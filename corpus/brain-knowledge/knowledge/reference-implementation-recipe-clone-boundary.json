@@ -15,14 +15,14 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future TypeScript pattern intake",
     "future reference implementation recipe trials",
     "future code-quality pattern gates"
   ],
-  "falsifier": "A future KRN slice can treat an example file or clone recipe as authoritative without local verification evidence, source-to-decision mapping, version or drift evidence, reviewability reasons, or proof/non-proof boundaries while brain-knowledge readback still marks the pattern ready.",
+  "falsifier": "A future KRN slice can treat an example file or clone recipe as authoritative without local verification evidence, source-to-decision mapping, version or drift evidence, reviewability reasons, or proof/non-proof boundaries while knowledge readback still marks the pattern ready.",
   "doesNotProve": "This pattern does not prove clone workflows outperform skills, that public practitioner sources are correct, that paid or proprietary course material may be copied, that generated code should bypass review, or that KRN should add a broad skill, subagent, crawler, or recipe runtime system now.",
   "observedAt": "2026-07-01",
   "nextAction": "review"

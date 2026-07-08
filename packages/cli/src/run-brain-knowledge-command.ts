@@ -1,17 +1,17 @@
 import path from "node:path";
 
 import type {
-  BrainKnowledgeReadModel,
-  BrainKnowledgeSearchFilter,
-  BrainKnowledgeUsefulnessFeedback
+  KnowledgeReadModel,
+  KnowledgeSearchFilter,
+  KnowledgeUsefulnessFeedback
 } from "@krn/harness";
 import {
-  brainKnowledgeCardFromDecision,
-  cardsWithBrainKnowledgeUsefulnessFeedback,
-  parseBrainKnowledgeReadModel,
-  parseBrainKnowledgeUsefulnessFeedbackList,
-  parseBrainKnowledgeDecision,
-  searchBrainKnowledgeCards
+  knowledgeReadModelFromDecision,
+  knowledgeReadModelsWithUsefulnessFeedback,
+  parseKnowledgeReadModel,
+  parseKnowledgeUsefulnessFeedbackList,
+  parseKnowledgeDecision,
+  searchKnowledgeReadModels
 } from "@krn/harness";
 import {
   readJsonObject,
@@ -19,58 +19,58 @@ import {
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
 
-export type BrainKnowledgeOutputFormat = "text" | "json" | "html";
+export type KnowledgeOutputFormat = "text" | "json" | "html";
 
 export interface BrainKnowledgeCommandRuntime {
   cwd?: string;
-  cardFiles: readonly string[];
+  readModelFiles: readonly string[];
   knowledgeFiles: readonly string[];
   catalogFiles: readonly string[];
-  filter: BrainKnowledgeSearchFilter;
-  format: BrainKnowledgeOutputFormat;
+  filter: KnowledgeSearchFilter;
+  format: KnowledgeOutputFormat;
   limit?: number;
-  cardProvider?: () => Promise<BrainKnowledgeReadModel[]>;
+  readModelProvider?: () => Promise<KnowledgeReadModel[]>;
   /**
    * Optional store-backed usefulness source (9xc1). When provided, the command
    * awaits it and merges the result into the usefulness feedback, so the
    * readback can show usefulness without a static corpus JSON ledger. The CLI
    * layer wires this to a feedback_delta store read (mapped via
-   * brainKnowledgeUsefulnessFromKnowledgeOutcomes). Seed-only corpus
+   * knowledgeUsefulnessFromKnowledgeOutcomes). Seed-only corpus
    * usefulnessFeedbackFiles may still be supplied and are merged alongside.
    */
-  usefulnessProvider?: () => Promise<BrainKnowledgeUsefulnessFeedback[]>;
+  usefulnessProvider?: () => Promise<KnowledgeUsefulnessFeedback[]>;
 }
 
 export interface BrainKnowledgeCommandResult {
   stdout: string;
 }
 
-interface LoadedBrainKnowledgeCards {
-  cards: BrainKnowledgeReadModel[];
-  feedback: BrainKnowledgeUsefulnessFeedback[];
-  cardFiles: string[];
+interface LoadedKnowledgeReadModels {
+  readModels: KnowledgeReadModel[];
+  feedback: KnowledgeUsefulnessFeedback[];
+  readModelFiles: string[];
   knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
 }
 
-interface BrainKnowledgePreviewResource {
-  kind: "krn.brainKnowledge.cards.preview.v1";
+interface KnowledgeReadbackResource {
+  kind: "krn.brain.knowledge.readback.v1";
   access: "read_only";
   mutation: "none";
   source: "explicit_files" | "memory_store";
   sourceBoundary: string;
   usefulnessSource: "explicit_files" | "store_backed";
-  filter: BrainKnowledgeSearchFilter;
-  cardFiles: string[];
+  filter: KnowledgeSearchFilter;
+  readModelFiles: string[];
   knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
-  totalCards: number;
-  returnedCards: number;
+  totalReadModels: number;
+  returnedReadModels: number;
   limit?: number;
   noMatchGuidance?: string[];
-  cards: BrainKnowledgeReadModel[];
+  readModels: KnowledgeReadModel[];
   proof: {
     proves: string[];
     doesNotProve: string[];
@@ -79,14 +79,14 @@ interface BrainKnowledgePreviewResource {
 
 const proof = {
   proves: [
-    "supplied files parse as BrainKnowledgeReadModel or brain knowledge decisions",
+    "supplied files parse as KnowledgeReadModel or knowledge decisions",
     "supplied usefulness feedback files parse with proof boundaries",
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
-    "brain knowledge readback was produced from live DB state",
+    "knowledge readback was produced from live DB state",
     "search ranking quality is good",
-    "brain knowledge decisions are complete",
+    "knowledge decisions are complete",
     "Memory Core, SourceDecision, candidates, or evidence were mutated",
     "KRN is product-ready"
   ]
@@ -99,12 +99,12 @@ const buildProof = (
   {
     const proves = source === "memory_store"
       ? [
-          "brain knowledge entries were read from DB-backed MemoryRecord rows",
-          "MemoryRecords were converted into BrainKnowledgeReadModel cards",
+          "knowledge entries were read from DB-backed MemoryRecord rows",
+          "MemoryRecords were converted into KnowledgeReadModel rows",
           "local readback filters were applied deterministically"
         ]
       : [
-          "supplied files parse as BrainKnowledgeReadModel or brain knowledge decisions",
+          "supplied files parse as KnowledgeReadModel or knowledge decisions",
           "local readback filters were applied deterministically"
         ];
     const usefulnessProves = usefulnessSource === "store_backed"
@@ -114,11 +114,11 @@ const buildProof = (
         : ["supplied usefulness feedback files parse with proof boundaries"];
     const doesNotProve = source === "memory_store" || usefulnessSource === "store_backed"
       ? proof.doesNotProve.filter(
-          (item) => item !== "brain knowledge readback was produced from live DB state"
+          (item) => item !== "knowledge readback was produced from live DB state"
         )
       : [
           ...proof.doesNotProve,
-          "explicit file or catalog-backed brain knowledge is runtime memory"
+          "explicit file or catalog-backed knowledge is runtime memory"
         ];
 
     return {
@@ -127,46 +127,46 @@ const buildProof = (
     };
   };
 
-const sourceBoundaryFor = (source: BrainKnowledgePreviewResource["source"]): string =>
+const sourceBoundaryFor = (source: KnowledgeReadbackResource["source"]): string =>
   source === "memory_store"
     ? "store-backed runtime readback"
     : "bootstrap/fixture/migration input only; not runtime memory";
 
-const createLoadedBrainKnowledgeCards = (): LoadedBrainKnowledgeCards => ({
-  cards: [],
+const createLoadedKnowledgeReadModels = (): LoadedKnowledgeReadModels => ({
+  readModels: [],
   feedback: [],
-  cardFiles: [],
+  readModelFiles: [],
   knowledgeFiles: [],
   usefulnessFeedbackFiles: [],
   catalogFiles: []
 });
 
-const loadExplicitBrainKnowledgeFiles = async (
+const loadExplicitKnowledgeFiles = async (
   runtime: BrainKnowledgeCommandRuntime,
   cwd: string,
-  loaded: LoadedBrainKnowledgeCards
+  loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
-  for (const cardFile of runtime.cardFiles) {
-    await loadCardFile(cardFile, await resolveRepoInputFile(cwd, cardFile), loaded.cards);
-    loaded.cardFiles.push(cardFile);
+  for (const readModelFile of runtime.readModelFiles) {
+    await loadReadModelFile(readModelFile, await resolveRepoInputFile(cwd, readModelFile), loaded.readModels);
+    loaded.readModelFiles.push(readModelFile);
   }
 
   for (const knowledgeFile of runtime.knowledgeFiles) {
-    await loadKnowledgeFile(knowledgeFile, await resolveRepoInputFile(cwd, knowledgeFile), loaded.cards);
+    await loadKnowledgeFile(knowledgeFile, await resolveRepoInputFile(cwd, knowledgeFile), loaded.readModels);
     loaded.knowledgeFiles.push(knowledgeFile);
   }
 };
 
-const loadCatalogCardFiles = async (
+const loadCatalogReadModelFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedBrainKnowledgeCards
+  loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
-  for (const cardFile of catalog.cardFiles) {
-    const resolvedCardFile = path.resolve(catalogDirectory, cardFile);
-    await loadCardFile(`${catalogFile}:${cardFile}`, resolvedCardFile, loaded.cards);
-    loaded.cardFiles.push(`${catalogFile}:${cardFile}`);
+  for (const readModelFile of catalog.readModelFiles) {
+    const resolvedReadModelFile = path.resolve(catalogDirectory, readModelFile);
+    await loadReadModelFile(`${catalogFile}:${readModelFile}`, resolvedReadModelFile, loaded.readModels);
+    loaded.readModelFiles.push(`${catalogFile}:${readModelFile}`);
   }
 };
 
@@ -174,11 +174,11 @@ const loadCatalogKnowledgeFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedBrainKnowledgeCards
+  loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
   for (const knowledgeFile of catalog.knowledgeFiles) {
     const resolvedKnowledgeFile = path.resolve(catalogDirectory, knowledgeFile);
-    await loadKnowledgeFile(`${catalogFile}:${knowledgeFile}`, resolvedKnowledgeFile, loaded.cards);
+    await loadKnowledgeFile(`${catalogFile}:${knowledgeFile}`, resolvedKnowledgeFile, loaded.readModels);
     loaded.knowledgeFiles.push(`${catalogFile}:${knowledgeFile}`);
   }
 };
@@ -187,7 +187,7 @@ const loadCatalogUsefulnessFeedbackFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
-  loaded: LoadedBrainKnowledgeCards
+  loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
   for (const usefulnessFeedbackFile of catalog.usefulnessFeedbackFiles) {
     const resolvedUsefulnessFeedbackFile = path.resolve(catalogDirectory, usefulnessFeedbackFile);
@@ -200,10 +200,10 @@ const loadCatalogUsefulnessFeedbackFiles = async (
   }
 };
 
-const loadBrainKnowledgeCatalogFile = async (
+const loadKnowledgeCatalogFile = async (
   cwd: string,
   catalogFile: string,
-  loaded: LoadedBrainKnowledgeCards
+  loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
   const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
   const result = await readJsonObjectResult(resolvedCatalogFile);
@@ -213,34 +213,34 @@ const loadBrainKnowledgeCatalogFile = async (
 
   if (catalog === undefined) {
     const reason = result.status === "ok"
-      ? "catalog must include non-empty cardFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays"
+      ? "catalog must include non-empty readModelFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays"
       : result.reason;
 
-    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (${reason})`);
+    throw new Error(`Invalid knowledge catalog file: ${catalogFile} (${reason})`);
   }
 
   const catalogDirectory = path.dirname(resolvedCatalogFile);
 
-  await loadCatalogCardFiles(catalogFile, catalogDirectory, catalog, loaded);
+  await loadCatalogReadModelFiles(catalogFile, catalogDirectory, catalog, loaded);
   await loadCatalogKnowledgeFiles(catalogFile, catalogDirectory, catalog, loaded);
   await loadCatalogUsefulnessFeedbackFiles(catalogFile, catalogDirectory, catalog, loaded);
   loaded.catalogFiles.push(catalogFile);
 };
 
-const loadBrainKnowledgeCards = async (
+const loadKnowledgeReadModels = async (
   runtime: BrainKnowledgeCommandRuntime,
   cwd: string
-): Promise<LoadedBrainKnowledgeCards> => {
-  const loaded = createLoadedBrainKnowledgeCards();
+): Promise<LoadedKnowledgeReadModels> => {
+  const loaded = createLoadedKnowledgeReadModels();
 
-  await loadExplicitBrainKnowledgeFiles(runtime, cwd, loaded);
+  await loadExplicitKnowledgeFiles(runtime, cwd, loaded);
 
   for (const catalogFile of runtime.catalogFiles) {
-    await loadBrainKnowledgeCatalogFile(cwd, catalogFile, loaded);
+    await loadKnowledgeCatalogFile(cwd, catalogFile, loaded);
   }
 
-  if (runtime.cardProvider !== undefined) {
-    loaded.cards.push(...await runtime.cardProvider());
+  if (runtime.readModelProvider !== undefined) {
+    loaded.readModels.push(...await runtime.readModelProvider());
   }
 
   return loaded;
@@ -250,92 +250,92 @@ export const runBrainKnowledgeCommand = async (
   runtime: BrainKnowledgeCommandRuntime
 ): Promise<BrainKnowledgeCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
-  const loaded = await loadBrainKnowledgeCards(runtime, cwd);
+  const loaded = await loadKnowledgeReadModels(runtime, cwd);
   const storeUsefulness = runtime.usefulnessProvider === undefined
     ? []
     : await runtime.usefulnessProvider();
   const source: "explicit_files" | "memory_store" =
-    runtime.cardProvider === undefined ? "explicit_files" : "memory_store";
+    runtime.readModelProvider === undefined ? "explicit_files" : "memory_store";
   const usefulnessSource: "explicit_files" | "store_backed" =
     runtime.usefulnessProvider === undefined ? "explicit_files" : "store_backed";
-  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(
-    loaded.cards,
+  const cardsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
+    loaded.readModels,
     [...loaded.feedback, ...storeUsefulness]
   );
-  const matchingCards = searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter);
-  const cards = runtime.limit === undefined
-    ? matchingCards
-    : matchingCards.slice(0, runtime.limit);
-  const noMatchGuidance = matchingCards.length === 0
+  const matchingReadModels = searchKnowledgeReadModels(cardsWithFeedback, runtime.filter);
+  const readModels = runtime.limit === undefined
+    ? matchingReadModels
+    : matchingReadModels.slice(0, runtime.limit);
+  const noMatchGuidance = matchingReadModels.length === 0
     ? buildNoMatchGuidance(runtime.filter)
     : undefined;
 
-  const resource: BrainKnowledgePreviewResource = {
-    kind: "krn.brainKnowledge.cards.preview.v1",
+  const resource: KnowledgeReadbackResource = {
+    kind: "krn.brain.knowledge.readback.v1",
     access: "read_only",
     mutation: "none",
     source,
     sourceBoundary: sourceBoundaryFor(source),
     usefulnessSource,
     filter: runtime.filter,
-    cardFiles: loaded.cardFiles,
+    readModelFiles: loaded.readModelFiles,
     knowledgeFiles: loaded.knowledgeFiles,
     usefulnessFeedbackFiles: loaded.usefulnessFeedbackFiles,
     catalogFiles: loaded.catalogFiles,
-    totalCards: matchingCards.length,
-    returnedCards: cards.length,
+    totalReadModels: matchingReadModels.length,
+    returnedReadModels: readModels.length,
     ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
     ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
-    cards,
+    readModels,
     proof: buildProof(source, usefulnessSource)
   };
 
   return {
-    stdout: formatBrainKnowledgeOutput(resource, runtime.format)
+    stdout: formatKnowledgeOutput(resource, runtime.format)
   };
 };
 
-const formatBrainKnowledgeOutput = (
-  resource: BrainKnowledgePreviewResource,
-  format: BrainKnowledgeOutputFormat
+const formatKnowledgeOutput = (
+  resource: KnowledgeReadbackResource,
+  format: KnowledgeOutputFormat
 ): string => {
   if (format === "json") {
     return `${JSON.stringify(resource, null, 2)}\n`;
   }
 
   if (format === "html") {
-    return formatBrainKnowledgeHtmlPreview(resource);
+    return formatKnowledgeHtmlPreview(resource);
   }
 
-  return formatBrainKnowledgeTextPreview(resource);
+  return formatKnowledgeTextPreview(resource);
 };
 
-const formatBrainKnowledgeTextPreview = (resource: BrainKnowledgePreviewResource): string =>
+const formatKnowledgeTextPreview = (resource: KnowledgeReadbackResource): string =>
   [
-    "KRN Brain Knowledge Readback",
+    "KRN Knowledge Readback",
     "Access: read-only",
     "Mutation: none",
     `Source: ${resource.source}`,
     `Source boundary: ${resource.sourceBoundary}`,
     `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
-    `Brain knowledge files: ${formatList(resource.cardFiles)}`,
+    `Knowledge read model files: ${formatList(resource.readModelFiles)}`,
     `Knowledge files: ${formatList(resource.knowledgeFiles)}`,
     `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
-    `Results: ${resource.cards.length}`,
-    `Total filtered results: ${resource.totalCards}`,
+    `Results: ${resource.readModels.length}`,
+    `Total filtered results: ${resource.totalReadModels}`,
     ...(resource.limit === undefined ? [] : [
       `Limit: ${resource.limit}`
     ]),
     ...formatNoMatchGuidanceText(resource),
     "",
-    ...resource.cards.flatMap(formatCard),
+    ...resource.readModels.flatMap(formatReadModel),
     "Proof:",
     ...resource.proof.proves.map((item) => `- proves: ${item}`),
     ...resource.proof.doesNotProve.map((item) => `- does not prove: ${item}`)
   ].join("\n") + "\n";
 
-const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource): string => {
+const formatKnowledgeHtmlPreview = (resource: KnowledgeReadbackResource): string => {
   const serializedResource = JSON.stringify(resource).replace(/</gu, "\\u003c");
 
   return `<!doctype html>
@@ -343,7 +343,7 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KRN Brain Knowledge Readback</title>
+  <title>KRN Knowledge Readback</title>
   <style>
     :root {
       color-scheme: light;
@@ -403,7 +403,7 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
       font-size: 14px;
       white-space: nowrap;
     }
-    .cards {
+    .readModels {
       display: grid;
       gap: 12px;
     }
@@ -483,24 +483,24 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
 <body>
   <main>
     <header>
-      <h1>KRN Brain Knowledge Readback</h1>
+      <h1>KRN Knowledge Readback</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: ${escapeHtml(resource.source)}</div>
       <div class="meta">Source boundary: ${escapeHtml(resource.sourceBoundary)}</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
       <div class="meta">Usefulness feedback files: ${escapeHtml(formatList(resource.usefulnessFeedbackFiles))}</div>
     </header>
     <section class="toolbar" aria-label="Knowledge search">
-      <input id="search" type="search" placeholder="Search brain knowledge" autocomplete="off">
-      ${formatSelect("kindFilter", "Kind", uniqueValues(resource.cards.map((card) => card.kind)))}
-      ${formatSelect("statusFilter", "Status", uniqueValues(resource.cards.map((card) => card.status)))}
-      ${formatSelect("reviewabilityFilter", "Reviewability", uniqueValues(resource.cards.map((card) => card.reviewability)))}
-      ${formatSelect("usefulnessOutcomeFilter", "Usefulness", uniqueValues(resource.cards.map((card) => card.usefulnessFeedback?.outcome ?? "none")))}
-      ${formatSelect("nextActionFilter", "Next action", uniqueValues(resource.cards.map((card) => card.nextAction)))}
-      <div id="count" class="count">Results: ${resource.cards.length}</div>
+      <input id="search" type="search" placeholder="Search knowledge" autocomplete="off">
+      ${formatSelect("kindFilter", "Kind", uniqueValues(resource.readModels.map((readModel) => readModel.kind)))}
+      ${formatSelect("statusFilter", "Status", uniqueValues(resource.readModels.map((readModel) => readModel.status)))}
+      ${formatSelect("reviewabilityFilter", "Reviewability", uniqueValues(resource.readModels.map((readModel) => readModel.reviewability)))}
+      ${formatSelect("usefulnessOutcomeFilter", "Usefulness", uniqueValues(resource.readModels.map((readModel) => readModel.usefulnessFeedback?.outcome ?? "none")))}
+      ${formatSelect("nextActionFilter", "Next action", uniqueValues(resource.readModels.map((readModel) => readModel.nextAction)))}
+      <div id="count" class="count">Results: ${resource.readModels.length}</div>
     </section>
     <section id="empty" class="empty">${formatNoMatchGuidanceHtml(resource)}</section>
-    <section id="cards" class="cards">
-      ${resource.cards.map(formatCardHtml).join("\n")}
+    <section id="readModels" class="readModels">
+      ${resource.readModels.map(formatReadModelHtml).join("\n")}
     </section>
     <section class="proof-panel">
       <h2>Proof Boundaries</h2>
@@ -512,7 +512,7 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
   </main>
   <script id="krn-data" type="application/json">${serializedResource}</script>
   <script>
-    const cards = Array.from(document.querySelectorAll("[data-card]"));
+    const readModels = Array.from(document.querySelectorAll("[data-read-model]"));
     const search = document.getElementById("search");
     const kindFilter = document.getElementById("kindFilter");
     const statusFilter = document.getElementById("statusFilter");
@@ -521,19 +521,19 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
     const nextActionFilter = document.getElementById("nextActionFilter");
     const count = document.getElementById("count");
     const empty = document.getElementById("empty");
-    const matchesFilter = (card, key, value) => value === "" || card.dataset[key] === value;
+    const matchesFilter = (readModel, key, value) => value === "" || readModel.dataset[key] === value;
     const render = () => {
       const query = search.value.trim().toLowerCase();
       let visible = 0;
-      for (const card of cards) {
-        const textMatch = query.length === 0 || card.dataset.search.includes(query);
+      for (const readModel of readModels) {
+        const textMatch = query.length === 0 || readModel.dataset.search.includes(query);
         const match = textMatch
-          && matchesFilter(card, "kind", kindFilter.value)
-          && matchesFilter(card, "status", statusFilter.value)
-          && matchesFilter(card, "reviewability", reviewabilityFilter.value)
-          && matchesFilter(card, "usefulnessOutcome", usefulnessOutcomeFilter.value)
-          && matchesFilter(card, "nextAction", nextActionFilter.value);
-        card.hidden = !match;
+          && matchesFilter(readModel, "kind", kindFilter.value)
+          && matchesFilter(readModel, "status", statusFilter.value)
+          && matchesFilter(readModel, "reviewability", reviewabilityFilter.value)
+          && matchesFilter(readModel, "usefulnessOutcome", usefulnessOutcomeFilter.value)
+          && matchesFilter(readModel, "nextAction", nextActionFilter.value);
+        readModel.hidden = !match;
         if (match) visible += 1;
       }
       count.textContent = "Results: " + visible;
@@ -552,134 +552,134 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
 `;
 };
 
-const buildNoMatchGuidance = (filter: BrainKnowledgeSearchFilter): string[] => [
-  "No brain knowledge entries matched the current filters.",
+const buildNoMatchGuidance = (filter: KnowledgeSearchFilter): string[] => [
+  "No knowledge entries matched the current filters.",
   ...(filter.text === undefined ? [] : [
     "Try a shorter --text query or split the query into one mechanism term.",
-    "If this is a brain-knowledge pre-coding query, run one broader query before concluding no selected knowledge applies."
+    "If this is a knowledge pre-coding query, run one broader query before concluding no selected knowledge applies."
   ]),
   ...(hasStructuredFilter(filter) ? [
     "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
   ] : []),
-  "If no brain knowledge applies after retry, record an explicit rejected_or_deferred_knowledge reason before coding.",
+  "If no knowledge applies after retry, record an explicit rejected_or_deferred_knowledge reason before coding.",
   "Zero results do not prove that no relevant pattern exists or that search ranking is good."
 ];
 
-const hasStructuredFilter = (filter: BrainKnowledgeSearchFilter): boolean =>
+const hasStructuredFilter = (filter: KnowledgeSearchFilter): boolean =>
   filter.kind !== undefined ||
   filter.status !== undefined ||
   filter.reviewability !== undefined ||
   filter.usefulnessOutcome !== undefined;
 
-const formatNoMatchGuidanceText = (resource: BrainKnowledgePreviewResource): string[] =>
+const formatNoMatchGuidanceText = (resource: KnowledgeReadbackResource): string[] =>
   resource.noMatchGuidance === undefined ? [] : [
     "",
     "No-match guidance:",
     ...resource.noMatchGuidance.map((item) => `- ${item}`)
   ];
 
-const formatNoMatchGuidanceHtml = (resource: BrainKnowledgePreviewResource): string =>
+const formatNoMatchGuidanceHtml = (resource: KnowledgeReadbackResource): string =>
   resource.noMatchGuidance === undefined
-    ? "No brain knowledge entries match the current search."
-    : `<strong>No brain knowledge entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    ? "No knowledge entries match the current search."
+    : `<strong>No knowledge entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 
-const formatCard = (card: BrainKnowledgeReadModel): string[] => [
-  `- ${card.id}`,
-  `  title: ${card.title}`,
-  `  kind: ${card.kind}`,
-  `  status: ${card.status}`,
-  `  confidence: ${card.confidence}`,
-  `  reviewability: ${card.reviewability}`,
-  `  nextAction: ${card.nextAction}`,
-  `  summary: ${card.summary}`,
-  ...(card.mechanism === undefined ? [] : [`  mechanism: ${card.mechanism}`]),
-  ...(card.krnImplication === undefined ? [] : [`  krnImplication: ${card.krnImplication}`]),
-  `  sourceRefs: ${card.sourceRefs.join(", ")}`,
-  `  evidenceRefs: ${card.evidenceRefs.join(", ")}`,
-  `  consumers: ${card.consumers.join(", ")}`,
-  ...(card.usefulnessFeedback === undefined ? [
+const formatReadModel = (readModel: KnowledgeReadModel): string[] => [
+  `- ${readModel.id}`,
+  `  title: ${readModel.title}`,
+  `  kind: ${readModel.kind}`,
+  `  status: ${readModel.status}`,
+  `  confidence: ${readModel.confidence}`,
+  `  reviewability: ${readModel.reviewability}`,
+  `  nextAction: ${readModel.nextAction}`,
+  `  summary: ${readModel.summary}`,
+  ...(readModel.mechanism === undefined ? [] : [`  mechanism: ${readModel.mechanism}`]),
+  ...(readModel.krnImplication === undefined ? [] : [`  krnImplication: ${readModel.krnImplication}`]),
+  `  sourceRefs: ${readModel.sourceRefs.join(", ")}`,
+  `  evidenceRefs: ${readModel.evidenceRefs.join(", ")}`,
+  `  consumers: ${readModel.consumers.join(", ")}`,
+  ...(readModel.usefulnessFeedback === undefined ? [
     "  usefulnessOutcome: none"
   ] : [
-    `  usefulnessOutcome: ${card.usefulnessFeedback.outcome}`,
-    `  usefulnessSummary: ${card.usefulnessFeedback.summary}`,
-    `  usefulnessEvidenceRefs: ${card.usefulnessFeedback.evidenceRefs.join(", ")}`,
-    `  usefulnessDoesNotProve: ${card.usefulnessFeedback.doesNotProve}`
+    `  usefulnessOutcome: ${readModel.usefulnessFeedback.outcome}`,
+    `  usefulnessSummary: ${readModel.usefulnessFeedback.summary}`,
+    `  usefulnessEvidenceRefs: ${readModel.usefulnessFeedback.evidenceRefs.join(", ")}`,
+    `  usefulnessDoesNotProve: ${readModel.usefulnessFeedback.doesNotProve}`
   ]),
-  `  falsifier: ${card.falsifier}`,
-  `  doesNotProve: ${card.doesNotProve}`,
+  `  falsifier: ${readModel.falsifier}`,
+  `  doesNotProve: ${readModel.doesNotProve}`,
   ""
 ];
 
-const cardSearchText = (card: BrainKnowledgeReadModel): string =>
+const readModelSearchText = (readModel: KnowledgeReadModel): string =>
   [
-    card.id,
-    card.kind,
-    card.status,
-    card.title,
-    card.summary,
-    card.mechanism ?? "",
-    card.krnImplication ?? "",
-    card.confidence,
-    card.reviewability,
-    card.nextAction,
-    ...card.sourceRefs,
-    ...card.evidenceRefs,
-    ...card.consumers,
-    card.falsifier,
-    card.doesNotProve,
-    ...cardUsefulnessSearchText(card)
+    readModel.id,
+    readModel.kind,
+    readModel.status,
+    readModel.title,
+    readModel.summary,
+    readModel.mechanism ?? "",
+    readModel.krnImplication ?? "",
+    readModel.confidence,
+    readModel.reviewability,
+    readModel.nextAction,
+    ...readModel.sourceRefs,
+    ...readModel.evidenceRefs,
+    ...readModel.consumers,
+    readModel.falsifier,
+    readModel.doesNotProve,
+    ...readModelUsefulnessSearchText(readModel)
   ].join(" ").toLowerCase();
 
-const cardUsefulnessSearchText = (card: BrainKnowledgeReadModel): string[] => {
-  if (card.usefulnessFeedback === undefined) {
+const readModelUsefulnessSearchText = (readModel: KnowledgeReadModel): string[] => {
+  if (readModel.usefulnessFeedback === undefined) {
     return [];
   }
 
   return [
-    card.usefulnessFeedback.outcome,
-    card.usefulnessFeedback.summary,
-    card.usefulnessFeedback.doesNotProve,
-    ...card.usefulnessFeedback.evidenceRefs
+    readModel.usefulnessFeedback.outcome,
+    readModel.usefulnessFeedback.summary,
+    readModel.usefulnessFeedback.doesNotProve,
+    ...readModel.usefulnessFeedback.evidenceRefs
   ];
 };
 
-const formatUsefulnessFeedbackHtml = (card: BrainKnowledgeReadModel): string =>
-  card.usefulnessFeedback === undefined
+const formatUsefulnessFeedbackHtml = (readModel: KnowledgeReadModel): string =>
+  readModel.usefulnessFeedback === undefined
     ? ""
-    : `<dt>Usefulness</dt><dd><strong>${escapeHtml(card.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(card.usefulnessFeedback.summary)}<br>${formatHtmlList(card.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(card.usefulnessFeedback.doesNotProve)}</span></dd>`;
+    : `<dt>Usefulness</dt><dd><strong>${escapeHtml(readModel.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(readModel.usefulnessFeedback.summary)}<br>${formatHtmlList(readModel.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(readModel.usefulnessFeedback.doesNotProve)}</span></dd>`;
 
-const formatCardDataAttributes = (card: BrainKnowledgeReadModel): string =>
+const formatReadModelDataAttributes = (readModel: KnowledgeReadModel): string =>
   [
-    { name: "data-card-id", value: card.id },
-    { name: "data-kind", value: card.kind },
-    { name: "data-status", value: card.status },
-    { name: "data-reviewability", value: card.reviewability },
-    { name: "data-usefulness-outcome", value: card.usefulnessFeedback?.outcome ?? "none" },
-    { name: "data-next-action", value: card.nextAction },
-    { name: "data-search", value: cardSearchText(card) }
+    { name: "data-read-model-id", value: readModel.id },
+    { name: "data-kind", value: readModel.kind },
+    { name: "data-status", value: readModel.status },
+    { name: "data-reviewability", value: readModel.reviewability },
+    { name: "data-usefulness-outcome", value: readModel.usefulnessFeedback?.outcome ?? "none" },
+    { name: "data-next-action", value: readModel.nextAction },
+    { name: "data-search", value: readModelSearchText(readModel) }
   ].map((attribute) => `${attribute.name}="${escapeHtml(attribute.value)}"`).join(" ");
 
-const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
-  return `<article data-card ${formatCardDataAttributes(card)}>
-  <h2>${escapeHtml(card.title)}</h2>
-  <div class="refs"><code>${escapeHtml(card.id)}</code></div>
+const formatReadModelHtml = (readModel: KnowledgeReadModel): string => {
+  return `<article data-read-model ${formatReadModelDataAttributes(readModel)}>
+  <h2>${escapeHtml(readModel.title)}</h2>
+  <div class="refs"><code>${escapeHtml(readModel.id)}</code></div>
   <div class="chips">
-    <span class="chip strong">${escapeHtml(card.kind)}</span>
-    <span class="chip">${escapeHtml(card.status)}</span>
-    <span class="chip">confidence: ${escapeHtml(card.confidence)}</span>
-    <span class="chip">reviewability: ${escapeHtml(card.reviewability)}</span>
-    <span class="chip">next: ${escapeHtml(card.nextAction)}</span>
+    <span class="chip strong">${escapeHtml(readModel.kind)}</span>
+    <span class="chip">${escapeHtml(readModel.status)}</span>
+    <span class="chip">confidence: ${escapeHtml(readModel.confidence)}</span>
+    <span class="chip">reviewability: ${escapeHtml(readModel.reviewability)}</span>
+    <span class="chip">next: ${escapeHtml(readModel.nextAction)}</span>
   </div>
-  <p>${escapeHtml(card.summary)}</p>
+  <p>${escapeHtml(readModel.summary)}</p>
   <dl>
-    ${card.mechanism === undefined ? "" : `<dt>Mechanism</dt><dd>${escapeHtml(card.mechanism)}</dd>`}
-    ${card.krnImplication === undefined ? "" : `<dt>KRN implication</dt><dd>${escapeHtml(card.krnImplication)}</dd>`}
-    <dt>Source refs</dt><dd>${formatHtmlList(card.sourceRefs)}</dd>
-    <dt>Evidence refs</dt><dd>${formatHtmlList(card.evidenceRefs)}</dd>
-    <dt>Consumers</dt><dd>${formatHtmlList(card.consumers)}</dd>
-    ${formatUsefulnessFeedbackHtml(card)}
-    <dt>Falsifier</dt><dd>${escapeHtml(card.falsifier)}</dd>
-    <dt>Does not prove</dt><dd>${escapeHtml(card.doesNotProve)}</dd>
+    ${readModel.mechanism === undefined ? "" : `<dt>Mechanism</dt><dd>${escapeHtml(readModel.mechanism)}</dd>`}
+    ${readModel.krnImplication === undefined ? "" : `<dt>KRN implication</dt><dd>${escapeHtml(readModel.krnImplication)}</dd>`}
+    <dt>Source refs</dt><dd>${formatHtmlList(readModel.sourceRefs)}</dd>
+    <dt>Evidence refs</dt><dd>${formatHtmlList(readModel.evidenceRefs)}</dd>
+    <dt>Consumers</dt><dd>${formatHtmlList(readModel.consumers)}</dd>
+    ${formatUsefulnessFeedbackHtml(readModel)}
+    <dt>Falsifier</dt><dd>${escapeHtml(readModel.falsifier)}</dd>
+    <dt>Does not prove</dt><dd>${escapeHtml(readModel.doesNotProve)}</dd>
   </dl>
 </article>`;
 };
@@ -714,7 +714,7 @@ const escapeHtml = (value: string): string =>
     .replaceAll("'", "&#39;");
 
 type KnowledgeCatalogInput = {
-  cardFiles: string[];
+  readModelFiles: string[];
   knowledgeFiles: string[];
   usefulnessFeedbackFiles: string[];
 };
@@ -724,66 +724,66 @@ const parseKnowledgeCatalog = (value: unknown): KnowledgeCatalogInput | undefine
     return undefined;
   }
 
-  const cardFiles = parseStringArray(value["cardFiles"]);
+  const readModelFiles = parseStringArray(value["readModelFiles"]);
   const knowledgeFiles = parseStringArray(value["knowledgeFiles"]);
   const usefulnessFeedbackFiles = parseStringArray(value["usefulnessFeedbackFiles"] ?? []);
 
   if (
-    cardFiles === undefined ||
+    readModelFiles === undefined ||
     knowledgeFiles === undefined ||
     usefulnessFeedbackFiles === undefined ||
-    (cardFiles.length === 0 && knowledgeFiles.length === 0 && usefulnessFeedbackFiles.length === 0)
+    (readModelFiles.length === 0 && knowledgeFiles.length === 0 && usefulnessFeedbackFiles.length === 0)
   ) {
     return undefined;
   }
 
   return {
-    cardFiles,
+    readModelFiles,
     knowledgeFiles,
     usefulnessFeedbackFiles
   };
 };
 
-const loadCardFile = async (
+const loadReadModelFile = async (
   label: string,
   resolvedFile: string,
-  cards: BrainKnowledgeReadModel[]
+  readModels: KnowledgeReadModel[]
 ): Promise<void> => {
   const parsed = await readJsonObject(resolvedFile);
-  const card = parseBrainKnowledgeReadModel(parsed);
+  const readModel = parseKnowledgeReadModel(parsed);
 
-  if (card === undefined) {
-    throw new Error(`Invalid BrainKnowledgeReadModel card file: ${label}`);
+  if (readModel === undefined) {
+    throw new Error(`Invalid KnowledgeReadModel file: ${label}`);
   }
 
-  cards.push(card);
+  readModels.push(readModel);
 };
 
 const loadKnowledgeFile = async (
   label: string,
   resolvedFile: string,
-  cards: BrainKnowledgeReadModel[]
+  readModels: KnowledgeReadModel[]
 ): Promise<void> => {
   const parsed = await readJsonObject(resolvedFile);
-  const decision = parseBrainKnowledgeDecision(parsed);
+  const decision = parseKnowledgeDecision(parsed);
 
   if (decision === undefined) {
-    throw new Error(`Invalid brain knowledge decision file: ${label}`);
+    throw new Error(`Invalid knowledge decision file: ${label}`);
   }
 
-  cards.push(brainKnowledgeCardFromDecision(decision));
+  readModels.push(knowledgeReadModelFromDecision(decision));
 };
 
 const loadUsefulnessFeedbackFile = async (
   label: string,
   resolvedFile: string,
-  feedback: BrainKnowledgeUsefulnessFeedback[]
+  feedback: KnowledgeUsefulnessFeedback[]
 ): Promise<void> => {
   const parsed = await readJsonObject(resolvedFile);
-  const parsedFeedback = parseBrainKnowledgeUsefulnessFeedbackList(parsed);
+  const parsedFeedback = parseKnowledgeUsefulnessFeedbackList(parsed);
 
   if (parsedFeedback === undefined) {
-    throw new Error(`Invalid brain knowledge usefulness feedback file: ${label}`);
+    throw new Error(`Invalid knowledge usefulness feedback file: ${label}`);
   }
 
   feedback.push(...parsedFeedback);

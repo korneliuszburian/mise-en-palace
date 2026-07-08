@@ -18,7 +18,7 @@
     "future second-operator/internal-alpha gates"
   ],
   "falsifier": "A future target-repo task writes to a living or fixture target without explicit mode, dirty-state handling, allowed/forbidden writes, rollback, and verification while tests still pass.",
-  "doesNotProve": "This card does not prove target writes are safe by default, external target readiness, second-operator proof, or product readiness.",
+  "doesNotProve": "This knowledge decision does not prove target writes are safe by default, external target readiness, second-operator proof, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"
 }

@@ -9,7 +9,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/run-knowledge-cards-command.test.ts"
+    "packages/cli/src/__tests__/run-brain-knowledge-command.test.ts"
   ],
   "consumers": [
     "future graph brain readback slices",
@@ -17,7 +17,7 @@
     "future Brain-QA graph relation cases"
   ],
   "falsifier": "A future graph-brain slice treats SourceClaimEdge relation counts, graphReadback, or relationSupport as proof of entity extraction, source truth, graph retrieval quality, or product-ready GraphRAG behavior.",
-  "doesNotProve": "This card does not prove graph ranking quality, entity extraction, relation correctness, source truth, GraphRAG-quality reasoning, or KRN product readiness.",
+  "doesNotProve": "This knowledge decision does not prove graph ranking quality, entity extraction, relation correctness, source truth, GraphRAG-quality reasoning, or KRN product readiness.",
   "observedAt": "2026-06-30",
   "nextAction": "use"
 }

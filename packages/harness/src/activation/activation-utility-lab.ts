@@ -127,7 +127,7 @@ export const buildActivationUtilityLabReadback = (
       sourceLinkGraph,
       verdict: "selected_knowledge_sufficient",
       recommendedNextAction:
-        "Use selected brain knowledge first; linked evidence can remain supporting context.",
+        "Use selected knowledge first; linked evidence can remain supporting context.",
       doesNotProve:
         "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
     };

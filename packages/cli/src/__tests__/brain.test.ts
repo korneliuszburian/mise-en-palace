@@ -46,7 +46,7 @@ const storePatternMemory = (): MemoryRecord => ({
 });
 
 const patternFeedbackDelta = (
-  brainKnowledgeId = "pattern:store-backed-usefulness"
+  knowledgeId = "pattern:store-backed-usefulness"
 ): FeedbackDelta => ({
   id: "feedback-delta-1" as FeedbackDelta["id"],
   reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
@@ -55,8 +55,8 @@ const patternFeedbackDelta = (
   sourceDecisions: [],
   evalCandidates: [],
   metadata: {
-    brainKnowledgeUsefulnessOutcomes: [{
-      brainKnowledgeId,
+    knowledgeUsefulnessOutcomes: [{
+      knowledgeId,
       outcome: "helped",
       reason: "The pattern changed the implementation decision.",
       evidenceRefs: ["test:brain knowledge store-only"],
@@ -176,7 +176,7 @@ const createBrainKnowledgeDatabaseRuntime = (
 });
 
 describe("runCli", () => {
-  it("prints brain knowledge readback help", async () => {
+  it("prints knowledge readback help", async () => {
     const result = await runCli(["brain", "knowledge", "--help"], {
       env: {},
       now: () => now,
@@ -185,9 +185,9 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--card-file <path>|--knowledge-file <path>|--catalog-file <path>]");
+    expect(result.stdout).toContain("Usage: krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
-    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord cards plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
+    expect(result.stdout).toContain("no file source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
   });
 
   it("explains the store-backed default DB requirement without file sources", async () => {
@@ -208,7 +208,7 @@ describe("runCli", () => {
       "KRN_DATABASE_URL is required for krn brain knowledge store-backed readback"
     );
     expect(result.stderr).toContain("No file source defaults to the store path");
-    expect(result.stderr).toContain("--card-file");
+    expect(result.stderr).toContain("--read-model-file");
   });
 
   it("renders brain knowledge through the preferred CLI readback", async () => {
@@ -216,8 +216,8 @@ describe("runCli", () => {
     const result = await runCli([
       "brain",
       "knowledge",
-      "--card-file",
-      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json",
+      "--read-model-file",
+      "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
       "--text",
       "unknown-first"
     ], {
@@ -229,13 +229,13 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Brain Knowledge Readback");
+    expect(result.stdout).toContain("KRN Knowledge Readback");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
   });
 
-  it("renders brain knowledge decision files through the brain knowledge CLI readback", async () => {
+  it("renders knowledge decision files through the brain knowledge CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
@@ -281,7 +281,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
-  it("defaults brain knowledge readback to store-backed usefulness from feedback deltas", async () => {
+  it("defaults knowledge readback to store-backed usefulness from feedback deltas", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
@@ -301,7 +301,7 @@ describe("runCli", () => {
     const resource = JSON.parse(result.stdout) as {
       source: string;
       usefulnessSource: string;
-      cards: Array<{
+      readModels: Array<{
         id: string;
         usefulnessFeedback?: {
           outcome: string;
@@ -317,8 +317,8 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(resource.source).toBe("memory_store");
     expect(resource.usefulnessSource).toBe("store_backed");
-    expect(resource.cards).toHaveLength(1);
-    expect(resource.cards[0]).toMatchObject({
+    expect(resource.readModels).toHaveLength(1);
+    expect(resource.readModels[0]).toMatchObject({
       id: "pattern:store-backed-usefulness",
       usefulnessFeedback: {
         outcome: "helped",
@@ -328,13 +328,13 @@ describe("runCli", () => {
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");
   });
 
-  it("merges store-backed usefulness into explicit seed cards by brain knowledge id", async () => {
+  it("merges store-backed usefulness into explicit seed readModels by knowledge id", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
       "brain",
       "knowledge",
-      "--card-file",
-      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json",
+      "--read-model-file",
+      "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
       "--usefulness-outcome",
       "helped",
       "--json"
@@ -352,7 +352,7 @@ describe("runCli", () => {
     const resource = JSON.parse(result.stdout) as {
       source: string;
       usefulnessSource: string;
-      cards: Array<{
+      readModels: Array<{
         id: string;
         usefulnessFeedback?: {
           outcome: string;
@@ -364,7 +364,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(resource.source).toBe("explicit_files");
     expect(resource.usefulnessSource).toBe("store_backed");
-    expect(resource.cards).toEqual([
+    expect(resource.readModels).toEqual([
       expect.objectContaining({
         id: "pattern:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: expect.objectContaining({
@@ -394,7 +394,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("KRN Brain Knowledge Readback");
+    expect(result.stdout).toContain("KRN Knowledge Readback");
     expect(result.stdout).toContain("type=\"search\"");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");

@@ -90,8 +90,8 @@ export interface SourceUsefulnessOutcomeFeedback {
   doesNotProve: string;
 }
 
-export interface BrainKnowledgeUsefulnessOutcomeFeedback {
-  brainKnowledgeId: string;
+export interface KnowledgeUsefulnessOutcomeFeedback {
+  knowledgeId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
@@ -259,20 +259,20 @@ export const sourceUsefulnessOutcomesFromMetadata = (
     }];
   });
 
-export const brainKnowledgeUsefulnessOutcomesFromMetadata = (
+export const knowledgeUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
-): BrainKnowledgeUsefulnessOutcomeFeedback[] =>
-  readMetadataObjectList(metadata, "brainKnowledgeUsefulnessOutcomes").flatMap((item) => {
-    const brainKnowledgeId = readMetadataString(item, "brainKnowledgeId");
+): KnowledgeUsefulnessOutcomeFeedback[] =>
+  readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes").flatMap((item) => {
+    const knowledgeId = readMetadataString(item, "knowledgeId");
     const reason = readMetadataString(item, "reason");
     const doesNotProve = readMetadataString(item, "doesNotProve");
 
-    if (brainKnowledgeId === undefined || reason === undefined || doesNotProve === undefined) {
+    if (knowledgeId === undefined || reason === undefined || doesNotProve === undefined) {
       return [];
     }
 
     return [{
-      brainKnowledgeId,
+      knowledgeId,
       outcome: sourceUsefulnessOutcomeField(item),
       reason,
       evidenceRefs: readMetadataStringList(item, "evidenceRefs"),

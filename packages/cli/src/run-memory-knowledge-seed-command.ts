@@ -1,8 +1,8 @@
 import path from "node:path";
 
 import type { CreateMemoryCandidateInput } from "@krn/harness/repositories";
-import type { BrainKnowledgeDecision } from "@krn/harness";
-import { parseBrainKnowledgeDecision } from "@krn/harness";
+import type { KnowledgeDecision } from "@krn/harness";
+import { parseKnowledgeDecision } from "@krn/harness";
 
 import {
   noStorePreviewLabel,
@@ -35,7 +35,7 @@ export interface MemoryKnowledgeSeedCommandResult {
 const SEED_PROPOSED_BY = "krn memory knowledge seed";
 const SEED_REVIEWER = "krn memory knowledge seed";
 
-const confidenceValue = (confidence: BrainKnowledgeDecision["confidence"]): number =>
+const confidenceValue = (confidence: KnowledgeDecision["confidence"]): number =>
   confidence === "high" ? 90 : confidence === "medium" ? 60 : confidence === "low" ? 30 : 0;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -51,12 +51,12 @@ const sourceLineageFromRefs = (
   }));
 
 /**
- * Map a parsed brain knowledge decision into the store-backed memory candidate
+ * Map a parsed knowledge decision into the store-backed memory candidate
  * input. Pure + unit-testable; the seed command writes it via the proven
  * createMemoryCandidate + promoteReviewedMemoryCandidate path.
  */
 export const brainKnowledgeDecisionToMemoryCandidateInput = (
-  decision: BrainKnowledgeDecision,
+  decision: KnowledgeDecision,
   projectId: string,
   now: string
 ): CreateMemoryCandidateInput => ({
@@ -89,8 +89,8 @@ export const brainKnowledgeDecisionToMemoryCandidateInput = (
 
 const recordKeyForKnowledge = (knowledgeId: string): string => `pattern:${knowledgeId}`;
 
-interface LoadedBrainKnowledgeDecision {
-  readonly decision: BrainKnowledgeDecision;
+interface LoadedKnowledgeDecision {
+  readonly decision: KnowledgeDecision;
   readonly sourceFile: string;
 }
 
@@ -99,7 +99,7 @@ const knowledgeFilesFromCatalog = (
   value: unknown
 ): string[] => {
   if (!isRecord(value)) {
-    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
+    throw new Error(`Invalid knowledge catalog file: ${catalogFile}`);
   }
 
   const knowledgeFiles = value["knowledgeFiles"];
@@ -109,29 +109,29 @@ const knowledgeFilesFromCatalog = (
     knowledgeFiles.length === 0 ||
     !knowledgeFiles.every((item) => typeof item === "string" && item.trim().length > 0)
   ) {
-    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (knowledgeFiles must be a non-empty string array)`);
+    throw new Error(`Invalid knowledge catalog file: ${catalogFile} (knowledgeFiles must be a non-empty string array)`);
   }
 
   return knowledgeFiles;
 };
 
-const loadBrainKnowledgeDecisionsFromCatalog = async (
+const loadKnowledgeDecisionsFromCatalog = async (
   cwd: string,
   catalogFile: string
-): Promise<LoadedBrainKnowledgeDecision[]> => {
+): Promise<LoadedKnowledgeDecision[]> => {
   const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
   const catalog = await readJsonObject(resolvedCatalogFile);
   const knowledgeFiles = knowledgeFilesFromCatalog(catalogFile, catalog);
   const catalogDirectory = path.dirname(resolvedCatalogFile);
-  const loaded: LoadedBrainKnowledgeDecision[] = [];
+  const loaded: LoadedKnowledgeDecision[] = [];
 
   for (const knowledgeFile of knowledgeFiles) {
     const resolvedKnowledgeFile = path.resolve(catalogDirectory, knowledgeFile);
     const parsed = await readJsonObject(resolvedKnowledgeFile);
-    const decision = parseBrainKnowledgeDecision(parsed);
+    const decision = parseKnowledgeDecision(parsed);
 
     if (decision === undefined) {
-      throw new Error(`Invalid brain knowledge decision file: ${catalogFile}:${knowledgeFile}`);
+      throw new Error(`Invalid knowledge decision file: ${catalogFile}:${knowledgeFile}`);
     }
 
     loaded.push({ decision, sourceFile: `${catalogFile}:${knowledgeFile}` });
@@ -159,7 +159,7 @@ export const runMemoryKnowledgeSeedCommand = async (
 ): Promise<MemoryKnowledgeSeedCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const command = runtime.command;
-  const loaded = await loadBrainKnowledgeDecisionsFromCatalog(cwd, command.catalogFile);
+  const loaded = await loadKnowledgeDecisionsFromCatalog(cwd, command.catalogFile);
 
   if (!command.persist || command.dryRun) {
     return {
@@ -208,7 +208,7 @@ export const runMemoryKnowledgeSeedCommand = async (
 };
 
 const formatSeedPreview = (
-  loaded: LoadedBrainKnowledgeDecision[],
+  loaded: LoadedKnowledgeDecision[],
   command: MemoryKnowledgeSeedCommand,
   persisted: boolean,
   createdCount?: number,
@@ -217,7 +217,7 @@ const formatSeedPreview = (
   const lines = [
     "KRN Memory Knowledge Seed",
     `Catalog file: ${command.catalogFile}`,
-    `Brain knowledge decisions in catalog: ${loaded.length}`,
+    `Knowledge decisions in catalog: ${loaded.length}`,
     ...(command.dryRun ? ["Mode: dry-run (no writes)"] : [])
   ];
 
@@ -229,7 +229,7 @@ const formatSeedPreview = (
     lines.push(noStorePreviewLabel);
   }
 
-  lines.push("", "Brain knowledge decisions:");
+  lines.push("", "Knowledge decisions:");
 
   for (const { decision, sourceFile } of loaded) {
     lines.push(`- ${decision.knowledgeId} (${decision.decisionStatus}) <- ${sourceFile}`);

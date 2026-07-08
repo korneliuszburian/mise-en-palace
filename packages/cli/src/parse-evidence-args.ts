@@ -1,7 +1,7 @@
 import type {
   EvidenceCommand,
   EvidenceCommandStatus,
-  BrainKnowledgeUsefulnessOutcomeFeedback,
+  KnowledgeUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceChangedFileInput,
   TargetEvidenceInput
@@ -17,7 +17,7 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
@@ -260,7 +260,7 @@ const parseSourceUsefulnessBody = (
   };
 };
 
-const parseBrainKnowledgeUsefulnessBody = (
+const parseKnowledgeUsefulnessBody = (
   body: string
 ): SourceUsefulnessParseResult<SourceUsefulnessBody> => {
   const parsed = parseSourceUsefulnessBody(body);
@@ -318,26 +318,26 @@ const parseSourceUsefulness = (
   };
 };
 
-const parseBrainKnowledgeUsefulness = (
+const parseKnowledgeUsefulness = (
   value: string
-): { outcome?: BrainKnowledgeUsefulnessOutcomeFeedback; error?: string } => {
+): { outcome?: KnowledgeUsefulnessOutcomeFeedback; error?: string } => {
   const separatorIndex = value.indexOf("=");
 
   if (separatorIndex < 0) {
     return {
-      error: "--knowledge-usefulness requires <brain-knowledge-id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
+      error: "--knowledge-usefulness requires <knowledge-id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
     };
   }
 
-  const brainKnowledgeId = value.slice(0, separatorIndex).trim();
+  const knowledgeId = value.slice(0, separatorIndex).trim();
 
-  if (brainKnowledgeId.length === 0) {
+  if (knowledgeId.length === 0) {
     return {
-      error: "--knowledge-usefulness requires a non-empty brain knowledge id"
+      error: "--knowledge-usefulness requires a non-empty knowledge id"
     };
   }
 
-  const body = parseBrainKnowledgeUsefulnessBody(value.slice(separatorIndex + 1));
+  const body = parseKnowledgeUsefulnessBody(value.slice(separatorIndex + 1));
 
   if (!body.ok) {
     return {
@@ -347,7 +347,7 @@ const parseBrainKnowledgeUsefulness = (
 
   return {
     outcome: {
-      brainKnowledgeId,
+      knowledgeId,
       outcome: body.value.outcome,
       reason: body.value.reason,
       evidenceRefs: body.value.evidenceRefs,
@@ -502,7 +502,7 @@ type EvidenceParseState = {
   targetChangedFilesExplicitNone: boolean;
   targetCommands: string[];
   sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[];
-  brainKnowledgeUsefulnessOutcomes: BrainKnowledgeUsefulnessOutcomeFeedback[];
+  knowledgeUsefulnessOutcomes: KnowledgeUsefulnessOutcomeFeedback[];
 };
 
 type EvidenceOptionResult =
@@ -870,7 +870,7 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       return parsed;
     }
 
-    const outcomeResult = parseBrainKnowledgeUsefulness(parsed.value);
+    const outcomeResult = parseKnowledgeUsefulness(parsed.value);
 
     if (outcomeResult.error !== undefined || outcomeResult.outcome === undefined) {
       return {
@@ -879,7 +879,7 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       };
     }
 
-    state.brainKnowledgeUsefulnessOutcomes.push(outcomeResult.outcome);
+    state.knowledgeUsefulnessOutcomes.push(outcomeResult.outcome);
 
     return {
       ok: true,
@@ -1078,7 +1078,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     targetChangedFilesExplicitNone: false,
     targetCommands: [],
     sourceUsefulnessOutcomes: [],
-    brainKnowledgeUsefulnessOutcomes: []
+    knowledgeUsefulnessOutcomes: []
   };
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -1128,7 +1128,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
       ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),
       ...(state.sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes: state.sourceUsefulnessOutcomes }),
-      ...(state.brainKnowledgeUsefulnessOutcomes.length === 0 ? {} : { brainKnowledgeUsefulnessOutcomes: state.brainKnowledgeUsefulnessOutcomes })
+      ...(state.knowledgeUsefulnessOutcomes.length === 0 ? {} : { knowledgeUsefulnessOutcomes: state.knowledgeUsefulnessOutcomes })
     }
   };
 };

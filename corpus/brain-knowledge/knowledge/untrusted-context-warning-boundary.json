@@ -21,7 +21,7 @@
     "future security/trust-boundary gates"
   ],
   "falsifier": "A future Codex brief renders untrusted external source or memory text without a warning label or proof boundary and adapter tests still pass.",
-  "doesNotProve": "This card does not prove prompt-injection resistance, safe Codex execution, source truth, or product readiness.",
+  "doesNotProve": "This knowledge decision does not prove prompt-injection resistance, safe Codex execution, source truth, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"
 }

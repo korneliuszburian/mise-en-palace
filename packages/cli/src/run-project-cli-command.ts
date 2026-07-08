@@ -2,10 +2,10 @@ import type {
   FeedbackDelta
 } from "@krn/core";
 import {
-  brainKnowledgeUsefulnessOutcomesFromMetadata
+  knowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import {
-  brainKnowledgeUsefulnessFromKnowledgeOutcomes
+  knowledgeUsefulnessFromKnowledgeOutcomes
 } from "@krn/harness";
 import type {
   CliCommand
@@ -32,8 +32,8 @@ import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
-  memoryRecordToKnowledgeCard
-} from "./memory-knowledge-card.js";
+  memoryRecordToKnowledgeReadModel
+} from "./memory-record-knowledge-read-model.js";
 import {
   runBrainKnowledgeCommand
 } from "./run-brain-knowledge-command.js";
@@ -92,27 +92,27 @@ const trimmedEnvValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
-const feedbackDeltasToBrainKnowledgeUsefulness = (
+const feedbackDeltasToKnowledgeUsefulness = (
   feedbackDeltas: readonly FeedbackDelta[]
 ) =>
   feedbackDeltas.flatMap((feedback) =>
-    brainKnowledgeUsefulnessFromKnowledgeOutcomes(
-      brainKnowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
+    knowledgeUsefulnessFromKnowledgeOutcomes(
+      knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
       feedback.createdAt
     )
   );
 
-const createBrainKnowledgeStoreProviders = async (
+const createKnowledgeStoreProviders = async (
   command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
   context: ProjectCliCommandContext
-): Promise<Pick<BrainKnowledgeCommandRuntime, "cardProvider" | "usefulnessProvider">> => {
+): Promise<Pick<BrainKnowledgeCommandRuntime, "readModelProvider" | "usefulnessProvider">> => {
   const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
 
   if (databaseUrl === undefined) {
     if (command.storeOnly) {
       throw new Error(
         "KRN_DATABASE_URL is required for krn brain knowledge store-backed readback. " +
-        "No file source defaults to the store path; pass --card-file, --knowledge-file, or --catalog-file for an explicit fixture/seed preview."
+        "No file source defaults to the store path; pass --read-model-file, --knowledge-file, or --catalog-file for an explicit fixture/seed preview."
       );
     }
 
@@ -155,7 +155,7 @@ const createBrainKnowledgeStoreProviders = async (
         runtime.projectId
       );
 
-      return feedbackDeltasToBrainKnowledgeUsefulness(feedbackDeltas);
+      return feedbackDeltasToKnowledgeUsefulness(feedbackDeltas);
     });
 
   if (!command.storeOnly) {
@@ -163,14 +163,14 @@ const createBrainKnowledgeStoreProviders = async (
   }
 
   return {
-    cardProvider: async () =>
+    readModelProvider: async () =>
       withRuntime(async (runtime) => {
         const records = await runtime.memoryRepository.listActiveMemory?.(
           runtime.projectId,
           command.limit ?? 100
         );
 
-        return (records ?? []).map(memoryRecordToKnowledgeCard);
+        return (records ?? []).map(memoryRecordToKnowledgeReadModel);
       }),
     usefulnessProvider
   };
@@ -185,11 +185,11 @@ const runBrainKnowledgeProjectCommand = async (
   command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
   context: ProjectCliCommandContext
 ): Promise<ProjectCommandOutput> => {
-  const storeProviders = await createBrainKnowledgeStoreProviders(command, context);
+  const storeProviders = await createKnowledgeStoreProviders(command, context);
 
   return runBrainKnowledgeCommand({
     cwd: context.cwd,
-    cardFiles: command.cardFiles,
+    readModelFiles: command.readModelFiles,
     knowledgeFiles: command.knowledgeFiles,
     catalogFiles: command.catalogFiles,
     filter: command.filter,

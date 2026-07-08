@@ -27,7 +27,7 @@
         "reviewRef": "review:external-review-policy-adoption",
         "feedbackRef": "feedback:external-review-policy-adoption-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:external-review-advisory-after-large-slice",
             "title": "External review after larger KRN slice",
@@ -41,8 +41,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:close-large-migration-from-local-tests",
             "title": "Close larger KRN migration from local tests only",
@@ -85,7 +85,7 @@
         "reviewRef": "review:memory-eval-review-standard",
         "feedbackRef": "feedback:memory-eval-review-standard-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:company-review-standard-after-eval-change",
             "title": "Company review standard after memory eval change",
@@ -99,7 +99,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
+        "excludedMemoryReadModels": [],
         "sourceClaims": [
           {
             "sourceClaimId": "source:company-review-standard-after-eval-change",
@@ -129,7 +129,7 @@
         "reviewRef": "review:source-authority-boundary",
         "feedbackRef": "feedback:source-authority-boundary-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:accepted-source-claims-only",
             "title": "Accepted SourceClaims only for authority",
@@ -143,7 +143,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
+        "excludedMemoryReadModels": [],
         "sourceClaims": [
           {
             "sourceClaimId": "source:accepted-source-claims-only",
@@ -174,7 +174,7 @@
         "reviewRef": "review:obsolete-mandatory-reviewer-rule-rejected",
         "feedbackRef": "feedback:obsolete-mandatory-reviewer-rule-hurt",
         "applicationOutcome": "hurt",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:routine-dependency-pin-cleanup",
             "title": "Routine dependency pin cleanup",
@@ -188,7 +188,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [
+        "excludedMemoryReadModels": [
           {
             "id": "pattern:obsolete-mandatory-reviewer-rule",
             "title": "Obsolete mandatory reviewer rule",
@@ -223,7 +223,7 @@
         "reviewRef": "review:adversarial-secret-context-rule-rejected",
         "feedbackRef": "feedback:adversarial-secret-context-rule-hurt",
         "applicationOutcome": "hurt",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:secret-path-denylist-for-review-context",
             "title": "Secret path denylist for review context",
@@ -237,7 +237,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [
+        "excludedMemoryReadModels": [
           {
             "id": "pattern:paste-secret-env-files-for-review",
             "title": "Paste secret env files into review context",
@@ -272,7 +272,7 @@
         "reviewRef": "review:adversarial-memory-source-conflict",
         "feedbackRef": "feedback:adversarial-memory-source-conflict-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:secret-review-context-denylist-source-backed",
             "title": "Secret review context denylist",
@@ -286,7 +286,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [
+        "excludedMemoryReadModels": [
           {
             "id": "pattern:paste-secret-env-files-for-review-source-conflict",
             "title": "Paste secret env files into review context",
@@ -331,7 +331,7 @@
         "reviewRef": "review:temporal-stale-source-claim-decision-link",
         "feedbackRef": "feedback:temporal-stale-source-claim-decision-link-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:source-decision-edge-ranking-current",
             "title": "Current source decision edge ranking",
@@ -345,7 +345,7 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
+        "excludedMemoryReadModels": [],
         "sourceClaims": [
           {
             "sourceClaimId": "source:current-source-decision-edge-ranking",
@@ -389,7 +389,7 @@
         "reviewRef": "review:runtime-memory-source-contradiction",
         "feedbackRef": "feedback:runtime-memory-source-contradiction-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:paste-secrets-from-old-memory-runtime-conflict",
             "title": "Paste secrets from old memory despite accepted source claim contradiction",
@@ -438,7 +438,7 @@
         "reviewRef": "review:source-search-command-boundary",
         "feedbackRef": "feedback:source-search-command-boundary-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:source-search-command-boundary",
             "title": "Source search command delegates readback helpers",
@@ -452,8 +452,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:generic-cli-cleanup",
             "title": "Generic CLI cleanup",
@@ -506,7 +506,7 @@
         "reviewRef": "review:brain-search-project-selector",
         "feedbackRef": "feedback:brain-search-project-selector-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:brain-search-explicit-project-selector",
             "title": "Brain search explicit DB project selector",
@@ -520,8 +520,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:generic-db-runtime-project",
             "title": "Generic DB runtime project",
@@ -564,7 +564,7 @@
         "reviewRef": "review:ranking-corpus-quality",
         "feedbackRef": "feedback:ranking-corpus-quality-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:ranking-corpus-quality-readback",
             "title": "Ranking corpus quality readback",
@@ -578,8 +578,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:docs-lint-proof-boundary",
             "title": "Docs lint proof boundary",
@@ -671,7 +671,7 @@
         "reviewRef": "review:unknown-first-json-metadata-boundary",
         "feedbackRef": "feedback:unknown-first-json-metadata-boundary-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:unknown-first-json-metadata-boundary",
             "title": "Unknown-first parser boundary",
@@ -685,8 +685,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:cast-json-record-in-command-runner",
             "title": "Cast parsed JSON Record in command runner",
@@ -756,7 +756,7 @@
         "reviewRef": "review:external-f2fw-r1-r2",
         "feedbackRef": "feedback:codex-output-evidence-shape-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:codex-output-evidence-shape-required",
             "title": "Codex output evidence shape required",
@@ -770,8 +770,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:summary-only-krn-context-claim",
             "title": "Summary-only KRN context claim",
@@ -816,7 +816,7 @@
         "reviewRef": "review:neutral-short-context-external-review",
         "feedbackRef": "feedback:neutral-short-context-external-review-neutral",
         "applicationOutcome": "neutral",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:neutral-external-review-policy",
             "title": "External review advisory evidence for larger migration",
@@ -830,8 +830,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:neutral-local-tests-only",
             "title": "Local tests only for tiny cleanup",
@@ -881,7 +881,7 @@
         "reviewRef": "review:neutral-single-turn-typecheck",
         "feedbackRef": "feedback:neutral-single-turn-typecheck-neutral",
         "applicationOutcome": "neutral",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:neutral-run-typecheck",
             "title": "Run typecheck before completing TypeScript source changes",
@@ -894,8 +894,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:neutral-docs-lint-only",
             "title": "Run docs lint for documentation-only edits",
@@ -929,7 +929,7 @@
       "falsificationClass": "retrieval_not_needed",
       "query": "documentation only edit run docs lint",
       "distractorClasses": ["generic-quality-guidance"],
-      "baselineFailureRationale": "This question is deliberately obvious from the query itself and the matching card; KRN should not claim a meaningful memory advantage.",
+      "baselineFailureRationale": "This question is deliberately obvious from the query itself and the matching read model; KRN should not claim a meaningful memory advantage.",
       "expectedKrnResult": "hit",
       "expectedSelectedKnowledgeId": "pattern:neutral-docs-lint",
       "priorSession": {
@@ -939,7 +939,7 @@
         "reviewRef": "review:neutral-retrieval-not-needed-docs",
         "feedbackRef": "feedback:neutral-retrieval-not-needed-docs-neutral",
         "applicationOutcome": "neutral",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:neutral-docs-lint",
             "title": "Documentation-only edit runs docs lint",
@@ -952,8 +952,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:neutral-typecheck-source",
             "title": "TypeScript source edit runs typecheck",
@@ -1023,7 +1023,7 @@
         "reviewRef": "review:neutral-codex-output-evidence-shape",
         "feedbackRef": "feedback:neutral-codex-output-evidence-shape-neutral",
         "applicationOutcome": "neutral",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:neutral-codex-output-evidence-shape-required",
             "title": "Final Codex output requires evidence refs verification changed files doesNotProve",
@@ -1037,8 +1037,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:neutral-summary-only-claim",
             "title": "Concise summary is enough for KRN context claim",
@@ -1087,7 +1087,7 @@
         "reviewRef": "review:store-backed-memory-no-markdown",
         "feedbackRef": "feedback:store-backed-memory-no-markdown-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:store-backed-memory-no-markdown",
             "title": "Store-backed memory, not runtime markdown",
@@ -1098,8 +1098,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:runtime-memory-md-shortcut",
             "title": "Create MEMORY.md runtime memory files",
@@ -1158,7 +1158,7 @@
         "reviewRef": "review:source-to-decision-chain-required",
         "feedbackRef": "feedback:source-to-decision-chain-required-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:source-to-decision-chain-required",
             "title": "Source-to-decision chain required",
@@ -1169,8 +1169,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:generic-cite-interesting-source",
             "title": "Cite interesting sources broadly",
@@ -1229,7 +1229,7 @@
         "reviewRef": "review:narrow-verification-policy",
         "feedbackRef": "feedback:narrow-verification-policy-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:narrow-verification-policy",
             "title": "Narrow verification before broad gates",
@@ -1240,8 +1240,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:run-every-package-command",
             "title": "Run every package command after every slice",
@@ -1300,7 +1300,7 @@
         "reviewRef": "review:no-guard-only-treadmill",
         "feedbackRef": "feedback:no-guard-only-treadmill-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:no-guard-only-treadmill",
             "title": "Avoid guard-only treadmill tasks",
@@ -1311,8 +1311,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:add-another-active-plan-invariant",
             "title": "Add another active plan invariant",
@@ -1380,7 +1380,7 @@
         "reviewRef": "review:no-worker-daemon-without-product-loop",
         "feedbackRef": "feedback:no-worker-daemon-without-product-loop-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:no-worker-daemon-without-product-loop",
             "title": "No worker daemon without named product loop",
@@ -1391,8 +1391,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:build-worker-daemon-now",
             "title": "Build worker daemon scheduler now",
@@ -1439,7 +1439,7 @@
         "reviewRef": "review:no-decorative-skills",
         "feedbackRef": "feedback:no-decorative-skills-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:no-decorative-skills",
             "title": "Skills need operational advantage",
@@ -1450,8 +1450,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:add-more-brain-skills",
             "title": "Add more brain skills for every kernel concept",
@@ -1504,7 +1504,7 @@
         "reviewRef": "review:idempotency-key-on-writes",
         "feedbackRef": "feedback:idempotency-key-on-writes-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:idempotency-key-on-state-writes",
             "title": "Idempotency key on state-mutating writes",
@@ -1518,8 +1518,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:fire-and-forget-write-no-key",
             "title": "Fire-and-forget write without a key",
@@ -1563,7 +1563,7 @@
         "reviewRef": "review:bounded-exponential-backoff-jitter",
         "feedbackRef": "feedback:bounded-exponential-backoff-jitter-helped",
         "applicationOutcome": "helped",
-        "memoryCards": [
+        "memoryReadModels": [
           {
             "id": "pattern:bounded-exponential-backoff-jitter",
             "title": "Bounded exponential backoff with jitter",
@@ -1577,8 +1577,8 @@
             "nextAction": "use"
           }
         ],
-        "excludedMemoryCards": [],
-        "distractorMemoryCards": [
+        "excludedMemoryReadModels": [],
+        "distractorMemoryReadModels": [
           {
             "id": "pattern:naive-tight-retry-loop",
             "title": "Naive tight retry loop",

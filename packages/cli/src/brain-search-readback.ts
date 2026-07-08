@@ -28,10 +28,10 @@ export interface BrainSearchPreviewResource {
   query: string;
   brainKnowledgeReadback: "catalog_files" | "store_only";
   brainKnowledgeQueries: readonly string[];
-  knowledgeCards: {
-    totalCards: number;
-    returnedCards: number;
-    cardIds: readonly string[];
+  knowledgeReadModels: {
+    totalReadModels: number;
+    returnedReadModels: number;
+    readModelIds: readonly string[];
     selectedKnowledge: readonly BrainSearchKnowledgePacket[];
     targetFitSummary: TargetFitSummary;
     doesNotProve: readonly string[];
@@ -99,7 +99,7 @@ interface SourceSearchKnowledgeFields {
 
 type BrainSearchRecommendationResource = Pick<
   BrainSearchPreviewResource,
-  "brainKnowledgeReadback" | "knowledgeCards" | "sourceSearch"
+  "brainKnowledgeReadback" | "knowledgeReadModels" | "sourceSearch"
 >;
 
 export const parseJsonObject = (text: string, label: string): JsonRecord => {
@@ -240,9 +240,9 @@ const proofDoesNotProve = (value: unknown): readonly string[] => {
   return stringArrayValue(proof["doesNotProve"]);
 };
 
-const knowledgeCardIds = (cards: readonly unknown[]): readonly string[] =>
-  cards.flatMap((card) => {
-    const record = recordValue(card);
+const knowledgeReadModelIds = (readModels: readonly unknown[]): readonly string[] =>
+  readModels.flatMap((readModel) => {
+    const record = recordValue(readModel);
     const id = record === undefined ? undefined : record["id"];
 
     return typeof id === "string" ? [id] : [];
@@ -276,12 +276,12 @@ const reviewabilityFromReasons = (
     : "ready";
 
 const knowledgePackets = (
-  cards: readonly unknown[],
+  readModels: readonly unknown[],
   query: string,
   source: BrainSearchKnowledgePacket["source"] = "catalog_file"
 ): readonly BrainSearchKnowledgePacket[] =>
-  cards.flatMap((card) => {
-    const record = recordValue(card);
+  readModels.flatMap((readModel) => {
+    const record = recordValue(readModel);
 
     if (record === undefined) {
       return [];
@@ -416,21 +416,21 @@ const sourceSearchKnowledgePackets = (
 
 const selectedKnowledgePackets = (input: {
   brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
-  cards: readonly unknown[];
+  readModels: readonly unknown[];
   supportingClaims: readonly unknown[];
   query: string;
 }): readonly BrainSearchKnowledgePacket[] => {
   const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
   if (input.brainKnowledgeReadback === "store_only") {
-    const storePackets = knowledgePackets(input.cards, input.query, "memory_store");
+    const storePackets = knowledgePackets(input.readModels, input.query, "memory_store");
 
     return storePackets.length > 0
       ? [...storePackets, ...sourcePackets]
       : sourcePackets;
   }
 
-  const catalogPackets = knowledgePackets(input.cards, input.query);
+  const catalogPackets = knowledgePackets(input.readModels, input.query);
 
   return catalogPackets.length > 0
     ? catalogPackets
@@ -461,7 +461,7 @@ const storeOnlyRecommendation = (
     return undefined;
   }
 
-  const hasStoreMemory = resource.knowledgeCards.selectedKnowledge.some(
+  const hasStoreMemory = resource.knowledgeReadModels.selectedKnowledge.some(
     (packet) => packet.source === "memory_store"
   );
 
@@ -474,23 +474,23 @@ const storeOnlyRecommendation = (
   }
 
   return sourceEvidenceCount(resource.sourceSearch) > 0
-    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-brain knowledge context is explicitly needed."
+    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-backed knowledge context is explicitly needed."
     : "Do not infer product truth from store-only brain search; seed or persist governed source evidence first.";
 };
 
 const catalogRecommendation = (
   resource: BrainSearchRecommendationResource
 ): string => {
-  const hasReturnedCards = resource.knowledgeCards.returnedCards > 0;
-  const hasSelectedKnowledge = resource.knowledgeCards.selectedKnowledge.length > 0;
+  const hasReturnedCards = resource.knowledgeReadModels.returnedReadModels > 0;
+  const hasSelectedKnowledge = resource.knowledgeReadModels.selectedKnowledge.length > 0;
   const hasSourceEvidence = sourceEvidenceCount(resource.sourceSearch) > 0;
 
   if (hasReturnedCards && hasSourceEvidence) {
-    return "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
+    return "Use the matching knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
   }
 
   if (!hasReturnedCards && hasSelectedKnowledge) {
-    return "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage.";
+    return "Use source-backed selected knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage.";
   }
 
   if (hasSourceEvidence) {
@@ -498,7 +498,7 @@ const catalogRecommendation = (
   }
 
   if (hasReturnedCards) {
-    return "Use the matching brain knowledge as guidance, but gather source evidence before implementation claims.";
+    return "Use the matching knowledge as guidance, but gather source evidence before implementation claims.";
   }
 
   return "Do not infer product truth; narrow the query or ingest/review source evidence first.";
@@ -508,7 +508,7 @@ const buildRecommendedNextAction = (
   resource: BrainSearchRecommendationResource
 ): string => {
   const targetFitRecommendation = nonTargetSpecificRecommendation(
-    resource.knowledgeCards.targetFitSummary
+    resource.knowledgeReadModels.targetFitSummary
   );
 
   if (targetFitRecommendation !== undefined) {
@@ -524,8 +524,8 @@ const buildRecommendedNextAction = (
   return catalogRecommendation(resource);
 };
 
-export const returnedBrainKnowledgeCardCount = (knowledgeJson: JsonRecord): number =>
-  numberValue(knowledgeJson["returnedCards"]);
+export const returnedKnowledgeReadModelCount = (knowledgeJson: JsonRecord): number =>
+  numberValue(knowledgeJson["returnedReadModels"]);
 
 export const buildBrainSearchPreviewResource = (
   input: {
@@ -536,7 +536,7 @@ export const buildBrainSearchPreviewResource = (
     sourceJson: JsonRecord;
   }
 ): BrainSearchPreviewResource => {
-  const cards = arrayValue(input.knowledgeJson["cards"]);
+  const readModels = arrayValue(input.knowledgeJson["readModels"]);
   const answerPackage = recordValue(input.sourceJson["answerPackage"]) ?? {};
   const supportingClaims = arrayValue(answerPackage["supportingClaims"]);
   const supportingDocuments = arrayValue(answerPackage["supportingDocuments"]);
@@ -547,7 +547,7 @@ export const buildBrainSearchPreviewResource = (
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
   const selectedKnowledge = selectedKnowledgePackets({
     brainKnowledgeReadback: input.brainKnowledgeReadback,
-    cards,
+    readModels,
     supportingClaims,
     query: input.query
   });
@@ -570,10 +570,10 @@ export const buildBrainSearchPreviewResource = (
     query: input.query,
     brainKnowledgeReadback: input.brainKnowledgeReadback,
     brainKnowledgeQueries: input.brainKnowledgeQueries,
-    knowledgeCards: {
-      totalCards: numberValue(input.knowledgeJson["totalCards"]),
-      returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
-      cardIds: knowledgeCardIds(cards),
+    knowledgeReadModels: {
+      totalReadModels: numberValue(input.knowledgeJson["totalReadModels"]),
+      returnedReadModels: numberValue(input.knowledgeJson["returnedReadModels"]),
+      readModelIds: knowledgeReadModelIds(readModels),
       selectedKnowledge,
       targetFitSummary,
       doesNotProve: proofDoesNotProve(input.knowledgeJson["proof"])
@@ -607,16 +607,16 @@ export const buildBrainSearchPreviewResource = (
     proof: {
       proves: [
         input.brainKnowledgeReadback === "store_only"
-          ? "brain knowledge catalog readback was explicitly skipped for this query"
-          : "existing brain-knowledge catalog readback was executed as bootstrap/fixture input for this query",
+          ? "knowledge catalog readback was explicitly skipped for this query"
+          : "existing knowledge catalog readback was executed as bootstrap/fixture input for this query",
         "existing source-search answer package was executed for this query",
         "brain search combined both readbacks without mutating KRN state"
       ],
       doesNotProve: [
         "source truth",
-        "brain-knowledge catalog completeness",
+        "knowledge catalog completeness",
         ...(input.brainKnowledgeReadback === "catalog_files"
-          ? ["catalog-file brain knowledge is runtime memory"]
+          ? ["catalog-file knowledge is runtime memory"]
           : []),
         "ranking quality",
         "semantic search quality",
@@ -638,42 +638,42 @@ export const formatBrainSearchPreviewText = (resource: BrainSearchPreviewResourc
     "Access: read-only",
     "Mutation: none",
     `Query: ${resource.query}`,
-    `Brain knowledge readback: ${resource.brainKnowledgeReadback}`,
-    `Brain knowledge queries: ${resource.brainKnowledgeQueries.length === 0 ? "none" : resource.brainKnowledgeQueries.join(" -> ")}`,
+    `Knowledge readback: ${resource.brainKnowledgeReadback}`,
+    `Knowledge queries: ${resource.brainKnowledgeQueries.length === 0 ? "none" : resource.brainKnowledgeQueries.join(" -> ")}`,
     "",
-    "Brain knowledge:",
-    `- returned: ${resource.knowledgeCards.returnedCards}`,
-    `- total: ${resource.knowledgeCards.totalCards}`,
-    ...(resource.knowledgeCards.cardIds.length === 0
-      ? ["- cardIds: none"]
-      : resource.knowledgeCards.cardIds.map((id) => `- cardId: ${id}`)),
-    ...resource.knowledgeCards.selectedKnowledge.flatMap((card) => [
-      `- selectedKnowledge: ${card.id}`,
-      `  title: ${card.title}`,
-      `  summary: ${card.summary}`,
-      `  source: ${card.source}`,
-      `  targetFit: ${card.targetFit}`,
-      ...(card.targetFitReasons.length === 0
+    "Knowledge read models:",
+    `- returned: ${resource.knowledgeReadModels.returnedReadModels}`,
+    `- total: ${resource.knowledgeReadModels.totalReadModels}`,
+    ...(resource.knowledgeReadModels.readModelIds.length === 0
+      ? ["- readModelIds: none"]
+      : resource.knowledgeReadModels.readModelIds.map((id) => `- readModelId: ${id}`)),
+    ...resource.knowledgeReadModels.selectedKnowledge.flatMap((readModel) => [
+      `- selectedKnowledge: ${readModel.id}`,
+      `  title: ${readModel.title}`,
+      `  summary: ${readModel.summary}`,
+      `  source: ${readModel.source}`,
+      `  targetFit: ${readModel.targetFit}`,
+      ...(readModel.targetFitReasons.length === 0
         ? ["  targetFitReason: none"]
-        : card.targetFitReasons.map((reason) => `  targetFitReason: ${reason}`)),
-      `  reviewability: ${card.reviewability}`,
-      ...(card.reviewabilityReasons.length === 0
+        : readModel.targetFitReasons.map((reason) => `  targetFitReason: ${reason}`)),
+      `  reviewability: ${readModel.reviewability}`,
+      ...(readModel.reviewabilityReasons.length === 0
         ? ["  reviewabilityReason: none"]
-        : card.reviewabilityReasons.map((reason) => `  reviewabilityReason: ${reason}`)),
-      `  consumers: ${card.consumers.length === 0 ? "none" : card.consumers.join(", ")}`,
-      `  falsifier: ${card.falsifier}`,
-      `  doesNotProve: ${card.doesNotProve}`,
-      `  nextAction: ${card.nextAction}`
+        : readModel.reviewabilityReasons.map((reason) => `  reviewabilityReason: ${reason}`)),
+      `  consumers: ${readModel.consumers.length === 0 ? "none" : readModel.consumers.join(", ")}`,
+      `  falsifier: ${readModel.falsifier}`,
+      `  doesNotProve: ${readModel.doesNotProve}`,
+      `  nextAction: ${readModel.nextAction}`
     ]),
     "- targetFitSummary:",
-    `  verdict: ${resource.knowledgeCards.targetFitSummary.verdict}`,
-    `  targetSpecific: ${resource.knowledgeCards.targetFitSummary.targetSpecific}`,
-    `  genericGuardrail: ${resource.knowledgeCards.targetFitSummary.genericGuardrail}`,
-    `  adjacentPattern: ${resource.knowledgeCards.targetFitSummary.adjacentPattern}`,
-    `  noise: ${resource.knowledgeCards.targetFitSummary.noise}`,
-    `  unknown: ${resource.knowledgeCards.targetFitSummary.unknown}`,
-    `  recommendedUse: ${resource.knowledgeCards.targetFitSummary.recommendedUse}`,
-    `  doesNotProve: ${resource.knowledgeCards.targetFitSummary.doesNotProve}`,
+    `  verdict: ${resource.knowledgeReadModels.targetFitSummary.verdict}`,
+    `  targetSpecific: ${resource.knowledgeReadModels.targetFitSummary.targetSpecific}`,
+    `  genericGuardrail: ${resource.knowledgeReadModels.targetFitSummary.genericGuardrail}`,
+    `  adjacentPattern: ${resource.knowledgeReadModels.targetFitSummary.adjacentPattern}`,
+    `  noise: ${resource.knowledgeReadModels.targetFitSummary.noise}`,
+    `  unknown: ${resource.knowledgeReadModels.targetFitSummary.unknown}`,
+    `  recommendedUse: ${resource.knowledgeReadModels.targetFitSummary.recommendedUse}`,
+    `  doesNotProve: ${resource.knowledgeReadModels.targetFitSummary.doesNotProve}`,
     "",
     "Source search:",
     `- answerUsefulness: ${resource.sourceSearch.answerUsefulness}`,

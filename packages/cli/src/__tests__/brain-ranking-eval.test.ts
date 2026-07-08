@@ -91,7 +91,7 @@ describe("runBrainRankingEval", () => {
         distractorClasses: ["duplicate-expected-id"],
         baselineFailureRationale: "Duplicate ids should not inflate recall.",
         expectedSelectedKnowledgeIds: ["expected-a", "expected-b"],
-        knowledgeCards: [
+        knowledgeReadModels: [
           {
             id: "expected-a",
             title: "Expected A",
@@ -135,7 +135,7 @@ describe("runBrainRankingEval", () => {
         distractorClasses: ["missing-expected-id"],
         baselineFailureRationale: "Actual packet should not satisfy a missing expected id.",
         expectedSelectedKnowledgeIds: [`expected-${index}`],
-        knowledgeCards: [{
+        knowledgeReadModels: [{
           id: `actual-${index}`,
           title: "Actual packet",
           summary: "Actual selected packet does not match the proxy label.",

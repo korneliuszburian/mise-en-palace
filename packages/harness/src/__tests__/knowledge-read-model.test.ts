@@ -7,13 +7,13 @@ import {
 } from "vitest";
 
 import {
-  brainKnowledgeCardFromDecision,
-  cardsWithBrainKnowledgeUsefulnessFeedback,
-  parseBrainKnowledgeReadModel,
-  parseBrainKnowledgeDecision,
-  parseBrainKnowledgeUsefulnessFeedbackList,
-  searchBrainKnowledgeCards
-} from "../brain-knowledge-read-model.js";
+  knowledgeReadModelFromDecision,
+  knowledgeReadModelsWithUsefulnessFeedback,
+  parseKnowledgeReadModel,
+  parseKnowledgeDecision,
+  parseKnowledgeUsefulnessFeedbackList,
+  searchKnowledgeReadModels
+} from "../knowledge-read-model.js";
 
 const readRootFile = (path: string): string =>
   readFileSync(new URL(`../../../../${path}`, import.meta.url), "utf8");
@@ -21,8 +21,8 @@ const readRootFile = (path: string): string =>
 const readJsonRootFile = (path: string): unknown =>
   JSON.parse(readRootFile(path));
 
-const cardFixture = (): unknown =>
-  readJsonRootFile("tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json");
+const readModelFixture = (): unknown =>
+  readJsonRootFile("tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json");
 
 const knowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json");
@@ -30,67 +30,67 @@ const knowledgeDecisionFixture = (): unknown =>
 const referenceImplementationKnowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json");
 
-const brainKnowledgeParserExemplarKnowledgeDecisionFixture = (): unknown =>
-  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-brain-knowledge-parser-exemplar.json");
+const knowledgeParserExemplarKnowledgeDecisionFixture = (): unknown =>
+  readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-knowledge-parser-exemplar.json");
 
 const sourceToDecisionKnowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/source-to-decision-retention-gate.json");
 
-const parsedCardFixture = () => {
-  const card = parseBrainKnowledgeReadModel(cardFixture());
+const parsedReadModelFixture = () => {
+  const readModel = parseKnowledgeReadModel(readModelFixture());
 
-  if (card === undefined) {
-    throw new Error("Expected card fixture to parse.");
+  if (readModel === undefined) {
+    throw new Error("Expected readModel fixture to parse.");
   }
 
-  return card;
+  return readModel;
 };
 
 const parsedKnowledgeDecisionFixture = () => {
-  const knowledgeDecision = parseBrainKnowledgeDecision(knowledgeDecisionFixture());
+  const knowledgeDecision = parseKnowledgeDecision(knowledgeDecisionFixture());
 
   if (knowledgeDecision === undefined) {
-    throw new Error("Expected brain knowledge decision fixture to parse.");
+    throw new Error("Expected knowledge decision fixture to parse.");
   }
 
   return knowledgeDecision;
 };
 
 const parsedReferenceImplementationKnowledgeDecisionFixture = () => {
-  const knowledgeDecision = parseBrainKnowledgeDecision(referenceImplementationKnowledgeDecisionFixture());
+  const knowledgeDecision = parseKnowledgeDecision(referenceImplementationKnowledgeDecisionFixture());
 
   if (knowledgeDecision === undefined) {
-    throw new Error("Expected reference implementation brain knowledge decision to parse.");
+    throw new Error("Expected reference implementation knowledge decision to parse.");
   }
 
   return knowledgeDecision;
 };
 
-const parsedBrainKnowledgeParserExemplarKnowledgeDecisionFixture = () => {
-  const knowledgeDecision = parseBrainKnowledgeDecision(brainKnowledgeParserExemplarKnowledgeDecisionFixture());
+const parsedKnowledgeParserExemplarKnowledgeDecisionFixture = () => {
+  const knowledgeDecision = parseKnowledgeDecision(knowledgeParserExemplarKnowledgeDecisionFixture());
 
   if (knowledgeDecision === undefined) {
-    throw new Error("Expected brain knowledge parser exemplar brain knowledge decision to parse.");
+    throw new Error("Expected knowledge parser exemplar knowledge decision to parse.");
   }
 
   return knowledgeDecision;
 };
 
 const parsedSourceToDecisionKnowledgeDecisionFixture = () => {
-  const knowledgeDecision = parseBrainKnowledgeDecision(sourceToDecisionKnowledgeDecisionFixture());
+  const knowledgeDecision = parseKnowledgeDecision(sourceToDecisionKnowledgeDecisionFixture());
 
   if (knowledgeDecision === undefined) {
-    throw new Error("Expected source-to-decision brain knowledge decision to parse.");
+    throw new Error("Expected source-to-decision knowledge decision to parse.");
   }
 
   return knowledgeDecision;
 };
 
-describe("Brain knowledge read model", () => {
-  it("parses a concrete brain knowledge fixture from unknown JSON", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
+describe("Knowledge read model", () => {
+  it("parses a concrete knowledge fixture from unknown JSON", () => {
+    const readModel = parseKnowledgeReadModel(readModelFixture());
 
-    expect(card).toMatchObject({
+    expect(readModel).toMatchObject({
       id: "pattern:ts-boundary-unknown-first-result-state",
       kind: "pattern",
       status: "active",
@@ -100,8 +100,8 @@ describe("Brain knowledge read model", () => {
     });
   });
 
-  it("rejects cards missing required evidence boundaries", () => {
-    const card = parseBrainKnowledgeReadModel({
+  it("rejects readModels missing required evidence boundaries", () => {
+    const readModel = parseKnowledgeReadModel({
       id: "pattern:missing-evidence",
       kind: "pattern",
       status: "active",
@@ -123,11 +123,11 @@ describe("Brain knowledge read model", () => {
       nextAction: "unknown"
     });
 
-    expect(card).toBeUndefined();
+    expect(readModel).toBeUndefined();
   });
 
   it("rejects invalid read-model enum fields from unknown JSON", () => {
-    const card = parsedCardFixture();
+    const readModel = parsedReadModelFixture();
 
     for (const field of [
       "kind",
@@ -136,61 +136,61 @@ describe("Brain knowledge read model", () => {
       "reviewability",
       "nextAction"
     ]) {
-      expect(parseBrainKnowledgeReadModel({
-        ...card,
+      expect(parseKnowledgeReadModel({
+        ...readModel,
         [field]: "invalid"
       })).toBeUndefined();
     }
   });
 
-  it("filters cards by kind, status, reviewability, and text", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
+  it("filters readModels by kind, status, reviewability, and text", () => {
+    const readModel = parseKnowledgeReadModel(readModelFixture());
 
-    if (card === undefined) {
-      throw new Error("Expected card fixture to parse.");
+    if (readModel === undefined) {
+      throw new Error("Expected readModel fixture to parse.");
     }
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       kind: "pattern",
       status: "active",
       reviewability: "ready",
       text: "unknown-first"
-    })).toEqual([card]);
+    })).toEqual([readModel]);
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       kind: "memory",
       text: "unknown-first"
     })).toEqual([]);
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       text: "nonexistent"
     })).toEqual([]);
   });
 
   it("matches text queries by deterministic tokens when whole-query substring misses", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
+    const readModel = parseKnowledgeReadModel(readModelFixture());
 
-    if (card === undefined) {
-      throw new Error("Expected card fixture to parse.");
+    if (readModel === undefined) {
+      throw new Error("Expected readModel fixture to parse.");
     }
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       text: "unknown first result state"
-    })).toEqual([card]);
+    })).toEqual([readModel]);
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       text: "unknown first result state missing"
     })).toEqual([]);
   });
 
-  it("filters cards by latest usefulness outcome", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
-    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+  it("filters readModels by latest usefulness outcome", () => {
+    const readModel = parseKnowledgeReadModel(readModelFixture());
+    const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          summary: "The brain knowledge guided an unknown-first boundary repair.",
+          summary: "The knowledge read model guided an unknown-first boundary repair.",
           evidenceRefs: ["review-evidence/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
@@ -198,62 +198,62 @@ describe("Brain knowledge read model", () => {
       ]
     });
 
-    if (card === undefined || feedback === undefined) {
-      throw new Error("Expected card and usefulness feedback fixtures to parse.");
+    if (readModel === undefined || feedback === undefined) {
+      throw new Error("Expected readModel and usefulness feedback fixtures to parse.");
     }
 
-    const cards = cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback);
+    const readModels = knowledgeReadModelsWithUsefulnessFeedback([readModel], feedback);
 
-    expect(searchBrainKnowledgeCards(cards, {
+    expect(searchKnowledgeReadModels(readModels, {
       usefulnessOutcome: "helped"
-    })).toEqual(cards);
-    expect(searchBrainKnowledgeCards(cards, {
+    })).toEqual(readModels);
+    expect(searchKnowledgeReadModels(readModels, {
       usefulnessOutcome: "noise"
     })).toEqual([]);
-    expect(searchBrainKnowledgeCards(cards, {
+    expect(searchKnowledgeReadModels(readModels, {
       usefulnessOutcome: "none"
     })).toEqual([]);
   });
 
-  it("filters cards with no usefulness feedback", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
+  it("filters readModels with no usefulness feedback", () => {
+    const readModel = parseKnowledgeReadModel(readModelFixture());
 
-    if (card === undefined) {
-      throw new Error("Expected card fixture to parse.");
+    if (readModel === undefined) {
+      throw new Error("Expected readModel fixture to parse.");
     }
 
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       usefulnessOutcome: "none"
-    })).toEqual([card]);
-    expect(searchBrainKnowledgeCards([card], {
+    })).toEqual([readModel]);
+    expect(searchKnowledgeReadModels([readModel], {
       usefulnessOutcome: "helped"
     })).toEqual([]);
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       usefulnessOutcome: "none",
       text: "unknown-first"
-    })).toEqual([card]);
-    expect(searchBrainKnowledgeCards([card], {
+    })).toEqual([readModel]);
+    expect(searchKnowledgeReadModels([readModel], {
       usefulnessOutcome: "none",
       text: "missing text"
     })).toEqual([]);
   });
 
-  it("produces the TypeScript boundary knowledge card from the brain knowledge decision", () => {
+  it("produces the TypeScript boundary knowledge read model from the knowledge decision", () => {
     const knowledgeDecision = parsedKnowledgeDecisionFixture();
-    const expectedCard = parseBrainKnowledgeReadModel(cardFixture());
+    const expectedReadModel = parseKnowledgeReadModel(readModelFixture());
 
-    if (expectedCard === undefined) {
-      throw new Error("Expected brain knowledge fixture to parse.");
+    if (expectedReadModel === undefined) {
+      throw new Error("Expected knowledge fixture to parse.");
     }
 
-    expect(brainKnowledgeCardFromDecision(knowledgeDecision)).toEqual(expectedCard);
+    expect(knowledgeReadModelFromDecision(knowledgeDecision)).toEqual(expectedReadModel);
   });
 
   it("keeps the reference implementation recipe knowledge searchable but deferred", () => {
     const knowledgeDecision = parsedReferenceImplementationKnowledgeDecisionFixture();
-    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
+    const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
-    expect(card).toMatchObject({
+    expect(readModel).toMatchObject({
       id: "pattern:reference-implementation-recipe-clone-boundary",
       kind: "pattern",
       status: "deferred",
@@ -261,77 +261,77 @@ describe("Brain knowledge read model", () => {
       reviewability: "ready",
       nextAction: "review"
     });
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       text: "reference implementation clone recipe TypeScript"
-    })).toEqual([card]);
+    })).toEqual([readModel]);
   });
 
-  it("keeps the brain knowledge parser exemplar searchable but deferred", () => {
-    const knowledgeDecision = parsedBrainKnowledgeParserExemplarKnowledgeDecisionFixture();
-    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
+  it("keeps the knowledge parser exemplar searchable but deferred", () => {
+    const knowledgeDecision = parsedKnowledgeParserExemplarKnowledgeDecisionFixture();
+    const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
-    expect(card).toMatchObject({
-      id: "pattern:ts-boundary-brain-knowledge-parser-exemplar",
+    expect(readModel).toMatchObject({
+      id: "pattern:ts-boundary-knowledge-parser-exemplar",
       kind: "pattern",
       status: "deferred",
       confidence: "medium",
       reviewability: "ready",
       nextAction: "review"
     });
-    expect(card.sourceRefs).toContain("packages/harness/src/brain-knowledge-read-model.ts");
-    expect(card.evidenceRefs).toContain(
-      "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    expect(readModel.sourceRefs).toContain("packages/harness/src/knowledge-read-model.ts");
+    expect(readModel.evidenceRefs).toContain(
+      "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
     );
-    expect(searchBrainKnowledgeCards([card], {
-      text: "brain knowledge parser exemplar unknown-first recipe"
-    })).toEqual([card]);
+    expect(searchKnowledgeReadModels([readModel], {
+      text: "knowledge parser exemplar unknown-first recipe"
+    })).toEqual([readModel]);
   });
 
   it("preserves optional source-to-decision mechanism fields from unknown JSON", () => {
     const knowledgeDecision = parsedSourceToDecisionKnowledgeDecisionFixture();
-    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
+    const readModel = knowledgeReadModelFromDecision(knowledgeDecision);
 
-    expect(card).toMatchObject({
+    expect(readModel).toMatchObject({
       id: "pattern:source-to-decision-retention-gate",
       mechanism: "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or pattern to state why it changes KRN behavior and how it can be falsified.",
       krnImplication: "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory."
     });
-    expect(searchBrainKnowledgeCards([card], {
+    expect(searchKnowledgeReadModels([readModel], {
       text: "decorative source hoarding store-backed memoryrecord"
-    })).toEqual([card]);
-    expect(parseBrainKnowledgeDecision({
+    })).toEqual([readModel]);
+    expect(parseKnowledgeDecision({
       ...knowledgeDecision,
       mechanism: ["not", "a", "string"]
     })).toBeUndefined();
   });
 
-  it("maps brain knowledge decision statuses to brain-knowledge status", () => {
+  it("maps knowledge decision statuses to knowledge status", () => {
     const knowledgeDecision = parsedKnowledgeDecisionFixture();
 
-    expect(brainKnowledgeCardFromDecision({
+    expect(knowledgeReadModelFromDecision({
       ...knowledgeDecision,
       decisionStatus: "adopt_now"
     })).toMatchObject({ status: "active" });
-    expect(brainKnowledgeCardFromDecision({
+    expect(knowledgeReadModelFromDecision({
       ...knowledgeDecision,
       decisionStatus: "lab"
     })).toMatchObject({ status: "deferred" });
-    expect(brainKnowledgeCardFromDecision({
+    expect(knowledgeReadModelFromDecision({
       ...knowledgeDecision,
       decisionStatus: "later"
     })).toMatchObject({ status: "deferred" });
-    expect(brainKnowledgeCardFromDecision({
+    expect(knowledgeReadModelFromDecision({
       ...knowledgeDecision,
       decisionStatus: "reject"
     })).toMatchObject({ status: "rejected" });
   });
 
   it("parses and applies latest usefulness feedback from unknown JSON", () => {
-    const card = parseBrainKnowledgeReadModel(cardFixture());
-    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+    const readModel = parseKnowledgeReadModel(readModelFixture());
+    const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Older feedback should not win.",
           evidenceRefs: ["review-evidence/older.md"],
@@ -339,9 +339,9 @@ describe("Brain knowledge read model", () => {
           observedAt: "2026-06-27"
         },
         {
-          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          summary: "The brain knowledge guided an unknown-first boundary repair.",
+          summary: "The knowledge read model guided an unknown-first boundary repair.",
           evidenceRefs: ["review-evidence/newer.md"],
           doesNotProve: "This feedback does not prove product readiness.",
           observedAt: "2026-06-28"
@@ -349,16 +349,16 @@ describe("Brain knowledge read model", () => {
       ]
     });
 
-    if (card === undefined || feedback === undefined) {
-      throw new Error("Expected card and usefulness feedback fixtures to parse.");
+    if (readModel === undefined || feedback === undefined) {
+      throw new Error("Expected readModel and usefulness feedback fixtures to parse.");
     }
 
-    expect(cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback)).toMatchObject([
+    expect(knowledgeReadModelsWithUsefulnessFeedback([readModel], feedback)).toMatchObject([
       {
         id: "pattern:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: {
           outcome: "helped",
-          summary: "The brain knowledge guided an unknown-first boundary repair.",
+          summary: "The knowledge read model guided an unknown-first boundary repair.",
           evidenceRefs: ["review-evidence/newer.md"]
         }
       }
@@ -366,10 +366,10 @@ describe("Brain knowledge read model", () => {
   });
 
   it("rejects usefulness feedback missing proof boundaries", () => {
-    expect(parseBrainKnowledgeUsefulnessFeedbackList({
+    expect(parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          cardId: "pattern:missing-boundary",
+          knowledgeId: "pattern:missing-boundary",
           outcome: "helped",
           summary: "Missing doesNotProve should fail.",
           evidenceRefs: ["review-evidence/report.md"]
@@ -379,18 +379,18 @@ describe("Brain knowledge read model", () => {
   });
 
   it("keeps untimestamped feedback only when no newer timestamped feedback exists", () => {
-    const card = parsedCardFixture();
-    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+    const readModel = parsedReadModelFixture();
+    const feedback = parseKnowledgeUsefulnessFeedbackList({
       feedback: [
         {
-          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           summary: "Untimestamped feedback should win only against untimestamped feedback.",
           evidenceRefs: ["review-evidence/untimestamped.md"],
           doesNotProve: "This feedback does not prove product readiness."
         },
         {
-          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "neutral",
           summary: "Timestamped feedback should win against untimestamped feedback.",
           evidenceRefs: ["review-evidence/timestamped.md"],
@@ -404,7 +404,7 @@ describe("Brain knowledge read model", () => {
       throw new Error("Expected usefulness feedback fixture to parse.");
     }
 
-    expect(cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback)).toMatchObject([
+    expect(knowledgeReadModelsWithUsefulnessFeedback([readModel], feedback)).toMatchObject([
       {
         usefulnessFeedback: {
           outcome: "neutral",

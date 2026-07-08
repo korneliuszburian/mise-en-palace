@@ -205,9 +205,9 @@ const runEvidenceCliCommand = (
     ...(command.sourceUsefulnessOutcomes === undefined
       ? {}
       : { sourceUsefulnessOutcomes: command.sourceUsefulnessOutcomes }),
-    ...(command.brainKnowledgeUsefulnessOutcomes === undefined
+    ...(command.knowledgeUsefulnessOutcomes === undefined
       ? {}
-      : { brainKnowledgeUsefulnessOutcomes: command.brainKnowledgeUsefulnessOutcomes }),
+      : { knowledgeUsefulnessOutcomes: command.knowledgeUsefulnessOutcomes }),
     ...databaseRuntimeOption(context),
     ...(context.readGitStatus === undefined ? {} : { readGitStatus: context.readGitStatus })
   });

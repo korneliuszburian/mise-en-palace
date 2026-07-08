@@ -516,7 +516,7 @@ describe("runMaintenancePreviewCommand", () => {
     const fixture = await writeJsonFixture("brain-search-generic-target-fit.json", {
       kind: "krn.brainSearch.preview.v1",
       query: "EKOLOGUS Brain quality gate",
-      knowledgeCards: {
+      knowledgeReadModels: {
         selectedKnowledge: [
           {
             id: "source-claim-1",
@@ -904,7 +904,7 @@ describe("runMaintenancePreviewCommand", () => {
         },
         verdict: "selected_knowledge_sufficient",
         recommendedNextAction:
-          "Use selected brain knowledge first; linked evidence can remain supporting context.",
+          "Use selected knowledge first; linked evidence can remain supporting context.",
         doesNotProve:
           "Activation utility lab readback does not prove ranking quality."
       }
@@ -934,7 +934,7 @@ describe("runMaintenancePreviewCommand", () => {
       expect(result.stdout).toContain("knowledgeAcquisition: 1");
       expect(result.stdout).toContain("query: selected knowledge sufficient");
       expect(result.stdout).not.toContain("activationUtilityEvidence:");
-      expect(result.stdout).not.toContain("Use selected brain knowledge first");
+      expect(result.stdout).not.toContain("Use selected knowledge first");
       expect(result.stdout).toContain("mutation: none");
     } finally {
       await fixture.cleanup();

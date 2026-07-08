@@ -1,7 +1,7 @@
 export {};
 export * from "./activation/index.js";
-export * from "./brain-knowledge-read-model.js";
-export * from "./brain-knowledge-usefulness.js";
+export * from "./knowledge-read-model.js";
+export * from "./knowledge-usefulness.js";
 export * from "./observations/index.js";
 export * from "./compiler/index.js";
 export * from "./corpus/index.js";

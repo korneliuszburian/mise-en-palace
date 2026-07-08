@@ -10,7 +10,7 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<brain-knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
     "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"pattern:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future pattern recall quality\"",
@@ -160,8 +160,8 @@ describe("parseEvidenceArgs", () => {
       command: {
         kind: "evidenceCapture",
         persist: false,
-        brainKnowledgeUsefulnessOutcomes: [{
-          brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           reason: "Knowledge selected the unknown-first parser shape",
           evidenceRefs: ["evidence-1", "run-show-1"],
@@ -299,7 +299,7 @@ describe("parseEvidenceArgs", () => {
       error: "--source-usefulness requires a non-empty doesNotProve field"
     });
     expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "=helped|reason|evidence|does not prove"])).toEqual({
-      error: "--knowledge-usefulness requires a non-empty brain knowledge id"
+      error: "--knowledge-usefulness requires a non-empty knowledge id"
     });
     expect(parseEvidenceArgs(["capture", "--knowledge-usefulness", "pattern:knowledge-1=decorative|reason|evidence|does not prove"])).toEqual({
       error: "--knowledge-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"

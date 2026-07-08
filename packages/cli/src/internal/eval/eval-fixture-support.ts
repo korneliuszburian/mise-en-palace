@@ -83,7 +83,7 @@ export const recordArray = (
   });
 };
 
-export interface EvalKnowledgeCardFixture {
+export interface EvalKnowledgeReadModelFixture {
   readonly id: string;
   readonly title: string;
   readonly summary: string;
@@ -108,10 +108,10 @@ export interface BrainSearchPreviewSections {
   readonly sourceSearch: Record<string, unknown>;
 }
 
-const parseEvalKnowledgeCard = (
+const parseEvalKnowledgeReadModel = (
   value: Record<string, unknown>,
   label: string
-): EvalKnowledgeCardFixture => ({
+): EvalKnowledgeReadModelFixture => ({
   id: requiredString(value, "id", label),
   title: requiredString(value, "title", label),
   summary: requiredString(value, "summary", label),
@@ -134,13 +134,13 @@ const parseEvalSourceClaim = (
   doesNotProve: requiredString(value, "doesNotProve", label)
 });
 
-export const parseEvalKnowledgeCards = (
+export const parseEvalKnowledgeReadModels = (
   record: Record<string, unknown>,
   key: string,
   label: string
-): readonly EvalKnowledgeCardFixture[] =>
-  recordArray(record, key, label).map((card, index) =>
-    parseEvalKnowledgeCard(card, `${label}.${key}[${index}]`)
+): readonly EvalKnowledgeReadModelFixture[] =>
+  recordArray(record, key, label).map((readModel, index) =>
+    parseEvalKnowledgeReadModel(readModel, `${label}.${key}[${index}]`)
   );
 
 export const parseEvalSourceClaims = (
@@ -162,18 +162,18 @@ export const parseBrainSearchPreviewSections = (
     throw new Error(`${label} did not return a brain search preview`);
   }
 
-  const knowledgeCards = parsed["knowledgeCards"];
+  const knowledgeReadModels = parsed["knowledgeReadModels"];
   const sourceSearch = parsed["sourceSearch"];
 
-  if (!isRecord(knowledgeCards) || !isRecord(sourceSearch)) {
+  if (!isRecord(knowledgeReadModels) || !isRecord(sourceSearch)) {
     throw new Error(`${label} brain search preview is missing readback sections`);
   }
 
   return {
     selectedKnowledge: recordArray(
-      knowledgeCards,
+      knowledgeReadModels,
       "selectedKnowledge",
-      `${label}.knowledgeCards`
+      `${label}.knowledgeReadModels`
     ),
     sourceSearch
   };

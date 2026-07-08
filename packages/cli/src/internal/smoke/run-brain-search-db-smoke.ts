@@ -70,7 +70,7 @@ export interface BrainSearchDbSmokeReport {
 }
 
 interface BrainSearchJson {
-  knowledgeCards?: {
+  knowledgeReadModels?: {
     selectedKnowledge?: unknown;
   };
   sourceSearch?: {
@@ -97,8 +97,8 @@ const stringValue = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
 const selectedKnowledgeIds = (json: BrainSearchJson): readonly string[] =>
-  Array.isArray(json.knowledgeCards?.selectedKnowledge)
-    ? json.knowledgeCards.selectedKnowledge.flatMap((item) => {
+  Array.isArray(json.knowledgeReadModels?.selectedKnowledge)
+    ? json.knowledgeReadModels.selectedKnowledge.flatMap((item) => {
         const record = objectValue(item);
         const id = record === undefined ? undefined : record["id"];
 
@@ -107,8 +107,8 @@ const selectedKnowledgeIds = (json: BrainSearchJson): readonly string[] =>
     : [];
 
 const selectedKnowledgePackets = (json: BrainSearchJson): readonly string[] =>
-  Array.isArray(json.knowledgeCards?.selectedKnowledge)
-    ? json.knowledgeCards.selectedKnowledge.flatMap((item) => {
+  Array.isArray(json.knowledgeReadModels?.selectedKnowledge)
+    ? json.knowledgeReadModels.selectedKnowledge.flatMap((item) => {
         const record = objectValue(item);
 
         if (record === undefined) {
@@ -131,15 +131,15 @@ const parseBrainSearchJson = (text: string): BrainSearchJson => {
     throw new Error("brain-search DB smoke expected JSON object output");
   }
 
-  const knowledgeCards = objectValue(record["knowledgeCards"]);
+  const knowledgeReadModels = objectValue(record["knowledgeReadModels"]);
   const sourceSearch = objectValue(record["sourceSearch"]);
 
   return {
-    ...(knowledgeCards === undefined
+    ...(knowledgeReadModels === undefined
       ? {}
       : {
-          knowledgeCards: {
-            selectedKnowledge: knowledgeCards["selectedKnowledge"]
+          knowledgeReadModels: {
+            selectedKnowledge: knowledgeReadModels["selectedKnowledge"]
           }
         }),
     ...(sourceSearch === undefined
@@ -157,7 +157,7 @@ const parseBrainSearchJson = (text: string): BrainSearchJson => {
 };
 
 const selectedKnowledgeCount = (json: BrainSearchJson): number =>
-  arrayLength(json.knowledgeCards?.selectedKnowledge);
+  arrayLength(json.knowledgeReadModels?.selectedKnowledge);
 
 const supportingClaimCount = (json: BrainSearchJson): number =>
   numberValue(json.sourceSearch?.supportingClaims);

@@ -13,7 +13,7 @@ import type {
 import type { ActivationRetrievalDiagnostics } from "@krn/harness";
 
 import type { ProjectResolution } from "./database-runtime.js";
-import type { BrainKnowledgePlanSelection } from "./brain-knowledge-selection.js";
+import type { KnowledgePlanSelection } from "./knowledge-selection.js";
 
 export type DecisionPacketReadModelOutputFormat = "text" | "json";
 
@@ -123,7 +123,7 @@ export interface DecisionPacketReadModel {
     objective: string;
     status: string;
   };
-  brainKnowledgeSelection?: BrainKnowledgePlanSelection;
+  knowledgeSelection?: KnowledgePlanSelection;
   context: {
     status: string;
     inclusions: number;
@@ -163,7 +163,7 @@ export interface DecisionPacketReadModel {
     };
     candidates: DecisionPacketReadModelCandidate[];
     sourceUsefulnessOutcomes: DecisionPacketReadModelSourceUsefulnessOutcome[];
-    brainKnowledgeUsefulnessOutcomes: DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome[];
+    knowledgeUsefulnessOutcomes: DecisionPacketReadModelKnowledgeUsefulnessOutcome[];
   }[];
   proof: {
     proves: string[];
@@ -190,8 +190,8 @@ export interface DecisionPacketReadModelSourceUsefulnessOutcome {
   doesNotProve: string;
 }
 
-export interface DecisionPacketReadModelBrainKnowledgeUsefulnessOutcome {
-  brainKnowledgeId: string;
+export interface DecisionPacketReadModelKnowledgeUsefulnessOutcome {
+  knowledgeId: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];

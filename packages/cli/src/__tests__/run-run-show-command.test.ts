@@ -60,11 +60,11 @@ const aggregate: HarnessRunAggregate = {
     status: "ready",
     summary: "Decision packet read model plan",
     metadata: {
-      brainKnowledgeSelection: {
-        kind: "krn.brainKnowledgePlanSelection.v1",
+      knowledgeSelection: {
+        kind: "krn.knowledge.selection.v1",
         status: "selected",
         query: "unknown first",
-        source: "brain_knowledge_catalog",
+        source: "knowledge_catalog",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
         selectedKnowledge: [{
           id: "pattern:ts-boundary-unknown-first-result-state",
@@ -75,7 +75,7 @@ const aggregate: HarnessRunAggregate = {
           targetFit: "target_specific",
           targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
-            "This brain knowledge does not prove the implementation used unknown-first validation correctly."
+            "This knowledge read model does not prove the implementation used unknown-first validation correctly."
         }],
         targetFitSummary: {
           verdict: "target_specific_selected_knowledge",
@@ -91,11 +91,11 @@ const aggregate: HarnessRunAggregate = {
         },
         recommendedNextAction:
           "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
-        reason: "Brain knowledge matched the pre-coding plan query.",
+        reason: "Knowledge read model matched the pre-coding plan query.",
         doesNotProve:
-          "Selected brain knowledge do not prove implementation correctness, source truth, ranking quality, or product readiness.",
+          "Selected knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
         proof: {
-          proves: ["brain knowledge catalog selected a brain knowledge for the plan query"],
+          proves: ["knowledge catalog selected knowledge for the plan query"],
           doesNotProve: ["future pattern recall quality"]
         }
       }
@@ -353,15 +353,15 @@ const aggregate: HarnessRunAggregate = {
         reason: "Missing doesNotProve should drop this malformed feedback row.",
         evidenceRefs: ["feedback-1"]
       }],
-      brainKnowledgeUsefulnessOutcomes: [{
-        brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
         outcome: "helped",
         reason: "Knowledge selected the unknown-first parser shape for the implementation.",
         evidenceRefs: ["evidence-1", "feedback-1"],
         doesNotProve:
           "This pattern outcome does not prove future pattern recall or TypeScript quality."
       }, {
-        brainKnowledgeId: "pattern-incomplete",
+        knowledgeId: "pattern-incomplete",
         outcome: "helped",
         reason: "Missing doesNotProve should drop this malformed pattern row.",
         evidenceRefs: ["feedback-1"]
@@ -421,10 +421,10 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Selected KRN context targetFit: target_specific_selected_knowledge");
     expect(result.stdout).toContain("Selected KRN context recommended use: Use target-specific selectedKnowledge");
     expect(result.stdout).toContain(
-      "knowledge=ts-boundary-unknown-first-result-state | card=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
+      "knowledge=ts-boundary-unknown-first-result-state | readModel=pattern:ts-boundary-unknown-first-result-state | reviewability=ready | targetFit=target_specific"
     );
     expect(result.stdout).toContain(
-      "Selected KRN context does not prove: Selected brain knowledge do not prove implementation correctness"
+      "Selected KRN context does not prove: Selected knowledge does not prove implementation correctness"
     );
     expect(result.stdout).toContain("Activation diagnostics:");
     expect(result.stdout).toContain("Context inclusion details:");
@@ -643,11 +643,11 @@ describe("runRunShowCommand", () => {
           repoPathHint: "/repo/root"
         }
       },
-      brainKnowledgeSelection: {
-        kind: "krn.brainKnowledgePlanSelection.v1",
+      knowledgeSelection: {
+        kind: "krn.knowledge.selection.v1",
         status: "selected",
         query: "unknown first",
-        source: "brain_knowledge_catalog",
+        source: "knowledge_catalog",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
         selectedKnowledge: [{
           id: "pattern:ts-boundary-unknown-first-result-state",
@@ -658,7 +658,7 @@ describe("runRunShowCommand", () => {
           targetFit: "target_specific",
           targetFitReasons: ["matched distinctive query token(s): unknown, first."],
           doesNotProve:
-            "This brain knowledge does not prove the implementation used unknown-first validation correctly."
+            "This knowledge read model does not prove the implementation used unknown-first validation correctly."
         }],
         targetFitSummary: {
           verdict: "target_specific_selected_knowledge",
@@ -783,8 +783,8 @@ describe("runRunShowCommand", () => {
           doesNotProve:
             "This stale outcome does not alter or deprecate SourceClaim truth."
         }],
-        brainKnowledgeUsefulnessOutcomes: [{
-          brainKnowledgeId: "pattern:ts-boundary-unknown-first-result-state",
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "pattern:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           reason: "Knowledge selected the unknown-first parser shape for the implementation.",
           evidenceRefs: ["evidence-1", "feedback-1"],

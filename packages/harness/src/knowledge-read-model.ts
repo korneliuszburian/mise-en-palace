@@ -1,4 +1,4 @@
-export const brainKnowledgeKindValues = [
+export const knowledgeKindValues = [
   "source_claim",
   "source_decision",
   "pattern",
@@ -12,9 +12,9 @@ export const brainKnowledgeKindValues = [
   "run_evidence"
 ] as const;
 
-export type BrainKnowledgeKind = typeof brainKnowledgeKindValues[number];
+export type KnowledgeKind = typeof knowledgeKindValues[number];
 
-export const brainKnowledgeStatusValues = [
+export const knowledgeStatusValues = [
   "active",
   "candidate",
   "accepted",
@@ -25,11 +25,11 @@ export const brainKnowledgeStatusValues = [
   "unknown"
 ] as const;
 
-export type BrainKnowledgeStatus = typeof brainKnowledgeStatusValues[number];
+export type KnowledgeStatus = typeof knowledgeStatusValues[number];
 
-export type BrainKnowledgeConfidence = "high" | "medium" | "low" | "unknown";
+export type KnowledgeConfidence = "high" | "medium" | "low" | "unknown";
 
-export const brainKnowledgeReviewabilityValues = [
+export const knowledgeReviewabilityValues = [
   "ready",
   "needs_more_evidence",
   "too_vague",
@@ -38,9 +38,9 @@ export const brainKnowledgeReviewabilityValues = [
   "unknown"
 ] as const;
 
-export type BrainKnowledgeReviewability = typeof brainKnowledgeReviewabilityValues[number];
+export type KnowledgeReviewability = typeof knowledgeReviewabilityValues[number];
 
-export type BrainKnowledgeTemporal =
+export type KnowledgeTemporal =
   | {
       kind: "current";
       observedAt?: string;
@@ -55,7 +55,7 @@ export type BrainKnowledgeTemporal =
       kind: "unknown";
     };
 
-export type BrainKnowledgeDissent =
+export type KnowledgeDissent =
   | {
       kind: "none";
     }
@@ -68,7 +68,7 @@ export type BrainKnowledgeDissent =
       kind: "unknown";
     };
 
-export const brainKnowledgeNextActionValues = [
+export const knowledgeNextActionValues = [
   "use",
   "review",
   "promote",
@@ -80,9 +80,9 @@ export const brainKnowledgeNextActionValues = [
   "unknown"
 ] as const;
 
-export type BrainKnowledgeNextAction = typeof brainKnowledgeNextActionValues[number];
+export type KnowledgeNextAction = typeof knowledgeNextActionValues[number];
 
-export const brainKnowledgeUsefulnessOutcomeValues = [
+export const knowledgeUsefulnessOutcomeValues = [
   "selected",
   "used",
   "helped",
@@ -92,68 +92,68 @@ export const brainKnowledgeUsefulnessOutcomeValues = [
   "unknown"
 ] as const;
 
-export type BrainKnowledgeUsefulnessOutcome =
-  typeof brainKnowledgeUsefulnessOutcomeValues[number];
+export type KnowledgeUsefulnessOutcome =
+  typeof knowledgeUsefulnessOutcomeValues[number];
 
-export type BrainKnowledgeUsefulnessOutcomeFilter =
-  | BrainKnowledgeUsefulnessOutcome
+export type KnowledgeUsefulnessOutcomeFilter =
+  | KnowledgeUsefulnessOutcome
   | "none";
 
-export const brainKnowledgeUsefulnessOutcomeFilterValues = [
-  ...brainKnowledgeUsefulnessOutcomeValues,
+export const knowledgeUsefulnessOutcomeFilterValues = [
+  ...knowledgeUsefulnessOutcomeValues,
   "none"
-] as const satisfies readonly BrainKnowledgeUsefulnessOutcomeFilter[];
+] as const satisfies readonly KnowledgeUsefulnessOutcomeFilter[];
 
-export type BrainKnowledgeUsefulnessFeedback = {
-  cardId: string;
-  outcome: BrainKnowledgeUsefulnessOutcome;
+export type KnowledgeUsefulnessFeedback = {
+  knowledgeId: string;
+  outcome: KnowledgeUsefulnessOutcome;
   summary: string;
   evidenceRefs: string[];
   doesNotProve: string;
   observedAt?: string;
 };
 
-export type BrainKnowledgeReadModel = {
+export type KnowledgeReadModel = {
   id: string;
-  kind: BrainKnowledgeKind;
-  status: BrainKnowledgeStatus;
+  kind: KnowledgeKind;
+  status: KnowledgeStatus;
   title: string;
   summary: string;
   mechanism?: string;
   krnImplication?: string;
-  confidence: BrainKnowledgeConfidence;
-  reviewability: BrainKnowledgeReviewability;
+  confidence: KnowledgeConfidence;
+  reviewability: KnowledgeReviewability;
   sourceRefs: string[];
   evidenceRefs: string[];
   consumers: string[];
   falsifier: string;
   doesNotProve: string;
-  temporal: BrainKnowledgeTemporal;
-  dissent: BrainKnowledgeDissent;
-  nextAction: BrainKnowledgeNextAction;
-  usefulnessFeedback?: BrainKnowledgeUsefulnessFeedback;
+  temporal: KnowledgeTemporal;
+  dissent: KnowledgeDissent;
+  nextAction: KnowledgeNextAction;
+  usefulnessFeedback?: KnowledgeUsefulnessFeedback;
 };
 
-export type BrainKnowledgeSearchFilter = {
-  kind?: BrainKnowledgeKind;
-  status?: BrainKnowledgeStatus;
-  reviewability?: BrainKnowledgeReviewability;
-  usefulnessOutcome?: BrainKnowledgeUsefulnessOutcomeFilter;
+export type KnowledgeSearchFilter = {
+  kind?: KnowledgeKind;
+  status?: KnowledgeStatus;
+  reviewability?: KnowledgeReviewability;
+  usefulnessOutcome?: KnowledgeUsefulnessOutcomeFilter;
   text?: string;
 };
 
-export type BrainKnowledgeDecisionStatus =
+export type KnowledgeDecisionStatus =
   | "adopt_now"
   | "lab"
   | "later"
   | "reject";
 
-export type BrainKnowledgeDecision = {
+export type KnowledgeDecision = {
   knowledgeId: string;
   name: string;
-  decisionStatus: BrainKnowledgeDecisionStatus;
-  confidence: BrainKnowledgeConfidence;
-  reviewability: BrainKnowledgeReviewability;
+  decisionStatus: KnowledgeDecisionStatus;
+  confidence: KnowledgeConfidence;
+  reviewability: KnowledgeReviewability;
   decision: string;
   mechanism?: string;
   krnImplication?: string;
@@ -163,21 +163,21 @@ export type BrainKnowledgeDecision = {
   falsifier: string;
   doesNotProve: string;
   observedAt?: string;
-  nextAction: BrainKnowledgeNextAction;
+  nextAction: KnowledgeNextAction;
 };
 
-type BrainKnowledgeReadModelRequiredFields = Omit<
-  BrainKnowledgeReadModel,
+type KnowledgeReadModelRequiredFields = Omit<
+  KnowledgeReadModel,
   "usefulnessFeedback" | "mechanism" | "krnImplication"
 >;
 
-type BrainKnowledgeDecisionRequiredFields = Omit<
-  BrainKnowledgeDecision,
+type KnowledgeDecisionRequiredFields = Omit<
+  KnowledgeDecision,
   "observedAt" | "mechanism" | "krnImplication"
 >;
 
-type BrainKnowledgeEvidenceBoundaryFields = Pick<
-  BrainKnowledgeReadModelRequiredFields,
+type KnowledgeEvidenceBoundaryFields = Pick<
+  KnowledgeReadModelRequiredFields,
   "reviewability" | "sourceRefs" | "evidenceRefs" | "consumers" | "falsifier" | "doesNotProve"
 >;
 
@@ -185,18 +185,18 @@ type FieldParsers<T extends object> = {
   [Key in keyof T]-?: (record: Record<string, unknown>) => T[Key] | undefined;
 };
 
-type NormalizedBrainKnowledgeSearchFilter = {
-  kind?: BrainKnowledgeKind;
-  status?: BrainKnowledgeStatus;
-  reviewability?: BrainKnowledgeReviewability;
-  usefulnessOutcome?: BrainKnowledgeUsefulnessOutcomeFilter;
+type KnowledgeSearchRuntimeFilter = {
+  kind?: KnowledgeKind;
+  status?: KnowledgeStatus;
+  reviewability?: KnowledgeReviewability;
+  usefulnessOutcome?: KnowledgeUsefulnessOutcomeFilter;
   text?: string;
   textTokens: string[];
 };
 
-const knowledgeKinds = new Set<string>(brainKnowledgeKindValues);
+const knowledgeKinds = new Set<string>(knowledgeKindValues);
 
-const knowledgeStatuses = new Set<string>(brainKnowledgeStatusValues);
+const knowledgeStatuses = new Set<string>(knowledgeStatusValues);
 
 const knowledgeConfidences = new Set<string>([
   "high",
@@ -206,52 +206,52 @@ const knowledgeConfidences = new Set<string>([
 ]);
 
 const knowledgeReviewabilities = new Set<string>(
-  brainKnowledgeReviewabilityValues
+  knowledgeReviewabilityValues
 );
 
 const knowledgeNextActions = new Set<string>(
-  brainKnowledgeNextActionValues
+  knowledgeNextActionValues
 );
 
 const knowledgeUsefulnessOutcomes = new Set<string>(
-  brainKnowledgeUsefulnessOutcomeValues
+  knowledgeUsefulnessOutcomeValues
 );
 
-const brainKnowledgeDecisionStatuses = new Set<string>([
+const knowledgeDecisionStatuses = new Set<string>([
   "adopt_now",
   "lab",
   "later",
   "reject"
 ]);
 
-const isBrainKnowledgeKind = (value: unknown): value is BrainKnowledgeKind =>
+const isKnowledgeKind = (value: unknown): value is KnowledgeKind =>
   typeof value === "string" && knowledgeKinds.has(value);
 
-const isBrainKnowledgeStatus = (value: unknown): value is BrainKnowledgeStatus =>
+const isKnowledgeStatus = (value: unknown): value is KnowledgeStatus =>
   typeof value === "string" && knowledgeStatuses.has(value);
 
-const isBrainKnowledgeConfidence = (value: unknown): value is BrainKnowledgeConfidence =>
+const isKnowledgeConfidence = (value: unknown): value is KnowledgeConfidence =>
   typeof value === "string" && knowledgeConfidences.has(value);
 
-const isBrainKnowledgeReviewability = (value: unknown): value is BrainKnowledgeReviewability =>
+const isKnowledgeReviewability = (value: unknown): value is KnowledgeReviewability =>
   typeof value === "string" && knowledgeReviewabilities.has(value);
 
-const isBrainKnowledgeNextAction = (value: unknown): value is BrainKnowledgeNextAction =>
+const isKnowledgeNextAction = (value: unknown): value is KnowledgeNextAction =>
   typeof value === "string" && knowledgeNextActions.has(value);
 
-const isBrainKnowledgeUsefulnessOutcome = (
+const isKnowledgeUsefulnessOutcome = (
   value: unknown
-): value is BrainKnowledgeUsefulnessOutcome =>
+): value is KnowledgeUsefulnessOutcome =>
   typeof value === "string" && knowledgeUsefulnessOutcomes.has(value);
 
-const isBrainKnowledgeDecisionStatus = (
+const isKnowledgeDecisionStatus = (
   value: unknown
-): value is BrainKnowledgeDecisionStatus =>
-  typeof value === "string" && brainKnowledgeDecisionStatuses.has(value);
+): value is KnowledgeDecisionStatus =>
+  typeof value === "string" && knowledgeDecisionStatuses.has(value);
 
-const evidenceBoundaryFieldParsers: FieldParsers<BrainKnowledgeEvidenceBoundaryFields> = {
+const evidenceBoundaryFieldParsers: FieldParsers<KnowledgeEvidenceBoundaryFields> = {
   reviewability: (record) =>
-    isBrainKnowledgeReviewability(record["reviewability"]) ? record["reviewability"] : undefined,
+    isKnowledgeReviewability(record["reviewability"]) ? record["reviewability"] : undefined,
   sourceRefs: (record) => parseNonEmptyStringArray(record["sourceRefs"]),
   evidenceRefs: (record) => parseNonEmptyStringArray(record["evidenceRefs"]),
   consumers: (record) => parseNonEmptyStringArray(record["consumers"]),
@@ -259,40 +259,40 @@ const evidenceBoundaryFieldParsers: FieldParsers<BrainKnowledgeEvidenceBoundaryF
   doesNotProve: (record) => parseNonEmptyString(record["doesNotProve"])
 };
 
-const brainKnowledgeReadModelFieldParsers: FieldParsers<BrainKnowledgeReadModelRequiredFields> = {
+const knowledgeReadModelFieldParsers: FieldParsers<KnowledgeReadModelRequiredFields> = {
   id: (record) => parseNonEmptyString(record["id"]),
-  kind: (record) => isBrainKnowledgeKind(record["kind"]) ? record["kind"] : undefined,
-  status: (record) => isBrainKnowledgeStatus(record["status"]) ? record["status"] : undefined,
+  kind: (record) => isKnowledgeKind(record["kind"]) ? record["kind"] : undefined,
+  status: (record) => isKnowledgeStatus(record["status"]) ? record["status"] : undefined,
   title: (record) => parseNonEmptyString(record["title"]),
   summary: (record) => parseNonEmptyString(record["summary"]),
   confidence: (record) =>
-    isBrainKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
+    isKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
   ...evidenceBoundaryFieldParsers,
   temporal: (record) => parseTemporal(record["temporal"]),
   dissent: (record) => parseDissent(record["dissent"]),
   nextAction: (record) =>
-    isBrainKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
+    isKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
 };
 
-const brainKnowledgeDecisionFieldParsers: FieldParsers<BrainKnowledgeDecisionRequiredFields> = {
+const knowledgeDecisionFieldParsers: FieldParsers<KnowledgeDecisionRequiredFields> = {
   knowledgeId: (record) => parseNonEmptyString(record["knowledgeId"]),
   name: (record) => parseNonEmptyString(record["name"]),
   decisionStatus: (record) =>
-    isBrainKnowledgeDecisionStatus(record["decisionStatus"]) ? record["decisionStatus"] : undefined,
+    isKnowledgeDecisionStatus(record["decisionStatus"]) ? record["decisionStatus"] : undefined,
   confidence: (record) =>
-    isBrainKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
+    isKnowledgeConfidence(record["confidence"]) ? record["confidence"] : undefined,
   decision: (record) => parseNonEmptyString(record["decision"]),
   ...evidenceBoundaryFieldParsers,
   nextAction: (record) =>
-    isBrainKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
+    isKnowledgeNextAction(record["nextAction"]) ? record["nextAction"] : undefined
 };
 
-export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeReadModel | undefined {
+export function parseKnowledgeReadModel(value: unknown): KnowledgeReadModel | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const requiredFields = parseObjectFields(value, brainKnowledgeReadModelFieldParsers);
+  const requiredFields = parseObjectFields(value, knowledgeReadModelFieldParsers);
   const usefulnessFeedback = parseOptionalUsefulnessFeedback(value);
 
   if (requiredFields === undefined || usefulnessFeedback === undefined) {
@@ -305,13 +305,13 @@ export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeRead
   };
 }
 
-export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnowledgeUsefulnessFeedback | undefined {
+export function parseKnowledgeUsefulnessFeedback(value: unknown): KnowledgeUsefulnessFeedback | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const cardId = parseNonEmptyString(value["cardId"]);
-  const outcome = isBrainKnowledgeUsefulnessOutcome(value["outcome"])
+  const knowledgeId = parseNonEmptyString(value["knowledgeId"]);
+  const outcome = isKnowledgeUsefulnessOutcome(value["outcome"])
     ? value["outcome"]
     : undefined;
   const summary = parseNonEmptyString(value["summary"]);
@@ -319,7 +319,7 @@ export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnow
   const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
 
   if (
-    cardId === undefined ||
+    knowledgeId === undefined ||
     outcome === undefined ||
     summary === undefined ||
     evidenceRefs === undefined ||
@@ -330,7 +330,7 @@ export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnow
   }
 
   return {
-    cardId,
+    knowledgeId,
     outcome,
     summary,
     evidenceRefs,
@@ -339,24 +339,24 @@ export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnow
   };
 }
 
-export function parseBrainKnowledgeUsefulnessFeedbackList(value: unknown): BrainKnowledgeUsefulnessFeedback[] | undefined {
+export function parseKnowledgeUsefulnessFeedbackList(value: unknown): KnowledgeUsefulnessFeedback[] | undefined {
   if (!isRecord(value) || !Array.isArray(value["feedback"])) {
     return undefined;
   }
 
-  const feedback = value["feedback"].map(parseBrainKnowledgeUsefulnessFeedback);
+  const feedback = value["feedback"].map(parseKnowledgeUsefulnessFeedback);
 
   return feedback.every((item) => item !== undefined)
     ? feedback
     : undefined;
 }
 
-export function parseBrainKnowledgeDecision(value: unknown): BrainKnowledgeDecision | undefined {
+export function parseKnowledgeDecision(value: unknown): KnowledgeDecision | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const requiredFields = parseObjectFields(value, brainKnowledgeDecisionFieldParsers);
+  const requiredFields = parseObjectFields(value, knowledgeDecisionFieldParsers);
 
   return requiredFields !== undefined &&
     optionalStringFields(value, ["observedAt", "mechanism", "krnImplication"]) ? {
@@ -367,13 +367,13 @@ export function parseBrainKnowledgeDecision(value: unknown): BrainKnowledgeDecis
   } : undefined;
 }
 
-export function brainKnowledgeCardFromDecision(
-  pattern: BrainKnowledgeDecision
-): BrainKnowledgeReadModel {
+export function knowledgeReadModelFromDecision(
+  pattern: KnowledgeDecision
+): KnowledgeReadModel {
   return {
     id: `pattern:${pattern.knowledgeId}`,
     kind: "pattern",
-    status: statusFromBrainKnowledgeDecision(pattern.decisionStatus),
+    status: statusFromKnowledgeDecision(pattern.decisionStatus),
     title: pattern.name,
     summary: pattern.decision,
     ...(pattern.mechanism === undefined ? {} : { mechanism: pattern.mechanism }),
@@ -396,39 +396,39 @@ export function brainKnowledgeCardFromDecision(
   };
 }
 
-export function cardsWithBrainKnowledgeUsefulnessFeedback(
-  cards: BrainKnowledgeReadModel[],
-  feedback: readonly BrainKnowledgeUsefulnessFeedback[]
-): BrainKnowledgeReadModel[] {
-  const latestByCardId = new Map<string, BrainKnowledgeUsefulnessFeedback>();
+export function knowledgeReadModelsWithUsefulnessFeedback(
+  readModels: KnowledgeReadModel[],
+  feedback: readonly KnowledgeUsefulnessFeedback[]
+): KnowledgeReadModel[] {
+  const latestByKnowledgeId = new Map<string, KnowledgeUsefulnessFeedback>();
 
   for (const item of feedback) {
-    const previous = latestByCardId.get(item.cardId);
+    const previous = latestByKnowledgeId.get(item.knowledgeId);
 
     if (previous === undefined || isNewerFeedback(item, previous)) {
-      latestByCardId.set(item.cardId, item);
+      latestByKnowledgeId.set(item.knowledgeId, item);
     }
   }
 
-  return cards.map((card) => {
-    const usefulnessFeedback = latestByCardId.get(card.id);
+  return readModels.map((readModel) => {
+    const usefulnessFeedback = latestByKnowledgeId.get(readModel.id);
 
     return usefulnessFeedback === undefined
-      ? card
+      ? readModel
       : {
-        ...card,
+        ...readModel,
         usefulnessFeedback
       };
   });
 }
 
-export function searchBrainKnowledgeCards(
-  cards: BrainKnowledgeReadModel[],
-  filter: BrainKnowledgeSearchFilter
-): BrainKnowledgeReadModel[] {
-  const normalizedFilter = normalizeSearchFilter(filter);
+export function searchKnowledgeReadModels(
+  readModels: KnowledgeReadModel[],
+  filter: KnowledgeSearchFilter
+): KnowledgeReadModel[] {
+  const normalizedFilter = searchRuntimeFilter(filter);
 
-  return cards.filter((card) => matchesBrainKnowledgeSearch(card, normalizedFilter));
+  return readModels.filter((readModel) => matchesKnowledgeSearch(readModel, normalizedFilter));
 }
 
 function tokenizeSearchText(value: string): string[] {
@@ -456,17 +456,17 @@ function parseObjectFields<T extends object>(
 
 function parseOptionalUsefulnessFeedback(
   record: Record<string, unknown>
-): Pick<BrainKnowledgeReadModel, "usefulnessFeedback"> | undefined {
+): Pick<KnowledgeReadModel, "usefulnessFeedback"> | undefined {
   if (record["usefulnessFeedback"] === undefined) {
     return {};
   }
 
-  const usefulnessFeedback = parseBrainKnowledgeUsefulnessFeedback(record["usefulnessFeedback"]);
+  const usefulnessFeedback = parseKnowledgeUsefulnessFeedback(record["usefulnessFeedback"]);
 
   return usefulnessFeedback === undefined ? undefined : { usefulnessFeedback };
 }
 
-function normalizeSearchFilter(filter: BrainKnowledgeSearchFilter): NormalizedBrainKnowledgeSearchFilter {
+function searchRuntimeFilter(filter: KnowledgeSearchFilter): KnowledgeSearchRuntimeFilter {
   const text = filter.text?.trim().toLowerCase();
 
   return {
@@ -476,101 +476,101 @@ function normalizeSearchFilter(filter: BrainKnowledgeSearchFilter): NormalizedBr
   };
 }
 
-function matchesBrainKnowledgeSearch(
-  card: BrainKnowledgeReadModel,
-  filter: NormalizedBrainKnowledgeSearchFilter
+function matchesKnowledgeSearch(
+  readModel: KnowledgeReadModel,
+  filter: KnowledgeSearchRuntimeFilter
 ): boolean {
-  return matchesStructuredFilter(card, filter) &&
-    matchesUsefulnessOutcomeFilter(card, filter) &&
-    matchesTextFilter(card, filter);
+  return matchesStructuredFilter(readModel, filter) &&
+    matchesUsefulnessOutcomeFilter(readModel, filter) &&
+    matchesTextFilter(readModel, filter);
 }
 
 function matchesStructuredFilter(
-  card: BrainKnowledgeReadModel,
-  filter: NormalizedBrainKnowledgeSearchFilter
+  readModel: KnowledgeReadModel,
+  filter: KnowledgeSearchRuntimeFilter
 ): boolean {
-  return (filter.kind === undefined || card.kind === filter.kind) &&
-    (filter.status === undefined || card.status === filter.status) &&
-    (filter.reviewability === undefined || card.reviewability === filter.reviewability);
+  return (filter.kind === undefined || readModel.kind === filter.kind) &&
+    (filter.status === undefined || readModel.status === filter.status) &&
+    (filter.reviewability === undefined || readModel.reviewability === filter.reviewability);
 }
 
 function matchesUsefulnessOutcomeFilter(
-  card: BrainKnowledgeReadModel,
-  filter: NormalizedBrainKnowledgeSearchFilter
+  readModel: KnowledgeReadModel,
+  filter: KnowledgeSearchRuntimeFilter
 ): boolean {
   if (filter.usefulnessOutcome === undefined) {
     return true;
   }
 
   if (filter.usefulnessOutcome === "none") {
-    return card.usefulnessFeedback === undefined;
+    return readModel.usefulnessFeedback === undefined;
   }
 
-  return card.usefulnessFeedback?.outcome === filter.usefulnessOutcome;
+  return readModel.usefulnessFeedback?.outcome === filter.usefulnessOutcome;
 }
 
 function matchesTextFilter(
-  card: BrainKnowledgeReadModel,
-  filter: NormalizedBrainKnowledgeSearchFilter
+  readModel: KnowledgeReadModel,
+  filter: KnowledgeSearchRuntimeFilter
 ): boolean {
   if (filter.text === undefined || filter.text.length === 0) {
     return true;
   }
 
-  if (buildExactSearchText(card).includes(filter.text)) {
+  if (buildExactSearchText(readModel).includes(filter.text)) {
     return true;
   }
 
-  const searchableTokens = new Set(tokenizeSearchText(buildTokenSearchText(card)));
+  const searchableTokens = new Set(tokenizeSearchText(buildTokenSearchText(readModel)));
 
   return filter.textTokens.length > 0 && filter.textTokens.every((token) => searchableTokens.has(token));
 }
 
-function buildExactSearchText(card: BrainKnowledgeReadModel): string {
+function buildExactSearchText(readModel: KnowledgeReadModel): string {
   return [
-    card.id,
-    card.title,
-    card.summary,
-    card.mechanism ?? "",
-    card.krnImplication ?? "",
-    card.falsifier,
-    card.doesNotProve,
-    ...card.sourceRefs,
-    ...card.evidenceRefs,
-    ...card.consumers,
-    ...usefulnessSearchText(card)
+    readModel.id,
+    readModel.title,
+    readModel.summary,
+    readModel.mechanism ?? "",
+    readModel.krnImplication ?? "",
+    readModel.falsifier,
+    readModel.doesNotProve,
+    ...readModel.sourceRefs,
+    ...readModel.evidenceRefs,
+    ...readModel.consumers,
+    ...usefulnessSearchText(readModel)
   ].join("\n").toLowerCase();
 }
 
-function buildTokenSearchText(card: BrainKnowledgeReadModel): string {
+function buildTokenSearchText(readModel: KnowledgeReadModel): string {
   return [
-    card.id,
-    card.title,
-    card.summary,
-    card.mechanism ?? "",
-    card.krnImplication ?? "",
-    card.falsifier,
-    card.doesNotProve,
-    ...card.consumers
+    readModel.id,
+    readModel.title,
+    readModel.summary,
+    readModel.mechanism ?? "",
+    readModel.krnImplication ?? "",
+    readModel.falsifier,
+    readModel.doesNotProve,
+    ...readModel.consumers
   ].join("\n").toLowerCase();
 }
 
-function usefulnessSearchText(card: BrainKnowledgeReadModel): string[] {
-  if (card.usefulnessFeedback === undefined) {
+function usefulnessSearchText(readModel: KnowledgeReadModel): string[] {
+  if (readModel.usefulnessFeedback === undefined) {
     return [];
   }
 
   return [
-    card.usefulnessFeedback.outcome,
-    card.usefulnessFeedback.summary,
-    card.usefulnessFeedback.doesNotProve,
-    ...card.usefulnessFeedback.evidenceRefs
+    readModel.usefulnessFeedback.outcome,
+    readModel.usefulnessFeedback.summary,
+    readModel.usefulnessFeedback.doesNotProve,
+    ...readModel.usefulnessFeedback.evidenceRefs
   ];
 }
 
 function isNewerFeedback(
-  candidate: BrainKnowledgeUsefulnessFeedback,
-  previous: BrainKnowledgeUsefulnessFeedback
+  candidate: KnowledgeUsefulnessFeedback,
+  previous: KnowledgeUsefulnessFeedback
 ): boolean {
   if (candidate.observedAt === undefined) {
     return previous.observedAt === undefined;
@@ -579,7 +579,7 @@ function isNewerFeedback(
   return previous.observedAt === undefined || candidate.observedAt >= previous.observedAt;
 }
 
-function statusFromBrainKnowledgeDecision(status: BrainKnowledgeDecisionStatus): BrainKnowledgeStatus {
+function statusFromKnowledgeDecision(status: KnowledgeDecisionStatus): KnowledgeStatus {
   switch (status) {
     case "adopt_now":
       return "active";
@@ -591,7 +591,7 @@ function statusFromBrainKnowledgeDecision(status: BrainKnowledgeDecisionStatus):
   }
 }
 
-function parseTemporal(value: unknown): BrainKnowledgeTemporal | undefined {
+function parseTemporal(value: unknown): KnowledgeTemporal | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -615,7 +615,7 @@ function parseTemporal(value: unknown): BrainKnowledgeTemporal | undefined {
   return value["kind"] === "unknown" ? { kind: "unknown" } : undefined;
 }
 
-function parseDissent(value: unknown): BrainKnowledgeDissent | undefined {
+function parseDissent(value: unknown): KnowledgeDissent | undefined {
   if (!isRecord(value)) {
     return undefined;
   }

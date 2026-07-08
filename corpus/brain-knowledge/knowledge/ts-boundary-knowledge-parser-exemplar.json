@@ -1,23 +1,23 @@
 {
-  "knowledgeId": "ts-boundary-brain-knowledge-parser-exemplar",
-  "name": "Brain knowledge parser TypeScript exemplar",
+  "knowledgeId": "ts-boundary-knowledge-parser-exemplar",
+  "name": "Knowledge parser TypeScript exemplar",
   "decisionStatus": "lab",
   "confidence": "medium",
   "reviewability": "ready",
-  "decision": "Use packages/harness/src/brain-knowledge-read-model.ts as a local reference implementation recipe for unknown-first brain-knowledge parser boundaries. Future similar parser work may clone the approach: external catalog JSON enters as unknown, finite status/action fields are narrowed with explicit sets, missing evidence-boundary fields reject the record, and tests cover invalid enum values, missing proof boundaries, usefulness-feedback readback, and deterministic text search. The exemplar guides implementation shape but does not replace tests, evidence capture, or source-to-decision mapping.",
+  "decision": "Use packages/harness/src/knowledge-read-model.ts as a local reference implementation recipe for unknown-first knowledge parser boundaries. Future similar parser work may clone the approach: external catalog JSON enters as unknown, finite status/action fields are narrowed with explicit sets, missing evidence-boundary fields reject the record, and tests cover invalid enum values, missing proof boundaries, usefulness-feedback readback, and deterministic text search. The exemplar guides implementation shape but does not replace tests, evidence capture, or source-to-decision mapping.",
   "sourceRefs": [
     "corpus/brain-knowledge/knowledge/reference-implementation-recipe-clone-boundary.json",
     "corpus/brain-knowledge/knowledge/ts-boundary-unknown-first-result-state.json",
-    "packages/harness/src/brain-knowledge-read-model.ts",
-    "packages/harness/src/brain-knowledge-read-model.test.ts",
+    "packages/harness/src/knowledge-read-model.ts",
+    "packages/harness/src/__tests__/knowledge-read-model.test.ts",
     "user-provided screenshots 2026-07-01: reference implementation, clone workflow, recipe hashing, and code-as-up-to-date-documentation practitioner notes"
   ],
   "evidenceRefs": [
-    "packages/harness/src/brain-knowledge-read-model-invariants.test.ts"
+    "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"
   ],
   "consumers": [
     "future TypeScript parser-boundary repairs",
-    "future brain knowledge catalog JSON changes",
+    "future knowledge catalog JSON changes",
     "future reference implementation recipe trials"
   ],
   "falsifier": "A future parser-boundary repair claims this exemplar while trusting external JSON directly, accepting missing proof-boundary fields, omitting invalid-enum tests, skipping deterministic search/readback proof, or treating the exemplar as a runtime clone system.",
