@@ -1,4 +1,5 @@
 import {
+  buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion,
   type CapabilityPlan,
   type ContextObservationPrefix,
@@ -537,6 +538,13 @@ export const buildDecisionPacketWithEngine = async (
     stronglyMatchesTask(decision, testCase)
   );
   const supportedGoverningDecisionIds = supportedGoverningRows.map((decision) => decision.id);
+  const sourceClaimIds = unique(supportedGoverningRows.map((decision) => decision.sourceClaimId));
+  const caveatedSourceClaimIds = unique(supportedGoverningRows
+    .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
+    .map((decision) => decision.sourceClaimId));
+  const sourceDecisionEdgeIds = unique(supportedGoverningRows.flatMap((decision) =>
+    nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
+  ));
   const staleDecisionIds = excludedDecisionIds(fixture, brief, testCase.staleDecisionIds);
   const rejectedPathIds = excludedDecisionIds(fixture, brief, testCase.rejectedDecisionIds);
   const sourceRejectionIds = unique(rejectedRows(fixture, rejectedPathIds).flatMap((decision) =>
@@ -546,19 +554,26 @@ export const buildDecisionPacketWithEngine = async (
     ...testCase.staleDecisionIds,
     ...testCase.rejectedDecisionIds
   ]);
+  const evidenceGaps = supportedGoverningDecisionIds.length === 0
+    ? [{
+        id: `evidence-gap:${testCase.id}:no-governing-decision`,
+        reason: "No current governed decision matched this task strongly enough to guide Codex.",
+        verificationRequired:
+          "Capture or promote source-backed decision evidence before turning this task into governing context."
+      }]
+    : [];
+  const severeStaleAuthorityIds = supportedGoverningDecisionIds.filter((id) =>
+    severeExpectedIds.has(id)
+  );
 
   return {
     formatVersion: decisionPacketFormatVersion,
     governingDecisionIds: supportedGoverningDecisionIds,
     governingStatements: unique(supportedGoverningRows.map((decision) => decision.statement).filter(nonEmpty)),
     taskStandardDecisions: taskStandardDecisionsFor(supportedGoverningRows),
-    sourceClaimIds: unique(supportedGoverningRows.map((decision) => decision.sourceClaimId)),
-    caveatedSourceClaimIds: unique(supportedGoverningRows
-      .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
-      .map((decision) => decision.sourceClaimId)),
-    sourceDecisionEdgeIds: unique(supportedGoverningRows.flatMap((decision) =>
-      nonEmpty(decision.sourceDecisionEdgeId) ? [decision.sourceDecisionEdgeId] : []
-    )),
+    sourceClaimIds,
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
     sourceRejectionIds,
     memoryRefs: unique(memoryRows
       .filter((decision) => supportedGoverningDecisionIds.includes(decision.id))
@@ -567,14 +582,17 @@ export const buildDecisionPacketWithEngine = async (
     rejectedPathIds,
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
     verificationCommands: evidenceContract.commands.map((command) => command.command),
-    evidenceGaps: supportedGoverningDecisionIds.length === 0
-      ? [{
-          id: `evidence-gap:${testCase.id}:no-governing-decision`,
-          reason: "No current governed decision matched this task strongly enough to guide Codex.",
-          verificationRequired:
-            "Capture or promote source-backed decision evidence before turning this task into governing context."
-        }]
-      : [],
+    evidenceGaps,
+    sourceConsensus: buildDecisionPacketSourceConsensus({
+      sourceClaimIds,
+      caveatedSourceClaimIds,
+      sourceDecisionEdgeIds,
+      staleDecisionIds,
+      rejectedPathIds,
+      sourceRejectionIds,
+      conflictedDecisionIds: severeStaleAuthorityIds,
+      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    }),
     doesNotProve: unique(supportedGoverningRows.map((decision) => decision.doesNotProve).filter(nonEmpty)),
     nonProofs: [
       "packet quality only",
@@ -582,7 +600,7 @@ export const buildDecisionPacketWithEngine = async (
       "does not prove source truth"
     ],
     noiseDecisionIds: supportedGoverningDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
-    severeStaleAuthorityIds: supportedGoverningDecisionIds.filter((id) => severeExpectedIds.has(id)),
+    severeStaleAuthorityIds,
     brief: {
       includedContextCount: brief.includedContext.length,
       observationPrefixCount: brief.observationPrefix.length,

@@ -193,6 +193,16 @@ describe("runDecisionPacketEval", () => {
         caveatedSourceClaimIds: [],
         sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
         sourceRejectionIds: expect.arrayContaining(["source-rejection:create-markdown-memory-files"]),
+        sourceConsensus: {
+          decisionLinkedSourceClaimIds: expect.arrayContaining(["source-claim:store-backed-memory-no-markdown"]),
+          caveatedSourceClaimIds: [],
+          sourceDecisionEdgeIds: expect.arrayContaining(["source-decision-edge:store-backed-memory-no-markdown"]),
+          staleDecisionIds: ["markdown-runtime-memory"],
+          rejectedPathIds: ["create-markdown-memory-files"],
+          sourceRejectionIds: expect.arrayContaining(["source-rejection:create-markdown-memory-files"]),
+          conflictedDecisionIds: [],
+          evidenceGapIds: []
+        },
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
         brief: {
           observationPrefixCount: 1
@@ -417,6 +427,18 @@ describe("runDecisionPacketEval", () => {
       falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
       verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
       evidenceGaps: [],
+      sourceConsensus: {
+        decisionLinkedSourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
+        caveatedSourceClaimIds: [],
+        sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
+        staleDecisionIds: ["cast-json-record"],
+        rejectedPathIds: ["prose-second-opinion"],
+        sourceRejectionIds: [],
+        conflictedDecisionIds: [],
+        evidenceGapIds: [],
+        doesNotProve:
+          "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
+      },
       doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
       nonProofs: ["packet quality only"],
       noiseDecisionIds: [],

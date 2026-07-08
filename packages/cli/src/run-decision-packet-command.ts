@@ -7,6 +7,7 @@ import type {
   SourceUsefulnessOutcome
 } from "@krn/core";
 import {
+  buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion
 } from "@krn/core";
 import type {
@@ -248,8 +249,30 @@ const compactDecisionPacket = (
 ): DecisionPacket => {
   const inclusions = readModel.context.inclusionDetails;
   const sourceClaimIds = sourceClaimIdsFor(readModel);
+  const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
+  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel);
   const governingDecisionIds = governingDecisionIdsFor(readModel);
   const staleDecisionIds = staleDecisionIdsFor(readModel);
+  const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
+  const rejectedPathIds = unique([
+    ...inclusions
+      .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
+      .map((inclusion) => inclusion.subjectId),
+    ...antiMemoryBlockedPathIdsFor(readModel),
+    ...sourceRejectionIds
+  ]);
+  const evidenceGaps = governingDecisionIds.length === 0
+    ? [{
+        id: `evidence-gap:${readModel.run.id}:no-governing-decision`,
+        reason: "No governed decision is present in this read-only packet.",
+        verificationRequired:
+          "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+      }]
+    : [];
+  const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
+    governingDecisionIds,
+    staleDecisionIds
+  });
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -257,39 +280,33 @@ const compactDecisionPacket = (
     governingStatements: governingStatementsFor(readModel),
     taskStandardDecisions: taskStandardDecisionsFor(readModel),
     sourceClaimIds,
-    caveatedSourceClaimIds: caveatedSourceClaimIdsFor(readModel),
-    sourceDecisionEdgeIds: sourceDecisionEdgeIdsFor(readModel),
-    sourceRejectionIds: rejectedSourceDecisionIdsFor(readModel),
+    caveatedSourceClaimIds,
+    sourceDecisionEdgeIds,
+    sourceRejectionIds,
     memoryRefs: unique(inclusions
       .filter((inclusion) => inclusion.subjectType === "memory_record")
       .map((inclusion) => inclusion.subjectId)),
     staleDecisionIds,
-    rejectedPathIds: unique([
-      ...inclusions
-        .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
-        .map((inclusion) => inclusion.subjectId),
-      ...antiMemoryBlockedPathIdsFor(readModel),
-      ...rejectedSourceDecisionIdsFor(readModel)
-    ]),
+    rejectedPathIds,
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)
     ),
     verificationCommands: verificationCommandsFor(readModel),
-    evidenceGaps: governingDecisionIds.length === 0
-      ? [{
-          id: `evidence-gap:${readModel.run.id}:no-governing-decision`,
-          reason: "No governed decision is present in this read-only packet.",
-          verificationRequired:
-            "Capture or promote source-backed decision evidence before treating this packet as task guidance."
-        }]
-      : [],
+    evidenceGaps,
+    sourceConsensus: buildDecisionPacketSourceConsensus({
+      sourceClaimIds,
+      caveatedSourceClaimIds,
+      sourceDecisionEdgeIds,
+      staleDecisionIds,
+      rejectedPathIds,
+      sourceRejectionIds,
+      conflictedDecisionIds: severeStaleAuthorityIds,
+      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    }),
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
     noiseDecisionIds: noiseDecisionIdsFor(readModel),
-    severeStaleAuthorityIds: severeStaleAuthorityIdsFor({
-      governingDecisionIds,
-      staleDecisionIds
-    }),
+    severeStaleAuthorityIds,
     brief: {
       includedContextCount: readModel.context.inclusions,
       observationPrefixCount: 0,

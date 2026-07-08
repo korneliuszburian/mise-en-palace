@@ -31,6 +31,48 @@ export interface DecisionPacketTaskStandard {
   doesNotProve: string;
 }
 
+export interface DecisionPacketSourceConsensus {
+  decisionLinkedSourceClaimIds: readonly string[];
+  caveatedSourceClaimIds: readonly string[];
+  sourceDecisionEdgeIds: readonly string[];
+  staleDecisionIds: readonly string[];
+  rejectedPathIds: readonly string[];
+  sourceRejectionIds: readonly string[];
+  conflictedDecisionIds: readonly string[];
+  evidenceGapIds: readonly string[];
+  doesNotProve: string;
+}
+
+const unique = (values: readonly string[]): string[] => [...new Set(values)];
+
+export const buildDecisionPacketSourceConsensus = (input: {
+  readonly sourceClaimIds: readonly string[];
+  readonly caveatedSourceClaimIds: readonly string[];
+  readonly sourceDecisionEdgeIds: readonly string[];
+  readonly staleDecisionIds: readonly string[];
+  readonly rejectedPathIds: readonly string[];
+  readonly sourceRejectionIds: readonly string[];
+  readonly conflictedDecisionIds: readonly string[];
+  readonly evidenceGapIds: readonly string[];
+}): DecisionPacketSourceConsensus => {
+  const caveatedSourceClaimIds = new Set(input.caveatedSourceClaimIds);
+
+  return {
+    decisionLinkedSourceClaimIds: unique(input.sourceClaimIds.filter((sourceClaimId) =>
+      !caveatedSourceClaimIds.has(sourceClaimId)
+    )),
+    caveatedSourceClaimIds: unique(input.caveatedSourceClaimIds),
+    sourceDecisionEdgeIds: unique(input.sourceDecisionEdgeIds),
+    staleDecisionIds: unique(input.staleDecisionIds),
+    rejectedPathIds: unique(input.rejectedPathIds),
+    sourceRejectionIds: unique(input.sourceRejectionIds),
+    conflictedDecisionIds: unique(input.conflictedDecisionIds),
+    evidenceGapIds: unique(input.evidenceGapIds),
+    doesNotProve:
+      "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
+  };
+};
+
 export interface DecisionPacket {
   formatVersion: DecisionPacketFormatVersion;
   governingDecisionIds: readonly string[];
@@ -46,6 +88,7 @@ export interface DecisionPacket {
   falsifiers: readonly string[];
   verificationCommands: readonly string[];
   evidenceGaps: readonly DecisionPacketEvidenceGap[];
+  sourceConsensus: DecisionPacketSourceConsensus;
   doesNotProve: readonly string[];
   nonProofs: readonly string[];
   noiseDecisionIds: readonly string[];

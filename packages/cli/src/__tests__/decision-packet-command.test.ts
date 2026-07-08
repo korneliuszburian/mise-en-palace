@@ -430,6 +430,22 @@ describe("decision packet CLI", () => {
         caveatedSourceClaimIds: ["claim-agent-caveated"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         sourceRejectionIds: ["source-decision-rejected-agent-1"],
+        sourceConsensus: {
+          decisionLinkedSourceClaimIds: ["claim-agent-1"],
+          caveatedSourceClaimIds: ["claim-agent-caveated"],
+          sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+          staleDecisionIds: [
+            "source-decision-stale-agent-1",
+            "source-decision-conflicted-agent-1"
+          ],
+          rejectedPathIds: [
+            "anti-memory-agent-1",
+            "source-decision-rejected-agent-1"
+          ],
+          sourceRejectionIds: ["source-decision-rejected-agent-1"],
+          conflictedDecisionIds: ["source-decision-conflicted-agent-1"],
+          evidenceGapIds: []
+        },
         memoryRefs: ["memory-agent-1"],
         staleDecisionIds: [
           "source-decision-stale-agent-1",
