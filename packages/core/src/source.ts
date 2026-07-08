@@ -49,22 +49,6 @@ export const sourceAuthorityLabels = [
 
 export type SourceAuthorityLabel = typeof sourceAuthorityLabels[number];
 
-export const sourceSupportTypes = [
-  "supports",
-  "contradicts",
-  "qualifies",
-  "background",
-  "does_not_support",
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary"
-] as const;
-
-export type SourceSupportType = typeof sourceSupportTypes[number];
-
 export type SourceSupportRelation =
   | "supports"
   | "contradicts"
@@ -82,16 +66,87 @@ export type SourceUse =
   | "eval-design"
   | "implementation-boundary";
 
-export interface SourceAuthority {
-  authorityRank: SourceAuthorityRank;
-  sourceKind: SourceKind;
-  rank: number;
-}
-
 export interface SourceSupportAssessment {
   relation: SourceSupportRelation;
   use: SourceUse;
   decisionGrade: boolean;
+}
+
+// Canonical support taxonomy. Public source-claim inputs and reflection source
+// candidates derive decision-grade support from this table instead of restating
+// a separate allowlist.
+const sourceSupportAssessmentByType = {
+  supports: {
+    relation: "supports",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  contradicts: {
+    relation: "contradicts",
+    use: "rejection",
+    decisionGrade: true
+  },
+  qualifies: {
+    relation: "qualifies",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  background: {
+    relation: "not_applicable",
+    use: "background",
+    decisionGrade: false
+  },
+  does_not_support: {
+    relation: "does_not_support",
+    use: "relation-only",
+    decisionGrade: false
+  },
+  mechanism: {
+    relation: "not_applicable",
+    use: "mechanism",
+    decisionGrade: true
+  },
+  decision: {
+    relation: "not_applicable",
+    use: "decision",
+    decisionGrade: true
+  },
+  risk: {
+    relation: "not_applicable",
+    use: "risk",
+    decisionGrade: true
+  },
+  rejection: {
+    relation: "not_applicable",
+    use: "rejection",
+    decisionGrade: true
+  },
+  "eval-design": {
+    relation: "not_applicable",
+    use: "eval-design",
+    decisionGrade: true
+  },
+  "implementation-boundary": {
+    relation: "not_applicable",
+    use: "implementation-boundary",
+    decisionGrade: true
+  }
+} as const satisfies Record<string, SourceSupportAssessment>;
+
+export type SourceSupportType = keyof typeof sourceSupportAssessmentByType;
+
+export const sourceSupportTypes = Object.keys(
+  sourceSupportAssessmentByType
+) as readonly SourceSupportType[];
+
+export const decisionGradeSourceSupportTypes: readonly SourceSupportType[] =
+  sourceSupportTypes.filter((supportType) =>
+    sourceSupportAssessmentByType[supportType].decisionGrade);
+
+export interface SourceAuthority {
+  authorityRank: SourceAuthorityRank;
+  sourceKind: SourceKind;
+  rank: number;
 }
 
 export interface SourceClaimTaxonomy {
@@ -264,6 +319,9 @@ export interface SourceRejection {
   rejectedAt: IsoTimestamp;
 }
 
+// Canonical authority ranking. Activation, override policy, and persistence
+// readback call through classifySourceAuthority/rankSourceAuthority instead of
+// maintaining package-local trust ladders.
 const sourceAuthorityByLabel: Record<SourceAuthorityLabel, SourceAuthority> = {
   high: { authorityRank: "high", sourceKind: "unspecified", rank: 85 },
   medium: { authorityRank: "medium", sourceKind: "unspecified", rank: 60 },
@@ -341,67 +399,6 @@ export const readSourceRelationMetadataReadback = (
   };
 };
 
-const sourceSupportAssessmentByType: Record<
-  SourceSupportType,
-  SourceSupportAssessment
-> = {
-  supports: {
-    relation: "supports",
-    use: "relation-only",
-    decisionGrade: false
-  },
-  contradicts: {
-    relation: "contradicts",
-    use: "rejection",
-    decisionGrade: true
-  },
-  qualifies: {
-    relation: "qualifies",
-    use: "relation-only",
-    decisionGrade: false
-  },
-  background: {
-    relation: "not_applicable",
-    use: "background",
-    decisionGrade: false
-  },
-  does_not_support: {
-    relation: "does_not_support",
-    use: "relation-only",
-    decisionGrade: false
-  },
-  mechanism: {
-    relation: "not_applicable",
-    use: "mechanism",
-    decisionGrade: true
-  },
-  decision: {
-    relation: "not_applicable",
-    use: "decision",
-    decisionGrade: true
-  },
-  risk: {
-    relation: "not_applicable",
-    use: "risk",
-    decisionGrade: true
-  },
-  rejection: {
-    relation: "not_applicable",
-    use: "rejection",
-    decisionGrade: true
-  },
-  "eval-design": {
-    relation: "not_applicable",
-    use: "eval-design",
-    decisionGrade: true
-  },
-  "implementation-boundary": {
-    relation: "not_applicable",
-    use: "implementation-boundary",
-    decisionGrade: true
-  }
-};
-
 export const assessSourceSupportType = (
   supportType: SourceSupportType
 ): SourceSupportAssessment => sourceSupportAssessmentByType[supportType];
@@ -420,10 +417,6 @@ export const classifySourceClaimTaxonomy = (
     decisionGrade: support.decisionGrade
   };
 };
-
-export const decisionGradeSourceSupportTypes: readonly SourceSupportType[] =
-  sourceSupportTypes.filter((supportType) =>
-    assessSourceSupportType(supportType).decisionGrade);
 
 const decisionGradeSourceSupportTypeSet = new Set<SourceSupportType>(
   decisionGradeSourceSupportTypes

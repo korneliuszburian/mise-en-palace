@@ -18,7 +18,7 @@ import type {
   SourceLineageRef
 } from "@krn/core";
 import {
-  sourceSupportTypes,
+  decisionGradeSourceSupportTypes,
   sourceAuthorityLabels
 } from "@krn/core";
 
@@ -87,7 +87,9 @@ const memoryKinds = new Set<string>([
 
 const sourceAuthorityLabelSet = new Set<string>(sourceAuthorityLabels);
 
-const sourceSupportTypeSet = new Set<string>(sourceSupportTypes);
+const decisionGradeSourceSupportTypeSet = new Set<string>(
+  decisionGradeSourceSupportTypes
+);
 
 const reflectionFindingKinds = new Set<string>([
   "candidate_signal",
@@ -143,7 +145,7 @@ const isReflectionSourceAuthorityLabel = (
 const isReflectionSourceSupportType = (
   value: unknown
 ): value is ReflectionSourceClaimCandidateProposal["supportType"] =>
-  typeof value === "string" && sourceSupportTypeSet.has(value);
+  typeof value === "string" && decisionGradeSourceSupportTypeSet.has(value);
 
 const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {

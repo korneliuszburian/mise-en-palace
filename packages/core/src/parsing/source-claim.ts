@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  decisionGradeSourceSupportTypes,
   sourceAuthorityLabels
 } from "../source.js";
 import {
@@ -19,14 +20,7 @@ export const SourceArtifactKindSchema = z.enum([
 
 export const SourceAuthorityLabelSchema = z.enum(sourceAuthorityLabels);
 
-export const SourceSupportTypeSchema = z.enum([
-  "mechanism",
-  "decision",
-  "risk",
-  "rejection",
-  "eval-design",
-  "implementation-boundary"
-]);
+export const SourceSupportTypeSchema = z.enum(decisionGradeSourceSupportTypes);
 
 export const SourceClaimStatusSchema = z.enum([
   "proposed",

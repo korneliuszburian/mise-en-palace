@@ -66,7 +66,40 @@ describe("DrizzleReflectionRepository", () => {
           },
           metadata: {}
         }],
-        sourceClaimCandidates: [],
+        sourceClaimCandidates: [
+          {
+            claim: "Decision-grade reflection source candidate stays reviewable.",
+            mechanism: "Reflection preserved source-to-decision fields with evidence.",
+            krnImplication: "The source candidate can be reviewed without becoming authority.",
+            doesNotProve: "This does not prove the source claim is accepted truth.",
+            sourceAuthority: "project-decision",
+            supportType: "implementation-boundary",
+            consumer: "reflection readback mapper",
+            falsifier: "Decision-grade source candidates disappear from reflection readback.",
+            evidence: {
+              provenance: "operator_reported",
+              evidenceRefs: ["evidence-bundle-1:commands"],
+              doesNotProve: "This does not prove source truth."
+            },
+            metadata: {}
+          },
+          {
+            claim: "Decorative reflection source candidate is only background.",
+            mechanism: "Decorative background does not imply KRN behavior.",
+            krnImplication: "The candidate should not enter source claim review.",
+            doesNotProve: "This does not prove source truth.",
+            sourceAuthority: "project-decision",
+            supportType: "background",
+            consumer: "reflection readback mapper",
+            falsifier: "Background source candidates enter source claim review.",
+            evidence: {
+              provenance: "operator_reported",
+              evidenceRefs: ["evidence-bundle-1:background"],
+              doesNotProve: "This does not prove source truth."
+            },
+            metadata: {}
+          }
+        ],
         antiMemoryCandidates: [],
         policyCandidates: [],
         evalCandidates: [],
@@ -87,6 +120,12 @@ describe("DrizzleReflectionRepository", () => {
           evidenceRefs: ["evidence-bundle-1:commands"],
           doesNotProve: "This does not prove Memory Core truth."
         }
+      })
+    ]);
+    expect(record.output.sourceClaimCandidates).toEqual([
+      expect.objectContaining({
+        claim: "Decision-grade reflection source candidate stays reviewable.",
+        supportType: "implementation-boundary"
       })
     ]);
   });

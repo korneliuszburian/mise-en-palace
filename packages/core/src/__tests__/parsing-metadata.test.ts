@@ -28,6 +28,20 @@ const expectPrivateReasoningMetadataRejection = (parse: () => unknown): void => 
 };
 
 describe("public parser metadata boundaries", () => {
+  test("reject decorative source support at public source claim boundaries", () => {
+    expect(() => parseSourceClaimInput({
+      claim: "Background links are not decision authority.",
+      mechanism: "Background material has no direct KRN behavior implication.",
+      krnImplication: "SourceClaim input must keep decorative context out of decision authority.",
+      doesNotProve: "This does not prove source truth.",
+      sourceAuthority: "project-decision",
+      supportType: "background",
+      consumer: "source claim parser",
+      falsifier: "A public source claim accepts background as decision support.",
+      metadata: {}
+    })).toThrow(ZodError);
+  });
+
   test("reject private reasoning metadata by default", () => {
     const metadata = {
       privateReasoning: "do not persist model-private reasoning"

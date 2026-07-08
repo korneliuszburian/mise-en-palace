@@ -9,6 +9,7 @@ import {
   buildSourceConsensusTimelineReadback,
   classifySourceAuthority,
   classifySourceClaimTaxonomy,
+  decisionGradeSourceSupportTypes,
   isSourceClaimTemporallyValid,
   rankSourceAuthority,
   readSourceRelationMetadataReadback,
@@ -732,6 +733,18 @@ describe("source review signals", () => {
   });
 
   test("projects source support from the canonical support table", () => {
+    expect(decisionGradeSourceSupportTypes).toEqual([
+      "contradicts",
+      "mechanism",
+      "decision",
+      "risk",
+      "rejection",
+      "eval-design",
+      "implementation-boundary"
+    ]);
+    expect(decisionGradeSourceSupportTypes.every((supportType) =>
+      assessSourceSupportType(supportType).decisionGrade
+    )).toBe(true);
     expect(assessSourceSupportType("implementation-boundary")).toEqual({
       relation: "not_applicable",
       use: "implementation-boundary",
