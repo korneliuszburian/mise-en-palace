@@ -778,7 +778,7 @@ The current P1 direction is:
 3. Build the notes-baseline decision-packet eval.
 4. Move usefulness feedback to store-backed events.
 5. Prove second-repo dry run.
-6. Rename/downscope maintenance preview contracts so naming matches candidate-only behavior.
+6. Run the first external consumer proof through the minimal DecisionPacket surface.
 
 Beads is the durable source for exact issue IDs, dependencies, and status.
 

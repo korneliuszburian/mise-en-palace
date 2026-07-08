@@ -43,23 +43,4 @@ describe("maintenance queue mappers", () => {
       updatedAt: "2026-06-22T09:05:00.000Z"
     });
   });
-
-  it("rejects legacy DB-only statuses from the active maintenance queue lifecycle", () => {
-    expect(() =>
-      mapMaintenanceQueue({
-        id: "maintenance-queue-legacy",
-        jobType: "compact_memory",
-        status: "dead_letter",
-        payload: {},
-        attempts: 2,
-        maxAttempts: 3,
-        runAfter,
-        lockedAt: null,
-        lockedBy: null,
-        lastError: "legacy state",
-        createdAt,
-        updatedAt
-      })
-    ).toThrow("Unsupported maintenance queue status: dead_letter");
-  });
 });

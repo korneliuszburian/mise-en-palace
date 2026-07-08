@@ -75,7 +75,7 @@ export const maintenanceQueueSmokeTransitionPlan = (
 const countMarkerRows = async (client: Sql, marker: string): Promise<number> => {
   const rows = await client<CountRow[]>`
     select count(*)::int as count
-    from worker_jobs
+    from maintenance_queue_records
     where payload->>'smokeId' = ${marker}
   `;
 
@@ -84,7 +84,7 @@ const countMarkerRows = async (client: Sql, marker: string): Promise<number> => 
 
 const deleteMarkerRows = async (client: Sql, marker: string): Promise<void> => {
   await client`
-    delete from worker_jobs
+    delete from maintenance_queue_records
     where payload->>'smokeId' = ${marker}
   `;
 };

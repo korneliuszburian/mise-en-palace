@@ -19,6 +19,8 @@ import { executionRuns } from "./harness.js";
 const attemptsColumn = () => integer("attempts").notNull().default(0);
 const availableAtColumn = () =>
   timestamp("available_at", { withTimezone: true }).notNull().defaultNow();
+const runAfterColumn = () =>
+  timestamp("run_after", { withTimezone: true }).notNull().defaultNow();
 const lockedAtColumn = () => timestamp("locked_at", { withTimezone: true });
 const lockedByColumn = () => text("locked_by");
 const lastErrorColumn = () => text("last_error");
@@ -38,14 +40,12 @@ export const outboxEventStatus = pgEnum("outbox_event_status", [
   "dead_letter"
 ]);
 
-export const maintenanceQueueStatus = pgEnum("worker_job_status", [
+export const maintenanceQueueStatus = pgEnum("maintenance_queue_status", [
   "queued",
   "running",
   "succeeded",
   "failed",
-  "skipped",
-  "dead_letter",
-  "cancelled"
+  "skipped"
 ]);
 
 export const runEvents = pgTable(
@@ -92,15 +92,15 @@ export const outboxEvents = pgTable(
 );
 
 export const maintenanceQueues = pgTable(
-  "worker_jobs",
+  "maintenance_queue_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    jobType: text("type").notNull(),
+    jobType: text("job_type").notNull(),
     status: maintenanceQueueStatus("status").notNull().default("queued"),
     payload: jsonObjectColumn("payload"),
     attempts: attemptsColumn(),
     maxAttempts: integer("max_attempts").notNull().default(3),
-    runAfter: availableAtColumn(),
+    runAfter: runAfterColumn(),
     lockedAt: lockedAtColumn(),
     lockedBy: lockedByColumn(),
     lastError: lastErrorColumn(),
@@ -108,7 +108,7 @@ export const maintenanceQueues = pgTable(
     updatedAt: updatedAtColumn()
   },
   (table) => [
-    index("worker_jobs_type_idx").on(table.jobType),
-    index("worker_jobs_status_available_at_idx").on(table.status, table.runAfter)
+    index("maintenance_queue_records_job_type_idx").on(table.jobType),
+    index("maintenance_queue_records_status_run_after_idx").on(table.status, table.runAfter)
   ]
 );

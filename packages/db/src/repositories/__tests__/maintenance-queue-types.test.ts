@@ -33,10 +33,7 @@ describe("maintenance queue repository type ownership", () => {
     ]);
   });
 
-  it("keeps schema-only legacy statuses outside the active repository lifecycle", () => {
-    expect(maintenanceQueueStatus.enumValues).toContain("dead_letter");
-    expect(maintenanceQueueStatus.enumValues).toContain("cancelled");
-    expect(maintenanceQueueLifecycleStatuses).not.toContain("dead_letter");
-    expect(maintenanceQueueLifecycleStatuses).not.toContain("cancelled");
+  it("keeps the schema status enum aligned with the active repository lifecycle", () => {
+    expect(maintenanceQueueStatus.enumValues).toEqual(maintenanceQueueLifecycleStatuses);
   });
 });
