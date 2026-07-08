@@ -53,6 +53,7 @@ export interface DecisionPacketSourceConsensus {
   sourceDecisionEdgeIds: readonly string[];
   sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   staleDecisionIds: readonly string[];
+  supersededPathIds: readonly string[];
   rejectedPathIds: readonly string[];
   sourceRejectionIds: readonly string[];
   conflictedDecisionIds: readonly string[];
@@ -110,6 +111,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceDecisionEdgeIds: readonly string[];
   readonly sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   readonly staleDecisionIds: readonly string[];
+  readonly supersededPathIds: readonly string[];
   readonly rejectedPathIds: readonly string[];
   readonly sourceRejectionIds: readonly string[];
   readonly conflictedDecisionIds: readonly string[];
@@ -125,6 +127,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
     sourceDecisionEdgeIds: unique(input.sourceDecisionEdgeIds),
     sourceDecisionTargets: input.sourceDecisionTargets,
     staleDecisionIds: unique(input.staleDecisionIds),
+    supersededPathIds: unique(input.supersededPathIds),
     rejectedPathIds: unique(input.rejectedPathIds),
     sourceRejectionIds: unique(input.sourceRejectionIds),
     conflictedDecisionIds: unique(input.conflictedDecisionIds),
@@ -223,6 +226,7 @@ export interface DecisionPacket {
   staleKnowledgeIds: readonly string[];
   noiseKnowledgeIds: readonly string[];
   unknownKnowledgeIds: readonly string[];
+  supersededPathIds: readonly string[];
   rejectedPathIds: readonly string[];
   falsifiers: readonly string[];
   verificationCommands: readonly string[];
@@ -605,19 +609,22 @@ const antiMemoryBlockedPathIdsFor = (
     : []
 ) ?? []);
 
-const rejectedSourceClaimExclusionReasons = new Set([
+const nonGoverningSourceClaimExclusionReasons = new Set([
   "invalidated",
   "stale",
   "superseded",
   "unsafe"
 ]);
 
-const rejectedSourceClaimExclusionIdsFor = (
-  readModel: DecisionPacketReadModelInput
+const supersededSourceClaimExclusionReasons = new Set(["superseded"]);
+
+const sourceClaimExclusionIdsFor = (
+  readModel: DecisionPacketReadModelInput,
+  reasons: ReadonlySet<string>
 ): string[] => unique(readModel.context.exclusionDetails
   ?.filter((exclusion) =>
     exclusion.subjectType === "source_claim" &&
-    rejectedSourceClaimExclusionReasons.has(exclusion.reason)
+    reasons.has(exclusion.reason)
   )
   .map((exclusion) => exclusion.subjectId) ?? []);
 
@@ -729,12 +736,16 @@ export const buildDecisionPacketFromReadModel = (
     ...memoryRefsWithPendingAntiMemoryReview(readModel)
   ]);
   const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
+  const supersededPathIds = sourceClaimExclusionIdsFor(
+    readModel,
+    supersededSourceClaimExclusionReasons
+  );
   const rejectedPathIds = unique([
     ...inclusions
       .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
       .map((inclusion) => inclusion.subjectId),
     ...antiMemoryBlockedPathIdsFor(readModel),
-    ...rejectedSourceClaimExclusionIdsFor(readModel),
+    ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons),
     ...sourceRejectionIds,
     ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
   ]);
@@ -762,6 +773,7 @@ export const buildDecisionPacketFromReadModel = (
     sourceDecisionEdgeIds,
     sourceDecisionTargets,
     staleDecisionIds,
+    supersededPathIds,
     rejectedPathIds,
     sourceRejectionIds,
     conflictedDecisionIds: severeStaleAuthorityIds,
@@ -784,6 +796,7 @@ export const buildDecisionPacketFromReadModel = (
     staleKnowledgeIds,
     noiseKnowledgeIds,
     unknownKnowledgeIds,
+    supersededPathIds,
     rejectedPathIds,
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)

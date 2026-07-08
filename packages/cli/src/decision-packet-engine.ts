@@ -587,6 +587,7 @@ export const buildDecisionPacketWithEngine = async (
     sourceDecisionEdgeIds,
     sourceDecisionTargets,
     staleDecisionIds,
+    supersededPathIds: [],
     rejectedPathIds,
     sourceRejectionIds
   };
@@ -614,6 +615,7 @@ export const buildDecisionPacketWithEngine = async (
     staleKnowledgeIds: [],
     noiseKnowledgeIds: [],
     unknownKnowledgeIds: [],
+    supersededPathIds: [],
     rejectedPathIds,
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
     verificationCommands: evidenceContract.commands.map((command) => command.command),

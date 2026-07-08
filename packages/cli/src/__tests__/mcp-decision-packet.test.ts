@@ -60,6 +60,7 @@ const packetJson = {
     sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],
     memoryRefs: ["memory:decision:frontend-project-standard-packet"],
     staleDecisionIds: ["generic-frontend-starter-default"],
+    supersededPathIds: [],
     rejectedPathIds: ["install-latest-frontend-stack"],
     falsifiers: ["DecisionPacket omits the governed frontend standard."],
     verificationCommands: ["pnpm --filter frontend test"],
@@ -74,6 +75,7 @@ const packetJson = {
         sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"]
       }],
       staleDecisionIds: ["generic-frontend-starter-default"],
+      supersededPathIds: [],
       rejectedPathIds: ["install-latest-frontend-stack"],
       sourceRejectionIds: ["source-rejection:install-latest-frontend-stack"],
       conflictedDecisionIds: [],

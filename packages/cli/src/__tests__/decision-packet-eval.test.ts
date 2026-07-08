@@ -490,6 +490,7 @@ describe("runDecisionPacketEval", () => {
       staleKnowledgeIds: [],
       noiseKnowledgeIds: [],
       unknownKnowledgeIds: [],
+      supersededPathIds: [],
       rejectedPathIds: ["prose-second-opinion"],
       falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
       verificationCommands: ["pnpm --filter @krn/cli test -- decision-packet-eval"],
@@ -504,6 +505,7 @@ describe("runDecisionPacketEval", () => {
           sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"]
         }],
         staleDecisionIds: ["cast-json-record"],
+        supersededPathIds: [],
         rejectedPathIds: ["prose-second-opinion"],
         sourceRejectionIds: [],
         conflictedDecisionIds: [],

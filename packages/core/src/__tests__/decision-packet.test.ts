@@ -253,6 +253,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.staleKnowledgeIds).toEqual(["memory-current"]);
     expect(packet.noiseKnowledgeIds).toEqual(["memory-noise"]);
     expect(packet.unknownKnowledgeIds).toEqual(["memory-unknown"]);
+    expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
     expect(packet.rejectedPathIds).toEqual([
       "anti-memory-superseded-template",
       "claim-superseded",
@@ -268,6 +269,7 @@ describe("DecisionPacket builder", () => {
       "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
     ]);
     expect(packet.rejectedPathIds).not.toContain("anti-memory-candidate-pending-feedback");
+    expect(packet.sourceConsensus.supersededPathIds).toEqual(["claim-superseded"]);
     expect(packet.sourceConsensus.evidenceGapIds).toEqual(packet.evidenceGaps.map((gap) => gap.id));
     expect(packet.abstentionScore).toMatchObject({
       status: "abstain",

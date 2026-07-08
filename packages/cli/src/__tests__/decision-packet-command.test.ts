@@ -486,6 +486,7 @@ describe("decision packet CLI", () => {
             "source-decision-stale-agent-1",
             "source-decision-conflicted-agent-1"
           ],
+          supersededPathIds: ["claim-agent-superseded"],
           rejectedPathIds: [
             "anti-memory-agent-1",
             "claim-agent-superseded",
@@ -526,6 +527,7 @@ describe("decision packet CLI", () => {
           "source-decision-stale-agent-1",
           "source-decision-conflicted-agent-1"
         ],
+        supersededPathIds: ["claim-agent-superseded"],
         rejectedPathIds: [
           "anti-memory-agent-1",
           "claim-agent-superseded",
