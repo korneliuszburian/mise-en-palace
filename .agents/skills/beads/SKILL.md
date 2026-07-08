@@ -53,11 +53,42 @@ bd update <id> --claim
 bd create "Short title" --description="Why this exists and what needs to be done" --type=task --priority=2
 ```
 
-5. Close completed work:
+5. Wire blocking edges when one issue must finish before another can start:
+
+```bash
+bd dep <blocker-id> --blocks <blocked-id>
+```
+
+6. Close completed work:
 
 ```bash
 bd close <id> --reason="Completed"
 ```
+
+## Planning Work
+
+When turning a roadmap slice, audit, spec, or conversation into Beads, create
+Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
+planning artifact.
+
+Use tracer-bullet issues for product work:
+
+- each issue delivers one narrow, verifiable path through the affected runtime
+  boundary;
+- each issue fits one fresh agent context;
+- each issue states acceptance criteria and proof/non-proof boundaries;
+- blockers are native Beads dependencies, not prose-only references;
+- the frontier is `bd ready`: open work whose blockers are done.
+
+Use expand-contract for wide refactors:
+
+1. expand the new form beside the old only when a single green slice cannot
+   migrate the blast radius safely;
+2. migrate callers in batches sized by package, directory, or public boundary;
+3. contract the old form only after `rg` and typecheck prove no caller remains.
+
+If a planned issue has no runtime consumer, falsifier, or owner, reject it or
+record it as a question before creating implementation work.
 
 ## Workflow
 
