@@ -23,6 +23,21 @@ export type SourceConsensusTimelineEntryState =
   | "historical"
   | "rejected";
 
+export type SourceConsensusRelationEvidenceDirection = "incoming" | "outgoing";
+
+export type SourceConsensusRelationEvidenceGap = "missing_relation_support_ref";
+
+export interface SourceConsensusRelationEvidence {
+  sourceClaimEdgeId: SourceClaimEdge["id"];
+  direction: SourceConsensusRelationEvidenceDirection;
+  kind: SourceClaimEdgeKind;
+  relatedSourceClaimId: SourceClaim["id"];
+  metadataEvidenceRefs: readonly string[];
+  metadataSourceDecisionRef?: string;
+  sourceRanges: readonly string[];
+  evidenceGaps: readonly SourceConsensusRelationEvidenceGap[];
+}
+
 export interface SourceConsensusTimelineEntry {
   sourceClaimId: SourceClaim["id"];
   claim: string;
@@ -37,6 +52,7 @@ export interface SourceConsensusTimelineEntry {
   evidenceRefs: readonly string[];
   rawEvidenceCitationRefs: readonly string[];
   sourceRanges: readonly string[];
+  relationEvidence: readonly SourceConsensusRelationEvidence[];
   supportingSourceClaimIds: readonly SourceClaim["id"][];
   dissentingSourceClaimIds: readonly SourceClaim["id"][];
   supersededBySourceClaimIds: readonly SourceClaim["id"][];
@@ -224,6 +240,42 @@ const readRawEvidenceCitationRef = (
     : undefined;
 };
 
+const sourceConsensusRelationEvidenceForEdge = (
+  edge: SourceClaimEdge,
+  direction: SourceConsensusRelationEvidenceDirection
+): SourceConsensusRelationEvidence => {
+  const metadata = readSourceRelationMetadataReadback(edge.metadata);
+  const relatedSourceClaimId =
+    direction === "incoming" ? edge.fromSourceClaimId : edge.toSourceClaimId;
+  const hasSupportRef =
+    metadata.evidenceRefs.length > 0 || metadata.sourceDecisionRef !== undefined;
+
+  return {
+    sourceClaimEdgeId: edge.id,
+    direction,
+    kind: edge.kind,
+    relatedSourceClaimId,
+    metadataEvidenceRefs: metadata.evidenceRefs,
+    ...(metadata.sourceDecisionRef === undefined
+      ? {}
+      : { metadataSourceDecisionRef: metadata.sourceDecisionRef }),
+    sourceRanges: metadata.sourceRanges,
+    evidenceGaps: hasSupportRef ? [] : ["missing_relation_support_ref"]
+  };
+};
+
+const sourceConsensusRelationEvidence = (input: {
+  readonly incomingEdges: readonly SourceClaimEdge[];
+  readonly outgoingEdges: readonly SourceClaimEdge[];
+}): readonly SourceConsensusRelationEvidence[] => [
+  ...input.incomingEdges.map((edge) =>
+    sourceConsensusRelationEvidenceForEdge(edge, "incoming")
+  ),
+  ...input.outgoingEdges.map((edge) =>
+    sourceConsensusRelationEvidenceForEdge(edge, "outgoing")
+  )
+];
+
 const isUnknownSourceConsensusEntry = (
   entry: SourceConsensusTimelineEntry
 ): boolean => {
@@ -360,6 +412,10 @@ const sourceConsensusTimelineEntryForClaim = (input: {
   });
   const claimMetadata = readSourceRelationMetadataReadback(input.claim.metadata);
   const rawEvidenceCitationRef = readRawEvidenceCitationRef(input.claim.metadata);
+  const relationEvidence = sourceConsensusRelationEvidence({
+    incomingEdges: input.incomingEdges,
+    outgoingEdges: input.outgoingEdges
+  });
 
   return {
     sourceClaimId: input.claim.id,
@@ -379,6 +435,7 @@ const sourceConsensusTimelineEntryForClaim = (input: {
       ? []
       : [rawEvidenceCitationRef],
     sourceRanges: claimMetadata.sourceRanges,
+    relationEvidence,
     supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
       input.incomingEdges,
       supportEdgeKinds,

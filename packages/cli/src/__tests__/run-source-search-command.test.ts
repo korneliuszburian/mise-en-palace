@@ -1249,13 +1249,18 @@ describe("runSourceSearchCommand", () => {
             id: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46" as SourceClaimEdge["id"],
             fromSourceClaimId: currentClaimId,
             toSourceClaimId: staleClaimId,
-            kind: "supersedes"
+            kind: "supersedes",
+            metadata: {
+              evidenceRef: "KRN_ROADMAP.md#phase-5-temporal-consensus",
+              sourceDecisionRef: "source-decision:temporal-claim-graph"
+            }
           }),
           sourceClaimEdge({
             id: "93c0eb08-fc5a-4a7d-aa79-a930d42f8062" as SourceClaimEdge["id"],
             fromSourceClaimId: rejectedClaimId,
             toSourceClaimId: currentClaimId,
-            kind: "contradicts"
+            kind: "contradicts",
+            metadata: {}
           })
         ],
         decisionEdges: [
@@ -1304,11 +1309,40 @@ describe("runSourceSearchCommand", () => {
       state: "current_authority",
       decisionSupportEdgeIds: ["9f87a7f4-0bf1-4796-8a46-3bda94cbb221"],
       dissentingSourceClaimIds: [rejectedClaimId],
-      supersedesSourceClaimIds: [staleClaimId]
+      supersedesSourceClaimIds: [staleClaimId],
+      relationEvidence: expect.arrayContaining([
+        expect.objectContaining({
+          sourceClaimEdgeId: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46",
+          direction: "outgoing",
+          kind: "supersedes",
+          relatedSourceClaimId: staleClaimId,
+          metadataEvidenceRefs: ["KRN_ROADMAP.md#phase-5-temporal-consensus"],
+          metadataSourceDecisionRef: "source-decision:temporal-claim-graph",
+          evidenceGaps: []
+        }),
+        expect.objectContaining({
+          sourceClaimEdgeId: "93c0eb08-fc5a-4a7d-aa79-a930d42f8062",
+          direction: "incoming",
+          kind: "contradicts",
+          relatedSourceClaimId: rejectedClaimId,
+          evidenceGaps: ["missing_relation_support_ref"]
+        })
+      ])
     });
     expect(entryFor(staleClaimId)).toMatchObject({
       state: "historical",
       supersededBySourceClaimIds: [currentClaimId],
+      relationEvidence: expect.arrayContaining([
+        expect.objectContaining({
+          sourceClaimEdgeId: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46",
+          direction: "incoming",
+          kind: "supersedes",
+          relatedSourceClaimId: currentClaimId,
+          metadataEvidenceRefs: ["KRN_ROADMAP.md#phase-5-temporal-consensus"],
+          metadataSourceDecisionRef: "source-decision:temporal-claim-graph",
+          evidenceGaps: []
+        })
+      ]),
       caveats: expect.arrayContaining([
         "stale",
         `superseded_by:${currentClaimId}`

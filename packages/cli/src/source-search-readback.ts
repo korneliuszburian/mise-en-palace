@@ -84,6 +84,23 @@ const formatSourceDecisionSupport = (
 const commaList = (values: readonly string[]): string =>
   values.length === 0 ? "none" : values.join(",");
 
+const formatConsensusRelationEvidence = (
+  relationEvidence: SourceSearchAnswerPackage["consensusReadback"]["entries"][number]["relationEvidence"]
+): string =>
+  relationEvidence.length === 0
+    ? "none"
+    : relationEvidence.map((relation) =>
+        [
+          relation.sourceClaimEdgeId,
+          `direction=${relation.direction}`,
+          `kind=${relation.kind}`,
+          `related=${relation.relatedSourceClaimId}`,
+          `evidenceRefs=${commaList(relation.metadataEvidenceRefs)}`,
+          `metadataSourceDecisionRef=${relation.metadataSourceDecisionRef ?? "none"}`,
+          `gaps=${commaList(relation.evidenceGaps)}`
+        ].join("/")
+      ).join(";");
+
 const formatConsensusReadback = (
   answerPackage: SourceSearchAnswerPackage
 ): readonly string[] => [
@@ -108,6 +125,7 @@ const formatConsensusReadback = (
           ` supports:${commaList(entry.supportingSourceClaimIds)}`,
           ` conflicts:${commaList(entry.dissentingSourceClaimIds)}`,
           ` supersededBy:${commaList(entry.supersededBySourceClaimIds)}`,
+          ` relationEvidence:${formatConsensusRelationEvidence(entry.relationEvidence)}`,
           ` rejections:${commaList(entry.rejectionIds)}`,
           ` caveats:${commaList(entry.caveats)}`
         ].join("")

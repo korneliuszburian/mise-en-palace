@@ -446,7 +446,12 @@ describe("source review signals", () => {
           id: "edge-current-supersedes-old",
           fromSourceClaimId: currentStandard.id,
           toSourceClaimId: oldStandard.id,
-          kind: "supersedes"
+          kind: "supersedes",
+          metadata: {
+            evidenceRef: "source-artifact:edge-current-supersedes-old",
+            sourceDecisionRef: "source-decision-edge:current-supersedes-old",
+            sourceRanges: ["forum_post:frontend-template-consensus#char=85-130"]
+          }
         }),
         sourceClaimEdge({
           id: "edge-rejected-contradicts-current",
@@ -516,6 +521,25 @@ describe("source review signals", () => {
       dissentingSourceClaimIds: ["claim-rejected"],
       supersededBySourceClaimIds: [],
       supersedesSourceClaimIds: ["claim-old-standard"],
+      relationEvidence: expect.arrayContaining([
+        expect.objectContaining({
+          sourceClaimEdgeId: "edge-current-supersedes-old",
+          direction: "outgoing",
+          kind: "supersedes",
+          relatedSourceClaimId: "claim-old-standard",
+          metadataEvidenceRefs: ["source-artifact:edge-current-supersedes-old"],
+          metadataSourceDecisionRef: "source-decision-edge:current-supersedes-old",
+          sourceRanges: ["forum_post:frontend-template-consensus#char=85-130"],
+          evidenceGaps: []
+        }),
+        expect.objectContaining({
+          sourceClaimEdgeId: "edge-rejected-supersedes-current",
+          direction: "incoming",
+          kind: "supersedes",
+          relatedSourceClaimId: "claim-rejected",
+          evidenceGaps: ["missing_relation_support_ref"]
+        })
+      ]),
       caveats: []
     });
     expect(readback.entries.find((entry) =>
@@ -523,6 +547,17 @@ describe("source review signals", () => {
     )).toMatchObject({
       state: "historical",
       supersededBySourceClaimIds: ["claim-current-standard"],
+      relationEvidence: expect.arrayContaining([
+        expect.objectContaining({
+          sourceClaimEdgeId: "edge-current-supersedes-old",
+          direction: "incoming",
+          kind: "supersedes",
+          relatedSourceClaimId: "claim-current-standard",
+          metadataEvidenceRefs: ["source-artifact:edge-current-supersedes-old"],
+          metadataSourceDecisionRef: "source-decision-edge:current-supersedes-old",
+          evidenceGaps: []
+        })
+      ]),
       caveats: expect.arrayContaining([
         "missing_source_decision_support",
         "superseded_by:claim-current-standard"
