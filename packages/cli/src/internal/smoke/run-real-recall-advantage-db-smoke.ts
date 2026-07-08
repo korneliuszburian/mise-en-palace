@@ -98,7 +98,7 @@ const realDecisions: readonly RealRecallAdvantageDecision[] = [
     claim:
       "KRN maintenance preview must stay contract and readback only; reject a worker daemon, background loop, or job executor until a named product loop requires runtime execution.",
     mechanism:
-      "A contract and readback only maintenance-preview package keeps memory maintenance candidate-only and reviewable instead of implying an autonomous worker daemon, background loop, or job executor.",
+      "A contract and readback only maintenance-preview package keeps memory maintenance candidate-only and reviewable instead of implying an autonomous maintenance daemon, background loop, or job executor.",
     implication:
       "When asked whether to build a worker daemon or background loop for memory maintenance, KRN should select the contract and readback only decision.",
     consumer: "maintenance runtime boundary",

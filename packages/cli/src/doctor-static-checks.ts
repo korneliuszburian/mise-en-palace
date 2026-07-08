@@ -6,7 +6,7 @@ import {
 } from "@krn/codex-adapter";
 import {
   DrizzleProjectRepository,
-  DrizzleWorkerJobRepository
+  DrizzleMaintenanceQueueRepository
 } from "@krn/db/adapters";
 import {
   runInitConnectSmokeCheck
@@ -16,8 +16,8 @@ import {
   projectKernels,
   projects,
   repoInstallations,
-  workerJobs as maintenanceQueueTable,
-  workerJobStatus
+  maintenanceQueues as maintenanceQueueTable,
+  maintenanceQueueStatus
 } from "@krn/db/schema";
 import {
   maintenanceJobPersistenceContract
@@ -159,7 +159,7 @@ const hasRedisOrKafkaDependency = (dependencyText: string): boolean =>
     "kafkajs"
   ].some((fragment) => dependencyText.includes(fragment));
 
-const hasBroadWorkerDaemon = async (
+const hasAutonomousMaintenanceDaemon = async (
   repoRoot: string
 ): Promise<boolean> => await pathExistsAny([
     path.join(repoRoot, "packages", "worker-daemon"),
@@ -167,38 +167,38 @@ const hasBroadWorkerDaemon = async (
     path.join(repoRoot, "packages", "job-runner")
   ]);
 
-const workerRepositoryMethods = [
-  "enqueueWorkerJob",
-  "listQueuedWorkerJobs",
-  "markWorkerJobRunning",
-  "markWorkerJobSucceeded",
-  "markWorkerJobSkipped",
-  "markWorkerJobFailed",
-  "cleanupTestWorkerJobs"
+const maintenanceQueueRepositoryMethods = [
+  "enqueueMaintenanceQueue",
+  "listQueuedMaintenanceQueues",
+  "markMaintenanceQueueRunning",
+  "markMaintenanceQueueSucceeded",
+  "markMaintenanceQueueSkipped",
+  "markMaintenanceQueueFailed",
+  "cleanupTestMaintenanceQueues"
 ] as const;
 
-const workerJobSchemaPresent = (): boolean =>
+const maintenanceQueueSchemaPresent = (): boolean =>
   maintenanceQueueTable !== undefined &&
   outboxEvents !== undefined &&
-  workerJobStatus.enumValues.includes("skipped");
+  maintenanceQueueStatus.enumValues.includes("skipped");
 
-const workerJobRepositoryPresent = (): boolean =>
-  workerRepositoryMethods.every((methodName) =>
-    hasFunction(DrizzleWorkerJobRepository.prototype[methodName])
+const maintenanceQueueRepositoryPresent = (): boolean =>
+  maintenanceQueueRepositoryMethods.every((methodName) =>
+    hasFunction(DrizzleMaintenanceQueueRepository.prototype[methodName])
   );
 
 export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const dependencyText = await readDependencyText(repoRoot);
-  const schemaPresent = workerJobSchemaPresent();
-  const repositoryPresent = workerJobRepositoryPresent();
+  const schemaPresent = maintenanceQueueSchemaPresent();
+  const repositoryPresent = maintenanceQueueRepositoryPresent();
   const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
   const maintenanceQueueSmokeStatus = readScriptStatus(
     packageJson,
     "db:smoke:maintenance-queue",
     "krn db smoke maintenance-queue"
   );
-  const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
+  const autonomousMaintenanceDaemonPresent = await hasAutonomousMaintenanceDaemon(
     repoRoot
   ) || maintenanceJobPersistenceContract.executionMode !== "persistence_only";
 
@@ -228,10 +228,10 @@ export const checkMaintenanceQueue = async (repoRoot: string): Promise<DoctorChe
       severity: forbiddenSurfaceSeverity(redisKafkaPresent)
     },
     {
-      label: "Broad worker daemon",
-      status: broadWorkerDaemonPresent ? "present" : "absent",
-      outcome: broadWorkerDaemonPresent ? "present" : "absent",
-      severity: forbiddenSurfaceSeverity(broadWorkerDaemonPresent)
+      label: "Autonomous maintenance daemon",
+      status: autonomousMaintenanceDaemonPresent ? "present" : "absent",
+      outcome: autonomousMaintenanceDaemonPresent ? "present" : "absent",
+      severity: forbiddenSurfaceSeverity(autonomousMaintenanceDaemonPresent)
     }
   ];
 };

@@ -11,27 +11,27 @@ import {
   normalizeSmokeSlugPart
 } from "./db-smoke-support.js";
 import {
-  DrizzleWorkerJobRepository
-} from "../../repositories/drizzle-worker-job-repository.js";
+  DrizzleMaintenanceQueueRepository
+} from "../../repositories/drizzle-maintenance-queue-repository.js";
 import {
-  workerJobTypes
-} from "../../repositories/worker-job-types.js";
+  maintenanceQueueTypes
+} from "../../repositories/maintenance-queue-types.js";
 import {
   smokeFixtureClocks
 } from "./smoke-fixture-clocks.js";
 import type {
-  EnqueueWorkerJobInput,
-  WorkerJobRecord,
-  WorkerJobType
-} from "../../repositories/worker-job-types.js";
+  EnqueueMaintenanceQueueInput,
+  MaintenanceQueueRecord,
+  MaintenanceQueueType
+} from "../../repositories/maintenance-queue-types.js";
 
-export interface WorkerJobSmokeInput {
+export interface MaintenanceQueueSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
 }
 
-export interface WorkerJobSmokeReport {
+export interface MaintenanceQueueSmokeReport {
   writeBoundaryValidatedCount: number;
   enqueuedJobCount: number;
   queuedReadbackCount: number;
@@ -52,15 +52,15 @@ interface MaintenanceJobBoundaryReadback {
   writeBoundaryValidatedCount: number;
 }
 
-export interface WorkerJobSmokeTransitionPlan {
+export interface MaintenanceQueueSmokeTransitionPlan {
   succeeded: number;
   skipped: number;
   failed: number;
 }
 
-export const workerJobSmokeTransitionPlan = (
+export const maintenanceQueueSmokeTransitionPlan = (
   jobCount: number
-): WorkerJobSmokeTransitionPlan => {
+): MaintenanceQueueSmokeTransitionPlan => {
   const succeeded = Math.min(2, jobCount);
   const skipped = Math.min(2, Math.max(jobCount - succeeded, 0));
   const failed = Math.max(jobCount - succeeded - skipped, 0);
@@ -90,16 +90,16 @@ const deleteMarkerRows = async (client: Sql, marker: string): Promise<void> => {
 };
 
 const enqueueInputForJobType = (
-  jobType: WorkerJobType,
+  jobType: MaintenanceQueueType,
   marker: string,
   sequence: number
-): EnqueueWorkerJobInput => {
+): EnqueueMaintenanceQueueInput => {
   const basePayload = {
     smoke: true,
     smokeId: marker,
     jobType,
     sequence,
-    reason: "M26.08 worker job smoke"
+    reason: "M26.08 maintenance queue smoke"
   } satisfies Record<string, unknown>;
 
   if (jobType === "embed_source_chunk") {
@@ -130,7 +130,7 @@ const enqueueInputForJobType = (
       payload: {
         ...basePayload,
         projectId: `project-${marker}`,
-        olderThan: smokeFixtureClocks.workerJobs.olderThan
+        olderThan: smokeFixtureClocks.maintenanceQueues.olderThan
       }
     };
   }
@@ -145,106 +145,106 @@ const enqueueInputForJobType = (
 };
 
 const requireStatus = (
-  record: WorkerJobRecord,
-  expectedStatus: WorkerJobRecord["status"],
+  record: MaintenanceQueueRecord,
+  expectedStatus: MaintenanceQueueRecord["status"],
   operation: string
 ): void => {
   if (record.status !== expectedStatus) {
     throw new Error(
-      `Worker job smoke ${operation} expected ${expectedStatus}, received ${record.status}`
+      `Maintenance queue smoke ${operation} expected ${expectedStatus}, received ${record.status}`
     );
   }
 };
 
-const workerJobBoundaryReadback = (): MaintenanceJobBoundaryReadback => {
-  const descriptions = workerJobTypes.map((jobType) => describeMaintenanceJob(jobType));
+const maintenanceQueueBoundaryReadback = (): MaintenanceJobBoundaryReadback => {
+  const descriptions = maintenanceQueueTypes.map((jobType) => describeMaintenanceJob(jobType));
 
   return {
     writeBoundaryValidatedCount: descriptions.length
   };
 };
 
-export const runWorkerJobSmokeCheck = async (
-  input: WorkerJobSmokeInput
-): Promise<WorkerJobSmokeReport> => {
+export const runMaintenanceQueueSmokeCheck = async (
+  input: MaintenanceQueueSmokeInput
+): Promise<MaintenanceQueueSmokeReport> => {
   await ensureSmokeBrainStoreReady(
     input.databaseUrl,
     input.migrationsFolder,
-    "worker job smoke"
+    "maintenance queue smoke"
   );
 
   const marker = normalizeSmokeSlugPart(input.smokeId);
   const { client, db } = createSmokeDatabase(input.databaseUrl);
-  const repository = new DrizzleWorkerJobRepository(db);
-  const workerJobIds: string[] = [];
+  const repository = new DrizzleMaintenanceQueueRepository(db);
+  const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
 
   try {
     await deleteMarkerRows(client, marker);
 
-    const enqueuedJobs: WorkerJobRecord[] = [];
-    const writeBoundary = workerJobBoundaryReadback();
+    const enqueuedJobs: MaintenanceQueueRecord[] = [];
+    const writeBoundary = maintenanceQueueBoundaryReadback();
 
-    for (const [index, jobType] of workerJobTypes.entries()) {
-      const job = await repository.enqueueWorkerJob({
+    for (const [index, jobType] of maintenanceQueueTypes.entries()) {
+      const job = await repository.enqueueMaintenanceQueue({
         ...enqueueInputForJobType(jobType, marker, index + 1),
-        runAfter: smokeFixtureClocks.workerJobs.runAfter
+        runAfter: smokeFixtureClocks.maintenanceQueues.runAfter
       });
 
       requireStatus(job, "queued", "enqueue");
-      workerJobIds.push(job.id);
+      maintenanceQueueIds.push(job.id);
       enqueuedJobs.push(job);
     }
 
-    const queuedJobs = await repository.listQueuedWorkerJobs(1000);
+    const queuedJobs = await repository.listQueuedMaintenanceQueues(1000);
     const queuedJobIds = new Set(queuedJobs.map((job) => job.id));
-    const queuedReadbackCount = workerJobIds.filter((id) => queuedJobIds.has(id)).length;
+    const queuedReadbackCount = maintenanceQueueIds.filter((id) => queuedJobIds.has(id)).length;
 
     if (queuedReadbackCount !== enqueuedJobs.length) {
-      throw new Error("Worker job smoke did not read back every queued job");
+      throw new Error("Maintenance queue smoke did not read back every queued job");
     }
 
     let runningTransitionCount = 0;
     let succeededCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
-    const transitionPlan = workerJobSmokeTransitionPlan(enqueuedJobs.length);
+    const transitionPlan = maintenanceQueueSmokeTransitionPlan(enqueuedJobs.length);
 
     for (const [index, job] of enqueuedJobs.entries()) {
-      const runningJob = await repository.markWorkerJobRunning(job.id, {
-        lockedBy: "worker-job-smoke",
-        lockedAt: smokeFixtureClocks.workerJobs.lockedAt
+      const runningJob = await repository.markMaintenanceQueueRunning(job.id, {
+        lockedBy: "maintenance-queue-smoke",
+        lockedAt: smokeFixtureClocks.maintenanceQueues.lockedAt
       });
 
       requireStatus(runningJob, "running", "running transition");
       runningTransitionCount += 1;
 
       if (index < transitionPlan.succeeded) {
-        const succeededJob = await repository.markWorkerJobSucceeded(job.id);
+        const succeededJob = await repository.markMaintenanceQueueSucceeded(job.id);
         requireStatus(succeededJob, "succeeded", "succeeded transition");
         succeededCount += 1;
         continue;
       }
 
       if (index < transitionPlan.succeeded + transitionPlan.skipped) {
-        const skippedJob = await repository.markWorkerJobSkipped(
+        const skippedJob = await repository.markMaintenanceQueueSkipped(
           job.id,
-          "Skipped by worker job smoke"
+          "Skipped by maintenance queue smoke"
         );
         requireStatus(skippedJob, "skipped", "skipped transition");
         skippedCount += 1;
         continue;
       }
 
-      const failedJob = await repository.markWorkerJobFailed(
+      const failedJob = await repository.markMaintenanceQueueFailed(
         job.id,
-        "Failed by worker job smoke"
+        "Failed by maintenance queue smoke"
       );
 
       requireStatus(failedJob, "failed", "failed transition");
 
       if (failedJob.attempts !== runningJob.attempts + 1) {
-        throw new Error("Worker job smoke failed transition did not increment attempts");
+        throw new Error("Maintenance queue smoke failed transition did not increment attempts");
       }
 
       failedCount += 1;
@@ -256,10 +256,10 @@ export const runWorkerJobSmokeCheck = async (
       skippedCount !== transitionPlan.skipped ||
       failedCount !== transitionPlan.failed
     ) {
-      throw new Error("Worker job smoke transition counts did not match expected proof");
+      throw new Error("Maintenance queue smoke transition counts did not match expected proof");
     }
 
-    const cleanup = await repository.cleanupTestWorkerJobs({ workerJobIds });
+    const cleanup = await repository.cleanupTestMaintenanceQueues({ maintenanceQueueIds });
     const remainingMarkerCount = await countMarkerRows(client, marker);
     cleanedUp = cleanup.deletedCount === enqueuedJobs.length && remainingMarkerCount === 0;
 

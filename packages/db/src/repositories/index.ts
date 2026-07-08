@@ -7,5 +7,5 @@ export * from "./drizzle-project-repository.js";
 export * from "./drizzle-reflection-repository.js";
 export * from "./drizzle-retrieval-repository.js";
 export * from "./drizzle-source-repository.js";
-export * from "./drizzle-worker-job-repository.js";
-export * from "./worker-job-types.js";
+export * from "./drizzle-maintenance-queue-repository.js";
+export * from "./maintenance-queue-types.js";

@@ -672,7 +672,7 @@ export const deriveMaintenanceQueueReadiness = (
   );
   const daemonPresent = hasCheckOutcome(
     maintenanceQueueChecks,
-    "Broad worker daemon",
+    "Autonomous maintenance daemon",
     "present",
     (status) => status === "present"
   );

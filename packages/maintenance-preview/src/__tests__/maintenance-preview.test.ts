@@ -138,7 +138,7 @@ describe("brain maintenance preview", () => {
         "source_decisions",
         "source_claim_edges",
         "eval_candidates",
-        "worker_jobs"
+        "maintenance_queue_records"
       ]
     });
     expect(result.candidates).toHaveLength(2);
@@ -158,7 +158,7 @@ describe("brain maintenance preview", () => {
         status: "passed",
         idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
         allowedWrites: [
-          "worker_jobs",
+          "maintenance_queue_records",
           "outbox_events",
           "memory_candidates"
         ],
@@ -280,7 +280,7 @@ describe("brain maintenance preview", () => {
           "source_decisions",
           "source_claim_edges",
           "eval_candidates",
-          "worker_jobs"
+          "maintenance_queue_records"
         ]
       })
     ]);
@@ -292,7 +292,7 @@ describe("brain maintenance preview", () => {
       "review-evidence/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
     ]);
     expect(result.reviewEvalClosure.forbiddenWrites).toContain("eval_candidates");
-    expect(result.manualCandidateLoop.forbiddenWrites).toContain("worker_jobs");
+    expect(result.manualCandidateLoop.forbiddenWrites).toContain("maintenance_queue_records");
     expect(result.mutation).toBe("none");
   });
 
@@ -487,7 +487,7 @@ describe("brain maintenance preview", () => {
         "source_decisions",
         "source_claim_edges",
         "eval_candidates",
-        "worker_jobs"
+        "maintenance_queue_records"
       ]
     });
     expect(result.mutation).toBe("none");
@@ -629,6 +629,6 @@ describe("brain maintenance preview", () => {
       reviewableCandidates: 0,
       mutation: "none"
     });
-    expect(result.manualCandidateLoop.forbiddenWrites).toContain("worker_jobs");
+    expect(result.manualCandidateLoop.forbiddenWrites).toContain("maintenance_queue_records");
   });
 });

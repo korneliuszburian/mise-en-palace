@@ -94,7 +94,7 @@ const doctorFailureRules: readonly DoctorFailureRule[] = [
       "Codex execution runner",
       "KRN MCP product server",
       "Redis/Kafka queue",
-      "Broad worker daemon",
+      "Autonomous maintenance daemon",
       "Runtime markdown memory",
       "Automatic memory mutation",
       "Separate vector/search DB",

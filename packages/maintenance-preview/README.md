@@ -7,21 +7,21 @@ Current truth:
 
 - job types and payloads are typed;
 - enqueue contracts require one queue port to create a maintenance queue record and the
-  matching `worker_job.queued` outbox event as one adapter-owned operation;
+  matching `maintenance_queue.queued` outbox event as one adapter-owned operation;
 - source-relation maintenance candidate preview can propose reviewable maintenance
   candidates without mutating source truth or Memory Core;
 - memory-staleness maintenance candidate preview can propose reviewable maintenance
   candidates without mutating Memory Core;
 - maintenance candidate preview can aggregate memory-staleness and
-  source-relation maintenance candidates without starting autonomous worker
+  source-relation maintenance candidates without starting autonomous maintenance
   execution;
 - consensus candidate evaluation preview can preserve support/dissent/risk
   evidence and graph relation review focus without creating autonomous truth;
-- job descriptions explicitly set `requiresBackgroundLoop: false`.
+- job descriptions explicitly set `executionMode: "persistence_only"`.
 
 Not built:
 
-- no worker daemon;
+- no autonomous maintenance daemon;
 - no background loop;
 - no job executor;
 - no memory compaction runtime;

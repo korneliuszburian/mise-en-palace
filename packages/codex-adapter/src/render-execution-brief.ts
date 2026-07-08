@@ -343,7 +343,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     doesNotProve: [
       "Codex executed the work.",
       "Memory was mutated.",
-      "Worker jobs executed."
+      "Maintenance queue records were processed by a runtime."
     ]
   };
 };

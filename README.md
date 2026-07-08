@@ -74,7 +74,7 @@ mechanisms.
   is not complete as one governed product path.
 - Reflection currently records/report candidates but must not be described as
   autonomous memory mutation or dreaming runtime.
-- Worker jobs are persisted contracts/skeletons; production background
+- Maintenance queue records are persisted contracts/skeletons; production background
   execution is not built.
 - Promptfoo is adopted only as a bounded eval runner/result adapter. The local
   Promptfoo smoke proves runner integration and result mapping only; it does

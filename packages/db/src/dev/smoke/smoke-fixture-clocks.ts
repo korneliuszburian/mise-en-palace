@@ -23,7 +23,7 @@ export const smokeFixtureClocks = {
     expiredAt: "2026-06-01T12:00:00.000Z",
     validFrom: "2026-05-01T12:00:00.000Z"
   },
-  workerJobs: {
+  maintenanceQueues: {
     olderThan: "2026-06-01T00:00:00.000Z",
     runAfter: "2026-06-01T00:00:00.000Z",
     lockedAt: "2026-06-22T06:00:00.000Z"

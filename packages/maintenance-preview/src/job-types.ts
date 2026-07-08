@@ -1,7 +1,3 @@
-import {
-  workerJobStatuses
-} from "@krn/core";
-
 export {
   assertMaintenanceJobWriteBoundary,
   assessMaintenanceJobWriteBoundary,
@@ -10,10 +6,9 @@ export {
   isMaintenanceJobType,
   maintenanceJobPersistenceContract,
   maintenanceJobTypes,
+  maintenanceQueueStatuses,
   parseMaintenanceJobType
 } from "@krn/core";
-
-export const maintenanceQueueStatuses = workerJobStatuses;
 
 export type {
   CompactMemoryPayload,
@@ -32,5 +27,5 @@ export type {
   MaintenanceJobType,
   MaintenanceJobWriteBoundaryAssessment,
   MaintenanceJobWriteBoundaryViolation,
-  WorkerJobStatus as MaintenanceQueueStatus
+  MaintenanceQueueStatus
 } from "@krn/core";

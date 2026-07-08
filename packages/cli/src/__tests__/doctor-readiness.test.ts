@@ -175,7 +175,7 @@ describe("doctorReadiness", () => {
         severity: "pass"
       },
       {
-        label: "Broad worker daemon",
+        label: "Autonomous maintenance daemon",
         status: "daemon forbidden surface absent after wording change",
         outcome: "absent",
         severity: "pass"

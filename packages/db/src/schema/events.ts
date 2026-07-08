@@ -38,7 +38,7 @@ export const outboxEventStatus = pgEnum("outbox_event_status", [
   "dead_letter"
 ]);
 
-export const workerJobStatus = pgEnum("worker_job_status", [
+export const maintenanceQueueStatus = pgEnum("worker_job_status", [
   "queued",
   "running",
   "succeeded",
@@ -91,12 +91,12 @@ export const outboxEvents = pgTable(
   ]
 );
 
-export const workerJobs = pgTable(
+export const maintenanceQueues = pgTable(
   "worker_jobs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     jobType: text("type").notNull(),
-    status: workerJobStatus("status").notNull().default("queued"),
+    status: maintenanceQueueStatus("status").notNull().default("queued"),
     payload: jsonObjectColumn("payload"),
     attempts: attemptsColumn(),
     maxAttempts: integer("max_attempts").notNull().default(3),

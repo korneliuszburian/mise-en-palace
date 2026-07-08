@@ -194,7 +194,7 @@ describe("runMaintenancePreviewCommand", () => {
     expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
     expect(result.stdout).toContain("inspectedCandidates: 2");
     expect(result.stdout).toContain("reviewableCandidates: 1");
-    expect(result.stdout).toContain("worker_jobs");
+    expect(result.stdout).toContain("maintenance_queue_records");
     expect(result.stdout).toContain("memoryRecords: 1");
     expect(result.stdout).toContain("sourceClaims: 2");
     expect(result.stdout).toContain("sourceClaimEdges: 1");
@@ -294,7 +294,7 @@ describe("runMaintenancePreviewCommand", () => {
     expect(result.stdout).toContain("reviewer: operator");
     expect(result.stdout).toContain("candidateReviewability: needs_more_evidence");
     expect(result.stdout).toContain("mutation: none");
-    expect(result.stdout).toContain("worker_jobs");
+    expect(result.stdout).toContain("maintenance_queue_records");
   });
 
   it("renders nextAction in json output", async () => {
@@ -371,7 +371,7 @@ describe("runMaintenancePreviewCommand", () => {
               status: "passed",
               idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
               allowedWrites: [
-                "worker_jobs",
+                "maintenance_queue_records",
                 "outbox_events",
                 "memory_candidates"
               ],
@@ -504,7 +504,7 @@ describe("runMaintenancePreviewCommand", () => {
       expect(result.stdout).toContain("falsifier:");
       expect(result.stdout).toContain("reviewability: ready");
       expect(result.stdout).toContain("mutation: none");
-      expect(result.stdout).toContain("worker_jobs");
+      expect(result.stdout).toContain("maintenance_queue_records");
     } finally {
       await fixture.cleanup();
     }
@@ -796,7 +796,7 @@ describe("runMaintenancePreviewCommand", () => {
       expect(result.stdout).toContain("sha256:source-artifact");
       expect(result.stdout).toContain("reviewability: ready");
       expect(result.stdout).toContain("mutation: none");
-      expect(result.stdout).toContain("worker_jobs");
+      expect(result.stdout).toContain("maintenance_queue_records");
     } finally {
       await fixture.cleanup();
     }

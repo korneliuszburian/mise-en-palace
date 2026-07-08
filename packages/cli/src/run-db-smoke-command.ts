@@ -10,7 +10,7 @@ import {
   runPersistenceSmokeCheck,
   runRetrievalSubstrateSmokeCheck,
   runSourceGraphSmokeCheck,
-  runWorkerJobSmokeCheck
+  runMaintenanceQueueSmokeCheck
 } from "@krn/db/dev";
 import {
   createExecutionBrief,
@@ -834,7 +834,7 @@ const runMaintenanceQueueSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
 ) => {
-  const report = await runWorkerJobSmokeCheck({
+  const report = await runMaintenanceQueueSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
     smokeId: runtime.createId("maintenance-queue-smoke")

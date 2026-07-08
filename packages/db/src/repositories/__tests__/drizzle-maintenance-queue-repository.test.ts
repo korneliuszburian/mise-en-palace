@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { KrnDatabase } from "../../database.js";
-import { DrizzleWorkerJobRepository } from "../drizzle-worker-job-repository.js";
+import { DrizzleMaintenanceQueueRepository } from "../drizzle-maintenance-queue-repository.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -36,24 +36,22 @@ const sqlParamValues = (
 };
 
 const methodNames = [
-  "enqueueWorkerJob",
-  "enqueue",
-  "getWorkerJobById",
-  "listQueuedWorkerJobs",
-  "markWorkerJobRunning",
-  "markWorkerJobSucceeded",
-  "markWorkerJobFailed",
-  "markWorkerJobSkipped",
-  "cleanupTestWorkerJobs"
+  "enqueueMaintenanceQueue",
+  "listQueuedMaintenanceQueues",
+  "markMaintenanceQueueRunning",
+  "markMaintenanceQueueSucceeded",
+  "markMaintenanceQueueFailed",
+  "markMaintenanceQueueSkipped",
+  "cleanupTestMaintenanceQueues"
 ] as const;
 
-const workerJobRow = (
+const maintenanceQueueRow = (
   status: "running" | "succeeded" | "failed" | "skipped"
 ) => {
   const timestamp = new Date("2026-07-07T00:00:00.000Z");
 
   return {
-    id: "worker-job-1",
+    id: "maintenance-queue-1",
     type: "compact_memory",
     jobType: "compact_memory",
     status,
@@ -65,14 +63,14 @@ const workerJobRow = (
     availableAt: timestamp,
     runAfter: timestamp,
     lockedAt: status === "running" ? timestamp : null,
-    lockedBy: status === "running" ? "worker-1" : null,
+    lockedBy: status === "running" ? "maintenance-runner-1" : null,
     lastError: status === "failed" || status === "skipped" ? "terminal reason" : null,
     createdAt: timestamp,
     updatedAt: timestamp
   };
 };
 
-const createUpdateDb = (row: ReturnType<typeof workerJobRow>) => {
+const createUpdateDb = (row: ReturnType<typeof maintenanceQueueRow>) => {
   const updateCall: { whereCondition?: unknown } = {};
   const db = {
     update: (_table: unknown) => ({
@@ -91,26 +89,26 @@ const createUpdateDb = (row: ReturnType<typeof workerJobRow>) => {
   return { db, updateCall };
 };
 
-describe("DrizzleWorkerJobRepository", () => {
-  it("exposes M26 worker job repository methods without maintenance runtime behavior", () => {
+describe("DrizzleMaintenanceQueueRepository", () => {
+  it("exposes M26 maintenance queue repository methods without maintenance runtime behavior", () => {
     for (const methodName of methodNames) {
-      expect(typeof DrizzleWorkerJobRepository.prototype[methodName]).toBe("function");
+      expect(typeof DrizzleMaintenanceQueueRepository.prototype[methodName]).toBe("function");
     }
   });
 
   it("guards running transition to queued jobs available at claim time", async () => {
     const claimAt = "2026-07-07T00:00:00.000Z";
     const rowTimestamp = new Date(claimAt);
-    const { db, updateCall } = createUpdateDb(workerJobRow("running"));
-    const repository = new DrizzleWorkerJobRepository(db);
+    const { db, updateCall } = createUpdateDb(maintenanceQueueRow("running"));
+    const repository = new DrizzleMaintenanceQueueRepository(db);
 
-    await repository.markWorkerJobRunning("worker-job-1", {
+    await repository.markMaintenanceQueueRunning("maintenance-queue-1", {
       lockedAt: claimAt,
-      lockedBy: "worker-1"
+      lockedBy: "maintenance-runner-1"
     });
 
     expect(sqlParamValues(updateCall.whereCondition)).toEqual(
-      expect.arrayContaining(["worker-job-1", "queued", rowTimestamp])
+      expect.arrayContaining(["maintenance-queue-1", "queued", rowTimestamp])
     );
   });
 
@@ -118,31 +116,31 @@ describe("DrizzleWorkerJobRepository", () => {
     {
       label: "succeeded",
       status: "succeeded",
-      run: (repository: DrizzleWorkerJobRepository) =>
-        repository.markWorkerJobSucceeded("worker-job-1")
+      run: (repository: DrizzleMaintenanceQueueRepository) =>
+        repository.markMaintenanceQueueSucceeded("maintenance-queue-1")
     },
     {
       label: "failed",
       status: "failed",
-      run: (repository: DrizzleWorkerJobRepository) =>
-        repository.markWorkerJobFailed("worker-job-1", "terminal reason")
+      run: (repository: DrizzleMaintenanceQueueRepository) =>
+        repository.markMaintenanceQueueFailed("maintenance-queue-1", "terminal reason")
     },
     {
       label: "skipped",
       status: "skipped",
-      run: (repository: DrizzleWorkerJobRepository) =>
-        repository.markWorkerJobSkipped("worker-job-1", "terminal reason")
+      run: (repository: DrizzleMaintenanceQueueRepository) =>
+        repository.markMaintenanceQueueSkipped("maintenance-queue-1", "terminal reason")
     }
   ] as const)(
     "guards $label transition to already-running jobs",
     async ({ status, run }) => {
-      const { db, updateCall } = createUpdateDb(workerJobRow(status));
-      const repository = new DrizzleWorkerJobRepository(db);
+      const { db, updateCall } = createUpdateDb(maintenanceQueueRow(status));
+      const repository = new DrizzleMaintenanceQueueRepository(db);
 
       await run(repository);
 
       expect(sqlParamValues(updateCall.whereCondition)).toEqual(
-        expect.arrayContaining(["worker-job-1", "running"])
+        expect.arrayContaining(["maintenance-queue-1", "running"])
       );
     }
   );

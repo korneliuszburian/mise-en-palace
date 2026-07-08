@@ -43,7 +43,7 @@ class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
 
     const outboxEvent = {
       id: "outbox-event-1",
-      topic: "worker_job.queued"
+      topic: "maintenance_queue.queued"
     } as const;
 
     return {
@@ -130,7 +130,7 @@ describe("maintenance queue contract", () => {
       }),
       outboxEvent: {
         id: "outbox-event-1",
-        topic: "worker_job.queued"
+        topic: "maintenance_queue.queued"
       }
     });
   });
@@ -204,19 +204,19 @@ describe("maintenance queue contract", () => {
         expect.objectContaining({
           jobType: type,
           terminalFailureStatus: "failed",
-          completionTopic: "worker_job.completed",
+          completionTopic: "maintenance_queue.completed",
           executionMode: "persistence_only",
           memoryCoreGate: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),
           idempotencyKey: expect.stringContaining(type),
-          allowedWrites: expect.arrayContaining(["worker_jobs", "outbox_events"]),
+          allowedWrites: expect.arrayContaining(["maintenance_queue_records", "outbox_events"]),
           forbiddenWrites: expect.arrayContaining(["memory_records"])
         })
       )
     );
     expect(describeMaintenanceJob("compact_memory")).toEqual(
       expect.objectContaining({
-        allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+        allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
         forbiddenWrites: [
           "memory_records",
           "anti_memory_records",
@@ -234,7 +234,7 @@ describe("maintenance queue contract", () => {
       memoryRecords: [],
       sourceClaims: [],
       sourceClaimEdges: [],
-      evidenceRef: "worker-test"
+      evidenceRef: "maintenance-test"
     } as const;
 
     expect(buildMaintenanceCandidatePreview(input)).toEqual(buildMaintenancePreview(input));
@@ -247,7 +247,7 @@ describe("maintenance queue contract", () => {
       status: "passed",
       idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
       allowedWrites: [
-        "worker_jobs",
+        "maintenance_queue_records",
         "outbox_events",
         "memory_candidates"
       ],
@@ -258,14 +258,14 @@ describe("maintenance queue contract", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Declared maintenance write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+        "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
     });
   });
 
-  test("fails worker write boundary when a gate allows the wrong write", () => {
+  test("fails maintenance queue write boundary when a gate allows the wrong write", () => {
     const invalidDescription = {
       ...describeMaintenanceJob("embed_source_chunk"),
-      allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+      allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
       memoryCoreGate: "no_memory_core_write"
     } as const;
 

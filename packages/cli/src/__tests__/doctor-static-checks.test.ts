@@ -37,7 +37,7 @@ describe("doctorStaticChecks", () => {
       "Maintenance queue repository",
       "Maintenance queue smoke",
       "Redis/Kafka queue",
-      "Broad worker daemon",
+      "Autonomous maintenance daemon",
       "Target repo init command",
       "Target repo fixture smoke",
       "Project registration schema",

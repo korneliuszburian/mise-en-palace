@@ -86,7 +86,7 @@ describe("runCli", () => {
       "Maintenance queue smoke: available (pnpm db:smoke:maintenance-queue)"
     );
     expect(result.stdout).toContain("Redis/Kafka queue: absent");
-    expect(result.stdout).toContain("Broad worker daemon: absent");
+    expect(result.stdout).toContain("Autonomous maintenance daemon: absent");
     expect(result.stdout).toContain(
       "Maintenance queue readiness: preview only (set KRN_DATABASE_URL and run maintenance queue smoke for proof)"
     );
@@ -380,7 +380,7 @@ describe("runCli", () => {
       { label: "Maintenance queue repository", status: "present" },
       { label: "Maintenance queue smoke", status: "available (pnpm db:smoke:maintenance-queue)" },
       { label: "Redis/Kafka queue", status: "absent" },
-      { label: "Broad worker daemon", status: "absent" }
+      { label: "Autonomous maintenance daemon", status: "absent" }
     ];
 
     expect(
@@ -394,7 +394,7 @@ describe("runCli", () => {
       deriveMaintenanceQueueReadiness(postgresReady, [
         ...maintenanceQueueReady.slice(0, 3),
         { label: "Redis/Kafka queue", status: "present" },
-        { label: "Broad worker daemon", status: "absent" }
+        { label: "Autonomous maintenance daemon", status: "absent" }
       ])
     ).toEqual({
       label: "Maintenance queue readiness",

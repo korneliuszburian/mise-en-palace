@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { mapWorkerJob } from "../worker-job-mappers.js";
+import { mapMaintenanceQueue } from "../maintenance-queue-mappers.js";
 
 const createdAt = new Date("2026-06-22T09:00:00.000Z");
 const updatedAt = new Date("2026-06-22T09:05:00.000Z");
 const runAfter = new Date("2026-06-22T09:10:00.000Z");
 
-describe("worker job mappers", () => {
-  it("maps worker job rows to the M26 jobType/runAfter contract", () => {
+describe("maintenance queue mappers", () => {
+  it("maps maintenance queue rows to the M26 jobType/runAfter contract", () => {
     expect(
-      mapWorkerJob({
-        id: "worker-job-1",
+      mapMaintenanceQueue({
+        id: "maintenance-queue-1",
         jobType: "embed_memory_record",
         status: "queued",
         payload: {
@@ -28,7 +28,7 @@ describe("worker job mappers", () => {
         updatedAt
       })
     ).toEqual({
-      id: "worker-job-1",
+      id: "maintenance-queue-1",
       jobType: "embed_memory_record",
       status: "queued",
       payload: {
@@ -44,10 +44,10 @@ describe("worker job mappers", () => {
     });
   });
 
-  it("rejects legacy DB-only statuses from the target worker lifecycle", () => {
+  it("rejects legacy DB-only statuses from the active maintenance queue lifecycle", () => {
     expect(() =>
-      mapWorkerJob({
-        id: "worker-job-legacy",
+      mapMaintenanceQueue({
+        id: "maintenance-queue-legacy",
         jobType: "compact_memory",
         status: "dead_letter",
         payload: {},
@@ -60,6 +60,6 @@ describe("worker job mappers", () => {
         createdAt,
         updatedAt
       })
-    ).toThrow("Unsupported worker job status: dead_letter");
+    ).toThrow("Unsupported maintenance queue status: dead_letter");
   });
 });

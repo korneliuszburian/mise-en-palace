@@ -84,7 +84,7 @@ Not product-ready:
   `krn_decision_packet` wrapper;
 - no external operator proof;
 - no broad benchmark suite;
-- no autonomous worker daemon or scheduler;
+- no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
 - no final temporal consensus engine;
 - no markdown-backed runtime memory.

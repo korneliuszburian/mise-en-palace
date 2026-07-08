@@ -1,9 +1,9 @@
 import type {
-  WorkerJobSmokeReport
+  MaintenanceQueueSmokeReport
 } from "@krn/db/dev";
 
 export const formatMaintenanceQueueSmokeReportLines = (
-  report: WorkerJobSmokeReport
+  report: MaintenanceQueueSmokeReport
 ): string[] => [
   `Maintenance write-boundary records validated: ${report.writeBoundaryValidatedCount}`,
   `Maintenance queue records enqueued: ${report.enqueuedJobCount}`,

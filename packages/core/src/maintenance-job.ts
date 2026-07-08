@@ -71,7 +71,7 @@ export type MaintenanceJob<TType extends MaintenanceJobType = MaintenanceJobType
   };
 }[TType];
 
-export const workerJobStatuses = [
+export const maintenanceQueueStatuses = [
   "queued",
   "running",
   "succeeded",
@@ -79,14 +79,14 @@ export const workerJobStatuses = [
   "skipped"
 ] as const;
 
-export type WorkerJobStatus = (typeof workerJobStatuses)[number];
+export type MaintenanceQueueStatus = (typeof maintenanceQueueStatuses)[number];
 
 export const maintenanceJobPersistenceContract = {
-  workerTable: "worker_jobs",
+  queueStore: "maintenance_queue_records",
   outboxTable: "outbox_events",
-  outboxTopic: "worker_job.queued",
+  outboxTopic: "maintenance_queue.queued",
   executionMode: "persistence_only",
-  completionTopic: "worker_job.completed",
+  completionTopic: "maintenance_queue.completed",
   terminalFailureStatus: "failed"
 } as const;
 
@@ -95,7 +95,7 @@ export type MaintenanceJobPersistenceContract = typeof maintenanceJobPersistence
 export interface MaintenanceJobDescription {
   jobType: MaintenanceJobType;
   label: string;
-  workerTable: MaintenanceJobPersistenceContract["workerTable"];
+  queueStore: MaintenanceJobPersistenceContract["queueStore"];
   outboxTable: MaintenanceJobPersistenceContract["outboxTable"];
   outboxTopic: MaintenanceJobPersistenceContract["outboxTopic"];
   executionMode: MaintenanceJobPersistenceContract["executionMode"];
@@ -142,7 +142,7 @@ const labels: Record<MaintenanceJobType, string> = {
 };
 
 export type MaintenanceJobAllowedWrite =
-  | "worker_jobs"
+  | "maintenance_queue_records"
   | "outbox_events"
   | "embeddings"
   | "memory_candidates"
@@ -183,17 +183,25 @@ const requiredForbiddenWrites = [
 ] as const satisfies readonly MaintenanceJobForbiddenWrite[];
 
 const allowedWritesByMemoryCoreGate = {
-  no_memory_core_write: ["worker_jobs", "outbox_events", "embeddings"],
-  read_memory_record_only: ["worker_jobs", "outbox_events", "embeddings"],
-  write_memory_candidate_only: ["worker_jobs", "outbox_events", "memory_candidates"],
-  write_reflection_record_only: ["worker_jobs", "outbox_events", "reflection_records"],
+  no_memory_core_write: ["maintenance_queue_records", "outbox_events", "embeddings"],
+  read_memory_record_only: ["maintenance_queue_records", "outbox_events", "embeddings"],
+  write_memory_candidate_only: [
+    "maintenance_queue_records",
+    "outbox_events",
+    "memory_candidates"
+  ],
+  write_reflection_record_only: [
+    "maintenance_queue_records",
+    "outbox_events",
+    "reflection_records"
+  ],
   must_create_reviewed_invalidation_candidate: [
-    "worker_jobs",
+    "maintenance_queue_records",
     "outbox_events",
     "memory_candidates"
   ],
   must_not_promote_memory_record: [
-    "worker_jobs",
+    "maintenance_queue_records",
     "outbox_events",
     "embeddings",
     "memory_candidates",
@@ -214,35 +222,35 @@ const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceJobWriteBoundar
   embed_source_chunk: {
     inputSchema: "EmbedSourceChunkPayload",
     idempotencyKey: "embed_source_chunk:{sourceChunkId}:{embeddingModelId}",
-    allowedWrites: ["worker_jobs", "outbox_events", "embeddings"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "embeddings"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "no_memory_core_write"
   },
   embed_memory_record: {
     inputSchema: "EmbedMemoryRecordPayload",
     idempotencyKey: "embed_memory_record:{memoryRecordId}:{embeddingModelId}",
-    allowedWrites: ["worker_jobs", "outbox_events", "embeddings"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "embeddings"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "read_memory_record_only"
   },
   compact_memory: {
     inputSchema: "CompactMemoryPayload",
     idempotencyKey: "compact_memory:{projectId}:{memoryRecordId}",
-    allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "write_memory_candidate_only"
   },
   detect_contradiction: {
     inputSchema: "DetectContradictionPayload",
     idempotencyKey: "detect_contradiction:{projectId}:{memoryRecordId}:{sourceClaimId}",
-    allowedWrites: ["worker_jobs", "outbox_events", "reflection_records"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "reflection_records"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "write_reflection_record_only"
   },
   expire_stale_memory: {
     inputSchema: "ExpireStaleMemoryPayload",
     idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
-    allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "must_create_reviewed_invalidation_candidate"
   }
@@ -343,6 +351,6 @@ export const buildMaintenanceJobWriteBoundaryReadback = (
     allowedWrites: description.allowedWrites,
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:
-      "Declared maintenance write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+      "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, idempotent enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
   };
 };

@@ -25,14 +25,14 @@ describe("locked row metadata mapper", () => {
     expect(
       mapLockedRowMetadataFields({
         lockedAt: new Date("2026-06-30T04:01:00.000Z"),
-        lockedBy: "worker-1",
+        lockedBy: "runner-1",
         lastError: "retry later",
         createdAt,
         updatedAt
       })
     ).toEqual({
       lockedAt: "2026-06-30T04:01:00.000Z",
-      lockedBy: "worker-1",
+      lockedBy: "runner-1",
       lastError: "retry later",
       createdAt: "2026-06-30T04:00:00.000Z",
       updatedAt: "2026-06-30T04:05:00.000Z"

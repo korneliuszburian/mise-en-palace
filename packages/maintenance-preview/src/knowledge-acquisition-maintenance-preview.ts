@@ -113,7 +113,7 @@ export interface KnowledgeAcquisitionMaintenanceCandidate {
     "source_decisions",
     "source_claim_edges",
     "eval_candidates",
-    "worker_jobs"
+    "maintenance_queue_records"
   ];
 }
 
@@ -140,7 +140,7 @@ const forbiddenWrites = [
   "source_decisions",
   "source_claim_edges",
   "eval_candidates",
-  "worker_jobs"
+  "maintenance_queue_records"
 ] as const;
 
 const previewDoesNotProve =

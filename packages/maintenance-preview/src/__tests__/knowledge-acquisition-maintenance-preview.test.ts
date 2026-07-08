@@ -29,7 +29,7 @@ describe("knowledge acquisition maintenance preview", () => {
           falsifier:
             "A missing-evidence run cannot create a reviewable acquisition candidate.",
           doesNotProve:
-            "This candidate does not prove source truth, autonomous worker readiness, or Memory Core mutation safety."
+            "This candidate does not prove source truth, autonomous maintenance runtime readiness, or Memory Core mutation safety."
         }
       ]
     });
@@ -54,7 +54,7 @@ describe("knowledge acquisition maintenance preview", () => {
           "source_decisions",
           "source_claim_edges",
           "eval_candidates",
-          "worker_jobs"
+          "maintenance_queue_records"
         ]
       })
     ]);

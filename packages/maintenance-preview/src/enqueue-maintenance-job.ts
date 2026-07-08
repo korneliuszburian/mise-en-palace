@@ -27,7 +27,7 @@ export type MaintenanceQueueRecord<TType extends MaintenanceJobType = Maintenanc
 
 export interface MaintenanceQueueOutboxReceipt {
   id: string;
-  topic: "worker_job.queued";
+  topic: "maintenance_queue.queued";
 }
 
 export interface EnqueueMaintenanceJobRequest<

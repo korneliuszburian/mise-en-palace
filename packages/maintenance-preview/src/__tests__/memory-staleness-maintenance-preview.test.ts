@@ -67,7 +67,7 @@ describe("memory staleness maintenance preview", () => {
           memoryCoreGate: "must_create_reviewed_invalidation_candidate",
           status: "passed",
           allowedWrites: [
-            "worker_jobs",
+            "maintenance_queue_records",
             "outbox_events",
             "memory_candidates"
           ],

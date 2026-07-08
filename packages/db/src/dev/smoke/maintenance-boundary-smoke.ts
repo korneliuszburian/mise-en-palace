@@ -64,7 +64,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
         "Seed one expired MemoryRecord and prove the maintenance preview emits maintenance boundary in candidate readback.",
       constraints: [
         "candidate-only maintenance preview",
-        "no worker daemon",
+        "no autonomous maintenance daemon",
         "cleanup seeded DB rows"
       ],
       nonGoals: ["no scheduler", "no Memory Core mutation outside smoke seed", "no schema migration"],
@@ -122,7 +122,7 @@ export const runMaintenanceBoundarySmokeCheck = async (
       sourceArtifactId: sourceArtifact.id,
       executionRunId: executionRun.id,
       claim:
-        "Maintenance memory-staleness candidates should expose validated maintenance boundary before worker automation.",
+        "Maintenance memory-staleness candidates should expose validated maintenance boundary before autonomous maintenance runtime work.",
       mechanism:
         "An expired MemoryRecord loaded from Postgres produces a candidate-only maintenance preview with expire_stale_memory maintenanceWriteBoundary.",
       krnImplication:

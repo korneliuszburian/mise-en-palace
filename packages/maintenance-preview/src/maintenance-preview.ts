@@ -105,7 +105,7 @@ export interface MaintenancePreviewCandidateLoopReadback {
     "source_decisions",
     "source_claim_edges",
     "eval_candidates",
-    "worker_jobs"
+    "maintenance_queue_records"
   ];
 }
 
@@ -136,7 +136,7 @@ export interface MaintenancePreviewCandidateReviewResult {
     "source_decisions",
     "source_claim_edges",
     "eval_candidates",
-    "worker_jobs"
+    "maintenance_queue_records"
   ];
 }
 
@@ -214,7 +214,7 @@ const candidateLoopForbiddenWrites = [
   "source_decisions",
   "source_claim_edges",
   "eval_candidates",
-  "worker_jobs"
+  "maintenance_queue_records"
 ] as const;
 
 const priorityOrder = [
