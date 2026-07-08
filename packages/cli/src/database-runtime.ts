@@ -30,7 +30,7 @@ import type {
   SearchDocumentRecord,
   SourceRepository,
   WorkspaceRecord
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import type {
   ObservationGroup,
   ObservationItem,

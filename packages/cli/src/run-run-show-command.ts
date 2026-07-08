@@ -8,7 +8,7 @@ import {
 import type {
   HarnessRunAggregate,
   HarnessRunRepository
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 
 import type {
   DatabaseRuntimeInput

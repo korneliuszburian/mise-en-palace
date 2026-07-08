@@ -13,7 +13,7 @@ import type {
 } from "@krn/core";
 import { formatActivationRetrievalDiagnostics } from "@krn/harness";
 import type { ActivationRetrievalDiagnostics } from "@krn/harness";
-import type { HarnessRunAggregate } from "@krn/harness/repositories";
+import type { HarnessRunAggregate } from "@krn/core/repositories";
 
 import type { ProjectResolution } from "./database-runtime.js";
 import { formatProjectResolutionKind } from "./project-resolution-format.js";

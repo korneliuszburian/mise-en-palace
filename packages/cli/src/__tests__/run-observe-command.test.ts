@@ -5,7 +5,7 @@ import type {
 } from "@krn/core";
 import type {
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import type {
   CreateObservationItemInput
 } from "@krn/db/adapters";

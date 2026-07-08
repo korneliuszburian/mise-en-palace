@@ -16,7 +16,7 @@ import type {
   MemoryRepository,
   RetrievalRepository,
   SourceRepository
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import {
   compileHarnessPlan,
   proposeMemoryConsolidation

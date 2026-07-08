@@ -4,7 +4,7 @@ import {
 } from "@krn/core";
 import type { CandidateReviewability } from "@krn/core";
 import type { ProjectStandardDecisionReadback } from "@krn/core";
-import type { HarnessRunAggregate } from "@krn/harness/repositories";
+import type { HarnessRunAggregate } from "@krn/core/repositories";
 
 import type {
   ProjectResolution,

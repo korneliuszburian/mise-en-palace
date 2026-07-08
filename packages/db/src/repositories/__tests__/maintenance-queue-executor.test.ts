@@ -5,7 +5,7 @@ import type {
 } from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import {
   createFeedbackDeltaMaintenanceHandler

@@ -23,7 +23,7 @@ import {
 import type {
   CreateMemoryCandidateInput,
   PromoteMemoryCandidateInput
-} from "../repositories/index.js";
+} from "@krn/core/repositories";
 
 const now = "2026-07-01T12:00:00.000Z";
 const projectId = "project-1";

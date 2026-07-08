@@ -21,7 +21,7 @@ import type {
   ActivationDecisionRecord,
   HarnessRunAggregate,
   RetrievalCandidateRecord
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 
 import {
   candidateReviewability,

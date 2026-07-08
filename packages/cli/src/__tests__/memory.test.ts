@@ -4,7 +4,7 @@ import type {
   AntiMemoryCandidate,
   MemoryCandidate
 } from "@krn/core";
-import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
+import type { HarnessRunAggregate } from "@krn/core/repositories/internal";
 import type {
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
@@ -15,7 +15,7 @@ import type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";

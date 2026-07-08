@@ -9,7 +9,7 @@ import type {
   CreateObservationGroupInput,
   CreateObservationItemInput
 } from "@krn/db/adapters";
-import type { HarnessRunAggregate } from "@krn/harness/repositories/internal";
+import type { HarnessRunAggregate } from "@krn/core/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import { runCli } from "../run-cli.js";

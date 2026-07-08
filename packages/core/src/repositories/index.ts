@@ -41,6 +41,8 @@ export type {
   ProjectRecord,
   RepoInstallationRecord,
   RetrievalCandidateRecord,
+  SearchDocumentRecord,
+  SearchDocumentSearchResult,
   RunEventRecord,
   SourceArtifactRecord,
   SourceChunkRecord,

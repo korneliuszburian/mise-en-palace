@@ -9,7 +9,7 @@ import {
 import type {
   CreateFeedbackDeltaInput,
   CreateReviewAssessmentInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import {
   now
 } from "./helpers/test-runtime.js";

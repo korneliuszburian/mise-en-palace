@@ -4,7 +4,7 @@ import type {
 } from "@krn/core";
 import type {
   CreateTaskContractInput
-} from "../repositories/index.js";
+} from "@krn/core/repositories";
 
 export interface TaskContractDraft {
   title: string;

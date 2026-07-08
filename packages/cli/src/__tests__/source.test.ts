@@ -14,7 +14,7 @@ import type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import { findRepoRoot } from "../cli-file-boundary.js";

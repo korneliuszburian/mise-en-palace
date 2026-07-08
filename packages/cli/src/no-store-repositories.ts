@@ -31,7 +31,7 @@ import type {
   SourceRepository,
   StartRetrievalRunInput,
   UpdateExecutionRunStatusInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 export interface NoStoreRuntime {
   now(): string;

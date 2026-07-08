@@ -10,7 +10,7 @@ import type {
 } from "@krn/core";
 import type {
   SearchDocumentSearchResult
-} from "../../repositories/types.js";
+} from "@krn/core/repositories";
 import {
   selectObservationPrefix
 } from "../../observations/observation-prefix.js";

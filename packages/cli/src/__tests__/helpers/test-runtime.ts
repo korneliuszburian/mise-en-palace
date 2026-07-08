@@ -27,7 +27,7 @@ import type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import type {
   DatabaseRuntimeInput
 } from "../../database-runtime.js";

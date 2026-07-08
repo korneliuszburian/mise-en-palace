@@ -17,7 +17,7 @@ import type { KnowledgeDecision } from "@krn/harness";
 import type {
   CreateMemoryCandidateInput,
   PromoteMemoryCandidateInput
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";

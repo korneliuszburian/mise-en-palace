@@ -6,10 +6,10 @@ import type {
 import type {
   MemoryRepository,
   PromoteMemoryCandidateInput
-} from "../repositories/memory-repository.js";
+} from "@krn/core/repositories/internal";
 import type {
   SourceRepository
-} from "../repositories/source-repository.js";
+} from "@krn/core/repositories/internal";
 import {
   assertReviewableCandidateEvidence,
   assertReviewGateConfidence,

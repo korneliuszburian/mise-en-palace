@@ -18,7 +18,7 @@ import type {
 } from "@krn/harness";
 import type {
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import {
   createKrnDatabase
 } from "@krn/db";
@@ -31,7 +31,7 @@ import {
 } from "@krn/db/adapters";
 import type {
   HarnessRunRepository
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import type {
   DatabaseRuntimeInput
 } from "./database-runtime.js";

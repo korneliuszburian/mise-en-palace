@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import type { CreateMemoryCandidateInput } from "@krn/harness/repositories";
+import type { CreateMemoryCandidateInput } from "@krn/core/repositories";
 import type { KnowledgeDecision } from "@krn/harness";
 import { parseKnowledgeDecision } from "@krn/harness";
 

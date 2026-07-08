@@ -12,7 +12,7 @@ import {
 } from "../reflection-candidate-writer.js";
 import type {
   CreateAntiMemoryCandidateInput
-} from "../../repositories/index.js";
+} from "@krn/core/repositories";
 
 const now = "2026-06-23T12:00:00.000Z";
 

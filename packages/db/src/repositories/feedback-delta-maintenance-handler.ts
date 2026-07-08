@@ -12,7 +12,7 @@ import {
 import type {
   HarnessRunRepository,
   MemoryRepository
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import type {
   MaintenanceQueueHandler

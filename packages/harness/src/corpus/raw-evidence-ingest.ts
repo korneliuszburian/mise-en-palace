@@ -1,12 +1,12 @@
 import type { ProjectId, SourceAuthorityLabel } from "@krn/core";
 
-import type { RetrievalRepository } from "../repositories/retrieval-repository.js";
-import type { SourceRepository } from "../repositories/source-repository.js";
+import type { RetrievalRepository } from "@krn/core/repositories/internal";
+import type { SourceRepository } from "@krn/core/repositories/internal";
 import type {
   SearchDocumentRecord,
   SourceArtifactRecord,
   SourceChunkRecord
-} from "../repositories/types.js";
+} from "@krn/core/repositories";
 
 export type RawEvidenceSourceType =
   | "forum_post"

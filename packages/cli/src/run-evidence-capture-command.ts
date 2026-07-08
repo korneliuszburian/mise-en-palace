@@ -26,7 +26,7 @@ import type {
   CreateFeedbackDeltaInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import {
   defaultWorkspaceSlug,
   defaultProjectSlug,

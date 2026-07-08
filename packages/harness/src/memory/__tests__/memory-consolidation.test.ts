@@ -24,7 +24,7 @@ import type {
   PromoteAntiMemoryCandidateInput,
   PromoteMemoryCandidateInput,
   SupersedeMemoryRecordInput
-} from "../../repositories/memory-repository.js";
+} from "@krn/core/repositories";
 import {
   promoteAntiMemoryCandidateThroughGate
 } from "../anti-memory-review-gate.js";

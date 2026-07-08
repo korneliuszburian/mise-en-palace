@@ -20,7 +20,7 @@ import type {
   PromoteMemoryCandidateInput,
   RejectMemoryCandidateInput,
   SupersedeMemoryRecordInput
-} from "../repositories/memory-repository.js";
+} from "@krn/core/repositories/internal";
 
 export interface ProposeMemoryConsolidationInput {
   memoryRepository: Pick<

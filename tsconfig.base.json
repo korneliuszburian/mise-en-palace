@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "@krn/core": ["packages/core/src/index.ts"],
+      "@krn/core/*": ["packages/core/src/*"],
       "@krn/harness": ["packages/harness/src/index.ts"]
     },
     "strict": true,

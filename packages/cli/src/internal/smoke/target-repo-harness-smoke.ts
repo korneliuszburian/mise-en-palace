@@ -17,7 +17,7 @@ import {
 } from "@krn/harness";
 import type {
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import type {
   EvidenceCommand,
   SourceUsefulnessOutcomeFeedback

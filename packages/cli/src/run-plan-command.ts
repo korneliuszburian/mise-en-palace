@@ -21,7 +21,7 @@ import type {
   HarnessRunRepository,
   ProjectKernelRecord,
   RepoInstallationRecord
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import {
   parseHarnessCompileInput,
   parseOperatorIntentInput,

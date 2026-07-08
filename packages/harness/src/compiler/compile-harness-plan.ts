@@ -31,7 +31,7 @@ import type {
   MemoryRepository,
   RetrievalRepository,
   SourceRepository
-} from "../repositories/internal/index.js";
+} from "@krn/core/repositories/internal";
 import {
   createCapabilityPlan
 } from "./create-capability-plan.js";

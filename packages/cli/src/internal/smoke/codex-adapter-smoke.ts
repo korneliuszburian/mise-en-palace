@@ -10,7 +10,7 @@ import {
 } from "@krn/harness";
 import type {
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import type {
   RenderedCodexBrief
 } from "../../codex-brief-support.js";

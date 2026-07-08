@@ -1,11 +1,9 @@
 import type {
   AddRetrievalCandidateInput,
-  StartRetrievalRunInput
-} from "../repositories/retrieval-repository.js";
-import type {
+  StartRetrievalRunInput,
   RetrievalCandidateRecord,
   RetrievalRunRecord
-} from "../repositories/types.js";
+} from "@krn/core/repositories/internal";
 
 const assignIfDefined = <T extends object, K extends keyof T>(
   target: T,

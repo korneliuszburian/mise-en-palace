@@ -7,7 +7,7 @@ import type {
   CompleteRetrievalRunInput,
   RecordActivationDecisionInput,
   RetrievalRepository
-} from "../../repositories/index.js";
+} from "@krn/core/repositories";
 import { persistActivationTrace } from "../activation-engine.js";
 import type { RankedActivationCandidate } from "../types.js";
 import {

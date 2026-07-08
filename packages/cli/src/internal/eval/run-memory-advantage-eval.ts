@@ -22,7 +22,7 @@ import {
 import type {
   SearchDocumentRecord,
   SearchDocumentSearchResult
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import {
   isCliEntrypoint,
   writeJsonEvalResult

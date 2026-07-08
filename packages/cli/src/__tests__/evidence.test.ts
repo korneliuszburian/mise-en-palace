@@ -16,7 +16,7 @@ import type {
   RecordMemoryApplicationInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";

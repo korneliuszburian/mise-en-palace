@@ -4,7 +4,7 @@ import type {
   ProjectRecord,
   SourceChunkRecord,
   SourceRepository
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 
 const mocks = vi.hoisted(() => {
   const client = {

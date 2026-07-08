@@ -45,7 +45,7 @@ import type {
   SourceArtifactRecord,
   SourceChunkRecord,
   WorkspaceRecord
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import type {
   activationDecisions,
   contextAssemblies,

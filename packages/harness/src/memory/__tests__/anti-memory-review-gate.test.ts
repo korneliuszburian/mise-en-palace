@@ -7,7 +7,7 @@ import type {
 } from "@krn/core";
 import type {
   PromoteAntiMemoryCandidateInput
-} from "../../repositories/memory-repository.js";
+} from "@krn/core/repositories";
 import {
   promoteAntiMemoryCandidateThroughGate
 } from "../anti-memory-review-gate.js";

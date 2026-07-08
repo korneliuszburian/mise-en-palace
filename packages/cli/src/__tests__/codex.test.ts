@@ -12,7 +12,7 @@ import type {
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
   HarnessRunAggregate
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import {
   deriveCodexAdapterReadiness
 } from "../doctor-readiness.js";

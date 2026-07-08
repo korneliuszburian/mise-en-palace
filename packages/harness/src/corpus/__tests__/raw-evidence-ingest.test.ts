@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { RetrievalRepository } from "../../repositories/retrieval-repository.js";
-import type { SourceRepository } from "../../repositories/source-repository.js";
+import type { RetrievalRepository } from "@krn/core/repositories";
+import type { SourceRepository } from "@krn/core/repositories";
 import type {
   CreateSourceArtifactInput,
   CreateSourceChunkInput,
   SearchDocumentRecord,
   SourceArtifactRecord,
   SourceChunkRecord
-} from "../../repositories/types.js";
+} from "@krn/core/repositories";
 import {
   ingestRawEvidenceSpan,
   rawEvidenceChecksum

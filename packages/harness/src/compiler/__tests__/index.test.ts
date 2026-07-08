@@ -36,7 +36,7 @@ import type {
   SourceRepository,
   StartRetrievalRunInput,
   UpdateExecutionRunStatusInput
-} from "../../repositories/index.js";
+} from "@krn/core/repositories";
 import {
   createRetrievalCandidateRecord,
   createRetrievalRunRecord

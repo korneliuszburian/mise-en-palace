@@ -13,7 +13,7 @@ import type {
   ProjectKernelRecord,
   ProjectRecord,
   RepoInstallationRecord
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 import {
   findRepoRoot as findWorkspaceRoot,
   pathExists,

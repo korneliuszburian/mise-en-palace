@@ -8,7 +8,7 @@ import type {
 } from "@krn/core";
 import type {
   SearchDocumentSearchResult
-} from "../../repositories/index.js";
+} from "@krn/core/repositories";
 import {
   applyContextROI,
   applyTemporalFilter,

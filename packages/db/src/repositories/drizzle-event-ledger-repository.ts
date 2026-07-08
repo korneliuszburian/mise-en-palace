@@ -3,7 +3,7 @@ import type {
   AppendRunEventInput,
   EventLedgerRepository,
   RunEventRecord
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import type { ExecutionRunId } from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";

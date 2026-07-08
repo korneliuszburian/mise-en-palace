@@ -4,7 +4,7 @@ import type {
 } from "@krn/core";
 import type {
   SourceRepository
-} from "../repositories/source-repository.js";
+} from "@krn/core/repositories";
 
 interface CandidateWithMetadata {
   metadata: Record<string, unknown>;

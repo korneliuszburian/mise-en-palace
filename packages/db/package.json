@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@krn/core": "workspace:*",
-    "@krn/harness": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
+    "@krn/harness": "workspace:*",
     "drizzle-kit": "^0.31.10",
     "vitest": "^4.1.9"
   }

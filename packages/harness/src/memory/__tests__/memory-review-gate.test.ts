@@ -8,7 +8,7 @@ import type {
 } from "@krn/core";
 import type {
   PromoteMemoryCandidateInput
-} from "../../repositories/memory-repository.js";
+} from "@krn/core/repositories";
 import {
   applyContextROI,
   assembleContext,

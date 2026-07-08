@@ -15,7 +15,7 @@ import type {
 } from "@krn/harness";
 import type {
   SearchDocumentSearchResult
-} from "@krn/harness/repositories/internal";
+} from "@krn/core/repositories/internal";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput

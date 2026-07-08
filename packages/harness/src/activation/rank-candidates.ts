@@ -1,6 +1,6 @@
 import type {
   SearchDocumentSearchResult,
-} from "../repositories/types.js";
+} from "@krn/core/repositories";
 import type {
   MemoryRecord,
   MemoryRecordReviewSignal,

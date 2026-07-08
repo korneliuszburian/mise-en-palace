@@ -14,12 +14,10 @@ import {
 import type {
   ActivationDecisionSourceSupportState,
   MemoryRepository,
+  RecordActivationDecisionInput,
   RetrievalRepository,
   SourceRepository
-} from "../repositories/internal/index.js";
-import type {
-  RecordActivationDecisionInput
-} from "../repositories/retrieval-repository.js";
+} from "@krn/core/repositories/internal";
 import {
   buildMemoryQuery
 } from "./memory-query.js";

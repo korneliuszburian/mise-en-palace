@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   HarnessRunAggregate
-} from "@krn/harness/repositories";
+} from "@krn/core/repositories";
 
 import type {
   DatabaseRuntime
