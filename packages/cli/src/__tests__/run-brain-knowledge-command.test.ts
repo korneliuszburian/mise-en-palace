@@ -39,6 +39,7 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Source: explicit_files");
+    expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
     expect(result.stdout).toContain("Results: 1");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
@@ -70,7 +71,8 @@ describe("runBrainKnowledgeCommand", () => {
       kind: "krn.brainKnowledge.cards.preview.v1",
       access: "read_only",
       mutation: "none",
-      source: "explicit_files"
+      source: "explicit_files",
+      sourceBoundary: "bootstrap/fixture/migration input only; not runtime memory"
     });
 
     const cards = parsed["cards"];
@@ -116,6 +118,7 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
     expect(result.stdout).toContain("does not prove: brain knowledge readback was produced from live DB state");
+    expect(result.stdout).toContain("does not prove: explicit file or catalog-backed brain knowledge is runtime memory");
   });
 
   it("rejects invalid brain knowledge decision files", async () => {
@@ -142,6 +145,7 @@ describe("runBrainKnowledgeCommand", () => {
     });
 
     expect(result.stdout).toContain("Catalog files: corpus/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
     expect(result.stdout).toContain(
       "corpus/brain-knowledge/catalog.json:knowledge/source-to-decision-retention-gate.json"
     );
@@ -177,6 +181,7 @@ describe("runBrainKnowledgeCommand", () => {
     expect(result.stdout).toContain("Next action: use");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("Source boundary: bootstrap/fixture/migration input only; not runtime memory");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("data-kind=\"pattern\"");
     expect(result.stdout).toContain("data-status=\"active\"");

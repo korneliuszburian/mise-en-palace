@@ -638,6 +638,7 @@ const buildBrainKnowledgeSelection = async (
     return brainKnowledgeSelectionFromReadbackJson(
       task,
       JSON.stringify({
+        source: "memory_store",
         cards: [],
         proof: {
           proves: ["store-backed MemoryRecord readback was executed with primary and compacted bridge queries"],

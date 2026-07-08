@@ -22,6 +22,10 @@ export type BrainKnowledgePlanSelectionStatus =
   | "rejected_or_deferred"
   | "unavailable";
 
+export type BrainKnowledgePlanSelectionSource =
+  | "brain_knowledge_catalog"
+  | "memory_store";
+
 export interface BrainKnowledgePlanItem {
   id: string;
   knowledgeId: string;
@@ -37,7 +41,7 @@ export interface BrainKnowledgePlanSelection {
   kind: "krn.brainKnowledgePlanSelection.v1";
   status: BrainKnowledgePlanSelectionStatus;
   query: string;
-  source: "brain_knowledge_catalog";
+  source: BrainKnowledgePlanSelectionSource;
   selectedKnowledgeIds: string[];
   selectedKnowledge: BrainKnowledgePlanItem[];
   targetFitSummary: TargetFitSummary;
@@ -76,7 +80,8 @@ const selectionStatuses = new Set<string>([
 ]);
 
 const selectionSources = new Set<string>([
-  "brain_knowledge_catalog"
+  "brain_knowledge_catalog",
+  "memory_store"
 ]);
 
 const planItemReviewabilities = new Set<string>(
@@ -244,12 +249,21 @@ const proofFromRecord = (
   };
 };
 
+const selectionSourceFromReadback = (
+  record: Record<string, unknown> | undefined
+): BrainKnowledgePlanSelectionSource =>
+  record?.["source"] === "memory_store" ? "memory_store" : "brain_knowledge_catalog";
+
+const readbackLabelFor = (source: BrainKnowledgePlanSelectionSource): string =>
+  source === "memory_store" ? "memory-store readback" : "catalog readback";
+
 export const brainKnowledgeSelectionFromReadbackJson = (
   query: string,
   text: string
 ): BrainKnowledgePlanSelection => {
   const parsed: unknown = JSON.parse(text);
   const record = isRecord(parsed) ? parsed : undefined;
+  const source = selectionSourceFromReadback(record);
   const cards = Array.isArray(record?.cards) ? record.cards : [];
   const selectedKnowledge = cards.flatMap((card) => {
     const item = planItemFromCard(card, query);
@@ -263,14 +277,14 @@ export const brainKnowledgeSelectionFromReadbackJson = (
       kind: "krn.brainKnowledgePlanSelection.v1",
       status: "rejected_or_deferred",
       query,
-      source: "brain_knowledge_catalog",
+      source,
       selectedKnowledgeIds: [],
       selectedKnowledge: [],
       targetFitSummary,
       recommendedNextAction: targetFitSummary.recommendedUse,
       reason: "No brain knowledge matched the pre-coding plan query.",
       doesNotProve:
-        "No matched brain knowledge does not prove no relevant knowledge exists; it proves only that this catalog readback did not select one.",
+        `No matched brain knowledge does not prove no relevant knowledge exists; it proves only that this ${readbackLabelFor(source)} did not select one.`,
       proof: proofFromRecord(record?.proof)
     };
   }
@@ -279,7 +293,7 @@ export const brainKnowledgeSelectionFromReadbackJson = (
     kind: "krn.brainKnowledgePlanSelection.v1",
     status: "selected",
     query,
-    source: "brain_knowledge_catalog",
+    source,
     selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
     selectedKnowledge,
     targetFitSummary,
@@ -293,7 +307,8 @@ export const brainKnowledgeSelectionFromReadbackJson = (
 
 export const unavailableBrainKnowledgeSelection = (
   query: string,
-  reason: string
+  reason: string,
+  source: BrainKnowledgePlanSelectionSource = "memory_store"
 ): BrainKnowledgePlanSelection => {
   const targetFitSummary = summarizeTargetFit([]);
 
@@ -301,7 +316,7 @@ export const unavailableBrainKnowledgeSelection = (
     kind: "krn.brainKnowledgePlanSelection.v1",
     status: "unavailable",
     query,
-    source: "brain_knowledge_catalog",
+    source,
     selectedKnowledgeIds: [],
     selectedKnowledge: [],
     targetFitSummary,

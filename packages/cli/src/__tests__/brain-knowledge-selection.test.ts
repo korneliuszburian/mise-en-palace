@@ -64,6 +64,7 @@ describe("brainKnowledgeSelection", () => {
     );
 
     expect(result.status).toBe("selected");
+    expect(result.source).toBe("brain_knowledge_catalog");
     expect(result.selectedKnowledge).toEqual([{
       ...validKnowledgeCard,
       knowledgeId: "ts-boundary-brain-knowledge-parser-exemplar",
@@ -72,6 +73,24 @@ describe("brainKnowledgeSelection", () => {
     }]);
     expect(result.targetFitSummary.verdict).toBe("target_specific_selected_knowledge");
     expect(result.recommendedNextAction).toContain("Use target-specific selectedKnowledge");
+  });
+
+  it("preserves store-backed readback source for plan metadata", () => {
+    const result = brainKnowledgeSelectionFromReadbackJson(
+      "unknown-first parser exemplar",
+      JSON.stringify({
+        source: "memory_store",
+        cards: [validKnowledgeCard],
+        proof: {
+          proves: ["memory store selected a brain knowledge"],
+          doesNotProve: ["source truth"]
+        }
+      })
+    );
+
+    expect(result.status).toBe("selected");
+    expect(result.source).toBe("memory_store");
+    expect(result.proof.proves).toContain("memory store selected a brain knowledge");
   });
 
   it("rejects brain knowledge cards with prose next actions", () => {

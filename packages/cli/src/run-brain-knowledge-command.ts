@@ -59,6 +59,7 @@ interface BrainKnowledgePreviewResource {
   access: "read_only";
   mutation: "none";
   source: "explicit_files" | "memory_store";
+  sourceBoundary: string;
   usefulnessSource: "explicit_files" | "store_backed";
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
@@ -115,13 +116,21 @@ const buildProof = (
       ? proof.doesNotProve.filter(
           (item) => item !== "brain knowledge readback was produced from live DB state"
         )
-      : [...proof.doesNotProve];
+      : [
+          ...proof.doesNotProve,
+          "explicit file or catalog-backed brain knowledge is runtime memory"
+        ];
 
     return {
       proves: [...proves, ...usefulnessProves],
       doesNotProve
     };
   };
+
+const sourceBoundaryFor = (source: BrainKnowledgePreviewResource["source"]): string =>
+  source === "memory_store"
+    ? "store-backed runtime readback"
+    : "bootstrap/fixture/migration input only; not runtime memory";
 
 const createLoadedBrainKnowledgeCards = (): LoadedBrainKnowledgeCards => ({
   cards: [],
@@ -266,6 +275,7 @@ export const runBrainKnowledgeCommand = async (
     access: "read_only",
     mutation: "none",
     source,
+    sourceBoundary: sourceBoundaryFor(source),
     usefulnessSource,
     filter: runtime.filter,
     cardFiles: loaded.cardFiles,
@@ -306,6 +316,7 @@ const formatBrainKnowledgeTextPreview = (resource: BrainKnowledgePreviewResource
     "Access: read-only",
     "Mutation: none",
     `Source: ${resource.source}`,
+    `Source boundary: ${resource.sourceBoundary}`,
     `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Brain knowledge files: ${formatList(resource.cardFiles)}`,
@@ -474,6 +485,7 @@ const formatBrainKnowledgeHtmlPreview = (resource: BrainKnowledgePreviewResource
     <header>
       <h1>KRN Brain Knowledge Readback</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: ${escapeHtml(resource.source)}</div>
+      <div class="meta">Source boundary: ${escapeHtml(resource.sourceBoundary)}</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
       <div class="meta">Usefulness feedback files: ${escapeHtml(formatList(resource.usefulnessFeedbackFiles))}</div>
     </header>

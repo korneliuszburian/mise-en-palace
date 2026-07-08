@@ -590,13 +590,16 @@ export const buildBrainSearchPreviewResource = (
       proves: [
         input.brainKnowledgeReadback === "store_only"
           ? "brain knowledge catalog readback was explicitly skipped for this query"
-          : "existing brain-knowledge catalog readback was executed for this query",
+          : "existing brain-knowledge catalog readback was executed as bootstrap/fixture input for this query",
         "existing source-search answer package was executed for this query",
         "brain search combined both readbacks without mutating KRN state"
       ],
       doesNotProve: [
         "source truth",
         "brain-knowledge catalog completeness",
+        ...(input.brainKnowledgeReadback === "catalog_files"
+          ? ["catalog-file brain knowledge is runtime memory"]
+          : []),
         "ranking quality",
         "semantic search quality",
         "product readiness",

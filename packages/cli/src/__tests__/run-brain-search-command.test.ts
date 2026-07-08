@@ -131,6 +131,10 @@ describe("runBrainSearchCommand", () => {
       }
     });
     expect(JSON.stringify(parsed)).toContain("matching brain knowledge");
+    expect(JSON.stringify(parsed)).toContain(
+      "existing brain-knowledge catalog readback was executed as bootstrap/fixture input for this query"
+    );
+    expect(JSON.stringify(parsed)).toContain("catalog-file brain knowledge is runtime memory");
     expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
   });
 

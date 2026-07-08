@@ -281,6 +281,7 @@ describe("runCli", () => {
     expect(executionRunMetadata).toMatchObject({
       brainKnowledgeSelection: {
         status: "selected",
+        source: "memory_store",
         reason:
           "Store-backed brain knowledge matched the pre-coding plan query.",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"]
