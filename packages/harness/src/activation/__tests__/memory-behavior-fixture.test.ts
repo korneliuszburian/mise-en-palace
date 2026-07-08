@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   MemoryRecord,
   SourceClaim,
@@ -13,6 +14,7 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  applyPendingAntiMemoryReview,
   buildActivationRawRecallTriggers,
   buildMemoryQuery,
   buildSourceQuery,
@@ -74,6 +76,31 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   owner: "memory-eval",
   confidence: 95,
   sourceLineage: [{ sourceId: "source-claim-anti-memory-1" }],
+  metadata: {},
+  validFrom: "2026-06-01T00:00:00.000Z",
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const antiMemoryCandidate = (
+  overrides: Partial<AntiMemoryCandidate>
+): AntiMemoryCandidate => ({
+  id: "anti-memory-candidate-1",
+  projectId: "project-1",
+  proposedBy: "maintenance:review_feedback_delta",
+  key: "stale-pattern",
+  status: "candidate",
+  rejectedClaim: "Use stale memory update patterns as trusted guidance.",
+  reason: "Feedback marked the pattern stale but review has not promoted anti-memory.",
+  invalidatedBySourceClaimIds: [],
+  appliesTo: "stale-pattern",
+  summary: "Review stale memory pattern feedback",
+  body: "Pending feedback-maintenance anti-memory candidate.",
+  owner: "maintenance-feedback",
+  confidence: 75,
+  sourceLineage: [{ sourceId: "feedback-delta-1" }],
+  feedbackDeltaId: "feedback-delta-1",
   metadata: {},
   validFrom: "2026-06-01T00:00:00.000Z",
   createdAt: "2026-06-01T00:00:00.000Z",
@@ -306,6 +333,42 @@ describe("golden memory behavior cases", () => {
         explanation: expect.stringContaining("unresolved_negative_feedback")
       })
     ]));
+  });
+
+  it("caveats pending feedback anti-memory without blocking activation", () => {
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-pending-review",
+        key: "stale-pattern",
+        summary: "Reviewed memory supports rollback path",
+        body: "Use this rollback path guidance for memory dogfood work.",
+        applicationGuidance: "Use when planning rollback path for memory dogfood."
+      }))
+    ], buildMemoryQuery(task({
+      objective: "Plan rollback path for memory dogfood."
+    })));
+    const caveated = applyPendingAntiMemoryReview(ranked, [
+      antiMemoryCandidate({})
+    ]);
+    const context = assembleContext({
+      id: "context-pending-anti-memory-review",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(caveated, { maxInclusions: 1 }),
+      createdAt: now
+    });
+
+    expect(context.inclusions.map((item) => item.subjectId)).toEqual(["memory-pending-review"]);
+    expect(context.exclusions).toEqual([]);
+    expect(caveated[0]).toMatchObject({
+      metadata: {
+        pendingAntiMemoryReview: {
+          antiMemoryCandidateIds: ["anti-memory-candidate-1"],
+          feedbackDeltaIds: ["feedback-delta-1"],
+          subjectRefs: ["applies_to:stale-pattern"],
+          doesNotProve: expect.stringContaining("do not block activation")
+        }
+      }
+    });
   });
 
   it("requires raw recall when exact source proof is needed", () => {

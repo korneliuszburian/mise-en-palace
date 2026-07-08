@@ -169,6 +169,15 @@ const renderActivationCandidateTrace = (
         `      confidence: ${candidate.sourceDecisionSupportBoost.confidence.join(", ")}`,
         `      supportTypes: ${candidate.sourceDecisionSupportBoost.supportTypes.join(", ")}`,
         `      doesNotProve: ${candidate.sourceDecisionSupportBoost.doesNotProve}`
+      ]),
+  ...(candidate.pendingAntiMemoryReview === undefined
+    ? []
+    : [
+        "    pendingAntiMemoryReview:",
+        `      antiMemoryCandidateIds: ${candidate.pendingAntiMemoryReview.antiMemoryCandidateIds.join(", ")}`,
+        `      feedbackDeltaIds: ${candidate.pendingAntiMemoryReview.feedbackDeltaIds.join(", ") || "none"}`,
+        `      subjectRefs: ${candidate.pendingAntiMemoryReview.subjectRefs.join(", ") || "none"}`,
+        `      doesNotProve: ${candidate.pendingAntiMemoryReview.doesNotProve}`
       ])
 ];
 

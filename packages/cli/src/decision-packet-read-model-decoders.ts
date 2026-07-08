@@ -13,6 +13,7 @@ import type {
 } from "./database-runtime.js";
 import type {
   DecisionPacketReadModelChangedFiles,
+  DecisionPacketReadModelPendingAntiMemoryReview,
   DecisionPacketReadModelSourceClaimEdgeInfluence,
   DecisionPacketReadModelSourceDecisionSupportBoost,
   DecisionPacketReadModelSourceDecisionSupportTarget
@@ -270,6 +271,32 @@ export const sourceDecisionSupportBoostFromMetadata = (
     targets,
     confidence,
     supportTypes,
+    doesNotProve
+  };
+};
+
+export const pendingAntiMemoryReviewFromMetadata = (
+  metadata: Record<string, unknown>
+): DecisionPacketReadModelPendingAntiMemoryReview | undefined => {
+  const value = metadataRecordValue(metadata.pendingAntiMemoryReview);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const antiMemoryCandidateIds = readMetadataStringList(value, "antiMemoryCandidateIds");
+  const feedbackDeltaIds = readMetadataStringList(value, "feedbackDeltaIds");
+  const subjectRefs = readMetadataStringList(value, "subjectRefs");
+  const doesNotProve = readMetadataString(value, "doesNotProve");
+
+  if (antiMemoryCandidateIds.length === 0 || doesNotProve === undefined) {
+    return undefined;
+  }
+
+  return {
+    antiMemoryCandidateIds,
+    feedbackDeltaIds,
+    subjectRefs,
     doesNotProve
   };
 };

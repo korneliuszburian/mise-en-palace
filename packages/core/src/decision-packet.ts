@@ -262,6 +262,12 @@ export interface DecisionPacketActivationCandidateInput {
       targetId: string;
     }[];
   };
+  pendingAntiMemoryReview?: {
+    antiMemoryCandidateIds: readonly string[];
+    feedbackDeltaIds: readonly string[];
+    subjectRefs: readonly string[];
+    doesNotProve: string;
+  };
 }
 
 export interface DecisionPacketActivationDecisionInput {
@@ -429,10 +435,19 @@ const caveatedSourceClaimIdsFor = (
   const maintenanceFeedbackSourceClaimIds = new Set(
     sourceClaimIdsWithUsefulness(readModel, ["noise", "stale", "unknown"])
   );
+  const pendingAntiMemoryReviewSourceClaimIds = new Set(
+    readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+      candidate.subjectType === "source_claim" &&
+      candidate.pendingAntiMemoryReview !== undefined
+        ? [candidate.subjectId]
+        : []
+    ) ?? []
+  );
 
   return sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
     !supportedSourceClaimIds.has(sourceClaimId) ||
-    maintenanceFeedbackSourceClaimIds.has(sourceClaimId)
+    maintenanceFeedbackSourceClaimIds.has(sourceClaimId) ||
+    pendingAntiMemoryReviewSourceClaimIds.has(sourceClaimId)
   );
 };
 
@@ -470,6 +485,20 @@ const memoryRefsWithKnowledgeUsefulness = (
   const knowledgeIds = knowledgeIdsWithUsefulness(readModel, outcomes);
 
   return knowledgeIds.filter((knowledgeId) => memoryRefs.has(knowledgeId));
+};
+
+const memoryRefsWithPendingAntiMemoryReview = (
+  readModel: DecisionPacketReadModelInput
+): string[] => {
+  const memoryRefs = new Set(memoryRefsFor(readModel));
+
+  return unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.subjectType === "memory_record" &&
+    memoryRefs.has(candidate.subjectId) &&
+    candidate.pendingAntiMemoryReview !== undefined
+      ? [candidate.subjectId]
+      : []
+  ) ?? []);
 };
 
 const rejectedSourceDecisionIdsFor = (
@@ -612,7 +641,8 @@ export const buildDecisionPacketFromReadModel = (
   const noiseKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["noise"]);
   const unknownKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["unknown"]);
   const caveatedMemoryRefs = unique([
-    ...memoryRefsWithKnowledgeUsefulness(readModel, ["stale", "noise", "unknown"])
+    ...memoryRefsWithKnowledgeUsefulness(readModel, ["stale", "noise", "unknown"]),
+    ...memoryRefsWithPendingAntiMemoryReview(readModel)
   ]);
   const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
   const rejectedPathIds = unique([

@@ -8,6 +8,7 @@ export * from "./conflict-filter.js";
 export * from "./context-roi.js";
 export * from "./memory-query.js";
 export * from "./owner-file-recall.js";
+export * from "./pending-anti-memory-review.js";
 export * from "./rank-candidates.js";
 export * from "./relation-grounded-qa-readback.js";
 export * from "./source-query.js";

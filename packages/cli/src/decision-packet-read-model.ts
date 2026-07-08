@@ -68,6 +68,13 @@ export interface DecisionPacketReadModelSourceDecisionSupportBoost {
   doesNotProve: string;
 }
 
+export interface DecisionPacketReadModelPendingAntiMemoryReview {
+  antiMemoryCandidateIds: string[];
+  feedbackDeltaIds: string[];
+  subjectRefs: string[];
+  doesNotProve: string;
+}
+
 export interface DecisionPacketReadModelSourceDecisionSupportTarget {
   sourceDecisionEdgeId: string;
   targetType: SourceDecisionTargetType;
@@ -93,6 +100,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
   sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
+  pendingAntiMemoryReview?: DecisionPacketReadModelPendingAntiMemoryReview;
 }
 
 export interface DecisionPacketReadModelActivationDecision {

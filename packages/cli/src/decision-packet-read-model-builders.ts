@@ -29,6 +29,7 @@ import {
   changedFileClassification,
   projectResolutionFromMetadata,
   projectStandardDecisionFromMetadata,
+  pendingAntiMemoryReviewFromMetadata,
   readMetadataFiniteNumber,
   sourceClaimEdgeInfluenceFromMetadata,
   sourceDecisionSupportBoostFromMetadata
@@ -131,6 +132,7 @@ const activationCandidateResource = (
 ): DecisionPacketReadModelActivationCandidate => {
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
+  const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
   const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
 
   return {
@@ -144,7 +146,8 @@ const activationCandidateResource = (
     reason: candidate.reason,
     ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
-    ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost })
+    ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost }),
+    ...(pendingAntiMemoryReview === undefined ? {} : { pendingAntiMemoryReview })
   };
 };
 

@@ -72,6 +72,16 @@ const readModel = {
       }, {
         subjectType: "source_claim",
         subjectId: "claim-caveated"
+      }, {
+        subjectType: "memory_record",
+        subjectId: "memory-current",
+        pendingAntiMemoryReview: {
+          antiMemoryCandidateIds: ["anti-memory-candidate-pending-feedback"],
+          feedbackDeltaIds: ["feedback-delta-prior"],
+          subjectRefs: ["applies_to:memory-current"],
+          doesNotProve:
+            "Pending anti-memory candidates are reviewable maintenance proposals; they do not block activation, promote rejected paths, or mutate Memory Core truth until reviewed."
+        }
       }],
       decisions: [{
         reason: "anti_memory_block",
@@ -195,6 +205,7 @@ describe("DecisionPacket builder", () => {
       "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current",
       "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
     ]);
+    expect(packet.rejectedPathIds).not.toContain("anti-memory-candidate-pending-feedback");
     expect(packet.sourceConsensus.evidenceGapIds).toEqual(packet.evidenceGaps.map((gap) => gap.id));
     expect(packet.abstentionScore).toMatchObject({
       status: "abstain",

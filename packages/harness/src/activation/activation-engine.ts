@@ -1,4 +1,5 @@
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   ActivationAbstentionReason,
   ContextAssembly,
@@ -40,6 +41,9 @@ import {
   toSourceClaimCandidate
 } from "./rank-candidates.js";
 import {
+  applyPendingAntiMemoryReview
+} from "./pending-anti-memory-review.js";
+import {
   buildSourceQuery
 } from "./source-query.js";
 import type {
@@ -61,7 +65,10 @@ export interface ActivationRetrievalLimits {
 }
 
 export interface ActivationCandidateRepositories {
-  memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
+  memoryRepository: Pick<
+    MemoryRepository,
+    "listActiveMemory" | "listAntiMemoryForProject"
+  > & Partial<Pick<MemoryRepository, "listAntiMemoryCandidates">>;
   sourceRepository: Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
@@ -83,6 +90,7 @@ export interface RetrieveActivationCandidatesResult {
   sourceQuery: ActivationQuery;
   candidates: readonly RankedActivationCandidate[];
   antiMemoryRecords: readonly AntiMemoryRecord[];
+  antiMemoryCandidates: readonly AntiMemoryCandidate[];
   diagnostics: ActivationRetrievalDiagnostics;
 }
 
@@ -473,6 +481,7 @@ export const retrieveActivationCandidates = async (
       sourceQuery,
       candidates: [],
       antiMemoryRecords: [],
+      antiMemoryCandidates: [],
       diagnostics: buildActivationRetrievalDiagnostics({
         projectScoped: false,
         memoryRecordCount: 0,
@@ -510,6 +519,13 @@ export const retrieveActivationCandidates = async (
     input.taskContract.projectId,
     input.limits.antiMemory
   );
+  const antiMemoryCandidates =
+    input.repositories.memoryRepository.listAntiMemoryCandidates === undefined
+      ? []
+      : await input.repositories.memoryRepository.listAntiMemoryCandidates(
+          input.taskContract.projectId,
+          input.limits.antiMemory
+        );
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
@@ -558,18 +574,19 @@ export const retrieveActivationCandidates = async (
     }),
     sourceQuery
   );
-  const candidates = mergeActivationCandidates([
+  const candidates = applyPendingAntiMemoryReview(mergeActivationCandidates([
     ...memoryCandidates,
     ...sourceCandidates,
     ...searchCandidates,
     ...ownerFileCandidates
-  ]);
+  ]), antiMemoryCandidates);
 
   return {
     memoryQuery,
     sourceQuery,
     candidates,
     antiMemoryRecords,
+    antiMemoryCandidates,
     diagnostics: buildActivationRetrievalDiagnostics({
       projectScoped: true,
       memoryRecordCount: memoryRecords.length,
