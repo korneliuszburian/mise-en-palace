@@ -2209,6 +2209,38 @@ describe("activation engine", () => {
     ]);
   });
 
+  it("blocks memory records targeted by feedback-maintenance anti-memory", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-feedback-target",
+            key: "frontend-standard"
+          })
+        )
+      ],
+      query
+    );
+    const result = detectConflicts(ranked, [
+      antiMemoryRecord({
+        id: "anti-memory-feedback",
+        key: "feedback-maintenance:feedback-delta-1:memory_record:memory-feedback-target:stale",
+        appliesTo: "memory-feedback-target"
+      })
+    ]);
+
+    expect(result.candidates[0]).toMatchObject({
+      subjectId: "memory-feedback-target",
+      antiMemoryRecordId: "anti-memory-feedback",
+      conflictReason: "anti_memory_block",
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("anti-memory-feedback")
+      }
+    });
+  });
+
   it("blocks search documents linked to anti-memory source or memory ids", () => {
     const query = buildSourceQuery(task);
     const ranked = rankCandidates(

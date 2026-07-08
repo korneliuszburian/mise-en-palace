@@ -459,10 +459,11 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
-      appliesTo: "brain_knowledge:pattern:stale-standard-1",
+      appliesTo: "pattern:stale-standard-1",
       metadata: {
         outcome: "stale",
         knowledgeId: "pattern:stale-standard-1",
+        subjectRef: "memory_record:pattern:stale-standard-1",
         mutation: "none"
       }
     });

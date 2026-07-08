@@ -26,9 +26,10 @@ type FeedbackMaintenanceOutcome = Pick<
   "outcome" | "reason" | "evidenceRefs" | "doesNotProve"
 >;
 type FeedbackMaintenanceSubject = {
-  readonly subjectKind: "source_claim" | "source_decision" | "brain_knowledge";
+  readonly subjectKind: "source_claim" | "source_decision" | "memory_record";
   readonly subjectId: string;
   readonly subjectRef: string;
+  readonly activationTarget: string;
   readonly blockedNoun: "current authority" | "current knowledge";
   readonly invalidatedBySourceClaimIds: readonly string[];
   readonly metadata: Record<string, unknown>;
@@ -69,6 +70,7 @@ const sourceSubjectFor = (
       subjectKind: "source_claim",
       subjectId: outcome.sourceClaimId,
       subjectRef: `source_claim:${outcome.sourceClaimId}`,
+      activationTarget: `source_claim:${outcome.sourceClaimId}`,
       blockedNoun: "current authority",
       invalidatedBySourceClaimIds: [outcome.sourceClaimId],
       metadata: {
@@ -83,6 +85,7 @@ const sourceSubjectFor = (
     subjectKind: "source_decision",
     subjectId,
     subjectRef: `source_decision:${subjectId}`,
+    activationTarget: `source_decision:${subjectId}`,
     blockedNoun: "current authority",
     invalidatedBySourceClaimIds: [],
     metadata: outcome.sourceDecisionId === undefined ? {} : {
@@ -94,9 +97,10 @@ const sourceSubjectFor = (
 const knowledgeSubjectFor = (
   outcome: KnowledgeUsefulnessOutcomeFeedback
 ): FeedbackMaintenanceSubject => ({
-  subjectKind: "brain_knowledge",
+  subjectKind: "memory_record",
   subjectId: outcome.knowledgeId,
-  subjectRef: `brain_knowledge:${outcome.knowledgeId}`,
+  subjectRef: `memory_record:${outcome.knowledgeId}`,
+  activationTarget: outcome.knowledgeId,
   blockedNoun: "current knowledge",
   invalidatedBySourceClaimIds: [],
   metadata: {
@@ -135,7 +139,7 @@ const antiMemoryCandidateForFeedback = (input: {
     reason:
       `Feedback marked ${subject.subjectRef} as ${outcome.outcome}: ${outcome.reason}`,
     invalidatedBySourceClaimIds: [...subject.invalidatedBySourceClaimIds],
-    appliesTo: subject.subjectRef,
+    appliesTo: subject.activationTarget,
     summary: `Review ${outcome.outcome} feedback for ${subject.subjectRef}`,
     body:
       `FeedbackDelta ${input.feedbackDelta.id} reported ${subject.subjectRef} as ${outcome.outcome}. ` +
