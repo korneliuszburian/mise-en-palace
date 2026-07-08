@@ -28,7 +28,7 @@ const sourceClaimAuthorityExclusionReason = (
 
 const sourceClaimAuthorityCanActivate = (
   status: SourceClaimAuthorityStatus
-): boolean => status === "accepted" || status === "caveated" || status === "evidence_gap";
+): boolean => status === "accepted" || status === "caveated";
 
 const sourceClaimAuthorityReasonText = (
   reasons: readonly SourceClaimAuthorityReason[] | undefined
