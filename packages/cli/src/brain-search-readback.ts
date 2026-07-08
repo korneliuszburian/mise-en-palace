@@ -26,8 +26,8 @@ export interface BrainSearchPreviewResource {
   access: "read_only";
   mutation: "none";
   query: string;
-  brainKnowledgeReadback: "catalog_files" | "store_only";
-  brainKnowledgeQueries: readonly string[];
+  brainRecallReadback: "catalog_files" | "store_only";
+  brainRecallQueries: readonly string[];
   knowledgeReadModels: {
     totalReadModels: number;
     returnedReadModels: number;
@@ -99,7 +99,7 @@ interface SourceSearchKnowledgeFields {
 
 type BrainSearchRecommendationResource = Pick<
   BrainSearchPreviewResource,
-  "brainKnowledgeReadback" | "knowledgeReadModels" | "sourceSearch"
+  "brainRecallReadback" | "knowledgeReadModels" | "sourceSearch"
 >;
 
 export const parseJsonObject = (text: string, label: string): JsonRecord => {
@@ -382,11 +382,11 @@ const sourceSearchKnowledgePacketFromFields = (
     consumers: optionalStringArray(fields.consumer),
     falsifier: firstDefinedString([
       fields.falsifier,
-      "missing falsifier; do not treat this source evidence as review-ready brain knowledge"
+      "missing falsifier; do not treat this source evidence as review-ready brain recall"
     ]),
     doesNotProve:
       fields.doesNotProve ??
-      "This source-search candidate does not prove a brain knowledge is review-ready.",
+      "This source-search candidate does not prove a brain recall is review-ready.",
     nextAction: sourceKnowledgeNextAction[reviewability]
   };
 };
@@ -415,14 +415,14 @@ const sourceSearchKnowledgePackets = (
   });
 
 const selectedKnowledgePackets = (input: {
-  brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
+  brainRecallReadback: BrainSearchPreviewResource["brainRecallReadback"];
   readModels: readonly unknown[];
   supportingClaims: readonly unknown[];
   query: string;
 }): readonly BrainSearchKnowledgePacket[] => {
   const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
-  if (input.brainKnowledgeReadback === "store_only") {
+  if (input.brainRecallReadback === "store_only") {
     const storePackets = knowledgePackets(input.readModels, input.query, "memory_store");
 
     return storePackets.length > 0
@@ -457,7 +457,7 @@ const nonTargetSpecificRecommendation = (
 const storeOnlyRecommendation = (
   resource: BrainSearchRecommendationResource
 ): string | undefined => {
-  if (resource.brainKnowledgeReadback !== "store_only") {
+  if (resource.brainRecallReadback !== "store_only") {
     return undefined;
   }
 
@@ -494,7 +494,7 @@ const catalogRecommendation = (
   }
 
   if (hasSourceEvidence) {
-    return "Use source-search evidence cautiously and run a narrower brain knowledge query before retaining a pattern.";
+    return "Use source-search evidence cautiously and run a narrower brain recall query before retaining a pattern.";
   }
 
   if (hasReturnedCards) {
@@ -530,8 +530,8 @@ export const returnedKnowledgeReadModelCount = (knowledgeJson: JsonRecord): numb
 export const buildBrainSearchPreviewResource = (
   input: {
     query: string;
-    brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
-    brainKnowledgeQueries: readonly string[];
+    brainRecallReadback: BrainSearchPreviewResource["brainRecallReadback"];
+    brainRecallQueries: readonly string[];
     knowledgeJson: JsonRecord;
     sourceJson: JsonRecord;
   }
@@ -546,7 +546,7 @@ export const buildBrainSearchPreviewResource = (
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
   const selectedKnowledge = selectedKnowledgePackets({
-    brainKnowledgeReadback: input.brainKnowledgeReadback,
+    brainRecallReadback: input.brainRecallReadback,
     readModels,
     supportingClaims,
     query: input.query
@@ -568,8 +568,8 @@ export const buildBrainSearchPreviewResource = (
     access: "read_only",
     mutation: "none",
     query: input.query,
-    brainKnowledgeReadback: input.brainKnowledgeReadback,
-    brainKnowledgeQueries: input.brainKnowledgeQueries,
+    brainRecallReadback: input.brainRecallReadback,
+    brainRecallQueries: input.brainRecallQueries,
     knowledgeReadModels: {
       totalReadModels: numberValue(input.knowledgeJson["totalReadModels"]),
       returnedReadModels: numberValue(input.knowledgeJson["returnedReadModels"]),
@@ -606,16 +606,16 @@ export const buildBrainSearchPreviewResource = (
     recommendedNextAction: "",
     proof: {
       proves: [
-        input.brainKnowledgeReadback === "store_only"
-          ? "knowledge catalog readback was explicitly skipped for this query"
-          : "existing knowledge catalog readback was executed as bootstrap/fixture input for this query",
+        input.brainRecallReadback === "store_only"
+          ? "brain recall catalog readback was explicitly skipped for this query"
+          : "existing brain recall catalog readback was executed as bootstrap/fixture input for this query",
         "existing source-search answer package was executed for this query",
         "brain search combined both readbacks without mutating KRN state"
       ],
       doesNotProve: [
         "source truth",
-        "knowledge catalog completeness",
-        ...(input.brainKnowledgeReadback === "catalog_files"
+        "brain recall catalog completeness",
+        ...(input.brainRecallReadback === "catalog_files"
           ? ["catalog-file knowledge is runtime memory"]
           : []),
         "ranking quality",
@@ -638,10 +638,10 @@ export const formatBrainSearchPreviewText = (resource: BrainSearchPreviewResourc
     "Access: read-only",
     "Mutation: none",
     `Query: ${resource.query}`,
-    `Knowledge readback: ${resource.brainKnowledgeReadback}`,
-    `Knowledge queries: ${resource.brainKnowledgeQueries.length === 0 ? "none" : resource.brainKnowledgeQueries.join(" -> ")}`,
+    `Brain recall readback: ${resource.brainRecallReadback}`,
+    `Brain recall queries: ${resource.brainRecallQueries.length === 0 ? "none" : resource.brainRecallQueries.join(" -> ")}`,
     "",
-    "Knowledge read models:",
+    "Recall read models:",
     `- returned: ${resource.knowledgeReadModels.returnedReadModels}`,
     `- total: ${resource.knowledgeReadModels.totalReadModels}`,
     ...(resource.knowledgeReadModels.readModelIds.length === 0

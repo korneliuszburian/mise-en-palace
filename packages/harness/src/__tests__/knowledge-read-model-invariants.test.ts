@@ -125,7 +125,7 @@ describe("Knowledge read model invariants", () => {
       throw new Error("Root package.json scripts must be an object.");
     }
 
-    const previewScript = scripts["brain:knowledge:preview"];
+    const previewScript = scripts["brain:recall:preview"];
 
     expect(typeof previewScript).toBe("string");
 
@@ -133,10 +133,10 @@ describe("Knowledge read model invariants", () => {
       return;
     }
 
-    expect(previewScript).toContain("brain knowledge");
+    expect(previewScript).toContain("brain recall");
     expect(previewScript).toContain("--catalog-file corpus/brain-knowledge/catalog.json");
     expect(previewScript).toContain("--html");
-    expect(previewScript).toContain(".local-lab/brain-knowledge-preview.html");
+    expect(previewScript).toContain(".local-lab/brain-recall-preview.html");
     expect(previewScript).not.toContain(" db ");
     expect(previewScript).not.toContain("dashboard");
     expect(previewScript).not.toContain("mcp");

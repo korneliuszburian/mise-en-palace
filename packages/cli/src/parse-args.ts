@@ -168,12 +168,12 @@ export type CliCommand =
       runId: string;
     }
   | {
-      kind: "brainKnowledgeHelp";
+      kind: "brainRecallHelp";
     }
   | {
-      kind: "brainKnowledge";
+      kind: "brainRecall";
       readModelFiles: readonly string[];
-      knowledgeFiles: readonly string[];
+      decisionFiles: readonly string[];
       catalogFiles: readonly string[];
       storeOnly: boolean;
       projectId?: string;
@@ -537,7 +537,7 @@ const usage = [
   "krn run show --run-id <id>",
   "krn decision packet --run-id <id> [--json]",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
-  "krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",

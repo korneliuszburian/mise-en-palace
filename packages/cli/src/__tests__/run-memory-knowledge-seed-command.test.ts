@@ -22,7 +22,7 @@ import type {
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import {
-  brainKnowledgeDecisionToMemoryCandidateInput,
+  brainRecallDecisionToMemoryCandidateInput,
   runMemoryKnowledgeSeedCommand
 } from "../run-memory-knowledge-seed-command.js";
 import {
@@ -259,9 +259,9 @@ const createStoreBackedSeedRuntime = (directory: string) => {
   };
 };
 
-describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
-  it("maps a brain knowledge to a kind=pattern memory candidate", () => {
-    const input = brainKnowledgeDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
+describe("brainRecallDecisionToMemoryCandidateInput", () => {
+  it("maps a brain recall to a kind=pattern memory candidate", () => {
+    const input = brainRecallDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
 
     expect(input.kind).toBe("pattern");
     expect(input.projectId).toBe("project-1");
@@ -403,7 +403,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           storeOnly: true,
           format: "json"
         },
-        async runBrainKnowledge(): Promise<never> {
+        async runBrainRecall(): Promise<never> {
           throw new Error("store-only brain search should not read file catalogs");
         },
         async runSourceSearch() {
@@ -438,8 +438,8 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       const parsed: unknown = JSON.parse(search.stdout);
 
       expect(parsed).toMatchObject({
-        brainKnowledgeReadback: "store_only",
-        brainKnowledgeQueries: ["db backed memory readback"],
+        brainRecallReadback: "store_only",
+        brainRecallQueries: ["db backed memory readback"],
         knowledgeReadModels: {
           readModelIds: ["pattern:ts-boundary-unknown-first-result-state"],
           selectedKnowledge: [{

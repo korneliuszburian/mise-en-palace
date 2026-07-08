@@ -237,7 +237,7 @@ const knowledgePayload = (
   readModels: readonly BrainRankingReadModelFixture[]
 ): string =>
   JSON.stringify({
-    kind: "krn.brain.knowledge.readback.v1",
+    kind: "krn.brain.recall.readback.v1",
     returnedReadModels: readModels.length,
     totalReadModels: readModels.length,
     readModels,
@@ -290,7 +290,7 @@ const evaluateCase = async (
     now: () => "2026-07-04T00:00:00.000Z",
     createId: (prefix) => `${prefix}-brain-ranking-eval`,
     command,
-    async runBrainKnowledge() {
+    async runBrainRecall() {
       return {
         stdout: knowledgePayload(testCase.knowledgeReadModels)
       };

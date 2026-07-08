@@ -2,19 +2,19 @@ import {
   optionValue
 } from "./parse-cli-options.js";
 import {
-  parseBrainKnowledgeArgs
-} from "./parse-brain-knowledge-args.js";
+  parseBrainRecallArgs
+} from "./parse-brain-recall-args.js";
 import type {
   ParseArgsResult
 } from "./parse-args.js";
 
 const brainSearchUsage = [
   "Usage: krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
-  "Usage: krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
-  "krn brain knowledge --text \"unknown-first\"",
+  "krn brain recall --text \"unknown-first\"",
   "krn brain search --query \"source-to-decision\" --project project-explicit --json",
   "  note: brain search defaults to DB-backed MemoryRecord readback plus source-search. --catalog-file is an explicit legacy catalog preview mode; --store-only keeps file catalog readback disabled. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
@@ -333,8 +333,8 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
     return brainSearchHelp();
   }
 
-  if (action === "knowledge") {
-    return parseBrainKnowledgeArgs(args);
+  if (action === "recall") {
+    return parseBrainRecallArgs(args);
   }
 
   return action === "search"

@@ -55,7 +55,7 @@ const sourceLineageFromRefs = (
  * input. Pure + unit-testable; the seed command writes it via the proven
  * createMemoryCandidate + promoteReviewedMemoryCandidate path.
  */
-export const brainKnowledgeDecisionToMemoryCandidateInput = (
+export const brainRecallDecisionToMemoryCandidateInput = (
   decision: KnowledgeDecision,
   projectId: string,
   now: string
@@ -187,7 +187,7 @@ export const runMemoryKnowledgeSeedCommand = async (
       }
 
       const candidate = await db.memoryRepository.createMemoryCandidate(
-        brainKnowledgeDecisionToMemoryCandidateInput(decision, projectId, runtime.now())
+        brainRecallDecisionToMemoryCandidateInput(decision, projectId, runtime.now())
       );
       await db.memoryRepository.promoteReviewedMemoryCandidate({
         candidateId: candidate.id,

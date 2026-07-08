@@ -25,7 +25,7 @@ import type {
 import {
   now,
   runPersistedPlanWithCapturedMetadata,
-  brainKnowledgeMemoryRepository,
+  brainRecallMemoryRepository,
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
 
@@ -159,11 +159,11 @@ describe("runCli", () => {
             compilerDependencies: {
               ...dependencies,
               harnessRunRepository,
-              memoryRepository: brainKnowledgeMemoryRepository
+              memoryRepository: brainRecallMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: brainKnowledgeMemoryRepository,
+            memoryRepository: brainRecallMemoryRepository,
             async close() {
               return undefined;
             }
@@ -253,11 +253,11 @@ describe("runCli", () => {
             compilerDependencies: {
               ...dependencies,
               harnessRunRepository,
-              memoryRepository: brainKnowledgeMemoryRepository
+              memoryRepository: brainRecallMemoryRepository
             },
             harnessRunRepository,
             sourceRepository,
-            memoryRepository: brainKnowledgeMemoryRepository,
+            memoryRepository: brainRecallMemoryRepository,
             async close() {
               return undefined;
             }
@@ -289,7 +289,7 @@ describe("runCli", () => {
     });
   });
 
-  it("retries brain knowledge planning with compact mechanism terms", async () => {
+  it("retries brain recall planning with compact mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
@@ -306,7 +306,7 @@ describe("runCli", () => {
     });
   });
 
-  it("retries brain knowledge planning with parser exemplar mechanism terms", async () => {
+  it("retries brain recall planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );

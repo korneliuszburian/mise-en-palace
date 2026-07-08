@@ -53,8 +53,8 @@ import type {
   SourceSeedProposal
 } from "./run-init-command.js";
 import {
-  compactBrainKnowledgeBridgeQueries
-} from "./brain-knowledge-query.js";
+  compactBrainRecallBridgeQueries
+} from "./brain-recall-query.js";
 import {
   formatKnowledgeSelectionLines,
   knowledgePlanSelectionMetadataKey,
@@ -574,7 +574,7 @@ const readKnowledgeSelection = async (
   const selection = knowledgeSelectionFromReadbackJson(
     query,
     JSON.stringify({
-      kind: "krn.brain.knowledge.readback.v1",
+      kind: "krn.brain.recall.readback.v1",
       access: "read_only",
       mutation: "none",
       source: "memory_store",
@@ -623,7 +623,7 @@ const buildKnowledgeSelection = async (
 ): Promise<KnowledgePlanSelection> => {
   const baseQueries = [task, task.replace(/-/gu, " ")];
   const queries = [...new Set(baseQueries.flatMap((query) => {
-    const compactQueries = compactBrainKnowledgeBridgeQueries(query);
+    const compactQueries = compactBrainRecallBridgeQueries(query);
 
     return [query, ...compactQueries];
   }))];
@@ -647,7 +647,7 @@ const buildKnowledgeSelection = async (
       })
     );
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "unknown knowledge readback error";
+    const reason = error instanceof Error ? error.message : "unknown brain recall readback error";
 
     return unavailableKnowledgeSelection(task, reason);
   }

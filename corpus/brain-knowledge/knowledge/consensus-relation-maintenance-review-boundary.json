@@ -18,7 +18,7 @@
     "future mini Brain-QA consensus relation cases"
   ],
   "falsifier": "A future consensus/eval or graph relation candidate still requires raw JSON, implementation code, or historical reports to identify relation focus, review question, support/risk evidence, review usefulness, decision options, or mutation boundaries.",
-  "doesNotProve": "This brain knowledge does not prove source truth, relation correctness, duplicate consolidation safety, consensus correctness, graph ranking quality, autonomous worker execution, Memory Core mutation safety, or KRN product readiness.",
+  "doesNotProve": "This retained memory does not prove source truth, relation correctness, duplicate consolidation safety, consensus correctness, graph ranking quality, autonomous worker execution, Memory Core mutation safety, or KRN product readiness.",
   "observedAt": "2026-07-01",
   "nextAction": "use"
 }

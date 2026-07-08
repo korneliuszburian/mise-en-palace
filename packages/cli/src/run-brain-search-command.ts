@@ -2,8 +2,8 @@ import type {
   CliCommand
 } from "./parse-args.js";
 import {
-  compactBrainKnowledgeBridgeQueries
-} from "./brain-knowledge-query.js";
+  compactBrainRecallBridgeQueries
+} from "./brain-recall-query.js";
 import {
   buildBrainSearchPreviewResource,
   formatBrainSearchPreviewText,
@@ -11,12 +11,12 @@ import {
   returnedKnowledgeReadModelCount
 } from "./brain-search-readback.js";
 import {
-  runBrainKnowledgeCommand
-} from "./run-brain-knowledge-command.js";
+  runBrainRecallCommand
+} from "./run-brain-recall-command.js";
 import type {
-  BrainKnowledgeCommandRuntime,
-  BrainKnowledgeCommandResult
-} from "./run-brain-knowledge-command.js";
+  BrainRecallCommandRuntime,
+  BrainRecallCommandResult
+} from "./run-brain-recall-command.js";
 import {
   runSourceSearchCommand
 } from "./run-source-search-command.js";
@@ -46,7 +46,7 @@ export interface BrainSearchCommandRuntime extends BaseCommandRuntime {
   cwd: string;
   command: BrainSearchCommand;
   createDatabaseRuntime?: CreateSourceSearchDatabaseRuntime;
-  runBrainKnowledge?: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
+  runBrainRecall?: (runtime: BrainRecallCommandRuntime) => Promise<BrainRecallCommandResult>;
   runSourceSearch?: (runtime: SourceSearchCommandRuntime) => Promise<SourceSearchCommandResult>;
 }
 
@@ -54,14 +54,14 @@ export interface BrainSearchCommandResult {
   stdout: string;
 }
 
-type BrainKnowledgeReadback = {
-  result: BrainKnowledgeCommandResult;
+type BrainRecallReadback = {
+  result: BrainRecallCommandResult;
   queries: readonly string[];
 };
 
 const maxBrainSearchCompactQueryRetries = 6;
 
-const skippedStoreOnlyReadback = (reason?: string): BrainKnowledgeReadback => ({
+const skippedStoreOnlyReadback = (reason?: string): BrainRecallReadback => ({
   result: {
     stdout: JSON.stringify({
       totalReadModels: 0,
@@ -69,7 +69,7 @@ const skippedStoreOnlyReadback = (reason?: string): BrainKnowledgeReadback => ({
       readModels: [],
       proof: {
         doesNotProve: [
-          "knowledge catalog readback was explicitly skipped by --store-only",
+          "brain recall catalog readback was explicitly skipped by --store-only",
           ...(reason === undefined ? [] : [reason])
         ]
       }
@@ -83,7 +83,7 @@ const runStoreMemoryReadback = async (
     runtime: BrainSearchCommandRuntime;
     query: string;
   }
-): Promise<BrainKnowledgeReadback> => {
+): Promise<BrainRecallReadback> => {
   const databaseUrl = input.runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
@@ -123,7 +123,7 @@ const runStoreMemoryReadback = async (
     return {
       result: {
         stdout: JSON.stringify({
-          kind: "krn.brain.knowledge.readback.v1",
+          kind: "krn.brain.recall.readback.v1",
           access: "read_only",
           mutation: "none",
           source: "memory_store",
@@ -160,19 +160,19 @@ const runStoreMemoryReadback = async (
   }
 };
 
-const runCatalogBrainKnowledgeReadback = async (
+const runCatalogBrainRecallReadback = async (
   input: {
     runtime: BrainSearchCommandRuntime;
-    runBrainKnowledge: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
+    runBrainRecall: (runtime: BrainRecallCommandRuntime) => Promise<BrainRecallCommandResult>;
     catalogFiles: readonly string[];
     query: string;
   }
-): Promise<BrainKnowledgeCommandResult> =>
-  input.runBrainKnowledge({
-    cwd: input.runtime.cwd,
-    readModelFiles: [],
-    knowledgeFiles: [],
-    catalogFiles: input.catalogFiles,
+): Promise<BrainRecallCommandResult> =>
+  input.runBrainRecall({
+      cwd: input.runtime.cwd,
+      readModelFiles: [],
+      decisionFiles: [],
+      catalogFiles: input.catalogFiles,
     filter: {
       text: input.query
     },
@@ -182,16 +182,16 @@ const runCatalogBrainKnowledgeReadback = async (
       : { limit: input.runtime.command.limit })
   });
 
-const runBrainKnowledgeReadback = async (
+const runBrainRecallReadback = async (
   input: {
     runtime: BrainSearchCommandRuntime;
-    runBrainKnowledge: (runtime: BrainKnowledgeCommandRuntime) => Promise<BrainKnowledgeCommandResult>;
+    runBrainRecall: (runtime: BrainRecallCommandRuntime) => Promise<BrainRecallCommandResult>;
     catalogFiles: readonly string[];
     query: string;
     useStoreReadback: boolean;
     readStoreMemory: boolean;
   }
-): Promise<BrainKnowledgeReadback> => {
+): Promise<BrainRecallReadback> => {
   if (input.useStoreReadback) {
     return input.readStoreMemory
       ? runStoreMemoryReadback({
@@ -201,8 +201,8 @@ const runBrainKnowledgeReadback = async (
       : skippedStoreOnlyReadback();
   }
 
-  const primaryResult = await runCatalogBrainKnowledgeReadback(input);
-  const primaryJson = parseJsonObject(primaryResult.stdout, "brain knowledge");
+  const primaryResult = await runCatalogBrainRecallReadback(input);
+  const primaryJson = parseJsonObject(primaryResult.stdout, "brain recall");
 
   if (returnedKnowledgeReadModelCount(primaryJson) > 0) {
     return {
@@ -211,17 +211,17 @@ const runBrainKnowledgeReadback = async (
     };
   }
 
-  const compactQueries = compactBrainKnowledgeBridgeQueries(input.query)
+  const compactQueries = compactBrainRecallBridgeQueries(input.query)
     .slice(0, maxBrainSearchCompactQueryRetries);
   const attemptedQueries = [input.query];
 
   for (const compactQuery of compactQueries) {
     attemptedQueries.push(compactQuery);
-    const compactResult = await runCatalogBrainKnowledgeReadback({
+    const compactResult = await runCatalogBrainRecallReadback({
       ...input,
       query: compactQuery
     });
-    const compactJson = parseJsonObject(compactResult.stdout, "brain knowledge compact retry");
+    const compactJson = parseJsonObject(compactResult.stdout, "brain recall compact retry");
 
     if (returnedKnowledgeReadModelCount(compactJson) > 0) {
       return {
@@ -245,11 +245,11 @@ export const runBrainSearchCommand = async (
   const useStoreReadback = runtime.command.storeOnly || catalogFiles.length === 0;
   const readStoreMemory =
     useStoreReadback && (runtime.runSourceSearch === undefined || runtime.createDatabaseRuntime !== undefined);
-  const runBrainKnowledge = runtime.runBrainKnowledge ?? runBrainKnowledgeCommand;
+  const runBrainRecall = runtime.runBrainRecall ?? runBrainRecallCommand;
   const runSource = runtime.runSourceSearch ?? runSourceSearchCommand;
-  const knowledgeResultPromise = runBrainKnowledgeReadback({
+  const knowledgeResultPromise = runBrainRecallReadback({
     runtime,
-    runBrainKnowledge,
+    runBrainRecall,
     catalogFiles,
     query,
     useStoreReadback,
@@ -281,9 +281,9 @@ export const runBrainSearchCommand = async (
   ]);
   const resource = buildBrainSearchPreviewResource({
     query,
-    brainKnowledgeReadback: useStoreReadback ? "store_only" : "catalog_files",
-    brainKnowledgeQueries: knowledgeResult.queries,
-    knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "brain knowledge"),
+    brainRecallReadback: useStoreReadback ? "store_only" : "catalog_files",
+    brainRecallQueries: knowledgeResult.queries,
+    knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "brain recall"),
     sourceJson: parseJsonObject(sourceResult.stdout, "source search")
   });
 

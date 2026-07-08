@@ -84,7 +84,7 @@ export const unusedMemoryRepository = {
   }
 };
 
-const brainKnowledgeMemory = (
+const brainRecallMemory = (
   knowledgeId: string,
   summary: string,
   body: string
@@ -117,33 +117,33 @@ const brainKnowledgeMemory = (
   updatedAt: now
 });
 
-const brainKnowledgeMemories: MemoryRecord[] = [
-  brainKnowledgeMemory(
+const brainRecallMemories: MemoryRecord[] = [
+  brainRecallMemory(
     "ts-boundary-knowledge-parser-exemplar",
     "TypeScript parser exemplar metadata-boundary",
     "Use the retained TypeScript parser exemplar for parser, metadata-boundary, and knowledge read-model work."
   ),
-  brainKnowledgeMemory(
+  brainRecallMemory(
     "ts-boundary-unknown-first-result-state",
     "Unknown-first TypeScript result state",
     "Use unknown-first parsing and explicit result-state narrowing for untrusted JSON or CLI inputs."
   ),
-  brainKnowledgeMemory(
+  brainRecallMemory(
     "consensus-relation-maintenance-review-boundary",
     "Consensus relation maintenance review boundary",
     "Use the consensus relation maintenance review boundary for bounded consensus, relation, and maintenance review work."
   ),
-  brainKnowledgeMemory(
+  brainRecallMemory(
     "reference-implementation-recipe-clone-boundary",
     "Reference implementation recipe clone boundary",
     "Use the reference implementation recipe when proving a local code exemplar without building clone runtime machinery."
   )
 ];
 
-export const brainKnowledgeMemoryRepository = {
+export const brainRecallMemoryRepository = {
   ...unusedMemoryRepository,
   async listActiveMemory(_projectId: string, limit: number): Promise<MemoryRecord[]> {
-    return brainKnowledgeMemories.slice(0, limit);
+    return brainRecallMemories.slice(0, limit);
   },
   async listAntiMemoryForProject(_projectId: string): Promise<AntiMemoryRecord[]> {
     return [];
@@ -231,11 +231,11 @@ export const runPersistedPlanWithCapturedMetadata = async (
           compilerDependencies: {
             ...dependencies,
             harnessRunRepository,
-            memoryRepository: brainKnowledgeMemoryRepository
+            memoryRepository: brainRecallMemoryRepository
           },
           harnessRunRepository,
           sourceRepository,
-          memoryRepository: brainKnowledgeMemoryRepository,
+          memoryRepository: brainRecallMemoryRepository,
           async close() {
             return undefined;
           }

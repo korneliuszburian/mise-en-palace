@@ -1,29 +1,29 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  compactBrainKnowledgeBridgeQueries
-} from "../brain-knowledge-query.js";
+  compactBrainRecallBridgeQueries
+} from "../brain-recall-query.js";
 
-describe("brainKnowledgeQuery", () => {
+describe("brainRecallQuery", () => {
   it("keeps a bounded dogfood mechanism retry list", () => {
     expect(
-      compactBrainKnowledgeBridgeQueries(
-        "unknown first brain knowledge dogfood evidence feedback"
+      compactBrainRecallBridgeQueries(
+        "unknown first brain recall dogfood evidence feedback"
       )
     ).toEqual([
-      "unknown first brain knowledge",
+      "unknown first brain recall",
       "unknown first brain",
-      "first brain knowledge",
-      "brain knowledge feedback",
+      "first brain recall",
+      "brain recall feedback",
       "unknown first",
       "first brain",
-      "brain knowledge",
-      "knowledge feedback"
+      "brain recall",
+      "recall feedback"
     ]);
   });
 
   it("keeps feedback available when it is part of the mechanism", () => {
-    expect(compactBrainKnowledgeBridgeQueries("user feedback collection")).toEqual([
+    expect(compactBrainRecallBridgeQueries("user feedback collection")).toEqual([
       "user feedback",
       "feedback collection"
     ]);
@@ -31,7 +31,7 @@ describe("brainKnowledgeQuery", () => {
 
   it("keeps later parser exemplar windows for long planning tasks", () => {
     expect(
-      compactBrainKnowledgeBridgeQueries(
+      compactBrainRecallBridgeQueries(
         "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select pattern:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
       )
     ).toContain("typescript parser exemplar");

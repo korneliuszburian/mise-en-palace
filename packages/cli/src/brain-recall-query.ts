@@ -1,4 +1,4 @@
-const brainKnowledgeBridgeTerms = new Set([
+const brainRecallBridgeTerms = new Set([
   "evidence",
   "relation",
   "relations",
@@ -7,7 +7,7 @@ const brainKnowledgeBridgeTerms = new Set([
   "temporal"
 ]);
 
-const brainKnowledgeTaskNoiseTerms = new Set([
+const brainRecallTaskNoiseTerms = new Set([
   "a",
   "an",
   "and",
@@ -46,22 +46,22 @@ const brainKnowledgeTaskNoiseTerms = new Set([
   "work"
 ]);
 
-const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
+const brainRecallQueryTokens = (query: string): readonly string[] =>
   [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
 
-const compactBrainKnowledgeBridgeTokens = (query: string): readonly string[] =>
-  brainKnowledgeQueryTokens(query).filter(
+const compactBrainRecallBridgeTokens = (query: string): readonly string[] =>
+  brainRecallQueryTokens(query).filter(
     (token) =>
-      !brainKnowledgeBridgeTerms.has(token) &&
-      !brainKnowledgeTaskNoiseTerms.has(token)
+      !brainRecallBridgeTerms.has(token) &&
+      !brainRecallTaskNoiseTerms.has(token)
   );
 
-const compactBrainKnowledgeBridgeQueryWithLimit = (
+const compactBrainRecallBridgeQueryWithLimit = (
   query: string,
   limit: number,
   minimumTokenCount = 2
 ): string | undefined => {
-  const compactTokens = compactBrainKnowledgeBridgeTokens(query);
+  const compactTokens = compactBrainRecallBridgeTokens(query);
   const compactQuery = compactTokens.slice(0, limit).join(" ");
 
   return compactTokens.length >= minimumTokenCount && compactQuery !== query.trim().toLowerCase()
@@ -69,11 +69,11 @@ const compactBrainKnowledgeBridgeQueryWithLimit = (
     : undefined;
 };
 
-const compactBrainKnowledgeWindowQueries = (
+const compactBrainRecallWindowQueries = (
   query: string,
   windowSize: number
 ): readonly string[] => {
-  const compactTokens = compactBrainKnowledgeBridgeTokens(query);
+  const compactTokens = compactBrainRecallBridgeTokens(query);
   const normalizedQuery = query.trim().toLowerCase();
 
   return compactTokens.flatMap((_, index) => {
@@ -86,14 +86,14 @@ const compactBrainKnowledgeWindowQueries = (
   });
 };
 
-export const compactBrainKnowledgeBridgeQueries = (
+export const compactBrainRecallBridgeQueries = (
   query: string
 ): readonly string[] => {
   const compactQueries = [
-    compactBrainKnowledgeBridgeQueryWithLimit(query, 4),
-    compactBrainKnowledgeBridgeQueryWithLimit(query, 3, 3),
-    ...compactBrainKnowledgeWindowQueries(query, 3),
-    ...compactBrainKnowledgeWindowQueries(query, 2)
+    compactBrainRecallBridgeQueryWithLimit(query, 4),
+    compactBrainRecallBridgeQueryWithLimit(query, 3, 3),
+    ...compactBrainRecallWindowQueries(query, 3),
+    ...compactBrainRecallWindowQueries(query, 2)
   ];
 
   return [...new Set(compactQueries.filter((item): item is string => item !== undefined))];

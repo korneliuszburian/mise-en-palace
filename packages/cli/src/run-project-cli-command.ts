@@ -35,16 +35,16 @@ import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
-  runBrainKnowledgeCommand
-} from "./run-brain-knowledge-command.js";
+  runBrainRecallCommand
+} from "./run-brain-recall-command.js";
 import type {
-  BrainKnowledgeCommandRuntime
-} from "./run-brain-knowledge-command.js";
+  BrainRecallCommandRuntime
+} from "./run-brain-recall-command.js";
 
 type ProjectCliCommand = Extract<
   CliCommand,
   | { kind: "init" }
-  | { kind: "brainKnowledge" }
+  | { kind: "brainRecall" }
 >;
 
 interface ProjectCliCommandContext {
@@ -83,7 +83,7 @@ const projectCommandError = (
 
 const isProjectCliCommand = (command: CliCommand): command is ProjectCliCommand => (
   command.kind === "init" ||
-  command.kind === "brainKnowledge"
+  command.kind === "brainRecall"
 );
 
 const trimmedEnvValue = (value: string | undefined): string | undefined => {
@@ -103,16 +103,16 @@ const feedbackDeltasToKnowledgeUsefulness = (
   );
 
 const createKnowledgeStoreProviders = async (
-  command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
-): Promise<Pick<BrainKnowledgeCommandRuntime, "readModelProvider" | "usefulnessProvider">> => {
+): Promise<Pick<BrainRecallCommandRuntime, "readModelProvider" | "usefulnessProvider">> => {
   const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
 
   if (databaseUrl === undefined) {
     if (command.storeOnly) {
       throw new Error(
-        "KRN_DATABASE_URL is required for krn brain knowledge store-backed readback. " +
-        "No file source defaults to the store path; pass --read-model-file, --knowledge-file, or --catalog-file for an explicit fixture/seed preview."
+        "KRN_DATABASE_URL is required for krn brain recall store-backed readback. " +
+        "No file source defaults to the store path; pass --read-model-file, --decision-file, or --catalog-file for an explicit fixture/seed preview."
       );
     }
 
@@ -178,19 +178,19 @@ const createKnowledgeStoreProviders = async (
 
 const projectFallbackMessages = {
   init: "Unknown init error",
-  brainKnowledge: "Unknown brain knowledge error"
+  brainRecall: "Unknown brain recall error"
 } satisfies Record<ProjectCliCommand["kind"], string>;
 
-const runBrainKnowledgeProjectCommand = async (
-  command: Extract<ProjectCliCommand, { kind: "brainKnowledge" }>,
+const runBrainRecallProjectCommand = async (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
 ): Promise<ProjectCommandOutput> => {
   const storeProviders = await createKnowledgeStoreProviders(command, context);
 
-  return runBrainKnowledgeCommand({
+  return runBrainRecallCommand({
     cwd: context.cwd,
     readModelFiles: command.readModelFiles,
-    knowledgeFiles: command.knowledgeFiles,
+    decisionFiles: command.decisionFiles,
     catalogFiles: command.catalogFiles,
     filter: command.filter,
     format: command.format,
@@ -217,7 +217,7 @@ const runSelectedProjectCommand = async (
     });
   }
 
-  return runBrainKnowledgeProjectCommand(command, context);
+  return runBrainRecallProjectCommand(command, context);
 };
 
 export const runProjectCliCommand = async (

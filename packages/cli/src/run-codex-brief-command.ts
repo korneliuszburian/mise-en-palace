@@ -26,7 +26,7 @@ export interface CodexBriefCommandResult {
 const renderText = (
   runId: string,
   briefText: string,
-  brainKnowledgeLines: readonly string[]
+  brainRecallLines: readonly string[]
 ): string =>
   [
     "KRN Codex Brief",
@@ -36,7 +36,7 @@ const renderText = (
     "Memory mutation: none",
     "",
     "Selected KRN Context:",
-    ...brainKnowledgeLines,
+    ...brainRecallLines,
     "",
     briefText.trimEnd()
   ].join("\n") + "\n";

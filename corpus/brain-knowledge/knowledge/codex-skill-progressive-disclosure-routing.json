@@ -4,7 +4,7 @@
   "decisionStatus": "adopt_now",
   "confidence": "high",
   "reviewability": "ready",
-  "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained brain knowledge when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",
+  "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained memory when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",
   "sourceRefs": [
     "source:codex-skills",
     ".agents/skills/source-to-decision/SKILL.md",
@@ -18,7 +18,7 @@
     "future Codex skill updates",
     "future pattern-to-skill routing"
   ],
-  "falsifier": "A repeated KRN workflow still requires copying long prompt blocks into chat, root plans, or AGENTS.md, or a relevant skill cannot query retained brain knowledge before implementation.",
+  "falsifier": "A repeated KRN workflow still requires copying long prompt blocks into chat, root plans, or AGENTS.md, or a relevant skill cannot query retained memory before implementation.",
   "doesNotProve": "This knowledge decision does not prove automatic skill selection, that many skills are useful by default, that Codex will always load the right skill, or product readiness.",
   "observedAt": "2026-06-28",
   "nextAction": "use"

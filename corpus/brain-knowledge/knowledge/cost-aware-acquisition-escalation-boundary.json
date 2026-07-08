@@ -19,7 +19,7 @@
     "future acquisition escalation eval candidates"
   ],
   "falsifier": "A future acquisition candidate opens bounded external research, human review, autonomous acquisition, source truth mutation, or Memory Core mutation before exhausting cheaper linked-document or store-backed source-search review; or a missing-evidence-only candidate starts at linked_document_review.",
-  "doesNotProve": "This brain knowledge does not prove source truth, acquisition success, retrieval ranking quality, autonomous worker safety, Memory Core usefulness, or KRN product readiness.",
+  "doesNotProve": "This retained memory does not prove source truth, acquisition success, retrieval ranking quality, autonomous worker safety, Memory Core usefulness, or KRN product readiness.",
   "observedAt": "2026-07-01",
   "nextAction": "use"
 }

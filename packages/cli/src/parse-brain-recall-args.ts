@@ -17,20 +17,20 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-const brainKnowledgeUsage = [
-  "Usage: krn brain knowledge [--store-only|--read-model-file <path>|--knowledge-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+const brainRecallUsage = [
+  "Usage: krn brain recall [--store-only|--read-model-file <path>|--decision-file <path>|--catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
-  "krn brain knowledge [--text unknown-first]",
-  "krn brain knowledge --store-only [--text unknown-first]",
-  "krn brain knowledge --read-model-file docs-or-fixture-read-model.json [--text unknown-first]",
-  "krn brain knowledge --knowledge-file brain-knowledge-decision.json [--text unknown-first]",
-  "krn brain knowledge --catalog-file brain-knowledge-catalog.json [--text unknown-first]",
+  "krn brain recall [--text unknown-first]",
+  "krn brain recall --store-only [--text unknown-first]",
+  "krn brain recall --read-model-file docs-or-fixture-read-model.json [--text unknown-first]",
+  "krn brain recall --decision-file brain-decision.json [--text unknown-first]",
+  "krn brain recall --catalog-file brain-recall-catalog.json [--text unknown-first]",
   "  note: no file source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; file options are explicit legacy fixture/seed previews",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
 
-export const formatBrainKnowledgeUsage = (): string => `${brainKnowledgeUsage}\n`;
+export const formatBrainRecallUsage = (): string => `${brainRecallUsage}\n`;
 
 const isAllowed = <T extends string>(
   value: string,
@@ -64,11 +64,11 @@ const parseRequiredOption = (
   if (valueResult.error !== undefined) {
     return {
       ok: false,
-      error: `${valueResult.error}\n${formatBrainKnowledgeUsage()}`
+      error: `${valueResult.error}\n${formatBrainRecallUsage()}`
     };
   }
 
-  return requiredOption(valueResult.value, formatBrainKnowledgeUsage());
+  return requiredOption(valueResult.value, formatBrainRecallUsage());
 };
 
 const parseAllowedOption = <T extends string>(
@@ -84,12 +84,12 @@ const parseAllowedOption = <T extends string>(
     return required;
   }
 
-  if (!isAllowed(required.value, allowed)) {
-    return {
-      ok: false,
-      error: `Unsupported knowledge ${label}: ${required.value}\n${formatBrainKnowledgeUsage()}`
-    };
-  }
+    if (!isAllowed(required.value, allowed)) {
+      return {
+        ok: false,
+        error: `Unsupported brain recall ${label}: ${required.value}\n${formatBrainRecallUsage()}`
+      };
+    }
 
   return {
     ok: true,
@@ -105,7 +105,7 @@ const parsePositiveInteger = (
   if (!/^[1-9]\d*$/u.test(trimmed)) {
     return {
       ok: false,
-      error: `Unsupported knowledge limit: ${value}`
+      error: `Unsupported brain recall limit: ${value}`
     };
   }
 
@@ -114,7 +114,7 @@ const parsePositiveInteger = (
   if (!Number.isSafeInteger(parsed)) {
     return {
       ok: false,
-      error: `Unsupported knowledge limit: ${value}`
+      error: `Unsupported brain recall limit: ${value}`
     };
   }
 
@@ -124,9 +124,9 @@ const parsePositiveInteger = (
   };
 };
 
-type BrainKnowledgeParseState = {
+type BrainRecallParseState = {
   readModelFiles: string[];
-  knowledgeFiles: string[];
+  decisionFiles: string[];
   catalogFiles: string[];
   storeOnly: boolean;
   projectId: string | undefined;
@@ -139,7 +139,7 @@ type BrainKnowledgeParseState = {
   limit: number | undefined;
 };
 
-type ParseBrainKnowledgeOptionResult =
+type ParseBrainRecallOptionResult =
   | {
       ok: true;
       nextIndex: number;
@@ -149,18 +149,18 @@ type ParseBrainKnowledgeOptionResult =
       error: string;
     };
 
-type BrainKnowledgeOptionParser = (
+type BrainRecallOptionParser = (
   args: readonly string[],
   index: number,
-  state: BrainKnowledgeParseState
-) => ParseBrainKnowledgeOptionResult;
+  state: BrainRecallParseState
+) => ParseBrainRecallOptionResult;
 
 const pushPathOption = (
   args: readonly string[],
   index: number,
   optionName: string,
   target: string[]
-): ParseBrainKnowledgeOptionResult => {
+): ParseBrainRecallOptionResult => {
   const required = parseRequiredOption(args, index, optionName);
 
   if (!required.ok) {
@@ -175,11 +175,11 @@ const pushPathOption = (
   };
 };
 
-const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = {
+const brainRecallOptionParsers: Record<string, BrainRecallOptionParser> = {
   "--read-model-file": (args, index, state) =>
     pushPathOption(args, index, "--read-model-file", state.readModelFiles),
-  "--knowledge-file": (args, index, state) =>
-    pushPathOption(args, index, "--knowledge-file", state.knowledgeFiles),
+  "--decision-file": (args, index, state) =>
+    pushPathOption(args, index, "--decision-file", state.decisionFiles),
   "--catalog-file": (args, index, state) =>
     pushPathOption(args, index, "--catalog-file", state.catalogFiles),
   "--store-only": (_args, index, state) => {
@@ -200,7 +200,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
     if (required.value.trim().length === 0) {
       return {
         ok: false,
-        error: `--project requires a non-empty project id\n${formatBrainKnowledgeUsage()}`
+        error: `--project requires a non-empty project id\n${formatBrainRecallUsage()}`
       };
     }
 
@@ -311,7 +311,7 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
     if (!parsedLimit.ok) {
       return {
         ok: false,
-        error: `${parsedLimit.error}\n${formatBrainKnowledgeUsage()}`
+        error: `${parsedLimit.error}\n${formatBrainRecallUsage()}`
       };
     }
 
@@ -340,20 +340,20 @@ const brainKnowledgeOptionParsers: Record<string, BrainKnowledgeOptionParser> = 
   }
 };
 
-const validateBrainKnowledgeSources = (
-  state: BrainKnowledgeParseState
+const validateBrainRecallSources = (
+  state: BrainRecallParseState
 ): ParseOptionResult<undefined> => {
-  if (state.storeOnly && hasExplicitBrainKnowledgeSource(state)) {
+  if (state.storeOnly && hasExplicitBrainRecallSource(state)) {
     return {
       ok: false,
-      error: `--store-only cannot be combined with --read-model-file, --knowledge-file, or --catalog-file\n${formatBrainKnowledgeUsage()}`
+      error: `--store-only cannot be combined with --read-model-file, --decision-file, or --catalog-file\n${formatBrainRecallUsage()}`
     };
   }
 
-  if (hasEmptyBrainKnowledgeSourcePath(state)) {
+  if (hasEmptyBrainRecallSourcePath(state)) {
     return {
       ok: false,
-      error: `Knowledge file source options require non-empty paths\n${formatBrainKnowledgeUsage()}`
+      error: `Brain recall source options require non-empty paths\n${formatBrainRecallUsage()}`
     };
   }
 
@@ -363,23 +363,23 @@ const validateBrainKnowledgeSources = (
   };
 };
 
-const hasExplicitBrainKnowledgeSource = (state: BrainKnowledgeParseState): boolean =>
+const hasExplicitBrainRecallSource = (state: BrainRecallParseState): boolean =>
   state.readModelFiles.length > 0 ||
-  state.knowledgeFiles.length > 0 ||
+  state.decisionFiles.length > 0 ||
   state.catalogFiles.length > 0;
 
-const hasEmptyBrainKnowledgeSourcePath = (state: BrainKnowledgeParseState): boolean =>
+const hasEmptyBrainRecallSourcePath = (state: BrainRecallParseState): boolean =>
   state.readModelFiles.some((readModelFile) => readModelFile.length === 0) ||
-  state.knowledgeFiles.some((knowledgeFile) => knowledgeFile.length === 0) ||
+  state.decisionFiles.some((decisionFile) => decisionFile.length === 0) ||
   state.catalogFiles.some((catalogFile) => catalogFile.length === 0);
 
-const buildBrainKnowledgeCommand = (
-  state: BrainKnowledgeParseState
+const buildBrainRecallCommand = (
+  state: BrainRecallParseState
 ): ParseArgsResult => ({
   command: {
-    kind: "brainKnowledge",
+    kind: "brainRecall",
     readModelFiles: state.readModelFiles,
-    knowledgeFiles: state.knowledgeFiles,
+    decisionFiles: state.decisionFiles,
     catalogFiles: state.catalogFiles,
     storeOnly: state.storeOnly,
     ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
@@ -395,18 +395,18 @@ const buildBrainKnowledgeCommand = (
   }
 });
 
-export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResult => {
+export const parseBrainRecallArgs = (args: readonly string[]): ParseArgsResult => {
   if (args[0] === "--help" || args[0] === "-h") {
     return {
       command: {
-        kind: "brainKnowledgeHelp"
+        kind: "brainRecallHelp"
       }
     };
   }
 
-  const state: BrainKnowledgeParseState = {
+  const state: BrainRecallParseState = {
     readModelFiles: [],
-    knowledgeFiles: [],
+    decisionFiles: [],
     catalogFiles: [],
     storeOnly: false,
     projectId: undefined,
@@ -422,11 +422,11 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
 
-    const parser = brainKnowledgeOptionParsers[arg];
+    const parser = brainRecallOptionParsers[arg];
 
     if (parser === undefined) {
       return {
-        error: `Unsupported knowledge argument: ${arg}\n${formatBrainKnowledgeUsage()}`
+        error: `Unsupported brain recall argument: ${arg}\n${formatBrainRecallUsage()}`
       };
     }
 
@@ -441,7 +441,7 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
     index = parsed.nextIndex;
   }
 
-  const sourceValidation = validateBrainKnowledgeSources(state);
+  const sourceValidation = validateBrainRecallSources(state);
 
   if (!sourceValidation.ok) {
     return {
@@ -449,9 +449,9 @@ export const parseBrainKnowledgeArgs = (args: readonly string[]): ParseArgsResul
     };
   }
 
-  if (!hasExplicitBrainKnowledgeSource(state)) {
+  if (!hasExplicitBrainRecallSource(state)) {
     state.storeOnly = true;
   }
 
-  return buildBrainKnowledgeCommand(state);
+  return buildBrainRecallCommand(state);
 };

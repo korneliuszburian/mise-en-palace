@@ -12,7 +12,7 @@ import type {
 } from "../database-runtime.js";
 
 describe("runBrainSearchCommand", () => {
-  it("combines brain knowledge and source search into a read-only brain preview", async () => {
+  it("combines brain recall and source search into a read-only brain preview", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
       env: {
@@ -29,14 +29,14 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runBrainKnowledge(runtime) {
+      async runBrainRecall(runtime) {
         expect(runtime.catalogFiles).toEqual(["corpus/brain-knowledge/catalog.json"]);
         expect(runtime.filter).toEqual({ text: "source-to-decision" });
         expect(runtime.format).toBe("json");
 
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.knowledge.readback.v1",
+            kind: "krn.brain.recall.readback.v1",
             returnedReadModels: 1,
             totalReadModels: 1,
             readModels: [{
@@ -99,7 +99,7 @@ describe("runBrainSearchCommand", () => {
       access: "read_only",
       mutation: "none",
       query: "source-to-decision",
-      brainKnowledgeReadback: "catalog_files",
+      brainRecallReadback: "catalog_files",
       knowledgeReadModels: {
         returnedReadModels: 1,
         totalReadModels: 1,
@@ -132,7 +132,7 @@ describe("runBrainSearchCommand", () => {
     });
     expect(JSON.stringify(parsed)).toContain("matching knowledge");
     expect(JSON.stringify(parsed)).toContain(
-      "existing knowledge catalog readback was executed as bootstrap/fixture input for this query"
+      "existing brain recall catalog readback was executed as bootstrap/fixture input for this query"
     );
     expect(JSON.stringify(parsed)).toContain("catalog-file knowledge is runtime memory");
     expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
@@ -151,7 +151,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: false,
         format: "text"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         return {
           stdout: JSON.stringify({
             returnedReadModels: 0,
@@ -194,8 +194,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(result.stdout).toContain("KRN Brain Search Preview");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Knowledge readback: store_only");
-    expect(result.stdout).toContain("Knowledge read models:");
+    expect(result.stdout).toContain("Brain recall readback: store_only");
+    expect(result.stdout).toContain("Recall read models:");
     expect(result.stdout).toContain("readModelIds: none");
     expect(result.stdout).toContain("graphAware: false");
     expect(result.stdout).toContain("sourceDecisionSupport: 0");
@@ -223,7 +223,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runBrainKnowledge(runtime) {
+      async runBrainRecall(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "graph sourceclaimedge") {
@@ -293,7 +293,7 @@ describe("runBrainSearchCommand", () => {
       "graph sourceclaimedge"
     ]);
     expect(parsed).toMatchObject({
-      brainKnowledgeQueries: [
+      brainRecallQueries: [
         "graph sourceclaimedge relation temporal source relations",
         "graph sourceclaimedge"
       ],
@@ -324,7 +324,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runBrainKnowledge(runtime) {
+      async runBrainRecall(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "maintenance dreaming") {
@@ -394,7 +394,7 @@ describe("runBrainSearchCommand", () => {
       "maintenance dreaming"
     ]);
     expect(parsed).toMatchObject({
-      brainKnowledgeQueries: [
+      brainRecallQueries: [
         "maintenance dreaming source relation evidence",
         "maintenance dreaming"
       ],
@@ -426,7 +426,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 6,
         format: "json"
       },
-      async runBrainKnowledge(runtime) {
+      async runBrainRecall(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         if (runtime.filter.text === "reference implementation recipe") {
@@ -498,7 +498,7 @@ describe("runBrainSearchCommand", () => {
       "reference implementation recipe"
     ]);
     expect(parsed).toMatchObject({
-      brainKnowledgeQueries: [
+      brainRecallQueries: [
         "prove retained reference implementation recipe pattern through local code exemplar",
         "prove reference implementation recipe",
         "prove reference implementation",
@@ -526,7 +526,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: false,
         format: "json"
       },
-      async runBrainKnowledge(runtime) {
+      async runBrainRecall(runtime) {
         knowledgeQueries.push(runtime.filter.text ?? "");
 
         return {
@@ -588,7 +588,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -633,7 +633,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "store_only",
+      brainRecallReadback: "store_only",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
@@ -648,7 +648,7 @@ describe("runBrainSearchCommand", () => {
           nextAction: "use"
         }],
         doesNotProve: [
-          "knowledge catalog readback was explicitly skipped by --store-only"
+          "brain recall catalog readback was explicitly skipped by --store-only"
         ]
       },
       sourceSearch: {
@@ -658,7 +658,7 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "knowledge catalog readback was explicitly skipped for this query",
+          "brain recall catalog readback was explicitly skipped for this query",
           "existing source-search answer package was executed for this query",
           "brain search combined both readbacks without mutating KRN state"
         ]
@@ -741,7 +741,7 @@ describe("runBrainSearchCommand", () => {
           async close() {}
         };
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch(runtime) {
@@ -786,8 +786,8 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "store_only",
-      brainKnowledgeQueries: ["external review after large slice"],
+      brainRecallReadback: "store_only",
+      brainRecallQueries: ["external review after large slice"],
       knowledgeReadModels: {
         returnedReadModels: 1,
         readModelIds: ["memory-record-1"],
@@ -832,7 +832,7 @@ describe("runBrainSearchCommand", () => {
       async createDatabaseRuntime() {
         throw new Error("database unavailable");
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -866,12 +866,12 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "store_only",
+      brainRecallReadback: "store_only",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [],
         doesNotProve: [
-          "knowledge catalog readback was explicitly skipped by --store-only",
+          "brain recall catalog readback was explicitly skipped by --store-only",
           "DB memory-store readback was unavailable: database unavailable"
         ]
       }
@@ -894,7 +894,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -994,7 +994,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1084,7 +1084,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 8,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         return {
           stdout: JSON.stringify({
             returnedReadModels: 0,
@@ -1141,7 +1141,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "catalog_files",
+      brainRecallReadback: "catalog_files",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
@@ -1180,7 +1180,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1220,7 +1220,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "store_only",
+      brainRecallReadback: "store_only",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
@@ -1250,7 +1250,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1284,7 +1284,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainKnowledgeReadback: "store_only",
+      brainRecallReadback: "store_only",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: []
@@ -1295,7 +1295,7 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "knowledge catalog readback was explicitly skipped for this query",
+          "brain recall catalog readback was explicitly skipped for this query",
           "existing source-search answer package was executed for this query",
           "brain search combined both readbacks without mutating KRN state"
         ]
@@ -1320,7 +1320,7 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 8,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         return {
           stdout: JSON.stringify({
             returnedReadModels: 0,
@@ -1422,7 +1422,7 @@ describe("runBrainSearchCommand", () => {
         storeOnly: true,
         format: "text"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         throw new Error("store-only brain search should not read file catalogs");
       },
       async runSourceSearch() {
@@ -1498,10 +1498,10 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.knowledge.readback.v1",
+            kind: "krn.brain.recall.readback.v1",
             returnedReadModels: 0,
             totalReadModels: 0,
             readModels: [],
@@ -1557,10 +1557,10 @@ describe("runBrainSearchCommand", () => {
         maxInclusions: 2,
         format: "json"
       },
-      async runBrainKnowledge() {
+      async runBrainRecall() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.knowledge.readback.v1",
+            kind: "krn.brain.recall.readback.v1",
             returnedReadModels: 0,
             totalReadModels: 0,
             readModels: [],
@@ -1707,7 +1707,7 @@ describe("runBrainSearchCommand", () => {
           maxInclusions: 4,
           format: "json"
         },
-        async runBrainKnowledge() {
+        async runBrainRecall() {
           throw new Error("grounding mini-gate should use store/source evidence");
         },
         async runSourceSearch(runtime) {
@@ -1769,7 +1769,7 @@ describe("runBrainSearchCommand", () => {
 
       expect(parsed).toMatchObject({
         query: entry.query,
-        brainKnowledgeReadback: "store_only",
+        brainRecallReadback: "store_only",
         knowledgeReadModels: {
           selectedKnowledge: [{
             id: entry.claimId,

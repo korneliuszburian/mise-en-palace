@@ -21,10 +21,10 @@ import {
 
 export type KnowledgeOutputFormat = "text" | "json" | "html";
 
-export interface BrainKnowledgeCommandRuntime {
+export interface BrainRecallCommandRuntime {
   cwd?: string;
   readModelFiles: readonly string[];
-  knowledgeFiles: readonly string[];
+  decisionFiles: readonly string[];
   catalogFiles: readonly string[];
   filter: KnowledgeSearchFilter;
   format: KnowledgeOutputFormat;
@@ -41,7 +41,7 @@ export interface BrainKnowledgeCommandRuntime {
   usefulnessProvider?: () => Promise<KnowledgeUsefulnessFeedback[]>;
 }
 
-export interface BrainKnowledgeCommandResult {
+export interface BrainRecallCommandResult {
   stdout: string;
 }
 
@@ -49,13 +49,13 @@ interface LoadedKnowledgeReadModels {
   readModels: KnowledgeReadModel[];
   feedback: KnowledgeUsefulnessFeedback[];
   readModelFiles: string[];
-  knowledgeFiles: string[];
+  decisionFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
 }
 
-interface KnowledgeReadbackResource {
-  kind: "krn.brain.knowledge.readback.v1";
+interface BrainRecallReadbackResource {
+  kind: "krn.brain.recall.readback.v1";
   access: "read_only";
   mutation: "none";
   source: "explicit_files" | "memory_store";
@@ -63,7 +63,7 @@ interface KnowledgeReadbackResource {
   usefulnessSource: "explicit_files" | "store_backed";
   filter: KnowledgeSearchFilter;
   readModelFiles: string[];
-  knowledgeFiles: string[];
+  decisionFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
   totalReadModels: number;
@@ -84,7 +84,7 @@ const proof = {
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
-    "knowledge readback was produced from live DB state",
+    "brain recall readback was produced from live DB state",
     "search ranking quality is good",
     "knowledge decisions are complete",
     "Memory Core, SourceDecision, candidates, or evidence were mutated",
@@ -99,7 +99,7 @@ const buildProof = (
   {
     const proves = source === "memory_store"
       ? [
-          "knowledge entries were read from DB-backed MemoryRecord rows",
+          "brain recall entries were read from DB-backed MemoryRecord rows",
           "MemoryRecords were converted into KnowledgeReadModel rows",
           "local readback filters were applied deterministically"
         ]
@@ -114,7 +114,7 @@ const buildProof = (
         : ["supplied usefulness feedback files parse with proof boundaries"];
     const doesNotProve = source === "memory_store" || usefulnessSource === "store_backed"
       ? proof.doesNotProve.filter(
-          (item) => item !== "knowledge readback was produced from live DB state"
+          (item) => item !== "brain recall readback was produced from live DB state"
         )
       : [
           ...proof.doesNotProve,
@@ -127,7 +127,7 @@ const buildProof = (
     };
   };
 
-const sourceBoundaryFor = (source: KnowledgeReadbackResource["source"]): string =>
+const sourceBoundaryFor = (source: BrainRecallReadbackResource["source"]): string =>
   source === "memory_store"
     ? "store-backed runtime readback"
     : "bootstrap/fixture/migration input only; not runtime memory";
@@ -136,13 +136,13 @@ const createLoadedKnowledgeReadModels = (): LoadedKnowledgeReadModels => ({
   readModels: [],
   feedback: [],
   readModelFiles: [],
-  knowledgeFiles: [],
+  decisionFiles: [],
   usefulnessFeedbackFiles: [],
   catalogFiles: []
 });
 
 const loadExplicitKnowledgeFiles = async (
-  runtime: BrainKnowledgeCommandRuntime,
+  runtime: BrainRecallCommandRuntime,
   cwd: string,
   loaded: LoadedKnowledgeReadModels
 ): Promise<void> => {
@@ -151,9 +151,9 @@ const loadExplicitKnowledgeFiles = async (
     loaded.readModelFiles.push(readModelFile);
   }
 
-  for (const knowledgeFile of runtime.knowledgeFiles) {
-    await loadKnowledgeFile(knowledgeFile, await resolveRepoInputFile(cwd, knowledgeFile), loaded.readModels);
-    loaded.knowledgeFiles.push(knowledgeFile);
+  for (const decisionFile of runtime.decisionFiles) {
+    await loadDecisionFile(decisionFile, await resolveRepoInputFile(cwd, decisionFile), loaded.readModels);
+    loaded.decisionFiles.push(decisionFile);
   }
 };
 
@@ -170,7 +170,7 @@ const loadCatalogReadModelFiles = async (
   }
 };
 
-const loadCatalogKnowledgeFiles = async (
+const loadCatalogDecisionFiles = async (
   catalogFile: string,
   catalogDirectory: string,
   catalog: KnowledgeCatalogInput,
@@ -178,8 +178,8 @@ const loadCatalogKnowledgeFiles = async (
 ): Promise<void> => {
   for (const knowledgeFile of catalog.knowledgeFiles) {
     const resolvedKnowledgeFile = path.resolve(catalogDirectory, knowledgeFile);
-    await loadKnowledgeFile(`${catalogFile}:${knowledgeFile}`, resolvedKnowledgeFile, loaded.readModels);
-    loaded.knowledgeFiles.push(`${catalogFile}:${knowledgeFile}`);
+    await loadDecisionFile(`${catalogFile}:${knowledgeFile}`, resolvedKnowledgeFile, loaded.readModels);
+    loaded.decisionFiles.push(`${catalogFile}:${knowledgeFile}`);
   }
 };
 
@@ -216,19 +216,19 @@ const loadKnowledgeCatalogFile = async (
       ? "catalog must include non-empty readModelFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays"
       : result.reason;
 
-    throw new Error(`Invalid knowledge catalog file: ${catalogFile} (${reason})`);
+    throw new Error(`Invalid brain recall catalog file: ${catalogFile} (${reason})`);
   }
 
   const catalogDirectory = path.dirname(resolvedCatalogFile);
 
   await loadCatalogReadModelFiles(catalogFile, catalogDirectory, catalog, loaded);
-  await loadCatalogKnowledgeFiles(catalogFile, catalogDirectory, catalog, loaded);
+  await loadCatalogDecisionFiles(catalogFile, catalogDirectory, catalog, loaded);
   await loadCatalogUsefulnessFeedbackFiles(catalogFile, catalogDirectory, catalog, loaded);
   loaded.catalogFiles.push(catalogFile);
 };
 
 const loadKnowledgeReadModels = async (
-  runtime: BrainKnowledgeCommandRuntime,
+  runtime: BrainRecallCommandRuntime,
   cwd: string
 ): Promise<LoadedKnowledgeReadModels> => {
   const loaded = createLoadedKnowledgeReadModels();
@@ -246,9 +246,9 @@ const loadKnowledgeReadModels = async (
   return loaded;
 };
 
-export const runBrainKnowledgeCommand = async (
-  runtime: BrainKnowledgeCommandRuntime
-): Promise<BrainKnowledgeCommandResult> => {
+export const runBrainRecallCommand = async (
+  runtime: BrainRecallCommandRuntime
+): Promise<BrainRecallCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const loaded = await loadKnowledgeReadModels(runtime, cwd);
   const storeUsefulness = runtime.usefulnessProvider === undefined
@@ -270,8 +270,8 @@ export const runBrainKnowledgeCommand = async (
     ? buildNoMatchGuidance(runtime.filter)
     : undefined;
 
-  const resource: KnowledgeReadbackResource = {
-    kind: "krn.brain.knowledge.readback.v1",
+  const resource: BrainRecallReadbackResource = {
+    kind: "krn.brain.recall.readback.v1",
     access: "read_only",
     mutation: "none",
     source,
@@ -279,7 +279,7 @@ export const runBrainKnowledgeCommand = async (
     usefulnessSource,
     filter: runtime.filter,
     readModelFiles: loaded.readModelFiles,
-    knowledgeFiles: loaded.knowledgeFiles,
+    decisionFiles: loaded.decisionFiles,
     usefulnessFeedbackFiles: loaded.usefulnessFeedbackFiles,
     catalogFiles: loaded.catalogFiles,
     totalReadModels: matchingReadModels.length,
@@ -296,7 +296,7 @@ export const runBrainKnowledgeCommand = async (
 };
 
 const formatKnowledgeOutput = (
-  resource: KnowledgeReadbackResource,
+  resource: BrainRecallReadbackResource,
   format: KnowledgeOutputFormat
 ): string => {
   if (format === "json") {
@@ -310,9 +310,9 @@ const formatKnowledgeOutput = (
   return formatKnowledgeTextPreview(resource);
 };
 
-const formatKnowledgeTextPreview = (resource: KnowledgeReadbackResource): string =>
+const formatKnowledgeTextPreview = (resource: BrainRecallReadbackResource): string =>
   [
-    "KRN Knowledge Readback",
+    "KRN Brain Recall",
     "Access: read-only",
     "Mutation: none",
     `Source: ${resource.source}`,
@@ -320,7 +320,7 @@ const formatKnowledgeTextPreview = (resource: KnowledgeReadbackResource): string
     `Usefulness source: ${resource.usefulnessSource}`,
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Knowledge read model files: ${formatList(resource.readModelFiles)}`,
-    `Knowledge files: ${formatList(resource.knowledgeFiles)}`,
+    `Decision files: ${formatList(resource.decisionFiles)}`,
     `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
     `Results: ${resource.readModels.length}`,
     `Total filtered results: ${resource.totalReadModels}`,
@@ -335,7 +335,7 @@ const formatKnowledgeTextPreview = (resource: KnowledgeReadbackResource): string
     ...resource.proof.doesNotProve.map((item) => `- does not prove: ${item}`)
   ].join("\n") + "\n";
 
-const formatKnowledgeHtmlPreview = (resource: KnowledgeReadbackResource): string => {
+const formatKnowledgeHtmlPreview = (resource: BrainRecallReadbackResource): string => {
   const serializedResource = JSON.stringify(resource).replace(/</gu, "\\u003c");
 
   return `<!doctype html>
@@ -343,7 +343,7 @@ const formatKnowledgeHtmlPreview = (resource: KnowledgeReadbackResource): string
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KRN Knowledge Readback</title>
+  <title>KRN Brain Recall</title>
   <style>
     :root {
       color-scheme: light;
@@ -483,7 +483,7 @@ const formatKnowledgeHtmlPreview = (resource: KnowledgeReadbackResource): string
 <body>
   <main>
     <header>
-      <h1>KRN Knowledge Readback</h1>
+      <h1>KRN Brain Recall</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: ${escapeHtml(resource.source)}</div>
       <div class="meta">Source boundary: ${escapeHtml(resource.sourceBoundary)}</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
@@ -553,15 +553,15 @@ const formatKnowledgeHtmlPreview = (resource: KnowledgeReadbackResource): string
 };
 
 const buildNoMatchGuidance = (filter: KnowledgeSearchFilter): string[] => [
-  "No knowledge entries matched the current filters.",
+  "No brain recall entries matched the current filters.",
   ...(filter.text === undefined ? [] : [
     "Try a shorter --text query or split the query into one mechanism term.",
-    "If this is a knowledge pre-coding query, run one broader query before concluding no selected knowledge applies."
+    "If this is a pre-coding recall query, run one broader query before concluding no selected memory applies."
   ]),
   ...(hasStructuredFilter(filter) ? [
     "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
   ] : []),
-  "If no knowledge applies after retry, record an explicit rejected_or_deferred_knowledge reason before coding.",
+  "If no recalled memory applies after retry, record an explicit rejected_or_deferred_memory reason before coding.",
   "Zero results do not prove that no relevant pattern exists or that search ranking is good."
 ];
 
@@ -571,17 +571,17 @@ const hasStructuredFilter = (filter: KnowledgeSearchFilter): boolean =>
   filter.reviewability !== undefined ||
   filter.usefulnessOutcome !== undefined;
 
-const formatNoMatchGuidanceText = (resource: KnowledgeReadbackResource): string[] =>
+const formatNoMatchGuidanceText = (resource: BrainRecallReadbackResource): string[] =>
   resource.noMatchGuidance === undefined ? [] : [
     "",
     "No-match guidance:",
     ...resource.noMatchGuidance.map((item) => `- ${item}`)
   ];
 
-const formatNoMatchGuidanceHtml = (resource: KnowledgeReadbackResource): string =>
+const formatNoMatchGuidanceHtml = (resource: BrainRecallReadbackResource): string =>
   resource.noMatchGuidance === undefined
-    ? "No knowledge entries match the current search."
-    : `<strong>No knowledge entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    ? "No brain recall entries match the current search."
+    : `<strong>No brain recall entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 
 const formatReadModel = (readModel: KnowledgeReadModel): string[] => [
   `- ${readModel.id}`,
@@ -759,7 +759,7 @@ const loadReadModelFile = async (
   readModels.push(readModel);
 };
 
-const loadKnowledgeFile = async (
+const loadDecisionFile = async (
   label: string,
   resolvedFile: string,
   readModels: KnowledgeReadModel[]
@@ -768,7 +768,7 @@ const loadKnowledgeFile = async (
   const decision = parseKnowledgeDecision(parsed);
 
   if (decision === undefined) {
-    throw new Error(`Invalid knowledge decision file: ${label}`);
+    throw new Error(`Invalid decision file: ${label}`);
   }
 
   readModels.push(knowledgeReadModelFromDecision(decision));

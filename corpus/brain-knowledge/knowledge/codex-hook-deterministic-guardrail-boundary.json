@@ -11,7 +11,7 @@
     "KRN_ROADMAP.md#decision-rule"
   ],
   "evidenceRefs": [
-    "packages/cli/src/__tests__/run-brain-knowledge-command.test.ts"
+    "packages/cli/src/__tests__/run-brain-recall-command.test.ts"
   ],
   "consumers": [
     "future Codex hook policy slices",
