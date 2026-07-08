@@ -44,8 +44,8 @@ export const maintenanceQueueStatus = pgEnum("maintenance_queue_status", [
   "queued",
   "running",
   "succeeded",
-  "failed",
-  "skipped"
+  "skipped",
+  "dead_letter"
 ]);
 
 export const runEvents = pgTable(

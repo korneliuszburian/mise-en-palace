@@ -38,7 +38,8 @@ export interface MaintenanceQueueSmokeReport {
   claimedRecordCount: number;
   successRecordedCount: number;
   skipRecordedCount: number;
-  failureRecordedCount: number;
+  retryRecordedCount: number;
+  deadLetterRecordedCount: number;
   cleanupDeletedCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -52,23 +53,28 @@ interface MaintenanceQueueBoundaryReadback {
   writeBoundaryValidatedCount: number;
 }
 
+type MaintenanceQueueSmokeSettlementKind = "success" | "skip" | "retry" | "deadLetter";
+
 export interface MaintenanceQueueSmokeSettlementPlan {
   success: number;
   skip: number;
-  failure: number;
+  retry: number;
+  deadLetter: number;
 }
 
 export const maintenanceQueueSmokeSettlementPlan = (
   jobCount: number
 ): MaintenanceQueueSmokeSettlementPlan => {
   const success = Math.min(2, jobCount);
-  const skip = Math.min(2, Math.max(jobCount - success, 0));
-  const failure = Math.max(jobCount - success - skip, 0);
+  const skip = Math.min(1, Math.max(jobCount - success, 0));
+  const retry = Math.min(1, Math.max(jobCount - success - skip, 0));
+  const deadLetter = Math.max(jobCount - success - skip - retry, 0);
 
   return {
     success,
     skip,
-    failure
+    retry,
+    deadLetter
   };
 };
 
@@ -164,6 +170,81 @@ const maintenanceQueueBoundaryReadback = (): MaintenanceQueueBoundaryReadback =>
   };
 };
 
+const settlementKindForIndex = (
+  index: number,
+  plan: MaintenanceQueueSmokeSettlementPlan
+): MaintenanceQueueSmokeSettlementKind => {
+  if (index < plan.success) {
+    return "success";
+  }
+
+  if (index < plan.success + plan.skip) {
+    return "skip";
+  }
+
+  return index < plan.success + plan.skip + plan.retry ? "retry" : "deadLetter";
+};
+
+const settleMaintenanceQueueSmokeRecord = async (
+  repository: DrizzleMaintenanceQueueRepository,
+  record: MaintenanceQueueRecord,
+  index: number,
+  plan: MaintenanceQueueSmokeSettlementPlan
+): Promise<MaintenanceQueueSmokeSettlementKind> => {
+  const claimedRecord = await repository.claimMaintenanceQueueRecord(record.id, {
+    lockedBy: "maintenance-queue-smoke-claim",
+    lockedAt: smokeFixtureClocks.maintenanceQueues.lockedAt
+  });
+  const settlementKind = settlementKindForIndex(index, plan);
+
+  requireStatus(claimedRecord, "running", "record claim");
+
+  if (settlementKind === "success") {
+    const successRecord = await repository.recordMaintenanceQueueSuccess(record.id);
+    requireStatus(successRecord, "succeeded", "success record");
+
+    return settlementKind;
+  }
+
+  if (settlementKind === "skip") {
+    const skipRecord = await repository.recordMaintenanceQueueSkip(
+      record.id,
+      "Skipped by maintenance queue smoke"
+    );
+    requireStatus(skipRecord, "skipped", "skip record");
+
+    return settlementKind;
+  }
+
+  if (settlementKind === "retry") {
+    const retryRecord = await repository.recordMaintenanceQueueRetry(record.id, {
+      error: "Retried by maintenance queue smoke",
+      runAfter: smokeFixtureClocks.maintenanceQueues.runAfter
+    });
+
+    requireStatus(retryRecord, "queued", "retry record");
+
+    if (retryRecord.attempts !== claimedRecord.attempts + 1) {
+      throw new Error("Maintenance queue smoke retry record did not increment attempts");
+    }
+
+    return settlementKind;
+  }
+
+  const deadLetterRecord = await repository.recordMaintenanceQueueDeadLetter(
+    record.id,
+    "Dead-lettered by maintenance queue smoke"
+  );
+
+  requireStatus(deadLetterRecord, "dead_letter", "dead-letter record");
+
+  if (deadLetterRecord.attempts !== claimedRecord.attempts + 1) {
+    throw new Error("Maintenance queue smoke dead-letter record did not increment attempts");
+  }
+
+  return settlementKind;
+};
+
 export const runMaintenanceQueueSmokeCheck = async (
   input: MaintenanceQueueSmokeInput
 ): Promise<MaintenanceQueueSmokeReport> => {
@@ -205,56 +286,31 @@ export const runMaintenanceQueueSmokeCheck = async (
     }
 
     let claimedRecordCount = 0;
-    let successRecordedCount = 0;
-    let skipRecordedCount = 0;
-    let failureRecordedCount = 0;
+    const settlementCounts: Record<MaintenanceQueueSmokeSettlementKind, number> = {
+      success: 0,
+      skip: 0,
+      retry: 0,
+      deadLetter: 0
+    };
     const settlementPlan = maintenanceQueueSmokeSettlementPlan(enqueuedRecords.length);
 
     for (const [index, record] of enqueuedRecords.entries()) {
-      const claimedRecord = await repository.claimMaintenanceQueueRecord(record.id, {
-        lockedBy: "maintenance-queue-smoke-claim",
-        lockedAt: smokeFixtureClocks.maintenanceQueues.lockedAt
-      });
-
-      requireStatus(claimedRecord, "running", "record claim");
-      claimedRecordCount += 1;
-
-      if (index < settlementPlan.success) {
-        const successRecord = await repository.recordMaintenanceQueueSuccess(record.id);
-        requireStatus(successRecord, "succeeded", "success record");
-        successRecordedCount += 1;
-        continue;
-      }
-
-      if (index < settlementPlan.success + settlementPlan.skip) {
-        const skipRecord = await repository.recordMaintenanceQueueSkip(
-          record.id,
-          "Skipped by maintenance queue smoke"
-        );
-        requireStatus(skipRecord, "skipped", "skip record");
-        skipRecordedCount += 1;
-        continue;
-      }
-
-      const failureRecord = await repository.recordMaintenanceQueueFailure(
-        record.id,
-        "Failed by maintenance queue smoke"
+      const settlementKind = await settleMaintenanceQueueSmokeRecord(
+        repository,
+        record,
+        index,
+        settlementPlan
       );
-
-      requireStatus(failureRecord, "failed", "failure record");
-
-      if (failureRecord.attempts !== claimedRecord.attempts + 1) {
-        throw new Error("Maintenance queue smoke failure record did not increment attempts");
-      }
-
-      failureRecordedCount += 1;
+      claimedRecordCount += 1;
+      settlementCounts[settlementKind] += 1;
     }
 
     if (
       claimedRecordCount !== enqueuedRecords.length ||
-      successRecordedCount !== settlementPlan.success ||
-      skipRecordedCount !== settlementPlan.skip ||
-      failureRecordedCount !== settlementPlan.failure
+      settlementCounts.success !== settlementPlan.success ||
+      settlementCounts.skip !== settlementPlan.skip ||
+      settlementCounts.retry !== settlementPlan.retry ||
+      settlementCounts.deadLetter !== settlementPlan.deadLetter
     ) {
       throw new Error("Maintenance queue smoke record settlement counts did not match expected proof");
     }
@@ -268,9 +324,10 @@ export const runMaintenanceQueueSmokeCheck = async (
       enqueuedRecordCount: enqueuedRecords.length,
       queuedReadbackCount,
       claimedRecordCount,
-      successRecordedCount,
-      skipRecordedCount,
-      failureRecordedCount,
+      successRecordedCount: settlementCounts.success,
+      skipRecordedCount: settlementCounts.skip,
+      retryRecordedCount: settlementCounts.retry,
+      deadLetterRecordedCount: settlementCounts.deadLetter,
       cleanupDeletedCount: cleanup.deletedCount,
       remainingMarkerCount,
       cleanedUp

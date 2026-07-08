@@ -20,7 +20,8 @@ import type {
   ClaimMaintenanceQueueRecordInput,
   EnqueueMaintenanceQueueInput,
   MaintenanceQueueRecord,
-  MaintenanceQueueRepository
+  MaintenanceQueueRepository,
+  RecordMaintenanceQueueRetryInput
 } from "./maintenance-queue-types.js";
 
 const now = (): Date => new Date();
@@ -108,12 +109,43 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
     return mapMaintenanceQueue(row);
   }
 
-  async recordMaintenanceQueueFailure(id: string, error: string): Promise<MaintenanceQueueRecord> {
+  async recordMaintenanceQueueRetry(
+    id: string,
+    input: RecordMaintenanceQueueRetryInput
+  ): Promise<MaintenanceQueueRecord> {
+    const runAfter = input.runAfter === undefined ? now() : fromIsoTimestamp(input.runAfter);
     const row = requireReturnedRow(
       await this.db
         .update(maintenanceQueues)
         .set({
-          status: "failed",
+          status: "queued",
+          attempts: sql`${maintenanceQueues.attempts} + 1`,
+          lockedAt: null,
+          lockedBy: null,
+          lastError: input.error,
+          runAfter,
+          updatedAt: now()
+        })
+        .where(
+          and(
+            eq(maintenanceQueues.id, id),
+            eq(maintenanceQueues.status, "running"),
+            sql`${maintenanceQueues.attempts} + 1 < ${maintenanceQueues.maxAttempts}`
+          )
+        )
+        .returning(),
+      "recordMaintenanceQueueRetry"
+    );
+
+    return mapMaintenanceQueue(row);
+  }
+
+  async recordMaintenanceQueueDeadLetter(id: string, error: string): Promise<MaintenanceQueueRecord> {
+    const row = requireReturnedRow(
+      await this.db
+        .update(maintenanceQueues)
+        .set({
+          status: "dead_letter",
           attempts: sql`${maintenanceQueues.attempts} + 1`,
           lockedAt: null,
           lockedBy: null,
@@ -122,7 +154,7 @@ export class DrizzleMaintenanceQueueRepository implements MaintenanceQueueReposi
         })
         .where(and(eq(maintenanceQueues.id, id), eq(maintenanceQueues.status, "running")))
         .returning(),
-      "recordMaintenanceQueueFailure"
+      "recordMaintenanceQueueDeadLetter"
     );
 
     return mapMaintenanceQueue(row);

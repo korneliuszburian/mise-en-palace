@@ -28,8 +28,8 @@ describe("maintenance queue repository type ownership", () => {
       "queued",
       "running",
       "succeeded",
-      "failed",
-      "skipped"
+      "skipped",
+      "dead_letter"
     ]);
   });
 

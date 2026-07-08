@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  assessMaintenanceQueueRuntimeWriteBoundary,
   assessMaintenanceQueueWriteBoundary,
   buildMaintenancePreview,
   buildMaintenanceCandidatePreview,
@@ -9,6 +10,7 @@ import {
   isMaintenanceJobType,
   maintenanceJobPersistenceContract,
   maintenanceJobTypes,
+  parseMaintenanceJob,
   parseMaintenanceJobType
 } from "../index.js";
 import type {
@@ -124,14 +126,14 @@ describe("maintenance queue contract", () => {
     );
   });
 
-  test("describes queue write boundary before any maintenance executor exists", () => {
+  test("describes queue write boundary and terminal dead-letter status", () => {
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
 
     expect(descriptions).toEqual(
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
           jobType: type,
-          failureRecordStatus: "failed",
+          deadLetterRecordStatus: "dead_letter",
           recordSettlementTopic: "maintenance_queue.record_settled",
           executionMode: "persistence_only",
           memoryBoundary: expect.any(String),
@@ -154,6 +156,64 @@ describe("maintenance queue contract", () => {
         memoryBoundary: "write_memory_candidate_only"
       })
     );
+  });
+
+  test("parses maintenance job payloads from unknown records before execution", () => {
+    expect(
+      parseMaintenanceJob("expire_stale_memory", {
+        projectId: "project-1",
+        reason: "stale standard",
+        olderThan: "2026-06-21T17:30:00.000Z"
+      })
+    ).toEqual({
+      jobType: "expire_stale_memory",
+      payload: {
+        projectId: "project-1",
+        reason: "stale standard",
+        olderThan: "2026-06-21T17:30:00.000Z"
+      }
+    });
+    expect(
+      parseMaintenanceJob("expire_stale_memory", {
+        projectId: "project-1",
+        reason: "stale standard",
+        olderThan: "not-a-time"
+      })
+    ).toBeUndefined();
+  });
+
+  test("checks handler-declared writes against the runtime maintenance boundary", () => {
+    expect(
+      assessMaintenanceQueueRuntimeWriteBoundary("compact_memory", [
+        "maintenance_queue_records",
+        "memory_candidates"
+      ])
+    ).toEqual({
+      jobType: "compact_memory",
+      memoryBoundary: "write_memory_candidate_only",
+      status: "passed",
+      declaredWrites: ["maintenance_queue_records", "memory_candidates"],
+      violations: []
+    });
+    expect(
+      assessMaintenanceQueueRuntimeWriteBoundary("compact_memory", ["memory_records"])
+    ).toEqual({
+      jobType: "compact_memory",
+      memoryBoundary: "write_memory_candidate_only",
+      status: "failed",
+      declaredWrites: ["memory_records"],
+      violations: [
+        {
+          code: "forbidden_runtime_write",
+          message: "compact_memory handler declares forbidden write memory_records."
+        },
+        {
+          code: "missing_required_runtime_write",
+          message:
+            "compact_memory handler must declare memory_candidates for memory boundary write_memory_candidate_only."
+        }
+      ]
+    });
   });
 
   test("routes maintenance candidate preview through the maintenance preview builder", () => {

@@ -35,18 +35,52 @@ const sqlParamValues = (
   return [];
 };
 
+const sqlTextFragments = (
+  value: unknown,
+  seen: WeakSet<object> = new WeakSet()
+): readonly string[] => {
+  if (typeof value === "string") {
+    return [value];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => sqlTextFragments(item, seen));
+  }
+
+  if (!isRecord(value)) {
+    return [];
+  }
+
+  if (seen.has(value)) {
+    return [];
+  }
+  seen.add(value);
+
+  const name = value["name"];
+  const queryChunks = value["queryChunks"];
+  const strings = typeof name === "string" ? [name] : [];
+
+  return [
+    ...strings,
+    ...(Array.isArray(queryChunks)
+      ? queryChunks.flatMap((item) => sqlTextFragments(item, seen))
+      : [])
+  ];
+};
+
 const methodNames = [
   "enqueueMaintenanceQueue",
   "listQueuedMaintenanceQueues",
   "claimMaintenanceQueueRecord",
   "recordMaintenanceQueueSuccess",
-  "recordMaintenanceQueueFailure",
+  "recordMaintenanceQueueRetry",
+  "recordMaintenanceQueueDeadLetter",
   "recordMaintenanceQueueSkip",
   "cleanupTestMaintenanceQueues"
 ] as const;
 
 const maintenanceQueueRow = (
-  status: "running" | "succeeded" | "failed" | "skipped"
+  status: "queued" | "running" | "succeeded" | "skipped" | "dead_letter"
 ) => {
   const timestamp = new Date("2026-07-07T00:00:00.000Z");
 
@@ -58,13 +92,16 @@ const maintenanceQueueRow = (
     payload: {
       projectId: "project-1"
     },
-    attempts: status === "failed" ? 1 : 0,
+    attempts: status === "queued" || status === "dead_letter" ? 1 : 0,
     maxAttempts: 3,
     availableAt: timestamp,
     runAfter: timestamp,
     lockedAt: status === "running" ? timestamp : null,
     lockedBy: status === "running" ? "maintenance-queue-claim-1" : null,
-    lastError: status === "failed" || status === "skipped" ? "terminal reason" : null,
+    lastError:
+      status === "queued" || status === "dead_letter" || status === "skipped"
+        ? "terminal reason"
+        : null,
     createdAt: timestamp,
     updatedAt: timestamp
   };
@@ -120,10 +157,21 @@ describe("DrizzleMaintenanceQueueRepository", () => {
         repository.recordMaintenanceQueueSuccess("maintenance-queue-1")
     },
     {
-      label: "failed",
-      status: "failed",
+      label: "retry",
+      status: "queued",
       run: (repository: DrizzleMaintenanceQueueRepository) =>
-        repository.recordMaintenanceQueueFailure("maintenance-queue-1", "terminal reason")
+        repository.recordMaintenanceQueueRetry("maintenance-queue-1", {
+          error: "terminal reason"
+        })
+    },
+    {
+      label: "dead letter",
+      status: "dead_letter",
+      run: (repository: DrizzleMaintenanceQueueRepository) =>
+        repository.recordMaintenanceQueueDeadLetter(
+          "maintenance-queue-1",
+          "terminal reason"
+        )
     },
     {
       label: "skipped",
@@ -144,4 +192,21 @@ describe("DrizzleMaintenanceQueueRepository", () => {
       );
     }
   );
+
+  it("guards retry to records with remaining attempts", async () => {
+    const { db, updateCall } = createUpdateDb(maintenanceQueueRow("queued"));
+    const repository = new DrizzleMaintenanceQueueRepository(db);
+
+    await repository.recordMaintenanceQueueRetry("maintenance-queue-1", {
+      error: "retryable reason",
+      runAfter: "2026-07-07T00:05:00.000Z"
+    });
+
+    expect(sqlParamValues(updateCall.whereCondition)).toEqual(
+      expect.arrayContaining(["maintenance-queue-1", "running"])
+    );
+    expect(sqlTextFragments(updateCall.whereCondition)).toEqual(
+      expect.arrayContaining(["attempts", "max_attempts"])
+    );
+  });
 });

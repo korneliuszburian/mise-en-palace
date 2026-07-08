@@ -173,14 +173,15 @@ const maintenanceQueueRepositoryMethods = [
   "claimMaintenanceQueueRecord",
   "recordMaintenanceQueueSuccess",
   "recordMaintenanceQueueSkip",
-  "recordMaintenanceQueueFailure",
+  "recordMaintenanceQueueRetry",
+  "recordMaintenanceQueueDeadLetter",
   "cleanupTestMaintenanceQueues"
 ] as const;
 
 const maintenanceQueueSchemaPresent = (): boolean =>
   maintenanceQueueTable !== undefined &&
   outboxEvents !== undefined &&
-  maintenanceQueueStatus.enumValues.includes("skipped");
+  maintenanceQueueStatus.enumValues.includes("dead_letter");
 
 const maintenanceQueueRepositoryPresent = (): boolean =>
   maintenanceQueueRepositoryMethods.every((methodName) =>

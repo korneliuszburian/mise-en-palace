@@ -8,8 +8,8 @@ describe("event and maintenance queue schema", () => {
       "queued",
       "running",
       "succeeded",
-      "failed",
-      "skipped"
+      "skipped",
+      "dead_letter"
     ]);
   });
 

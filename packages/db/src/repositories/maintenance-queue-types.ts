@@ -34,6 +34,11 @@ export interface ClaimMaintenanceQueueRecordInput {
   lockedBy?: string;
 }
 
+export interface RecordMaintenanceQueueRetryInput {
+  error: string;
+  runAfter?: IsoTimestamp;
+}
+
 export interface MaintenanceQueueRecord {
   id: string;
   jobType: MaintenanceQueueType;
@@ -65,7 +70,11 @@ export interface MaintenanceQueueRepository {
     input?: ClaimMaintenanceQueueRecordInput
   ): Promise<MaintenanceQueueRecord>;
   recordMaintenanceQueueSuccess(id: string): Promise<MaintenanceQueueRecord>;
-  recordMaintenanceQueueFailure(id: string, error: string): Promise<MaintenanceQueueRecord>;
+  recordMaintenanceQueueRetry(
+    id: string,
+    input: RecordMaintenanceQueueRetryInput
+  ): Promise<MaintenanceQueueRecord>;
+  recordMaintenanceQueueDeadLetter(id: string, error: string): Promise<MaintenanceQueueRecord>;
   recordMaintenanceQueueSkip(id: string, reason: string): Promise<MaintenanceQueueRecord>;
   cleanupTestMaintenanceQueues(
     input: CleanupTestMaintenanceQueuesInput

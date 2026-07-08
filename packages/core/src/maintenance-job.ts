@@ -75,8 +75,8 @@ export const maintenanceQueueStatuses = [
   "queued",
   "running",
   "succeeded",
-  "failed",
-  "skipped"
+  "skipped",
+  "dead_letter"
 ] as const;
 
 export type MaintenanceQueueStatus = (typeof maintenanceQueueStatuses)[number];
@@ -87,7 +87,7 @@ export const maintenanceJobPersistenceContract = {
   outboxTopic: "maintenance_queue.queued",
   executionMode: "persistence_only",
   recordSettlementTopic: "maintenance_queue.record_settled",
-  failureRecordStatus: "failed"
+  deadLetterRecordStatus: "dead_letter"
 } as const;
 
 export type MaintenanceJobPersistenceContract = typeof maintenanceJobPersistenceContract;
@@ -102,7 +102,7 @@ export interface MaintenanceJobDescription {
   inputSchema: string;
   queueRecordKeyTemplate: string;
   recordSettlementTopic: MaintenanceJobPersistenceContract["recordSettlementTopic"];
-  failureRecordStatus: MaintenanceJobPersistenceContract["failureRecordStatus"];
+  deadLetterRecordStatus: MaintenanceJobPersistenceContract["deadLetterRecordStatus"];
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
   memoryBoundary: MaintenanceJobMemoryBoundary;
@@ -131,6 +131,22 @@ export interface MaintenanceQueueWriteBoundaryReadback {
   allowedWrites: readonly MaintenanceJobAllowedWrite[];
   forbiddenWrites: readonly MaintenanceJobForbiddenWrite[];
   doesNotProve: string;
+}
+
+export interface MaintenanceQueueRuntimeWriteBoundaryViolation {
+  code:
+    | "disallowed_runtime_write"
+    | "forbidden_runtime_write"
+    | "missing_required_runtime_write";
+  message: string;
+}
+
+export interface MaintenanceQueueRuntimeWriteBoundaryAssessment {
+  jobType: MaintenanceJobType;
+  memoryBoundary: MaintenanceJobMemoryBoundary;
+  status: "passed" | "failed";
+  declaredWrites: readonly string[];
+  violations: readonly MaintenanceQueueRuntimeWriteBoundaryViolation[];
 }
 
 const labels: Record<MaintenanceJobType, string> = {
@@ -352,5 +368,204 @@ export const buildMaintenanceQueueWriteBoundaryReadback = (
     forbiddenWrites: description.forbiddenWrites,
     doesNotProve:
       "Declared maintenance queue write boundary does not prove maintenance execution, scheduler readiness, unique enqueue deduplication, runtime enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared queue boundary."
+  };
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const nonEmptyString = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value : undefined;
+
+const optionalNonEmptyString = (value: unknown): string | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return nonEmptyString(value);
+};
+
+const optionalPositiveInteger = (value: unknown): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return Number.isInteger(value) && typeof value === "number" && value > 0
+    ? value
+    : undefined;
+};
+
+const isoTimestamp = (value: unknown): IsoTimestamp | undefined => {
+  const timestamp = nonEmptyString(value);
+  if (timestamp === undefined || !Number.isFinite(Date.parse(timestamp))) {
+    return undefined;
+  }
+
+  return timestamp;
+};
+
+type MaintenanceJobPayloadParser = (
+  payload: Record<string, unknown>,
+  reason: string
+) => MaintenanceJob | undefined;
+
+const parseEmbedSourceChunkJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const sourceChunkId = nonEmptyString(payload["sourceChunkId"]);
+  const embeddingModelId = nonEmptyString(payload["embeddingModelId"]);
+  if (sourceChunkId === undefined || embeddingModelId === undefined) {
+    return undefined;
+  }
+
+  return {
+    jobType: "embed_source_chunk",
+    payload: {
+      sourceChunkId,
+      reason,
+      embeddingModelId
+    }
+  };
+};
+
+const parseEmbedMemoryRecordJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const memoryRecordId = nonEmptyString(payload["memoryRecordId"]);
+  const embeddingModelId = nonEmptyString(payload["embeddingModelId"]);
+  if (memoryRecordId === undefined || embeddingModelId === undefined) {
+    return undefined;
+  }
+
+  return {
+    jobType: "embed_memory_record",
+    payload: {
+      memoryRecordId,
+      reason,
+      embeddingModelId
+    }
+  };
+};
+
+const parseCompactMemoryJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const projectId = nonEmptyString(payload["projectId"]);
+  if (projectId === undefined) {
+    return undefined;
+  }
+
+  const memoryRecordId = optionalNonEmptyString(payload["memoryRecordId"]);
+  const maxSourceRecords = optionalPositiveInteger(payload["maxSourceRecords"]);
+
+  return {
+    jobType: "compact_memory",
+    payload: {
+      projectId,
+      reason,
+      ...(memoryRecordId === undefined ? {} : { memoryRecordId }),
+      ...(maxSourceRecords === undefined ? {} : { maxSourceRecords })
+    }
+  };
+};
+
+const parseDetectContradictionJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const projectId = nonEmptyString(payload["projectId"]);
+  if (projectId === undefined) {
+    return undefined;
+  }
+
+  const memoryRecordId = optionalNonEmptyString(payload["memoryRecordId"]);
+  const sourceClaimId = optionalNonEmptyString(payload["sourceClaimId"]);
+
+  return {
+    jobType: "detect_contradiction",
+    payload: {
+      projectId,
+      reason,
+      ...(memoryRecordId === undefined ? {} : { memoryRecordId }),
+      ...(sourceClaimId === undefined ? {} : { sourceClaimId })
+    }
+  };
+};
+
+const parseExpireStaleMemoryJob: MaintenanceJobPayloadParser = (payload, reason) => {
+  const projectId = nonEmptyString(payload["projectId"]);
+  const olderThan = isoTimestamp(payload["olderThan"]);
+  if (projectId === undefined || olderThan === undefined) {
+    return undefined;
+  }
+
+  return {
+    jobType: "expire_stale_memory",
+    payload: {
+      projectId,
+      reason,
+      olderThan
+    }
+  };
+};
+
+const maintenanceJobPayloadParsers = {
+  embed_source_chunk: parseEmbedSourceChunkJob,
+  embed_memory_record: parseEmbedMemoryRecordJob,
+  compact_memory: parseCompactMemoryJob,
+  detect_contradiction: parseDetectContradictionJob,
+  expire_stale_memory: parseExpireStaleMemoryJob
+} as const satisfies Record<MaintenanceJobType, MaintenanceJobPayloadParser>;
+
+export const parseMaintenanceJob = (
+  jobType: unknown,
+  payload: unknown
+): MaintenanceJob | undefined => {
+  const parsedJobType = parseMaintenanceJobType(jobType);
+  if (parsedJobType === undefined || !isRecord(payload)) {
+    return undefined;
+  }
+
+  const reason = nonEmptyString(payload["reason"]);
+  if (reason === undefined) {
+    return undefined;
+  }
+
+  return maintenanceJobPayloadParsers[parsedJobType](payload, reason);
+};
+
+export const assessMaintenanceQueueRuntimeWriteBoundary = (
+  jobType: MaintenanceJobType,
+  declaredWrites: readonly string[]
+): MaintenanceQueueRuntimeWriteBoundaryAssessment => {
+  const description = describeMaintenanceJob(jobType);
+  const allowedWrites = new Set<string>(description.allowedWrites);
+  const forbiddenWrites = new Set<string>(description.forbiddenWrites);
+  const requiredWrites = requiredWritesByMemoryBoundary[description.memoryBoundary];
+  const violations: MaintenanceQueueRuntimeWriteBoundaryViolation[] = [];
+
+  for (const write of declaredWrites) {
+    if (forbiddenWrites.has(write)) {
+      violations.push({
+        code: "forbidden_runtime_write",
+        message: `${jobType} handler declares forbidden write ${write}.`
+      });
+      continue;
+    }
+
+    if (!allowedWrites.has(write)) {
+      violations.push({
+        code: "disallowed_runtime_write",
+        message: `${jobType} handler declares ${write}, outside memory boundary ${description.memoryBoundary}.`
+      });
+    }
+  }
+
+  for (const requiredWrite of requiredWrites) {
+    if (!declaredWrites.includes(requiredWrite)) {
+      violations.push({
+        code: "missing_required_runtime_write",
+        message: `${jobType} handler must declare ${requiredWrite} for memory boundary ${description.memoryBoundary}.`
+      });
+    }
+  }
+
+  return {
+    jobType,
+    memoryBoundary: description.memoryBoundary,
+    status: violations.length === 0 ? "passed" : "failed",
+    declaredWrites,
+    violations
   };
 };

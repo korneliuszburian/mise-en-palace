@@ -1,5 +1,6 @@
 export {
   assertMaintenanceQueueWriteBoundary,
+  assessMaintenanceQueueRuntimeWriteBoundary,
   assessMaintenanceQueueWriteBoundary,
   buildMaintenanceQueueWriteBoundaryReadback,
   describeMaintenanceJob,
@@ -7,6 +8,7 @@ export {
   maintenanceJobPersistenceContract,
   maintenanceJobTypes,
   maintenanceQueueStatuses,
+  parseMaintenanceJob,
   parseMaintenanceJobType
 } from "@krn/core";
 
@@ -24,6 +26,8 @@ export type {
   MaintenanceJobPayloadByType,
   MaintenanceJobPersistenceContract,
   MaintenanceJobType,
+  MaintenanceQueueRuntimeWriteBoundaryAssessment,
+  MaintenanceQueueRuntimeWriteBoundaryViolation,
   MaintenanceQueueWriteBoundaryAssessment,
   MaintenanceQueueWriteBoundaryReadback,
   MaintenanceQueueWriteBoundaryViolation,
