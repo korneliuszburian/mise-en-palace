@@ -108,8 +108,8 @@ jobs:
       - name: DB run show smoke
         run: pnpm db:smoke:run-show
 
-      - name: DB worker jobs smoke
-        run: pnpm db:smoke:worker-jobs
+      - name: DB maintenance queue smoke
+        run: pnpm db:smoke:maintenance-queue
 
       - name: DB source graph smoke
         run: pnpm db:smoke:source-graph
