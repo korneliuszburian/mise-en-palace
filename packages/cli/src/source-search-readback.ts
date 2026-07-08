@@ -91,6 +91,9 @@ const formatConsensusReadback = (
   `- currentSourceClaims: ${commaList(answerPackage.consensusReadback.currentSourceClaimIds)}`,
   `- caveatedSourceClaims: ${commaList(answerPackage.consensusReadback.caveatedSourceClaimIds)}`,
   `- historicalSourceClaims: ${commaList(answerPackage.consensusReadback.historicalSourceClaimIds)}`,
+  `- staleSourceClaims: ${commaList(answerPackage.consensusReadback.staleSourceClaimIds)}`,
+  `- supersededSourceClaims: ${commaList(answerPackage.consensusReadback.supersededSourceClaimIds)}`,
+  `- unknownSourceClaims: ${commaList(answerPackage.consensusReadback.unknownSourceClaimIds)}`,
   `- rejectedSourceClaims: ${commaList(answerPackage.consensusReadback.rejectedSourceClaimIds)}`,
   "consensus entries:",
   ...(answerPackage.consensusReadback.entries.length === 0

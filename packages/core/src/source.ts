@@ -620,6 +620,9 @@ export interface SourceConsensusTimelineReadback {
   currentSourceClaimIds: readonly SourceClaim["id"][];
   caveatedSourceClaimIds: readonly SourceClaim["id"][];
   historicalSourceClaimIds: readonly SourceClaim["id"][];
+  staleSourceClaimIds: readonly SourceClaim["id"][];
+  supersededSourceClaimIds: readonly SourceClaim["id"][];
+  unknownSourceClaimIds: readonly SourceClaim["id"][];
   rejectedSourceClaimIds: readonly SourceClaim["id"][];
   entries: readonly SourceConsensusTimelineEntry[];
   doesNotProve: string;
@@ -815,6 +818,22 @@ const readRawEvidenceCitationRef = (
     : undefined;
 };
 
+const isUnknownSourceConsensusEntry = (
+  entry: SourceConsensusTimelineEntry
+): boolean => {
+  if (entry.state === "caveated_authority" || entry.temporalValidity.status === "invalid_time") {
+    return true;
+  }
+
+  return (
+    entry.state === "historical" &&
+    entry.temporalValidity.status === "valid" &&
+    entry.supersededBySourceClaimIds.length === 0 &&
+    entry.rejectionIds.length === 0 &&
+    entry.blockedByCurrentSourceClaimId === undefined
+  );
+};
+
 export const buildSourceConsensusTimelineReadback = (input: {
   readonly sourceClaims: readonly SourceClaim[];
   readonly sourceClaimEdges: readonly SourceClaimEdge[];
@@ -918,6 +937,15 @@ export const buildSourceConsensusTimelineReadback = (input: {
       .map((entry) => entry.sourceClaimId),
     historicalSourceClaimIds: entries
       .filter((entry) => entry.state === "historical")
+      .map((entry) => entry.sourceClaimId),
+    staleSourceClaimIds: entries
+      .filter((entry) => entry.temporalValidity.status === "stale")
+      .map((entry) => entry.sourceClaimId),
+    supersededSourceClaimIds: entries
+      .filter((entry) => entry.supersededBySourceClaimIds.length > 0)
+      .map((entry) => entry.sourceClaimId),
+    unknownSourceClaimIds: entries
+      .filter(isUnknownSourceConsensusEntry)
       .map((entry) => entry.sourceClaimId),
     rejectedSourceClaimIds: entries
       .filter((entry) => entry.state === "rejected")

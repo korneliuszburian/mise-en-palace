@@ -397,6 +397,12 @@ describe("source review signals", () => {
       "claim-stale-standard",
       "claim-old-standard"
     ]);
+    expect(readback.staleSourceClaimIds).toEqual(["claim-stale-standard"]);
+    expect(readback.supersededSourceClaimIds).toEqual(["claim-old-standard"]);
+    expect(readback.unknownSourceClaimIds).toEqual([
+      "claim-accepted-only",
+      "claim-invalid-time-standard"
+    ]);
     expect(readback.rejectedSourceClaimIds).toEqual(["claim-rejected"]);
 
     expect(readback.entries.map((entry) => entry.sourceClaimId)).toEqual([

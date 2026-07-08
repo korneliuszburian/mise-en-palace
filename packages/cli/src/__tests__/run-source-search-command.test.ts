@@ -1285,7 +1285,13 @@ describe("runSourceSearchCommand", () => {
       .toContain(currentClaimId);
     expect(arrayValue(consensusReadback.historicalSourceClaimIds, "historicalSourceClaimIds"))
       .toContain(staleClaimId);
+    expect(arrayValue(consensusReadback.staleSourceClaimIds, "staleSourceClaimIds"))
+      .toContain(staleClaimId);
+    expect(arrayValue(consensusReadback.supersededSourceClaimIds, "supersededSourceClaimIds"))
+      .toContain(staleClaimId);
     expect(arrayValue(consensusReadback.caveatedSourceClaimIds, "caveatedSourceClaimIds"))
+      .toContain(acceptedOnlyClaimId);
+    expect(arrayValue(consensusReadback.unknownSourceClaimIds, "unknownSourceClaimIds"))
       .toContain(acceptedOnlyClaimId);
     expect(arrayValue(consensusReadback.rejectedSourceClaimIds, "rejectedSourceClaimIds"))
       .toContain(rejectedClaimId);

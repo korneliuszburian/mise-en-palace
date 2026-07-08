@@ -187,6 +187,9 @@ export const buildSourceSearchAnswerPackage = (input: {
     currentSourceClaimIds: [],
     caveatedSourceClaimIds: [],
     historicalSourceClaimIds: [],
+    staleSourceClaimIds: [],
+    supersededSourceClaimIds: [],
+    unknownSourceClaimIds: [],
     rejectedSourceClaimIds: [],
     entries: [],
     doesNotProve:
