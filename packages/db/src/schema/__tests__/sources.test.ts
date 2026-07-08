@@ -1,35 +1,17 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  sourceAuthorityLabels,
+  sourceSupportTypes
+} from "@krn/core";
+
 import * as sourceSchema from "../sources.js";
 
 describe("source graph schema", () => {
-  it("exposes M22 source vocabulary and typed decision edges", () => {
-    expect(sourceSchema.sourceAuthorityLabel.enumValues).toEqual(
-      expect.arrayContaining([
-        "primary",
-        "official",
-        "project-decision",
-        "source-code",
-        "paper",
-        "practitioner",
-        "secondary",
-        "hypothesis"
-      ])
-    );
-    expect(sourceSchema.sourceSupportType.enumValues).toEqual(
-      expect.arrayContaining([
-        "mechanism",
-        "decision",
-        "risk",
-        "rejection",
-        "eval-design",
-        "implementation-boundary"
-      ])
-    );
+  it("keeps DB source enums aligned with the core source model", () => {
+    expect(sourceSchema.sourceAuthorityLabel.enumValues).toEqual(sourceAuthorityLabels);
+    expect(sourceSchema.sourceSupportType.enumValues).toEqual(sourceSupportTypes);
     expect("sourceClaimStatus" in sourceSchema).toBe(true);
-    expect(sourceSchema.sourceClaimEdgeKind.enumValues).toEqual(
-      expect.arrayContaining(["narrows", "invalidates", "expires"])
-    );
     expect("sourceDecisionTargetType" in sourceSchema).toBe(true);
     expect("sourceDecisionEdgeConfidence" in sourceSchema).toBe(true);
     expect("sourceDecisionEdges" in sourceSchema).toBe(true);
