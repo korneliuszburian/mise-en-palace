@@ -26,6 +26,9 @@ import {
   runMemoryKnowledgeSeedCommand
 } from "../run-memory-knowledge-seed-command.js";
 import {
+  runBrainSearchCommand
+} from "../run-brain-search-command.js";
+import {
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
 
@@ -38,9 +41,11 @@ const fixtureKnowledge = (overrides: Partial<BrainKnowledgeDecision> = {}): Brai
   confidence: "high",
   reviewability: "ready",
   decision: "Keep JSON.parse results unknown until validated.",
+  mechanism: "Unknown-first parsing prevents external JSON from entering domain code unchecked.",
+  krnImplication: "Seeded knowledge must retain the parser boundary through DB-backed memory readback.",
   sourceRefs: ["packages/core/src/metadata.ts"],
   evidenceRefs: ["tests/fixtures/ts-boundary.json"],
-  consumers: ["@krn/core"],
+  consumers: ["@krn/core", "@krn/cli"],
   falsifier: "A JSON.parse result assigned to a non-unknown type.",
   doesNotProve: "Seed import does not prove the pattern is current or applied.",
   nextAction: "use",
@@ -151,6 +156,109 @@ const createSeedTestRuntime = (directory: string) => {
   };
 };
 
+const memoryRecordFromCandidate = (
+  candidateId: string,
+  input: CreateMemoryCandidateInput,
+  recordKey: string | undefined
+): MemoryRecord => ({
+  id: `memory-record-${candidateId}`,
+  projectId: input.projectId,
+  key: recordKey ?? candidateId,
+  kind: input.kind,
+  status: "active",
+  summary: input.summary,
+  body: input.body,
+  owner: input.owner,
+  confidence: input.confidence,
+  applicationGuidance: input.applicationGuidance,
+  ...(input.invalidationRule === undefined ? {} : { invalidationRule: input.invalidationRule }),
+  sourceLineage: input.sourceLineage,
+  isUserPreference: input.isUserPreference,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: input.metadata ?? {},
+  validFrom: input.validFrom ?? now,
+  ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
+  createdAt: now,
+  updatedAt: now
+});
+
+const createStoreBackedSeedRuntime = (directory: string) => {
+  const dependencies = createNoStoreCompilerDependencies({
+    now: () => now,
+    createId: (prefix) => `${prefix}-1`
+  });
+  const candidates = new Map<string, CreateMemoryCandidateInput>();
+  const records: MemoryRecord[] = [];
+
+  const createDatabaseRuntime = async (): Promise<DatabaseRuntime> => ({
+    workspaceId: "workspace-1",
+    projectId: "project-1",
+    compilerDependencies: dependencies,
+    harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+    sourceRepository: {} as DatabaseRuntime["sourceRepository"],
+    memoryRepository: {
+      ...unusedMemoryRepository,
+      async listMemoryRecordsForProject() {
+        return records;
+      },
+      async listActiveMemory() {
+        return records;
+      },
+      async createMemoryCandidate(input) {
+        const id = `memory-candidate-${candidates.size + 1}`;
+        candidates.set(id, input);
+
+        return {
+          id,
+          metadata: input.metadata ?? {}
+        } as MemoryCandidate;
+      },
+      async promoteReviewedMemoryCandidate(input) {
+        const candidate = candidates.get(input.candidateId);
+
+        if (candidate === undefined) {
+          throw new Error(`Missing candidate ${input.candidateId}`);
+        }
+        const record = memoryRecordFromCandidate(
+          input.candidateId,
+          {
+            ...candidate,
+            metadata: {
+              ...(candidate.metadata ?? {}),
+              ...(input.metadata ?? {})
+            }
+          },
+          input.recordKey
+        );
+        records.push(record);
+
+        return record;
+      }
+    } as DatabaseRuntime["memoryRepository"],
+    async close() {}
+  });
+
+  return {
+    createDatabaseRuntime,
+    seedRuntime: {
+      cwd: directory,
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`,
+      command: {
+        kind: "memoryKnowledgeSeed",
+        persist: true,
+        dryRun: false,
+        catalogFile: "catalog.json"
+      } as const,
+      createDatabaseRuntime
+    }
+  };
+};
+
 describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
   it("maps a brain knowledge to a kind=pattern memory candidate", () => {
     const input = brainKnowledgeDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
@@ -165,15 +273,23 @@ describe("brainKnowledgeDecisionToMemoryCandidateInput", () => {
     expect(input.proposedBy).toBe("krn memory knowledge seed");
     expect(input.isUserPreference).toBe(false);
     expect(input.validFrom).toBe(now);
-    expect(input.sourceLineage).toEqual([{ sourceId: "packages/core/src/metadata.ts" }]);
+    expect(input.sourceLineage).toEqual([{
+      sourceId: "packages/core/src/metadata.ts",
+      note: "tests/fixtures/ts-boundary.json"
+    }]);
     const metadata = input.metadata ?? {};
 
     expect(metadata.knowledgeId).toBe("ts-boundary-unknown-first-result-state");
     expect(metadata.decisionStatus).toBe("adopt_now");
     expect(metadata.reviewability).toBe("ready");
+    expect(metadata.mechanism).toBe("Unknown-first parsing prevents external JSON from entering domain code unchecked.");
+    expect(metadata.krnImplication).toBe("Seeded knowledge must retain the parser boundary through DB-backed memory readback.");
     expect(metadata.nextAction).toBe("use");
+    expect(metadata.falsifier).toBe("A JSON.parse result assigned to a non-unknown type.");
     expect(metadata.doesNotProve).toBe("Seed import does not prove the pattern is current or applied.");
     expect(metadata.sourceRefs).toEqual(["packages/core/src/metadata.ts"]);
+    expect(metadata.evidenceRefs).toEqual(["tests/fixtures/ts-boundary.json"]);
+    expect(metadata.consumers).toEqual(["@krn/core", "@krn/cli"]);
   });
 });
 
@@ -236,9 +352,14 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       expect(capturedCandidates[0]).toMatchObject({
         projectId: "project-1",
         kind: "pattern",
-        sourceLineage: [{ sourceId: "packages/core/src/metadata.ts" }],
+        sourceLineage: [{
+          sourceId: "packages/core/src/metadata.ts",
+          note: "tests/fixtures/ts-boundary.json"
+        }],
         metadata: {
-          knowledgeId: "ts-boundary-unknown-first-result-state"
+          knowledgeId: "ts-boundary-unknown-first-result-state",
+          evidenceRefs: ["tests/fixtures/ts-boundary.json"],
+          consumers: ["@krn/core", "@krn/cli"]
         }
       });
       expect(capturedPromotions).toEqual([
@@ -249,6 +370,89 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           recordKey: "pattern:ts-boundary-unknown-first-result-state"
         }
       ]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("feeds seeded corpus knowledge back through store-only brain search", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
+
+    try {
+      await writeKnowledgeCatalog(directory, fixtureKnowledge());
+
+      const {
+        createDatabaseRuntime,
+        seedRuntime
+      } = createStoreBackedSeedRuntime(directory);
+
+      await runMemoryKnowledgeSeedCommand(seedRuntime);
+
+      const search = await runBrainSearchCommand({
+        cwd: directory,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime,
+        command: {
+          kind: "brainSearch",
+          query: "db backed memory readback",
+          catalogFiles: [],
+          storeOnly: true,
+          format: "json"
+        },
+        async runBrainKnowledge(): Promise<never> {
+          throw new Error("store-only brain search should not read file catalogs");
+        },
+        async runSourceSearch() {
+          return {
+            stdout: JSON.stringify({
+              answerPackage: {
+                answerUsefulness: "not_useful",
+                supportingClaims: [],
+                supportingDocuments: [],
+                relationSupport: [],
+                sourceDecisionSupport: [],
+                graphReadback: {
+                  claimNodes: 0,
+                  relationEdges: 0,
+                  temporalEdges: 0,
+                  contradictionEdges: 0,
+                  duplicateEdges: 0,
+                  invalidationEdges: 0,
+                  graphAware: false,
+                  caveats: []
+                },
+                missingEvidence: []
+              },
+              includedCandidates: [],
+              proof: {
+                doesNotProve: ["source truth"]
+              }
+            })
+          };
+        }
+      });
+      const parsed: unknown = JSON.parse(search.stdout);
+
+      expect(parsed).toMatchObject({
+        brainKnowledgeReadback: "store_only",
+        brainKnowledgeQueries: ["db backed memory readback"],
+        knowledgeCards: {
+          cardIds: ["pattern:ts-boundary-unknown-first-result-state"],
+          selectedKnowledge: [{
+            id: "pattern:ts-boundary-unknown-first-result-state",
+            source: "memory_store",
+            mechanism: "Unknown-first parsing prevents external JSON from entering domain code unchecked.",
+            krnImplication: "Seeded knowledge must retain the parser boundary through DB-backed memory readback.",
+            consumers: ["@krn/core", "@krn/cli"],
+            falsifier: "A JSON.parse result assigned to a non-unknown type.",
+            doesNotProve: "Seed import does not prove the pattern is current or applied."
+          }]
+        }
+      });
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

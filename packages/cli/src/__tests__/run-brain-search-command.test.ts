@@ -691,6 +691,10 @@ describe("runBrainSearchCommand", () => {
       positiveFeedbackCount: 0,
       negativeFeedbackCount: 0,
       metadata: {
+        mechanism: "External review falsifies the local done-claim after a large slice.",
+        krnImplication: "Brain search should expose reviewer evidence only as advisory memory beside source-search support.",
+        evidenceRefs: ["review:external-loop-1"],
+        consumers: ["kernel-development", "slice-closure"],
         falsifier: "Reviewer prose overrides local verification evidence.",
         doesNotProve: "This memory does not prove Claude found every bug."
       },
@@ -790,8 +794,10 @@ describe("runBrainSearchCommand", () => {
         selectedKnowledge: [{
           id: "memory-record-1",
           source: "memory_store",
+          mechanism: "External review falsifies the local done-claim after a large slice.",
+          krnImplication: "Brain search should expose reviewer evidence only as advisory memory beside source-search support.",
           reviewability: "ready",
-          consumers: ["kernel-development"],
+          consumers: ["kernel-development", "slice-closure"],
           falsifier: "Reviewer prose overrides local verification evidence.",
           doesNotProve: "This memory does not prove Claude found every bug.",
           nextAction: "use"

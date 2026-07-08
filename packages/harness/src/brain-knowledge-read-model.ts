@@ -119,6 +119,8 @@ export type BrainKnowledgeReadModel = {
   status: BrainKnowledgeStatus;
   title: string;
   summary: string;
+  mechanism?: string;
+  krnImplication?: string;
   confidence: BrainKnowledgeConfidence;
   reviewability: BrainKnowledgeReviewability;
   sourceRefs: string[];
@@ -153,6 +155,8 @@ export type BrainKnowledgeDecision = {
   confidence: BrainKnowledgeConfidence;
   reviewability: BrainKnowledgeReviewability;
   decision: string;
+  mechanism?: string;
+  krnImplication?: string;
   sourceRefs: string[];
   evidenceRefs: string[];
   consumers: string[];
@@ -162,9 +166,15 @@ export type BrainKnowledgeDecision = {
   nextAction: BrainKnowledgeNextAction;
 };
 
-type BrainKnowledgeReadModelRequiredFields = Omit<BrainKnowledgeReadModel, "usefulnessFeedback">;
+type BrainKnowledgeReadModelRequiredFields = Omit<
+  BrainKnowledgeReadModel,
+  "usefulnessFeedback" | "mechanism" | "krnImplication"
+>;
 
-type BrainKnowledgeDecisionRequiredFields = Omit<BrainKnowledgeDecision, "observedAt">;
+type BrainKnowledgeDecisionRequiredFields = Omit<
+  BrainKnowledgeDecision,
+  "observedAt" | "mechanism" | "krnImplication"
+>;
 
 type BrainKnowledgeEvidenceBoundaryFields = Pick<
   BrainKnowledgeReadModelRequiredFields,
@@ -348,8 +358,11 @@ export function parseBrainKnowledgeDecision(value: unknown): BrainKnowledgeDecis
 
   const requiredFields = parseObjectFields(value, brainKnowledgeDecisionFieldParsers);
 
-  return requiredFields !== undefined && optionalStringFields(value, ["observedAt"]) ? {
+  return requiredFields !== undefined &&
+    optionalStringFields(value, ["observedAt", "mechanism", "krnImplication"]) ? {
     ...requiredFields,
+    ...pickOptionalString(value, "mechanism"),
+    ...pickOptionalString(value, "krnImplication"),
     ...pickOptionalString(value, "observedAt")
   } : undefined;
 }
@@ -363,6 +376,8 @@ export function brainKnowledgeCardFromDecision(
     status: statusFromBrainKnowledgeDecision(pattern.decisionStatus),
     title: pattern.name,
     summary: pattern.decision,
+    ...(pattern.mechanism === undefined ? {} : { mechanism: pattern.mechanism }),
+    ...(pattern.krnImplication === undefined ? {} : { krnImplication: pattern.krnImplication }),
     confidence: pattern.confidence,
     reviewability: pattern.reviewability,
     sourceRefs: pattern.sourceRefs,
@@ -516,15 +531,14 @@ function buildExactSearchText(card: BrainKnowledgeReadModel): string {
     card.id,
     card.title,
     card.summary,
+    card.mechanism ?? "",
+    card.krnImplication ?? "",
     card.falsifier,
     card.doesNotProve,
-    card.usefulnessFeedback?.outcome ?? "",
-    card.usefulnessFeedback?.summary ?? "",
-    card.usefulnessFeedback?.doesNotProve ?? "",
     ...card.sourceRefs,
     ...card.evidenceRefs,
     ...card.consumers,
-    ...(card.usefulnessFeedback?.evidenceRefs ?? [])
+    ...usefulnessSearchText(card)
   ].join("\n").toLowerCase();
 }
 
@@ -533,10 +547,25 @@ function buildTokenSearchText(card: BrainKnowledgeReadModel): string {
     card.id,
     card.title,
     card.summary,
+    card.mechanism ?? "",
+    card.krnImplication ?? "",
     card.falsifier,
     card.doesNotProve,
     ...card.consumers
   ].join("\n").toLowerCase();
+}
+
+function usefulnessSearchText(card: BrainKnowledgeReadModel): string[] {
+  if (card.usefulnessFeedback === undefined) {
+    return [];
+  }
+
+  return [
+    card.usefulnessFeedback.outcome,
+    card.usefulnessFeedback.summary,
+    card.usefulnessFeedback.doesNotProve,
+    ...card.usefulnessFeedback.evidenceRefs
+  ];
 }
 
 function isNewerFeedback(

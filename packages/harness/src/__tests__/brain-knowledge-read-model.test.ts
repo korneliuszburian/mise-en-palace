@@ -33,6 +33,9 @@ const referenceImplementationKnowledgeDecisionFixture = (): unknown =>
 const brainKnowledgeParserExemplarKnowledgeDecisionFixture = (): unknown =>
   readJsonRootFile("corpus/brain-knowledge/knowledge/ts-boundary-brain-knowledge-parser-exemplar.json");
 
+const sourceToDecisionKnowledgeDecisionFixture = (): unknown =>
+  readJsonRootFile("corpus/brain-knowledge/knowledge/source-to-decision-retention-gate.json");
+
 const parsedCardFixture = () => {
   const card = parseBrainKnowledgeReadModel(cardFixture());
 
@@ -68,6 +71,16 @@ const parsedBrainKnowledgeParserExemplarKnowledgeDecisionFixture = () => {
 
   if (knowledgeDecision === undefined) {
     throw new Error("Expected brain knowledge parser exemplar brain knowledge decision to parse.");
+  }
+
+  return knowledgeDecision;
+};
+
+const parsedSourceToDecisionKnowledgeDecisionFixture = () => {
+  const knowledgeDecision = parseBrainKnowledgeDecision(sourceToDecisionKnowledgeDecisionFixture());
+
+  if (knowledgeDecision === undefined) {
+    throw new Error("Expected source-to-decision brain knowledge decision to parse.");
   }
 
   return knowledgeDecision;
@@ -272,6 +285,24 @@ describe("Brain knowledge read model", () => {
     expect(searchBrainKnowledgeCards([card], {
       text: "brain knowledge parser exemplar unknown-first recipe"
     })).toEqual([card]);
+  });
+
+  it("preserves optional source-to-decision mechanism fields from unknown JSON", () => {
+    const knowledgeDecision = parsedSourceToDecisionKnowledgeDecisionFixture();
+    const card = brainKnowledgeCardFromDecision(knowledgeDecision);
+
+    expect(card).toMatchObject({
+      id: "pattern:source-to-decision-retention-gate",
+      mechanism: "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or pattern to state why it changes KRN behavior and how it can be falsified.",
+      krnImplication: "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory."
+    });
+    expect(searchBrainKnowledgeCards([card], {
+      text: "decorative source hoarding store-backed memoryrecord"
+    })).toEqual([card]);
+    expect(parseBrainKnowledgeDecision({
+      ...knowledgeDecision,
+      mechanism: ["not", "a", "string"]
+    })).toBeUndefined();
   });
 
   it("maps brain knowledge decision statuses to brain-knowledge status", () => {

@@ -72,6 +72,8 @@ export interface BrainSearchKnowledgePacket {
   id: string;
   title: string;
   summary: string;
+  mechanism?: string;
+  krnImplication?: string;
   source: "catalog_file" | "memory_store" | "source_search";
   targetFit: TargetFit;
   targetFitReasons: readonly string[];
@@ -185,6 +187,16 @@ const firstDefinedString = (values: readonly (string | undefined)[]): string =>
 const optionalStringArray = (value: string | undefined): readonly string[] =>
   value === undefined ? [] : [value];
 
+const optionalMechanism = (
+  mechanism: string | undefined
+): Pick<BrainSearchKnowledgePacket, "mechanism"> | Record<string, never> =>
+  mechanism === undefined ? {} : { mechanism };
+
+const optionalKrnImplication = (
+  krnImplication: string | undefined
+): Pick<BrainSearchKnowledgePacket, "krnImplication"> | Record<string, never> =>
+  krnImplication === undefined ? {} : { krnImplication };
+
 const sourceKnowledgeNextAction: Record<
   BrainSearchKnowledgePacket["reviewability"],
   string
@@ -198,6 +210,8 @@ const packetTargetFitText = (packet: BrainSearchKnowledgePacket): string =>
     packet.id,
     packet.title,
     packet.summary,
+    packet.mechanism ?? "",
+    packet.krnImplication ?? "",
     packet.source,
     ...packet.consumers,
     packet.falsifier,
@@ -292,6 +306,8 @@ const knowledgePackets = (
       id,
       title: stringValue(record["title"], ""),
       summary: stringValue(record["summary"], ""),
+      ...optionalMechanism(nonEmptyStringValue(record["mechanism"])),
+      ...optionalKrnImplication(nonEmptyStringValue(record["krnImplication"])),
       source,
       targetFit: "unknown",
       targetFitReasons: [],
@@ -356,6 +372,8 @@ const sourceSearchKnowledgePacketFromFields = (
     id: fields.id,
     title: firstDefinedString([fields.claimText, fields.label, fields.id]),
     summary: firstDefinedString([fields.krnImplication, fields.mechanism, fields.reason]),
+    ...optionalMechanism(fields.mechanism),
+    ...optionalKrnImplication(fields.krnImplication),
     source: "source_search",
     targetFit: "unknown",
     targetFitReasons: [],

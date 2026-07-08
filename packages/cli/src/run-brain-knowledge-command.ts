@@ -592,6 +592,8 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `  reviewability: ${card.reviewability}`,
   `  nextAction: ${card.nextAction}`,
   `  summary: ${card.summary}`,
+  ...(card.mechanism === undefined ? [] : [`  mechanism: ${card.mechanism}`]),
+  ...(card.krnImplication === undefined ? [] : [`  krnImplication: ${card.krnImplication}`]),
   `  sourceRefs: ${card.sourceRefs.join(", ")}`,
   `  evidenceRefs: ${card.evidenceRefs.join(", ")}`,
   `  consumers: ${card.consumers.join(", ")}`,
@@ -615,6 +617,8 @@ const cardSearchText = (card: BrainKnowledgeReadModel): string =>
     card.status,
     card.title,
     card.summary,
+    card.mechanism ?? "",
+    card.krnImplication ?? "",
     card.confidence,
     card.reviewability,
     card.nextAction,
@@ -623,11 +627,21 @@ const cardSearchText = (card: BrainKnowledgeReadModel): string =>
     ...card.consumers,
     card.falsifier,
     card.doesNotProve,
-    card.usefulnessFeedback?.outcome ?? "",
-    card.usefulnessFeedback?.summary ?? "",
-    card.usefulnessFeedback?.doesNotProve ?? "",
-    ...(card.usefulnessFeedback?.evidenceRefs ?? [])
+    ...cardUsefulnessSearchText(card)
   ].join(" ").toLowerCase();
+
+const cardUsefulnessSearchText = (card: BrainKnowledgeReadModel): string[] => {
+  if (card.usefulnessFeedback === undefined) {
+    return [];
+  }
+
+  return [
+    card.usefulnessFeedback.outcome,
+    card.usefulnessFeedback.summary,
+    card.usefulnessFeedback.doesNotProve,
+    ...card.usefulnessFeedback.evidenceRefs
+  ];
+};
 
 const formatUsefulnessFeedbackHtml = (card: BrainKnowledgeReadModel): string =>
   card.usefulnessFeedback === undefined
@@ -658,6 +672,8 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
   </div>
   <p>${escapeHtml(card.summary)}</p>
   <dl>
+    ${card.mechanism === undefined ? "" : `<dt>Mechanism</dt><dd>${escapeHtml(card.mechanism)}</dd>`}
+    ${card.krnImplication === undefined ? "" : `<dt>KRN implication</dt><dd>${escapeHtml(card.krnImplication)}</dd>`}
     <dt>Source refs</dt><dd>${formatHtmlList(card.sourceRefs)}</dd>
     <dt>Evidence refs</dt><dd>${formatHtmlList(card.evidenceRefs)}</dd>
     <dt>Consumers</dt><dd>${formatHtmlList(card.consumers)}</dd>

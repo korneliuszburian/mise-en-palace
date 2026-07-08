@@ -46,20 +46,45 @@ const metadataString = (
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 };
 
+const uniqueStrings = (values: readonly string[]): string[] => [...new Set(values)];
+
+const metadataStringArray = (
+  metadata: Record<string, unknown>,
+  key: string
+): string[] | undefined => {
+  const value = metadata[key];
+
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const strings = uniqueStrings(
+    value.flatMap((item) =>
+      typeof item === "string" && item.trim().length > 0 ? [item.trim()] : []
+    )
+  );
+
+  return strings.length === 0 ? undefined : strings;
+};
+
 const sourceLineageEvidenceRefs = (
   memory: MemoryRecord
 ): string[] =>
-  memory.sourceLineage.flatMap((source) =>
+  uniqueStrings(memory.sourceLineage.flatMap((source) =>
     source.note === undefined || source.note.trim().length === 0
       ? []
       : [source.note]
-  );
+  ));
 
 export const memoryRecordToKnowledgeCard = (
   memory: MemoryRecord
 ): BrainKnowledgeReadModel => {
-  const evidenceRefs = sourceLineageEvidenceRefs(memory);
+  const evidenceRefs =
+    metadataStringArray(memory.metadata, "evidenceRefs") ??
+    sourceLineageEvidenceRefs(memory);
   const knowledgeId = metadataString(memory.metadata, "knowledgeId");
+  const mechanism = metadataString(memory.metadata, "mechanism");
+  const krnImplication = metadataString(memory.metadata, "krnImplication");
 
   return {
     id: knowledgeId === undefined ? memory.id : `pattern:${knowledgeId}`,
@@ -67,11 +92,15 @@ export const memoryRecordToKnowledgeCard = (
     status: memoryStatus(memory.status),
     title: memory.summary,
     summary: `${memory.body}\n\nApplication guidance: ${memory.applicationGuidance}`,
+    ...(mechanism === undefined ? {} : { mechanism }),
+    ...(krnImplication === undefined ? {} : { krnImplication }),
     confidence: memoryConfidence(memory.confidence),
     reviewability: "ready",
-    sourceRefs: memory.sourceLineage.map((source) => source.sourceId),
+    sourceRefs:
+      metadataStringArray(memory.metadata, "sourceRefs") ??
+      memory.sourceLineage.map((source) => source.sourceId),
     evidenceRefs: evidenceRefs.length > 0 ? evidenceRefs : [`memory:${memory.id}`],
-    consumers: [memory.owner],
+    consumers: metadataStringArray(memory.metadata, "consumers") ?? [memory.owner],
     falsifier:
       metadataString(memory.metadata, "falsifier") ??
       memory.invalidationRule ??

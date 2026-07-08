@@ -42,9 +42,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const sourceLineageFromRefs = (
-  sourceRefs: readonly string[]
+  sourceRefs: readonly string[],
+  evidenceRefs: readonly string[]
 ): CreateMemoryCandidateInput["sourceLineage"] =>
-  sourceRefs.map((sourceId) => ({ sourceId }));
+  sourceRefs.map((sourceId) => ({
+    sourceId,
+    ...(evidenceRefs[0] === undefined ? {} : { note: evidenceRefs[0] })
+  }));
 
 /**
  * Map a parsed brain knowledge decision into the store-backed memory candidate
@@ -65,16 +69,21 @@ export const brainKnowledgeDecisionToMemoryCandidateInput = (
   confidence: confidenceValue(decision.confidence),
   applicationGuidance: decision.decision,
   invalidationRule: decision.falsifier,
-  sourceLineage: sourceLineageFromRefs(decision.sourceRefs),
+  sourceLineage: sourceLineageFromRefs(decision.sourceRefs, decision.evidenceRefs),
   isUserPreference: false,
   validFrom: now,
   metadata: {
     knowledgeId: decision.knowledgeId,
     decisionStatus: decision.decisionStatus,
     reviewability: decision.reviewability,
+    ...(decision.mechanism === undefined ? {} : { mechanism: decision.mechanism }),
+    ...(decision.krnImplication === undefined ? {} : { krnImplication: decision.krnImplication }),
     nextAction: decision.nextAction,
+    falsifier: decision.falsifier,
     doesNotProve: decision.doesNotProve,
-    sourceRefs: decision.sourceRefs
+    sourceRefs: decision.sourceRefs,
+    evidenceRefs: decision.evidenceRefs,
+    consumers: decision.consumers
   }
 });
 
