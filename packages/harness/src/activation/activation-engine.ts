@@ -4,12 +4,15 @@ import type {
   ActivationAbstentionReason,
   ContextAssembly,
   SourceAuthorityLabel,
+  SourceDecisionEdge,
+  SourceRejection,
   TaskContract
 } from "@krn/core";
 import {
   assessSourceClaimAuthority,
   assessSourceClaimReviewSignals,
-  activationExclusionReasons
+  activationExclusionReasons,
+  buildSourceConsensusTimelineReadback
 } from "@krn/core";
 
 import type {
@@ -72,7 +75,7 @@ export interface ActivationCandidateRepositories {
   sourceRepository: Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  >;
+  > & Partial<Pick<SourceRepository, "listSourceRejectionsForClaim">>;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -454,19 +457,36 @@ const sourceClaimEdgesForClaims = async (
   return [...uniqueEdgesById.values()];
 };
 
-const sourceDecisionCountsForClaims = async (
+const sourceDecisionEdgesForClaims = async (
   sourceRepository: Pick<SourceRepository, "listSourceDecisionEdgesForClaim">,
   sourceClaims: readonly { id: string }[]
-): Promise<ReadonlyMap<string, number>> => {
-  const countsBySourceClaimId = new Map<string, number>();
+): Promise<ReadonlyMap<string, readonly SourceDecisionEdge[]>> => {
+  const edgesBySourceClaimId = new Map<string, readonly SourceDecisionEdge[]>();
 
   await Promise.all(sourceClaims.map(async (claim) => {
     const edges = await sourceRepository.listSourceDecisionEdgesForClaim(claim.id);
 
-    countsBySourceClaimId.set(claim.id, edges.length);
+    edgesBySourceClaimId.set(claim.id, edges);
   }));
 
-  return countsBySourceClaimId;
+  return edgesBySourceClaimId;
+};
+
+const sourceRejectionsForClaims = async (
+  sourceRepository: Partial<Pick<SourceRepository, "listSourceRejectionsForClaim">>,
+  sourceClaims: readonly { id: string }[]
+): Promise<SourceRejection[]> => {
+  const listSourceRejectionsForClaim = sourceRepository.listSourceRejectionsForClaim;
+
+  if (listSourceRejectionsForClaim === undefined) {
+    return [];
+  }
+
+  const rejections = await Promise.all(
+    sourceClaims.map((claim) => listSourceRejectionsForClaim(claim.id))
+  );
+
+  return rejections.flat();
 };
 
 export const retrieveActivationCandidates = async (
@@ -510,10 +530,21 @@ export const retrieveActivationCandidates = async (
     input.repositories.sourceRepository,
     sourceClaims
   );
-  const sourceDecisionCountsByClaimId = await sourceDecisionCountsForClaims(
+  const sourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(
     input.repositories.sourceRepository,
     sourceClaims
   );
+  const sourceRejections = await sourceRejectionsForClaims(
+    input.repositories.sourceRepository,
+    sourceClaims
+  );
+  const sourceConsensus = buildSourceConsensusTimelineReadback({
+    sourceClaims,
+    sourceClaimEdges,
+    sourceDecisionEdges: [...sourceDecisionEdgesByClaimId.values()].flat(),
+    sourceRejections,
+    now: input.taskContract.updatedAt
+  });
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
@@ -530,7 +561,7 @@ export const retrieveActivationCandidates = async (
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
       applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
-        const sourceDecisionSupportCount = sourceDecisionCountsByClaimId.get(claim.id) ?? 0;
+        const sourceDecisionSupportCount = sourceDecisionEdgesByClaimId.get(claim.id)?.length ?? 0;
         const authorityAssessment = assessSourceClaimAuthority({
           claim,
           now: input.taskContract.updatedAt,
@@ -562,7 +593,7 @@ export const retrieveActivationCandidates = async (
       }),
       {
         edges: sourceClaimEdges,
-        sourceClaims
+        rankDownAuthoritySourceClaimIds: sourceConsensus.currentSourceClaimIds
       }
     ),
     sourceQuery

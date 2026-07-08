@@ -311,7 +311,7 @@ export const applySourceClaimEdgeInfluence = (
 
 export interface SourceClaimEdgeRankDownInput {
   edges: readonly SourceClaimEdge[];
-  sourceClaims: readonly Pick<SourceClaim, "id" | "status">[];
+  rankDownAuthoritySourceClaimIds: readonly SourceClaim["id"][];
   graphPenalty?: number;
 }
 
@@ -319,7 +319,7 @@ export const applySourceClaimEdgeRankDown = (
   candidates: readonly ActivationCandidate[],
   input: SourceClaimEdgeRankDownInput
 ): ActivationCandidate[] => {
-  const sourceClaimStatusById = new Map(input.sourceClaims.map((claim) => [claim.id, claim.status]));
+  const rankDownAuthoritySourceClaimIds = new Set(input.rankDownAuthoritySourceClaimIds);
   const graphPenalty = input.graphPenalty ?? defaultSourceClaimEdgeRankDownScore;
   const rankDownBySourceClaimId = new Map<SourceClaim["id"], {
     edgeIds: string[];
@@ -332,7 +332,7 @@ export const applySourceClaimEdgeRankDown = (
       continue;
     }
 
-    if (sourceClaimStatusById.get(edge.fromSourceClaimId) !== "accepted") {
+    if (!rankDownAuthoritySourceClaimIds.has(edge.fromSourceClaimId)) {
       continue;
     }
 

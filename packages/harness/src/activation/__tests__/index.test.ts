@@ -111,47 +111,56 @@ const sourceDecisionEdge = (
 
 const retrieveDecisionLinkedSourceCandidates = async (
   claims: readonly SourceClaim[],
-  edges: readonly SourceClaimEdge[] = []
-) => retrieveActivationCandidates({
-  taskContract: task,
-  limits: {
-    memory: 0,
-    source: 10,
-    search: 0,
-    antiMemory: 0
-  },
-  repositories: {
-    memoryRepository: {
-      async listActiveMemory() {
-        return [];
-      },
-      async listAntiMemoryForProject() {
-        return [];
-      }
+  edges: readonly SourceClaimEdge[] = [],
+  decisionLinkedClaimIds: readonly SourceClaim["id"][] = claims.map((claim) => claim.id)
+) => {
+  const decisionLinked = new Set(decisionLinkedClaimIds);
+
+  return retrieveActivationCandidates({
+    taskContract: task,
+    limits: {
+      memory: 0,
+      source: 10,
+      search: 0,
+      antiMemory: 0
     },
-    sourceRepository: {
-      async listClaimsForProject() {
-        return [...claims];
+    repositories: {
+      memoryRepository: {
+        async listActiveMemory() {
+          return [];
+        },
+        async listAntiMemoryForProject() {
+          return [];
+        }
       },
-      async listSourceClaimEdgesForClaim(sourceClaimId) {
-        return edges.filter((edge) =>
-          edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
-        );
+      sourceRepository: {
+        async listClaimsForProject() {
+          return [...claims];
+        },
+        async listSourceClaimEdgesForClaim(sourceClaimId) {
+          return edges.filter((edge) =>
+            edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
+          );
+        },
+        async listSourceDecisionEdgesForClaim(sourceClaimId) {
+          if (!decisionLinked.has(sourceClaimId)) {
+            return [];
+          }
+
+          return [sourceDecisionEdge({
+            id: `edge-${sourceClaimId}`,
+            sourceClaimId
+          })];
+        }
       },
-      async listSourceDecisionEdgesForClaim(sourceClaimId) {
-        return [sourceDecisionEdge({
-          id: `edge-${sourceClaimId}`,
-          sourceClaimId
-        })];
-      }
-    },
-    retrievalRepository: {
-      async searchLexical() {
-        return [];
+      retrievalRepository: {
+        async searchLexical() {
+          return [];
+        }
       }
     }
-  }
-});
+  });
+};
 
 const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
   id: "anti-memory-1",
@@ -621,11 +630,7 @@ describe("activation engine", () => {
           invalidatesEdge,
           proposedEdge
         ],
-        sourceClaims: [
-          activeClaim,
-          staleClaim,
-          proposedInvalidator
-        ],
+        rankDownAuthoritySourceClaimIds: [activeClaim.id],
         graphPenalty: 30
       }),
       buildSourceQuery(task)
@@ -686,10 +691,7 @@ describe("activation engine", () => {
         }
       ], {
         edges: [contradictsEdge],
-        sourceClaims: [
-          acceptedDissent,
-          contestedClaim
-        ],
+        rankDownAuthoritySourceClaimIds: [acceptedDissent.id],
         graphPenalty: 30
       }),
       buildSourceQuery(task)
@@ -1639,6 +1641,59 @@ describe("activation engine", () => {
         explanation: expect.stringContaining("edge-current-supersedes-old")
       })
     ]));
+  });
+
+  it("does not rank down authority from accepted claims without decision support", async () => {
+    const currentClaim = sourceClaim({
+      id: "claim-current-decision-linked",
+      claim: "Current decision-linked source claim should guide activation.",
+      supportType: "implementation-boundary",
+      falsifier: "A decision-linked current claim is ranked down by unsupported evidence."
+    });
+    const unsupportedInvalidator = sourceClaim({
+      id: "claim-unsupported-invalidator",
+      claim: "Accepted-only source claim tries to invalidate current authority.",
+      supportType: "implementation-boundary",
+      falsifier: "Accepted-only evidence can demote decision-linked current authority."
+    });
+    const invalidatesEdge: SourceClaimEdge = {
+      id: "edge-unsupported-invalidates-current",
+      fromSourceClaimId: unsupportedInvalidator.id,
+      toSourceClaimId: currentClaim.id,
+      kind: "invalidates",
+      metadata: {
+        consumer: "activation-engine-test",
+        doesNotProve: "This edge does not prove source truth outside the fixture."
+      },
+      createdAt: now
+    };
+    const retrieved = await retrieveDecisionLinkedSourceCandidates(
+      [currentClaim, unsupportedInvalidator],
+      [invalidatesEdge],
+      [currentClaim.id]
+    );
+    const result = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const bySubjectId = new Map(result.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get(currentClaim.id)?.sourceClaimAuthorityStatus).toBe("accepted");
+    expect(bySubjectId.get(currentClaim.id)?.exclusion).toBeUndefined();
+    expect(bySubjectId.get(currentClaim.id)?.sourceClaimEdgeRankDown).toBeUndefined();
+    expect(bySubjectId.get(unsupportedInvalidator.id)).toMatchObject({
+      sourceClaimAuthorityStatus: "evidence_gap",
+      sourceClaimAuthorityReasons: ["missing_source_decision_support"],
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("accepted_claim_without_decision")
+      }
+    });
   });
 
   it("selects a small high-signal working set from noisy candidates", () => {

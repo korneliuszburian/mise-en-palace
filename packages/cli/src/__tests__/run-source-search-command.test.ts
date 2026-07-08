@@ -1143,6 +1143,13 @@ describe("runSourceSearchCommand", () => {
             toSourceClaimId: staleClaimId,
             kind: "invalidates"
           })
+        ],
+        decisionEdges: [
+          sourceDecisionEdge({
+            id: "4a4f60d9-3071-4f2c-aa07-48d43eb52f08" as SourceDecisionEdge["id"],
+            sourceClaimId: currentClaimId,
+            confidence: "high"
+          })
         ]
       })
     });
@@ -1164,14 +1171,14 @@ describe("runSourceSearchCommand", () => {
 
     expect(supportingClaims).toHaveLength(1);
     expect(firstClaim.sourceClaimId).toBe(currentClaimId);
-    expect(firstClaim.sourceDecisionSupportState).toBe("missing");
-    expect(firstClaim.sourceDecisionSupportCaveat).toContain("has no SourceDecisionEdge support");
+    expect(firstClaim.sourceDecisionSupportState).toBe("linked");
     expect(relationSupport).toHaveLength(1);
     expect(relation.sourceClaimId).toBe(currentClaimId);
     expect(relation.relatedSourceClaimId).toBe(staleClaimId);
     expect(relation.kind).toBe("invalidates");
     expect(relation.sourceDecisionRef).toBe("source-decision:temporal-claim-graph");
-    expect(sourceDecisionSupport).toEqual([]);
+    expect(sourceDecisionSupport).toHaveLength(1);
+    expect(objectValue(sourceDecisionSupport[0], "decision support").confidence).toBe("high");
     expect(graphReadback.graphAware).toBe(true);
     expect(graphReadback.invalidationEdges).toBe(1);
     expect(excludedStaleClaim?.reason).toContain("Source graph rank-down");
