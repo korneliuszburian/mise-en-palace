@@ -4,7 +4,7 @@ import type {
 } from "./types.js";
 
 const doesNotProve =
-  "Activation diagnostics do not prove selected context is sufficient, source truth is correct, or ranking quality is good.";
+  "Activation diagnostics do not prove selected context is sufficient, source truth is correct, vector/hybrid activation is active, or ranking quality is good.";
 
 interface BuildActivationRetrievalDiagnosticsInput {
   projectScoped: boolean;
@@ -49,6 +49,7 @@ export const buildActivationRetrievalDiagnostics = (
 ): ActivationRetrievalDiagnostics => ({
   projectScoped: input.projectScoped,
   inputStatus: inputStatusFor(input),
+  searchMode: "lexical",
   memoryRecordCount: input.memoryRecordCount,
   sourceClaimCount: input.sourceClaimCount,
   searchResultCount: input.searchResultCount,
@@ -103,6 +104,48 @@ const targetReadModelStatuses = new Set<ActivationRetrievalDiagnostics["targetRe
   "provided"
 ]);
 
+const searchModes = new Set<ActivationRetrievalDiagnostics["searchMode"]>([
+  "lexical"
+]);
+
+const diagnosticsNumberFieldKeys = [
+  "memoryRecordCount",
+  "sourceClaimCount",
+  "searchResultCount",
+  "ownerFileCandidateCount",
+  "antiMemoryRecordCount",
+  "mergedCandidateCount",
+  "sourceSeedCount",
+  "targetOwnerFileCount",
+  "trustExclusionCount"
+] as const satisfies readonly (keyof ActivationRetrievalDiagnostics)[];
+
+type DiagnosticsNumberFieldKey = (typeof diagnosticsNumberFieldKeys)[number];
+
+const enumStringField = <TValue extends string>(
+  record: Record<string, unknown>,
+  key: keyof ActivationRetrievalDiagnostics,
+  allowedValues: ReadonlySet<TValue>
+): TValue | undefined => {
+  const value = stringField(record, key);
+
+  return value !== undefined && allowedValues.has(value as TValue)
+    ? value as TValue
+    : undefined;
+};
+
+const numberFields = (
+  record: Record<string, unknown>
+): Record<DiagnosticsNumberFieldKey, number> | undefined => {
+  const entries = diagnosticsNumberFieldKeys.map((key) => [key, numberField(record, key)] as const);
+
+  if (entries.some(([, value]) => value === undefined)) {
+    return undefined;
+  }
+
+  return Object.fromEntries(entries) as Record<DiagnosticsNumberFieldKey, number>;
+};
+
 export const activationRetrievalDiagnosticsFromMetadata = (
   metadata: Record<string, unknown> | undefined
 ): ActivationRetrievalDiagnostics | undefined => {
@@ -113,37 +156,23 @@ export const activationRetrievalDiagnosticsFromMetadata = (
   }
 
   const record = value as Record<string, unknown>;
-  const inputStatus = stringField(record, "inputStatus");
-  const targetReadModelStatus = stringField(record, "targetReadModelStatus");
+  const inputStatus = enumStringField(record, "inputStatus", inputStatuses);
+  const searchMode = enumStringField(record, "searchMode", searchModes);
+  const targetReadModelStatus = enumStringField(
+    record,
+    "targetReadModelStatus",
+    targetReadModelStatuses
+  );
   const projectScoped = booleanField(record, "projectScoped");
-  const memoryRecordCount = numberField(record, "memoryRecordCount");
-  const sourceClaimCount = numberField(record, "sourceClaimCount");
-  const searchResultCount = numberField(record, "searchResultCount");
-  const ownerFileCandidateCount = numberField(record, "ownerFileCandidateCount");
-  const antiMemoryRecordCount = numberField(record, "antiMemoryRecordCount");
-  const mergedCandidateCount = numberField(record, "mergedCandidateCount");
-  const sourceSeedCount = numberField(record, "sourceSeedCount");
-  const targetOwnerFileCount = numberField(record, "targetOwnerFileCount");
-  const trustExclusionCount = numberField(record, "trustExclusionCount");
+  const counts = numberFields(record);
   const parsedDoesNotProve = stringField(record, "doesNotProve");
 
   if (
     projectScoped === undefined ||
     inputStatus === undefined ||
-    !inputStatuses.has(inputStatus as ActivationRetrievalDiagnostics["inputStatus"]) ||
+    searchMode === undefined ||
     targetReadModelStatus === undefined ||
-    !targetReadModelStatuses.has(
-      targetReadModelStatus as ActivationRetrievalDiagnostics["targetReadModelStatus"]
-    ) ||
-    memoryRecordCount === undefined ||
-    sourceClaimCount === undefined ||
-    searchResultCount === undefined ||
-    ownerFileCandidateCount === undefined ||
-    antiMemoryRecordCount === undefined ||
-    mergedCandidateCount === undefined ||
-    sourceSeedCount === undefined ||
-    targetOwnerFileCount === undefined ||
-    trustExclusionCount === undefined ||
+    counts === undefined ||
     parsedDoesNotProve === undefined
   ) {
     return undefined;
@@ -151,18 +180,10 @@ export const activationRetrievalDiagnosticsFromMetadata = (
 
   return {
     projectScoped,
-    inputStatus: inputStatus as ActivationRetrievalDiagnostics["inputStatus"],
-    memoryRecordCount,
-    sourceClaimCount,
-    searchResultCount,
-    ownerFileCandidateCount,
-    antiMemoryRecordCount,
-    mergedCandidateCount,
-    targetReadModelStatus:
-      targetReadModelStatus as ActivationRetrievalDiagnostics["targetReadModelStatus"],
-    sourceSeedCount,
-    targetOwnerFileCount,
-    trustExclusionCount,
+    inputStatus,
+    searchMode,
+    ...counts,
+    targetReadModelStatus,
     doesNotProve: parsedDoesNotProve
   };
 };
@@ -172,6 +193,7 @@ export const formatActivationRetrievalDiagnostics = (
 ): string[] => [
   "Activation diagnostics:",
   `- inputStatus: ${diagnostics.inputStatus}`,
+  `- searchMode: ${diagnostics.searchMode}`,
   [
     "- counts:",
     `memory=${diagnostics.memoryRecordCount}`,

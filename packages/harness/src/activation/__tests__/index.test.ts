@@ -1126,6 +1126,7 @@ describe("activation engine", () => {
     expect(result.diagnostics).toMatchObject({
       projectScoped: true,
       inputStatus: "empty_activation_store",
+      searchMode: "lexical",
       memoryRecordCount: 0,
       sourceClaimCount: 0,
       searchResultCount: 0,
@@ -1135,6 +1136,7 @@ describe("activation engine", () => {
       targetReadModelStatus: "not_provided"
     });
     expect(result.diagnostics.doesNotProve).toContain("ranking quality");
+    expect(result.diagnostics.doesNotProve).toContain("vector/hybrid activation");
   });
 
   it("retries lexical search with explicit marker terms when the full source query is empty", async () => {
@@ -1200,6 +1202,7 @@ describe("activation engine", () => {
     expect(queries[1]).toBe("55568e9ec7a48a12");
     expect(result.diagnostics).toMatchObject({
       inputStatus: "candidates_available",
+      searchMode: "lexical",
       searchResultCount: 1,
       mergedCandidateCount: 1
     });

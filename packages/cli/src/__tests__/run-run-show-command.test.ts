@@ -15,6 +15,7 @@ const now = "2026-06-25T14:40:00.000Z";
 const activationRetrievalDiagnostics = {
   projectScoped: true,
   inputStatus: "empty_activation_store",
+  searchMode: "lexical",
   memoryRecordCount: 0,
   sourceClaimCount: 0,
   searchResultCount: 0,
@@ -26,7 +27,7 @@ const activationRetrievalDiagnostics = {
   targetOwnerFileCount: 0,
   trustExclusionCount: 0,
   doesNotProve:
-    "Activation diagnostics do not prove selected context is sufficient, source truth is correct, or ranking quality is good."
+    "Activation diagnostics do not prove selected context is sufficient, source truth is correct, vector/hybrid activation is active, or ranking quality is good."
 } as const;
 
 const aggregate: HarnessRunAggregate = {
@@ -451,6 +452,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("source_claim:claim-weak");
     expect(result.stdout).toContain("explanation: Weak source excluded.");
     expect(result.stdout).toContain("- inputStatus: empty_activation_store");
+    expect(result.stdout).toContain("- searchMode: lexical");
     expect(result.stdout).toContain(
       "- counts: memory=0 sourceClaims=0 search=0 ownerFile=0 antiMemory=0 merged=0"
     );
@@ -695,6 +697,7 @@ describe("runRunShowCommand", () => {
         }],
         activationDiagnostics: {
           inputStatus: "empty_activation_store",
+          searchMode: "lexical",
           memoryRecordCount: 0,
           sourceClaimCount: 0,
           searchResultCount: 0,

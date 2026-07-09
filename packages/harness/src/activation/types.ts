@@ -129,9 +129,12 @@ export type ActivationTargetReadModelStatus =
   | "not_provided"
   | "provided";
 
+export type ActivationSearchMode = "lexical";
+
 export interface ActivationRetrievalDiagnostics {
   projectScoped: boolean;
   inputStatus: ActivationRetrievalInputStatus;
+  searchMode: ActivationSearchMode;
   memoryRecordCount: number;
   sourceClaimCount: number;
   searchResultCount: number;
