@@ -18,7 +18,9 @@ import type {
 } from "@krn/core";
 import {
   assessCandidateReviewability,
+  knowledgeUsefulnessOutcomesFromMetadata,
   isReviewableFeedbackOutcome,
+  sourceUsefulnessOutcomesFromMetadata,
   toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
@@ -43,6 +45,10 @@ import type {
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
+import {
+  authorizePacketUsefulness,
+  usefulnessAuthorizationDowngradeReason
+} from "./packet-usefulness-authorization.js";
 import type {
   CreateDatabaseRuntime
 } from "./run-plan-command.js";
@@ -93,6 +99,7 @@ interface PersistedEvidenceIdentity {
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
   decisionPacketEvidenceRef?: string;
+  usefulnessAuthorizationReason?: string;
 }
 
 interface EvidencePersistenceConfig {
@@ -892,6 +899,7 @@ const hasReviewableUsefulnessFeedback = (
 
 const enqueueFeedbackMaintenance = async (
   databaseRuntime: Awaited<ReturnType<CreateDatabaseRuntime>>,
+  projectId: string,
   feedbackDeltaId: string,
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined
@@ -907,7 +915,7 @@ const enqueueFeedbackMaintenance = async (
   const queueRecord = await databaseRuntime.maintenanceQueueRepository.enqueueMaintenanceQueue({
     jobType: "review_feedback_delta",
     payload: {
-      projectId: databaseRuntime.projectId,
+      projectId,
       feedbackDeltaId,
       reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
     }
@@ -946,7 +954,36 @@ const persistEvidenceCapture = async (
     }
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
-    const decisionPacketChecksum = normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum);
+    const callerPacketChecksum = normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum);
+    const usefulnessSubjects = [
+      ...(sourceUsefulnessOutcomes ?? []).flatMap((outcome) => {
+        const id = outcome.sourceDecisionId ?? outcome.sourceClaimId;
+        return id === undefined
+          ? []
+          : [{
+              kind: outcome.sourceDecisionId === undefined ? "source_claim" as const : "source_decision" as const,
+              id,
+              evidenceRefs: outcome.evidenceRefs
+            }];
+      }),
+      ...(knowledgeUsefulnessOutcomes ?? []).map((outcome) => ({
+        kind: "knowledge" as const,
+        id: outcome.knowledgeId,
+        evidenceRefs: outcome.evidenceRefs
+      }))
+    ];
+    const usefulnessAuthorization = usefulnessSubjects.length === 0
+      ? undefined
+      : authorizePacketUsefulness({
+          aggregate,
+          runId,
+          runtimeProjectId: databaseRuntime.projectId,
+          ...(callerPacketChecksum === undefined ? {} : { callerPacketChecksum }),
+          subjects: usefulnessSubjects
+        });
+    const decisionPacketChecksum = usefulnessAuthorization?.authorized === true
+      ? usefulnessAuthorization.packetChecksum
+      : undefined;
     const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle(
       buildEvidenceBundleInput(
         runId,
@@ -963,10 +1000,13 @@ const persistEvidenceCapture = async (
     const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment(
       buildReviewAssessmentInput(evidenceBundle.id, runId, counts)
     );
-    const memoryCandidates = memoryCandidateProposals.map((proposal) =>
+    const taskProjectId = aggregate.taskContract.projectId;
+    const memoryCandidates = taskProjectId === undefined
+      ? []
+      : memoryCandidateProposals.map((proposal) =>
       materializeFeedbackDeltaMemoryCandidate(
         proposal,
-        databaseRuntime.projectId,
+        taskProjectId,
         runId
       )
     );
@@ -977,12 +1017,53 @@ const persistEvidenceCapture = async (
       commands,
       decisionPacketChecksum
     );
+    const authorizedSourceUsefulnessOutcomes = usefulnessAuthorization?.authorized === false
+      ? sourceUsefulnessOutcomes?.map((outcome) => ({
+          ...outcome,
+          outcome: "unknown" as const,
+          reason: `${usefulnessAuthorizationDowngradeReason(usefulnessAuthorization)} Original reason: ${outcome.reason}`
+        }))
+      : sourceUsefulnessOutcomes;
+    const authorizedKnowledgeUsefulnessOutcomes = usefulnessAuthorization?.authorized === false
+      ? knowledgeUsefulnessOutcomes?.map((outcome) => ({
+          ...outcome,
+          outcome: "unknown" as const,
+          reason: `${usefulnessAuthorizationDowngradeReason(usefulnessAuthorization)} Original reason: ${outcome.reason}`
+        }))
+      : knowledgeUsefulnessOutcomes;
+    const existingUsefulnessKeys = new Set(
+      aggregate.feedbackDeltas.flatMap((feedback) => {
+        if (decisionPacketChecksum === undefined || feedback.metadata["decisionPacketChecksum"] !== decisionPacketChecksum) {
+          return [];
+        }
+
+        return [
+          ...sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) =>
+            `source:${outcome.sourceDecisionId ?? outcome.sourceClaimId}`
+          ),
+          ...knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) =>
+            `knowledge:${outcome.knowledgeId}`
+          )
+        ];
+      })
+    );
+    const deduplicateUsefulnessOutcomes = <T extends {
+      readonly sourceClaimId?: string;
+      readonly sourceDecisionId?: string;
+      readonly knowledgeId?: string;
+    }>(outcomes: readonly T[] | undefined, prefix: "source" | "knowledge"): readonly T[] | undefined =>
+      outcomes?.filter((outcome) => {
+        const id = prefix === "source"
+          ? outcome.sourceDecisionId ?? outcome.sourceClaimId
+          : outcome.knowledgeId;
+        return id === undefined || !existingUsefulnessKeys.has(`${prefix}:${id}`);
+      });
     const evidenceLinkedSourceUsefulnessOutcomes = downgradeSourceUsefulnessOutcomesWithoutCurrentEvidence(
-      sourceUsefulnessOutcomes,
+      deduplicateUsefulnessOutcomes(authorizedSourceUsefulnessOutcomes, "source"),
       currentEvidenceRefs
     );
     const evidenceLinkedKnowledgeUsefulnessOutcomes = downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence(
-      knowledgeUsefulnessOutcomes,
+      deduplicateUsefulnessOutcomes(authorizedKnowledgeUsefulnessOutcomes, "knowledge"),
       currentEvidenceRefs
     );
     const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta(
@@ -997,12 +1078,15 @@ const persistEvidenceCapture = async (
         decisionPacketChecksum
       )
     );
-    const feedbackMaintenanceQueueRecordId = await enqueueFeedbackMaintenance(
-      databaseRuntime,
-      feedbackDelta.id,
-      evidenceLinkedSourceUsefulnessOutcomes,
-      evidenceLinkedKnowledgeUsefulnessOutcomes
-    );
+    const feedbackMaintenanceQueueRecordId = usefulnessAuthorization?.authorized === true
+      ? await enqueueFeedbackMaintenance(
+          databaseRuntime,
+          usefulnessAuthorization.projectId ?? aggregate.taskContract.projectId ?? databaseRuntime.projectId,
+          feedbackDelta.id,
+          evidenceLinkedSourceUsefulnessOutcomes,
+          evidenceLinkedKnowledgeUsefulnessOutcomes
+        )
+      : undefined;
 
     return {
       evidenceBundleId: evidenceBundle.id,
@@ -1014,6 +1098,9 @@ const persistEvidenceCapture = async (
       ...(decisionPacketChecksum === undefined
         ? {}
         : { decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}` }),
+      ...(usefulnessAuthorization?.authorized === false
+        ? { usefulnessAuthorizationReason: usefulnessAuthorization.reason }
+        : {}),
       ...(evidenceLinkedSourceUsefulnessOutcomes === undefined
         ? {}
         : { sourceUsefulnessOutcomes: evidenceLinkedSourceUsefulnessOutcomes }),
@@ -1108,6 +1195,9 @@ export const runEvidenceCaptureCommand = async (
       `evidenceBundle: ${persistedIdentity.evidenceBundleId}`,
       `reviewAssessment: ${persistedIdentity.reviewAssessmentId}`,
       `feedbackDelta: ${persistedIdentity.feedbackDeltaId}`,
+      ...(persistedIdentity.usefulnessAuthorizationReason === undefined
+        ? []
+        : [`usefulnessAuthorization: ${persistedIdentity.usefulnessAuthorizationReason}`]),
       ...(persistedIdentity.feedbackMaintenanceQueueRecordId === undefined
         ? []
         : [

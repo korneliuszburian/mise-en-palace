@@ -335,6 +335,7 @@ export type CliCommand =
       persist: boolean;
       runId?: string;
       memoryId?: string;
+      decisionPacketChecksum?: string;
       outcome?: string;
       notes?: string;
       expectedUse?: string;

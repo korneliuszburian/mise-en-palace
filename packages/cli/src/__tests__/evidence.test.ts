@@ -22,6 +22,10 @@ import { buildDecisionPacketFromReadModel } from "@krn/core";
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { buildDecisionPacketReadModel } from "../decision-packet-read-model-builders.js";
+import {
+  authorizePacketUsefulness,
+  currentDecisionPacketBindingForAggregate
+} from "../packet-usefulness-authorization.js";
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -118,7 +122,7 @@ type EnqueueMaintenanceQueueInput = Parameters<
   NonNullable<DatabaseRuntime["maintenanceQueueRepository"]>["enqueueMaintenanceQueue"]
 >[0];
 
-const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
+export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   operatorIntent: {
     id: "operator-intent-1",
     workspaceId: "workspace-1",
@@ -157,7 +161,37 @@ const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
     id: "context-assembly-1",
     harnessPlanId: "harness-plan-1",
     status: "assembled",
-    inclusions: [],
+    inclusions: [{
+      subjectType: "source_claim",
+      subjectId: "source-claim-1",
+      reason: "Selected source claim.",
+      expectedUse: "Use for current task evidence.",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "source_claim",
+      subjectId: "source-claim-current",
+      reason: "Selected source claim.",
+      expectedUse: "Use for current task evidence.",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "source_claim",
+      subjectId: "source-claim-stale",
+      reason: "Selected source claim.",
+      expectedUse: "Use for current task evidence.",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "knowledge:ts-boundary-unknown-first-result-state",
+      reason: "Selected retained knowledge.",
+      expectedUse: "Use for current task evidence.",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "knowledge:frontend-template",
+      reason: "Selected retained knowledge.",
+      expectedUse: "Use for current task evidence.",
+      sourceAuthority: "project-decision"
+    }],
     exclusions: [],
     metadata: {},
     createdAt: now
@@ -287,7 +321,7 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("sourceUsefulnessOutcomes:");
   expect(stdout).toContain("outcome=helped sourceClaim=source-claim-1 sourceDecision=none");
   expect(stdout).toContain("reason: Source claim kept knowledge-intake proof boundaries visible");
-  expect(stdout).toContain("evidenceRef: evidence-bundle-1");
+  expect(stdout).toContain("evidenceRef: packet:");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
   expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
   expect(stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
@@ -331,14 +365,14 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       sourceClaimId: "source-claim-1",
       outcome: "helped",
       reason: "Source claim kept knowledge-intake proof boundaries visible",
-      evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
+      evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future source selector quality"
     }],
     knowledgeUsefulnessOutcomes: [{
       knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
       outcome: "helped",
       reason: "Memory selected the unknown-first parser shape",
-      evidenceRefs: ["evidence-bundle-1"],
+      evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future memory recall quality"
     }]
   });
@@ -648,6 +682,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -682,9 +717,11 @@ describe("runCli", () => {
         "--target-command",
         "wilq-seo scripts/test.sh",
         "--source-usefulness",
-        "claim:source-claim-1=helped|Source claim kept knowledge-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
+        `claim:source-claim-1=helped|Source claim kept knowledge-intake proof boundaries visible|${packetBinding.packetEvidenceRef}|Does not prove future source selector quality`,
         "--memory-usefulness",
-        "knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-bundle-1|Does not prove future memory recall quality",
+        `knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|${packetBinding.packetEvidenceRef}|Does not prove future memory recall quality`,
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
         "--persist"
       ],
       {
@@ -740,6 +777,8 @@ describe("runCli", () => {
         "capture",
         "--run-id",
         "execution-run-1",
+        "--decision-packet-checksum",
+        "fake-packet",
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
         "--memory-usefulness",
@@ -778,35 +817,26 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
     expect(result.stdout).toContain("outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state");
-    expect(result.stdout).toContain(
-      "Downgraded: no evidenceRef matched current evidence bundle, changed file, or command proof."
-    );
+    expect(result.stdout).toContain("packet checksum is not the current reconstructed packet checksum");
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
         outcome: "unknown",
-        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
+        reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
         evidenceRefs: ["stale-source-ref"],
         doesNotProve: "Does not prove future source selection quality"
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "unknown",
-        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
+        reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
         evidenceRefs: ["stale-proof-ref"],
         doesNotProve: "Does not prove future memory recall quality"
       }]
     });
-    expect(capture.maintenanceQueueInputs).toEqual([{
-      jobType: "review_feedback_delta",
-      payload: {
-        projectId: "project-1",
-        feedbackDeltaId: "feedback-delta-1",
-        reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
-      }
-    }]);
-    expect(result.stdout).toContain("feedbackMaintenanceQueueRecord: maintenance-queue-record-1");
-    expect(result.stdout).toContain("feedbackMaintenanceRun: krn maintenance run --id maintenance-queue-record-1");
+    expect(capture.maintenanceQueueInputs).toBeUndefined();
+    expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
+    expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
   });
 
   it("does not enqueue maintenance for helped-only persisted usefulness feedback", async () => {
@@ -873,6 +903,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -885,11 +916,11 @@ describe("runCli", () => {
         "--run-id",
         "execution-run-1",
         "--decision-packet-checksum",
-        "current-packet",
+        packetBinding.packetChecksum,
         "--source-usefulness",
-        "claim:source-claim-current=helped|Current packet source helped|packet:current-packet|Does not prove future source selection quality",
+        `claim:source-claim-current=helped|Current packet source helped|${packetBinding.packetEvidenceRef}|Does not prove future source selection quality`,
         "--source-usefulness",
-        "claim:source-claim-stale=helped|Stale packet source allegedly helped|packet:stale-packet|Does not prove future source selection quality",
+        `claim:source-claim-stale=helped|Stale packet source allegedly helped|${packetBinding.packetEvidenceRef}|Does not prove future source selection quality`,
         "--persist"
       ],
       {
@@ -920,24 +951,24 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("DecisionPacket: checksum=current-packet | evidenceRef=packet:current-packet");
-    expect(result.stdout).toContain("decisionPacketEvidenceRef: packet:current-packet");
+    expect(result.stdout).toContain(`DecisionPacket: checksum=${packetBinding.packetChecksum} | evidenceRef=${packetBinding.packetEvidenceRef}`);
+    expect(result.stdout).toContain(`decisionPacketEvidenceRef: ${packetBinding.packetEvidenceRef}`);
     expect(capture.evidenceBundle?.metadata).toMatchObject({
-      decisionPacketChecksum: "current-packet",
-      decisionPacketEvidenceRef: "packet:current-packet"
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef
     });
     expect(capture.feedbackDeltaMetadata).toMatchObject({
-      decisionPacketChecksum: "current-packet",
-      decisionPacketEvidenceRef: "packet:current-packet",
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-current",
         outcome: "helped",
-        evidenceRefs: ["packet:current-packet"]
+        evidenceRefs: [packetBinding.packetEvidenceRef]
       }, {
         sourceClaimId: "source-claim-stale",
         outcome: "unknown",
-        reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
-        evidenceRefs: ["packet:stale-packet"]
+        outcome: "helped",
+        evidenceRefs: [packetBinding.packetEvidenceRef]
       }]
     });
   });
@@ -949,6 +980,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -961,11 +993,11 @@ describe("runCli", () => {
         "--run-id",
         "execution-run-1",
         "--decision-packet-checksum",
-        "current-packet",
+        packetBinding.packetChecksum,
         "--source-usefulness",
-        "claim:source-claim-stale=stale|Selected source claim became stale|packet:current-packet|Does not demote source truth without review",
+        `claim:source-claim-stale=stale|Selected source claim became stale|${packetBinding.packetEvidenceRef}|Does not demote source truth without review`,
         "--memory-usefulness",
-        "knowledge:frontend-template=stale|Selected knowledge became stale|packet:current-packet|Does not demote memory truth without review",
+        `knowledge:frontend-template=stale|Selected knowledge became stale|${packetBinding.packetEvidenceRef}|Does not demote memory truth without review`,
         "--persist"
       ],
       {
@@ -1051,6 +1083,79 @@ describe("runCli", () => {
     );
     expect(packet.abstentionScore.reasons).toContain("caveated_source_authority");
     expect(packet.abstentionScore.reasons).toContain("caveated_memory_authority");
+  });
+
+  it("rejects usefulness bound to a stale reconstructed packet", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const staleBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const changedAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      contextAssembly: {
+        ...aggregate.contextAssembly,
+        inclusions: [...(aggregate.contextAssembly?.inclusions ?? []), {
+          subjectType: "source_claim",
+          subjectId: "newly-selected-claim",
+          reason: "Changed packet selection.",
+          expectedUse: "Use only if current.",
+          sourceAuthority: "project-decision"
+        }]
+      }
+    };
+
+    const authorization = authorizePacketUsefulness({
+      aggregate: changedAggregate,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      callerPacketChecksum: staleBinding.packetChecksum,
+      subjects: [{
+        kind: "source_claim",
+        id: "source-claim-1",
+        evidenceRefs: [staleBinding.packetEvidenceRef]
+      }]
+    });
+
+    expect(authorization.authorized).toBe(false);
+    expect(authorization.reason).toContain("current reconstructed packet checksum");
+  });
+
+  it("rejects a store subject absent from the current packet", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const binding = currentDecisionPacketBindingForAggregate(aggregate);
+
+    const authorization = authorizePacketUsefulness({
+      aggregate,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      callerPacketChecksum: binding.packetChecksum,
+      subjects: [{
+        kind: "source_claim",
+        id: "store-only-claim",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    expect(authorization.authorized).toBe(false);
+    expect(authorization.reason).toContain("not selected by the current packet");
+  });
+
+  it("rejects usefulness when runtime and task projects differ", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const binding = currentDecisionPacketBindingForAggregate(aggregate);
+
+    const authorization = authorizePacketUsefulness({
+      aggregate,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-b",
+      callerPacketChecksum: binding.packetChecksum,
+      subjects: [{
+        kind: "source_claim",
+        id: "source-claim-1",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    expect(authorization.authorized).toBe(false);
+    expect(authorization.reason).toContain("runtime project does not match");
   });
 
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {

@@ -27,6 +27,9 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
+import {
+  authorizePacketUsefulness
+} from "./packet-usefulness-authorization.js";
 
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 
@@ -259,6 +262,62 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error(`MemoryRecord not found: ${applicationInput.memoryRecordId}`);
     }
 
+    const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
+      applicationInput.executionRunId
+    );
+
+    if (aggregate === undefined) {
+      throw new Error(`Execution run not found: ${applicationInput.executionRunId}`);
+    }
+
+    const authorization = authorizePacketUsefulness({
+      aggregate,
+      runId: applicationInput.executionRunId,
+      runtimeProjectId: databaseRuntime.projectId,
+      ...(command.decisionPacketChecksum === undefined
+        ? {}
+        : { callerPacketChecksum: command.decisionPacketChecksum }),
+      subjects: [{
+        kind: "memory_record",
+        id: applicationInput.memoryRecordId,
+        evidenceRefs: command.decisionPacketChecksum === undefined
+          ? []
+          : [`packet:${command.decisionPacketChecksum}`]
+      }]
+    });
+
+    if (!authorization.authorized) {
+      throw new Error(authorization.reason);
+    }
+
+    if (memoryRecord.projectId !== authorization.projectId) {
+      throw new Error("usefulness write rejected: memory record project does not match the run task project");
+    }
+
+    const existingApplication = databaseRuntime.memoryRepository.findMemoryApplicationByUsefulnessBinding === undefined
+      ? undefined
+      : await databaseRuntime.memoryRepository.findMemoryApplicationByUsefulnessBinding({
+          memoryRecordId: applicationInput.memoryRecordId,
+          executionRunId: applicationInput.executionRunId,
+          packetChecksum: authorization.packetChecksum
+        });
+
+    if (existingApplication !== undefined) {
+      return {
+        stdout: formatPersisted(
+          existingApplication,
+          undefined,
+          undefined,
+          memoryFeedbackRecommendationReadback({
+            memoryRecordId: applicationInput.memoryRecordId,
+            outcome: existingApplication.outcome ?? applicationInput.outcome,
+            reason: existingApplication.notes ?? applicationInput.expectedUse,
+            evidenceRefs: [authorization.packetEvidenceRef]
+          })
+        )
+      };
+    }
+
     const memoryApplication = await databaseRuntime.memoryRepository.recordMemoryApplication({
       memoryRecordId: applicationInput.memoryRecordId,
       executionRunId: applicationInput.executionRunId,
@@ -271,7 +330,12 @@ export const runMemoryRecordApplyCommand = async (
       expectedUse: applicationInput.expectedUse,
       outcome: applicationInput.outcome,
       notes: applicationInput.notes,
-      metadata: applicationInput.metadata
+      metadata: {
+        ...applicationInput.metadata,
+        decisionPacketChecksum: authorization.packetChecksum,
+        decisionPacketEvidenceRef: authorization.packetEvidenceRef,
+        usefulnessSubject: `memory_record:${applicationInput.memoryRecordId}`
+      }
     });
 
     const feedbackEventType = feedbackEventTypeForOutcome(applicationInput.outcome);

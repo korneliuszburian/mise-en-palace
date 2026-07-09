@@ -20,6 +20,7 @@ import type {
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { runCli } from "../run-cli.js";
+import { currentDecisionPacketBindingForAggregate } from "../packet-usefulness-authorization.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
@@ -147,6 +148,21 @@ const memoryHarnessRunAggregate = (projectId: string): HarnessRunAggregate => ({
     metadata: {},
     createdAt: now,
     updatedAt: now
+  },
+  contextAssembly: {
+    id: "context-assembly-1",
+    harnessPlanId: "harness-plan-1",
+    status: "assembled",
+    inclusions: [{
+      subjectType: "memory_record",
+      subjectId: "memory-record-1",
+      reason: "Selected retained memory.",
+      expectedUse: "Use for current task.",
+      sourceAuthority: "project-decision"
+    }],
+    exclusions: [],
+    metadata: {},
+    createdAt: now
   },
   evidenceBundles: [],
   reviewAssessments: [],
@@ -521,7 +537,7 @@ describe("runCli", () => {
               return createPersistedMemoryCandidate(input);
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
             return undefined;
           }
@@ -766,7 +782,7 @@ describe("runCli", () => {
               throw new Error("rejectMemoryCandidate should not be called");
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
             return undefined;
           }
@@ -890,7 +906,7 @@ describe("runCli", () => {
               };
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
             return undefined;
           }
@@ -987,6 +1003,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
     let capturedApplication: RecordMemoryApplicationInput | undefined;
     const result = await runCli(
       [
@@ -997,6 +1014,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--memory-id",
         "memory-record-1",
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
         "--outcome",
         "helped",
         "--notes",
@@ -1075,7 +1094,7 @@ describe("runCli", () => {
               throw new Error("createMemoryFeedbackEvent should not be called");
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
             return undefined;
           }
@@ -1116,6 +1135,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
     let capturedFeedbackEvent: CreateMemoryFeedbackEventInput | undefined;
     let capturedAntiMemoryCandidate:
       | Parameters<typeof unusedMemoryRepository.createAntiMemoryCandidate>[0]
@@ -1129,6 +1149,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--memory-id",
         "memory-record-1",
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
         "--outcome",
         outcome,
         "--notes",
@@ -1223,7 +1245,7 @@ describe("runCli", () => {
               return createPersistedAntiMemoryCandidate(input);
             }
           },
-          harnessRunRepository: createMemoryHarnessRunRepository(dependencies),
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
             return undefined;
           }

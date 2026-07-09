@@ -862,6 +862,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
   }
 
+  async findMemoryApplicationByUsefulnessBinding(
+    input: {
+      memoryRecordId: MemoryRecord["id"];
+      executionRunId: ExecutionRunId;
+      packetChecksum: string;
+    }
+  ): Promise<MemoryApplication | undefined> {
+    const row = await this.db.query.memoryApplications.findFirst({
+      where: and(
+        eq(memoryApplications.memoryRecordId, input.memoryRecordId),
+        eq(memoryApplications.executionRunId, input.executionRunId),
+        sql`${memoryApplications.metadata} ->> 'decisionPacketChecksum' = ${input.packetChecksum}`
+      )
+    });
+
+    return row === undefined ? undefined : mapMemoryApplication(row);
+  }
+
   async createMemoryFeedbackEvent(
     input: CreateMemoryFeedbackEventInput
   ): Promise<MemoryFeedbackEvent> {

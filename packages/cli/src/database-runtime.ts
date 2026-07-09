@@ -143,6 +143,7 @@ export interface DatabaseRuntime {
     | "listMemoryRecordsForProject"
     | "invalidateMemoryRecord"
     | "recordMemoryApplication"
+    | "findMemoryApplicationByUsefulnessBinding"
     | "createMemoryFeedbackEvent"
     | "createAntiMemoryCandidate"
     | "getAntiMemoryCandidateById"

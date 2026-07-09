@@ -100,6 +100,12 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   notes: string;
 }
 
+export interface FindMemoryApplicationByUsefulnessBindingInput {
+  memoryRecordId: MemoryRecord["id"];
+  executionRunId: ExecutionRunId;
+  packetChecksum: string;
+}
+
 export interface CreateMemoryFeedbackEventInput extends RepositoryMetadata {
   memoryRecordId: MemoryRecord["id"];
   executionRunId?: ExecutionRunId;
@@ -174,6 +180,9 @@ export interface MemoryRepository {
   invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord>;
   supersedeMemoryRecord(input: SupersedeMemoryRecordInput): Promise<MemoryRecord>;
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
+  findMemoryApplicationByUsefulnessBinding?(
+    input: FindMemoryApplicationByUsefulnessBindingInput
+  ): Promise<MemoryApplication | undefined>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
   getAntiMemoryCandidateById(id: string): Promise<AntiMemoryCandidate | undefined>;
