@@ -225,6 +225,11 @@ export type CliCommand =
       id: string;
     }
   | {
+      kind: "maintenanceRecover";
+      id: string;
+      lockedBefore: string;
+    }
+  | {
       kind: "observeRun";
       runId: string;
       projectId?: string;

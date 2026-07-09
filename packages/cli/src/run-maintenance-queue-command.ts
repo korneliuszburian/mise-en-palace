@@ -1,5 +1,6 @@
 import {
   createFeedbackDeltaMaintenanceHandler,
+  recoverStaleMaintenanceQueueRecord,
   runMaintenanceQueueRecord
 } from "@krn/db/adapters";
 import type {
@@ -21,14 +22,17 @@ import type {
   CliCommand
 } from "./parse-args.js";
 
-export type MaintenanceRunCommand = Extract<CliCommand, { kind: "maintenanceRun" }>;
+export type MaintenanceQueueCommand = Extract<
+  CliCommand,
+  { kind: "maintenanceRun" | "maintenanceRecover" }
+>;
 
 export type CreateMaintenanceQueueDatabaseRuntime = (
   input: MaintenanceQueueDatabaseRuntimeInput
 ) => Promise<MaintenanceQueueDatabaseRuntime>;
 
 export interface MaintenanceRunCommandRuntime extends BaseCommandRuntime {
-  command: MaintenanceRunCommand;
+  command: MaintenanceQueueCommand;
   createMaintenanceQueueDatabaseRuntime?: CreateMaintenanceQueueDatabaseRuntime;
 }
 
@@ -104,13 +108,30 @@ const formatMaintenanceRunOutput = (
   ...linesForValues("doesNotProve", readback.doesNotProve)
 ].join("\n") + "\n";
 
+const formatMaintenanceRecoveryOutput = (
+  readback: Awaited<ReturnType<typeof recoverStaleMaintenanceQueueRecord>>
+): string => [
+  "KRN Maintenance Queue Recovery",
+  `status: ${readback.status}`,
+  `jobType: ${readback.jobType}`,
+  `recordId: ${readback.record.id}`,
+  `recordStatus: ${readback.record.status}`,
+  `queueKey: ${readback.record.queueKey}`,
+  `attempts: ${readback.record.attempts}/${readback.record.maxAttempts}`,
+  `staleLockCutoff: ${readback.staleLockCutoff}`,
+  `queueRecordKeyUniqueness: ${readback.queueRecordKeyUniqueness}`,
+  ...writeBoundaryLines(readback.writeBoundary),
+  ...linesForValues("proves", readback.proves),
+  ...linesForValues("doesNotProve", readback.doesNotProve)
+].join("\n") + "\n";
+
 export const runMaintenanceQueueCommand = async (
   runtime: MaintenanceRunCommandRuntime
 ): Promise<MaintenanceRunCommandResult> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for krn maintenance run");
+    throw new Error(`KRN_DATABASE_URL is required for krn maintenance ${runtime.command.kind === "maintenanceRecover" ? "recover" : "run"}`);
   }
 
   const createRuntime =
@@ -118,6 +139,21 @@ export const runMaintenanceQueueCommand = async (
   const databaseRuntime = await createRuntime({ databaseUrl });
 
   try {
+    if (runtime.command.kind === "maintenanceRecover") {
+      const readback = await recoverStaleMaintenanceQueueRecord({
+        repository: databaseRuntime.maintenanceQueueRepository,
+        recordId: runtime.command.id,
+        recovery: {
+          lockedBefore: runtime.command.lockedBefore,
+          error: "Recovered by explicit krn maintenance recover command."
+        }
+      });
+
+      return {
+        stdout: formatMaintenanceRecoveryOutput(readback)
+      };
+    }
+
     const readback = await runMaintenanceQueueRecord({
       repository: databaseRuntime.maintenanceQueueRepository,
       recordId: runtime.command.id,

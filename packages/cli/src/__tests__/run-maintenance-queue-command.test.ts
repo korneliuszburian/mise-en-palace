@@ -108,10 +108,18 @@ class FakeMaintenanceQueueRepository implements MaintenanceQueueRepository {
   }
 
   async recoverStaleMaintenanceQueueRecord(
-    _id: string,
-    _input: RecoverStaleMaintenanceQueueRecordInput
+    id: string,
+    input: RecoverStaleMaintenanceQueueRecordInput
   ): Promise<MaintenanceQueueRecord> {
-    throw new Error("recoverStaleMaintenanceQueueRecord should not be called");
+    this.calls.push(`recover:${id}:${input.lockedBefore}`);
+
+    return {
+      ...runningFeedbackRecord,
+      status: "queued",
+      lockedAt: undefined,
+      lockedBy: undefined,
+      updatedAt: now
+    };
   }
 
   async recordMaintenanceQueueDeadLetter(
@@ -222,6 +230,58 @@ describe("runMaintenanceQueueCommand", () => {
     );
   });
 
+  it("recovers one stale running maintenance record through the explicit executor", async () => {
+    const maintenanceQueueRepository = new FakeMaintenanceQueueRepository();
+    let closed = false;
+
+    const result = await runMaintenanceQueueCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "maintenanceRecover",
+        id: "maintenance-queue-1",
+        lockedBefore: "2026-07-09T11:59:00.000Z"
+      },
+      createMaintenanceQueueDatabaseRuntime: async () => ({
+        maintenanceQueueRepository,
+        harnessRunRepository: {
+          async listFeedbackDeltasForProject() {
+            throw new Error("listFeedbackDeltasForProject should not be called");
+          }
+        },
+        memoryRepository: {
+          async createAntiMemoryCandidate() {
+            throw new Error("createAntiMemoryCandidate should not be called");
+          }
+        },
+        async close() {
+          closed = true;
+        }
+      })
+    });
+
+    expect(maintenanceQueueRepository.calls).toEqual([
+      "recover:maintenance-queue-1:2026-07-09T11:59:00.000Z"
+    ]);
+    expect(closed).toBe(true);
+    expect(result.stdout).toContain("KRN Maintenance Queue Recovery");
+    expect(result.stdout).toContain("status: recovered");
+    expect(result.stdout).toContain("jobType: review_feedback_delta");
+    expect(result.stdout).toContain("recordId: maintenance-queue-1");
+    expect(result.stdout).toContain("recordStatus: queued");
+    expect(result.stdout).toContain("staleLockCutoff: 2026-07-09T11:59:00.000Z");
+    expect(result.stdout).toContain("queueRecordKeyUniqueness: db_unique_queue_key");
+    expect(result.stdout).toContain(
+      "Stale maintenance recovery does not prove autonomous scheduler or daemon readiness."
+    );
+    expect(result.stdout).toContain(
+      "Stale maintenance recovery does not directly promote memory records or source claims."
+    );
+  });
+
   it("requires database configuration", async () => {
     await expect(runMaintenanceQueueCommand({
       env: {},
@@ -232,5 +292,18 @@ describe("runMaintenanceQueueCommand", () => {
         id: "maintenance-queue-1"
       }
     })).rejects.toThrow("KRN_DATABASE_URL is required for krn maintenance run");
+  });
+
+  it("requires database configuration for stale recovery", async () => {
+    await expect(runMaintenanceQueueCommand({
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "maintenanceRecover",
+        id: "maintenance-queue-1",
+        lockedBefore: "2026-07-09T11:59:00.000Z"
+      }
+    })).rejects.toThrow("KRN_DATABASE_URL is required for krn maintenance recover");
   });
 });

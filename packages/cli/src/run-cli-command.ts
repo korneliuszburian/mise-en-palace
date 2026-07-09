@@ -177,7 +177,7 @@ const runMaintenancePreviewAdapter: CliCommandAdapter = async (command, context)
 };
 
 const runMaintenanceQueueAdapter: CliCommandAdapter = async (command, context) => {
-  if (command.kind !== "maintenanceRun") {
+  if (command.kind !== "maintenanceRun" && command.kind !== "maintenanceRecover") {
     return undefined;
   }
 

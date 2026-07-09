@@ -155,9 +155,43 @@ describe("parseMaintenanceArgs", () => {
     });
   });
 
+  it("parses explicit stale maintenance record recovery", () => {
+    expect(parseMaintenanceArgs([
+      "recover",
+      "--id",
+      "maintenance-queue-1",
+      "--locked-before",
+      "2026-07-09T12:00:00.000Z"
+    ])).toEqual({
+      command: {
+        kind: "maintenanceRecover",
+        id: "maintenance-queue-1",
+        lockedBefore: "2026-07-09T12:00:00.000Z"
+      }
+    });
+  });
+
   it("rejects empty maintenance queue record ids", () => {
     expect(parseMaintenanceArgs(["run", "--id", " "])).toEqual({
       error: expect.stringContaining("--id cannot be empty")
+    });
+  });
+
+  it("requires stale recovery cutoff", () => {
+    expect(parseMaintenanceArgs(["recover", "--id", "maintenance-queue-1"])).toEqual({
+      error: expect.stringContaining("--locked-before")
+    });
+  });
+
+  it("rejects invalid stale recovery cutoff", () => {
+    expect(parseMaintenanceArgs([
+      "recover",
+      "--id",
+      "maintenance-queue-1",
+      "--locked-before",
+      "not-a-date"
+    ])).toEqual({
+      error: expect.stringContaining("--locked-before must be an ISO timestamp")
     });
   });
 });

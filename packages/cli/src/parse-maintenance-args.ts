@@ -2,14 +2,22 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
+const parseTimestampMs = (value: string): number | undefined => {
+  const parsed = Date.parse(value);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 export const formatMaintenanceUsage = (): string =>
   [
     "Usage: krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "Usage: krn maintenance run --id <maintenance-queue-id>",
+    "Usage: krn maintenance recover --id <maintenance-queue-id> --locked-before <iso-timestamp>",
     "",
     "Operator commands:",
     "krn maintenance preview",
     "krn maintenance run --id <maintenance-queue-id>",
+    "krn maintenance recover --id <maintenance-queue-id> --locked-before <iso-timestamp>",
     "",
     "Preview options:",
     "--project <project-id>",
@@ -31,7 +39,11 @@ export const formatMaintenanceUsage = (): string =>
     "Run options:",
     "--id <maintenance-queue-id>",
     "",
-    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. Maintenance run executes exactly one queued maintenance record through the explicit per-record executor. Neither command starts a scheduler, daemon, autonomous promotion path, or broad worker platform."
+    "Recovery options:",
+    "--id <maintenance-queue-id>",
+    "--locked-before <iso-timestamp>",
+    "",
+    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. Maintenance run executes exactly one queued maintenance record through the explicit per-record executor. Maintenance recover explicitly returns one stale running record to queued state. Neither command starts a scheduler, daemon, autonomous promotion path, or broad worker platform."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
@@ -362,6 +374,44 @@ const maintenanceRunOptionParsers: Record<string, MaintenanceRunOptionParser> = 
     })
 };
 
+type MaintenanceRecoverParseState = {
+  id: string | undefined;
+  lockedBefore: string | undefined;
+};
+
+type MaintenanceRecoverOptionParser = MaintenanceOptionParser<MaintenanceRecoverParseState>;
+
+const maintenanceRecoverOptionParsers: Record<string, MaintenanceRecoverOptionParser> = {
+  "--id": (args, index, state) =>
+    assignTextOption(args, index, "--id", (value) => {
+      state.id = value;
+    }),
+  "--locked-before": (args, index, state) => {
+    const required = requiredOption(args, index, "--locked-before");
+
+    if (!required.ok) {
+      return {
+        ok: false,
+        error: `${required.error}\n${formatMaintenanceUsage()}`
+      };
+    }
+
+    if (parseTimestampMs(required.value) === undefined) {
+      return {
+        ok: false,
+        error: `--locked-before must be an ISO timestamp\n${formatMaintenanceUsage()}`
+      };
+    }
+
+    state.lockedBefore = required.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  }
+};
+
 const hasAnyReviewField = (state: MaintenancePreviewParseState): boolean =>
   state.reviewCandidateId !== undefined ||
   state.reviewDecision !== undefined ||
@@ -496,6 +546,45 @@ const parseMaintenanceRunArgs = (args: readonly string[]): ParseArgsResult => {
   };
 };
 
+const parseMaintenanceRecoverArgs = (args: readonly string[]): ParseArgsResult => {
+  const state: MaintenanceRecoverParseState = {
+    id: undefined,
+    lockedBefore: undefined
+  };
+  const optionError = parseMaintenanceOptions({
+    args,
+    state,
+    parsers: maintenanceRecoverOptionParsers,
+    label: "maintenance recover"
+  });
+
+  if (optionError !== undefined) {
+    return {
+      error: optionError
+    };
+  }
+
+  if (state.id === undefined) {
+    return {
+      error: `krn maintenance recover requires --id <maintenance-queue-id>\n${formatMaintenanceUsage()}`
+    };
+  }
+
+  if (state.lockedBefore === undefined) {
+    return {
+      error: `krn maintenance recover requires --locked-before <iso-timestamp>\n${formatMaintenanceUsage()}`
+    };
+  }
+
+  return {
+    command: {
+      kind: "maintenanceRecover",
+      id: state.id,
+      lockedBefore: state.lockedBefore
+    }
+  };
+};
+
 export const parseMaintenanceArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
 
@@ -509,6 +598,10 @@ export const parseMaintenanceArgs = (rest: readonly string[]): ParseArgsResult =
 
   if (action === "run") {
     return parseMaintenanceRunArgs(args);
+  }
+
+  if (action === "recover") {
+    return parseMaintenanceRecoverArgs(args);
   }
 
   if (action !== "preview") {
