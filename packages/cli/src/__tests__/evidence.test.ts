@@ -782,9 +782,9 @@ describe("runCli", () => {
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
         "--memory-usefulness",
-        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge allegedly helped without current proof|stale-proof-ref|Does not prove future memory recall quality",
+        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge allegedly helped without current proof|packet:fake-packet|Does not prove future memory recall quality",
         "--source-usefulness",
-        "claim:source-claim-1=helped|Source allegedly helped without current proof|stale-source-ref|Does not prove future source selection quality",
+        "claim:source-claim-1=helped|Source allegedly helped without current proof|packet:fake-packet|Does not prove future source selection quality",
         "--persist"
       ],
       {
@@ -823,14 +823,14 @@ describe("runCli", () => {
         sourceClaimId: "source-claim-1",
         outcome: "unknown",
         reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
-        evidenceRefs: ["stale-source-ref"],
+        evidenceRefs: ["packet:fake-packet"],
         doesNotProve: "Does not prove future source selection quality"
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "unknown",
         reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
-        evidenceRefs: ["stale-proof-ref"],
+        evidenceRefs: ["packet:fake-packet"],
         doesNotProve: "Does not prove future memory recall quality"
       }]
     });

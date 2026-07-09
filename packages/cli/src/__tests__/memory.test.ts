@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type {
   AntiMemoryCandidate,
+  MemoryApplication,
   MemoryCandidate
 } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/core/repositories/internal";
@@ -20,6 +21,7 @@ import type {
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { runCli } from "../run-cli.js";
+import { runMemoryRecordApplyCommand } from "../run-memory-record-apply-command.js";
 import { currentDecisionPacketBindingForAggregate } from "../packet-usefulness-authorization.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -1120,6 +1122,92 @@ describe("runCli", () => {
       outcome: "helped",
       notes: "Guided M23 decision to avoid a separate graph DB"
     });
+  });
+
+  it("does not repeat the same packet-bound memory application", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
+    let application: MemoryApplication | undefined;
+    let recordCalls = 0;
+    const command = {
+      kind: "memoryRecordApply" as const,
+      persist: true,
+      runId: "execution-run-1",
+      memoryId: "memory-record-1",
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      outcome: "helped" as const,
+      notes: "Replay should not strengthen this memory twice."
+    };
+    const run = () => runMemoryRecordApplyCommand({
+      command,
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: dependencies,
+        sourceRepository: unusedSourceRepository,
+        harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
+        memoryRepository: {
+          ...unusedMemoryRepository,
+          async getMemoryRecordById(id) {
+            return {
+              id,
+              projectId: "project-1",
+              currentVersionId: "memory-record-version-1",
+              key: "memory:memory-candidate-1",
+              kind: "constraint",
+              status: "active",
+              summary: "Use Postgres edge tables first",
+              body: "Source graph should use Postgres edge tables first",
+              owner: "operator",
+              confidence: 70,
+              applicationGuidance: "Use when deciding whether to add a separate graph DB",
+              invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+              sourceLineage: [{ sourceId: "source-claim-1" }],
+              isUserPreference: false,
+              validFrom: now,
+              positiveFeedbackCount: 0,
+              negativeFeedbackCount: 0,
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            };
+          },
+          async findMemoryApplicationByUsefulnessBinding() {
+            return application;
+          },
+          async recordMemoryApplication(input) {
+            recordCalls += 1;
+            application = {
+              id: "memory-application-1",
+              memoryRecordId: input.memoryRecordId,
+              executionRunId: input.executionRunId,
+              expectedUse: input.expectedUse,
+              outcome: input.outcome,
+              notes: input.notes,
+              metadata: input.metadata ?? {},
+              createdAt: now
+            };
+            return application;
+          }
+        },
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    const first = await run();
+    const replay = await run();
+
+    expect(first.stdout).toContain("memoryApplication: memory-application-1");
+    expect(replay.stdout).toContain("memoryApplication: memory-application-1");
+    expect(recordCalls).toBe(1);
   });
 
   it.each([
