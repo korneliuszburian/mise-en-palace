@@ -39,8 +39,8 @@ describe("runSourceGraphRankingEval", () => {
         expectedHitIdCount: 24,
         distractorClassCount: 5,
         relationLinkedCaseCount: 10,
-        flatBaselineWeakerCases: 10,
-        flatBaselineMissingExpectedRelationSupportCases: 10,
+        flatBaselineWeakerCases: 8,
+        flatBaselineMissingExpectedRelationSupportCases: 8,
         relationShapeCaseCount: 9,
         relationShapeCoveredCases: 9,
         relationShapeKinds: ["contradicts", "depends_on", "duplicates", "expires", "invalidates", "qualifies", "supersedes", "supports"],
@@ -55,7 +55,9 @@ describe("runSourceGraphRankingEval", () => {
         observedRelationDirections: ["incoming", "outgoing"],
         heldOutRelationDirections: ["incoming", "outgoing"],
         heldOutObservedRelationDirections: ["incoming", "outgoing"],
-        staleEdgeReadbackCases: 2
+        staleEdgeReadbackCases: 2,
+        expectedExcludedHitCases: 2,
+        expectedExcludedHitCoveredCases: 2
       }
     });
     expect(result.metrics.ndcgAtK).toBeGreaterThanOrEqual(0.95);
@@ -75,19 +77,20 @@ describe("runSourceGraphRankingEval", () => {
       testCase.id === "graph-relation"
     );
     expect(relationLinkedCase).toMatchObject({
+      expectedHitDisposition: "excluded",
       relationLinkedExpected: true,
+      expectedHitMatched: true,
+      hitAtK: false,
       expectedRelationKinds: [],
       expectedHitRelationSupport: 3,
       expectedHitRelationKinds: ["invalidates", "narrows"],
-      flatComparison: {
-        relationSupport: 0,
-        expectedHitRelationSupport: 0,
-        relationKinds: [],
-        expectedHitRelationKinds: [],
-        hitAtK: true,
-        weakness: "missing_expected_relation_support"
-      }
+      incomingStaleEdge: true,
+      expectedHitRelationDirections: ["incoming", "outgoing"]
     });
+    expect(relationLinkedCase?.excludedHitIds).toContain("source_claim:claim-graph-relation");
+    expect(relationLinkedCase?.flatComparison).toBeUndefined();
+    expect(relationLinkedCase?.includedHitIds).not.toContain("source_claim:claim-graph-relation");
+    expect(relationLinkedCase?.includedHitIds).toContain("source_claim:claim-graph-invalidation");
     expect(result.cases.find((testCase) =>
       testCase.id === "relation-shape-supports"
     )).toMatchObject({
@@ -182,21 +185,23 @@ describe("runSourceGraphRankingEval", () => {
       testCase.id === "stale-rankdown-incoming"
     )).toMatchObject({
       corpusSplit: "main",
+      expectedHitDisposition: "excluded",
+      expectedHitMatched: true,
       relationLinkedExpected: true,
       expectedRelationKinds: ["invalidates"],
       expectedRelationDirections: ["incoming"],
-      hitAtK: true,
+      hitAtK: false,
       incomingStaleEdge: true,
       expectedHitRelationSupport: 1,
       expectedHitRelationKinds: ["invalidates"],
-      expectedHitRelationDirections: ["incoming"],
-      flatComparison: {
-        expectedHitRelationSupport: 0,
-        expectedHitRelationKinds: [],
-        expectedHitRelationDirections: [],
-        weakness: "missing_expected_relation_support"
-      }
+      expectedHitRelationDirections: ["incoming"]
     });
+    const staleCase = result.cases.find((testCase) =>
+      testCase.id === "stale-rankdown-incoming"
+    );
+    expect(staleCase?.excludedHitIds).toContain("source_claim:claim-stale-rankdown");
+    expect(staleCase?.flatComparison).toBeUndefined();
+    expect(staleCase?.includedHitIds).not.toContain("source_claim:claim-stale-rankdown");
     expect(result.metrics.staleEdgeReadbackCases).toBeGreaterThanOrEqual(1);
     expect(result.cases.filter((testCase) => testCase.incomingStaleEdge).length)
       .toBe(result.metrics.staleEdgeReadbackCases);

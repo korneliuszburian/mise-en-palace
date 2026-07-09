@@ -56,10 +56,12 @@ interface SourceGraphRankingQuery {
   readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly corpusSplit: SourceGraphRankingCorpusSplit;
   readonly expectedRelationDirections: readonly SourceGraphRankingRelationDirection[];
+  readonly expectedHitDisposition: SourceGraphRankingHitDisposition;
 }
 
 type SourceGraphRankingCorpusSplit = "main" | "held_out";
 type SourceGraphRankingRelationDirection = "incoming" | "outgoing";
+type SourceGraphRankingHitDisposition = "included" | "excluded";
 
 interface SourceGraphFlatComparison {
   readonly includedHitIds: readonly string[];
@@ -88,6 +90,7 @@ export interface SourceGraphRankingEvalFixture {
 
 interface SourceGraphQueryRun {
   readonly includedHitIds: readonly string[];
+  readonly excludedHitIds: readonly string[];
   readonly supportingClaims: number;
   readonly supportingDocuments: number;
   readonly sourceClaimDocumentLinks: number;
@@ -100,6 +103,7 @@ interface SourceGraphQueryRun {
   readonly incomingStaleEdge: boolean;
   readonly sourceDecisionSupport: number;
   readonly hitAtK: boolean;
+  readonly expectedHitMatched: boolean;
   readonly ndcgAtK: number;
 }
 
@@ -112,6 +116,7 @@ export interface SourceGraphRankingEvalCaseResult extends SourceGraphQueryRun {
   readonly relationLinkedExpected: boolean;
   readonly expectedRelationKinds: readonly SourceClaimEdge["kind"][];
   readonly expectedRelationDirections: readonly SourceGraphRankingRelationDirection[];
+  readonly expectedHitDisposition: SourceGraphRankingHitDisposition;
   readonly flatComparison?: SourceGraphFlatComparison;
 }
 
@@ -160,6 +165,8 @@ export interface SourceGraphRankingEvalResult {
     readonly heldOutRelationDirections: readonly SourceGraphRankingRelationDirection[];
     readonly heldOutObservedRelationDirections: readonly SourceGraphRankingRelationDirection[];
     readonly staleEdgeReadbackCases: number;
+    readonly expectedExcludedHitCases: number;
+    readonly expectedExcludedHitCoveredCases: number;
   };
   readonly cases: readonly SourceGraphRankingEvalCaseResult[];
   readonly proof: {
@@ -242,6 +249,23 @@ const parseRelationDirectionArray = (
   return value.map((item, index) => parseRelationDirection(item, `${label}[${index}]`));
 };
 
+const parseHitDisposition = (
+  value: unknown,
+  label: string
+): SourceGraphRankingHitDisposition => {
+  if (value === undefined) {
+    return "included";
+  }
+
+  const disposition = stringValue(value, label);
+
+  if (disposition !== "included" && disposition !== "excluded") {
+    throw new Error(`${label} must be included or excluded`);
+  }
+
+  return disposition;
+};
+
 const parseRow = (
   tuple: readonly unknown[],
   index: number
@@ -306,6 +330,7 @@ const parseQuery = (
   const expectedRelationKinds = parseRelationKindArray(tuple[5], `queries[${index}][5]`);
   const corpusSplit = parseCorpusSplit(tuple[6], `queries[${index}][6]`);
   const expectedRelationDirections = parseRelationDirectionArray(tuple[7], `queries[${index}][7]`);
+  const expectedHitDisposition = parseHitDisposition(tuple[8], `queries[${index}][8]`);
 
   if (expectedRelationKinds.length > 0 && !relationLinkedExpected) {
     throw new Error(`queries[${index}] expectedRelationKinds require relationLinkedExpected=true`);
@@ -323,7 +348,8 @@ const parseQuery = (
     relationLinkedExpected,
     expectedRelationKinds,
     corpusSplit,
-    expectedRelationDirections
+    expectedRelationDirections,
+    expectedHitDisposition
   };
 };
 
@@ -335,8 +361,8 @@ const parseQueryTuples = (
   }
 
   return value.map((item, index) => {
-    if (!Array.isArray(item) || (item.length < 4 || item.length > 8)) {
-      throw new Error(`queries[${index}] must be a 4-, 5-, 6-, 7-, or 8-item tuple`);
+    if (!Array.isArray(item) || (item.length < 4 || item.length > 9)) {
+      throw new Error(`queries[${index}] must be a 4- to 9-item tuple`);
     }
 
     return parseQuery(item, index);
@@ -646,6 +672,31 @@ const candidateHitId = (candidate: Record<string, unknown>): string | undefined 
 const sourceClaimIdFromHitId = (hitId: string): string | undefined =>
   hitId.startsWith("source_claim:") ? hitId.slice("source_claim:".length) : undefined;
 
+const expectedRelationEvidence = (
+  answerPackage: Record<string, unknown>,
+  expectedSourceClaimIds: ReadonlySet<string>,
+  label: string
+): readonly Record<string, unknown>[] => {
+  const consensusReadback = parseJsonObject(
+    JSON.stringify(answerPackage["consensusReadback"]),
+    `${label}.consensusReadback`
+  );
+  const entries = recordArray(consensusReadback["entries"], `${label}.consensusReadback.entries`);
+
+  return entries.flatMap((entry, index) => {
+    const sourceClaimId = optionalString(entry["sourceClaimId"]);
+
+    if (sourceClaimId === undefined || !expectedSourceClaimIds.has(sourceClaimId)) {
+      return [];
+    }
+
+    return recordArray(
+      entry["relationEvidence"],
+      `${label}.consensusReadback.entries[${index}].relationEvidence`
+    );
+  });
+};
+
 const runQueryPath = async (
   fixture: SourceGraphRankingEvalFixture,
   queryCase: SourceGraphRankingQuery,
@@ -673,7 +724,13 @@ const runQueryPath = async (
     `${queryCase.id}.answerPackage`
   );
   const includedCandidates = recordArray(output["includedCandidates"], `${queryCase.id}.includedCandidates`);
+  const excludedCandidates = recordArray(output["excludedCandidates"], `${queryCase.id}.excludedCandidates`);
   const includedHitIds = includedCandidates.flatMap((candidate) => {
+    const hitId = candidateHitId(candidate);
+
+    return hitId === undefined ? [] : [hitId];
+  });
+  const excludedHitIds = excludedCandidates.flatMap((candidate) => {
     const hitId = candidateHitId(candidate);
 
     return hitId === undefined ? [] : [hitId];
@@ -685,12 +742,17 @@ const runQueryPath = async (
     return sourceClaimId === undefined ? [] : [sourceClaimId];
   }));
   const relationSupport = recordArray(answerPackage["relationSupport"], `${queryCase.id}.relationSupport`);
+  const consensusRelationEvidence = expectedRelationEvidence(
+    answerPackage,
+    expectedSourceClaimIds,
+    queryCase.id
+  );
   const relationKinds = uniqueRelationKinds(relationSupport.flatMap((support) => {
     const kind = relationKindFromReadback(support["kind"]);
 
     return kind === undefined ? [] : [kind];
   }));
-  const expectedHitRelationKinds = uniqueRelationKinds(relationSupport.flatMap((support) => {
+  const expectedHitRelationKindsFromIncluded = uniqueRelationKinds(relationSupport.flatMap((support) => {
     const sourceClaimId = optionalString(support["sourceClaimId"]);
     const kind = relationKindFromReadback(support["kind"]);
 
@@ -698,12 +760,17 @@ const runQueryPath = async (
       ? [kind]
       : [];
   }));
+  const expectedHitRelationKindsFromConsensus = uniqueRelationKinds(consensusRelationEvidence.flatMap((support) => {
+    const kind = relationKindFromReadback(support["kind"]);
+
+    return kind === undefined ? [] : [kind];
+  }));
   const relationDirections = uniqueRelationDirections(relationSupport.flatMap((support) => {
     const direction = relationDirectionFromReadback(support["direction"]);
 
     return direction === undefined ? [] : [direction];
   }));
-  const expectedHitRelationDirections = uniqueRelationDirections(relationSupport.flatMap((support) => {
+  const expectedHitRelationDirectionsFromIncluded = uniqueRelationDirections(relationSupport.flatMap((support) => {
     const sourceClaimId = optionalString(support["sourceClaimId"]);
     const direction = relationDirectionFromReadback(support["direction"]);
 
@@ -711,7 +778,18 @@ const runQueryPath = async (
       ? [direction]
       : [];
   }));
-  const incomingStaleEdge = relationSupport.some((support) => {
+  const expectedHitRelationDirectionsFromConsensus = uniqueRelationDirections(consensusRelationEvidence.flatMap((support) => {
+    const direction = relationDirectionFromReadback(support["direction"]);
+
+    return direction === undefined ? [] : [direction];
+  }));
+  const expectedHitRelationKinds = queryCase.expectedHitDisposition === "excluded"
+    ? expectedHitRelationKindsFromConsensus
+    : expectedHitRelationKindsFromIncluded;
+  const expectedHitRelationDirections = queryCase.expectedHitDisposition === "excluded"
+    ? expectedHitRelationDirectionsFromConsensus
+    : expectedHitRelationDirectionsFromIncluded;
+  const includedIncomingStaleEdge = relationSupport.some((support) => {
     const sourceClaimId = optionalString(support["sourceClaimId"]);
     const kind = relationKindFromReadback(support["kind"]);
     const direction = relationDirectionFromReadback(support["direction"]);
@@ -721,9 +799,21 @@ const runQueryPath = async (
       (kind === "invalidates" || kind === "supersedes") &&
       direction === "incoming";
   });
+  const consensusIncomingStaleEdge = consensusRelationEvidence.some((support) => {
+    const kind = relationKindFromReadback(support["kind"]);
+    const direction = relationDirectionFromReadback(support["direction"]);
+
+    return (kind === "invalidates" || kind === "supersedes") &&
+      direction === "incoming";
+  });
+  const hitAtK = includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id));
+  const expectedHitMatched = queryCase.expectedHitDisposition === "excluded"
+    ? excludedHitIds.some((id) => expectedHitIds.has(id))
+    : hitAtK;
 
   return {
     includedHitIds,
+    excludedHitIds,
     supportingClaims: recordArray(answerPackage["supportingClaims"], `${queryCase.id}.supportingClaims`).length,
     supportingDocuments: recordArray(answerPackage["supportingDocuments"], `${queryCase.id}.supportingDocuments`).length,
     sourceClaimDocumentLinks: recordArray(
@@ -735,14 +825,15 @@ const runQueryPath = async (
       const sourceClaimId = optionalString(support["sourceClaimId"]);
 
       return sourceClaimId !== undefined && expectedSourceClaimIds.has(sourceClaimId);
-    }).length,
+    }).length + (queryCase.expectedHitDisposition === "excluded" ? consensusRelationEvidence.length : 0),
     relationKinds,
     expectedHitRelationKinds,
     relationDirections,
     expectedHitRelationDirections,
-    incomingStaleEdge,
+    incomingStaleEdge: includedIncomingStaleEdge || consensusIncomingStaleEdge,
     sourceDecisionSupport: recordArray(answerPackage["sourceDecisionSupport"], `${queryCase.id}.sourceDecisionSupport`).length,
-    hitAtK: includedHitIds.slice(0, fixture.topK).some((id) => expectedHitIds.has(id)),
+    hitAtK,
+    expectedHitMatched,
     ndcgAtK: roundRankingMetric(ndcgAtK(includedHitIds, expectedHitIds, fixture.topK))
   };
 };
@@ -766,7 +857,7 @@ const evaluateQuery = async (
   queryCase: SourceGraphRankingQuery
 ): Promise<SourceGraphRankingEvalCaseResult> => {
   const linked = await runQueryPath(fixture, queryCase, { includeRelations: true });
-  const flat = queryCase.relationLinkedExpected
+  const flat = queryCase.relationLinkedExpected && queryCase.expectedHitDisposition === "included"
     ? await runQueryPath(fixture, queryCase, { includeRelations: false })
     : undefined;
   const weakness = flat === undefined ? undefined : flatWeakness(linked, flat);
@@ -779,10 +870,11 @@ const evaluateQuery = async (
     relationLinkedExpected: queryCase.relationLinkedExpected,
     expectedRelationKinds: queryCase.expectedRelationKinds,
     expectedRelationDirections: queryCase.expectedRelationDirections,
+    expectedHitDisposition: queryCase.expectedHitDisposition,
     ...linked
   };
 
-  if (flat === undefined || weakness === undefined) {
+  if (flat === undefined || weakness === undefined || queryCase.expectedHitDisposition === "excluded") {
     return result;
   }
 
@@ -822,9 +914,24 @@ export const runSourceGraphRankingEval = async (
   fixture: SourceGraphRankingEvalFixture
 ): Promise<SourceGraphRankingEvalResult> => {
   const cases = await Promise.all(fixture.queries.map((query) => evaluateQuery(fixture, query)));
-  const hitRateAtK = cases.filter((testCase) => testCase.hitAtK).length / cases.length;
-  const ndcgAtK = cases.reduce((sum, testCase) => sum + testCase.ndcgAtK, 0) / cases.length;
+  const includedExpectationCases = cases.filter((testCase) =>
+    testCase.expectedHitDisposition === "included"
+  );
+  const expectedExcludedHitCases = cases.filter((testCase) =>
+    testCase.expectedHitDisposition === "excluded"
+  );
+  const expectedExcludedHitCoveredCases = expectedExcludedHitCases.filter((testCase) =>
+    testCase.expectedHitMatched
+  );
+  const hitRateAtK = averageRankingMetric(includedExpectationCases, "hitAtK");
+  const ndcgAtK = includedExpectationCases.length === 0
+    ? 0
+    : includedExpectationCases.reduce((sum, testCase) => sum + testCase.ndcgAtK, 0) /
+      includedExpectationCases.length;
   const relationLinkedCases = cases.filter((testCase) => testCase.relationLinkedExpected);
+  const includedRelationLinkedCases = relationLinkedCases.filter((testCase) =>
+    testCase.expectedHitDisposition === "included"
+  );
   const flatBaselineWeakerCases = relationLinkedCases.filter((testCase) =>
     testCase.flatComparison !== undefined
   );
@@ -862,7 +969,7 @@ export const runSourceGraphRankingEval = async (
     testCase.expectedHitRelationDirections
   ));
   const staleEdgeReadbackCases = cases.filter((testCase) =>
-    testCase.hitAtK && testCase.incomingStaleEdge
+    testCase.expectedHitMatched && testCase.incomingStaleEdge
   ).length;
   const hasRequiredRelationShapeKinds = requiredRelationShapeKinds.every((kind) =>
     relationShapeKinds.includes(kind)
@@ -879,7 +986,8 @@ export const runSourceGraphRankingEval = async (
     ndcgAtK >= fixture.minimumNdcgAtK &&
     hasHeldOutRelationCorpus &&
     relationLinkedCases.length > 0 &&
-    flatBaselineWeakerCases.length === relationLinkedCases.length &&
+    flatBaselineWeakerCases.length === includedRelationLinkedCases.length &&
+    expectedExcludedHitCoveredCases.length === expectedExcludedHitCases.length &&
     relationShapeCoveredCases.length === relationShapeCases.length &&
     relationDirectionCoveredCases.length === relationDirectionCases.length &&
     relationDirectionCases.length >= requiredRelationDirections.length &&
@@ -945,7 +1053,9 @@ export const runSourceGraphRankingEval = async (
       observedRelationDirections,
       heldOutRelationDirections,
       heldOutObservedRelationDirections,
-      staleEdgeReadbackCases
+      staleEdgeReadbackCases,
+      expectedExcludedHitCases: expectedExcludedHitCases.length,
+      expectedExcludedHitCoveredCases: expectedExcludedHitCoveredCases.length
     },
     cases,
     proof: {
