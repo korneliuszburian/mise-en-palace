@@ -5,12 +5,12 @@ import {
 } from "vitest";
 
 import {
-  parseMaintenancePreviewArgs
-} from "../parse-maintenance-preview-args.js";
+  parseMaintenanceArgs
+} from "../parse-maintenance-args.js";
 
-describe("parseMaintenancePreviewArgs", () => {
+describe("parseMaintenanceArgs", () => {
   it("parses maintenance preview options", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--project",
       "project-1",
@@ -68,7 +68,7 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("defaults to text preview", () => {
-    expect(parseMaintenancePreviewArgs(["preview"])).toEqual({
+    expect(parseMaintenanceArgs(["preview"])).toEqual({
       command: {
         kind: "maintenancePreview",
         format: "text"
@@ -77,19 +77,19 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("rejects invalid numeric options", () => {
-    expect(parseMaintenancePreviewArgs(["preview", "--max-candidates", "0"])).toEqual({
+    expect(parseMaintenanceArgs(["preview", "--max-candidates", "0"])).toEqual({
       error: expect.stringContaining("--max-candidates must be a positive integer")
     });
   });
 
   it("rejects empty project", () => {
-    expect(parseMaintenancePreviewArgs(["preview", "--project", " "])).toEqual({
+    expect(parseMaintenanceArgs(["preview", "--project", " "])).toEqual({
       error: expect.stringContaining("--project cannot be empty")
     });
   });
 
   it("rejects empty acquisition readback file", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--acquisition-readback-file",
       " "
@@ -99,7 +99,7 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("rejects empty consensus candidate file", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--consensus-candidate-file",
       " "
@@ -109,7 +109,7 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("rejects unknown candidate kind", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--candidate-kind",
       "all"
@@ -119,7 +119,7 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("requires complete candidate review input", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--review-candidate-id",
       "candidate-1",
@@ -131,7 +131,7 @@ describe("parseMaintenancePreviewArgs", () => {
   });
 
   it("rejects unknown candidate review decisions", () => {
-    expect(parseMaintenancePreviewArgs([
+    expect(parseMaintenanceArgs([
       "preview",
       "--review-candidate-id",
       "candidate-1",
@@ -143,6 +143,21 @@ describe("parseMaintenancePreviewArgs", () => {
       "docs/review.md"
     ])).toEqual({
       error: expect.stringContaining("--review-decision must be")
+    });
+  });
+
+  it("parses explicit maintenance queue record execution", () => {
+    expect(parseMaintenanceArgs(["run", "--id", "maintenance-queue-1"])).toEqual({
+      command: {
+        kind: "maintenanceRun",
+        id: "maintenance-queue-1"
+      }
+    });
+  });
+
+  it("rejects empty maintenance queue record ids", () => {
+    expect(parseMaintenanceArgs(["run", "--id", " "])).toEqual({
+      error: expect.stringContaining("--id cannot be empty")
     });
   });
 });

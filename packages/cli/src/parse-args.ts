@@ -27,8 +27,8 @@ import {
   parseEvidenceArgs
 } from "./parse-evidence-args.js";
 import {
-  parseMaintenancePreviewArgs
-} from "./parse-maintenance-preview-args.js";
+  parseMaintenanceArgs
+} from "./parse-maintenance-args.js";
 import {
   parseInitArgs
 } from "./parse-init-args.js";
@@ -182,7 +182,7 @@ export type CliCommand =
       limit?: number;
     }
   | {
-      kind: "maintenancePreviewHelp";
+      kind: "maintenanceHelp";
     }
   | {
       kind: "maintenancePreview";
@@ -219,6 +219,10 @@ export type CliCommand =
         reviewer?: string;
       };
       format: "text" | "json";
+    }
+  | {
+      kind: "maintenanceRun";
+      id: string;
     }
   | {
       kind: "observeRun";
@@ -539,6 +543,7 @@ const usage = [
   "krn brain search --query \"...\" [--project <project-id>] [--json]",
   "krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
+  "krn maintenance run --id <maintenance-queue-id>",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
@@ -588,7 +593,7 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
         }
       : parseEvidenceArgs(rest),
   review: parseReviewArgs,
-  maintenance: parseMaintenancePreviewArgs,
+  maintenance: parseMaintenanceArgs,
   decision: parseDecisionArgs,
   observe: parseObserveArgs,
   reflect: parseReflectArgs,

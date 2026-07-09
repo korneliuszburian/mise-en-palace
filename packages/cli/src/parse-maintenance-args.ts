@@ -2,14 +2,16 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-export const formatMaintenancePreviewUsage = (): string =>
+export const formatMaintenanceUsage = (): string =>
   [
     "Usage: krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
+    "Usage: krn maintenance run --id <maintenance-queue-id>",
     "",
-    "Read-only operator commands:",
+    "Operator commands:",
     "krn maintenance preview",
+    "krn maintenance run --id <maintenance-queue-id>",
     "",
-    "Optional:",
+    "Preview options:",
     "--project <project-id>",
     "--memory-limit <positive-integer>",
     "--source-claim-limit <positive-integer>",
@@ -26,7 +28,10 @@ export const formatMaintenancePreviewUsage = (): string =>
     "--reviewer <name>",
     "--json",
     "",
-    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, queued maintenance jobs, or DB schema."
+    "Run options:",
+    "--id <maintenance-queue-id>",
+    "",
+    "Note: maintenance preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. Maintenance run executes exactly one queued maintenance record through the explicit per-record executor. Neither command starts a scheduler, daemon, autonomous promotion path, or broad worker platform."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
@@ -108,11 +113,13 @@ type ParseMaintenancePreviewOptionResult =
       error: string;
     };
 
-type MaintenancePreviewOptionParser = (
+type MaintenanceOptionParser<State> = (
   args: readonly string[],
   index: number,
-  state: MaintenancePreviewParseState
+  state: State
 ) => ParseMaintenancePreviewOptionResult;
+
+type MaintenancePreviewOptionParser = MaintenanceOptionParser<MaintenancePreviewParseState>;
 
 const requiredOption = (
   args: readonly string[],
@@ -145,7 +152,7 @@ const assignTextOption = (
   if (!required.ok) {
     return {
       ok: false,
-      error: `${required.error}\n${formatMaintenancePreviewUsage()}`
+      error: `${required.error}\n${formatMaintenanceUsage()}`
     };
   }
 
@@ -168,7 +175,7 @@ const assignPositiveIntegerOption = (
   if (!required.ok) {
     return {
       ok: false,
-      error: `${required.error}\n${formatMaintenancePreviewUsage()}`
+      error: `${required.error}\n${formatMaintenanceUsage()}`
     };
   }
 
@@ -177,7 +184,7 @@ const assignPositiveIntegerOption = (
   if (!parsed.ok) {
     return {
       ok: false,
-      error: `${parsed.error}\n${formatMaintenancePreviewUsage()}`
+      error: `${parsed.error}\n${formatMaintenanceUsage()}`
     };
   }
 
@@ -258,7 +265,7 @@ const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionPa
     if (!required.ok) {
       return {
         ok: false,
-        error: `${required.error}\n${formatMaintenancePreviewUsage()}`
+        error: `${required.error}\n${formatMaintenanceUsage()}`
       };
     }
 
@@ -269,7 +276,7 @@ const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionPa
         ok: false,
         error:
           "--candidate-kind must be memory_staleness, source_relation, knowledge_acquisition, or consensus_evaluation\n" +
-          formatMaintenancePreviewUsage()
+          formatMaintenanceUsage()
       };
     }
 
@@ -298,7 +305,7 @@ const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionPa
     if (!required.ok) {
       return {
         ok: false,
-        error: `${required.error}\n${formatMaintenancePreviewUsage()}`
+        error: `${required.error}\n${formatMaintenanceUsage()}`
       };
     }
 
@@ -309,7 +316,7 @@ const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionPa
         ok: false,
         error:
           "--review-decision must be accept_for_manual_followup, defer_pending_evidence, or reject_not_actionable\n" +
-          formatMaintenancePreviewUsage()
+          formatMaintenanceUsage()
       };
     }
 
@@ -342,6 +349,19 @@ const maintenancePreviewOptionParsers: Record<string, MaintenancePreviewOptionPa
   }
 };
 
+type MaintenanceRunParseState = {
+  id: string | undefined;
+};
+
+type MaintenanceRunOptionParser = MaintenanceOptionParser<MaintenanceRunParseState>;
+
+const maintenanceRunOptionParsers: Record<string, MaintenanceRunOptionParser> = {
+  "--id": (args, index, state) =>
+    assignTextOption(args, index, "--id", (value) => {
+      state.id = value;
+    })
+};
+
 const hasAnyReviewField = (state: MaintenancePreviewParseState): boolean =>
   state.reviewCandidateId !== undefined ||
   state.reviewDecision !== undefined ||
@@ -365,7 +385,7 @@ const validateReviewState = (state: MaintenancePreviewParseState): string | unde
     return undefined;
   }
 
-  return `Maintenance candidate review requires ${missing.join(", ")}\n${formatMaintenancePreviewUsage()}`;
+  return `Maintenance candidate review requires ${missing.join(", ")}\n${formatMaintenanceUsage()}`;
 };
 
 const buildCandidateReview = (
@@ -419,20 +439,81 @@ const buildMaintenancePreviewCommand = (state: MaintenancePreviewParseState): Pa
   };
 };
 
-export const parseMaintenancePreviewArgs = (rest: readonly string[]): ParseArgsResult => {
+const parseMaintenanceOptions = <State>(input: {
+  readonly args: readonly string[];
+  readonly state: State;
+  readonly parsers: Record<string, MaintenanceOptionParser<State>>;
+  readonly label: string;
+}): string | undefined => {
+  for (let index = 0; index < input.args.length; index += 1) {
+    const arg = input.args[index]!;
+    const parser = input.parsers[arg];
+
+    if (parser === undefined) {
+      return `Unsupported ${input.label} argument: ${arg}\n${formatMaintenanceUsage()}`;
+    }
+
+    const parsed = parser(input.args, index, input.state);
+
+    if (!parsed.ok) {
+      return parsed.error;
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  return undefined;
+};
+
+const parseMaintenanceRunArgs = (args: readonly string[]): ParseArgsResult => {
+  const state: MaintenanceRunParseState = {
+    id: undefined
+  };
+  const optionError = parseMaintenanceOptions({
+    args,
+    state,
+    parsers: maintenanceRunOptionParsers,
+    label: "maintenance run"
+  });
+
+  if (optionError !== undefined) {
+    return {
+      error: optionError
+    };
+  }
+
+  if (state.id === undefined) {
+    return {
+      error: `krn maintenance run requires --id <maintenance-queue-id>\n${formatMaintenanceUsage()}`
+    };
+  }
+
+  return {
+    command: {
+      kind: "maintenanceRun",
+      id: state.id
+    }
+  };
+};
+
+export const parseMaintenanceArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
 
   if (action === undefined || action === "--help" || action === "-h") {
     return {
       command: {
-        kind: "maintenancePreviewHelp"
+        kind: "maintenanceHelp"
       }
     };
   }
 
+  if (action === "run") {
+    return parseMaintenanceRunArgs(args);
+  }
+
   if (action !== "preview") {
     return {
-      error: `Unsupported maintenance preview command: ${action}\n${formatMaintenancePreviewUsage()}`
+      error: `Unsupported maintenance command: ${action}\n${formatMaintenanceUsage()}`
     };
   }
 
@@ -454,25 +535,17 @@ export const parseMaintenancePreviewArgs = (rest: readonly string[]): ParseArgsR
     format: "text"
   };
 
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]!;
-    const parser = maintenancePreviewOptionParsers[arg];
+  const optionError = parseMaintenanceOptions({
+    args,
+    state,
+    parsers: maintenancePreviewOptionParsers,
+    label: "maintenance preview"
+  });
 
-    if (parser === undefined) {
-      return {
-        error: `Unsupported maintenance preview argument: ${arg}\n${formatMaintenancePreviewUsage()}`
-      };
-    }
-
-    const parsed = parser(args, index, state);
-
-    if (!parsed.ok) {
-      return {
-        error: parsed.error
-      };
-    }
-
-    index = parsed.nextIndex;
+  if (optionError !== undefined) {
+    return {
+      error: optionError
+    };
   }
 
   const reviewError = validateReviewState(state);

@@ -4,6 +4,7 @@ import {
 } from "@krn/db";
 import {
   DrizzleHarnessRunRepository,
+  DrizzleMaintenanceQueueRepository,
   DrizzleMemoryRepository,
   DrizzleObservationRepository,
   DrizzleProjectRepository,
@@ -38,6 +39,9 @@ import type {
   SourceClaim,
   AntiMemoryRecord
 } from "@krn/core";
+import type {
+  MaintenanceQueueRepository
+} from "@krn/db/adapters";
 
 type PostgresClient = ReturnType<typeof postgres>;
 
@@ -193,6 +197,23 @@ export interface ReviewAssessDatabaseRuntime {
     HarnessRunRepository,
     | "createReviewAssessment"
     | "createFeedbackDelta"
+  >;
+  close(): Promise<void>;
+}
+
+export interface MaintenanceQueueDatabaseRuntimeInput {
+  databaseUrl: string;
+}
+
+export interface MaintenanceQueueDatabaseRuntime {
+  maintenanceQueueRepository: MaintenanceQueueRepository;
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    "listFeedbackDeltasForProject"
+  >;
+  memoryRepository: Pick<
+    MemoryRepository,
+    "createAntiMemoryCandidate"
   >;
   close(): Promise<void>;
 }
@@ -694,6 +715,26 @@ export const createReviewAssessDatabaseRuntime = async (
 
     return {
       harnessRunRepository,
+      close: closePostgresClient(client)
+    };
+  } catch (error) {
+    await client.end();
+    throw error;
+  }
+};
+
+export const createMaintenanceQueueDatabaseRuntime = async (
+  input: MaintenanceQueueDatabaseRuntimeInput
+): Promise<MaintenanceQueueDatabaseRuntime> => {
+  const client = postgres(input.databaseUrl, { max: 1 });
+
+  try {
+    const db = createKrnDatabase(client);
+
+    return {
+      maintenanceQueueRepository: new DrizzleMaintenanceQueueRepository(db),
+      harnessRunRepository: new DrizzleHarnessRunRepository(db),
+      memoryRepository: new DrizzleMemoryRepository(db),
       close: closePostgresClient(client)
     };
   } catch (error) {

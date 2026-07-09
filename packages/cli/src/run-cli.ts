@@ -33,8 +33,8 @@ import {
   formatReviewAssessUsage
 } from "./parse-review-args.js";
 import {
-  formatMaintenancePreviewUsage
-} from "./parse-maintenance-preview-args.js";
+  formatMaintenanceUsage
+} from "./parse-maintenance-args.js";
 import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
@@ -70,6 +70,9 @@ import type {
 import type {
   CreateReflectDatabaseRuntime
 } from "./run-reflect-command.js";
+import type {
+  CreateMaintenanceQueueDatabaseRuntime
+} from "./run-maintenance-queue-command.js";
 import {
   runCliCommand
 } from "./run-cli-command.js";
@@ -94,6 +97,7 @@ export interface CliRuntime {
   createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
   createReflectDatabaseRuntime?: CreateReflectDatabaseRuntime;
   createInitConnectRuntime?: CreateInitConnectRuntime;
+  createMaintenanceQueueDatabaseRuntime?: CreateMaintenanceQueueDatabaseRuntime;
 }
 
 export interface CliResult {
@@ -150,7 +154,7 @@ const helpRenderers = {
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
   brainRecallHelp: formatBrainRecallUsage,
   decisionPacketHelp: formatDecisionPacketUsage,
-  maintenancePreviewHelp: formatMaintenancePreviewUsage,
+  maintenanceHelp: formatMaintenanceUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
   memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,
@@ -237,6 +241,9 @@ export const runCli = async (
     ...(runtime.createReflectDatabaseRuntime === undefined
       ? {}
       : { createReflectDatabaseRuntime: runtime.createReflectDatabaseRuntime }),
+    ...(runtime.createMaintenanceQueueDatabaseRuntime === undefined
+      ? {}
+      : { createMaintenanceQueueDatabaseRuntime: runtime.createMaintenanceQueueDatabaseRuntime }),
     formatCliError
   });
   if (commandResult !== undefined) {

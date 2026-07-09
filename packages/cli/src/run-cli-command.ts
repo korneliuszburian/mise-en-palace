@@ -18,6 +18,12 @@ import {
   runMaintenancePreviewCommand
 } from "./run-maintenance-preview-command.js";
 import {
+  runMaintenanceQueueCommand
+} from "./run-maintenance-queue-command.js";
+import type {
+  CreateMaintenanceQueueDatabaseRuntime
+} from "./run-maintenance-queue-command.js";
+import {
   runMemoryCliCommand
 } from "./run-memory-cli-command.js";
 import {
@@ -38,6 +44,7 @@ interface CliCommandDispatchContext {
   createObserveDatabaseRuntime?: CliRuntime["createObserveDatabaseRuntime"];
   createReflectDatabaseRuntime?: CliRuntime["createReflectDatabaseRuntime"];
   createInitConnectRuntime?: CliRuntime["createInitConnectRuntime"];
+  createMaintenanceQueueDatabaseRuntime?: CreateMaintenanceQueueDatabaseRuntime;
   formatCliError(message: string): string;
 }
 
@@ -169,6 +176,26 @@ const runMaintenancePreviewAdapter: CliCommandAdapter = async (command, context)
   );
 };
 
+const runMaintenanceQueueAdapter: CliCommandAdapter = async (command, context) => {
+  if (command.kind !== "maintenanceRun") {
+    return undefined;
+  }
+
+  return readbackCommandResult(
+    () => runMaintenanceQueueCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command,
+      ...(context.createMaintenanceQueueDatabaseRuntime === undefined
+        ? {}
+        : { createMaintenanceQueueDatabaseRuntime: context.createMaintenanceQueueDatabaseRuntime })
+    }),
+    "Unknown maintenance queue run error",
+    context
+  );
+};
+
 const runBrainAdapter: CliCommandAdapter = async (command, context) => {
   if (command.kind !== "brainSearch") {
     return undefined;
@@ -197,6 +224,7 @@ const cliCommandAdapters: readonly CliCommandAdapter[] = [
   runMemoryAdapter,
   runHarnessAdapter,
   runMaintenancePreviewAdapter,
+  runMaintenanceQueueAdapter,
   runDbAdapter
 ];
 
