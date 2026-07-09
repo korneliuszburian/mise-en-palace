@@ -14,7 +14,7 @@ state without mutating memory automatically.
   review burden, rollback path, or feedback candidates.
 - Turning review findings into memory/source/skill/policy/eval candidates.
 
-## Workflow
+## Steps
 
 1. Record changed files and scope.
 2. Record each command with status and provenance; distinguish statuses

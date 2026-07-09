@@ -7,6 +7,11 @@ description: Use when working in a repository that uses bd or Beads for durable 
 
 Use Beads as the shared project task system. Local plans, scratch files, and personal memories are useful, but they are not the durable source of truth for project work.
 
+## Trigger
+
+Use when durable task state, issue dependencies, blocker management, follow-up
+work, or multi-session recovery matters.
+
 ## First Step
 
 Run:
@@ -25,7 +30,7 @@ rtk bd where
 
 Use the `bd` CLI when shell access is available. It is the most compact and direct Beads interface.
 
-## Core CLI Workflow
+## Core CLI Steps
 
 1. Find work:
 
@@ -104,7 +109,7 @@ separate map document:
 - create newly discovered Beads only after the current question makes their
   blockers and acceptance criteria clear.
 
-## Workflow
+## Steps
 
 Use Beads before durable work:
 
@@ -133,7 +138,7 @@ Use agent-local planning tools only for the current turn's execution checklist. 
 - Closing reason or issue note with verification and non-proof boundary.
 - No markdown TODO or parallel task ledger.
 
-## Rules
+## Forbidden
 
 - Do not create markdown TODO files as the source of truth when Beads is available.
 - Do not use `bd edit`; it opens an interactive editor. Use `bd update` flags instead.

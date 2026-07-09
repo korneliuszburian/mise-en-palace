@@ -587,13 +587,15 @@ records, and onboarding surfaces.
 The canonical skill shape is:
 
 ```txt
-Trigger -> Workflow -> Output -> Stop Condition -> Verification -> Forbidden
+name -> description -> trigger -> steps -> output -> stop_condition -> verification -> forbidden
 ```
 
-Use only the sections that change agent behavior. A skill can omit a section
-when the contract is obvious, but it must still have a checkable stop condition
-and verification path. Keep detailed branches behind progressive disclosure
-when they would bloat `SKILL.md`.
+In `SKILL.md`, `name` and `description` live in YAML frontmatter. The body uses
+`Trigger`, `Steps`, `Output`, `Stop Condition`, `Verification`, and `Forbidden`
+where they change behavior. A skill can omit an optional section when the
+contract is obvious, but it must still have checkable steps, stop condition, and
+verification path. Keep detailed branches behind progressive disclosure when
+they would bloat `SKILL.md`.
 
 External methods, including practitioner workflows, public course material, and
 loop-engineering articles, must enter KRN through source-to-decision:
@@ -604,8 +606,9 @@ source -> mechanism -> KRN implication -> decision/rejection -> consumer -> fals
 
 Adopt the mechanism only when it has a current KRN consumer. For current skill
 work, the adopted mechanisms are small composable skills, TypeScript/static
-feedback, red-green behavior falsifiers, maker/checker separation, durable task
-state, worktree isolation for larger slices when requested, and explicit stop
+feedback, red-green behavior falsifiers, vertical tracer-bullet task slices,
+maker/checker separation, durable task state, worktree/PR isolation for larger
+or quality-critical slices when the operator wants it, and explicit stop
 conditions. This does not prove those external sources are product authority.
 
 ADR-like records are rare. Prefer Beads for task state, source decisions for

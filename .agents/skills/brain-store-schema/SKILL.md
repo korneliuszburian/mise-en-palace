@@ -14,7 +14,7 @@ Use this skill when a change touches the Postgres-backed KRN brain store.
 - New memory, source graph, retrieval, evidence, feedback, outbox, or worker-job
   persistence behavior.
 
-## Workflow
+## Steps
 
 1. Identify the durable object and its lifecycle.
 2. Keep stable query fields relational; use JSONB only for unstable metadata.

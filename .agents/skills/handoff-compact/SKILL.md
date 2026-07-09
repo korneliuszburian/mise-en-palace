@@ -14,7 +14,7 @@ Use this skill to keep continuation state small and useful.
 - A slice was committed, pushed, CI-checked, blocked, or left with a precise
   next action.
 
-## Workflow
+## Steps
 
 1. State the current objective.
 2. State the active Beads task id, status, and next action.

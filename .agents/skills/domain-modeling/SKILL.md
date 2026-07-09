@@ -9,7 +9,12 @@ Keep KRN's language coherent across roadmap, Beads, code, CLI/API surfaces, and
 store-backed knowledge. Resolve domain terms by changing the owning boundary,
 not by creating another glossary file.
 
-## Workflow
+## Trigger
+
+Use when a term, public name, concept boundary, roadmap phrase, CLI/API wording,
+or retained-knowledge vocabulary changes or looks logically inconsistent.
+
+## Steps
 
 1. Pin the term or concept under dispute.
 2. Map the current path:
@@ -47,7 +52,7 @@ not by creating another glossary file.
 - Keep technical uses of `pattern` when they are literal regex/path/search
   patterns, not retained brain knowledge.
 
-## Rejection Rules
+## Forbidden
 
 - Do not create `CONTEXT.md`, `CONVENTIONS.md`, ADR folders, glossary docs, or
   markdown runbooks as a default authority surface.
@@ -94,3 +99,8 @@ does_not_prove:
 Stop when the canonical term is owned at the highest honest boundary, stale
 public terms are removed or explicitly deferred, and `rg` plus the smallest
 type/behavior check prove the rejected vocabulary is not still active.
+
+## Verification
+
+Verify by grepping rejected terms and running the smallest type/behavior checks
+that touch the renamed or re-owned boundary.

@@ -25,7 +25,7 @@ Target repositories are not disposable fixtures.
 Do not edit, commit, push, reset, clean, or normalize a target repo unless the
 current task explicitly allows target writes.
 
-## Workflow
+## Steps
 
 Follow these steps before treating target-repo output as KRN evidence.
 
@@ -157,7 +157,7 @@ Each entry is `path|root|kind|reason`. If no owner files are provided, record
 proof that owner files do not exist, and do not repair activation scoring from
 that signal alone.
 
-## Step 5: Stop Conditions
+## Stop Condition
 
 Stop and report instead of patching when:
 
@@ -175,7 +175,7 @@ Stop and report instead of patching when:
 Target-repo work is verified only when mode, dirty state, write authority,
 commands, proof/non-proof boundaries, and handoff state are recorded.
 
-## Required Output
+## Output
 
 Every target trial report must include:
 
@@ -193,3 +193,10 @@ what_did_not_prove:
 target_dirty_after:
 condensation_decision:
 ```
+
+## Forbidden
+
+- Do not edit, commit, push, reset, clean, or normalize a target repo unless the
+  current task explicitly allows target writes.
+- Do not treat observation-only output as permission to repair.
+- Do not use a dirty target as clean evidence without recording dirty state.

@@ -29,7 +29,7 @@ a runtime consumer, falsifier, and owner.
 - Leverage: capability callers get from the interface.
 - Locality: change concentrated in one module instead of scattered callers.
 
-## Checks
+## Steps
 
 1. Map current caller -> interface -> implementation -> persistence/runtime path.
 2. Run the deletion test: if deleting the module removes complexity, it is
@@ -63,3 +63,16 @@ a runtime consumer, falsifier, and owner.
 
 Stop when the current path, smallest design decision, owner, consumer,
 falsifier, non-proof boundary, and verification command are all named.
+
+## Verification
+
+Verify with the smallest behavior/type checks that touch the changed seam, plus
+targeted `rg` proof for removed aliases, duplicate read models, or rejected
+public terms when relevant.
+
+## Forbidden
+
+- Do not add a seam without a current consumer, falsifier, and owner.
+- Do not preserve bad names behind compatibility aliases unless a staged rollout
+  is required.
+- Do not use prose/topology tests as design proof.

@@ -15,7 +15,7 @@ Use this skill at the Codex brief boundary, not inside core domain logic.
 - A brief change risks treating skills, hooks, MCP, or adapter metadata as the
   product brain instead of tooling around the `DecisionPacket`.
 
-## Workflow
+## Steps
 
 1. Read the bounded input: task contract, context assembly, selected knowledge,
    source support, rejected/stale paths, capability requirements, and evidence

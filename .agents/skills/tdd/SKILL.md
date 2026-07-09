@@ -15,7 +15,7 @@ Use when a runtime behavior, parser boundary, migration, source/memory
 authority rule, DecisionPacket selection, feedback effect, or bug fix needs a
 red-green falsifier.
 
-## Workflow
+## Steps
 
 1. Name the behavior, not the implementation.
 2. Pick the highest public seam that observes it:
@@ -73,6 +73,19 @@ public interface.
 Stop when the test fails for the intended reason before implementation, passes
 after the smallest change, and the local behavior command, typecheck, and
 relevant Fallow gate are run or explicitly unavailable.
+
+## Verification
+
+Verification requires the red command, green command, typecheck result, and
+relevant Fallow result or an explicit unavailable reason.
+
+## Forbidden
+
+- Do not write tests that freeze prose, topology, command lists, snapshots, or
+  implementation ceremony.
+- Do not mock internal KRN collaborators that can be exercised through a public
+  seam.
+- Do not refactor ahead of the red-green slice.
 
 ## Source Decision
 

@@ -13,7 +13,7 @@ Use this skill to keep active context small, justified, and reviewable.
   abstention behavior.
 - A change affects trust, time, lexical/vector/graph scores, or context budget.
 
-## Workflow
+## Steps
 
 1. Start from the task contract and context budget.
 2. Build query terms from task objective, constraints, non-goals, and

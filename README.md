@@ -39,6 +39,17 @@ External methods and research enter only through source-to-decision: source,
 mechanism, KRN implication, decision or rejection, consumer, falsifier, and
 non-proof. A method is adopted only when it changes a current KRN consumer.
 
+## Skill Boundary
+
+Repo-local skills live in `.agents/skills`. They are versioned operating
+protocols for repeated KRN work, not runtime memory, broad docs, or architecture
+by themselves.
+
+The skill/artifact contract is defined in `KRN_ROADMAP.md`. Keep README as a
+pointer, not a skills catalog. External methods such as Matt Pocock-style skills
+and loop engineering enter KRN only through source-to-decision and only as
+mechanisms with a current consumer and falsifier.
+
 ## Current Truth
 
 - Product direction: `KRN_ROADMAP.md`.

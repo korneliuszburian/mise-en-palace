@@ -13,7 +13,7 @@ Use this skill before or during TypeScript changes.
   CLI/env/file/JSON boundaries, generics, casts, or dependency declarations.
 - A shortcut would weaken strictness to move faster.
 
-## Workflow
+## Steps
 
 1. Classify the boundary: public API, external input, internal domain type,
    persistence, CLI, MCP/app connector, test fixture, or config.

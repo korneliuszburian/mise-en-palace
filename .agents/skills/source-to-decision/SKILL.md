@@ -13,7 +13,7 @@ Use this skill to prevent source hoarding.
   local repo evidence, or user-provided material.
 - A source might otherwise become decorative context.
 
-## Workflow
+## Steps
 
 1. Identify the exact source and trust tier.
 2. Extract the mechanism, not just the claim.
