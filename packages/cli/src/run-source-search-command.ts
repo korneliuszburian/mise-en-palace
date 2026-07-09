@@ -10,6 +10,9 @@ import {
 import {
   createDatabaseRuntime
 } from "./database-runtime.js";
+import {
+  sourceClaimAuthorityStateFor
+} from "@krn/core";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
@@ -70,10 +73,17 @@ const sourceSearchSourceClaimCanReadBack = (
     return true;
   }
 
+  if (candidate.sourceClaimStatus !== undefined && candidate.sourceClaimStatus !== "accepted") {
+    return false;
+  }
+
   if (candidate.sourceClaimAuthorityStatus !== undefined) {
-    return candidate.sourceClaimAuthorityStatus === "accepted" ||
-      candidate.sourceClaimAuthorityStatus === "caveated" ||
-      candidate.sourceClaimAuthorityStatus === "evidence_gap";
+    const state = sourceClaimAuthorityStateFor({
+      status: candidate.sourceClaimAuthorityStatus,
+      reasons: candidate.sourceClaimAuthorityReasons ?? []
+    });
+
+    return state === "accepted" || state === "conflicting" || state === "unsupported";
   }
 
   return candidate.sourceClaimStatus === "accepted";
@@ -82,7 +92,13 @@ const sourceSearchSourceClaimCanReadBack = (
 const sourceSearchSourceClaimExclusionReason = (
   candidate: RankedActivationCandidate
 ): "stale" | "unsafe" =>
-  candidate.sourceClaimAuthorityStatus === "stale" ? "stale" : "unsafe";
+  candidate.sourceClaimAuthorityStatus !== undefined &&
+  sourceClaimAuthorityStateFor({
+    status: candidate.sourceClaimAuthorityStatus,
+    reasons: candidate.sourceClaimAuthorityReasons ?? []
+  }) === "stale"
+    ? "stale"
+    : "unsafe";
 
 const applySourceSearchEvidenceFilter = (
   candidates: readonly RankedActivationCandidate[]

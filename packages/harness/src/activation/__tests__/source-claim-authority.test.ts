@@ -27,7 +27,17 @@ describe("source claim authority guard", () => {
     })).toEqual({
       reason: "unsafe",
       explanation:
-        "SourceClaim authority status evidence_gap: missing_source_decision_support."
+        "SourceClaim authority state unsupported: missing_source_decision_support."
+    });
+
+    expect(sourceClaimAuthorityExclusion({
+      subjectType: "source_claim",
+      sourceClaimStatus: "accepted",
+      sourceClaimAuthorityStatus: "blocked",
+      sourceClaimAuthorityReasons: ["invalid_time"]
+    })).toEqual({
+      reason: "unsafe",
+      explanation: "SourceClaim authority state unknown: invalid_time."
     });
   });
 });

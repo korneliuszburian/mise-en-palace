@@ -1581,7 +1581,7 @@ describe("activation engine", () => {
       ]),
       exclusion: {
         reason: "stale",
-        explanation: expect.stringContaining("SourceClaim authority status stale")
+      explanation: expect.stringContaining("SourceClaim authority state stale")
       }
     });
   });

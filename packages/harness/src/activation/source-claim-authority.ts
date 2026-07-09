@@ -1,8 +1,12 @@
 import type {
   ContextSubjectType,
   SourceClaimAuthorityReason,
+  SourceClaimAuthorityState,
   SourceClaimAuthorityStatus,
   SourceClaimStatus
+} from "@krn/core";
+import {
+  sourceClaimAuthorityStateFor
 } from "@krn/core";
 
 import type {
@@ -17,9 +21,9 @@ export interface SourceClaimAuthorityCandidate {
 }
 
 const sourceClaimAuthorityExclusionReason = (
-  status: SourceClaimAuthorityStatus
+  state: SourceClaimAuthorityState
 ): ActivationExclusion["reason"] => {
-  if (status === "stale") {
+  if (state === "stale") {
     return "stale";
   }
 
@@ -27,8 +31,8 @@ const sourceClaimAuthorityExclusionReason = (
 };
 
 const sourceClaimAuthorityCanActivate = (
-  status: SourceClaimAuthorityStatus
-): boolean => status === "accepted" || status === "caveated";
+  state: SourceClaimAuthorityState
+): boolean => state === "accepted" || state === "conflicting";
 
 const sourceClaimAuthorityReasonText = (
   reasons: readonly SourceClaimAuthorityReason[] | undefined
@@ -48,22 +52,30 @@ export const sourceClaimAuthorityExclusion = (
   }
 
   if (candidate.sourceClaimAuthorityStatus !== undefined) {
-    if (sourceClaimAuthorityCanActivate(candidate.sourceClaimAuthorityStatus)) {
+    const state = sourceClaimAuthorityStateFor({
+      status: candidate.sourceClaimAuthorityStatus,
+      reasons: candidate.sourceClaimAuthorityReasons ?? []
+    });
+
+    if (
+      sourceClaimAuthorityCanActivate(state) &&
+      (candidate.sourceClaimStatus === undefined || candidate.sourceClaimStatus === "accepted")
+    ) {
       return undefined;
     }
 
     if (candidate.sourceClaimStatus !== undefined && candidate.sourceClaimStatus !== "accepted") {
       return {
-        reason: sourceClaimAuthorityExclusionReason(candidate.sourceClaimAuthorityStatus),
+        reason: sourceClaimAuthorityExclusionReason(state),
         explanation:
-          `Source claims require accepted status before activation; ${candidate.sourceClaimStatus} claims remain review candidates, not implementation authority. SourceClaim authority status ${candidate.sourceClaimAuthorityStatus}: ${sourceClaimAuthorityReasonText(candidate.sourceClaimAuthorityReasons)}.`
+          `Source claims require accepted authority state before activation; ${candidate.sourceClaimStatus} claims remain review candidates, not implementation authority. SourceClaim authority state ${state}: ${sourceClaimAuthorityReasonText(candidate.sourceClaimAuthorityReasons)}.`
       };
     }
 
     return {
-      reason: sourceClaimAuthorityExclusionReason(candidate.sourceClaimAuthorityStatus),
+      reason: sourceClaimAuthorityExclusionReason(state),
       explanation:
-        `SourceClaim authority status ${candidate.sourceClaimAuthorityStatus}: ${sourceClaimAuthorityReasonText(candidate.sourceClaimAuthorityReasons)}.`
+        `SourceClaim authority state ${state}: ${sourceClaimAuthorityReasonText(candidate.sourceClaimAuthorityReasons)}.`
     };
   }
 
