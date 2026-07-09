@@ -114,5 +114,8 @@ jobs:
       - name: DB source graph smoke
         run: pnpm db:smoke:source-graph
 
+      - name: DB product-loop eval
+        run: pnpm eval:db
+
       - name: Diff check
         run: git diff --check

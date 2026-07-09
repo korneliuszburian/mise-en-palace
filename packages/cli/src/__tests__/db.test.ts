@@ -132,6 +132,15 @@ describe("runCli", () => {
     );
   });
 
+  it("keeps the canonical DB product-loop eval in full verification and CI", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = await readRootPackageJson(repoRoot);
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+
+    expect(packageJson.scripts?.["alpha:verify:full"]).toContain("pnpm eval:db");
+    expect(workflow).toContain("run: pnpm eval:db");
+  });
+
   it("fails real recall eval when any distractor-competition case loses", () => {
     expect(() => assertAllRealRecallAdvantageWins([
       {

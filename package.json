@@ -71,7 +71,7 @@
     "quality:fallow:ci": "fallow audit --format compact",
     "alpha:verify": "pnpm alpha:verify:fast",
     "alpha:verify:fast": "pnpm typecheck && pnpm test && pnpm krn doctor",
-    "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:krn:smoke && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && git diff --check",
+    "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:krn:smoke && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && pnpm eval:db && git diff --check",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck"
   },
