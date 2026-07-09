@@ -31,6 +31,7 @@ import {
   projectStandardDecisionFromMetadata,
   pendingAntiMemoryReviewFromMetadata,
   readMetadataFiniteNumber,
+  sourceClaimAuthorityFromMetadata,
   sourceClaimEdgeInfluenceFromMetadata,
   sourceDecisionSupportBoostFromMetadata
 } from "./decision-packet-read-model-decoders.js";
@@ -134,6 +135,7 @@ const activationCandidateResource = (
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
   const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
   const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
+  const sourceClaimAuthority = sourceClaimAuthorityFromMetadata(candidate.metadata);
 
   return {
     id: candidate.id,
@@ -142,6 +144,12 @@ const activationCandidateResource = (
     subjectType: candidate.subjectType,
     subjectId: candidate.subjectId,
     sourceAuthority: candidate.sourceAuthority,
+    ...(sourceClaimAuthority === undefined
+      ? {}
+      : {
+          sourceClaimAuthorityStatus: sourceClaimAuthority.status,
+          sourceClaimAuthorityReasons: sourceClaimAuthority.reasons
+        }),
     ...activationCandidateScores(candidate),
     reason: candidate.reason,
     ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),

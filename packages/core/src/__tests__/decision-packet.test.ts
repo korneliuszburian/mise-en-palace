@@ -283,6 +283,45 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("keeps authority-superseded source claims as superseded rejected paths", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-authority-superseded",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 0,
+        exclusions: 1,
+        inclusionDetails: [],
+        exclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-authority-superseded",
+          reason: "unsafe"
+        }],
+        activationTrace: {
+          candidates: [{
+            subjectType: "source_claim",
+            subjectId: "claim-authority-superseded",
+            sourceClaimAuthorityStatus: "blocked",
+            sourceClaimAuthorityReasons: ["superseded_by_current_claim"]
+          }],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.supersededPathIds).toEqual(["claim-authority-superseded"]);
+    expect(packet.rejectedPathIds).toEqual(["claim-authority-superseded"]);
+    expect(packet.sourceConsensus.supersededPathIds).toEqual([
+      "claim-authority-superseded"
+    ]);
+  });
+
   it("keeps decision-linked relation evidence usable when the relation has support", () => {
     const packet = buildDecisionPacketFromReadModel(relationReadModel([]));
 

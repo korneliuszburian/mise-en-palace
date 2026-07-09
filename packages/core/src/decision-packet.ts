@@ -12,6 +12,8 @@ import type {
 import type {
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
+  SourceClaimAuthorityReason,
+  SourceClaimAuthorityStatus,
   SourceDecisionTargetType
 } from "./source.js";
 
@@ -288,6 +290,8 @@ export interface DecisionPacketActivationTraceInput {
 export interface DecisionPacketActivationCandidateInput {
   subjectType: string;
   subjectId: string;
+  sourceClaimAuthorityStatus?: SourceClaimAuthorityStatus;
+  sourceClaimAuthorityReasons?: readonly SourceClaimAuthorityReason[];
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: {
     edgeIds: readonly string[];
@@ -644,6 +648,16 @@ const sourceClaimExclusionIdsFor = (
   )
   .map((exclusion) => exclusion.subjectId) ?? []);
 
+const sourceClaimAuthorityReasonIdsFor = (
+  readModel: DecisionPacketReadModelInput,
+  reason: SourceClaimAuthorityReason
+): string[] => unique(readModel.context.activationTrace?.candidates
+  .filter((candidate) =>
+    candidate.subjectType === "source_claim" &&
+    candidate.sourceClaimAuthorityReasons?.includes(reason) === true
+  )
+  .map((candidate) => candidate.subjectId) ?? []);
+
 const severeStaleAuthorityIdsFor = (input: {
   readonly governingDecisionIds: readonly string[];
   readonly staleDecisionIds: readonly string[];
@@ -757,11 +771,20 @@ export const buildDecisionPacketFromReadModel = (
     readModel,
     supersededSourceClaimExclusionReasons
   );
+  const authoritySupersededPathIds = sourceClaimAuthorityReasonIdsFor(
+    readModel,
+    "superseded_by_current_claim"
+  );
+  const allSupersededPathIds = unique([
+    ...supersededPathIds,
+    ...authoritySupersededPathIds
+  ]);
   const rejectedPathIds = unique([
     ...inclusions
       .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
       .map((inclusion) => inclusion.subjectId),
     ...antiMemoryBlockedPathIdsFor(readModel),
+    ...authoritySupersededPathIds,
     ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons),
     ...sourceRejectionIds,
     ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
@@ -790,7 +813,7 @@ export const buildDecisionPacketFromReadModel = (
     sourceDecisionEdgeIds,
     sourceDecisionTargets,
     staleDecisionIds,
-    supersededPathIds,
+    supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
     sourceRejectionIds,
     conflictedDecisionIds: severeStaleAuthorityIds,
@@ -813,7 +836,7 @@ export const buildDecisionPacketFromReadModel = (
     staleKnowledgeIds,
     noiseKnowledgeIds,
     unknownKnowledgeIds,
-    supersededPathIds,
+    supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
     falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
       bundle.commands.map((command) => command.command)

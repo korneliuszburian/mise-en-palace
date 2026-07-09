@@ -5,6 +5,10 @@ import {
 import type { CandidateReviewability } from "@krn/core";
 import type { ProjectStandardDecisionReadback } from "@krn/core";
 import type { SourceClaimEdgeKind } from "@krn/core";
+import type {
+  SourceClaimAuthorityReason,
+  SourceClaimAuthorityStatus
+} from "@krn/core";
 import type { SourceDecisionTargetType } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/core/repositories";
 
@@ -109,6 +113,40 @@ const sourceClaimEdgeKinds = [
 
 const isSourceClaimEdgeKind = (value: string): value is SourceClaimEdgeKind =>
   sourceClaimEdgeKinds.some((edgeKind) => edgeKind === value);
+
+const sourceClaimAuthorityStatuses = [
+  "accepted",
+  "caveated",
+  "blocked",
+  "stale",
+  "rejected",
+  "evidence_gap"
+] as const satisfies readonly SourceClaimAuthorityStatus[];
+
+const isSourceClaimAuthorityStatus = (
+  value: string
+): value is SourceClaimAuthorityStatus =>
+  sourceClaimAuthorityStatuses.some((status) => status === value);
+
+const sourceClaimAuthorityReasons = [
+  "current_decision_linked_authority",
+  "accepted_with_dissenting_source_claims",
+  "candidate_not_accepted",
+  "rejected_or_deprecated",
+  "invalid_time",
+  "stale",
+  "missing_source_to_decision_fields",
+  "decorative_support_type",
+  "missing_source_decision_support",
+  "superseded_by_current_claim",
+  "weaker_than_current_valid_consensus",
+  "rejected_by_source_rejection"
+] as const satisfies readonly SourceClaimAuthorityReason[];
+
+const isSourceClaimAuthorityReason = (
+  value: string
+): value is SourceClaimAuthorityReason =>
+  sourceClaimAuthorityReasons.some((reason) => reason === value);
 
 export const projectResolutionFromMetadata = (
   metadata: Record<string, unknown>
@@ -222,6 +260,31 @@ export const sourceClaimEdgeInfluenceFromMetadata = (
     ...(missingRelationSupportEdgeIds.length === 0 ? {} : { missingRelationSupportEdgeIds }),
     seedSourceClaimIds,
     doesNotProve
+  };
+};
+
+export const sourceClaimAuthorityFromMetadata = (
+  metadata: Record<string, unknown>
+): {
+  status: SourceClaimAuthorityStatus;
+  reasons: SourceClaimAuthorityReason[];
+} | undefined => {
+  const value = metadataRecordValue(metadata.sourceClaimAuthority);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const status = readMetadataString(value, "status");
+  const reasons = readMetadataStringList(value, "reasons").filter(isSourceClaimAuthorityReason);
+
+  if (status === undefined || !isSourceClaimAuthorityStatus(status) || reasons.length === 0) {
+    return undefined;
+  }
+
+  return {
+    status,
+    reasons
   };
 };
 

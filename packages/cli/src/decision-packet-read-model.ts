@@ -8,6 +8,8 @@ import type {
   ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
+  SourceClaimAuthorityReason,
+  SourceClaimAuthorityStatus,
   SourceDecisionTargetType,
   SourceUsefulnessOutcome,
   TargetEvidence
@@ -90,6 +92,8 @@ export interface DecisionPacketReadModelActivationCandidate {
   subjectType: string;
   subjectId: string;
   sourceAuthority: SourceAuthorityLabel;
+  sourceClaimAuthorityStatus?: SourceClaimAuthorityStatus;
+  sourceClaimAuthorityReasons?: SourceClaimAuthorityReason[];
   lexicalScore?: number;
   vectorScore?: number;
   graphScore?: number;
