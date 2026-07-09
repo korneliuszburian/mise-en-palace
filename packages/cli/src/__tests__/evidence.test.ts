@@ -966,7 +966,6 @@ describe("runCli", () => {
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }, {
         sourceClaimId: "source-claim-stale",
-        outcome: "unknown",
         outcome: "helped",
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }]
@@ -1088,11 +1087,15 @@ describe("runCli", () => {
   it("rejects usefulness bound to a stale reconstructed packet", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const staleBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const contextAssembly = aggregate.contextAssembly;
+    if (contextAssembly === undefined) {
+      throw new Error("Expected aggregate context assembly");
+    }
     const changedAggregate: HarnessRunAggregate = {
       ...aggregate,
       contextAssembly: {
-        ...aggregate.contextAssembly,
-        inclusions: [...(aggregate.contextAssembly?.inclusions ?? []), {
+        ...contextAssembly,
+        inclusions: [...contextAssembly.inclusions, {
           subjectType: "source_claim",
           subjectId: "newly-selected-claim",
           reason: "Changed packet selection.",
