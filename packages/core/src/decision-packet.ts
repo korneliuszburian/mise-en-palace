@@ -1,6 +1,7 @@
-import type {
-  FeedbackCandidateProposalKind,
-  SourceUsefulnessOutcome
+import {
+  isReviewableFeedbackOutcome,
+  type FeedbackCandidateProposalKind,
+  type SourceUsefulnessOutcome
 } from "./feedback-delta.js";
 import type {
   ContextSubjectType
@@ -95,14 +96,6 @@ const usefulFeedbackOutcomes = [
   "selected",
   "used",
   "helped"
-] as const satisfies readonly SourceUsefulnessOutcome[];
-
-const maintenanceFeedbackOutcomes = [
-  "noise",
-  "stale",
-  "unknown",
-  "hurt",
-  "rejected"
 ] as const satisfies readonly SourceUsefulnessOutcome[];
 
 export const buildDecisionPacketSourceConsensus = (input: {
@@ -450,12 +443,11 @@ const sourceClaimIdsWithDecisionSupportFor = (
     : []
 ) ?? []);
 
-const sourceClaimIdsWithUsefulness = (
-  readModel: DecisionPacketReadModelInput,
-  outcomes: readonly SourceUsefulnessOutcome[]
+const sourceClaimIdsWithReviewableFeedback = (
+  readModel: DecisionPacketReadModelInput
 ): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-    outcome.sourceClaimId !== undefined && outcomes.includes(outcome.outcome)
+    outcome.sourceClaimId !== undefined && isReviewableFeedbackOutcome(outcome.outcome)
       ? [outcome.sourceClaimId]
       : []
   )
@@ -465,9 +457,7 @@ const caveatedSourceClaimIdsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => {
   const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
-  const maintenanceFeedbackSourceClaimIds = new Set(
-    sourceClaimIdsWithUsefulness(readModel, maintenanceFeedbackOutcomes)
-  );
+  const maintenanceFeedbackSourceClaimIds = new Set(sourceClaimIdsWithReviewableFeedback(readModel));
   const pendingAntiMemoryReviewSourceClaimIds = new Set(
     readModel.context.activationTrace?.candidates.flatMap((candidate) =>
       candidate.subjectType === "source_claim" &&
@@ -510,12 +500,15 @@ const knowledgeIdsWithUsefulness = (
   )
 ));
 
-const memoryRefsWithKnowledgeUsefulness = (
-  readModel: DecisionPacketReadModelInput,
-  outcomes: readonly SourceUsefulnessOutcome[]
+const memoryRefsWithReviewableKnowledgeFeedback = (
+  readModel: DecisionPacketReadModelInput
 ): string[] => {
   const memoryRefs = new Set(memoryRefsFor(readModel));
-  const knowledgeIds = knowledgeIdsWithUsefulness(readModel, outcomes);
+  const knowledgeIds = unique(readModel.feedbackDeltas.flatMap((feedback) =>
+    feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
+      isReviewableFeedbackOutcome(outcome.outcome) ? [outcome.knowledgeId] : []
+    )
+  ));
 
   return knowledgeIds.filter((knowledgeId) => memoryRefs.has(knowledgeId));
 };
@@ -732,7 +725,7 @@ export const buildDecisionPacketFromReadModel = (
   const noiseKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["noise"]);
   const unknownKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["unknown"]);
   const caveatedMemoryRefs = unique([
-    ...memoryRefsWithKnowledgeUsefulness(readModel, maintenanceFeedbackOutcomes),
+    ...memoryRefsWithReviewableKnowledgeFeedback(readModel),
     ...memoryRefsWithPendingAntiMemoryReview(readModel)
   ]);
   const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
