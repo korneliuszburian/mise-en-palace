@@ -261,18 +261,18 @@ const formatReviewEvalClosure = (preview: MaintenancePreview): string[] => [
   ...formatList(preview.reviewEvalClosure.forbiddenWrites)
 ];
 
-const formatCandidateLoop = (preview: MaintenancePreview): string[] => [
+const formatCandidateRouting = (preview: MaintenancePreview): string[] => [
   "Candidate routing:",
-  `mode: ${preview.manualCandidateLoop.mode}`,
-  `status: ${preview.manualCandidateLoop.status}`,
-  `nextAction: ${preview.manualCandidateLoop.nextAction}`,
-  `summary: ${preview.manualCandidateLoop.summary}`,
-  `inspectedCandidates: ${preview.manualCandidateLoop.inspectedCandidates}`,
-  `reviewableCandidates: ${preview.manualCandidateLoop.reviewableCandidates}`,
-  `doesNotProve: ${preview.manualCandidateLoop.doesNotProve}`,
-  `mutation: ${preview.manualCandidateLoop.mutation}`,
+  `mode: ${preview.manualCandidateRouting.mode}`,
+  `status: ${preview.manualCandidateRouting.status}`,
+  `nextAction: ${preview.manualCandidateRouting.nextAction}`,
+  `summary: ${preview.manualCandidateRouting.summary}`,
+  `inspectedCandidates: ${preview.manualCandidateRouting.inspectedCandidates}`,
+  `reviewableCandidates: ${preview.manualCandidateRouting.reviewableCandidates}`,
+  `doesNotProve: ${preview.manualCandidateRouting.doesNotProve}`,
+  `mutation: ${preview.manualCandidateRouting.mutation}`,
   "forbiddenWrites:",
-  ...formatList(preview.manualCandidateLoop.forbiddenWrites)
+  ...formatList(preview.manualCandidateRouting.forbiddenWrites)
 ];
 
 const formatCandidateReviewResult = (preview: MaintenancePreview): string[] => {
@@ -316,7 +316,7 @@ export const formatMaintenancePreview = (
     "",
     ...formatReviewEvalClosure(input.preview),
     "",
-    ...formatCandidateLoop(input.preview),
+    ...formatCandidateRouting(input.preview),
     ...(input.preview.candidateReviewResult === undefined
       ? []
       : ["", ...formatCandidateReviewResult(input.preview)]),

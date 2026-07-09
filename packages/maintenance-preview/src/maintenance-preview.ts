@@ -49,12 +49,12 @@ export type MaintenancePreviewReviewEvalNextAction =
   | "improve_candidate_evidence"
   | "seed_or_select_maintenance_candidate_state";
 
-export type MaintenancePreviewCandidateLoopStatus =
+export type MaintenancePreviewCandidateRoutingStatus =
   | "ready_for_operator_review"
   | "needs_candidate_evidence"
   | "no_candidates";
 
-export type MaintenancePreviewCandidateLoopNextAction =
+export type MaintenancePreviewCandidateRoutingNextAction =
   | "review_candidates_and_capture_evidence"
   | "improve_candidate_evidence"
   | "seed_or_select_maintenance_candidate_state";
@@ -88,11 +88,11 @@ export interface MaintenancePreviewReviewEvalClosure {
   ];
 }
 
-export interface MaintenancePreviewCandidateLoopReadback {
-  kind: "maintenance_candidate_loop";
+export interface MaintenancePreviewCandidateRoutingReadback {
+  kind: "maintenance_candidate_routing";
   mode: "manual_candidate_only";
-  status: MaintenancePreviewCandidateLoopStatus;
-  nextAction: MaintenancePreviewCandidateLoopNextAction;
+  status: MaintenancePreviewCandidateRoutingStatus;
+  nextAction: MaintenancePreviewCandidateRoutingNextAction;
   summary: string;
   inspectedCandidates: number;
   reviewableCandidates: number;
@@ -173,7 +173,7 @@ export interface MaintenancePreview {
   proof: string;
   doesNotProve: string;
   reviewEvalClosure: MaintenancePreviewReviewEvalClosure;
-  manualCandidateLoop: MaintenancePreviewCandidateLoopReadback;
+  manualCandidateRouting: MaintenancePreviewCandidateRoutingReadback;
   candidateReviewResult?: MaintenancePreviewCandidateReviewResult;
   priorityOrder: readonly [
     "memory_staleness",
@@ -207,7 +207,7 @@ const reviewEvalClosureForbiddenWrites = [
   "eval_candidates"
 ] as const;
 
-const candidateLoopForbiddenWrites = [
+const candidateRoutingForbiddenWrites = [
   "memory_records",
   "anti_memory_records",
   "source_claims",
@@ -233,8 +233,8 @@ const previewProof =
 const reviewEvalClosureDoesNotProve =
   "Maintenance preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous maintenance execution, or Memory Core mutation.";
 
-const candidateLoopDoesNotProve =
-  "Maintenance candidate loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.";
+const candidateRoutingDoesNotProve =
+  "Maintenance candidate routing readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.";
 
 const candidateReviewDoesNotProve =
   "Maintenance candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, maintenance daemon readiness, or Memory Core mutation.";
@@ -313,32 +313,32 @@ const buildReviewEvalClosure = (
   };
 };
 
-const buildCandidateLoopReadback = (
+const buildCandidateRoutingReadback = (
   candidates: readonly MaintenancePreviewCandidate[],
   reviewEvalClosure: MaintenancePreviewReviewEvalClosure
-): MaintenancePreviewCandidateLoopReadback => {
+): MaintenancePreviewCandidateRoutingReadback => {
   const reviewableCandidates = countReviewableCandidates(candidates);
   const statusByDecision = {
     ready_for_behavior_proof: "ready_for_operator_review",
     needs_more_evidence: "needs_candidate_evidence",
     no_reviewable_candidates: "no_candidates"
-  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateLoopStatus>;
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateRoutingStatus>;
   const nextActionByDecision = {
     ready_for_behavior_proof: "review_candidates_and_capture_evidence",
     needs_more_evidence: "improve_candidate_evidence",
     no_reviewable_candidates: "seed_or_select_maintenance_candidate_state"
-  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateLoopNextAction>;
+  } as const satisfies Record<MaintenancePreviewReviewEvalDecision, MaintenancePreviewCandidateRoutingNextAction>;
   const summaryByDecision = {
     ready_for_behavior_proof:
-      "Maintenance candidate loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+      "Maintenance candidate routing can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
     needs_more_evidence:
-      "Maintenance candidate loop found maintenance candidates, but their evidence is not ready for operator review.",
+      "Maintenance candidate routing found maintenance candidates, but their evidence is not ready for operator review.",
     no_reviewable_candidates:
-      "Maintenance candidate loop inspected current state but has no reviewable maintenance candidates to route."
+      "Maintenance candidate routing inspected current state but has no reviewable maintenance candidates to route."
   } as const satisfies Record<MaintenancePreviewReviewEvalDecision, string>;
 
   return {
-    kind: "maintenance_candidate_loop",
+    kind: "maintenance_candidate_routing",
     mode: "manual_candidate_only",
     status: statusByDecision[reviewEvalClosure.decision],
     nextAction: nextActionByDecision[reviewEvalClosure.decision],
@@ -346,8 +346,8 @@ const buildCandidateLoopReadback = (
     inspectedCandidates: candidates.length,
     reviewableCandidates,
     mutation: "none",
-    doesNotProve: candidateLoopDoesNotProve,
-    forbiddenWrites: candidateLoopForbiddenWrites
+    doesNotProve: candidateRoutingDoesNotProve,
+    forbiddenWrites: candidateRoutingForbiddenWrites
   };
 };
 
@@ -382,7 +382,7 @@ const buildCandidateReviewResult = (
     ...(candidate === undefined ? {} : { candidateReviewability: candidate.reviewability }),
     mutation: "none",
     doesNotProve: candidateReviewDoesNotProve,
-    forbiddenWrites: candidateLoopForbiddenWrites
+    forbiddenWrites: candidateRoutingForbiddenWrites
   };
 };
 
@@ -433,7 +433,7 @@ export const buildMaintenancePreview = (
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
   const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
-  const manualCandidateLoop = buildCandidateLoopReadback(candidates, reviewEvalClosure);
+  const manualCandidateRouting = buildCandidateRoutingReadback(candidates, reviewEvalClosure);
 
   return {
     generatedAt: input.now,
@@ -455,7 +455,7 @@ export const buildMaintenancePreview = (
     proof: previewProof,
     doesNotProve: previewDoesNotProve,
     reviewEvalClosure,
-    manualCandidateLoop,
+    manualCandidateRouting,
     ...(candidateReviewResult === undefined ? {} : { candidateReviewResult }),
     priorityOrder,
     forbiddenWrites

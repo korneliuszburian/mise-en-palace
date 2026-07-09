@@ -349,7 +349,7 @@ describe("runMaintenancePreviewCommand", () => {
           nextAction: "add_golden_behavior_case",
           mutation: "none"
         },
-        manualCandidateLoop: {
+        manualCandidateRouting: {
           mode: "manual_candidate_only",
           status: "ready_for_operator_review",
           nextAction: "review_candidates_and_capture_evidence",
@@ -1003,7 +1003,7 @@ describe("runMaintenancePreviewCommand", () => {
             nextAction: "add_golden_behavior_case",
             mutation: "none"
           },
-          manualCandidateLoop: {
+          manualCandidateRouting: {
             status: "ready_for_operator_review",
             nextAction: "review_candidates_and_capture_evidence",
             inspectedCandidates: 1,

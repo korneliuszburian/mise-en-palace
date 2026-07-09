@@ -119,18 +119,18 @@ describe("brain maintenance preview", () => {
         "eval_candidates"
       ]
     });
-    expect(result.manualCandidateLoop).toEqual({
-      kind: "maintenance_candidate_loop",
+    expect(result.manualCandidateRouting).toEqual({
+      kind: "maintenance_candidate_routing",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
       summary:
-        "Maintenance candidate loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+        "Maintenance candidate routing can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
       inspectedCandidates: 2,
       reviewableCandidates: 2,
       mutation: "none",
       doesNotProve:
-        "Maintenance candidate loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.",
+        "Maintenance candidate routing readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, maintenance daemon readiness, or Memory Core mutation.",
       forbiddenWrites: [
         "memory_records",
         "anti_memory_records",
@@ -233,8 +233,8 @@ describe("brain maintenance preview", () => {
       nextAction: "add_golden_behavior_case",
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toMatchObject({
-      kind: "maintenance_candidate_loop",
+    expect(result.manualCandidateRouting).toMatchObject({
+      kind: "maintenance_candidate_routing",
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       nextAction: "review_candidates_and_capture_evidence",
@@ -292,7 +292,7 @@ describe("brain maintenance preview", () => {
       "review-evidence/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
     ]);
     expect(result.reviewEvalClosure.forbiddenWrites).toContain("eval_candidates");
-    expect(result.manualCandidateLoop.forbiddenWrites).toContain("maintenance_queue_records");
+    expect(result.manualCandidateRouting.forbiddenWrites).toContain("maintenance_queue_records");
     expect(result.mutation).toBe("none");
   });
 
@@ -349,7 +349,7 @@ describe("brain maintenance preview", () => {
       candidateIds: ["consensus-candidate-evaluation:consensus-duplicate-source-relation"],
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toMatchObject({
+    expect(result.manualCandidateRouting).toMatchObject({
       status: "ready_for_operator_review",
       inspectedCandidates: 1,
       reviewableCandidates: 1,
@@ -574,7 +574,7 @@ describe("brain maintenance preview", () => {
       nextAction: "add_golden_behavior_case",
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toMatchObject({
+    expect(result.manualCandidateRouting).toMatchObject({
       mode: "manual_candidate_only",
       status: "ready_for_operator_review",
       reviewableCandidates: 1,
@@ -621,7 +621,7 @@ describe("brain maintenance preview", () => {
       nextAction: "seed_or_select_maintenance_candidate_state",
       mutation: "none"
     });
-    expect(result.manualCandidateLoop).toMatchObject({
+    expect(result.manualCandidateRouting).toMatchObject({
       mode: "manual_candidate_only",
       status: "no_candidates",
       nextAction: "seed_or_select_maintenance_candidate_state",
@@ -629,6 +629,6 @@ describe("brain maintenance preview", () => {
       reviewableCandidates: 0,
       mutation: "none"
     });
-    expect(result.manualCandidateLoop.forbiddenWrites).toContain("maintenance_queue_records");
+    expect(result.manualCandidateRouting.forbiddenWrites).toContain("maintenance_queue_records");
   });
 });
