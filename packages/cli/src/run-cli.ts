@@ -45,7 +45,8 @@ import {
   formatMemoryAntiAddUsage,
   formatMemoryAntiProposeUsage,
   formatMemoryAntiPromoteUsage,
-  formatMemoryAntiRejectUsage
+  formatMemoryAntiRejectUsage,
+  formatMemoryUsage
 } from "./parse-memory-args.js";
 import {
   formatSourceClaimAddUsage,
@@ -159,6 +160,7 @@ const helpRenderers = {
   brainRecallHelp: formatBrainRecallUsage,
   decisionPacketHelp: formatDecisionPacketUsage,
   maintenanceHelp: formatMaintenanceUsage,
+  memoryHelp: formatMemoryUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
   memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,

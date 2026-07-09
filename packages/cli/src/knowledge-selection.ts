@@ -323,11 +323,11 @@ export const unavailableKnowledgeSelection = (
     recommendedNextAction: targetFitSummary.recommendedUse,
     reason,
     doesNotProve:
-      "Unavailable brain recall readback does not prove no relevant knowledge exists; run brain recall readback before making selection claims.",
+      "Unavailable memory recall readback does not prove no relevant knowledge exists; run memory recall readback before making selection claims.",
     proof: {
-      proves: ["plan recorded an explicit brain recall readback failure"],
+      proves: ["plan recorded an explicit memory recall readback failure"],
       doesNotProve: [
-        "brain recall catalog completeness",
+        "memory recall catalog completeness",
         "knowledge relevance",
         "implementation correctness"
       ]

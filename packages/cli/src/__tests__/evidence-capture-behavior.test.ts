@@ -49,7 +49,7 @@ const proof = (
   summary,
   evidenceRefs,
   doesNotProve:
-    "This CLI behavior proof does not prove Memory Brain product readiness, activation quality, DB persistence, or reflection quality."
+    "This CLI behavior proof does not prove Memory Core product readiness, activation quality, DB persistence, or reflection quality."
 });
 
 const toBehaviorFixture = (task: BehaviorFixtureInput): BehaviorFixture => ({
@@ -140,9 +140,9 @@ const knowledgeUsefulnessExpectation: OutputExpectation = {
     "pnpm typecheck: passed | provenance=operator_reported",
     "knowledgeUsefulnessOutcomes:",
     "outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state",
-    "reason: Knowledge selected the unknown-first parser shape",
+    "reason: Memory selected the unknown-first parser shape",
     "evidenceRef: packages/cli/src/run-evidence-capture-command.ts",
-    "doesNotProve: Does not prove future knowledge recall quality"
+    "doesNotProve: Does not prove future memory recall quality"
   ],
   excludes: [
     "Memory mutation: applied"
@@ -221,8 +221,8 @@ describe("evidence capture behavior fixture", () => {
       "packages/cli/src/run-evidence-capture-command.ts",
       "--verification",
       "pnpm typecheck=passed",
-      "--knowledge-usefulness",
-      "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future knowledge recall quality"
+      "--memory-usefulness",
+      "knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|packages/cli/src/run-evidence-capture-command.ts|Does not prove future memory recall quality"
     ], {
       env: {},
       cwd: process.cwd(),

@@ -237,7 +237,7 @@ const knowledgePayload = (
   readModels: readonly BrainRankingReadModelFixture[]
 ): string =>
   JSON.stringify({
-    kind: "krn.brain.recall.readback.v1",
+    kind: "krn.memory.recall.readback.v1",
     returnedReadModels: readModels.length,
     totalReadModels: readModels.length,
     readModels,
@@ -390,10 +390,10 @@ export const runBrainRankingEval = async (
     cases,
     proof: {
       proves: [
-        "brain search selected expected proxy-labeled knowledge packets for the fixture query set",
+        "memory search selected expected proxy-labeled knowledge packets for the fixture query set",
         "brain ranking fixture reports corpus name, corpus size, distractor classes, and per-case baseline failure rationale",
-        "brain search reports recall@k over expected proxy-labeled selectedKnowledge ids",
-        "catalog-backed and source-backed brain-search readbacks were exercised without DB mutation",
+        "memory search reports recall@k over expected proxy-labeled selectedKnowledge ids",
+        "catalog-backed and source-backed memory-search readbacks were exercised without DB mutation",
         "future changes that drop expected selectedKnowledge from top-k will fail this eval"
       ],
       doesNotProve: [

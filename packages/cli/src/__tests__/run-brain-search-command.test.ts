@@ -13,7 +13,7 @@ import type {
 } from "../database-runtime.js";
 
 describe("runBrainSearchCommand", () => {
-  it("combines brain recall and source search into a read-only brain preview", async () => {
+  it("combines memory recall and source search into a read-only brain preview", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
       env: {
@@ -37,7 +37,7 @@ describe("runBrainSearchCommand", () => {
 
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.recall.readback.v1",
+            kind: "krn.memory.recall.readback.v1",
             returnedReadModels: 1,
             totalReadModels: 1,
             readModels: [{
@@ -96,11 +96,11 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      kind: "krn.brainSearch.preview.v1",
+      kind: "krn.memorySearch.preview.v1",
       access: "read_only",
       mutation: "none",
       query: "source-to-decision",
-      brainRecallReadback: "fixture_catalog",
+      memoryRecallReadback: "fixture_catalog",
       knowledgeReadModels: {
         returnedReadModels: 1,
         totalReadModels: 1,
@@ -133,7 +133,7 @@ describe("runBrainSearchCommand", () => {
     });
     expect(JSON.stringify(parsed)).toContain("matching knowledge");
     expect(JSON.stringify(parsed)).toContain(
-      "existing brain recall fixture catalog readback was executed as bootstrap/fixture input for this query"
+      "existing memory recall fixture catalog readback was executed as bootstrap/fixture input for this query"
     );
     expect(JSON.stringify(parsed)).toContain("fixture catalog knowledge is runtime memory");
     expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
@@ -193,9 +193,9 @@ describe("runBrainSearchCommand", () => {
       }
     });
 
-    expect(result.stdout).toContain("KRN Brain Search Preview");
+    expect(result.stdout).toContain("KRN Memory Search Preview");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Brain recall readback: store_backed");
+    expect(result.stdout).toContain("Memory recall readback: store_backed");
     expect(result.stdout).toContain("Recall read models:");
     expect(result.stdout).toContain("readModelIds: none");
     expect(result.stdout).toContain("graphAware: false");
@@ -294,7 +294,7 @@ describe("runBrainSearchCommand", () => {
       "graph sourceclaimedge"
     ]);
     expect(parsed).toMatchObject({
-      brainRecallQueries: [
+      memoryRecallQueries: [
         "graph sourceclaimedge relation temporal source relations",
         "graph sourceclaimedge"
       ],
@@ -395,7 +395,7 @@ describe("runBrainSearchCommand", () => {
       "maintenance dreaming"
     ]);
     expect(parsed).toMatchObject({
-      brainRecallQueries: [
+      memoryRecallQueries: [
         "maintenance dreaming source relation evidence",
         "maintenance dreaming"
       ],
@@ -499,7 +499,7 @@ describe("runBrainSearchCommand", () => {
       "reference implementation recipe"
     ]);
     expect(parsed).toMatchObject({
-      brainRecallQueries: [
+      memoryRecallQueries: [
         "prove retained reference implementation recipe through local code exemplar",
         "prove reference implementation recipe",
         "prove reference implementation",
@@ -574,7 +574,7 @@ describe("runBrainSearchCommand", () => {
     expect(knowledgeQueries[0]).toBe("alpha beta gamma delta epsilon zeta eta theta");
   });
 
-  it("derives store-backed selected knowledge from source claims in store-backed brain search", async () => {
+  it("derives store-backed selected knowledge from source claims in store-backed memory search", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
       env: {
@@ -590,7 +590,7 @@ describe("runBrainSearchCommand", () => {
         format: "json"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -601,9 +601,9 @@ describe("runBrainSearchCommand", () => {
                 label: "source_claim:claim-1",
                 subjectId: "claim-1",
                 sourceClaimId: "claim-1",
-                claim: "Store-backed brain search should derive selected knowledge from source evidence.",
+                claim: "Store-backed memory search should derive selected knowledge from source evidence.",
                 mechanism: "Source search already returns governed SourceClaim fields.",
-                krnImplication: "Brain search can surface selected knowledge without file-backed catalog readModels.",
+                krnImplication: "Memory search can surface selected knowledge without file-backed catalog readModels.",
                 consumer: "IMR-00 brain knowledge",
                 falsifier: "Store-backed search with governed source evidence returns empty selectedKnowledge.",
                 doesNotProve: "This does not prove ranking quality.",
@@ -634,13 +634,13 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
+      memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
           id: "claim-1",
-          title: "Store-backed brain search should derive selected knowledge from source evidence.",
-          summary: "Brain search can surface selected knowledge without file-backed catalog readModels.",
+          title: "Store-backed memory search should derive selected knowledge from source evidence.",
+          summary: "Memory search can surface selected knowledge without file-backed catalog readModels.",
           source: "source_search",
           reviewability: "ready",
           consumers: ["IMR-00 brain knowledge"],
@@ -649,7 +649,7 @@ describe("runBrainSearchCommand", () => {
           nextAction: "use"
         }],
         doesNotProve: [
-          "brain recall fixture catalog readback is unavailable in product brain search"
+          "memory recall fixture catalog readback is unavailable in product memory search"
         ]
       },
       sourceSearch: {
@@ -659,9 +659,9 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "brain recall fixture catalog readback is unavailable in product brain search",
+          "memory recall fixture catalog readback is unavailable in product memory search",
           "existing source-search answer package was executed for this query",
-          "brain search combined both readbacks without mutating KRN state"
+          "memory search combined both readbacks without mutating KRN state"
         ]
       }
     });
@@ -669,7 +669,7 @@ describe("runBrainSearchCommand", () => {
     expect(JSON.stringify(parsed)).not.toContain("memory_store");
   });
 
-  it("derives store-backed selected knowledge from DB MemoryRecords in store-backed brain search", async () => {
+  it("derives store-backed selected knowledge from DB MemoryRecords in store-backed memory search", async () => {
     const memoryRecord: MemoryRecord = {
       id: "memory-record-1",
       projectId: "project-1",
@@ -693,7 +693,7 @@ describe("runBrainSearchCommand", () => {
       negativeFeedbackCount: 0,
       metadata: {
         mechanism: "External review falsifies the local done-claim after a large slice.",
-        krnImplication: "Brain search should expose reviewer evidence only as advisory memory beside source-search support.",
+        krnImplication: "Memory search should expose reviewer evidence only as advisory memory beside source-search support.",
         evidenceRefs: ["review:external-loop-1"],
         consumers: ["kernel-development", "slice-closure"],
         falsifier: "Reviewer prose overrides local verification evidence.",
@@ -743,7 +743,7 @@ describe("runBrainSearchCommand", () => {
         };
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch(runtime) {
         expect(runtime.command.projectId).toBe("project-explicit");
@@ -756,7 +756,7 @@ describe("runBrainSearchCommand", () => {
                 sourceClaimId: "source-claim-1",
                 claim: "External review can challenge larger KRN slices.",
                 mechanism: "A governed source claim names mechanism, implication, consumer, and falsifier.",
-                krnImplication: "Brain search should keep source support visible next to selected memory.",
+                krnImplication: "Memory search should keep source support visible next to selected memory.",
                 consumer: "kernel-development",
                 falsifier: "The source-search packet is hidden when MemoryRecord readback succeeds.",
                 doesNotProve: "This does not prove source truth."
@@ -787,8 +787,8 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
-      brainRecallQueries: ["external review after large slice"],
+      memoryRecallReadback: "store_backed",
+      memoryRecallQueries: ["external review after large slice"],
       knowledgeReadModels: {
         returnedReadModels: 1,
         readModelIds: ["memory-record-1"],
@@ -796,7 +796,7 @@ describe("runBrainSearchCommand", () => {
           id: "memory-record-1",
           source: "memory_store",
           mechanism: "External review falsifies the local done-claim after a large slice.",
-          krnImplication: "Brain search should expose reviewer evidence only as advisory memory beside source-search support.",
+          krnImplication: "Memory search should expose reviewer evidence only as advisory memory beside source-search support.",
           reviewability: "ready",
           consumers: ["kernel-development", "slice-closure"],
           falsifier: "Reviewer prose overrides local verification evidence.",
@@ -925,7 +925,7 @@ describe("runBrainSearchCommand", () => {
         };
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -959,7 +959,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
+      memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
         returnedReadModels: 1,
         readModelIds: ["memory-record-current"],
@@ -972,7 +972,7 @@ describe("runBrainSearchCommand", () => {
     expect(JSON.stringify(parsed)).not.toContain("memory-record-stale");
   });
 
-  it("keeps store-backed brain search resilient when DB memory readback is unavailable", async () => {
+  it("keeps store-backed memory search resilient when DB memory readback is unavailable", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
       env: {
@@ -991,7 +991,7 @@ describe("runBrainSearchCommand", () => {
         throw new Error("database unavailable");
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1024,12 +1024,12 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
+      memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [],
         doesNotProve: [
-          "brain recall fixture catalog readback is unavailable in product brain search",
+          "memory recall fixture catalog readback is unavailable in product memory search",
           "DB memory-store readback was unavailable: database unavailable"
         ]
       }
@@ -1053,7 +1053,7 @@ describe("runBrainSearchCommand", () => {
         format: "json"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1153,7 +1153,7 @@ describe("runBrainSearchCommand", () => {
         format: "json"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1299,7 +1299,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "fixture_catalog",
+      memoryRecallReadback: "fixture_catalog",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
@@ -1339,7 +1339,7 @@ describe("runBrainSearchCommand", () => {
         format: "json"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1378,7 +1378,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
+      memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: [{
@@ -1409,7 +1409,7 @@ describe("runBrainSearchCommand", () => {
         format: "json"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1442,7 +1442,7 @@ describe("runBrainSearchCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     expect(parsed).toMatchObject({
-      brainRecallReadback: "store_backed",
+      memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
         returnedReadModels: 0,
         selectedKnowledge: []
@@ -1453,9 +1453,9 @@ describe("runBrainSearchCommand", () => {
       },
       proof: {
         proves: [
-          "brain recall fixture catalog readback is unavailable in product brain search",
+          "memory recall fixture catalog readback is unavailable in product memory search",
           "existing source-search answer package was executed for this query",
-          "brain search combined both readbacks without mutating KRN state"
+          "memory search combined both readbacks without mutating KRN state"
         ]
       }
     });
@@ -1581,7 +1581,7 @@ describe("runBrainSearchCommand", () => {
         format: "text"
       },
       async runBrainRecall() {
-        throw new Error("store-backed brain search should not read file catalogs");
+        throw new Error("store-backed memory search should not read file catalogs");
       },
       async runSourceSearch() {
         return {
@@ -1659,7 +1659,7 @@ describe("runBrainSearchCommand", () => {
       async runBrainRecall() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.recall.readback.v1",
+            kind: "krn.memory.recall.readback.v1",
             returnedReadModels: 0,
             totalReadModels: 0,
             readModels: [],
@@ -1718,7 +1718,7 @@ describe("runBrainSearchCommand", () => {
       async runBrainRecall() {
         return {
           stdout: JSON.stringify({
-            kind: "krn.brain.recall.readback.v1",
+            kind: "krn.memory.recall.readback.v1",
             returnedReadModels: 0,
             totalReadModels: 0,
             readModels: [],
@@ -1785,7 +1785,7 @@ describe("runBrainSearchCommand", () => {
         missingEvidence: ["governed SourceClaim evidence"]
       },
       recommendedNextAction:
-        "Do not infer product truth from store-backed brain search; seed or persist governed source evidence first."
+        "Do not infer product truth from store-backed memory search; seed or persist governed source evidence first."
     });
     expect(sourceGroundedJson).toMatchObject({
       knowledgeReadModels: {
@@ -1804,7 +1804,7 @@ describe("runBrainSearchCommand", () => {
         missingEvidence: []
       },
       recommendedNextAction:
-        "Use the store-backed source/search evidence cautiously; use fixture-catalog brain search only for explicit test/import readbacks."
+        "Use the store-backed source/search evidence cautiously; use fixture-catalog memory search only for explicit test/import readbacks."
     });
   });
 
@@ -1927,7 +1927,7 @@ describe("runBrainSearchCommand", () => {
 
       expect(parsed).toMatchObject({
         query: entry.query,
-        brainRecallReadback: "store_backed",
+        memoryRecallReadback: "store_backed",
         knowledgeReadModels: {
           selectedKnowledge: [{
             id: entry.claimId,
@@ -1945,7 +1945,7 @@ describe("runBrainSearchCommand", () => {
           missingEvidence: []
         }
       });
-      expect(JSON.stringify(parsed)).toContain("brain search combined both readbacks without mutating KRN state");
+      expect(JSON.stringify(parsed)).toContain("memory search combined both readbacks without mutating KRN state");
       expect(JSON.stringify(parsed)).not.toContain("governed SourceClaim evidence");
     }
   });

@@ -8,16 +8,16 @@ describe("brainRecallQuery", () => {
   it("keeps a bounded dogfood mechanism retry list", () => {
     expect(
       compactBrainRecallBridgeQueries(
-        "unknown first brain recall dogfood evidence feedback"
+        "unknown first memory recall dogfood evidence feedback"
       )
     ).toEqual([
-      "unknown first brain recall",
-      "unknown first brain",
-      "first brain recall",
-      "brain recall feedback",
+      "unknown first memory recall",
+      "unknown first memory",
+      "first memory recall",
+      "memory recall feedback",
       "unknown first",
-      "first brain",
-      "brain recall",
+      "first memory",
+      "memory recall",
       "recall feedback"
     ]);
   });

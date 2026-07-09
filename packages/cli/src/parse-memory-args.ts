@@ -11,6 +11,14 @@ import {
   optionValue,
   parsePersistedMetadataToken
 } from "./parse-cli-options.js";
+import {
+  formatBrainSearchUsage,
+  parseBrainSearchArgs
+} from "./parse-brain-args.js";
+import {
+  formatBrainRecallUsage,
+  parseBrainRecallArgs
+} from "./parse-brain-recall-args.js";
 
 export const formatMemoryCandidateAddUsage = (): string =>
   [
@@ -147,25 +155,26 @@ export const formatMemoryAntiRejectUsage = (): string =>
 
 export const formatMemoryKnowledgeSeedUsage = (): string =>
   [
-    "Usage: krn memory knowledge seed --file <catalog.json> [--persist] [--dry-run]",
+    "Usage: krn memory seed --file <catalog.json> [--persist] [--dry-run]",
     "",
-    "Seeds knowledge decisions from a corpus catalog JSON into store-backed memory_records",
-    "so the brain reads procedural knowledge from the DB instead of JSON files.",
-    "Idempotent: re-runs skip knowledge already seeded (matched by metadata.knowledgeId).",
-    "--dry-run lists knowledge decisions without writing; --persist writes to the DB."
+    "Seeds reviewed memory decisions from a corpus catalog JSON into store-backed memory_records.",
+    "Idempotent: re-runs skip decisions already seeded (matched by metadata.knowledgeId).",
+    "--dry-run lists decisions without writing; --persist writes to the DB."
   ].join("\n") + "\n";
 
 export const formatMemoryKnowledgeProposeUsage = (): string =>
   [
-    "Usage: krn memory knowledge propose [--project <project-id>] [--limit <n>] [--persist]",
+    "Usage: krn memory propose [--project <project-id>] [--limit <n>] [--persist]",
     "",
     "Proposes MemoryCandidate rows from store-backed SourceDecision support.",
     "Preview mode reads source decisions and existing memory, but does not write.",
     "--persist creates MemoryCandidate rows only; it never promotes MemoryRecord truth."
   ].join("\n") + "\n";
 
-const formatMemoryUsage = (): string =>
+export const formatMemoryUsage = (): string =>
   [
+    formatBrainSearchUsage().trim(),
+    formatBrainRecallUsage().trim(),
     formatMemoryCandidateAddUsage().trim(),
     formatMemoryCandidatePromoteUsage().trim(),
     formatMemoryCandidateRejectUsage().trim(),
@@ -644,7 +653,7 @@ const parseMemoryKnowledgeSeedToken = (
     const value = optionValue(rest, index, "--file");
 
     if (value.error !== undefined || value.value === undefined) {
-      return memoryError(value.error ?? "krn memory knowledge seed --file requires a catalog.json path");
+      return memoryError(value.error ?? "krn memory seed --file requires a catalog.json path");
     }
 
     memoryCommand.catalogFile = value.value;
@@ -652,7 +661,7 @@ const parseMemoryKnowledgeSeedToken = (
     return memoryNext(value.nextIndex);
   }
 
-  return memoryError(`Unknown krn memory knowledge seed option: ${token ?? ""}`);
+  return memoryError(`Unknown krn memory seed option: ${token ?? ""}`);
 };
 
 const parsePositiveInteger = (
@@ -745,9 +754,10 @@ const parseMemoryProjectLimitToken = (
 const parseMemoryTokenLoop = (
   rest: readonly string[],
   parseToken: (index: number) => MemoryTokenParseResult,
-  helpCommand: CliCommand
+  helpCommand: CliCommand,
+  startIndex = 2
 ): ParseArgsResult | undefined => {
-  for (let index = 2; index < rest.length; index += 1) {
+  for (let index = startIndex; index < rest.length; index += 1) {
     const parsed = parseToken(index);
 
     if (parsed.kind === "help") {
@@ -1039,7 +1049,7 @@ const parseMemoryAntiRejectArgs = (rest: readonly string[]): ParseArgsResult => 
 };
 
 const parseMemoryKnowledgeSeedArgs = (rest: readonly string[]): ParseArgsResult => {
-  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+  if (rest.length === 2 && (rest[1] === "--help" || rest[1] === "-h")) {
     return {
       command: {
         kind: "memoryKnowledgeSeedHelp"
@@ -1059,7 +1069,8 @@ const parseMemoryKnowledgeSeedArgs = (rest: readonly string[]): ParseArgsResult 
     (index) => parseMemoryKnowledgeSeedToken(rest, index, memoryCommand),
     {
       kind: "memoryKnowledgeSeedHelp"
-    }
+    },
+    1
   );
 
   if (parsed !== undefined) {
@@ -1068,7 +1079,7 @@ const parseMemoryKnowledgeSeedArgs = (rest: readonly string[]): ParseArgsResult 
 
   if (memoryCommand.catalogFile.length === 0) {
     return {
-      error: "krn memory knowledge seed requires --file <catalog.json>"
+      error: "krn memory seed requires --file <catalog.json>"
     };
   }
 
@@ -1078,7 +1089,7 @@ const parseMemoryKnowledgeSeedArgs = (rest: readonly string[]): ParseArgsResult 
 };
 
 const parseMemoryKnowledgeProposeArgs = (rest: readonly string[]): ParseArgsResult => {
-  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+  if (rest.length === 2 && (rest[1] === "--help" || rest[1] === "-h")) {
     return {
       command: {
         kind: "memoryKnowledgeProposeHelp"
@@ -1097,11 +1108,12 @@ const parseMemoryKnowledgeProposeArgs = (rest: readonly string[]): ParseArgsResu
       rest,
       index,
       memoryCommand,
-      "krn memory knowledge propose"
+      "krn memory propose"
     ),
     {
       kind: "memoryKnowledgeProposeHelp"
-    }
+    },
+    1
   );
 
   if (parsed !== undefined) {
@@ -1157,13 +1169,31 @@ const memorySubcommandParsers = new Map<string, (rest: readonly string[]) => Par
   ["candidate add", parseMemoryCandidateAddArgs],
   ["candidate promote", parseMemoryCandidatePromoteArgs],
   ["candidate reject", parseMemoryCandidateRejectArgs],
-  ["knowledge propose", parseMemoryKnowledgeProposeArgs],
-  ["knowledge seed", parseMemoryKnowledgeSeedArgs],
+  ["propose", parseMemoryKnowledgeProposeArgs],
+  ["recall", (rest) => parseBrainRecallArgs(rest.slice(1))],
+  ["search", (rest) => parseBrainSearchArgs(rest.slice(1))],
+  ["seed", parseMemoryKnowledgeSeedArgs],
   ["record apply", parseMemoryRecordApplyArgs]
 ]);
 
+const memorySubcommandKey = (rest: readonly string[]): string => {
+  const first = rest[0] ?? "";
+
+  return first === "propose" || first === "recall" || first === "search" || first === "seed"
+    ? first
+    : `${first} ${rest[1] ?? ""}`;
+};
+
 export const parseMemoryArgs = (rest: readonly string[]): ParseArgsResult => {
-  const parser = memorySubcommandParsers.get(`${rest[0] ?? ""} ${rest[1] ?? ""}`);
+  if (rest[0] === undefined || rest[0] === "--help" || rest[0] === "-h") {
+    return {
+      command: {
+        kind: "memoryHelp"
+      }
+    };
+  }
+
+  const parser = memorySubcommandParsers.get(memorySubcommandKey(rest));
 
   if (parser !== undefined) {
     return parser(rest);

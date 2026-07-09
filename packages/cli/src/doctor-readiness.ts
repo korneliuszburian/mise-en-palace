@@ -25,48 +25,48 @@ export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]
 
   if (postgresStatus?.startsWith("not configured") === true) {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
     };
   }
 
   if (postgresStatus?.startsWith("configured but unreachable") === true) {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (Postgres unreachable)"
     };
   }
 
   if (pgvectorStatus === "available" && migrationStatus?.startsWith("verified") === true) {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "ready"
     };
   }
 
   if (pgvectorStatus === "missing" && migrationStatus?.startsWith("verified") === true) {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (pgvector missing)"
     };
   }
 
   if (pgvectorStatus === "available" && migrationStatus === "migration table missing") {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (migrations not applied)"
     };
   }
 
   if (pgvectorStatus === "available" && migrationStatus?.startsWith("unverified") === true) {
     return {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (migrations unverified)"
     };
   }
 
   return {
-    label: "Brain store readiness",
+    label: "Memory store readiness",
     status: "incomplete (pgvector and migrations must be ready)"
   };
 };
@@ -155,7 +155,7 @@ export const deriveHarnessPersistenceReadiness = (
   if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
     return {
       label: "Harness persistence readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -214,7 +214,7 @@ export const deriveSourceGraphReadiness = (
   if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
     return {
       label: "Source graph readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -307,7 +307,7 @@ export const deriveMemoryGovernanceReadiness = (
   if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
     return {
       label: "Memory governance readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -397,7 +397,7 @@ export const deriveRetrievalSubstrateReadiness = (
   if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
     return {
       label: "Retrieval substrate readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -483,7 +483,7 @@ export const deriveActivationReadiness = (
   if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
     return {
       label: "Activation readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -624,7 +624,7 @@ export const deriveCodexAdapterReadiness = (
   if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Codex adapter readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -735,7 +735,7 @@ export const deriveMaintenanceQueueReadiness = (
   if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Maintenance queue readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 
@@ -847,7 +847,7 @@ export const deriveTargetRepoReadiness = (
   if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
     return {
       label: "Target repo readiness",
-      status: "blocked (brain store not ready)"
+      status: "blocked (memory store not ready)"
     };
   }
 

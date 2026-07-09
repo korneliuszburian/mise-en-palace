@@ -67,7 +67,7 @@ const knowledgeSource = (id: string): SourceDecisionKnowledgeSource => ({
 const memoryCandidateWithSourceDecision = (sourceDecisionId: string): MemoryCandidate => ({
   id: `memory-candidate-${sourceDecisionId}`,
   projectId: "project-1",
-  proposedBy: "krn memory knowledge propose",
+  proposedBy: "krn memory propose",
   kind: "procedure",
   status: "candidate",
   summary: "Existing candidate",
@@ -94,7 +94,7 @@ describe("sourceDecisionKnowledgeSourceToMemoryCandidateInput", () => {
 
     expect(input).toMatchObject({
       projectId: "project-1",
-      proposedBy: "krn memory knowledge propose",
+      proposedBy: "krn memory propose",
       kind: "procedure",
       summary: "Use source decisions to propose reviewed knowledge.",
       owner: "memory knowledge proposal",
@@ -214,7 +214,7 @@ describe("runMemoryKnowledgeProposeCommand", () => {
           };
         },
         async promoteReviewedMemoryCandidate(): Promise<never> {
-          throw new Error("memory knowledge propose must not promote MemoryRecord truth");
+          throw new Error("memory propose must not promote MemoryRecord truth");
         }
       } as DatabaseRuntime["memoryRepository"],
       async close() {

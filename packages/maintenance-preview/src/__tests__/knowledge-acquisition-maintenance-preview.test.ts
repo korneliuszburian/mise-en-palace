@@ -16,7 +16,7 @@ describe("knowledge acquisition maintenance preview", () => {
       requests: [
         {
           id: "ama-missing-evidence",
-          source: "brain_search",
+          source: "memory_search",
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: [
             "source-search missing evidence should produce acquisition candidates",
@@ -44,7 +44,7 @@ describe("knowledge acquisition maintenance preview", () => {
         action: "propose_knowledge_acquisition",
         reason: "missing_evidence",
         requestId: "ama-missing-evidence",
-        source: "brain_search",
+        source: "memory_search",
         reviewability: "ready",
         mutation: "none",
         forbiddenWrites: [
@@ -186,7 +186,7 @@ describe("knowledge acquisition maintenance preview", () => {
       requests: [
         {
           id: "linked-document-request",
-          source: "brain_search",
+          source: "memory_search",
           query: "artifact-linked source claims",
           missingEvidence: ["included SearchDocument evidence"],
           linkedDocumentEvidence: {
@@ -250,7 +250,7 @@ describe("knowledge acquisition maintenance preview", () => {
       requests: [
         {
           id: "activation-utility-request",
-          source: "brain_search",
+          source: "memory_search",
           query: "Autonomous Memory Agents exploration",
           missingEvidence: ["selected knowledge is missing while linked evidence is useful"],
           activationUtilityEvidence: {

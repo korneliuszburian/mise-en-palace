@@ -18,13 +18,13 @@ import type {
 } from "./parse-args.js";
 
 const brainRecallUsage = [
-  "Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--project <project-id>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
-  "krn brain recall [--text unknown-first]",
-  "krn brain recall --fixture-read-model-file tests/fixtures/brain-knowledge/read-models/example.json [--text unknown-first]",
-  "krn brain recall --fixture-decision-file tests/fixtures/brain-knowledge/corpus/knowledge/example.json [--text unknown-first]",
-  "krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json [--text unknown-first]",
+  "krn memory recall [--text unknown-first]",
+  "krn memory recall --fixture-read-model-file tests/fixtures/brain-knowledge/read-models/example.json [--text unknown-first]",
+  "krn memory recall --fixture-decision-file tests/fixtures/brain-knowledge/corpus/knowledge/example.json [--text unknown-first]",
+  "krn memory recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json [--text unknown-first]",
   "  note: no fixture source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL; fixture file options are explicit test/import readbacks, not product memory",
   "  proof boundary: valid output proves only that the selected read source parsed and local filters were applied"
 ].join("\n");
@@ -86,7 +86,7 @@ const parseAllowedOption = <T extends string>(
   if (!isAllowed(required.value, allowed)) {
     return {
       ok: false,
-      error: `Unsupported brain recall ${label}: ${required.value}\n${formatBrainRecallUsage()}`
+      error: `Unsupported memory recall ${label}: ${required.value}\n${formatBrainRecallUsage()}`
     };
   }
 
@@ -104,7 +104,7 @@ const parsePositiveInteger = (
   if (!/^[1-9]\d*$/u.test(trimmed)) {
     return {
       ok: false,
-      error: `Unsupported brain recall limit: ${value}`
+      error: `Unsupported memory recall limit: ${value}`
     };
   }
 
@@ -113,7 +113,7 @@ const parsePositiveInteger = (
   if (!Number.isSafeInteger(parsed)) {
     return {
       ok: false,
-      error: `Unsupported brain recall limit: ${value}`
+      error: `Unsupported memory recall limit: ${value}`
     };
   }
 
@@ -410,7 +410,7 @@ export const parseBrainRecallArgs = (args: readonly string[]): ParseArgsResult =
 
     if (parser === undefined) {
       return {
-        error: `Unsupported brain recall argument: ${arg}\n${formatBrainRecallUsage()}`
+        error: `Unsupported memory recall argument: ${arg}\n${formatBrainRecallUsage()}`
       };
     }
 

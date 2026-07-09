@@ -5,7 +5,7 @@ import {
 } from "../parse-brain-recall-args.js";
 
 describe("parseBrainRecallArgs", () => {
-  it("parses brain recall readback preview", () => {
+  it("parses memory recall readback preview", () => {
     expect(parseBrainRecallArgs([
       "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/readModels/ts-boundary-unknown-first-result-state.json",
@@ -216,7 +216,7 @@ describe("parseBrainRecallArgs", () => {
         flag,
         ...(flag === "--catalog-file" ? ["tests/fixtures/brain-knowledge/corpus/catalog.json"] : [])
       ])).toEqual({
-        error: expect.stringContaining(`Unsupported brain recall argument: ${flag}`)
+        error: expect.stringContaining(`Unsupported memory recall argument: ${flag}`)
       });
     }
   });
@@ -228,7 +228,7 @@ describe("parseBrainRecallArgs", () => {
       "--kind",
       "everything"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported brain recall kind: everything")
+      error: expect.stringContaining("Unsupported memory recall kind: everything")
     });
   });
 
@@ -239,7 +239,7 @@ describe("parseBrainRecallArgs", () => {
       "--usefulness-outcome",
       "maybe"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported brain recall usefulness outcome: maybe")
+      error: expect.stringContaining("Unsupported memory recall usefulness outcome: maybe")
     });
   });
 
@@ -250,7 +250,7 @@ describe("parseBrainRecallArgs", () => {
       "--status",
       "draft"
     ])).toEqual({
-      error: expect.stringContaining("Unsupported brain recall status: draft")
+      error: expect.stringContaining("Unsupported memory recall status: draft")
     });
   });
 
@@ -262,7 +262,7 @@ describe("parseBrainRecallArgs", () => {
         "--limit",
         limit
       ])).toEqual({
-        error: expect.stringContaining(`Unsupported brain recall limit: ${limit}`)
+        error: expect.stringContaining(`Unsupported memory recall limit: ${limit}`)
       });
     }
   });

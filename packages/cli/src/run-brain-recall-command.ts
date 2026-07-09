@@ -55,7 +55,7 @@ interface LoadedKnowledgeReadModels {
 }
 
 interface BrainRecallReadbackResource {
-  kind: "krn.brain.recall.readback.v1";
+  kind: "krn.memory.recall.readback.v1";
   access: "read_only";
   mutation: "none";
   source: "explicit_files" | "memory_store";
@@ -84,7 +84,7 @@ const proof = {
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
-    "brain recall readback was produced from live DB state",
+    "memory recall readback was produced from live DB state",
     "search ranking quality is good",
     "knowledge decisions are complete",
     "Memory Core, SourceDecision, candidates, or evidence were mutated",
@@ -99,7 +99,7 @@ const buildProof = (
   {
     const proves = source === "memory_store"
       ? [
-          "brain recall entries were read from DB-backed MemoryRecord rows",
+          "memory recall entries were read from DB-backed MemoryRecord rows",
           "MemoryRecords were converted into KnowledgeReadModel rows",
           "local readback filters were applied deterministically"
         ]
@@ -114,7 +114,7 @@ const buildProof = (
         : ["supplied usefulness feedback files parse with proof boundaries"];
     const doesNotProve = source === "memory_store" || usefulnessSource === "store_backed"
       ? proof.doesNotProve.filter(
-          (item) => item !== "brain recall readback was produced from live DB state"
+          (item) => item !== "memory recall readback was produced from live DB state"
         )
       : [
           ...proof.doesNotProve,
@@ -216,7 +216,7 @@ const loadKnowledgeCatalogFile = async (
       ? "catalog must include non-empty readModelFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays"
       : result.reason;
 
-    throw new Error(`Invalid brain recall catalog file: ${catalogFile} (${reason})`);
+    throw new Error(`Invalid memory recall catalog file: ${catalogFile} (${reason})`);
   }
 
   const catalogDirectory = path.dirname(resolvedCatalogFile);
@@ -271,7 +271,7 @@ export const runBrainRecallCommand = async (
     : undefined;
 
   const resource: BrainRecallReadbackResource = {
-    kind: "krn.brain.recall.readback.v1",
+    kind: "krn.memory.recall.readback.v1",
     access: "read_only",
     mutation: "none",
     source,
@@ -312,7 +312,7 @@ const formatKnowledgeOutput = (
 
 const formatKnowledgeTextPreview = (resource: BrainRecallReadbackResource): string =>
   [
-    "KRN Brain Recall",
+    "KRN Memory Recall",
     "Access: read-only",
     "Mutation: none",
     `Source: ${resource.source}`,
@@ -343,7 +343,7 @@ const formatKnowledgeHtmlPreview = (resource: BrainRecallReadbackResource): stri
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KRN Brain Recall</title>
+  <title>KRN Memory Recall</title>
   <style>
     :root {
       color-scheme: light;
@@ -483,7 +483,7 @@ const formatKnowledgeHtmlPreview = (resource: BrainRecallReadbackResource): stri
 <body>
   <main>
     <header>
-      <h1>KRN Brain Recall</h1>
+      <h1>KRN Memory Recall</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: ${escapeHtml(resource.source)}</div>
       <div class="meta">Source boundary: ${escapeHtml(resource.sourceBoundary)}</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
@@ -553,7 +553,7 @@ const formatKnowledgeHtmlPreview = (resource: BrainRecallReadbackResource): stri
 };
 
 const buildNoMatchGuidance = (filter: KnowledgeSearchFilter): string[] => [
-  "No brain recall entries matched the current filters.",
+  "No memory recall entries matched the current filters.",
   ...(filter.text === undefined ? [] : [
     "Try a shorter --text query or split the query into one mechanism term.",
     "If this is a pre-coding recall query, run one broader query before concluding no selected memory applies."
@@ -580,8 +580,8 @@ const formatNoMatchGuidanceText = (resource: BrainRecallReadbackResource): strin
 
 const formatNoMatchGuidanceHtml = (resource: BrainRecallReadbackResource): string =>
   resource.noMatchGuidance === undefined
-    ? "No brain recall entries match the current search."
-    : `<strong>No brain recall entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    ? "No memory recall entries match the current search."
+    : `<strong>No memory recall entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 
 const formatReadModel = (readModel: KnowledgeReadModel): string[] => [
   `- ${readModel.id}`,

@@ -98,7 +98,7 @@ const memoryRecordWithKnowledgeId = (knowledgeId: string): MemoryRecord => ({
   status: "active",
   summary: knowledgeId,
   body: knowledgeId,
-  owner: "krn memory knowledge seed",
+  owner: "krn memory seed",
   confidence: 90,
   applicationGuidance: knowledgeId,
   sourceLineage: [{ sourceId: "fixture" }],
@@ -281,7 +281,7 @@ const createStoreBackedSeedRuntime = (directory: string) => {
 };
 
 describe("brainRecallDecisionToMemoryCandidateInput", () => {
-  it("maps a brain recall decision to a procedural memory candidate", () => {
+  it("maps a memory recall decision to a procedural memory candidate", () => {
     const input = brainRecallDecisionToMemoryCandidateInput(fixtureKnowledge(), "project-1", now);
 
     expect(input.kind).toBe("procedure");
@@ -291,7 +291,7 @@ describe("brainRecallDecisionToMemoryCandidateInput", () => {
     expect(input.invalidationRule).toBe("A JSON.parse result assigned to a non-unknown type.");
     expect(input.confidence).toBe(90);
     expect(input.owner).toBe("@krn/core");
-    expect(input.proposedBy).toBe("krn memory knowledge seed");
+    expect(input.proposedBy).toBe("krn memory seed");
     expect(input.isUserPreference).toBe(false);
     expect(input.validFrom).toBe(now);
     expect(input.sourceLineage).toEqual([{
@@ -338,7 +338,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       });
 
       expect(result.stdout).toContain("Mode: dry-run (no writes)");
-      expect(result.stdout).toContain("Knowledge decisions in catalog: 1");
+      expect(result.stdout).toContain("Memory decisions in catalog: 1");
       expect(result.stdout).toContain(
         "- ts-boundary-unknown-first-result-state (adopt_now) <- catalog.json:knowledge/knowledge.json"
       );
@@ -388,7 +388,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       expect(capturedPromotions).toEqual([
         {
           candidateId: "memory-candidate-1",
-          reviewer: "krn memory knowledge seed",
+          reviewer: "krn memory seed",
           decision: "accepted",
           recordKey: "knowledge:ts-boundary-unknown-first-result-state"
         }
@@ -413,7 +413,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
 
       const result = await runMemoryKnowledgeSeedCommand(runtime);
 
-      expect(result.stdout).toContain("Knowledge decisions in catalog: 2");
+      expect(result.stdout).toContain("Memory decisions in catalog: 2");
       expect(result.stdout).toContain("Created: 1");
       expect(result.stdout).toContain("Skipped (already seeded): 0");
       expect(result.stdout).toContain("Deferred (not adopt_now): 1");
@@ -423,7 +423,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       expect(capturedPromotions).toEqual([
         {
           candidateId: "memory-candidate-1",
-          reviewer: "krn memory knowledge seed",
+          reviewer: "krn memory seed",
           decision: "accepted",
           recordKey: "knowledge:ts-boundary-unknown-first-result-state"
         }
@@ -433,7 +433,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
     }
   });
 
-  it("feeds seeded corpus knowledge back through store-backed brain search", async () => {
+  it("feeds seeded corpus knowledge back through store-backed memory search", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-seed-"));
 
     try {
@@ -462,7 +462,7 @@ describe("runMemoryKnowledgeSeedCommand", () => {
           format: "json"
         },
         async runBrainRecall(): Promise<never> {
-          throw new Error("store-backed brain search should not read file catalogs");
+          throw new Error("store-backed memory search should not read file catalogs");
         },
         async runSourceSearch() {
           return {
@@ -496,8 +496,8 @@ describe("runMemoryKnowledgeSeedCommand", () => {
       const parsed: unknown = JSON.parse(search.stdout);
 
       expect(parsed).toMatchObject({
-        brainRecallReadback: "store_backed",
-        brainRecallQueries: ["db backed memory readback"],
+        memoryRecallReadback: "store_backed",
+        memoryRecallQueries: ["db backed memory readback"],
         knowledgeReadModels: {
           readModelIds: ["knowledge:ts-boundary-unknown-first-result-state"],
           selectedKnowledge: [{

@@ -6,7 +6,7 @@
   "reviewability": "ready",
   "decision": "A source or knowledge decision may become retained KRN knowledge only when it states mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
   "mechanism": "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or knowledge decision to state why it changes KRN behavior and how it can be falsified.",
-  "krnImplication": "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory.",
+  "krnImplication": "Memory seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory.",
   "sourceRefs": [
     "KRN_ROADMAP.md#decision-rule",
     "legacy-knowledge-selection-gate",

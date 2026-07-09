@@ -29,7 +29,7 @@ describe("parseMaintenanceArgs", () => {
       "--candidate-kind",
       "consensus_evaluation",
       "--acquisition-readback-file",
-      "docs/readbacks/brain-search.json",
+      "docs/readbacks/memory-search.json",
       "--consensus-candidate-file",
       "docs/readbacks/consensus-candidates.json",
       "--review-candidate-id",
@@ -53,7 +53,7 @@ describe("parseMaintenanceArgs", () => {
         maxCandidates: 4,
         evidenceRef: "docs/report.md",
         candidateKinds: ["knowledge_acquisition", "consensus_evaluation"],
-        acquisitionReadbackFile: "docs/readbacks/brain-search.json",
+        acquisitionReadbackFile: "docs/readbacks/memory-search.json",
         consensusCandidateFile: "docs/readbacks/consensus-candidates.json",
         candidateReview: {
           candidateId: "candidate-1",

@@ -169,7 +169,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("decision-corpus-import");
     expect(result.stdout).toContain("real-recall-advantage");
     expect(result.stdout).toContain(
-      "They are not public operator workflow, product quality authority, or Memory Brain readiness proof."
+      "They are not public operator workflow, product quality authority, or Memory Core readiness proof."
     );
   });
 
@@ -184,7 +184,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("KRN DB Readiness");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
-    expect(result.stdout).toContain("Brain store readiness: blocked (database not configured)");
+    expect(result.stdout).toContain("Memory store readiness: blocked (database not configured)");
   });
 
   it("reports DB smoke missing configuration", async () => {
@@ -303,8 +303,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Activation smoke: skipped (database not configured)");
   });
 
-  it("reports brain loop smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "brain-loop"], {
+  it("reports memory loop smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "memory-loop"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -312,13 +312,13 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Brain Loop Smoke");
+    expect(result.stdout).toContain("KRN Memory Loop Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
-    expect(result.stdout).toContain("Brain loop smoke: skipped (database not configured)");
+    expect(result.stdout).toContain("Memory loop smoke: skipped (database not configured)");
   });
 
-  it("reports brain search smoke missing configuration", async () => {
-    const result = await runCli(["db", "smoke", "brain-search"], {
+  it("reports memory search smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "memory-search"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -326,9 +326,9 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Brain Search Smoke");
+    expect(result.stdout).toContain("KRN Memory Search Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
-    expect(result.stdout).toContain("Brain search smoke: skipped (database not configured)");
+    expect(result.stdout).toContain("Memory search smoke: skipped (database not configured)");
   });
 
   it("reports real recall advantage smoke missing configuration", async () => {

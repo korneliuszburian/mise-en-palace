@@ -158,15 +158,15 @@ export const parseBrainSearchPreviewSections = (
 ): BrainSearchPreviewSections => {
   const parsed: unknown = JSON.parse(stdout);
 
-  if (!isRecord(parsed) || parsed["kind"] !== "krn.brainSearch.preview.v1") {
-    throw new Error(`${label} did not return a brain search preview`);
+  if (!isRecord(parsed) || parsed["kind"] !== "krn.memorySearch.preview.v1") {
+    throw new Error(`${label} did not return a memory search preview`);
   }
 
   const knowledgeReadModels = parsed["knowledgeReadModels"];
   const sourceSearch = parsed["sourceSearch"];
 
   if (!isRecord(knowledgeReadModels) || !isRecord(sourceSearch)) {
-    throw new Error(`${label} brain search preview is missing readback sections`);
+    throw new Error(`${label} memory search preview is missing readback sections`);
   }
 
   return {

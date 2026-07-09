@@ -59,7 +59,7 @@ const knowledgeFeedbackDelta = (
       knowledgeId,
       outcome: "helped",
       reason: "The knowledge changed the implementation decision.",
-      evidenceRefs: ["test:brain recall store-backed"],
+      evidenceRefs: ["test:memory recall store-backed"],
       doesNotProve: "One helped event does not prove broad usefulness."
     }]
   },
@@ -176,8 +176,8 @@ const createBrainRecallDatabaseRuntime = (
 });
 
 describe("runCli", () => {
-  it("prints brain recall readback help", async () => {
-    const result = await runCli(["brain", "recall", "--help"], {
+  it("prints memory recall readback help", async () => {
+    const result = await runCli(["memory", "recall", "--help"], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -185,14 +185,14 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>]");
+    expect(result.stdout).toContain("Usage: krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
     expect(result.stdout).toContain("no fixture source defaults to DB-backed MemoryRecord read models plus feedback_delta usefulness outcomes and requires KRN_DATABASE_URL");
   });
 
   it("explains the store-backed default DB requirement without file sources", async () => {
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--text",
       "unknown-first"
@@ -205,16 +205,16 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain(
-      "KRN_DATABASE_URL is required for krn brain recall store-backed readback"
+      "KRN_DATABASE_URL is required for krn memory recall store-backed readback"
     );
     expect(result.stderr).toContain("No fixture source defaults to the store path");
     expect(result.stderr).toContain("--fixture-read-model-file");
   });
 
-  it("renders brain recall through the preferred CLI readback", async () => {
+  it("renders memory recall through the preferred CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
@@ -229,16 +229,16 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("KRN Brain Recall");
+    expect(result.stdout).toContain("KRN Memory Recall");
     expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
   });
 
-  it("renders knowledge decision files through the brain recall CLI readback", async () => {
+  it("renders knowledge decision files through the memory recall CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--fixture-decision-file",
       "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
@@ -258,10 +258,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
-  it("renders explicit catalog files through the brain recall CLI readback", async () => {
+  it("renders explicit catalog files through the memory recall CLI readback", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--fixture-catalog-file",
       "tests/fixtures/brain-knowledge/corpus/catalog.json",
@@ -281,10 +281,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
-  it("defaults brain recall readback to store-backed usefulness from feedback deltas", async () => {
+  it("defaults memory recall readback to store-backed usefulness from feedback deltas", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--usefulness-outcome",
       "helped",
@@ -322,7 +322,7 @@ describe("runCli", () => {
       id: "knowledge:store-backed-usefulness",
       usefulnessFeedback: {
         outcome: "helped",
-        evidenceRefs: ["test:brain recall store-backed"]
+        evidenceRefs: ["test:memory recall store-backed"]
       }
     });
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");
@@ -331,7 +331,7 @@ describe("runCli", () => {
   it("merges store-backed usefulness into explicit seed readModels by knowledge id", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--fixture-read-model-file",
       "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
@@ -374,10 +374,10 @@ describe("runCli", () => {
     ]);
   });
 
-  it("renders brain recall as self-contained html", async () => {
+  it("renders memory recall as self-contained html", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli([
-      "brain",
+      "memory",
       "recall",
       "--fixture-catalog-file",
       "tests/fixtures/brain-knowledge/corpus/catalog.json",
@@ -394,7 +394,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("KRN Brain Recall");
+    expect(result.stdout).toContain("KRN Memory Recall");
     expect(result.stdout).toContain("type=\"search\"");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");

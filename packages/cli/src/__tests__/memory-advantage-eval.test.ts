@@ -157,7 +157,7 @@ describe("runMemoryAdvantageEval", () => {
         status: "pass",
         caseIds: [
           "learn-company-review-standard",
-          "heldout-db-project-brain-search",
+          "heldout-db-project-memory-search",
           "heldout-coding-task-json-boundary",
           "heldout-multi-session-codex-output-evidence",
           "neutral-single-turn-typecheck",
@@ -370,20 +370,20 @@ describe("runMemoryAdvantageEval", () => {
     expect(learningCase?.["reviewed_feedback_effect"].planBriefContextSize.bytes).toBeGreaterThan(0);
 
     const heldOutLearningCase = result.cases.find((testCase) =>
-      testCase.caseId === "heldout-db-project-brain-search"
+      testCase.caseId === "heldout-db-project-memory-search"
     );
     expect(heldOutLearningCase?.["reviewed_feedback_effect"]).toMatchObject({
-      priorFeedbackRef: "feedback:brain-search-project-selector-helped",
-      priorEvidenceRef: "evidence:brain-search-project-selector",
-      priorReviewRef: "review:brain-search-project-selector",
-      requiredKnowledgeId: "knowledge:brain-search-explicit-project-selector",
+      priorFeedbackRef: "feedback:memory-search-project-selector-helped",
+      priorEvidenceRef: "evidence:memory-search-project-selector",
+      priorReviewRef: "review:memory-search-project-selector",
+      requiredKnowledgeId: "knowledge:memory-search-explicit-project-selector",
       baselineNoMemoryResult: "miss",
       simpleRetrievalResult: "distractor_selected",
-      simpleRetrievalTopKnowledgeId: "source:brain-search-explicit-project-selector",
+      simpleRetrievalTopKnowledgeId: "source:memory-search-explicit-project-selector",
       simpleRetrievalWeakerThanKrn: true,
       krnResult: "hit",
-      selectedMemoryIds: ["knowledge:brain-search-explicit-project-selector"],
-      selectedSourceClaimIds: ["source:brain-search-explicit-project-selector"],
+      selectedMemoryIds: ["knowledge:memory-search-explicit-project-selector"],
+      selectedSourceClaimIds: ["source:memory-search-explicit-project-selector"],
       proofStatus: "pass"
     });
     const codingTaskCase = result.cases.find((testCase) =>
@@ -548,7 +548,7 @@ describe("runMemoryAdvantageEval", () => {
       "temporal-stale-source-claim-decision-link",
       "runtime-memory-source-contradiction-review-context",
       "heldout-source-search-command-boundary",
-      "heldout-db-project-brain-search",
+      "heldout-db-project-memory-search",
       "heldout-ranking-corpus-quality",
       "heldout-coding-task-json-boundary",
       "heldout-multi-session-codex-output-evidence",
@@ -595,7 +595,7 @@ describe("runMemoryAdvantageEval", () => {
       "source:current-source-decision-edge-ranking",
       "source:runtime-secret-context-denylist",
       "knowledge:source-search-command-boundary",
-      "knowledge:brain-search-explicit-project-selector",
+      "knowledge:memory-search-explicit-project-selector",
       "knowledge:ranking-corpus-quality-readback",
       "source:unknown-first-json-metadata-boundary",
       "source:codex-output-evidence-shape-required",

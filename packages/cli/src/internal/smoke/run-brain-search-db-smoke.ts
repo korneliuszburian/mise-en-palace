@@ -128,7 +128,7 @@ const parseBrainSearchJson = (text: string): BrainSearchJson => {
   const record = objectValue(parsed);
 
   if (record === undefined) {
-    throw new Error("brain-search DB smoke expected JSON object output");
+    throw new Error("memory-search DB smoke expected JSON object output");
   }
 
   const knowledgeReadModels = objectValue(record["knowledgeReadModels"]);
@@ -173,7 +173,7 @@ const linkedSearchDocumentCount = (json: BrainSearchJson): number =>
 
 const createSmokeId = (smokeId: string) => createUniqueSmokeCreateId(smokeId);
 
-const smokeSource = "krn db smoke brain-search";
+const smokeSource = "krn db smoke memory-search";
 
 const retainedStandardChallenge = {
   id: "retained-standard-store-backed-memory-no-markdown",
@@ -321,7 +321,7 @@ export const runBrainSearchDbSmokeCheck = async (
     runtime = await createDatabaseRuntime({
       databaseUrl: input.databaseUrl,
       workspaceSlug: "local",
-      projectSlug: "brain-search-smoke",
+      projectSlug: "memory-search-smoke",
       requireProjectKernelForExplicitProject: false,
       now: () => input.now,
       createId
@@ -367,9 +367,9 @@ export const runBrainSearchDbSmokeCheck = async (
         }
       },
       taskContract: {
-        title: "Teach DB-backed brain search from reviewed retained-standard evidence",
+        title: "Teach DB-backed memory search from reviewed retained-standard evidence",
         objective:
-          `Persist the ${retainedStandardChallenge.standardId} decision so a later brain-search run can retrieve it from live repositories.`,
+          `Persist the ${retainedStandardChallenge.standardId} decision so a later memory-search run can retrieve it from live repositories.`,
         constraints: [
           "use DB-backed source and memory repositories",
           "prove the store-backed memory decision beats the markdown runtime-memory shortcut",
@@ -380,7 +380,7 @@ export const runBrainSearchDbSmokeCheck = async (
           "do not claim broad memory ranking quality"
         ],
         acceptance: [
-          "Session B store-backed brain search selects the Session A MemoryRecord",
+          "Session B store-backed memory search selects the Session A MemoryRecord",
           "Session B source-search support remains decision-linked",
           "Session B readback states the retained-standard expected decision and falsifier"
         ],
@@ -401,12 +401,12 @@ export const runBrainSearchDbSmokeCheck = async (
     }, runtime.compilerDependencies);
     const sessionAExecutionRun = await runtime.harnessRunRepository.createExecutionRun({
       harnessPlanId: sessionACompile.harnessPlan.id,
-      adapter: "krn-db-smoke-brain-search",
+      adapter: "krn-db-smoke-memory-search",
       status: "succeeded",
       startedAt: input.now,
       initialEvent: {
         sequence: 1,
-        type: "smoke.brain_search.session_a.started",
+        type: "smoke.memory_search.session_a.started",
         message: "Brain-search DB smoke Session A started",
         payload: {
           smokeId: input.smokeId,
@@ -423,10 +423,10 @@ export const runBrainSearchDbSmokeCheck = async (
       status: "captured",
       changedFiles: ["packages/cli/src/internal/smoke/run-brain-search-db-smoke.ts"],
       commands: [{
-        command: "pnpm db:smoke:brain-search",
+        command: "pnpm db:smoke:memory-search",
         status: "passed",
         provenance: "operator_reported",
-        assertedBy: "brain-search-db-smoke",
+        assertedBy: "memory-search-db-smoke",
         doesNotProve:
           "This command does not prove broad memory ranking quality, source truth, Codex output quality, or product readiness."
       }],
@@ -435,7 +435,7 @@ export const runBrainSearchDbSmokeCheck = async (
       rollbackPath: "Delete smoke marker rows.",
       event: {
         sequence: 2,
-        type: "smoke.brain_search.session_a.evidence_captured",
+        type: "smoke.memory_search.session_a.evidence_captured",
         message: "Brain-search DB smoke Session A evidence captured",
         payload: {
           smokeId: input.smokeId,
@@ -454,7 +454,7 @@ export const runBrainSearchDbSmokeCheck = async (
     const sessionAReviewAssessment = await runtime.harnessRunRepository.createReviewAssessment({
       evidenceBundleId: sessionAEvidenceBundle.id,
       status: "accepted",
-      reviewer: "brain-search-db-smoke",
+      reviewer: "memory-search-db-smoke",
       summary: "Session A evidence is sufficient to create one review-linked memory candidate.",
       findings: [],
       metadata: {
@@ -482,9 +482,9 @@ export const runBrainSearchDbSmokeCheck = async (
       projectId,
       kind: "doc",
       sourceAuthority: "project-decision",
-      uri: `smoke://brain-search/${input.smokeId}`,
-      title: "Brain search DB dogfood source",
-      contentHash: `brain-search-${input.smokeId}`,
+      uri: `smoke://memory-search/${input.smokeId}`,
+      title: "Memory search DB dogfood source",
+      contentHash: `memory-search-${input.smokeId}`,
       metadata
     });
     const sourceClaim = await runtime.sourceRepository.createSourceClaim({
@@ -521,13 +521,13 @@ export const runBrainSearchDbSmokeCheck = async (
     });
 
     if (sourceDecision === undefined) {
-      throw new Error("SourceDecision creation is unavailable for brain-search DB smoke");
+      throw new Error("SourceDecision creation is unavailable for memory-search DB smoke");
     }
 
     const sourceDecisionEdge = await runtime.sourceRepository.createSourceDecisionEdge({
       sourceClaimId: sourceClaim.id,
       targetType: "architecture_decision",
-      targetId: `brain-search-dogfood-${input.smokeId}`,
+      targetId: `memory-search-dogfood-${input.smokeId}`,
       supportType: "implementation-boundary",
       confidence: "high",
       notes: "Decision-linked support for the store-backed memory retained-standard DB replay.",
@@ -544,7 +544,7 @@ export const runBrainSearchDbSmokeCheck = async (
       sourceArtifactId: sourceArtifact.id,
       sourceClaimId: sourceClaim.id,
       sourceAuthority: "project-decision",
-      title: "Brain search DB dogfood SearchDocument",
+      title: "Memory search DB dogfood SearchDocument",
       body:
         `SearchDocument for ${query}. ${retainedStandardChallenge.expectedDecision} The marker-specific evidence is backed by an accepted SourceClaim and SourceDecisionEdge.`,
       searchText:
@@ -560,13 +560,13 @@ export const runBrainSearchDbSmokeCheck = async (
     });
 
     if (searchDocument === undefined) {
-      throw new Error("SearchDocument creation is unavailable for brain-search DB smoke");
+      throw new Error("SearchDocument creation is unavailable for memory-search DB smoke");
     }
     const memoryCandidate = await runtime.memoryRepository.createMemoryCandidate({
       projectId,
       executionRunId: sessionAExecutionRun.id,
       feedbackDeltaId: sessionAFeedbackDelta.id,
-      proposedBy: "krn db smoke brain-search",
+      proposedBy: "krn db smoke memory-search",
       kind: "procedure",
       summary: "Use store-backed memory instead of runtime markdown memory",
       body:
@@ -576,7 +576,7 @@ export const runBrainSearchDbSmokeCheck = async (
       applicationGuidance:
         "Use this persisted MemoryRecord as the memory side of the DB-backed retained-standard advantage proof.",
       invalidationRule:
-        "Invalidate if store-backed brain search no longer reads MemoryRecord rows or if the source claim is rejected.",
+        "Invalidate if store-backed memory search no longer reads MemoryRecord rows or if the source claim is rejected.",
       sourceLineage: [
         {
           sourceId: sourceClaim.id,
@@ -602,9 +602,9 @@ export const runBrainSearchDbSmokeCheck = async (
     });
     const memoryRecord = await runtime.memoryRepository.promoteReviewedMemoryCandidate({
       candidateId: memoryCandidate.id,
-      reviewer: "krn db smoke brain-search",
+      reviewer: "krn db smoke memory-search",
       decision: "accepted",
-      recordKey: `brain-search-memory-${input.smokeId}`,
+      recordKey: `memory-search-memory-${input.smokeId}`,
       metadata: {
         ...metadata,
         challengeCaseId: retainedStandardChallenge.id,

@@ -57,7 +57,7 @@ export const runDbReadinessCommand = async (
         "Postgres config: missing KRN_DATABASE_URL",
         `Next action: ${missingDbConfigRecovery()}`,
         `Does not prove: ${dbBootstrapDoesNotProve}`,
-        "Brain store readiness: blocked (database not configured)"
+        "Memory store readiness: blocked (database not configured)"
       ].join("\n") + "\n"
     };
   }
@@ -89,7 +89,7 @@ export const runDbReadinessCommand = async (
               `Next action: ${connectedButNotReadyRecovery()}`,
               "Does not prove: a reachable database is not ready until migrations and pgvector are ready"
             ]),
-        `Brain store readiness: ${ready ? "ready" : "blocked (pgvector and migrations must be ready)"}`
+        `Memory store readiness: ${ready ? "ready" : "blocked (pgvector and migrations must be ready)"}`
       ].join("\n") + "\n"
     };
   } catch (error) {
@@ -105,7 +105,7 @@ export const runDbReadinessCommand = async (
         `Postgres/migrations: failed (${errorMessage(error)})`,
         `Next action: ${unreachablePostgresRecovery()}`,
         `Does not prove: ${dbBootstrapDoesNotProve}`,
-        "Brain store readiness: blocked (migration readiness failed)"
+        "Memory store readiness: blocked (migration readiness failed)"
       ].join("\n") + "\n"
     };
   }

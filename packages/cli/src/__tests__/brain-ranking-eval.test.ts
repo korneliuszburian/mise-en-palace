@@ -59,7 +59,7 @@ describe("runBrainRankingEval", () => {
     expect(planBriefCase?.selectedKnowledgeIds[0]).toBe("knowledge:plan-brief-memory-advantage-comparator");
     expect(planBriefCase?.selectedKnowledgeIds).toContain("knowledge:local-tests-alone-closeout");
     expect(result.proof.proves).toContain(
-      "brain search reports recall@k over expected proxy-labeled selectedKnowledge ids"
+      "memory search reports recall@k over expected proxy-labeled selectedKnowledge ids"
     );
     expect(result.proof.proves).toContain(
       "brain ranking fixture reports corpus name, corpus size, distractor classes, and per-case baseline failure rationale"

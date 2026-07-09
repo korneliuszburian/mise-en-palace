@@ -140,11 +140,11 @@ export interface BrainLoopSmokeReport {
 }
 
 const now = smokeFixtureClocks.brainLoop.now;
-const memoryOriginRepoInstallationId = "repo-installation-brain-loop-source";
-const nextRunRepoInstallationId = "repo-installation-brain-loop-consumer";
-const downgradedRunRepoInstallationId = "repo-installation-brain-loop-rejector";
-const consolidationRunRepoInstallationId = "repo-installation-brain-loop-consolidation";
-const revisionRunRepoInstallationId = "repo-installation-brain-loop-revision";
+const memoryOriginRepoInstallationId = "repo-installation-memory-loop-source";
+const nextRunRepoInstallationId = "repo-installation-memory-loop-consumer";
+const downgradedRunRepoInstallationId = "repo-installation-memory-loop-rejector";
+const consolidationRunRepoInstallationId = "repo-installation-memory-loop-consolidation";
+const revisionRunRepoInstallationId = "repo-installation-memory-loop-revision";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -162,7 +162,7 @@ const unique = (values: readonly string[]): string[] =>
   [...new Set(values)];
 
 const targetReadModelForRepo = (repoInstallationId: string) => ({
-  projectKernelId: "brain-loop-shared-kernel",
+  projectKernelId: "memory-loop-shared-kernel",
   repoInstallationIds: [repoInstallationId],
   localPathHints: [`/tmp/krn/${repoInstallationId}`],
   sourceSeeds: [],
@@ -329,9 +329,9 @@ export const runBrainLoopSmokeCheck = async (
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder,
     smokeId: input.smokeId,
-    smokeName: "brain loop smoke",
-    workspacePrefix: "krn-brain-loop-smoke",
-    projectSlug: "brain-loop",
+    smokeName: "memory loop smoke",
+    workspacePrefix: "krn-memory-loop-smoke",
+    projectSlug: "memory-loop",
     cleanupRows: (cleanupInput) => cleanupBrainLoopSmokeRows({
       ...cleanupInput,
       consolidationRetrievalRunId,
@@ -354,16 +354,16 @@ export const runBrainLoopSmokeCheck = async (
       revisionRetrievalRunId,
       retrievalRunId
     }),
-    rawIntent: `brain loop smoke ${input.smokeId}`,
+    rawIntent: `memory loop smoke ${input.smokeId}`,
     taskContract: {
-      title: "Use reviewed DB-backed brain loop memory",
+      title: "Use reviewed DB-backed memory loop memory",
       objective: "Prove persisted evidence and review can become reviewed Memory Core context for a next activation.",
       constraints: ["promote through MemoryReviewGate", "reuse promoted memory through activation"],
       nonGoals: ["no activation scoring rewrite", "no maintenance runtime", "no schema migration"],
       acceptance: ["evidence readback", "reviewed memory promotion", "next activation includes memory"]
     },
     harnessPlan: {
-      summary: "DB-backed governed brain loop smoke",
+      summary: "DB-backed governed memory loop smoke",
       nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it."
     }
   });
@@ -393,8 +393,8 @@ export const runBrainLoopSmokeCheck = async (
       startedAt: now,
       initialEvent: {
         sequence: 1,
-        type: "smoke.brain_loop.started",
-        message: "Brain loop smoke started",
+        type: "smoke.memory_loop.started",
+        message: "Memory loop smoke started",
         payload: {
           smokeId: marker
         }
@@ -408,10 +408,10 @@ export const runBrainLoopSmokeCheck = async (
       status: "captured",
       changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
       commands: [{
-        command: "pnpm db:smoke:brain-loop",
+        command: "pnpm db:smoke:memory-loop",
         status: "passed",
         provenance: "operator_reported",
-        assertedBy: "brain-loop-smoke",
+        assertedBy: "memory-loop-smoke",
         doesNotProve: "This command does not prove product readiness, ranking quality, maintenance execution, or autonomous memory quality."
       }],
       diffRisk: "low",
@@ -419,8 +419,8 @@ export const runBrainLoopSmokeCheck = async (
       rollbackPath: "Delete smoke marker rows.",
       event: {
         sequence: 2,
-        type: "smoke.brain_loop.evidence_captured",
-        message: "Brain loop smoke evidence captured",
+        type: "smoke.memory_loop.evidence_captured",
+        message: "Memory loop smoke evidence captured",
         payload: {
           smokeId: marker
         }
@@ -433,7 +433,7 @@ export const runBrainLoopSmokeCheck = async (
     const reviewAssessment = await harnessRunRepository.createReviewAssessment({
       evidenceBundleId: evidenceBundle.id,
       status: "accepted",
-      reviewer: "brain-loop-smoke",
+      reviewer: "memory-loop-smoke",
       summary: "Evidence is sufficient for one reviewed MemoryCandidate.",
       findings: [],
       metadata: {
@@ -446,9 +446,9 @@ export const runBrainLoopSmokeCheck = async (
       projectId: project.id,
       kind: "operator_input",
       sourceAuthority: "project-decision",
-      uri: `operator://brain-loop-smoke/${marker}`,
-      title: "Brain loop smoke source",
-      contentHash: `brain-loop-smoke-${marker}`,
+      uri: `operator://memory-loop-smoke/${marker}`,
+      title: "Memory loop smoke source",
+      contentHash: `memory-loop-smoke-${marker}`,
       metadata: {
         smokeId: marker
       }
@@ -462,8 +462,8 @@ export const runBrainLoopSmokeCheck = async (
       doesNotProve: "This does not prove activation ranking quality, product readiness, maintenance runtime, or autonomous reflection quality.",
       sourceAuthority: "project-decision",
       supportType: "implementation-boundary",
-      consumer: "E2E-02 brain loop smoke",
-      falsifier: "Brain loop smoke readback or cleanup fails.",
+      consumer: "E2E-02 memory loop smoke",
+      falsifier: "Memory loop smoke readback or cleanup fails.",
       revisitWhen: "The evidence, memory, or activation persistence contracts change.",
       status: "proposed",
       metadata: {
@@ -474,10 +474,10 @@ export const runBrainLoopSmokeCheck = async (
       projectId: project.id,
       sourceClaimId: proposedSourceClaim.id,
       status: "adopt",
-      decision: "Adopt the DB-backed brain loop source claim as implementation-boundary evidence.",
+      decision: "Adopt the DB-backed memory loop source claim as implementation-boundary evidence.",
       rationale: "The source claim maps the live DB smoke mechanism to the governed memory promotion path.",
       falsifier: "MemoryReviewGate accepts a candidate whose source claim remains proposed.",
-      consumer: "E2E-02 brain loop smoke",
+      consumer: "E2E-02 memory loop smoke",
       metadata: {
         smokeId: marker
       }
@@ -506,7 +506,7 @@ export const runBrainLoopSmokeCheck = async (
     const sourceClaim = requireSmokeReadbackValue(
       await sourceRepository.getSourceClaimById(proposedSourceClaim.id),
       "accepted source claim readback",
-      "Brain loop smoke source decision did not accept the source claim"
+      "Memory loop smoke source decision did not accept the source claim"
     );
     const sourceDecisionTraceTargetsForRun = sourceDecisionTraceTargets({
       taskContractId: taskContract.id,
@@ -527,7 +527,7 @@ export const runBrainLoopSmokeCheck = async (
           metadata: {
             smokeId: marker,
             sourceDecisionId: sourceDecision.id,
-            provenanceTrace: "brain_loop_source_to_decision"
+            provenanceTrace: "memory_loop_source_to_decision"
           }
         })
       )
@@ -536,15 +536,15 @@ export const runBrainLoopSmokeCheck = async (
       projectId: project.id,
       executionRunId: executionRun.id,
       feedbackDeltaId: feedbackDelta.id,
-      proposedBy: "brain-loop-smoke",
+      proposedBy: "memory-loop-smoke",
       kind: "procedure",
       status: "candidate",
-      summary: "Use reviewed DB-backed brain loop memory",
-      body: "A KRN brain loop proof must preserve evidence lineage through evidence, review, feedback, MemoryReviewGate promotion, and next activation.",
+      summary: "Use reviewed DB-backed memory loop memory",
+      body: "A KRN memory loop proof must preserve evidence lineage through evidence, review, feedback, MemoryReviewGate promotion, and next activation.",
       owner: "kernel",
       confidence: 90,
       applicationGuidance: "Use when checking whether KRN can reuse reviewed evidence as active context.",
-      invalidationRule: "Revisit when the DB-backed brain loop smoke is replaced by a broader product workflow.",
+      invalidationRule: "Revisit when the DB-backed memory loop smoke is replaced by a broader product workflow.",
       sourceClaimIds: [sourceClaim.id],
       sourceLineage: [{ sourceId: sourceClaim.id, note: "E2E-02 source-to-decision" }],
       isUserPreference: false,
@@ -564,9 +564,9 @@ export const runBrainLoopSmokeCheck = async (
       sourceRepository,
       review: {
         candidateId: memoryCandidate.id,
-        reviewer: "brain-loop-smoke",
+        reviewer: "memory-loop-smoke",
         evidenceReviewedRef: evidenceBundle.id,
-        recordKey: `brain-loop-smoke:${marker}`,
+        recordKey: `memory-loop-smoke:${marker}`,
         metadata: {
           smokeId: marker
         }
@@ -613,7 +613,7 @@ export const runBrainLoopSmokeCheck = async (
       minimumDiverseKinds: ["memory"]
     });
     const draftContext = assembleContext({
-      id: `brain-loop-context-${marker}`,
+      id: `memory-loop-context-${marker}`,
       harnessPlanId: harnessPlan.id,
       candidates: bounded,
       tokenBudget: 360,
@@ -654,7 +654,7 @@ export const runBrainLoopSmokeCheck = async (
       contextAssemblyId: contextAssembly.id,
       expectedUse: "Verify next activation reused reviewed memory.",
       outcome: "helped",
-      notes: "DB-backed brain loop smoke included reviewed memory in context.",
+      notes: "DB-backed memory loop smoke included reviewed memory in context.",
       metadata: {
         smokeId: marker
       }
@@ -664,14 +664,14 @@ export const runBrainLoopSmokeCheck = async (
       projectId: project.id,
       operatorIntent: {
         source: "cli",
-        rawIntent: `next brain loop recall ${marker}`,
+        rawIntent: `next memory loop recall ${marker}`,
         metadata: {
           smokeId: marker
         }
       },
       taskContract: {
-        title: "Reuse reviewed DB-backed brain loop memory",
-        objective: "Automatically recall reviewed DB-backed brain loop memory in the next planning activation.",
+        title: "Reuse reviewed DB-backed memory loop memory",
+        objective: "Automatically recall reviewed DB-backed memory loop memory in the next planning activation.",
         constraints: ["use store-backed Memory Core", "do not create a maintenance runtime"],
         nonGoals: ["no dashboard", "no activation scoring rewrite"],
         acceptance: ["next planning activation includes or explicitly excludes the reviewed MemoryRecord"],
@@ -701,7 +701,7 @@ export const runBrainLoopSmokeCheck = async (
     const nextRunRetrievalRunId = requireSmokeReadbackValue(
       nextRetrievalRunId,
       "next run retrievalRunId",
-      "Brain loop next-run recall did not persist retrieval metadata"
+      "Memory loop next-run recall did not persist retrieval metadata"
     );
     const nextRunMemoryInclusions = nextCompile.contextAssembly.inclusions.filter((item) =>
       item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
@@ -740,7 +740,7 @@ export const runBrainLoopSmokeCheck = async (
         contextAssemblyId: nextCompile.contextAssembly.id,
         expectedUse: "Verify negative application feedback downgrades future activation.",
         outcome: "hurt",
-        notes: `DB-backed brain loop smoke downgrade feedback ${attempt}.`,
+        notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
         metadata: {
           smokeId: marker,
           feedbackLoop: "downgrade",
@@ -751,20 +751,20 @@ export const runBrainLoopSmokeCheck = async (
     const downgradedMemoryRecord = requireSmokeReadbackValue(
       await memoryRepository.getMemoryRecordById(memoryRecord.id),
       "downgraded memory record readback",
-      "Brain loop smoke did not persist negative memory feedback"
+      "Memory loop smoke did not persist negative memory feedback"
     );
     const downgradedCompile = await compileHarnessPlan({
       workspaceId: workspace.id,
       projectId: project.id,
       operatorIntent: {
         source: "cli",
-        rawIntent: `downgrade brain loop recall ${marker}`,
+        rawIntent: `downgrade memory loop recall ${marker}`,
         metadata: {
           smokeId: marker
         }
       },
       taskContract: {
-        title: "Reject downgraded DB-backed brain loop memory",
+        title: "Reject downgraded DB-backed memory loop memory",
         objective: "Show negative application feedback prevents hurt memory from re-entering activation context.",
         constraints: ["use store-backed Memory Core", "do not create a maintenance runtime"],
         nonGoals: ["no dashboard", "no activation scoring rewrite"],
@@ -796,7 +796,7 @@ export const runBrainLoopSmokeCheck = async (
     const downgradedRunRetrievalRunId = requireSmokeReadbackValue(
       downgradedRetrievalRunId,
       "downgraded run retrievalRunId",
-      "Brain loop downgraded run did not persist retrieval metadata"
+      "Memory loop downgraded run did not persist retrieval metadata"
     );
     const {
       nextRunRepoInstallationIds,
@@ -831,13 +831,13 @@ export const runBrainLoopSmokeCheck = async (
     const consolidationCandidate = requireSmokeReadbackValue(
       maintenancePreview.candidates[0],
       "maintenance consolidation candidate",
-      "Brain loop smoke did not create a maintenance consolidation candidate"
+      "Memory loop smoke did not create a maintenance consolidation candidate"
     );
     const consolidationProposal = await proposeMemoryConsolidation({
       memoryRepository,
       candidate: consolidationCandidate,
       projectId: project.id,
-      proposedBy: "brain-loop-smoke",
+      proposedBy: "memory-loop-smoke",
       owner: "kernel",
       observedAt: now,
       executionRunId: executionRun.id,
@@ -851,7 +851,7 @@ export const runBrainLoopSmokeCheck = async (
       sourceRepository,
       review: {
         candidateId: consolidationProposal.antiMemoryCandidate.id,
-        reviewer: "brain-loop-smoke",
+        reviewer: "memory-loop-smoke",
         evidenceReviewedRef: feedbackDelta.id,
         metadata: {
           smokeId: marker,
@@ -864,7 +864,7 @@ export const runBrainLoopSmokeCheck = async (
       projectId: project.id,
       operatorIntent: {
         source: "cli",
-        rawIntent: `consolidated brain loop recall ${marker}`,
+        rawIntent: `consolidated memory loop recall ${marker}`,
         metadata: {
           smokeId: marker
         }
@@ -902,7 +902,7 @@ export const runBrainLoopSmokeCheck = async (
     const consolidationRunRetrievalRunId = requireSmokeReadbackValue(
       consolidationRetrievalRunId,
       "consolidation run retrievalRunId",
-      "Brain loop consolidation run did not persist retrieval metadata"
+      "Memory loop consolidation run did not persist retrieval metadata"
     );
     const consolidationRunMemoryExclusions = consolidationCompile.contextAssembly.exclusions.filter((item) =>
       item.subjectType === "memory_record" &&
@@ -930,7 +930,7 @@ export const runBrainLoopSmokeCheck = async (
       draft: {
         action: "refresh_memory",
         sourceMemoryRecord: memoryRecord,
-        summary: "Use refreshed DB-backed brain loop memory",
+        summary: "Use refreshed DB-backed memory loop memory",
         body:
           "A reviewed memory refresh can replace stale Memory Core guidance while preserving source lineage, feedback evidence, supersession, and later activation.",
         applicationGuidance:
@@ -938,15 +938,15 @@ export const runBrainLoopSmokeCheck = async (
         invalidationRule: "Revisit when memory revision promotion or supersession contracts change.",
         confidence: 94,
         owner: "kernel",
-        sourceLineage: [{ sourceId: sourceClaim.id, note: "reviewed brain-loop source claim" }],
+        sourceLineage: [{ sourceId: sourceClaim.id, note: "reviewed memory-loop source claim" }],
         sourceClaimIds: [sourceClaim.id],
-        reason: "Reviewed consolidation found the original brain-loop memory stale and refreshed it.",
+        reason: "Reviewed consolidation found the original memory-loop memory stale and refreshed it.",
         evidenceRefs: [feedbackDelta.id, sourceClaim.id],
         doesNotProve:
           "This reviewed refresh does not prove autonomous maintenance execution, broad memory quality, or product readiness."
       },
       projectId: project.id,
-      proposedBy: "brain-loop-smoke",
+      proposedBy: "memory-loop-smoke",
       executionRunId: executionRun.id,
       feedbackDeltaId: feedbackDelta.id,
       metadata: {
@@ -959,9 +959,9 @@ export const runBrainLoopSmokeCheck = async (
       memoryRepository,
       proposal: revisionProposal,
       sourceMemoryRecordId: memoryRecord.id,
-      reviewer: "brain-loop-smoke",
-      reason: "Reviewed refresh replaces the stale brain-loop memory.",
-      recordKey: `brain-loop-smoke:${marker}:revision`,
+      reviewer: "memory-loop-smoke",
+      reason: "Reviewed refresh replaces the stale memory-loop memory.",
+      recordKey: `memory-loop-smoke:${marker}:revision`,
       reviewedAt: now,
       metadata: {
         smokeId: marker,
@@ -972,25 +972,25 @@ export const runBrainLoopSmokeCheck = async (
     const revisionSupersededMemory = requireSmokeReadbackValue(
       await memoryRepository.getMemoryRecordById(memoryRecord.id),
       "revision superseded source memory readback",
-      "Brain loop revision did not persist superseded source memory"
+      "Memory loop revision did not persist superseded source memory"
     );
     const revisionReplacementMemory = requireSmokeReadbackValue(
       await memoryRepository.getMemoryRecordById(revisionApplication.memoryRecord.id),
       "revision replacement memory readback",
-      "Brain loop revision did not persist replacement memory"
+      "Memory loop revision did not persist replacement memory"
     );
     const revisionCompile = await compileHarnessPlan({
       workspaceId: workspace.id,
       projectId: project.id,
       operatorIntent: {
         source: "cli",
-        rawIntent: `revised brain loop recall ${marker}`,
+        rawIntent: `revised memory loop recall ${marker}`,
         metadata: {
           smokeId: marker
         }
       },
       taskContract: {
-        title: "Use refreshed DB-backed brain loop memory",
+        title: "Use refreshed DB-backed memory loop memory",
         objective:
           "Show reviewed memory revision supersedes stale Memory Core context and activates the replacement.",
         constraints: ["use store-backed memory revision", "do not create a maintenance runtime"],
@@ -1023,7 +1023,7 @@ export const runBrainLoopSmokeCheck = async (
     const revisionRunRetrievalRunId = requireSmokeReadbackValue(
       revisionRetrievalRunId,
       "revision run retrievalRunId",
-      "Brain loop revision run did not persist retrieval metadata"
+      "Memory loop revision run did not persist retrieval metadata"
     );
     const revisionRunReplacementInclusions = revisionCompile.contextAssembly.inclusions.filter((item) =>
       item.subjectType === "memory_record" && item.subjectId === revisionReplacementMemory.id
@@ -1110,7 +1110,7 @@ export const runBrainLoopSmokeCheck = async (
       .select({ count: sql<number>`count(*)::int` })
       .from(memoryApplications)
       .where(eq(memoryApplications.id, memoryApplication.id));
-    const readbackError = "Brain loop smoke readback did not match persisted records";
+    const readbackError = "Memory loop smoke readback did not match persisted records";
 
     assertSmokeReadbackChecks([
       { label: "harness aggregate", passed: aggregate !== undefined },
@@ -1146,7 +1146,7 @@ export const runBrainLoopSmokeCheck = async (
       },
       {
         label: "decision packet falsifier command",
-        passed: decisionPacketFalsifierCommands.includes("pnpm db:smoke:brain-loop")
+        passed: decisionPacketFalsifierCommands.includes("pnpm db:smoke:memory-loop")
       },
       {
         label: "decision packet non-proof boundary",

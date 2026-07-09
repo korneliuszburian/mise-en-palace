@@ -126,14 +126,14 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
-    id: "brain-loop-db-smoke",
-    command: "pnpm db:smoke:brain-loop",
-    scriptName: "db:smoke:brain-loop",
+    id: "memory-loop-db-smoke",
+    command: "pnpm db:smoke:memory-loop",
+    scriptName: "db:smoke:memory-loop",
     owner: "DB-backed product-loop proof",
     tier: "db",
     requiredFor: ["product-loop", "db-runtime", "handoff"],
     proves: [
-      "live DB evidence/review/feedback/SourceDecision/MemoryReviewGate/memory/activation/Codex-brief readback works for the bounded brain-loop scenario",
+      "live DB evidence/review/feedback/SourceDecision/MemoryReviewGate/memory/activation/Codex-brief readback works for the bounded memory-loop scenario",
       "feedback can change later activation by including helped memory and excluding hurt memory in persisted next-run decisions",
       "marker cleanup completed for that scenario"
     ],
@@ -319,7 +319,7 @@ export const evalProofBoundaryManifest = [
     tier: "db",
     requiredFor: ["db-runtime", "product-loop", "handoff"],
     proves: [
-      "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, KRN behavior/docs smoke, DB readiness, Drizzle check, baseline DB smoke, DB brain-loop smoke, and diff check completed in the current shell",
+      "workspace typecheck, workspace tests, krn doctor, Fallow changed-file audit, KRN behavior/docs smoke, DB readiness, Drizzle check, baseline DB smoke, DB memory-loop smoke, and diff check completed in the current shell",
       "the local full gate aggregated the current deterministic static, eval-adapter, DB-runtime, and product-loop smoke boundaries"
     ],
     doesNotProve: [

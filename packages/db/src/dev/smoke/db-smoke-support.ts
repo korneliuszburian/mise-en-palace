@@ -320,7 +320,7 @@ export const ensureSmokeBrainStoreReady = async (
   });
 
   if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error(`Brain store is not ready for ${smokeName}`);
+    throw new Error(`Memory store is not ready for ${smokeName}`);
   }
 };
 

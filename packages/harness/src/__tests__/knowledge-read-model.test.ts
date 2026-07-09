@@ -294,7 +294,7 @@ describe("Knowledge read model", () => {
     expect(readModel).toMatchObject({
       id: "knowledge:source-to-decision-retention-gate",
       mechanism: "Source-to-decision mapping prevents decorative source hoarding by forcing every retained source or knowledge decision to state why it changes KRN behavior and how it can be falsified.",
-      krnImplication: "Brain-knowledge seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory."
+      krnImplication: "Memory seeds may guide implementation only after the reviewed decision chain is preserved through a store-backed MemoryRecord readback, not by treating catalog JSON as runtime memory."
     });
     expect(searchKnowledgeReadModels([readModel], {
       text: "decorative source hoarding store-backed memoryrecord"

@@ -212,7 +212,7 @@ const runBrainAdapter: CliCommandAdapter = async (command, context) => {
         ? {}
         : { createDatabaseRuntime: context.createDatabaseRuntime })
     }),
-    "Unknown brain search error",
+    "Unknown memory search error",
     context
   );
 };

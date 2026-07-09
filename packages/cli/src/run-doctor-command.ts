@@ -125,7 +125,7 @@ const doctorFailureRules: readonly DoctorFailureRule[] = [
   },
   {
     labels: labels([
-      "Brain store readiness",
+      "Memory store readiness",
       "Harness persistence readiness",
       "Source graph readiness",
       "Memory governance readiness",

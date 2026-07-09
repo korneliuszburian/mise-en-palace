@@ -283,7 +283,7 @@ export const runCodexAdapterSmokeCheck = async (
     migrationsFolder: input.migrationsFolder
   });
 
-  assertBrainStoreReady(readiness, "Brain store is not ready for Codex adapter smoke");
+  assertBrainStoreReady(readiness, "Memory store is not ready for Codex adapter smoke");
 
   const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-codex-adapter-smoke-${marker}`;

@@ -391,8 +391,8 @@ describe("runMaintenancePreviewCommand", () => {
   });
 
   it("routes brain-search missingEvidence readback into acquisition candidates", async () => {
-    const fixture = await writeJsonFixture("brain-search.json", {
-      kind: "krn.brainSearch.preview.v1",
+    const fixture = await writeJsonFixture("memory-search.json", {
+      kind: "krn.memorySearch.preview.v1",
       query: "Autonomous Memory Agents",
       sourceSearch: {
         supportingClaims: 5,
@@ -409,7 +409,7 @@ describe("runMaintenancePreviewCommand", () => {
           "run a narrower paper-specific source search before retaining the claim"
         ],
         doesNotProve: [
-          "brain-search readback does not prove the paper is applicable to KRN"
+          "memory-search readback does not prove the paper is applicable to KRN"
         ]
       },
       activationUtility: {
@@ -464,7 +464,7 @@ describe("runMaintenancePreviewCommand", () => {
 
       expect(result.stdout).toContain("knowledgeAcquisition: 1");
       expect(result.stdout).toContain("kind: knowledge_acquisition_candidate");
-      expect(result.stdout).toContain("source: brain_search");
+      expect(result.stdout).toContain("source: memory_search");
       expect(result.stdout).toContain("query: Autonomous Memory Agents");
       expect(result.stdout).toContain(
         "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
@@ -512,9 +512,9 @@ describe("runMaintenancePreviewCommand", () => {
     }
   });
 
-  it("routes generic-only target-fit brain-search readback into acquisition candidates", async () => {
-    const fixture = await writeJsonFixture("brain-search-generic-target-fit.json", {
-      kind: "krn.brainSearch.preview.v1",
+  it("routes generic-only target-fit memory-search readback into acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("memory-search-generic-target-fit.json", {
+      kind: "krn.memorySearch.preview.v1",
       query: "EKOLOGUS Brain quality gate",
       knowledgeReadModels: {
         selectedKnowledge: [
@@ -555,7 +555,7 @@ describe("runMaintenancePreviewCommand", () => {
         "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
       proof: {
         doesNotProve: [
-          "brain search combined readbacks without mutating KRN state"
+          "memory search combined readbacks without mutating KRN state"
         ]
       }
     });
@@ -591,10 +591,10 @@ describe("runMaintenancePreviewCommand", () => {
           candidates: [
             {
               kind: "knowledge_acquisition_candidate",
-              source: "brain_search",
+              source: "memory_search",
               query: "EKOLOGUS Brain quality gate",
               missingEvidence: [
-                "target-specific SourceClaim evidence for brain-search query \"EKOLOGUS Brain quality gate\""
+                "target-specific SourceClaim evidence for memory-search query \"EKOLOGUS Brain quality gate\""
               ],
               queryShapeDiagnostics: [
                 "targetFitSummary: generic_only_selected_knowledge",
@@ -818,8 +818,8 @@ describe("runMaintenancePreviewCommand", () => {
             sourceClaimEdgeReadback: "not_created",
             sourceSearchReadbackCommand:
               "pnpm --filter @krn/cli krn source search --query docs/source.md",
-            brainSearchReadbackCommand:
-              "pnpm --filter @krn/cli krn brain search --query docs/source.md",
+            memorySearchReadbackCommand:
+              "pnpm --filter @krn/cli krn memory search --query docs/source.md",
             doesNotProve:
               "Ready ingest readback does not prove source truth or ranking quality."
           }
@@ -877,15 +877,15 @@ describe("runMaintenancePreviewCommand", () => {
   });
 
   it("does not preserve activation utility evidence for non-exploration verdicts", async () => {
-    const fixture = await writeJsonFixture("brain-search-sufficient.json", {
-      kind: "krn.brainSearch.preview.v1",
+    const fixture = await writeJsonFixture("memory-search-sufficient.json", {
+      kind: "krn.memorySearch.preview.v1",
       query: "selected knowledge sufficient",
       sourceSearch: {
         missingEvidence: [
           "SearchDocument evidence for selected knowledge sufficient"
         ],
         doesNotProve: [
-          "brain-search readback does not prove source truth"
+          "memory-search readback does not prove source truth"
         ]
       },
       activationUtility: {
@@ -942,15 +942,15 @@ describe("runMaintenancePreviewCommand", () => {
   });
 
   it("focuses maintenance preview on knowledge acquisition candidates", async () => {
-    const fixture = await writeJsonFixture("brain-search.json", {
-      kind: "krn.brainSearch.preview.v1",
+    const fixture = await writeJsonFixture("memory-search.json", {
+      kind: "krn.memorySearch.preview.v1",
       query: "focused acquisition",
       sourceSearch: {
         missingEvidence: [
           "SearchDocument evidence for focused acquisition"
         ],
         doesNotProve: [
-          "brain-search readback does not prove acquisition quality"
+          "memory-search readback does not prove acquisition quality"
         ]
       }
     });
@@ -1018,7 +1018,7 @@ describe("runMaintenancePreviewCommand", () => {
           candidates: [
             {
               kind: "knowledge_acquisition_candidate",
-              source: "brain_search",
+              source: "memory_search",
               query: "focused acquisition",
               reviewability: "ready",
               mutation: "none"

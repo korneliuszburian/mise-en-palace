@@ -84,7 +84,7 @@ export interface SourceArtifactPreviewPersistenceReadback {
     sourceClaimEdgeReadback: "ready" | "missing_readback" | "not_created";
     activationReadbackQuery: string;
     sourceSearchReadbackCommand: string;
-    brainSearchReadbackCommand: string;
+    memorySearchReadbackCommand: string;
     nextAction: string;
     doesNotProve: string;
   };
@@ -573,8 +573,8 @@ const shellQuote = (value: string): string =>
 const sourceSearchReadbackCommand = (query: string): string =>
   `krn source search --query ${shellQuote(query)} --json`;
 
-const brainSearchReadbackCommand = (query: string): string =>
-  `krn brain search --query ${shellQuote(query)} --json`;
+const memorySearchReadbackCommand = (query: string): string =>
+  `krn memory search --query ${shellQuote(query)} --json`;
 
 const ingestLoopReadback = (input: {
   artifact: SourceArtifactPersistenceRows;
@@ -602,7 +602,7 @@ const ingestLoopReadback = (input: {
     sourceClaimEdgeReadback: edgeStatus,
     activationReadbackQuery: input.search.readbackQuery,
     sourceSearchReadbackCommand: sourceSearchReadbackCommand(input.search.readbackQuery),
-    brainSearchReadbackCommand: brainSearchReadbackCommand(input.search.readbackQuery),
+    memorySearchReadbackCommand: memorySearchReadbackCommand(input.search.readbackQuery),
     nextAction: "run the readback command before changing ranking, crawler, schema, UI, API, or MCP",
     doesNotProve: "ingest loop readback does not prove activation inclusion, ranking quality, source truth, embeddings, graph retrieval quality, crawler readiness, or product readiness"
   };
@@ -625,7 +625,7 @@ const formatIngestLoopReadbackLines = (input: {
     `sourceClaimEdgeReadback: ${readback.sourceClaimEdgeReadback}`,
     `activationReadbackQuery: ${readback.activationReadbackQuery}`,
     `sourceSearchReadbackCommand: ${readback.sourceSearchReadbackCommand}`,
-    `brainSearchReadbackCommand: ${readback.brainSearchReadbackCommand}`,
+    `memorySearchReadbackCommand: ${readback.memorySearchReadbackCommand}`,
     `nextAction: ${readback.nextAction}`,
     `doesNotProve: ${readback.doesNotProve}`
   ];

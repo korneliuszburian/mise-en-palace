@@ -348,7 +348,7 @@ describe("runCli", () => {
     });
   });
 
-  it("retries brain recall planning with compact mechanism terms", async () => {
+  it("retries memory recall planning with compact mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Use the retained consensus relation maintenance review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether knowledge:consensus-relation-maintenance-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work"
     );
@@ -365,7 +365,7 @@ describe("runCli", () => {
     });
   });
 
-  it("retries brain recall planning with parser exemplar mechanism terms", async () => {
+  it("retries memory recall planning with parser exemplar mechanism terms", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Improve knowledge plan query shaping so long TypeScript parser exemplar metadata-boundary tasks select knowledge:ts-boundary-knowledge-parser-exemplar without ranking, schema, or Memory Core changes"
     );

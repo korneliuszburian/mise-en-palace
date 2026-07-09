@@ -22,12 +22,12 @@ const isJsonRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 export interface BrainSearchPreviewResource {
-  kind: "krn.brainSearch.preview.v1";
+  kind: "krn.memorySearch.preview.v1";
   access: "read_only";
   mutation: "none";
   query: string;
-  brainRecallReadback: "fixture_catalog" | "store_backed";
-  brainRecallQueries: readonly string[];
+  memoryRecallReadback: "fixture_catalog" | "store_backed";
+  memoryRecallQueries: readonly string[];
   knowledgeReadModels: {
     totalReadModels: number;
     returnedReadModels: number;
@@ -99,7 +99,7 @@ interface SourceSearchKnowledgeFields {
 
 type BrainSearchRecommendationResource = Pick<
   BrainSearchPreviewResource,
-  "brainRecallReadback" | "knowledgeReadModels" | "sourceSearch"
+  "memoryRecallReadback" | "knowledgeReadModels" | "sourceSearch"
 >;
 
 export const parseJsonObject = (text: string, label: string): JsonRecord => {
@@ -382,11 +382,11 @@ const sourceSearchKnowledgePacketFromFields = (
     consumers: optionalStringArray(fields.consumer),
     falsifier: firstDefinedString([
       fields.falsifier,
-      "missing falsifier; do not treat this source evidence as review-ready brain recall"
+      "missing falsifier; do not treat this source evidence as review-ready memory recall"
     ]),
     doesNotProve:
       fields.doesNotProve ??
-      "This source-search candidate does not prove a brain recall is review-ready.",
+      "This source-search candidate does not prove a memory recall is review-ready.",
     nextAction: sourceKnowledgeNextAction[reviewability]
   };
 };
@@ -415,14 +415,14 @@ const sourceSearchKnowledgePackets = (
   });
 
 const selectedKnowledgePackets = (input: {
-  brainRecallReadback: BrainSearchPreviewResource["brainRecallReadback"];
+  memoryRecallReadback: BrainSearchPreviewResource["memoryRecallReadback"];
   readModels: readonly unknown[];
   supportingClaims: readonly unknown[];
   query: string;
 }): readonly BrainSearchKnowledgePacket[] => {
   const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims, input.query);
 
-  if (input.brainRecallReadback === "store_backed") {
+  if (input.memoryRecallReadback === "store_backed") {
     const storePackets = knowledgePackets(input.readModels, input.query, "memory_store");
 
     return storePackets.length > 0
@@ -457,7 +457,7 @@ const nonTargetSpecificRecommendation = (
 const storeBackedRecommendation = (
   resource: BrainSearchRecommendationResource
 ): string | undefined => {
-  if (resource.brainRecallReadback !== "store_backed") {
+  if (resource.memoryRecallReadback !== "store_backed") {
     return undefined;
   }
 
@@ -474,8 +474,8 @@ const storeBackedRecommendation = (
   }
 
   return sourceEvidenceCount(resource.sourceSearch) > 0
-    ? "Use the store-backed source/search evidence cautiously; use fixture-catalog brain search only for explicit test/import readbacks."
-    : "Do not infer product truth from store-backed brain search; seed or persist governed source evidence first.";
+    ? "Use the store-backed source/search evidence cautiously; use fixture-catalog memory search only for explicit test/import readbacks."
+    : "Do not infer product truth from store-backed memory search; seed or persist governed source evidence first.";
 };
 
 const catalogRecommendation = (
@@ -494,7 +494,7 @@ const catalogRecommendation = (
   }
 
   if (hasSourceEvidence) {
-    return "Use source-search evidence cautiously and run a narrower brain recall query before retaining knowledge.";
+    return "Use source-search evidence cautiously and run a narrower memory recall query before retaining knowledge.";
   }
 
   if (hasReturnedReadModels) {
@@ -530,8 +530,8 @@ export const returnedKnowledgeReadModelCount = (knowledgeJson: JsonRecord): numb
 export const buildBrainSearchPreviewResource = (
   input: {
     query: string;
-    brainRecallReadback: BrainSearchPreviewResource["brainRecallReadback"];
-    brainRecallQueries: readonly string[];
+    memoryRecallReadback: BrainSearchPreviewResource["memoryRecallReadback"];
+    memoryRecallQueries: readonly string[];
     knowledgeJson: JsonRecord;
     sourceJson: JsonRecord;
   }
@@ -546,7 +546,7 @@ export const buildBrainSearchPreviewResource = (
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
   const selectedKnowledge = selectedKnowledgePackets({
-    brainRecallReadback: input.brainRecallReadback,
+    memoryRecallReadback: input.memoryRecallReadback,
     readModels,
     supportingClaims,
     query: input.query
@@ -564,12 +564,12 @@ export const buildBrainSearchPreviewResource = (
   });
   const targetFitSummary = summarizeTargetFit(selectedKnowledge);
   const resource: BrainSearchPreviewResource = {
-    kind: "krn.brainSearch.preview.v1",
+    kind: "krn.memorySearch.preview.v1",
     access: "read_only",
     mutation: "none",
     query: input.query,
-    brainRecallReadback: input.brainRecallReadback,
-    brainRecallQueries: input.brainRecallQueries,
+    memoryRecallReadback: input.memoryRecallReadback,
+    memoryRecallQueries: input.memoryRecallQueries,
     knowledgeReadModels: {
       totalReadModels: numberValue(input.knowledgeJson["totalReadModels"]),
       returnedReadModels: numberValue(input.knowledgeJson["returnedReadModels"]),
@@ -606,16 +606,16 @@ export const buildBrainSearchPreviewResource = (
     recommendedNextAction: "",
     proof: {
       proves: [
-        input.brainRecallReadback === "store_backed"
-          ? "brain recall fixture catalog readback is unavailable in product brain search"
-          : "existing brain recall fixture catalog readback was executed as bootstrap/fixture input for this query",
+        input.memoryRecallReadback === "store_backed"
+          ? "memory recall fixture catalog readback is unavailable in product memory search"
+          : "existing memory recall fixture catalog readback was executed as bootstrap/fixture input for this query",
         "existing source-search answer package was executed for this query",
-        "brain search combined both readbacks without mutating KRN state"
+        "memory search combined both readbacks without mutating KRN state"
       ],
       doesNotProve: [
         "source truth",
-        "brain recall catalog completeness",
-        ...(input.brainRecallReadback === "fixture_catalog"
+        "memory recall catalog completeness",
+        ...(input.memoryRecallReadback === "fixture_catalog"
           ? ["fixture catalog knowledge is runtime memory"]
           : []),
         "ranking quality",
@@ -634,12 +634,12 @@ export const buildBrainSearchPreviewResource = (
 
 export const formatBrainSearchPreviewText = (resource: BrainSearchPreviewResource): string =>
   [
-    "KRN Brain Search Preview",
+    "KRN Memory Search Preview",
     "Access: read-only",
     "Mutation: none",
     `Query: ${resource.query}`,
-    `Brain recall readback: ${resource.brainRecallReadback}`,
-    `Brain recall queries: ${resource.brainRecallQueries.length === 0 ? "none" : resource.brainRecallQueries.join(" -> ")}`,
+    `Memory recall readback: ${resource.memoryRecallReadback}`,
+    `Memory recall queries: ${resource.memoryRecallQueries.length === 0 ? "none" : resource.memoryRecallQueries.join(" -> ")}`,
     "",
     "Recall read models:",
     `- returned: ${resource.knowledgeReadModels.returnedReadModels}`,

@@ -138,14 +138,14 @@ const dbSmokeTargetMetadata = {
     failureLabel: "Activation smoke"
   },
   brainLoop: {
-    title: "KRN Brain Loop Smoke",
-    skippedLine: "Brain loop smoke: skipped (database not configured)",
-    failureLabel: "Brain loop smoke"
+    title: "KRN Memory Loop Smoke",
+    skippedLine: "Memory loop smoke: skipped (database not configured)",
+    failureLabel: "Memory loop smoke"
   },
   brainSearch: {
-    title: "KRN Brain Search Smoke",
-    skippedLine: "Brain search smoke: skipped (database not configured)",
-    failureLabel: "Brain search smoke"
+    title: "KRN Memory Search Smoke",
+    skippedLine: "Memory search smoke: skipped (database not configured)",
+    failureLabel: "Memory search smoke"
   },
   runShow: {
     title: "KRN Run Show Smoke",
@@ -496,13 +496,13 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runBrainLoopSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("brain-loop-smoke"),
+    smokeId: runtime.createId("memory-loop-smoke"),
     renderExecutionBrief: (input) => renderExecutionBriefText(createExecutionBrief(input))
   });
 
   return smokeResultFromCleanup(
     context,
-    "KRN Brain Loop Smoke",
+    "KRN Memory Loop Smoke",
     report.cleanedUp,
     [
       `Workspace smoke row: ${report.workspaceSlug}`,
@@ -579,7 +579,7 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Revision-run superseded source excluded: ${report.revisionRunSupersededSourceExcluded ? "yes" : "no"}`,
       `Run events: ${report.runEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-      ...cleanupStatusLines(report.cleanedUp, "Brain loop smoke")
+      ...cleanupStatusLines(report.cleanedUp, "Memory loop smoke")
     ]
   );
 };
@@ -591,13 +591,13 @@ const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runBrainSearchDbSmokeCheck({
     databaseUrl: context.databaseUrl,
     repoRoot: context.repoRoot,
-    smokeId: runtime.createId("brain-search-smoke"),
+    smokeId: runtime.createId("memory-search-smoke"),
     now: "2026-07-04T00:00:00.000Z"
   });
 
   return smokeResultFromCleanup(
     context,
-    "KRN Brain Search Smoke",
+    "KRN Memory Search Smoke",
     report.cleanedUp,
     [
       `Project: ${report.projectId}`,
@@ -640,7 +640,7 @@ const runBrainSearchSmokeTarget: DbSmokeTargetHandler = async (
       `Grounded source contribution: ${report.groundedSourceContribution}`,
       `Limitation classification: ${report.limitationClassification}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-      ...cleanupStatusLines(report.cleanedUp, "Brain search smoke")
+      ...cleanupStatusLines(report.cleanedUp, "Memory search smoke")
     ]
   );
 };

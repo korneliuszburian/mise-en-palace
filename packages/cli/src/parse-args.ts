@@ -9,9 +9,6 @@ import type {
   KnowledgeSearchFilter
 } from "@krn/harness";
 import {
-  parseBrainArgs
-} from "./parse-brain-args.js";
-import {
   parseCodexArgs
 } from "./parse-codex-args.js";
 import {
@@ -169,6 +166,9 @@ export type CliCommand =
     }
   | {
       kind: "brainRecallHelp";
+    }
+  | {
+      kind: "memoryHelp";
     }
   | {
       kind: "brainRecall";
@@ -562,10 +562,10 @@ const usage = [
   "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
   "krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "krn doctor",
-  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]",
+  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "  source usefulness: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
-  "  knowledge usefulness: krn evidence capture --knowledge-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future knowledge recall quality\"",
+  "  memory usefulness: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
   "  target: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "  persisted: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"git diff --check=passed\" --persist",
   "  note: evidence capture records outcomes; it does not execute commands",
@@ -573,8 +573,10 @@ const usage = [
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
   "krn decision packet --run-id <id> [--json]",
-  "krn brain search --query \"...\" [--project <project-id>] [--json]",
-  "krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn memory search --query \"...\" [--project <project-id>] [--json]",
+  "krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn memory seed --file <catalog.json> [--persist] [--dry-run]",
+  "krn memory propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn maintenance preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn maintenance run --id <maintenance-queue-id>",
   "krn codex brief --run-id <id>",
@@ -592,7 +594,6 @@ const usage = [
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
-  "krn memory knowledge propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn memory anti propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
@@ -602,7 +603,7 @@ const usage = [
   "Internal/dev commands:",
   "krn db --help",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|memory-loop|memory-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "  note: DB readiness/smoke commands prove local runtime plumbing only; they are not product workflow or quality authority"
 ].join("\n");
 
@@ -616,7 +617,6 @@ const isEvidenceHelpRequest = (rest: readonly string[]): boolean =>
   (rest[0] === "capture" && (rest[1] === "--help" || rest[1] === "-h"));
 
 const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
-  brain: parseBrainArgs,
   doctor: parseDoctorArgs,
   init: parseInitArgs,
   db: parseDbArgs,

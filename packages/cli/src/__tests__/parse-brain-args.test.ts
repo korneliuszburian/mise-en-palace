@@ -5,7 +5,7 @@ import {
 } from "../parse-brain-args.js";
 
 describe("parseBrainArgs", () => {
-  it("parses store-backed brain search args", () => {
+  it("parses store-backed memory search args", () => {
     expect(parseBrainArgs([
       "search",
       "--query",
@@ -28,7 +28,7 @@ describe("parseBrainArgs", () => {
     });
   });
 
-  it("parses project-scoped brain search", () => {
+  it("parses project-scoped memory search", () => {
     expect(parseBrainArgs([
       "search",
       "--query",
@@ -48,7 +48,7 @@ describe("parseBrainArgs", () => {
     });
   });
 
-  it("defaults brain search to store-backed memory readback", () => {
+  it("defaults memory search to store-backed memory readback", () => {
     expect(parseBrainArgs([
       "search",
       "--query",
@@ -64,7 +64,7 @@ describe("parseBrainArgs", () => {
     });
   });
 
-  it("rejects an empty brain search project id", () => {
+  it("rejects an empty memory search project id", () => {
     const result = parseBrainArgs([
       "search",
       "--query",
@@ -76,7 +76,7 @@ describe("parseBrainArgs", () => {
     expect(result.error).toContain("--project requires a non-empty project id");
   });
 
-  it("rejects legacy catalog files in brain search", () => {
+  it("rejects legacy catalog files in memory search", () => {
     const result = parseBrainArgs([
       "search",
       "--query",
@@ -85,10 +85,10 @@ describe("parseBrainArgs", () => {
       "tests/fixtures/brain-knowledge/corpus/catalog.json"
     ]);
 
-    expect(result.error).toContain("Unsupported brain search argument: --catalog-file");
+    expect(result.error).toContain("Unsupported memory search argument: --catalog-file");
   });
 
-  it("rejects redundant store-only in brain search", () => {
+  it("rejects redundant store-only in memory search", () => {
     const result = parseBrainArgs([
       "search",
       "--query",
@@ -96,7 +96,7 @@ describe("parseBrainArgs", () => {
       "--store-only"
     ]);
 
-    expect(result.error).toContain("Unsupported brain search argument: --store-only");
+    expect(result.error).toContain("Unsupported memory search argument: --store-only");
   });
 
   it("requires a query", () => {
@@ -108,6 +108,6 @@ describe("parseBrainArgs", () => {
   it("rejects unsupported limits", () => {
     const result = parseBrainArgs(["search", "--query", "x", "--limit", "0"]);
 
-    expect(result.error).toContain("Unsupported brain search limit: 0");
+    expect(result.error).toContain("Unsupported memory search limit: 0");
   });
 });

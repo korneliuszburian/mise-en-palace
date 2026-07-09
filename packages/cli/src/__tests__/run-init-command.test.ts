@@ -199,7 +199,7 @@ describe("runCli init", () => {
     );
   });
 
-  it("connects a target repo to the brain store with persisted IDs", async () => {
+  it("connects a target repo to the memory store with persisted IDs", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const fixtureRepo = path.join(
       repoRoot,

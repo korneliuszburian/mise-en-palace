@@ -36,7 +36,7 @@ const findCheckStatus = (
 type BrainStoreSkipReason =
   | "Postgres not configured"
   | "Postgres unreachable"
-  | "brain store not ready";
+  | "memory store not ready";
 
 type BrainStoreGate =
   | {
@@ -215,7 +215,7 @@ const brainStoreGate = (
   ) {
     return {
       kind: "skipped",
-      reason: "brain store not ready"
+      reason: "memory store not ready"
     };
   }
 

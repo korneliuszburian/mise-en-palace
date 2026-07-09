@@ -317,9 +317,8 @@ describe("parseMemoryArgs", () => {
     });
   });
 
-  it("parses memory knowledge propose options", () => {
+  it("parses memory propose options", () => {
     expect(parseMemoryArgs([
-      "knowledge",
       "propose",
       "--project",
       "project-1",
@@ -335,13 +334,13 @@ describe("parseMemoryArgs", () => {
       }
     });
 
-    expect(parseMemoryArgs(["knowledge", "propose", "--help"])).toEqual({
+    expect(parseMemoryArgs(["propose", "--help"])).toEqual({
       command: {
         kind: "memoryKnowledgeProposeHelp"
       }
     });
 
-    expect(parseMemoryArgs(["knowledge", "propose", "--limit", "0"])).toEqual({
+    expect(parseMemoryArgs(["propose", "--limit", "0"])).toEqual({
       error: "--limit requires a positive integer"
     });
   });
@@ -519,8 +518,8 @@ describe("parseMemoryArgs", () => {
       error: expect.any(String)
     });
     expect(unsupportedShape.error).toContain("Usage: krn memory candidate add");
-    expect(unsupportedShape.error).toContain("Usage: krn memory knowledge seed");
-    expect(unsupportedShape.error).toContain("Usage: krn memory knowledge propose");
+    expect(unsupportedShape.error).toContain("Usage: krn memory seed");
+    expect(unsupportedShape.error).toContain("Usage: krn memory propose");
     expect(unsupportedShape.error).toContain("Usage: krn memory anti add");
     expect(unsupportedShape.error).toContain("Usage: krn memory anti propose");
   });

@@ -39,13 +39,13 @@ describe("parseDbArgs", () => {
         target: "targetRepoHarness"
       }
     });
-    expect(parseDbArgs(["smoke", "brain-loop"])).toEqual({
+    expect(parseDbArgs(["smoke", "memory-loop"])).toEqual({
       command: {
         kind: "dbSmoke",
         target: "brainLoop"
       }
     });
-    expect(parseDbArgs(["smoke", "brain-search"])).toEqual({
+    expect(parseDbArgs(["smoke", "memory-search"])).toEqual({
       command: {
         kind: "dbSmoke",
         target: "brainSearch"

@@ -127,7 +127,7 @@ const packetJson = {
       sourceDecisionUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness decision:<id>=helped",
       knowledgeUsefulnessExample:
-        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --knowledge-usefulness knowledge=helped",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --memory-usefulness knowledge=helped",
       doesNotProve: "Feedback does not promote truth without review gates."
     }
   },

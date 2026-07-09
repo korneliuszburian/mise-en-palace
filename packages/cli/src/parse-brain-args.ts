@@ -9,14 +9,14 @@ import type {
 } from "./parse-args.js";
 
 const brainSearchUsage = [
-  "Usage: krn brain search --query \"...\" [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
-  "Usage: krn brain recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn memory search --query \"...\" [--project <project-id>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
+  "Usage: krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
-  "krn brain search --query \"unknown-first TypeScript boundary\"",
-  "krn brain recall --text \"unknown-first\"",
-  "krn brain search --query \"source-to-decision\" --project project-explicit --json",
-  "  note: brain search uses DB-backed MemoryRecord readback plus source-search. File catalogs are fixture/import inputs for brain recall and memory knowledge seed, not product brain search memory. It does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "krn memory search --query \"unknown-first TypeScript boundary\"",
+  "krn memory recall --text \"unknown-first\"",
+  "krn memory search --query \"source-to-decision\" --project project-explicit --json",
+  "  note: memory search uses DB-backed MemoryRecord readback plus source-search. File catalogs are fixture/import inputs for memory recall and memory seed, not product runtime memory. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;
@@ -30,7 +30,7 @@ const parsePositiveInteger = (
   if (!/^[1-9]\d*$/u.test(trimmed)) {
     return {
       ok: false,
-      error: `Unsupported brain search ${label}: ${value}`
+      error: `Unsupported memory search ${label}: ${value}`
     };
   }
 
@@ -39,7 +39,7 @@ const parsePositiveInteger = (
   if (!Number.isSafeInteger(parsed)) {
     return {
       ok: false,
-      error: `Unsupported brain search ${label}: ${value}`
+      error: `Unsupported memory search ${label}: ${value}`
     };
   }
 
@@ -191,7 +191,7 @@ const parseBrainSearchOption = (
   return parser === undefined
     ? {
         ok: false,
-        error: `Unsupported brain search argument: ${arg}\n${formatBrainSearchUsage()}`
+        error: `Unsupported memory search argument: ${arg}\n${formatBrainSearchUsage()}`
       }
     : parser(args, index, state);
 };
@@ -268,7 +268,7 @@ const buildBrainSearchCommand = (
   };
 };
 
-const parseBrainSearchArgs = (args: readonly string[]): ParseArgsResult => {
+export const parseBrainSearchArgs = (args: readonly string[]): ParseArgsResult => {
   if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
     return brainSearchHelp();
   }
@@ -303,6 +303,6 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
   return action === "search"
     ? parseBrainSearchArgs(args)
     : {
-        error: `Unsupported brain command: ${action}\n${formatBrainSearchUsage()}`
+        error: `Unsupported memory command: ${action}\n${formatBrainSearchUsage()}`
       };
 };

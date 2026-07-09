@@ -5,14 +5,14 @@ import type {
 
 const dbUsage = [
   "Usage: krn db readiness|smoke",
-  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|brain-loop|brain-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
+  "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|memory-loop|memory-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "",
   "Internal/dev commands:",
   "krn db readiness",
   "krn db smoke [target]",
   "",
   "Boundary: DB readiness and smoke commands prove local runtime plumbing only.",
-  "They are not public operator workflow, product quality authority, or Memory Brain readiness proof."
+  "They are not public operator workflow, product quality authority, or Memory Core readiness proof."
 ].join("\n");
 
 export const formatDbUsage = (): string => `${dbUsage}\n`;
@@ -26,8 +26,8 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["memory-governance", "memoryGovernance"],
   ["retrieval-substrate", "retrievalSubstrate"],
   ["activation", "activation"],
-  ["brain-loop", "brainLoop"],
-  ["brain-search", "brainSearch"],
+  ["memory-loop", "brainLoop"],
+  ["memory-search", "brainSearch"],
   ["run-show", "runShow"],
   ["maintenance-boundary", "maintenanceBoundary"],
   ["codex-adapter", "codexAdapter"],

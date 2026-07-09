@@ -135,28 +135,28 @@ describe("runCli", () => {
         usage: "Usage: krn db readiness|smoke"
       },
       {
-        args: ["brain", "--help"],
-        usage: "Usage: krn brain search"
+        args: ["memory", "--help"],
+        usage: "Usage: krn memory search"
       },
       {
-        args: ["brain", "-h"],
-        usage: "Usage: krn brain search"
+        args: ["memory", "-h"],
+        usage: "Usage: krn memory search"
       },
       {
-        args: ["brain", "search", "--help"],
-        usage: "Usage: krn brain search"
+        args: ["memory", "search", "--help"],
+        usage: "Usage: krn memory search"
       },
       {
-        args: ["brain", "search", "-h"],
-        usage: "Usage: krn brain search"
+        args: ["memory", "search", "-h"],
+        usage: "Usage: krn memory search"
       },
       {
-        args: ["brain", "recall", "--help"],
-        usage: "Usage: krn brain recall"
+        args: ["memory", "recall", "--help"],
+        usage: "Usage: krn memory recall"
       },
       {
-        args: ["brain", "recall", "-h"],
-        usage: "Usage: krn brain recall"
+        args: ["memory", "recall", "-h"],
+        usage: "Usage: krn memory recall"
       },
       {
         args: ["maintenance", "--help"],
@@ -243,10 +243,6 @@ describe("runCli", () => {
         args: ["source", "--help"],
         usage: "Usage: krn source artifact preview"
       },
-      {
-        args: ["memory", "--help"],
-        usage: "Usage: krn memory candidate add"
-      }
     ] as const;
 
     for (const command of commands) {

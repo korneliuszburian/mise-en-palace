@@ -491,24 +491,24 @@
       }
     },
     {
-      "id": "heldout-db-project-brain-search",
+      "id": "heldout-db-project-memory-search",
       "competency": "learning",
       "heldOut": true,
       "query": "for DB backed brain search in a non default project what selector must the operator pass",
       "distractorClasses": ["target-specific-vs-generic"],
       "baselineFailureRationale": "A generic DB runtime packet can mention projects but miss the explicit brain-search project selector needed for non-default project recall.",
       "expectedKrnResult": "hit",
-      "expectedSelectedKnowledgeId": "knowledge:brain-search-explicit-project-selector",
+      "expectedSelectedKnowledgeId": "knowledge:memory-search-explicit-project-selector",
       "priorSession": {
-        "id": "session:brain-search-project-selector",
+        "id": "session:memory-search-project-selector",
         "task": "Add an explicit project selector for DB-backed brain search so non-default project memory/source readbacks resolve correctly.",
-        "evidenceRef": "evidence:brain-search-project-selector",
-        "reviewRef": "review:brain-search-project-selector",
-        "feedbackRef": "feedback:brain-search-project-selector-helped",
+        "evidenceRef": "evidence:memory-search-project-selector",
+        "reviewRef": "review:memory-search-project-selector",
+        "feedbackRef": "feedback:memory-search-project-selector-helped",
         "applicationOutcome": "helped",
         "memoryReadModels": [
           {
-            "id": "knowledge:brain-search-explicit-project-selector",
+            "id": "knowledge:memory-search-explicit-project-selector",
             "title": "Brain search explicit DB project selector",
             "summary": "DB-backed brain search should accept an explicit project selector and propagate it into both memory readback and nested source-search composition for non-default projects.",
             "consumers": [
@@ -536,7 +536,7 @@
         ],
         "sourceClaims": [
           {
-            "sourceClaimId": "source:brain-search-explicit-project-selector",
+            "sourceClaimId": "source:memory-search-explicit-project-selector",
             "claim": "DB-backed brain search needs an explicit project selector for non-default project recall.",
             "mechanism": "The selector is propagated into store-backed MemoryRecord readback and nested source-search command composition.",
             "krnImplication": "Future target-specific memory runs should pass the intended project instead of relying on the default local project.",

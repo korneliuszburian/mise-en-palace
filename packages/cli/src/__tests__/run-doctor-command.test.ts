@@ -20,7 +20,7 @@ describe("runDoctorCommand", () => {
       severity: "failure"
     };
     const typedPassOverLegacyBlocked: DoctorCheck = {
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (legacy wording would have failed)",
       outcome: "ready",
       severity: "pass"
@@ -34,7 +34,7 @@ describe("runDoctorCommand", () => {
     expect(
       hasDoctorFailure([
         {
-          label: "Brain store readiness",
+          label: "Memory store readiness",
           status: "blocked (legacy check)"
         }
       ])

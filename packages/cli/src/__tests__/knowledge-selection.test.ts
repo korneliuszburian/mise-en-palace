@@ -164,10 +164,10 @@ describe("knowledgeSelection", () => {
     expect(result?.recommendedNextAction).toBe("stored target-fit summary was preserved");
   });
 
-  it("formats unavailable brain recall readback with empty-target-fit guidance", () => {
+  it("formats unavailable memory recall readback with empty-target-fit guidance", () => {
     const selection = unavailableKnowledgeSelection(
       "unknown-first parser exemplar",
-      "brain recall command failed"
+      "memory recall command failed"
     );
 
     expect(selection.targetFitSummary.verdict).toBe("no_selected_knowledge");

@@ -33,7 +33,7 @@ import {
 const defaultAcquisitionConsumer =
   "maintenance knowledge acquisition preview";
 const defaultAcquisitionFalsifier =
-  "A source/brain search missing-evidence or generic-only target-fit readback should produce a candidate-only acquisition request without mutating Memory Core.";
+  "A source/memory search missing-evidence or generic-only target-fit readback should produce a candidate-only acquisition request without mutating Memory Core.";
 const defaultAcquisitionDoesNotProve =
   "Missing-evidence or generic-only target-fit readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous maintenance execution, or Memory Core mutation.";
 
@@ -237,7 +237,7 @@ const genericOnlyTargetFitMissingEvidence = (
   }
 
   return [
-    `target-specific SourceClaim evidence for brain-search query "${input.query}"`
+    `target-specific SourceClaim evidence for memory-search query "${input.query}"`
   ];
 };
 
@@ -372,8 +372,8 @@ const brainSearchAcquisitionRequestFromSourceSearch = (
   }
 
   return {
-    id: `readback-brain-search-${safeSlug(input.query)}`,
-    source: "brain_search",
+    id: `readback-memory-search-${safeSlug(input.query)}`,
+    source: "memory_search",
     query: input.query,
     missingEvidence,
     queryShapeDiagnostics: uniqueStrings(
@@ -545,7 +545,7 @@ const sourceArtifactPreviewFollowUp = (
   ingestLoop: JsonRecord | undefined
 ): readonly string[] => uniqueStrings([
   ...optionalTextAsList(ingestLoop?.["sourceSearchReadbackCommand"]),
-  ...optionalTextAsList(ingestLoop?.["brainSearchReadbackCommand"]),
+  ...optionalTextAsList(ingestLoop?.["memorySearchReadbackCommand"]),
   "Use this source artifact preview JSON as readback evidence before opening crawler, schema, ranking, API/MCP, worker, or Memory Core work."
 ]);
 

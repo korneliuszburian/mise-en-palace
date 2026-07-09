@@ -190,7 +190,7 @@ describe("brain maintenance preview", () => {
       knowledgeAcquisitionRequests: [
         {
           id: "activation-utility-exploration",
-          source: "brain_search",
+          source: "memory_search",
           query: "Autonomous Memory Agents exploration",
           missingEvidence: [
             "selected knowledge is missing while source/link/graph evidence is useful"
@@ -536,7 +536,7 @@ describe("brain maintenance preview", () => {
       knowledgeAcquisitionRequests: [
         {
           id: "ama-missing-evidence",
-          source: "brain_search",
+          source: "memory_search",
           query: "Autonomous Memory Agents acquisition escalation",
           missingEvidence: ["candidate-only acquisition lane"],
           evidenceRefs: ["KRN_ROADMAP.md#research-intake"],

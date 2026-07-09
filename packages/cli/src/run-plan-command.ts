@@ -589,7 +589,7 @@ const readKnowledgeSelection = async (
   const selection = knowledgeSelectionFromReadbackJson(
     query,
     JSON.stringify({
-      kind: "krn.brain.recall.readback.v1",
+      kind: "krn.memory.recall.readback.v1",
       access: "read_only",
       mutation: "none",
       source: "memory_store",
@@ -667,7 +667,7 @@ const buildKnowledgeSelection = async (
       })
     );
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "unknown brain recall readback error";
+    const reason = error instanceof Error ? error.message : "unknown memory recall readback error";
 
     return unavailableKnowledgeSelection(task, reason);
   }

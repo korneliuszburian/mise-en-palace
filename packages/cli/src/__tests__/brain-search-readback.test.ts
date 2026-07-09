@@ -6,18 +6,18 @@ import {
 
 describe("brainSearchReadback", () => {
   it("parses brain-search child output as an unknown-first JSON object", () => {
-    const parsed = parseJsonObject("{\"kind\":\"readback\",\"count\":1}", "brain search");
+    const parsed = parseJsonObject("{\"kind\":\"readback\",\"count\":1}", "memory search");
 
     expect(parsed["kind"]).toBe("readback");
     expect(parsed["count"]).toBe(1);
   });
 
   it("rejects non-object brain-search child JSON", () => {
-    expect(() => parseJsonObject("[]", "brain search")).toThrow(
-      "brain search JSON output must be an object"
+    expect(() => parseJsonObject("[]", "memory search")).toThrow(
+      "memory search JSON output must be an object"
     );
-    expect(() => parseJsonObject("null", "brain search")).toThrow(
-      "brain search JSON output must be an object"
+    expect(() => parseJsonObject("null", "memory search")).toThrow(
+      "memory search JSON output must be an object"
     );
   });
 });

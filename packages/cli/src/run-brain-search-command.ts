@@ -75,7 +75,7 @@ const emptyStoreMemoryReadback = (reason?: string): BrainRecallReadback => ({
       readModels: [],
       proof: {
         doesNotProve: [
-          "brain recall fixture catalog readback is unavailable in product brain search",
+          "memory recall fixture catalog readback is unavailable in product memory search",
           ...(reason === undefined ? [] : [reason])
         ]
       }
@@ -103,7 +103,7 @@ const buildStoreMemoryReadback = (
 ): BrainRecallReadback => ({
   result: {
     stdout: JSON.stringify({
-      kind: "krn.brain.recall.readback.v1",
+      kind: "krn.memory.recall.readback.v1",
       access: "read_only",
       mutation: "none",
       source: "memory_store",
@@ -115,10 +115,10 @@ const buildStoreMemoryReadback = (
       readModels: input.usefulnessSelection.readModels,
       proof: {
         proves: [
-          "store-backed brain search read active MemoryRecord rows from the configured DB project",
+          "store-backed memory search read active MemoryRecord rows from the configured DB project",
           "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection",
           ...(input.usefulnessSelection.appliedUsefulnessFeedback
-            ? ["store-backed brain search applied usefulness feedback before selecting knowledge"]
+            ? ["store-backed memory search applied usefulness feedback before selecting knowledge"]
             : [])
         ],
         doesNotProve: [
@@ -253,7 +253,7 @@ const runBrainRecallReadback = async (
   }
 
   const primaryResult = await runCatalogBrainRecallReadback(input);
-  const primaryJson = parseJsonObject(primaryResult.stdout, "brain recall");
+  const primaryJson = parseJsonObject(primaryResult.stdout, "memory recall");
 
   if (returnedKnowledgeReadModelCount(primaryJson) > 0) {
     return {
@@ -272,7 +272,7 @@ const runBrainRecallReadback = async (
       ...input,
       query: compactQuery
     });
-    const compactJson = parseJsonObject(compactResult.stdout, "brain recall compact retry");
+    const compactJson = parseJsonObject(compactResult.stdout, "memory recall compact retry");
 
     if (returnedKnowledgeReadModelCount(compactJson) > 0) {
       return {
@@ -332,9 +332,9 @@ export const runBrainSearchCommand = async (
   ]);
   const resource = buildBrainSearchPreviewResource({
     query,
-    brainRecallReadback: useStoreReadback ? "store_backed" : "fixture_catalog",
-    brainRecallQueries: knowledgeResult.queries,
-    knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "brain recall"),
+    memoryRecallReadback: useStoreReadback ? "store_backed" : "fixture_catalog",
+    memoryRecallQueries: knowledgeResult.queries,
+    knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "memory recall"),
     sourceJson: parseJsonObject(sourceResult.stdout, "source search")
   });
 

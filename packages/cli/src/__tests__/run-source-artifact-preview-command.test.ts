@@ -669,7 +669,7 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceClaimEdgeReadback: ready");
     expect(result.stdout).toContain("activationReadbackQuery: krn-source-artifact-preview ");
     expect(result.stdout).toContain("sourceSearchReadbackCommand: krn source search --query \"krn-source-artifact-preview ");
-    expect(result.stdout).toContain("brainSearchReadbackCommand: krn brain search --query \"krn-source-artifact-preview ");
+    expect(result.stdout).toContain("memorySearchReadbackCommand: krn memory search --query \"krn-source-artifact-preview ");
     expect(result.stdout).toContain("nextAction: run the readback command before changing ranking, crawler, schema, UI, API, or MCP");
     expect(result.stdout).toContain("SourceClaim row created: see Persistence readback");
     expect(result.stdout).toContain("SourceClaimEdge row created: see Persistence readback");
@@ -932,7 +932,7 @@ describe("runSourceArtifactPreviewCommand", () => {
         readback: {
           ingestLoop: {
             sourceSearchReadbackCommand: expect.stringContaining("krn source search --query"),
-            brainSearchReadbackCommand: expect.stringContaining("krn brain search --query")
+            memorySearchReadbackCommand: expect.stringContaining("krn memory search --query")
           }
         }
       }

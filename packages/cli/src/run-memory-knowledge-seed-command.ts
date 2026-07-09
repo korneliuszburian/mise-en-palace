@@ -32,8 +32,8 @@ export interface MemoryKnowledgeSeedCommandResult {
   stdout: string;
 }
 
-const SEED_PROPOSED_BY = "krn memory knowledge seed";
-const SEED_REVIEWER = "krn memory knowledge seed";
+const SEED_PROPOSED_BY = "krn memory seed";
+const SEED_REVIEWER = "krn memory seed";
 
 const confidenceValue = (confidence: KnowledgeDecision["confidence"]): number =>
   confidence === "high" ? 90 : confidence === "medium" ? 60 : confidence === "low" ? 30 : 0;
@@ -172,7 +172,7 @@ export const runMemoryKnowledgeSeedCommand = async (
 
   const db = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory knowledge seed --persist"
+    "KRN_DATABASE_URL is required for krn memory seed --persist"
   );
 
   try {
@@ -225,9 +225,9 @@ const formatSeedPreview = (
   deferredCount?: number
 ): string => {
   const lines = [
-    "KRN Memory Knowledge Seed",
+    "KRN Memory Seed",
     `Catalog file: ${command.catalogFile}`,
-    `Knowledge decisions in catalog: ${loaded.length}`,
+    `Memory decisions in catalog: ${loaded.length}`,
     ...(command.dryRun ? ["Mode: dry-run (no writes)"] : [])
   ];
 

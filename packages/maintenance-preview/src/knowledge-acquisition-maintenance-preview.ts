@@ -8,7 +8,7 @@ import type {
 
 export type KnowledgeAcquisitionSource =
   | "source_search"
-  | "brain_search"
+  | "memory_search"
   | "source_artifact_preview";
 
 export type KnowledgeAcquisitionMaintenanceCandidateReason =
@@ -208,7 +208,7 @@ const buildAcquisitionEscalationPreview = (
     order: steps.length + 1,
     source: "source_search_review",
     cost: "low",
-    action: "Run or review a narrower store-backed source/brain search for the missing evidence.",
+    action: "Run or review a narrower store-backed source/memory search for the missing evidence.",
     when: "Use when linked evidence is absent, insufficient, stale, or contradictory.",
     doesNotProve: "Store-backed search review does not prove complete source coverage or ranking quality."
   });

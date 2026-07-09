@@ -291,8 +291,8 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
   expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
   expect(stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
-  expect(stdout).toContain("reason: Knowledge selected the unknown-first parser shape");
-  expect(stdout).toContain("doesNotProve: Does not prove future knowledge recall quality");
+  expect(stdout).toContain("reason: Memory selected the unknown-first parser shape");
+  expect(stdout).toContain("doesNotProve: Does not prove future memory recall quality");
 };
 
 const expectPersistedEvidenceCandidates = (capture: EvidencePersistenceCapture): void => {
@@ -337,9 +337,9 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
     knowledgeUsefulnessOutcomes: [{
       knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
       outcome: "helped",
-      reason: "Knowledge selected the unknown-first parser shape",
+      reason: "Memory selected the unknown-first parser shape",
       evidenceRefs: ["evidence-bundle-1"],
-      doesNotProve: "Does not prove future knowledge recall quality"
+      doesNotProve: "Does not prove future memory recall quality"
     }]
   });
   expect(capture.evidenceBundle?.reviewBurden).toBe(
@@ -430,13 +430,13 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
     expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
-    expect(result.stdout).toContain("knowledge usefulness: krn evidence capture --knowledge-usefulness");
+    expect(result.stdout).toContain("memory usefulness: krn evidence capture --memory-usefulness");
     expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
@@ -683,8 +683,8 @@ describe("runCli", () => {
         "wilq-seo scripts/test.sh",
         "--source-usefulness",
         "claim:source-claim-1=helped|Source claim kept knowledge-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
-        "--knowledge-usefulness",
-        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-bundle-1|Does not prove future knowledge recall quality",
+        "--memory-usefulness",
+        "knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-bundle-1|Does not prove future memory recall quality",
         "--persist"
       ],
       {
@@ -742,8 +742,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
-        "--knowledge-usefulness",
-        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge allegedly helped without current proof|stale-proof-ref|Does not prove future knowledge recall quality",
+        "--memory-usefulness",
+        "knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge allegedly helped without current proof|stale-proof-ref|Does not prove future memory recall quality",
         "--source-usefulness",
         "claim:source-claim-1=helped|Source allegedly helped without current proof|stale-source-ref|Does not prove future source selection quality",
         "--persist"
@@ -794,7 +794,7 @@ describe("runCli", () => {
         outcome: "unknown",
         reason: expect.stringContaining("Downgraded: no evidenceRef matched current evidence bundle"),
         evidenceRefs: ["stale-proof-ref"],
-        doesNotProve: "Does not prove future knowledge recall quality"
+        doesNotProve: "Does not prove future memory recall quality"
       }]
     });
     expect(capture.maintenanceQueueInputs).toEqual([{
@@ -829,8 +829,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--source-usefulness",
         "claim:source-claim-current=helped|Current source claim helped|evidence-bundle-1|Does not prove future source selection quality",
-        "--knowledge-usefulness",
-        "knowledge:frontend-template=helped|Current knowledge helped|evidence-bundle-1|Does not prove future knowledge recall quality",
+        "--memory-usefulness",
+        "knowledge:frontend-template=helped|Current knowledge helped|evidence-bundle-1|Does not prove future memory recall quality",
         "--persist"
       ],
       {
@@ -964,7 +964,7 @@ describe("runCli", () => {
         "current-packet",
         "--source-usefulness",
         "claim:source-claim-stale=stale|Selected source claim became stale|packet:current-packet|Does not demote source truth without review",
-        "--knowledge-usefulness",
+        "--memory-usefulness",
         "knowledge:frontend-template=stale|Selected knowledge became stale|packet:current-packet|Does not demote memory truth without review",
         "--persist"
       ],

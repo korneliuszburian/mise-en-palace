@@ -20,7 +20,7 @@ const knowledgeFile = "tests/fixtures/brain-knowledge/corpus/knowledge/ts-bounda
 const catalogFile = "tests/fixtures/brain-knowledge/corpus/catalog.json";
 
 describe("runBrainRecallCommand", () => {
-  it("renders a read-only brain recall preview", async () => {
+  it("renders a read-only memory recall preview", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [readModelFile],
@@ -35,7 +35,7 @@ describe("runBrainRecallCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("KRN Brain Recall");
+    expect(result.stdout).toContain("KRN Memory Recall");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Source: explicit_files");
@@ -68,7 +68,7 @@ describe("runBrainRecallCommand", () => {
     }
 
     expect(parsed).toMatchObject({
-      kind: "krn.brain.recall.readback.v1",
+      kind: "krn.memory.recall.readback.v1",
       access: "read_only",
       mutation: "none",
       source: "explicit_files",
@@ -102,7 +102,7 @@ describe("runBrainRecallCommand", () => {
     })).rejects.toThrow("Invalid KnowledgeReadModel file: package.json");
   });
 
-  it("renders brain recall produced from knowledge decision files", async () => {
+  it("renders memory recall produced from knowledge decision files", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -117,7 +117,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("Decision files: tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
-    expect(result.stdout).toContain("does not prove: brain recall readback was produced from live DB state");
+    expect(result.stdout).toContain("does not prove: memory recall readback was produced from live DB state");
     expect(result.stdout).toContain("does not prove: explicit file or catalog-backed knowledge is runtime memory");
   });
 
@@ -132,7 +132,7 @@ describe("runBrainRecallCommand", () => {
     })).rejects.toThrow("Invalid decision file: package.json");
   });
 
-  it("renders brain recall from explicit catalog files", async () => {
+  it("renders memory recall from explicit catalog files", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -168,7 +168,7 @@ describe("runBrainRecallCommand", () => {
     });
 
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("<title>KRN Brain Recall</title>");
+    expect(result.stdout).toContain("<title>KRN Memory Recall</title>");
     expect(result.stdout).toContain("type=\"search\"");
     expect(result.stdout).toContain("id=\"kindFilter\"");
     expect(result.stdout).toContain("id=\"statusFilter\"");
@@ -219,7 +219,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("knowledge:target-repo-write-authority-boundary");
     expect(result.stdout).toContain("knowledge:untrusted-context-warning-boundary");
     expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
-    expect(result.stdout).toContain("Brain recall readback/search remains read-only until usefulness proof");
+    expect(result.stdout).toContain("Memory recall readback/search remains read-only until usefulness proof");
     expect(result.stdout).toContain("Consensus relation maintenance review boundary");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Graph relation readback boundary");
@@ -311,7 +311,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("knowledge:ts-boundary-unknown-first-result-state");
   });
 
-  it("searches the second brain recall through the catalog", async () => {
+  it("searches the second memory recall through the catalog", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -400,7 +400,7 @@ describe("runBrainRecallCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
-  it("filters brain recall readModels by usefulness outcome", async () => {
+  it("filters memory recall readModels by usefulness outcome", async () => {
     const helpedResult = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -470,7 +470,7 @@ describe("runBrainRecallCommand", () => {
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
 
-  it("filters brain recall readModels with no usefulness feedback", async () => {
+  it("filters memory recall readModels with no usefulness feedback", async () => {
     const result = await runBrainRecallCommand({
       cwd: repoRoot,
       readModelFiles: [],
@@ -511,7 +511,7 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall knowledge gate source slice operator UX TypeScript"
+        text: "memory recall knowledge gate source slice operator UX TypeScript"
       },
       format: "json"
     });
@@ -520,7 +520,7 @@ describe("runBrainRecallCommand", () => {
     expect(preview.totalReadModels).toBe(0);
     expect(preview.returnedReadModels).toBe(0);
     expect(readModelIds(preview)).toEqual([]);
-    expect(preview.noMatchGuidance).toContain("No brain recall entries matched the current filters.");
+    expect(preview.noMatchGuidance).toContain("No memory recall entries matched the current filters.");
     expect(preview.noMatchGuidance).toContain(
       "Try a shorter --text query or split the query into one mechanism term."
     );
@@ -545,7 +545,7 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall knowledge gate source slice operator UX TypeScript"
+        text: "memory recall knowledge gate source slice operator UX TypeScript"
       },
       format: "text"
     });
@@ -607,13 +607,13 @@ describe("runBrainRecallCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "brain recall knowledge gate source slice operator UX TypeScript"
+        text: "memory recall knowledge gate source slice operator UX TypeScript"
       },
       format: "html"
     });
 
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("No brain recall entries match the current filters.");
+    expect(result.stdout).toContain("No memory recall entries match the current filters.");
     expect(result.stdout).toContain("Try a shorter --text query");
     expect(result.stdout).toContain("Zero results do not prove");
     expect(result.stdout).toContain("Mutation: none");
@@ -766,7 +766,7 @@ describe("runBrainRecallCommand", () => {
       filter: {},
       format: "text"
     })).rejects.toThrow(
-      "Invalid brain recall catalog file: package.json (catalog must include non-empty readModelFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays)"
+      "Invalid memory recall catalog file: package.json (catalog must include non-empty readModelFiles, knowledgeFiles, or usefulnessFeedbackFiles arrays)"
     );
   });
 });

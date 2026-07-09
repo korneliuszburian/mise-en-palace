@@ -17,10 +17,10 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--knowledge-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
-  "Knowledge usefulness example: krn evidence capture --knowledge-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge selected the unknown-first parser shape|evidence-1|Does not prove future knowledge recall quality\"",
+  "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"git diff --check=passed\" --persist",
   "Note: evidence capture records operator/captured evidence; it does not run commands."
@@ -271,7 +271,7 @@ const parseKnowledgeUsefulnessBody = (
 
   return {
     ok: false,
-    error: parsed.error.replaceAll("--source-usefulness", "--knowledge-usefulness")
+    error: parsed.error.replaceAll("--source-usefulness", "--memory-usefulness")
   };
 };
 
@@ -325,7 +325,7 @@ const parseKnowledgeUsefulness = (
 
   if (separatorIndex < 0) {
     return {
-      error: "--knowledge-usefulness requires <knowledge-id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
+      error: "--memory-usefulness requires <knowledge-id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
     };
   }
 
@@ -333,7 +333,7 @@ const parseKnowledgeUsefulness = (
 
   if (knowledgeId.length === 0) {
     return {
-      error: "--knowledge-usefulness requires a non-empty knowledge id"
+      error: "--memory-usefulness requires a non-empty knowledge id"
     };
   }
 
@@ -543,7 +543,7 @@ const evidenceOptionNames = [
   "--command",
   "--verification",
   "--source-usefulness",
-  "--knowledge-usefulness",
+  "--memory-usefulness",
   "--status",
   "--exit-code",
   "--output"
@@ -863,8 +863,8 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
-  "--knowledge-usefulness": (rest, index, state) => {
-    const parsed = parseEvidenceOption(rest, index, "--knowledge-usefulness");
+  "--memory-usefulness": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--memory-usefulness");
 
     if (!parsed.ok) {
       return parsed;

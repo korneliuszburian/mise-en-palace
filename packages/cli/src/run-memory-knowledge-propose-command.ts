@@ -29,7 +29,7 @@ export interface MemoryKnowledgeProposeCommandResult {
   stdout: string;
 }
 
-const PROPOSED_BY = "krn memory knowledge propose";
+const PROPOSED_BY = "krn memory propose";
 const DUPLICATE_SCAN_LIMIT = 1000;
 const DEFAULT_SOURCE_DECISION_LIMIT = 25;
 
@@ -95,7 +95,7 @@ export const runMemoryKnowledgeProposeCommand = async (
 ): Promise<MemoryKnowledgeProposeCommandResult> => {
   const db = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory knowledge propose"
+    "KRN_DATABASE_URL is required for krn memory propose"
   );
 
   try {
@@ -135,7 +135,7 @@ export const runMemoryKnowledgeProposeCommand = async (
 
     return {
       stdout: formatSourceDecisionProposalResult({
-        title: "KRN Memory Knowledge Propose",
+        title: "KRN Memory Propose",
         projectId,
         sourceCountLabel: "Source decisions read",
         sourceCount: sources.length,

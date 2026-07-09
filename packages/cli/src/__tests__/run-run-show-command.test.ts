@@ -98,7 +98,7 @@ const aggregate: HarnessRunAggregate = {
           "Selected knowledge does not prove implementation correctness, source truth, ranking quality, or product readiness.",
         proof: {
           proves: ["knowledge catalog selected knowledge for the plan query"],
-          doesNotProve: ["future knowledge recall quality"]
+          doesNotProve: ["future memory recall quality"]
         }
       }
     },
@@ -358,7 +358,7 @@ const aggregate: HarnessRunAggregate = {
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "helped",
-        reason: "Knowledge selected the unknown-first parser shape for the implementation.",
+        reason: "Memory selected the unknown-first parser shape for the implementation.",
         evidenceRefs: ["evidence-1", "feedback-1"],
         doesNotProve:
           "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
@@ -495,7 +495,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("knowledge usefulness outcomes:");
     expect(result.stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain(
-      "reason: Knowledge selected the unknown-first parser shape for the implementation."
+      "reason: Memory selected the unknown-first parser shape for the implementation."
     );
     expect(result.stdout).toContain(
       "doesNotProve: This knowledge outcome does not prove future knowledge recall or TypeScript quality."
@@ -790,7 +790,7 @@ describe("runRunShowCommand", () => {
         knowledgeUsefulnessOutcomes: [{
           knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
-          reason: "Knowledge selected the unknown-first parser shape for the implementation.",
+          reason: "Memory selected the unknown-first parser shape for the implementation.",
           evidenceRefs: ["evidence-1", "feedback-1"],
           doesNotProve:
             "This knowledge outcome does not prove future knowledge recall or TypeScript quality."

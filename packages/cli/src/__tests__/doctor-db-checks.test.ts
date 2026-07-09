@@ -182,20 +182,20 @@ describe("doctorDbChecks", () => {
       "Source graph runtime proof": "skipped (Postgres unreachable)"
     });
     expectStatuses(await checkMemoryGovernance(repoRoot, "postgres://example", notReadyChecks), {
-      "Memory governance schema": "skipped (brain store not ready)",
-      "MemoryRepository read path": "skipped (brain store not ready)",
-      "Memory governance runtime proof": "skipped (brain store not ready)"
+      "Memory governance schema": "skipped (memory store not ready)",
+      "MemoryRepository read path": "skipped (memory store not ready)",
+      "Memory governance runtime proof": "skipped (memory store not ready)"
     });
     expectStatuses(await checkRetrievalSubstrate(repoRoot, "postgres://example", notReadyChecks), {
-      "Retrieval substrate schema": "skipped (brain store not ready)",
-      "RetrievalRepository read path": "skipped (brain store not ready)",
-      "Retrieval substrate runtime proof": "skipped (brain store not ready)"
+      "Retrieval substrate schema": "skipped (memory store not ready)",
+      "RetrievalRepository read path": "skipped (memory store not ready)",
+      "Retrieval substrate runtime proof": "skipped (memory store not ready)"
     });
     expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, "postgres://example", unreachableChecks), {
       "Codex adapter runtime proof": "skipped (Postgres unreachable)"
     });
     expectStatuses(await checkCodexAdapterRuntimeProof(repoRoot, "postgres://example", notReadyChecks), {
-      "Codex adapter runtime proof": "skipped (brain store not ready)"
+      "Codex adapter runtime proof": "skipped (memory store not ready)"
     });
   });
 

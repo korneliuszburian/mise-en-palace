@@ -31,7 +31,7 @@ describe("runCli", () => {
       "Postgres next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:ready"
     );
     expect(result.stdout).toContain(
-      "Brain store readiness: preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
+      "Memory store readiness: preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
     );
     expect(result.stdout).toContain("pgvector: skipped");
     expect(result.stdout).toContain("Harness persistence schema: skipped (Postgres not configured)");
@@ -129,7 +129,7 @@ describe("runCli", () => {
         { label: "migrations", status: "unverified (2/3 applied)" }
       ])
     ).toEqual({
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (migrations unverified)"
     });
 
@@ -140,7 +140,7 @@ describe("runCli", () => {
         { label: "migrations", status: "verified (3/3 applied)" }
       ])
     ).toEqual({
-      label: "Brain store readiness",
+      label: "Memory store readiness",
       status: "blocked (pgvector missing)"
     });
   });

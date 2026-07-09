@@ -1045,7 +1045,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
     migrationsFolder: input.migrationsFolder
   });
 
-  assertBrainStoreReady(readiness, "Brain store is not ready for target repo harness smoke");
+  assertBrainStoreReady(readiness, "Memory store is not ready for target repo harness smoke");
 
   const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-target-repo-harness-smoke-${marker}`;

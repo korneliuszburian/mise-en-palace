@@ -111,7 +111,7 @@ const createKnowledgeStoreProviders = async (
   if (databaseUrl === undefined) {
     if (command.storeOnly) {
       throw new Error(
-        "KRN_DATABASE_URL is required for krn brain recall store-backed readback. " +
+        "KRN_DATABASE_URL is required for krn memory recall store-backed readback. " +
         "No fixture source defaults to the store path; pass --fixture-read-model-file, --fixture-decision-file, or --fixture-catalog-file for an explicit test/import readback."
       );
     }
@@ -178,7 +178,7 @@ const createKnowledgeStoreProviders = async (
 
 const projectFallbackMessages = {
   init: "Unknown init error",
-  brainRecall: "Unknown brain recall error"
+  brainRecall: "Unknown memory recall error"
 } satisfies Record<ProjectCliCommand["kind"], string>;
 
 const runBrainRecallProjectCommand = async (
