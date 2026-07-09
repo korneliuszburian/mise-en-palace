@@ -545,7 +545,7 @@ describe("runMaintenanceQueueRecord", () => {
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
-  it("turns stale source feedback into reviewable anti-memory candidates", async () => {
+  it("turns stale source-claim and knowledge feedback into reviewable anti-memory candidates", async () => {
     const repository = new FakeMaintenanceQueueRepository(
       runningRecord({
         jobType: "review_feedback_delta",
@@ -636,7 +636,7 @@ describe("runMaintenanceQueueRecord", () => {
       "source_claims",
       "source_decisions"
     ]));
-    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(5);
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(3);
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       proposedBy: "maintenance:review_feedback_delta",
@@ -651,26 +651,6 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[1]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
-      appliesTo: "source_decision:source-decision-unknown-1",
-      metadata: {
-        outcome: "unknown",
-        sourceDecisionId: "source-decision-unknown-1"
-      }
-    });
-    expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
-      feedbackDeltaId: "feedback-delta-1",
-      invalidatedBySourceClaimIds: [],
-      appliesTo: "source_decision:source-decision-hurt-1",
-      metadata: {
-        outcome: "hurt",
-        sourceDecisionId: "source-decision-hurt-1",
-        recommendationActions: ["demote", "delete"],
-        mutation: "none"
-      }
-    });
-    expect(memoryRepository.createdAntiMemoryCandidates[3]).toMatchObject({
-      feedbackDeltaId: "feedback-delta-1",
-      invalidatedBySourceClaimIds: [],
       appliesTo: "knowledge:stale-standard-1",
       metadata: {
         outcome: "stale",
@@ -679,7 +659,7 @@ describe("runMaintenanceQueueRecord", () => {
         mutation: "none"
       }
     });
-    expect(memoryRepository.createdAntiMemoryCandidates[4]).toMatchObject({
+    expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
       appliesTo: "knowledge:rejected-standard-1",
@@ -691,6 +671,15 @@ describe("runMaintenanceQueueRecord", () => {
         mutation: "none"
       }
     });
+    expect(memoryRepository.createdAntiMemoryCandidates).toEqual(
+      expect.not.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            sourceDecisionId: expect.any(String)
+          })
+        })
+      ])
+    );
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 });

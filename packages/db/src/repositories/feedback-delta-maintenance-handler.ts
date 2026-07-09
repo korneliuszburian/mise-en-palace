@@ -27,8 +27,11 @@ type FeedbackMaintenanceOutcome = Pick<
   SourceUsefulnessOutcomeFeedback,
   "outcome" | "reason" | "evidenceRefs" | "doesNotProve"
 >;
+type SourceClaimUsefulnessOutcomeFeedback = SourceUsefulnessOutcomeFeedback & {
+  readonly sourceClaimId: NonNullable<SourceUsefulnessOutcomeFeedback["sourceClaimId"]>;
+};
 type FeedbackMaintenanceSubject = {
-  readonly subjectKind: "source_claim" | "source_decision" | "memory_record";
+  readonly subjectKind: "source_claim" | "memory_record";
   readonly subjectId: string;
   readonly subjectRef: string;
   readonly activationTarget: string;
@@ -62,37 +65,24 @@ const sourceLineageFor = (
     note: "feedback-maintenance"
   }));
 
-const sourceSubjectFor = (
+const hasReviewableSourceClaimOutcome = (
   outcome: SourceUsefulnessOutcomeFeedback
-): FeedbackMaintenanceSubject => {
-  if (outcome.sourceClaimId !== undefined) {
-    return {
-      subjectKind: "source_claim",
-      subjectId: outcome.sourceClaimId,
-      subjectRef: `source_claim:${outcome.sourceClaimId}`,
-      activationTarget: `source_claim:${outcome.sourceClaimId}`,
-      blockedNoun: "current authority",
-      invalidatedBySourceClaimIds: [outcome.sourceClaimId],
-      metadata: {
-        sourceClaimId: outcome.sourceClaimId
-      }
-    };
+): outcome is SourceClaimUsefulnessOutcomeFeedback =>
+  outcome.sourceClaimId !== undefined && isReviewableFeedbackOutcome(outcome.outcome);
+
+const sourceClaimSubjectFor = (
+  outcome: SourceClaimUsefulnessOutcomeFeedback
+): FeedbackMaintenanceSubject => ({
+  subjectKind: "source_claim",
+  subjectId: outcome.sourceClaimId,
+  subjectRef: `source_claim:${outcome.sourceClaimId}`,
+  activationTarget: `source_claim:${outcome.sourceClaimId}`,
+  blockedNoun: "current authority",
+  invalidatedBySourceClaimIds: [outcome.sourceClaimId],
+  metadata: {
+    sourceClaimId: outcome.sourceClaimId
   }
-
-  const subjectId = outcome.sourceDecisionId ?? "unknown";
-
-  return {
-    subjectKind: "source_decision",
-    subjectId,
-    subjectRef: `source_decision:${subjectId}`,
-    activationTarget: `source_decision:${subjectId}`,
-    blockedNoun: "current authority",
-    invalidatedBySourceClaimIds: [],
-    metadata: outcome.sourceDecisionId === undefined ? {} : {
-      sourceDecisionId: outcome.sourceDecisionId
-    }
-  };
-};
+});
 
 const knowledgeSubjectFor = (
   outcome: KnowledgeUsefulnessOutcomeFeedback
@@ -168,10 +158,10 @@ const feedbackMaintenanceCandidatesFor = (
   feedbackDelta: FeedbackDelta
 ): FeedbackMaintenanceCandidate[] => [
   ...sourceUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-    .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
+    .filter(hasReviewableSourceClaimOutcome)
     .map((outcome) => ({
       outcome,
-      subject: sourceSubjectFor(outcome)
+      subject: sourceClaimSubjectFor(outcome)
     })),
   ...knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
     .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
@@ -225,7 +215,8 @@ export const createFeedbackDeltaMaintenanceHandler = (
     if (candidates.length === 0) {
       return {
         status: "skipped",
-        reason: `FeedbackDelta ${feedbackDelta.id} has no stale/noise/unknown source or knowledge usefulness outcomes`
+        reason:
+          `FeedbackDelta ${feedbackDelta.id} has no source-claim or knowledge usefulness outcomes with a maintenance consumer`
       };
     }
 
