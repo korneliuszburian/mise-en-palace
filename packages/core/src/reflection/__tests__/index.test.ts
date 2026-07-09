@@ -103,10 +103,10 @@ const output: ReflectionOutput = {
     key: "reflection-candidate-only",
     summary: "Reflection cannot mutate Memory Core.",
     rationale: "Reflection is a staging layer that produces reviewable candidates.",
-    evidenceRefs: ["ADR-0011"],
+    evidenceRefs: ["source-decision:reflection-candidate-only"],
     evidence: {
       provenance: "source_claim",
-      evidenceRefs: ["ADR-0011"],
+      evidenceRefs: ["source-decision:reflection-candidate-only"],
       doesNotProve: "This does not prove the policy candidate is accepted."
     },
     metadata: {}

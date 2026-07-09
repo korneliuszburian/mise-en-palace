@@ -87,9 +87,8 @@ export const assertAllRealRecallAdvantageWins = (
   }
 };
 
-// Real KRN governing decisions extracted from repo docs/ADRs (KRN_ROADMAP.md,
-// naming-vocabulary-audit.md, kernel-next-priority-synthesis.md). These are the
-// actual standards the project adopted, not synthetic remembered-standard fixtures.
+// Real KRN governing decisions kept as committed eval seeds. They come from
+// current roadmap/source-to-decision choices, not runtime markdown authority.
 const realDecisions: readonly RealRecallAdvantageDecision[] = [
   {
     id: "real-decision-maintenance-no-autonomous-daemon",
