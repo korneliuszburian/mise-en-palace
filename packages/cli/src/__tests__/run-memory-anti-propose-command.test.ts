@@ -59,7 +59,7 @@ const rejectedKnowledgeSource = (id: string): RejectedSourceDecisionKnowledgeSou
     sourceClaimId: `source-claim-${id}`,
     title: "Markdown runtime memory rejected",
     attemptedClaim: "Markdown files are sufficient runtime memory for KRN.",
-    rejectedBecause: "runtime_memory_requires_store",
+    rejectedBecause: "unsupported",
     reason: "KRN activation must read reviewed memory records, not docs as authority.",
     doesNotProve: "This rejection does not prove docs have no handoff value.",
     consumer: "memory anti proposal",
@@ -130,7 +130,7 @@ describe("rejectedSourceDecisionToAntiMemoryCandidateInput", () => {
         sourceDecisionId: "source-decision-1",
         sourceRejectionId: "source-rejection-1",
         sourceClaimId: "source-claim-1",
-        rejectedBecause: "runtime_memory_requires_store",
+        rejectedBecause: "unsupported",
         falsifier: "A rejected source decision creates active memory truth directly.",
         doesNotProve: "This rejection does not prove docs have no handoff value."
       }
@@ -150,12 +150,58 @@ describe("runMemoryAntiProposeCommand", () => {
       workspaceId: "workspace-1",
       projectId: "project-1",
       compilerDependencies: dependencies,
-      harnessRunRepository: dependencies.harnessRunRepository,
+      harnessRunRepository: {
+        async createExecutionRun(): Promise<never> {
+          throw new Error("createExecutionRun should not be called");
+        },
+        async getHarnessRunByExecutionRunId() {
+          return undefined;
+        },
+        async createEvidenceBundle(): Promise<never> {
+          throw new Error("createEvidenceBundle should not be called");
+        },
+        async createReviewAssessment(): Promise<never> {
+          throw new Error("createReviewAssessment should not be called");
+        },
+        async createFeedbackDelta(): Promise<never> {
+          throw new Error("createFeedbackDelta should not be called");
+        }
+      },
       sourceRepository: {
+        async createSourceArtifact(): Promise<never> {
+          throw new Error("createSourceArtifact should not be called");
+        },
+        async createSourceClaim(): Promise<never> {
+          throw new Error("createSourceClaim should not be called");
+        },
+        async getSourceClaimById() {
+          return undefined;
+        },
+        async listClaimsForProject() {
+          return [];
+        },
+        async createSourceClaimEdge(): Promise<never> {
+          throw new Error("createSourceClaimEdge should not be called");
+        },
+        async listSourceClaimEdgesForClaim() {
+          return [];
+        },
+        async createSourceDecisionEdge(): Promise<never> {
+          throw new Error("createSourceDecisionEdge should not be called");
+        },
+        async getSourceDecisionEdgeById() {
+          return undefined;
+        },
+        async listSourceDecisionEdgesForClaim() {
+          return [];
+        },
+        async createSourceRejection(): Promise<never> {
+          throw new Error("createSourceRejection should not be called");
+        },
         async listRejectedSourceDecisionKnowledgeSources() {
           return [rejectedKnowledgeSource("1"), rejectedKnowledgeSource("2")];
         }
-      } as DatabaseRuntime["sourceRepository"],
+      },
       memoryRepository: {
         ...unusedMemoryRepository,
         async listAntiMemoryCandidates() {
