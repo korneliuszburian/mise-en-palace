@@ -1,7 +1,18 @@
 import { eq, sql } from "drizzle-orm";
 import {
+  buildSourceConsensusTimelineReadback
+} from "@krn/core";
+import {
   retrieveActivationCandidates
 } from "@krn/harness";
+import type {
+  SourceClaim,
+  SourceClaimEdge,
+  SourceConsensusTimelineReadback
+} from "@krn/core";
+import type {
+  SourceRepository
+} from "@krn/core/repositories";
 
 import {
   assertSmokeReadbackChecks,
@@ -30,9 +41,11 @@ export interface SourceGraphSmokeReport {
   sourceClaimId: string;
   temporalSourceClaimId: string;
   duplicateSourceClaimId: string;
+  rejectedSourceClaimId: string;
   readBackSourceClaimId: string;
   sourceClaimEdgeId: string;
   duplicateSourceClaimEdgeId: string;
+  missingSupportSourceClaimEdgeId: string;
   sourceDecisionId: string;
   sourceDecisionEdgeId: string;
   sourceRejectionId: string;
@@ -47,6 +60,11 @@ export interface SourceGraphSmokeReport {
   sourceGraphInfluenceEdgeKinds: string[];
   runDecisionEdgeCount: number;
   rejectionCount: number;
+  sourceConsensusCurrentAuthorityCount: number;
+  sourceConsensusHistoricalCount: number;
+  sourceConsensusSupersededCount: number;
+  sourceConsensusRejectedCount: number;
+  sourceConsensusRelationEvidenceGapCount: number;
   outboxEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -58,6 +76,21 @@ interface SourceGraphRankDownMetadata {
 
 interface SourceGraphInfluenceMetadata {
   edgeKinds: string[];
+}
+
+interface SourceConsensusTimelineSmokeReadback {
+  rejectedSourceClaimId: string;
+  missingSupportSourceClaimEdgeId: string;
+  sourceRejectionId: string;
+  currentAuthorityReadbackPassed: boolean;
+  historicalReadbackPassed: boolean;
+  rejectedReadbackPassed: boolean;
+  relationEvidenceGapReadbackPassed: boolean;
+  currentAuthorityCount: number;
+  historicalCount: number;
+  supersededCount: number;
+  rejectedCount: number;
+  relationEvidenceGapCount: number;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -81,6 +114,162 @@ const isSourceGraphInfluenceMetadata = (
   }
 
   return value.edgeKinds.every((edgeKind) => typeof edgeKind === "string");
+};
+
+const sourceConsensusRelationEvidenceGapCount = (
+  timeline: SourceConsensusTimelineReadback
+): number => timeline.entries.reduce(
+  (entrySum, entry) =>
+    entrySum + entry.relationEvidence.reduce(
+      (relationSum, relation) => relationSum + relation.evidenceGaps.length,
+      0
+    ),
+  0
+);
+
+const sourceClaimsById = async (
+  sourceRepository: Pick<SourceRepository, "getSourceClaimById">,
+  sourceClaimIds: readonly SourceClaim["id"][]
+): Promise<SourceClaim[]> =>
+  (await Promise.all(sourceClaimIds.map((sourceClaimId) =>
+    sourceRepository.getSourceClaimById(sourceClaimId)
+  ))).filter((claim): claim is SourceClaim => claim !== undefined);
+
+const buildPersistedSourceConsensusTimeline = async (input: {
+  readonly sourceRepository: Pick<
+    SourceRepository,
+    | "getSourceClaimById"
+    | "listSourceDecisionEdgesForClaim"
+    | "listSourceRejectionsForClaim"
+  >;
+  readonly sourceClaimIds: readonly SourceClaim["id"][];
+  readonly sourceClaimEdges: readonly SourceClaimEdge[];
+  readonly now: string;
+}): Promise<SourceConsensusTimelineReadback> => {
+  const sourceClaims = await sourceClaimsById(
+    input.sourceRepository,
+    input.sourceClaimIds
+  );
+  const sourceDecisionEdges = (await Promise.all(sourceClaims.map((claim) =>
+    input.sourceRepository.listSourceDecisionEdgesForClaim(claim.id)
+  ))).flat();
+  const sourceRejections = (await Promise.all(sourceClaims.map((claim) =>
+    input.sourceRepository.listSourceRejectionsForClaim?.(claim.id) ?? Promise.resolve([])
+  ))).flat();
+
+  return buildSourceConsensusTimelineReadback({
+    sourceClaims,
+    sourceClaimEdges: input.sourceClaimEdges,
+    sourceDecisionEdges,
+    sourceRejections,
+    now: input.now
+  });
+};
+
+const createSourceConsensusTimelineSmokeReadback = async (input: {
+  readonly sourceRepository: SourceRepository;
+  readonly projectId: string;
+  readonly executionRunId: string;
+  readonly sourceArtifactId: string;
+  readonly marker: string;
+  readonly currentSourceClaimId: SourceClaim["id"];
+  readonly staleSourceClaimId: SourceClaim["id"];
+  readonly duplicateSourceClaimId: SourceClaim["id"];
+  readonly sourceClaimEdges: readonly SourceClaimEdge[];
+  readonly now: string;
+}): Promise<SourceConsensusTimelineSmokeReadback> => {
+  const rejectedSourceClaim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: input.sourceArtifactId,
+    executionRunId: input.executionRunId,
+    claim: "Source graph smoke rejected timeline paths should remain non-governing.",
+    mechanism: "A linked SourceRejection preserves why this source path must not govern.",
+    krnImplication:
+      "KRN can keep rejected source reasoning visible without selecting it as current authority.",
+    doesNotProve: "This rejected path does not prove automated source-review quality.",
+    sourceAuthority: "hypothesis",
+    supportType: "rejection",
+    consumer: "B-03 source consensus timeline smoke",
+    falsifier: "Source consensus timeline readback omits the rejected claim.",
+    revisitWhen: "2026-12-31T00:00:00.000Z",
+    status: "proposed",
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  await input.sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: rejectedSourceClaim.id,
+    status: "reject",
+    decision: "Reject this source graph timeline path.",
+    rationale:
+      "The path is retained only as rejected evidence for source consensus timeline readback.",
+    falsifier: "Source consensus timeline treats this rejected claim as governing authority.",
+    consumer: "B-03 source consensus timeline smoke",
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const sourceRejection = await input.sourceRepository.createSourceRejection({
+    projectId: input.projectId,
+    executionRunId: input.executionRunId,
+    sourceClaimId: rejectedSourceClaim.id,
+    title: "Decorative source smoke example",
+    attemptedClaim: "An interesting AI link should influence KRN behavior.",
+    rejectedBecause: "decorative",
+    reason: "No mechanism, consumer, or decision support.",
+    doesNotProve: "The link should become trusted KRN context.",
+    consumer: "M22 source graph smoke",
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const missingSupportSourceClaimEdge = await input.sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: input.duplicateSourceClaimId,
+    toSourceClaimId: input.currentSourceClaimId,
+    kind: "narrows",
+    metadata: {
+      smokeId: input.marker,
+      consumer: "B-03 source consensus timeline smoke",
+      scope: "source consensus timeline evidence-gap readback",
+      doesNotProve:
+        "This relation intentionally omits support refs to prove timeline evidence-gap readback."
+    }
+  });
+  const consensusTimeline = await buildPersistedSourceConsensusTimeline({
+    sourceRepository: input.sourceRepository,
+    sourceClaimIds: [
+      input.currentSourceClaimId,
+      input.staleSourceClaimId,
+      input.duplicateSourceClaimId,
+      rejectedSourceClaim.id
+    ],
+    sourceClaimEdges: [
+      ...input.sourceClaimEdges,
+      missingSupportSourceClaimEdge
+    ],
+    now: input.now
+  });
+  const relationEvidenceGapCount =
+    sourceConsensusRelationEvidenceGapCount(consensusTimeline);
+
+  return {
+    rejectedSourceClaimId: rejectedSourceClaim.id,
+    missingSupportSourceClaimEdgeId: missingSupportSourceClaimEdge.id,
+    sourceRejectionId: sourceRejection.id,
+    currentAuthorityReadbackPassed:
+      consensusTimeline.currentSourceClaimIds.includes(input.currentSourceClaimId),
+    historicalReadbackPassed:
+      consensusTimeline.historicalSourceClaimIds.includes(input.staleSourceClaimId) &&
+      consensusTimeline.supersededSourceClaimIds.includes(input.staleSourceClaimId),
+    rejectedReadbackPassed:
+      consensusTimeline.rejectedSourceClaimIds.includes(rejectedSourceClaim.id),
+    relationEvidenceGapReadbackPassed: relationEvidenceGapCount > 0,
+    currentAuthorityCount: consensusTimeline.currentSourceClaimIds.length,
+    historicalCount: consensusTimeline.historicalSourceClaimIds.length,
+    supersededCount: consensusTimeline.supersededSourceClaimIds.length,
+    rejectedCount: consensusTimeline.rejectedSourceClaimIds.length,
+    relationEvidenceGapCount
+  };
 };
 
 export const runSourceGraphSmokeCheck = async (
@@ -162,7 +351,7 @@ export const runSourceGraphSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "M22 source graph smoke",
       falsifier: "Source graph smoke readback or cleanup fails.",
-      revisitWhen: "Source graph repository contract changes.",
+      revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -179,7 +368,7 @@ export const runSourceGraphSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "B-01 temporal source graph smoke",
       falsifier: "Temporal claim edge readback or cleanup fails.",
-      revisitWhen: "Temporal source graph semantics change.",
+      revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -196,7 +385,7 @@ export const runSourceGraphSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "B-02 duplicate source graph smoke",
       falsifier: "Duplicate source claim edge influence is absent from activation readback.",
-      revisitWhen: "Source graph influence semantics change.",
+      revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -277,19 +466,6 @@ export const runSourceGraphSmokeCheck = async (
         smokeId: marker
       }
     });
-    const sourceRejection = await sourceRepository.createSourceRejection({
-      projectId: project.id,
-      executionRunId: executionRun.id,
-      title: "Decorative source smoke example",
-      attemptedClaim: "An interesting AI link should influence KRN behavior.",
-      rejectedBecause: "decorative",
-      reason: "No mechanism, consumer, or decision support.",
-      doesNotProve: "The link should become trusted KRN context.",
-      consumer: "M22 source graph smoke",
-      metadata: {
-        smokeId: marker
-      }
-    });
     const runClaims = await sourceRepository.listSourceClaimsForRun(executionRun.id);
     const runDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
       executionRun.id
@@ -314,12 +490,12 @@ export const runSourceGraphSmokeCheck = async (
     const rankedDownCandidate = activationReadback.candidates.find((candidate) =>
       candidate.subjectType === "source_claim" &&
       candidate.subjectId === staleSourceClaim.id &&
-      isSourceGraphRankDownMetadata(candidate.metadata.sourceClaimEdgeRankDown)
+      isSourceGraphRankDownMetadata(candidate.sourceClaimEdgeRankDown)
     );
     const sourceGraphRankDown = isSourceGraphRankDownMetadata(
-      rankedDownCandidate?.metadata.sourceClaimEdgeRankDown
+      rankedDownCandidate?.sourceClaimEdgeRankDown
     )
-      ? rankedDownCandidate.metadata.sourceClaimEdgeRankDown
+      ? rankedDownCandidate.sourceClaimEdgeRankDown
       : undefined;
     const sourceGraphRankDownEdgeKinds = sourceGraphRankDown?.edgeKinds ?? [];
     const influencedCandidate = activationReadback.candidates.find((candidate) =>
@@ -333,10 +509,22 @@ export const runSourceGraphSmokeCheck = async (
       ? influencedCandidate.metadata.sourceClaimEdgeInfluence
       : undefined;
     const sourceGraphInfluenceEdgeKinds = sourceGraphInfluence?.edgeKinds ?? [];
+    const consensusReadback = await createSourceConsensusTimelineSmokeReadback({
+      sourceRepository,
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      sourceArtifactId: sourceArtifact.id,
+      marker,
+      currentSourceClaimId: sourceClaim.id,
+      staleSourceClaimId: staleSourceClaim.id,
+      duplicateSourceClaimId: duplicateSourceClaim.id,
+      sourceClaimEdges: sourceClaimEdgesForClaim,
+      now: "2026-07-07T12:00:00.000Z"
+    });
     const rejectionRows = await db
       .select()
       .from(sourceRejections)
-      .where(eq(sourceRejections.id, sourceRejection.id));
+      .where(eq(sourceRejections.id, consensusReadback.sourceRejectionId));
     const outboxRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(outboxEvents)
@@ -390,7 +578,23 @@ export const runSourceGraphSmokeCheck = async (
       { label: "source rejection row count", passed: rejectionRows.length === 1 },
       {
         label: "source rejection readback",
-        passed: rejectionRows[0]?.id === sourceRejection.id
+        passed: rejectionRows[0]?.id === consensusReadback.sourceRejectionId
+      },
+      {
+        label: "source consensus current authority readback",
+        passed: consensusReadback.currentAuthorityReadbackPassed
+      },
+      {
+        label: "source consensus historical readback",
+        passed: consensusReadback.historicalReadbackPassed
+      },
+      {
+        label: "source consensus rejected readback",
+        passed: consensusReadback.rejectedReadbackPassed
+      },
+      {
+        label: "source consensus relation evidence gap readback",
+        passed: consensusReadback.relationEvidenceGapReadbackPassed
       },
       { label: "outbox events created", passed: (outboxRows[0]?.count ?? 0) >= 2 }
     ], readbackError);
@@ -411,12 +615,14 @@ export const runSourceGraphSmokeCheck = async (
       sourceClaimId: sourceClaim.id,
       temporalSourceClaimId: staleSourceClaim.id,
       duplicateSourceClaimId: duplicateSourceClaim.id,
+      rejectedSourceClaimId: consensusReadback.rejectedSourceClaimId,
       readBackSourceClaimId: persistedSourceClaim.id,
       sourceClaimEdgeId: sourceClaimEdge.id,
       duplicateSourceClaimEdgeId: duplicateSourceClaimEdge.id,
+      missingSupportSourceClaimEdgeId: consensusReadback.missingSupportSourceClaimEdgeId,
       sourceDecisionId: sourceDecision.id,
       sourceDecisionEdgeId: sourceDecisionEdge.id,
-      sourceRejectionId: sourceRejection.id,
+      sourceRejectionId: consensusReadback.sourceRejectionId,
       runClaimCount: runClaims.length,
       sourceClaimEdgeCount: sourceClaimEdgesForClaim.length,
       activationCandidateCount: activationReadback.candidates.length,
@@ -428,6 +634,11 @@ export const runSourceGraphSmokeCheck = async (
       sourceGraphInfluenceEdgeKinds,
       runDecisionEdgeCount: runDecisionEdges.length,
       rejectionCount: rejectionRows.length,
+      sourceConsensusCurrentAuthorityCount: consensusReadback.currentAuthorityCount,
+      sourceConsensusHistoricalCount: consensusReadback.historicalCount,
+      sourceConsensusSupersededCount: consensusReadback.supersededCount,
+      sourceConsensusRejectedCount: consensusReadback.rejectedCount,
+      sourceConsensusRelationEvidenceGapCount: consensusReadback.relationEvidenceGapCount,
       outboxEventCount: outboxRows[0]?.count ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

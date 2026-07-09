@@ -318,11 +318,13 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Source claim: ${report.sourceClaimId}`,
       `Temporal source claim: ${report.temporalSourceClaimId}`,
       `Duplicate source claim: ${report.duplicateSourceClaimId}`,
+      `Rejected source claim: ${report.rejectedSourceClaimId}`,
       `Source claim readback: ${
         report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
       }`,
       `Source claim edge: ${report.sourceClaimEdgeId}`,
       `Duplicate source claim edge: ${report.duplicateSourceClaimEdgeId}`,
+      `Missing-support source claim edge: ${report.missingSupportSourceClaimEdgeId}`,
       `Source decision: ${report.sourceDecisionId}`,
       `Source decision edge: ${report.sourceDecisionEdgeId}`,
       `Source rejection: ${report.sourceRejectionId}`,
@@ -337,6 +339,11 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Source graph influence edge kinds: ${report.sourceGraphInfluenceEdgeKinds.join(", ")}`,
       `Run source decision edges: ${report.runDecisionEdgeCount}`,
       `Source rejections: ${report.rejectionCount}`,
+      `Source consensus current authorities: ${report.sourceConsensusCurrentAuthorityCount}`,
+      `Source consensus historical claims: ${report.sourceConsensusHistoricalCount}`,
+      `Source consensus superseded claims: ${report.sourceConsensusSupersededCount}`,
+      `Source consensus rejected claims: ${report.sourceConsensusRejectedCount}`,
+      `Source consensus relation evidence gaps: ${report.sourceConsensusRelationEvidenceGapCount}`,
       `Outbox events: ${report.outboxEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Source graph smoke")
