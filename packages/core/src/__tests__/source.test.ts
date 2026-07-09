@@ -514,6 +514,7 @@ describe("source review signals", () => {
       entry.sourceClaimId === "claim-current-standard"
     )).toMatchObject({
       state: "current_authority",
+      authorityState: "accepted",
       decisionSupportEdgeIds: ["decision-edge-current"],
       evidenceRefs: ["source-artifact:frontend-template-current"],
       rawEvidenceCitationRefs: ["forum_post:frontend-template-consensus#char=12-84"],
@@ -546,6 +547,7 @@ describe("source review signals", () => {
       entry.sourceClaimId === "claim-old-standard"
     )).toMatchObject({
       state: "historical",
+      authorityState: "superseded",
       supersededBySourceClaimIds: ["claim-current-standard"],
       relationEvidence: expect.arrayContaining([
         expect.objectContaining({
@@ -567,6 +569,7 @@ describe("source review signals", () => {
       entry.sourceClaimId === "claim-stale-standard"
     )).toMatchObject({
       state: "historical",
+      authorityState: "stale",
       caveats: expect.arrayContaining([
         "stale",
         "missing_source_decision_support"
@@ -585,12 +588,14 @@ describe("source review signals", () => {
       entry.sourceClaimId === "claim-accepted-only"
     )).toMatchObject({
       state: "caveated_authority",
+      authorityState: "unsupported",
       caveats: ["missing_source_decision_support"]
     });
     expect(readback.entries.find((entry) =>
       entry.sourceClaimId === "claim-rejected"
     )).toMatchObject({
       state: "rejected",
+      authorityState: "rejected",
       rejectionIds: ["rejection-rejected"],
       caveats: expect.arrayContaining([
         "missing_source_decision_support",
@@ -654,6 +659,7 @@ describe("source review signals", () => {
       entry.sourceClaimId === "claim-current-standard"
     )).toMatchObject({
       state: "caveated_authority",
+      authorityState: "conflicting",
       decisionSupportEdgeIds: ["decision-edge-current"],
       dissentingSourceClaimIds: ["claim-dissenting-standard"],
       caveats: ["dissenting_source_claims:claim-dissenting-standard"]

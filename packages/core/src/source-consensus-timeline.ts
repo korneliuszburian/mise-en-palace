@@ -1,7 +1,9 @@
 import {
   assessSourceClaimAuthority,
   assessSourceClaimOverride,
+  sourceClaimAuthorityStateFor,
   type SourceClaimAuthorityAssessment,
+  type SourceClaimAuthorityState,
   type SourceClaimTemporalValidity
 } from "./source-authority.js";
 import { readSourceRelationMetadataReadback } from "./source-metadata.js";
@@ -46,6 +48,7 @@ export interface SourceConsensusTimelineEntry {
   sourceAuthority: SourceAuthorityLabel;
   authorityRank: number;
   temporalValidity: SourceClaimTemporalValidity;
+  authorityState: SourceClaimAuthorityState;
   state: SourceConsensusTimelineEntryState;
   blockedByCurrentSourceClaimId?: SourceClaim["id"];
   decisionSupportEdgeIds: readonly SourceDecisionEdge["id"][];
@@ -425,6 +428,7 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     sourceAuthority: input.claim.sourceAuthority,
     authorityRank: rankSourceAuthority(input.claim.sourceAuthority),
     temporalValidity: authorityAssessment.temporalValidity,
+    authorityState: sourceClaimAuthorityStateFor(authorityAssessment),
     state: sourceConsensusEntryState({ authorityAssessment }),
     ...(blockedByCurrentSourceClaimId === undefined
       ? {}

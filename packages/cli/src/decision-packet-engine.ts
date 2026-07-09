@@ -604,6 +604,11 @@ export const buildDecisionPacketWithEngine = async (
   };
   const sourceConsensus = buildDecisionPacketSourceConsensus({
     ...sourceConsensusBase,
+    unsupportedSourceClaimIds: unique(sourceRows
+      .filter((decision) => !nonEmpty(decision.sourceDecisionEdgeId))
+      .map((decision) => decision.sourceClaimId)),
+    conflictingSourceClaimIds: [],
+    unknownSourceClaimIds: [],
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
   });

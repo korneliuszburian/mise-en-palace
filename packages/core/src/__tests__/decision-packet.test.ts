@@ -336,6 +336,68 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("exposes unsupported, conflicting, and unknown source authority in the packet", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-authority-states",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 3,
+        exclusions: 0,
+        inclusionDetails: [
+          {
+            subjectType: "source_claim",
+            subjectId: "claim-unsupported",
+            sourceAuthority: "medium"
+          },
+          {
+            subjectType: "source_claim",
+            subjectId: "claim-conflicting",
+            sourceAuthority: "medium"
+          },
+          {
+            subjectType: "source_claim",
+            subjectId: "claim-unknown",
+            sourceAuthority: "medium"
+          }
+        ],
+        activationTrace: {
+          candidates: [
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-unsupported",
+              sourceClaimAuthorityStatus: "evidence_gap",
+              sourceClaimAuthorityReasons: ["missing_source_decision_support"]
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-conflicting",
+              sourceClaimAuthorityStatus: "caveated",
+              sourceClaimAuthorityReasons: ["accepted_with_dissenting_source_claims"]
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-unknown"
+            }
+          ],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.sourceConsensus.unsupportedSourceClaimIds).toEqual(["claim-unsupported"]);
+    expect(packet.sourceConsensus.conflictingSourceClaimIds).toEqual(["claim-conflicting"]);
+    expect(packet.sourceConsensus.unknownSourceClaimIds).toEqual(["claim-unknown"]);
+    expect(packet.abstentionScore.reasons).toContain("conflicting_authority");
+    expect(packet.abstentionScore.status).toBe("abstain");
+  });
+
   it("treats hurt and rejected usefulness feedback as maintenance caveats", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {

@@ -183,6 +183,52 @@ export type SourceClaimAuthorityStatus =
   | "rejected"
   | "evidence_gap";
 
+export type SourceClaimAuthorityState =
+  | "accepted"
+  | "stale"
+  | "superseded"
+  | "rejected"
+  | "unsupported"
+  | "conflicting"
+  | "unknown";
+
+export const sourceClaimAuthorityStateFor = (input: {
+  readonly status: SourceClaimAuthorityStatus;
+  readonly reasons: readonly SourceClaimAuthorityReason[];
+}): SourceClaimAuthorityState => {
+  if (input.status === "rejected" || input.reasons.includes("rejected_or_deprecated")) {
+    return "rejected";
+  }
+
+  if (input.status === "stale" || input.reasons.includes("stale")) {
+    return "stale";
+  }
+
+  if (
+    input.reasons.includes("superseded_by_current_claim") ||
+    input.reasons.includes("weaker_than_current_valid_consensus")
+  ) {
+    return input.reasons.includes("weaker_than_current_valid_consensus")
+      ? "conflicting"
+      : "superseded";
+  }
+
+  if (
+    input.status === "evidence_gap" ||
+    input.reasons.includes("missing_source_to_decision_fields") ||
+    input.reasons.includes("missing_source_decision_support") ||
+    input.reasons.includes("decorative_support_type")
+  ) {
+    return "unsupported";
+  }
+
+  if (input.reasons.includes("accepted_with_dissenting_source_claims")) {
+    return "conflicting";
+  }
+
+  return input.status === "accepted" ? "accepted" : "unknown";
+};
+
 export type SourceClaimAuthorityReason =
   | "current_decision_linked_authority"
   | "accepted_with_dissenting_source_claims"

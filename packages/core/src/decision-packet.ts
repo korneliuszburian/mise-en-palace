@@ -3,6 +3,7 @@ import {
   type FeedbackCandidateProposalKind,
   type SourceUsefulnessOutcome
 } from "./feedback-delta.js";
+import { sourceClaimAuthorityStateFor } from "./source-authority.js";
 import type {
   ContextSubjectType
 } from "./context-assembly.js";
@@ -13,6 +14,7 @@ import type {
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
+  SourceClaimAuthorityState,
   SourceClaimAuthorityStatus,
   SourceDecisionTargetType
 } from "./source.js";
@@ -59,6 +61,9 @@ export interface DecisionPacketTaskStandard {
 export interface DecisionPacketSourceConsensus {
   decisionLinkedSourceClaimIds: readonly string[];
   caveatedSourceClaimIds: readonly string[];
+  unsupportedSourceClaimIds: readonly string[];
+  conflictingSourceClaimIds: readonly string[];
+  unknownSourceClaimIds: readonly string[];
   sourceDecisionEdgeIds: readonly string[];
   sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   staleDecisionIds: readonly string[];
@@ -88,6 +93,7 @@ export type DecisionPacketAbstentionReason =
   | "caveated_memory_authority"
   | "stale_authority"
   | "missing_rejected_path_evidence"
+  | "conflicting_authority"
   | "evidence_gap";
 
 export interface DecisionPacketAbstentionScore {
@@ -119,6 +125,9 @@ const usefulFeedbackOutcomes = [
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
+  readonly unsupportedSourceClaimIds: readonly string[];
+  readonly conflictingSourceClaimIds: readonly string[];
+  readonly unknownSourceClaimIds: readonly string[];
   readonly sourceDecisionEdgeIds: readonly string[];
   readonly sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   readonly staleDecisionIds: readonly string[];
@@ -135,6 +144,9 @@ export const buildDecisionPacketSourceConsensus = (input: {
       !caveatedSourceClaimIds.has(sourceClaimId)
     )),
     caveatedSourceClaimIds: unique(input.caveatedSourceClaimIds),
+    unsupportedSourceClaimIds: unique(input.unsupportedSourceClaimIds),
+    conflictingSourceClaimIds: unique(input.conflictingSourceClaimIds),
+    unknownSourceClaimIds: unique(input.unknownSourceClaimIds),
     sourceDecisionEdgeIds: unique(input.sourceDecisionEdgeIds),
     sourceDecisionTargets: input.sourceDecisionTargets,
     staleDecisionIds: unique(input.staleDecisionIds),
@@ -178,6 +190,11 @@ export const buildDecisionPacketAbstentionScore = (input: {
   if (input.sourceConsensus.caveatedSourceClaimIds.length > 0) {
     reasons.push("caveated_source_authority");
     score -= 20;
+  }
+
+  if (input.sourceConsensus.conflictingSourceClaimIds.length > 0) {
+    reasons.push("conflicting_authority");
+    score -= 35;
   }
 
   if (input.sourceConsensus.evidenceGapIds.some((id) =>
@@ -460,6 +477,53 @@ const sourceClaimIdsFor = (
 ): string[] => unique(readModel.context.inclusionDetails
   .filter((inclusion) => inclusion.subjectType === "source_claim")
   .map((inclusion) => inclusion.subjectId));
+
+const sourceClaimAuthorityCandidateFor = (
+  readModel: DecisionPacketReadModelInput,
+  sourceClaimId: string
+): DecisionPacketActivationCandidateInput | undefined =>
+  readModel.context.activationTrace?.candidates.find((candidate) =>
+    candidate.subjectType === "source_claim" && candidate.subjectId === sourceClaimId
+  );
+
+const sourceClaimIdsWithAuthorityState = (
+  readModel: DecisionPacketReadModelInput,
+  state: SourceClaimAuthorityState
+): string[] => sourceClaimIdsFor(readModel).filter((sourceClaimId) => {
+  const candidate = sourceClaimAuthorityCandidateFor(readModel, sourceClaimId);
+
+  return candidate?.sourceClaimAuthorityStatus !== undefined &&
+    sourceClaimAuthorityStateFor({
+      status: candidate.sourceClaimAuthorityStatus,
+      reasons: candidate.sourceClaimAuthorityReasons ?? []
+    }) === state;
+});
+
+const unsupportedSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => sourceClaimIdsWithAuthorityState(readModel, "unsupported");
+
+const conflictingSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique([
+  ...sourceClaimIdsWithAuthorityState(readModel, "conflicting"),
+  ...sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
+    sourceClaimAuthorityCandidateFor(readModel, sourceClaimId)?.sourceClaimEdgeInfluence?.edgeKinds.some((kind) =>
+      kind === "contradicts" || kind === "invalidates"
+    ) === true
+  )
+]);
+
+const unknownSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => sourceClaimIdsFor(readModel).filter((sourceClaimId) => {
+  const candidate = sourceClaimAuthorityCandidateFor(readModel, sourceClaimId);
+  return candidate === undefined || (
+    candidate.sourceClaimAuthorityStatus === undefined &&
+    candidate.sourceClaimAuthorityReasons === undefined &&
+    candidate.sourceDecisionSupportBoost === undefined
+  );
+});
 
 const sourceClaimIdsWithDecisionSupportFor = (
   readModel: DecisionPacketReadModelInput
@@ -751,6 +815,9 @@ export const buildDecisionPacketFromReadModel = (
   const exclusions = readModel.context.exclusionDetails ?? [];
   const sourceClaimIds = sourceClaimIdsFor(readModel);
   const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
+  const unsupportedSourceClaimIds = unsupportedSourceClaimIdsFor(readModel);
+  const conflictingSourceClaimIds = conflictingSourceClaimIdsFor(readModel);
+  const unknownSourceClaimIds = unknownSourceClaimIdsFor(readModel);
   const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel, sourceClaimIds);
   const sourceDecisionTargets = sourceDecisionTargetsFor(readModel, sourceClaimIds);
   const governingDecisionIds = unique([
@@ -810,6 +877,9 @@ export const buildDecisionPacketFromReadModel = (
   const sourceConsensus = buildDecisionPacketSourceConsensus({
     sourceClaimIds,
     caveatedSourceClaimIds,
+    unsupportedSourceClaimIds,
+    conflictingSourceClaimIds,
+    unknownSourceClaimIds,
     sourceDecisionEdgeIds,
     sourceDecisionTargets,
     staleDecisionIds,
