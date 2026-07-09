@@ -2,7 +2,11 @@
 
 ## What To Build
 
+## Consumer
+
 ## Acceptance Criteria
+
+## Falsifier
 
 ## Proof / Non-Proof
 
@@ -10,7 +14,10 @@ Proof:
 
 Non-proof:
 
-## Blocked By
+## Native Dependency Edges
 
-Use native Beads dependency edges for blockers; do not rely on this section
-alone.
+Required `bd dep` edges:
+
+## Rollback / Contraction
+
+## Open Questions

@@ -614,38 +614,8 @@ rtk bd close &lt;id&gt; --reason=&quot;Completed&quot;
 
 ## Planning Work
 
-When turning a roadmap slice, audit, spec, or conversation into Beads, create
-Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
-planning artifact.
-
-For `to-spec`, `to-tickets`, or `wayfinding` planning, read
-`references/planning-modes.md` before creating or rewriting issues.
-
-Use tracer-bullet issues for product work:
-
-- each issue delivers one narrow, verifiable path through the affected runtime
-  boundary;
-- each issue fits one fresh agent context;
-- each issue states acceptance criteria and proof/non-proof boundaries;
-- blockers are native Beads dependencies, not prose-only references;
-- the frontier is `bd ready`: open work whose blockers are done.
-
-If a planned issue has no runtime consumer, falsifier, or owner, reject it or
-record it as a question before creating implementation work.
-
-Reject horizontal layer tickets like &quot;build database&quot;, &quot;add tests&quot;, or
-&quot;refactor activation&quot; unless the issue names the end-to-end behavior it proves.
-
-For foggy roadmap work, use wayfinding inside Beads instead of creating a
-separate top-level skill or parallel map document.
-
-Wayfinding stop condition:
-
-- the destination is named;
-- the map issue exists and uses `templates/wayfinding-map.md`;
-- child decision tickets are agent-sized and one-ticket-per-session;
-- blocker edges are native Beads dependencies;
-- the frontier is visible through `bd ready`.
+For `to-spec`, `to-tickets`, and `wayfinding`, `references/planning-modes.md`
+is authoritative. Load it before creating or rewriting planning issues.
 
 ## Steps
 
@@ -730,6 +700,8 @@ Do not reread:</code></pre>
 
 ## Problem Statement
 
+## Consumer
+
 ## Solution
 
 ## Operator/User Stories
@@ -738,16 +710,7 @@ Do not reread:</code></pre>
 
 ## Testing Decisions
 
-## Out Of Scope
-
-## Open Questions</code></pre>
-            </details><details class="skill-file" open>
-              <summary>templates/ticket.md</summary>
-              <pre id="skill-beads-templates-ticket-md"><code># Ticket
-
-## What To Build
-
-## Acceptance Criteria
+## Falsifiers
 
 ## Proof / Non-Proof
 
@@ -755,26 +718,61 @@ Proof:
 
 Non-proof:
 
-## Blocked By
+## Out Of Scope
 
-Use native Beads dependency edges for blockers; do not rely on this section
-alone.</code></pre>
+## Open Questions Blocking Slicing</code></pre>
+            </details><details class="skill-file" open>
+              <summary>templates/ticket.md</summary>
+              <pre id="skill-beads-templates-ticket-md"><code># Ticket
+
+## What To Build
+
+## Consumer
+
+## Acceptance Criteria
+
+## Falsifier
+
+## Proof / Non-Proof
+
+Proof:
+
+Non-proof:
+
+## Native Dependency Edges
+
+Required `bd dep` edges:
+
+## Rollback / Contraction
+
+## Open Questions</code></pre>
             </details><details class="skill-file" open>
               <summary>templates/wayfinding-map.md</summary>
               <pre id="skill-beads-templates-wayfinding-map-md"><code># Wayfinding Map
 
 ## Destination
 
+## Consumer
+
 ## Decisions So Far
 
 ## Not Yet Specified
+
+## Open Questions Blocking Slicing
 
 ## Out Of Scope
 
 ## Frontier
 
-List child Beads issue IDs that are ready or will become ready after native
-dependency edges are satisfied.</code></pre>
+Ready child issue IDs visible through `bd ready`:
+
+## Native Dependency Edges
+
+Required `bd dep` edges:
+
+## Falsifier
+
+Condition that proves this map is too vague, too broad, or ready to split.</code></pre>
             </details>
           </details>
           <details class="skill-node">
@@ -1203,7 +1201,7 @@ _Avoid_: rejected synonym, overloaded phrase
               <summary>SKILL.md</summary>
               <pre id="skill-domain-modeling-SKILL-md"><code>---
 name: domain-modeling
-description: Use for KRN terms, public names, concept ownership, context/ADR decisions, grill questions, codebase-design seams, CLI/API wording, or stale vocabulary removal.
+description: Use when a KRN term, public name, concept owner, context/ADR decision, grill question, public seam name, CLI/API wording, or stale vocabulary must be resolved.
 ---
 
 # Domain Modeling
@@ -1679,6 +1677,123 @@ TypeScript changes. For broad JS/TS package-surface or cleanup work, run
               <button type="button" data-copy="source-to-decision">Copy</button>
             </summary>
             <details class="skill-file" open>
+              <summary>references/knowledge-gate.md</summary>
+              <pre id="skill-source-to-decision-references-knowledge-gate-md"><code># Knowledge Gate
+
+Use this reference when a non-trivial KRN slice touches retained knowledge,
+source authority, policy, evals, Codex surfaces, TypeScript boundaries, target
+repos, trust, security, or operator-facing readbacks.
+
+## Procedure
+
+1. Classify whether the slice touches one of these knowledge surfaces:
+
+   ```txt
+   infra / storage / migrations / queues
+   harness / activation / memory / review gates
+   CI / release / eval / Promptfoo
+   Codex surfaces / skills / hooks / MCP / subagents
+   target-repo workflow
+   TypeScript boundaries
+   security / permissions / trust boundaries
+   operator UX / CLI / readback
+   ```
+
+2. If it does, choose exactly one path:
+   - cite an existing KRN source, standard, architecture decision, or skill and
+     state the mechanism;
+   - add a bounded source decision;
+   - reject or defer source work with a reason.
+3. Do not proceed from retained knowledge to implementation unless the consumer
+   and falsifier are explicit.
+
+## Allowed Source Classes
+
+```txt
+official docs
+papers
+high-quality public course page
+practitioner writing
+competitor docs
+repo-local evidence
+target-repo evidence
+user-provided research
+```
+
+## Consumer Routing
+
+```txt
+standard:
+  durable coding or review rule
+
+skill:
+  repeated execution workflow
+
+architecture decision:
+  rare source-backed decision; prefer roadmap, Beads, or store-backed
+  SourceDecision over markdown ADR files
+
+eval/golden candidate:
+  behavior can be falsified
+
+memory/source candidate:
+  useful future recall, still review-gated
+
+CLI/readback/CI behavior:
+  operator-facing or enforcement surface
+
+bounded repair:
+  one small source change with verification
+
+reject:
+  source is decorative, unsupported, stale, or mismatched to KRN
+```
+
+## Legal Boundary
+
+- Do not copy paid/proprietary course material into KRN.
+- Use public pages, personal notes supplied by the user, or short source
+  summaries that map to mechanisms and decisions.
+- Prefer links and mechanisms over transcripts.
+
+## Stop Condition
+
+Stop when the source path is adopted, rejected, or deferred with a consumer,
+falsifier, and `does_not_prove`, or when the slice is explicitly classified as
+not source-shaped.</code></pre>
+            </details><details class="skill-file" open>
+              <summary>references/source-usefulness.md</summary>
+              <pre id="skill-source-to-decision-references-source-usefulness-md"><code># Source Usefulness
+
+Use this reference after execution when a source materially shaped code, infra,
+harness, CI, eval, TypeScript, operator UX, or Codex-surface work.
+
+## Procedure
+
+1. Decide whether the source shaped an implementation or review decision.
+2. If it did, close usefulness feedback:
+
+   ```txt
+   rtk proxy krn evidence capture --source-usefulness &quot;claim:&lt;source-id&gt;=helped|reason|evidence-ref[,ref]|doesNotProve&quot;
+   ```
+
+   Use `decision:&lt;id&gt;` instead of `claim:&lt;id&gt;` when the retained object is a
+   SourceDecision.
+3. If usefulness is not measured, record one bounded reason:
+
+   ```txt
+   no persisted run
+   source was rejected
+   source was background context only
+   no implementation/review decision used it
+   legal/content boundary
+   ```
+
+## Stop Condition
+
+Stop when a shaped source has measured usefulness feedback, or a bounded reason
+explains why usefulness was not measured.</code></pre>
+            </details><details class="skill-file" open>
               <summary>SKILL.md</summary>
               <pre id="skill-source-to-decision-SKILL-md"><code>---
 name: source-to-decision
@@ -1708,6 +1823,8 @@ Use this skill to prevent source hoarding.
 7. Add a falsifier.
 8. After execution, close source usefulness feedback or record why it was not
    measured.
+   - Use `references/source-usefulness.md` when a source materially shaped
+     implementation or review.
 
 ## Research Intake Rules
 
@@ -1755,6 +1872,11 @@ Preferred consumers:
 
 Reject or defer sources when the consumer is unclear.
 
+For retained-knowledge preflight on non-trivial KRN slices, use
+`references/knowledge-gate.md` only when the slice actually touches source,
+memory, policy, eval, trust, target-repo, TypeScript, or operator readback
+authority.
+
 ## Output
 
 ```yaml
@@ -1796,109 +1918,6 @@ source_usefulness_feedback:
 - Do not create a research archive, source crawler, or broad research backlog
   from a source that has no immediate consumer.
 
-## Continuous Knowledge Gate
-
-Use this gate at every non-trivial KRN slice, not only research-labeled tasks.
-
-Before adopting, rejecting, or implementing retained knowledge, classify whether
-the slice touches one of these knowledge surfaces:
-
-```txt
-infra / storage / migrations / queues
-harness / activation / memory / review gates
-CI / release / eval / Promptfoo
-Codex surfaces / skills / hooks / MCP / subagents
-target-repo workflow
-TypeScript boundaries
-security / permissions / trust boundaries
-operator UX / CLI / readback
-```
-
-If it does, either:
-
-- cite an existing KRN source, standard, architecture decision, or skill and
-  state the mechanism; or
-- add a bounded source decision; or
-- explicitly reject/defer source work with a reason.
-
-Allowed source classes:
-
-```txt
-official docs
-papers
-high-quality public course page
-practitioner writing
-competitor docs
-repo-local evidence
-target-repo evidence
-user-provided research
-```
-
-Legal/content boundary:
-
-- Do not copy paid/proprietary course material into KRN.
-- Use public pages, personal notes supplied by the user, or short source
-  summaries that map to mechanisms and decisions.
-- Prefer links and mechanisms over transcripts.
-
-Consumer routing:
-
-```txt
-standard:
-  durable coding or review rule
-
-skill:
-  repeated execution workflow
-
-architecture decision:
-  rare source-backed decision; prefer roadmap, Beads, or store-backed
-  SourceDecision over markdown ADR files
-
-eval/golden candidate:
-  behavior can be falsified
-
-memory/source candidate:
-  useful future recall, still review-gated
-
-CLI/readback/CI behavior:
-  operator-facing or enforcement surface
-
-bounded repair:
-  one small source change with verification
-
-reject:
-  source is decorative, unsupported, stale, or mismatched to KRN
-```
-
-Do not proceed from retained knowledge to implementation unless the consumer and falsifier
-are explicit.
-
-## Usefulness Feedback Closure
-
-If a source materially shaped code, infra, harness, CI, eval, TypeScript,
-operator UX, or Codex-surface work, close the loop after execution:
-
-```txt
-krn evidence capture --source-usefulness &quot;claim:&lt;source-id&gt;=helped|reason|evidence-ref[,ref]|doesNotProve&quot;
-```
-
-Use `decision:&lt;id&gt;` instead of `claim:&lt;id&gt;` when the retained object is a
-SourceDecision.
-
-If usefulness is not measured, record why in the report or plan outcome. Accept
-only bounded reasons:
-
-```txt
-no persisted run
-source was rejected
-source was background context only
-no implementation/review decision used it
-legal/content boundary
-```
-
-Do not leave a course, paper, docs page, practitioner claim, or repo-local
-source as decorative authority after it influences implementation.
-
 ## Verification
 
 The mapped source must change a decision, reject a path, define a risk, create a
@@ -1926,6 +1945,35 @@ bounded reason usefulness was not measured.</code></pre>
   display_name: &quot;Target Repo Testing&quot;
   short_description: &quot;Run KRN target-repo trials without corrupting living checkouts.&quot;
   default_prompt: &quot;Use $target-repo-testing to classify target repo testing mode, dirty state, allowed writes, evidence, and stop conditions before running target commands.&quot;</code></pre>
+            </details><details class="skill-file" open>
+              <summary>references/owner-file-read-model.md</summary>
+              <pre id="skill-target-repo-testing-references-owner-file-read-model-md"><code># Owner-File Read Model
+
+Use this reference for `krn init --repo`, owner-file capture, or
+activation-read-model trials against a target repository.
+
+Exact target owner files are explicit read-model inputs, not automatic crawler
+output. If the bounded target task has known owner files, pass them through
+`krn init`:
+
+```sh
+rtk proxy pnpm krn init --dry-run --repo &lt;target&gt; \
+  --owner-file &quot;src/index.ts|src|implementation_entry|implementation entry point&quot;
+
+rtk proxy pnpm krn init --connect --repo &lt;target&gt; --persist \
+  --owner-file &quot;src/index.ts|src|implementation_entry|implementation entry point&quot;
+```
+
+Each entry is `path|root|kind|reason`.
+
+If no owner files are provided, record `missing_owner_file_read_model` as
+read-model incompleteness. Do not treat it as proof that owner files do not
+exist, and do not repair activation scoring from that signal alone.
+
+## Stop Condition
+
+Stop when owner-file inputs are passed explicitly or the missing read model is
+recorded as incompleteness, not as activation proof.</code></pre>
             </details><details class="skill-file" open>
               <summary>SKILL.md</summary>
               <pre id="skill-target-repo-testing-SKILL-md"><code>---
@@ -2068,24 +2116,10 @@ dirty, state:
 KRN EvidenceBundle did not classify target changed files.
 ```
 
-## Owner-File Read-Model Contract
+## Owner-File Read Models
 
-Exact target owner files are explicit read-model inputs, not automatic crawler
-output. If the bounded target task has known owner files, pass them through
-`krn init`:
-
-```sh
-rtk proxy pnpm krn init --dry-run --repo &lt;target&gt; \
-  --owner-file &quot;src/index.ts|src|implementation_entry|implementation entry point&quot;
-
-rtk proxy pnpm krn init --connect --repo &lt;target&gt; --persist \
-  --owner-file &quot;src/index.ts|src|implementation_entry|implementation entry point&quot;
-```
-
-Each entry is `path|root|kind|reason`. If no owner files are provided, record
-`missing_owner_file_read_model` as read-model incompleteness. Do not treat it as
-proof that owner files do not exist, and do not repair activation scoring from
-that signal alone.
+For `krn init --repo`, owner-file capture, or activation-read-model trials, load
+`references/owner-file-read-model.md`.
 
 ## Stop Condition
 

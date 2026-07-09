@@ -6,7 +6,7 @@
 - Strip decision: active
 - Owner skill: target-repo-testing
 - Invocation: model-invoked
-- Lines: 203
+- Lines: 189
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -24,7 +24,7 @@ Use for KRN work against another repo: inspect, init, test, plan, verify, or rep
 - Step 2: Record Dirty State
 - Step 3: Run Only Mode-Compatible Commands
 - Step 4: Capture Evidence Honestly
-- Owner-File Read-Model Contract
+- Owner-File Read Models
 - Stop Condition
 - Verification
 - Output
@@ -33,10 +33,11 @@ Use for KRN work against another repo: inspect, init, test, plan, verify, or rep
 ## Reference Files
 
 - agents/openai.yaml
+- references/owner-file-read-model.md
 
 ## References
 
-- _None._
+- references/owner-file-read-model.md
 
 ## Templates
 

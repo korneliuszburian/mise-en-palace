@@ -13,7 +13,7 @@
 
 ## Description
 
-Use for KRN terms, public names, concept ownership, context/ADR decisions, grill questions, codebase-design seams, CLI/API wording, or stale vocabulary removal.
+Use when a KRN term, public name, concept owner, context/ADR decision, grill question, public seam name, CLI/API wording, or stale vocabulary must be resolved.
 
 ## Sections
 

@@ -26,6 +26,8 @@ Use this skill to prevent source hoarding.
 7. Add a falsifier.
 8. After execution, close source usefulness feedback or record why it was not
    measured.
+   - Use `references/source-usefulness.md` when a source materially shaped
+     implementation or review.
 
 ## Research Intake Rules
 
@@ -73,6 +75,11 @@ Preferred consumers:
 
 Reject or defer sources when the consumer is unclear.
 
+For retained-knowledge preflight on non-trivial KRN slices, use
+`references/knowledge-gate.md` only when the slice actually touches source,
+memory, policy, eval, trust, target-repo, TypeScript, or operator readback
+authority.
+
 ## Output
 
 ```yaml
@@ -113,109 +120,6 @@ source_usefulness_feedback:
   unless auditing the raw source.
 - Do not create a research archive, source crawler, or broad research backlog
   from a source that has no immediate consumer.
-
-## Continuous Knowledge Gate
-
-Use this gate at every non-trivial KRN slice, not only research-labeled tasks.
-
-Before adopting, rejecting, or implementing retained knowledge, classify whether
-the slice touches one of these knowledge surfaces:
-
-```txt
-infra / storage / migrations / queues
-harness / activation / memory / review gates
-CI / release / eval / Promptfoo
-Codex surfaces / skills / hooks / MCP / subagents
-target-repo workflow
-TypeScript boundaries
-security / permissions / trust boundaries
-operator UX / CLI / readback
-```
-
-If it does, either:
-
-- cite an existing KRN source, standard, architecture decision, or skill and
-  state the mechanism; or
-- add a bounded source decision; or
-- explicitly reject/defer source work with a reason.
-
-Allowed source classes:
-
-```txt
-official docs
-papers
-high-quality public course page
-practitioner writing
-competitor docs
-repo-local evidence
-target-repo evidence
-user-provided research
-```
-
-Legal/content boundary:
-
-- Do not copy paid/proprietary course material into KRN.
-- Use public pages, personal notes supplied by the user, or short source
-  summaries that map to mechanisms and decisions.
-- Prefer links and mechanisms over transcripts.
-
-Consumer routing:
-
-```txt
-standard:
-  durable coding or review rule
-
-skill:
-  repeated execution workflow
-
-architecture decision:
-  rare source-backed decision; prefer roadmap, Beads, or store-backed
-  SourceDecision over markdown ADR files
-
-eval/golden candidate:
-  behavior can be falsified
-
-memory/source candidate:
-  useful future recall, still review-gated
-
-CLI/readback/CI behavior:
-  operator-facing or enforcement surface
-
-bounded repair:
-  one small source change with verification
-
-reject:
-  source is decorative, unsupported, stale, or mismatched to KRN
-```
-
-Do not proceed from retained knowledge to implementation unless the consumer and falsifier
-are explicit.
-
-## Usefulness Feedback Closure
-
-If a source materially shaped code, infra, harness, CI, eval, TypeScript,
-operator UX, or Codex-surface work, close the loop after execution:
-
-```txt
-krn evidence capture --source-usefulness "claim:<source-id>=helped|reason|evidence-ref[,ref]|doesNotProve"
-```
-
-Use `decision:<id>` instead of `claim:<id>` when the retained object is a
-SourceDecision.
-
-If usefulness is not measured, record why in the report or plan outcome. Accept
-only bounded reasons:
-
-```txt
-no persisted run
-source was rejected
-source was background context only
-no implementation/review decision used it
-legal/content boundary
-```
-
-Do not leave a course, paper, docs page, practitioner claim, or repo-local
-source as decorative authority after it influences implementation.
 
 ## Verification
 

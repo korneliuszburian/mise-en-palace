@@ -6,7 +6,7 @@
 - Strip decision: active
 - Owner skill: beads
 - Invocation: model-invoked
-- Lines: 186
+- Lines: 156
 - Stop condition: yes
 - Output: yes
 - Verification: yes

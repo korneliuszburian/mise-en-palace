@@ -87,38 +87,8 @@ rtk bd close <id> --reason="Completed"
 
 ## Planning Work
 
-When turning a roadmap slice, audit, spec, or conversation into Beads, create
-Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
-planning artifact.
-
-For `to-spec`, `to-tickets`, or `wayfinding` planning, read
-`references/planning-modes.md` before creating or rewriting issues.
-
-Use tracer-bullet issues for product work:
-
-- each issue delivers one narrow, verifiable path through the affected runtime
-  boundary;
-- each issue fits one fresh agent context;
-- each issue states acceptance criteria and proof/non-proof boundaries;
-- blockers are native Beads dependencies, not prose-only references;
-- the frontier is `bd ready`: open work whose blockers are done.
-
-If a planned issue has no runtime consumer, falsifier, or owner, reject it or
-record it as a question before creating implementation work.
-
-Reject horizontal layer tickets like "build database", "add tests", or
-"refactor activation" unless the issue names the end-to-end behavior it proves.
-
-For foggy roadmap work, use wayfinding inside Beads instead of creating a
-separate top-level skill or parallel map document.
-
-Wayfinding stop condition:
-
-- the destination is named;
-- the map issue exists and uses `templates/wayfinding-map.md`;
-- child decision tickets are agent-sized and one-ticket-per-session;
-- blocker edges are native Beads dependencies;
-- the frontier is visible through `bd ready`.
+For `to-spec`, `to-tickets`, and `wayfinding`, `references/planning-modes.md`
+is authoritative. Load it before creating or rewriting planning issues.
 
 ## Steps
 

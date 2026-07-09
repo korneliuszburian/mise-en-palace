@@ -8,13 +8,13 @@ engineering loop.
 
 | Skill | Role | strip_decision | Owner | References | Templates | Invocation | Stop | Output | Verification | Lines |
 |---|---|---|---|---|---|---|---|---|---|---|
-| beads | router | active | beads | 1 | 4 | model | yes | yes | yes | 186 |
+| beads | router | active | beads | 1 | 4 | model | yes | yes | yes | 156 |
 | code-review | checker | active | code-review | 1 | 1 | model | yes | yes | yes | 86 |
 | diagnosing-bugs | maker | new | diagnosing-bugs | 0 | 0 | model | yes | yes | yes | 82 |
 | domain-modeling | decision | active | domain-modeling | 3 | 0 | model | yes | yes | yes | 132 |
 | krn-implementation | maker | new | krn-implementation | 5 | 0 | model | yes | yes | yes | 91 |
-| source-to-decision | decision | active | source-to-decision | 0 | 0 | model | yes | yes | yes | 231 |
-| target-repo-testing | checker | active | target-repo-testing | 0 | 0 | model | yes | yes | yes | 203 |
+| source-to-decision | decision | active | source-to-decision | 2 | 0 | model | yes | yes | yes | 135 |
+| target-repo-testing | checker | active | target-repo-testing | 1 | 0 | model | yes | yes | yes | 189 |
 
 ## KRN Strip Decisions
 

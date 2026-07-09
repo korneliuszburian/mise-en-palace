@@ -2,6 +2,8 @@
 
 ## Problem Statement
 
+## Consumer
+
 ## Solution
 
 ## Operator/User Stories
@@ -10,6 +12,14 @@
 
 ## Testing Decisions
 
+## Falsifiers
+
+## Proof / Non-Proof
+
+Proof:
+
+Non-proof:
+
 ## Out Of Scope
 
-## Open Questions
+## Open Questions Blocking Slicing

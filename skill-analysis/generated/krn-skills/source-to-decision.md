@@ -6,7 +6,7 @@
 - Strip decision: active
 - Owner skill: source-to-decision
 - Invocation: model-invoked
-- Lines: 231
+- Lines: 135
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -22,18 +22,18 @@ Use when external docs, papers, practitioner writing, competitor docs, local evi
 - Research Intake Rules
 - Output
 - Forbidden
-- Continuous Knowledge Gate
-- Usefulness Feedback Closure
 - Verification
 - Stop Condition
 
 ## Reference Files
 
-- _None._
+- references/knowledge-gate.md
+- references/source-usefulness.md
 
 ## References
 
-- _None._
+- references/knowledge-gate.md
+- references/source-usefulness.md
 
 ## Templates
 
