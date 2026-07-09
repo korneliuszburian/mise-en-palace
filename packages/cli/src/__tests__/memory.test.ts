@@ -1139,7 +1139,8 @@ describe("runCli", () => {
       memoryId: "memory-record-1",
       decisionPacketChecksum: packetBinding.packetChecksum,
       outcome: "helped" as const,
-      notes: "Replay should not strengthen this memory twice."
+      notes: "Replay should not strengthen this memory twice.",
+      metadata: {}
     };
     const run = () => runMemoryRecordApplyCommand({
       command,
