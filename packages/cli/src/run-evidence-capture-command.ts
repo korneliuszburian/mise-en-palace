@@ -18,6 +18,7 @@ import type {
 } from "@krn/core";
 import {
   assessCandidateReviewability,
+  isReviewableFeedbackOutcome,
   toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
@@ -88,6 +89,7 @@ interface PersistedEvidenceIdentity {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+  feedbackMaintenanceQueueRecordId?: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
   decisionPacketEvidenceRef?: string;
@@ -881,6 +883,39 @@ const currentEvidenceRefsForUsefulness = (
     )
   ]);
 
+const hasReviewableUsefulnessFeedback = (
+  sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined
+): boolean =>
+  (sourceOutcomes ?? []).some((outcome) => isReviewableFeedbackOutcome(outcome.outcome)) ||
+  (knowledgeOutcomes ?? []).some((outcome) => isReviewableFeedbackOutcome(outcome.outcome));
+
+const enqueueFeedbackMaintenance = async (
+  databaseRuntime: Awaited<ReturnType<CreateDatabaseRuntime>>,
+  feedbackDeltaId: string,
+  sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined
+): Promise<string | undefined> => {
+  if (!hasReviewableUsefulnessFeedback(sourceOutcomes, knowledgeOutcomes)) {
+    return undefined;
+  }
+
+  if (databaseRuntime.maintenanceQueueRepository === undefined) {
+    throw new Error("Maintenance queue repository is required to enqueue reviewable feedback");
+  }
+
+  const queueRecord = await databaseRuntime.maintenanceQueueRepository.enqueueMaintenanceQueue({
+    jobType: "review_feedback_delta",
+    payload: {
+      projectId: databaseRuntime.projectId,
+      feedbackDeltaId,
+      reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
+    }
+  });
+
+  return queueRecord.id;
+};
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
@@ -962,11 +997,20 @@ const persistEvidenceCapture = async (
         decisionPacketChecksum
       )
     );
+    const feedbackMaintenanceQueueRecordId = await enqueueFeedbackMaintenance(
+      databaseRuntime,
+      feedbackDelta.id,
+      evidenceLinkedSourceUsefulnessOutcomes,
+      evidenceLinkedKnowledgeUsefulnessOutcomes
+    );
 
     return {
       evidenceBundleId: evidenceBundle.id,
       reviewAssessmentId: reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
+      ...(feedbackMaintenanceQueueRecordId === undefined
+        ? {}
+        : { feedbackMaintenanceQueueRecordId }),
       ...(decisionPacketChecksum === undefined
         ? {}
         : { decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}` }),
@@ -1064,6 +1108,9 @@ export const runEvidenceCaptureCommand = async (
       `evidenceBundle: ${persistedIdentity.evidenceBundleId}`,
       `reviewAssessment: ${persistedIdentity.reviewAssessmentId}`,
       `feedbackDelta: ${persistedIdentity.feedbackDeltaId}`,
+      ...(persistedIdentity.feedbackMaintenanceQueueRecordId === undefined
+        ? []
+        : [`feedbackMaintenanceQueueRecord: ${persistedIdentity.feedbackMaintenanceQueueRecordId}`]),
       ...(persistedIdentity.decisionPacketEvidenceRef === undefined
         ? []
         : [`decisionPacketEvidenceRef: ${persistedIdentity.decisionPacketEvidenceRef}`])

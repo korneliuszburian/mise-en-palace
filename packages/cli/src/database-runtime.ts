@@ -149,6 +149,10 @@ export interface DatabaseRuntime {
     MemoryRepository,
     "listActiveMemory"
   >>;
+  maintenanceQueueRepository?: Pick<
+    MaintenanceQueueRepository,
+    "enqueueMaintenanceQueue"
+  >;
   observationRepository?: {
     createGroup(input: CreateObservationGroupInput): Promise<ObservationGroup>;
     addItems(
@@ -497,6 +501,7 @@ const createDatabaseRuntimeForClient = async (
   const sourceRepository = new DrizzleSourceRepository(db);
   const retrievalRepository = new DrizzleRetrievalRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
+  const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
   const runtimeProject = await resolveRuntimeProject(projectRepository, input);
 
@@ -583,6 +588,7 @@ const createDatabaseRuntimeForClient = async (
     sourceRepository: sourceSearchSourceRepository,
     retrievalRepository: sourceSearchRetrievalRepository,
     memoryRepository,
+    maintenanceQueueRepository,
     observationRepository,
     close: closePostgresClient(client)
   };

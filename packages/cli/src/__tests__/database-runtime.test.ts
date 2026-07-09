@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => {
     drizzleSourceRepository,
     retrievalRepository: {},
     memoryRepository: {},
+    maintenanceQueueRepository: {},
     observationRepository: {}
   };
 });
@@ -60,6 +61,9 @@ vi.mock("@krn/db/adapters", () => ({
   }),
   DrizzleMemoryRepository: vi.fn(function DrizzleMemoryRepository() {
     return mocks.memoryRepository;
+  }),
+  DrizzleMaintenanceQueueRepository: vi.fn(function DrizzleMaintenanceQueueRepository() {
+    return mocks.maintenanceQueueRepository;
   }),
   DrizzleObservationRepository: vi.fn(function DrizzleObservationRepository() {
     return mocks.observationRepository;

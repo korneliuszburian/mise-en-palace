@@ -6,6 +6,7 @@ import type {
 } from "@krn/core";
 import {
   buildFeedbackRecommendationReadback,
+  isReviewableFeedbackOutcome,
   knowledgeUsefulnessOutcomesFromMetadata,
   sourceUsefulnessOutcomesFromMetadata
 } from "@krn/core";
@@ -45,8 +46,6 @@ export interface CreateFeedbackDeltaMaintenanceHandlerInput {
   readonly feedbackDeltaSearchLimit?: number;
   readonly now?: () => IsoTimestamp;
 }
-
-const reviewableFeedbackOutcomes = new Set(["noise", "stale", "hurt", "rejected", "unknown"]);
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
@@ -168,13 +167,13 @@ const feedbackMaintenanceCandidatesFor = (
   feedbackDelta: FeedbackDelta
 ): FeedbackMaintenanceCandidate[] => [
   ...sourceUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-    .filter((outcome) => reviewableFeedbackOutcomes.has(outcome.outcome))
+    .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
     .map((outcome) => ({
       outcome,
       subject: sourceSubjectFor(outcome)
     })),
   ...knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-    .filter((outcome) => reviewableFeedbackOutcomes.has(outcome.outcome))
+    .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
     .map((outcome) => ({
       outcome,
       subject: knowledgeSubjectFor(outcome)

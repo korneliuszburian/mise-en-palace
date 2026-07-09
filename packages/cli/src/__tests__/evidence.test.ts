@@ -107,12 +107,16 @@ interface EvidencePersistenceCapture {
   sourceDecisions?: CreateFeedbackDeltaInput["sourceDecisions"];
   memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
   feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
+  maintenanceQueueInputs?: EnqueueMaintenanceQueueInput[];
 }
 
 type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
 type EvidenceHarnessRunRepository =
   NoStoreCompilerDependencies["harnessRunRepository"] &
   DatabaseRuntime["harnessRunRepository"];
+type EnqueueMaintenanceQueueInput = Parameters<
+  NonNullable<DatabaseRuntime["maintenanceQueueRepository"]>["enqueueMaintenanceQueue"]
+>[0];
 
 const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   operatorIntent: {
@@ -237,6 +241,30 @@ const createCapturingEvidenceHarnessRunRepository = (
       sourceDecisions: input.sourceDecisions,
       evalCandidates: input.evalCandidates,
       metadata: input.metadata ?? {},
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+});
+
+const createCapturingMaintenanceQueueRepository = (
+  capture: EvidencePersistenceCapture
+): NonNullable<DatabaseRuntime["maintenanceQueueRepository"]> => ({
+  async enqueueMaintenanceQueue(input) {
+    capture.maintenanceQueueInputs = [
+      ...(capture.maintenanceQueueInputs ?? []),
+      input
+    ];
+
+    return {
+      id: "maintenance-queue-record-1",
+      jobType: input.jobType,
+      queueKey: `${input.jobType}:project-1:feedback-delta-1`,
+      status: "queued",
+      payload: input.payload,
+      attempts: 0,
+      maxAttempts: input.maxAttempts ?? 3,
+      runAfter: input.runAfter ?? now,
       createdAt: now,
       updatedAt: now
     };
@@ -690,6 +718,7 @@ describe("runCli", () => {
     expectPersistedEvidenceCandidates(capture);
     expectPersistedEvidenceMetadata(capture);
     expectDefaultTemplateCommands(capture.commands);
+    expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 
   it("downgrades persisted knowledge usefulness when evidence refs do not match current evidence", async () => {
@@ -736,6 +765,7 @@ describe("runCli", () => {
           harnessRunRepository,
           sourceRepository: unusedSourceRepository,
           memoryRepository: unusedMemoryRepository,
+          maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
           async close() {
             return undefined;
           }
@@ -766,6 +796,71 @@ describe("runCli", () => {
         doesNotProve: "Does not prove future knowledge recall quality"
       }]
     });
+    expect(capture.maintenanceQueueInputs).toEqual([{
+      jobType: "review_feedback_delta",
+      payload: {
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-delta-1",
+        reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
+      }
+    }]);
+    expect(result.stdout).toContain("feedbackMaintenanceQueueRecord: maintenance-queue-record-1");
+  });
+
+  it("does not enqueue maintenance for helped-only persisted usefulness feedback", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--source-usefulness",
+        "claim:source-claim-current=helped|Current source claim helped|evidence-bundle-1|Does not prove future source selection quality",
+        "--knowledge-usefulness",
+        "knowledge:frontend-template=helped|Current knowledge helped|evidence-bundle-1|Does not prove future knowledge recall quality",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(capture.maintenanceQueueInputs).toBeUndefined();
+    expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
   });
 
   it("binds persisted usefulness feedback to the supplied decision packet checksum", async () => {
@@ -812,6 +907,7 @@ describe("runCli", () => {
           harnessRunRepository,
           sourceRepository: unusedSourceRepository,
           memoryRepository: unusedMemoryRepository,
+          maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
           async close() {
             return undefined;
           }
@@ -887,6 +983,7 @@ describe("runCli", () => {
           harnessRunRepository,
           sourceRepository: unusedSourceRepository,
           memoryRepository: unusedMemoryRepository,
+          maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
           async close() {
             return undefined;
           }

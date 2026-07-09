@@ -159,6 +159,18 @@ export const isSourceUsefulnessOutcome = (
 ): value is SourceUsefulnessOutcome =>
   typeof value === "string" && sourceUsefulnessOutcomes.has(value);
 
+const reviewableFeedbackOutcomes = new Set<SourceUsefulnessOutcome>([
+  "noise",
+  "stale",
+  "hurt",
+  "rejected",
+  "unknown"
+]);
+
+export const isReviewableFeedbackOutcome = (
+  outcome: SourceUsefulnessOutcome
+): boolean => reviewableFeedbackOutcomes.has(outcome);
+
 export const feedbackRecommendationsForOutcome = (
   outcome: FeedbackRecommendationOutcome
 ): readonly FeedbackRecommendation[] => {
