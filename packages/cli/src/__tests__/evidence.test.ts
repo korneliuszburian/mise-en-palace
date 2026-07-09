@@ -805,6 +805,7 @@ describe("runCli", () => {
       }
     }]);
     expect(result.stdout).toContain("feedbackMaintenanceQueueRecord: maintenance-queue-record-1");
+    expect(result.stdout).toContain("feedbackMaintenanceRun: krn maintenance run --id maintenance-queue-record-1");
   });
 
   it("does not enqueue maintenance for helped-only persisted usefulness feedback", async () => {
@@ -861,6 +862,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(capture.maintenanceQueueInputs).toBeUndefined();
     expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
+    expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
   });
 
   it("binds persisted usefulness feedback to the supplied decision packet checksum", async () => {

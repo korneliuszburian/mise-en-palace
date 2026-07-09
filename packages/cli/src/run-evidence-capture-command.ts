@@ -1110,7 +1110,10 @@ export const runEvidenceCaptureCommand = async (
       `feedbackDelta: ${persistedIdentity.feedbackDeltaId}`,
       ...(persistedIdentity.feedbackMaintenanceQueueRecordId === undefined
         ? []
-        : [`feedbackMaintenanceQueueRecord: ${persistedIdentity.feedbackMaintenanceQueueRecordId}`]),
+        : [
+            `feedbackMaintenanceQueueRecord: ${persistedIdentity.feedbackMaintenanceQueueRecordId}`,
+            `feedbackMaintenanceRun: krn maintenance run --id ${persistedIdentity.feedbackMaintenanceQueueRecordId}`
+          ]),
       ...(persistedIdentity.decisionPacketEvidenceRef === undefined
         ? []
         : [`decisionPacketEvidenceRef: ${persistedIdentity.decisionPacketEvidenceRef}`])
