@@ -25,6 +25,7 @@ import {
 } from "./db-smoke-support.js";
 import {
   contextAssemblies,
+  projects,
   retrievalRuns,
   searchDocuments,
 } from "../../schema/index.js";
@@ -58,6 +59,8 @@ export interface ActivationSmokeReport {
   memoryRecordCount: number;
   antiMemoryRecordCount: number;
   searchDocumentCount: number;
+  indexOnlySearchExcluded: boolean;
+  crossProjectIndexExcluded: boolean;
   searchCandidateCount: number;
   retrievalCandidateCount: number;
   activationDecisionCount: number;
@@ -298,13 +301,69 @@ export const runActivationSmokeCheck = async (
     });
 
     const sourceQuery = buildSourceQuery(taskContract);
-    await retrievalRepository.createSearchDocument({
+    const [foreignProject] = await db
+      .insert(projects)
+      .values({
+        workspaceId: project.workspaceId,
+        slug: `activation-engine-foreign-${marker}`,
+        displayName: `activation-engine-foreign-${marker}`,
+        metadata: {
+          smokeId: marker
+        }
+      })
+      .returning({ id: projects.id });
+
+    if (foreignProject === undefined) {
+      throw new Error("Activation smoke could not create its foreign-project fixture");
+    }
+
+    const foreignSourceArtifact = await sourceRepository.createSourceArtifact({
+      projectId: foreignProject.id,
+      kind: "operator_input",
+      sourceAuthority: "project-decision",
+      uri: `operator://activation-smoke/${marker}/foreign`,
+      title: "Activation smoke foreign source",
+      contentHash: `activation-smoke-foreign-${marker}`,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const foreignClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: foreignSourceArtifact.id,
+      executionRunId: executionRun.id,
+      claim: "A foreign-project index subject must not enter this activation.",
+      mechanism: "The canonical SourceClaim belongs to another project.",
+      krnImplication: "Activation must fail closed on cross-project index links.",
+      doesNotProve: "This does not prove project-level authorization outside activation.",
+      sourceAuthority: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "activation smoke",
+      falsifier: "A foreign-project index link enters activation.",
+      status: "proposed",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const searchDocument = await retrievalRepository.createSearchDocument({
       projectId: project.id,
       subjectType: "source_claim",
       subjectId: activationClaim.id,
       sourceClaimId: activationClaim.id,
       title: "Activation smoke search document",
       body: "Activation readiness uses search candidates, explicit exclusions, anti-memory conflict handling, bounded context, and persisted decisions.",
+      searchText: sourceQuery.text,
+      sourceAuthority: "project-decision",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const crossProjectSearchDocument = await retrievalRepository.createSearchDocument({
+      projectId: project.id,
+      subjectType: "source_claim",
+      subjectId: foreignClaim.id,
+      sourceClaimId: foreignClaim.id,
+      title: "Activation smoke cross-project search document",
+      body: "This active index row points at a SourceClaim in another project.",
       searchText: sourceQuery.text,
       sourceAuthority: "project-decision",
       metadata: {
@@ -505,6 +564,12 @@ export const runActivationSmokeCheck = async (
     const memoryRecordCount = 2;
     const antiMemoryRecordCount = retrieved.antiMemoryRecords.length;
     const searchDocumentCount = searchDocumentRows[0]?.count ?? 0;
+    const indexOnlySearchExcluded = !contextAssembly.inclusions.some(
+      (inclusion) => inclusion.subjectId === searchDocument.id
+    );
+    const crossProjectIndexExcluded = !contextAssembly.inclusions.some(
+      (inclusion) => inclusion.subjectId === crossProjectSearchDocument.id
+    );
     const searchCandidateCount = candidates.filter((candidate) =>
       candidate.kind === "search" || hasMergedSearchSignal(candidate.metadata)
     ).length;
@@ -526,7 +591,9 @@ export const runActivationSmokeCheck = async (
         { label: "source claims", passed: sourceClaimCount === 3 },
         { label: "memory records", passed: memoryRecordCount === 2 },
         { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
-        { label: "search documents", passed: searchDocumentCount === 1 },
+        { label: "search documents", passed: searchDocumentCount === 2 },
+        { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
+        { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
         { label: "retrieval candidates", passed: retrievalCandidateCount >= 5 },
         { label: "activation decisions", passed: activationDecisionCount >= 5 },
@@ -567,6 +634,8 @@ export const runActivationSmokeCheck = async (
       memoryRecordCount,
       antiMemoryRecordCount,
       searchDocumentCount,
+      indexOnlySearchExcluded,
+      crossProjectIndexExcluded,
       searchCandidateCount,
       retrievalCandidateCount,
       activationDecisionCount,

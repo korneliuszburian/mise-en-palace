@@ -123,6 +123,7 @@ export interface DatabaseRuntime {
     | "listSourceDecisionKnowledgeSources"
     | "listRejectedSourceDecisionKnowledgeSources"
     | "listSourceRejectionsForClaim"
+    | "getSourceClaimForProject"
   >>;
   retrievalRepository?: Pick<
     RetrievalRepository,
@@ -556,6 +557,7 @@ const createDatabaseRuntimeForClient = async (
     createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
     createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
     getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
+    getSourceClaimForProject: (...args) => sourceRepository.getSourceClaimForProject(...args),
     listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
     createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
     createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),

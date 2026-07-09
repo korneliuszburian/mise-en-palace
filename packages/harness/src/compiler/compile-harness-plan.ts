@@ -71,11 +71,12 @@ export interface HarnessCompilerRepositories {
     HarnessRunRepository,
     "createOperatorIntent" | "createTaskContract" | "createHarnessPlan" | "createContextAssembly"
   >;
-  memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
+  memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject"> &
+    Partial<Pick<MemoryRepository, "getMemoryRecordById">>;
   sourceRepository: Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  >;
+  > & Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
   retrievalRepository: Pick<
     RetrievalRepository,
     | "startRetrievalRun"

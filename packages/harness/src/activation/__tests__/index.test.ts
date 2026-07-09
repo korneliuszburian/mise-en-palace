@@ -1185,6 +1185,7 @@ describe("activation engine", () => {
                     subjectType: "source_artifact",
                     subjectId: "source-artifact-1",
                     sourceArtifactId: "source-artifact-1",
+                    sourceClaimId: undefined,
                     title: "Local artifact preview marker",
                     body: "krn-source-artifact-preview 55568e9ec7a48a12",
                     searchText: "krn-source-artifact-preview 55568e9ec7a48a12",
@@ -1211,9 +1212,180 @@ describe("activation engine", () => {
         kind: "search",
         subjectType: "search_document",
         subjectId: "search-document-marker",
-        searchDocumentId: "search-document-marker"
+        searchDocumentId: "search-document-marker",
+        metadata: expect.objectContaining({
+          searchDocumentAuthority: "unlinked_index_evidence"
+        })
       })
     ]);
+  });
+
+  it("requires every active search hit to resolve to current project-scoped canonical authority", async () => {
+    const currentSourceClaim = sourceClaim({
+      id: "claim-current-indexed",
+      claim: "Current indexed source claims can guide activation.",
+      supportType: "decision",
+      falsifier: "A current indexed source claim can be shown unsupported."
+    });
+    const staleSourceClaim = sourceClaim({
+      id: "claim-stale-indexed",
+      status: "deprecated",
+      claim: "Deprecated indexed source claims must not guide activation."
+    });
+    const currentMemoryRecord = memoryRecord({
+      id: "memory-current-indexed",
+      summary: "Current indexed memory can guide activation."
+    });
+    const sourceDecisionSupport = sourceDecisionEdge({
+      id: "edge-current-indexed",
+      sourceClaimId: currentSourceClaim.id
+    });
+    const searchResults = [
+      searchDocument({
+        id: "search-current-source",
+        subjectType: "source_claim",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        title: "Current source claim index"
+      }),
+      searchDocument({
+        id: "search-stale-source",
+        subjectType: "source_claim",
+        subjectId: staleSourceClaim.id,
+        sourceClaimId: staleSourceClaim.id,
+        title: "Deprecated source claim index"
+      }),
+      searchDocument({
+        id: "search-cross-project-source",
+        subjectType: "source_claim",
+        subjectId: "claim-from-project-2",
+        sourceClaimId: "claim-from-project-2",
+        title: "Cross-project source claim index"
+      }),
+      searchDocument({
+        id: "search-current-memory",
+        subjectType: "memory_record",
+        subjectId: currentMemoryRecord.id,
+        sourceClaimId: undefined,
+        memoryRecordId: currentMemoryRecord.id,
+        title: "Current memory index"
+      }),
+      searchDocument({
+        id: "search-anti-memory",
+        subjectType: "anti_memory_record",
+        subjectId: "anti-memory-indexed",
+        sourceClaimId: undefined,
+        antiMemoryRecordId: "anti-memory-indexed",
+        title: "Anti-memory index"
+      }),
+      searchDocument({
+        id: "search-incoherent-link",
+        subjectType: "source_claim",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        memoryRecordId: currentMemoryRecord.id,
+        title: "Incoherent canonical links"
+      }),
+      searchDocument({
+        id: "search-missing-canonical-link",
+        subjectType: "source_claim",
+        subjectId: "claim-without-link",
+        sourceClaimId: undefined,
+        title: "Missing canonical link"
+      })
+    ];
+    const result = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 0,
+        source: 0,
+        search: searchResults.length,
+        antiMemory: 0
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async getMemoryRecordById(id) {
+            return id === currentMemoryRecord.id ? currentMemoryRecord : undefined;
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [];
+          },
+          async getSourceClaimForProject(projectId, id) {
+            if (projectId !== task.projectId) {
+              return undefined;
+            }
+
+            return id === currentSourceClaim.id
+              ? currentSourceClaim
+              : id === staleSourceClaim.id
+                ? staleSourceClaim
+                : undefined;
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return sourceClaimId === currentSourceClaim.id ? [sourceDecisionSupport] : [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return searchResults;
+          }
+        }
+      }
+    });
+    const filtered = applyActivationFilters({
+      candidates: result.candidates,
+      antiMemoryRecords: result.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const included = filtered.candidates.filter((candidate) => candidate.exclusion === undefined);
+
+    expect(included).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "source",
+        subjectType: "source_claim",
+        subjectId: currentSourceClaim.id,
+        searchDocumentIds: ["search-current-source"]
+      }),
+      expect.objectContaining({
+        kind: "memory",
+        subjectType: "memory_record",
+        subjectId: currentMemoryRecord.id,
+        searchDocumentIds: ["search-current-memory"]
+      })
+    ]));
+    expect(included).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ searchDocumentId: "search-stale-source" }),
+      expect.objectContaining({ searchDocumentId: "search-cross-project-source" }),
+      expect.objectContaining({ searchDocumentId: "search-anti-memory" }),
+      expect.objectContaining({ searchDocumentId: "search-incoherent-link" }),
+      expect.objectContaining({ searchDocumentId: "search-missing-canonical-link" })
+    ]));
+    expect(result.candidates).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "search",
+        subjectType: "search_document",
+        subjectId: "search-stale-source",
+        exclusion: undefined
+      }),
+      expect.objectContaining({
+        kind: "search",
+        subjectType: "search_document",
+        subjectId: "search-cross-project-source",
+        exclusion: undefined
+      })
+    ]));
   });
 
   it("ranks Memory Core write-authority memory above adjacent source-graph memory", () => {

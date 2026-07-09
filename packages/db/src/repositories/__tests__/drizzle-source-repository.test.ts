@@ -23,6 +23,7 @@ const methodNames = [
   "createSourceChunk",
   "createSourceClaim",
   "getSourceClaimById",
+  "getSourceClaimForProject",
   "listClaimsForProject",
   "listSourceClaimsForRun",
   "createSourceDecision",

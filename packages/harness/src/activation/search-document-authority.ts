@@ -1,0 +1,305 @@
+import type {
+  MemoryRecord,
+  ProjectId,
+  SourceClaim
+} from "@krn/core";
+import type {
+  MemoryRepository,
+  SearchDocumentSearchResult,
+  SourceRepository
+} from "@krn/core/repositories/internal";
+
+import type {
+  ActivationExclusion
+} from "./types.js";
+
+export type SearchDocumentAuthorityResolution =
+  | {
+      kind: "source";
+      document: SearchDocumentSearchResult;
+      subject: SourceClaim;
+    }
+  | {
+      kind: "memory";
+      document: SearchDocumentSearchResult;
+      subject: MemoryRecord;
+    }
+  | {
+      kind: "unlinked";
+      document: SearchDocumentSearchResult;
+      explanation: string;
+    }
+  | {
+      kind: "rejected";
+      document: SearchDocumentSearchResult;
+      exclusion: ActivationExclusion;
+    };
+
+type SearchDocumentAuthorityRepositories = {
+  memoryRepository: Pick<MemoryRepository, "listActiveMemory"> &
+    Partial<Pick<MemoryRepository, "getMemoryRecordById">>;
+  sourceRepository: Pick<SourceRepository, "listClaimsForProject"> &
+    Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
+};
+
+const canonicalLinkNames = [
+  "sourceClaimId",
+  "memoryRecordId",
+  "antiMemoryRecordId"
+] as const;
+
+type CanonicalLinkName = (typeof canonicalLinkNames)[number];
+
+const canonicalSubjectTypes = new Set([
+  "source_claim",
+  "memory_record",
+  "anti_memory_record"
+]);
+
+const rejection = (
+  document: SearchDocumentSearchResult,
+  reason: ActivationExclusion["reason"],
+  explanation: string
+): SearchDocumentAuthorityResolution => ({
+  kind: "rejected",
+  document,
+  exclusion: { reason, explanation }
+});
+
+const canonicalLinkIds = (
+  document: SearchDocumentSearchResult
+): readonly { name: CanonicalLinkName; id: string }[] => canonicalLinkNames.flatMap((name) => {
+  const id = document[name];
+
+  return id === undefined || id.trim().length === 0 ? [] : [{ name, id }];
+});
+
+const expectedLinkForSubjectType = (
+  subjectType: SearchDocumentSearchResult["subjectType"]
+): CanonicalLinkName | undefined => {
+  switch (subjectType) {
+    case "source_claim":
+      return "sourceClaimId";
+    case "memory_record":
+      return "memoryRecordId";
+    case "anti_memory_record":
+      return "antiMemoryRecordId";
+    default:
+      return undefined;
+  }
+};
+
+const sourceClaimForProject = async (
+  input: SearchDocumentSearchResult,
+  projectId: ProjectId,
+  repositories: SearchDocumentAuthorityRepositories,
+  knownClaimsById: ReadonlyMap<string, SourceClaim>
+): Promise<SourceClaim | undefined> => {
+  const sourceClaimId = input.sourceClaimId;
+
+  if (sourceClaimId === undefined) {
+    return undefined;
+  }
+
+  if (repositories.sourceRepository.getSourceClaimForProject !== undefined) {
+    return repositories.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId);
+  }
+
+  return knownClaimsById.get(sourceClaimId);
+};
+
+const memoryRecordForProject = async (
+  input: SearchDocumentSearchResult,
+  projectId: ProjectId,
+  repositories: SearchDocumentAuthorityRepositories,
+  knownMemoryRecordsById: ReadonlyMap<string, MemoryRecord>
+): Promise<MemoryRecord | undefined> => {
+  const memoryRecordId = input.memoryRecordId;
+
+  if (memoryRecordId === undefined) {
+    return undefined;
+  }
+
+  const record = repositories.memoryRepository.getMemoryRecordById === undefined
+    ? knownMemoryRecordsById.get(memoryRecordId)
+    : await repositories.memoryRepository.getMemoryRecordById(memoryRecordId);
+
+  return record?.projectId === projectId ? record : undefined;
+};
+
+const canonicalLinkExclusion = (
+  document: SearchDocumentSearchResult,
+  links: readonly { name: CanonicalLinkName; id: string }[]
+): ActivationExclusion | undefined => {
+  const expectedLink = expectedLinkForSubjectType(document.subjectType);
+
+  if (links.length > 1 || (expectedLink !== undefined && links[0]?.name !== expectedLink)) {
+    return {
+      reason: "unsafe",
+      explanation: "SearchDocument canonical subject type and link columns are incoherent."
+    };
+  }
+
+  if (links.length === 0 && canonicalSubjectTypes.has(document.subjectType)) {
+    return {
+      reason: "unsafe",
+      explanation: "Canonical SearchDocument subjects require an explicit canonical link."
+    };
+  }
+
+  return undefined;
+};
+
+const resolveSourceClaimDocument = async (input: {
+  document: SearchDocumentSearchResult;
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+  knownClaimsById: ReadonlyMap<string, SourceClaim>;
+}): Promise<SearchDocumentAuthorityResolution> => {
+  const claim = await sourceClaimForProject(
+    input.document,
+    input.projectId,
+    input.repositories,
+    input.knownClaimsById
+  );
+
+  if (claim === undefined) {
+    return rejection(
+      input.document,
+      "unsafe",
+      "SearchDocument source claim is missing or outside the activation project."
+    );
+  }
+
+  if (claim.status !== "accepted") {
+    return rejection(
+      input.document,
+      claim.status === "deprecated" ? "stale" : "unsafe",
+      `SearchDocument source claim is not current: ${claim.status}.`
+    );
+  }
+
+  return { kind: "source", document: input.document, subject: claim };
+};
+
+const resolveMemoryDocument = async (input: {
+  document: SearchDocumentSearchResult;
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+  knownMemoryRecordsById: ReadonlyMap<string, MemoryRecord>;
+}): Promise<SearchDocumentAuthorityResolution> => {
+  const record = await memoryRecordForProject(
+    input.document,
+    input.projectId,
+    input.repositories,
+    input.knownMemoryRecordsById
+  );
+
+  if (record === undefined) {
+    return rejection(
+      input.document,
+      "unsafe",
+      "SearchDocument memory record is missing or outside the activation project."
+    );
+  }
+
+  if (record.status !== "active") {
+    return rejection(
+      input.document,
+      record.status === "stale" || record.status === "deprecated" ? "stale" : "unsafe",
+      `SearchDocument memory record is not current: ${record.status}.`
+    );
+  }
+
+  return { kind: "memory", document: input.document, subject: record };
+};
+
+const resolveLinkedDocument = async (input: {
+  document: SearchDocumentSearchResult;
+  link: { name: CanonicalLinkName; id: string };
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+  knownClaimsById: ReadonlyMap<string, SourceClaim>;
+  knownMemoryRecordsById: ReadonlyMap<string, MemoryRecord>;
+}): Promise<SearchDocumentAuthorityResolution> => {
+  if (input.document.subjectId !== input.link.id) {
+    return rejection(
+      input.document,
+      "unsafe",
+      "SearchDocument subjectId does not match its canonical link."
+    );
+  }
+
+  if (input.link.name === "antiMemoryRecordId") {
+    return rejection(
+      input.document,
+      "unsafe",
+      "AntiMemoryRecord is a rejection projection and cannot become activation authority."
+    );
+  }
+
+  if (input.link.name === "sourceClaimId") {
+    return resolveSourceClaimDocument(input);
+  }
+
+  return resolveMemoryDocument(input);
+};
+
+const resolveSearchDocument = async (input: {
+  document: SearchDocumentSearchResult;
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+  knownClaimsById: ReadonlyMap<string, SourceClaim>;
+  knownMemoryRecordsById: ReadonlyMap<string, MemoryRecord>;
+}): Promise<SearchDocumentAuthorityResolution> => {
+  if (input.document.projectId !== input.projectId) {
+    return rejection(
+      input.document,
+      "unsafe",
+      "SearchDocument project scope does not match the activation project."
+    );
+  }
+
+  const links = canonicalLinkIds(input.document);
+  const exclusion = canonicalLinkExclusion(input.document, links);
+
+  if (exclusion !== undefined) {
+    return rejection(input.document, exclusion.reason, exclusion.explanation);
+  }
+
+  const link = links[0];
+
+  if (link === undefined) {
+    return {
+      kind: "unlinked",
+      document: input.document,
+      explanation:
+        "SearchDocument has no canonical subject link; it remains non-governing search evidence."
+    };
+  }
+
+  return resolveLinkedDocument({ ...input, link });
+};
+
+export const resolveSearchDocumentAuthority = async (input: {
+  documents: readonly SearchDocumentSearchResult[];
+  projectId: ProjectId;
+  knownMemoryRecords: readonly MemoryRecord[];
+  knownSourceClaims: readonly SourceClaim[];
+  repositories: SearchDocumentAuthorityRepositories;
+}): Promise<SearchDocumentAuthorityResolution[]> => {
+  const knownMemoryRecordsById = new Map(
+    input.knownMemoryRecords.map((record) => [record.id, record])
+  );
+  const knownClaimsById = new Map(
+    input.knownSourceClaims.map((claim) => [claim.id, claim])
+  );
+
+  return Promise.all(input.documents.map((document) => resolveSearchDocument({
+    document,
+    projectId: input.projectId,
+    repositories: input.repositories,
+    knownClaimsById,
+    knownMemoryRecordsById
+  })));
+};

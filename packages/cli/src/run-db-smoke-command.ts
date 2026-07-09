@@ -472,6 +472,8 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
       `Memory records: ${report.memoryRecordCount}`,
       `Anti-memory records: ${report.antiMemoryRecordCount}`,
       `Search documents: ${report.searchDocumentCount}`,
+      `Index-only stale search excluded: ${report.indexOnlySearchExcluded ? "yes" : "no"}`,
+      `Cross-project search excluded: ${report.crossProjectIndexExcluded ? "yes" : "no"}`,
       `Search candidates: ${report.searchCandidateCount}`,
       `Retrieval candidates: ${report.retrievalCandidateCount}`,
       `Activation decisions: ${report.activationDecisionCount}`,

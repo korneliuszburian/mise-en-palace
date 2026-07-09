@@ -59,8 +59,15 @@ import type {
   RankedActivationCandidate
 } from "./types.js";
 import {
+  markExcluded
+} from "./types.js";
+import {
   buildActivationRawRecallTriggers
 } from "./activation-raw-recall.js";
+import {
+  resolveSearchDocumentAuthority,
+  type SearchDocumentAuthorityResolution
+} from "./search-document-authority.js";
 
 export interface ActivationRetrievalLimits {
   memory: number;
@@ -73,11 +80,11 @@ export interface ActivationCandidateRepositories {
   memoryRepository: Pick<
     MemoryRepository,
     "listActiveMemory" | "listAntiMemoryForProject"
-  > & Partial<Pick<MemoryRepository, "listAntiMemoryCandidates">>;
+  > & Partial<Pick<MemoryRepository, "getMemoryRecordById" | "listAntiMemoryCandidates">>;
   sourceRepository: Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  > & Partial<Pick<SourceRepository, "listSourceRejectionsForClaim">>;
+  > & Partial<Pick<SourceRepository, "getSourceClaimForProject" | "listSourceRejectionsForClaim">>;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -124,6 +131,107 @@ type ActivationRawRecallTrigger =
 
 const candidateKey = (candidate: { subjectType: string; subjectId: string }): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
+
+const appendUniqueById = <T extends { id: string }>(
+  existing: readonly T[],
+  additions: readonly T[]
+): T[] => {
+  const byId = new Map(existing.map((item) => [item.id, item]));
+
+  for (const addition of additions) {
+    byId.set(addition.id, addition);
+  }
+
+  return [...byId.values()];
+};
+
+const firstRankedCandidate = (
+  candidates: readonly Parameters<typeof rankCandidates>[0][number][],
+  query: ActivationQuery
+): RankedActivationCandidate => {
+  const candidate = rankCandidates(candidates, query)[0];
+
+  if (candidate === undefined) {
+    throw new Error("Activation search projection produced no candidate");
+  }
+
+  return candidate;
+};
+
+const searchDocumentProvenance = (
+  resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" | "memory" }>
+): Record<string, unknown> => ({
+  searchDocumentAuthority: "canonical_projection",
+  searchDocument: {
+    id: resolution.document.id,
+    subjectType: resolution.document.subjectType,
+    subjectId: resolution.document.subjectId,
+    sourceAuthority: resolution.document.sourceAuthority,
+    validityStatus: resolution.document.validityStatus,
+    title: resolution.document.title,
+    ...(resolution.document.sourceArtifactId === undefined
+      ? {}
+      : { sourceArtifactId: resolution.document.sourceArtifactId }),
+    ...(resolution.document.sourceChunkId === undefined
+      ? {}
+      : { sourceChunkId: resolution.document.sourceChunkId }),
+    metadata: resolution.document.metadata,
+    doesNotProve:
+      "SearchDocument provenance can enrich a current canonical subject; it does not create authority."
+  }
+});
+
+const nonGoverningSearchCandidate = (
+  resolution: Extract<SearchDocumentAuthorityResolution, { kind: "unlinked" }>
+) => {
+  const candidate = toSearchCandidate(resolution.document);
+
+  return {
+    ...candidate,
+    reason: resolution.explanation,
+    expectedUse:
+      "Use only as non-governing indexed search evidence; resolve a canonical subject before treating it as authority.",
+    metadata: {
+      ...candidate.metadata,
+      searchDocumentAuthority: "unlinked_index_evidence",
+      doesNotProve:
+        "An unlinked SearchDocument does not prove current source or memory authority."
+    }
+  };
+};
+
+const rejectedSearchCandidate = (
+  document: Extract<SearchDocumentAuthorityResolution, { kind: "rejected" }>["document"]
+) => {
+  const candidate = { ...toSearchCandidate(document) };
+
+  delete candidate.sourceClaimId;
+  delete candidate.memoryRecordId;
+  delete candidate.antiMemoryRecordId;
+
+  return candidate;
+};
+
+const canonicalSearchProjection = (
+  candidate: RankedActivationCandidate,
+  resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" | "memory" }>,
+  query: ActivationQuery
+): RankedActivationCandidate => {
+  const projected = {
+    ...candidate,
+    lexicalScore: resolution.document.lexicalScore,
+    ...(resolution.document.vectorScore === undefined
+      ? {}
+      : { vectorScore: resolution.document.vectorScore }),
+    searchDocumentId: resolution.document.id,
+    metadata: {
+      ...candidate.metadata,
+      ...searchDocumentProvenance(resolution)
+    }
+  };
+
+  return firstRankedCandidate([projected], query);
+};
 
 type ExclusionActivationDecision = Extract<
   RecordActivationDecisionInput["decision"],
@@ -541,13 +649,40 @@ export const retrieveActivationCandidates = async (
     };
   }
 
-  const memoryRecords = await input.repositories.memoryRepository.listActiveMemory(
+  const initialMemoryRecords = await input.repositories.memoryRepository.listActiveMemory(
     input.taskContract.projectId,
     input.limits.memory
   );
-  const sourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
+  const initialSourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
     input.taskContract.projectId,
     input.limits.source
+  );
+  const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
+  const searchDocumentResolutions = await resolveSearchDocumentAuthority({
+    documents: searchResults,
+    projectId: input.taskContract.projectId,
+    knownMemoryRecords: initialMemoryRecords,
+    knownSourceClaims: initialSourceClaims,
+    repositories: {
+      memoryRepository: input.repositories.memoryRepository,
+      sourceRepository: input.repositories.sourceRepository
+    }
+  });
+  const memoryRecords = appendUniqueById(
+    initialMemoryRecords,
+    searchDocumentResolutions
+      .filter((resolution): resolution is Extract<SearchDocumentAuthorityResolution, { kind: "memory" }> =>
+        resolution.kind === "memory"
+      )
+      .map((resolution) => resolution.subject)
+  );
+  const sourceClaims = appendUniqueById(
+    initialSourceClaims,
+    searchDocumentResolutions
+      .filter((resolution): resolution is Extract<SearchDocumentAuthorityResolution, { kind: "source" }> =>
+        resolution.kind === "source"
+      )
+      .map((resolution) => resolution.subject)
   );
   const sourceClaimEdges = await sourceClaimEdgesForClaims(
     input.repositories.sourceRepository,
@@ -572,7 +707,6 @@ export const retrieveActivationCandidates = async (
     sourceConsensus.entries.map((entry) => [entry.sourceClaimId, entry])
   );
   const currentAuthoritySourceClaimIds = new Set(sourceConsensus.currentSourceClaimIds);
-  const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
     input.limits.antiMemory
@@ -645,7 +779,36 @@ export const retrieveActivationCandidates = async (
     ),
     sourceQuery
   );
-  const searchCandidates = rankCandidates(searchResults.map(toSearchCandidate), sourceQuery);
+  const canonicalCandidatesByKey = new Map(
+    [...memoryCandidates, ...sourceCandidates].map((candidate) => [candidateKey(candidate), candidate])
+  );
+  const searchCandidates = searchDocumentResolutions.flatMap((resolution) => {
+    if (resolution.kind === "unlinked") {
+      return [firstRankedCandidate([nonGoverningSearchCandidate(resolution)], sourceQuery)];
+    }
+
+    if (resolution.kind === "rejected") {
+      const candidate = firstRankedCandidate([rejectedSearchCandidate(resolution.document)], sourceQuery);
+
+      return [markExcluded(candidate, resolution.exclusion)];
+    }
+
+    const canonicalKey = resolution.kind === "source"
+      ? `source_claim:${resolution.subject.id}`
+      : `memory_record:${resolution.subject.id}`;
+    const canonicalCandidate = canonicalCandidatesByKey.get(canonicalKey);
+
+    if (canonicalCandidate === undefined) {
+      const candidate = firstRankedCandidate([rejectedSearchCandidate(resolution.document)], sourceQuery);
+
+      return [markExcluded(candidate, {
+        reason: "unsafe",
+        explanation: "SearchDocument resolved to a canonical subject that activation could not materialize."
+      })];
+    }
+
+    return [canonicalSearchProjection(canonicalCandidate, resolution, sourceQuery)];
+  });
   const ownerFileCandidates = rankCandidates(
     buildOwnerFileRecallCandidates(input.taskContract, {
       ...(input.targetReadModel === undefined ? {} : { targetReadModel: input.targetReadModel })

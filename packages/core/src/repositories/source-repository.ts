@@ -104,6 +104,10 @@ export interface SourceRepository {
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
   createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim>;
   getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined>;
+  getSourceClaimForProject?(
+    projectId: ProjectId,
+    id: SourceClaim["id"]
+  ): Promise<SourceClaim | undefined>;
   listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;

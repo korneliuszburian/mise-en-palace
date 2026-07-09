@@ -76,6 +76,26 @@ const requireText = (value: string | undefined, message: string): void => {
   }
 };
 
+const sourceClaimProjection = {
+  id: sourceClaims.id,
+  sourceArtifactId: sourceClaims.sourceArtifactId,
+  sourceChunkId: sourceClaims.sourceChunkId,
+  executionRunId: sourceClaims.executionRunId,
+  claim: sourceClaims.claim,
+  mechanism: sourceClaims.mechanism,
+  krnImplication: sourceClaims.krnImplication,
+  doesNotProve: sourceClaims.doesNotProve,
+  sourceAuthority: sourceClaims.sourceAuthority,
+  supportType: sourceClaims.supportType,
+  consumer: sourceClaims.consumer,
+  falsifier: sourceClaims.falsifier,
+  revisitWhen: sourceClaims.revisitWhen,
+  status: sourceClaims.status,
+  metadata: sourceClaims.metadata,
+  createdAt: sourceClaims.createdAt,
+  updatedAt: sourceClaims.updatedAt
+} as const;
+
 const assertDecisionGradeSupportType = (
   supportType: SourceSupportType,
   label: string
@@ -315,27 +335,23 @@ export class DrizzleSourceRepository implements SourceRepository {
     return row === undefined ? undefined : mapSourceClaim(row);
   }
 
+  async getSourceClaimForProject(
+    projectId: ProjectId,
+    id: SourceClaim["id"]
+  ): Promise<SourceClaim | undefined> {
+    const [row] = await this.db
+      .select(sourceClaimProjection)
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(and(eq(sourceClaims.id, id), eq(sourceArtifacts.projectId, projectId)))
+      .limit(1);
+
+    return row === undefined ? undefined : mapSourceClaim(row);
+  }
+
   async listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]> {
     const rows = await this.db
-      .select({
-        id: sourceClaims.id,
-        sourceArtifactId: sourceClaims.sourceArtifactId,
-        sourceChunkId: sourceClaims.sourceChunkId,
-        executionRunId: sourceClaims.executionRunId,
-        claim: sourceClaims.claim,
-        mechanism: sourceClaims.mechanism,
-        krnImplication: sourceClaims.krnImplication,
-        doesNotProve: sourceClaims.doesNotProve,
-        sourceAuthority: sourceClaims.sourceAuthority,
-        supportType: sourceClaims.supportType,
-        consumer: sourceClaims.consumer,
-        falsifier: sourceClaims.falsifier,
-        revisitWhen: sourceClaims.revisitWhen,
-        status: sourceClaims.status,
-        metadata: sourceClaims.metadata,
-        createdAt: sourceClaims.createdAt,
-        updatedAt: sourceClaims.updatedAt
-      })
+      .select(sourceClaimProjection)
       .from(sourceClaims)
       .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .where(eq(sourceArtifacts.projectId, projectId))
