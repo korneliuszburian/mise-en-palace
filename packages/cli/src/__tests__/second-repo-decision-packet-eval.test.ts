@@ -58,15 +58,16 @@ describe("runSecondRepoDecisionPacketEval", () => {
       },
       metrics: {
         repoCount: 1,
-        caseCount: 15,
+        caseCount: 16,
         repoSpecificDecisionCount: 12,
         reusableKnowledgeDecisionCount: 3,
         rejectedPathCount: 5,
         staleDecisionCount: 5,
-        krnWinCount: 12,
+        krnWinCount: 13,
         notesWinCount: 0,
         tieCount: 3,
-        decisiveComparisonCount: 12,
+        decisiveComparisonCount: 13,
+        evidenceGapCaseCount: 1,
         selfRepoContaminationCount: 0
       }
     });
@@ -74,13 +75,14 @@ describe("runSecondRepoDecisionPacketEval", () => {
       targetRepo: "weak-json-boundary-typescript",
       decisionPacketStatus: "pass",
       metrics: {
-        decisionPacketUsefulRate: 1
+        decisionPacketUsefulRate: 0.9375
       },
       selfRepoContaminationRefs: []
     });
     expect(result.proof.proves).toEqual(expect.arrayContaining([
       "the decision-packet eval runs on target-repo corpora outside the KRN repo",
       "each target corpus includes stale and rejected-path readback",
+      "each target corpus includes an evidence-gap abstention for unsupported target work",
       "each target corpus reports KRN-vs-notes comparison outcomes"
     ]));
     expect(result.gaps).toEqual(expect.arrayContaining([
@@ -110,15 +112,16 @@ describe("runSecondRepoDecisionPacketEval", () => {
     ]);
     expect(result.metrics).toMatchObject({
       repoCount: 3,
-      caseCount: 45,
+      caseCount: 48,
       repoSpecificDecisionCount: 28,
       reusableKnowledgeDecisionCount: 9,
       rejectedPathCount: 11,
       staleDecisionCount: 9,
-      krnWinCount: 31,
+      krnWinCount: 34,
       notesWinCount: 0,
       tieCount: 14,
-      decisiveComparisonCount: 31,
+      decisiveComparisonCount: 34,
+      evidenceGapCaseCount: 3,
       selfRepoContaminationCount: 0
     });
     expect(result.repoResults.map((repo) => ({
@@ -126,27 +129,31 @@ describe("runSecondRepoDecisionPacketEval", () => {
       decisionPacketStatus: repo.decisionPacketStatus,
       krnWinCount: repo.metrics.krnWinCount,
       notesWinCount: repo.metrics.notesWinCount,
+      evidenceGapCaseCount: repo.metrics.evidenceGapCaseCount,
       selfRepoContaminationCount: repo.metrics.selfRepoContaminationCount
     }))).toEqual([
       {
         targetRepo: "weak-json-boundary-typescript",
         decisionPacketStatus: "pass",
-        krnWinCount: 12,
+        krnWinCount: 13,
         notesWinCount: 0,
+        evidenceGapCaseCount: 1,
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "env-config-contract-typescript",
         decisionPacketStatus: "pass",
-        krnWinCount: 9,
+        krnWinCount: 10,
         notesWinCount: 0,
+        evidenceGapCaseCount: 1,
         selfRepoContaminationCount: 0
       },
       {
         targetRepo: "async-job-boundary-typescript",
         decisionPacketStatus: "pass",
-        krnWinCount: 10,
+        krnWinCount: 11,
         notesWinCount: 0,
+        evidenceGapCaseCount: 1,
         selfRepoContaminationCount: 0
       }
     ]);

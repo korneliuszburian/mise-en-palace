@@ -29,6 +29,7 @@ export interface SecondRepoTargetResult {
     readonly reusableKnowledgeDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
+    readonly evidenceGapCaseCount: number;
     readonly decisionPacketUsefulRate: number;
     readonly krnWinCount: number;
     readonly notesWinCount: number;
@@ -65,6 +66,7 @@ export interface SecondRepoDecisionPacketEvalResult {
     readonly reusableKnowledgeDecisionCount: number;
     readonly rejectedPathCount: number;
     readonly staleDecisionCount: number;
+    readonly evidenceGapCaseCount: number;
     readonly krnWinCount: number;
     readonly notesWinCount: number;
     readonly tieCount: number;
@@ -178,6 +180,11 @@ export const runSecondRepoDecisionPacketEval = async (
     const staleDecisionCount = fixture.decisions.filter((decision) =>
       decision.status === "stale"
     ).length;
+    const evidenceGapCaseCount = decisionPacket.cases.filter((testCase) =>
+      testCase.expectedEvidenceGap !== undefined &&
+      testCase.packet.evidenceGaps.length > 0 &&
+      testCase.packet.brief.evidenceGapIds.length > 0
+    ).length;
     const selfRepoContaminationRefs = collectSelfRepoContaminationRefs(fixture);
 
     return {
@@ -189,6 +196,7 @@ export const runSecondRepoDecisionPacketEval = async (
         reusableKnowledgeDecisionCount,
         rejectedPathCount,
         staleDecisionCount,
+        evidenceGapCaseCount,
         decisionPacketUsefulRate: decisionPacket.metrics.usefulRate,
         krnWinCount: decisionPacket.metrics.krnWinCount,
         notesWinCount: decisionPacket.metrics.notesWinCount,
@@ -208,6 +216,7 @@ export const runSecondRepoDecisionPacketEval = async (
     reusableKnowledgeDecisionCount: sum.reusableKnowledgeDecisionCount + result.metrics.reusableKnowledgeDecisionCount,
     rejectedPathCount: sum.rejectedPathCount + result.metrics.rejectedPathCount,
     staleDecisionCount: sum.staleDecisionCount + result.metrics.staleDecisionCount,
+    evidenceGapCaseCount: sum.evidenceGapCaseCount + result.metrics.evidenceGapCaseCount,
     krnWinCount: sum.krnWinCount + result.metrics.krnWinCount,
     notesWinCount: sum.notesWinCount + result.metrics.notesWinCount,
     tieCount: sum.tieCount + result.metrics.tieCount,
@@ -219,6 +228,7 @@ export const runSecondRepoDecisionPacketEval = async (
     reusableKnowledgeDecisionCount: 0,
     rejectedPathCount: 0,
     staleDecisionCount: 0,
+    evidenceGapCaseCount: 0,
     krnWinCount: 0,
     notesWinCount: 0,
     tieCount: 0,
@@ -231,6 +241,7 @@ export const runSecondRepoDecisionPacketEval = async (
     result.metrics.reusableKnowledgeDecisionCount >= 1 &&
     result.metrics.rejectedPathCount >= 1 &&
     result.metrics.staleDecisionCount >= 1 &&
+    result.metrics.evidenceGapCaseCount >= 1 &&
     result.metrics.selfRepoContaminationCount === 0
   );
   const status = paths.length > 0 && everyRepoPasses ? "pass" : "fail";
@@ -269,6 +280,7 @@ export const runSecondRepoDecisionPacketEval = async (
         "each target corpus has repo-specific governing decisions",
         "each target corpus includes at least one reusable KRN TypeScript knowledge decision",
         "each target corpus includes stale and rejected-path readback",
+        "each target corpus includes an evidence-gap abstention for unsupported target work",
         "each target corpus reports KRN-vs-notes comparison outcomes",
         "each target corpus avoids self-repo KRN plan/architecture evidence refs"
       ],

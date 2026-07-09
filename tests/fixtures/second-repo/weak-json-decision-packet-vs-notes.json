@@ -533,6 +533,18 @@
       "staleDecisionIds": [],
       "rejectedDecisionIds": ["reject-delete-tests"],
       "baselineFailureRationale": "Notes can recall invalid tests but cannot prevent deleting those tests as a shortcut."
+    },
+    {
+      "id": "weak-json-unsupported-mobile-release-task",
+      "task": "Create a native mobile release pipeline with app store certificates fastlane profiles ios android signing. What should Codex do before coding?",
+      "expectedEvidenceGap": {
+        "id": "evidence-gap:weak-json-unsupported-mobile-release-task:no-governing-decision",
+        "reason": "No current governed decision matched this task strongly enough to guide Codex.",
+        "verificationRequired": "Capture or promote source-backed decision evidence before turning this task into governing context."
+      },
+      "staleDecisionIds": [],
+      "rejectedDecisionIds": [],
+      "baselineFailureRationale": "Flat notes can still return confident TypeScript boundary guidance for an unsupported mobile-release task; KRN must abstain until target source-backed evidence exists."
     }
   ]
 }
