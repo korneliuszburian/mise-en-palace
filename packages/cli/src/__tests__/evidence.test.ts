@@ -17,9 +17,11 @@ import type {
   CreateReviewAssessmentInput,
   HarnessRunAggregate
 } from "@krn/core/repositories/internal";
+import { buildDecisionPacketFromReadModel } from "@krn/core";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
+import { buildDecisionPacketReadModel } from "../decision-packet-read-model-builders.js";
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -839,6 +841,110 @@ describe("runCli", () => {
         evidenceRefs: ["packet:stale-packet"]
       }]
     });
+  });
+
+  it("feeds persisted usefulness feedback into the next DecisionPacket caveats", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--decision-packet-checksum",
+        "current-packet",
+        "--source-usefulness",
+        "claim:source-claim-stale=stale|Selected source claim became stale|packet:current-packet|Does not demote source truth without review",
+        "--knowledge-usefulness",
+        "knowledge:frontend-template=stale|Selected knowledge became stale|packet:current-packet|Does not demote memory truth without review",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    if (capture.feedbackDeltaMetadata === undefined) {
+      throw new Error("Expected persisted feedback metadata");
+    }
+
+    const nextAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      contextAssembly: {
+        ...aggregate.contextAssembly,
+        inclusions: [{
+          subjectType: "source_claim",
+          subjectId: "source-claim-stale",
+          reason: "Previously selected source claim.",
+          expectedUse: "Use only if current.",
+          sourceAuthority: "project-decision"
+        }, {
+          subjectType: "memory_record",
+          subjectId: "knowledge:frontend-template",
+          reason: "Previously selected retained knowledge.",
+          expectedUse: "Use only if current.",
+          sourceAuthority: "project-decision"
+        }]
+      },
+      feedbackDeltas: [{
+        id: "feedback-delta-1",
+        reviewAssessmentId: "review-assessment-1",
+        status: "candidate",
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: [],
+        metadata: capture.feedbackDeltaMetadata,
+        createdAt: now,
+        updatedAt: now
+      }]
+    };
+    const packet = buildDecisionPacketFromReadModel(
+      buildDecisionPacketReadModel(nextAggregate)
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(packet.caveatedSourceClaimIds).toEqual(["source-claim-stale"]);
+    expect(packet.caveatedMemoryRefs).toEqual(["knowledge:frontend-template"]);
+    expect(packet.staleKnowledgeIds).toEqual(["knowledge:frontend-template"]);
+    expect(packet.sourceConsensus.evidenceGapIds).toContain(
+      "evidence-gap:execution-run-1:caveated-source-authority:source-claim-stale"
+    );
+    expect(packet.sourceConsensus.evidenceGapIds).toContain(
+      "evidence-gap:execution-run-1:caveated-memory-authority:knowledge:frontend-template"
+    );
+    expect(packet.abstentionScore.reasons).toContain("caveated_source_authority");
+    expect(packet.abstentionScore.reasons).toContain("caveated_memory_authority");
   });
 
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
