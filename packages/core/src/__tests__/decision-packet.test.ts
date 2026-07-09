@@ -216,12 +216,15 @@ describe("DecisionPacket builder", () => {
   it("builds governed packet signals from read model evidence", () => {
     const packet = buildDecisionPacketFromReadModel(readModel);
 
-    expect(packet.governingDecisionIds).toEqual([
-      "source-decision-current",
-      "source-decision-conflicted"
-    ]);
+    expect(packet.governingDecisionIds).toEqual(["source-decision-current"]);
     expect(packet.governingStatements).toContain(
       "Use the current frontend template for matching app setup tasks."
+    );
+    expect(packet.governingStatements).not.toContain(
+      "Current template reduced setup churn."
+    );
+    expect(packet.governingStatements).not.toContain(
+      "Conflicted decision was selected before stale feedback."
     );
     expect(packet.governingStatements).not.toContain(
       "Helpful knowledge feedback is not itself a governing statement."
@@ -260,13 +263,12 @@ describe("DecisionPacket builder", () => {
       "source-decision-rejected"
     ]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
-    expect(packet.severeStaleAuthorityIds).toEqual(["source-decision-conflicted"]);
+    expect(packet.severeStaleAuthorityIds).toEqual([]);
     expect(packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-caveated",
-      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current",
-      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
+      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current"
     ]);
     expect(packet.rejectedPathIds).not.toContain("anti-memory-candidate-pending-feedback");
     expect(packet.sourceConsensus.supersededPathIds).toEqual(["claim-superseded"]);
@@ -277,10 +279,63 @@ describe("DecisionPacket builder", () => {
         "evidence_gap",
         "missing_decision_linked_source",
         "caveated_source_authority",
-        "caveated_memory_authority",
-        "stale_authority"
+        "caveated_memory_authority"
       ]
     });
+  });
+
+  it("keeps feedback-only source decisions and reasons outside governing authority", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-feedback-only-authority",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 0,
+        exclusions: 0,
+        inclusionDetails: [],
+        activationTrace: {
+          candidates: [],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [{
+        candidates: [],
+        sourceUsefulnessOutcomes: [
+          {
+            sourceDecisionId: "source-decision-unseen-selected",
+            outcome: "selected",
+            reason: "Caller supplied reason must remain diagnostic only.",
+            evidenceRefs: ["packet:feedback-only"],
+            doesNotProve: "This feedback does not prove source truth."
+          },
+          {
+            sourceDecisionId: "source-decision-unseen-used",
+            outcome: "used",
+            reason: "Caller supplied used reason must remain diagnostic only.",
+            evidenceRefs: ["packet:feedback-only"],
+            doesNotProve: "This feedback does not prove source truth."
+          },
+          {
+            sourceDecisionId: "source-decision-unseen-helped",
+            outcome: "helped",
+            reason: "Caller supplied helped reason must remain diagnostic only.",
+            evidenceRefs: ["packet:feedback-only"],
+            doesNotProve: "This feedback does not prove source truth."
+          }
+        ],
+        knowledgeUsefulnessOutcomes: []
+      }],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.governingDecisionIds).toEqual([]);
+    expect(packet.governingStatements).toEqual([]);
+    expect(packet.staleDecisionIds).toEqual([]);
+    expect(packet.noiseDecisionIds).toEqual([]);
   });
 
   it("keeps authority-superseded source claims as superseded rejected paths", () => {

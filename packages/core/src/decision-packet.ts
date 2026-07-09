@@ -116,12 +116,6 @@ const contextSubjectIds = (
   .filter((item) => item.subjectType === subjectType)
   .map((item) => item.subjectId));
 
-const usefulFeedbackOutcomes = [
-  "selected",
-  "used",
-  "helped"
-] as const satisfies readonly SourceUsefulnessOutcome[];
-
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -674,16 +668,9 @@ const taskStandardDecisionsFor = (
 
 const governingStatementsFor = (
   readModel: DecisionPacketReadModelInput
-): string[] => unique([
-  ...readModel.context.activationTrace?.candidates.flatMap((candidate) =>
-    candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
-  ) ?? [],
-  ...readModel.feedbackDeltas.flatMap((feedback) =>
-    feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-      ["selected", "used", "helped"].includes(outcome.outcome) ? [outcome.reason] : []
-    )
-  )
-]);
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
+) ?? []);
 
 const antiMemoryBlockedPathIdsFor = (
   readModel: DecisionPacketReadModelInput
@@ -820,10 +807,7 @@ export const buildDecisionPacketFromReadModel = (
   const unknownSourceClaimIds = unknownSourceClaimIdsFor(readModel);
   const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel, sourceClaimIds);
   const sourceDecisionTargets = sourceDecisionTargetsFor(readModel, sourceClaimIds);
-  const governingDecisionIds = unique([
-    ...architectureDecisionTargetIdsFor(sourceDecisionTargets),
-    ...sourceDecisionIdsWithUsefulness(readModel, usefulFeedbackOutcomes)
-  ]);
+  const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
   const memoryRefs = memoryRefsFor(readModel);
   const staleKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["stale"]);

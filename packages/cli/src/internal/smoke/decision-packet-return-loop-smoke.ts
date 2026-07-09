@@ -64,17 +64,18 @@ export interface DecisionPacketReturnLoopSmokeReport {
   returnChannelHasChecksum: boolean;
   matchingFeedbackDeltaId: string;
   matchingFeedbackOutcome: string;
-  matchingFeedbackRemainedAuthoritative: boolean;
+  matchingFeedbackStayedDiagnostic: boolean;
   staleFeedbackDeltaId: string;
   staleFeedbackOutcome: string;
-  staleFeedbackDemotedDecision: boolean;
+  staleFeedbackStayedDiagnostic: boolean;
   mismatchedFeedbackDeltaId: string;
   mismatchedFeedbackOutcome: string;
   mismatchedFeedbackDowngraded: boolean;
   mismatchedFeedbackStayedOutOfNextPacket: boolean;
   nextPacketGoverningDecisionIds: readonly string[];
   nextPacketStaleDecisionIds: readonly string[];
-  nextPacketIncludesMatchingDecision: boolean;
+  nextPacketCaveatedSourceClaimIds: readonly string[];
+  nextPacketRetainsActivatedDecision: boolean;
   selectorProofRunId: string;
   selectorHelpedMemoryRecordId: string;
   selectorStaleMemoryRecordId: string;
@@ -170,6 +171,13 @@ interface SelectorFeedbackProofResult {
   maintenanceAntiMemoryCandidateId: string;
   maintenanceFeedbackEventId: string;
   maintenanceCandidateLinkedToFeedbackDelta: boolean;
+}
+
+type FeedbackSourceProof = "helped" | "stale";
+
+interface FeedbackSourceClaimProof {
+  claimId: string;
+  decisionTargetId: string;
 }
 
 interface SourceConsensusProofResult {
@@ -329,12 +337,14 @@ const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
 };
 
 const sourceUsefulnessOutcome = (input: {
-  readonly decisionId: string;
+  readonly claimId?: string;
+  readonly decisionId?: string;
   readonly evidenceRef: string;
   readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
   readonly reason: string;
 }): SourceUsefulnessOutcomeFeedback => ({
-  sourceDecisionId: input.decisionId,
+  ...(input.claimId === undefined ? {} : { sourceClaimId: input.claimId }),
+  ...(input.decisionId === undefined ? {} : { sourceDecisionId: input.decisionId }),
   outcome: input.outcome,
   reason: input.reason,
   evidenceRefs: [input.evidenceRef],
@@ -342,24 +352,22 @@ const sourceUsefulnessOutcome = (input: {
     "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
 });
 
-const createFeedbackSourceDecision = async (
+const createFeedbackSourceClaim = async (
   input: {
-    readonly executionRunId: string;
     readonly marker: string;
     readonly projectId: string;
     readonly sourceArtifactId: string;
     readonly sourceRepository: SourceRepository;
-    readonly proof: "helped" | "stale" | "mismatched";
+    readonly proof: FeedbackSourceProof;
   }
-): Promise<string> => {
+): Promise<FeedbackSourceClaimProof> => {
   const claim = await input.sourceRepository.createSourceClaim({
     sourceArtifactId: input.sourceArtifactId,
-    executionRunId: input.executionRunId,
-    claim: `DecisionPacket feedback ${input.proof} source decision must resolve through persisted source truth.`,
+    claim: `DecisionPacket return-loop feedback ${input.proof} source claim must stay bound to current activation.`,
     mechanism:
-      "Source-usefulness feedback carries a SourceDecision id that maintenance resolves to the linked SourceClaim before proposing anti-memory.",
+      "Source-usefulness feedback is attached to a selected SourceClaim while source decisions and support edges remain canonical authority.",
     krnImplication:
-      "KRN demotes stale source guidance through the source-claim path instead of inventing source-decision memory targets.",
+      "KRN keeps source feedback as a bounded diagnostic and maintenance signal instead of letting it mint governing authority.",
     doesNotProve:
       "This fixture does not prove broad source-review quality or live Codex obedience.",
     sourceAuthority: "project-decision",
@@ -370,26 +378,44 @@ const createFeedbackSourceDecision = async (
     status: "proposed",
     metadata: {
       smokeId: input.marker,
-      feedbackSourceDecision: input.proof
+      feedbackSourceClaim: input.proof
     }
   });
   const decision = await input.sourceRepository.createSourceDecision({
     projectId: input.projectId,
     sourceClaimId: claim.id,
     status: "adopt",
-    decision: `Use persisted ${input.proof} source feedback decision for the DecisionPacket return-loop smoke.`,
+    decision: `Use persisted ${input.proof} source support for the DecisionPacket return-loop smoke.`,
     rationale:
-      "The smoke must exercise the same SourceDecision lookup path used by feedback maintenance.",
+      "The smoke must provide canonical source support before feedback is captured.",
     falsifier:
-      "The return-loop smoke accepts synthetic source decision ids that the maintenance handler cannot resolve.",
+      "The return-loop smoke lets feedback replace the source decision or support edge.",
     consumer: "DecisionPacket return-loop feedback smoke",
     metadata: {
       smokeId: input.marker,
-      feedbackSourceDecision: input.proof
+      feedbackSourceClaim: input.proof
     }
   });
 
-  return decision.id;
+  const decisionTargetId = `architecture-decision:feedback:${input.marker}:${input.proof}`;
+  await input.sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: claim.id,
+    targetType: "architecture_decision",
+    targetId: decisionTargetId,
+    supportType: "decision",
+    confidence: "high",
+    notes: "DecisionPacket return-loop smoke canonical source support.",
+    metadata: {
+      smokeId: input.marker,
+      sourceDecisionId: decision.id,
+      feedbackSourceClaim: input.proof
+    }
+  });
+
+  return {
+    claimId: claim.id,
+    decisionTargetId
+  };
 };
 
 const firstSourceUsefulnessOutcome = (
@@ -1425,6 +1451,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   const feedbackDeltaIds: string[] = [];
   const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
+  let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
+  let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
 
   const cleanup = async (): Promise<number> => {
     await deleteFeedbackOutboxRows({ client, feedbackDeltaIds });
@@ -1499,7 +1527,35 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       marker,
       projectSlug,
       task,
-      workspaceSlug
+      workspaceSlug,
+      prepare: async ({ project, sourceRepository }) => {
+        const feedbackSourceArtifact = await sourceRepository.createSourceArtifact({
+          projectId: project.id,
+          kind: "run",
+          uri: `operator://decision-packet-return-loop/${marker}/feedback-source-claims`,
+          title: "DecisionPacket feedback source claim smoke source",
+          contentHash: `decision-packet-feedback-source-claims-${marker}`,
+          sourceAuthority: "project-decision",
+          metadata: {
+            smokeId: marker,
+            feedbackSourceClaims: true
+          }
+        });
+        helpedFeedbackSource = await createFeedbackSourceClaim({
+          marker,
+          projectId: project.id,
+          sourceArtifactId: feedbackSourceArtifact.id,
+          sourceRepository,
+          proof: "helped"
+        });
+        staleFeedbackSource = await createFeedbackSourceClaim({
+          marker,
+          projectId: project.id,
+          sourceArtifactId: feedbackSourceArtifact.id,
+          sourceRepository,
+          proof: "stale"
+        });
+      }
     });
     retrievalRunId = compiledRetrievalRunId;
 
@@ -1537,46 +1593,14 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime
     })).stdout);
-    const feedbackSourceArtifact = await sourceRepository.createSourceArtifact({
-      projectId: project.id,
-      kind: "run",
-      uri: `operator://decision-packet-return-loop/${marker}/feedback-source-decisions`,
-      title: "DecisionPacket feedback source decision smoke source",
-      contentHash: `decision-packet-feedback-source-decisions-${marker}`,
-      sourceAuthority: "project-decision",
-      metadata: {
-        smokeId: marker,
-        feedbackSourceDecision: true
-      }
-    });
-    const matchingDecisionId = await createFeedbackSourceDecision({
-      executionRunId: executionRun.id,
-      marker,
-      projectId: project.id,
-      sourceArtifactId: feedbackSourceArtifact.id,
-      sourceRepository,
-      proof: "helped"
-    });
-    const staleDecisionId = await createFeedbackSourceDecision({
-      executionRunId: executionRun.id,
-      marker,
-      projectId: project.id,
-      sourceArtifactId: feedbackSourceArtifact.id,
-      sourceRepository,
-      proof: "stale"
-    });
-    const mismatchedDecisionId = await createFeedbackSourceDecision({
-      executionRunId: executionRun.id,
-      marker,
-      projectId: project.id,
-      sourceArtifactId: feedbackSourceArtifact.id,
-      sourceRepository,
-      proof: "mismatched"
-    });
+    if (helpedFeedbackSource === undefined || staleFeedbackSource === undefined) {
+      throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
+    }
+    const unseenDecisionId = `source-decision-unseen:${marker}`;
     const returnChannelHasChecksum =
       firstPacket.returnChannels.evidence.persistedCommand.includes(firstPacket.packetIdentity.checksum) &&
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
-        firstPacket.packetIdentity.evidenceRef
+        "does not expose canonical selected SourceDecision ids"
       );
     const matchingEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
@@ -1590,10 +1614,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
-          decisionId: matchingDecisionId,
+          claimId: helpedFeedbackSource.claimId,
           evidenceRef: firstPacket.packetIdentity.evidenceRef,
           outcome: "helped",
-          reason: "Matching packet checksum kept source decision feedback authoritative."
+          reason: "Matching packet checksum kept selected source claim feedback bound to the packet."
         })
       ],
       readGitStatus: async () => "",
@@ -1609,14 +1633,19 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     feedbackDeltaIds.push(matchingFeedbackDelta.id);
 
     const matchingFeedbackOutcome = feedbackOutcome(matchingFeedbackDelta.metadata);
-    const matchingFeedbackRemainedAuthoritative =
+    const matchingFeedbackWasAccepted =
       matchingFeedbackOutcome === "helped" &&
       matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
+    const packetAfterMatching = parseDecisionPacket((await runDecisionPacketCommand({
+      ...baseRuntime,
+      runId: executionRun.id,
+      createDatabaseRuntime: async () => commandRuntime
+    })).stdout);
     const staleEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
-      decisionPacketChecksum: firstPacket.packetIdentity.checksum,
+      decisionPacketChecksum: packetAfterMatching.packetIdentity.checksum,
       commandOutcomes: [{
         command: "pnpm --filter @krn/cli test -- decision-packet-stale-feedback",
         status: "passed",
@@ -1624,10 +1653,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
-          decisionId: staleDecisionId,
-          evidenceRef: firstPacket.packetIdentity.evidenceRef,
+          claimId: staleFeedbackSource.claimId,
+          evidenceRef: packetAfterMatching.packetIdentity.evidenceRef,
           outcome: "stale",
-          reason: "Matching packet checksum demoted stale source decision feedback in the next packet."
+          reason: "Matching packet checksum kept stale source claim feedback reviewable."
         })
       ],
       readGitStatus: async () => "",
@@ -1645,7 +1674,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const staleFeedbackOutcome = feedbackOutcome(staleFeedbackDelta.metadata);
     const staleFeedbackBoundToPacket =
       staleFeedbackOutcome === "stale" &&
-      staleEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
+      staleEvidence.stdout.includes(`decisionPacketEvidenceRef: ${packetAfterMatching.packetIdentity.evidenceRef}`);
     const mismatchedChecksum = "0".repeat(64);
     await runEvidenceCaptureCommand({
       ...baseRuntime,
@@ -1659,10 +1688,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
-          decisionId: mismatchedDecisionId,
+          decisionId: unseenDecisionId,
           evidenceRef: firstPacket.packetIdentity.evidenceRef,
           outcome: "helped",
-          reason: "Mismatched packet checksum must downgrade this feedback."
+          reason: "Unseen source decision feedback must not mint governing authority."
         })
       ],
       readGitStatus: async () => "",
@@ -1684,14 +1713,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime
     })).stdout);
-    const nextPacketIncludesMatchingDecision =
-      nextPacket.packet.governingDecisionIds.includes(matchingDecisionId);
-    const staleFeedbackDemotedDecision =
-      nextPacket.packet.staleDecisionIds.includes(staleDecisionId) &&
-      !nextPacket.packet.governingDecisionIds.includes(staleDecisionId);
+    const nextPacketRetainsActivatedDecision =
+      nextPacket.packet.governingDecisionIds.includes(helpedFeedbackSource.decisionTargetId) &&
+      nextPacket.packet.governingDecisionIds.includes(staleFeedbackSource.decisionTargetId);
+    const nextPacketCaveatedSourceClaimIds = nextPacket.packet.sourceConsensus.caveatedSourceClaimIds;
+    const staleFeedbackStayedDiagnostic =
+      staleFeedbackOutcome === "stale" &&
+      nextPacketCaveatedSourceClaimIds.includes(staleFeedbackSource.claimId) &&
+      nextPacket.packet.governingDecisionIds.includes(staleFeedbackSource.decisionTargetId);
     const mismatchedFeedbackStayedOutOfNextPacket =
-      !nextPacket.packet.governingDecisionIds.includes(mismatchedDecisionId) &&
-      !nextPacket.packet.staleDecisionIds.includes(mismatchedDecisionId);
+      !nextPacket.packet.governingDecisionIds.includes(unseenDecisionId) &&
+      !nextPacket.packet.staleDecisionIds.includes(unseenDecisionId);
+    const matchingFeedbackStayedDiagnostic =
+      matchingFeedbackWasAccepted &&
+      nextPacketRetainsActivatedDecision &&
+      !nextPacket.packet.governingDecisionIds.includes(helpedFeedbackSource.claimId);
     const feedbackMaintenanceProof = await runFeedbackMaintenanceProof({
       client,
       marker,
@@ -1741,12 +1777,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
 
     assertReturnLoopChecks([
       { label: "return channel checksum binding", passed: returnChannelHasChecksum },
-      { label: "matching feedback authoritative", passed: matchingFeedbackRemainedAuthoritative },
+      { label: "matching feedback accepted as bounded signal", passed: matchingFeedbackStayedDiagnostic },
       { label: "stale feedback packet binding", passed: staleFeedbackBoundToPacket },
-      { label: "stale feedback demoted decision", passed: staleFeedbackDemotedDecision },
+      { label: "stale feedback stayed diagnostic", passed: staleFeedbackStayedDiagnostic },
       { label: "mismatched feedback downgraded", passed: mismatchedFeedbackDowngraded },
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfNextPacket },
-      { label: "next packet includes matching decision", passed: nextPacketIncludesMatchingDecision },
+      { label: "next packet retains activated decisions", passed: nextPacketRetainsActivatedDecision },
       { label: "selector packet includes helped memory", passed: selectorProof.includesHelpedMemory },
       { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
       {
@@ -1805,17 +1841,18 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       returnChannelHasChecksum,
       matchingFeedbackDeltaId: matchingFeedbackDelta.id,
       matchingFeedbackOutcome: matchingFeedbackOutcome ?? "missing",
-      matchingFeedbackRemainedAuthoritative,
+      matchingFeedbackStayedDiagnostic,
       staleFeedbackDeltaId: staleFeedbackDelta.id,
       staleFeedbackOutcome: staleFeedbackOutcome ?? "missing",
-      staleFeedbackDemotedDecision,
+      staleFeedbackStayedDiagnostic,
       mismatchedFeedbackDeltaId: mismatchedFeedbackDelta.id,
       mismatchedFeedbackOutcome: mismatchedFeedbackOutcome ?? "missing",
       mismatchedFeedbackDowngraded,
       mismatchedFeedbackStayedOutOfNextPacket,
       nextPacketGoverningDecisionIds: nextPacket.packet.governingDecisionIds,
       nextPacketStaleDecisionIds: nextPacket.packet.staleDecisionIds,
-      nextPacketIncludesMatchingDecision,
+      nextPacketCaveatedSourceClaimIds,
+      nextPacketRetainsActivatedDecision,
       selectorProofRunId: selectorProof.proofRunId,
       selectorHelpedMemoryRecordId: selectorProof.helpedMemoryRecordId,
       selectorStaleMemoryRecordId: selectorProof.staleMemoryRecordId,

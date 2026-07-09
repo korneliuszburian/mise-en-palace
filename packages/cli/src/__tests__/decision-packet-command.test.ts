@@ -444,11 +444,7 @@ describe("decision packet CLI", () => {
       },
       packet: {
         formatVersion: "krn.decisionPacket.v1",
-        governingDecisionIds: [
-          "frontend-bootstrap-standard",
-          "source-decision-helped-agent-1",
-          "source-decision-conflicted-agent-1"
-        ],
+        governingDecisionIds: ["frontend-bootstrap-standard"],
         governingStatements: expect.arrayContaining([
           "Use the refreshed frontend bootstrap standard for matching new frontend projects."
         ]),
@@ -494,12 +490,11 @@ describe("decision packet CLI", () => {
             "source-decision-rejected-agent-1"
           ],
           sourceRejectionIds: ["source-decision-rejected-agent-1"],
-          conflictedDecisionIds: ["source-decision-conflicted-agent-1"],
+          conflictedDecisionIds: [],
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
-            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
           ]
         },
         abstentionScore: {
@@ -509,14 +504,12 @@ describe("decision packet CLI", () => {
             "evidence_gap",
             "missing_decision_linked_source",
             "caveated_source_authority",
-            "caveated_memory_authority",
-            "stale_authority"
+            "caveated_memory_authority"
           ],
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
-            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
           ]
         },
         memoryRefs: ["memory-agent-1"],
@@ -535,7 +528,7 @@ describe("decision packet CLI", () => {
           "source-decision-rejected-agent-1"
         ],
         noiseDecisionIds: ["source-decision-noise-agent-1"],
-        severeStaleAuthorityIds: ["source-decision-conflicted-agent-1"],
+        severeStaleAuthorityIds: [],
         verificationCommands: ["pnpm --filter frontend test"],
         brief: {
           includedContextCount: 3,
@@ -551,8 +544,7 @@ describe("decision packet CLI", () => {
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
-            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
           ]
         }
       },
@@ -623,7 +615,7 @@ describe("decision packet CLI", () => {
     );
     expect(json.packet.abstentionScore.status).toBe("abstain");
     expect(json.packet.abstentionScore.reasons).toContain("missing_decision_linked_source");
-    expect(json.packet.abstentionScore.reasons).toContain("stale_authority");
+    expect(json.packet.abstentionScore.reasons).not.toContain("stale_authority");
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);

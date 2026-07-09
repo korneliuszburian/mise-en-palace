@@ -107,6 +107,7 @@ export interface SmokeHarnessCompileInput {
   db: KrnDatabase;
   marker: string;
   nonGoals?: readonly string[];
+  prepare?: (input: SmokeHarnessPreparationInput) => Promise<void>;
   projectSlug: string;
   task: string;
   workspaceSlug: string;
@@ -130,6 +131,17 @@ export interface SmokeCompiledExecutionInput extends SmokeHarnessCompileInput {
 export interface SmokeCompiledExecutionOutput extends SmokeHarnessCompileOutput {
   executionRun: SmokeExecutionRunRecord;
   retrievalRunId: string | undefined;
+}
+
+export interface SmokeHarnessPreparationInput {
+  db: KrnDatabase;
+  harnessRunRepository: DrizzleHarnessRunRepository;
+  marker: string;
+  memoryRepository: DrizzleMemoryRepository;
+  project: SmokeProjectRecords["project"];
+  retrievalRepository: DrizzleRetrievalRepository;
+  sourceRepository: DrizzleSourceRepository;
+  workspace: SmokeProjectRecords["workspace"];
 }
 
 export interface SmokeCoreRepositories {
@@ -382,6 +394,16 @@ const compileSmokeHarnessPlan = async (
     input.projectSlug,
     input.marker
   );
+  await input.prepare?.({
+    db: input.db,
+    harnessRunRepository,
+    marker: input.marker,
+    memoryRepository,
+    project,
+    retrievalRepository,
+    sourceRepository,
+    workspace
+  });
   const result = await compileHarnessPlan(
     {
       workspaceId: workspace.id,
