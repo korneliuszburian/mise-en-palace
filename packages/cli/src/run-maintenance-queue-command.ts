@@ -79,6 +79,13 @@ const handlerWriteBoundaryLines = (
   ];
 };
 
+const createdReviewCandidateLines = (
+  createdReviewCandidates: Awaited<ReturnType<typeof runMaintenanceQueueRecord>>["createdReviewCandidates"]
+): string[] => linesForValues(
+  "createdReviewCandidates",
+  createdReviewCandidates.map((candidate) => `${candidate.kind}:${candidate.id}`)
+);
+
 const formatMaintenanceRunOutput = (
   readback: Awaited<ReturnType<typeof runMaintenanceQueueRecord>>
 ): string => [
@@ -92,6 +99,7 @@ const formatMaintenanceRunOutput = (
   `queueRecordKeyUniqueness: ${readback.queueRecordKeyUniqueness}`,
   ...writeBoundaryLines(readback.writeBoundary),
   ...handlerWriteBoundaryLines(readback.handlerWriteBoundary),
+  ...createdReviewCandidateLines(readback.createdReviewCandidates),
   ...linesForValues("proves", readback.proves),
   ...linesForValues("doesNotProve", readback.doesNotProve)
 ].join("\n") + "\n";

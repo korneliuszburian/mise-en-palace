@@ -215,6 +215,8 @@ describe("runMaintenanceQueueCommand", () => {
     expect(result.stdout).toContain("recordId: maintenance-queue-1");
     expect(result.stdout).toContain("handlerWriteBoundary:");
     expect(result.stdout).toContain("status: passed");
+    expect(result.stdout).toContain("createdReviewCandidates:");
+    expect(result.stdout).toContain("- anti_memory_candidate:anti-memory-candidate-1");
     expect(result.stdout).toContain(
       "Explicit maintenance record execution does not prove autonomous scheduler or daemon readiness."
     );

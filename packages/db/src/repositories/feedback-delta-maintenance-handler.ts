@@ -16,6 +16,7 @@ import type {
 } from "@krn/core/repositories/internal";
 
 import type {
+  MaintenanceQueueCreatedReviewCandidate,
   MaintenanceQueueHandler
 } from "./maintenance-queue-executor.js";
 
@@ -229,8 +230,10 @@ export const createFeedbackDeltaMaintenanceHandler = (
     }
 
     const now = input.now?.();
+    const createdReviewCandidates: MaintenanceQueueCreatedReviewCandidate[] = [];
+
     for (const candidate of candidates) {
-      await input.memoryRepository.createAntiMemoryCandidate(
+      const antiMemoryCandidate = await input.memoryRepository.createAntiMemoryCandidate(
         antiMemoryCandidateForFeedback({
           feedbackDelta,
           outcome: candidate.outcome,
@@ -239,10 +242,15 @@ export const createFeedbackDeltaMaintenanceHandler = (
           ...(now === undefined ? {} : { now })
         })
       );
+      createdReviewCandidates.push({
+        kind: "anti_memory_candidate",
+        id: antiMemoryCandidate.id
+      });
     }
 
     return {
-      status: "succeeded"
+      status: "succeeded",
+      createdReviewCandidates
     };
   }
 });

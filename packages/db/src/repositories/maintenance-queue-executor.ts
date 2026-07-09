@@ -18,9 +18,15 @@ import type {
   RecoverStaleMaintenanceQueueRecordInput
 } from "./maintenance-queue-types.js";
 
+export interface MaintenanceQueueCreatedReviewCandidate {
+  kind: "anti_memory_candidate";
+  id: string;
+}
+
 export type MaintenanceQueueHandlerOutcome =
   | {
       status: "succeeded";
+      createdReviewCandidates?: readonly MaintenanceQueueCreatedReviewCandidate[];
     }
   | {
       status: "skipped";
@@ -71,6 +77,7 @@ export interface MaintenanceQueueExecutorReadback {
   record: MaintenanceQueueRecord;
   writeBoundary: MaintenanceQueueWriteBoundaryReadback;
   handlerWriteBoundary?: MaintenanceQueueRuntimeWriteBoundaryAssessment;
+  createdReviewCandidates: readonly MaintenanceQueueCreatedReviewCandidate[];
   queueRecordKeyUniqueness: "db_unique_queue_key";
   proves: readonly string[];
   doesNotProve: readonly string[];
@@ -128,13 +135,15 @@ const buildReadback = (
   status: MaintenanceQueueExecutorStatus,
   record: MaintenanceQueueRecord,
   writeBoundary: MaintenanceQueueWriteBoundaryReadback,
-  handlerWriteBoundary?: MaintenanceQueueRuntimeWriteBoundaryAssessment
+  handlerWriteBoundary?: MaintenanceQueueRuntimeWriteBoundaryAssessment,
+  createdReviewCandidates: readonly MaintenanceQueueCreatedReviewCandidate[] = []
 ): MaintenanceQueueExecutorReadback => ({
   status,
   jobType: record.jobType,
   record,
   writeBoundary,
   ...(handlerWriteBoundary === undefined ? {} : { handlerWriteBoundary }),
+  createdReviewCandidates,
   queueRecordKeyUniqueness: "db_unique_queue_key",
   proves: [
     ...executorBaseProofs,
@@ -231,7 +240,8 @@ export const runMaintenanceQueueRecord = async (
         "succeeded",
         succeededRecord,
         writeBoundary,
-        handlerWriteBoundary
+        handlerWriteBoundary,
+        outcome.createdReviewCandidates ?? []
       );
     }
 
