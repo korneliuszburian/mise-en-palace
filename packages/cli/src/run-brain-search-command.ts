@@ -33,12 +33,18 @@ import {
   defaultProjectSlug,
   createDatabaseRuntime
 } from "./database-runtime.js";
+import type {
+  DatabaseRuntime
+} from "./database-runtime.js";
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
+import {
+  applyStoreKnowledgeUsefulnessFeedback
+} from "./store-knowledge-usefulness-selection.js";
 
 export type BrainSearchCommand = Extract<CliCommand, { kind: "brainSearch" }>;
 
@@ -78,6 +84,87 @@ const emptyStoreMemoryReadback = (reason?: string): BrainRecallReadback => ({
   queries: []
 });
 
+const listStoreFeedbackDeltas = async (
+  databaseRuntime: DatabaseRuntime
+) => {
+  const listFeedbackDeltasForProject =
+    databaseRuntime.harnessRunRepository.listFeedbackDeltasForProject;
+
+  return listFeedbackDeltasForProject === undefined
+    ? []
+    : await listFeedbackDeltasForProject(databaseRuntime.projectId, 100);
+};
+
+const buildStoreMemoryReadback = (
+  input: {
+    query: string;
+    usefulnessSelection: ReturnType<typeof applyStoreKnowledgeUsefulnessFeedback>;
+  }
+): BrainRecallReadback => ({
+  result: {
+    stdout: JSON.stringify({
+      kind: "krn.brain.recall.readback.v1",
+      access: "read_only",
+      mutation: "none",
+      source: "memory_store",
+      filter: {
+        text: input.query
+      },
+      totalReadModels: input.usefulnessSelection.readModels.length,
+      returnedReadModels: input.usefulnessSelection.readModels.length,
+      readModels: input.usefulnessSelection.readModels,
+      proof: {
+        proves: [
+          "store-backed brain search read active MemoryRecord rows from the configured DB project",
+          "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection",
+          ...(input.usefulnessSelection.appliedUsefulnessFeedback
+            ? ["store-backed brain search applied usefulness feedback before selecting knowledge"]
+            : [])
+        ],
+        doesNotProve: [
+          "DB-backed memory selection proves source truth",
+          "Codex used the selected memory",
+          "memory ranking quality is broad or production-ready",
+          ...(input.usefulnessSelection.appliedUsefulnessFeedback
+            ? ["store-backed usefulness feedback proves broad ranking quality"]
+            : ["store-backed usefulness feedback was available"]),
+          "fixture catalog knowledge was consulted"
+        ]
+      }
+    })
+  },
+  queries: [input.query]
+});
+
+const readStoreMemoryFromDatabase = async (
+  input: {
+    databaseRuntime: DatabaseRuntime;
+    query: string;
+    limit: number;
+  }
+): Promise<BrainRecallReadback> => {
+  if (typeof input.databaseRuntime.memoryRepository.listActiveMemory !== "function") {
+    return emptyStoreMemoryReadback(
+      "DB memory-store readback was unavailable because the runtime did not expose active MemoryRecord listing."
+    );
+  }
+
+  const records = await input.databaseRuntime.memoryRepository.listActiveMemory(
+    input.databaseRuntime.projectId,
+    input.limit
+  );
+  const feedbackDeltas = await listStoreFeedbackDeltas(input.databaseRuntime);
+  const usefulnessSelection = applyStoreKnowledgeUsefulnessFeedback(
+    records.map(memoryRecordToKnowledgeReadModel),
+    feedbackDeltas
+  );
+
+  return buildStoreMemoryReadback({
+    query: input.query,
+    usefulnessSelection
+  });
+};
+
 const runStoreMemoryReadback = async (
   input: {
     runtime: BrainSearchCommandRuntime;
@@ -108,47 +195,11 @@ const runStoreMemoryReadback = async (
     });
     const limit = input.runtime.command.limit ?? 20;
 
-    if (typeof databaseRuntime.memoryRepository.listActiveMemory !== "function") {
-      return emptyStoreMemoryReadback(
-        "DB memory-store readback was unavailable because the runtime did not expose active MemoryRecord listing."
-      );
-    }
-
-    const records = await databaseRuntime.memoryRepository.listActiveMemory(
-      databaseRuntime.projectId,
+    return await readStoreMemoryFromDatabase({
+      databaseRuntime,
+      query: input.query,
       limit
-    );
-    const readModels = records.map(memoryRecordToKnowledgeReadModel);
-
-    return {
-      result: {
-        stdout: JSON.stringify({
-          kind: "krn.brain.recall.readback.v1",
-          access: "read_only",
-          mutation: "none",
-          source: "memory_store",
-          filter: {
-            text: input.query
-          },
-          totalReadModels: readModels.length,
-          returnedReadModels: readModels.length,
-          readModels,
-          proof: {
-            proves: [
-              "store-backed brain search read active MemoryRecord rows from the configured DB project",
-              "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection"
-            ],
-            doesNotProve: [
-              "DB-backed memory selection proves source truth",
-              "Codex used the selected memory",
-              "memory ranking quality is broad or production-ready",
-              "fixture catalog knowledge was consulted"
-            ]
-          }
-        })
-      },
-      queries: [input.query]
-    };
+    });
   } catch (error) {
     return emptyStoreMemoryReadback(
       `DB memory-store readback was unavailable: ${

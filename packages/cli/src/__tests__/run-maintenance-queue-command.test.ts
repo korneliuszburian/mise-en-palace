@@ -92,10 +92,15 @@ class FakeMaintenanceQueueRepository implements MaintenanceQueueRepository {
     this.calls.push(`success:${id}`);
 
     return {
-      ...runningFeedbackRecord,
+      id: runningFeedbackRecord.id,
+      jobType: runningFeedbackRecord.jobType,
+      queueKey: runningFeedbackRecord.queueKey,
       status: "succeeded",
-      lockedAt: undefined,
-      lockedBy: undefined,
+      payload: runningFeedbackRecord.payload,
+      attempts: runningFeedbackRecord.attempts,
+      maxAttempts: runningFeedbackRecord.maxAttempts,
+      runAfter: runningFeedbackRecord.runAfter,
+      createdAt: runningFeedbackRecord.createdAt,
       updatedAt: now
     };
   }
@@ -114,10 +119,15 @@ class FakeMaintenanceQueueRepository implements MaintenanceQueueRepository {
     this.calls.push(`recover:${id}:${input.lockedBefore}`);
 
     return {
-      ...runningFeedbackRecord,
+      id: runningFeedbackRecord.id,
+      jobType: runningFeedbackRecord.jobType,
+      queueKey: runningFeedbackRecord.queueKey,
       status: "queued",
-      lockedAt: undefined,
-      lockedBy: undefined,
+      payload: runningFeedbackRecord.payload,
+      attempts: runningFeedbackRecord.attempts,
+      maxAttempts: runningFeedbackRecord.maxAttempts,
+      runAfter: runningFeedbackRecord.runAfter,
+      createdAt: runningFeedbackRecord.createdAt,
       updatedAt: now
     };
   }
@@ -198,6 +208,11 @@ describe("runMaintenanceQueueCommand", () => {
             } satisfies AntiMemoryCandidate;
           }
         },
+        sourceRepository: {
+          async getSourceDecisionById() {
+            return undefined;
+          }
+        },
         async close() {
           closed = true;
         }
@@ -261,6 +276,11 @@ describe("runMaintenanceQueueCommand", () => {
           },
           async createAntiMemoryCandidate() {
             throw new Error("createAntiMemoryCandidate should not be called");
+          }
+        },
+        sourceRepository: {
+          async getSourceDecisionById() {
+            throw new Error("getSourceDecisionById should not be called");
           }
         },
         async close() {

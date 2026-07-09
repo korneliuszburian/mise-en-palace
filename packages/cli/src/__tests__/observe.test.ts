@@ -79,6 +79,7 @@ describe("runCli", () => {
         projectId: "project-1",
         source: "cli",
         rawIntent: "observe run",
+        status: "received",
         metadata: {},
         createdAt: now
       },
@@ -200,6 +201,7 @@ describe("runCli", () => {
         projectId: "project-from-run",
         source: "cli",
         rawIntent: "observe run",
+        status: "received",
         metadata: {},
         createdAt: now
       },
@@ -310,6 +312,7 @@ describe("runCli", () => {
         projectId: "",
         source: "cli",
         rawIntent: "observe run",
+        status: "received",
         metadata: {},
         createdAt: now
       },
@@ -396,6 +399,7 @@ describe("runCli", () => {
         projectId: "project-1",
         source: "cli",
         rawIntent: "self-hosting evidence provenance",
+        status: "received",
         metadata: {},
         createdAt: now
       },

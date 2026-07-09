@@ -36,6 +36,7 @@ const aggregate: HarnessRunAggregate = {
     projectId: "project-1",
     source: "cli",
     rawIntent: "show run",
+    status: "received",
     metadata: {},
     createdAt: now
   },

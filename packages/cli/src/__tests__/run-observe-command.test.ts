@@ -44,6 +44,7 @@ const aggregate = (input: AggregateInput = {
     workspaceId: "workspace-1",
     source: "cli",
     rawIntent: "observe run",
+    status: "received",
     metadata: {},
     createdAt: now,
     ...(input.operatorProjectId === undefined ? {} : { projectId: input.operatorProjectId })

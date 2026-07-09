@@ -110,6 +110,7 @@ const memoryHarnessRunAggregate = (projectId: string): HarnessRunAggregate => ({
     projectId,
     source: "cli",
     rawIntent: "memory candidate add",
+    status: "received",
     metadata: {},
     createdAt: now
   },

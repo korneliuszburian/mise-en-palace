@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type {
+  FeedbackDelta,
   MemoryRecord
 } from "@krn/core";
 import {
@@ -812,6 +813,163 @@ describe("runBrainSearchCommand", () => {
         supportingClaims: 1
       }
     });
+  });
+
+  it("excludes store-backed knowledge with blocking usefulness feedback", async () => {
+    const staleMemoryRecord: MemoryRecord = {
+      id: "memory-record-stale",
+      projectId: "project-1",
+      key: "memory:old-frontend-standard",
+      kind: "procedure",
+      status: "active",
+      summary: "Use the old frontend starter",
+      body: "Start new frontend work from the historical starter.",
+      owner: "frontend",
+      confidence: 90,
+      applicationGuidance:
+        "Use this memory when a new frontend project starts.",
+      invalidationRule:
+        "Invalidate when feedback marks this starter stale.",
+      sourceLineage: [{
+        sourceId: "source-claim-stale",
+        note: "source-claim:source-claim-stale"
+      }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {
+        evidenceRefs: ["review:stale-standard"],
+        consumers: ["frontend-bootstrap"],
+        falsifier: "A newer starter becomes the accepted frontend baseline.",
+        doesNotProve: "This memory does not prove the starter is still current."
+      },
+      validFrom: "2026-07-04T00:00:00.000Z",
+      createdAt: "2026-07-04T00:00:00.000Z",
+      updatedAt: "2026-07-04T00:00:00.000Z"
+    };
+    const currentMemoryRecord: MemoryRecord = {
+      ...staleMemoryRecord,
+      id: "memory-record-current",
+      key: "memory:current-frontend-standard",
+      summary: "Use the current frontend starter",
+      body: "Start new frontend work from the current starter.",
+      sourceLineage: [{
+        sourceId: "source-claim-current",
+        note: "source-claim:source-claim-current"
+      }],
+      metadata: {
+        evidenceRefs: ["review:current-standard"],
+        consumers: ["frontend-bootstrap"],
+        falsifier: "The current starter stops matching new frontend tasks.",
+        doesNotProve: "This memory does not prove every frontend task uses the starter."
+      }
+    };
+    const staleFeedbackDelta: FeedbackDelta = {
+      id: "feedback-delta-1",
+      reviewAssessmentId: "review-assessment-1",
+      status: "applied",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "memory-record-stale",
+          outcome: "stale",
+          reason: "A newer frontend starter replaced this retained memory.",
+          evidenceRefs: ["feedback:frontend-starter-rotation"],
+          doesNotProve: "This feedback does not prove the newer starter is globally best."
+        }]
+      },
+      createdAt: "2026-07-05T00:00:00.000Z",
+      updatedAt: "2026-07-05T00:00:00.000Z"
+    };
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-05T00:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "new frontend project starter",
+        catalogFiles: [],
+        storeOnly: true,
+        projectId: "project-explicit",
+        limit: 6,
+        format: "json"
+      },
+      async createDatabaseRuntime(): Promise<DatabaseRuntime> {
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+          harnessRunRepository: {
+            async listFeedbackDeltasForProject(projectId, limit) {
+              expect(projectId).toBe("project-1");
+              expect(limit).toBe(100);
+
+              return [staleFeedbackDelta];
+            }
+          } as DatabaseRuntime["harnessRunRepository"],
+          sourceRepository: {} as DatabaseRuntime["sourceRepository"],
+          memoryRepository: {
+            async listActiveMemory(projectId, limit) {
+              expect(projectId).toBe("project-1");
+              expect(limit).toBe(6);
+
+              return [staleMemoryRecord, currentMemoryRecord];
+            }
+          } as DatabaseRuntime["memoryRepository"],
+          async close() {}
+        };
+      },
+      async runBrainRecall() {
+        throw new Error("store-backed brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "not_useful",
+              supportingClaims: [],
+              supportingDocuments: [],
+              sourceDecisionSupport: [],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainRecallReadback: "store_backed",
+      knowledgeReadModels: {
+        returnedReadModels: 1,
+        readModelIds: ["memory-record-current"],
+        selectedKnowledge: [{
+          id: "memory-record-current",
+          source: "memory_store"
+        }]
+      }
+    });
+    expect(JSON.stringify(parsed)).not.toContain("memory-record-stale");
   });
 
   it("keeps store-backed brain search resilient when DB memory readback is unavailable", async () => {

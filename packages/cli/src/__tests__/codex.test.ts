@@ -77,6 +77,7 @@ describe("runCli", () => {
         projectId: "project-1",
         source: "cli",
         rawIntent: "render Codex execution brief",
+        status: "received",
         metadata: {},
         createdAt: now
       },

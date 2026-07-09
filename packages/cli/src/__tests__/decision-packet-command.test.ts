@@ -63,6 +63,7 @@ const aggregate: HarnessRunAggregate = {
     projectId: "project-1",
     source: "cli",
     rawIntent: "decision packet",
+    status: "received",
     metadata: {},
     createdAt: now
   },

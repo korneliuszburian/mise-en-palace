@@ -125,6 +125,7 @@ const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
     projectId: "project-1",
     source: "cli",
     rawIntent: "persist harness run",
+    status: "received",
     metadata: {},
     createdAt: now
   },
@@ -261,7 +262,7 @@ const createCapturingMaintenanceQueueRepository = (
       jobType: input.jobType,
       queueKey: `${input.jobType}:project-1:feedback-delta-1`,
       status: "queued",
-      payload: input.payload,
+      payload: { ...input.payload },
       attempts: 0,
       maxAttempts: input.maxAttempts ?? 3,
       runAfter: input.runAfter ?? now,
@@ -997,10 +998,16 @@ describe("runCli", () => {
       throw new Error("Expected persisted feedback metadata");
     }
 
+    const contextAssembly = aggregate.contextAssembly;
+
+    if (contextAssembly === undefined) {
+      throw new Error("Expected aggregate context assembly");
+    }
+
     const nextAggregate: HarnessRunAggregate = {
       ...aggregate,
       contextAssembly: {
-        ...aggregate.contextAssembly,
+        ...contextAssembly,
         inclusions: [{
           subjectType: "source_claim",
           subjectId: "source-claim-stale",
@@ -1130,6 +1137,7 @@ describe("runCli", () => {
         projectId: "project-1",
         source: "cli",
         rawIntent: "persist harness run",
+        status: "received",
         metadata: {},
         createdAt: now
       },
