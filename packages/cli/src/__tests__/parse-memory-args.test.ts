@@ -176,6 +176,8 @@ describe("parseMemoryArgs", () => {
       "run-1",
       "--memory-id",
       "memory-1",
+      "--decision-packet-checksum",
+      "packet-checksum-1",
       "--outcome",
       "helped",
       "--notes",
@@ -195,6 +197,7 @@ describe("parseMemoryArgs", () => {
         persist: true,
         runId: "run-1",
         memoryId: "memory-1",
+        decisionPacketChecksum: "packet-checksum-1",
         outcome: "helped",
         notes: "Useful",
         expectedUse: "planning",
@@ -390,6 +393,21 @@ describe("parseMemoryArgs", () => {
       },
       {
         args: ["record", "apply", "--run-id", "run-1"],
+        usage: "Usage: krn memory record apply"
+      },
+      {
+        args: [
+          "record",
+          "apply",
+          "--run-id",
+          "run-1",
+          "--memory-id",
+          "memory-1",
+          "--outcome",
+          "helped",
+          "--notes",
+          "Useful"
+        ],
         usage: "Usage: krn memory record apply"
       },
       {

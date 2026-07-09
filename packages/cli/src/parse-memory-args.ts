@@ -257,6 +257,7 @@ const hasMemoryRecordApplyRequiredFields = (
   [
     memoryCommand.runId,
     memoryCommand.memoryId,
+    memoryCommand.decisionPacketChecksum,
     memoryCommand.outcome,
     memoryCommand.notes
   ].every(hasText);

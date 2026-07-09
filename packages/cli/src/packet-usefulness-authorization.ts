@@ -71,10 +71,10 @@ const selectedSubjectIds = (
       ...packet.sourceClaimIds,
       ...packet.brief.includedSourceClaimIds
     ])],
-    ["source_decision", new Set([
-      ...packet.governingDecisionIds,
-      ...packet.sourceDecisionTargets.map((target) => target.targetId)
-    ])],
+    // governingDecisionIds and sourceDecisionTargets contain decision target
+    // identities, not canonical SourceDecision row ids. Fail closed until the
+    // packet contract carries selected SourceDecision ids explicitly.
+    ["source_decision", new Set<string>()],
     ["knowledge", new Set([
       ...packet.memoryRefs,
       ...packet.taskStandardDecisions.map((decision) => decision.memoryRecordId),

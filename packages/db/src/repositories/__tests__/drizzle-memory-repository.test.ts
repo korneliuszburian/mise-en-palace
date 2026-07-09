@@ -19,7 +19,7 @@ const methodNames = [
   "invalidateMemoryRecord",
   "supersedeMemoryRecord",
   "recordMemoryApplication",
-  "findMemoryApplicationByUsefulnessBinding",
+  "recordMemoryApplicationOnce",
   "createMemoryFeedbackEvent",
   "createAntiMemoryCandidate",
   "getAntiMemoryCandidateById",

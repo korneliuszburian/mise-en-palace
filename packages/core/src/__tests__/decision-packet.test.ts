@@ -497,7 +497,7 @@ describe("DecisionPacket builder", () => {
       `--decision-packet-checksum ${first.packetIdentity.checksum}`
     );
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
-      first.packetIdentity.evidenceRef
+      "does not expose canonical selected SourceDecision ids"
     );
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);

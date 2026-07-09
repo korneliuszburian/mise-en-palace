@@ -942,6 +942,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--memory-id",
         "memory-record-1",
+        "--decision-packet-checksum",
+        "preview-checksum",
         "--outcome",
         "helped",
         "--notes",
@@ -980,6 +982,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--memory-id",
         "memory-record-1",
+        "--decision-packet-checksum",
+        "unresolved-without-database",
         "--outcome",
         "helped",
         "--notes",
@@ -1078,18 +1082,21 @@ describe("runCli", () => {
                 updatedAt: now
               };
             },
-            async recordMemoryApplication(input) {
+            async recordMemoryApplicationOnce(input) {
               capturedApplication = input;
 
               return {
-                id: "memory-application-1",
-                memoryRecordId: input.memoryRecordId,
-                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-                expectedUse: input.expectedUse,
-                ...(input.outcome === undefined ? {} : { outcome: input.outcome }),
-                ...(input.notes === undefined ? {} : { notes: input.notes }),
-                metadata: input.metadata ?? {},
-                createdAt: now
+                application: {
+                  id: "memory-application-1",
+                  memoryRecordId: input.memoryRecordId,
+                  executionRunId: input.executionRunId,
+                  expectedUse: input.expectedUse,
+                  ...(input.outcome === undefined ? {} : { outcome: input.outcome }),
+                  ...(input.notes === undefined ? {} : { notes: input.notes }),
+                  metadata: input.metadata ?? {},
+                  createdAt: now
+                },
+                created: true
               };
             },
             async createMemoryFeedbackEvent() {
@@ -1179,22 +1186,24 @@ describe("runCli", () => {
               updatedAt: now
             };
           },
-          async findMemoryApplicationByUsefulnessBinding() {
-            return application;
-          },
-          async recordMemoryApplication(input) {
-            recordCalls += 1;
-            application = {
-              id: "memory-application-1",
-              memoryRecordId: input.memoryRecordId,
-              executionRunId: input.executionRunId,
-              expectedUse: input.expectedUse,
-              outcome: input.outcome,
-              notes: input.notes,
-              metadata: input.metadata ?? {},
-              createdAt: now
-            };
-            return application;
+          async recordMemoryApplicationOnce(input) {
+            if (application === undefined) {
+              recordCalls += 1;
+              application = {
+                id: "memory-application-1",
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                expectedUse: input.expectedUse,
+                outcome: input.outcome,
+                notes: input.notes,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+
+              return { application, created: true };
+            }
+
+            return { application, created: false };
           }
         },
         async close() {
@@ -1300,16 +1309,19 @@ describe("runCli", () => {
                 updatedAt: now
               };
             },
-            async recordMemoryApplication(input) {
+            async recordMemoryApplicationOnce(input) {
               return {
-                id: "memory-application-1",
-                memoryRecordId: input.memoryRecordId,
-                executionRunId: input.executionRunId,
-                expectedUse: input.expectedUse,
-                outcome: input.outcome,
-                notes: input.notes,
-                metadata: input.metadata ?? {},
-                createdAt: now
+                application: {
+                  id: "memory-application-1",
+                  memoryRecordId: input.memoryRecordId,
+                  executionRunId: input.executionRunId,
+                  expectedUse: input.expectedUse,
+                  outcome: input.outcome,
+                  notes: input.notes,
+                  metadata: input.metadata ?? {},
+                  createdAt: now
+                },
+                created: true
               };
             },
             async createMemoryFeedbackEvent(input) {

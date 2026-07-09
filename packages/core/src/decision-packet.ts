@@ -989,11 +989,11 @@ export const buildDecisionPacketReturnChannels = (input: {
     },
     feedback: {
       memoryRecordApplyExample:
-        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> --outcome helped --notes "packet=${input.packetIdentity.evidenceRef}; <why>" --persist`,
+        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> ${packetChecksumOption} --outcome helped --notes "<why>" --persist`,
       sourceUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       sourceDecisionUsefulnessExample:
-        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "decision:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        "Unavailable: the DecisionPacket does not expose canonical selected SourceDecision ids; use claim-scoped feedback.",
       knowledgeUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:

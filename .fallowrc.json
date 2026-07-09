@@ -38,6 +38,7 @@
         "invalidateMemoryRecord",
         "supersedeMemoryRecord",
         "recordMemoryApplication",
+        "recordMemoryApplicationOnce",
         "createMemoryFeedbackEvent",
         "createAntiMemoryCandidate",
         "getAntiMemoryCandidateById",

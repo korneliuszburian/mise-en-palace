@@ -590,9 +590,13 @@ describe("decision packet CLI", () => {
         },
         feedback: {
           memoryRecordApplyExample:
-            expect.stringContaining("packet=packet:"),
+            expect.stringMatching(
+              /--decision-packet-checksum [a-f0-9]{64} .*--notes "<why>"/u
+            ),
           sourceUsefulnessExample: expect.stringContaining("packet:"),
-          sourceDecisionUsefulnessExample: expect.stringContaining("packet:")
+          sourceDecisionUsefulnessExample: expect.stringContaining(
+            "does not expose canonical selected SourceDecision ids"
+          )
         }
       },
       proof: {
@@ -623,7 +627,9 @@ describe("decision packet CLI", () => {
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
-    expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
+    expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
+      "does not expose canonical selected SourceDecision ids"
+    );
     expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(closed).toBe(true);
   });

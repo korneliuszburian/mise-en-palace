@@ -22,6 +22,8 @@ import type {
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
+  RecordMemoryApplicationOnceInput,
+  RecordMemoryApplicationOnceResult,
   SupersedeMemoryRecordInput
 } from "@krn/core/repositories/internal";
 
@@ -813,71 +815,102 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
   }
 
+  private async insertMemoryApplication(
+    input: RecordMemoryApplicationInput,
+    tx: KrnDatabase
+  ): Promise<MemoryApplication> {
+    const row = requireReturnedRow(
+      await tx
+        .insert(memoryApplications)
+        .values({
+          memoryRecordId: input.memoryRecordId,
+          executionRunId: input.executionRunId,
+          ...(input.taskContractId === undefined
+            ? {}
+            : { taskContractId: input.taskContractId }),
+          ...(input.contextAssemblyId === undefined
+            ? {}
+            : { contextAssemblyId: input.contextAssemblyId }),
+          expectedUse: input.expectedUse,
+          outcome: input.outcome,
+          notes: input.notes,
+          metadata: input.metadata ?? {}
+        })
+        .returning(),
+      "recordMemoryApplication"
+    );
+
+    if (input.outcome === "helped") {
+      await tx
+        .update(memoryRecords)
+        .set({
+          positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(memoryRecords.id, input.memoryRecordId));
+    }
+
+    if (input.outcome === "hurt" || input.outcome === "stale") {
+      await tx
+        .update(memoryRecords)
+        .set({
+          negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(memoryRecords.id, input.memoryRecordId));
+    }
+
+    return mapMemoryApplication(row);
+  }
+
   async recordMemoryApplication(
     input: RecordMemoryApplicationInput
   ): Promise<MemoryApplication> {
-    return this.db.transaction(async (tx) => {
-      const row = requireReturnedRow(
-        await tx
-          .insert(memoryApplications)
-          .values({
-            memoryRecordId: input.memoryRecordId,
-            executionRunId: input.executionRunId,
-            ...(input.taskContractId === undefined
-              ? {}
-              : { taskContractId: input.taskContractId }),
-            ...(input.contextAssemblyId === undefined
-              ? {}
-              : { contextAssemblyId: input.contextAssemblyId }),
-            expectedUse: input.expectedUse,
-            outcome: input.outcome,
-            notes: input.notes,
-            metadata: input.metadata ?? {}
-          })
-          .returning(),
-        "recordMemoryApplication"
-      );
-
-      if (input.outcome === "helped") {
-        await tx
-          .update(memoryRecords)
-          .set({
-            positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`,
-            updatedAt: new Date()
-          })
-          .where(eq(memoryRecords.id, input.memoryRecordId));
-      }
-
-      if (input.outcome === "hurt" || input.outcome === "stale") {
-        await tx
-          .update(memoryRecords)
-          .set({
-            negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`,
-            updatedAt: new Date()
-          })
-          .where(eq(memoryRecords.id, input.memoryRecordId));
-      }
-
-      return mapMemoryApplication(row);
-    });
+    return this.db.transaction(async (tx) => this.insertMemoryApplication(input, tx));
   }
 
-  async findMemoryApplicationByUsefulnessBinding(
-    input: {
-      memoryRecordId: MemoryRecord["id"];
-      executionRunId: ExecutionRunId;
-      packetChecksum: string;
-    }
-  ): Promise<MemoryApplication | undefined> {
-    const row = await this.db.query.memoryApplications.findFirst({
-      where: and(
-        eq(memoryApplications.memoryRecordId, input.memoryRecordId),
-        eq(memoryApplications.executionRunId, input.executionRunId),
-        sql`${memoryApplications.metadata} ->> 'decisionPacketChecksum' = ${input.packetChecksum}`
-      )
-    });
+  async recordMemoryApplicationOnce(
+    input: RecordMemoryApplicationOnceInput
+  ): Promise<RecordMemoryApplicationOnceResult> {
+    return this.db.transaction(async (tx) => {
+      const binding = [
+        input.memoryRecordId,
+        input.executionRunId,
+        input.packetChecksum
+      ].join(":");
 
-    return row === undefined ? undefined : mapMemoryApplication(row);
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${binding}, 0))`
+      );
+
+      const [existing] = await tx
+        .select()
+        .from(memoryApplications)
+        .where(and(
+          eq(memoryApplications.memoryRecordId, input.memoryRecordId),
+          eq(memoryApplications.executionRunId, input.executionRunId),
+          sql`${memoryApplications.metadata} ->> 'decisionPacketChecksum' = ${input.packetChecksum}`
+        ))
+        .limit(1);
+
+      if (existing !== undefined) {
+        return {
+          application: mapMemoryApplication(existing),
+          created: false
+        };
+      }
+
+      return {
+        application: await this.insertMemoryApplication({
+          ...input,
+          metadata: {
+            ...input.metadata,
+            decisionPacketChecksum: input.packetChecksum
+          }
+        }, tx),
+        created: true
+      };
+    });
   }
 
   async createMemoryFeedbackEvent(

@@ -158,16 +158,35 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
-    const memoryApplication = await memoryRepository.recordMemoryApplication({
+    const packetBoundApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
+      packetChecksum: `memory-governance-packet-${marker}`,
       expectedUse: "Guide memory governance smoke.",
       outcome: "helped",
       notes: "Verified explicit promotion and application feedback.",
       metadata: {
         smokeId: marker
       }
-    });
+    } as const;
+
+    if (memoryRepository.recordMemoryApplicationOnce === undefined) {
+      throw new Error("Memory governance smoke requires atomic packet-bound application persistence");
+    }
+
+    const applicationResults = await Promise.all([
+      memoryRepository.recordMemoryApplicationOnce(packetBoundApplication),
+      memoryRepository.recordMemoryApplicationOnce(packetBoundApplication)
+    ]);
+
+    const [firstApplicationResult, replayApplicationResult] = applicationResults;
+
+    if (firstApplicationResult === undefined || replayApplicationResult === undefined) {
+      throw new Error("Memory governance smoke did not return packet-bound application results");
+    }
+
+    const memoryApplication = firstApplicationResult.application;
+    const createdApplicationCount = applicationResults.filter((result) => result?.created).length;
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const projectMemoryRecords = await memoryRepository.listMemoryRecordsForProject(project.id);
     const invalidatedMemoryRecord = await memoryRepository.invalidateMemoryRecord({
@@ -264,6 +283,16 @@ export const runMemoryGovernanceSmokeCheck = async (
         passed: versionRows[0]?.createdFromCandidateId === memoryCandidate.id
       },
       { label: "memory application row count", passed: applicationRows.length === 1 },
+      {
+        label: "packet-bound memory application created once",
+        passed:
+          createdApplicationCount === 1 &&
+          replayApplicationResult.application.id === memoryApplication.id
+      },
+      {
+        label: "packet-bound memory feedback counted once",
+        passed: readBackMemoryRecord?.positiveFeedbackCount === 1
+      },
       {
         label: "memory application record lineage",
         passed: applicationRows[0]?.memoryRecordId === memoryRecord.id

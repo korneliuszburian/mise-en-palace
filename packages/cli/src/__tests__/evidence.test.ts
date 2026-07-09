@@ -1141,6 +1141,71 @@ describe("runCli", () => {
     expect(authorization.reason).toContain("not selected by the current packet");
   });
 
+  it("does not treat an architecture decision target as a SourceDecision id", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const aggregateWithDecisionTarget: HarnessRunAggregate = {
+      ...aggregate,
+      activationTrace: {
+        retrievalRunId: "retrieval-run-1",
+        candidates: [{
+          id: "retrieval-candidate-1",
+          retrievalRunId: "retrieval-run-1",
+          kind: "source",
+          status: "included",
+          subjectType: "source_claim",
+          subjectId: "source-claim-1",
+          sourceAuthority: "project-decision",
+          lexicalScore: 10,
+          vectorScore: 0,
+          graphScore: 10,
+          temporalScore: 0,
+          contextRoiScore: 10,
+          totalScore: 30,
+          score: 30,
+          reason: "Selected source claim supports an architecture target.",
+          metadata: {
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["source-decision-edge-1"],
+              targets: [{
+                sourceDecisionEdgeId: "source-decision-edge-1",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-1"
+              }],
+              confidence: ["high"],
+              supportTypes: ["decision"],
+              doesNotProve: "Decision support does not turn its target into a SourceDecision id."
+            }
+          },
+          createdAt: now
+        }],
+        decisions: []
+      }
+    };
+    const packet = buildDecisionPacketFromReadModel(
+      buildDecisionPacketReadModel(aggregateWithDecisionTarget)
+    );
+    const binding = currentDecisionPacketBindingForAggregate(aggregateWithDecisionTarget);
+
+    expect(packet.sourceDecisionTargets).toEqual([expect.objectContaining({
+      targetId: "architecture-target-1"
+    })]);
+
+    const authorization = authorizePacketUsefulness({
+      aggregate: aggregateWithDecisionTarget,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      callerPacketChecksum: binding.packetChecksum,
+      subjects: [{
+        kind: "source_decision",
+        id: "architecture-target-1",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    expect(authorization.authorized).toBe(false);
+    expect(authorization.reason).toContain("not selected by the current packet");
+  });
+
   it("rejects usefulness when runtime and task projects differ", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const binding = currentDecisionPacketBindingForAggregate(aggregate);
