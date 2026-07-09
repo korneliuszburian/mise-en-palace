@@ -1751,7 +1751,7 @@ describe("activation engine", () => {
       nonGoals: ["do not continue EKOLOGUS target-specific work"],
       acceptance: ["retained source-to-decision SourceClaim is included before unrelated target context"]
     });
-    const retainedPattern = toSourceClaimCandidate(
+    const retainedKnowledgeCandidate = toSourceClaimCandidate(
       sourceClaim({
         id: "claim-source-to-decision-knowledge",
         claim: "Retained KRN knowledge must preserve source, mechanism, KRN implication, decision or rejection, consumer, falsifier, and does-not-prove boundary.",
@@ -1771,7 +1771,7 @@ describe("activation engine", () => {
     );
 
     const bounded = applyContextROI(
-      rankCandidates([unrelatedTargetPacket, retainedPattern], sourceQuery),
+      rankCandidates([unrelatedTargetPacket, retainedKnowledgeCandidate], sourceQuery),
       { maxInclusions: 1 }
     );
 
