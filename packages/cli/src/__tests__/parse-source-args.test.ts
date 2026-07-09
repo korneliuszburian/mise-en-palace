@@ -8,6 +8,7 @@ import {
   formatSourceArtifactPreviewUsage,
   formatSourceClaimEdgesUsage,
   formatSourceClaimRejectUsage,
+  formatSourceDecisionImportUsage,
   formatSourceSearchUsage,
   parseSourceArgs
 } from "../parse-source-args.js";
@@ -269,6 +270,27 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses source decision import options", () => {
+    expect(parseSourceArgs([
+      "decision",
+      "import",
+      "--file",
+      " tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json ",
+      "--project",
+      "project-explicit",
+      "--persist",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "sourceDecisionImport",
+        file: "tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
+        projectId: "project-explicit",
+        persist: true,
+        json: true
+      }
+    });
+  });
+
   it("rejects source commands missing required fields", () => {
     const invalidCases = [
       {
@@ -290,6 +312,10 @@ describe("parseSourceArgs", () => {
       {
         args: ["decision", "link", "--source-claim-id", "claim-1"],
         usage: "Usage: krn source decision link"
+      },
+      {
+        args: ["decision", "import", "--json"],
+        usage: "Usage: krn source decision import"
       }
     ];
 
@@ -426,6 +452,11 @@ describe("parseSourceArgs", () => {
         kind: "sourceDecisionGapsHelp"
       }
     });
+    expect(parseSourceArgs(["decision", "import", "--help"])).toEqual({
+      command: {
+        kind: "sourceDecisionImportHelp"
+      }
+    });
     expect(parseSourceArgs(["artifact", "preview", "--help"])).toEqual({
       command: {
         kind: "sourceArtifactPreviewHelp"
@@ -463,6 +494,15 @@ describe("parseSourceArgs", () => {
     });
     expect(parseSourceArgs(["search", "--unknown"])).toEqual({
       error: formatSourceSearchUsage()
+    });
+    expect(parseSourceArgs(["decision", "import", "--file", ""])).toEqual({
+      error: "--file requires a non-empty path"
+    });
+    expect(parseSourceArgs(["decision", "import", "--project", ""])).toEqual({
+      error: "--project requires a non-empty project id"
+    });
+    expect(parseSourceArgs(["decision", "import", "--unknown"])).toEqual({
+      error: formatSourceDecisionImportUsage()
     });
     expect(parseSourceArgs(["claim", "unknown"])).toEqual({
       error: formatSourceArtifactPreviewUsage()

@@ -1,8 +1,5 @@
 import postgres from "postgres";
 
-import type {
-  ProjectId
-} from "@krn/core";
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
@@ -11,20 +8,13 @@ import {
 import {
   createDatabaseRuntime
 } from "../../database-runtime.js";
-import type {
-  DatabaseRuntime
-} from "../../database-runtime.js";
 import {
-  loadDecisionCorpusImportFixture,
-  buildImportedDecisionCorpus
+  loadDecisionCorpusImportFixture
 } from "../eval/run-decision-corpus-import.js";
 import {
-  loadDecisionPacketEvalFixture
-} from "../../decision-packet-fixture.js";
-import type {
-  DecisionCorpusImportFixture,
-  DecisionCorpusImportRow
-} from "../eval/run-decision-corpus-import.js";
+  persistSourceDecisionImport,
+  type PersistedSourceDecisionImportRow
+} from "../../source-decision-store-import.js";
 import {
   runSmokeSourceSearch,
   sourceSearchIncludesClaim
@@ -34,13 +24,6 @@ import {
   finalizeSourceSmokeMarkerCleanup
 } from "./source-smoke-marker-cleanup.js";
 
-type DecisionCorpusImportRuntime = Pick<
-  DatabaseRuntime,
-  "sourceRepository" | "retrievalRepository"
->;
-type DecisionCorpusSourceRepository = DecisionCorpusImportRuntime["sourceRepository"];
-type DecisionCorpusRetrievalRepository = NonNullable<DecisionCorpusImportRuntime["retrievalRepository"]>;
-
 export interface DecisionCorpusImportDbSmokeInput {
   readonly databaseUrl: string;
   readonly repoRoot: string;
@@ -48,18 +31,7 @@ export interface DecisionCorpusImportDbSmokeInput {
   readonly now: string;
 }
 
-export interface PersistedDecisionCorpusRow {
-  readonly decisionId: string;
-  readonly sourceArtifactId: string;
-  readonly sourceChunkId: string;
-  readonly sourceClaimId: string;
-  readonly sourceClaimStatus: string;
-  readonly sourceDecisionId: string;
-  readonly sourceDecisionStatus: string;
-  readonly sourceDecisionEdgeId?: string;
-  readonly searchDocumentId?: string;
-  readonly sourceRejectionId?: string;
-}
+export type PersistedDecisionCorpusRow = PersistedSourceDecisionImportRow;
 
 export interface DecisionCorpusImportDbSmokeReport {
   readonly smokeId: string;
@@ -81,16 +53,6 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly cleanedUp: boolean;
 }
 
-interface PersistDecisionCorpusImportInput {
-  readonly runtime: DecisionCorpusImportRuntime;
-  readonly projectId: ProjectId;
-  readonly fixture: DecisionCorpusImportFixture;
-  readonly smokeId: string;
-  readonly now: string;
-}
-
-const smokeSource = "krn db smoke decision-corpus-import";
-
 const markerTables = [
   "retrieval_runs",
   "search_documents",
@@ -103,234 +65,24 @@ const markerTables = [
   "source_artifacts"
 ] as const;
 
-const metadataForRow = (
-  smokeId: string,
-  row: DecisionCorpusImportRow
-): Record<string, unknown> => ({
-  smokeId,
-  source: smokeSource,
-  decisionCorpusImportId: row.id,
-  decisionCorpusStatus: row.status,
-  evidenceRef: row.evidenceRef
-});
+const smokeSource = "krn db smoke decision-corpus-import";
 
-const createSourceArtifactAndChunk = async (
-  sourceRepository: DecisionCorpusSourceRepository,
-  projectId: ProjectId,
-  row: DecisionCorpusImportRow,
-  metadata: Record<string, unknown>
-) => {
-  if (sourceRepository.createSourceChunk === undefined) {
-    throw new Error("SourceChunk creation is unavailable for decision-corpus-import DB smoke");
-  }
-
-  const sourceArtifact = await sourceRepository.createSourceArtifact({
-    projectId,
-    kind: "doc",
-    sourceAuthority: "project-decision",
-    uri: `decision-corpus-import://${row.id}`,
-    title: row.title,
-    contentHash: `decision-corpus-import:${row.id}`,
-    metadata
-  });
-  const sourceChunk = await sourceRepository.createSourceChunk({
-    sourceArtifactId: sourceArtifact.id,
-    ordinal: 0,
-    heading: row.title,
-    content: `${row.statement}\n\n${row.noteText}`,
-    tokenCount: row.statement.split(/\s+/u).length + row.noteText.split(/\s+/u).length,
-    contentHash: `decision-corpus-import:${row.id}:chunk`,
-    metadata
-  });
-
-  return { sourceArtifact, sourceChunk };
-};
-
-const createDecisionSupport = async (
-  input: {
-    readonly sourceRepository: DecisionCorpusSourceRepository;
-    readonly retrievalRepository: DecisionCorpusRetrievalRepository;
-    readonly projectId: ProjectId;
-    readonly row: DecisionCorpusImportRow;
-    readonly sourceArtifactId: string;
-    readonly sourceChunkId: string;
-    readonly sourceClaimId: string;
-    readonly sourceDecisionId: string;
-    readonly metadata: Record<string, unknown>;
-  }
-): Promise<Pick<PersistedDecisionCorpusRow, "sourceDecisionEdgeId" | "searchDocumentId">> => {
-  const sourceDecisionEdge = await input.sourceRepository.createSourceDecisionEdge({
-    sourceClaimId: input.sourceClaimId,
-    targetType: "architecture_decision",
-    targetId: `decision-corpus-import:${input.row.id}`,
-    supportType: "implementation-boundary",
-    confidence: input.row.status === "current" ? "high" : "medium",
-    notes: input.row.noteText,
-    metadata: {
-      ...input.metadata,
-      sourceDecisionId: input.sourceDecisionId
-    }
-  });
-  const searchDocument = await input.retrievalRepository.createSearchDocument({
-    projectId: input.projectId,
-    subjectType: "source_claim",
-    subjectId: input.sourceClaimId,
-    sourceArtifactId: input.sourceArtifactId,
-    sourceChunkId: input.sourceChunkId,
-    sourceClaimId: input.sourceClaimId,
-    sourceDecisionId: input.sourceDecisionId,
-    sourceAuthority: "project-decision",
-    validityStatus: input.row.status === "stale" ? "invalidated" : "active",
-    title: input.row.title,
-    body: `${input.row.statement}\n\n${input.row.noteText}`,
-    searchText: [
-      input.row.title,
-      input.row.statement,
-      input.row.noteText,
-      input.row.falsifier,
-      input.row.doesNotProve
-    ].join(" "),
-    metadataFilters: {
-      smokeId: input.metadata["smokeId"],
-      decisionCorpusStatus: input.row.status
-    },
-    metadata: {
-      ...input.metadata,
-      sourceDecisionId: input.sourceDecisionId
-    }
-  });
-
-  return {
-    sourceDecisionEdgeId: sourceDecisionEdge.id,
-    searchDocumentId: searchDocument.id
+type PersistDecisionCorpusImportInput =
+  Omit<Parameters<typeof persistSourceDecisionImport>[0], "importId" | "importedBy"> & {
+    readonly smokeId: string;
   };
-};
-
-const createRejectedPath = async (
-  input: {
-    readonly sourceRepository: DecisionCorpusSourceRepository;
-    readonly projectId: ProjectId;
-    readonly row: DecisionCorpusImportRow;
-    readonly sourceArtifactId: string;
-    readonly sourceClaimId: string;
-    readonly metadata: Record<string, unknown>;
-  }
-): Promise<string> => {
-  const sourceRejection = await input.sourceRepository.createSourceRejection({
-    projectId: input.projectId,
-    sourceArtifactId: input.sourceArtifactId,
-    sourceClaimId: input.sourceClaimId,
-    title: input.row.title,
-    attemptedClaim: input.row.statement,
-    rejectedBecause: "unsupported",
-    reason: input.row.falsifier,
-    doesNotProve: input.row.doesNotProve,
-    consumer: "decision corpus import",
-    metadata: input.metadata
-  });
-
-  return sourceRejection.id;
-};
 
 export const persistDecisionCorpusImport = async (
   input: PersistDecisionCorpusImportInput
 ): Promise<readonly PersistedDecisionCorpusRow[]> => {
-  const base = loadDecisionPacketEvalFixture(input.fixture.baseFixturePath);
-  const retrievalRepository = input.runtime.retrievalRepository;
-  const sourceRepository = input.runtime.sourceRepository;
-
-  if (sourceRepository.createSourceDecision === undefined) {
-    throw new Error("SourceDecision creation is unavailable for decision-corpus-import DB smoke");
-  }
-
-  const createSourceDecision = sourceRepository.createSourceDecision.bind(sourceRepository);
-
-  if (retrievalRepository === undefined) {
-    throw new Error("SearchDocument creation is unavailable for decision-corpus-import DB smoke");
-  }
-
-  buildImportedDecisionCorpus(input.fixture, base);
-
-  return Promise.all(input.fixture.decisions.map(async (row) => {
-    const metadata = metadataForRow(input.smokeId, row);
-    const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
-      sourceRepository,
-      input.projectId,
-      row,
-      metadata
-    );
-    const sourceClaim = await sourceRepository.createSourceClaim({
-      sourceArtifactId: sourceArtifact.id,
-      sourceChunkId: sourceChunk.id,
-      claim: row.statement,
-      mechanism: row.noteText,
-      krnImplication: row.statement,
-      doesNotProve: row.doesNotProve,
-      sourceAuthority: "project-decision",
-      supportType: row.status === "rejected" ? "rejection" : "implementation-boundary",
-      consumer: "decision corpus import",
-      falsifier: row.falsifier,
-      metadata
-    });
-    const sourceDecision = await createSourceDecision({
-      projectId: input.projectId,
-      sourceClaimId: sourceClaim.id,
-      status: row.status === "rejected" ? "reject" : "adopt",
-      decision: row.statement,
-      rationale: row.noteText,
-      falsifier: row.falsifier,
-      consumer: "decision corpus import",
-      metadata
-    });
-    const sourceClaimReadback = await sourceRepository.getSourceClaimById(sourceClaim.id);
-
-    if (sourceClaimReadback === undefined) {
-      throw new Error(`missing SourceClaim readback for imported decision ${row.id}`);
-    }
-
-    if (row.status === "rejected") {
-      const sourceRejectionId = await createRejectedPath({
-        sourceRepository,
-        projectId: input.projectId,
-        row,
-        sourceArtifactId: sourceArtifact.id,
-        sourceClaimId: sourceClaim.id,
-        metadata
-      });
-
-      return {
-        decisionId: row.id,
-        sourceArtifactId: sourceArtifact.id,
-        sourceChunkId: sourceChunk.id,
-        sourceClaimId: sourceClaim.id,
-        sourceClaimStatus: sourceClaimReadback.status,
-        sourceDecisionId: sourceDecision.id,
-        sourceDecisionStatus: sourceDecision.status,
-        sourceRejectionId
-      };
-    }
-
-    return {
-      decisionId: row.id,
-      sourceArtifactId: sourceArtifact.id,
-      sourceChunkId: sourceChunk.id,
-      sourceClaimId: sourceClaim.id,
-      sourceClaimStatus: sourceClaimReadback.status,
-      sourceDecisionId: sourceDecision.id,
-      sourceDecisionStatus: sourceDecision.status,
-      ...await createDecisionSupport({
-        sourceRepository,
-        retrievalRepository,
-        projectId: input.projectId,
-        row,
-        sourceArtifactId: sourceArtifact.id,
-        sourceChunkId: sourceChunk.id,
-        sourceClaimId: sourceClaim.id,
-        sourceDecisionId: sourceDecision.id,
-        metadata
-      })
-    };
-  }));
+  return persistSourceDecisionImport({
+    runtime: input.runtime,
+    projectId: input.projectId,
+    fixture: input.fixture,
+    importId: input.smokeId,
+    importedBy: "krn db smoke decision-corpus-import",
+    now: input.now
+  });
 };
 
 const countValue = (value: unknown): number => {

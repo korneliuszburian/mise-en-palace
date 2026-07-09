@@ -349,6 +349,68 @@ describe("runCli", () => {
     expect(result.stdout).toContain("--rationale");
   });
 
+  it("prints source decision import help", async () => {
+    const result = await runCli(["source", "decision", "import", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn source decision import");
+    expect(result.stdout).toContain("--file");
+  });
+
+  it("previews source decision import without DB writes", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "import",
+        "--file",
+        "tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Source Decision Import");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("decisions: 11 (current=6, stale=2, rejected=3)");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("doesNotProve: source truth");
+  });
+
+  it("requires database config for source decision import --persist", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "import",
+        "--file",
+        "tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn source decision import --persist"
+    );
+  });
+
   it("previews source decision adoption without DB writes", async () => {
     const result = await runCli(
       [

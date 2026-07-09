@@ -53,6 +53,7 @@ import {
   formatSourceClaimRejectUsage,
   formatSourceDecisionAdoptUsage,
   formatSourceDecisionGapsUsage,
+  formatSourceDecisionImportUsage,
   formatSourceDecisionLinkUsage
 } from "./parse-source-args.js";
 import type {
@@ -146,6 +147,7 @@ const helpRenderers = {
   reviewAssessHelp: formatReviewAssessUsage,
   sourceClaimAddHelp: formatSourceClaimAddUsage,
   sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
+  sourceDecisionImportHelp: formatSourceDecisionImportUsage,
   sourceSearchHelp: formatSourceSearchUsage,
   sourceArtifactPreviewHelp: formatSourceArtifactPreviewUsage,
   sourceDecisionAdoptHelp: formatSourceDecisionAdoptUsage,

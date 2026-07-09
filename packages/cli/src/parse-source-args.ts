@@ -77,6 +77,21 @@ export const formatSourceDecisionGapsUsage = (): string =>
     "Note: read-only Postgres readback for accepted SourceClaims missing SourceDecisionEdge support. It does not mutate Beads, CI, Memory Core, or source status."
   ].join("\n") + "\n";
 
+export const formatSourceDecisionImportUsage = (): string =>
+  [
+    "Usage: krn source decision import --file <source-decision-import.json> [--project <project-id>] [--persist] [--json]",
+    "",
+    "Required:",
+    "--file",
+    "",
+    "Optional:",
+    "--project <project-id>",
+    "--persist",
+    "--json",
+    "",
+    "Note: imports compact source-to-decision rows into existing SourceArtifact, SourceClaim, SourceDecision, SourceDecisionEdge, SearchDocument, and SourceRejection paths. It does not crawl, execute Codex, promote Memory Core truth, or create a markdown knowledge store."
+  ].join("\n") + "\n";
+
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
     "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
@@ -228,8 +243,11 @@ type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
 type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
 type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
 type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
+type SourceDecisionImportCommand = Extract<CliCommand, { kind: "sourceDecisionImport" }>;
 
 type SourceTokenParseResult = CliTokenParseResult;
+type SourceFileOptionCommand = SourceArtifactPreviewCommand | SourceDecisionImportCommand;
+type SourceCommonFlagCommand = SourceArtifactPreviewCommand | SourceDecisionImportCommand;
 
 const sourceClaimAddStringOptions = {
   "--title": "title",
@@ -327,6 +345,93 @@ const sourceError = (error: string): SourceTokenParseResult => ({
   error
 });
 
+type SourceCommonFlagTokenResult =
+  | { readonly kind: "parsed"; readonly result: SourceTokenParseResult }
+  | { readonly kind: "unmatched"; readonly arg: string };
+
+const parseSourceCommonFlagToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceCommonFlagCommand,
+  usage: string
+): SourceCommonFlagTokenResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return {
+      kind: "parsed",
+      result: sourceError(usage)
+    };
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return {
+      kind: "parsed",
+      result: sourceHelp()
+    };
+  }
+
+  if (arg === "--persist") {
+    sourceCommand.persist = true;
+
+    return {
+      kind: "parsed",
+      result: sourceNext(index)
+    };
+  }
+
+  if (arg === "--json") {
+    sourceCommand.json = true;
+
+    return {
+      kind: "parsed",
+      result: sourceNext(index)
+    };
+  }
+
+  return {
+    kind: "unmatched",
+    arg
+  };
+};
+
+const parseSourceFileOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceFileOptionCommand,
+  usage: string
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--file")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--file");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? usage
+    };
+  }
+
+  const file = valueResult.value.trim();
+
+  if (file.length === 0) {
+    return {
+      error: "--file requires a non-empty path"
+    };
+  }
+
+  sourceCommand.file = file;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
 
@@ -397,6 +502,11 @@ const hasSourceDecisionLinkRequiredFields = (
     sourceCommand.notes
   ].every(hasText);
 
+const hasSourceDecisionImportRequiredFields = (
+  sourceCommand: SourceDecisionImportCommand
+): boolean =>
+  hasText(sourceCommand.file);
+
 const sourceArtifactPreviewStringOptions = {
   "--claim": "claim",
   "--mechanism": "mechanism",
@@ -458,36 +568,8 @@ const parseSourceArtifactFileOption = (
   index: number,
   arg: string,
   sourceCommand: SourceArtifactPreviewCommand
-): SourceOptionParseResult => {
-  if (!optionMatches(arg, "--file")) {
-    return {
-      matched: false
-    };
-  }
-
-  const valueResult = optionValue(rest, index, "--file");
-
-  if (valueResult.error !== undefined || valueResult.value === undefined) {
-    return {
-      error: valueResult.error ?? formatSourceArtifactPreviewUsage()
-    };
-  }
-
-  const file = valueResult.value.trim();
-
-  if (file.length === 0) {
-    return {
-      error: "--file requires a non-empty path"
-    };
-  }
-
-  sourceCommand.file = file;
-
-  return {
-    matched: true,
-    nextIndex: valueResult.nextIndex
-  };
-};
+): SourceOptionParseResult =>
+  parseSourceFileOption(rest, index, arg, sourceCommand, formatSourceArtifactPreviewUsage());
 
 const parseSourceArtifactPositiveIntegerOption = (
   rest: readonly string[],
@@ -636,35 +718,24 @@ const parseSourceArtifactPreviewToken = (
   index: number,
   sourceCommand: SourceArtifactPreviewCommand
 ): SourceTokenParseResult => {
-  const arg = rest[index];
+  const common = parseSourceCommonFlagToken(
+    rest,
+    index,
+    sourceCommand,
+    formatSourceArtifactPreviewUsage()
+  );
 
-  if (arg === undefined) {
-    return sourceError(formatSourceArtifactPreviewUsage());
+  if (common.kind === "parsed") {
+    return common.result;
   }
 
-  if (arg === "--help" || arg === "-h") {
-    return sourceHelp();
-  }
-
-  if (arg === "--persist") {
-    sourceCommand.persist = true;
-
-    return sourceNext(index);
-  }
-
-  if (arg === "--json") {
-    sourceCommand.json = true;
-
-    return sourceNext(index);
-  }
-
-  if (arg === "--extract-candidates") {
+  if (common.arg === "--extract-candidates") {
     sourceCommand.extractCandidates = true;
 
     return sourceNext(index);
   }
 
-  const parsed = parseSourceArtifactPreviewOption(rest, index, arg, sourceCommand);
+  const parsed = parseSourceArtifactPreviewOption(rest, index, common.arg, sourceCommand);
 
   if ("error" in parsed) {
     return sourceError(parsed.error);
@@ -969,6 +1040,85 @@ const parseSourceDecisionGapsToken = (
     kind: "error",
     error: formatSourceDecisionGapsUsage()
   };
+};
+
+type SourceDecisionImportOptionParser = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceDecisionImportCommand
+) => SourceOptionParseResult;
+
+const parseSourceDecisionImportFileOption: SourceDecisionImportOptionParser = (
+  rest,
+  index,
+  arg,
+  sourceCommand
+) =>
+  parseSourceFileOption(rest, index, arg, sourceCommand, formatSourceDecisionImportUsage());
+
+const parseSourceDecisionImportProjectOption: SourceDecisionImportOptionParser = (
+  rest,
+  index,
+  arg,
+  sourceCommand
+) => {
+  if (!optionMatches(arg, "--project")) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = parseProjectOption(rest, index, formatSourceDecisionImportUsage());
+
+  if ("error" in parsed) {
+    return {
+      error: parsed.error
+    };
+  }
+
+  sourceCommand.projectId = parsed.projectId;
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+const sourceDecisionImportOptionParsers: readonly SourceDecisionImportOptionParser[] = [
+  parseSourceDecisionImportFileOption,
+  parseSourceDecisionImportProjectOption
+];
+
+const parseSourceDecisionImportToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceDecisionImportCommand
+): SourceTokenParseResult => {
+  const common = parseSourceCommonFlagToken(
+    rest,
+    index,
+    sourceCommand,
+    formatSourceDecisionImportUsage()
+  );
+
+  if (common.kind === "parsed") {
+    return common.result;
+  }
+
+  for (const parseOption of sourceDecisionImportOptionParsers) {
+    const parsed = parseOption(rest, index, common.arg, sourceCommand);
+
+    if ("error" in parsed) {
+      return sourceError(parsed.error);
+    }
+
+    if (parsed.matched) {
+      return sourceNext(parsed.nextIndex);
+    }
+  }
+
+  return sourceError(formatSourceDecisionImportUsage());
 };
 
 const parseSourceSearchToken = (
@@ -1567,40 +1717,74 @@ const parseSourceDecisionGapsArgs = (rest: readonly string[]): ParseArgsResult =
   };
 };
 
-export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
-  if (rest[0] === "search") {
-    return parseSourceSearchArgs(rest);
+const parseSourceDecisionImportArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceDecisionImportHelp"
+      }
+    };
   }
 
-  if (rest[0] === "artifact" && rest[1] === "preview") {
-    return parseSourceArtifactPreviewArgs(rest);
+  const sourceCommand: SourceDecisionImportCommand = {
+    kind: "sourceDecisionImport",
+    persist: false
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const parsed = parseSourceDecisionImportToken(rest, index, sourceCommand);
+
+    if (parsed.kind === "help") {
+      return {
+        command: {
+          kind: "sourceDecisionImportHelp"
+        }
+      };
+    }
+
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
   }
 
-  if (rest[0] === "claim" && rest[1] === "add") {
-    return parseSourceClaimAddArgs(rest);
-  }
-
-  if (rest[0] === "claim" && rest[1] === "edges") {
-    return parseSourceClaimEdgesArgs(rest);
-  }
-
-  if (rest[0] === "claim" && rest[1] === "reject") {
-    return parseSourceClaimRejectArgs(rest);
-  }
-
-  if (rest[0] === "decision" && rest[1] === "link") {
-    return parseSourceDecisionLinkArgs(rest);
-  }
-
-  if (rest[0] === "decision" && rest[1] === "adopt") {
-    return parseSourceDecisionAdoptArgs(rest);
-  }
-
-  if (rest[0] === "decision" && rest[1] === "gaps") {
-    return parseSourceDecisionGapsArgs(rest);
+  if (!hasSourceDecisionImportRequiredFields(sourceCommand)) {
+    return {
+      error: formatSourceDecisionImportUsage()
+    };
   }
 
   return {
+    command: sourceCommand
+  };
+};
+
+type SourceArgsParser = (rest: readonly string[]) => ParseArgsResult;
+
+const sourceArgsParsers: ReadonlyMap<string, SourceArgsParser> = new Map([
+  ["search", parseSourceSearchArgs],
+  ["artifact preview", parseSourceArtifactPreviewArgs],
+  ["claim add", parseSourceClaimAddArgs],
+  ["claim edges", parseSourceClaimEdgesArgs],
+  ["claim reject", parseSourceClaimRejectArgs],
+  ["decision link", parseSourceDecisionLinkArgs],
+  ["decision adopt", parseSourceDecisionAdoptArgs],
+  ["decision gaps", parseSourceDecisionGapsArgs],
+  ["decision import", parseSourceDecisionImportArgs]
+]);
+
+const sourceArgsKey = (rest: readonly string[]): string =>
+  rest[0] === "search"
+    ? "search"
+    : `${rest[0] ?? ""} ${rest[1] ?? ""}`.trim();
+
+export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
+  const parser = sourceArgsParsers.get(sourceArgsKey(rest));
+
+  return parser?.(rest) ?? {
     error: formatSourceArtifactPreviewUsage()
   };
 };

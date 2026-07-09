@@ -458,6 +458,9 @@ export type CliCommand =
       kind: "sourceDecisionGapsHelp";
     }
   | {
+      kind: "sourceDecisionImportHelp";
+    }
+  | {
       kind: "sourceDecisionLink";
       persist: boolean;
       sourceClaimId?: string;
@@ -490,6 +493,13 @@ export type CliCommand =
       kind: "sourceDecisionGaps";
       projectId?: string;
       limit?: number;
+      json?: boolean;
+    }
+  | {
+      kind: "sourceDecisionImport";
+      persist: boolean;
+      file?: string;
+      projectId?: string;
       json?: boolean;
     }
   | {
@@ -559,6 +569,7 @@ const usage = [
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
+  "krn source decision import --file source-decisions.json [--project <project-id>] [--persist] [--json]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",

@@ -30,6 +30,9 @@ import {
   runSourceDecisionGapsCommand
 } from "./run-source-decision-gaps-command.js";
 import {
+  runSourceDecisionImportCommand
+} from "./run-source-decision-import-command.js";
+import {
   runSourceSearchCommand
 } from "./run-source-search-command.js";
 
@@ -42,6 +45,7 @@ type SourceCliCommand = Extract<
   | { kind: "sourceDecisionLink" }
   | { kind: "sourceDecisionAdopt" }
   | { kind: "sourceDecisionGaps" }
+  | { kind: "sourceDecisionImport" }
   | { kind: "sourceClaimReject" }
 >;
 
@@ -101,6 +105,7 @@ const isSourceCliCommand = (command: CliCommand): command is SourceCliCommand =>
     command.kind === "sourceDecisionLink" ||
     command.kind === "sourceDecisionAdopt" ||
     command.kind === "sourceDecisionGaps" ||
+    command.kind === "sourceDecisionImport" ||
     command.kind === "sourceClaimReject"
 );
 
@@ -112,6 +117,7 @@ const sourceFallbackMessages = {
   sourceDecisionLink: "Unknown source decision link error",
   sourceDecisionAdopt: "Unknown source decision adopt error",
   sourceDecisionGaps: "Unknown source decision gaps error",
+  sourceDecisionImport: "Unknown source decision import error",
   sourceClaimReject: "Unknown source claim reject error"
 } satisfies Record<SourceCliCommand["kind"], string>;
 
@@ -168,6 +174,14 @@ const runSelectedSourceCommand = async (
 
   if (command.kind === "sourceDecisionGaps") {
     return runSourceDecisionGapsCommand({
+      ...standardSourceInput(context),
+      cwd: context.cwd,
+      command
+    });
+  }
+
+  if (command.kind === "sourceDecisionImport") {
+    return runSourceDecisionImportCommand({
       ...standardSourceInput(context),
       cwd: context.cwd,
       command
