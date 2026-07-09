@@ -99,11 +99,11 @@ jobs:
       - name: DB smoke
         run: pnpm db:smoke
 
-      - name: DB brain loop smoke
-        run: pnpm db:smoke:brain-loop
+      - name: DB memory loop smoke
+        run: pnpm db:smoke:memory-loop
 
-      - name: DB brain search smoke
-        run: pnpm db:smoke:brain-search
+      - name: DB memory search smoke
+        run: pnpm db:smoke:memory-search
 
       - name: DB run show smoke
         run: pnpm db:smoke:run-show
