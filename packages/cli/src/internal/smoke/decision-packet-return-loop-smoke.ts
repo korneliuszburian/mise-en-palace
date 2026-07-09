@@ -342,6 +342,56 @@ const sourceUsefulnessOutcome = (input: {
     "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
 });
 
+const createFeedbackSourceDecision = async (
+  input: {
+    readonly executionRunId: string;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly sourceArtifactId: string;
+    readonly sourceRepository: SourceRepository;
+    readonly proof: "helped" | "stale" | "mismatched";
+  }
+): Promise<string> => {
+  const claim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: input.sourceArtifactId,
+    executionRunId: input.executionRunId,
+    claim: `DecisionPacket feedback ${input.proof} source decision must resolve through persisted source truth.`,
+    mechanism:
+      "Source-usefulness feedback carries a SourceDecision id that maintenance resolves to the linked SourceClaim before proposing anti-memory.",
+    krnImplication:
+      "KRN demotes stale source guidance through the source-claim path instead of inventing source-decision memory targets.",
+    doesNotProve:
+      "This fixture does not prove broad source-review quality or live Codex obedience.",
+    sourceAuthority: "project-decision",
+    supportType: "decision",
+    consumer: "DecisionPacket return-loop feedback smoke",
+    falsifier:
+      "Feedback maintenance cannot resolve the persisted SourceDecision back to a linked SourceClaim.",
+    status: "proposed",
+    metadata: {
+      smokeId: input.marker,
+      feedbackSourceDecision: input.proof
+    }
+  });
+  const decision = await input.sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: claim.id,
+    status: "adopt",
+    decision: `Use persisted ${input.proof} source feedback decision for the DecisionPacket return-loop smoke.`,
+    rationale:
+      "The smoke must exercise the same SourceDecision lookup path used by feedback maintenance.",
+    falsifier:
+      "The return-loop smoke accepts synthetic source decision ids that the maintenance handler cannot resolve.",
+    consumer: "DecisionPacket return-loop feedback smoke",
+    metadata: {
+      smokeId: input.marker,
+      feedbackSourceDecision: input.proof
+    }
+  });
+
+  return decision.id;
+};
+
 const firstSourceUsefulnessOutcome = (
   value: Record<string, unknown>
 ): Record<string, unknown> | undefined => {
@@ -426,6 +476,53 @@ const createSmokeCommandRuntime = (input: {
   }
 });
 
+const selectorProofSmokeTables = [
+  { tableName: "outbox_events", markerColumn: "payload" },
+  { tableName: "memory_applications", markerColumn: "metadata" },
+  { tableName: "memory_feedback_events", markerColumn: "metadata" },
+  { tableName: "memory_record_versions", markerColumn: "metadata" },
+  { tableName: "memory_records", markerColumn: "metadata" },
+  { tableName: "anti_memory_candidates", markerColumn: "metadata" },
+  { tableName: "memory_candidates", markerColumn: "metadata" },
+  { tableName: "source_decision_edges", markerColumn: "metadata" },
+  { tableName: "source_decisions", markerColumn: "metadata" },
+  { tableName: "source_rejections", markerColumn: "metadata" },
+  { tableName: "source_claim_edges", markerColumn: "metadata" },
+  { tableName: "source_claims", markerColumn: "metadata" },
+  { tableName: "source_artifacts", markerColumn: "metadata" }
+] as const;
+
+const deleteSmokeRows = async (
+  input: {
+    readonly client: Sql;
+    readonly marker: string;
+    readonly markerColumn: "metadata" | "payload";
+    readonly tableName: string;
+  }
+): Promise<void> => {
+  await input.client`
+    delete from ${input.client(input.tableName)}
+    where ${input.client(input.markerColumn)}->>'smokeId' = ${input.marker}
+  `;
+};
+
+const countSmokeRows = async (
+  input: {
+    readonly client: Sql;
+    readonly marker: string;
+    readonly markerColumn: "metadata" | "payload";
+    readonly tableName: string;
+  }
+): Promise<number> => {
+  const rows = await input.client<{ count: number }[]>`
+    select count(*)::int as count
+    from ${input.client(input.tableName)}
+    where ${input.client(input.markerColumn)}->>'smokeId' = ${input.marker}
+  `;
+
+  return rows[0]?.count ?? 0;
+};
+
 const deleteSelectorProofRows = async (
   input: {
     readonly client: Sql;
@@ -433,42 +530,14 @@ const deleteSelectorProofRows = async (
     readonly retrievalRunIds: readonly string[];
   }
 ): Promise<void> => {
-  await input.client`
-    delete from outbox_events
-    where payload->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from memory_applications
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from memory_feedback_events
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from memory_record_versions
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from memory_records
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from anti_memory_candidates
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from memory_candidates
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from source_decision_edges
-    where metadata->>'smokeId' = ${input.marker}
-  `;
-  await input.client`
-    delete from source_decisions
-    where metadata->>'smokeId' = ${input.marker}
-  `;
+  for (const table of selectorProofSmokeTables) {
+    await deleteSmokeRows({
+      client: input.client,
+      marker: input.marker,
+      markerColumn: table.markerColumn,
+      tableName: table.tableName
+    });
+  }
 
   for (const retrievalRunId of input.retrievalRunIds) {
     await input.client`
@@ -485,20 +554,16 @@ const countSelectorProofRows = async (
     readonly retrievalRunIds: readonly string[];
   }
 ): Promise<number> => {
-  const rows = await input.client<{ count: number }[]>`
-    select (
-      (select count(*)::int from memory_applications where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from memory_feedback_events where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from anti_memory_candidates where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from memory_record_versions where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from memory_records where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from memory_candidates where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from source_decision_edges where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from source_decisions where metadata->>'smokeId' = ${input.marker}) +
-      (select count(*)::int from outbox_events where payload->>'smokeId' = ${input.marker})
-    ) as count
-  `;
-  let count = rows[0]?.count ?? 0;
+  let count = 0;
+
+  for (const table of selectorProofSmokeTables) {
+    count += await countSmokeRows({
+      client: input.client,
+      marker: input.marker,
+      markerColumn: table.markerColumn,
+      tableName: table.tableName
+    });
+  }
 
   for (const retrievalRunId of input.retrievalRunIds) {
     const retrievalRows = await input.client<{ count: number }[]>`
@@ -1472,12 +1537,47 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime
     })).stdout);
+    const feedbackSourceArtifact = await sourceRepository.createSourceArtifact({
+      projectId: project.id,
+      kind: "run",
+      uri: `operator://decision-packet-return-loop/${marker}/feedback-source-decisions`,
+      title: "DecisionPacket feedback source decision smoke source",
+      contentHash: `decision-packet-feedback-source-decisions-${marker}`,
+      sourceAuthority: "project-decision",
+      metadata: {
+        smokeId: marker,
+        feedbackSourceDecision: true
+      }
+    });
+    const matchingDecisionId = await createFeedbackSourceDecision({
+      executionRunId: executionRun.id,
+      marker,
+      projectId: project.id,
+      sourceArtifactId: feedbackSourceArtifact.id,
+      sourceRepository,
+      proof: "helped"
+    });
+    const staleDecisionId = await createFeedbackSourceDecision({
+      executionRunId: executionRun.id,
+      marker,
+      projectId: project.id,
+      sourceArtifactId: feedbackSourceArtifact.id,
+      sourceRepository,
+      proof: "stale"
+    });
+    const mismatchedDecisionId = await createFeedbackSourceDecision({
+      executionRunId: executionRun.id,
+      marker,
+      projectId: project.id,
+      sourceArtifactId: feedbackSourceArtifact.id,
+      sourceRepository,
+      proof: "mismatched"
+    });
     const returnChannelHasChecksum =
       firstPacket.returnChannels.evidence.persistedCommand.includes(firstPacket.packetIdentity.checksum) &&
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
         firstPacket.packetIdentity.evidenceRef
       );
-    const decisionId = `source-decision-decision-packet-${marker}`;
     const matchingEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
@@ -1490,7 +1590,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
-          decisionId,
+          decisionId: matchingDecisionId,
           evidenceRef: firstPacket.packetIdentity.evidenceRef,
           outcome: "helped",
           reason: "Matching packet checksum kept source decision feedback authoritative."
@@ -1512,7 +1612,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const matchingFeedbackRemainedAuthoritative =
       matchingFeedbackOutcome === "helped" &&
       matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
-    const staleDecisionId = `${decisionId}-stale`;
     const staleEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
@@ -1547,7 +1646,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const staleFeedbackBoundToPacket =
       staleFeedbackOutcome === "stale" &&
       staleEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
-    const mismatchedDecisionId = `${decisionId}-mismatched`;
     const mismatchedChecksum = "0".repeat(64);
     await runEvidenceCaptureCommand({
       ...baseRuntime,
@@ -1587,7 +1685,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       createDatabaseRuntime: async () => commandRuntime
     })).stdout);
     const nextPacketIncludesMatchingDecision =
-      nextPacket.packet.governingDecisionIds.includes(decisionId);
+      nextPacket.packet.governingDecisionIds.includes(matchingDecisionId);
     const staleFeedbackDemotedDecision =
       nextPacket.packet.staleDecisionIds.includes(staleDecisionId) &&
       !nextPacket.packet.governingDecisionIds.includes(staleDecisionId);
