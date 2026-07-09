@@ -1,4 +1,4 @@
-import { or, eq } from "drizzle-orm";
+import { and, desc, inArray, or, eq } from "drizzle-orm";
 import type {
   ExecutionRunId,
   ProjectId,
@@ -14,6 +14,7 @@ import type {
 } from "@krn/core";
 import {
   assessSourceDecisionReviewSignals,
+  decisionGradeSourceSupportTypes,
   isDecisionGradeSourceSupportType
 } from "@krn/core";
 import type {
@@ -26,6 +27,7 @@ import type {
   CreateSourceRejectionInput,
   SourceArtifactRecord,
   SourceChunkRecord,
+  SourceDecisionKnowledgeSource,
   SourceRepository
 } from "@krn/core/repositories/internal";
 
@@ -91,6 +93,17 @@ const sourceClaimEdgeKindsRequiringSupportRef = new Set<SourceClaimEdgeKind>([
 
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
+
+const canSourceDecisionSeedKnowledge = (
+  projectId: ProjectId,
+  source: SourceDecisionKnowledgeSource
+): boolean =>
+  source.sourceDecision.projectId === projectId &&
+  source.sourceDecision.status === "adopt" &&
+  source.sourceDecision.sourceClaimId === source.sourceClaim.id &&
+  source.sourceClaim.status === "accepted" &&
+  source.sourceDecisionEdge.sourceClaimId === source.sourceClaim.id &&
+  isDecisionGradeSourceSupportType(source.sourceDecisionEdge.supportType);
 
 export const throwOnBlockingSourceDecisionSignals = (
   sourceDecision: SourceDecision,
@@ -403,6 +416,37 @@ export class DrizzleSourceRepository implements SourceRepository {
       .limit(1);
 
     return row === undefined ? undefined : mapSourceDecision(row);
+  }
+
+  async listSourceDecisionKnowledgeSources(
+    projectId: ProjectId,
+    limit: number
+  ): Promise<SourceDecisionKnowledgeSource[]> {
+    const rows = await this.db
+      .select({
+        sourceDecision: sourceDecisions,
+        sourceClaim: sourceClaims,
+        sourceDecisionEdge: sourceDecisionEdges
+      })
+      .from(sourceDecisions)
+      .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceDecisionEdges, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
+      .where(and(
+        eq(sourceDecisions.projectId, projectId),
+        eq(sourceDecisions.status, "adopt"),
+        eq(sourceClaims.status, "accepted"),
+        inArray(sourceDecisionEdges.supportType, decisionGradeSourceSupportTypes)
+      ))
+      .orderBy(desc(sourceDecisions.createdAt), desc(sourceDecisionEdges.createdAt))
+      .limit(limit);
+
+    return rows
+      .map((row) => ({
+        sourceDecision: mapSourceDecision(row.sourceDecision),
+        sourceClaim: mapSourceClaim(row.sourceClaim),
+        sourceDecisionEdge: mapSourceDecisionEdge(row.sourceDecisionEdge)
+      }))
+      .filter((source) => canSourceDecisionSeedKnowledge(projectId, source));
   }
 
   async createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge> {

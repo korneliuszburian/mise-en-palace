@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { SourceDecision } from "@krn/core";
+import type {
+  SourceClaim,
+  SourceDecision,
+  SourceSupportType
+} from "@krn/core";
 
 import {
   DrizzleSourceRepository,
@@ -22,6 +26,7 @@ const methodNames = [
   "listClaimsForProject",
   "listSourceClaimsForRun",
   "createSourceDecision",
+  "listSourceDecisionKnowledgeSources",
   "createSourceClaimEdge",
   "listSourceClaimEdgesForClaim",
   "createSourceDecisionEdge",
@@ -29,6 +34,80 @@ const methodNames = [
   "listSourceDecisionEdgesForRun",
   "createSourceRejection"
 ] as const;
+
+const createdAt = new Date("2026-07-09T00:00:00.000Z");
+
+const createKnowledgeSourceDb = (rows: readonly unknown[]) => ({
+  select: () => ({
+    from: () => ({
+      innerJoin: () => ({
+        innerJoin: () => ({
+          where: () => ({
+            orderBy: () => ({
+              limit: () => Promise.resolve(rows)
+            })
+          })
+        })
+      })
+    })
+  })
+});
+
+const knowledgeSourceRow = (input: {
+  id: string;
+  projectId?: string | null;
+  decisionStatus?: SourceDecision["status"];
+  claimStatus?: SourceClaim["status"];
+  edgeSupportType?: SourceSupportType;
+}) => {
+  const sourceClaimId = `source-claim-${input.id}`;
+
+  return {
+    sourceDecision: {
+      id: `source-decision-${input.id}`,
+      projectId: input.projectId ?? "project-1",
+      sourceClaimId,
+      status: input.decisionStatus ?? "adopt",
+      decision: "Retain store-backed source decision knowledge.",
+      rationale: "The source decision has accepted source support and a decision edge.",
+      falsifier: "The row is returned without accepted claim support.",
+      consumer: "source-decision knowledge proposal",
+      metadata: {},
+      createdAt,
+      updatedAt: createdAt
+    },
+    sourceClaim: {
+      id: sourceClaimId,
+      sourceArtifactId: `source-artifact-${input.id}`,
+      sourceChunkId: null,
+      executionRunId: null,
+      claim: "Source decisions can seed governed knowledge proposals.",
+      mechanism: "Accepted source claims and source decision edges preserve support.",
+      krnImplication: "Memory proposals can be sourced from store decisions.",
+      doesNotProve: "This does not promote durable memory truth by itself.",
+      sourceAuthority: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "source-decision knowledge proposal",
+      falsifier: "A rejected or unsupported source decision is proposed as knowledge.",
+      revisitWhen: null,
+      status: input.claimStatus ?? "accepted",
+      metadata: {},
+      createdAt,
+      updatedAt: createdAt
+    },
+    sourceDecisionEdge: {
+      id: `source-decision-edge-${input.id}`,
+      sourceClaimId,
+      targetType: "memory_record",
+      targetId: `knowledge-${input.id}`,
+      supportType: input.edgeSupportType ?? "implementation-boundary",
+      confidence: "high",
+      notes: "Decision support for a future knowledge proposal.",
+      metadata: {},
+      createdAt
+    }
+  };
+};
 
 describe("DrizzleSourceRepository", () => {
   it("exposes source graph repository methods", () => {
@@ -229,6 +308,23 @@ describe("DrizzleSourceRepository", () => {
     } as SourceDecision;
 
     expect(() => throwOnBlockingSourceDecisionSignals(sourceDecision, "accepted")).not.toThrow();
+  });
+
+  it("lists only adopted source decisions with accepted claim and decision support for knowledge proposals", async () => {
+    const repository = new DrizzleSourceRepository(createKnowledgeSourceDb([
+      knowledgeSourceRow({ id: "valid" }),
+      knowledgeSourceRow({ id: "rejected-decision", decisionStatus: "reject" }),
+      knowledgeSourceRow({ id: "proposed-claim", claimStatus: "proposed" }),
+      knowledgeSourceRow({ id: "unsupported-edge", edgeSupportType: "background" }),
+      knowledgeSourceRow({ id: "other-project", projectId: "project-2" })
+    ]) as never);
+
+    const sources = await repository.listSourceDecisionKnowledgeSources("project-1", 20);
+
+    expect(sources).toHaveLength(1);
+    expect(sources[0]?.sourceDecision.id).toBe("source-decision-valid");
+    expect(sources[0]?.sourceClaim.status).toBe("accepted");
+    expect(sources[0]?.sourceDecisionEdge.supportType).toBe("implementation-boundary");
   });
 
   it("ranks source authorities deterministically", () => {

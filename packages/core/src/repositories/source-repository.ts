@@ -87,6 +87,12 @@ export interface CreateSourceRejectionInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface SourceDecisionKnowledgeSource {
+  sourceDecision: SourceDecision;
+  sourceClaim: SourceClaim;
+  sourceDecisionEdge: SourceDecisionEdge;
+}
+
 export interface SourceRepository {
   createSourceArtifact(input: CreateSourceArtifactInput): Promise<SourceArtifactRecord>;
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
@@ -96,6 +102,10 @@ export interface SourceRepository {
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
   getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined>;
+  listSourceDecisionKnowledgeSources(
+    projectId: ProjectId,
+    limit: number
+  ): Promise<SourceDecisionKnowledgeSource[]>;
   createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge>;
   listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]>;
   createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;
