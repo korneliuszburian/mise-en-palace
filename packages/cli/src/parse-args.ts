@@ -279,6 +279,9 @@ export type CliCommand =
       kind: "memoryKnowledgeSeedHelp";
     }
   | {
+      kind: "memoryKnowledgeProposeHelp";
+    }
+  | {
       kind: "memoryAntiAddHelp";
     }
   | {
@@ -341,6 +344,12 @@ export type CliCommand =
       persist: boolean;
       dryRun: boolean;
       catalogFile: string;
+    }
+  | {
+      kind: "memoryKnowledgePropose";
+      persist: boolean;
+      projectId?: string;
+      limit?: number;
     }
   | {
       kind: "memoryAntiAdd";
@@ -574,6 +583,7 @@ const usage = [
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
+  "krn memory knowledge propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
   "krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",

@@ -317,6 +317,35 @@ describe("parseMemoryArgs", () => {
     });
   });
 
+  it("parses memory knowledge propose options", () => {
+    expect(parseMemoryArgs([
+      "knowledge",
+      "propose",
+      "--project",
+      "project-1",
+      "--limit",
+      "7",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryKnowledgePropose",
+        persist: true,
+        projectId: "project-1",
+        limit: 7
+      }
+    });
+
+    expect(parseMemoryArgs(["knowledge", "propose", "--help"])).toEqual({
+      command: {
+        kind: "memoryKnowledgeProposeHelp"
+      }
+    });
+
+    expect(parseMemoryArgs(["knowledge", "propose", "--limit", "0"])).toEqual({
+      error: "--limit requires a positive integer"
+    });
+  });
+
   it("rejects memory commands missing required fields", () => {
     const invalidCases = [
       {
@@ -462,6 +491,7 @@ describe("parseMemoryArgs", () => {
     });
     expect(unsupportedShape.error).toContain("Usage: krn memory candidate add");
     expect(unsupportedShape.error).toContain("Usage: krn memory knowledge seed");
+    expect(unsupportedShape.error).toContain("Usage: krn memory knowledge propose");
     expect(unsupportedShape.error).toContain("Usage: krn memory anti add");
   });
 });

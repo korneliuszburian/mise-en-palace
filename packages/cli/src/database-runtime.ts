@@ -120,6 +120,7 @@ export interface DatabaseRuntime {
     | "createSourceChunk"
     | "createSourceDecision"
     | "getSourceDecisionById"
+    | "listSourceDecisionKnowledgeSources"
     | "listSourceRejectionsForClaim"
   >>;
   retrievalRepository?: Pick<
@@ -148,7 +149,7 @@ export interface DatabaseRuntime {
     | "rejectAntiMemoryCandidate"
   > & Partial<Pick<
     MemoryRepository,
-    "listActiveMemory"
+    "listActiveMemory" | "listMemoryCandidates"
   >>;
   maintenanceQueueRepository?: Pick<
     MaintenanceQueueRepository,
@@ -559,6 +560,8 @@ const createDatabaseRuntimeForClient = async (
     getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
     listSourceDecisionEdgesForClaim: (...args) =>
       sourceRepository.listSourceDecisionEdgesForClaim(...args),
+    listSourceDecisionKnowledgeSources: (...args) =>
+      sourceRepository.listSourceDecisionKnowledgeSources(...args),
     createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args),
     listSourceRejectionsForClaim: (...args) =>
       sourceRepository.listSourceRejectionsForClaim(...args)
