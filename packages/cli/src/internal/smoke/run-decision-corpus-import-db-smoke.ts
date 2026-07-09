@@ -237,11 +237,13 @@ export const persistDecisionCorpusImport = async (
 ): Promise<readonly PersistedDecisionCorpusRow[]> => {
   const base = loadDecisionPacketEvalFixture(input.fixture.baseFixturePath);
   const retrievalRepository = input.runtime.retrievalRepository;
-  const createSourceDecision = input.runtime.sourceRepository.createSourceDecision;
+  const sourceRepository = input.runtime.sourceRepository;
 
-  if (createSourceDecision === undefined) {
+  if (sourceRepository.createSourceDecision === undefined) {
     throw new Error("SourceDecision creation is unavailable for decision-corpus-import DB smoke");
   }
+
+  const createSourceDecision = sourceRepository.createSourceDecision.bind(sourceRepository);
 
   if (retrievalRepository === undefined) {
     throw new Error("SearchDocument creation is unavailable for decision-corpus-import DB smoke");
@@ -252,12 +254,12 @@ export const persistDecisionCorpusImport = async (
   return Promise.all(input.fixture.decisions.map(async (row) => {
     const metadata = metadataForRow(input.smokeId, row);
     const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
-      input.runtime.sourceRepository,
+      sourceRepository,
       input.projectId,
       row,
       metadata
     );
-    const sourceClaim = await input.runtime.sourceRepository.createSourceClaim({
+    const sourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
       sourceChunkId: sourceChunk.id,
       claim: row.statement,
@@ -280,7 +282,7 @@ export const persistDecisionCorpusImport = async (
       consumer: "decision corpus import",
       metadata
     });
-    const sourceClaimReadback = await input.runtime.sourceRepository.getSourceClaimById(sourceClaim.id);
+    const sourceClaimReadback = await sourceRepository.getSourceClaimById(sourceClaim.id);
 
     if (sourceClaimReadback === undefined) {
       throw new Error(`missing SourceClaim readback for imported decision ${row.id}`);
@@ -288,7 +290,7 @@ export const persistDecisionCorpusImport = async (
 
     if (row.status === "rejected") {
       const sourceRejectionId = await createRejectedPath({
-        sourceRepository: input.runtime.sourceRepository,
+        sourceRepository,
         projectId: input.projectId,
         row,
         sourceArtifactId: sourceArtifact.id,
@@ -317,7 +319,7 @@ export const persistDecisionCorpusImport = async (
       sourceDecisionId: sourceDecision.id,
       sourceDecisionStatus: sourceDecision.status,
       ...await createDecisionSupport({
-        sourceRepository: input.runtime.sourceRepository,
+        sourceRepository,
         retrievalRepository,
         projectId: input.projectId,
         row,

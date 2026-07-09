@@ -11,7 +11,9 @@ import {
   persistActivationTrace,
   promoteAntiMemoryCandidateThroughGate,
   promoteMemoryCandidateThroughGate,
+  applyReviewedMemoryRevision,
   proposeMemoryConsolidation,
+  proposeMemoryRevision,
   retrieveActivationCandidates
 } from "@krn/harness";
 import type {
@@ -121,6 +123,17 @@ export interface BrainLoopSmokeReport {
   consolidationRunMemoryExclusionCount: number;
   consolidationRunExcludedMemoryDecisionCount: number;
   consolidationRunAntiMemoryConflictCount: number;
+  revisionMemoryCandidateId: string;
+  revisionMemoryFeedbackEventId: string;
+  revisionMemoryRecordId: string;
+  revisionSupersededMemoryStatus: string;
+  revisionRunTaskContractId: string;
+  revisionRunRetrievalRunId: string;
+  revisionRunContextAssemblyId: string;
+  revisionRunReplacementInclusionCount: number;
+  revisionRunIncludedReplacementDecisionCount: number;
+  revisionRunSourceMemoryInclusionCount: number;
+  revisionRunSupersededSourceExcluded: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -131,6 +144,7 @@ const memoryOriginRepoInstallationId = "repo-installation-brain-loop-source";
 const nextRunRepoInstallationId = "repo-installation-brain-loop-consumer";
 const downgradedRunRepoInstallationId = "repo-installation-brain-loop-rejector";
 const consolidationRunRepoInstallationId = "repo-installation-brain-loop-consolidation";
+const revisionRunRepoInstallationId = "repo-installation-brain-loop-revision";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -306,6 +320,8 @@ export const runBrainLoopSmokeCheck = async (
   let downgradedContextAssemblyId: string | undefined;
   let downgradedRetrievalRunId: string | undefined;
   let feedbackDeltaId: string | undefined;
+  let revisionContextAssemblyId: string | undefined;
+  let revisionRetrievalRunId: string | undefined;
   let retrievalRunId: string | undefined;
   let nextRetrievalRunId: string | undefined;
   let nextContextAssemblyId: string | undefined;
@@ -322,6 +338,7 @@ export const runBrainLoopSmokeCheck = async (
       downgradedRetrievalRunId,
       feedbackDeltaId,
       nextRetrievalRunId,
+      revisionRetrievalRunId,
       retrievalRunId
     }),
     countMarkerRows: (markerInput) => countBrainLoopSmokeMarkerRows({
@@ -333,6 +350,8 @@ export const runBrainLoopSmokeCheck = async (
       feedbackDeltaId,
       nextContextAssemblyId,
       nextRetrievalRunId,
+      revisionContextAssemblyId,
+      revisionRetrievalRunId,
       retrievalRunId
     }),
     rawIntent: `brain loop smoke ${input.smokeId}`,
@@ -906,6 +925,120 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
+    const revisionProposal = await proposeMemoryRevision({
+      memoryRepository,
+      draft: {
+        action: "refresh_memory",
+        sourceMemoryRecord: memoryRecord,
+        summary: "Use refreshed DB-backed brain loop memory",
+        body:
+          "A reviewed memory refresh can replace stale Memory Core guidance while preserving source lineage, feedback evidence, supersession, and later activation.",
+        applicationGuidance:
+          "Use when checking whether reviewed memory revisions replace stale guidance in a later DecisionPacket.",
+        invalidationRule: "Revisit when memory revision promotion or supersession contracts change.",
+        confidence: 94,
+        owner: "kernel",
+        sourceLineage: [{ sourceId: sourceClaim.id, note: "reviewed brain-loop source claim" }],
+        sourceClaimIds: [sourceClaim.id],
+        reason: "Reviewed consolidation found the original brain-loop memory stale and refreshed it.",
+        evidenceRefs: [feedbackDelta.id, sourceClaim.id],
+        doesNotProve:
+          "This reviewed refresh does not prove autonomous maintenance execution, broad memory quality, or product readiness."
+      },
+      projectId: project.id,
+      proposedBy: "brain-loop-smoke",
+      executionRunId: executionRun.id,
+      feedbackDeltaId: feedbackDelta.id,
+      metadata: {
+        smokeId: marker,
+        originRepoInstallationId: memoryOriginRepoInstallationId,
+        proof: "reviewed_memory_revision"
+      }
+    });
+    const revisionApplication = await applyReviewedMemoryRevision({
+      memoryRepository,
+      proposal: revisionProposal,
+      sourceMemoryRecordId: memoryRecord.id,
+      reviewer: "brain-loop-smoke",
+      reason: "Reviewed refresh replaces the stale brain-loop memory.",
+      recordKey: `brain-loop-smoke:${marker}:revision`,
+      reviewedAt: now,
+      metadata: {
+        smokeId: marker,
+        originRepoInstallationId: memoryOriginRepoInstallationId,
+        proof: "reviewed_memory_revision"
+      }
+    });
+    const revisionSupersededMemory = requireSmokeReadbackValue(
+      await memoryRepository.getMemoryRecordById(memoryRecord.id),
+      "revision superseded source memory readback",
+      "Brain loop revision did not persist superseded source memory"
+    );
+    const revisionReplacementMemory = requireSmokeReadbackValue(
+      await memoryRepository.getMemoryRecordById(revisionApplication.memoryRecord.id),
+      "revision replacement memory readback",
+      "Brain loop revision did not persist replacement memory"
+    );
+    const revisionCompile = await compileHarnessPlan({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      operatorIntent: {
+        source: "cli",
+        rawIntent: `revised brain loop recall ${marker}`,
+        metadata: {
+          smokeId: marker
+        }
+      },
+      taskContract: {
+        title: "Use refreshed DB-backed brain loop memory",
+        objective:
+          "Show reviewed memory revision supersedes stale Memory Core context and activates the replacement.",
+        constraints: ["use store-backed memory revision", "do not create a maintenance runtime"],
+        nonGoals: ["no daemon", "no autonomous memory promotion"],
+        acceptance: ["revision activation includes the replacement and does not include the superseded source"],
+        metadata: {
+          smokeId: marker,
+          proof: "memory_revision_replacement"
+        }
+      },
+      tokenBudget: 360,
+      targetReadModel: targetReadModelForRepo(revisionRunRepoInstallationId),
+      metadata: {
+        smokeId: marker,
+        proof: "reviewed_memory_revision_next_compile"
+      }
+    }, {
+      harnessRunRepository,
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
+      now: () => now,
+      createId: (prefix) => `${prefix}-${marker}-revision`
+    });
+    revisionContextAssemblyId = revisionCompile.contextAssembly.id;
+    revisionRetrievalRunId = stringMetadataValue(
+      revisionCompile.contextAssembly.metadata,
+      "retrievalRunId"
+    );
+    const revisionRunRetrievalRunId = requireSmokeReadbackValue(
+      revisionRetrievalRunId,
+      "revision run retrievalRunId",
+      "Brain loop revision run did not persist retrieval metadata"
+    );
+    const revisionRunReplacementInclusions = revisionCompile.contextAssembly.inclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === revisionReplacementMemory.id
+    );
+    const revisionRunSourceMemoryInclusions = revisionCompile.contextAssembly.inclusions.filter((item) =>
+      item.subjectType === "memory_record" && item.subjectId === memoryRecord.id
+    );
+    const revisionRunActivationDecisions = await retrievalRepository.listActivationDecisionsForRun(
+      revisionRunRetrievalRunId
+    );
+    const revisionRunIncludedReplacementDecisionCount = revisionRunActivationDecisions.filter((decision) =>
+      decision.decision === "included" &&
+      decision.subjectType === "memory_record" &&
+      decision.subjectId === revisionReplacementMemory.id
+    ).length;
     const decisionPacketGoverningDecisionIds = governingDecisionIdsFromMetadata(
       feedbackDelta.metadata
     );
@@ -1115,6 +1248,41 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "consolidation run excluded memory decision",
         passed: consolidationRunExcludedMemoryDecisionCount === 1
+      },
+      {
+        label: "revision memory candidate persisted",
+        passed: revisionProposal.memoryCandidate.id.length > 0
+      },
+      {
+        label: "revision feedback event persisted",
+        passed: revisionProposal.feedbackEvent.memoryRecordId === memoryRecord.id
+      },
+      {
+        label: "revision replacement persisted",
+        passed: revisionReplacementMemory.id === revisionApplication.memoryRecord.id
+      },
+      {
+        label: "revision source memory superseded",
+        passed: revisionSupersededMemory.status === "superseded"
+      },
+      {
+        label: "revision supersession links replacement",
+        passed: stringMetadataValue(
+          revisionSupersededMemory.metadata,
+          "replacementMemoryRecordId"
+        ) === revisionReplacementMemory.id
+      },
+      {
+        label: "revision run includes replacement",
+        passed: revisionRunReplacementInclusions.length === 1
+      },
+      {
+        label: "revision run excludes superseded source from active retrieval",
+        passed: revisionRunSourceMemoryInclusions.length === 0
+      },
+      {
+        label: "revision run activation decision",
+        passed: revisionRunIncludedReplacementDecisionCount === 1
       }
     ], readbackError);
 
@@ -1195,6 +1363,17 @@ export const runBrainLoopSmokeCheck = async (
       consolidationRunMemoryExclusionCount: consolidationRunMemoryExclusions.length,
       consolidationRunExcludedMemoryDecisionCount,
       consolidationRunAntiMemoryConflictCount,
+      revisionMemoryCandidateId: revisionProposal.memoryCandidate.id,
+      revisionMemoryFeedbackEventId: revisionProposal.feedbackEvent.id,
+      revisionMemoryRecordId: revisionReplacementMemory.id,
+      revisionSupersededMemoryStatus: revisionSupersededMemory.status,
+      revisionRunTaskContractId: revisionCompile.taskContract.id,
+      revisionRunRetrievalRunId,
+      revisionRunContextAssemblyId: revisionCompile.contextAssembly.id,
+      revisionRunReplacementInclusionCount: revisionRunReplacementInclusions.length,
+      revisionRunIncludedReplacementDecisionCount,
+      revisionRunSourceMemoryInclusionCount: revisionRunSourceMemoryInclusions.length,
+      revisionRunSupersededSourceExcluded: revisionRunSourceMemoryInclusions.length === 0,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

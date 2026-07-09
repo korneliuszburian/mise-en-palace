@@ -476,14 +476,12 @@ const sourceRejectionsForClaims = async (
   sourceRepository: Partial<Pick<SourceRepository, "listSourceRejectionsForClaim">>,
   sourceClaims: readonly { id: string }[]
 ): Promise<SourceRejection[]> => {
-  const listSourceRejectionsForClaim = sourceRepository.listSourceRejectionsForClaim;
-
-  if (listSourceRejectionsForClaim === undefined) {
+  if (sourceRepository.listSourceRejectionsForClaim === undefined) {
     return [];
   }
 
   const rejections = await Promise.all(
-    sourceClaims.map((claim) => listSourceRejectionsForClaim(claim.id))
+    sourceClaims.map((claim) => sourceRepository.listSourceRejectionsForClaim?.(claim.id) ?? [])
   );
 
   return rejections.flat();

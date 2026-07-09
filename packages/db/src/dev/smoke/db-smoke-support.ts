@@ -275,6 +275,8 @@ export interface BrainLoopSmokeRowInput extends SmokeMarkerRowInput {
   feedbackDeltaId: string | undefined;
   nextContextAssemblyId: string | undefined;
   nextRetrievalRunId: string | undefined;
+  revisionContextAssemblyId: string | undefined;
+  revisionRetrievalRunId: string | undefined;
   retrievalRunId: string | undefined;
 }
 
@@ -283,6 +285,7 @@ export interface BrainLoopSmokeCleanupInput extends SmokeCleanupInput {
   downgradedRetrievalRunId: string | undefined;
   feedbackDeltaId: string | undefined;
   nextRetrievalRunId: string | undefined;
+  revisionRetrievalRunId: string | undefined;
   retrievalRunId: string | undefined;
 }
 
@@ -709,6 +712,7 @@ export const countBrainLoopSmokeMarkerRows = async (
   countOptionalSmokeContextSelectionRows(input.db, input.consolidationContextAssemblyId),
   countOptionalSmokeContextSelectionRows(input.db, input.nextContextAssemblyId),
   countOptionalSmokeContextSelectionRows(input.db, input.downgradedContextAssemblyId),
+  countOptionalSmokeContextSelectionRows(input.db, input.revisionContextAssemblyId),
   optionalSmokeCount(
     input.consolidationRetrievalRunId,
     (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
@@ -719,6 +723,10 @@ export const countBrainLoopSmokeMarkerRows = async (
   ),
   optionalSmokeCount(
     input.downgradedRetrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
+  optionalSmokeCount(
+    input.revisionRetrievalRunId,
     (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
   ),
   () => countSmokeRows(input.db, evidenceBundles, sql`${evidenceBundles.metadata}->>'smokeId' = ${input.marker}`),
@@ -1035,6 +1043,12 @@ export const cleanupBrainLoopSmokeRows = async (
     await input.db
       .delete(retrievalRuns)
       .where(eq(retrievalRuns.id, input.downgradedRetrievalRunId));
+  }
+
+  if (input.revisionRetrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.revisionRetrievalRunId));
   }
 };
 

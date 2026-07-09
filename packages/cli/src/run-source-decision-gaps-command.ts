@@ -150,12 +150,11 @@ const buildReport = async (input: {
 }): Promise<SourceDecisionGapsReport> => {
   const claims = await input.sourceRepository.listClaimsForProject(input.projectId, input.limit);
   const acceptedClaims = claims.filter((claim) => claim.status === "accepted");
-  const listSourceRejectionsForClaim = input.sourceRepository.listSourceRejectionsForClaim;
   const unadoptedClaims = await Promise.all(
     claims.filter((claim) => claim.status !== "accepted").map(async (claim) => {
-      const rejections = listSourceRejectionsForClaim === undefined
+      const rejections = input.sourceRepository.listSourceRejectionsForClaim === undefined
         ? []
-        : await listSourceRejectionsForClaim(claim.id);
+        : await input.sourceRepository.listSourceRejectionsForClaim(claim.id);
       const dispositionReason = rejections.at(0)?.reason;
       const explicitDisposition: UnadoptedSourceClaim["explicitDisposition"] =
         rejections.length > 0 ? "rejected" : "pending_review";

@@ -121,13 +121,11 @@ export const runSourceDecisionAdoptCommand = async (
   });
 
   try {
-    const createSourceDecision = databaseRuntime.sourceRepository.createSourceDecision;
-
-    if (createSourceDecision === undefined) {
+    if (databaseRuntime.sourceRepository.createSourceDecision === undefined) {
       throw new Error("SourceDecision persistence is unavailable in this database runtime");
     }
 
-    const sourceDecision = await createSourceDecision({
+    const sourceDecision = await databaseRuntime.sourceRepository.createSourceDecision({
       projectId: databaseRuntime.projectId,
       ...(decisionInput.sourceClaimId === undefined
         ? {}
