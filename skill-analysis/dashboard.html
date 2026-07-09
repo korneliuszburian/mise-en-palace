@@ -90,6 +90,9 @@
         border-radius: 8px;
         overflow: hidden;
       }
+      .utility-panel {
+        margin-top: 18px;
+      }
       .skills-header {
         padding: 14px;
         border-bottom: 1px solid var(--line);
@@ -99,7 +102,7 @@
       .skills-header p { font-size: 13px; }
       .skill-node { border-bottom: 1px solid var(--line); }
       .skill-node:last-child { border-bottom: 0; }
-      .skill-node summary {
+      .skill-node > summary {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -121,6 +124,17 @@
         padding: 5px 9px;
         font: inherit;
         cursor: pointer;
+      }
+      .skill-file {
+        border-top: 1px solid var(--line);
+      }
+      .skill-file summary {
+        padding: 9px 14px;
+        cursor: pointer;
+        color: var(--muted);
+        background: #f8fafc;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
       }
       pre {
         margin: 0;
@@ -326,6 +340,126 @@
         <article class="callout"><h2>3. Beads wayfinding</h2><p>Beads has dependencies, but needs explicit destination, frontier, fog, decisions-so-far, and one-ticket-per-session discipline.</p></article>
         <article class="callout"><h2>4. to-spec</h2><p>Large fuzzy work lacks a settled spec artifact between conversation and ticket slicing.</p></article>
       </section>
+      <section class="section utility-panel" aria-label="KRN skill utility">
+        <table>
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th>Po co istnieje</th>
+              <th>Kiedy uzywac</th>
+              <th>Realny zysk</th>
+              <th>Ryzyko</th>
+              <th>Decyzja</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><strong>activation-engine</strong><span>maker</span></td>
+            <td>Steruje wyborem kontekstu dla KRN: co aktywować, co odrzucić i kiedy jawnie abstainować.</td>
+            <td>Gdy zmieniamy retrieval, ranking, owner-file recall, budżet kontekstu, filtry zaufania albo selekcję memory/source.</td>
+            <td>Chroni loop przed prompt bloatem i losowym dociąganiem dokumentów, bo każda inkluzja musi mieć powód użycia.</td>
+            <td>Może stać się polityką opisaną w markdownu, jeśli nie jest podparta testami selekcji i exclusion records.</td>
+            <td>Keep as maker skill.</td>
+          </tr>
+          <tr>
+            <td><strong>beads</strong><span>router</span></td>
+            <td>Durable task graph dla dużego loopu: stan pracy, zależności, frontier, claim, close, follow-up.</td>
+            <td>Gdy praca ma przetrwać sesję, wymaga blockerów, równoległości, handoffu albo podziału na agent-sized issues.</td>
+            <td>Może zastąpić większość `to-tickets` i część `to-spec`, bo końcowym artefaktem i tak jest tracker.</td>
+            <td>Jeśli wrzucimy tu wszystko, stanie się overloaded routerem; potrzebuje jawnych trybów: triage, to-spec, to-tickets, wayfinding.</td>
+            <td>Keep, but split internally into explicit modes before adding separate planning skills.</td>
+          </tr>
+          <tr>
+            <td><strong>brain-store-schema</strong><span>maker</span></td>
+            <td>Pilnuje granic storage/migration dla temporal Memory Core.</td>
+            <td>Gdy zmieniamy Drizzle/Postgres schema, migracje, repo adapters, persistence, outbox albo job state.</td>
+            <td>Wymusza TypeScript/store discipline i rollback thinking przy zmianach, które trudno odkręcić.</td>
+            <td>Bez rzeczywistych migration/evidence gates może udawać safety zamiast go dowodzić.</td>
+            <td>Keep as maker skill.</td>
+          </tr>
+          <tr>
+            <td><strong>code-review</strong><span>checker</span></td>
+            <td>Niezależny checker dla diffu: standardy, spec fit, roadmap drift, smell baseline i proof gaps.</td>
+            <td>Po implementacji, przy PR/diff/review albo gdy trzeba odsiać test theater i shallow modules.</td>
+            <td>To jest nasz najmocniej pokryty Mattowy element; zawiera Fowler-style smells i rozdziela Standards od Spec.</td>
+            <td>Traci sens, jeśli ten sam agent ocenia własną zmianę bez świeżego kontekstu lub bez file:line evidence.</td>
+            <td>Keep; pair explicitly after maker work.</td>
+          </tr>
+          <tr>
+            <td><strong>codebase-design</strong><span>decision</span></td>
+            <td>Decyzje architektoniczne: gdzie jest granica modułu, czy interface jest deep, czy nazwa oddaje ownership.</td>
+            <td>Przy zmianach boundary, package seam, public API, refactorach i płytkich modułach.</td>
+            <td>Daje język do odrzucania speculative seams i adapter-chainów zanim wejdą do kodu.</td>
+            <td>Może być advice-only, jeśli nie kończy się konkretną decyzją, zmianą granicy albo follow-up Beadem.</td>
+            <td>Keep as decision skill; tie outputs to context/ADR/source decision.</td>
+          </tr>
+          <tr>
+            <td><strong>codex-adapter-plan</strong><span>maker</span></td>
+            <td>Przekłada KRN DecisionPacket/harness output na bounded Codex execution brief.</td>
+            <td>Gdy zmieniamy adapter do Codexa, proof boundaries, context shape albo non-mutating execution brief.</td>
+            <td>Chroni przed tym, żeby adapter zaczął być ukrytą pamięcią/runtime policy zamiast rendererem decyzji.</td>
+            <td>Nisza; jeśli nie ma aktywnych adapter zmian, będzie rzadko używany.</td>
+            <td>Keep as specialized maker skill.</td>
+          </tr>
+          <tr>
+            <td><strong>domain-modeling</strong><span>decision</span></td>
+            <td>Pilnuje słownika, nazw domenowych i tego, żeby pojęcia miały jednego właściciela.</td>
+            <td>Gdy pojawia się niejasne nazewnictwo: brain, memory, source, activation, DecisionPacket, retained knowledge itd.</td>
+            <td>To naturalne miejsce na Mattową logikę `CONTEXT.md`: rozwiąż termin raz i zapisz decyzję poza czatem.</td>
+            <td>Obecnie bardziej hamuje złe nazwy niż prowadzi do widocznego context artifactu.</td>
+            <td>Keep; extend with grill/context capture behavior.</td>
+          </tr>
+          <tr>
+            <td><strong>evidence-review-loop</strong><span>checker</span></td>
+            <td>Checker dowodów po wykonaniu pracy: co jest proof, co non-proof, jakie ryzyko i feedback delta.</td>
+            <td>Po większych runach, gdy trzeba rozdzielić realną weryfikację od deklaracji w final answer.</td>
+            <td>Buduje feedback loop i memory/source/skill candidates bez polegania na opowieści agenta.</td>
+            <td>Jeśli używany jako końcowa checklista przez maker agent, osłabia maker/checker separation.</td>
+            <td>Keep as checker; invoke deliberately after implementation.</td>
+          </tr>
+          <tr>
+            <td><strong>handoff-compact</strong><span>router</span></td>
+            <td>Zapisuje stan pracy po długiej sesji: objective, issue, commit/push/CI, decyzje, blokery, next action.</td>
+            <td>Przed compaction/resume/pause/transfer albo przy końcu większego taska.</td>
+            <td>Zmniejsza utratę stanu w wielkim loopie, gdzie model zapomina, a repo/tracker pamięta.</td>
+            <td>Może dublować Beads, jeśli zamiast compact handoff zacznie być osobnym task ledgerem.</td>
+            <td>Keep as router/state skill.</td>
+          </tr>
+          <tr>
+            <td><strong>source-to-decision</strong><span>decision</span></td>
+            <td>Przerabia źródła na decyzje: source -&gt; mechanism -&gt; KRN implication -&gt; decision/rejection.</td>
+            <td>Gdy architektura, skill, policy, MCP, eval albo TypeScript decision zależy od docs/papers/practitioner writing.</td>
+            <td>Najlepsza obrona przed research summary bez konsekwencji w systemie.</td>
+            <td>Może być za szeroki: research legwork, decyzja, falsifier i knowledge promotion w jednym miejscu.</td>
+            <td>Keep for now; audit whether pure research should split out.</td>
+          </tr>
+          <tr>
+            <td><strong>target-repo-testing</strong><span>checker</span></td>
+            <td>Checker/protocol dla pracy na target repo: dirty state, write authority, proof/non-proof, handoff.</td>
+            <td>Gdy KRN inspektuje, testuje lub naprawia zewnętrzne repo przez harness.</td>
+            <td>Chroni przed fałszywym proofem i przypadkowym mutowaniem cudzego stanu.</td>
+            <td>Może być zbyt duży i mieszać setup, test, repair oraz handoff.</td>
+            <td>Keep, but watch for sequence split if agents rush through phases.</td>
+          </tr>
+          <tr>
+            <td><strong>tdd</strong><span>maker</span></td>
+            <td>Maker loop dla zamierzonego zachowania: red -&gt; green -&gt; refactor przy właściwym public seam.</td>
+            <td>Przy bugfixach z dobrym seamem i nowych zachowaniach, które da się sfalsyfikować testem.</td>
+            <td>Najkrótszy feedback loop dla implementacji; typowo Mattowy rdzeń pracy.</td>
+            <td>Nie zastępuje `diagnosing-bugs`, bo TDD nie wymusza najpierw red-capable repro dla nieznanej usterki.</td>
+            <td>Keep; add separate diagnosing-bugs.</td>
+          </tr>
+          <tr>
+            <td><strong>typescript-type-safety</strong><span>maker</span></td>
+            <td>Pilnuje TypeScript-first granic: unknown narrowing, public types, validators, any/cast discipline.</td>
+            <td>Przy TS source, API boundaries, CLI/MCP inputs, env/file/fetch data, generics i configu typecheck.</td>
+            <td>Skraca feedback loop przez typy i zapobiega oszukiwaniu kompilatora dla szybkiego green.</td>
+            <td>Może być policy reminderem, jeśli nie kończy się typecheckiem albo konkretnym boundary fixem.</td>
+            <td>Keep as maker skill.</td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
       <section class="skills-panel" aria-label="KRN skill files">
         <div class="skills-header">
           <h2>KRN Skills Tree</h2>
@@ -340,7 +474,9 @@
               </span>
               <button type="button" data-copy="activation-engine">Copy</button>
             </summary>
-            <pre id="skill-activation-engine"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-activation-engine-SKILL-md"><code>---
 name: activation-engine
 description: Use when implementing or changing KRN context selection, retrieval candidate ranking, memory/source activation, owner-file/read-model recall, context exclusions, trust filters, temporal filters, abstention, or context ROI behavior.
 ---
@@ -417,6 +553,7 @@ as abstention or missing-read-model evidence.
 
 Tests should prove high-signal inclusion, invalid/stale exclusion, source-safety
 exclusion, budget behavior, and abstention for weak context.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -426,7 +563,111 @@ exclusion, budget behavior, and abstention for weak context.</code></pre>
               </span>
               <button type="button" data-copy="beads">Copy</button>
             </summary>
-            <pre id="skill-beads"><code>---
+            <details class="skill-file" open>
+              <summary>agents/openai.yaml</summary>
+              <pre id="skill-beads-agents-openai-yaml"><code>interface:
+  display_name: &quot;Beads&quot;
+  short_description: &quot;Project task tracking with bd&quot;
+  default_prompt: &quot;Use $beads to inspect ready work and manage durable project tasks.&quot;</code></pre>
+            </details><details class="skill-file" open>
+              <summary>references/planning-modes.md</summary>
+              <pre id="skill-beads-references-planning-modes-md"><code># Beads Planning Modes
+
+Use this reference when Beads is being used for planning, not only claim/close
+task tracking.
+
+## to-spec Mode
+
+Use when a conversation or rough idea needs a settled build artifact before
+ticket slicing.
+
+Output shape:
+
+```md
+## Problem Statement
+
+## Solution
+
+## Operator/User Stories
+
+## Implementation Decisions
+
+## Testing Decisions
+
+## Out of Scope
+
+## Open Questions
+```
+
+Stop when the spec is specific enough to slice into agent-sized tickets without
+inventing requirements.
+
+## to-tickets Mode
+
+Use when a spec or plan is ready to become Beads issues.
+
+Each ticket must include:
+
+```md
+## What to build
+
+## Acceptance criteria
+
+## Proof / non-proof
+
+## Blocked by
+```
+
+Rules:
+
+- Prefer tracer-bullet vertical slices.
+- Each ticket should fit one fresh agent context.
+- Use native Beads dependency edges for blockers.
+- The frontier is `bd ready`.
+- Use expand-contract for wide refactors that cannot land as vertical slices.
+
+Stop when every ticket has acceptance criteria, proof boundaries, and blocker
+edges.
+
+## wayfinding Mode
+
+Use when the destination is clear enough to name, but the route is still foggy.
+This is not implementation planning. It is decision discovery.
+
+Map issue shape:
+
+```md
+## Destination
+
+## Notes
+
+## Decisions so far
+
+## Not yet specified
+
+## Out of scope
+```
+
+Child issue types:
+
+- `research`: external or local investigation;
+- `prototype`: concrete throwaway artifact to make a decision easier;
+- `grilling`: human-in-the-loop question;
+- `task`: manual work required before a decision can be made.
+
+Rules:
+
+- Work one ticket per fresh context.
+- Claim before work.
+- Record the answer in the ticket, then close it.
+- Add newly visible tickets only after the current answer makes them specific.
+- Keep the map as an index; detailed answers live in child tickets.
+
+Stop when the route to the destination is clear or the remaining fog has become
+specific tickets.</code></pre>
+            </details><details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-beads-SKILL-md"><code>---
 name: beads
 description: Use when working in a repository that uses bd or Beads for durable project task tracking, issue dependencies, blocker management, multi-session handoff, or shared work memory. Trigger when the user asks to find ready work, claim or close tasks, create follow-up work, inspect blockers, recover project context, or choose between local planning and persistent project tracking.
 ---
@@ -503,6 +744,9 @@ rtk bd close &lt;id&gt; --reason=&quot;Completed&quot;
 When turning a roadmap slice, audit, spec, or conversation into Beads, create
 Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
 planning artifact.
+
+For `to-spec`, `to-tickets`, or `wayfinding` planning, read
+`references/planning-modes.md` before creating or rewriting issues.
 
 Use tracer-bullet issues for product work:
 
@@ -592,6 +836,7 @@ rtk git diff --check
 ```
 
 If Beads work changes package manifests or generated skills, also rely on the repository CI skill invariants before claiming the integration is complete.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -601,7 +846,9 @@ If Beads work changes package manifests or generated skills, also rely on the re
               </span>
               <button type="button" data-copy="brain-store-schema">Copy</button>
             </summary>
-            <pre id="skill-brain-store-schema"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-brain-store-schema-SKILL-md"><code>---
 name: brain-store-schema
 description: Use when designing or changing KRN Drizzle/Postgres schema, migrations, repository adapters, memory/source/run ledgers, retrieval tables, outbox events, or worker job persistence with unknown narrowing, migration evidence, and rollback risk.
 ---
@@ -656,6 +903,7 @@ narrowing, rollback risk, and verification commands are all explicit.
 Run `rtk proxy pnpm typecheck`, relevant tests, `rtk proxy pnpm --filter
 @krn/db db:generate` when schema changes, `rtk proxy pnpm --filter @krn/db
 db:check`, SQL inspection, and `rtk git diff --check`.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -665,7 +913,9 @@ db:check`, SQL inspection, and `rtk git diff --check`.</code></pre>
               </span>
               <button type="button" data-copy="code-review">Copy</button>
             </summary>
-            <pre id="skill-code-review"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-code-review-SKILL-md"><code>---
 name: code-review
 description: Use when reviewing KRN diffs, PRs, large local changes, migration slices, cleanup slices, or architecture/naming changes for bugs, spec drift, roadmap drift, test theater, speculative generality, shallow modules, and Fowler-style code smells.
 ---
@@ -722,6 +972,8 @@ Flag these as judgment calls unless a repo rule makes them hard blockers:
 - Do not praise green tests as proof of product readiness.
 - Reject reviewer claims contradicted by current code or verification output.
 - If no issue is found, say so and name residual test or proof gaps.
+- For PR-comment back-and-forth review, use
+  `templates/pr-review-comment.md`.
 
 ## Output
 
@@ -746,6 +998,49 @@ issue, current roadmap/agent rules, and any command output the change claims.
 - Do not rewrite or fix the diff during review.
 - Do not merge Standards and Spec findings into one vague verdict.
 - Do not treat green tests as proof that product behavior is correct.</code></pre>
+            </details><details class="skill-file" open>
+              <summary>templates/pr-review-comment.md</summary>
+              <pre id="skill-code-review-templates-pr-review-comment-md"><code># PR Review Comment Template
+
+Use this shape for future PR-comment back-and-forth between a checker agent and
+Codex.
+
+```md
+## Finding
+
+&lt;bug, risk, spec drift, smell, or proof gap&gt;
+
+## Evidence
+
+- File/line:
+- Observed behavior or diff:
+- Relevant convention/source:
+
+## Requested Change
+
+&lt;smallest change or evidence needed&gt;
+
+## Stop Condition
+
+&lt;what would close this thread&gt;
+```
+
+## Codex Response Shape
+
+```md
+## Response
+
+&lt;accepted / rejected with evidence / needs product decision&gt;
+
+## Change
+
+&lt;commit, diff summary, or why no code changed&gt;
+
+## Proof
+
+&lt;command output or explicit non-proof boundary&gt;
+```</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -755,7 +1050,9 @@ issue, current roadmap/agent rules, and any command output the change claims.
               </span>
               <button type="button" data-copy="codebase-design">Copy</button>
             </summary>
-            <pre id="skill-codebase-design"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-codebase-design-SKILL-md"><code>---
 name: codebase-design
 description: Use when changing KRN architecture, package seams, public interfaces, adapters, runtime/store boundaries, naming, or refactors where the risk is shallow modules, pass-through layers, duplicate read models, speculative seams, or unclear test surfaces.
 ---
@@ -833,6 +1130,7 @@ public terms when relevant.
 - Do not preserve bad names behind compatibility aliases unless a staged rollout
   is required.
 - Do not use prose/topology tests as design proof.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -842,7 +1140,9 @@ public terms when relevant.
               </span>
               <button type="button" data-copy="codex-adapter-plan">Copy</button>
             </summary>
-            <pre id="skill-codex-adapter-plan"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-codex-adapter-plan-SKILL-md"><code>---
 name: codex-adapter-plan
 description: Use when rendering KRN DecisionPacket or harness output into Codex-facing execution briefs with bounded context, evidence expectations, proof boundaries, and non-mutating adapter behavior.
 ---
@@ -900,6 +1200,7 @@ core packages.
 
 Run typecheck/tests, verify the changed brief output, and search that
 `packages/core` has no Codex adapter imports or Codex-specific runtime behavior.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -909,16 +1210,84 @@ Run typecheck/tests, verify the changed brief output, and search that
               </span>
               <button type="button" data-copy="domain-modeling">Copy</button>
             </summary>
-            <pre id="skill-domain-modeling"><code>---
+            <details class="skill-file" open>
+              <summary>references/adr-format.md</summary>
+              <pre id="skill-domain-modeling-references-adr-format-md"><code># ADR Format
+
+Use this format when a KRN operating or architecture decision should survive a
+fresh agent context.
+
+ADRs live in `docs/adr/` and use sequential numbering:
+
+```txt
+0001-short-slug.md
+0002-short-slug.md
+```
+
+## Template
+
+```md
+# Short title
+
+One to three sentences: what was the context, what did we decide, and why.
+```
+
+## Optional Sections
+
+Add only when they carry real information:
+
+- `Status: proposed | accepted | deprecated | superseded by ADR-NNNN`
+- `Considered Options`
+- `Consequences`
+- `Consumer`
+- `Falsifier`
+- `Verification`
+
+## Creation Test
+
+Create an ADR only when all are true:
+
+1. hard to reverse;
+2. surprising without context;
+3. a real trade-off was made;
+4. a future agent is likely to rediscover or undo the decision.</code></pre>
+            </details><details class="skill-file" open>
+              <summary>references/context-format.md</summary>
+              <pre id="skill-domain-modeling-references-context-format-md"><code># Context Format
+
+Use this format when `domain-modeling` resolves shared KRN vocabulary.
+
+```md
+# KRN Context
+
+One or two sentences describing what this context owns.
+
+## Language
+
+**Term**:
+One or two sentences defining what the term is in this repository.
+_Avoid_: rejected synonym, overloaded phrase
+```
+
+## Rules
+
+- Add only KRN-specific operating or domain terms.
+- Define what the term is, not every place it appears.
+- Prefer one canonical word and list rejected alternatives under `_Avoid_`.
+- Do not add generic programming concepts.
+- Do not use `CONTEXT.md` as a spec, plan, task list, or runtime memory.</code></pre>
+            </details><details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-domain-modeling-SKILL-md"><code>---
 name: domain-modeling
 description: Use when changing or judging KRN terminology, public names, concept ownership, domain vocabulary, CLI/API wording, roadmap wording, or when the user flags logical divergence in names such as brain, memory, knowledge, source, activation, DecisionPacket, retained knowledge, pattern, card, normalized, final, or new.
 ---
 
 # Domain Modeling
 
-Keep KRN&#39;s language coherent across roadmap, Beads, code, CLI/API surfaces, and
-store-backed knowledge. Resolve domain terms by changing the owning boundary,
-not by creating another glossary file.
+Keep KRN&#39;s language coherent across `CONTEXT.md`, `CONVENTIONS.md`, roadmap,
+Beads, code, CLI/API surfaces, and store-backed knowledge. Resolve domain terms
+by updating the smallest durable owner.
 
 ## Trigger
 
@@ -929,6 +1298,8 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 
 1. Pin the term or concept under dispute.
 2. Map the current path:
+   - `CONTEXT.md` for shared operating vocabulary;
+   - `CONVENTIONS.md` for skill/artifact rules;
    - `KRN_ROADMAP.md` for product architecture language;
    - the active Beads issue for current work scope;
    - exported types, CLI commands, readbacks, schemas, and tests that expose the term;
@@ -942,7 +1313,9 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 4. Choose one canonical term at the highest honest boundary.
 5. Update the owner:
    - code export when the term is a runtime/domain concept;
-   - `KRN_ROADMAP.md` only for compact architecture truth;
+   - `CONTEXT.md` when the term is shared operating vocabulary;
+   - `CONVENTIONS.md` when the term defines a skill/artifact rule;
+   - `KRN_ROADMAP.md` only for compact product or architecture direction;
    - Beads for follow-up work or dependency edges;
    - store-backed memory/source/eval candidates when the term must be learned at runtime.
 6. Remove stale public terms in the same slice when safe. Do not hide them behind
@@ -963,13 +1336,22 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 - Keep technical uses of `pattern` when they are literal regex/path/search
   patterns, not retained brain knowledge.
 
+## Context And ADR
+
+- For context format, read `references/context-format.md`.
+- For ADR format, read `references/adr-format.md`.
+- Update `CONTEXT.md` immediately when a shared operating term is resolved.
+- Update `CONVENTIONS.md` when the decision changes skill shape, artifact
+  ownership, planning modes, review rules, or debugging rules.
+- Offer an ADR only when the decision is hard to reverse, surprising without
+  context, and the result of a real trade-off.
+- Keep ADRs compact and link the consumer, falsifier, and verification path when
+  those are not obvious from the decision text.
+
 ## Forbidden
 
-- Do not create `CONTEXT.md`, `CONVENTIONS.md`, ADR folders, glossary docs, or
-  markdown runbooks as a default authority surface.
-- If an ADR-like decision is truly needed, keep it compact and require the
-  roadmap Artifact Contract: source, mechanism, KRN implication,
-  decision/rejection, owner, consumer, falsifier, and verification.
+- Do not use `CONTEXT.md`, `CONVENTIONS.md`, ADRs, or markdown runbooks as task
+  ledgers, runtime memory, or substitutes for implemented behavior.
 - Do not preserve bad exported names with local aliases.
 - Do not rename storage details into product terms when only repository plumbing
   is involved.
@@ -1015,6 +1397,7 @@ type/behavior check prove the rejected vocabulary is not still active.
 
 Verify by grepping rejected terms and running the smallest type/behavior checks
 that touch the renamed or re-owned boundary.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1024,7 +1407,9 @@ that touch the renamed or re-owned boundary.</code></pre>
               </span>
               <button type="button" data-copy="evidence-review-loop">Copy</button>
             </summary>
-            <pre id="skill-evidence-review-loop"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-evidence-review-loop-SKILL-md"><code>---
 name: evidence-review-loop
 description: Use when capturing KRN execution evidence with command provenance, proof/non-proof boundaries, review risk, feedback deltas, or memory/source/skill/policy/eval candidates after a run.
 ---
@@ -1100,6 +1485,7 @@ remains, and how to roll back.
 
 For persisted same-run loops, evidence must also show that observe completed
 before reflect, or explicitly mark reflection output as sequencing-weak.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1109,7 +1495,9 @@ before reflect, or explicitly mark reflection output as sequencing-weak.</code><
               </span>
               <button type="button" data-copy="handoff-compact">Copy</button>
             </summary>
-            <pre id="skill-handoff-compact"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-handoff-compact-SKILL-md"><code>---
 name: handoff-compact
 description: Use when Codex must preserve current objective, active Beads task, verified commit/push/CI state, decisions, changed files, blockers, context selectors, and next action after meaningful work, before auto-compaction, resume, pause, or transfer of a KRN task.
 ---
@@ -1182,6 +1570,7 @@ unverified work for pushed or CI-proven work.
 A new Codex thread should be able to continue the next action without broad
 reread, without losing the active Beads task, and without repeating
 already-verified commit/push/CI work.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1191,7 +1580,9 @@ already-verified commit/push/CI work.</code></pre>
               </span>
               <button type="button" data-copy="source-to-decision">Copy</button>
             </summary>
-            <pre id="skill-source-to-decision"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-source-to-decision-SKILL-md"><code>---
 name: source-to-decision
 description: Use when Codex cites OpenAI docs, Cookbook examples, papers, practitioner writing, competitor docs, local repo evidence, or user-provided material to justify KRN architecture, policy, skill, memory, context, eval, MCP, hook, subagent, or TypeScript decisions with a consumer and falsifier.
 ---
@@ -1421,6 +1812,7 @@ usefulness feedback with a proof/non-proof boundary.
 Stop when every used source has a mechanism, KRN implication, decision or
 rejection, consumer, falsifier, `does_not_prove`, and usefulness closure or a
 bounded reason usefulness was not measured.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1430,7 +1822,15 @@ bounded reason usefulness was not measured.</code></pre>
               </span>
               <button type="button" data-copy="target-repo-testing">Copy</button>
             </summary>
-            <pre id="skill-target-repo-testing"><code>---
+            <details class="skill-file" open>
+              <summary>agents/openai.yaml</summary>
+              <pre id="skill-target-repo-testing-agents-openai-yaml"><code>interface:
+  display_name: &quot;Target Repo Testing&quot;
+  short_description: &quot;Run KRN target-repo trials without corrupting living checkouts.&quot;
+  default_prompt: &quot;Use $target-repo-testing to classify target repo testing mode, dirty state, allowed writes, evidence, and stop conditions before running target commands.&quot;</code></pre>
+            </details><details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-target-repo-testing-SKILL-md"><code>---
 name: target-repo-testing
 description: Use when Codex is asked to inspect, test, initialize, plan, verify, or repair a target repository through KRN with explicit mode, dirty-state, write-authority, proof/non-proof, and handoff boundaries, especially when the target repo may be dirty, active, external, headless, writable, or used as evidence for second-operator/internal-alpha readiness.
 ---
@@ -1632,6 +2032,7 @@ condensation_decision:
   current task explicitly allows target writes.
 - Do not treat observation-only output as permission to repair.
 - Do not use a dirty target as clean evidence without recording dirty state.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1641,7 +2042,9 @@ condensation_decision:
               </span>
               <button type="button" data-copy="tdd">Copy</button>
             </summary>
-            <pre id="skill-tdd"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-tdd-SKILL-md"><code>---
 name: tdd
 description: Use when adding or changing KRN tests for runtime behavior, parser boundaries, migrations, source/memory authority, DecisionPacket selection, feedback effects, or bug fixes that need a red-green falsifier; do not use for prose, topology, command-list, snapshot, or ceremony tests.
 ---
@@ -1741,6 +2144,7 @@ repo prose or ceremony.
 Consumer: Codex sessions that add or change tests.
 Falsifier: a test added under this skill only freezes prose/topology or passes
 without observing the intended behavior.</code></pre>
+            </details>
           </details>
           <details class="skill-node">
             <summary>
@@ -1750,7 +2154,9 @@ without observing the intended behavior.</code></pre>
               </span>
               <button type="button" data-copy="typescript-type-safety">Copy</button>
             </summary>
-            <pre id="skill-typescript-type-safety"><code>---
+            <details class="skill-file" open>
+              <summary>SKILL.md</summary>
+              <pre id="skill-typescript-type-safety-SKILL-md"><code>---
 name: typescript-type-safety
 description: Enforce KRN TypeScript boundary discipline. Use for TypeScript source, tsconfig, public exported types, validators, JSON/fetch/file/env/CLI/MCP inputs, generics, casts, unknown narrowing, any usage, double assertions, ts-reset decisions, or fixes that might weaken type safety to move faster.
 ---
@@ -1823,6 +2229,7 @@ typecheck` passes or is explicitly unavailable.
 
 The final diff should preserve strict boundaries and include a typecheck result
 or an explicit reason typecheck is unavailable.</code></pre>
+            </details>
           </details>
       </section>
     </main>
@@ -1831,9 +2238,10 @@ or an explicit reason typecheck is unavailable.</code></pre>
         button.addEventListener("click", async (event) => {
           event.preventDefault();
           const name = button.getAttribute("data-copy");
-          const source = document.getElementById("skill-" + name);
-          if (!source) return;
-          await navigator.clipboard.writeText(source.innerText);
+          const node = button.closest(".skill-node");
+          if (!node) return;
+          const sources = Array.from(node.querySelectorAll("pre")).map((pre) => pre.innerText);
+          await navigator.clipboard.writeText(sources.join("\n\n"));
           const original = button.innerText;
           button.innerText = "Copied";
           window.setTimeout(() => { button.innerText = original; }, 1200);

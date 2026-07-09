@@ -30,5 +30,5 @@ Use when Codex is asked to inspect, test, initialize, plan, verify, or repair a 
 
 ## Reference Files
 
-- _None._
+- agents/openai.yaml
 

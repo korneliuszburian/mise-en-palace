@@ -12,9 +12,11 @@ memory substrate.
 ## Start
 
 1. Read `AGENTS.md`.
-2. Read `KRN_ROADMAP.md`.
-3. Use Beads for active work.
-4. Load repo-local skills only when their trigger matches the task.
+2. Read `CONTEXT.md` and `CONVENTIONS.md` when changing skill behavior,
+   terminology, artifacts, or planning flow.
+3. Read `KRN_ROADMAP.md` when product or architecture direction matters.
+4. Use Beads for active work.
+5. Load repo-local skills only when their trigger matches the task.
 
 ## Operating Loop
 
@@ -32,8 +34,9 @@ Beads issue
 
 Codex edits code. KRN supplies governed context and records whether that context
 helped. Repo-local skills are operational protocols for repeated work; they are
-not runtime memory or product architecture. Their contract lives in
-`KRN_ROADMAP.md` under Artifact Contract.
+not runtime memory or product architecture. Their stable operating contract lives
+in `CONVENTIONS.md`; shared language lives in `CONTEXT.md`; product direction
+lives in `KRN_ROADMAP.md`.
 
 External methods and research enter only through source-to-decision: source,
 mechanism, KRN implication, decision or rejection, consumer, falsifier, and
@@ -45,7 +48,7 @@ Repo-local skills live in `.agents/skills`. They are versioned operating
 protocols for repeated KRN work, not runtime memory, broad docs, or architecture
 by themselves.
 
-The skill/artifact contract is defined in `KRN_ROADMAP.md`. Keep README as a
+The skill/artifact contract is defined in `CONVENTIONS.md`. Keep README as a
 compact onboarding surface, not a second source of product truth. External
 methods such as Matt Pocock-style skills and loop engineering enter KRN only
 through source-to-decision and only as mechanisms with a current consumer and
@@ -53,6 +56,8 @@ falsifier.
 
 ## Current Truth
 
+- Shared language: `CONTEXT.md`.
+- Skill and artifact conventions: `CONVENTIONS.md`.
 - Product direction: `KRN_ROADMAP.md`.
 - Operating rules: `AGENTS.md`.
 - Durable task graph: Beads.

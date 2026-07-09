@@ -24,5 +24,5 @@ Diagnosis loop for hard bugs and performance regressions. Use when the user says
 
 ## Reference Files
 
-- _None._
+- scripts/hitl-loop.template.sh
 

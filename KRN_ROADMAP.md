@@ -611,13 +611,18 @@ maker/checker separation, durable task state, worktree/PR isolation for larger
 or quality-critical slices when the operator wants it, and explicit stop
 conditions. This does not prove those external sources are product authority.
 
-ADR-like records are rare. Prefer Beads for task state, source decisions for
+Skill operating artifacts are allowed when they make repeated agent work more
+predictable. `CONTEXT.md` owns shared vocabulary, `CONVENTIONS.md` owns skill
+and artifact rules, and `docs/adr/` owns rare hard-to-reverse decisions. These
+files must stay compact and must not become runtime memory, task state,
+scratchpads, or a substitute for implemented behavior.
+
+ADR-like records remain rare. Prefer Beads for task state, source decisions for
 evidence-backed knowledge, store-backed memory/source/eval candidates for
-runtime learning, and `KRN_ROADMAP.md` for compact architecture truth. Create a
-separate ADR only when the decision is hard to reverse, surprising without
-context, has a current owner, has a runtime consumer, and has a falsifier. Do
-not create an ADR forest, `CONTEXT.md`, `CONVENTIONS.md`, or markdown memory
-ledger as a substitute for implemented behavior.
+runtime learning, and `KRN_ROADMAP.md` for compact product and architecture
+direction. Create a separate ADR only when the decision is hard to reverse,
+surprising without context, has a current owner, has a consumer, and has a
+falsifier.
 
 ## External Review Rule
 

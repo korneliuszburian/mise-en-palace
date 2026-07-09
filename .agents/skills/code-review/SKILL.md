@@ -55,6 +55,8 @@ Flag these as judgment calls unless a repo rule makes them hard blockers:
 - Do not praise green tests as proof of product readiness.
 - Reject reviewer claims contradicted by current code or verification output.
 - If no issue is found, say so and name residual test or proof gaps.
+- For PR-comment back-and-forth review, use
+  `templates/pr-review-comment.md`.
 
 ## Output
 

@@ -4,7 +4,7 @@
 - Path: `.agents/skills/beads/SKILL.md`
 - Role: router
 - Invocation: model-invoked
-- Lines: 167
+- Lines: 170
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -29,5 +29,6 @@ Use when working in a repository that uses bd or Beads for durable project task 
 
 ## Reference Files
 
-- _None._
+- agents/openai.yaml
+- references/planning-modes.md
 

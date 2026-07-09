@@ -76,6 +76,9 @@ When turning a roadmap slice, audit, spec, or conversation into Beads, create
 Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
 planning artifact.
 
+For `to-spec`, `to-tickets`, or `wayfinding` planning, read
+`references/planning-modes.md` before creating or rewriting issues.
+
 Use tracer-bullet issues for product work:
 
 - each issue delivers one narrow, verifiable path through the affected runtime

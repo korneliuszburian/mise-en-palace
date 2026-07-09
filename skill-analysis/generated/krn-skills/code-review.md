@@ -4,7 +4,7 @@
 - Path: `.agents/skills/code-review/SKILL.md`
 - Role: checker
 - Invocation: model-invoked
-- Lines: 82
+- Lines: 84
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -27,5 +27,5 @@ Use when reviewing KRN diffs, PRs, large local changes, migration slices, cleanu
 
 ## Reference Files
 
-- _None._
+- templates/pr-review-comment.md
 

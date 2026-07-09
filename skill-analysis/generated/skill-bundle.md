@@ -1,33 +1,38 @@
 # KRN Skills Bundle
 
 This is a repomix-style single document for reading, searching, and copying the
-current repo-local KRN skills. It is generated from `.agents/skills/*/SKILL.md`.
+current repo-local KRN skills. It is generated from `.agents/skills/**`.
 
 ## File Index
 
 | # | Skill | Role | File |
 |---|---|---|---|
 | 1 | activation-engine | maker | `.agents/skills/activation-engine/SKILL.md` |
-| 2 | beads | router | `.agents/skills/beads/SKILL.md` |
-| 3 | brain-store-schema | maker | `.agents/skills/brain-store-schema/SKILL.md` |
-| 4 | code-review | checker | `.agents/skills/code-review/SKILL.md` |
-| 5 | codebase-design | decision | `.agents/skills/codebase-design/SKILL.md` |
-| 6 | codex-adapter-plan | maker | `.agents/skills/codex-adapter-plan/SKILL.md` |
-| 7 | domain-modeling | decision | `.agents/skills/domain-modeling/SKILL.md` |
-| 8 | evidence-review-loop | checker | `.agents/skills/evidence-review-loop/SKILL.md` |
-| 9 | handoff-compact | router | `.agents/skills/handoff-compact/SKILL.md` |
-| 10 | source-to-decision | decision | `.agents/skills/source-to-decision/SKILL.md` |
-| 11 | target-repo-testing | checker | `.agents/skills/target-repo-testing/SKILL.md` |
-| 12 | tdd | maker | `.agents/skills/tdd/SKILL.md` |
-| 13 | typescript-type-safety | maker | `.agents/skills/typescript-type-safety/SKILL.md` |
+| 2 | beads | router | `.agents/skills/beads/agents/openai.yaml` |
+| 3 | beads | router | `.agents/skills/beads/references/planning-modes.md` |
+| 4 | beads | router | `.agents/skills/beads/SKILL.md` |
+| 5 | brain-store-schema | maker | `.agents/skills/brain-store-schema/SKILL.md` |
+| 6 | code-review | checker | `.agents/skills/code-review/SKILL.md` |
+| 7 | code-review | checker | `.agents/skills/code-review/templates/pr-review-comment.md` |
+| 8 | codebase-design | decision | `.agents/skills/codebase-design/SKILL.md` |
+| 9 | codex-adapter-plan | maker | `.agents/skills/codex-adapter-plan/SKILL.md` |
+| 10 | domain-modeling | decision | `.agents/skills/domain-modeling/references/adr-format.md` |
+| 11 | domain-modeling | decision | `.agents/skills/domain-modeling/references/context-format.md` |
+| 12 | domain-modeling | decision | `.agents/skills/domain-modeling/SKILL.md` |
+| 13 | evidence-review-loop | checker | `.agents/skills/evidence-review-loop/SKILL.md` |
+| 14 | handoff-compact | router | `.agents/skills/handoff-compact/SKILL.md` |
+| 15 | source-to-decision | decision | `.agents/skills/source-to-decision/SKILL.md` |
+| 16 | target-repo-testing | checker | `.agents/skills/target-repo-testing/agents/openai.yaml` |
+| 17 | target-repo-testing | checker | `.agents/skills/target-repo-testing/SKILL.md` |
+| 18 | tdd | maker | `.agents/skills/tdd/SKILL.md` |
+| 19 | typescript-type-safety | maker | `.agents/skills/typescript-type-safety/SKILL.md` |
 
 ## Files
 
 ## 1. .agents/skills/activation-engine/SKILL.md
 
-name: activation-engine
+skill: activation-engine
 role: maker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -109,11 +114,124 @@ Tests should prove high-signal inclusion, invalid/stale exclusion, source-safety
 exclusion, budget behavior, and abstention for weak context.
 ```
 
-## 2. .agents/skills/beads/SKILL.md
+## 2. .agents/skills/beads/agents/openai.yaml
 
-name: beads
+skill: beads
 role: router
-invocation: model-invoked
+
+```markdown
+interface:
+  display_name: "Beads"
+  short_description: "Project task tracking with bd"
+  default_prompt: "Use $beads to inspect ready work and manage durable project tasks."
+```
+
+## 3. .agents/skills/beads/references/planning-modes.md
+
+skill: beads
+role: router
+
+```markdown
+# Beads Planning Modes
+
+Use this reference when Beads is being used for planning, not only claim/close
+task tracking.
+
+## to-spec Mode
+
+Use when a conversation or rough idea needs a settled build artifact before
+ticket slicing.
+
+Output shape:
+
+```md
+## Problem Statement
+
+## Solution
+
+## Operator/User Stories
+
+## Implementation Decisions
+
+## Testing Decisions
+
+## Out of Scope
+
+## Open Questions
+```
+
+Stop when the spec is specific enough to slice into agent-sized tickets without
+inventing requirements.
+
+## to-tickets Mode
+
+Use when a spec or plan is ready to become Beads issues.
+
+Each ticket must include:
+
+```md
+## What to build
+
+## Acceptance criteria
+
+## Proof / non-proof
+
+## Blocked by
+```
+
+Rules:
+
+- Prefer tracer-bullet vertical slices.
+- Each ticket should fit one fresh agent context.
+- Use native Beads dependency edges for blockers.
+- The frontier is `bd ready`.
+- Use expand-contract for wide refactors that cannot land as vertical slices.
+
+Stop when every ticket has acceptance criteria, proof boundaries, and blocker
+edges.
+
+## wayfinding Mode
+
+Use when the destination is clear enough to name, but the route is still foggy.
+This is not implementation planning. It is decision discovery.
+
+Map issue shape:
+
+```md
+## Destination
+
+## Notes
+
+## Decisions so far
+
+## Not yet specified
+
+## Out of scope
+```
+
+Child issue types:
+
+- `research`: external or local investigation;
+- `prototype`: concrete throwaway artifact to make a decision easier;
+- `grilling`: human-in-the-loop question;
+- `task`: manual work required before a decision can be made.
+
+Rules:
+
+- Work one ticket per fresh context.
+- Claim before work.
+- Record the answer in the ticket, then close it.
+- Add newly visible tickets only after the current answer makes them specific.
+- Keep the map as an index; detailed answers live in child tickets.
+
+Stop when the route to the destination is clear or the remaining fog has become
+specific tickets.
+```
+
+## 4. .agents/skills/beads/SKILL.md
+
+skill: beads
+role: router
 
 ```markdown
 ---
@@ -193,6 +311,9 @@ rtk bd close <id> --reason="Completed"
 When turning a roadmap slice, audit, spec, or conversation into Beads, create
 Beads issues directly. Do not create `tickets.md`, local TODO files, or a second
 planning artifact.
+
+For `to-spec`, `to-tickets`, or `wayfinding` planning, read
+`references/planning-modes.md` before creating or rewriting issues.
 
 Use tracer-bullet issues for product work:
 
@@ -284,11 +405,10 @@ rtk git diff --check
 If Beads work changes package manifests or generated skills, also rely on the repository CI skill invariants before claiming the integration is complete.
 ```
 
-## 3. .agents/skills/brain-store-schema/SKILL.md
+## 5. .agents/skills/brain-store-schema/SKILL.md
 
-name: brain-store-schema
+skill: brain-store-schema
 role: maker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -348,11 +468,10 @@ Run `rtk proxy pnpm typecheck`, relevant tests, `rtk proxy pnpm --filter
 db:check`, SQL inspection, and `rtk git diff --check`.
 ```
 
-## 4. .agents/skills/code-review/SKILL.md
+## 6. .agents/skills/code-review/SKILL.md
 
-name: code-review
+skill: code-review
 role: checker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -412,6 +531,8 @@ Flag these as judgment calls unless a repo rule makes them hard blockers:
 - Do not praise green tests as proof of product readiness.
 - Reject reviewer claims contradicted by current code or verification output.
 - If no issue is found, say so and name residual test or proof gaps.
+- For PR-comment back-and-forth review, use
+  `templates/pr-review-comment.md`.
 
 ## Output
 
@@ -438,11 +559,58 @@ issue, current roadmap/agent rules, and any command output the change claims.
 - Do not treat green tests as proof that product behavior is correct.
 ```
 
-## 5. .agents/skills/codebase-design/SKILL.md
+## 7. .agents/skills/code-review/templates/pr-review-comment.md
 
-name: codebase-design
+skill: code-review
+role: checker
+
+```markdown
+# PR Review Comment Template
+
+Use this shape for future PR-comment back-and-forth between a checker agent and
+Codex.
+
+```md
+## Finding
+
+<bug, risk, spec drift, smell, or proof gap>
+
+## Evidence
+
+- File/line:
+- Observed behavior or diff:
+- Relevant convention/source:
+
+## Requested Change
+
+<smallest change or evidence needed>
+
+## Stop Condition
+
+<what would close this thread>
+```
+
+## Codex Response Shape
+
+```md
+## Response
+
+<accepted / rejected with evidence / needs product decision>
+
+## Change
+
+<commit, diff summary, or why no code changed>
+
+## Proof
+
+<command output or explicit non-proof boundary>
+```
+```
+
+## 8. .agents/skills/codebase-design/SKILL.md
+
+skill: codebase-design
 role: decision
-invocation: model-invoked
 
 ```markdown
 ---
@@ -525,11 +693,10 @@ public terms when relevant.
 - Do not use prose/topology tests as design proof.
 ```
 
-## 6. .agents/skills/codex-adapter-plan/SKILL.md
+## 9. .agents/skills/codex-adapter-plan/SKILL.md
 
-name: codex-adapter-plan
+skill: codex-adapter-plan
 role: maker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -592,11 +759,88 @@ Run typecheck/tests, verify the changed brief output, and search that
 `packages/core` has no Codex adapter imports or Codex-specific runtime behavior.
 ```
 
-## 7. .agents/skills/domain-modeling/SKILL.md
+## 10. .agents/skills/domain-modeling/references/adr-format.md
 
-name: domain-modeling
+skill: domain-modeling
 role: decision
-invocation: model-invoked
+
+```markdown
+# ADR Format
+
+Use this format when a KRN operating or architecture decision should survive a
+fresh agent context.
+
+ADRs live in `docs/adr/` and use sequential numbering:
+
+```txt
+0001-short-slug.md
+0002-short-slug.md
+```
+
+## Template
+
+```md
+# Short title
+
+One to three sentences: what was the context, what did we decide, and why.
+```
+
+## Optional Sections
+
+Add only when they carry real information:
+
+- `Status: proposed | accepted | deprecated | superseded by ADR-NNNN`
+- `Considered Options`
+- `Consequences`
+- `Consumer`
+- `Falsifier`
+- `Verification`
+
+## Creation Test
+
+Create an ADR only when all are true:
+
+1. hard to reverse;
+2. surprising without context;
+3. a real trade-off was made;
+4. a future agent is likely to rediscover or undo the decision.
+```
+
+## 11. .agents/skills/domain-modeling/references/context-format.md
+
+skill: domain-modeling
+role: decision
+
+```markdown
+# Context Format
+
+Use this format when `domain-modeling` resolves shared KRN vocabulary.
+
+```md
+# KRN Context
+
+One or two sentences describing what this context owns.
+
+## Language
+
+**Term**:
+One or two sentences defining what the term is in this repository.
+_Avoid_: rejected synonym, overloaded phrase
+```
+
+## Rules
+
+- Add only KRN-specific operating or domain terms.
+- Define what the term is, not every place it appears.
+- Prefer one canonical word and list rejected alternatives under `_Avoid_`.
+- Do not add generic programming concepts.
+- Do not use `CONTEXT.md` as a spec, plan, task list, or runtime memory.
+```
+
+## 12. .agents/skills/domain-modeling/SKILL.md
+
+skill: domain-modeling
+role: decision
 
 ```markdown
 ---
@@ -606,9 +850,9 @@ description: Use when changing or judging KRN terminology, public names, concept
 
 # Domain Modeling
 
-Keep KRN's language coherent across roadmap, Beads, code, CLI/API surfaces, and
-store-backed knowledge. Resolve domain terms by changing the owning boundary,
-not by creating another glossary file.
+Keep KRN's language coherent across `CONTEXT.md`, `CONVENTIONS.md`, roadmap,
+Beads, code, CLI/API surfaces, and store-backed knowledge. Resolve domain terms
+by updating the smallest durable owner.
 
 ## Trigger
 
@@ -619,6 +863,8 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 
 1. Pin the term or concept under dispute.
 2. Map the current path:
+   - `CONTEXT.md` for shared operating vocabulary;
+   - `CONVENTIONS.md` for skill/artifact rules;
    - `KRN_ROADMAP.md` for product architecture language;
    - the active Beads issue for current work scope;
    - exported types, CLI commands, readbacks, schemas, and tests that expose the term;
@@ -632,7 +878,9 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 4. Choose one canonical term at the highest honest boundary.
 5. Update the owner:
    - code export when the term is a runtime/domain concept;
-   - `KRN_ROADMAP.md` only for compact architecture truth;
+   - `CONTEXT.md` when the term is shared operating vocabulary;
+   - `CONVENTIONS.md` when the term defines a skill/artifact rule;
+   - `KRN_ROADMAP.md` only for compact product or architecture direction;
    - Beads for follow-up work or dependency edges;
    - store-backed memory/source/eval candidates when the term must be learned at runtime.
 6. Remove stale public terms in the same slice when safe. Do not hide them behind
@@ -653,13 +901,22 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 - Keep technical uses of `pattern` when they are literal regex/path/search
   patterns, not retained brain knowledge.
 
+## Context And ADR
+
+- For context format, read `references/context-format.md`.
+- For ADR format, read `references/adr-format.md`.
+- Update `CONTEXT.md` immediately when a shared operating term is resolved.
+- Update `CONVENTIONS.md` when the decision changes skill shape, artifact
+  ownership, planning modes, review rules, or debugging rules.
+- Offer an ADR only when the decision is hard to reverse, surprising without
+  context, and the result of a real trade-off.
+- Keep ADRs compact and link the consumer, falsifier, and verification path when
+  those are not obvious from the decision text.
+
 ## Forbidden
 
-- Do not create `CONTEXT.md`, `CONVENTIONS.md`, ADR folders, glossary docs, or
-  markdown runbooks as a default authority surface.
-- If an ADR-like decision is truly needed, keep it compact and require the
-  roadmap Artifact Contract: source, mechanism, KRN implication,
-  decision/rejection, owner, consumer, falsifier, and verification.
+- Do not use `CONTEXT.md`, `CONVENTIONS.md`, ADRs, or markdown runbooks as task
+  ledgers, runtime memory, or substitutes for implemented behavior.
 - Do not preserve bad exported names with local aliases.
 - Do not rename storage details into product terms when only repository plumbing
   is involved.
@@ -707,11 +964,10 @@ Verify by grepping rejected terms and running the smallest type/behavior checks
 that touch the renamed or re-owned boundary.
 ```
 
-## 8. .agents/skills/evidence-review-loop/SKILL.md
+## 13. .agents/skills/evidence-review-loop/SKILL.md
 
-name: evidence-review-loop
+skill: evidence-review-loop
 role: checker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -792,11 +1048,10 @@ For persisted same-run loops, evidence must also show that observe completed
 before reflect, or explicitly mark reflection output as sequencing-weak.
 ```
 
-## 9. .agents/skills/handoff-compact/SKILL.md
+## 14. .agents/skills/handoff-compact/SKILL.md
 
-name: handoff-compact
+skill: handoff-compact
 role: router
-invocation: model-invoked
 
 ```markdown
 ---
@@ -874,11 +1129,10 @@ reread, without losing the active Beads task, and without repeating
 already-verified commit/push/CI work.
 ```
 
-## 10. .agents/skills/source-to-decision/SKILL.md
+## 15. .agents/skills/source-to-decision/SKILL.md
 
-name: source-to-decision
+skill: source-to-decision
 role: decision
-invocation: model-invoked
 
 ```markdown
 ---
@@ -1113,11 +1367,22 @@ rejection, consumer, falsifier, `does_not_prove`, and usefulness closure or a
 bounded reason usefulness was not measured.
 ```
 
-## 11. .agents/skills/target-repo-testing/SKILL.md
+## 16. .agents/skills/target-repo-testing/agents/openai.yaml
 
-name: target-repo-testing
+skill: target-repo-testing
 role: checker
-invocation: model-invoked
+
+```markdown
+interface:
+  display_name: "Target Repo Testing"
+  short_description: "Run KRN target-repo trials without corrupting living checkouts."
+  default_prompt: "Use $target-repo-testing to classify target repo testing mode, dirty state, allowed writes, evidence, and stop conditions before running target commands."
+```
+
+## 17. .agents/skills/target-repo-testing/SKILL.md
+
+skill: target-repo-testing
+role: checker
 
 ```markdown
 ---
@@ -1324,11 +1589,10 @@ condensation_decision:
 - Do not use a dirty target as clean evidence without recording dirty state.
 ```
 
-## 12. .agents/skills/tdd/SKILL.md
+## 18. .agents/skills/tdd/SKILL.md
 
-name: tdd
+skill: tdd
 role: maker
-invocation: model-invoked
 
 ```markdown
 ---
@@ -1433,11 +1697,10 @@ Falsifier: a test added under this skill only freezes prose/topology or passes
 without observing the intended behavior.
 ```
 
-## 13. .agents/skills/typescript-type-safety/SKILL.md
+## 19. .agents/skills/typescript-type-safety/SKILL.md
 
-name: typescript-type-safety
+skill: typescript-type-safety
 role: maker
-invocation: model-invoked
 
 ```markdown
 ---

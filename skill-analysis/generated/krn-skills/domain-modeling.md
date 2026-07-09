@@ -4,7 +4,7 @@
 - Path: `.agents/skills/domain-modeling/SKILL.md`
 - Role: decision
 - Invocation: model-invoked
-- Lines: 107
+- Lines: 120
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -18,6 +18,7 @@ Use when changing or judging KRN terminology, public names, concept ownership, d
 - Trigger
 - Steps
 - KRN Naming Rules
+- Context And ADR
 - Forbidden
 - Source-To-Decision
 - Output
@@ -26,5 +27,6 @@ Use when changing or judging KRN terminology, public names, concept ownership, d
 
 ## Reference Files
 
-- _None._
+- references/adr-format.md
+- references/context-format.md
 

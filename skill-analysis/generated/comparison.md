@@ -9,12 +9,12 @@ engineering loop.
 | Skill | Role | Invocation | Stop | Output | Verification | Lines |
 |---|---|---|---|---|---|---|
 | activation-engine | maker | model | yes | yes | yes | 78 |
-| beads | router | model | yes | yes | yes | 167 |
+| beads | router | model | yes | yes | yes | 170 |
 | brain-store-schema | maker | model | yes | yes | yes | 56 |
-| code-review | checker | model | yes | yes | yes | 82 |
+| code-review | checker | model | yes | yes | yes | 84 |
 | codebase-design | decision | model | yes | yes | yes | 79 |
 | codex-adapter-plan | maker | model | yes | yes | yes | 59 |
-| domain-modeling | decision | model | yes | yes | yes | 107 |
+| domain-modeling | decision | model | yes | yes | yes | 120 |
 | evidence-review-loop | checker | model | yes | yes | yes | 77 |
 | handoff-compact | router | model | yes | yes | yes | 74 |
 | source-to-decision | decision | model | yes | yes | yes | 231 |

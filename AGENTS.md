@@ -14,18 +14,21 @@ prompt bloat, decorative platform wiring, or proof theater.
 Before editing:
 
 1. Read `KRN_ROADMAP.md`.
-2. Read only the files needed for the current task.
-3. Do not copy old repo topology.
-4. Do not build dashboard, benchmark lane, broad multi-agent system, or
+2. Read `CONTEXT.md` and `CONVENTIONS.md` when changing terminology, skills,
+   artifacts, planning flow, review flow, or debugging flow.
+3. Read only the files needed for the current task.
+4. Do not copy old repo topology.
+5. Do not build dashboard, benchmark lane, broad multi-agent system, or
    file-backed runtime memory.
-5. Do not treat historical docs as required reading.
-6. If a decision depends on a source, map it through source -> mechanism -> KRN
+6. Do not treat historical docs as required reading.
+7. If a decision depends on a source, map it through source -> mechanism -> KRN
    implication -> decision/rejection.
 
 For architecture, naming, context-boundary, or product-shape changes:
 
 - map the current code path before editing;
-- compare the intended behavior against `KRN_ROADMAP.md` and any official docs
+- compare the intended behavior against `CONTEXT.md`, `CONVENTIONS.md`,
+  `KRN_ROADMAP.md`, and any official docs
   that define platform mechanics;
 - follow the `KRN_ROADMAP.md` Artifact Contract for skills, specs, Beads
   tickets, decision records, templates, and rare ADR-like decisions;

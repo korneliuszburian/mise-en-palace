@@ -65,6 +65,20 @@ const listSkillDirs = async (root) => {
   return entries.filter((entry) => entry.isDirectory()).map((entry) => path.join(root, entry.name));
 };
 
+const listFilesRecursive = async (root) => {
+  const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
+  const files = [];
+  for (const entry of entries) {
+    const entryPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await listFilesRecursive(entryPath));
+    } else if (entry.isFile()) {
+      files.push(entryPath);
+    }
+  }
+  return files.sort((a, b) => a.localeCompare(b));
+};
+
 const parseFrontmatter = (text) => {
   const match = text.match(/^---\n([\s\S]*?)\n---\n/);
   const fields = new Map();
@@ -96,9 +110,19 @@ const loadSkills = async (root, source) => {
     const description = frontmatter.get("description") ?? "";
     const body = text.replace(/^---\n[\s\S]*?\n---\n/, "");
     const sections = extractSections(text);
-    const referenceFiles = (await readdir(dir, { withFileTypes: true }).catch(() => []))
-      .filter((entry) => entry.isFile() && entry.name !== "SKILL.md")
-      .map((entry) => entry.name)
+    const resourceFiles = [];
+    for (const filePath of await listFilesRecursive(dir)) {
+      const relativePath = path.relative(repoRoot, filePath);
+      const skillRelativePath = path.relative(dir, filePath);
+      resourceFiles.push({
+        path: relativePath,
+        skillPath: skillRelativePath,
+        text: await readFile(filePath, "utf8")
+      });
+    }
+    const referenceFiles = resourceFiles
+      .filter((file) => file.skillPath !== "SKILL.md")
+      .map((file) => file.skillPath)
       .sort();
     const signalText = `${name} ${description} ${sections.join(" ")} ${body.slice(0, 2500)}`;
     const routingText = `${name} ${description}`;
@@ -113,6 +137,7 @@ const loadSkills = async (root, source) => {
       text,
       sections,
       referenceFiles,
+      resourceFiles,
       role,
       lineCount: text.split("\n").length,
       hasStop: /^##\s+Stop Condition/m.test(text) || /completion criterion/i.test(text),
@@ -152,24 +177,26 @@ ${skill.referenceFiles.map((file) => `- ${file}`).join("\n") || "- _None._"}
 `;
 
 const skillBundleMarkdown = (skills) => {
-  const rows = skills.map((skill, index) =>
-    `| ${index + 1} | ${skill.name} | ${skill.role} | \`${skill.skillPath}\` |`
+  const files = skills.flatMap((skill) =>
+    skill.resourceFiles.map((file) => ({ ...file, skillName: skill.name, role: skill.role }))
   );
-  const docs = skills.map((skill, index) => `## ${index + 1}. ${skill.skillPath}
+  const rows = files.map((file, index) =>
+    `| ${index + 1} | ${file.skillName} | ${file.role} | \`${file.path}\` |`
+  );
+  const docs = files.map((file, index) => `## ${index + 1}. ${file.path}
 
-name: ${skill.name}
-role: ${skill.role}
-invocation: ${skill.isUserInvoked ? "user-invoked" : "model-invoked"}
+skill: ${file.skillName}
+role: ${file.role}
 
 \`\`\`markdown
-${skill.text.trim()}
+${file.text.trim()}
 \`\`\`
 `);
 
   return `# KRN Skills Bundle
 
 This is a repomix-style single document for reading, searching, and copying the
-current repo-local KRN skills. It is generated from \`.agents/skills/*/SKILL.md\`.
+current repo-local KRN skills. It is generated from \`.agents/skills/**\`.
 
 ## File Index
 
@@ -436,6 +463,100 @@ const lifecycleDiagnostics = lifecycleStages.map((stage) => ({
   ...stageMechanics.get(stage.id)
 }));
 
+const skillUtility = new Map([
+  ["activation-engine", {
+    purpose: "Steruje wyborem kontekstu dla KRN: co aktywować, co odrzucić i kiedy jawnie abstainować.",
+    use: "Gdy zmieniamy retrieval, ranking, owner-file recall, budżet kontekstu, filtry zaufania albo selekcję memory/source.",
+    gain: "Chroni loop przed prompt bloatem i losowym dociąganiem dokumentów, bo każda inkluzja musi mieć powód użycia.",
+    risk: "Może stać się polityką opisaną w markdownu, jeśli nie jest podparta testami selekcji i exclusion records.",
+    decision: "Keep as maker skill."
+  }],
+  ["beads", {
+    purpose: "Durable task graph dla dużego loopu: stan pracy, zależności, frontier, claim, close, follow-up.",
+    use: "Gdy praca ma przetrwać sesję, wymaga blockerów, równoległości, handoffu albo podziału na agent-sized issues.",
+    gain: "Może zastąpić większość `to-tickets` i część `to-spec`, bo końcowym artefaktem i tak jest tracker.",
+    risk: "Jeśli wrzucimy tu wszystko, stanie się overloaded routerem; potrzebuje jawnych trybów: triage, to-spec, to-tickets, wayfinding.",
+    decision: "Keep, but split internally into explicit modes before adding separate planning skills."
+  }],
+  ["brain-store-schema", {
+    purpose: "Pilnuje granic storage/migration dla temporal Memory Core.",
+    use: "Gdy zmieniamy Drizzle/Postgres schema, migracje, repo adapters, persistence, outbox albo job state.",
+    gain: "Wymusza TypeScript/store discipline i rollback thinking przy zmianach, które trudno odkręcić.",
+    risk: "Bez rzeczywistych migration/evidence gates może udawać safety zamiast go dowodzić.",
+    decision: "Keep as maker skill."
+  }],
+  ["code-review", {
+    purpose: "Niezależny checker dla diffu: standardy, spec fit, roadmap drift, smell baseline i proof gaps.",
+    use: "Po implementacji, przy PR/diff/review albo gdy trzeba odsiać test theater i shallow modules.",
+    gain: "To jest nasz najmocniej pokryty Mattowy element; zawiera Fowler-style smells i rozdziela Standards od Spec.",
+    risk: "Traci sens, jeśli ten sam agent ocenia własną zmianę bez świeżego kontekstu lub bez file:line evidence.",
+    decision: "Keep; pair explicitly after maker work."
+  }],
+  ["codebase-design", {
+    purpose: "Decyzje architektoniczne: gdzie jest granica modułu, czy interface jest deep, czy nazwa oddaje ownership.",
+    use: "Przy zmianach boundary, package seam, public API, refactorach i płytkich modułach.",
+    gain: "Daje język do odrzucania speculative seams i adapter-chainów zanim wejdą do kodu.",
+    risk: "Może być advice-only, jeśli nie kończy się konkretną decyzją, zmianą granicy albo follow-up Beadem.",
+    decision: "Keep as decision skill; tie outputs to context/ADR/source decision."
+  }],
+  ["codex-adapter-plan", {
+    purpose: "Przekłada KRN DecisionPacket/harness output na bounded Codex execution brief.",
+    use: "Gdy zmieniamy adapter do Codexa, proof boundaries, context shape albo non-mutating execution brief.",
+    gain: "Chroni przed tym, żeby adapter zaczął być ukrytą pamięcią/runtime policy zamiast rendererem decyzji.",
+    risk: "Nisza; jeśli nie ma aktywnych adapter zmian, będzie rzadko używany.",
+    decision: "Keep as specialized maker skill."
+  }],
+  ["domain-modeling", {
+    purpose: "Pilnuje słownika, nazw domenowych i tego, żeby pojęcia miały jednego właściciela.",
+    use: "Gdy pojawia się niejasne nazewnictwo: brain, memory, source, activation, DecisionPacket, retained knowledge itd.",
+    gain: "To naturalne miejsce na Mattową logikę `CONTEXT.md`: rozwiąż termin raz i zapisz decyzję poza czatem.",
+    risk: "Obecnie bardziej hamuje złe nazwy niż prowadzi do widocznego context artifactu.",
+    decision: "Keep; extend with grill/context capture behavior."
+  }],
+  ["evidence-review-loop", {
+    purpose: "Checker dowodów po wykonaniu pracy: co jest proof, co non-proof, jakie ryzyko i feedback delta.",
+    use: "Po większych runach, gdy trzeba rozdzielić realną weryfikację od deklaracji w final answer.",
+    gain: "Buduje feedback loop i memory/source/skill candidates bez polegania na opowieści agenta.",
+    risk: "Jeśli używany jako końcowa checklista przez maker agent, osłabia maker/checker separation.",
+    decision: "Keep as checker; invoke deliberately after implementation."
+  }],
+  ["handoff-compact", {
+    purpose: "Zapisuje stan pracy po długiej sesji: objective, issue, commit/push/CI, decyzje, blokery, next action.",
+    use: "Przed compaction/resume/pause/transfer albo przy końcu większego taska.",
+    gain: "Zmniejsza utratę stanu w wielkim loopie, gdzie model zapomina, a repo/tracker pamięta.",
+    risk: "Może dublować Beads, jeśli zamiast compact handoff zacznie być osobnym task ledgerem.",
+    decision: "Keep as router/state skill."
+  }],
+  ["source-to-decision", {
+    purpose: "Przerabia źródła na decyzje: source -> mechanism -> KRN implication -> decision/rejection.",
+    use: "Gdy architektura, skill, policy, MCP, eval albo TypeScript decision zależy od docs/papers/practitioner writing.",
+    gain: "Najlepsza obrona przed research summary bez konsekwencji w systemie.",
+    risk: "Może być za szeroki: research legwork, decyzja, falsifier i knowledge promotion w jednym miejscu.",
+    decision: "Keep for now; audit whether pure research should split out."
+  }],
+  ["target-repo-testing", {
+    purpose: "Checker/protocol dla pracy na target repo: dirty state, write authority, proof/non-proof, handoff.",
+    use: "Gdy KRN inspektuje, testuje lub naprawia zewnętrzne repo przez harness.",
+    gain: "Chroni przed fałszywym proofem i przypadkowym mutowaniem cudzego stanu.",
+    risk: "Może być zbyt duży i mieszać setup, test, repair oraz handoff.",
+    decision: "Keep, but watch for sequence split if agents rush through phases."
+  }],
+  ["tdd", {
+    purpose: "Maker loop dla zamierzonego zachowania: red -> green -> refactor przy właściwym public seam.",
+    use: "Przy bugfixach z dobrym seamem i nowych zachowaniach, które da się sfalsyfikować testem.",
+    gain: "Najkrótszy feedback loop dla implementacji; typowo Mattowy rdzeń pracy.",
+    risk: "Nie zastępuje `diagnosing-bugs`, bo TDD nie wymusza najpierw red-capable repro dla nieznanej usterki.",
+    decision: "Keep; add separate diagnosing-bugs."
+  }],
+  ["typescript-type-safety", {
+    purpose: "Pilnuje TypeScript-first granic: unknown narrowing, public types, validators, any/cast discipline.",
+    use: "Przy TS source, API boundaries, CLI/MCP inputs, env/file/fetch data, generics i configu typecheck.",
+    gain: "Skraca feedback loop przez typy i zapobiega oszukiwaniu kompilatora dla szybkiego green.",
+    risk: "Może być policy reminderem, jeśli nie kończy się typecheckiem albo konkretnym boundary fixem.",
+    decision: "Keep as maker skill."
+  }]
+]);
+
 const statusLabel = (status) => ({
   covered: "covered",
   partial: "partial",
@@ -495,6 +616,48 @@ ${rows.join("\n")}
 `;
 };
 
+const skillUtilityMarkdown = (skills) => {
+  const rows = skills.map((skill) => {
+    const utility = skillUtility.get(skill.name);
+    return `| ${skill.name} | ${skill.role} | ${utility?.purpose ?? "_brak opisu_"} | ${utility?.gain ?? "_brak opisu_"} | ${utility?.risk ?? "_brak opisu_"} | ${utility?.decision ?? "_brak decyzji_"} |`;
+  });
+
+  return `# Uzytecznosc KRN Skills
+
+Ten dokument opisuje po polsku, po co istnieje kazdy skill w naszym systemie.
+Nie jest to katalog dla katalogu. Pytanie brzmi: czy skill realnie zmienia
+zachowanie agenta w wielkim loopie?
+
+## Najwazniejsze rozroznienie
+
+\`to-spec\` i \`to-tickets\` prawdopodobnie powinny zaczac jako tryby \`beads\`,
+bo ich naturalnym artefaktem koncowym jest tracker: issue body, acceptance
+criteria, dependency edges i frontier.
+
+\`wayfinder\` jest innym typem mechanizmu. Nie sluzy tylko do rozbicia planu na
+zadania. Sluzy wtedy, gdy planu jeszcze nie da sie uczciwie napisac: istnieje
+destination, fog of war, decyzje do odkrycia, blocker graph i frontier. Dlatego
+Wayfinder moze byc osobnym protokolem wewnatrz Beads albo osobnym skillem, jesli
+sam tryb Beads robi sie zbyt ciezki.
+
+## Skill Utility Table
+
+| Skill | Rola | Po co istnieje | Realny zysk | Ryzyko | Decyzja |
+|---|---|---|---|---|---|
+${rows.join("\n")}
+
+## Kandydaci na nastepne zmiany
+
+1. \`diagnosing-bugs\`: osobny skill, bo brakuje czerwonej petli diagnostycznej.
+2. \`beads\`: dodac tryby \`to-spec\`, \`to-tickets\`, \`wayfinding\`, zamiast
+   mnozyc nowe skillsy bez potrzeby.
+3. \`domain-modeling\`: dodac grill/context capture, bo to jest najblizszy
+   odpowiednik Mattowego \`CONTEXT.md\`.
+4. \`source-to-decision\`: sprawdzic, czy nie trzeba oddzielic research legwork
+   od decision capture.
+`;
+};
+
 const dashboardHtml = (krnSkills) => {
   const score = lifecycleDiagnostics.reduce((sum, stage) => sum + stage.score, 0);
   const maxScore = lifecycleDiagnostics.length * 2;
@@ -525,8 +688,23 @@ const dashboardHtml = (krnSkills) => {
               </span>
               <button type="button" data-copy="${htmlEscape(skill.name)}">Copy</button>
             </summary>
-            <pre id="skill-${htmlEscape(skill.name)}"><code>${htmlEscape(skill.text.trim())}</code></pre>
+            ${skill.resourceFiles.map((file) => `<details class="skill-file" open>
+              <summary>${htmlEscape(file.skillPath)}</summary>
+              <pre id="skill-${htmlEscape(skill.name)}-${htmlEscape(file.skillPath).replace(/[^a-z0-9]/gi, "-")}"><code>${htmlEscape(file.text.trim())}</code></pre>
+            </details>`).join("")}
           </details>`).join("");
+  const utilityRows = krnSkills.map((skill) => {
+    const utility = skillUtility.get(skill.name);
+    return `
+          <tr>
+            <td><strong>${htmlEscape(skill.name)}</strong><span>${htmlEscape(skill.role)}</span></td>
+            <td>${htmlEscape(utility?.purpose ?? "brak opisu")}</td>
+            <td>${htmlEscape(utility?.use ?? "brak opisu")}</td>
+            <td>${htmlEscape(utility?.gain ?? "brak opisu")}</td>
+            <td>${htmlEscape(utility?.risk ?? "brak opisu")}</td>
+            <td>${htmlEscape(utility?.decision ?? "brak decyzji")}</td>
+          </tr>`;
+  }).join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -620,6 +798,9 @@ const dashboardHtml = (krnSkills) => {
         border-radius: 8px;
         overflow: hidden;
       }
+      .utility-panel {
+        margin-top: 18px;
+      }
       .skills-header {
         padding: 14px;
         border-bottom: 1px solid var(--line);
@@ -629,7 +810,7 @@ const dashboardHtml = (krnSkills) => {
       .skills-header p { font-size: 13px; }
       .skill-node { border-bottom: 1px solid var(--line); }
       .skill-node:last-child { border-bottom: 0; }
-      .skill-node summary {
+      .skill-node > summary {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -651,6 +832,17 @@ const dashboardHtml = (krnSkills) => {
         padding: 5px 9px;
         font: inherit;
         cursor: pointer;
+      }
+      .skill-file {
+        border-top: 1px solid var(--line);
+      }
+      .skill-file summary {
+        padding: 9px 14px;
+        cursor: pointer;
+        color: var(--muted);
+        background: #f8fafc;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
       }
       pre {
         margin: 0;
@@ -713,6 +905,22 @@ const dashboardHtml = (krnSkills) => {
         <article class="callout"><h2>3. Beads wayfinding</h2><p>Beads has dependencies, but needs explicit destination, frontier, fog, decisions-so-far, and one-ticket-per-session discipline.</p></article>
         <article class="callout"><h2>4. to-spec</h2><p>Large fuzzy work lacks a settled spec artifact between conversation and ticket slicing.</p></article>
       </section>
+      <section class="section utility-panel" aria-label="KRN skill utility">
+        <table>
+          <thead>
+            <tr>
+              <th>Skill</th>
+              <th>Po co istnieje</th>
+              <th>Kiedy uzywac</th>
+              <th>Realny zysk</th>
+              <th>Ryzyko</th>
+              <th>Decyzja</th>
+            </tr>
+          </thead>
+          <tbody>${utilityRows}
+          </tbody>
+        </table>
+      </section>
       <section class="skills-panel" aria-label="KRN skill files">
         <div class="skills-header">
           <h2>KRN Skills Tree</h2>
@@ -726,9 +934,10 @@ ${skillTree}
         button.addEventListener("click", async (event) => {
           event.preventDefault();
           const name = button.getAttribute("data-copy");
-          const source = document.getElementById("skill-" + name);
-          if (!source) return;
-          await navigator.clipboard.writeText(source.innerText);
+          const node = button.closest(".skill-node");
+          if (!node) return;
+          const sources = Array.from(node.querySelectorAll("pre")).map((pre) => pre.innerText);
+          await navigator.clipboard.writeText(sources.join("\\n\\n"));
           const original = button.innerText;
           button.innerText = "Copied";
           window.setTimeout(() => { button.innerText = original; }, 1200);
@@ -801,8 +1010,13 @@ ${inventoryRows(mattSkills).join("\n")}
   );
 
   await writeFile(path.join(outRoot, "loop-diagnostics.md"), lifecycleMarkdown(), "utf8");
+  await writeFile(path.join(outRoot, "skill-utility-pl.md"), skillUtilityMarkdown(krnSkills), "utf8");
   await writeFile(path.join(outRoot, "skill-bundle.md"), skillBundleMarkdown(krnSkills), "utf8");
-  await writeFile(path.join(repoRoot, "skill-analysis", "dashboard.html"), dashboardHtml(krnSkills), "utf8");
+  await writeFile(
+    path.join(repoRoot, "skill-analysis", "dashboard.html"),
+    dashboardHtml(krnSkills).replace(/[ \t]+$/gm, ""),
+    "utf8"
+  );
 
   await writeFile(
     path.join(outRoot, "index.md"),
@@ -811,7 +1025,9 @@ ${inventoryRows(mattSkills).join("\n")}
 Generated files:
 
 - ${link("../dashboard.html", "HTML dashboard")}
+- ${link("../NORMALIZATION-GAPS.md", "Normalization gaps")}
 - ${link("loop-diagnostics.md", "Loop diagnostics")}
+- ${link("skill-utility-pl.md", "Polish skill utility")}
 - ${link("skill-bundle.md", "KRN skills bundle")}
 - ${link("comparison.md", "Comparison matrix")}
 - ${link("skill-graph.md", "Mermaid skill graph")}
