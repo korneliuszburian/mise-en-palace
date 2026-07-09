@@ -11,6 +11,7 @@ import {
 } from "../internal/mcp/decision-packet-mcp-server.js";
 
 const now = "2026-07-07T22:00:00.000Z";
+const weakContextEvidenceGapId = "evidence-gap:run-agent-weak:no-governing-decision";
 
 const packetJson = {
   kind: "krn.decisionPacketReadback.v1",
@@ -127,6 +128,54 @@ const packetJson = {
   proof: {
     proves: ["a headless consumer can request a read-only DecisionPacket contract through CLI JSON"],
     doesNotProve: ["MCP integration", "live Codex obedience", "memory/source promotion"]
+  }
+};
+
+const weakPacketJson = {
+  ...packetJson,
+  request: {
+    runId: "run-agent-weak"
+  },
+  packetIdentity: {
+    ...packetJson.packetIdentity,
+    packetId: "decision-packet:run-agent-weak:def",
+    checksum: "b".repeat(64),
+    evidenceRef: `packet:${"b".repeat(64)}`
+  },
+  packet: {
+    ...packetJson.packet,
+    governingDecisionIds: [],
+    governingStatements: [],
+    taskStandardDecisions: [],
+    sourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    memoryRefs: [],
+    falsifiers: [],
+    verificationCommands: [],
+    evidenceGaps: [{
+      id: weakContextEvidenceGapId,
+      reason: "No governed decision is present in this read-only packet.",
+      verificationRequired:
+        "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+    }],
+    sourceConsensus: {
+      ...packetJson.packet.sourceConsensus,
+      decisionLinkedSourceClaimIds: [],
+      sourceDecisionEdgeIds: [],
+      sourceDecisionTargets: [],
+      evidenceGapIds: [weakContextEvidenceGapId]
+    },
+    abstentionScore: {
+      ...packetJson.packet.abstentionScore,
+      status: "abstain",
+      score: 0,
+      reasons: [
+        "missing_governing_decision",
+        "evidence_gap"
+      ],
+      evidenceGapIds: [weakContextEvidenceGapId]
+    }
   }
 };
 
@@ -257,6 +306,59 @@ describe("DecisionPacket MCP wrapper", () => {
               reasons: []
             }
           }
+        }
+      }
+    });
+  });
+
+  it("preserves abstention and evidence gaps in structured tool output", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-weak",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-weak"
+        }
+      }
+    }, runtime(async () => ({
+      stdout: `${JSON.stringify(weakPacketJson)}\n`
+    })));
+    const result = isRecord(reply) ? reply["result"] : undefined;
+    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
+
+    expect(structuredContent).toMatchObject({
+      kind: "krn.decisionPacketReadback.v1",
+      packetIdentity: {
+        checksum: "b".repeat(64),
+        evidenceRef: `packet:${"b".repeat(64)}`
+      },
+      proof: {
+        proves: expect.arrayContaining([
+          "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
+        ]),
+        doesNotProve: expect.arrayContaining(["broad MCP product readiness"])
+      },
+      packet: {
+        governingDecisionIds: [],
+        evidenceGaps: [{
+          id: weakContextEvidenceGapId,
+          reason: "No governed decision is present in this read-only packet.",
+          verificationRequired:
+            "Capture or promote source-backed decision evidence before treating this packet as task guidance."
+        }],
+        sourceConsensus: {
+          evidenceGapIds: [weakContextEvidenceGapId]
+        },
+        abstentionScore: {
+          status: "abstain",
+          score: 0,
+          reasons: [
+            "missing_governing_decision",
+            "evidence_gap"
+          ],
+          evidenceGapIds: [weakContextEvidenceGapId]
         }
       }
     });
