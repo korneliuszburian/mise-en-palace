@@ -1431,6 +1431,7 @@ describe("runSourceSearchCommand", () => {
             kind: "duplicates",
             metadata: {
               consumer: "source-search duplicate relation ranking proof",
+              evidenceRef: "test:source-search-duplicate-relation",
               doesNotProve: "This edge does not prove duplicate truth or broad graph retrieval quality."
             }
           })
@@ -1527,6 +1528,7 @@ describe("runSourceSearchCommand", () => {
             kind: "supports",
             metadata: {
               consumer: "source-search positive relation ranking proof",
+              evidenceRef: "test:source-search-positive-relation",
               doesNotProve: "This edge does not prove support truth or broad graph retrieval quality."
             }
           })

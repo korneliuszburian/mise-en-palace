@@ -418,6 +418,7 @@ describe("activation engine", () => {
       kind: "narrows",
       metadata: {
         consumer: "V330 edge-aware ranking lab",
+        evidenceRef: "test:source-claim-edge-influence",
         doesNotProve: "This edge does not prove graph retrieval quality."
       },
       createdAt: now
@@ -455,6 +456,59 @@ describe("activation engine", () => {
     expect(disconnected?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
   });
 
+  it("reports unsupported SourceClaimEdge influence without boosting authority", () => {
+    const query = buildSourceQuery(task);
+    const seedSourceClaim = sourceClaim({
+      id: "claim-seed",
+      claim: "KRN should expose unsupported relation edges as evidence gaps.",
+      krnImplication: "Do not treat decorative source graph relations as authority."
+    });
+    const connectedSourceClaim = sourceClaim({
+      id: "claim-connected",
+      claim: "Unsupported source graph relations need evidence before selection boost.",
+      mechanism: "A SourceClaimEdge exists but has no evidenceRef or sourceDecisionRef.",
+      krnImplication: "Report the missing relation support without increasing graphScore."
+    });
+    const unsupportedEdge: SourceClaimEdge = {
+      id: "edge-unsupported",
+      fromSourceClaimId: seedSourceClaim.id,
+      toSourceClaimId: connectedSourceClaim.id,
+      kind: "supports",
+      metadata: {
+        consumer: "activation-engine-test",
+        doesNotProve: "This unsupported edge does not prove source truth."
+      },
+      createdAt: now
+    };
+
+    const influenced = rankCandidates(applySourceClaimEdgeInfluence([
+      toSourceClaimCandidate(seedSourceClaim),
+      toSourceClaimCandidate(connectedSourceClaim)
+    ], {
+      edges: [unsupportedEdge],
+      seedSourceClaimIds: [seedSourceClaim.id],
+      graphScore: 30
+    }), query);
+    const connected = influenced.find((candidate) =>
+      candidate.subjectId === connectedSourceClaim.id
+    );
+
+    expect(connected).toMatchObject({
+      subjectType: "source_claim",
+      subjectId: "claim-connected",
+      graphScore: 0,
+      metadata: {
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-unsupported"],
+          edgeKinds: ["supports"],
+          missingRelationSupportEdgeIds: ["edge-unsupported"],
+          seedSourceClaimIds: ["claim-seed"],
+          doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }
+    });
+  });
+
   it("proves SourceClaimEdge influence can change bounded selection against a no-edge baseline", () => {
     const query = buildSourceQuery({
       ...task,
@@ -484,6 +538,7 @@ describe("activation engine", () => {
       kind: "supports",
       metadata: {
         consumer: "V334 edge-aware activation selection delta proof",
+        evidenceRef: "test:edge-selection-delta",
         doesNotProve: "This edge does not prove graph retrieval quality."
       },
       createdAt: now
@@ -744,6 +799,7 @@ describe("activation engine", () => {
       kind: "duplicates",
       metadata: {
         consumer: "GRE-01 relation focus graph QA case",
+        evidenceRef: "test:edge-qa-answer",
         doesNotProve: "This edge does not prove duplicate truth or graph QA quality."
       },
       createdAt: now
@@ -877,6 +933,7 @@ describe("activation engine", () => {
       kind: "narrows",
       metadata: {
         consumer: "V332 edge-aware source candidate refinement",
+        evidenceRef: "test:activation-retrieval-edge",
         doesNotProve: "This edge does not prove graph retrieval quality."
       },
       createdAt: now

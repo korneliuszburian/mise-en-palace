@@ -989,6 +989,7 @@ const runRelationGroundedQaReadback = (now: string): BehaviorFixtureProof => {
     kind: "supports",
     metadata: {
       consumer: "golden relation-grounded QA readback",
+      evidenceRef: "packages/harness/src/krn-behavior-gate.ts",
       doesNotProve: "This edge does not prove graph QA quality."
     },
     createdAt: now

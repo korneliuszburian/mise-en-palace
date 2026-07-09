@@ -221,6 +221,14 @@ export interface SourceClaimEdgeInfluenceInput {
   graphScore?: number;
 }
 
+interface SourceClaimEdgeInfluence {
+  edgeIds: string[];
+  edgeKinds: SourceClaimEdge["kind"][];
+  graphScore: number;
+  missingRelationSupportEdgeIds: string[];
+  seedSourceClaimIds: SourceClaim["id"][];
+}
+
 const connectedSourceClaimIdFor = (
   edge: SourceClaimEdge,
   seedSourceClaimIds: ReadonlySet<SourceClaim["id"]>
@@ -234,19 +242,85 @@ const connectedSourceClaimIdFor = (
     : undefined;
 };
 
+const edgeHasRelationSupport = (edge: SourceClaimEdge): boolean => {
+  const relationMetadata = readSourceRelationMetadataReadback(edge.metadata);
+
+  return relationMetadata.evidenceRefs.length > 0 ||
+    relationMetadata.sourceDecisionRef !== undefined;
+};
+
+const seedSourceClaimIdForConnection = (
+  edge: SourceClaimEdge,
+  connectedSourceClaimId: SourceClaim["id"]
+): SourceClaim["id"] =>
+  edge.fromSourceClaimId === connectedSourceClaimId
+    ? edge.toSourceClaimId
+    : edge.fromSourceClaimId;
+
+const emptySourceClaimEdgeInfluence = (): SourceClaimEdgeInfluence => ({
+  edgeIds: [],
+  edgeKinds: [],
+  graphScore: 0,
+  missingRelationSupportEdgeIds: [],
+  seedSourceClaimIds: []
+});
+
+const mergeSourceClaimEdgeInfluence = (
+  existing: SourceClaimEdgeInfluence | undefined,
+  input: {
+    edge: SourceClaimEdge;
+    graphScore: number;
+    hasRelationSupport: boolean;
+    seedSourceClaimId: SourceClaim["id"];
+  }
+): SourceClaimEdgeInfluence => {
+  const current = existing ?? emptySourceClaimEdgeInfluence();
+  const missingRelationSupportEdgeIds = input.hasRelationSupport
+    ? current.missingRelationSupportEdgeIds
+    : [...current.missingRelationSupportEdgeIds, input.edge.id];
+
+  return {
+    edgeIds: [...current.edgeIds, input.edge.id],
+    edgeKinds: [...current.edgeKinds, input.edge.kind],
+    graphScore: Math.max(current.graphScore, input.graphScore),
+    missingRelationSupportEdgeIds,
+    seedSourceClaimIds: [...current.seedSourceClaimIds, input.seedSourceClaimId]
+  };
+};
+
+const applySourceClaimEdgeInfluenceToCandidate = (
+  candidate: ActivationCandidate,
+  influence: SourceClaimEdgeInfluence
+): ActivationCandidate => {
+  const missingRelationSupportEdgeIds = [...new Set(influence.missingRelationSupportEdgeIds)];
+
+  return {
+    ...candidate,
+    graphScore: Math.max(candidate.graphScore ?? 0, influence.graphScore),
+    reason: `${candidate.reason} Edge-aware source graph context: ${influence.edgeKinds.join(", ")}.`,
+    expectedUse: `${candidate.expectedUse} Review with connected SourceClaimEdge context before claiming graph retrieval quality.`,
+    metadata: {
+      ...candidate.metadata,
+      sourceClaimEdgeInfluence: {
+        edgeIds: [...new Set(influence.edgeIds)],
+        edgeKinds: [...new Set(influence.edgeKinds)],
+        ...(missingRelationSupportEdgeIds.length === 0
+          ? {}
+          : { missingRelationSupportEdgeIds }),
+        seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
+        doesNotProve: sourceClaimEdgeInfluenceDoesNotProve
+      }
+    }
+  };
+};
+
 export const applySourceClaimEdgeInfluence = (
   candidates: readonly ActivationCandidate[],
   input: SourceClaimEdgeInfluenceInput
 ): ActivationCandidate[] => {
   const seedSourceClaimIds = new Set(input.seedSourceClaimIds);
   const baseGraphScore = input.graphScore ?? defaultSourceClaimEdgeGraphScore;
-  const influenceBySourceClaimId = new Map<SourceClaim["id"], {
-    edgeIds: string[];
-    edgeKinds: SourceClaimEdge["kind"][];
-    graphScore: number;
-    missingRelationSupportEdgeIds: string[];
-    seedSourceClaimIds: SourceClaim["id"][];
-  }>();
+  const influenceBySourceClaimId = new Map<SourceClaim["id"], SourceClaimEdgeInfluence>();
 
   for (const edge of input.edges) {
     const connectedSourceClaimId = connectedSourceClaimIdFor(edge, seedSourceClaimIds);
@@ -256,24 +330,20 @@ export const applySourceClaimEdgeInfluence = (
     }
 
     const existing = influenceBySourceClaimId.get(connectedSourceClaimId);
-    const seedSourceClaimId = edge.fromSourceClaimId === connectedSourceClaimId
-      ? edge.toSourceClaimId
-      : edge.fromSourceClaimId;
+    const seedSourceClaimId = seedSourceClaimIdForConnection(edge, connectedSourceClaimId);
     const weightedGraphScore = sourceClaimEdgeInfluenceScore(edge.kind, baseGraphScore);
-    const relationMetadata = readSourceRelationMetadataReadback(edge.metadata);
-    const hasRelationSupport =
-      relationMetadata.evidenceRefs.length > 0 || relationMetadata.sourceDecisionRef !== undefined;
+    const hasRelationSupport = edgeHasRelationSupport(edge);
+    const supportedGraphScore = hasRelationSupport ? weightedGraphScore : 0;
 
-    influenceBySourceClaimId.set(connectedSourceClaimId, {
-      edgeIds: [...(existing?.edgeIds ?? []), edge.id],
-      edgeKinds: [...(existing?.edgeKinds ?? []), edge.kind],
-      graphScore: Math.max(existing?.graphScore ?? 0, weightedGraphScore),
-      missingRelationSupportEdgeIds: [
-        ...(existing?.missingRelationSupportEdgeIds ?? []),
-        ...(hasRelationSupport ? [] : [edge.id])
-      ],
-      seedSourceClaimIds: [...(existing?.seedSourceClaimIds ?? []), seedSourceClaimId]
-    });
+    influenceBySourceClaimId.set(
+      connectedSourceClaimId,
+      mergeSourceClaimEdgeInfluence(existing, {
+        edge,
+        graphScore: supportedGraphScore,
+        hasRelationSupport,
+        seedSourceClaimId
+      })
+    );
   }
 
   return candidates.map((candidate) => {
@@ -286,26 +356,8 @@ export const applySourceClaimEdgeInfluence = (
     if (influence === undefined) {
       return candidate;
     }
-    const missingRelationSupportEdgeIds = [...new Set(influence.missingRelationSupportEdgeIds)];
 
-    return {
-      ...candidate,
-      graphScore: Math.max(candidate.graphScore ?? 0, influence.graphScore),
-      reason: `${candidate.reason} Edge-aware source graph context: ${influence.edgeKinds.join(", ")}.`,
-      expectedUse: `${candidate.expectedUse} Review with connected SourceClaimEdge context before claiming graph retrieval quality.`,
-      metadata: {
-        ...candidate.metadata,
-        sourceClaimEdgeInfluence: {
-          edgeIds: [...new Set(influence.edgeIds)],
-          edgeKinds: [...new Set(influence.edgeKinds)],
-          ...(missingRelationSupportEdgeIds.length === 0
-            ? {}
-            : { missingRelationSupportEdgeIds }),
-          seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
-          doesNotProve: sourceClaimEdgeInfluenceDoesNotProve
-        }
-      }
-    };
+    return applySourceClaimEdgeInfluenceToCandidate(candidate, influence);
   });
 };
 
