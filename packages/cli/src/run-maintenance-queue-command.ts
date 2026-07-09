@@ -169,6 +169,7 @@ export const runMaintenanceQueueCommand = async (
         createFeedbackDeltaMaintenanceHandler({
           harnessRunRepository: databaseRuntime.harnessRunRepository,
           memoryRepository: databaseRuntime.memoryRepository,
+          sourceRepository: databaseRuntime.sourceRepository,
           now: runtime.now
         })
       ]

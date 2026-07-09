@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryCandidate,
   FeedbackDelta,
-  MemoryRecord
+  MemoryRecord,
+  SourceDecision
 } from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput
@@ -181,6 +182,14 @@ class FakeFeedbackMaintenanceMemoryRepository {
   }
 }
 
+class FakeFeedbackMaintenanceSourceRepository {
+  constructor(private readonly sourceDecisions: ReadonlyMap<string, SourceDecision>) {}
+
+  async getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined> {
+    return this.sourceDecisions.get(id);
+  }
+}
+
 class FakeExpireStaleMemoryMaintenanceRepository extends FakeFeedbackMaintenanceMemoryRepository {
   constructor(private readonly memoryRecords: readonly MemoryRecord[]) {
     super();
@@ -201,6 +210,23 @@ const feedbackDelta = (metadata: Record<string, unknown>): FeedbackDelta => ({
   sourceDecisions: [],
   evalCandidates: [],
   metadata,
+  createdAt: isoNow,
+  updatedAt: isoNow
+});
+
+const sourceDecision = (
+  input: Pick<SourceDecision, "id"> &
+    Partial<Pick<SourceDecision, "sourceClaimId">>
+): SourceDecision => ({
+  id: input.id,
+  projectId: "project-1",
+  ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
+  status: "adopt",
+  decision: "Adopt source guidance for this task.",
+  rationale: "The source claim is useful enough to guide activation.",
+  falsifier: "A rejected or stale linked source claim must remove this authority.",
+  consumer: "feedback-maintenance-test",
+  metadata: {},
   createdAt: isoNow,
   updatedAt: isoNow
 });
@@ -545,7 +571,7 @@ describe("runMaintenanceQueueRecord", () => {
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
-  it("turns stale source-claim and knowledge feedback into reviewable anti-memory candidates", async () => {
+  it("turns stale source, source-decision, and knowledge feedback into reviewable anti-memory candidates", async () => {
     const repository = new FakeMaintenanceQueueRepository(
       runningRecord({
         jobType: "review_feedback_delta",
@@ -557,6 +583,16 @@ describe("runMaintenanceQueueRecord", () => {
       })
     );
     const memoryRepository = new FakeFeedbackMaintenanceMemoryRepository();
+    const sourceRepository = new FakeFeedbackMaintenanceSourceRepository(new Map([
+      ["source-decision-unknown-1", sourceDecision({
+        id: "source-decision-unknown-1",
+        sourceClaimId: "source-claim-linked-unknown-1"
+      })],
+      ["source-decision-hurt-1", sourceDecision({
+        id: "source-decision-hurt-1",
+        sourceClaimId: "source-claim-linked-hurt-1"
+      })]
+    ]));
     const feedback = feedbackDelta({
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-stale-1",
@@ -618,6 +654,7 @@ describe("runMaintenanceQueueRecord", () => {
             }
           },
           memoryRepository,
+          sourceRepository,
           now: () => isoNow
         })
       ]
@@ -636,7 +673,7 @@ describe("runMaintenanceQueueRecord", () => {
       "source_claims",
       "source_decisions"
     ]));
-    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(3);
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(5);
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       proposedBy: "maintenance:review_feedback_delta",
@@ -650,6 +687,30 @@ describe("runMaintenanceQueueRecord", () => {
     });
     expect(memoryRepository.createdAntiMemoryCandidates[1]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: ["source-claim-linked-unknown-1"],
+      appliesTo: "source_claim:source-claim-linked-unknown-1",
+      metadata: {
+        outcome: "unknown",
+        sourceClaimId: "source-claim-linked-unknown-1",
+        sourceDecisionId: "source-decision-unknown-1",
+        subjectRef: "source_decision:source-decision-unknown-1",
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
+      invalidatedBySourceClaimIds: ["source-claim-linked-hurt-1"],
+      appliesTo: "source_claim:source-claim-linked-hurt-1",
+      metadata: {
+        outcome: "hurt",
+        sourceClaimId: "source-claim-linked-hurt-1",
+        sourceDecisionId: "source-decision-hurt-1",
+        subjectRef: "source_decision:source-decision-hurt-1",
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[3]).toMatchObject({
+      feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
       appliesTo: "knowledge:stale-standard-1",
       metadata: {
@@ -659,7 +720,7 @@ describe("runMaintenanceQueueRecord", () => {
         mutation: "none"
       }
     });
-    expect(memoryRepository.createdAntiMemoryCandidates[2]).toMatchObject({
+    expect(memoryRepository.createdAntiMemoryCandidates[4]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       invalidatedBySourceClaimIds: [],
       appliesTo: "knowledge:rejected-standard-1",
@@ -671,15 +732,8 @@ describe("runMaintenanceQueueRecord", () => {
         mutation: "none"
       }
     });
-    expect(memoryRepository.createdAntiMemoryCandidates).toEqual(
-      expect.not.arrayContaining([
-        expect.objectContaining({
-          metadata: expect.objectContaining({
-            sourceDecisionId: expect.any(String)
-          })
-        })
-      ])
-    );
+    expect(memoryRepository.createdAntiMemoryCandidates.map((candidate) => candidate.appliesTo))
+      .not.toContain("source_decision:source-decision-hurt-1");
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 });

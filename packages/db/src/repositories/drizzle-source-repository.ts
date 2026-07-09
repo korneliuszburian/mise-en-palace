@@ -395,6 +395,16 @@ export class DrizzleSourceRepository implements SourceRepository {
     });
   }
 
+  async getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(sourceDecisions)
+      .where(eq(sourceDecisions.id, id))
+      .limit(1);
+
+    return row === undefined ? undefined : mapSourceDecision(row);
+  }
+
   async createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge> {
     assertSourceClaimEdgeGovernance(input);
 

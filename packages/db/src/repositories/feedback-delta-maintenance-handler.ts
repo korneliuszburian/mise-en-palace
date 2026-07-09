@@ -2,6 +2,7 @@ import type {
   FeedbackDelta,
   IsoTimestamp,
   KnowledgeUsefulnessOutcomeFeedback,
+  SourceDecision,
   SourceUsefulnessOutcomeFeedback
 } from "@krn/core";
 import {
@@ -12,7 +13,8 @@ import {
 } from "@krn/core";
 import type {
   HarnessRunRepository,
-  MemoryRepository
+  MemoryRepository,
+  SourceRepository
 } from "@krn/core/repositories/internal";
 
 import type {
@@ -29,6 +31,12 @@ type FeedbackMaintenanceOutcome = Pick<
 >;
 type SourceClaimUsefulnessOutcomeFeedback = SourceUsefulnessOutcomeFeedback & {
   readonly sourceClaimId: NonNullable<SourceUsefulnessOutcomeFeedback["sourceClaimId"]>;
+};
+type SourceDecisionUsefulnessOutcomeFeedback = SourceUsefulnessOutcomeFeedback & {
+  readonly sourceDecisionId: NonNullable<SourceUsefulnessOutcomeFeedback["sourceDecisionId"]>;
+};
+type SourceDecisionWithClaim = SourceDecision & {
+  readonly sourceClaimId: NonNullable<SourceDecision["sourceClaimId"]>;
 };
 type FeedbackMaintenanceSubject = {
   readonly subjectKind: "source_claim" | "memory_record";
@@ -47,6 +55,7 @@ type FeedbackMaintenanceCandidate = {
 export interface CreateFeedbackDeltaMaintenanceHandlerInput {
   readonly harnessRunRepository: Pick<HarnessRunRepository, "listFeedbackDeltasForProject">;
   readonly memoryRepository: Pick<MemoryRepository, "createAntiMemoryCandidate">;
+  readonly sourceRepository: Pick<SourceRepository, "getSourceDecisionById">;
   readonly feedbackDeltaSearchLimit?: number;
   readonly now?: () => IsoTimestamp;
 }
@@ -70,6 +79,18 @@ const hasReviewableSourceClaimOutcome = (
 ): outcome is SourceClaimUsefulnessOutcomeFeedback =>
   outcome.sourceClaimId !== undefined && isReviewableFeedbackOutcome(outcome.outcome);
 
+const hasReviewableSourceDecisionOutcome = (
+  outcome: SourceUsefulnessOutcomeFeedback
+): outcome is SourceDecisionUsefulnessOutcomeFeedback =>
+  outcome.sourceClaimId === undefined &&
+  outcome.sourceDecisionId !== undefined &&
+  isReviewableFeedbackOutcome(outcome.outcome);
+
+const sourceDecisionHasClaim = (
+  sourceDecision: SourceDecision
+): sourceDecision is SourceDecisionWithClaim =>
+  sourceDecision.sourceClaimId !== undefined;
+
 const sourceClaimSubjectFor = (
   outcome: SourceClaimUsefulnessOutcomeFeedback
 ): FeedbackMaintenanceSubject => ({
@@ -81,6 +102,22 @@ const sourceClaimSubjectFor = (
   invalidatedBySourceClaimIds: [outcome.sourceClaimId],
   metadata: {
     sourceClaimId: outcome.sourceClaimId
+  }
+});
+
+const sourceDecisionSubjectFor = (
+  outcome: SourceDecisionUsefulnessOutcomeFeedback,
+  sourceDecision: SourceDecisionWithClaim
+): FeedbackMaintenanceSubject => ({
+  subjectKind: "source_claim",
+  subjectId: sourceDecision.sourceClaimId,
+  subjectRef: `source_decision:${outcome.sourceDecisionId}`,
+  activationTarget: `source_claim:${sourceDecision.sourceClaimId}`,
+  blockedNoun: "current authority",
+  invalidatedBySourceClaimIds: [sourceDecision.sourceClaimId],
+  metadata: {
+    sourceDecisionId: outcome.sourceDecisionId,
+    sourceClaimId: sourceDecision.sourceClaimId
   }
 });
 
@@ -154,22 +191,44 @@ const antiMemoryCandidateForFeedback = (input: {
   };
 };
 
-const feedbackMaintenanceCandidatesFor = (
-  feedbackDelta: FeedbackDelta
-): FeedbackMaintenanceCandidate[] => [
-  ...sourceUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-    .filter(hasReviewableSourceClaimOutcome)
-    .map((outcome) => ({
-      outcome,
-      subject: sourceClaimSubjectFor(outcome)
-    })),
-  ...knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-    .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
-    .map((outcome) => ({
-      outcome,
-      subject: knowledgeSubjectFor(outcome)
-    }))
-];
+const feedbackMaintenanceCandidatesFor = async (
+  input: Pick<CreateFeedbackDeltaMaintenanceHandlerInput, "sourceRepository"> & {
+    readonly feedbackDelta: FeedbackDelta;
+  }
+): Promise<FeedbackMaintenanceCandidate[]> => {
+  const sourceOutcomes = sourceUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata);
+  const sourceDecisionCandidates = await Promise.all(
+    sourceOutcomes
+      .filter(hasReviewableSourceDecisionOutcome)
+      .map(async (outcome): Promise<FeedbackMaintenanceCandidate[]> => {
+        const sourceDecision =
+          await input.sourceRepository.getSourceDecisionById(outcome.sourceDecisionId);
+
+        return sourceDecision === undefined || !sourceDecisionHasClaim(sourceDecision)
+          ? []
+          : [{
+            outcome,
+            subject: sourceDecisionSubjectFor(outcome, sourceDecision)
+          }];
+      })
+  );
+
+  return [
+    ...sourceOutcomes
+      .filter(hasReviewableSourceClaimOutcome)
+      .map((outcome) => ({
+        outcome,
+        subject: sourceClaimSubjectFor(outcome)
+      })),
+    ...sourceDecisionCandidates.flat(),
+    ...knowledgeUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata)
+      .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
+      .map((outcome) => ({
+        outcome,
+        subject: knowledgeSubjectFor(outcome)
+      }))
+  ];
+};
 
 const findFeedbackDelta = async (
   input: CreateFeedbackDeltaMaintenanceHandlerInput,
@@ -210,13 +269,16 @@ export const createFeedbackDeltaMaintenanceHandler = (
       };
     }
 
-    const candidates = feedbackMaintenanceCandidatesFor(feedbackDelta);
+    const candidates = await feedbackMaintenanceCandidatesFor({
+      feedbackDelta,
+      sourceRepository: input.sourceRepository
+    });
 
     if (candidates.length === 0) {
       return {
         status: "skipped",
         reason:
-          `FeedbackDelta ${feedbackDelta.id} has no source-claim or knowledge usefulness outcomes with a maintenance consumer`
+          `FeedbackDelta ${feedbackDelta.id} has no source-claim, source-decision-with-linked-claim, or knowledge usefulness outcomes with a maintenance consumer`
       };
     }
 

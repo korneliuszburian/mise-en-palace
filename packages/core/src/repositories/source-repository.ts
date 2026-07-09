@@ -95,6 +95,7 @@ export interface SourceRepository {
   listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
+  getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined>;
   createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge>;
   listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]>;
   createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;

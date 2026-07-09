@@ -659,6 +659,7 @@ const runFeedbackMaintenanceProof = async (
       readonly maintenanceQueueRepository: DrizzleMaintenanceQueueRepository;
       readonly harnessRunRepository: HarnessRunRepository;
       readonly memoryRepository: MemoryRepository;
+      readonly sourceRepository: SourceRepository;
     };
   }
 ): Promise<FeedbackMaintenanceProofResult> => {
@@ -687,6 +688,7 @@ const runFeedbackMaintenanceProof = async (
       createFeedbackDeltaMaintenanceHandler({
         harnessRunRepository: input.repositories.harnessRunRepository,
         memoryRepository: input.repositories.memoryRepository,
+        sourceRepository: input.repositories.sourceRepository,
         now: () => "2026-07-07T12:00:00.000Z"
       })
     ]
@@ -1600,7 +1602,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       repositories: {
         maintenanceQueueRepository,
         harnessRunRepository,
-        memoryRepository
+        memoryRepository,
+        sourceRepository
       }
     });
 

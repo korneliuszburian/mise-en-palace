@@ -119,6 +119,7 @@ export interface DatabaseRuntime {
     SourceRepository,
     | "createSourceChunk"
     | "createSourceDecision"
+    | "getSourceDecisionById"
     | "listSourceRejectionsForClaim"
   >>;
   retrievalRepository?: Pick<
@@ -220,6 +221,7 @@ export interface MaintenanceQueueDatabaseRuntime {
     | "listMemoryRecordsForProject"
     | "createAntiMemoryCandidate"
   >;
+  sourceRepository: Pick<SourceRepository, "getSourceDecisionById">;
   close(): Promise<void>;
 }
 
@@ -551,6 +553,7 @@ const createDatabaseRuntimeForClient = async (
     listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
     createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
     createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
+    getSourceDecisionById: (...args) => sourceRepository.getSourceDecisionById(...args),
     listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
     createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
     getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
@@ -737,11 +740,16 @@ export const createMaintenanceQueueDatabaseRuntime = async (
 
   try {
     const db = createKrnDatabase(client);
+    const sourceRepository = new DrizzleSourceRepository(db);
 
     return {
       maintenanceQueueRepository: new DrizzleMaintenanceQueueRepository(db),
       harnessRunRepository: new DrizzleHarnessRunRepository(db),
       memoryRepository: new DrizzleMemoryRepository(db),
+      sourceRepository: {
+        getSourceDecisionById: (...args) =>
+          sourceRepository.getSourceDecisionById(...args)
+      },
       close: closePostgresClient(client)
     };
   } catch (error) {
