@@ -18,7 +18,7 @@ might weaken type safety to move faster.
    catalog before implementation when the catalog is available:
 
    ```sh
-   rtk proxy pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
+   rtk proxy pnpm --filter @krn/cli krn memory recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
    ```
 
    Use the catalog result as read-only knowledge context. If the command is not

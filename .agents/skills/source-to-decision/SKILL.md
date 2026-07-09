@@ -38,7 +38,7 @@ Before retaining or applying a source or knowledge decision, query the explicit
 brain knowledge catalog when retained knowledge context is relevant:
 
 ```sh
-rtk proxy pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
+rtk proxy pnpm --filter @krn/cli krn memory recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
 ```
 
 Use catalog results as read-only context. They can guide adoption, rejection,
