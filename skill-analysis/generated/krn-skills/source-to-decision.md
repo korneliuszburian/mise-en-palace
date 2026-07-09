@@ -6,7 +6,7 @@
 - Strip decision: active
 - Owner skill: source-to-decision
 - Invocation: model-invoked
-- Lines: 135
+- Lines: 134
 - Stop condition: yes
 - Output: yes
 - Verification: yes

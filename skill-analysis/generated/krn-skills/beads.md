@@ -6,7 +6,7 @@
 - Strip decision: active
 - Owner skill: beads
 - Invocation: model-invoked
-- Lines: 156
+- Lines: 142
 - Stop condition: yes
 - Output: yes
 - Verification: yes
@@ -21,10 +21,8 @@ Use for durable project state: triage, claims, blockers, to-spec, to-tickets, wa
 - First Step
 - Mode Dispatch
 - Core CLI Steps
-- Planning Work
 - Steps
 - Handoff Mode
-- What Belongs In Beads
 - Output
 - Forbidden
 - Stop Condition

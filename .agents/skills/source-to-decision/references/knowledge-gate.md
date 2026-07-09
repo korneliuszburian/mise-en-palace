@@ -1,22 +1,24 @@
 # Knowledge Gate
 
-Use this reference when a non-trivial KRN slice touches retained knowledge,
-source authority, policy, evals, Codex surfaces, TypeScript boundaries, target
-repos, trust, security, or operator-facing readbacks.
+Use this reference only for source-shaped authority work: selecting, retaining,
+rejecting, measuring, or changing source, knowledge, trust, eval, or readback
+semantics.
+
+Do not use this gate for ordinary TypeScript, target-repo, Codex-surface, or
+readback work unless that work changes source/knowledge authority.
 
 ## Procedure
 
-1. Classify whether the slice touches one of these knowledge surfaces:
+1. Classify whether the slice changes one of these authority surfaces:
 
    ```txt
-   infra / storage / migrations / queues
-   harness / activation / memory / review gates
-   CI / release / eval / Promptfoo
-   Codex surfaces / skills / hooks / MCP / subagents
-   target-repo workflow
-   TypeScript boundaries
-   security / permissions / trust boundaries
-   operator UX / CLI / readback
+   source selection / source rejection
+   knowledge retention / demotion / forgetting
+   trust or safety filtering
+   eval/golden selection semantics
+   evidence/source usefulness measurement
+   operator readback of source or knowledge authority
+   target-repo or TypeScript behavior that changes source/knowledge authority
    ```
 
 2. If it does, choose exactly one path:
@@ -78,6 +80,6 @@ reject:
 
 ## Stop Condition
 
-Stop when the source path is adopted, rejected, or deferred with a consumer,
-falsifier, and `does_not_prove`, or when the slice is explicitly classified as
-not source-shaped.
+Stop when the source-shaped authority path is adopted, rejected, or deferred
+with a consumer, falsifier, and `does_not_prove`, or when the slice is
+explicitly classified as ordinary implementation/review work.

@@ -39,8 +39,9 @@ Choose the narrowest mode before mutating issues:
 | `wayfinding` | named destination with foggy route | map issue plus decision tickets | destination, map, blockers, and frontier are visible |
 | `handoff` | meaningful repo/task state | compact continuation state | fresh agent can resume without broad reread |
 
-For planning modes, read `references/planning-modes.md` and use the matching
-template from `templates/`.
+For planning modes, `references/planning-modes.md` is authoritative. Load it
+before creating or rewriting `to-spec`, `to-tickets`, or `wayfinding` issues,
+and use the matching template from `templates/`.
 
 If a request spans multiple modes, finish the earlier artifact before starting
 the later one. Do not skip from fog to implementation tickets.
@@ -85,11 +86,6 @@ rtk bd dep <blocker-id> --blocks <blocked-id>
 rtk bd close <id> --reason="Completed"
 ```
 
-## Planning Work
-
-For `to-spec`, `to-tickets`, and `wayfinding`, `references/planning-modes.md`
-is authoritative. Load it before creating or rewriting planning issues.
-
 ## Steps
 
 Use Beads before durable work:
@@ -105,16 +101,6 @@ Use Beads before durable work:
 Use `templates/handoff.md` before compaction, pause, transfer, or session end
 when meaningful repo state changed. Keep it compact and store durable task
 state in Beads, not in a markdown ledger.
-
-## What Belongs In Beads
-
-Use Beads for:
-
-- shared project tasks
-- blockers and dependencies
-- discovered follow-up work
-- work that must survive thread reset, compaction, or handoff
-- status that another person or agent should be able to resume
 
 ## Output
 

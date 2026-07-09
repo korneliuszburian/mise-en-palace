@@ -75,10 +75,9 @@ Preferred consumers:
 
 Reject or defer sources when the consumer is unclear.
 
-For retained-knowledge preflight on non-trivial KRN slices, use
-`references/knowledge-gate.md` only when the slice actually touches source,
-memory, policy, eval, trust, target-repo, TypeScript, or operator readback
-authority.
+For retained-knowledge preflight, use `references/knowledge-gate.md` only when
+the slice is source-shaped authority work: selecting, retaining, rejecting,
+measuring, or changing source/knowledge/trust/eval/readback semantics.
 
 ## Output
 

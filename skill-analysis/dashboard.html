@@ -566,8 +566,9 @@ Choose the narrowest mode before mutating issues:
 | `wayfinding` | named destination with foggy route | map issue plus decision tickets | destination, map, blockers, and frontier are visible |
 | `handoff` | meaningful repo/task state | compact continuation state | fresh agent can resume without broad reread |
 
-For planning modes, read `references/planning-modes.md` and use the matching
-template from `templates/`.
+For planning modes, `references/planning-modes.md` is authoritative. Load it
+before creating or rewriting `to-spec`, `to-tickets`, or `wayfinding` issues,
+and use the matching template from `templates/`.
 
 If a request spans multiple modes, finish the earlier artifact before starting
 the later one. Do not skip from fog to implementation tickets.
@@ -612,11 +613,6 @@ rtk bd dep &lt;blocker-id&gt; --blocks &lt;blocked-id&gt;
 rtk bd close &lt;id&gt; --reason=&quot;Completed&quot;
 ```
 
-## Planning Work
-
-For `to-spec`, `to-tickets`, and `wayfinding`, `references/planning-modes.md`
-is authoritative. Load it before creating or rewriting planning issues.
-
 ## Steps
 
 Use Beads before durable work:
@@ -632,16 +628,6 @@ Use Beads before durable work:
 Use `templates/handoff.md` before compaction, pause, transfer, or session end
 when meaningful repo state changed. Keep it compact and store durable task
 state in Beads, not in a markdown ledger.
-
-## What Belongs In Beads
-
-Use Beads for:
-
-- shared project tasks
-- blockers and dependencies
-- discovered follow-up work
-- work that must survive thread reset, compaction, or handoff
-- status that another person or agent should be able to resume
 
 ## Output
 
@@ -700,75 +686,131 @@ Do not reread:</code></pre>
 
 ## Problem Statement
 
+State the user/operator problem in one paragraph; no implementation plan here.
+
 ## Consumer
+
+Who will use this spec or resulting behavior, and at what boundary?
 
 ## Solution
 
+State the smallest settled solution that can be sliced into tickets.
+
 ## Operator/User Stories
+
+List only stories that change acceptance criteria.
 
 ## Implementation Decisions
 
+Name decisions already made; do not hide open questions here.
+
 ## Testing Decisions
 
+Name the proof level expected for the ticket slice.
+
 ## Falsifiers
+
+What would prove this spec is wrong, incomplete, or not ready to slice?
 
 ## Proof / Non-Proof
 
 Proof:
 
+Commands, checks, or evidence expected after implementation.
+
 Non-proof:
+
+Evidence that is useful but insufficient.
 
 ## Out Of Scope
 
-## Open Questions Blocking Slicing</code></pre>
+Explicit work this spec must not create tickets for.
+
+## Open Questions Blocking Slicing
+
+Questions that must be answered before `to-tickets`; leave empty only if none.</code></pre>
             </details><details class="skill-file" open>
               <summary>templates/ticket.md</summary>
               <pre id="skill-beads-templates-ticket-md"><code># Ticket
 
 ## What To Build
 
+One vertical tracer-bullet behavior, not a layer or ceremony.
+
 ## Consumer
+
+Runtime path, operator workflow, or artifact that consumes this work.
 
 ## Acceptance Criteria
 
+Observable conditions that make the issue closable.
+
 ## Falsifier
+
+The test, smoke, review finding, or readback that would prove this failed.
 
 ## Proof / Non-Proof
 
 Proof:
 
+Commands or evidence required before close.
+
 Non-proof:
+
+Checks that do not prove the acceptance criteria.
 
 ## Native Dependency Edges
 
 Required `bd dep` edges:
 
+List blocker issue IDs that must be native Beads deps, not prose-only.
+
 ## Rollback / Contraction
 
-## Open Questions</code></pre>
+How to undo, contract, or safely abandon the slice if verification fails.
+
+## Open Questions
+
+Questions that block implementation; create/edge a question issue when needed.</code></pre>
             </details><details class="skill-file" open>
               <summary>templates/wayfinding-map.md</summary>
               <pre id="skill-beads-templates-wayfinding-map-md"><code># Wayfinding Map
 
 ## Destination
 
+Decision, spec, or runtime change this map is trying to make possible.
+
 ## Consumer
+
+Who uses the destination and why it matters now.
 
 ## Decisions So Far
 
+Settled decisions only; detailed evidence belongs in child tickets.
+
 ## Not Yet Specified
+
+Fog that is not ready for implementation tickets.
 
 ## Open Questions Blocking Slicing
 
+Questions that must become one-ticket-per-session child issues.
+
 ## Out Of Scope
+
+Nearby work this map must not absorb.
 
 ## Frontier
 
 Ready child issue IDs visible through `bd ready`:
 
+Only list unblocked child issues or the dependency that will unblock them.
+
 ## Native Dependency Edges
 
 Required `bd dep` edges:
+
+Map blockers as native Beads deps; do not rely on this section alone.
 
 ## Falsifier
 
@@ -1680,23 +1722,25 @@ TypeScript changes. For broad JS/TS package-surface or cleanup work, run
               <summary>references/knowledge-gate.md</summary>
               <pre id="skill-source-to-decision-references-knowledge-gate-md"><code># Knowledge Gate
 
-Use this reference when a non-trivial KRN slice touches retained knowledge,
-source authority, policy, evals, Codex surfaces, TypeScript boundaries, target
-repos, trust, security, or operator-facing readbacks.
+Use this reference only for source-shaped authority work: selecting, retaining,
+rejecting, measuring, or changing source, knowledge, trust, eval, or readback
+semantics.
+
+Do not use this gate for ordinary TypeScript, target-repo, Codex-surface, or
+readback work unless that work changes source/knowledge authority.
 
 ## Procedure
 
-1. Classify whether the slice touches one of these knowledge surfaces:
+1. Classify whether the slice changes one of these authority surfaces:
 
    ```txt
-   infra / storage / migrations / queues
-   harness / activation / memory / review gates
-   CI / release / eval / Promptfoo
-   Codex surfaces / skills / hooks / MCP / subagents
-   target-repo workflow
-   TypeScript boundaries
-   security / permissions / trust boundaries
-   operator UX / CLI / readback
+   source selection / source rejection
+   knowledge retention / demotion / forgetting
+   trust or safety filtering
+   eval/golden selection semantics
+   evidence/source usefulness measurement
+   operator readback of source or knowledge authority
+   target-repo or TypeScript behavior that changes source/knowledge authority
    ```
 
 2. If it does, choose exactly one path:
@@ -1758,9 +1802,9 @@ reject:
 
 ## Stop Condition
 
-Stop when the source path is adopted, rejected, or deferred with a consumer,
-falsifier, and `does_not_prove`, or when the slice is explicitly classified as
-not source-shaped.</code></pre>
+Stop when the source-shaped authority path is adopted, rejected, or deferred
+with a consumer, falsifier, and `does_not_prove`, or when the slice is
+explicitly classified as ordinary implementation/review work.</code></pre>
             </details><details class="skill-file" open>
               <summary>references/source-usefulness.md</summary>
               <pre id="skill-source-to-decision-references-source-usefulness-md"><code># Source Usefulness
@@ -1872,10 +1916,9 @@ Preferred consumers:
 
 Reject or defer sources when the consumer is unclear.
 
-For retained-knowledge preflight on non-trivial KRN slices, use
-`references/knowledge-gate.md` only when the slice actually touches source,
-memory, policy, eval, trust, target-repo, TypeScript, or operator readback
-authority.
+For retained-knowledge preflight, use `references/knowledge-gate.md` only when
+the slice is source-shaped authority work: selecting, retaining, rejecting,
+measuring, or changing source/knowledge/trust/eval/readback semantics.
 
 ## Output
 
