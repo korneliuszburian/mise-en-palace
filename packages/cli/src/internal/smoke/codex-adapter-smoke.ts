@@ -59,18 +59,12 @@ interface CodexAdapterBoundaryProof {
 interface CodexAdapterBoundaryCheck {
   label: string;
   passed: boolean;
+  detail?: string;
 }
 
 type CodexAdapterReadBackContextAssembly = NonNullable<
   HarnessRunAggregate["contextAssembly"]
 >;
-
-const sameStringList = (
-  actual: readonly string[],
-  expected: readonly string[]
-): boolean =>
-  actual.length === expected.length &&
-  actual.every((value, index) => value === expected[index]);
 
 const countMarkerRows = async (
   client: Sql,
@@ -85,6 +79,7 @@ const countMarkerRows = async (
     countSourceArtifactsBySmokeId(client, marker),
     countSourceClaimsBySmokeId(client, marker),
     client<CountRow[]>`select count(*)::int as count from source_decisions where metadata->>'smokeId' = ${marker}`,
+    client<CountRow[]>`select count(*)::int as count from source_decision_edges where metadata->>'smokeId' = ${marker}`,
     client<CountRow[]>`select count(*)::int as count from search_documents where metadata->>'smokeId' = ${marker}`,
     countMemoryRecordsBySmokeId(client, marker),
     client<CountRow[]>`select count(*)::int as count from anti_memory_records where metadata->>'smokeId' = ${marker}`
@@ -118,6 +113,7 @@ const cleanupMarkerRows = async (
   }
 
   await client`delete from search_documents where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_decision_edges where metadata->>'smokeId' = ${marker}`;
   await client`delete from source_decisions where metadata->>'smokeId' = ${marker}`;
   await client`delete from source_artifacts where metadata->>'smokeId' = ${marker}`;
   await client`delete from workspaces where slug = ${workspaceSlug}`;
@@ -170,6 +166,18 @@ const renderedBriefCoversContract = (
     rendered.renderedBrief.includes(command.command)
   );
 
+const hasBoundedSelectedContext = (
+  input: {
+    expectedExpiredMemoryRecordId: string;
+    expectedMemoryRecordId: string;
+    expectedSourceClaimId: string;
+    rendered: RenderedCodexBrief;
+  }
+): boolean =>
+  input.rendered.brief.sourceClaimsUsed.includes(input.expectedSourceClaimId) &&
+  input.rendered.brief.memoryRecordsUsed.includes(input.expectedMemoryRecordId) &&
+  !input.rendered.brief.memoryRecordsUsed.includes(input.expectedExpiredMemoryRecordId);
+
 const assertCodexAdapterBoundary = (
   input: {
     aggregate: HarnessRunAggregate;
@@ -201,9 +209,25 @@ const assertCodexAdapterBoundary = (
     },
     {
       label: "bounded-selected-context",
-      passed:
-        sameStringList(input.rendered.brief.sourceClaimsUsed, [input.expectedSourceClaimId]) &&
-        sameStringList(input.rendered.brief.memoryRecordsUsed, [input.expectedMemoryRecordId])
+      passed: hasBoundedSelectedContext({
+        expectedExpiredMemoryRecordId: input.expectedExpiredMemoryRecordId,
+        expectedMemoryRecordId: input.expectedMemoryRecordId,
+        expectedSourceClaimId: input.expectedSourceClaimId,
+        rendered: input.rendered
+      }),
+      detail: [
+        `expectedSourceClaimId=${input.expectedSourceClaimId}`,
+        `sourceClaimsUsed=${input.rendered.brief.sourceClaimsUsed.join(",")}`,
+        `contextInclusions=${contextAssembly.inclusions.map((item) =>
+          `${item.subjectType}:${item.subjectId}:${item.reason}`
+        ).join(",")}`,
+        `contextExclusions=${contextAssembly.exclusions.map((item) =>
+          `${item.subjectType}:${item.subjectId}:${item.reason}:${item.explanation}`
+        ).join(",")}`,
+        `expectedMemoryRecordId=${input.expectedMemoryRecordId}`,
+        `expectedExpiredMemoryRecordId=${input.expectedExpiredMemoryRecordId}`,
+        `memoryRecordsUsed=${input.rendered.brief.memoryRecordsUsed.join(",")}`
+      ].join(" | ")
     },
     {
       label: "stale-memory-exclusion",
@@ -219,7 +243,10 @@ const assertCodexAdapterBoundary = (
 
   if (failedCheck !== undefined) {
     throw new Error(
-      `Codex adapter smoke readback did not match expected brief proof: ${failedCheck.label}`
+      [
+        `Codex adapter smoke readback did not match expected brief proof: ${failedCheck.label}`,
+        failedCheck.detail
+      ].filter((line): line is string => line !== undefined).join(" | ")
     );
   }
 
@@ -317,13 +344,12 @@ export const runCodexAdapterSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "M26 Codex adapter smoke",
       falsifier: "The smoke command cannot render objective, context, evidence, or proof boundaries.",
-      revisitWhen: "Codex adapter output contract changes.",
-      status: "proposed",
+      revisitWhen: "2030-01-01T00:00:00.000Z",
       metadata: {
         smokeId: marker
       }
     });
-    await sourceRepository.createSourceDecision({
+    const adapterDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,
       sourceClaimId: adapterClaim.id,
       status: "adopt",
@@ -334,6 +360,18 @@ export const runCodexAdapterSmokeCheck = async (
       consumer: "M26 Codex adapter smoke",
       metadata: {
         smokeId: marker
+      }
+    });
+    await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: adapterClaim.id,
+      targetType: "architecture_decision",
+      targetId: adapterDecision.id,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "Codex adapter smoke source claim is decision-linked authority for bounded brief rendering.",
+      metadata: {
+        smokeId: marker,
+        sourceDecisionId: adapterDecision.id
       }
     });
     const boundedMemoryRecord = await memoryRepository.createMemoryRecord({

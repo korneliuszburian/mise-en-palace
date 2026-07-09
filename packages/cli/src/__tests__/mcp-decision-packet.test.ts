@@ -101,7 +101,12 @@ const packetJson = {
       observationPrefixCount: 0,
       explicitExclusionCount: 2,
       sourceClaimUseCount: 1,
-      memoryRecordUseCount: 1
+      memoryRecordUseCount: 1,
+      includedSourceClaimIds: ["source-claim-agent-1"],
+      includedMemoryRecordIds: ["memory-agent-1"],
+      excludedSourceClaimIds: ["source-claim-stale-agent-1"],
+      excludedMemoryRecordIds: [],
+      excludedAntiMemoryRecordIds: ["anti-memory-agent-1"]
     }
   },
   readModel: {

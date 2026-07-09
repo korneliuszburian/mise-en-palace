@@ -53,6 +53,8 @@ const maximumAverageNoiseDecisions = 2;
 const evalCandidateCreatedAt = "2026-07-08T00:00:00.000Z";
 const evalCandidateDoesNotProve =
   "DecisionPacket eval candidates identify reviewable deterministic failures; they do not prove source truth, live Codex behavior, production retrieval quality, or that the proposed fix is correct.";
+const missingBriefPropagationReason =
+  "packet-selected guidance is missing from Codex-facing brief";
 
 const decisionById = (
   decisions: readonly DecisionPacketDecision[]
@@ -115,6 +117,56 @@ const expectedSourceRejectionIds = (
     );
 };
 
+const sourceClaimIdsForDecisionIds = (
+  fixture: DecisionPacketEvalFixture,
+  decisionIds: readonly string[]
+): readonly string[] => {
+  const expected = new Set(decisionIds);
+
+  return fixture.decisions
+    .filter((decision) => expected.has(decision.id))
+    .map((decision) => decision.sourceClaimId)
+    .filter(nonEmpty);
+};
+
+const hasAllIds = (
+  actual: readonly string[],
+  expected: readonly string[]
+): boolean => {
+  const actualIds = new Set(actual);
+
+  return expected.every((id) => actualIds.has(id));
+};
+
+const hasBriefPropagation = (
+  fixture: DecisionPacketEvalFixture,
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: DecisionPacketCase,
+  expectedDecision: DecisionPacketDecision | undefined
+): boolean => {
+  if (testCase.expectedEvidenceGap !== undefined) {
+    return packet.governingDecisionIds.length === 0;
+  }
+
+  if (
+    testCase.expectedDecisionId === undefined ||
+    expectedDecision === undefined
+  ) {
+    return false;
+  }
+
+  const expectedExcludedSourceClaimIds = sourceClaimIdsForDecisionIds(fixture, [
+    ...testCase.staleDecisionIds,
+    ...testCase.rejectedDecisionIds
+  ]);
+  const expectedMemoryRef = `memory:decision:${testCase.expectedDecisionId}`;
+  const memoryRefIsSelected = packet.memoryRefs.includes(expectedMemoryRef);
+
+  return packet.brief.includedSourceClaimIds.includes(expectedDecision.sourceClaimId) &&
+    (!memoryRefIsSelected || packet.brief.includedMemoryRecordIds.includes(expectedMemoryRef)) &&
+    hasAllIds(packet.brief.excludedSourceClaimIds, expectedExcludedSourceClaimIds);
+};
+
 const reasonFor = (
   condition: boolean,
   passed: string,
@@ -124,7 +176,8 @@ const reasonFor = (
 const packetReasons = (
   fixture: DecisionPacketEvalFixture,
   packet: DecisionPacketEvalCaseReadback["packet"],
-  testCase: DecisionPacketCase
+  testCase: DecisionPacketCase,
+  expectedDecision: DecisionPacketDecision | undefined
 ): readonly string[] => [
   ...(testCase.expectedDecisionId === undefined
     ? [
@@ -154,6 +207,11 @@ const packetReasons = (
           packet.falsifiers.length > 0 && packet.doesNotProve.length > 0,
           "packet includes falsifier and doesNotProve boundaries",
           "packet is missing falsifier or doesNotProve boundaries"
+        ),
+        reasonFor(
+          hasBriefPropagation(fixture, packet, testCase, expectedDecision),
+          "packet-selected guidance reaches Codex-facing brief",
+          missingBriefPropagationReason
         )
       ]),
   reasonFor(
@@ -319,6 +377,7 @@ export const classifyDecisionPacketForEval = (
 
   if (
     !hasDecisionBoundary(packet, expectedDecision) ||
+    !hasBriefPropagation(fixture, packet, testCase, expectedDecision) ||
     !hasSameIds(packet.staleDecisionIds, testCase.staleDecisionIds) ||
     packet.caveatedSourceClaimIds.length > maximumCaveatedSourceClaimInclusions ||
     !hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) ||
@@ -431,10 +490,47 @@ const evaluateCase = async (
     notesBaseline,
     comparisonOutcome,
     status: decisionPacketCaseStatus(qualityLabel),
-    reasons: packetReasons(fixture, packet, testCase),
+    reasons: packetReasons(fixture, packet, testCase, expectedDecision),
     packet
   };
 };
+
+interface DecisionPacketFailureRule {
+  readonly failureClass: DecisionPacketEvalFailureClass;
+  readonly matches: (testCase: DecisionPacketEvalCaseReadback) => boolean;
+}
+
+const failureClassRules: readonly DecisionPacketFailureRule[] = [
+  {
+    failureClass: "stale_authority",
+    matches: (testCase) => testCase.qualityLabel === "stale_authority"
+  },
+  {
+    failureClass: "missing_abstention",
+    matches: (testCase) =>
+      testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel !== "abstained"
+  },
+  {
+    failureClass: "missing_evidence_fidelity",
+    matches: (testCase) => testCase.scores.evidenceFidelity === 0
+  },
+  {
+    failureClass: "missing_source_support",
+    matches: (testCase) => testCase.scores.sourceSupport === 0
+  },
+  {
+    failureClass: "missing_rejected_path",
+    matches: (testCase) => testCase.scores.rejectionRecall === 0
+  },
+  {
+    failureClass: "missing_brief_propagation",
+    matches: (testCase) => testCase.reasons.includes(missingBriefPropagationReason)
+  },
+  {
+    failureClass: "missed_packet",
+    matches: (testCase) => testCase.qualityLabel === "miss"
+  }
+];
 
 const failureClassForCase = (
   testCase: DecisionPacketEvalCaseReadback
@@ -443,31 +539,7 @@ const failureClassForCase = (
     return undefined;
   }
 
-  if (testCase.qualityLabel === "stale_authority") {
-    return "stale_authority";
-  }
-
-  if (testCase.expectedEvidenceGap !== undefined && testCase.qualityLabel !== "abstained") {
-    return "missing_abstention";
-  }
-
-  if (testCase.scores.evidenceFidelity === 0) {
-    return "missing_evidence_fidelity";
-  }
-
-  if (testCase.scores.sourceSupport === 0) {
-    return "missing_source_support";
-  }
-
-  if (testCase.scores.rejectionRecall === 0) {
-    return "missing_rejected_path";
-  }
-
-  if (testCase.qualityLabel === "miss") {
-    return "missed_packet";
-  }
-
-  return "noisy_packet";
+  return failureClassRules.find((rule) => rule.matches(testCase))?.failureClass ?? "noisy_packet";
 };
 
 const evalCandidateId = (
@@ -532,6 +604,9 @@ const buildCaseEvalCandidate = (
         rejectedPathIds: testCase.packet.rejectedPathIds,
         caveatedSourceClaimIds: testCase.packet.caveatedSourceClaimIds,
         severeStaleAuthorityIds: testCase.packet.severeStaleAuthorityIds,
+        briefIncludedSourceClaimIds: testCase.packet.brief.includedSourceClaimIds,
+        briefIncludedMemoryRecordIds: testCase.packet.brief.includedMemoryRecordIds,
+        briefExcludedSourceClaimIds: testCase.packet.brief.excludedSourceClaimIds,
         evidenceGapIds: testCase.packet.evidenceGaps.map((gap) => gap.id)
       },
       doesNotProve: evalCandidateDoesNotProve
@@ -825,6 +900,7 @@ export const runDecisionPacketEval = async (
         "packets include governing decisions, SourceClaim refs, SourceDecisionEdge refs, SourceRejection refs, memory refs, falsifiers, and doesNotProve boundaries",
         "normal coding task packets expose taskStandardDecisions and verificationCommands before Codex starts implementation",
         "packet scoring reports stale-decision exclusions and rejected-path visibility from context exclusions before coding starts",
+        "packet scoring reports whether selected governing source and memory signals reached the Codex-facing brief summary",
         "packet scoring reports explicit evidence-gap abstention when no governed decision should guide Codex",
         "packet scoring reports consensus/conflict as a separate axis over stale, rejected, caveated, and unsupported governing context",
         "abstentionScore is a top-level scorer gate for unsupported cases before broad MCP transport can rely on DecisionPacket guidance",

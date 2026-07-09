@@ -539,9 +539,15 @@ describe("decision packet CLI", () => {
         verificationCommands: ["pnpm --filter frontend test"],
         brief: {
           includedContextCount: 3,
+          observationPrefixCount: 0,
           explicitExclusionCount: 2,
           sourceClaimUseCount: 2,
-          memoryRecordUseCount: 1
+          memoryRecordUseCount: 1,
+          includedSourceClaimIds: ["claim-agent-1", "claim-agent-caveated"],
+          includedMemoryRecordIds: ["memory-agent-1"],
+          excludedSourceClaimIds: ["claim-agent-superseded"],
+          excludedMemoryRecordIds: ["memory-rejected-1"],
+          excludedAntiMemoryRecordIds: []
         }
       },
       readModel: {

@@ -419,6 +419,16 @@ const stronglyMatchesTask = (
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
+const briefSubjectIds = (
+  items: readonly {
+    subjectType: string;
+    subjectId: string;
+  }[],
+  subjectType: string
+): string[] => unique(items
+  .filter((item) => item.subjectType === subjectType)
+  .map((item) => item.subjectId));
+
 const includedDecisionRows = (
   fixture: DecisionPacketEvalFixture,
   brief: ExecutionBrief
@@ -638,7 +648,12 @@ export const buildDecisionPacketWithEngine = async (
       observationPrefixCount: brief.observationPrefix.length,
       explicitExclusionCount: brief.explicitExclusions.length,
       sourceClaimUseCount: brief.sourceClaimsUsed.length,
-      memoryRecordUseCount: brief.memoryRecordsUsed.length
+      memoryRecordUseCount: brief.memoryRecordsUsed.length,
+      includedSourceClaimIds: brief.sourceClaimsUsed,
+      includedMemoryRecordIds: brief.memoryRecordsUsed,
+      excludedSourceClaimIds: briefSubjectIds(brief.explicitExclusions, "source_claim"),
+      excludedMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "memory_record"),
+      excludedAntiMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "anti_memory_record")
     }
   };
 };

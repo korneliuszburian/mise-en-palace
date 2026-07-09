@@ -99,7 +99,13 @@ const expectProjectStandardCase = (
         reasons: []
       },
       brief: {
-        observationPrefixCount: 1
+        observationPrefixCount: 1,
+        includedSourceClaimIds: expect.arrayContaining([`source-claim:${expected.expectedDecisionId}`]),
+        includedMemoryRecordIds: expect.arrayContaining([`memory:decision:${expected.expectedDecisionId}`]),
+        excludedSourceClaimIds: expect.arrayContaining([
+          `source-claim:${expected.staleDecisionId}`,
+          `source-claim:${expected.rejectedDecisionId}`
+        ])
       },
       severeStaleAuthorityIds: []
     }
@@ -211,7 +217,17 @@ describe("runDecisionPacketEval", () => {
         },
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
         brief: {
-          observationPrefixCount: 1
+          observationPrefixCount: 1,
+          includedSourceClaimIds: expect.arrayContaining([
+            "source-claim:store-backed-memory-no-markdown"
+          ]),
+          includedMemoryRecordIds: expect.arrayContaining([
+            "memory:decision:store-backed-memory-no-markdown"
+          ]),
+          excludedSourceClaimIds: expect.arrayContaining([
+            "source-claim:markdown-runtime-memory",
+            "source-claim:create-markdown-memory-files"
+          ])
         },
         staleDecisionIds: ["markdown-runtime-memory"],
         rejectedPathIds: ["create-markdown-memory-files"],
@@ -530,7 +546,15 @@ describe("runDecisionPacketEval", () => {
         observationPrefixCount: 1,
         explicitExclusionCount: 2,
         sourceClaimUseCount: 1,
-        memoryRecordUseCount: 1
+        memoryRecordUseCount: 1,
+        includedSourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
+        includedMemoryRecordIds: ["memory:decision:store-backed-memory-no-markdown"],
+        excludedSourceClaimIds: [
+          "source-claim:cast-json-record",
+          "source-claim:prose-second-opinion"
+        ],
+        excludedMemoryRecordIds: [],
+        excludedAntiMemoryRecordIds: []
       }
     };
 

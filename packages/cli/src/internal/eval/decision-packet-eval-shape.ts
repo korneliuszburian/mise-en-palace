@@ -15,6 +15,7 @@ export type NotesBaselineLabel = "usable" | "unsafe" | "unsupported" | "miss";
 export type BaselineComparisonOutcome = "krn_win" | "notes_win" | "tie";
 export type DecisionPacketEvalFailureClass =
   | "missing_abstention"
+  | "missing_brief_propagation"
   | "missing_evidence_fidelity"
   | "missing_rejected_path"
   | "missing_source_support"

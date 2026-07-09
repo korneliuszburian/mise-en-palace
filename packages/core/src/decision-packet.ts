@@ -25,6 +25,11 @@ export interface DecisionPacketBriefSummary {
   explicitExclusionCount: number;
   sourceClaimUseCount: number;
   memoryRecordUseCount: number;
+  includedSourceClaimIds: readonly string[];
+  includedMemoryRecordIds: readonly string[];
+  excludedSourceClaimIds: readonly string[];
+  excludedMemoryRecordIds: readonly string[];
+  excludedAntiMemoryRecordIds: readonly string[];
 }
 
 export interface DecisionPacketEvidenceGap {
@@ -91,6 +96,16 @@ export interface DecisionPacketAbstentionScore {
 }
 
 const unique = <T extends string>(values: readonly T[]): T[] => [...new Set(values)];
+
+const contextSubjectIds = (
+  items: readonly {
+    subjectType: ContextSubjectType;
+    subjectId: string;
+  }[],
+  subjectType: ContextSubjectType
+): readonly string[] => unique(items
+  .filter((item) => item.subjectType === subjectType)
+  .map((item) => item.subjectId));
 
 const usefulFeedbackOutcomes = [
   "selected",
@@ -718,6 +733,7 @@ export const buildDecisionPacketFromReadModel = (
   readModel: DecisionPacketReadModelInput
 ): DecisionPacket => {
   const inclusions = readModel.context.inclusionDetails;
+  const exclusions = readModel.context.exclusionDetails ?? [];
   const sourceClaimIds = sourceClaimIdsFor(readModel);
   const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
   const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel, sourceClaimIds);
@@ -821,7 +837,12 @@ export const buildDecisionPacketFromReadModel = (
       ).length,
       memoryRecordUseCount: inclusions.filter((inclusion) =>
         inclusion.subjectType === "memory_record"
-      ).length
+      ).length,
+      includedSourceClaimIds: contextSubjectIds(inclusions, "source_claim"),
+      includedMemoryRecordIds: contextSubjectIds(inclusions, "memory_record"),
+      excludedSourceClaimIds: contextSubjectIds(exclusions, "source_claim"),
+      excludedMemoryRecordIds: contextSubjectIds(exclusions, "memory_record"),
+      excludedAntiMemoryRecordIds: contextSubjectIds(exclusions, "anti_memory_record")
     }
   };
 };
