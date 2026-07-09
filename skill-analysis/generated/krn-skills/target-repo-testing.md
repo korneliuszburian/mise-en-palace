@@ -3,6 +3,8 @@
 - Source: KRN
 - Path: `.agents/skills/target-repo-testing/SKILL.md`
 - Role: checker
+- Strip decision: active
+- Owner skill: target-repo-testing
 - Invocation: model-invoked
 - Lines: 203
 - Stop condition: yes
@@ -11,7 +13,7 @@
 
 ## Description
 
-Use when Codex is asked to inspect, test, initialize, plan, verify, or repair a target repository through KRN with explicit mode, dirty-state, write-authority, proof/non-proof, and handoff boundaries, especially when the target repo may be dirty, active, external, headless, writable, or used as evidence for second-operator/internal-alpha readiness.
+Use for KRN work against another repo: inspect, init, test, plan, verify, or repair with explicit mode, dirty state, write authority, proof/non-proof, and handoff.
 
 ## Sections
 
@@ -31,4 +33,12 @@ Use when Codex is asked to inspect, test, initialize, plan, verify, or repair a 
 ## Reference Files
 
 - agents/openai.yaml
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

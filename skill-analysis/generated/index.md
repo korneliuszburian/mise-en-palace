@@ -14,7 +14,7 @@ Generated files:
 
 ## Current Counts
 
-- KRN skills: 13
+- KRN skills: 7
 - Matt skills: 17
 
 Regenerate with:

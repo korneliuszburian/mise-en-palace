@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use when reviewing KRN diffs, PRs, large local changes, migration slices, cleanup slices, or architecture/naming changes for bugs, spec drift, roadmap drift, test theater, speculative generality, shallow modules, and Fowler-style code smells.
+description: Use for KRN reviews of diffs, PRs, migrations, cleanup, architecture, or naming; checks Standards, Spec, proof gaps, test theater, and Fowler-style smells.
 ---
 
 # Code Review
@@ -19,6 +19,8 @@ cleanup, architecture, or naming slice needs checker evidence.
 3. Find the Beads issue, `AGENTS.md`, `KRN_ROADMAP.md`, and relevant skills.
 4. Do not read historical docs unless a current authority surface references
    them for the reviewed slice.
+5. For execution evidence capture, proof/non-proof boundaries, rollback path,
+   or feedback candidates, read `references/evidence-review.md`.
 
 ## Axes
 

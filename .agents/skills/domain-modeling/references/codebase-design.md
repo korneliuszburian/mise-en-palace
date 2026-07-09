@@ -1,21 +1,8 @@
----
-name: codebase-design
-description: Use when changing KRN architecture, package seams, public interfaces, adapters, runtime/store boundaries, naming, or refactors where the risk is shallow modules, pass-through layers, duplicate read models, speculative seams, or unclear test surfaces.
----
-
 # Codebase Design
 
-Use this skill before architecture or naming edits that change a public seam.
-
-## Trigger
-
-Use before architecture, naming, or seam edits that change what callers,
-operators, tests, or persistence paths must understand.
-
-## Purpose
-
-Make KRN smaller and deeper: more behavior behind fewer clearer interfaces, with
-a runtime consumer, falsifier, and owner.
+Use this reference before architecture or naming edits that change a public
+seam. It provides vocabulary for keeping KRN modules smaller, deeper, and
+owned by a real consumer.
 
 ## Vocabulary
 
@@ -29,9 +16,10 @@ a runtime consumer, falsifier, and owner.
 - Leverage: capability callers get from the interface.
 - Locality: change concentrated in one module instead of scattered callers.
 
-## Steps
+## Procedure
 
-1. Map current caller -> interface -> implementation -> persistence/runtime path.
+1. Map current caller -> interface -> implementation -> persistence/runtime
+   path.
 2. Run the deletion test: if deleting the module removes complexity, it is
    likely middle-man; if complexity reappears across callers, it earns depth.
 3. Classify dependencies before adding a seam:
@@ -40,10 +28,10 @@ a runtime consumer, falsifier, and owner.
    - remote-owned: define a port only when production and test adapters both
      earn the seam;
    - true external: inject the dependency and mock only that boundary.
-4. Count adapters: one adapter is usually a hypothetical seam; two real adapters
-   can justify a seam.
-5. Prefer one direct domain model over adapter chains, duplicate read models, or
-   compatibility aliases.
+4. Count adapters: one adapter is usually a hypothetical seam; two real
+   adapters can justify a seam.
+5. Prefer one direct domain model over adapter chains, duplicate read models,
+   or compatibility aliases.
 6. Test at the highest public seam that proves behavior; replace shallow tests
    with seam tests instead of layering both.
 7. Reject tests that freeze file topology, prose, command lists, or ceremony.
@@ -59,20 +47,8 @@ a runtime consumer, falsifier, and owner.
 - Non-proof:
 - Verification:
 
-## Stop Condition
-
-Stop when the current path, smallest design decision, owner, consumer,
-falsifier, non-proof boundary, and verification command are all named.
-
 ## Verification
 
 Verify with the smallest behavior/type checks that touch the changed seam, plus
 targeted `rg` proof for removed aliases, duplicate read models, or rejected
 public terms when relevant.
-
-## Forbidden
-
-- Do not add a seam without a current consumer, falsifier, and owner.
-- Do not preserve bad names behind compatibility aliases unless a staged rollout
-  is required.
-- Do not use prose/topology tests as design proof.

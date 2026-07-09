@@ -14,24 +14,18 @@ flowchart LR
   subgraph KRN["KRN"]
     subgraph KRN_checker["checker"]
       KRN_code_review["code-review"]
-      KRN_evidence_review_loop["evidence-review-loop"]
       KRN_target_repo_testing["target-repo-testing"]
     end
     subgraph KRN_decision["decision"]
-      KRN_codebase_design["codebase-design"]
       KRN_domain_modeling["domain-modeling"]
       KRN_source_to_decision["source-to-decision"]
     end
     subgraph KRN_maker["maker"]
-      KRN_activation_engine["activation-engine"]
-      KRN_brain_store_schema["brain-store-schema"]
-      KRN_codex_adapter_plan["codex-adapter-plan"]
-      KRN_tdd["tdd"]
-      KRN_typescript_type_safety["typescript-type-safety"]
+      KRN_diagnosing_bugs["diagnosing-bugs"]
+      KRN_krn_implementation["krn-implementation"]
     end
     subgraph KRN_router["router"]
       KRN_beads["beads"]
-      KRN_handoff_compact["handoff-compact"]
     end
   end
   subgraph MATT["Matt Pocock"]

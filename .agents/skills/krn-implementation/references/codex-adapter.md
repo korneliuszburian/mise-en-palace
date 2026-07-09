@@ -1,11 +1,6 @@
----
-name: codex-adapter-plan
-description: Use when rendering KRN DecisionPacket or harness output into Codex-facing execution briefs with bounded context, evidence expectations, proof boundaries, and non-mutating adapter behavior.
----
+# Codex Adapter
 
-# Codex Adapter Plan
-
-Use this skill at the Codex brief boundary, not inside core domain logic.
+Use this reference at the Codex brief boundary, not inside core domain logic.
 
 ## Trigger
 
@@ -15,7 +10,7 @@ Use this skill at the Codex brief boundary, not inside core domain logic.
 - A brief change risks treating skills, hooks, MCP, or adapter metadata as the
   product brain instead of tooling around the `DecisionPacket`.
 
-## Steps
+## Procedure
 
 1. Read the bounded input: task contract, context assembly, selected knowledge,
    source support, rejected/stale paths, capability requirements, and evidence
@@ -28,20 +23,10 @@ Use this skill at the Codex brief boundary, not inside core domain logic.
 6. Keep core package imports one-way: adapter may import core/harness; core must
    not import adapter.
 
-## Output
+## Verification
 
-- Execution brief.
-- DecisionPacket context inclusion/exclusion section.
-- Current knowledge/source support, stale boundaries, and rejected paths.
-- Evidence contract.
-- Non-goals and stop conditions.
-- Proof and non-proof boundary.
-
-## Stop Condition
-
-Stop when the rendered brief is bounded, inspectable, non-mutating, has explicit
-proof/non-proof boundaries, and no Codex-specific product authority leaked into
-core packages.
+Run typecheck/tests, verify the changed brief output, and search that
+`packages/core` has no Codex adapter imports or Codex-specific runtime behavior.
 
 ## Forbidden
 
@@ -51,8 +36,3 @@ core packages.
 - Do not render skill, hook, MCP, Goal, or ExecPlan metadata unless a current
   runtime contract consumes it.
 - Do not import `@krn/codex-adapter` from `packages/core`.
-
-## Verification
-
-Run typecheck/tests, verify the changed brief output, and search that
-`packages/core` has no Codex adapter imports or Codex-specific runtime behavior.

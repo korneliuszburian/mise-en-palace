@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/prototype/SKILL.md`
 - Role: maker
+- Strip decision: n/a
+- Owner skill: prototype
 - Invocation: model-invoked
 - Lines: 31
 - Stop condition: no
@@ -23,4 +25,12 @@ Build a throwaway prototype to answer a design question. Use when the user wants
 
 - LOGIC.md
 - UI.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

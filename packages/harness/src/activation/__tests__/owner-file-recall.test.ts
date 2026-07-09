@@ -229,9 +229,9 @@ describe("owner-file recall", () => {
           reason: "seed repo-local KRN skills and execution workflow organs"
         },
         {
-          path: ".agents/skills/evidence-review-loop/SKILL.md",
+          path: ".agents/skills/code-review/references/evidence-review.md",
           kind: "skill_doc",
-          reason: "seed evidence-review-loop skill owner for proof and sequencing work"
+          reason: "seed code-review evidence-review reference owner for proof and sequencing work"
         },
       ],
       ownerFiles: [],
@@ -239,14 +239,14 @@ describe("owner-file recall", () => {
     };
     const candidates = buildOwnerFileRecallCandidates(
       taskContract(
-        "Update evidence-review-loop skill and skill invariant for observe reflect sequencing guard"
+        "Update code-review evidence-review reference and skill invariant for observe reflect sequencing guard"
       ),
       { targetReadModel }
     );
 
     expect(candidates.map((candidate) => candidate.reason)).toEqual(
       expect.arrayContaining([
-        "Target source seed: .agents/skills/evidence-review-loop/SKILL.md"
+        "Target source seed: .agents/skills/code-review/references/evidence-review.md"
       ])
     );
     expect(candidates).toEqual(
@@ -255,7 +255,7 @@ describe("owner-file recall", () => {
           metadata: expect.objectContaining({
             source: "target_project_read_model",
             targetReadModelKind: "source_seed",
-            targetPath: ".agents/skills/evidence-review-loop/SKILL.md",
+            targetPath: ".agents/skills/code-review/references/evidence-review.md",
             seedKind: "skill_doc"
           })
         }),
@@ -270,7 +270,7 @@ describe("owner-file recall", () => {
       localPathHints: ["/tmp/mise-en-palace"],
       sourceSeeds: [
         {
-          path: ".agents/skills/typescript-type-safety/SKILL.md",
+          path: ".agents/skills/krn-implementation/references/type-safety.md",
           kind: "skill_doc",
           reason: "seed TypeScript boundary workflow for strict code changes"
         }
@@ -299,7 +299,7 @@ describe("owner-file recall", () => {
 
     expect(included?.metadata).toMatchObject({
       targetReadModelKind: "source_seed",
-      targetPath: ".agents/skills/typescript-type-safety/SKILL.md",
+      targetPath: ".agents/skills/krn-implementation/references/type-safety.md",
       seedKind: "skill_doc"
     });
     expect(excluded).toEqual(expect.arrayContaining([

@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/diagnosing-bugs/SKILL.md`
 - Role: maker
+- Strip decision: n/a
+- Owner skill: diagnosing-bugs
 - Invocation: model-invoked
 - Lines: 135
 - Stop condition: yes
@@ -25,4 +27,12 @@ Diagnosis loop for hard bugs and performance regressions. Use when the user says
 ## Reference Files
 
 - scripts/hitl-loop.template.sh
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

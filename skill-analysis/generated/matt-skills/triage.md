@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/triage/SKILL.md`
 - Role: router
+- Strip decision: n/a
+- Owner skill: triage
 - Invocation: user-invoked
 - Lines: 113
 - Stop condition: no
@@ -29,4 +31,12 @@ Move issues and external PRs through a state machine of triage roles — categor
 
 - AGENT-BRIEF.md
 - OUT-OF-SCOPE.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

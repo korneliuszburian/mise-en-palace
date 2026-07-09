@@ -1,6 +1,6 @@
 ---
 name: source-to-decision
-description: Use when Codex cites OpenAI docs, Cookbook examples, papers, practitioner writing, competitor docs, local repo evidence, or user-provided material to justify KRN architecture, policy, skill, memory, context, eval, MCP, hook, subagent, or TypeScript decisions with a consumer and falsifier.
+description: Use when external docs, papers, practitioner writing, competitor docs, local evidence, or user material must become a KRN decision with mechanism, consumer, falsifier, and does-not-prove.
 ---
 
 # Source To Decision

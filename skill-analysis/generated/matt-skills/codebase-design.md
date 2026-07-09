@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/codebase-design/SKILL.md`
 - Role: decision
+- Strip decision: n/a
+- Owner skill: codebase-design
 - Invocation: model-invoked
 - Lines: 115
 - Stop condition: no
@@ -27,4 +29,12 @@ Shared vocabulary for designing deep modules. Use when the user wants to design 
 
 - DEEPENING.md
 - DESIGN-IT-TWICE.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

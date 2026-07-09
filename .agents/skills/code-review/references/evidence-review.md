@@ -1,20 +1,9 @@
----
-name: evidence-review-loop
-description: Use when capturing KRN execution evidence with command provenance, proof/non-proof boundaries, review risk, feedback deltas, or memory/source/skill/policy/eval candidates after a run.
----
+# Evidence Review
 
-# Evidence Review Loop
-
-Use this skill after or around execution, when proof must become reviewable
+Use this reference after or around execution, when proof must become reviewable
 state without mutating memory automatically.
 
-## Trigger
-
-- Capturing changed files, command results, typecheck/test status, diff risk,
-  review burden, rollback path, or feedback candidates.
-- Turning review findings into memory/source/skill/policy/eval candidates.
-
-## Steps
+## Procedure
 
 1. Record changed files and scope.
 2. Record each command with status and provenance; distinguish statuses
@@ -31,8 +20,9 @@ state without mutating memory automatically.
    before `krn reflect --persist`. Do not start observe and reflect in parallel
    for the same run.
 8. If run-scoped reflect selects `0` observations when the run should have
-   persisted evidence, treat it as a sequencing failure until observe completion
-   is verified. Do not use that result as reflection-quality evidence.
+   persisted evidence, treat it as a sequencing failure until observe
+   completion is verified. Do not use that result as reflection-quality
+   evidence.
 9. Create feedback candidates; do not apply them automatically.
 10. Append run/outbox evidence only when persistence is configured.
 
@@ -48,25 +38,6 @@ state without mutating memory automatically.
 - Observe-before-reflect sequencing status for persisted same-run loops.
 - Persistence status.
 
-## Stop Condition
-
-Stop when a reviewer can distinguish hard proof, skipped or weak evidence,
-interpretation, rollback path, source usefulness, feedback candidates, and any
-remaining proof gaps.
-
-## Forbidden
-
-- Do not claim skipped commands passed.
-- Do not treat default_template, skipped, missing, or not_run command rows
-  as strong verification proof.
-- Do not mutate Memory Core without explicit acceptance.
-- Do not invent execution runs when DB/run IDs are absent.
-- Do not promote eval/source/memory candidates as a side effect of capture.
-- Do not run same-run `krn observe --persist` and `krn reflect --persist` in
-  parallel.
-- Do not call a zero-observation reflection result a reflection-quality finding
-  until observe completion for that run is verified.
-
 ## Verification
 
 Evidence must let a reviewer see what changed, what was actually run, what risk
@@ -74,3 +45,14 @@ remains, and how to roll back.
 
 For persisted same-run loops, evidence must also show that observe completed
 before reflect, or explicitly mark reflection output as sequencing-weak.
+
+## Forbidden
+
+- Do not claim skipped commands passed.
+- Do not treat default_template, skipped, missing, or not_run command rows as
+  strong verification proof.
+- Do not mutate Memory Core without explicit acceptance.
+- Do not invent execution runs when DB/run IDs are absent.
+- Do not promote eval/source/memory candidates as a side effect of capture.
+- Do not run same-run `krn observe --persist` and `krn reflect --persist` in
+  parallel.

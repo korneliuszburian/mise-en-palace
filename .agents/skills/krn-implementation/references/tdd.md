@@ -1,21 +1,10 @@
----
-name: tdd
-description: Use when adding or changing KRN tests for runtime behavior, parser boundaries, migrations, source/memory authority, DecisionPacket selection, feedback effects, or bug fixes that need a red-green falsifier; do not use for prose, topology, command-list, snapshot, or ceremony tests.
----
-
 # TDD
 
-Use TDD to create one tight behavior falsifier before implementation. The goal
-is not more tests. The goal is a test that would fail for the exact bug,
-authority gap, or product behavior being changed.
+Use this reference to create one tight behavior falsifier before implementation.
+The goal is not more tests. The goal is a test that would fail for the exact
+bug, authority gap, or product behavior being changed.
 
-## Trigger
-
-Use when a runtime behavior, parser boundary, migration, source/memory
-authority rule, DecisionPacket selection, feedback effect, or bug fix needs a
-red-green falsifier.
-
-## Steps
+## Procedure
 
 1. Name the behavior, not the implementation.
 2. Pick the highest public seam that observes it:
@@ -59,42 +48,7 @@ process exit, or a DB when a test DB is not the seam under test. Do not mock
 core, CLI, harness, or DB repository collaborators you can exercise through the
 public interface.
 
-## Output
-
-- Behavior:
-- Seam:
-- Red command:
-- Green command:
-- Non-proof:
-- Verification:
-
-## Stop Condition
-
-Stop when the test fails for the intended reason before implementation, passes
-after the smallest change, and the local behavior command, typecheck, and
-relevant Fallow gate are run or explicitly unavailable.
-
 ## Verification
 
 Verification requires the red command, green command, typecheck result, and
 relevant Fallow result or an explicit unavailable reason.
-
-## Forbidden
-
-- Do not write tests that freeze prose, topology, command lists, snapshots, or
-  implementation ceremony.
-- Do not mock internal KRN collaborators that can be exercised through a public
-  seam.
-- Do not refactor ahead of the red-green slice.
-
-## Source Decision
-
-Source: Matt Pocock `tdd` skill, adapted from public repo
-`https://github.com/mattpocock/skills`.
-Mechanism: red-green at a public seam prevents implementation-coupled and
-tautological tests.
-KRN implication: tests must protect source/memory/DecisionPacket behavior, not
-repo prose or ceremony.
-Consumer: Codex sessions that add or change tests.
-Falsifier: a test added under this skill only freezes prose/topology or passes
-without observing the intended behavior.

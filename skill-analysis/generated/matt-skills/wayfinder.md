@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/wayfinder/SKILL.md`
 - Role: router
+- Strip decision: n/a
+- Owner skill: wayfinder
 - Invocation: user-invoked
 - Lines: 128
 - Stop condition: no
@@ -30,6 +32,14 @@ Plan a huge chunk of work — more than one agent session can hold — as a shar
 - Invocation
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

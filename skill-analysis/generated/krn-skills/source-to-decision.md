@@ -3,6 +3,8 @@
 - Source: KRN
 - Path: `.agents/skills/source-to-decision/SKILL.md`
 - Role: decision
+- Strip decision: active
+- Owner skill: source-to-decision
 - Invocation: model-invoked
 - Lines: 231
 - Stop condition: yes
@@ -11,7 +13,7 @@
 
 ## Description
 
-Use when Codex cites OpenAI docs, Cookbook examples, papers, practitioner writing, competitor docs, local repo evidence, or user-provided material to justify KRN architecture, policy, skill, memory, context, eval, MCP, hook, subagent, or TypeScript decisions with a consumer and falsifier.
+Use when external docs, papers, practitioner writing, competitor docs, local evidence, or user material must become a KRN decision with mechanism, consumer, falsifier, and does-not-prove.
 
 ## Sections
 
@@ -26,6 +28,14 @@ Use when Codex cites OpenAI docs, Cookbook examples, papers, practitioner writin
 - Stop Condition
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

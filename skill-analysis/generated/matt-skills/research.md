@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/research/SKILL.md`
 - Role: decision
+- Strip decision: n/a
+- Owner skill: research
 - Invocation: model-invoked
 - Lines: 13
 - Stop condition: no
@@ -18,6 +20,14 @@ Investigate a question against high-trust primary sources and capture the findin
 - _No h2 sections found._
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

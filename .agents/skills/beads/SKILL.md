@@ -1,11 +1,12 @@
 ---
 name: beads
-description: Use when working in a repository that uses bd or Beads for durable project task tracking, issue dependencies, blocker management, multi-session handoff, or shared work memory. Trigger when the user asks to find ready work, claim or close tasks, create follow-up work, inspect blockers, recover project context, or choose between local planning and persistent project tracking.
+description: Use for durable project state: triage, claims, blockers, to-spec, to-tickets, wayfinding, handoff, follow-up work, or any task that must survive the current chat.
 ---
 
 # Beads
 
-Use Beads as the shared project task system. Local plans, scratch files, and personal memories are useful, but they are not the durable source of truth for project work.
+Use Beads as the shared project task system. If work must survive the current
+chat, it belongs in Beads or it does not exist as project state.
 
 ## Trigger
 
@@ -26,9 +27,23 @@ If that prints nothing, check whether the repository has an active Beads workspa
 rtk bd where
 ```
 
-## Preferred Route
+## Mode Dispatch
 
-Use the `bd` CLI when shell access is available. It is the most compact and direct Beads interface.
+Choose the narrowest mode before mutating issues:
+
+| Mode | Input | Output | Stop gate |
+|---|---|---|---|
+| `triage` | backlog, blocker, follow-up, status question | claimed/updated/closed issue or new follow-up | next action is represented in Beads |
+| `to-spec` | rough idea or conversation | one settled spec issue/body | spec can be sliced without inventing requirements |
+| `to-tickets` | spec or concrete plan | agent-sized issues plus dependency edges | `bd ready` shows the frontier |
+| `wayfinding` | named destination with foggy route | map issue plus decision tickets | destination, map, blockers, and frontier are visible |
+| `handoff` | meaningful repo/task state | compact continuation state | fresh agent can resume without broad reread |
+
+For planning modes, read `references/planning-modes.md` and use the matching
+template from `templates/`.
+
+If a request spans multiple modes, finish the earlier artifact before starting
+the later one. Do not skip from fog to implementation tickets.
 
 ## Core CLI Steps
 
@@ -88,29 +103,22 @@ Use tracer-bullet issues for product work:
 - blockers are native Beads dependencies, not prose-only references;
 - the frontier is `bd ready`: open work whose blockers are done.
 
-Use expand-contract for wide refactors:
-
-1. expand the new form beside the old only when a single green slice cannot
-   migrate the blast radius safely;
-2. migrate callers in batches sized by package, directory, or public boundary;
-3. contract the old form only after `rg` and typecheck prove no caller remains.
-
 If a planned issue has no runtime consumer, falsifier, or owner, reject it or
 record it as a question before creating implementation work.
 
-For foggy roadmap work, use wayfinding inside Beads instead of creating a
-separate map document:
+Reject horizontal layer tickets like "build database", "add tests", or
+"refactor activation" unless the issue names the end-to-end behavior it proves.
 
-- first name the destination: the decision, spec, or runtime change that makes
-  the roadmap more true;
-- create question issues only for fog that is sharp enough to answer in one
-  fresh context;
-- keep vague future areas out of implementation tickets until a frontier issue
-  makes them specific;
-- record each resolved decision in the closing reason or issue notes, not in a
-  parallel plan file;
-- create newly discovered Beads only after the current question makes their
-  blockers and acceptance criteria clear.
+For foggy roadmap work, use wayfinding inside Beads instead of creating a
+separate top-level skill or parallel map document.
+
+Wayfinding stop condition:
+
+- the destination is named;
+- the map issue exists and uses `templates/wayfinding-map.md`;
+- child decision tickets are agent-sized and one-ticket-per-session;
+- blocker edges are native Beads dependencies;
+- the frontier is visible through `bd ready`.
 
 ## Steps
 
@@ -122,6 +130,12 @@ Use Beads before durable work:
 4. Keep implementation notes in Beads comments or issue descriptions when they are durable; keep root KRN plans compact.
 5. Close the Beads issue only after verification, commit, push, and CI status are recorded or explicitly marked unavailable.
 
+## Handoff Mode
+
+Use `templates/handoff.md` before compaction, pause, transfer, or session end
+when meaningful repo state changed. Keep it compact and store durable task
+state in Beads, not in a markdown ledger.
+
 ## What Belongs In Beads
 
 Use Beads for:
@@ -132,12 +146,11 @@ Use Beads for:
 - work that must survive thread reset, compaction, or handoff
 - status that another person or agent should be able to resume
 
-Use agent-local planning tools only for the current turn's execution checklist. Do not treat them as shared project state.
-
 ## Output
 
 - Claimed, created, updated, blocked, or closed Beads issue.
 - Dependency edge when one task gates another.
+- Mode used and why.
 - Closing reason or issue note with verification and non-proof boundary.
 - No markdown TODO or parallel task ledger.
 
@@ -148,6 +161,9 @@ Use agent-local planning tools only for the current turn's execution checklist. 
 - Prefer `--json` when parsing `bd` output programmatically.
 - If hooks are installed, `bd prime` may already be injected. Run it manually when context is missing.
 - Do not auto-close or mutate tasks unless the work is actually complete.
+- Do not create broad epics disguised as ready work.
+- Do not represent blockers only in prose; use native dependency edges.
+- Do not use Beads as a research archive.
 
 ## Stop Condition
 

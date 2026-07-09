@@ -20,19 +20,13 @@ const roleRules = [
 ];
 
 const roleOverrides = new Map([
-  ["KRN:activation-engine", "maker"],
   ["KRN:beads", "router"],
-  ["KRN:brain-store-schema", "maker"],
   ["KRN:code-review", "checker"],
-  ["KRN:codebase-design", "decision"],
-  ["KRN:codex-adapter-plan", "maker"],
+  ["KRN:diagnosing-bugs", "maker"],
   ["KRN:domain-modeling", "decision"],
-  ["KRN:evidence-review-loop", "checker"],
-  ["KRN:handoff-compact", "router"],
+  ["KRN:krn-implementation", "maker"],
   ["KRN:source-to-decision", "decision"],
   ["KRN:target-repo-testing", "checker"],
-  ["KRN:tdd", "maker"],
-  ["KRN:typescript-type-safety", "maker"],
   ["Matt Pocock:ask-matt", "router"],
   ["Matt Pocock:code-review", "checker"],
   ["Matt Pocock:codebase-design", "decision"],
@@ -51,6 +45,102 @@ const roleOverrides = new Map([
   ["Matt Pocock:triage", "router"],
   ["Matt Pocock:wayfinder", "router"]
 ]);
+
+const skillStripDecisions = new Map([
+  ["beads", {
+    stripDecision: "active",
+    ownerSkill: "beads",
+    reason: "Durable task graph, planning modes, blocker edges, frontier, and handoff state need one tracker substrate."
+  }],
+  ["domain-modeling", {
+    stripDecision: "active",
+    ownerSkill: "domain-modeling",
+    reason: "Vocabulary, context, ADR, and codebase-design decisions share the same concept ownership lane."
+  }],
+  ["source-to-decision", {
+    stripDecision: "active",
+    ownerSkill: "source-to-decision",
+    reason: "Source evidence still needs a distinct mechanism-to-decision gate."
+  }],
+  ["krn-implementation", {
+    stripDecision: "new",
+    ownerSkill: "krn-implementation",
+    reason: "Unifies maker procedures that were too narrow to remain top-level invocation skills."
+  }],
+  ["diagnosing-bugs", {
+    stripDecision: "new",
+    ownerSkill: "diagnosing-bugs",
+    reason: "Diagnosis needs an explicit red-capable repro gate that TDD did not cover."
+  }],
+  ["code-review", {
+    stripDecision: "active",
+    ownerSkill: "code-review",
+    reason: "Checker behavior and evidence review belong behind one review entrypoint."
+  }],
+  ["target-repo-testing", {
+    stripDecision: "active",
+    ownerSkill: "target-repo-testing",
+    reason: "Target-repo dirty-state and write-authority checks remain a distinct proof boundary."
+  }],
+  ["activation-engine", {
+    stripDecision: "merged",
+    ownerSkill: "krn-implementation",
+    target: "references/activation.md",
+    reason: "Activation is implementation procedure, not an independent top-level workflow."
+  }],
+  ["brain-store-schema", {
+    stripDecision: "merged",
+    ownerSkill: "krn-implementation",
+    target: "references/store-schema.md",
+    reason: "Store schema work is implementation procedure with DB-specific verification."
+  }],
+  ["codex-adapter-plan", {
+    stripDecision: "merged",
+    ownerSkill: "krn-implementation",
+    target: "references/codex-adapter.md",
+    reason: "Codex adapter rendering is a specialized implementation boundary."
+  }],
+  ["tdd", {
+    stripDecision: "merged",
+    ownerSkill: "krn-implementation",
+    target: "references/tdd.md",
+    reason: "TDD is a maker reference used inside implementation, not a standalone KRN workflow."
+  }],
+  ["typescript-type-safety", {
+    stripDecision: "merged",
+    ownerSkill: "krn-implementation",
+    target: "references/type-safety.md",
+    reason: "Type safety is a reusable implementation boundary reference."
+  }],
+  ["codebase-design", {
+    stripDecision: "merged",
+    ownerSkill: "domain-modeling",
+    target: "references/codebase-design.md",
+    reason: "Architecture seams and names are part of domain concept ownership."
+  }],
+  ["evidence-review-loop", {
+    stripDecision: "merged",
+    ownerSkill: "code-review",
+    target: "references/evidence-review.md",
+    reason: "Evidence capture is checker procedure under code review."
+  }],
+  ["handoff-compact", {
+    stripDecision: "merged",
+    ownerSkill: "beads",
+    target: "templates/handoff.md",
+    reason: "Handoff is Beads state transfer, not a separate public skill."
+  }]
+]);
+
+const stripDecisionRows = () => [...skillStripDecisions.entries()]
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([name, decision]) => ({
+    name,
+    stripDecision: decision.stripDecision,
+    ownerSkill: decision.ownerSkill,
+    target: decision.target ?? "SKILL.md",
+    reason: decision.reason
+  }));
 
 const readIfExists = async (filePath) => {
   try {
@@ -124,10 +214,20 @@ const loadSkills = async (root, source) => {
       .filter((file) => file.skillPath !== "SKILL.md")
       .map((file) => file.skillPath)
       .sort();
+    const references = referenceFiles.filter((file) => file.startsWith("references/"));
+    const templates = referenceFiles.filter((file) => file.startsWith("templates/"));
+    const scripts = referenceFiles.filter((file) => file.startsWith("scripts/"));
     const signalText = `${name} ${description} ${sections.join(" ")} ${body.slice(0, 2500)}`;
     const routingText = `${name} ${description}`;
     const role = roleOverrides.get(`${source}:${name}`)
       ?? inferOne(roleRules, routingText, inferOne(roleRules, signalText, "reference"));
+    const stripDecision = source === "KRN"
+      ? skillStripDecisions.get(name) ?? {
+        stripDecision: "active",
+        ownerSkill: name,
+        reason: "Current repo-local active skill."
+      }
+      : undefined;
     skills.push({
       source,
       name,
@@ -137,8 +237,14 @@ const loadSkills = async (root, source) => {
       text,
       sections,
       referenceFiles,
+      references,
+      templates,
+      scripts,
       resourceFiles,
       role,
+      stripDecision: stripDecision?.stripDecision,
+      ownerSkill: stripDecision?.ownerSkill,
+      stripReason: stripDecision?.reason,
       lineCount: text.split("\n").length,
       hasStop: /^##\s+Stop Condition/m.test(text) || /completion criterion/i.test(text),
       hasOutput: /^##\s+Output/m.test(text) || /^##\s+Required Output/m.test(text),
@@ -156,6 +262,8 @@ const skillDoc = (skill) => `# ${skill.name}
 - Source: ${skill.source}
 - Path: \`${skill.dir}/SKILL.md\`
 - Role: ${skill.role}
+- Strip decision: ${skill.stripDecision ?? "n/a"}
+- Owner skill: ${skill.ownerSkill ?? skill.name}
 - Invocation: ${skill.isUserInvoked ? "user-invoked" : "model-invoked"}
 - Lines: ${skill.lineCount}
 - Stop condition: ${skill.hasStop ? "yes" : "no"}
@@ -173,6 +281,14 @@ ${skill.sections.map((section) => `- ${section}`).join("\n") || "- _No h2 sectio
 ## Reference Files
 
 ${skill.referenceFiles.map((file) => `- ${file}`).join("\n") || "- _None._"}
+
+## References
+
+${skill.references.map((file) => `- ${file}`).join("\n") || "- _None._"}
+
+## Templates
+
+${skill.templates.map((file) => `- ${file}`).join("\n") || "- _None._"}
 
 `;
 
@@ -193,10 +309,20 @@ ${file.text.trim()}
 \`\`\`
 `);
 
+  const decisionRows = stripDecisionRows().map((row) =>
+    `| ${row.name} | ${row.stripDecision} | ${row.ownerSkill} | \`${row.target}\` | ${row.reason} |`
+  );
+
   return `# KRN Skills Bundle
 
 This is a repomix-style single document for reading, searching, and copying the
 current repo-local KRN skills. It is generated from \`.agents/skills/**\`.
+
+## Strip Decisions
+
+| Skill/procedure | strip_decision | Owner skill | Target | Reason |
+|---|---|---|---|---|
+${decisionRows.join("\n")}
 
 ## File Index
 
@@ -261,60 +387,60 @@ const lifecycleStages = [
     stage: "Grill",
     matt: "grill-with-docs, domain-modeling",
     krn: "domain-modeling, source-to-decision",
-    status: "partial",
-    score: 1,
+    status: "covered",
+    score: 2,
     metric: "Ambiguous intent is clarified with the human before implementation.",
-    krnFinding: "KRN can challenge vocabulary and source claims, but lacks a named human-question gate that prevents self-grilling or jumping straight to code.",
-    missingMechanism: "A grill gate: one question at a time, no self-answering, capture resolved vocabulary/decision immediately.",
-    nextMove: "Add the grill behavior to domain-modeling or a user-invoked router before adding a separate skill."
+    krnFinding: "KRN keeps grill behavior inside domain-modeling: ask one narrow operator question when term, owner, or decision is ambiguous; never self-grill.",
+    missingMechanism: "None for this strip; split only if ambiguous non-domain decisions need independent routing.",
+    nextMove: "Keep grill as domain-modeling behavior, not a top-level skill."
   },
   {
     id: "spec",
     stage: "Spec",
     matt: "to-spec",
-    krn: "Beads issue descriptions, source-to-decision",
-    status: "missing",
-    score: 0,
+    krn: "beads to-spec mode, templates/spec.md, source-to-decision",
+    status: "covered",
+    score: 2,
     metric: "Conversation or rough idea becomes an agreed build spec.",
-    krnFinding: "KRN has task issues and source decisions, but no first-class spec artifact that sits between conversation and ticket slicing.",
-    missingMechanism: "A spec format with user stories, constraints, non-goals, acceptance criteria, and open questions.",
-    nextMove: "Decide whether Beads issue bodies are enough, or add a to-spec style mode for large/fuzzy work."
+    krnFinding: "KRN keeps to-spec inside Beads and uses a spec template when a settled artifact is needed before slicing.",
+    missingMechanism: "None for this strip; validate through actual planning use.",
+    nextMove: "Keep specs as Beads artifacts unless repeated independent invocation pressure appears."
   },
   {
     id: "tickets",
     stage: "Tickets",
     matt: "to-tickets",
-    krn: "beads",
-    status: "partial",
-    score: 1,
+    krn: "beads to-tickets mode, templates/ticket.md",
+    status: "covered",
+    score: 2,
     metric: "Spec becomes tracer-bullet, agent-sized tickets with blocking edges.",
-    krnFinding: "Beads already supports dependencies and tracer-bullet wording, but there is no dedicated conversion workflow from spec/conversation into a frontier.",
-    missingMechanism: "A to-tickets-like Beads mode that sizes each issue for one fresh context and wires blocker edges deliberately.",
-    nextMove: "Strengthen Beads before adding a separate to-tickets skill."
+    krnFinding: "KRN keeps to-tickets inside Beads with agent-sized acceptance criteria, proof boundaries, and native dependency edges.",
+    missingMechanism: "None for this strip; failures should become Beads workflow repairs.",
+    nextMove: "Use bd ready as the frontier proof instead of adding a separate to-tickets skill."
   },
   {
     id: "wayfinder",
     stage: "Wayfinder",
     matt: "wayfinder",
-    krn: "beads wayfinding section",
-    status: "partial",
-    score: 1,
+    krn: "beads wayfinding mode, templates/wayfinding-map.md",
+    status: "covered",
+    score: 2,
     metric: "Huge foggy work becomes a map of decision tickets with a frontier.",
-    krnFinding: "KRN has foggy-work guidance inside Beads, but lacks Matt's explicit map artifact: destination, decisions so far, not-yet-specified fog, out-of-scope, one ticket per session.",
-    missingMechanism: "Wayfinding protocol inside Beads, including map issue shape and frontier discipline.",
-    nextMove: "Add a Beads wayfinding mode before creating a separate wayfinder skill."
+    krnFinding: "KRN has explicit wayfinding mode, a map template, one-ticket-per-session discipline, native blockers, and bd ready frontier.",
+    missingMechanism: "None for this strip; split later only if Beads mode causes premature completion.",
+    nextMove: "Keep wayfinding as a Beads mode until independent invocation pressure is proven."
   },
   {
     id: "research",
     stage: "Research",
     matt: "research",
     krn: "source-to-decision",
-    status: "partial",
-    score: 1,
+    status: "covered",
+    score: 2,
     metric: "External sources become decision-grade evidence, not broad summaries.",
-    krnFinding: "source-to-decision is strong for source -> mechanism -> implication -> decision, but may be too broad for pure research legwork.",
-    missingMechanism: "Clear split between research artifact and decision capture when a run is source-heavy.",
-    nextMove: "Audit source-to-decision uses before splitting."
+    krnFinding: "KRN intentionally routes research through source-to-decision so sources become mechanisms, decisions, consumers, and falsifiers instead of archives.",
+    missingMechanism: "No separate research skill unless pure source legwork repeatedly has a consumer independent of decisions.",
+    nextMove: "Reject decorative research artifacts; create Beads follow-up only when a source has a consumer."
   },
   {
     id: "prototype",
@@ -332,19 +458,19 @@ const lifecycleStages = [
     id: "implement",
     stage: "Implement",
     matt: "implement",
-    krn: "domain maker skills, Codex default execution",
-    status: "partial",
-    score: 1,
+    krn: "krn-implementation, Codex default execution",
+    status: "covered",
+    score: 2,
     metric: "One ticket is implemented with the right maker skill and verification chain.",
-    krnFinding: "KRN has strong domain-specific maker skills, but no unified implement wrapper that always routes through TDD and review for each ticket.",
-    missingMechanism: "Ticket execution protocol: claim, pick maker skill, run verification, call checker, record evidence.",
-    nextMove: "Prefer improving Beads/README routing over a generic implement skill unless agents keep skipping review."
+    krnFinding: "KRN now has one implementation entrypoint with activation, store, adapter, TDD, and TypeScript references.",
+    missingMechanism: "None for maker routing; checker separation still depends on review workflow.",
+    nextMove: "Use specialized references through krn-implementation instead of top-level maker skill sprawl."
   },
   {
     id: "review",
     stage: "Code Review",
     matt: "code-review with Fowler smells",
-    krn: "code-review, evidence-review-loop, target-repo-testing",
+    krn: "code-review, code-review/references/evidence-review.md, target-repo-testing",
     status: "covered",
     score: 2,
     metric: "A checker inspects standards, spec fit, smells, and proof gaps.",
@@ -356,25 +482,25 @@ const lifecycleStages = [
     id: "diagnosis",
     stage: "Diagnosis",
     matt: "diagnosing-bugs",
-    krn: "none",
-    status: "missing",
-    score: 0,
+    krn: "diagnosing-bugs",
+    status: "covered",
+    score: 2,
     metric: "Reported bugs require a tight red-capable loop before hypotheses.",
-    krnFinding: "KRN has TDD and review, but no diagnosis discipline that blocks theory-first debugging.",
-    missingMechanism: "Feedback loop -> reproduce/minimize -> hypotheses -> instrument -> fix/regression -> cleanup.",
-    nextMove: "Add diagnosing-bugs as the first new KRN skill candidate."
+    krnFinding: "KRN now has a diagnosis entrypoint that forbids hypotheses or fixes before a red-capable repro command exists and has been run.",
+    missingMechanism: "None for this strip; enforce through usage.",
+    nextMove: "Use diagnosis for unknown symptoms and krn-implementation/tdd for known behavior changes."
   },
   {
     id: "context",
     stage: "Context / ADR",
     matt: "domain-modeling, CONTEXT.md, docs/adr",
-    krn: "KRN_ROADMAP.md, source-to-decision, Beads, no dedicated context lane",
-    status: "partial",
-    score: 1,
+    krn: "domain-modeling, CONTEXT.md, CONVENTIONS.md, docs/adr",
+    status: "covered",
+    score: 2,
     metric: "Resolved vocabulary and surprising decisions survive fresh agent context.",
-    krnFinding: "KRN has source decisions and roadmap truth, but no small domain-context artifact analogous to Matt's glossary plus lazy ADR lane.",
-    missingMechanism: "A scoped context/ADR lane that is not runtime memory, not a scratchpad, and not a second roadmap.",
-    nextMove: "Run the context-artifact-lane decision candidate next."
+    krnFinding: "KRN owns vocabulary in CONTEXT.md, artifact rules in CONVENTIONS.md, and rare hard-to-reverse decisions in docs/adr/ through domain-modeling.",
+    missingMechanism: "None for this strip; avoid per-skill ADR folders and markdown runtime memory.",
+    nextMove: "Update the smallest stable owner when a vocabulary or operating decision is resolved."
   }
 ];
 
@@ -391,35 +517,35 @@ const stageMechanics = new Map([
     agentSized: "yes",
     blockerGraph: "no",
     makerChecker: "partial",
-    stopGate: "partial"
+    stopGate: "yes"
   }],
   ["spec", {
     artifact: "Spec",
-    agentSized: "partial",
-    blockerGraph: "no",
+    agentSized: "yes",
+    blockerGraph: "n/a",
     makerChecker: "partial",
-    stopGate: "missing"
+    stopGate: "yes"
   }],
   ["tickets", {
     artifact: "Beads issues",
-    agentSized: "partial",
+    agentSized: "yes",
     blockerGraph: "yes",
     makerChecker: "partial",
-    stopGate: "partial"
+    stopGate: "yes"
   }],
   ["wayfinder", {
     artifact: "Map issue",
     agentSized: "yes",
-    blockerGraph: "partial",
+    blockerGraph: "yes",
     makerChecker: "yes",
-    stopGate: "partial"
+    stopGate: "yes"
   }],
   ["research", {
     artifact: "Source decision",
-    agentSized: "partial",
+    agentSized: "yes",
     blockerGraph: "n/a",
     makerChecker: "partial",
-    stopGate: "partial"
+    stopGate: "yes"
   }],
   ["prototype", {
     artifact: "Prototype link",
@@ -430,10 +556,10 @@ const stageMechanics = new Map([
   }],
   ["implement", {
     artifact: "Patch + evidence",
-    agentSized: "partial",
+    agentSized: "yes",
     blockerGraph: "partial",
     makerChecker: "partial",
-    stopGate: "partial"
+    stopGate: "yes"
   }],
   ["review", {
     artifact: "Review findings",
@@ -447,14 +573,14 @@ const stageMechanics = new Map([
     agentSized: "yes",
     blockerGraph: "n/a",
     makerChecker: "partial",
-    stopGate: "missing"
+    stopGate: "yes"
   }],
   ["context", {
     artifact: "Context/ADR candidate",
     agentSized: "n/a",
     blockerGraph: "n/a",
     makerChecker: "partial",
-    stopGate: "partial"
+    stopGate: "yes"
   }]
 ]);
 
@@ -464,96 +590,54 @@ const lifecycleDiagnostics = lifecycleStages.map((stage) => ({
 }));
 
 const skillUtility = new Map([
-  ["activation-engine", {
-    purpose: "Steruje wyborem kontekstu dla KRN: co aktywować, co odrzucić i kiedy jawnie abstainować.",
-    use: "Gdy zmieniamy retrieval, ranking, owner-file recall, budżet kontekstu, filtry zaufania albo selekcję memory/source.",
-    gain: "Chroni loop przed prompt bloatem i losowym dociąganiem dokumentów, bo każda inkluzja musi mieć powód użycia.",
-    risk: "Może stać się polityką opisaną w markdownu, jeśli nie jest podparta testami selekcji i exclusion records.",
-    decision: "Keep as maker skill."
-  }],
   ["beads", {
-    purpose: "Durable task graph dla dużego loopu: stan pracy, zależności, frontier, claim, close, follow-up.",
+    purpose: "Durable task graph dla dużego loopu: triage, to-spec, to-tickets, wayfinding, handoff, zależności i frontier.",
     use: "Gdy praca ma przetrwać sesję, wymaga blockerów, równoległości, handoffu albo podziału na agent-sized issues.",
-    gain: "Może zastąpić większość `to-tickets` i część `to-spec`, bo końcowym artefaktem i tak jest tracker.",
-    risk: "Jeśli wrzucimy tu wszystko, stanie się overloaded routerem; potrzebuje jawnych trybów: triage, to-spec, to-tickets, wayfinding.",
-    decision: "Keep, but split internally into explicit modes before adding separate planning skills."
-  }],
-  ["brain-store-schema", {
-    purpose: "Pilnuje granic storage/migration dla temporal Memory Core.",
-    use: "Gdy zmieniamy Drizzle/Postgres schema, migracje, repo adapters, persistence, outbox albo job state.",
-    gain: "Wymusza TypeScript/store discipline i rollback thinking przy zmianach, które trudno odkręcić.",
-    risk: "Bez rzeczywistych migration/evidence gates może udawać safety zamiast go dowodzić.",
-    decision: "Keep as maker skill."
+    gain: "Przejmuje Mattowe to-spec/to-tickets/wayfinder bez tworzenia drugiego planning surface poza trackerem.",
+    risk: "Może stać się overloaded routerem, jeśli tryby nie kończą się konkretnymi Beads artifacts i bd ready frontier.",
+    decision: "Active; keep planning modes inside Beads unless independent invocation pressure appears."
   }],
   ["code-review", {
-    purpose: "Niezależny checker dla diffu: standardy, spec fit, roadmap drift, smell baseline i proof gaps.",
+    purpose: "Niezależny checker dla diffu: standardy, spec fit, roadmap drift, smell baseline, evidence review i proof gaps.",
     use: "Po implementacji, przy PR/diff/review albo gdy trzeba odsiać test theater i shallow modules.",
-    gain: "To jest nasz najmocniej pokryty Mattowy element; zawiera Fowler-style smells i rozdziela Standards od Spec.",
+    gain: "Zawiera Fowler-style smells, rozdziela Standards od Spec i przejmuje evidence-review jako reference.",
     risk: "Traci sens, jeśli ten sam agent ocenia własną zmianę bez świeżego kontekstu lub bez file:line evidence.",
-    decision: "Keep; pair explicitly after maker work."
+    decision: "Active; pair explicitly after maker work."
   }],
-  ["codebase-design", {
-    purpose: "Decyzje architektoniczne: gdzie jest granica modułu, czy interface jest deep, czy nazwa oddaje ownership.",
-    use: "Przy zmianach boundary, package seam, public API, refactorach i płytkich modułach.",
-    gain: "Daje język do odrzucania speculative seams i adapter-chainów zanim wejdą do kodu.",
-    risk: "Może być advice-only, jeśli nie kończy się konkretną decyzją, zmianą granicy albo follow-up Beadem.",
-    decision: "Keep as decision skill; tie outputs to context/ADR/source decision."
-  }],
-  ["codex-adapter-plan", {
-    purpose: "Przekłada KRN DecisionPacket/harness output na bounded Codex execution brief.",
-    use: "Gdy zmieniamy adapter do Codexa, proof boundaries, context shape albo non-mutating execution brief.",
-    gain: "Chroni przed tym, żeby adapter zaczął być ukrytą pamięcią/runtime policy zamiast rendererem decyzji.",
-    risk: "Nisza; jeśli nie ma aktywnych adapter zmian, będzie rzadko używany.",
-    decision: "Keep as specialized maker skill."
+  ["diagnosing-bugs", {
+    purpose: "Diagnostyka nieznanych awarii: najpierw czerwony repro command, potem hipotezy i fix.",
+    use: "Gdy coś jest broken, flaky, slow, throwing albo regressed, a przyczyna nie jest udowodniona.",
+    gain: "Blokuje theory-first debugging i oddziela diagnozę od TDD dla znanego zachowania.",
+    risk: "Jeśli repro jest zbyt szerokie albo pominięte, skill zamienia się w zwykłe fix-by-inspection.",
+    decision: "New active skill; keep because it enforces a distinct red-capable diagnosis loop."
   }],
   ["domain-modeling", {
-    purpose: "Pilnuje słownika, nazw domenowych i tego, żeby pojęcia miały jednego właściciela.",
-    use: "Gdy pojawia się niejasne nazewnictwo: brain, memory, source, activation, DecisionPacket, retained knowledge itd.",
-    gain: "To naturalne miejsce na Mattową logikę `CONTEXT.md`: rozwiąż termin raz i zapisz decyzję poza czatem.",
-    risk: "Obecnie bardziej hamuje złe nazwy niż prowadzi do widocznego context artifactu.",
-    decision: "Keep; extend with grill/context capture behavior."
+    purpose: "Pilnuje słownika, nazw domenowych, context/ADR lane, grill behavior i codebase-design decisions.",
+    use: "Gdy pojawia się niejasne nazewnictwo, public seam, concept ownership albo operating decision.",
+    gain: "Przejmuje grill-with-docs i codebase-design bez osobnych top-level skills; resolved terms trafiają do CONTEXT/CONVENTIONS/docs/adr.",
+    risk: "Może stać się prose-only, jeśli nie kończy się właścicielem, consumerem, falsifierem albo targeted rg/typecheck proof.",
+    decision: "Active; ask one narrow human question when ambiguous and never self-grill."
   }],
-  ["evidence-review-loop", {
-    purpose: "Checker dowodów po wykonaniu pracy: co jest proof, co non-proof, jakie ryzyko i feedback delta.",
-    use: "Po większych runach, gdy trzeba rozdzielić realną weryfikację od deklaracji w final answer.",
-    gain: "Buduje feedback loop i memory/source/skill candidates bez polegania na opowieści agenta.",
-    risk: "Jeśli używany jako końcowa checklista przez maker agent, osłabia maker/checker separation.",
-    decision: "Keep as checker; invoke deliberately after implementation."
-  }],
-  ["handoff-compact", {
-    purpose: "Zapisuje stan pracy po długiej sesji: objective, issue, commit/push/CI, decyzje, blokery, next action.",
-    use: "Przed compaction/resume/pause/transfer albo przy końcu większego taska.",
-    gain: "Zmniejsza utratę stanu w wielkim loopie, gdzie model zapomina, a repo/tracker pamięta.",
-    risk: "Może dublować Beads, jeśli zamiast compact handoff zacznie być osobnym task ledgerem.",
-    decision: "Keep as router/state skill."
+  ["krn-implementation", {
+    purpose: "Maker entrypoint dla runtime work: activation, store schema, Codex adapter, TDD i TypeScript boundaries.",
+    use: "Gdy implementujemy KRN behavior, migracje, adapter output, test falsifier albo TypeScript boundary.",
+    gain: "Redukuje skill zoo: pięć wyspecjalizowanych maker skills staje się progressive-disclosure references.",
+    risk: "Może być za szeroki, jeśli agent nie wybierze konkretnej reference i proof command przed edycją.",
+    decision: "New active skill; keep references short and load only the relevant branch."
   }],
   ["source-to-decision", {
     purpose: "Przerabia źródła na decyzje: source -> mechanism -> KRN implication -> decision/rejection.",
     use: "Gdy architektura, skill, policy, MCP, eval albo TypeScript decision zależy od docs/papers/practitioner writing.",
-    gain: "Najlepsza obrona przed research summary bez konsekwencji w systemie.",
-    risk: "Może być za szeroki: research legwork, decyzja, falsifier i knowledge promotion w jednym miejscu.",
-    decision: "Keep for now; audit whether pure research should split out."
+    gain: "Przejmuje research jako decision-grade source gate zamiast tworzyć research archive.",
+    risk: "Może być za ciężki dla prostego linku; należy odrzucać źródła bez consumer/falsifier.",
+    decision: "Active; no separate research skill until pure source legwork earns one."
   }],
   ["target-repo-testing", {
     purpose: "Checker/protocol dla pracy na target repo: dirty state, write authority, proof/non-proof, handoff.",
     use: "Gdy KRN inspektuje, testuje lub naprawia zewnętrzne repo przez harness.",
     gain: "Chroni przed fałszywym proofem i przypadkowym mutowaniem cudzego stanu.",
     risk: "Może być zbyt duży i mieszać setup, test, repair oraz handoff.",
-    decision: "Keep, but watch for sequence split if agents rush through phases."
-  }],
-  ["tdd", {
-    purpose: "Maker loop dla zamierzonego zachowania: red -> green -> refactor przy właściwym public seam.",
-    use: "Przy bugfixach z dobrym seamem i nowych zachowaniach, które da się sfalsyfikować testem.",
-    gain: "Najkrótszy feedback loop dla implementacji; typowo Mattowy rdzeń pracy.",
-    risk: "Nie zastępuje `diagnosing-bugs`, bo TDD nie wymusza najpierw red-capable repro dla nieznanej usterki.",
-    decision: "Keep; add separate diagnosing-bugs."
-  }],
-  ["typescript-type-safety", {
-    purpose: "Pilnuje TypeScript-first granic: unknown narrowing, public types, validators, any/cast discipline.",
-    use: "Przy TS source, API boundaries, CLI/MCP inputs, env/file/fetch data, generics i configu typecheck.",
-    gain: "Skraca feedback loop przez typy i zapobiega oszukiwaniu kompilatora dla szybkiego green.",
-    risk: "Może być policy reminderem, jeśli nie kończy się typecheckiem albo konkretnym boundary fixem.",
-    decision: "Keep as maker skill."
+    decision: "Active; watch for sequence split if agents rush through phases."
   }]
 ]);
 
@@ -607,12 +691,12 @@ ${rows.join("\n")}
 
 ## Highest-Value Gaps
 
-1. Add a KRN-specific \`diagnosing-bugs\` skill.
-2. Decide the context/ADR lane so vocabulary and surprising decisions survive
+1. Validate the new \`diagnosing-bugs\` skill on real failures.
+2. Keep the context/ADR lane small so vocabulary and surprising decisions survive
    fresh-agent loops.
-3. Strengthen Beads with \`to-tickets\` and \`wayfinder\` modes before adding
-   separate skills.
-4. Decide whether a \`to-spec\` artifact is needed for large or fuzzy work.
+3. Validate Beads \`to-spec\`, \`to-tickets\`, and \`wayfinding\` modes through
+   real issue creation.
+4. Watch whether \`krn-implementation\` stays a useful entrypoint or becomes too broad.
 `;
 };
 
@@ -630,15 +714,15 @@ zachowanie agenta w wielkim loopie?
 
 ## Najwazniejsze rozroznienie
 
-\`to-spec\` i \`to-tickets\` prawdopodobnie powinny zaczac jako tryby \`beads\`,
-bo ich naturalnym artefaktem koncowym jest tracker: issue body, acceptance
-criteria, dependency edges i frontier.
+\`to-spec\`, \`to-tickets\` i \`wayfinder\` zostaja trybami \`beads\`, bo ich
+naturalnym artefaktem koncowym jest tracker: issue body, acceptance criteria,
+dependency edges i frontier.
 
-\`wayfinder\` jest innym typem mechanizmu. Nie sluzy tylko do rozbicia planu na
-zadania. Sluzy wtedy, gdy planu jeszcze nie da sie uczciwie napisac: istnieje
-destination, fog of war, decyzje do odkrycia, blocker graph i frontier. Dlatego
-Wayfinder moze byc osobnym protokolem wewnatrz Beads albo osobnym skillem, jesli
-sam tryb Beads robi sie zbyt ciezki.
+\`grill\` zostaje zachowaniem \`domain-modeling\`: pytamy operatora, gdy term,
+owner albo decision jest niejasne, i nie odpowiadamy sami za operatora.
+\`research\` zostaje \`source-to-decision\`, bo KRN potrzebuje decyzji,
+consumerow i falsifierow, nie archiwum linkow. \`prototype\` jest opcjonalnym
+brakiem, dopoki realny UX/state-model artifact nie bedzie mial consumerow.
 
 ## Skill Utility Table
 
@@ -648,13 +732,12 @@ ${rows.join("\n")}
 
 ## Kandydaci na nastepne zmiany
 
-1. \`diagnosing-bugs\`: osobny skill, bo brakuje czerwonej petli diagnostycznej.
-2. \`beads\`: dodac tryby \`to-spec\`, \`to-tickets\`, \`wayfinding\`, zamiast
-   mnozyc nowe skillsy bez potrzeby.
-3. \`domain-modeling\`: dodac grill/context capture, bo to jest najblizszy
-   odpowiednik Mattowego \`CONTEXT.md\`.
-4. \`source-to-decision\`: sprawdzic, czy nie trzeba oddzielic research legwork
-   od decision capture.
+1. Sprawdzic \`diagnosing-bugs\` na prawdziwym failure i doprecyzowac repro gate.
+2. Sprawdzic Beads \`wayfinding\` na duzej mglistej pracy i potwierdzic, ze
+   frontier przez \`bd ready\` wystarcza.
+3. Pilnowac, czy \`krn-implementation\` nie robi sie zbyt szeroki; jesli tak,
+   split musi miec consumer/falsifier.
+4. Dodac osobny \`prototype\` tylko po realnym UX/state-model consumerze.
 `;
 };
 
@@ -900,10 +983,10 @@ const dashboardHtml = (krnSkills) => {
         </table>
       </section>
       <section class="callouts" aria-label="Priority gaps">
-        <article class="callout"><h2>1. diagnosing-bugs</h2><p>No tight red-capable repro gate exists yet. This is the cleanest new skill candidate.</p></article>
-        <article class="callout"><h2>2. context / ADR lane</h2><p>Decisions and vocabulary need a small durable home that is not runtime memory or a second roadmap.</p></article>
-        <article class="callout"><h2>3. Beads wayfinding</h2><p>Beads has dependencies, but needs explicit destination, frontier, fog, decisions-so-far, and one-ticket-per-session discipline.</p></article>
-        <article class="callout"><h2>4. to-spec</h2><p>Large fuzzy work lacks a settled spec artifact between conversation and ticket slicing.</p></article>
+        <article class="callout"><h2>1. Repro gate</h2><p>Validate diagnosing-bugs on real failures: no repro command means no hypothesis and no fix.</p></article>
+        <article class="callout"><h2>2. Beads frontier</h2><p>Validate to-spec, to-tickets, and wayfinding by checking that bd ready exposes the next frontier.</p></article>
+        <article class="callout"><h2>3. Implementation breadth</h2><p>krn-implementation must route to one reference and proof path, not become a new omnibus checklist.</p></article>
+        <article class="callout"><h2>4. Prototype stays optional</h2><p>Add a prototype skill only after a real UX or state-model consumer earns it.</p></article>
       </section>
       <section class="section utility-panel" aria-label="KRN skill utility">
         <table>
@@ -971,7 +1054,11 @@ const main = async () => {
   await writeSkillSet(mattSkills, "matt-skills");
 
   const inventoryRows = (skills) =>
-    skills.map((skill) => `| ${skill.name} | ${skill.role} | ${skill.isUserInvoked ? "user" : "model"} | ${skill.hasStop ? "yes" : "no"} | ${skill.hasOutput ? "yes" : "no"} | ${skill.hasVerification ? "yes" : "no"} | ${skill.lineCount} |`);
+    skills.map((skill) => `| ${skill.name} | ${skill.role} | ${skill.stripDecision ?? "n/a"} | ${skill.ownerSkill ?? skill.name} | ${skill.references.length} | ${skill.templates.length} | ${skill.isUserInvoked ? "user" : "model"} | ${skill.hasStop ? "yes" : "no"} | ${skill.hasOutput ? "yes" : "no"} | ${skill.hasVerification ? "yes" : "no"} | ${skill.lineCount} |`);
+
+  const stripRows = stripDecisionRows().map((row) =>
+    `| ${row.name} | ${row.stripDecision} | ${row.ownerSkill} | \`${row.target}\` | ${row.reason} |`
+  );
 
   await writeFile(
     path.join(outRoot, "skill-graph.md"),
@@ -996,14 +1083,20 @@ engineering loop.
 
 ## KRN Skills
 
-| Skill | Role | Invocation | Stop | Output | Verification | Lines |
-|---|---|---|---|---|---|---|
+| Skill | Role | strip_decision | Owner | References | Templates | Invocation | Stop | Output | Verification | Lines |
+|---|---|---|---|---|---|---|---|---|---|---|
 ${inventoryRows(krnSkills).join("\n")}
+
+## KRN Strip Decisions
+
+| Skill/procedure | strip_decision | Owner skill | Target | Reason |
+|---|---|---|---|---|
+${stripRows.join("\n")}
 
 ## Matt Skills
 
-| Skill | Role | Invocation | Stop | Output | Verification | Lines |
-|---|---|---|---|---|---|---|
+| Skill | Role | strip_decision | Owner | References | Templates | Invocation | Stop | Output | Verification | Lines |
+|---|---|---|---|---|---|---|---|---|---|---|
 ${inventoryRows(mattSkills).join("\n")}
 `,
     "utf8"

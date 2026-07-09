@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/setup-matt-pocock-skills/SKILL.md`
 - Role: router
+- Strip decision: n/a
+- Owner skill: setup-matt-pocock-skills
 - Invocation: user-invoked
 - Lines: 128
 - Stop condition: no
@@ -25,4 +27,12 @@ Configure this repo for the engineering skills — set up its issue tracker, tri
 - issue-tracker-gitlab.md
 - issue-tracker-local.md
 - triage-labels.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/ask-matt/SKILL.md`
 - Role: router
+- Strip decision: n/a
+- Owner skill: ask-matt
 - Invocation: user-invoked
 - Lines: 77
 - Stop condition: no
@@ -24,6 +26,14 @@ Ask which skill or flow fits your situation. A router over the skills in this re
 - Precondition
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

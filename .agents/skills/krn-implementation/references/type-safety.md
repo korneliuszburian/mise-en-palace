@@ -1,19 +1,11 @@
----
-name: typescript-type-safety
-description: Enforce KRN TypeScript boundary discipline. Use for TypeScript source, tsconfig, public exported types, validators, JSON/fetch/file/env/CLI/MCP inputs, generics, casts, unknown narrowing, any usage, double assertions, ts-reset decisions, or fixes that might weaken type safety to move faster.
----
+# Type Safety
 
-# TypeScript Type Safety
+Use this reference for TypeScript source, tsconfig, public exported types,
+validators, JSON/fetch/file/env/CLI/MCP inputs, generics, casts, unknown
+narrowing, `any` usage, double assertions, `ts-reset` decisions, or fixes that
+might weaken type safety to move faster.
 
-Use this skill before or during TypeScript changes.
-
-## Trigger
-
-- A change touches TypeScript source, tsconfig, validators, public exports,
-  CLI/env/file/JSON boundaries, generics, casts, or dependency declarations.
-- A shortcut would weaken strictness to move faster.
-
-## Steps
+## Procedure
 
 1. Classify the boundary: public API, external input, internal domain type,
    persistence, CLI, MCP/app connector, test fixture, or config.
@@ -36,26 +28,16 @@ Use this skill before or during TypeScript changes.
 9. Decide whether `ts-type-critic` should review.
 10. Run typecheck before completion.
 
-## Output
-
-- Boundary classification.
-- Knowledge ID applied or rejected, when retained TypeScript knowledge is relevant.
-- Validation or narrowing location.
-- Public type changes.
-- Any justified type-safety exception.
-- Typecheck result.
-
 ## `ts-reset`
 
 - Consider only for application packages.
 - Do not use global `ts-reset` in `packages/core` or public SDK packages.
 - Never use it to hide missing validation.
 
-## Stop Condition
+## Verification
 
-Stop when each external boundary is narrowed from `unknown`, public type
-changes are explicit, any exception is justified, and `rtk proxy pnpm
-typecheck` passes or is explicitly unavailable.
+The final diff should preserve strict boundaries and include
+`rtk proxy pnpm typecheck` or an explicit reason typecheck is unavailable.
 
 ## Forbidden
 
@@ -65,9 +47,3 @@ typecheck` passes or is explicitly unavailable.
 - Do not introduce unreviewed `any`.
 - Do not apply retained knowledge by vibe; name the knowledge ID, consumer, and
   falsifier or explicitly reject it for the slice.
-- Do not claim completion without typecheck once TypeScript exists.
-
-## Verification
-
-The final diff should preserve strict boundaries and include a typecheck result
-or an explicit reason typecheck is unavailable.

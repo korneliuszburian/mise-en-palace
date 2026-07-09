@@ -6,7 +6,7 @@
   "reviewability": "ready",
   "decision": "Every evidence item that can influence review, memory, source, skill, policy, or eval decisions must state what it proves and what it does not prove, with command provenance kept visible.",
   "sourceRefs": [
-    ".agents/skills/evidence-review-loop/SKILL.md",
+    ".agents/skills/code-review/references/evidence-review.md",
     "packages/core/src/evidence-bundle.ts",
     "packages/core/src/parsing/evidence-capture.ts"
   ],

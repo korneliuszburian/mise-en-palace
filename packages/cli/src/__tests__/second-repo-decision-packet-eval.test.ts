@@ -232,7 +232,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
         typeof decision["id"] === "string" && decision["id"].startsWith("env-config-")
           ? {
               ...decision,
-              evidenceRef: ".agents/skills/typescript-type-safety/SKILL.md"
+              evidenceRef: ".agents/skills/krn-implementation/references/type-safety.md"
             }
           : decision
       );

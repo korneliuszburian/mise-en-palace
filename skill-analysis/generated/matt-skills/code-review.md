@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/code-review/SKILL.md`
 - Role: checker
+- Strip decision: n/a
+- Owner skill: code-review
 - Invocation: model-invoked
 - Lines: 90
 - Stop condition: no
@@ -19,6 +21,14 @@ Review the changes since a fixed point (commit, branch, tag, or merge-base) alon
 - Why two axes
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/tdd/SKILL.md`
 - Role: maker
+- Strip decision: n/a
+- Owner skill: tdd
 - Invocation: model-invoked
 - Lines: 37
 - Stop condition: no
@@ -24,4 +26,12 @@ Test-driven development. Use when the user wants to build features or fix bugs t
 
 - mocking.md
 - tests.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

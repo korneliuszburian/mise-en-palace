@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/domain-modeling/SKILL.md`
 - Role: decision
+- Strip decision: n/a
+- Owner skill: domain-modeling
 - Invocation: model-invoked
 - Lines: 75
 - Stop condition: no
@@ -22,4 +24,12 @@ Build and sharpen a project's domain model. Use when the user wants to pin down 
 
 - ADR-FORMAT.md
 - CONTEXT-FORMAT.md
+
+## References
+
+- _None._
+
+## Templates
+
+- _None._
 

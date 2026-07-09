@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/to-tickets/SKILL.md`
 - Role: router
+- Strip decision: n/a
+- Owner skill: to-tickets
 - Invocation: user-invoked
 - Lines: 115
 - Stop condition: no
@@ -24,6 +26,14 @@ Break a plan, spec, or the current conversation into a set of tracer-bullet tick
 - Blocked by
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

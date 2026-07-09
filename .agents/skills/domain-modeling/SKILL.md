@@ -1,13 +1,13 @@
 ---
 name: domain-modeling
-description: Use when changing or judging KRN terminology, public names, concept ownership, domain vocabulary, CLI/API wording, roadmap wording, or when the user flags logical divergence in names such as brain, memory, knowledge, source, activation, DecisionPacket, retained knowledge, pattern, card, normalized, final, or new.
+description: Use for KRN terms, public names, concept ownership, context/ADR decisions, grill questions, codebase-design seams, CLI/API wording, or stale vocabulary removal.
 ---
 
 # Domain Modeling
 
 Keep KRN's language coherent across `CONTEXT.md`, `CONVENTIONS.md`, roadmap,
-Beads, code, CLI/API surfaces, and store-backed knowledge. Resolve domain terms
-by updating the smallest durable owner.
+Beads, code, CLI/API surfaces, and store-backed knowledge. Resolve concepts by
+updating one durable owner, not by adding aliases.
 
 ## Trigger
 
@@ -17,6 +17,9 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
 ## Steps
 
 1. Pin the term or concept under dispute.
+   - If the term, owner, or decision is ambiguous, ask the operator one narrow
+     question before naming it.
+   - Do not self-grill by inventing both sides of an unresolved human decision.
 2. Map the current path:
    - `CONTEXT.md` for shared operating vocabulary;
    - `CONVENTIONS.md` for skill/artifact rules;
@@ -31,17 +34,35 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
    - technical generic: regex pattern, path pattern, parser normalization, etc.;
    - stale vocabulary: old scaffold, migration residue, or temporary name.
 4. Choose one canonical term at the highest honest boundary.
+   - If two terms survive, state the boundary that makes both necessary.
+   - If no boundary makes both necessary, delete or defer one.
 5. Update the owner:
    - code export when the term is a runtime/domain concept;
    - `CONTEXT.md` when the term is shared operating vocabulary;
    - `CONVENTIONS.md` when the term defines a skill/artifact rule;
    - `KRN_ROADMAP.md` only for compact product or architecture direction;
    - Beads for follow-up work or dependency edges;
-   - store-backed memory/source/eval candidates when the term must be learned at runtime.
+   - store-backed memory/source/eval candidates when the term must be learned at runtime;
+   - `docs/adr/NNNN-slug.md` only when the ADR rule is satisfied.
 6. Remove stale public terms in the same slice when safe. Do not hide them behind
    local aliases or migration fallbacks unless a staged rollout is required.
 7. Verify by grepping the rejected term and running the smallest behavior/type
    checks that touch the changed boundary.
+
+For architecture, package seam, public interface, or deep-module decisions, read
+`references/codebase-design.md`.
+
+## Grill Gate
+
+Use this gate before naming, splitting, or recording a decision when the human
+intent is under-specified.
+
+- Ask one concrete question.
+- Ask only when the answer changes the artifact, public name, or implementation
+  boundary.
+- Do not continue by assuming the answer if a wrong assumption would create a
+  durable term, ADR, issue graph, or exported API.
+- Once answered, update the smallest owner immediately.
 
 ## KRN Naming Rules
 
@@ -65,6 +86,7 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
   ownership, planning modes, review rules, or debugging rules.
 - Offer an ADR only when the decision is hard to reverse, surprising without
   context, and the result of a real trade-off.
+- Keep ADRs in `docs/adr/NNNN-slug.md`; do not create per-skill ADR folders.
 - Keep ADRs compact and link the consumer, falsifier, and verification path when
   those are not obvious from the decision text.
 
@@ -79,22 +101,11 @@ or retained-knowledge vocabulary changes or looks logically inconsistent.
   boundary actually leaks the wrong concept.
 - Do not write tests that only freeze vocabulary. Prefer existing behavior tests,
   typecheck, Fallow, and targeted `rg` proof for rejected terms.
-
-## Source-To-Decision
-
-When external writing, papers, or reference implementations influence a term,
-record the decision in this shape:
-
-```yaml
-source:
-mechanism:
-krn_implication:
-decision:
-rejection:
-consumer:
-falsifier:
-does_not_prove:
-```
+- Do not ask yourself a grill question and answer it as if it were operator
+  input.
+- Do not preserve two names because both appeared in history.
+- Do not use `new`, `final`, `normalized`, `manager`, `processor`, `helper`, or
+  `utils` at a public boundary unless the domain meaning is explicit.
 
 ## Output
 
@@ -106,6 +117,7 @@ does_not_prove:
 - Consumer:
 - Falsifier:
 - Verification:
+- Rejected language:
 
 ## Stop Condition
 

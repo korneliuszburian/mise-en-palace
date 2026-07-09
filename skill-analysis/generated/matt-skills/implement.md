@@ -3,6 +3,8 @@
 - Source: Matt Pocock
 - Path: `.local-lab/mattpocock-skills/skills/engineering/implement/SKILL.md`
 - Role: maker
+- Strip decision: n/a
+- Owner skill: implement
 - Invocation: user-invoked
 - Lines: 16
 - Stop condition: no
@@ -18,6 +20,14 @@ Implement a piece of work based on a spec or set of tickets.
 - _No h2 sections found._
 
 ## Reference Files
+
+- _None._
+
+## References
+
+- _None._
+
+## Templates
 
 - _None._
 

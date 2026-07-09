@@ -3,24 +3,27 @@
 - Source: KRN
 - Path: `.agents/skills/beads/SKILL.md`
 - Role: router
+- Strip decision: active
+- Owner skill: beads
 - Invocation: model-invoked
-- Lines: 170
+- Lines: 186
 - Stop condition: yes
 - Output: yes
 - Verification: yes
 
 ## Description
 
-Use when working in a repository that uses bd or Beads for durable project task tracking, issue dependencies, blocker management, multi-session handoff, or shared work memory. Trigger when the user asks to find ready work, claim or close tasks, create follow-up work, inspect blockers, recover project context, or choose between local planning and persistent project tracking.
+Use for durable project state: triage, claims, blockers, to-spec, to-tickets, wayfinding, handoff, follow-up work, or any task that must survive the current chat.
 
 ## Sections
 
 - Trigger
 - First Step
-- Preferred Route
+- Mode Dispatch
 - Core CLI Steps
 - Planning Work
 - Steps
+- Handoff Mode
 - What Belongs In Beads
 - Output
 - Forbidden
@@ -31,4 +34,19 @@ Use when working in a repository that uses bd or Beads for durable project task 
 
 - agents/openai.yaml
 - references/planning-modes.md
+- templates/handoff.md
+- templates/spec.md
+- templates/ticket.md
+- templates/wayfinding-map.md
+
+## References
+
+- references/planning-modes.md
+
+## Templates
+
+- templates/handoff.md
+- templates/spec.md
+- templates/ticket.md
+- templates/wayfinding-map.md
 
