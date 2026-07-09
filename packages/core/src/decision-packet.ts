@@ -389,14 +389,19 @@ const canonicalJson = (value: unknown): string => {
 };
 
 const sourceDecisionEdgeIdsFor = (
-  readModel: DecisionPacketReadModelInput
+  readModel: DecisionPacketReadModelInput,
+  sourceClaimIds: readonly string[]
 ): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
-  candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
+  candidate.subjectType === "source_claim" && sourceClaimIds.includes(candidate.subjectId)
+    ? candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
+    : []
 ) ?? []);
 
 const sourceDecisionTargetsFor = (
-  readModel: DecisionPacketReadModelInput
+  readModel: DecisionPacketReadModelInput,
+  sourceClaimIds: readonly string[]
 ): DecisionPacketSourceDecisionTarget[] => {
+  const allowedSourceClaimIds = new Set(sourceClaimIds);
   const targetByKey = new Map<string, {
     targetType: SourceDecisionTargetType;
     targetId: string;
@@ -404,7 +409,9 @@ const sourceDecisionTargetsFor = (
   }>();
 
   for (const target of readModel.context.activationTrace?.candidates.flatMap((candidate) =>
-    candidate.sourceDecisionSupportBoost?.targets ?? []
+    candidate.subjectType === "source_claim" && allowedSourceClaimIds.has(candidate.subjectId)
+      ? candidate.sourceDecisionSupportBoost?.targets ?? []
+      : []
   ) ?? []) {
     const key = `${target.targetType}:${target.targetId}`;
     const existing = targetByKey.get(key);
@@ -713,8 +720,8 @@ export const buildDecisionPacketFromReadModel = (
   const inclusions = readModel.context.inclusionDetails;
   const sourceClaimIds = sourceClaimIdsFor(readModel);
   const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
-  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel);
-  const sourceDecisionTargets = sourceDecisionTargetsFor(readModel);
+  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel, sourceClaimIds);
+  const sourceDecisionTargets = sourceDecisionTargetsFor(readModel, sourceClaimIds);
   const governingDecisionIds = unique([
     ...architectureDecisionTargetIdsFor(sourceDecisionTargets),
     ...sourceDecisionIdsWithUsefulness(readModel, usefulFeedbackOutcomes)

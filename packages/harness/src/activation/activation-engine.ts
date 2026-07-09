@@ -472,6 +472,29 @@ const sourceDecisionEdgesForClaims = async (
   return edgesBySourceClaimId;
 };
 
+const sourceDecisionSupportBoostMetadata = (
+  edges: readonly SourceDecisionEdge[]
+): Record<string, unknown> => {
+  if (edges.length === 0) {
+    return {};
+  }
+
+  return {
+    sourceDecisionSupportBoost: {
+      sourceDecisionEdgeIds: edges.map((edge) => edge.id),
+      targets: edges.map((edge) => ({
+        sourceDecisionEdgeId: edge.id,
+        targetType: edge.targetType,
+        targetId: edge.targetId
+      })),
+      confidence: [...new Set(edges.map((edge) => edge.confidence))],
+      supportTypes: [...new Set(edges.map((edge) => edge.supportType))],
+      doesNotProve:
+        "SourceDecisionEdge support links selected source claims to decision targets; it does not prove source truth, target correctness, or broad consensus quality."
+    }
+  };
+};
+
 const sourceRejectionsForClaims = async (
   sourceRepository: Partial<Pick<SourceRepository, "listSourceRejectionsForClaim">>,
   sourceClaims: readonly { id: string }[]
@@ -559,7 +582,8 @@ export const retrieveActivationCandidates = async (
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
       applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
-        const sourceDecisionSupportCount = sourceDecisionEdgesByClaimId.get(claim.id)?.length ?? 0;
+        const sourceDecisionEdges = sourceDecisionEdgesByClaimId.get(claim.id) ?? [];
+        const sourceDecisionSupportCount = sourceDecisionEdges.length;
         const authorityAssessment = assessSourceClaimAuthority({
           claim,
           now: input.taskContract.updatedAt,
@@ -578,6 +602,7 @@ export const retrieveActivationCandidates = async (
           sourceClaimReviewSignals,
           metadata: {
             ...candidate.metadata,
+            ...sourceDecisionSupportBoostMetadata(sourceDecisionEdges),
             sourceClaimAuthority: {
               status: authorityAssessment.status,
               reasons: authorityAssessment.reasons,

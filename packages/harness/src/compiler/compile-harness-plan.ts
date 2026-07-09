@@ -12,6 +12,7 @@ import {
   applyContextROI,
   applyMemoryReviewSignalFilter,
   applySourceClaimAuthorityFilter,
+  applySourceClaimGraphConsensusFilter,
   applySourceClaimReviewSignalFilter,
   applyTemporalFilter,
   applyTrustFilter,
@@ -212,9 +213,11 @@ const filterActivationCandidates = (
 ): FilteredActivationCandidates => applyContextROI(
   applyTemporalFilter(
     applyTrustFilter(
-      applySourceClaimAuthorityFilter(
-        applySourceClaimReviewSignalFilter(
-          applyMemoryReviewSignalFilter(conflictResult.candidates)
+      applySourceClaimGraphConsensusFilter(
+        applySourceClaimAuthorityFilter(
+          applySourceClaimReviewSignalFilter(
+            applyMemoryReviewSignalFilter(conflictResult.candidates)
+          )
         )
       ),
       { minimumSourceAuthority }
