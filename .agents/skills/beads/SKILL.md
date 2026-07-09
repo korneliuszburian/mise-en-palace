@@ -90,6 +90,20 @@ Use expand-contract for wide refactors:
 If a planned issue has no runtime consumer, falsifier, or owner, reject it or
 record it as a question before creating implementation work.
 
+For foggy roadmap work, use wayfinding inside Beads instead of creating a
+separate map document:
+
+- first name the destination: the decision, spec, or runtime change that makes
+  the roadmap more true;
+- create question issues only for fog that is sharp enough to answer in one
+  fresh context;
+- keep vague future areas out of implementation tickets until a frontier issue
+  makes them specific;
+- record each resolved decision in the closing reason or issue notes, not in a
+  parallel plan file;
+- create newly discovered Beads only after the current question makes their
+  blockers and acceptance criteria clear.
+
 ## Workflow
 
 Use Beads before durable work:
