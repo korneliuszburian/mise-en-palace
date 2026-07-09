@@ -519,6 +519,9 @@ describe("runDecisionPacketEval", () => {
       sourceConsensus: {
         decisionLinkedSourceClaimIds: ["source-claim:store-backed-memory-no-markdown"],
         caveatedSourceClaimIds: [],
+        unsupportedSourceClaimIds: [],
+        conflictingSourceClaimIds: [],
+        unknownSourceClaimIds: [],
         sourceDecisionEdgeIds: ["source-decision-edge:store-backed-memory-no-markdown"],
         sourceDecisionTargets: [{
           targetType: "architecture_decision",
