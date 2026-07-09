@@ -30,6 +30,7 @@ export interface DecisionPacketBriefSummary {
   excludedSourceClaimIds: readonly string[];
   excludedMemoryRecordIds: readonly string[];
   excludedAntiMemoryRecordIds: readonly string[];
+  evidenceGapIds: readonly string[];
 }
 
 export interface DecisionPacketEvidenceGap {
@@ -842,7 +843,8 @@ export const buildDecisionPacketFromReadModel = (
       includedMemoryRecordIds: contextSubjectIds(inclusions, "memory_record"),
       excludedSourceClaimIds: contextSubjectIds(exclusions, "source_claim"),
       excludedMemoryRecordIds: contextSubjectIds(exclusions, "memory_record"),
-      excludedAntiMemoryRecordIds: contextSubjectIds(exclusions, "anti_memory_record")
+      excludedAntiMemoryRecordIds: contextSubjectIds(exclusions, "anti_memory_record"),
+      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
     }
   };
 };

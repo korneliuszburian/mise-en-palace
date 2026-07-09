@@ -547,7 +547,13 @@ describe("decision packet CLI", () => {
           includedMemoryRecordIds: ["memory-agent-1"],
           excludedSourceClaimIds: ["claim-agent-superseded"],
           excludedMemoryRecordIds: ["memory-rejected-1"],
-          excludedAntiMemoryRecordIds: []
+          excludedAntiMemoryRecordIds: [],
+          evidenceGapIds: [
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
+            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1",
+            "evidence-gap:run-agent-1:stale-authority:source-decision-conflicted-agent-1"
+          ]
         }
       },
       readModel: {

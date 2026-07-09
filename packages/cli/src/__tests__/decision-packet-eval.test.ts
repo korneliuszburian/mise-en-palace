@@ -100,6 +100,7 @@ const expectProjectStandardCase = (
       },
       brief: {
         observationPrefixCount: 1,
+        evidenceGapIds: [],
         includedSourceClaimIds: expect.arrayContaining([`source-claim:${expected.expectedDecisionId}`]),
         includedMemoryRecordIds: expect.arrayContaining([`memory:decision:${expected.expectedDecisionId}`]),
         excludedSourceClaimIds: expect.arrayContaining([
@@ -218,6 +219,7 @@ describe("runDecisionPacketEval", () => {
         memoryRefs: expect.arrayContaining(["memory:decision:store-backed-memory-no-markdown"]),
         brief: {
           observationPrefixCount: 1,
+          evidenceGapIds: [],
           includedSourceClaimIds: expect.arrayContaining([
             "source-claim:store-backed-memory-no-markdown"
           ]),
@@ -286,6 +288,9 @@ describe("runDecisionPacketEval", () => {
             "missing_governing_decision",
             "evidence_gap"
           ],
+          evidenceGapIds: ["evidence-gap:unsupported-mobile-release-task:no-governing-decision"]
+        },
+        brief: {
           evidenceGapIds: ["evidence-gap:unsupported-mobile-release-task:no-governing-decision"]
         }
       },
@@ -554,7 +559,8 @@ describe("runDecisionPacketEval", () => {
           "source-claim:prose-second-opinion"
         ],
         excludedMemoryRecordIds: [],
-        excludedAntiMemoryRecordIds: []
+        excludedAntiMemoryRecordIds: [],
+        evidenceGapIds: []
       }
     };
 

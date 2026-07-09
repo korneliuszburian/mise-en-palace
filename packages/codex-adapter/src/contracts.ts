@@ -36,6 +36,7 @@ export const executionBriefSectionProfiles = [
   { id: "source_claims_used", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "memory_records_used", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "anti_memory_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "evidence_gaps", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
   { id: "evidence_contract", kind: "required", emptyBehavior: "render_none" },
   { id: "stop_condition", kind: "required", emptyBehavior: "render_none" },
@@ -128,6 +129,12 @@ export interface ExecutionBriefEvidenceContract {
   rollbackPath: string;
 }
 
+export interface ExecutionBriefEvidenceGap {
+  id: string;
+  reason: string;
+  verificationRequired: string;
+}
+
 export interface ExecutionBrief {
   formatVersion: ExecutionBriefFormatVersion;
   title: string;
@@ -142,6 +149,7 @@ export interface ExecutionBrief {
   sourceClaimsUsed: string[];
   memoryRecordsUsed: string[];
   antiMemoryWarnings: string[];
+  evidenceGaps: ExecutionBriefEvidenceGap[];
   toolBoundaries: string[];
   evidenceContract: ExecutionBriefEvidenceContract;
   stopCondition: string;

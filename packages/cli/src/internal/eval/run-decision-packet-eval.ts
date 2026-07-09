@@ -145,7 +145,8 @@ const hasBriefPropagation = (
   expectedDecision: DecisionPacketDecision | undefined
 ): boolean => {
   if (testCase.expectedEvidenceGap !== undefined) {
-    return packet.governingDecisionIds.length === 0;
+    return packet.governingDecisionIds.length === 0 &&
+      packet.brief.evidenceGapIds.includes(testCase.expectedEvidenceGap.id);
   }
 
   if (

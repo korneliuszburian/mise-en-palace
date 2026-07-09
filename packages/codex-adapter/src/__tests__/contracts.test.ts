@@ -49,6 +49,7 @@ describe("Codex adapter contracts", () => {
       sourceClaimsUsed: ["claim-strong"],
       memoryRecordsUsed: ["memory-1"],
       antiMemoryWarnings: ["do not promote memory automatically"],
+      evidenceGaps: [],
       toolBoundaries: ["Do not invoke Codex from the renderer."],
       evidenceContract: {
         commands: ["pnpm typecheck"],
@@ -88,7 +89,7 @@ describe("Codex adapter contracts", () => {
         emptyBehavior: "render_none"
       }],
       budget: {
-        maxRenderedSections: 21,
+        maxRenderedSections: 19,
         maxRenderedItems: 80,
         renderedSections: 12,
         renderedItems: 20,

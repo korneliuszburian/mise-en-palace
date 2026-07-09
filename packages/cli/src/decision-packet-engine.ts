@@ -528,16 +528,17 @@ export const buildDecisionPacketWithEngine = async (
     }
   });
   const evidenceContract = evidenceContractFor(testCase);
-  const brief = createExecutionBrief({
+  const briefInput = {
     taskContract: taskContractFor(testCase),
     contextAssembly,
     capabilityPlan: capabilityPlanFor(testCase),
     evidenceContract,
     nextAction: "Use the governed decision packet before coding."
-  });
+  };
+  const baseBrief = createExecutionBrief(briefInput);
   const decisionsById = decisionById(fixture.decisions);
-  const sourceRows = includedDecisionRows(fixture, brief);
-  const memoryRows = includedMemoryRows(fixture, brief);
+  const sourceRows = includedDecisionRows(fixture, baseBrief);
+  const memoryRows = includedMemoryRows(fixture, baseBrief);
   const governingDecisionIds = unique([
     ...sourceRows.map((decision) => decision.id),
     ...memoryRows.map((decision) => decision.id)
@@ -565,8 +566,8 @@ export const buildDecisionPacketWithEngine = async (
         }]
       : []
   );
-  const staleDecisionIds = excludedDecisionIds(fixture, brief, testCase.staleDecisionIds);
-  const rejectedPathIds = excludedDecisionIds(fixture, brief, testCase.rejectedDecisionIds);
+  const staleDecisionIds = excludedDecisionIds(fixture, baseBrief, testCase.staleDecisionIds);
+  const rejectedPathIds = excludedDecisionIds(fixture, baseBrief, testCase.rejectedDecisionIds);
   const sourceRejectionIds = unique(rejectedRows(fixture, rejectedPathIds).flatMap((decision) =>
     nonEmpty(decision.sourceRejectionId) ? [decision.sourceRejectionId] : []
   ));
@@ -605,6 +606,10 @@ export const buildDecisionPacketWithEngine = async (
     ...sourceConsensusBase,
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+  });
+  const brief = createExecutionBrief({
+    ...briefInput,
+    evidenceGaps
   });
 
   return {
@@ -653,7 +658,8 @@ export const buildDecisionPacketWithEngine = async (
       includedMemoryRecordIds: brief.memoryRecordsUsed,
       excludedSourceClaimIds: briefSubjectIds(brief.explicitExclusions, "source_claim"),
       excludedMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "memory_record"),
-      excludedAntiMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "anti_memory_record")
+      excludedAntiMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "anti_memory_record"),
+      evidenceGapIds: brief.evidenceGaps.map((gap) => gap.id)
     }
   };
 };

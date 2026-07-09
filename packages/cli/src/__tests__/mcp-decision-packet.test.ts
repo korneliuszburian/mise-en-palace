@@ -106,7 +106,8 @@ const packetJson = {
       includedMemoryRecordIds: ["memory-agent-1"],
       excludedSourceClaimIds: ["source-claim-stale-agent-1"],
       excludedMemoryRecordIds: [],
-      excludedAntiMemoryRecordIds: ["anti-memory-agent-1"]
+      excludedAntiMemoryRecordIds: ["anti-memory-agent-1"],
+      evidenceGapIds: []
     }
   },
   readModel: {
@@ -179,6 +180,10 @@ const weakPacketJson = {
         "missing_governing_decision",
         "evidence_gap"
       ],
+      evidenceGapIds: [weakContextEvidenceGapId]
+    },
+    brief: {
+      ...packetJson.packet.brief,
       evidenceGapIds: [weakContextEvidenceGapId]
     }
   }
@@ -363,6 +368,9 @@ describe("DecisionPacket MCP wrapper", () => {
             "missing_governing_decision",
             "evidence_gap"
           ],
+          evidenceGapIds: [weakContextEvidenceGapId]
+        },
+        brief: {
           evidenceGapIds: [weakContextEvidenceGapId]
         }
       }

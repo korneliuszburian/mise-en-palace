@@ -232,7 +232,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 18,
+      maxRenderedSections: 19,
       maxRenderedItems: 80,
       status: "within_budget"
     });
@@ -320,6 +320,37 @@ describe("renderExecutionBrief", () => {
     expect(rendered).not.toContain("Source Claims Used:");
     expect(rendered).not.toContain("Memory Records Used:");
     expect(rendered).not.toContain("Anti-memory Warnings:");
+    expect(rendered).not.toContain("Evidence Gaps:");
+  });
+
+  it("renders evidence gaps as Codex-facing packet guidance", () => {
+    const brief = createExecutionBrief({
+      taskContract,
+      contextAssembly: minimalContextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Do not treat weak context as authority.",
+      evidenceGaps: [{
+        id: "evidence-gap:task-1:no-governing-decision",
+        reason: "No current governed decision matched this task.",
+        verificationRequired:
+          "Promote source-backed decision evidence before turning this into implementation guidance."
+      }]
+    });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.evidenceGaps).toEqual([{
+      id: "evidence-gap:task-1:no-governing-decision",
+      reason: "No current governed decision matched this task.",
+      verificationRequired:
+        "Promote source-backed decision evidence before turning this into implementation guidance."
+    }]);
+    expect(rendered).toContain("Evidence Gaps:");
+    expect(rendered).toContain("evidence-gap:task-1:no-governing-decision");
+    expect(rendered).toContain("reason=No current governed decision matched this task.");
+    expect(rendered).toContain(
+      "verification_required=Promote source-backed decision evidence before turning this into implementation guidance."
+    );
   });
 
   it("reports over budget when rendered brief items exceed the profile budget", () => {

@@ -8,6 +8,7 @@ import type {
   ExecutionBrief,
   ExecutionBriefContextExclusion,
   ExecutionBriefContextInclusion,
+  ExecutionBriefEvidenceGap,
   ExecutionBriefObservationPrefixItem,
   ExecutionBriefObservationPrefixWarning,
   ExecutionBriefProfileReadback,
@@ -25,6 +26,7 @@ export interface RenderExecutionBriefInput {
   capabilityPlan: CapabilityPlan;
   evidenceContract: EvidenceContract;
   nextAction: string;
+  evidenceGaps?: readonly ExecutionBriefEvidenceGap[];
 }
 
 const renderList = (items: readonly string[]): string[] =>
@@ -111,6 +113,7 @@ const executionBriefSectionCounters = {
   source_claims_used: (brief) => brief.sourceClaimsUsed.length,
   memory_records_used: (brief) => brief.memoryRecordsUsed.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
+  evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
   evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
   stop_condition: scalarSectionItemCount,
@@ -280,6 +283,17 @@ const antiMemoryWarnings = (
       ].join(" | ")
     );
 
+const renderEvidenceGaps = (
+  evidenceGaps: readonly ExecutionBriefEvidenceGap[]
+): string[] =>
+  evidenceGaps.map((gap) =>
+    [
+      `- ${gap.id}`,
+      `reason=${gap.reason}`,
+      `verification_required=${gap.verificationRequired}`
+    ].join(" | ")
+  );
+
 export const createExecutionBrief = (input: RenderExecutionBriefInput): ExecutionBrief => {
   const includedContext = toContextInclusions(input.contextAssembly);
   const explicitExclusions = toContextExclusions(input.contextAssembly);
@@ -306,6 +320,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     sourceClaimsUsed: sourceClaimsUsed(includedContext),
     memoryRecordsUsed: memoryRecordsUsed(includedContext),
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
+    evidenceGaps: [...(input.evidenceGaps ?? [])],
     toolBoundaries: input.capabilityPlan.toolBoundaries,
     evidenceContract: {
       commands: input.evidenceContract.commands.map((command) =>
@@ -365,6 +380,7 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     ...renderOptionalSection("Source Claims Used:", brief.sourceClaimsUsed.map((claim) => `- ${claim}`)),
     ...renderOptionalSection("Memory Records Used:", brief.memoryRecordsUsed.map((record) => `- ${record}`)),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
+    ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),
     "",
     "Evidence Contract:",
