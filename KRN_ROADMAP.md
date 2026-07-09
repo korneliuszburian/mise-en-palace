@@ -567,6 +567,7 @@ The target is a small set of sharp skills:
 - evidence review;
 - codebase design;
 - code review;
+- TDD/behavior-test discipline;
 - activation/context work;
 - type-safety;
 - target-repo testing;
