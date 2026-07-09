@@ -160,7 +160,7 @@ describe("brain maintenance preview", () => {
         allowedWrites: [
           "maintenance_queue_records",
           "outbox_events",
-          "memory_candidates"
+          "anti_memory_candidates"
         ],
         forbiddenWrites: [
           "memory_records",

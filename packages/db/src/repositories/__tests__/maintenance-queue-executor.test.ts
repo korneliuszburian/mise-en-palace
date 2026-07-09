@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryCandidate,
-  FeedbackDelta
+  FeedbackDelta,
+  MemoryRecord
 } from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput
@@ -10,6 +11,9 @@ import type {
 import {
   createFeedbackDeltaMaintenanceHandler
 } from "../feedback-delta-maintenance-handler.js";
+import {
+  createExpireStaleMemoryMaintenanceHandler
+} from "../expire-stale-memory-maintenance-handler.js";
 import {
   recoverStaleMaintenanceQueueRecord,
   runMaintenanceQueueRecord
@@ -177,6 +181,18 @@ class FakeFeedbackMaintenanceMemoryRepository {
   }
 }
 
+class FakeExpireStaleMemoryMaintenanceRepository extends FakeFeedbackMaintenanceMemoryRepository {
+  constructor(private readonly memoryRecords: readonly MemoryRecord[]) {
+    super();
+  }
+
+  async listMemoryRecordsForProject(projectId: string, limit?: number): Promise<MemoryRecord[]> {
+    return this.memoryRecords
+      .filter((record) => record.projectId === projectId)
+      .slice(0, limit ?? this.memoryRecords.length);
+  }
+}
+
 const feedbackDelta = (metadata: Record<string, unknown>): FeedbackDelta => ({
   id: "feedback-delta-1",
   reviewAssessmentId: "review-1",
@@ -187,6 +203,35 @@ const feedbackDelta = (metadata: Record<string, unknown>): FeedbackDelta => ({
   metadata,
   createdAt: isoNow,
   updatedAt: isoNow
+});
+
+const memoryRecord = (
+  input: Partial<MemoryRecord> = {}
+): MemoryRecord => ({
+  id: "memory-expired-1",
+  projectId: "project-1",
+  key: "frontend-template-standard",
+  kind: "procedure",
+  status: "active",
+  summary: "Expired frontend template standard",
+  body: "Old frontend template guidance that now needs review.",
+  owner: "kernel",
+  confidence: 90,
+  applicationGuidance: "Use only if current source evidence still supports this memory.",
+  invalidationRule: "Review when the validity window expires.",
+  sourceLineage: [{
+    sourceId: "source-claim-expired-memory-1",
+    note: "test-source"
+  }],
+  isUserPreference: false,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: {},
+  validFrom: "2026-07-01T00:00:00.000Z",
+  validUntil: "2026-07-07T00:00:00.000Z",
+  createdAt: "2026-07-01T00:00:00.000Z",
+  updatedAt: "2026-07-01T00:00:00.000Z",
+  ...input
 });
 
 describe("runMaintenanceQueueRecord", () => {
@@ -429,6 +474,75 @@ describe("runMaintenanceQueueRecord", () => {
       "claim:maintenance-queue-1",
       "dead-letter:maintenance-queue-1"
     ]);
+  });
+
+  it("turns expired memory queue records into reviewable anti-memory candidates", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "expire_stale_memory",
+        payload: {
+          projectId: "project-1",
+          reason: "review expired memory records",
+          olderThan: "2026-07-08T00:00:00.000Z"
+        }
+      })
+    );
+    const memoryRepository = new FakeExpireStaleMemoryMaintenanceRepository([
+      memoryRecord()
+    ]);
+
+    const result = await runMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      handlers: [
+        createExpireStaleMemoryMaintenanceHandler({
+          memoryRepository
+        })
+      ]
+    });
+
+    expect(result.status).toBe("succeeded");
+    expect(result.handlerWriteBoundary).toMatchObject({
+      jobType: "expire_stale_memory",
+      memoryBoundary: "must_create_reviewed_invalidation_candidate",
+      status: "passed",
+      declaredWrites: ["anti_memory_candidates"]
+    });
+    expect(result.writeBoundary.allowedWrites).toEqual([
+      "maintenance_queue_records",
+      "outbox_events",
+      "anti_memory_candidates"
+    ]);
+    expect(result.writeBoundary.forbiddenWrites).toEqual(expect.arrayContaining([
+      "memory_records",
+      "anti_memory_records"
+    ]));
+    expect(result.createdReviewCandidates).toEqual([{
+      kind: "anti_memory_candidate",
+      id: "anti-memory-candidate-1"
+    }]);
+    expect(memoryRepository.createdAntiMemoryCandidates).toHaveLength(1);
+    expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
+      proposedBy: "maintenance:expire_stale_memory",
+      key: "memory-expired-1",
+      appliesTo: "frontend-template-standard",
+      status: "candidate",
+      metadata: {
+        kind: "krn.expireStaleMemoryMaintenanceCandidate.v1",
+        maintenanceQueueRecordId: "maintenance-queue-1",
+        memoryRecordId: "memory-expired-1",
+        action: "review_memory_invalidation",
+        reason: "expired_memory",
+        mutation: "none"
+      }
+    });
+    expect(memoryRepository.createdAntiMemoryCandidates[0]?.sourceLineage.map((item) =>
+      item.sourceId
+    )).toEqual(expect.arrayContaining([
+      "maintenance_queue:maintenance-queue-1",
+      "source-claim-expired-memory-1"
+    ]));
+    expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
   it("turns stale source feedback into reviewable anti-memory candidates", async () => {

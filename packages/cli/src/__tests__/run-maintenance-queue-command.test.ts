@@ -170,6 +170,9 @@ describe("runMaintenanceQueueCommand", () => {
           }
         },
         memoryRepository: {
+          async listMemoryRecordsForProject() {
+            throw new Error("listMemoryRecordsForProject should not be called");
+          },
           async createAntiMemoryCandidate(input) {
             antiMemoryCandidates.push(input);
 
@@ -253,6 +256,9 @@ describe("runMaintenanceQueueCommand", () => {
           }
         },
         memoryRepository: {
+          async listMemoryRecordsForProject() {
+            throw new Error("listMemoryRecordsForProject should not be called");
+          },
           async createAntiMemoryCandidate() {
             throw new Error("createAntiMemoryCandidate should not be called");
           }

@@ -279,7 +279,7 @@ const allowedWritesByMemoryBoundary = {
   must_create_reviewed_invalidation_candidate: [
     "maintenance_queue_records",
     "outbox_events",
-    "memory_candidates"
+    "anti_memory_candidates"
   ],
   must_not_promote_memory_record: [
     "maintenance_queue_records",
@@ -296,7 +296,7 @@ const requiredWritesByMemoryBoundary = {
   write_memory_candidate_only: ["memory_candidates"],
   write_feedback_candidate_only: ["anti_memory_candidates"],
   write_reflection_record_only: ["reflection_records"],
-  must_create_reviewed_invalidation_candidate: ["memory_candidates"],
+  must_create_reviewed_invalidation_candidate: ["anti_memory_candidates"],
   must_not_promote_memory_record: []
 } as const satisfies Record<MaintenanceJobMemoryBoundary, readonly MaintenanceJobAllowedWrite[]>;
 
@@ -332,7 +332,7 @@ const writeBoundaryByType: Record<MaintenanceJobType, MaintenanceQueueWriteBound
   expire_stale_memory: {
     inputSchema: "ExpireStaleMemoryPayload",
     queueRecordKeyTemplate: "expire_stale_memory:{projectId}:{olderThan}",
-    allowedWrites: ["maintenance_queue_records", "outbox_events", "memory_candidates"],
+    allowedWrites: ["maintenance_queue_records", "outbox_events", "anti_memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
     memoryBoundary: "must_create_reviewed_invalidation_candidate"
   },

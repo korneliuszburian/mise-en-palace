@@ -212,6 +212,22 @@ describe("maintenance queue contract", () => {
         memoryBoundary: "write_memory_candidate_only"
       })
     );
+    expect(describeMaintenanceJob("expire_stale_memory")).toEqual(
+      expect.objectContaining({
+        allowedWrites: [
+          "maintenance_queue_records",
+          "outbox_events",
+          "anti_memory_candidates"
+        ],
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions"
+        ],
+        memoryBoundary: "must_create_reviewed_invalidation_candidate"
+      })
+    );
     expect(describeMaintenanceJob("review_feedback_delta")).toEqual(
       expect.objectContaining({
         allowedWrites: [
@@ -308,6 +324,17 @@ describe("maintenance queue contract", () => {
       ]
     });
     expect(
+      assessMaintenanceQueueRuntimeWriteBoundary("expire_stale_memory", [
+        "anti_memory_candidates"
+      ])
+    ).toEqual({
+      jobType: "expire_stale_memory",
+      memoryBoundary: "must_create_reviewed_invalidation_candidate",
+      status: "passed",
+      declaredWrites: ["anti_memory_candidates"],
+      violations: []
+    });
+    expect(
       assessMaintenanceQueueRuntimeWriteBoundary("review_feedback_delta", [
         "anti_memory_candidates"
       ])
@@ -360,7 +387,7 @@ describe("maintenance queue contract", () => {
       allowedWrites: [
         "maintenance_queue_records",
         "outbox_events",
-        "memory_candidates"
+        "anti_memory_candidates"
       ],
       forbiddenWrites: [
         "memory_records",

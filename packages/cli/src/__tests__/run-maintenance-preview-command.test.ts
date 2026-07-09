@@ -209,7 +209,7 @@ describe("runMaintenancePreviewCommand", () => {
     expect(result.stdout).toContain(
       "queueRecordKeyTemplate: expire_stale_memory:{projectId}:{olderThan}"
     );
-    expect(result.stdout).toContain("memory_candidates");
+    expect(result.stdout).toContain("anti_memory_candidates");
     expect(result.stdout).toContain("Missing fields: relationEvidenceRefs.");
     expect(result.stdout).toContain("relationReviewFocus: relation_evidence");
     expect(result.stdout).toContain(
@@ -375,7 +375,7 @@ describe("runMaintenancePreviewCommand", () => {
               allowedWrites: [
                 "maintenance_queue_records",
                 "outbox_events",
-                "memory_candidates"
+                "anti_memory_candidates"
               ],
               forbiddenWrites: [
                 "memory_records",

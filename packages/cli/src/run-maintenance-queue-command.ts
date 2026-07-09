@@ -1,4 +1,5 @@
 import {
+  createExpireStaleMemoryMaintenanceHandler,
   createFeedbackDeltaMaintenanceHandler,
   recoverStaleMaintenanceQueueRecord,
   runMaintenanceQueueRecord
@@ -162,6 +163,9 @@ export const runMaintenanceQueueCommand = async (
         lockedBy
       },
       handlers: [
+        createExpireStaleMemoryMaintenanceHandler({
+          memoryRepository: databaseRuntime.memoryRepository
+        }),
         createFeedbackDeltaMaintenanceHandler({
           harnessRunRepository: databaseRuntime.harnessRunRepository,
           memoryRepository: databaseRuntime.memoryRepository,

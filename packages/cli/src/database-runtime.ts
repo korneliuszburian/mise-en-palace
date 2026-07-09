@@ -217,7 +217,8 @@ export interface MaintenanceQueueDatabaseRuntime {
   >;
   memoryRepository: Pick<
     MemoryRepository,
-    "createAntiMemoryCandidate"
+    | "listMemoryRecordsForProject"
+    | "createAntiMemoryCandidate"
   >;
   close(): Promise<void>;
 }

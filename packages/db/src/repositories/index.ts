@@ -8,6 +8,7 @@ export * from "./drizzle-reflection-repository.js";
 export * from "./drizzle-retrieval-repository.js";
 export * from "./drizzle-source-repository.js";
 export * from "./drizzle-maintenance-queue-repository.js";
+export * from "./expire-stale-memory-maintenance-handler.js";
 export * from "./feedback-delta-maintenance-handler.js";
 export * from "./maintenance-queue-executor.js";
 export * from "./maintenance-queue-types.js";
