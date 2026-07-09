@@ -81,7 +81,7 @@ const aggregate: HarnessRunAggregate = {
           verdict: "target_specific_selected_knowledge",
           targetSpecific: 1,
           genericGuardrail: 0,
-          adjacentPattern: 0,
+          adjacentKnowledge: 0,
           noise: 0,
           unknown: 0,
           recommendedUse:
@@ -664,7 +664,7 @@ describe("runRunShowCommand", () => {
           verdict: "target_specific_selected_knowledge",
           targetSpecific: 1,
           genericGuardrail: 0,
-          adjacentPattern: 0,
+          adjacentKnowledge: 0,
           noise: 0,
           unknown: 0,
           recommendedUse:

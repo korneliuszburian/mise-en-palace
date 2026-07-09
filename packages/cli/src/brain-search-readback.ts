@@ -669,7 +669,7 @@ export const formatBrainSearchPreviewText = (resource: BrainSearchPreviewResourc
     `  verdict: ${resource.knowledgeReadModels.targetFitSummary.verdict}`,
     `  targetSpecific: ${resource.knowledgeReadModels.targetFitSummary.targetSpecific}`,
     `  genericGuardrail: ${resource.knowledgeReadModels.targetFitSummary.genericGuardrail}`,
-    `  adjacentPattern: ${resource.knowledgeReadModels.targetFitSummary.adjacentPattern}`,
+    `  adjacentKnowledge: ${resource.knowledgeReadModels.targetFitSummary.adjacentKnowledge}`,
     `  noise: ${resource.knowledgeReadModels.targetFitSummary.noise}`,
     `  unknown: ${resource.knowledgeReadModels.targetFitSummary.unknown}`,
     `  recommendedUse: ${resource.knowledgeReadModels.targetFitSummary.recommendedUse}`,

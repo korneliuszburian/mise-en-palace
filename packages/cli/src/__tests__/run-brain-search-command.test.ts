@@ -969,7 +969,7 @@ describe("runBrainSearchCommand", () => {
           }),
           expect.objectContaining({
             id: "adjacent-claim",
-            targetFit: "adjacent_pattern",
+            targetFit: "adjacent_knowledge",
             targetFitReasons: expect.arrayContaining([
               "no distinctive query token matched."
             ])

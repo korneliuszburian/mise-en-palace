@@ -1,7 +1,7 @@
 export const targetFitValues = [
   "target_specific",
   "generic_guardrail",
-  "adjacent_pattern",
+  "adjacent_knowledge",
   "noise",
   "unknown"
 ] as const;
@@ -26,7 +26,7 @@ export interface TargetFitSummary {
   verdict: TargetFitSummaryVerdict;
   targetSpecific: number;
   genericGuardrail: number;
-  adjacentPattern: number;
+  adjacentKnowledge: number;
   noise: number;
   unknown: number;
   recommendedUse: string;
@@ -43,8 +43,10 @@ const genericQueryTokens = new Set([
   "quality",
   "krn",
   "knowledge",
-  "pattern",
-  "patterns"
+  "practice",
+  "practices",
+  "standard",
+  "standards"
 ]);
 
 const genericGuardrailTokens = new Set([
@@ -60,7 +62,7 @@ const genericGuardrailTokens = new Set([
   "should"
 ]);
 
-const adjacentPatternTokens = new Set([
+const adjacentKnowledgeTokens = new Set([
   "activation",
   "artifact",
   "candidate",
@@ -136,13 +138,13 @@ export const classifyTargetFit = (input: {
     };
   }
 
-  const adjacentMatches = [...adjacentPatternTokens].filter((token) =>
+  const adjacentMatches = [...adjacentKnowledgeTokens].filter((token) =>
     packetTokens.has(token)
   );
 
   if (allQueryTokenMatches.length > 0 || adjacentMatches.length > 0) {
     return {
-      targetFit: "adjacent_pattern",
+      targetFit: "adjacent_knowledge",
       targetFitReasons: [
         "no distinctive query token matched.",
         ...(allQueryTokenMatches.length === 0
@@ -150,14 +152,14 @@ export const classifyTargetFit = (input: {
           : [`generic query token overlap: ${allQueryTokenMatches.join(", ")}.`]),
         ...(adjacentMatches.length === 0
           ? []
-          : [`adjacent pattern token(s): ${adjacentMatches.join(", ")}.`])
+          : [`adjacent knowledge token(s): ${adjacentMatches.join(", ")}.`])
       ]
     };
   }
 
   return {
     targetFit: "noise",
-    targetFitReasons: ["no distinctive, generic, or adjacent query/pattern signal matched."]
+    targetFitReasons: ["no distinctive, generic, or adjacent knowledge signal matched."]
   };
 };
 
@@ -166,7 +168,7 @@ export const summarizeTargetFit = (
 ): TargetFitSummary => {
   const targetSpecific = items.filter((item) => item.targetFit === "target_specific").length;
   const genericGuardrail = items.filter((item) => item.targetFit === "generic_guardrail").length;
-  const adjacentPattern = items.filter((item) => item.targetFit === "adjacent_pattern").length;
+  const adjacentKnowledge = items.filter((item) => item.targetFit === "adjacent_knowledge").length;
   const noise = items.filter((item) => item.targetFit === "noise").length;
   const unknown = items.filter((item) => item.targetFit === "unknown").length;
 
@@ -175,7 +177,7 @@ export const summarizeTargetFit = (
       verdict: "no_selected_knowledge",
       targetSpecific,
       genericGuardrail,
-      adjacentPattern,
+      adjacentKnowledge,
       noise,
       unknown,
       recommendedUse:
@@ -190,7 +192,7 @@ export const summarizeTargetFit = (
       verdict: "target_specific_selected_knowledge",
       targetSpecific,
       genericGuardrail,
-      adjacentPattern,
+      adjacentKnowledge,
       noise,
       unknown,
       recommendedUse:
@@ -205,7 +207,7 @@ export const summarizeTargetFit = (
       verdict: "generic_only_selected_knowledge",
       targetSpecific,
       genericGuardrail,
-      adjacentPattern,
+      adjacentKnowledge,
       noise,
       unknown,
       recommendedUse:
@@ -219,7 +221,7 @@ export const summarizeTargetFit = (
     verdict: "adjacent_or_unknown_selected_knowledge",
     targetSpecific,
     genericGuardrail,
-    adjacentPattern,
+    adjacentKnowledge,
     noise,
     unknown,
     recommendedUse:
@@ -249,7 +251,7 @@ export const parseTargetFitSummary = (
   const verdict = value["verdict"];
   const targetSpecific = value["targetSpecific"];
   const genericGuardrail = value["genericGuardrail"];
-  const adjacentPattern = value["adjacentPattern"];
+  const adjacentKnowledge = value["adjacentKnowledge"];
   const noise = value["noise"];
   const unknown = value["unknown"];
   const recommendedUse = value["recommendedUse"];
@@ -259,7 +261,7 @@ export const parseTargetFitSummary = (
     !isSummaryVerdict(verdict) ||
     !finiteNumber(targetSpecific) ||
     !finiteNumber(genericGuardrail) ||
-    !finiteNumber(adjacentPattern) ||
+    !finiteNumber(adjacentKnowledge) ||
     !finiteNumber(noise) ||
     !finiteNumber(unknown) ||
     typeof recommendedUse !== "string" ||
@@ -272,7 +274,7 @@ export const parseTargetFitSummary = (
     verdict,
     targetSpecific,
     genericGuardrail,
-    adjacentPattern,
+    adjacentKnowledge,
     noise,
     unknown,
     recommendedUse,

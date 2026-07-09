@@ -23,7 +23,7 @@ describe("target fit", () => {
     expect(classifyTargetFit({
       query: "specific adapter behavior",
       text: "source graph relation readback"
-    }).targetFit).toBe("adjacent_pattern");
+    }).targetFit).toBe("adjacent_knowledge");
     expect(classifyTargetFit({
       query: "specific adapter behavior",
       text: "unrelated wording"
@@ -52,7 +52,7 @@ describe("target fit", () => {
       verdict: "generic_only_selected_knowledge",
       targetSpecific: 0,
       genericGuardrail: 1,
-      adjacentPattern: 0,
+      adjacentKnowledge: 0,
       noise: 0,
       unknown: 0,
       recommendedUse: "Use source evidence first.",

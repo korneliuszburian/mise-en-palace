@@ -527,7 +527,7 @@ describe("runMaintenancePreviewCommand", () => {
           verdict: "generic_only_selected_knowledge",
           targetSpecific: 0,
           genericGuardrail: 1,
-          adjacentPattern: 0,
+          adjacentKnowledge: 0,
           noise: 0,
           unknown: 0,
           recommendedUse:
