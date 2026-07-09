@@ -6,6 +6,7 @@ import {
 } from "../../no-store-repositories.js";
 import type {
   AntiMemoryRecord,
+  FeedbackDelta,
   MemoryRecord
 } from "@krn/core";
 import type {
@@ -38,6 +39,10 @@ export type CapturedPlanRun = {
   result: Awaited<ReturnType<typeof runCli>>;
   executionRunMetadata: Record<string, unknown> | undefined;
 };
+
+interface PersistedPlanOptions {
+  feedbackDeltas?: readonly FeedbackDelta[];
+}
 
 export const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
@@ -151,7 +156,8 @@ export const brainRecallMemoryRepository = {
 };
 
 export const runPersistedPlanWithCapturedMetadata = async (
-  task: string
+  task: string,
+  options: PersistedPlanOptions = {}
 ): Promise<CapturedPlanRun> => {
   let executionRunMetadata: Record<string, unknown> | undefined;
   const result = await runCli(
@@ -197,7 +203,7 @@ export const runPersistedPlanWithCapturedMetadata = async (
             throw new Error("createFeedbackDelta should not be called");
           },
           async listFeedbackDeltasForProject() {
-            return [];
+            return [...(options.feedbackDeltas ?? [])];
           }
         };
         const sourceRepository = {

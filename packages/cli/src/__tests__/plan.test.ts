@@ -9,6 +9,7 @@ import {
 } from "../no-store-repositories.js";
 import type {
   AntiMemoryRecord,
+  FeedbackDelta,
   MemoryRecord,
   SourceClaim
 } from "@krn/core";
@@ -32,6 +33,29 @@ import {
 const shouldNotBeCalled = (method: string): never => {
   throw new Error(`Plan test runtime method should not be called: ${method}`);
 };
+
+const knowledgeFeedbackDelta = (
+  knowledgeId: string,
+  outcome: "noise" | "stale" | "hurt" | "rejected"
+): FeedbackDelta => ({
+  id: "feedback-delta-1" as FeedbackDelta["id"],
+  reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
+  status: "accepted",
+  memoryCandidates: [],
+  sourceDecisions: [],
+  evalCandidates: [],
+  metadata: {
+    knowledgeUsefulnessOutcomes: [{
+      knowledgeId,
+      outcome,
+      reason: "The knowledge was selected for a previous plan and proved stale for this task class.",
+      evidenceRefs: ["test:plan knowledge usefulness feedback"],
+      doesNotProve: "One feedback delta does not prove broad knowledge ranking quality."
+    }]
+  },
+  createdAt: now,
+  updatedAt: now
+});
 
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
@@ -285,6 +309,40 @@ describe("runCli", () => {
         reason:
           "Store-backed knowledge read model matched the pre-coding plan query.",
         selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"]
+      }
+    });
+  });
+
+  it("applies store-backed usefulness feedback before selecting plan knowledge", async () => {
+    const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "TypeScript",
+      {
+        feedbackDeltas: [
+          knowledgeFeedbackDelta("knowledge:ts-boundary-knowledge-parser-exemplar", "stale")
+        ]
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Selected KRN context: selected");
+    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).not.toContain("Selected KRN context IDs: ts-boundary-knowledge-parser-exemplar");
+    expect(executionRunMetadata).toMatchObject({
+      knowledgeSelection: {
+        status: "selected",
+        selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+        proof: {
+          proves: [
+            "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
+            "plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"
+          ],
+          doesNotProve: [
+            "DB-backed knowledge selection proves source truth",
+            "Codex used the selected memory",
+            "store-backed usefulness feedback proves broad ranking quality"
+          ]
+        }
       }
     });
   });

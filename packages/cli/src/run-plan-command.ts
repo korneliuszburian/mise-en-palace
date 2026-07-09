@@ -11,10 +11,13 @@ import {
   assessTargetOwnerFileRecall,
   compileHarnessPlan,
   formatActivationRetrievalDiagnostics,
+  knowledgeReadModelsWithUsefulnessFeedback,
+  knowledgeUsefulnessFromKnowledgeOutcomes,
   searchKnowledgeReadModels
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
+  KnowledgeReadModel,
   TargetActivationReadModel
 } from "@krn/harness";
 import type {
@@ -23,6 +26,7 @@ import type {
   RepoInstallationRecord
 } from "@krn/core/repositories";
 import {
+  knowledgeUsefulnessOutcomesFromMetadata,
   parseHarnessCompileInput,
   parseOperatorIntentInput,
   parseTaskContractInput
@@ -105,7 +109,8 @@ interface CompilerRuntimeResolution {
   persistenceLabel: string;
   projectResolution?: ProjectResolution;
   compilerDependencies: HarnessCompilerDependencies;
-  harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun">;
+  harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun"> &
+    Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">>;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
   close(): Promise<void>;
 }
@@ -556,6 +561,19 @@ const withKnowledgeSelectionReason = (
   reason
 });
 
+const blockingUsefulnessOutcomes = new Set<string>([
+  "noise",
+  "stale",
+  "hurt",
+  "rejected"
+]);
+
+const hasBlockingUsefulnessFeedback = (
+  readModel: KnowledgeReadModel
+): boolean =>
+  readModel.usefulnessFeedback !== undefined &&
+  blockingUsefulnessOutcomes.has(readModel.usefulnessFeedback.outcome);
+
 const readKnowledgeSelection = async (
   query: string,
   compilerRuntime: CompilerRuntimeResolution
@@ -564,12 +582,34 @@ const readKnowledgeSelection = async (
     compilerRuntime.projectId,
     20
   );
-  const readModels = searchKnowledgeReadModels(
+  const listFeedbackDeltasForProject =
+    compilerRuntime.harnessRunRepository?.listFeedbackDeltasForProject;
+  const feedbackDeltas = listFeedbackDeltasForProject === undefined
+    ? []
+    : await listFeedbackDeltasForProject(
+      compilerRuntime.projectId,
+      100
+    );
+  const usefulnessFeedback = feedbackDeltas.flatMap((feedback) =>
+    knowledgeUsefulnessFromKnowledgeOutcomes(
+      knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
+      feedback.updatedAt
+    )
+  );
+  const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
     records.map(memoryRecordToKnowledgeReadModel),
+    usefulnessFeedback
+  );
+  const selectableReadModels = readModelsWithFeedback.filter((readModel) =>
+    !hasBlockingUsefulnessFeedback(readModel)
+  );
+  const readModels = searchKnowledgeReadModels(
+    selectableReadModels,
     {
       text: query
     }
   ).slice(0, 5);
+  const appliedUsefulnessFeedback = usefulnessFeedback.length > 0;
   const selection = knowledgeSelectionFromReadbackJson(
     query,
     JSON.stringify({
@@ -585,12 +625,17 @@ const readKnowledgeSelection = async (
       readModels,
       proof: {
         proves: [
-          "plan knowledge selection read active MemoryRecord rows from the resolved DB project"
+          "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
+          ...(appliedUsefulnessFeedback
+            ? ["plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"]
+            : [])
         ],
         doesNotProve: [
           "DB-backed knowledge selection proves source truth",
           "Codex used the selected memory",
-          "store-backed usefulness feedback has been applied"
+          ...(appliedUsefulnessFeedback
+            ? ["store-backed usefulness feedback proves broad ranking quality"]
+            : ["store-backed usefulness feedback has been applied"])
         ]
       }
     })
