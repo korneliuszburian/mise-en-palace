@@ -10,30 +10,122 @@ export interface MigrationReadinessInput {
   migrationsFolder: string;
 }
 
+export interface MigrationIdentity {
+  hash: string;
+  createdAt: string;
+}
+
+export type MigrationIdentityStatus =
+  | "verified"
+  | "missing"
+  | "extra"
+  | "reordered"
+  | "mismatched"
+  | "unavailable";
+
+export interface MigrationIdentityComparison {
+  status: MigrationIdentityStatus;
+  details: readonly string[];
+}
+
 export interface MigrationReadinessReport {
   migrationsFolder: string;
   expectedMigrationCount: number;
   appliedMigrationCount: number;
   migrationTablePresent: boolean;
+  migrationIdentityStatus: MigrationIdentityStatus;
+  migrationIdentityDetails: readonly string[];
   migrationsVerified: boolean;
   pgvectorAvailable: boolean;
 }
+
+const migrationIdentityKey = (identity: MigrationIdentity): string =>
+  `${identity.hash}@${identity.createdAt}`;
+
+const sameSequence = (
+  left: readonly string[],
+  right: readonly string[]
+): boolean => left.length === right.length && left.every((value, index) => value === right[index]);
+
+const containsAll = (
+  values: readonly string[],
+  expected: readonly string[]
+): boolean => expected.every((value) => values.includes(value));
+
+export const compareMigrationIdentities = (
+  expected: readonly MigrationIdentity[],
+  applied: readonly MigrationIdentity[]
+): MigrationIdentityComparison => {
+  const expectedKeys = expected.map(migrationIdentityKey);
+  const appliedKeys = applied.map(migrationIdentityKey);
+
+  if (sameSequence(expectedKeys, appliedKeys)) {
+    return {
+      status: "verified",
+      details: []
+    };
+  }
+
+  if (
+    appliedKeys.length < expectedKeys.length &&
+    (sameSequence(appliedKeys, expectedKeys.slice(0, appliedKeys.length)) ||
+      containsAll(expectedKeys, appliedKeys))
+  ) {
+    return {
+      status: "missing",
+      details: [`Missing applied migration identities: ${expectedKeys.filter((key) => !appliedKeys.includes(key)).join(", ")}`]
+    };
+  }
+
+  if (
+    appliedKeys.length > expectedKeys.length &&
+    (sameSequence(expectedKeys, appliedKeys.slice(0, expectedKeys.length)) ||
+      containsAll(appliedKeys, expectedKeys))
+  ) {
+    return {
+      status: "extra",
+      details: [`Extra applied migration identities: ${appliedKeys.filter((key) => !expectedKeys.includes(key)).join(", ")}`]
+    };
+  }
+
+  if (
+    expectedKeys.length === appliedKeys.length &&
+    containsAll(expectedKeys, appliedKeys) &&
+    containsAll(appliedKeys, expectedKeys)
+  ) {
+    return {
+      status: "reordered",
+      details: ["Applied migration identities contain the expected set in a different order."]
+    };
+  }
+
+  return {
+    status: "mismatched",
+    details: [
+      `Expected migration identities: ${expectedKeys.join(", ")}`,
+      `Applied migration identities: ${appliedKeys.join(", ")}`
+    ]
+  };
+};
 
 const inspectMigrationState = async (
   client: Sql,
   migrationsFolder: string
 ): Promise<MigrationReadinessReport> => {
-  const expectedMigrationCount = readMigrationFiles({
-    migrationsFolder
-  }).length;
+  const expectedMigrations = readMigrationFiles({ migrationsFolder }).map((migration) => ({
+    hash: migration.hash,
+    createdAt: String(migration.folderMillis)
+  }));
+  const expectedMigrationCount = expectedMigrations.length;
   const migrationTableRows = await client<{ present: boolean }[]>`
     select to_regclass('drizzle.__drizzle_migrations') is not null as present
   `;
   const migrationTablePresent = migrationTableRows[0]?.present === true;
   const migrationRows = migrationTablePresent
-    ? await client<{ appliedCount: number }[]>`
-        select count(*)::int as "appliedCount"
+    ? await client<{ hash: string; createdAt: string }[]>`
+        select hash, created_at::text as "createdAt"
         from drizzle.__drizzle_migrations
+        order by id
       `
     : [];
   const vectorRows = await client<{ available: boolean }[]>`
@@ -43,16 +135,23 @@ const inspectMigrationState = async (
       where extname = 'vector'
     ) as available
   `;
-  const appliedMigrationCount = migrationRows[0]?.appliedCount ?? 0;
+  const appliedMigrationCount = migrationRows.length;
   const pgvectorAvailable = vectorRows[0]?.available === true;
+  const migrationIdentity = migrationTablePresent
+    ? compareMigrationIdentities(expectedMigrations, migrationRows)
+    : {
+        status: "unavailable" as const,
+        details: ["drizzle.__drizzle_migrations is missing"]
+      };
 
   return {
     migrationsFolder,
     expectedMigrationCount,
     appliedMigrationCount,
     migrationTablePresent,
-    migrationsVerified:
-      migrationTablePresent && appliedMigrationCount === expectedMigrationCount,
+    migrationIdentityStatus: migrationIdentity.status,
+    migrationIdentityDetails: migrationIdentity.details,
+    migrationsVerified: migrationIdentity.status === "verified",
     pgvectorAvailable
   };
 };

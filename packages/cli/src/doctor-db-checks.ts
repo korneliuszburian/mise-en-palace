@@ -71,8 +71,13 @@ const migrationStatus = (report: MigrationReadinessReport): string => {
   }
 
   const counts = `${report.appliedMigrationCount}/${report.expectedMigrationCount} applied`;
+  const identity = report.migrationIdentityStatus === "missing"
+    ? ""
+    : `; identity ${report.migrationIdentityStatus}`;
 
-  return report.migrationsVerified ? `verified (${counts})` : `unverified (${counts})`;
+  return report.migrationsVerified
+    ? `verified (${counts})`
+    : `unverified (${counts}${identity})`;
 };
 
 const migrationOutcome = (report: MigrationReadinessReport): DoctorOutcome => {

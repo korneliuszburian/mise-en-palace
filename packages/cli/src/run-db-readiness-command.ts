@@ -81,6 +81,8 @@ export const runDbReadinessCommand = async (
         "Postgres: reachable",
         `Migrations expected: ${report.expectedMigrationCount}`,
         `Migrations applied: ${report.appliedMigrationCount}`,
+        `Migrations identity: ${report.migrationIdentityStatus}`,
+        ...report.migrationIdentityDetails.map((detail) => `Migration detail: ${detail}`),
         `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
         `pgvector: ${report.pgvectorAvailable ? "available" : "missing"}`,
         ...(ready
