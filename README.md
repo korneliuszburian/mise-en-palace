@@ -46,9 +46,10 @@ protocols for repeated KRN work, not runtime memory, broad docs, or architecture
 by themselves.
 
 The skill/artifact contract is defined in `KRN_ROADMAP.md`. Keep README as a
-pointer, not a skills catalog. External methods such as Matt Pocock-style skills
-and loop engineering enter KRN only through source-to-decision and only as
-mechanisms with a current consumer and falsifier.
+compact onboarding surface, not a second source of product truth. External
+methods such as Matt Pocock-style skills and loop engineering enter KRN only
+through source-to-decision and only as mechanisms with a current consumer and
+falsifier.
 
 ## Current Truth
 
