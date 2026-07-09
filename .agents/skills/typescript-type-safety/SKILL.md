@@ -26,7 +26,7 @@ Use this skill before or during TypeScript changes.
    catalog before implementation when the catalog is available:
 
    ```sh
-   pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
+   rtk proxy pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text unknown-first
    ```
 
    Use the catalog result as read-only knowledge context. If the command is not
@@ -50,6 +50,12 @@ Use this skill before or during TypeScript changes.
 - Consider only for application packages.
 - Do not use global `ts-reset` in `packages/core` or public SDK packages.
 - Never use it to hide missing validation.
+
+## Stop Condition
+
+Stop when each external boundary is narrowed from `unknown`, public type
+changes are explicit, any exception is justified, and `rtk proxy pnpm
+typecheck` passes or is explicitly unavailable.
 
 ## Forbidden
 

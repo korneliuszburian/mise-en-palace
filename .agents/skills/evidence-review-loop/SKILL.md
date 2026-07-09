@@ -48,6 +48,12 @@ state without mutating memory automatically.
 - Observe-before-reflect sequencing status for persisted same-run loops.
 - Persistence status.
 
+## Stop Condition
+
+Stop when a reviewer can distinguish hard proof, skipped or weak evidence,
+interpretation, rollback path, source usefulness, feedback candidates, and any
+remaining proof gaps.
+
 ## Forbidden
 
 - Do not claim skipped commands passed.

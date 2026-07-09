@@ -58,6 +58,12 @@ Does not prove:
 - Owner-file/read-model source or missing-read-model reason when relevant.
 - Test or proof command.
 
+## Stop Condition
+
+Stop when the packet has the smallest justified inclusion set, every rejected
+high-scoring candidate has an exclusion reason, and weak context is represented
+as abstention or missing-read-model evidence.
+
 ## Forbidden
 
 - Do not activate raw materials by default.

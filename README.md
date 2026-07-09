@@ -16,6 +16,29 @@ memory substrate.
 3. Use Beads for active work.
 4. Load repo-local skills only when their trigger matches the task.
 
+## Operating Loop
+
+KRN work uses one small loop:
+
+```txt
+Beads issue
+  -> roadmap/source-to-decision context
+  -> focused skill selection
+  -> implementation or review slice
+  -> verification
+  -> evidence and usefulness feedback
+  -> close, follow up, or hand off
+```
+
+Codex edits code. KRN supplies governed context and records whether that context
+helped. Repo-local skills are operational protocols for repeated work; they are
+not runtime memory or product architecture. Their contract lives in
+`KRN_ROADMAP.md` under Artifact Contract.
+
+External methods and research enter only through source-to-decision: source,
+mechanism, KRN implication, decision or rejection, consumer, falsifier, and
+non-proof. A method is adopted only when it changes a current KRN consumer.
+
 ## Current Truth
 
 - Product direction: `KRN_ROADMAP.md`.
@@ -51,24 +74,24 @@ Still not built:
 Fast local gate:
 
 ```sh
-pnpm alpha:verify
+rtk proxy pnpm alpha:verify
 ```
 
 Full local gate, when Postgres is available:
 
 ```sh
-pnpm alpha:verify:full
+rtk proxy pnpm alpha:verify:full
 ```
 
 Common focused checks:
 
 ```sh
-pnpm typecheck
-pnpm test
-pnpm quality:fallow:ci
-pnpm --filter @krn/db db:check
-pnpm db:smoke:maintenance-queue
-git diff --check
+rtk proxy pnpm typecheck
+rtk proxy pnpm test
+rtk proxy pnpm quality:fallow:ci
+rtk proxy pnpm --filter @krn/db db:check
+rtk proxy pnpm db:smoke:maintenance-queue
+rtk git diff --check
 ```
 
 Do not claim DB runtime truth unless the relevant DB command ran in the current

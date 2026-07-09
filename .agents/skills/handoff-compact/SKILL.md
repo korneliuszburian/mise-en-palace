@@ -51,6 +51,12 @@ Next action:
 Do not reread:
 ```
 
+## Stop Condition
+
+Stop when a fresh Codex thread can resume the next action from the compact
+handoff without broad reread, without losing Beads state, and without mistaking
+unverified work for pushed or CI-proven work.
+
 ## Forbidden
 
 - Do not write a historical narrative.

@@ -576,6 +576,46 @@ The target is a small set of sharp skills:
 Skills for building the kernel may stay if they encode real project discipline,
 but their vocabulary must not leak into runtime contracts unless implemented.
 
+## Artifact Contract
+
+KRN artifacts exist only when they make the loop more predictable. A useful
+artifact names the trigger, the bounded context to inspect, the workflow, the
+output, the stop condition, the verification, and the proof/non-proof boundary.
+This applies to skills, Beads issues, source decisions, rare ADR-like decision
+records, and onboarding surfaces.
+
+The canonical skill shape is:
+
+```txt
+Trigger -> Workflow -> Output -> Stop Condition -> Verification -> Forbidden
+```
+
+Use only the sections that change agent behavior. A skill can omit a section
+when the contract is obvious, but it must still have a checkable stop condition
+and verification path. Keep detailed branches behind progressive disclosure
+when they would bloat `SKILL.md`.
+
+External methods, including practitioner workflows, public course material, and
+loop-engineering articles, must enter KRN through source-to-decision:
+
+```txt
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
+```
+
+Adopt the mechanism only when it has a current KRN consumer. For current skill
+work, the adopted mechanisms are small composable skills, TypeScript/static
+feedback, red-green behavior falsifiers, maker/checker separation, durable task
+state, worktree isolation for larger slices when requested, and explicit stop
+conditions. This does not prove those external sources are product authority.
+
+ADR-like records are rare. Prefer Beads for task state, source decisions for
+evidence-backed knowledge, store-backed memory/source/eval candidates for
+runtime learning, and `KRN_ROADMAP.md` for compact architecture truth. Create a
+separate ADR only when the decision is hard to reverse, surprising without
+context, has a current owner, has a runtime consumer, and has a falsifier. Do
+not create an ADR forest, `CONTEXT.md`, `CONVENTIONS.md`, or markdown memory
+ledger as a substitute for implemented behavior.
+
 ## External Review Rule
 
 External review is optional advisory evidence, not an implementation gate:

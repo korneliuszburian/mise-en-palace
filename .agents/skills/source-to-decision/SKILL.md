@@ -20,8 +20,9 @@ Use this skill to prevent source hoarding.
 3. State the KRN implication.
 4. Decide: adopt, reject, lab-test, or defer.
 5. State what the source does not prove.
-6. Name the consumer: doc, ADR, skill, type, policy gate, eval candidate, or CLI
-   behavior.
+6. Name the consumer: roadmap decision, Beads issue, store-backed source or
+   memory candidate, skill, type, eval candidate, CLI/readback behavior, or
+   runtime contract.
 7. Add a falsifier.
 8. After execution, close source usefulness feedback or record why it was not
    measured.
@@ -35,7 +36,7 @@ Before retaining or applying a source or knowledge decision, query the explicit
 brain knowledge catalog when retained knowledge context is relevant:
 
 ```sh
-pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
+rtk proxy pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text source-to-decision
 ```
 
 Use catalog results as read-only context. They can guide adoption, rejection,
@@ -55,8 +56,8 @@ Keep the gate strict:
 - Decision without falsifier is dogma.
 - Practitioner or course guidance can shape style, but it does not override
   repo evidence, tests, or KRN architecture law.
-- Papers can create hypotheses, eval candidates, or ADR evidence, but they do
-  not become product truth without local falsifiers.
+- Papers can create hypotheses, eval candidates, or architecture-decision
+  evidence, but they do not become product truth without local falsifiers.
 - Official docs can define current product mechanics, but still need a KRN
   implication and a proof/non-proof boundary.
 
@@ -133,7 +134,8 @@ operator UX / CLI / readback
 
 If it does, either:
 
-- cite an existing KRN source/standard/ADR/skill and state the mechanism; or
+- cite an existing KRN source, standard, architecture decision, or skill and
+  state the mechanism; or
 - add a bounded source decision; or
 - explicitly reject/defer source work with a reason.
 
@@ -166,8 +168,9 @@ standard:
 skill:
   repeated execution workflow
 
-ADR:
-  architecture or infrastructure decision
+architecture decision:
+  rare source-backed decision; prefer roadmap, Beads, or store-backed
+  SourceDecision over markdown ADR files
 
 eval/golden candidate:
   behavior can be falsified
@@ -219,3 +222,9 @@ source as decorative authority after it influences implementation.
 The mapped source must change a decision, reject a path, define a risk, create a
 testable hypothesis, constrain implementation, or be closed by source
 usefulness feedback with a proof/non-proof boundary.
+
+## Stop Condition
+
+Stop when every used source has a mechanism, KRN implication, decision or
+rejection, consumer, falsifier, `does_not_prove`, and usefulness closure or a
+bounded reason usefulness was not measured.

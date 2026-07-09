@@ -7,7 +7,7 @@ description: Use when reviewing KRN diffs, PRs, large local changes, migration s
 
 Review the diff against a fixed point, usually the merge base with `origin/main`.
 
-## First
+## Workflow
 
 1. Resolve the fixed point with `git rev-parse`.
 2. Inspect `git diff <fixed-point>...HEAD` and relevant commits.
@@ -57,3 +57,9 @@ Flag these as judgment calls unless a repo rule makes them hard blockers:
 - Spec:
 - Verification:
 - Follow-up Beads:
+
+## Stop Condition
+
+Stop when findings are severity ordered with file/line evidence, standards and
+spec risks are separated, verification gaps are named, and false reviewer claims
+are rejected with current evidence.

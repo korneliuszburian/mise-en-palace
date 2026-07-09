@@ -35,6 +35,11 @@ Use this skill when a change touches the Postgres-backed KRN brain store.
 - Query/index rationale.
 - Rollback or migration risk.
 
+## Stop Condition
+
+Stop when the durable object lifecycle, schema/migration diff, adapter
+narrowing, rollback risk, and verification commands are all explicit.
+
 ## Forbidden
 
 - Do not make markdown or `.krn` runtime truth.
@@ -45,6 +50,6 @@ Use this skill when a change touches the Postgres-backed KRN brain store.
 
 ## Verification
 
-Run `pnpm typecheck`, relevant tests, `pnpm --filter @krn/db db:generate` when
-schema changes, `pnpm --filter @krn/db db:check`, SQL inspection, and
-`git diff --check`.
+Run `rtk proxy pnpm typecheck`, relevant tests, `rtk proxy pnpm --filter
+@krn/db db:generate` when schema changes, `rtk proxy pnpm --filter @krn/db
+db:check`, SQL inspection, and `rtk git diff --check`.

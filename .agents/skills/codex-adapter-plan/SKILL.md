@@ -1,58 +1,58 @@
 ---
 name: codex-adapter-plan
-description: Use when rendering KRN harness output into Codex-facing briefs, Goal/ExecPlan references, AGENTS pointers, skill hints, hooks, MCP references, or execution instructions with bounded context, non-goals, proof boundaries, and non-mutating adapter behavior.
+description: Use when rendering KRN DecisionPacket or harness output into Codex-facing execution briefs with bounded context, evidence expectations, proof boundaries, and non-mutating adapter behavior.
 ---
 
 # Codex Adapter Plan
 
-Use this skill at the Codex boundary, not inside core domain logic.
+Use this skill at the Codex brief boundary, not inside core domain logic.
 
 ## Trigger
 
-- A KRN plan must become a Codex brief, skill hint, AGENTS pointer, Goal,
-  ExecPlan, hook expectation, or MCP reference.
+- A KRN `DecisionPacket`, harness plan, or task contract must become a Codex
+  execution brief.
 - A change risks leaking Codex-specific language into `packages/core`.
+- A brief change risks treating skills, hooks, MCP, or adapter metadata as the
+  product brain instead of tooling around the `DecisionPacket`.
 
 ## Workflow
 
-1. Read the harness output: task contract, context assembly, capability plan,
-   Codex adapter plan reference, and evidence contract.
+1. Read the bounded input: task contract, context assembly, selected knowledge,
+   source support, rejected/stale paths, capability requirements, and evidence
+   expectations.
 2. Render only bounded instructions needed by Codex to execute the next slice.
-3. Include context inclusions and exclusions with reasons.
-4. Include capability requirements and evidence expectations.
-5. Keep adapter output plain, inspectable, and non-mutating.
+3. Include inclusions, exclusions, rejected paths, and non-proof boundaries.
+4. Keep adapter output plain, inspectable, and non-mutating.
+5. If a proposed section has no current consumer in the brief contract, reject
+   it or file a Beads task instead of adding reserved adapter surface.
 6. Keep core package imports one-way: adapter may import core/harness; core must
    not import adapter.
-7. If the work changes skill hints, Codex-facing execution instructions,
-   `AGENTS.md` pointers, or reusable brief guidance, query the retained skill
-   routing knowledge first when the catalog is available:
-
-   ```sh
-   pnpm --filter @krn/cli krn brain recall --fixture-catalog-file tests/fixtures/brain-knowledge/corpus/catalog.json --text progressive-disclosure
-   ```
-
-   Use the result as read-only context. It can guide skill routing and
-   prompt-size decisions, but it does not prove automatic skill selection,
-   product readiness, or that broad skill creation is useful.
 
 ## Output
 
 - Execution brief.
-- Context inclusion/exclusion section.
-- Capability or skill hints.
+- DecisionPacket context inclusion/exclusion section.
+- Current knowledge/source support, stale boundaries, and rejected paths.
 - Evidence contract.
 - Non-goals and stop conditions.
-- Retained skill-routing knowledge applied or explicitly rejected when the brief
-  changes skill hints or reusable Codex instructions.
+- Proof and non-proof boundary.
+
+## Stop Condition
+
+Stop when the rendered brief is bounded, inspectable, non-mutating, has explicit
+proof/non-proof boundaries, and no Codex-specific product authority leaked into
+core packages.
 
 ## Forbidden
 
 - Do not invoke Codex from the adapter.
 - Do not write files, mutate memory, or run shell commands from renderer code.
 - Do not make Codex surfaces the product brain.
+- Do not render skill, hook, MCP, Goal, or ExecPlan metadata unless a current
+  runtime contract consumes it.
 - Do not import `@krn/codex-adapter` from `packages/core`.
 
 ## Verification
 
-Run typecheck/tests and search that `packages/core` has no Codex adapter imports
-or Codex-specific runtime behavior.
+Run typecheck/tests, verify the changed brief output, and search that
+`packages/core` has no Codex adapter imports or Codex-specific runtime behavior.

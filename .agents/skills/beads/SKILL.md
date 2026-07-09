@@ -12,13 +12,13 @@ Use Beads as the shared project task system. Local plans, scratch files, and per
 Run:
 
 ```bash
-bd prime
+rtk bd prime
 ```
 
 If that prints nothing, check whether the repository has an active Beads workspace:
 
 ```bash
-bd where
+rtk bd where
 ```
 
 ## Preferred Route
@@ -30,39 +30,39 @@ Use the `bd` CLI when shell access is available. It is the most compact and dire
 1. Find work:
 
 ```bash
-bd ready
-bd list --status=open
-bd list --status=in_progress
+rtk bd ready
+rtk bd list --status=open
+rtk bd list --status=in_progress
 ```
 
 2. Inspect before editing:
 
 ```bash
-bd show <id>
+rtk bd show <id>
 ```
 
 3. Claim work atomically:
 
 ```bash
-bd update <id> --claim
+rtk bd update <id> --claim
 ```
 
 4. Create durable follow-up work when implementation reveals new tasks:
 
 ```bash
-bd create "Short title" --description="Why this exists and what needs to be done" --type=task --priority=2
+rtk bd create "Short title" --description="Why this exists and what needs to be done" --type=task --priority=2
 ```
 
 5. Wire blocking edges when one issue must finish before another can start:
 
 ```bash
-bd dep <blocker-id> --blocks <blocked-id>
+rtk bd dep <blocker-id> --blocks <blocked-id>
 ```
 
 6. Close completed work:
 
 ```bash
-bd close <id> --reason="Completed"
+rtk bd close <id> --reason="Completed"
 ```
 
 ## Planning Work
@@ -126,6 +126,13 @@ Use Beads for:
 
 Use agent-local planning tools only for the current turn's execution checklist. Do not treat them as shared project state.
 
+## Output
+
+- Claimed, created, updated, blocked, or closed Beads issue.
+- Dependency edge when one task gates another.
+- Closing reason or issue note with verification and non-proof boundary.
+- No markdown TODO or parallel task ledger.
+
 ## Rules
 
 - Do not create markdown TODO files as the source of truth when Beads is available.
@@ -134,15 +141,21 @@ Use agent-local planning tools only for the current turn's execution checklist. 
 - If hooks are installed, `bd prime` may already be injected. Run it manually when context is missing.
 - Do not auto-close or mutate tasks unless the work is actually complete.
 
+## Stop Condition
+
+Stop when the active work has a claimed Bead or a justified local-only plan, new
+durable follow-up work is represented in Beads, blockers are dependency edges
+or explicit human decisions, and completed issues have verification recorded.
+
 ## Verification
 
 For Beads workflow changes, verify the CLI and repository handoff surface:
 
 ```bash
-bd --version
-bd prime
-bd ready --json
-git diff --check
+rtk bd --version
+rtk bd prime
+rtk bd ready --json
+rtk git diff --check
 ```
 
 If Beads work changes package manifests or generated skills, also rely on the repository CI skill invariants before claiming the integration is complete.

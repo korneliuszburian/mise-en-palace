@@ -9,6 +9,12 @@ Use TDD to create one tight behavior falsifier before implementation. The goal
 is not more tests. The goal is a test that would fail for the exact bug,
 authority gap, or product behavior being changed.
 
+## Trigger
+
+Use when a runtime behavior, parser boundary, migration, source/memory
+authority rule, DecisionPacket selection, feedback effect, or bug fix needs a
+red-green falsifier.
+
 ## Workflow
 
 1. Name the behavior, not the implementation.
@@ -24,7 +30,7 @@ authority gap, or product behavior being changed.
 5. Implement the smallest change that makes it green.
 6. Refactor only if the green path exposes real duplication or a shallow seam.
 7. Run the local test, `rtk proxy pnpm typecheck`, and the relevant Fallow gate
-   before closing the Bead.
+   through `rtk proxy` before closing the Bead.
 
 ## Good KRN Tests
 
@@ -61,6 +67,12 @@ public interface.
 - Green command:
 - Non-proof:
 - Verification:
+
+## Stop Condition
+
+Stop when the test fails for the intended reason before implementation, passes
+after the smallest change, and the local behavior command, typecheck, and
+relevant Fallow gate are run or explicitly unavailable.
 
 ## Source Decision
 

@@ -49,8 +49,11 @@ not by creating another glossary file.
 
 ## Rejection Rules
 
-- Do not create `CONTEXT.md`, ADRs, glossary docs, or markdown runbooks as a new
-  authority surface.
+- Do not create `CONTEXT.md`, `CONVENTIONS.md`, ADR folders, glossary docs, or
+  markdown runbooks as a default authority surface.
+- If an ADR-like decision is truly needed, keep it compact and require the
+  roadmap Artifact Contract: source, mechanism, KRN implication,
+  decision/rejection, owner, consumer, falsifier, and verification.
 - Do not preserve bad exported names with local aliases.
 - Do not rename storage details into product terms when only repository plumbing
   is involved.
@@ -85,3 +88,9 @@ does_not_prove:
 - Consumer:
 - Falsifier:
 - Verification:
+
+## Stop Condition
+
+Stop when the canonical term is owned at the highest honest boundary, stale
+public terms are removed or explicitly deferred, and `rg` plus the smallest
+type/behavior check prove the rejected vocabulary is not still active.

@@ -7,7 +7,12 @@ description: Use when changing KRN architecture, package seams, public interface
 
 Use this skill before architecture or naming edits that change a public seam.
 
-## Goal
+## Trigger
+
+Use before architecture, naming, or seam edits that change what callers,
+operators, tests, or persistence paths must understand.
+
+## Purpose
 
 Make KRN smaller and deeper: more behavior behind fewer clearer interfaces, with
 a runtime consumer, falsifier, and owner.
@@ -53,3 +58,8 @@ a runtime consumer, falsifier, and owner.
 - Falsifier:
 - Non-proof:
 - Verification:
+
+## Stop Condition
+
+Stop when the current path, smallest design decision, owner, consumer,
+falsifier, non-proof boundary, and verification command are all named.

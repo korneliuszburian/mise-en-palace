@@ -27,6 +27,8 @@ For architecture, naming, context-boundary, or product-shape changes:
 - map the current code path before editing;
 - compare the intended behavior against `KRN_ROADMAP.md` and any official docs
   that define platform mechanics;
+- follow the `KRN_ROADMAP.md` Artifact Contract for skills, specs, Beads
+  tickets, decision records, templates, and rare ADR-like decisions;
 - state the smallest decision that makes the roadmap more true;
 - reject or defer ideas whose consumer, falsifier, or owner is unclear;
 - prefer one direct model over aliases, compatibility shims, or parallel

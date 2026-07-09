@@ -145,10 +145,10 @@ output. If the bounded target task has known owner files, pass them through
 `krn init`:
 
 ```sh
-krn init --dry-run --repo <target> \
+rtk proxy pnpm krn init --dry-run --repo <target> \
   --owner-file "src/index.ts|src|implementation_entry|implementation entry point"
 
-krn init --connect --repo <target> --persist \
+rtk proxy pnpm krn init --connect --repo <target> --persist \
   --owner-file "src/index.ts|src|implementation_entry|implementation entry point"
 ```
 
