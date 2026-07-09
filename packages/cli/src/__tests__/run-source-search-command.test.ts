@@ -470,6 +470,7 @@ describe("runSourceSearchCommand", () => {
       diagnostics: {
         projectScoped: true,
         inputStatus: "candidates_available",
+        searchMode: "lexical",
         memoryRecordCount: 0,
         sourceClaimCount: 0,
         searchResultCount: 0,
