@@ -6,6 +6,9 @@ import type {
   ExecutionBrief
 } from "@krn/codex-adapter";
 import {
+  parseEvidenceContract
+} from "@krn/core";
+import {
   createExecutionBrief,
   renderExecutionBriefText
 } from "@krn/codex-adapter";
@@ -90,12 +93,6 @@ export interface RenderedCodexBrief {
   renderedBrief: string;
   evidenceContract: EvidenceContract;
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isDiffRisk = (value: unknown): value is EvidenceContract["diffRisk"] =>
-  value === "low" || value === "medium" || value === "high";
 
 export const normalizeSmokeSlugPart = (value: string): string => {
   const smokeSlugPart = value
@@ -229,42 +226,6 @@ export const countRetrievalRunById = (
   retrievalRunId: string
 ): Promise<CountRow[]> =>
   client<CountRow[]>`select count(*)::int as count from retrieval_runs where id = ${retrievalRunId}`;
-
-const parseEvidenceContract = (value: unknown): EvidenceContract | undefined => {
-  if (!isRecord(value) || !Array.isArray(value.commands)) {
-    return undefined;
-  }
-
-  const commands = value.commands.flatMap((item): EvidenceContract["commands"] => {
-    if (!isRecord(item) || typeof item.command !== "string" || typeof item.required !== "boolean") {
-      return [];
-    }
-
-    return [
-      {
-        command: item.command,
-        required: item.required
-      }
-    ];
-  });
-
-  if (
-    commands.length === 0 ||
-    !isDiffRisk(value.diffRisk) ||
-    typeof value.reviewBurden !== "string" ||
-    typeof value.rollbackPath !== "string"
-  ) {
-    return undefined;
-  }
-
-  return {
-    commands,
-    diffRisk: value.diffRisk,
-    reviewBurden: value.reviewBurden,
-    rollbackPath: value.rollbackPath,
-    metadata: isRecord(value.metadata) ? value.metadata : {}
-  };
-};
 
 const createReadOnlyHarnessRuntime = async (
   databaseUrl: string

@@ -9,6 +9,7 @@ import {
   buildDecisionPacketFromReadModel,
   type DecisionPacketReadModelInput
 } from "../decision-packet.js";
+import { parseEvidenceContract } from "../evidence-contract.js";
 
 const now = "2026-07-08T14:45:00.000Z";
 
@@ -93,6 +94,12 @@ const readModel = {
         antiMemoryRecordId: "anti-memory-superseded-template"
       }]
     }
+  },
+  evidenceContract: {
+    commands: [{
+      command: "pnpm --filter frontend test",
+      required: true
+    }]
   },
   evidenceBundles: [{
     commands: [{
@@ -264,6 +271,9 @@ describe("DecisionPacket builder", () => {
     ]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
     expect(packet.severeStaleAuthorityIds).toEqual([]);
+    expect(packet.falsifiers).toEqual([
+      "A matching app setup packet omits the current template decision."
+    ]);
     expect(packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
@@ -282,6 +292,59 @@ describe("DecisionPacket builder", () => {
         "caveated_memory_authority"
       ]
     });
+  });
+
+  it("uses the active evidence contract instead of historical command observations", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      evidenceContract: {
+        commands: [{
+          command: "pnpm typecheck",
+          required: true
+        }, {
+          command: "pnpm test -- current-task",
+          required: false
+        }]
+      },
+      evidenceBundles: [{
+        commands: [{
+          command: "pnpm old-check=failed"
+        }, {
+          command: "pnpm old-check=skipped"
+        }, {
+          command: "pnpm old-check=default_template"
+        }]
+      }]
+    });
+
+    expect(packet.verificationCommands).toEqual([
+      "pnpm typecheck",
+      "pnpm test -- current-task"
+    ]);
+    expect(packet.falsifiers).toEqual([
+      "A matching app setup packet omits the current template decision."
+    ]);
+    expect(packet.verificationCommands).not.toContain("pnpm old-check=failed");
+    expect(packet.falsifiers).not.toContain("pnpm old-check=skipped");
+  });
+
+  it("does not guess current verification when the active contract is absent", () => {
+    const { evidenceContract, ...readModelWithoutContract } = readModel;
+    void evidenceContract;
+
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModelWithoutContract,
+      evidenceBundles: [{
+        commands: [{
+          command: "pnpm historical-check=passed"
+        }]
+      }]
+    });
+
+    expect(packet.verificationCommands).toEqual([]);
+    expect(packet.falsifiers).toEqual([
+      "A matching app setup packet omits the current template decision."
+    ]);
   });
 
   it("keeps feedback-only source decisions and reasons outside governing authority", () => {
@@ -526,6 +589,20 @@ describe("DecisionPacket builder", () => {
       status: "abstain",
       reasons: ["evidence_gap"]
     });
+  });
+
+  it("fails closed when the active evidence contract contains malformed commands", () => {
+    expect(parseEvidenceContract({
+      commands: [{
+        command: "pnpm typecheck",
+        required: true
+      }, {
+        command: "pnpm test"
+      }],
+      diffRisk: "medium",
+      reviewBurden: "review",
+      rollbackPath: "revert"
+    })).toBeUndefined();
   });
 
   it("binds return channels to a stable packet checksum", () => {

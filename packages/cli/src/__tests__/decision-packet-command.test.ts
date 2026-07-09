@@ -87,7 +87,20 @@ const aggregate: HarnessRunAggregate = {
     version: 1,
     status: "ready",
     summary: "Headless decision packet plan",
-    metadata: {},
+    metadata: {
+      evidenceContract: {
+        commands: [{
+          command: "pnpm --filter frontend test",
+          required: true
+        }],
+        diffRisk: "medium",
+        reviewBurden: "Review frontend bootstrap output against the current project standard.",
+        rollbackPath: "Revert the frontend bootstrap slice.",
+        metadata: {
+          taskContractId: "task-agent-1"
+        }
+      }
+    },
     createdAt: now,
     updatedAt: now
   },

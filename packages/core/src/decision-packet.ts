@@ -11,6 +11,9 @@ import type {
   ProjectStandardDecisionReadback
 } from "./memory.js";
 import type {
+  EvidenceContract
+} from "./evidence-contract.js";
+import type {
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
@@ -274,6 +277,7 @@ export interface DecisionPacketReadModelInput {
     exclusionDetails?: readonly DecisionPacketContextExclusionInput[];
     activationTrace?: DecisionPacketActivationTraceInput;
   };
+  evidenceContract?: Pick<EvidenceContract, "commands">;
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
   feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
   proof: {
@@ -624,9 +628,7 @@ const rejectedSourceDecisionIdsFor = (
 
 const verificationCommandsFor = (
   readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.evidenceBundles.flatMap((bundle) =>
-  bundle.commands.map((command) => command.command)
-));
+): string[] => unique(readModel.evidenceContract?.commands.map((command) => command.command) ?? []);
 
 const taskStandardDecisionsFor = (
   readModel: DecisionPacketReadModelInput
@@ -892,9 +894,7 @@ export const buildDecisionPacketFromReadModel = (
     unknownKnowledgeIds,
     supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
-    falsifiers: readModel.evidenceBundles.flatMap((bundle) =>
-      bundle.commands.map((command) => command.command)
-    ),
+    falsifiers: unique(taskStandardDecisionsFor(readModel).map((decision) => decision.falsifier)),
     verificationCommands: verificationCommandsFor(readModel),
     evidenceGaps,
     sourceConsensus,

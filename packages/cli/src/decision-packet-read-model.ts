@@ -1,6 +1,7 @@
 import type {
   CandidateReviewability,
   ContextSubjectType,
+  EvidenceContract,
   EvidenceCommand,
   EvidenceCommandReadback,
   FeedbackCandidateProposalKind,
@@ -155,6 +156,7 @@ export interface DecisionPacketReadModel {
     activationDiagnostics?: ActivationRetrievalDiagnostics;
     activationTrace?: DecisionPacketReadModelActivationTrace;
   };
+  evidenceContract?: EvidenceContract;
   evidenceBundles: {
     id: string;
     status: string;

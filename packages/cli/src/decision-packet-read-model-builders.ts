@@ -1,5 +1,6 @@
 import {
   knowledgeUsefulnessOutcomesFromMetadata,
+  parseEvidenceContract,
   buildFeedbackRecommendationReadback,
   readMetadataObjectList,
   readMetadataString,
@@ -462,6 +463,7 @@ export const buildDecisionPacketReadModel = (
 ): DecisionPacketReadModel => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
+  const evidenceContract = parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract);
   const knowledgeSelection = knowledgeSelectionResource(aggregate);
 
   return {
@@ -472,6 +474,7 @@ export const buildDecisionPacketReadModel = (
     task: taskResource(aggregate),
     ...(knowledgeSelection === undefined ? {} : { knowledgeSelection }),
     context: contextResource(aggregate, activationTrace),
+    ...(evidenceContract === undefined ? {} : { evidenceContract }),
     evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
     feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaResource),
