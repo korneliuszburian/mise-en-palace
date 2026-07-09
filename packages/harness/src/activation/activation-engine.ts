@@ -3,7 +3,9 @@ import type {
   AntiMemoryRecord,
   ActivationAbstentionReason,
   ContextAssembly,
+  SourceClaim,
   SourceAuthorityLabel,
+  SourceConsensusTimelineEntry,
   SourceDecisionEdge,
   SourceRejection,
   TaskContract
@@ -566,6 +568,10 @@ export const retrieveActivationCandidates = async (
     sourceRejections,
     now: input.taskContract.updatedAt
   });
+  const sourceConsensusEntriesByClaimId = new Map<SourceClaim["id"], SourceConsensusTimelineEntry>(
+    sourceConsensus.entries.map((entry) => [entry.sourceClaimId, entry])
+  );
+  const currentAuthoritySourceClaimIds = new Set(sourceConsensus.currentSourceClaimIds);
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
@@ -583,15 +589,33 @@ export const retrieveActivationCandidates = async (
     applySourceClaimEdgeRankDown(
       applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
         const sourceDecisionEdges = sourceDecisionEdgesByClaimId.get(claim.id) ?? [];
-        const sourceDecisionSupportCount = sourceDecisionEdges.length;
+        const sourceConsensusEntry = sourceConsensusEntriesByClaimId.get(claim.id);
+        const decisionSupportEdgeIds =
+          sourceConsensusEntry?.decisionSupportEdgeIds ??
+          sourceDecisionEdges.map((edge) => edge.id);
         const authorityAssessment = assessSourceClaimAuthority({
           claim,
           now: input.taskContract.updatedAt,
-          sourceDecisionSupportCount
+          decisionSupportEdgeIds,
+          ...(sourceConsensusEntry === undefined
+            ? {}
+            : {
+                supersededBySourceClaimIds: sourceConsensusEntry.supersededBySourceClaimIds,
+                acceptedDissentingSourceClaimIds: sourceConsensusEntry.dissentingSourceClaimIds.filter(
+                  (sourceClaimId) => currentAuthoritySourceClaimIds.has(sourceClaimId)
+                ),
+                rejectionIds: sourceConsensusEntry.rejectionIds,
+                ...(sourceConsensusEntry.blockedByCurrentSourceClaimId === undefined
+                  ? {}
+                  : {
+                      blockedByCurrentSourceClaimId:
+                        sourceConsensusEntry.blockedByCurrentSourceClaimId
+                    })
+              })
         });
         const sourceClaimReviewSignals = assessSourceClaimReviewSignals(claim, {
           now: input.taskContract.updatedAt,
-          sourceDecisionCount: sourceDecisionSupportCount
+          sourceDecisionCount: decisionSupportEdgeIds.length
         });
         const candidate = toSourceClaimCandidate(claim);
 

@@ -1677,6 +1677,10 @@ describe("activation engine", () => {
 
     expect(bySubjectId.get("claim-current-consensus")?.exclusion).toBeUndefined();
     expect(bySubjectId.get("claim-superseded-consensus")).toMatchObject({
+      sourceClaimAuthorityStatus: "blocked",
+      sourceClaimAuthorityReasons: expect.arrayContaining([
+        "superseded_by_current_claim"
+      ]),
       sourceClaimEdgeRankDown: {
         edgeIds: ["edge-current-supersedes-old"],
         edgeKinds: ["supersedes"],

@@ -173,9 +173,9 @@ export const applyActivationFilters = (
   const conflictResult = detectConflicts(input.candidates, input.antiMemoryRecords);
   const memoryReviewSafe = applyMemoryReviewSignalFilter(conflictResult.candidates);
   const sourceReviewSafe = applySourceClaimReviewSignalFilter(memoryReviewSafe);
-  const sourceAuthoritySafe = applySourceClaimAuthorityFilter(sourceReviewSafe);
-  const sourceConsensusSafe = applySourceClaimGraphConsensusFilter(sourceAuthoritySafe);
-  const trusted = applyTrustFilter(sourceConsensusSafe, {
+  const sourceConsensusSafe = applySourceClaimGraphConsensusFilter(sourceReviewSafe);
+  const sourceAuthoritySafe = applySourceClaimAuthorityFilter(sourceConsensusSafe);
+  const trusted = applyTrustFilter(sourceAuthoritySafe, {
     minimumSourceAuthority: input.minimumSourceAuthority
   });
   const current = applyTemporalFilter(trusted, input.now);
