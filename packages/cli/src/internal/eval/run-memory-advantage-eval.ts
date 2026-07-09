@@ -2131,8 +2131,8 @@ const compilePlanBriefReadback = async (
     expectedSelectedKnowledgeId: testCase.expectedSelectedKnowledgeId,
     selectedMemoryRecordIds: memoryRecordIds,
     selectedSourceClaimIds: sourceClaimIds,
-    renderedMemoryRecordIds: brief.memoryRecordsUsed,
-    renderedSourceClaimIds: brief.sourceClaimsUsed,
+    renderedMemoryRecordIds: brief.memoryRecordsSelected,
+    renderedSourceClaimIds: brief.sourceClaimsSelected,
     renderedBrief
   });
 
@@ -2142,8 +2142,8 @@ const compilePlanBriefReadback = async (
     requiredKnowledgeId: testCase.expectedSelectedKnowledgeId,
     selectedMemoryRecordIds: memoryRecordIds,
     selectedSourceClaimIds: sourceClaimIds,
-    renderedMemoryRecordIds: brief.memoryRecordsUsed,
-    renderedSourceClaimIds: brief.sourceClaimsUsed,
+    renderedMemoryRecordIds: brief.memoryRecordsSelected,
+    renderedSourceClaimIds: brief.sourceClaimsSelected,
     contextInclusionCount: compiled.contextAssembly.inclusions.length,
     contextSize: approximateSelectedContextSizeFromParts(planBriefContextPayloadParts(
       readModels,

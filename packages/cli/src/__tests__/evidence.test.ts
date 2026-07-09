@@ -319,12 +319,12 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("No MemoryCandidate row created");
   expect(stdout).toContain("sourceDecisionCandidates:");
   expect(stdout).toContain("sourceUsefulnessOutcomes:");
-  expect(stdout).toContain("outcome=helped sourceClaim=source-claim-1 sourceDecision=none");
+  expect(stdout).toContain("outcome=selected sourceClaim=source-claim-1 sourceDecision=none");
   expect(stdout).toContain("reason: Source claim kept knowledge-intake proof boundaries visible");
   expect(stdout).toContain("evidenceRef: packet:");
   expect(stdout).toContain("doesNotProve: Does not prove future source selector quality");
   expect(stdout).toContain("knowledgeUsefulnessOutcomes:");
-  expect(stdout).toContain("outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state");
+  expect(stdout).toContain("outcome=selected knowledge=knowledge:ts-boundary-unknown-first-result-state");
   expect(stdout).toContain("reason: Memory selected the unknown-first parser shape");
   expect(stdout).toContain("doesNotProve: Does not prove future memory recall quality");
 };
@@ -363,14 +363,14 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
   expect(capture.feedbackDeltaMetadata).toMatchObject({
     sourceUsefulnessOutcomes: [{
       sourceClaimId: "source-claim-1",
-      outcome: "helped",
+      outcome: "selected",
       reason: "Source claim kept knowledge-intake proof boundaries visible",
       evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future source selector quality"
     }],
     knowledgeUsefulnessOutcomes: [{
       knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
-      outcome: "helped",
+      outcome: "selected",
       reason: "Memory selected the unknown-first parser shape",
       evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future memory recall quality"
@@ -717,9 +717,9 @@ describe("runCli", () => {
         "--target-command",
         "wilq-seo scripts/test.sh",
         "--source-usefulness",
-        `claim:source-claim-1=helped|Source claim kept knowledge-intake proof boundaries visible|${packetBinding.packetEvidenceRef}|Does not prove future source selector quality`,
+        `claim:source-claim-1=selected|Source claim kept knowledge-intake proof boundaries visible|${packetBinding.packetEvidenceRef}|Does not prove future source selector quality`,
         "--memory-usefulness",
-        `knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|${packetBinding.packetEvidenceRef}|Does not prove future memory recall quality`,
+        `knowledge:ts-boundary-unknown-first-result-state=selected|Memory selected the unknown-first parser shape|${packetBinding.packetEvidenceRef}|Does not prove future memory recall quality`,
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
         "--persist"
@@ -757,6 +757,161 @@ describe("runCli", () => {
     expectPersistedEvidenceMetadata(capture);
     expectDefaultTemplateCommands(capture.commands);
     expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
+  it("downgrades observation-only helped feedback to selected without target application proof", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
+        "--target-repo",
+        "../typescript-basic",
+        "--target-mode",
+        "observation-only",
+        "--target-dirty-before",
+        "clean",
+        "--target-dirty-after",
+        "clean",
+        "--target-owned-changes",
+        "external",
+        "--target-changed-file",
+        "none",
+        "--verification",
+        "pnpm --dir ../typescript-basic test=passed",
+        "--source-usefulness",
+        `claim:source-claim-1=helped|Observation-only target command passed without a target application|${packetBinding.packetEvidenceRef}|Does not prove target application or source truth`,
+        "--memory-usefulness",
+        `knowledge:ts-boundary-unknown-first-result-state=helped|Observation-only target command passed without a target application|${packetBinding.packetEvidenceRef}|Does not prove target application or memory usefulness`,
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("outcome=selected sourceClaim=source-claim-1");
+    expect(result.stdout).toContain("outcome=selected knowledge=knowledge:ts-boundary-unknown-first-result-state");
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "selected"
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        outcome: "selected"
+      }]
+    });
+    expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
+  it("requires current application and verification refs for used and helped", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
+    const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--intended-file",
+        applicationPath,
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
+        "--verification",
+        `${verificationCommand}=passed`,
+        "--source-usefulness",
+        `claim:source-claim-1=helped|Source application and verification both passed|${packetBinding.packetEvidenceRef},${applicationPath},${verificationCommand}|Does not prove source truth`,
+        "--memory-usefulness",
+        `knowledge:ts-boundary-unknown-first-result-state=used|Memory application was observed|${packetBinding.packetEvidenceRef},${applicationPath}|Does not prove memory usefulness`,
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ` M ${applicationPath}\n`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "helped"
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        outcome: "used"
+      }]
+    });
   });
 
   it("downgrades persisted knowledge usefulness when evidence refs do not match current evidence", async () => {
@@ -962,11 +1117,11 @@ describe("runCli", () => {
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-current",
-        outcome: "helped",
+        outcome: "selected",
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }, {
         sourceClaimId: "source-claim-stale",
-        outcome: "helped",
+        outcome: "selected",
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }]
     });

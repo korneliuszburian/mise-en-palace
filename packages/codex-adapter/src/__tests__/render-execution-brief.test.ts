@@ -199,8 +199,8 @@ describe("renderExecutionBrief", () => {
       acceptance: ["typecheck and tests pass"]
     });
     expect(brief.formatVersion).toBe(executionBriefFormatVersion);
-    expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
-    expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
+    expect(brief.sourceClaimsSelected).toEqual(["claim-1"]);
+    expect(brief.memoryRecordsSelected).toEqual(["memory-1"]);
     expect(brief.observationPrefix).toEqual([
       {
         observationId: "observation-1",
@@ -277,9 +277,9 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("memory_record:memory-1");
     expect(rendered).toContain("Explicit Exclusions:");
     expect(rendered).toContain("source_claim:claim-weak");
-    expect(rendered).toContain("Source Claims Used:");
+    expect(rendered).toContain("Source Claims Selected:");
     expect(rendered).toContain("- claim-1");
-    expect(rendered).toContain("Memory Records Used:");
+    expect(rendered).toContain("Memory Records Selected:");
     expect(rendered).toContain("- memory-1");
     expect(rendered).toContain("Anti-memory Warnings:");
     expect(rendered).toContain("anti_memory_record:anti-1");
@@ -317,8 +317,8 @@ describe("renderExecutionBrief", () => {
 
     expect(rendered).not.toContain("Observation Prefix:");
     expect(rendered).not.toContain("Untrusted Context Warnings:");
-    expect(rendered).not.toContain("Source Claims Used:");
-    expect(rendered).not.toContain("Memory Records Used:");
+    expect(rendered).not.toContain("Source Claims Selected:");
+    expect(rendered).not.toContain("Memory Records Selected:");
     expect(rendered).not.toContain("Anti-memory Warnings:");
     expect(rendered).not.toContain("Evidence Gaps:");
   });

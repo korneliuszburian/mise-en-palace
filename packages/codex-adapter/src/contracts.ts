@@ -33,8 +33,8 @@ export const executionBriefSectionProfiles = [
   { id: "observation_prefix", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "untrusted_context_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
-  { id: "source_claims_used", kind: "optional", emptyBehavior: "omit_when_empty" },
-  { id: "memory_records_used", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "source_claims_selected", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "memory_records_selected", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "anti_memory_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "evidence_gaps", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "tool_boundaries", kind: "required", emptyBehavior: "render_none" },
@@ -146,8 +146,8 @@ export interface ExecutionBrief {
   observationPrefixWarnings: ExecutionBriefObservationPrefixWarning[];
   untrustedContextWarnings: string[];
   explicitExclusions: ExecutionBriefContextExclusion[];
-  sourceClaimsUsed: string[];
-  memoryRecordsUsed: string[];
+  sourceClaimsSelected: string[];
+  memoryRecordsSelected: string[];
   antiMemoryWarnings: string[];
   evidenceGaps: ExecutionBriefEvidenceGap[];
   toolBoundaries: string[];

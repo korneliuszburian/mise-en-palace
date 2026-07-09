@@ -437,7 +437,7 @@ const includedDecisionRows = (
     ...brief.includedContext
       .filter((item) => item.subjectType === "source_claim")
       .map((item) => item.subjectId),
-    ...brief.sourceClaimsUsed
+    ...brief.sourceClaimsSelected
   ])
     .map((sourceClaimId) => rowForSourceClaim(fixture.decisions, sourceClaimId))
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
@@ -446,7 +446,7 @@ const includedMemoryRows = (
   fixture: DecisionPacketEvalFixture,
   brief: ExecutionBrief
 ): readonly DecisionPacketRow[] =>
-  brief.memoryRecordsUsed
+  brief.memoryRecordsSelected
     .map((memoryRef) => rowForMemoryRef(fixture.decisions, memoryRef))
     .filter((decision): decision is DecisionPacketRow => decision !== undefined);
 
@@ -657,10 +657,10 @@ export const buildDecisionPacketWithEngine = async (
       includedContextCount: brief.includedContext.length,
       observationPrefixCount: brief.observationPrefix.length,
       explicitExclusionCount: brief.explicitExclusions.length,
-      sourceClaimUseCount: brief.sourceClaimsUsed.length,
-      memoryRecordUseCount: brief.memoryRecordsUsed.length,
-      includedSourceClaimIds: brief.sourceClaimsUsed,
-      includedMemoryRecordIds: brief.memoryRecordsUsed,
+      sourceClaimUseCount: brief.sourceClaimsSelected.length,
+      memoryRecordUseCount: brief.memoryRecordsSelected.length,
+      includedSourceClaimIds: brief.sourceClaimsSelected,
+      includedMemoryRecordIds: brief.memoryRecordsSelected,
       excludedSourceClaimIds: briefSubjectIds(brief.explicitExclusions, "source_claim"),
       excludedMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "memory_record"),
       excludedAntiMemoryRecordIds: briefSubjectIds(brief.explicitExclusions, "anti_memory_record"),

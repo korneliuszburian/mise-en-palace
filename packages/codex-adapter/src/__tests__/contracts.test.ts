@@ -46,8 +46,8 @@ describe("Codex adapter contracts", () => {
           sourceAuthority: "low"
         }
       ],
-      sourceClaimsUsed: ["claim-strong"],
-      memoryRecordsUsed: ["memory-1"],
+      sourceClaimsSelected: ["claim-strong"],
+      memoryRecordsSelected: ["memory-1"],
       antiMemoryWarnings: ["do not promote memory automatically"],
       evidenceGaps: [],
       toolBoundaries: ["Do not invoke Codex from the renderer."],

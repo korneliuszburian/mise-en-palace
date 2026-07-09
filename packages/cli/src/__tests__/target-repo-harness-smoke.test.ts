@@ -38,18 +38,16 @@ describe("targetRepoHarnessSmoke", () => {
       consumerTargetCommand: "pnpm --dir tests/fixtures/target-repos/typescript-basic test",
       consumerTargetCommandStatus: "passed",
       consumerEvidenceBoundToPacket: true,
-      sourceDecisionUsefulnessOutcome: "helped",
       reviewAssessmentId: "review-assessment-1",
       reviewAssessmentReadbackMatched: true,
       feedbackDeltaId: "feedback-delta-1",
       feedbackDeltaReadbackMatched: true,
       memorySeedRecordId: "memory-record-1",
       memoryIncluded: true,
-      memoryApplicationId: "memory-application-1",
-      memoryUsefulnessOutcome: "helped",
+      memoryUsefulnessOutcome: "selected",
       memoryUsefulnessReadbackMatched: true,
       memoryRecordDrift: "none",
-      memoryPositiveFeedbackCount: 1,
+      memoryPositiveFeedbackCount: 0,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: true,
       remainingMarkerCount: 0,
@@ -87,18 +85,17 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Consumer target command: pnpm --dir tests/fixtures/target-repos/typescript-basic test");
     expect(output).toContain("Consumer target command status: passed");
     expect(output).toContain("Consumer evidence bound to packet: yes");
-    expect(output).toContain("Source decision usefulness outcome: helped");
     expect(output).toContain("Review assessment: review-assessment-1");
     expect(output).toContain("Review assessment readback: matched");
     expect(output).toContain("Feedback delta: feedback-delta-1");
     expect(output).toContain("Feedback delta readback: matched");
     expect(output).toContain("Memory seed record: memory-record-1");
     expect(output).toContain("Memory included: yes");
-    expect(output).toContain("Memory application: memory-application-1");
-    expect(output).toContain("Memory usefulness outcome: helped");
+    expect(output).toContain("Memory application: none");
+    expect(output).toContain("Memory usefulness outcome: selected");
     expect(output).toContain("Memory usefulness readback: matched");
     expect(output).toContain("Memory record drift: none");
-    expect(output).toContain("Memory positive feedback count: 1");
+    expect(output).toContain("Memory positive feedback count: 0");
     expect(output).toContain("Automatic MemoryRecord mutation: none");
     expect(output).toContain("Target project linked: yes");
     expect(output).toContain("Cleanup remaining marker count: 0");

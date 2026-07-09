@@ -110,8 +110,8 @@ const executionBriefSectionCounters = {
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
   explicit_exclusions: (brief) => brief.explicitExclusions.length,
-  source_claims_used: (brief) => brief.sourceClaimsUsed.length,
-  memory_records_used: (brief) => brief.memoryRecordsUsed.length,
+  source_claims_selected: (brief) => brief.sourceClaimsSelected.length,
+  memory_records_selected: (brief) => brief.memoryRecordsSelected.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -256,14 +256,14 @@ const renderObservationPrefix = (
   ];
 };
 
-const sourceClaimsUsed = (
+const sourceClaimsSelected = (
   inclusions: readonly ExecutionBriefContextInclusion[]
 ): string[] =>
   inclusions
     .filter((inclusion) => inclusion.subjectType === "source_claim")
     .map((inclusion) => inclusion.subjectId);
 
-const memoryRecordsUsed = (
+const memoryRecordsSelected = (
   inclusions: readonly ExecutionBriefContextInclusion[]
 ): string[] =>
   inclusions
@@ -317,8 +317,8 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     observationPrefixWarnings,
     untrustedContextWarnings: untrustedContextWarnings(includedContext),
     explicitExclusions,
-    sourceClaimsUsed: sourceClaimsUsed(includedContext),
-    memoryRecordsUsed: memoryRecordsUsed(includedContext),
+    sourceClaimsSelected: sourceClaimsSelected(includedContext),
+    memoryRecordsSelected: memoryRecordsSelected(includedContext),
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
     evidenceGaps: [...(input.evidenceGaps ?? [])],
     toolBoundaries: input.capabilityPlan.toolBoundaries,
@@ -377,8 +377,8 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "Explicit Exclusions:",
     ...renderContextExclusions(brief.explicitExclusions),
     "",
-    ...renderOptionalSection("Source Claims Used:", brief.sourceClaimsUsed.map((claim) => `- ${claim}`)),
-    ...renderOptionalSection("Memory Records Used:", brief.memoryRecordsUsed.map((record) => `- ${record}`)),
+    ...renderOptionalSection("Source Claims Selected:", brief.sourceClaimsSelected.map((claim) => `- ${claim}`)),
+    ...renderOptionalSection("Memory Records Selected:", brief.memoryRecordsSelected.map((record) => `- ${record}`)),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),

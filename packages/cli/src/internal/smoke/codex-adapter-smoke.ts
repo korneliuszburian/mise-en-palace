@@ -140,14 +140,14 @@ const hasStaleMemoryExclusion = (
   const renderedTextIncludesExclusion = input.rendered.renderedBrief.includes(
     `memory_record:${input.expectedExpiredMemoryRecordId}`
   );
-  const excludedFromUsedMemory = !input.rendered.brief.memoryRecordsUsed.includes(
+  const excludedFromSelectedMemory = !input.rendered.brief.memoryRecordsSelected.includes(
     input.expectedExpiredMemoryRecordId
   );
 
   return exclusion?.reason === "stale" &&
     explicitExclusionRendered &&
     renderedTextIncludesExclusion &&
-    excludedFromUsedMemory;
+    excludedFromSelectedMemory;
 };
 
 const renderedBriefCoversContract = (
@@ -174,9 +174,9 @@ const hasBoundedSelectedContext = (
     rendered: RenderedCodexBrief;
   }
 ): boolean =>
-  input.rendered.brief.sourceClaimsUsed.includes(input.expectedSourceClaimId) &&
-  input.rendered.brief.memoryRecordsUsed.includes(input.expectedMemoryRecordId) &&
-  !input.rendered.brief.memoryRecordsUsed.includes(input.expectedExpiredMemoryRecordId);
+  input.rendered.brief.sourceClaimsSelected.includes(input.expectedSourceClaimId) &&
+  input.rendered.brief.memoryRecordsSelected.includes(input.expectedMemoryRecordId) &&
+  !input.rendered.brief.memoryRecordsSelected.includes(input.expectedExpiredMemoryRecordId);
 
 const assertCodexAdapterBoundary = (
   input: {
@@ -217,7 +217,7 @@ const assertCodexAdapterBoundary = (
       }),
       detail: [
         `expectedSourceClaimId=${input.expectedSourceClaimId}`,
-        `sourceClaimsUsed=${input.rendered.brief.sourceClaimsUsed.join(",")}`,
+        `sourceClaimsSelected=${input.rendered.brief.sourceClaimsSelected.join(",")}`,
         `contextInclusions=${contextAssembly.inclusions.map((item) =>
           `${item.subjectType}:${item.subjectId}:${item.reason}`
         ).join(",")}`,
@@ -226,7 +226,7 @@ const assertCodexAdapterBoundary = (
         ).join(",")}`,
         `expectedMemoryRecordId=${input.expectedMemoryRecordId}`,
         `expectedExpiredMemoryRecordId=${input.expectedExpiredMemoryRecordId}`,
-        `memoryRecordsUsed=${input.rendered.brief.memoryRecordsUsed.join(",")}`
+        `memoryRecordsSelected=${input.rendered.brief.memoryRecordsSelected.join(",")}`
       ].join(" | ")
     },
     {

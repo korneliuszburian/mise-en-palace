@@ -1634,7 +1634,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
 
     const matchingFeedbackOutcome = feedbackOutcome(matchingFeedbackDelta.metadata);
     const matchingFeedbackWasAccepted =
-      matchingFeedbackOutcome === "helped" &&
+      matchingFeedbackOutcome === "selected" &&
       matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
     const packetAfterMatching = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
