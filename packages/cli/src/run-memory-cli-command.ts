@@ -29,6 +29,9 @@ import {
 import {
   runMemoryKnowledgeProposeCommand
 } from "./run-memory-knowledge-propose-command.js";
+import {
+  runMemoryAntiProposeCommand
+} from "./run-memory-anti-propose-command.js";
 
 type MemoryCliCommand = Extract<
   CliCommand,
@@ -39,6 +42,7 @@ type MemoryCliCommand = Extract<
   | { kind: "memoryKnowledgeSeed" }
   | { kind: "memoryKnowledgePropose" }
   | { kind: "memoryAntiAdd" }
+  | { kind: "memoryAntiPropose" }
   | { kind: "memoryAntiPromote" }
   | { kind: "memoryAntiReject" }
 >;
@@ -54,6 +58,19 @@ interface MemoryCliCommandContext {
 type MemoryCommandOutput = {
   stdout: string;
 };
+
+const memoryCommandKinds = new Set<string>([
+  "memoryCandidateAdd",
+  "memoryCandidatePromote",
+  "memoryCandidateReject",
+  "memoryRecordApply",
+  "memoryKnowledgeSeed",
+  "memoryKnowledgePropose",
+  "memoryAntiAdd",
+  "memoryAntiPropose",
+  "memoryAntiPromote",
+  "memoryAntiReject"
+]);
 
 const memoryCommandResult = (stdout: string): CliResult => ({
   exitCode: 0,
@@ -91,15 +108,7 @@ const standardMemoryInput = (context: MemoryCliCommandContext) => ({
 });
 
 const isMemoryCliCommand = (command: CliCommand): command is MemoryCliCommand => (
-  command.kind === "memoryCandidateAdd" ||
-  command.kind === "memoryCandidatePromote" ||
-  command.kind === "memoryCandidateReject" ||
-  command.kind === "memoryRecordApply" ||
-  command.kind === "memoryKnowledgeSeed" ||
-  command.kind === "memoryKnowledgePropose" ||
-  command.kind === "memoryAntiAdd" ||
-  command.kind === "memoryAntiPromote" ||
-  command.kind === "memoryAntiReject"
+  memoryCommandKinds.has(command.kind)
 );
 
 const memoryFallbackMessages = {
@@ -110,6 +119,7 @@ const memoryFallbackMessages = {
   memoryKnowledgeSeed: "Unknown memory knowledge seed error",
   memoryKnowledgePropose: "Unknown memory knowledge propose error",
   memoryAntiAdd: "Unknown memory anti add error",
+  memoryAntiPropose: "Unknown memory anti propose error",
   memoryAntiPromote: "Unknown memory anti review error",
   memoryAntiReject: "Unknown memory anti review error"
 } satisfies Record<MemoryCliCommand["kind"], string>;
@@ -158,6 +168,13 @@ const runSelectedMemoryCommand = async (
 
   if (command.kind === "memoryAntiAdd") {
     return runMemoryAntiAddCommand({
+      ...standardMemoryInput(context),
+      command
+    });
+  }
+
+  if (command.kind === "memoryAntiPropose") {
+    return runMemoryAntiProposeCommand({
       ...standardMemoryInput(context),
       command
     });

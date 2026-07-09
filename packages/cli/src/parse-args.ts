@@ -285,6 +285,9 @@ export type CliCommand =
       kind: "memoryAntiAddHelp";
     }
   | {
+      kind: "memoryAntiProposeHelp";
+    }
+  | {
       kind: "memoryAntiPromoteHelp";
     }
   | {
@@ -369,6 +372,12 @@ export type CliCommand =
       candidateEvidenceProvenance?: string;
       candidateEvidenceDoesNotProve?: string;
       metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryAntiPropose";
+      persist: boolean;
+      projectId?: string;
+      limit?: number;
     }
   | {
       kind: "memoryAntiPromote";
@@ -585,6 +594,7 @@ const usage = [
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory knowledge propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
+  "krn memory anti propose [--project <project-id>] [--limit <n>] [--persist]",
   "krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
   "krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn review assess --evidence-bundle-id <id> --reviewer <name> --summary \"...\" [--status accepted|changes_requested|rejected|pending] [--persist]",

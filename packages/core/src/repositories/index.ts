@@ -28,6 +28,7 @@ export type {
   CreateSourceDecisionEdgeInput,
   CreateSourceDecisionInput,
   CreateSourceRejectionInput,
+  RejectedSourceDecisionKnowledgeSource,
   SourceDecisionKnowledgeSource,
   SourceRepository
 } from "./source-repository.js";

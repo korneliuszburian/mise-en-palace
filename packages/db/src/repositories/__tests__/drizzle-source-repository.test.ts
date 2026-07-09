@@ -27,6 +27,7 @@ const methodNames = [
   "listSourceClaimsForRun",
   "createSourceDecision",
   "listSourceDecisionKnowledgeSources",
+  "listRejectedSourceDecisionKnowledgeSources",
   "createSourceClaimEdge",
   "listSourceClaimEdgesForClaim",
   "createSourceDecisionEdge",
@@ -105,6 +106,65 @@ const knowledgeSourceRow = (input: {
       notes: "Decision support for a future knowledge proposal.",
       metadata: {},
       createdAt
+    }
+  };
+};
+
+const rejectedKnowledgeSourceRow = (input: {
+  id: string;
+  projectId?: string | null;
+  decisionStatus?: SourceDecision["status"];
+  claimStatus?: SourceClaim["status"];
+}) => {
+  const sourceClaimId = `source-claim-rejected-${input.id}`;
+
+  return {
+    sourceDecision: {
+      id: `source-decision-rejected-${input.id}`,
+      projectId: input.projectId ?? "project-1",
+      sourceClaimId,
+      status: input.decisionStatus ?? "reject",
+      decision: "Reject markdown as runtime memory.",
+      rationale: "Runtime memory must flow through store-backed candidates.",
+      falsifier: "Markdown is treated as active Memory Core truth.",
+      consumer: "rejected source decision anti-memory proposal",
+      metadata: {},
+      createdAt,
+      updatedAt: createdAt
+    },
+    sourceClaim: {
+      id: sourceClaimId,
+      sourceArtifactId: `source-artifact-rejected-${input.id}`,
+      sourceChunkId: null,
+      executionRunId: null,
+      claim: "Markdown is runtime memory.",
+      mechanism: "Markdown files bypass reviewable store-backed memory state.",
+      krnImplication: "KRN should retain this as a rejected path, not active knowledge.",
+      doesNotProve: "This does not prove all markdown files are useless.",
+      sourceAuthority: "project-decision",
+      supportType: "rejection",
+      consumer: "rejected source decision anti-memory proposal",
+      falsifier: "A rejected source decision creates active MemoryRecord truth.",
+      revisitWhen: null,
+      status: input.claimStatus ?? "rejected",
+      metadata: {},
+      createdAt,
+      updatedAt: createdAt
+    },
+    sourceRejection: {
+      id: `source-rejection-${input.id}`,
+      projectId: input.projectId ?? "project-1",
+      executionRunId: null,
+      sourceArtifactId: `source-artifact-rejected-${input.id}`,
+      sourceClaimId,
+      title: "Markdown runtime memory rejected",
+      attemptedClaim: "Markdown is runtime memory.",
+      rejectedBecause: "unsupported",
+      reason: "Runtime memory must be store-backed and reviewed.",
+      doesNotProve: "This rejection does not prove all markdown is non-operational.",
+      consumer: "rejected source decision anti-memory proposal",
+      metadata: {},
+      rejectedAt: createdAt
     }
   };
 };
@@ -325,6 +385,24 @@ describe("DrizzleSourceRepository", () => {
     expect(sources[0]?.sourceDecision.id).toBe("source-decision-valid");
     expect(sources[0]?.sourceClaim.status).toBe("accepted");
     expect(sources[0]?.sourceDecisionEdge.supportType).toBe("implementation-boundary");
+  });
+
+  it("lists only rejected source decisions with rejected claim and rejection details for anti-memory proposals", async () => {
+    const repository = new DrizzleSourceRepository(createKnowledgeSourceDb([
+      rejectedKnowledgeSourceRow({ id: "valid" }),
+      rejectedKnowledgeSourceRow({ id: "adopted-decision", decisionStatus: "adopt" }),
+      rejectedKnowledgeSourceRow({ id: "accepted-claim", claimStatus: "accepted" }),
+      rejectedKnowledgeSourceRow({ id: "other-project", projectId: "project-2" })
+    ]) as never);
+
+    const sources = await repository.listRejectedSourceDecisionKnowledgeSources("project-1", 20);
+
+    expect(sources).toHaveLength(1);
+    expect(sources[0]?.sourceDecision.id).toBe("source-decision-rejected-valid");
+    expect(sources[0]?.sourceClaim.status).toBe("rejected");
+    expect(sources[0]?.sourceRejection.reason).toBe(
+      "Runtime memory must be store-backed and reviewed."
+    );
   });
 
   it("ranks source authorities deterministically", () => {

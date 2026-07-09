@@ -107,6 +107,15 @@ export const formatMemoryAntiAddUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+export const formatMemoryAntiProposeUsage = (): string =>
+  [
+    "Usage: krn memory anti propose [--project <project-id>] [--limit <n>] [--persist]",
+    "",
+    "Proposes AntiMemoryCandidate rows from rejected store-backed SourceDecision support.",
+    "Preview mode reads rejected source decisions and existing anti-memory, but does not write.",
+    "--persist creates AntiMemoryCandidate rows only; it never promotes AntiMemoryRecord truth."
+  ].join("\n") + "\n";
+
 export const formatMemoryAntiPromoteUsage = (): string =>
   [
     "Usage: krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
@@ -164,6 +173,7 @@ const formatMemoryUsage = (): string =>
     formatMemoryKnowledgeSeedUsage().trim(),
     formatMemoryKnowledgeProposeUsage().trim(),
     formatMemoryAntiAddUsage().trim(),
+    formatMemoryAntiProposeUsage().trim(),
     formatMemoryAntiPromoteUsage().trim(),
     formatMemoryAntiRejectUsage().trim()
   ].join("\n\n");
@@ -177,6 +187,7 @@ type MemoryCandidateRejectCommand = Extract<CliCommand, { kind: "memoryCandidate
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 type MemoryKnowledgeSeedCommand = Extract<CliCommand, { kind: "memoryKnowledgeSeed" }>;
 type MemoryKnowledgeProposeCommand = Extract<CliCommand, { kind: "memoryKnowledgePropose" }>;
+type MemoryAntiProposeCommand = Extract<CliCommand, { kind: "memoryAntiPropose" }>;
 type MemoryAntiPromoteCommand = Extract<CliCommand, { kind: "memoryAntiPromote" }>;
 type MemoryAntiRejectCommand = Extract<CliCommand, { kind: "memoryAntiReject" }>;
 type MemoryRejectCommand = MemoryCandidateRejectCommand | MemoryAntiRejectCommand;
@@ -652,21 +663,25 @@ const parsePositiveInteger = (
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 };
 
-type MemoryKnowledgeProposeOptionParser = (
+type MemoryProjectLimitCommand = MemoryKnowledgeProposeCommand | MemoryAntiProposeCommand;
+
+type MemoryProjectLimitOptionParser = (
   rest: readonly string[],
   index: number,
-  memoryCommand: MemoryKnowledgeProposeCommand
+  memoryCommand: MemoryProjectLimitCommand,
+  commandName: string
 ) => MemoryTokenParseResult;
 
-const parseMemoryKnowledgeProposeProject: MemoryKnowledgeProposeOptionParser = (
+const parseMemoryProjectOption: MemoryProjectLimitOptionParser = (
   rest,
   index,
-  memoryCommand
+  memoryCommand,
+  commandName
 ) => {
   const value = optionValue(rest, index, "--project");
 
   if (value.error !== undefined || value.value === undefined) {
-    return memoryError(value.error ?? "krn memory knowledge propose --project requires a project id");
+    return memoryError(value.error ?? `${commandName} --project requires a project id`);
   }
 
   memoryCommand.projectId = value.value;
@@ -674,15 +689,16 @@ const parseMemoryKnowledgeProposeProject: MemoryKnowledgeProposeOptionParser = (
   return memoryNext(value.nextIndex);
 };
 
-const parseMemoryKnowledgeProposeLimit: MemoryKnowledgeProposeOptionParser = (
+const parseMemoryLimitOption: MemoryProjectLimitOptionParser = (
   rest,
   index,
-  memoryCommand
+  memoryCommand,
+  commandName
 ) => {
   const value = optionValue(rest, index, "--limit");
 
   if (value.error !== undefined || value.value === undefined) {
-    return memoryError(value.error ?? "krn memory knowledge propose --limit requires a positive integer");
+    return memoryError(value.error ?? `${commandName} --limit requires a positive integer`);
   }
 
   const limit = parsePositiveInteger(value.value);
@@ -696,15 +712,16 @@ const parseMemoryKnowledgeProposeLimit: MemoryKnowledgeProposeOptionParser = (
   return memoryNext(value.nextIndex);
 };
 
-const memoryKnowledgeProposeOptionParsers = new Map<string, MemoryKnowledgeProposeOptionParser>([
-  ["--project", parseMemoryKnowledgeProposeProject],
-  ["--limit", parseMemoryKnowledgeProposeLimit]
+const memoryProjectLimitOptionParsers = new Map<string, MemoryProjectLimitOptionParser>([
+  ["--project", parseMemoryProjectOption],
+  ["--limit", parseMemoryLimitOption]
 ]);
 
-const parseMemoryKnowledgeProposeToken = (
+const parseMemoryProjectLimitToken = (
   rest: readonly string[],
   index: number,
-  memoryCommand: MemoryKnowledgeProposeCommand
+  memoryCommand: MemoryProjectLimitCommand,
+  commandName: string
 ): MemoryTokenParseResult => {
   const token = rest[index];
 
@@ -716,13 +733,13 @@ const parseMemoryKnowledgeProposeToken = (
 
   const parseOption = token === undefined
     ? undefined
-    : memoryKnowledgeProposeOptionParsers.get(token);
+    : memoryProjectLimitOptionParsers.get(token);
 
   if (parseOption !== undefined) {
-    return parseOption(rest, index, memoryCommand);
+    return parseOption(rest, index, memoryCommand, commandName);
   }
 
-  return memoryError(`Unknown krn memory knowledge propose option: ${token ?? ""}`);
+  return memoryError(`Unknown ${commandName} option: ${token ?? ""}`);
 };
 
 const parseMemoryTokenLoop = (
@@ -1076,7 +1093,12 @@ const parseMemoryKnowledgeProposeArgs = (rest: readonly string[]): ParseArgsResu
 
   const parsed = parseMemoryTokenLoop(
     rest,
-    (index) => parseMemoryKnowledgeProposeToken(rest, index, memoryCommand),
+    (index) => parseMemoryProjectLimitToken(
+      rest,
+      index,
+      memoryCommand,
+      "krn memory knowledge propose"
+    ),
     {
       kind: "memoryKnowledgeProposeHelp"
     }
@@ -1091,8 +1113,45 @@ const parseMemoryKnowledgeProposeArgs = (rest: readonly string[]): ParseArgsResu
   };
 };
 
+const parseMemoryAntiProposeArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "memoryAntiProposeHelp"
+      }
+    };
+  }
+
+  const memoryCommand: MemoryAntiProposeCommand = {
+    kind: "memoryAntiPropose",
+    persist: false
+  };
+
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryProjectLimitToken(
+      rest,
+      index,
+      memoryCommand,
+      "krn memory anti propose"
+    ),
+    {
+      kind: "memoryAntiProposeHelp"
+    }
+  );
+
+  if (parsed !== undefined) {
+    return parsed;
+  }
+
+  return {
+    command: memoryCommand
+  };
+};
+
 const memorySubcommandParsers = new Map<string, (rest: readonly string[]) => ParseArgsResult>([
   ["anti add", parseMemoryAntiAddArgs],
+  ["anti propose", parseMemoryAntiProposeArgs],
   ["anti promote", parseMemoryAntiPromoteArgs],
   ["anti reject", parseMemoryAntiRejectArgs],
   ["candidate add", parseMemoryCandidateAddArgs],

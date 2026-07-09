@@ -43,6 +43,7 @@ import {
   formatMemoryKnowledgeSeedUsage,
   formatMemoryKnowledgeProposeUsage,
   formatMemoryAntiAddUsage,
+  formatMemoryAntiProposeUsage,
   formatMemoryAntiPromoteUsage,
   formatMemoryAntiRejectUsage
 } from "./parse-memory-args.js";
@@ -165,6 +166,7 @@ const helpRenderers = {
   memoryKnowledgeSeedHelp: formatMemoryKnowledgeSeedUsage,
   memoryKnowledgeProposeHelp: formatMemoryKnowledgeProposeUsage,
   memoryAntiAddHelp: formatMemoryAntiAddUsage,
+  memoryAntiProposeHelp: formatMemoryAntiProposeUsage,
   memoryAntiPromoteHelp: formatMemoryAntiPromoteUsage,
   memoryAntiRejectHelp: formatMemoryAntiRejectUsage
 } satisfies Record<LegacyHelpCommandKind, () => string>;

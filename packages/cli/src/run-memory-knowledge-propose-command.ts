@@ -1,6 +1,4 @@
 import type {
-  MemoryCandidate,
-  MemoryRecord,
   ProjectId
 } from "@krn/core";
 import type {
@@ -8,12 +6,12 @@ import type {
   SourceDecisionKnowledgeSource
 } from "@krn/core/repositories";
 
-import {
-  persistenceLine,
-  postgresPersistedLabel,
-  previewOnlyPersistenceLabel
-} from "./command-runtime-support.js";
 import type { BaseCommandRuntime } from "./command-runtime-support.js";
+import {
+  formatSourceDecisionProposalResult,
+  proposeSourceDecisionCandidates,
+  sourceDecisionIdsFromMetadata
+} from "./memory-proposal-command-support.js";
 import {
   createMemoryCommandDatabaseRuntime
 } from "./memory-command-support.js";
@@ -31,14 +29,6 @@ export interface MemoryKnowledgeProposeCommandResult {
   stdout: string;
 }
 
-interface ProposedKnowledgeCandidate {
-  readonly sourceDecisionId: string;
-  readonly sourceClaimId: string;
-  readonly summary: string;
-  readonly candidateId?: string;
-  readonly skipped: boolean;
-}
-
 const PROPOSED_BY = "krn memory knowledge propose";
 const DUPLICATE_SCAN_LIMIT = 1000;
 const DEFAULT_SOURCE_DECISION_LIMIT = 25;
@@ -47,33 +37,6 @@ const confidenceValue = (
   confidence: SourceDecisionKnowledgeSource["sourceDecisionEdge"]["confidence"]
 ): number =>
   confidence === "high" ? 90 : confidence === "medium" ? 60 : 30;
-
-const metadataSourceDecisionId = (
-  item: Pick<MemoryCandidate | MemoryRecord, "metadata">
-): string | undefined => {
-  const sourceDecisionId = item.metadata["sourceDecisionId"];
-
-  return typeof sourceDecisionId === "string" && sourceDecisionId.trim().length > 0
-    ? sourceDecisionId
-    : undefined;
-};
-
-const existingSourceDecisionIds = (
-  candidates: readonly MemoryCandidate[],
-  records: readonly MemoryRecord[]
-): Set<string> => {
-  const ids = new Set<string>();
-
-  for (const item of [...candidates, ...records]) {
-    const sourceDecisionId = metadataSourceDecisionId(item);
-
-    if (sourceDecisionId !== undefined) {
-      ids.add(sourceDecisionId);
-    }
-  }
-
-  return ids;
-};
 
 export const sourceDecisionKnowledgeSourceToMemoryCandidateInput = (
   source: SourceDecisionKnowledgeSource,
@@ -127,47 +90,6 @@ export const sourceDecisionKnowledgeSourceToMemoryCandidateInput = (
   }
 });
 
-const formatProposeResult = (
-  input: {
-    readonly projectId: ProjectId;
-    readonly sourceCount: number;
-    readonly proposed: readonly ProposedKnowledgeCandidate[];
-    readonly persist: boolean;
-  }
-): string => {
-  const createdCount = input.proposed.filter((item) => !item.skipped).length;
-  const skippedCount = input.proposed.filter((item) => item.skipped).length;
-  const lines = [
-    "KRN Memory Knowledge Propose",
-    `Project: ${input.projectId}`,
-    `Source decisions read: ${input.sourceCount}`,
-    `Created candidates: ${input.persist ? createdCount : 0}`,
-    `Preview candidates: ${input.persist ? 0 : createdCount}`,
-    `Skipped duplicates: ${skippedCount}`,
-    persistenceLine(
-      input.persist
-        ? postgresPersistedLabel
-        : previewOnlyPersistenceLabel("create MemoryCandidate rows")
-    ),
-    "No MemoryRecord promotion performed.",
-    "",
-    "Source decisions:"
-  ];
-
-  for (const proposal of input.proposed) {
-    const status = proposal.skipped
-      ? "skipped_duplicate"
-      : input.persist
-        ? `created:${proposal.candidateId ?? "unknown"}`
-        : "preview";
-    lines.push(
-      `- ${proposal.sourceDecisionId} -> ${proposal.sourceClaimId} (${status}) ${proposal.summary}`
-    );
-  }
-
-  return `${lines.join("\n")}\n`;
-};
-
 export const runMemoryKnowledgeProposeCommand = async (
   runtime: MemoryKnowledgeProposeCommandRuntime
 ): Promise<MemoryKnowledgeProposeCommandResult> => {
@@ -196,49 +118,32 @@ export const runMemoryKnowledgeProposeCommand = async (
       projectId,
       DUPLICATE_SCAN_LIMIT
     );
-    const alreadyRepresented = existingSourceDecisionIds(existingCandidates, existingRecords);
-    const proposed: ProposedKnowledgeCandidate[] = [];
-
-    for (const source of sources) {
-      if (alreadyRepresented.has(source.sourceDecision.id)) {
-        proposed.push({
-          sourceDecisionId: source.sourceDecision.id,
-          sourceClaimId: source.sourceClaim.id,
-          summary: source.sourceDecision.decision,
-          skipped: true
-        });
-        continue;
-      }
-
-      if (!runtime.command.persist) {
-        proposed.push({
-          sourceDecisionId: source.sourceDecision.id,
-          sourceClaimId: source.sourceClaim.id,
-          summary: source.sourceDecision.decision,
-          skipped: false
-        });
-        continue;
-      }
-
-      const candidate = await db.memoryRepository.createMemoryCandidate(
-        sourceDecisionKnowledgeSourceToMemoryCandidateInput(source, projectId, runtime.now())
-      );
-      alreadyRepresented.add(source.sourceDecision.id);
-      proposed.push({
-        sourceDecisionId: source.sourceDecision.id,
-        sourceClaimId: source.sourceClaim.id,
-        summary: source.sourceDecision.decision,
-        candidateId: candidate.id,
-        skipped: false
-      });
-    }
+    const alreadyRepresented = sourceDecisionIdsFromMetadata([
+      ...existingCandidates,
+      ...existingRecords
+    ]);
+    const proposed = await proposeSourceDecisionCandidates({
+      sources,
+      alreadyRepresented,
+      persist: runtime.command.persist,
+      summarize: (source) => source.sourceDecision.decision,
+      createCandidate: (source) =>
+        db.memoryRepository.createMemoryCandidate(
+          sourceDecisionKnowledgeSourceToMemoryCandidateInput(source, projectId, runtime.now())
+        )
+    });
 
     return {
-      stdout: formatProposeResult({
+      stdout: formatSourceDecisionProposalResult({
+        title: "KRN Memory Knowledge Propose",
         projectId,
+        sourceCountLabel: "Source decisions read",
         sourceCount: sources.length,
         proposed,
-        persist: runtime.command.persist
+        persist: runtime.command.persist,
+        previewTarget: "create MemoryCandidate rows",
+        noPromotionLine: "No MemoryRecord promotion performed.",
+        entriesTitle: "Source decisions:"
       })
     };
   } finally {

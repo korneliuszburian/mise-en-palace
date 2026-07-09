@@ -25,6 +25,7 @@ import type {
   CreateSourceDecisionInput,
   CreateSourceDecisionEdgeInput,
   CreateSourceRejectionInput,
+  RejectedSourceDecisionKnowledgeSource,
   SourceArtifactRecord,
   SourceChunkRecord,
   SourceDecisionKnowledgeSource,
@@ -104,6 +105,17 @@ const canSourceDecisionSeedKnowledge = (
   source.sourceClaim.status === "accepted" &&
   source.sourceDecisionEdge.sourceClaimId === source.sourceClaim.id &&
   isDecisionGradeSourceSupportType(source.sourceDecisionEdge.supportType);
+
+const canRejectedSourceDecisionSeedAntiMemory = (
+  projectId: ProjectId,
+  source: RejectedSourceDecisionKnowledgeSource
+): boolean =>
+  source.sourceDecision.projectId === projectId &&
+  source.sourceDecision.status === "reject" &&
+  source.sourceDecision.sourceClaimId === source.sourceClaim.id &&
+  source.sourceClaim.status === "rejected" &&
+  source.sourceRejection.projectId === projectId &&
+  source.sourceRejection.sourceClaimId === source.sourceClaim.id;
 
 export const throwOnBlockingSourceDecisionSignals = (
   sourceDecision: SourceDecision,
@@ -447,6 +459,37 @@ export class DrizzleSourceRepository implements SourceRepository {
         sourceDecisionEdge: mapSourceDecisionEdge(row.sourceDecisionEdge)
       }))
       .filter((source) => canSourceDecisionSeedKnowledge(projectId, source));
+  }
+
+  async listRejectedSourceDecisionKnowledgeSources(
+    projectId: ProjectId,
+    limit: number
+  ): Promise<RejectedSourceDecisionKnowledgeSource[]> {
+    const rows = await this.db
+      .select({
+        sourceDecision: sourceDecisions,
+        sourceClaim: sourceClaims,
+        sourceRejection: sourceRejections
+      })
+      .from(sourceDecisions)
+      .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceRejections, eq(sourceRejections.sourceClaimId, sourceClaims.id))
+      .where(and(
+        eq(sourceDecisions.projectId, projectId),
+        eq(sourceDecisions.status, "reject"),
+        eq(sourceClaims.status, "rejected"),
+        eq(sourceRejections.projectId, projectId)
+      ))
+      .orderBy(desc(sourceDecisions.createdAt), desc(sourceRejections.rejectedAt))
+      .limit(limit);
+
+    return rows
+      .map((row) => ({
+        sourceDecision: mapSourceDecision(row.sourceDecision),
+        sourceClaim: mapSourceClaim(row.sourceClaim),
+        sourceRejection: mapSourceRejection(row.sourceRejection)
+      }))
+      .filter((source) => canRejectedSourceDecisionSeedAntiMemory(projectId, source));
   }
 
   async createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge> {
