@@ -732,9 +732,10 @@ describe("runBrainSearchCommand", () => {
           harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
           sourceRepository: {} as DatabaseRuntime["sourceRepository"],
           memoryRepository: {
-            async listActiveMemory(projectId, limit) {
+            async listActiveMemory(projectId, limit, options) {
               expect(projectId).toBe("project-1");
               expect(limit).toBe(6);
+              expect(options?.terms).toEqual(expect.arrayContaining(["external", "review"]));
 
               return [memoryRecord];
             }

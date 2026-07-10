@@ -29,6 +29,9 @@ import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
 import {
+  tokenizeActivationText
+} from "@krn/harness";
+import {
   defaultWorkspaceSlug,
   defaultProjectSlug,
   createDatabaseRuntime
@@ -151,7 +154,8 @@ const readStoreMemoryFromDatabase = async (
 
   const records = await input.databaseRuntime.memoryRepository.listActiveMemory(
     input.databaseRuntime.projectId,
-    input.limit
+    input.limit,
+    { terms: tokenizeActivationText(input.query) }
   );
   const feedbackDeltas = await listStoreFeedbackDeltas(input.databaseRuntime);
   const usefulnessSelection = applyStoreKnowledgeUsefulnessFeedback(

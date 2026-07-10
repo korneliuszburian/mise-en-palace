@@ -11,7 +11,8 @@ import {
   assessTargetOwnerFileRecall,
   compileHarnessPlan,
   formatActivationRetrievalDiagnostics,
-  searchKnowledgeReadModels
+  searchKnowledgeReadModels,
+  tokenizeActivationText
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
@@ -566,7 +567,8 @@ const readKnowledgeSelection = async (
 ): Promise<KnowledgePlanSelection> => {
   const records = await compilerRuntime.compilerDependencies.memoryRepository.listActiveMemory(
     compilerRuntime.projectId,
-    20
+    20,
+    { terms: tokenizeActivationText(query) }
   );
   const listFeedbackDeltasForProject =
     compilerRuntime.harnessRunRepository?.listFeedbackDeltasForProject;

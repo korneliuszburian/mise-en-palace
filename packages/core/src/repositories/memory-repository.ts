@@ -158,6 +158,10 @@ export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
   validUntil?: string;
 }
 
+export interface ActiveMemorySelectionOptions {
+  terms?: readonly string[];
+}
+
 export interface PromoteAntiMemoryCandidateInput extends RepositoryMetadata {
   candidateId: AntiMemoryCandidate["id"];
   reviewer: string;
@@ -175,7 +179,11 @@ export interface MemoryRepository {
   getMemoryRecord(id: string): Promise<MemoryRecord | undefined>;
   getMemoryRecordById(id: string): Promise<MemoryRecord | undefined>;
   listMemoryRecordsForProject(projectId: ProjectId, limit?: number): Promise<MemoryRecord[]>;
-  listActiveMemory(projectId: ProjectId, limit: number): Promise<MemoryRecord[]>;
+  listActiveMemory(
+    projectId: ProjectId,
+    limit: number,
+    options?: ActiveMemorySelectionOptions
+  ): Promise<MemoryRecord[]>;
   createMemoryCandidate(input: CreateMemoryCandidateInput): Promise<MemoryCandidate>;
   getMemoryCandidateById(id: string): Promise<MemoryCandidate | undefined>;
   promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord>;

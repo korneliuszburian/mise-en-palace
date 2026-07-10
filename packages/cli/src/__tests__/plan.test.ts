@@ -1023,7 +1023,8 @@ describe("runCli", () => {
               ...dependencies,
               harnessRunRepository,
               memoryRepository: {
-                async listActiveMemory() {
+                async listActiveMemory(_projectId, _limit, options) {
+                  expect(options?.terms).toContain("activation");
                   return [activeMemory];
                 },
                 async listAntiMemoryForProject() {

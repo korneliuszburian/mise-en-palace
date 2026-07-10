@@ -651,7 +651,8 @@ export const retrieveActivationCandidates = async (
 
   const initialMemoryRecords = await input.repositories.memoryRepository.listActiveMemory(
     input.taskContract.projectId,
-    input.limits.memory
+    input.limits.memory,
+    { terms: memoryQuery.terms }
   );
   const initialSourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
     input.taskContract.projectId,

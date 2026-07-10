@@ -25,6 +25,7 @@ import {
 } from "./db-smoke-support.js";
 import {
   contextAssemblies,
+  memoryRecords,
   projects,
   retrievalRuns,
   searchDocuments,
@@ -57,6 +58,7 @@ export interface ActivationSmokeReport {
   readBackRetrievalRunId: string;
   sourceClaimCount: number;
   memoryRecordCount: number;
+  relevantMemoryRetrieved: boolean;
   antiMemoryRecordCount: number;
   searchDocumentCount: number;
   indexOnlySearchExcluded: boolean;
@@ -75,6 +77,8 @@ export interface ActivationSmokeReport {
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
+
+const relevanceDistractorCount = 25;
 
 const countByDecision = (
   decisions: readonly { decision: string }[],
@@ -281,6 +285,50 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
+    const relevanceKey = Date.now().toString();
+    for (const index of Array.from({ length: relevanceDistractorCount }, (_, item) => item)) {
+      const distractor = await memoryRepository.createMemoryRecord({
+        projectId: project.id,
+        key: `unrelated-release-distractor:${relevanceKey}:${index}`,
+        kind: "procedure",
+        status: "active",
+        summary: "Unrelated release calendar note",
+        body: "Unrelated deployment note with favored positive feedback.",
+        owner: "kernel",
+        confidence: 95,
+        applicationGuidance: "Review only for unrelated release work.",
+        invalidationRule: "Revisit unrelated release work.",
+        sourceLineage: [{ sourceId: activationClaim.id }],
+        isUserPreference: false,
+        validFrom: past,
+        metadata: {
+          smokeId: marker
+        }
+      });
+      await db
+        .update(memoryRecords)
+        .set({ positiveFeedbackCount: 100 })
+        .where(eq(memoryRecords.id, distractor.id));
+    }
+    const relevantMemory = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `relevant-memory:${relevanceKey}`,
+      kind: "procedure",
+      status: "active",
+      summary: "Activation memory relevance",
+      body: "Activation smoke must preserve bounded task-relevant memory before candidate limits.",
+      owner: "kernel",
+      confidence: 80,
+      applicationGuidance: "Use for activation retrieval relevance.",
+      invalidationRule: "Revisit when activation retrieval policy changes.",
+      sourceLineage: [{ sourceId: activationClaim.id }],
+      isUserPreference: false,
+      validFrom: past,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const noTermFallbackRecords = await memoryRepository.listActiveMemory(project.id, 1);
     await memoryRepository.createAntiMemoryRecord({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -385,6 +433,9 @@ export const runActivationSmokeCheck = async (
         retrievalRepository
       }
     });
+    const relevantMemoryRetrieved = retrieved.candidates.some(
+      (candidate) => candidate.subjectId === relevantMemory.id
+    );
     const retrievalRun = await retrievalRepository.startRetrievalRun({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -561,7 +612,7 @@ export const runActivationSmokeCheck = async (
     const readBackContextAssembly = readBackContextAssemblyRows[0];
     const readBackRetrievalRun = readBackRetrievalRunRows[0];
     const sourceClaimCount = [activationClaim, crawlerClaim].length + 1;
-    const memoryRecordCount = 2;
+    const memoryRecordCount = 2 + relevanceDistractorCount + 1;
     const antiMemoryRecordCount = retrieved.antiMemoryRecords.length;
     const searchDocumentCount = searchDocumentRows[0]?.count ?? 0;
     const indexOnlySearchExcluded = !contextAssembly.inclusions.some(
@@ -589,7 +640,9 @@ export const runActivationSmokeCheck = async (
         { label: "context assembly retrieval run", passed: readBackContextAssembly?.retrievalRunId === retrievalRun.id },
         { label: "retrieval run exists", passed: readBackRetrievalRun !== undefined },
         { label: "source claims", passed: sourceClaimCount === 3 },
-        { label: "memory records", passed: memoryRecordCount === 2 },
+        { label: "memory records", passed: memoryRecordCount === 2 + relevanceDistractorCount + 1 },
+        { label: "no-term memory fallback remains bounded", passed: noTermFallbackRecords.length === 1 },
+        { label: "relevant memory before bounded limit", passed: relevantMemoryRetrieved },
         { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
         { label: "search documents", passed: searchDocumentCount === 2 },
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
@@ -632,6 +685,7 @@ export const runActivationSmokeCheck = async (
       readBackRetrievalRunId,
       sourceClaimCount,
       memoryRecordCount,
+      relevantMemoryRetrieved,
       antiMemoryRecordCount,
       searchDocumentCount,
       indexOnlySearchExcluded,

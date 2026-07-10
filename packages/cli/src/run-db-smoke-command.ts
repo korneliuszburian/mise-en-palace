@@ -511,6 +511,7 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
       }`,
       `Source claims: ${report.sourceClaimCount}`,
       `Memory records: ${report.memoryRecordCount}`,
+      `Relevant memory before bounded limit: ${report.relevantMemoryRetrieved ? "yes" : "no"}`,
       `Anti-memory records: ${report.antiMemoryRecordCount}`,
       `Search documents: ${report.searchDocumentCount}`,
       `Index-only stale search excluded: ${report.indexOnlySearchExcluded ? "yes" : "no"}`,

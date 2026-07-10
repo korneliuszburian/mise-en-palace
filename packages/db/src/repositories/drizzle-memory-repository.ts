@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
@@ -12,6 +12,7 @@ import type {
 import type {
   CreateAntiMemoryRecordInput,
   CreateAntiMemoryCandidateInput,
+  ActiveMemorySelectionOptions,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
@@ -516,9 +517,33 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return rows.map(mapMemoryRecord);
   }
 
-  async listActiveMemory(projectId: ProjectId, limit: number): Promise<MemoryRecord[]> {
+  async listActiveMemory(
+    projectId: ProjectId,
+    limit: number,
+    options?: ActiveMemorySelectionOptions
+  ): Promise<MemoryRecord[]> {
+    const terms = [...new Set(
+      (options?.terms ?? [])
+        .map((term) => term.trim().toLowerCase())
+        .filter((term) => term.length > 0)
+    )];
+    const searchableText = sql`lower(concat_ws(' ',
+      ${memoryRecords.key},
+      ${memoryRecords.summary},
+      ${memoryRecords.body},
+      ${memoryRecords.owner},
+      ${memoryRecords.applicationGuidance},
+      ${memoryRecords.invalidationRule}
+    ))`;
+    const relevanceFilter = terms.length === 0
+      ? undefined
+      : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
     const rows = await this.db.query.memoryRecords.findMany({
-      where: and(eq(memoryRecords.projectId, projectId), eq(memoryRecords.status, "active")),
+      where: and(
+        eq(memoryRecords.projectId, projectId),
+        eq(memoryRecords.status, "active"),
+        relevanceFilter
+      ),
       orderBy: activeMemorySelectionOrder(),
       limit
     });
