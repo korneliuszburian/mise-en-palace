@@ -4,8 +4,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import type { EvalCandidateProposal } from "@krn/core";
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
+export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;
@@ -51,6 +53,56 @@ export type PairedRepairScore = {
   readonly krn: HeldOutArmScore;
   readonly reason: string;
 };
+
+export const pairedRepairUsefulnessOutcome = (
+  outcome: PairedRepairOutcome
+): PairedRepairUsefulnessOutcome => {
+  switch (outcome) {
+    case "win":
+      return "helped";
+    case "tie":
+      return "neutral";
+    case "loss":
+      return "hurt";
+    case "invalid":
+      return "unknown";
+  }
+};
+
+export const pairedRepairEvalCandidate = (input: {
+  readonly score: PairedRepairScore;
+  readonly runId: string;
+  readonly packetChecksum: string;
+  readonly evidenceRefs: readonly string[];
+  readonly createdAt: string;
+  readonly projectId?: string;
+}): EvalCandidateProposal => ({
+  id: `paired-target-repair:${input.runId}`,
+  ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+  status: "candidate",
+  title: `Paired target repair outcome: ${input.score.outcome}`,
+  scenario: "weak-json-boundary-typescript current-shell Codex repair",
+  expectedSignal: "Only a predeclared KRN win may be classified as helped.",
+  sourceEvidence: [...input.evidenceRefs],
+  metadata: {
+    evaluationKind: "paired_live_codex_repair",
+    outcome: input.score.outcome,
+    usefulnessOutcome: pairedRepairUsefulnessOutcome(input.score.outcome),
+    baselineScore: input.score.baseline.score,
+    krnScore: input.score.krn.score,
+    baselineStatus: input.score.baseline.status,
+    krnStatus: input.score.krn.status,
+    packetChecksum: input.packetChecksum,
+    packetEvidenceRef: `packet:${input.packetChecksum}`,
+    evidenceRefs: [...input.evidenceRefs],
+    doesNotProve: [
+      "A single paired trial does not prove arbitrary-repository portability.",
+      "A tie, loss, or invalid trial does not prove memory usefulness.",
+      "The candidate is reviewable evidence and does not mutate MemoryRecord or SourceClaim truth."
+    ]
+  },
+  createdAt: input.createdAt
+});
 
 export type PairedRepairPrompts = {
   readonly baseline: string;

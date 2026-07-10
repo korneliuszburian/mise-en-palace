@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPairedRepairPrompts,
+  pairedRepairEvalCandidate,
+  pairedRepairUsefulnessOutcome,
   scorePairedRepairs,
   scoreTargetRepair,
   type CommandResult,
@@ -125,5 +127,46 @@ describe("paired live Codex repair eval", () => {
       baseline: pass,
       krn: { ...pass, status: "invalid" }
     }).outcome).toBe("invalid");
+  });
+
+  it("maps only a measured win to helped and preserves neutral, hurt, and unknown", () => {
+    expect(pairedRepairUsefulnessOutcome("win")).toBe("helped");
+    expect(pairedRepairUsefulnessOutcome("tie")).toBe("neutral");
+    expect(pairedRepairUsefulnessOutcome("loss")).toBe("hurt");
+    expect(pairedRepairUsefulnessOutcome("invalid")).toBe("unknown");
+  });
+
+  it("creates a reviewable eval candidate without mutating durable truth", () => {
+    const score = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+    const candidate = pairedRepairEvalCandidate({
+      score: scorePairedRepairs({ baseline: score, krn: score }),
+      runId: "run-1",
+      packetChecksum: "a".repeat(64),
+      evidenceRefs: ["packet:" + "a".repeat(64), "checker:live-score"],
+      createdAt: "2026-07-10T00:00:00.000Z"
+    });
+
+    expect(candidate).toMatchObject({
+      id: "paired-target-repair:run-1",
+      status: "candidate",
+      metadata: {
+        outcome: "tie",
+        usefulnessOutcome: "neutral",
+        packetChecksum: "a".repeat(64)
+      }
+    });
+    expect(candidate.metadata.doesNotProve).toEqual(expect.arrayContaining([
+      expect.stringContaining("does not mutate MemoryRecord")
+    ]));
   });
 });

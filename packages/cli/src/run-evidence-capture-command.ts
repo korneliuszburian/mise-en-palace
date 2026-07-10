@@ -7,6 +7,7 @@ import {
 } from "node:util";
 import type {
   DiffRisk,
+  EvalCandidateProposal,
   EvidenceCommand,
   EvidenceCommandReadback,
   MemoryCandidate,
@@ -65,6 +66,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  evalCandidateProposals?: readonly EvalCandidateProposal[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -810,13 +812,14 @@ const buildFeedbackDeltaInput = (
   sourceDecisionCandidates: readonly SourceDecision[],
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
-  decisionPacketChecksum: string | undefined
+  decisionPacketChecksum: string | undefined,
+  evalCandidateProposals: readonly EvalCandidateProposal[]
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
   memoryCandidates: [...memoryCandidates],
   sourceDecisions: [...sourceDecisionCandidates],
-  evalCandidates: [],
+  evalCandidates: [...evalCandidateProposals],
   metadata: {
     runId,
     ...counts,
@@ -1257,6 +1260,7 @@ const renderEvidenceCaptureOutput = (input: {
   readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
   readonly persistedIdentity: PersistedEvidenceIdentity | undefined;
   readonly runtime: EvidenceCaptureRuntime;
+  readonly evalCandidateProposals: readonly EvalCandidateProposal[];
   readonly sourceDecisionCandidates: readonly SourceDecision[];
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
@@ -1288,6 +1292,7 @@ const renderEvidenceCaptureOutput = (input: {
   ...renderMemoryCandidateProposals(input.memoryCandidateProposals),
   "sourceDecisionCandidates:",
   ...renderSourceDecisionCandidates(input.sourceDecisionCandidates),
+  `evalCandidateProposals: ${input.evalCandidateProposals.length}`,
   "sourceUsefulnessOutcomes:",
   ...renderSourceUsefulnessOutcomes(input.sourceUsefulnessOutcomes),
   "knowledgeUsefulnessOutcomes:",
@@ -1305,7 +1310,8 @@ const persistEvidenceCapture = async (
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
-  memoryCandidateProposals: readonly MemoryCandidateProposal[]
+  memoryCandidateProposals: readonly MemoryCandidateProposal[],
+  evalCandidateProposals: readonly EvalCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
   const { databaseUrl, runId } = resolveEvidencePersistenceConfig(runtime);
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
@@ -1375,7 +1381,8 @@ const persistEvidenceCapture = async (
         sourceDecisionCandidates,
         evidenceBackedUsefulness.sourceOutcomes,
         evidenceBackedUsefulness.knowledgeOutcomes,
-        decisionPacketChecksum
+        decisionPacketChecksum,
+        evalCandidateProposals
       )
     );
     const feedbackMaintenanceQueueRecordId = await enqueueAuthorizedFeedbackMaintenance({
@@ -1434,7 +1441,8 @@ export const runEvidenceCaptureCommand = async (
       runtime.sourceUsefulnessOutcomes,
       runtime.knowledgeUsefulnessOutcomes,
       sourceDecisionCandidates,
-      memoryCandidateProposals
+      memoryCandidateProposals,
+      runtime.evalCandidateProposals ?? []
     )
     : undefined;
   const feedbackCandidate =
@@ -1459,7 +1467,8 @@ export const runEvidenceCaptureCommand = async (
       runtime,
       sourceDecisionCandidates,
       sourceUsefulnessOutcomes: renderedSourceUsefulnessOutcomes,
-      targetEvidence
+      targetEvidence,
+      evalCandidateProposals: runtime.evalCandidateProposals ?? []
     })
   };
 };
