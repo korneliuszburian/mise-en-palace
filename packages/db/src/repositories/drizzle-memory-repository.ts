@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
@@ -257,6 +257,39 @@ const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
   }
 
   assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
+};
+
+const requireCandidateTransitionRow = <Row>(
+  rows: readonly Row[],
+  operation: string,
+  candidateId: string
+): Row => {
+  const row = rows[0];
+
+  if (row === undefined) {
+    throw new Error(
+      `${operation} could not transition candidate ${candidateId}; expected proposed or candidate status`
+    );
+  }
+
+  return row;
+};
+
+const requireMemoryRecordTransitionRow = <Row>(
+  rows: readonly Row[],
+  operation: string,
+  memoryRecordId: string,
+  expectedStatus: string
+): Row => {
+  const row = rows[0];
+
+  if (row === undefined) {
+    throw new Error(
+      `${operation} could not transition memory record ${memoryRecordId}; expected ${expectedStatus} status`
+    );
+  }
+
+  return row;
 };
 
 const ensurePromotableAntiMemoryCandidate = (candidate: AntiMemoryCandidate): void => {
@@ -569,6 +602,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       ensurePromotableCandidate(candidate);
 
       const now = new Date();
+      requireCandidateTransitionRow(
+        await tx
+          .update(memoryCandidates)
+          .set({
+            status: input.decision,
+            reviewer: input.reviewer,
+            reviewedAt: now,
+            metadata: memoryPromotionMetadata(candidate, input),
+            updatedAt: now
+          })
+          .where(and(
+            eq(memoryCandidates.id, candidateRow.id),
+            inArray(memoryCandidates.status, ["proposed", "candidate"])
+          ))
+          .returning(),
+        "promoteMemoryCandidate",
+        candidateRow.id
+      );
       const memoryRecordRow = requireReturnedRow(
         await tx
           .insert(memoryRecords)
@@ -634,16 +685,6 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           .returning(),
         "promoteMemoryCandidate.updateMemoryRecord"
       );
-      await tx
-        .update(memoryCandidates)
-        .set({
-          status: input.decision,
-          reviewer: input.reviewer,
-          reviewedAt: now,
-          metadata: memoryPromotionMetadata(candidate, input),
-          updatedAt: now
-        })
-        .where(eq(memoryCandidates.id, candidateRow.id));
       await tx.insert(outboxEvents).values({
         topic: "memory.candidate.promoted",
         payload: {
@@ -665,7 +706,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
   async rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate> {
     const now = new Date();
-    const row = requireReturnedRow(
+    const row = requireCandidateTransitionRow(
       await this.db
         .update(memoryCandidates)
         .set({
@@ -675,9 +716,13 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           rejectionReason: input.reason,
           updatedAt: now
         })
-        .where(eq(memoryCandidates.id, input.candidateId))
+        .where(and(
+          eq(memoryCandidates.id, input.candidateId),
+          inArray(memoryCandidates.status, ["proposed", "candidate"])
+        ))
         .returning(),
-      "rejectMemoryCandidate"
+      "rejectMemoryCandidate",
+      input.candidateId
     );
 
     return mapMemoryCandidate(row);
@@ -706,6 +751,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     }
 
     return this.db.transaction(async (tx) => {
+      await tx.execute(sql`
+        SELECT id
+        FROM ${memoryRecords}
+        WHERE id = ${input.memoryRecordId}
+        FOR UPDATE
+      `);
       const currentRow = await tx.query.memoryRecords.findFirst({
         where: eq(memoryRecords.id, input.memoryRecordId)
       });
@@ -718,7 +769,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         input.invalidatedAt === undefined
           ? new Date()
           : fromIsoTimestamp(input.invalidatedAt);
-      const row = requireReturnedRow(
+      const row = requireMemoryRecordTransitionRow(
         await tx
           .update(memoryRecords)
           .set({
@@ -736,9 +787,14 @@ export class DrizzleMemoryRepository implements MemoryRepository {
             },
             updatedAt: new Date()
           })
-          .where(eq(memoryRecords.id, input.memoryRecordId))
+          .where(and(
+            eq(memoryRecords.id, input.memoryRecordId),
+            eq(memoryRecords.status, "active")
+          ))
           .returning(),
-        "invalidateMemoryRecord"
+        "invalidateMemoryRecord",
+        input.memoryRecordId,
+        "active"
       );
 
       return mapMemoryRecord(row);
@@ -758,6 +814,17 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     }
 
     return this.db.transaction(async (tx) => {
+      if (input.memoryRecordId === input.supersededByMemoryRecordId) {
+        throw new Error("supersedeMemoryRecord cannot supersede a record with itself");
+      }
+
+      await tx.execute(sql`
+        SELECT id
+        FROM ${memoryRecords}
+        WHERE id IN (${input.memoryRecordId}, ${input.supersededByMemoryRecordId})
+        ORDER BY id
+        FOR UPDATE
+      `);
       const currentRow = await tx.query.memoryRecords.findFirst({
         where: eq(memoryRecords.id, input.memoryRecordId)
       });
@@ -773,11 +840,27 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         throw new Error(`Superseding MemoryRecord not found: ${input.supersededByMemoryRecordId}`);
       }
 
+      if (currentRow.status !== "active") {
+        throw new Error(
+          `supersedeMemoryRecord requires an active current record; found ${currentRow.status}`
+        );
+      }
+
+      if (replacementRow.status !== "active") {
+        throw new Error(
+          `supersedeMemoryRecord requires an active replacement; found ${replacementRow.status}`
+        );
+      }
+
+      if (currentRow.projectId !== replacementRow.projectId) {
+        throw new Error("supersedeMemoryRecord requires records from the same project");
+      }
+
       const supersededAt =
         input.supersededAt === undefined
           ? new Date()
           : fromIsoTimestamp(input.supersededAt);
-      const row = requireReturnedRow(
+      const row = requireMemoryRecordTransitionRow(
         await tx
           .update(memoryRecords)
           .set({
@@ -796,9 +879,15 @@ export class DrizzleMemoryRepository implements MemoryRepository {
             },
             updatedAt: new Date()
           })
-          .where(eq(memoryRecords.id, input.memoryRecordId))
+          .where(and(
+            eq(memoryRecords.id, input.memoryRecordId),
+            eq(memoryRecords.projectId, replacementRow.projectId),
+            eq(memoryRecords.status, "active")
+          ))
           .returning(),
-        "supersedeMemoryRecord"
+        "supersedeMemoryRecord",
+        input.memoryRecordId,
+        "active"
       );
 
       await tx.insert(outboxEvents).values({
@@ -993,6 +1082,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
       const now = new Date();
       const metadata = antiMemoryPromotionMetadata(candidate, input);
+      requireCandidateTransitionRow(
+        await tx
+          .update(antiMemoryCandidates)
+          .set({
+            status: input.decision,
+            reviewer: input.reviewer,
+            reviewedAt: now,
+            metadata,
+            updatedAt: now
+          })
+          .where(and(
+            eq(antiMemoryCandidates.id, candidateRow.id),
+            inArray(antiMemoryCandidates.status, ["proposed", "candidate"])
+          ))
+          .returning(),
+        "promoteReviewedAntiMemoryCandidate",
+        candidateRow.id
+      );
       const antiMemoryRow = requireReturnedRow(
         await tx
           .insert(antiMemoryRecords)
@@ -1027,17 +1134,6 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         "promoteReviewedAntiMemoryCandidate.insertAntiMemoryRecord"
       );
 
-      await tx
-        .update(antiMemoryCandidates)
-        .set({
-          status: input.decision,
-          reviewer: input.reviewer,
-          reviewedAt: now,
-          metadata,
-          updatedAt: now
-        })
-        .where(eq(antiMemoryCandidates.id, candidateRow.id));
-
       await tx.insert(outboxEvents).values({
         topic: "anti_memory.candidate.promoted",
         payload: {
@@ -1056,7 +1152,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     input: RejectAntiMemoryCandidateInput
   ): Promise<AntiMemoryCandidate> {
     const now = new Date();
-    const row = requireReturnedRow(
+    const row = requireCandidateTransitionRow(
       await this.db
         .update(antiMemoryCandidates)
         .set({
@@ -1067,9 +1163,13 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           metadata: input.metadata ?? {},
           updatedAt: now
         })
-        .where(eq(antiMemoryCandidates.id, input.candidateId))
+        .where(and(
+          eq(antiMemoryCandidates.id, input.candidateId),
+          inArray(antiMemoryCandidates.status, ["proposed", "candidate"])
+        ))
         .returning(),
-      "rejectAntiMemoryCandidate"
+      "rejectAntiMemoryCandidate",
+      input.candidateId
     );
 
     return mapAntiMemoryCandidate(row);

@@ -1,4 +1,5 @@
 import { eq, sql } from "drizzle-orm";
+import postgres from "postgres";
 
 import {
   assertSmokeReadbackChecks,
@@ -8,11 +9,43 @@ import {
   createSmokeRuntime,
   requireSmokeReadbackValue
 } from "./db-smoke-support.js";
+import { createKrnDatabase } from "../../database.js";
 import {
+  DrizzleMemoryRepository,
+  DrizzleProjectRepository
+} from "../../repositories/index.js";
+import {
+  antiMemoryRecords,
   memoryApplications,
+  memoryRecords,
   memoryRecordVersions,
-  outboxEvents
+  outboxEvents,
+  workspaces
 } from "../../schema/index.js";
+
+const assertRejected = async (
+  operation: Promise<unknown>,
+  expectedError: string,
+  message: string
+): Promise<void> => {
+  try {
+    await operation;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(expectedError)) {
+      return;
+    }
+
+    throw new Error(
+      `${message}: unexpected rejection ${error instanceof Error ? error.message : "unknown error"}`
+    );
+  }
+
+  throw new Error(message);
+};
+
+const fulfilledCount = <Value>(
+  results: readonly PromiseSettledResult<Value>[]
+): number => results.filter((result) => result.status === "fulfilled").length;
 
 export interface MemoryGovernanceSmokeInput {
   databaseUrl: string;
@@ -148,6 +181,91 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const readBackCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
+    const concurrentMemoryCandidate = await memoryRepository.createMemoryCandidate({
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      proposedBy: "memory-governance-concurrency-smoke",
+      kind: "constraint",
+      status: "proposed",
+      summary: "Concurrent memory promotion must have one winner",
+      body: "A candidate may create at most one accepted memory record.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use only after explicit concurrent review arbitration.",
+      invalidationRule: "Revisit when candidate promotion concurrency changes.",
+      sourceClaimIds: [sourceClaim.id],
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "concurrent-memory-promotion"
+      }
+    });
+    const concurrentMemoryClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+
+    try {
+      const concurrentMemoryRepositories = concurrentMemoryClients.map(
+        (concurrentClient) => new DrizzleMemoryRepository(createKrnDatabase(concurrentClient))
+      );
+      const [firstConcurrentMemoryRepository, secondConcurrentMemoryRepository] =
+        concurrentMemoryRepositories;
+
+      if (firstConcurrentMemoryRepository === undefined || secondConcurrentMemoryRepository === undefined) {
+        throw new Error("Memory governance concurrency smoke did not create two memory repositories");
+      }
+
+      const concurrentMemoryPromotionResults = await Promise.allSettled([
+        firstConcurrentMemoryRepository.promoteReviewedMemoryCandidate({
+          candidateId: concurrentMemoryCandidate.id,
+          reviewer: "memory-governance-concurrency-smoke-a",
+          decision: "accepted",
+          recordKey: `memory-governance-concurrent-a:${marker}`,
+          metadata: {
+            smokeId: marker,
+            lifecycleProbe: "concurrent-memory-promotion"
+          }
+        }),
+        secondConcurrentMemoryRepository.promoteReviewedMemoryCandidate({
+          candidateId: concurrentMemoryCandidate.id,
+          reviewer: "memory-governance-concurrency-smoke-b",
+          decision: "accepted",
+          recordKey: `memory-governance-concurrent-b:${marker}`,
+          metadata: {
+            smokeId: marker,
+            lifecycleProbe: "concurrent-memory-promotion"
+          }
+        })
+      ]);
+      const concurrentMemoryRows = await db
+        .select()
+        .from(memoryRecords)
+        .where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'concurrent-memory-promotion'
+          AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
+      const concurrentMemoryCandidateReadback = await memoryRepository.getMemoryCandidateById(
+        concurrentMemoryCandidate.id
+      );
+
+      assertSmokeReadbackChecks([
+        {
+          label: "concurrent memory promotion has one winner",
+          passed: fulfilledCount(concurrentMemoryPromotionResults) === 1
+        },
+        {
+          label: "concurrent memory promotion creates one record",
+          passed: concurrentMemoryRows.length === 1
+        },
+        {
+          label: "concurrent memory candidate is accepted once",
+          passed: concurrentMemoryCandidateReadback?.status === "accepted"
+        }
+      ], "Memory governance concurrency falsifier failed");
+    } finally {
+      await Promise.all(concurrentMemoryClients.map((concurrentClient) => concurrentClient.end()));
+    }
+
     const memoryRecord = await memoryRepository.promoteMemoryCandidate({
       candidateId: memoryCandidate.id,
       reviewer: "memory-governance-smoke",
@@ -158,6 +276,19 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
+    await assertRejected(
+      memoryRepository.rejectMemoryCandidate({
+        candidateId: memoryCandidate.id,
+        reviewer: "memory-governance-smoke-after-accept",
+        reason: "An accepted candidate must not be rejected afterward.",
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "reject-after-accept"
+        }
+      }),
+      "expected proposed or candidate status",
+      "Memory governance allowed rejection after acceptance"
+    );
     const packetBoundApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
@@ -199,6 +330,138 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const activeMemoryAfterInvalidation = await memoryRepository.listActiveMemory(project.id, 10);
+    const smokeWorkspace = await db.query.workspaces.findFirst({
+      where: eq(workspaces.slug, workspaceSlug)
+    });
+
+    if (smokeWorkspace === undefined) {
+      throw new Error("Memory governance smoke workspace was not found for lifecycle probes");
+    }
+
+    const crossProject = await new DrizzleProjectRepository(db).createProject({
+      workspaceId: smokeWorkspace.id,
+      slug: `memory-governance-cross-project-${marker}`,
+      displayName: `memory-governance-cross-project-${marker}`,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "cross-project-supersession"
+      }
+    });
+    const supersessionCurrent = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-supersession-current:${marker}`,
+      kind: "constraint",
+      summary: "Current memory for guarded supersession",
+      body: "This active record may be replaced by a reviewed same-project record.",
+      owner: "kernel",
+      confidence: 90,
+      applicationGuidance: "Use only while the replacement is not yet accepted.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "supersession"
+      }
+    });
+    const supersessionReplacement = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-supersession-replacement:${marker}`,
+      kind: "constraint",
+      summary: "Replacement memory for guarded supersession",
+      body: "This active record is the valid same-project replacement.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use as the reviewed replacement.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "supersession"
+      }
+    });
+    const crossProjectReplacement = await memoryRepository.createMemoryRecord({
+      projectId: crossProject.id,
+      key: `memory-governance-cross-project-replacement:${marker}`,
+      kind: "constraint",
+      summary: "Cross-project replacement must be rejected",
+      body: "A record from another project cannot supersede this record.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Never use across project authority boundaries.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "cross-project-supersession"
+      }
+    });
+
+    await assertRejected(
+      memoryRepository.supersedeMemoryRecord({
+        memoryRecordId: supersessionCurrent.id,
+        reviewer: "memory-governance-smoke",
+        reason: "Self-supersession must be rejected.",
+        supersededByMemoryRecordId: supersessionCurrent.id,
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "supersession"
+        }
+      }),
+      "cannot supersede a record with itself",
+      "Memory governance allowed self-supersession"
+    );
+    await assertRejected(
+      memoryRepository.supersedeMemoryRecord({
+        memoryRecordId: supersessionCurrent.id,
+        reviewer: "memory-governance-smoke",
+        reason: "Cross-project supersession must be rejected.",
+        supersededByMemoryRecordId: crossProjectReplacement.id,
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "cross-project-supersession"
+        }
+      }),
+      "same project",
+      "Memory governance allowed cross-project supersession"
+    );
+    await assertRejected(
+      memoryRepository.supersedeMemoryRecord({
+        memoryRecordId: supersessionReplacement.id,
+        reviewer: "memory-governance-smoke",
+        reason: "An invalidated record cannot be a replacement.",
+        supersededByMemoryRecordId: memoryRecord.id,
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "non-active-replacement"
+        }
+      }),
+      "active replacement",
+      "Memory governance allowed a non-active replacement"
+    );
+    await assertRejected(
+      memoryRepository.supersedeMemoryRecord({
+        memoryRecordId: memoryRecord.id,
+        reviewer: "memory-governance-smoke",
+        reason: "An invalidated record cannot be superseded again.",
+        supersededByMemoryRecordId: supersessionReplacement.id,
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "non-active-current"
+        }
+      }),
+      "active current record",
+      "Memory governance allowed a non-active current record"
+    );
+    const supersededRecord = await memoryRepository.supersedeMemoryRecord({
+      memoryRecordId: supersessionCurrent.id,
+      reviewer: "memory-governance-smoke",
+      reason: "A reviewed same-project replacement is active.",
+      supersededByMemoryRecordId: supersessionReplacement.id,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "supersession"
+      }
+    });
     const antiMemoryCandidate = await memoryRepository.createAntiMemoryCandidate({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -224,6 +487,92 @@ export const runMemoryGovernanceSmokeCheck = async (
         }
       }
     });
+    const concurrentAntiMemoryCandidate = await memoryRepository.createAntiMemoryCandidate({
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      key: `anti-memory-governance-concurrent:${marker}`,
+      proposedBy: "memory-governance-concurrency-smoke",
+      status: "candidate",
+      rejectedClaim: "Concurrent anti-memory promotion must have one winner.",
+      reason: "One candidate must create at most one anti-memory record.",
+      invalidatedBySourceClaimIds: [sourceClaim.id],
+      appliesTo: "memory governance concurrency",
+      mayRevisitWhen: "Anti-memory promotion concurrency changes.",
+      summary: "Concurrent anti-memory promotion must have one winner",
+      body: "An anti-memory candidate may create at most one accepted record.",
+      owner: "kernel",
+      confidence: 95,
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "concurrent-anti-memory-promotion"
+      }
+    });
+    const concurrentAntiMemoryClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+
+    try {
+      const concurrentAntiMemoryRepositories = concurrentAntiMemoryClients.map(
+        (concurrentClient) => new DrizzleMemoryRepository(createKrnDatabase(concurrentClient))
+      );
+      const [firstConcurrentAntiMemoryRepository, secondConcurrentAntiMemoryRepository] =
+        concurrentAntiMemoryRepositories;
+
+      if (firstConcurrentAntiMemoryRepository === undefined || secondConcurrentAntiMemoryRepository === undefined) {
+        throw new Error("Memory governance concurrency smoke did not create two anti-memory repositories");
+      }
+
+      const concurrentAntiMemoryPromotionResults = await Promise.allSettled([
+        firstConcurrentAntiMemoryRepository.promoteReviewedAntiMemoryCandidate({
+          candidateId: concurrentAntiMemoryCandidate.id,
+          reviewer: "memory-governance-concurrency-smoke-a",
+          decision: "accepted",
+          recordKey: `anti-memory-governance-concurrent-a:${marker}`,
+          metadata: {
+            smokeId: marker,
+            lifecycleProbe: "concurrent-anti-memory-promotion"
+          }
+        }),
+        secondConcurrentAntiMemoryRepository.promoteReviewedAntiMemoryCandidate({
+          candidateId: concurrentAntiMemoryCandidate.id,
+          reviewer: "memory-governance-concurrency-smoke-b",
+          decision: "accepted",
+          recordKey: `anti-memory-governance-concurrent-b:${marker}`,
+          metadata: {
+            smokeId: marker,
+            lifecycleProbe: "concurrent-anti-memory-promotion"
+          }
+        })
+      ]);
+      const concurrentAntiMemoryRows = await db
+        .select()
+        .from(antiMemoryRecords)
+        .where(sql`${antiMemoryRecords.metadata}->>'lifecycleProbe' = 'concurrent-anti-memory-promotion'
+          AND ${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
+      const concurrentAntiMemoryCandidateReadback = await memoryRepository.getAntiMemoryCandidateById(
+        concurrentAntiMemoryCandidate.id
+      );
+
+      assertSmokeReadbackChecks([
+        {
+          label: "concurrent anti-memory promotion has one winner",
+          passed: fulfilledCount(concurrentAntiMemoryPromotionResults) === 1
+        },
+        {
+          label: "concurrent anti-memory promotion creates one record",
+          passed: concurrentAntiMemoryRows.length === 1
+        },
+        {
+          label: "concurrent anti-memory candidate is accepted once",
+          passed: concurrentAntiMemoryCandidateReadback?.status === "accepted"
+        }
+      ], "Anti-memory governance concurrency falsifier failed");
+    } finally {
+      await Promise.all(concurrentAntiMemoryClients.map((concurrentClient) => concurrentClient.end()));
+    }
+
     const antiMemoryRecord = await memoryRepository.promoteReviewedAntiMemoryCandidate({
       candidateId: antiMemoryCandidate.id,
       reviewer: "memory-governance-smoke",
@@ -240,6 +589,19 @@ export const runMemoryGovernanceSmokeCheck = async (
     );
     const reviewedAntiMemoryCandidateStatus =
       reviewedAntiMemoryCandidate?.status ?? "missing";
+    await assertRejected(
+      memoryRepository.rejectAntiMemoryCandidate({
+        candidateId: antiMemoryCandidate.id,
+        reviewer: "memory-governance-smoke-after-accept",
+        reason: "An accepted anti-memory candidate must not be rejected afterward.",
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "reject-after-accept"
+        }
+      }),
+      "expected proposed or candidate status",
+      "Memory governance allowed anti-memory rejection after acceptance"
+    );
     const runAntiMemory = await memoryRepository.listAntiMemoryForRun(executionRun.id);
     const versionRows = await db
       .select()
@@ -276,6 +638,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "invalidated memory excluded from active list",
         passed: !activeMemoryAfterInvalidation.some((record) => record.id === memoryRecord.id)
+      },
+      {
+        label: "same-project memory superseded",
+        passed: supersededRecord.status === "superseded"
       },
       { label: "memory version row count", passed: versionRows.length === 1 },
       {

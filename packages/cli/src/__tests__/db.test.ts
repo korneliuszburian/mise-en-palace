@@ -138,7 +138,11 @@ describe("runCli", () => {
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
 
     expect(packageJson.scripts?.["alpha:verify:full"]).toContain("pnpm eval:db");
+    expect(packageJson.scripts?.["alpha:verify:full"]).toContain(
+      "pnpm db:smoke:memory-governance"
+    );
     expect(workflow).toContain("run: pnpm eval:db");
+    expect(workflow).toContain("run: pnpm db:smoke:memory-governance");
   });
 
   it("fails real recall eval when any distractor-competition case loses", () => {

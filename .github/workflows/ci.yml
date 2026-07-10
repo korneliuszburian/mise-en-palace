@@ -99,6 +99,9 @@ jobs:
       - name: DB smoke
         run: pnpm db:smoke
 
+      - name: DB memory governance smoke
+        run: pnpm db:smoke:memory-governance
+
       - name: DB memory loop smoke
         run: pnpm db:smoke:memory-loop
 
