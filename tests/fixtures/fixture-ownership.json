@@ -1,0 +1,665 @@
+{
+  "schemaVersion": "fixture-ownership.v1",
+  "fixtures": [
+    {
+      "path": "tests/fixtures/activation/noisy-brain-selection.json",
+      "consumer": "decision-packet/eval test",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/behavior-fixtures/boundary-behavior.json",
+      "consumer": "behavior gate and adapter tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/behavior-fixtures/codex-brief-behavior.json",
+      "consumer": "behavior gate and adapter tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/behavior-fixtures/evidence-capture-behavior.json",
+      "consumer": "behavior gate and adapter tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/behavior-fixtures/memory-behavior.json",
+      "consumer": "behavior gate and adapter tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/behavior-fixtures/observation-reflection-behavior.json",
+      "consumer": "behavior gate and adapter tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/catalog.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/consensus-relation-maintenance-review-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/cost-aware-acquisition-escalation-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/evidence-proof-non-proof-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/graph-relation-readback-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/knowledge-read-only-preview-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/krn-brain-layer-model-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/maintenance-candidate-only-runtime-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/reference-implementation-recipe-clone-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/source-to-decision-retention-gate.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/target-repo-write-authority-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-knowledge-parser-exemplar.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/corpus/knowledge/untrusted-context-warning-boundary.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-knowledge/read-models/ts-boundary-unknown-first-result-state.json",
+      "consumer": "brain recall and knowledge read-model tests",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/brain-ranking/brain-ranking-eval.json",
+      "consumer": "brain ranking eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",
+      "consumer": "recorded obedience eval",
+      "provenance": "recorded replay fixture captured 2026-07-01",
+      "capturedAt": "2026-07-01",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "recorded_replay",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json",
+      "consumer": "recorded obedience eval",
+      "provenance": "recorded replay fixture captured 2026-07-06",
+      "capturedAt": "2026-07-06",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "recorded_replay",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
+      "consumer": "corpus import eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json",
+      "consumer": "memory advantage eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+      "consumer": "decision-packet/eval test",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json",
+      "consumer": "decision-packet/eval test",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json",
+      "consumer": "decision-packet/eval test",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json",
+      "consumer": "decision-packet/eval test",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json",
+      "consumer": "source graph ranking eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/AGENTS.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/docs/job-contract.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/src/jobQueue.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/tests/jobQueue.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/AGENTS.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/docs/config-contract.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/src/config.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/src/configReadback.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/tests/config.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/.env.example",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/.muke/state.fixture.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/.supersearch/runtime/cache.fixture.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/AGENTS.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/README.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/docs/target-runbook.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/package.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/src/index.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/tests/readiness.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/typescript-basic/tsconfig.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/.gitignore",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/AGENTS.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/README.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/docs/repair-contract.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/package.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/README.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/config.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/index.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/userService.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/tests/userService.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scripts/materialize-scenario.mjs",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/src/config.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/src/index.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/src/userService.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/tests/userService.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/tsconfig.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    }
+  ]
+}

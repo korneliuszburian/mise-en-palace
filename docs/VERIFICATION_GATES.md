@@ -12,6 +12,7 @@ Run the relevant local contract before closing work:
 rtk pnpm toolchain:check
 rtk pnpm platform:check
 rtk pnpm workspace:check
+rtk pnpm fixtures:check
 rtk proxy pnpm typecheck
 rtk proxy pnpm test
 rtk pnpm quality:fallow:ci

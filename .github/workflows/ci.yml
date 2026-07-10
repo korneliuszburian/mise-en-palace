@@ -49,6 +49,9 @@ jobs:
       - name: Workspace script contract
         run: pnpm workspace:check
 
+      - name: Fixture ownership contract
+        run: pnpm fixtures:check
+
       - name: Typecheck
         run: pnpm typecheck
 

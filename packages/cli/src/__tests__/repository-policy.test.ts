@@ -270,6 +270,64 @@ describe("repository policy boundaries", () => {
     }
   });
 
+  it("requires every fixture to have an owner and rejects unreferenced files", () => {
+    const checker = join(repoRoot, "scripts/check-fixture-ownership.mjs");
+    const current = execFileSync(process.execPath, [checker], {
+      cwd: repoRoot,
+      encoding: "utf8"
+    });
+    const manifest = JSON.parse(readRootFile("tests/fixtures/fixture-ownership.json")) as {
+      fixtures?: Array<Record<string, unknown>>;
+    };
+    const recorded = manifest.fixtures?.find((entry) => entry.path ===
+      "tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json");
+
+    expect(current).toContain("Fixture ownership check passed");
+    expect(recorded).toMatchObject({
+      provenance: expect.any(String),
+      capturedAt: "2026-07-06",
+      checkerVersion: expect.any(String),
+      replayOwner: expect.any(String),
+      mode: "recorded_replay"
+    });
+
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fixture-ownership-"));
+    const fixtureDirectory = join(fixtureRoot, "tests/fixtures");
+    mkdirSync(fixtureDirectory, { recursive: true });
+    writeFileSync(join(fixtureDirectory, "owned.json"), "{}\n");
+    writeFileSync(join(fixtureDirectory, "fixture-ownership.json"), JSON.stringify({
+      schemaVersion: "fixture-ownership.v1",
+      fixtures: [{
+        path: "tests/fixtures/owned.json",
+        consumer: "fixture contract test",
+        provenance: "test fixture",
+        capturedAt: "2026-07-10",
+        checkerVersion: "fixture-ownership.v1",
+        replayOwner: "@korneliuszburian",
+        archival: null
+      }]
+    }));
+
+    try {
+      writeFileSync(join(fixtureDirectory, "unowned.json"), "{}\n");
+      let failure: { status?: number; stderr?: string } | undefined;
+      try {
+        execFileSync(process.execPath, [checker, "--root", fixtureRoot], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          stdio: "pipe"
+        });
+      } catch (error) {
+        failure = error as { status?: number; stderr?: string };
+      }
+
+      expect(failure?.status).toBe(1);
+      expect(failure?.stderr).toContain("unreferenced fixture");
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
     const security = readRootFile("SECURITY.md");
     const contributing = readRootFile("CONTRIBUTING.md");
