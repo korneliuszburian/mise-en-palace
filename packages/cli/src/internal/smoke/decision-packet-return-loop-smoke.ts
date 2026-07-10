@@ -1154,6 +1154,7 @@ const runSelectorFeedbackProof = async (
     sourceRepository
   } = input.repositories;
   const selectorSourceArtifact = await sourceRepository.createSourceArtifact({
+    projectId: input.projectId,
     kind: "run",
     uri: `operator://decision-packet-return-loop/${input.marker}/selector-feedback`,
     title: "DecisionPacket selector feedback smoke source",
