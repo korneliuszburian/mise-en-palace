@@ -193,6 +193,40 @@ describe("repository policy boundaries", () => {
     expect(failure?.stderr).toContain("use Linux, macOS, or WSL");
   });
 
+  it("blocks the current private source packages from release", () => {
+    const checker = join(repoRoot, "scripts/check-release-boundary.mjs");
+    const releaseDocs = readRootFile("docs/RELEASE_BOUNDARY.md");
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      private?: boolean;
+      version?: string;
+      prepublishOnly?: string;
+      scripts?: Record<string, string>;
+    };
+
+    expect(packageJson.private).toBe(true);
+    expect(packageJson.version).toBe("0.0.0");
+    expect(packageJson.scripts?.["release:check"]).toContain("check-release-boundary.mjs");
+    expect(packageJson.prepublishOnly).toBe("node scripts/check-release-boundary.mjs");
+    expect(releaseDocs).toContain("compiled artifacts");
+    expect(releaseDocs).toContain("SBOM");
+    expect(releaseDocs).toContain("migration and upgrade");
+
+    let failure: { status?: number; stderr?: string } | undefined;
+    try {
+      execFileSync(process.execPath, [checker], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: "pipe"
+      });
+    } catch (error) {
+      failure = error as { status?: number; stderr?: string };
+    }
+
+    expect(failure?.status).toBe(1);
+    expect(failure?.stderr).toContain("internal alpha");
+    expect(failure?.stderr).toContain("@krn/core");
+  });
+
   it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
     const security = readRootFile("SECURITY.md");
     const contributing = readRootFile("CONTRIBUTING.md");

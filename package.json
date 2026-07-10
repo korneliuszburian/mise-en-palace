@@ -2,6 +2,7 @@
   "name": "mise-en-palace",
   "version": "0.0.0",
   "private": true,
+  "prepublishOnly": "node scripts/check-release-boundary.mjs",
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "engines": {
@@ -71,6 +72,7 @@
     "beads:validate": "node scripts/validate-beads-history.mjs validate --issues .beads/issues.jsonl --interactions .beads/interactions.jsonl",
     "beads:roundtrip": "node scripts/validate-beads-history.mjs roundtrip --issues .beads/issues.jsonl --interactions .beads/interactions.jsonl",
     "platform:check": "node scripts/check-platform.mjs",
+    "release:check": "node scripts/check-release-boundary.mjs",
     "toolchain:check": "node scripts/check-toolchain.mjs",
     "security:secrets": "node scripts/security-policy.mjs secrets --tracked",
     "security:licenses": "mkdir -p .local-lab/security && pnpm licenses list --json > .local-lab/security/licenses.json && node scripts/security-policy.mjs licenses --report .local-lab/security/licenses.json",

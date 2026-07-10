@@ -67,6 +67,12 @@ falsifier.
 Current status: controlled internal alpha for technical operators. Not
 product-ready.
 
+Release boundary: packages are private `0.0.0` source contracts. Run
+`rtk pnpm release:check` before any publish attempt; it must fail until an
+explicit release decision covers artifacts, exports, support, semver,
+migrations, licensing, security, SBOM, and upgrades. See
+`docs/RELEASE_BOUNDARY.md`.
+
 Built enough to keep:
 
 - strict pnpm TypeScript workspace;

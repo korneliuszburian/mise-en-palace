@@ -10,6 +10,7 @@
     }
   },
   "scripts": {
+    "prepublishOnly": "node ../../scripts/check-release-boundary.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },

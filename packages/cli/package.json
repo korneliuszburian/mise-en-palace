@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepublishOnly": "node ../../scripts/check-release-boundary.mjs",
     "krn": "tsx src/index.ts",
     "eval:decision-packet": "tsx src/internal/eval/run-decision-packet-eval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
     "eval:codex-decision-packet-obedience:recorded": "tsx src/internal/eval/run-codex-decision-packet-obedience-eval.ts ../../tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",

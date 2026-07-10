@@ -22,6 +22,10 @@ The supported shell contract is Linux/macOS/WSL with `bash`, `sh`, `dash`, or
 `zsh`. Native Windows shells are unsupported; run the repository from WSL or a
 POSIX host and verify the boundary with `rtk pnpm platform:check`.
 
+Release work is currently blocked by the private internal-alpha boundary. Use
+`rtk pnpm release:check`; do not publish or describe the source packages as
+stable. The future-release checklist is in `docs/RELEASE_BOUNDARY.md`.
+
 For a code change, run the smallest relevant proof path and then the root gates:
 
 ```sh
