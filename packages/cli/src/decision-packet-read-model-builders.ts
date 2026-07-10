@@ -4,6 +4,7 @@ import {
   buildFeedbackRecommendationReadback,
   readMetadataObjectList,
   readMetadataString,
+  readMetadataStringList,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
@@ -134,6 +135,7 @@ const activationCandidateResource = (
 ): DecisionPacketReadModelActivationCandidate => {
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
+  const sourceRejectionIds = readMetadataStringList(candidate.metadata, "sourceRejectionIds");
   const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
   const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
   const sourceClaimAuthority = sourceClaimAuthorityFromMetadata(candidate.metadata);
@@ -156,6 +158,7 @@ const activationCandidateResource = (
     ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
     ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost }),
+    ...(sourceRejectionIds.length === 0 ? {} : { sourceRejectionIds }),
     ...(pendingAntiMemoryReview === undefined ? {} : { pendingAntiMemoryReview })
   };
 };

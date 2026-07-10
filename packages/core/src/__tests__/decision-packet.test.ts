@@ -53,8 +53,15 @@ const readModel = {
       candidates: [{
         subjectType: "source_claim",
         subjectId: "claim-current",
+        sourceRejectionIds: ["source-rejection-current"],
         sourceDecisionSupportBoost: {
           sourceDecisionEdgeIds: ["source-decision-edge-current"],
+          sourceDecisionIds: [
+            "source-decision-current",
+            "source-decision-stale",
+            "source-decision-noise",
+            "source-decision-conflicted"
+          ],
           targets: [{
             sourceDecisionEdgeId: "source-decision-edge-current",
             targetType: "architecture_decision",
@@ -261,14 +268,14 @@ describe("DecisionPacket builder", () => {
       "source-decision-conflicted"
     ]);
     expect(packet.staleKnowledgeIds).toEqual(["memory-current"]);
-    expect(packet.noiseKnowledgeIds).toEqual(["memory-noise"]);
-    expect(packet.unknownKnowledgeIds).toEqual(["memory-unknown"]);
+    expect(packet.noiseKnowledgeIds).toEqual([]);
+    expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
     expect(packet.rejectedPathIds).toEqual([
       "anti-memory-superseded-template",
-      "claim-superseded",
-      "source-decision-rejected"
+      "claim-superseded"
     ]);
+    expect(packet.sourceRejectionIds).toEqual(["source-rejection-current"]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
     expect(packet.severeStaleAuthorityIds).toEqual([]);
     expect(packet.falsifiers).toEqual([
@@ -313,6 +320,68 @@ describe("DecisionPacket builder", () => {
 
     expect(packet.governingDecisionIds).toEqual(["source-decision-current"]);
     expect(packet.governingStatements).not.toContain("owner-file:project-1:AGENTS.md");
+  });
+
+  it("derives governing prose only from included activation subjects", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        inclusionDetails: readModel.context.inclusionDetails.filter((inclusion) =>
+          inclusion.subjectId !== "memory-excluded"
+        ),
+        activationTrace: {
+          ...readModel.context.activationTrace,
+          candidates: [
+            ...(readModel.context.activationTrace?.candidates ?? []),
+            {
+              subjectType: "memory_record",
+              subjectId: "memory-excluded",
+              projectStandardDecision: {
+                kind: "krn.projectStandardDecision.v1",
+                memoryRecordId: "memory-excluded",
+                key: "excluded-standard",
+                sourceRefs: ["excluded-source"],
+                mechanism: "Excluded activation candidates must not become packet authority.",
+                krnImplication: "Only included subjects can contribute governing prose.",
+                decision: "Never expose this excluded standard as governing guidance.",
+                consumer: "DecisionPacket",
+                falsifier: "The excluded standard appears in governingStatements.",
+                validFrom: now,
+                doesNotProve: "This test does not prove source truth."
+              }
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-excluded",
+              sourceDecisionSupportBoost: {
+                sourceDecisionEdgeIds: ["hidden-edge"],
+                sourceDecisionIds: ["hidden-decision"],
+                targets: [{
+                  sourceDecisionEdgeId: "hidden-edge",
+                  targetType: "architecture_decision",
+                  targetId: "hidden-architecture-decision"
+                }],
+                confidence: ["high"],
+                supportTypes: ["decision"],
+                doesNotProve: "This test does not prove source truth."
+              },
+              sourceRejectionIds: ["hidden-source-rejection"]
+            }
+          ]
+        }
+      }
+    });
+
+    expect(packet.governingStatements).not.toContain(
+      "Never expose this excluded standard as governing guidance."
+    );
+    expect(packet.taskStandardDecisions).not.toEqual([
+      expect.objectContaining({ key: "excluded-standard" })
+    ]);
+    expect(packet.governingDecisionIds).not.toContain("hidden-architecture-decision");
+    expect(packet.sourceDecisionEdgeIds).not.toContain("hidden-edge");
+    expect(packet.sourceRejectionIds).not.toContain("hidden-source-rejection");
   });
 
   it("uses the active evidence contract instead of historical command observations", () => {
@@ -420,6 +489,8 @@ describe("DecisionPacket builder", () => {
     expect(packet.governingStatements).toEqual([]);
     expect(packet.staleDecisionIds).toEqual([]);
     expect(packet.noiseDecisionIds).toEqual([]);
+    expect(packet.rejectedPathIds).toEqual([]);
+    expect(packet.sourceRejectionIds).toEqual([]);
   });
 
   it("keeps authority-superseded source claims as superseded rejected paths", () => {
@@ -581,7 +652,8 @@ describe("DecisionPacket builder", () => {
 
     expect(packet.caveatedSourceClaimIds).toEqual(["claim-hurt"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-hurt"]);
-    expect(packet.rejectedPathIds).toContain("source-decision-feedback-rejected");
+    expect(packet.rejectedPathIds).not.toContain("source-decision-feedback-rejected");
+    expect(packet.sourceRejectionIds).toEqual([]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-hurt-feedback:no-governing-decision",
       "evidence-gap:run-hurt-feedback:caveated-source-authority:claim-hurt",

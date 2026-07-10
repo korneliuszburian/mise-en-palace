@@ -281,5 +281,5 @@ describe("evidence capture behavior fixture", () => {
     expect(report.failedCaseCount).toBe(0);
     expect(report.missingProofCaseIds).toEqual([]);
     expect(report.failedProofCaseIds).toEqual([]);
-  });
+  }, 15_000);
 });

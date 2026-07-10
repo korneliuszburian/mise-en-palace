@@ -67,6 +67,7 @@ export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
 
 export interface DecisionPacketReadModelSourceDecisionSupportBoost {
   sourceDecisionEdgeIds: string[];
+  sourceDecisionIds?: string[];
   targets: DecisionPacketReadModelSourceDecisionSupportTarget[];
   confidence: string[];
   supportTypes: string[];
@@ -107,6 +108,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
   sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
+  sourceRejectionIds?: string[];
   pendingAntiMemoryReview?: DecisionPacketReadModelPendingAntiMemoryReview;
 }
 

@@ -573,6 +573,9 @@ const sourceDecisionSupportBoostMetadata = (
   return {
     sourceDecisionSupportBoost: {
       sourceDecisionEdgeIds: edges.map((edge) => edge.id),
+      sourceDecisionIds: [...new Set(edges.flatMap((edge) =>
+        edge.sourceDecisionId === undefined ? [] : [edge.sourceDecisionId]
+      ))],
       targets: edges.map((edge) => ({
         sourceDecisionEdgeId: edge.id,
         targetType: edge.targetType,
@@ -747,7 +750,8 @@ export const retrieveActivationCandidates = async (
               status: authorityAssessment.status,
               reasons: authorityAssessment.reasons,
               caveats: authorityAssessment.caveats
-            }
+            },
+            sourceRejectionIds: sourceConsensusEntry?.rejectionIds ?? []
           }
         };
       }), {

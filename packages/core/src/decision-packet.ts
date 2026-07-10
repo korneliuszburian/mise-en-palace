@@ -317,12 +317,14 @@ export interface DecisionPacketActivationCandidateInput {
   };
   sourceDecisionSupportBoost?: {
     sourceDecisionEdgeIds: readonly string[];
+    sourceDecisionIds?: readonly string[];
     targets: readonly {
       sourceDecisionEdgeId: string;
       targetType: SourceDecisionTargetType;
       targetId: string;
     }[];
   };
+  sourceRejectionIds?: readonly string[];
   pendingAntiMemoryReview?: {
     antiMemoryCandidateIds: readonly string[];
     feedbackDeltaIds: readonly string[];
@@ -426,7 +428,7 @@ const canonicalJson = (value: unknown): string => {
 const sourceDecisionEdgeIdsFor = (
   readModel: DecisionPacketReadModelInput,
   sourceClaimIds: readonly string[]
-): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.subjectType === "source_claim" && sourceClaimIds.includes(candidate.subjectId)
     ? candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
     : []
@@ -443,7 +445,7 @@ const sourceDecisionTargetsFor = (
     sourceDecisionEdgeIds: string[];
   }>();
 
-  for (const target of readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  for (const target of includedActivationCandidatesFor(readModel).flatMap((candidate) =>
     candidate.subjectType === "source_claim" && allowedSourceClaimIds.has(candidate.subjectId)
       ? candidate.sourceDecisionSupportBoost?.targets ?? []
       : []
@@ -476,11 +478,31 @@ const sourceClaimIdsFor = (
   .filter((inclusion) => inclusion.subjectType === "source_claim")
   .map((inclusion) => inclusion.subjectId));
 
+const includedActivationCandidatesFor = (
+  readModel: DecisionPacketReadModelInput
+): readonly DecisionPacketActivationCandidateInput[] => {
+  const includedSubjectKeys = new Set(readModel.context.inclusionDetails.map((inclusion) =>
+    `${inclusion.subjectType}:${inclusion.subjectId}`
+  ));
+
+  return readModel.context.activationTrace?.candidates.filter((candidate) =>
+    includedSubjectKeys.has(`${candidate.subjectType}:${candidate.subjectId}`)
+  ) ?? [];
+};
+
+const sourceDecisionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
+  candidate.subjectType === "source_claim"
+    ? candidate.sourceDecisionSupportBoost?.sourceDecisionIds ?? []
+    : []
+));
+
 const sourceClaimAuthorityCandidateFor = (
   readModel: DecisionPacketReadModelInput,
   sourceClaimId: string
 ): DecisionPacketActivationCandidateInput | undefined =>
-  readModel.context.activationTrace?.candidates.find((candidate) =>
+  includedActivationCandidatesFor(readModel).find((candidate) =>
     candidate.subjectType === "source_claim" && candidate.subjectId === sourceClaimId
   );
 
@@ -525,7 +547,7 @@ const unknownSourceClaimIdsFor = (
 
 const sourceClaimIdsWithDecisionSupportFor = (
   readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.subjectType === "source_claim" &&
   (candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds.length ?? 0) > 0
     ? [candidate.subjectId]
@@ -548,7 +570,7 @@ const caveatedSourceClaimIdsFor = (
   const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
   const maintenanceFeedbackSourceClaimIds = new Set(sourceClaimIdsWithReviewableFeedback(readModel));
   const pendingAntiMemoryReviewSourceClaimIds = new Set(
-    readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    includedActivationCandidatesFor(readModel).flatMap((candidate) =>
       candidate.subjectType === "source_claim" &&
       candidate.pendingAntiMemoryReview !== undefined
         ? [candidate.subjectId]
@@ -566,13 +588,19 @@ const caveatedSourceClaimIdsFor = (
 const sourceDecisionIdsWithUsefulness = (
   readModel: DecisionPacketReadModelInput,
   outcomes: readonly SourceUsefulnessOutcome[]
-): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+): string[] => {
+  const selectedSourceDecisionIds = new Set(sourceDecisionIdsFor(readModel));
+
+  return unique(readModel.feedbackDeltas.flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-    outcome.sourceDecisionId !== undefined && outcomes.includes(outcome.outcome)
+    outcome.sourceDecisionId !== undefined &&
+    selectedSourceDecisionIds.has(outcome.sourceDecisionId) &&
+    outcomes.includes(outcome.outcome)
       ? [outcome.sourceDecisionId]
       : []
   )
-));
+  ));
+};
 
 const memoryRefsFor = (
   readModel: DecisionPacketReadModelInput
@@ -583,11 +611,17 @@ const memoryRefsFor = (
 const knowledgeIdsWithUsefulness = (
   readModel: DecisionPacketReadModelInput,
   outcomes: readonly SourceUsefulnessOutcome[]
-): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+): string[] => {
+  const selectedMemoryIds = new Set(memoryRefsFor(readModel));
+
+  return unique(readModel.feedbackDeltas.flatMap((feedback) =>
   feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
-    outcomes.includes(outcome.outcome) ? [outcome.knowledgeId] : []
+    selectedMemoryIds.has(outcome.knowledgeId) && outcomes.includes(outcome.outcome)
+      ? [outcome.knowledgeId]
+      : []
   )
-));
+  ));
+};
 
 const memoryRefsWithReviewableKnowledgeFeedback = (
   readModel: DecisionPacketReadModelInput
@@ -607,7 +641,7 @@ const memoryRefsWithPendingAntiMemoryReview = (
 ): string[] => {
   const memoryRefs = new Set(memoryRefsFor(readModel));
 
-  return unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  return unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
     candidate.subjectType === "memory_record" &&
     memoryRefs.has(candidate.subjectId) &&
     candidate.pendingAntiMemoryReview !== undefined
@@ -616,16 +650,6 @@ const memoryRefsWithPendingAntiMemoryReview = (
   ) ?? []);
 };
 
-const rejectedSourceDecisionIdsFor = (
-  readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
-  feedback.candidates.flatMap((candidate) =>
-    candidate.kind === "source_decision_candidate" && candidate.status === "reject"
-      ? [candidate.id]
-      : []
-  )
-));
-
 const verificationCommandsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => unique(readModel.evidenceContract?.commands.map((command) => command.command) ?? []);
@@ -633,7 +657,7 @@ const verificationCommandsFor = (
 const taskStandardDecisionsFor = (
   readModel: DecisionPacketReadModelInput
 ): DecisionPacketTaskStandard[] => {
-  const decisions = readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  const decisions = includedActivationCandidatesFor(readModel).flatMap((candidate) =>
     candidate.projectStandardDecision === undefined
       ? []
       : [{
@@ -654,7 +678,7 @@ const taskStandardDecisionsFor = (
             : { rejectedPath: candidate.projectStandardDecision.rejectedPath }),
           doesNotProve: candidate.projectStandardDecision.doesNotProve
         }]
-  ) ?? [];
+  );
   const byKey = new Map<string, DecisionPacketTaskStandard>();
 
   for (const decision of decisions) {
@@ -670,9 +694,9 @@ const taskStandardDecisionsFor = (
 
 const governingStatementsFor = (
   readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
-) ?? []);
+));
 
 const antiMemoryBlockedPathIdsFor = (
   readModel: DecisionPacketReadModelInput
@@ -701,15 +725,38 @@ const sourceClaimExclusionIdsFor = (
   )
   .map((exclusion) => exclusion.subjectId) ?? []);
 
+const sourceRejectionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => {
+  const sourceClaimIds = new Set([
+    ...sourceClaimIdsFor(readModel),
+    ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons)
+  ]);
+
+  return unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+    candidate.subjectType === "source_claim" && sourceClaimIds.has(candidate.subjectId)
+      ? candidate.sourceRejectionIds ?? []
+      : []
+  ) ?? []);
+};
+
 const sourceClaimAuthorityReasonIdsFor = (
   readModel: DecisionPacketReadModelInput,
   reason: SourceClaimAuthorityReason
-): string[] => unique(readModel.context.activationTrace?.candidates
+): string[] => {
+  const sourceClaimIds = new Set([
+    ...sourceClaimIdsFor(readModel),
+    ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons)
+  ]);
+
+  return unique(readModel.context.activationTrace?.candidates
   .filter((candidate) =>
     candidate.subjectType === "source_claim" &&
+    sourceClaimIds.has(candidate.subjectId) &&
     candidate.sourceClaimAuthorityReasons?.includes(reason) === true
   )
   .map((candidate) => candidate.subjectId) ?? []);
+};
 
 const severeStaleAuthorityIdsFor = (input: {
   readonly governingDecisionIds: readonly string[];
@@ -765,7 +812,7 @@ const sourceRelationSupportEvidenceGapsFor = (input: {
 }): DecisionPacketEvidenceGap[] => {
   const includedSourceClaimIds = new Set(input.includedSourceClaimIds);
 
-  return input.readModel.context.activationTrace?.candidates.flatMap((candidate) => {
+  return includedActivationCandidatesFor(input.readModel).flatMap((candidate) => {
     if (
       candidate.subjectType !== "source_claim" ||
       !includedSourceClaimIds.has(candidate.subjectId)
@@ -819,7 +866,7 @@ export const buildDecisionPacketFromReadModel = (
     ...memoryRefsWithReviewableKnowledgeFeedback(readModel),
     ...memoryRefsWithPendingAntiMemoryReview(readModel)
   ]);
-  const sourceRejectionIds = rejectedSourceDecisionIdsFor(readModel);
+  const sourceRejectionIds = sourceRejectionIdsFor(readModel);
   const supersededPathIds = sourceClaimExclusionIdsFor(
     readModel,
     supersededSourceClaimExclusionReasons
@@ -839,7 +886,6 @@ export const buildDecisionPacketFromReadModel = (
     ...antiMemoryBlockedPathIdsFor(readModel),
     ...authoritySupersededPathIds,
     ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons),
-    ...sourceRejectionIds,
     ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
   ]);
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({

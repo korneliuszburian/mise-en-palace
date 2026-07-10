@@ -335,6 +335,7 @@ export const sourceDecisionSupportBoostFromMetadata = (
   }
 
   const sourceDecisionEdgeIds = readMetadataStringList(value, "sourceDecisionEdgeIds");
+  const sourceDecisionIds = readMetadataStringList(value, "sourceDecisionIds");
   const targets = sourceDecisionSupportTargetsFromMetadata(value);
   const confidence = readMetadataStringList(value, "confidence");
   const supportTypes = readMetadataStringList(value, "supportTypes");
@@ -352,6 +353,7 @@ export const sourceDecisionSupportBoostFromMetadata = (
 
   return {
     sourceDecisionEdgeIds,
+    ...(sourceDecisionIds.length === 0 ? {} : { sourceDecisionIds }),
     targets,
     confidence,
     supportTypes,

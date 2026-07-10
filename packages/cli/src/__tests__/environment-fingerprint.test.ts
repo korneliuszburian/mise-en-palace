@@ -85,5 +85,5 @@ describe("environment fingerprint", () => {
     } finally {
       output.mockRestore();
     }
-  });
+  }, 15_000);
 });

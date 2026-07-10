@@ -186,6 +186,7 @@ const aggregate: HarnessRunAggregate = {
         },
         sourceDecisionSupportBoost: {
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+          sourceDecisionIds: ["source-decision-canonical-agent-1"],
           targets: [{
             sourceDecisionEdgeId: "source-decision-edge-agent-1",
             targetType: "architecture_decision",
@@ -195,7 +196,8 @@ const aggregate: HarnessRunAggregate = {
           supportTypes: ["decision"],
           doesNotProve:
             "SourceDecisionEdge boost does not prove source truth or target correctness."
-        }
+        },
+        sourceRejectionIds: ["source-rejection-agent-1"]
       },
       createdAt: now
     }],
@@ -479,7 +481,7 @@ describe("decision packet CLI", () => {
           targetId: "frontend-bootstrap-standard",
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
         }],
-        sourceRejectionIds: ["source-decision-rejected-agent-1"],
+        sourceRejectionIds: ["source-rejection-agent-1"],
         sourceConsensus: {
           decisionLinkedSourceClaimIds: [],
           caveatedSourceClaimIds: [
@@ -492,17 +494,10 @@ describe("decision packet CLI", () => {
             targetId: "frontend-bootstrap-standard",
             sourceDecisionEdgeIds: ["source-decision-edge-agent-1"]
           }],
-          staleDecisionIds: [
-            "source-decision-stale-agent-1",
-            "source-decision-conflicted-agent-1"
-          ],
+          staleDecisionIds: [],
           supersededPathIds: ["claim-agent-superseded"],
-          rejectedPathIds: [
-            "anti-memory-agent-1",
-            "claim-agent-superseded",
-            "source-decision-rejected-agent-1"
-          ],
-          sourceRejectionIds: ["source-decision-rejected-agent-1"],
+          rejectedPathIds: ["anti-memory-agent-1", "claim-agent-superseded"],
+          sourceRejectionIds: ["source-rejection-agent-1"],
           conflictedDecisionIds: [],
           evidenceGapIds: [
             "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
@@ -530,17 +525,10 @@ describe("decision packet CLI", () => {
         staleKnowledgeIds: ["memory-agent-1"],
         noiseKnowledgeIds: [],
         unknownKnowledgeIds: [],
-        staleDecisionIds: [
-          "source-decision-stale-agent-1",
-          "source-decision-conflicted-agent-1"
-        ],
+        staleDecisionIds: [],
         supersededPathIds: ["claim-agent-superseded"],
-        rejectedPathIds: [
-          "anti-memory-agent-1",
-          "claim-agent-superseded",
-          "source-decision-rejected-agent-1"
-        ],
-        noiseDecisionIds: ["source-decision-noise-agent-1"],
+        rejectedPathIds: ["anti-memory-agent-1", "claim-agent-superseded"],
+        noiseDecisionIds: [],
         severeStaleAuthorityIds: [],
         verificationCommands: ["pnpm --filter frontend test"],
         brief: {
@@ -577,6 +565,7 @@ describe("decision packet CLI", () => {
               },
               sourceDecisionSupportBoost: {
                 sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
+                sourceDecisionIds: ["source-decision-canonical-agent-1"],
                 targets: [{
                   sourceDecisionEdgeId: "source-decision-edge-agent-1",
                   targetType: "architecture_decision",
