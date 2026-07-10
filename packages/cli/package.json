@@ -10,6 +10,7 @@
     "eval:codex-decision-packet-obedience:live-pilot": "tsx src/internal/eval/run-codex-decision-packet-obedience-eval.ts ../../tests/fixtures/codex-decision-packet-obedience/live-pilot-2026-07-06.json",
     "eval:second-repo-decision-packet": "tsx src/internal/eval/run-second-repo-decision-packet-eval.ts ../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json",
     "eval:decision-corpus-import": "tsx src/internal/eval/run-decision-corpus-import.ts ../../tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
+    "eval:paired-live-codex-repair": "tsx src/internal/eval/run-paired-live-codex-repair.ts",
     "eval:corpus-closure": "tsx src/internal/eval/run-corpus-closure-smoke.ts",
     "eval:real-recall": "tsx src/index.ts db smoke real-recall-advantage",
     "eval:determinism": "tsx src/internal/eval/run-deterministic-eval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json ../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json ../../tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",

@@ -605,13 +605,24 @@ describe("runDecisionCorpusImport", () => {
       repositoryWriteCount += 1;
       throw new Error("repository write should not run");
     };
-    const sourceRepository = {
-      createSourceArtifact: failWrite
-    } as DatabaseRuntime["sourceRepository"];
-    const retrievalRepository = {
+    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
+      createSourceArtifact: failWrite,
+      createSourceChunk: failWrite,
+      createSourceClaim: failWrite,
+      getSourceClaimById: async () => undefined,
+      listClaimsForProject: async () => [],
+      createSourceClaimEdge: failWrite,
+      listSourceClaimEdgesForClaim: async () => [],
+      listSourceDecisionEdgesForClaim: async () => [],
+      createSourceDecision: failWrite,
+      createSourceDecisionEdge: failWrite,
+      getSourceDecisionEdgeById: async () => undefined,
+      createSourceRejection: failWrite
+    };
+    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
       createSearchDocument: failWrite,
       searchLexical: async () => []
-    } as NonNullable<DatabaseRuntime["retrievalRepository"]>;
+    };
 
     await expect(persistDecisionCorpusImport({
       runtime: {
