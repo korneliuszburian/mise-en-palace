@@ -13,7 +13,7 @@ import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
 
-type JsonRpcId = string | number | null;
+type JsonRpcId = string | number;
 
 type JsonValue =
   | string
@@ -34,7 +34,7 @@ interface JsonRpcRequest {
 
 interface JsonRpcResponse {
   readonly jsonrpc: "2.0";
-  readonly id: JsonRpcId;
+  readonly id: JsonRpcId | null;
   readonly result?: JsonValue;
   readonly error?: {
     readonly code: number;
@@ -50,6 +50,21 @@ type ToolCallResult = JsonObject & {
   readonly structuredContent?: JsonValue;
   readonly isError?: boolean;
 };
+
+interface ProtocolError {
+  readonly code: number;
+  readonly message: string;
+}
+
+type ToolCallOutcome =
+  | {
+      readonly kind: "result";
+      readonly result: ToolCallResult;
+    }
+  | {
+      readonly kind: "protocol_error";
+      readonly error: ProtocolError;
+    };
 
 export interface DecisionPacketMcpRuntime {
   readonly env: Record<string, string | undefined>;
@@ -68,6 +83,9 @@ const decisionPacketToolName = "krn_decision_packet";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isJsonRpcRequestId = (value: unknown): value is JsonRpcId =>
+  typeof value === "string" || (typeof value === "number" && Number.isInteger(value));
 
 const isJsonValue = (value: unknown): value is JsonValue => {
   if (
@@ -156,7 +174,7 @@ const annotateMcpTransportProof = (
 };
 
 const response = (
-  id: JsonRpcId,
+  id: JsonRpcId | null,
   result: JsonValue
 ): JsonRpcResponse => ({
   jsonrpc: "2.0",
@@ -165,7 +183,7 @@ const response = (
 });
 
 const errorResponse = (
-  id: JsonRpcId,
+  id: JsonRpcId | null,
   code: number,
   message: string
 ): JsonRpcResponse => ({
@@ -179,7 +197,7 @@ const errorResponse = (
 
 const requestId = (
   message: JsonRpcRequest
-): JsonRpcId => message.id === undefined ? null : message.id;
+): JsonRpcId | null => message.id === undefined ? null : message.id;
 
 const toolDefinition = (): JsonValue => ({
   name: decisionPacketToolName,
@@ -255,41 +273,72 @@ const runDecisionPacket = async (
 const runToolCall = async (
   runtime: DecisionPacketMcpRuntime,
   params: unknown
-): Promise<ToolCallResult> => {
+): Promise<ToolCallOutcome> => {
   if (!isRecord(params)) {
-    return textResult("tools/call params must be an object", true);
+    return {
+      kind: "protocol_error",
+      error: {
+        code: -32602,
+        message: "tools/call params must be an object"
+      }
+    };
   }
 
   if (params["name"] !== decisionPacketToolName) {
-    return textResult(`Unknown tool: ${String(params["name"])}`, true);
+    return {
+      kind: "protocol_error",
+      error: {
+        code: -32602,
+        message: `Unknown tool: ${String(params["name"])}`
+      }
+    };
   }
 
   const args = params["arguments"];
 
   if (!isRecord(args) || typeof args["runId"] !== "string" || args["runId"].trim().length === 0) {
-    return textResult("krn_decision_packet requires a non-empty runId argument", true);
+    return {
+      kind: "protocol_error",
+      error: {
+        code: -32602,
+        message: "krn_decision_packet requires a non-empty runId argument"
+      }
+    };
   }
 
   try {
-    return await runDecisionPacket(runtime, args["runId"].trim());
+    return {
+      kind: "result",
+      result: await runDecisionPacket(runtime, args["runId"].trim())
+    };
   } catch (error) {
-    return textResult(error instanceof Error ? error.message : String(error), true);
+    return {
+      kind: "result",
+      result: textResult(error instanceof Error ? error.message : String(error), true)
+    };
   }
 };
 
 const parseRequest = (
   value: unknown
-): JsonRpcRequest | undefined =>
-  isRecord(value) &&
-  value["jsonrpc"] === "2.0" &&
-  typeof value["method"] === "string"
-    ? {
-        jsonrpc: "2.0",
-        method: value["method"],
-        ...(value["id"] === undefined ? {} : { id: value["id"] as JsonRpcId }),
-        ...(value["params"] === undefined ? {} : { params: value["params"] })
-      }
-    : undefined;
+): JsonRpcRequest | undefined => {
+  if (!isRecord(value) || value["jsonrpc"] !== "2.0" || typeof value["method"] !== "string") {
+    return undefined;
+  }
+
+  const id = value["id"];
+
+  if (id !== undefined && !isJsonRpcRequestId(id)) {
+    return undefined;
+  }
+
+  return {
+    jsonrpc: "2.0",
+    method: value["method"],
+    ...(id === undefined ? {} : { id }),
+    ...(value["params"] === undefined ? {} : { params: value["params"] })
+  };
+};
 
 export const handleDecisionPacketMcpMessage = async (
   value: unknown,
@@ -301,12 +350,19 @@ export const handleDecisionPacketMcpMessage = async (
     return errorResponse(null, -32600, "Invalid JSON-RPC request");
   }
 
-  if (message.id === undefined && message.method === "notifications/initialized") {
+  if (message.id === undefined) {
     return undefined;
   }
 
   switch (message.method) {
     case "initialize":
+      if (!isRecord(message.params) || typeof message.params["protocolVersion"] !== "string") {
+        return errorResponse(
+          requestId(message),
+          -32602,
+          "initialize requires a protocolVersion"
+        );
+      }
       return response(requestId(message), initializeResult(message.params));
     case "ping":
       return response(requestId(message), {});
@@ -314,8 +370,12 @@ export const handleDecisionPacketMcpMessage = async (
       return response(requestId(message), {
         tools: [toolDefinition()]
       });
-    case "tools/call":
-      return response(requestId(message), await runToolCall(runtime, message.params));
+    case "tools/call": {
+      const outcome = await runToolCall(runtime, message.params);
+      return outcome.kind === "protocol_error"
+        ? errorResponse(requestId(message), outcome.error.code, outcome.error.message)
+        : response(requestId(message), outcome.result);
+    }
     default:
       return errorResponse(requestId(message), -32601, `Method not found: ${message.method}`);
   }

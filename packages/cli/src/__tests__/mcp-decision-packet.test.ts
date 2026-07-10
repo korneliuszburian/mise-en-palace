@@ -264,6 +264,120 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
+  it("round-trips string and integer request IDs and rejects invalid IDs", async () => {
+    const validIds: Array<string | number> = ["request-id", 0, 7];
+
+    for (const id of validIds) {
+      const reply = await handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id,
+        method: "ping"
+      }, runtime());
+
+      expect(reply).toMatchObject({
+        jsonrpc: "2.0",
+        id,
+        result: {}
+      });
+    }
+
+    for (const id of [null, true, 1.5, { nested: "id" }]) {
+      const reply = await handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id,
+        method: "ping"
+      }, runtime());
+
+      expect(reply).toEqual({
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32600,
+          message: "Invalid JSON-RPC request"
+        }
+      });
+    }
+  });
+
+  it("does not respond to any notification, including unknown notifications", async () => {
+    const messages: unknown[] = [
+      { jsonrpc: "2.0", method: "notifications/initialized" },
+      { jsonrpc: "2.0", method: "ping" },
+      { jsonrpc: "2.0", method: "unknown/method" },
+      {
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: {
+          name: "missing-tool"
+        }
+      }
+    ];
+
+    for (const message of messages) {
+      await expect(handleDecisionPacketMcpMessage(message, runtime())).resolves.toBeUndefined();
+    }
+  });
+
+  it("requires an initialize protocol version and distinguishes unknown tools from execution errors", async () => {
+    const missingVersion = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "initialize-missing-version",
+      method: "initialize",
+      params: {}
+    }, runtime());
+
+    expect(missingVersion).toMatchObject({
+      id: "initialize-missing-version",
+      error: {
+        code: -32602,
+        message: "initialize requires a protocolVersion"
+      }
+    });
+
+    const unknownTool = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "unknown-tool",
+      method: "tools/call",
+      params: {
+        name: "missing-tool",
+        arguments: {}
+      }
+    }, runtime());
+
+    expect(unknownTool).toMatchObject({
+      id: "unknown-tool",
+      error: {
+        code: -32602,
+        message: "Unknown tool: missing-tool"
+      }
+    });
+
+    const executionError = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "execution-error",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1"
+        }
+      }
+    }, runtime(async () => {
+      throw new Error("database unavailable");
+    }));
+
+    expect(executionError).toMatchObject({
+      id: "execution-error",
+      result: {
+        isError: true,
+        content: [{
+          type: "text",
+          text: "database unavailable"
+        }]
+      }
+    });
+  });
+
   it("wraps the existing DecisionPacket contract as structured tool output", async () => {
     const seenRunIds: string[] = [];
     const reply = await handleDecisionPacketMcpMessage({
@@ -377,7 +491,7 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
-  it("reports invalid tool input as a tool error instead of inventing a packet", async () => {
+  it("reports invalid tool input as a protocol error instead of inventing a packet", async () => {
     const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: 3,
@@ -389,12 +503,9 @@ describe("DecisionPacket MCP wrapper", () => {
     }, runtime());
 
     expect(reply).toMatchObject({
-      result: {
-        isError: true,
-        content: [{
-          type: "text",
-          text: "krn_decision_packet requires a non-empty runId argument"
-        }]
+      error: {
+        code: -32602,
+        message: "krn_decision_packet requires a non-empty runId argument"
       }
     });
   });
@@ -453,5 +564,44 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(proves).toContain("DecisionPacket was served through the read-only krn_decision_packet MCP tool");
     expect(doesNotProve).not.toContain("MCP integration");
     expect(doesNotProve).toContain("broad MCP product readiness");
+  });
+
+  it("keeps stdio framing deterministic for notifications, malformed input, and invalid IDs", async () => {
+    async function* input(): AsyncIterable<string> {
+      yield "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n";
+      yield "{not-json}\n";
+      yield "{\"jsonrpc\":\"2.0\",\"id\":null,\"method\":\"ping\"}\n";
+      yield "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"ping\"}\n";
+    }
+
+    const output: string[] = [];
+
+    await serveDecisionPacketMcpStdio(input(), {
+      write: (chunk) => output.push(chunk)
+    }, runtime());
+
+    expect(output.map((line) => JSON.parse(line))).toEqual([
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32700,
+          message: "Parse error"
+        }
+      },
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32600,
+          message: "Invalid JSON-RPC request"
+        }
+      },
+      {
+        jsonrpc: "2.0",
+        id: 3,
+        result: {}
+      }
+    ]);
   });
 });
