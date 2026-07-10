@@ -169,6 +169,13 @@
       "when": 1783657427699,
       "tag": "0023_dapper_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783669097724,
+      "tag": "0024_red_triathlon",
+      "breakpoints": true
     }
   ]
 }

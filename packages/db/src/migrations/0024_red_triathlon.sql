@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "source_decisions_terminal_claim_unique" ON "source_decisions" USING btree ("source_claim_id") WHERE "source_decisions"."status" in ('adopt', 'reject');

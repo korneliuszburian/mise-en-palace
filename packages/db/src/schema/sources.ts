@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -195,7 +196,10 @@ export const sourceDecisions = pgTable(
     index("source_decisions_project_id_idx").on(table.projectId),
     index("source_decisions_source_claim_id_idx").on(table.sourceClaimId),
     index("source_decisions_status_idx").on(table.status),
-    index("source_decisions_consumer_idx").on(table.consumer)
+    index("source_decisions_consumer_idx").on(table.consumer),
+    uniqueIndex("source_decisions_terminal_claim_unique")
+      .on(table.sourceClaimId)
+      .where(sql`${table.status} in ('adopt', 'reject')`)
   ]
 );
 

@@ -13,6 +13,7 @@ import type {
 import type {
   SourceRepository
 } from "@krn/core/repositories";
+import type { SourceClaimTransitionSmokeReport } from "./source-claim-transition-smoke.js";
 
 import {
   assertSmokeReadbackChecks,
@@ -22,6 +23,7 @@ import {
   createSmokeRuntime,
   requireSmokeReadbackValue
 } from "./db-smoke-support.js";
+import { runSourceClaimTransitionSmokeCheck } from "./source-claim-transition-smoke.js";
 import {
   outboxEvents,
   sourceRejections
@@ -66,6 +68,7 @@ export interface SourceGraphSmokeReport {
   sourceConsensusRejectedCount: number;
   sourceConsensusRelationEvidenceGapCount: number;
   outboxEventCount: number;
+  sourceClaimTransition: SourceClaimTransitionSmokeReport;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -529,6 +532,14 @@ export const runSourceGraphSmokeCheck = async (
       .select({ count: sql<number>`count(*)::int` })
       .from(outboxEvents)
       .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
+    const sourceClaimTransition = await runSourceClaimTransitionSmokeCheck({
+      databaseUrl: input.databaseUrl,
+      db,
+      marker,
+      projectId: project.id,
+      sourceRepository,
+      workspaceId: project.workspaceId
+    });
 
     const readbackError = "Source graph smoke readback did not match persisted records";
 
@@ -640,10 +651,15 @@ export const runSourceGraphSmokeCheck = async (
       sourceConsensusRejectedCount: consensusReadback.rejectedCount,
       sourceConsensusRelationEvidenceGapCount: consensusReadback.relationEvidenceGapCount,
       outboxEventCount: outboxRows[0]?.count ?? 0,
+      sourceClaimTransition,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };
   } finally {
-    await client.end();
+    try {
+      await cleanup();
+    } finally {
+      await client.end();
+    }
   }
 };

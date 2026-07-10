@@ -22,5 +22,6 @@ export * from "../retrieval-substrate-readiness.js";
 export * from "./smoke/retrieval-substrate-smoke.js";
 export * from "../source-graph-readiness.js";
 export * from "./smoke/source-graph-smoke.js";
+export * from "./smoke/source-claim-transition-smoke.js";
 export * from "./smoke/smoke-fixture-clocks.js";
 export * from "./smoke/maintenance-queue-smoke.js";

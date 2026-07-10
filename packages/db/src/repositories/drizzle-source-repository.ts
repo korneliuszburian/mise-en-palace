@@ -97,6 +97,80 @@ const sourceClaimProjection = {
   updatedAt: sourceClaims.updatedAt
 } as const;
 
+interface SourceDecisionClaimContext {
+  sourceClaim: SourceClaim;
+  sourceArtifactProjectId: string | null;
+}
+
+const getSourceDecisionClaim = async (
+  tx: KrnDatabaseTransaction,
+  sourceClaimId: string | undefined
+): Promise<SourceDecisionClaimContext | undefined> => {
+  if (sourceClaimId === undefined) {
+    return undefined;
+  }
+
+  const row = requireReturnedRow(
+    await tx
+      .select({
+        sourceClaim: sourceClaims,
+        sourceArtifactProjectId: sourceArtifacts.projectId
+      })
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(eq(sourceClaims.id, sourceClaimId))
+      .limit(1),
+    "getSourceClaimForSourceDecision"
+  );
+
+  return {
+    sourceClaim: mapSourceClaim(row.sourceClaim),
+    sourceArtifactProjectId: row.sourceArtifactProjectId
+  };
+};
+
+const resolveSourceDecisionProjectId = (
+  inputProjectId: CreateSourceDecisionInput["projectId"],
+  sourceArtifactProjectId: string | null | undefined
+): CreateSourceDecisionInput["projectId"] => {
+  if (
+    sourceArtifactProjectId !== undefined &&
+    inputProjectId !== undefined &&
+    inputProjectId !== sourceArtifactProjectId
+  ) {
+    throw new Error(
+      "SourceDecision projectId must match the SourceClaim source artifact project"
+    );
+  }
+
+  return sourceArtifactProjectId ?? inputProjectId;
+};
+
+const arbitrateSourceClaimTerminalReview = async (
+  tx: KrnDatabaseTransaction,
+  sourceClaimId: string | undefined,
+  sourceClaimStatus: SourceClaimLifecycleStatus | undefined
+): Promise<void> => {
+  if (sourceClaimId === undefined || sourceClaimStatus === undefined) {
+    return;
+  }
+
+  requireReturnedRow(
+    await tx
+      .update(sourceClaims)
+      .set({
+        status: sourceClaimStatus,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(sourceClaims.id, sourceClaimId),
+        eq(sourceClaims.status, "proposed")
+      ))
+      .returning({ id: sourceClaims.id }),
+    "arbitrateSourceClaimTerminalReview"
+  );
+};
+
 const assertDecisionGradeSupportType = (
   supportType: SourceSupportType,
   label: string
@@ -408,22 +482,20 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceDecisionGovernance(input);
 
     return this.db.transaction(async (tx) => {
-      const sourceClaimRow = input.sourceClaimId === undefined
-        ? undefined
-        : requireReturnedRow(
-          await tx
-            .select()
-            .from(sourceClaims)
-            .where(eq(sourceClaims.id, input.sourceClaimId))
-            .limit(1),
-          "getSourceClaimForSourceDecision"
-        );
+      const sourceClaimContext = await getSourceDecisionClaim(tx, input.sourceClaimId);
       const sourceClaimStatus = sourceClaimStatusForDecisionStatus(input.status);
+      const projectId = resolveSourceDecisionProjectId(
+        input.projectId,
+        sourceClaimContext?.sourceArtifactProjectId
+      );
+
+      await arbitrateSourceClaimTerminalReview(tx, input.sourceClaimId, sourceClaimStatus);
+
       const row = requireReturnedRow(
         await tx
           .insert(sourceDecisions)
           .values({
-            ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+            ...(projectId === undefined ? {} : { projectId }),
             ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
             status: input.status,
             decision: input.decision,
@@ -437,30 +509,17 @@ export class DrizzleSourceRepository implements SourceRepository {
       );
       const sourceDecision = mapSourceDecision(row);
 
-      if (sourceClaimRow !== undefined) {
+      if (sourceClaimContext !== undefined) {
         throwOnBlockingSourceDecisionSignals(
           sourceDecision,
-          mapSourceClaim(sourceClaimRow).status
-        );
-      }
-
-      if (input.sourceClaimId !== undefined && sourceClaimStatus !== undefined) {
-        requireReturnedRow(
-          await tx
-            .update(sourceClaims)
-            .set({
-              status: sourceClaimStatus,
-              updatedAt: new Date()
-            })
-            .where(eq(sourceClaims.id, input.sourceClaimId))
-            .returning({ id: sourceClaims.id }),
-          "updateSourceClaimForSourceDecision"
+          sourceClaimContext.sourceClaim.status
         );
       }
 
       await tx.insert(outboxEvents).values({
         topic: "source.decision.created",
         payload: {
+          ...smokePayload(input.metadata),
           sourceDecisionId: row.id,
           projectId: row.projectId,
           sourceClaimId: row.sourceClaimId
