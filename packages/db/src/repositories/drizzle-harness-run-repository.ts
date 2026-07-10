@@ -28,11 +28,16 @@ import {
   readMetadataString
 } from "@krn/core";
 import {
+  maintenanceQueueRecordKeyForJob
+} from "@krn/core";
+import {
   parseEvidenceCaptureInput
 } from "@krn/core";
 import type {
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
+  CreateEvidenceFeedbackOnceInput,
+  CreateEvidenceFeedbackOnceResult,
   CreateEvalFeedbackDeltaOnceInput,
   CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,
@@ -56,6 +61,7 @@ import {
   executionRuns,
   feedbackDeltas,
   harnessPlans,
+  maintenanceQueues,
   operatorIntents,
   outboxEvents,
   reviewAssessments,
@@ -227,6 +233,7 @@ const insertEvidenceBundleAndEvent = async (
       .insert(evidenceBundles)
       .values({
         executionRunId: input.executionRunId,
+        ...(input.captureIdentity === undefined ? {} : { captureIdentity: input.captureIdentity }),
         status: input.status ?? "captured",
         changedFiles: input.changedFiles,
         commands: evidenceCommandsForPersistence(input.commands),
@@ -251,8 +258,244 @@ const insertEvidenceBundleAndEvent = async (
   return row;
 };
 
+export type EvidenceFeedbackPersistenceStage =
+  | "after_evidence_bundle"
+  | "after_review_assessment"
+  | "after_feedback_delta"
+  | "after_maintenance_queue";
+
+export interface DrizzleHarnessRunRepositoryOptions {
+  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void;
+}
+
+const existingEvidenceFeedbackOnceResult = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput,
+  captureIdentity: string
+): Promise<CreateEvidenceFeedbackOnceResult | undefined> => {
+  const evidenceBundleRow = await tx.query.evidenceBundles.findFirst({
+    where: and(
+      eq(evidenceBundles.executionRunId, input.executionRunId),
+      eq(evidenceBundles.captureIdentity, captureIdentity)
+    )
+  });
+
+  if (evidenceBundleRow === undefined) {
+    return undefined;
+  }
+
+  const reviewAssessmentRow = await tx.query.reviewAssessments.findFirst({
+    where: eq(reviewAssessments.evidenceBundleId, evidenceBundleRow.id)
+  });
+  if (reviewAssessmentRow === undefined) {
+    throw new Error(
+      `Evidence feedback persistence is incomplete for ${captureIdentity}: review assessment missing`
+    );
+  }
+
+  const feedbackDeltaRow = await tx.query.feedbackDeltas.findFirst({
+    where: eq(feedbackDeltas.reviewAssessmentId, reviewAssessmentRow.id)
+  });
+  if (feedbackDeltaRow === undefined) {
+    throw new Error(
+      `Evidence feedback persistence is incomplete for ${captureIdentity}: feedback delta missing`
+    );
+  }
+
+  const feedbackMaintenanceQueueRecordId = input.maintenance === undefined
+    ? undefined
+    : (await tx.query.maintenanceQueues.findFirst({
+        where: eq(
+          maintenanceQueues.queueKey,
+          maintenanceQueueRecordKeyForJob({
+            jobType: "review_feedback_delta",
+            payload: {
+              projectId: input.projectId,
+              feedbackDeltaId: feedbackDeltaRow.id,
+              reason: input.maintenance.reason
+            }
+          })
+        )
+      }))?.id;
+
+  if (input.maintenance !== undefined && feedbackMaintenanceQueueRecordId === undefined) {
+    throw new Error(
+      `Evidence feedback persistence is incomplete for ${captureIdentity}: maintenance queue record missing`
+    );
+  }
+
+  return {
+    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
+    feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
+    ...(feedbackMaintenanceQueueRecordId === undefined
+      ? {}
+      : { feedbackMaintenanceQueueRecordId }),
+    created: false
+  };
+};
+
+const assertEvidenceFeedbackRunProject = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput
+): Promise<void> => {
+  const linkedRun = await tx
+    .select({ projectId: taskContracts.projectId })
+    .from(executionRuns)
+    .innerJoin(harnessPlans, eq(executionRuns.harnessPlanId, harnessPlans.id))
+    .innerJoin(taskContracts, eq(harnessPlans.taskContractId, taskContracts.id))
+    .where(eq(executionRuns.id, input.executionRunId))
+    .limit(1);
+  const linkedRunProjectId = linkedRun[0]?.projectId;
+
+  if (linkedRunProjectId === undefined || linkedRunProjectId !== input.projectId) {
+    throw new Error(
+      "createEvidenceFeedbackOnce rejected: execution run project does not match capture project"
+    );
+  }
+};
+
+const insertEvidenceReviewAssessment = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput,
+  evidenceBundleId: string
+) => requireReturnedRow(
+  await tx
+    .insert(reviewAssessments)
+    .values({
+      evidenceBundleId,
+      status: input.review.status ?? "pending",
+      reviewer: input.review.reviewer,
+      summary: input.review.summary,
+      findings: input.review.findings,
+      metadata: input.review.metadata ?? {}
+    })
+    .returning(),
+  "createEvidenceFeedbackOnce.reviewAssessment"
+);
+
+const insertEvidenceFeedbackDelta = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput,
+  reviewAssessmentId: string,
+  captureIdentity: string
+) => requireReturnedRow(
+  await tx
+    .insert(feedbackDeltas)
+    .values({
+      reviewAssessmentId,
+      status: input.feedback.status ?? "candidate",
+      memoryCandidates: input.feedback.memoryCandidates,
+      sourceDecisions: input.feedback.sourceDecisions,
+      evalCandidates: input.feedback.evalCandidates,
+      metadata: {
+        ...(input.feedback.metadata ?? {}),
+        captureIdentity,
+        projectId: input.projectId
+      }
+    })
+    .returning(),
+  "createEvidenceFeedbackOnce.feedbackDelta"
+);
+
+const insertEvidenceFeedbackMaintenanceQueue = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput,
+  feedbackDeltaId: string
+): Promise<string | undefined> => input.maintenance === undefined
+  ? undefined
+  : requireReturnedRow(
+      await tx
+        .insert(maintenanceQueues)
+        .values({
+          jobType: "review_feedback_delta",
+          queueKey: maintenanceQueueRecordKeyForJob({
+            jobType: "review_feedback_delta",
+            payload: {
+              projectId: input.projectId,
+              feedbackDeltaId,
+              reason: input.maintenance.reason
+            }
+          }),
+          payload: {
+            projectId: input.projectId,
+            feedbackDeltaId,
+            reason: input.maintenance.reason
+          }
+        })
+        .returning(),
+      "createEvidenceFeedbackOnce.maintenanceQueue"
+    ).id;
+
+const insertEvidenceFeedbackChain = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceFeedbackOnceInput,
+  captureIdentity: string,
+  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void
+): Promise<CreateEvidenceFeedbackOnceResult> => {
+  const evidenceInput = validateEvidenceBundleInputForPersistence({
+    ...input.evidence,
+    executionRunId: input.executionRunId,
+    captureIdentity,
+    metadata: {
+      ...(input.evidence.metadata ?? {}),
+      captureIdentity,
+      projectId: input.projectId
+    }
+  });
+  const evidenceBundleRow = await insertEvidenceBundleAndEvent(
+    tx,
+    evidenceInput,
+    "createEvidenceFeedbackOnce.evidenceBundle"
+  );
+  faultAfterStage?.("after_evidence_bundle");
+  const reviewAssessmentRow = await insertEvidenceReviewAssessment(
+    tx,
+    input,
+    evidenceBundleRow.id
+  );
+  faultAfterStage?.("after_review_assessment");
+  const feedbackDeltaRow = await insertEvidenceFeedbackDelta(
+    tx,
+    input,
+    reviewAssessmentRow.id,
+    captureIdentity
+  );
+
+  await tx.insert(outboxEvents).values({
+    topic: "feedback.delta.created",
+    payload: {
+      feedbackDeltaId: feedbackDeltaRow.id,
+      reviewAssessmentId: reviewAssessmentRow.id,
+      captureIdentity,
+      projectId: input.projectId
+    }
+  });
+  faultAfterStage?.("after_feedback_delta");
+
+  const feedbackMaintenanceQueueRecordId = await insertEvidenceFeedbackMaintenanceQueue(
+    tx,
+    input,
+    feedbackDeltaRow.id
+  );
+  faultAfterStage?.("after_maintenance_queue");
+
+  return {
+    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
+    feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
+    ...(feedbackMaintenanceQueueRecordId === undefined
+      ? {}
+      : { feedbackMaintenanceQueueRecordId }),
+    created: true
+  };
+};
+
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
-  constructor(private readonly db: KrnDatabase) {}
+  constructor(
+    private readonly db: KrnDatabase,
+    private readonly options: DrizzleHarnessRunRepositoryOptions = {}
+  ) {}
 
   private async findHarnessRunSpineRows(executionRunId: string) {
     const executionRunRow = await this.db.query.executionRuns.findFirst({
@@ -544,6 +787,35 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       });
 
       return mapFeedbackDelta(row);
+    });
+  }
+
+  async createEvidenceFeedbackOnce(
+    input: CreateEvidenceFeedbackOnceInput
+  ): Promise<CreateEvidenceFeedbackOnceResult> {
+    const captureIdentity = input.captureIdentity.trim();
+
+    if (captureIdentity.length === 0) {
+      throw new Error("createEvidenceFeedbackOnce requires capture identity");
+    }
+
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`${input.executionRunId}:${captureIdentity}`}, 0))`
+      );
+
+      const existing = await existingEvidenceFeedbackOnceResult(tx, input, captureIdentity);
+      if (existing !== undefined) {
+        return existing;
+      }
+
+      await assertEvidenceFeedbackRunProject(tx, input);
+      return insertEvidenceFeedbackChain(
+        tx,
+        input,
+        captureIdentity,
+        this.options.faultAfterStage
+      );
     });
   }
 

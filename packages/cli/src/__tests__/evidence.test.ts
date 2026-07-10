@@ -15,6 +15,7 @@ import type {
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
   CreateReviewAssessmentInput,
+  CreateEvidenceFeedbackOnceInput,
   HarnessRunAggregate
 } from "@krn/core/repositories/internal";
 import { buildDecisionPacketFromReadModel } from "@krn/core";
@@ -220,6 +221,50 @@ export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   }]
 });
 
+const createCapturingAtomicEvidenceFeedbackResult = (
+  input: CreateEvidenceFeedbackOnceInput
+) => ({
+  evidenceBundle: {
+    id: "evidence-bundle-1",
+    executionRunId: input.executionRunId,
+    status: input.evidence.status ?? "captured",
+    changedFiles: input.evidence.changedFiles,
+    commands: input.evidence.commands,
+    diffRisk: input.evidence.diffRisk,
+    reviewBurden: input.evidence.reviewBurden,
+    rollbackPath: input.evidence.rollbackPath,
+    metadata: input.evidence.metadata ?? {},
+    createdAt: now,
+    updatedAt: now
+  },
+  reviewAssessment: {
+    id: "review-assessment-1",
+    evidenceBundleId: "evidence-bundle-1",
+    status: input.review.status ?? "pending",
+    reviewer: input.review.reviewer,
+    summary: input.review.summary,
+    findings: input.review.findings,
+    metadata: input.review.metadata ?? {},
+    createdAt: now,
+    updatedAt: now
+  },
+  feedbackDelta: {
+    id: "feedback-delta-1",
+    reviewAssessmentId: "review-assessment-1",
+    status: input.feedback.status ?? "candidate",
+    memoryCandidates: input.feedback.memoryCandidates,
+    sourceDecisions: input.feedback.sourceDecisions,
+    evalCandidates: input.feedback.evalCandidates,
+    metadata: input.feedback.metadata ?? {},
+    createdAt: now,
+    updatedAt: now
+  },
+  ...(input.maintenance === undefined
+    ? {}
+    : { feedbackMaintenanceQueueRecordId: "maintenance-queue-record-1" }),
+  created: true
+});
+
 const createCapturingEvidenceHarnessRunRepository = (
   dependencies: NoStoreCompilerDependencies,
   aggregate: HarnessRunAggregate,
@@ -279,6 +324,29 @@ const createCapturingEvidenceHarnessRunRepository = (
       createdAt: now,
       updatedAt: now
     };
+  },
+  async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+    capture.evidenceBundle = {
+      ...input.evidence,
+      executionRunId: input.executionRunId
+    };
+    capture.commands = input.evidence.commands;
+    capture.memoryCandidates = input.feedback.memoryCandidates;
+    capture.sourceDecisions = input.feedback.sourceDecisions;
+    capture.feedbackDeltaMetadata = input.feedback.metadata;
+
+    if (input.maintenance !== undefined) {
+      capture.maintenanceQueueInputs = [{
+        jobType: "review_feedback_delta",
+        payload: {
+          projectId: input.projectId,
+          feedbackDeltaId: "feedback-delta-1",
+          reason: input.maintenance.reason
+        }
+      }];
+    }
+
+    return createCapturingAtomicEvidenceFeedbackResult(input);
   }
 });
 
@@ -1585,6 +1653,48 @@ describe("runCli", () => {
           metadata: input.metadata ?? {},
           createdAt: now,
           updatedAt: now
+        };
+      },
+      async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+        capturedCommands = input.evidence.commands;
+
+        return {
+          evidenceBundle: {
+            id: "evidence-bundle-1",
+            executionRunId: input.executionRunId,
+            status: input.evidence.status ?? "captured",
+            changedFiles: input.evidence.changedFiles,
+            commands: input.evidence.commands,
+            diffRisk: input.evidence.diffRisk,
+            reviewBurden: input.evidence.reviewBurden,
+            rollbackPath: input.evidence.rollbackPath,
+            metadata: input.evidence.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          },
+          reviewAssessment: {
+            id: "review-assessment-1",
+            evidenceBundleId: "evidence-bundle-1",
+            status: input.review.status ?? "pending",
+            reviewer: input.review.reviewer,
+            summary: input.review.summary,
+            findings: input.review.findings,
+            metadata: input.review.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          },
+          feedbackDelta: {
+            id: "feedback-delta-1",
+            reviewAssessmentId: "review-assessment-1",
+            status: input.feedback.status ?? "candidate",
+            memoryCandidates: input.feedback.memoryCandidates,
+            sourceDecisions: input.feedback.sourceDecisions,
+            evalCandidates: input.feedback.evalCandidates,
+            metadata: input.feedback.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          },
+          created: true
         };
       }
     };

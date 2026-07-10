@@ -110,6 +110,7 @@ export interface DatabaseRuntime {
     | "createFeedbackDelta"
   > & Partial<Pick<
     HarnessRunRepository,
+    | "createEvidenceFeedbackOnce"
     | "listFeedbackDeltasForProject"
     | "listFeedbackDeltasForSubjects"
     | "createEvalFeedbackDeltaOnce"
@@ -613,6 +614,13 @@ const createDatabaseRuntimeForClient = async (
     createEvidenceBundle: (...args) => harnessRunRepository.createEvidenceBundle(...args),
     createReviewAssessment: (...args) => harnessRunRepository.createReviewAssessment(...args),
     createFeedbackDelta: (...args) => harnessRunRepository.createFeedbackDelta(...args),
+    ...(harnessRunRepository.createEvidenceFeedbackOnce === undefined
+      ? {}
+      : {
+          createEvidenceFeedbackOnce: (...args: Parameters<
+            NonNullable<HarnessRunRepository["createEvidenceFeedbackOnce"]>
+          >) => harnessRunRepository.createEvidenceFeedbackOnce!(...args)
+        }),
     ...(harnessRunRepository.createEvalFeedbackDeltaOnce === undefined
       ? {}
       : {

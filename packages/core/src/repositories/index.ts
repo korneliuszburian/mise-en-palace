@@ -3,6 +3,8 @@ export type {
   CreateContextAssemblyStatus,
   CreateEvidenceBundleInput,
   CreateEvidenceBundleStatus,
+  CreateEvidenceFeedbackOnceInput,
+  CreateEvidenceFeedbackOnceResult,
   CreateEvalFeedbackDeltaOnceInput,
   CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,

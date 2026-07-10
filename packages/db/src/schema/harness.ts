@@ -244,6 +244,7 @@ export const evidenceBundles = pgTable(
     executionRunId: uuid("execution_run_id")
       .notNull()
       .references(() => executionRuns.id, { onDelete: "cascade" }),
+    captureIdentity: text("capture_identity"),
     status: evidenceBundleStatus("status").notNull().default("draft"),
     changedFiles: jsonListColumn("changed_files"),
     commands: jsonListColumn("commands"),
@@ -256,6 +257,10 @@ export const evidenceBundles = pgTable(
   },
   (table) => [
     index("evidence_bundles_execution_run_id_idx").on(table.executionRunId),
+    uniqueIndex("evidence_bundles_execution_capture_identity_unique").on(
+      table.executionRunId,
+      table.captureIdentity
+    ),
     index("evidence_bundles_status_idx").on(table.status)
   ]
 );

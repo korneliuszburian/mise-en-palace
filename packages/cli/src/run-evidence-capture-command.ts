@@ -1,4 +1,7 @@
 import {
+  createHash
+} from "node:crypto";
+import {
   execFile
 } from "node:child_process";
 import path from "node:path";
@@ -19,9 +22,7 @@ import type {
 } from "@krn/core";
 import {
   assessCandidateReviewability,
-  knowledgeUsefulnessOutcomesFromMetadata,
   isReviewableFeedbackOutcome,
-  sourceUsefulnessOutcomesFromMetadata,
   toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
@@ -98,6 +99,7 @@ interface ChangedFileClassification {
 }
 
 interface PersistedEvidenceIdentity {
+  captureIdentity: string;
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
@@ -112,6 +114,39 @@ interface EvidencePersistenceConfig {
   databaseUrl: string;
   runId: string;
 }
+
+const canonicalCaptureIdentityJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalCaptureIdentityJson).join(",")}]`;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalCaptureIdentityJson(item)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+};
+
+const evidenceCaptureIdentityFor = (input: {
+  readonly runId: string;
+  readonly projectId: string;
+  readonly decisionPacketChecksum: string | undefined;
+  readonly environmentFingerprintId: string;
+  readonly changedFiles: readonly ChangedFile[];
+  readonly commands: readonly EvidenceCommandReadback[];
+  readonly targetEvidence: TargetEvidence | undefined;
+  readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly sourceDecisionCandidates: readonly SourceDecision[];
+  readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
+  readonly evalCandidateProposals: readonly EvalCandidateProposal[];
+}): string => createHash("sha256").update(canonicalCaptureIdentityJson({
+  version: 1,
+  ...input
+})).digest("hex");
 
 interface EvidencePersistenceCounts {
   changedFileCount: number;
@@ -795,11 +830,9 @@ const buildEvidenceBundleInput = (
 });
 
 const buildReviewAssessmentInput = (
-  evidenceBundleId: string,
   runId: string,
   counts: EvidencePersistenceCounts
-): CreateReviewAssessmentInput => ({
-  evidenceBundleId,
+): Omit<CreateReviewAssessmentInput, "evidenceBundleId"> => ({
   status: "pending",
   reviewer: "krn-cli",
   summary: "Evidence captured; human review still required.",
@@ -811,7 +844,7 @@ const buildReviewAssessmentInput = (
 });
 
 const buildFeedbackDeltaInput = (
-  reviewAssessmentId: string,
+  captureIdentity: string,
   runId: string,
   counts: EvidencePersistenceCounts,
   memoryCandidates: readonly MemoryCandidate[],
@@ -821,14 +854,14 @@ const buildFeedbackDeltaInput = (
   decisionPacketChecksum: string | undefined,
   evalCandidateProposals: readonly EvalCandidateProposal[],
   environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
-): CreateFeedbackDeltaInput => ({
-  reviewAssessmentId,
+): Omit<CreateFeedbackDeltaInput, "reviewAssessmentId"> => ({
   status: "candidate",
   memoryCandidates: [...memoryCandidates],
   sourceDecisions: [...sourceDecisionCandidates],
   evalCandidates: [...evalCandidateProposals],
   metadata: {
     runId,
+    captureIdentity,
     ...counts,
     memoryCandidateProposalCount: memoryCandidates.length,
     memoryCandidateRowCount: 0,
@@ -958,15 +991,13 @@ const downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence = (
   );
 
 const currentEvidenceRefsForUsefulness = (
-  evidenceBundleId: string,
-  reviewAssessmentId: string,
+  captureIdentity: string,
   changedFiles: readonly ChangedFile[],
   commands: readonly EvidenceCommandReadback[],
   decisionPacketChecksum: string | undefined
 ): ReadonlySet<string> =>
   new Set([
-    evidenceBundleId,
-    reviewAssessmentId,
+    `capture:${captureIdentity}`,
     ...(decisionPacketChecksum === undefined ? [] : [`packet:${decisionPacketChecksum}`]),
     ...changedFiles.map((file) => file.path),
   ...commands.flatMap((command) =>
@@ -983,33 +1014,6 @@ const hasReviewableUsefulnessFeedback = (
 ): boolean =>
   (sourceOutcomes ?? []).some((outcome) => isReviewableFeedbackOutcome(outcome.outcome)) ||
   (knowledgeOutcomes ?? []).some((outcome) => isReviewableFeedbackOutcome(outcome.outcome));
-
-const enqueueFeedbackMaintenance = async (
-  databaseRuntime: Awaited<ReturnType<CreateDatabaseRuntime>>,
-  projectId: string,
-  feedbackDeltaId: string,
-  sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined
-): Promise<string | undefined> => {
-  if (!hasReviewableUsefulnessFeedback(sourceOutcomes, knowledgeOutcomes)) {
-    return undefined;
-  }
-
-  if (databaseRuntime.maintenanceQueueRepository === undefined) {
-    throw new Error("Maintenance queue repository is required to enqueue reviewable feedback");
-  }
-
-  const queueRecord = await databaseRuntime.maintenanceQueueRepository.enqueueMaintenanceQueue({
-    jobType: "review_feedback_delta",
-    payload: {
-      projectId,
-      feedbackDeltaId,
-      reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
-    }
-  });
-
-  return queueRecord.id;
-};
 
 type UsefulnessAuthorization = ReturnType<typeof authorizePacketUsefulness>;
 
@@ -1085,60 +1089,26 @@ interface EvidenceBackedUsefulnessOutcomes {
 }
 
 const evidenceBackedUsefulnessOutcomesFor = (input: {
-  readonly aggregate: HarnessRunAggregate;
+  readonly captureIdentity: string;
   readonly changedFiles: readonly ChangedFile[];
   readonly commands: readonly EvidenceCommandReadback[];
   readonly decisionPacketChecksum: string | undefined;
-  readonly evidenceBundleId: string;
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
-  readonly reviewAssessmentId: string;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
 }): EvidenceBackedUsefulnessOutcomes => {
   const currentEvidenceRefs = currentEvidenceRefsForUsefulness(
-    input.evidenceBundleId,
-    input.reviewAssessmentId,
+    input.captureIdentity,
     input.changedFiles,
     input.commands,
     input.decisionPacketChecksum
   );
-  const existingUsefulnessKeys = new Set(
-    input.aggregate.feedbackDeltas.flatMap((feedback) => {
-      if (
-        input.decisionPacketChecksum === undefined ||
-        feedback.metadata["decisionPacketChecksum"] !== input.decisionPacketChecksum
-      ) {
-        return [];
-      }
-
-      return [
-        ...sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) =>
-          `source:${outcome.sourceDecisionId ?? outcome.sourceClaimId}`
-        ),
-        ...knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) =>
-          `knowledge:${outcome.knowledgeId}`
-        )
-      ];
-    })
-  );
-  const deduplicate = <T extends {
-    readonly sourceClaimId?: string;
-    readonly sourceDecisionId?: string;
-    readonly knowledgeId?: string;
-  }>(outcomes: readonly T[] | undefined, prefix: "source" | "knowledge"): readonly T[] | undefined =>
-    outcomes?.filter((outcome) => {
-      const id = prefix === "source"
-        ? outcome.sourceDecisionId ?? outcome.sourceClaimId
-        : outcome.knowledgeId;
-
-      return id === undefined || !existingUsefulnessKeys.has(`${prefix}:${id}`);
-    });
   const evidenceLinkedSourceOutcomes = downgradeSourceUsefulnessOutcomesWithoutCurrentEvidence(
-    deduplicate(input.sourceOutcomes, "source"),
+    input.sourceOutcomes,
     currentEvidenceRefs
   );
   const evidenceLinkedKnowledgeOutcomes = downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence(
-    deduplicate(input.knowledgeOutcomes, "knowledge"),
+    input.knowledgeOutcomes,
     currentEvidenceRefs
   );
   const evidenceClass = usefulnessEvidenceClassFor({
@@ -1167,27 +1137,6 @@ const materializeFeedbackDeltaMemoryCandidates = (
   ? []
   : proposals.map((proposal) => materializeFeedbackDeltaMemoryCandidate(proposal, projectId, runId));
 
-const enqueueAuthorizedFeedbackMaintenance = async (input: {
-  readonly aggregate: HarnessRunAggregate;
-  readonly authorization: UsefulnessAuthorization | undefined;
-  readonly databaseRuntime: Awaited<ReturnType<CreateDatabaseRuntime>>;
-  readonly feedbackDeltaId: string;
-  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
-  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
-}): Promise<string | undefined> => {
-  if (input.authorization?.authorized !== true) {
-    return undefined;
-  }
-
-  return enqueueFeedbackMaintenance(
-    input.databaseRuntime,
-    input.authorization.projectId ?? input.aggregate.taskContract.projectId ?? input.databaseRuntime.projectId,
-    input.feedbackDeltaId,
-    input.sourceOutcomes,
-    input.knowledgeOutcomes
-  );
-};
-
 const buildPersistedEvidenceIdentity = (input: {
   readonly authorization: UsefulnessAuthorization | undefined;
   readonly decisionPacketChecksum: string | undefined;
@@ -1197,8 +1146,10 @@ const buildPersistedEvidenceIdentity = (input: {
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly reviewAssessmentId: string;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly captureIdentity: string;
 }): PersistedEvidenceIdentity => {
   const identity: PersistedEvidenceIdentity = {
+    captureIdentity: input.captureIdentity,
     evidenceBundleId: input.evidenceBundleId,
     reviewAssessmentId: input.reviewAssessmentId,
     feedbackDeltaId: input.feedbackDeltaId
@@ -1236,6 +1187,7 @@ const renderPersistedEvidenceIdentity = (
 
   const lines = [
     "Persisted IDs:",
+    `captureIdentity: ${identity.captureIdentity}`,
     `evidenceBundle: ${identity.evidenceBundleId}`,
     `reviewAssessment: ${identity.reviewAssessmentId}`,
     `feedbackDelta: ${identity.feedbackDeltaId}`
@@ -1342,6 +1294,24 @@ const persistEvidenceCapture = async (
     }
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
+    const projectId = aggregate.taskContract.projectId ?? databaseRuntime.projectId;
+    if (projectId === undefined) {
+      throw new Error(`No project identity found for --run-id ${runId}`);
+    }
+    const captureIdentity = evidenceCaptureIdentityFor({
+      runId,
+      projectId,
+      decisionPacketChecksum: normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum),
+      environmentFingerprintId: environmentFingerprint.id,
+      changedFiles,
+      commands,
+      targetEvidence,
+      sourceUsefulnessOutcomes,
+      knowledgeUsefulnessOutcomes,
+      sourceDecisionCandidates,
+      memoryCandidateProposals,
+      evalCandidateProposals
+    });
     const usefulness = prepareUsefulnessOutcomes({
       aggregate,
       callerPacketChecksum: normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum),
@@ -1351,8 +1321,29 @@ const persistEvidenceCapture = async (
       sourceUsefulnessOutcomes
     });
     const decisionPacketChecksum = usefulness.decisionPacketChecksum;
-    const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle(
-      buildEvidenceBundleInput(
+    const memoryCandidates = materializeFeedbackDeltaMemoryCandidates(
+      memoryCandidateProposals,
+      projectId,
+      runId
+    );
+    const evidenceBackedUsefulness = evidenceBackedUsefulnessOutcomesFor({
+      captureIdentity,
+      changedFiles,
+      commands,
+      decisionPacketChecksum,
+      knowledgeOutcomes: usefulness.knowledgeOutcomes,
+      sourceOutcomes: usefulness.sourceOutcomes,
+      targetEvidence
+    });
+    const createEvidenceFeedbackOnce = databaseRuntime.harnessRunRepository.createEvidenceFeedbackOnce;
+    if (createEvidenceFeedbackOnce === undefined) {
+      throw new Error("Evidence feedback atomic persistence is unavailable");
+    }
+    const atomicResult = await createEvidenceFeedbackOnce.call(databaseRuntime.harnessRunRepository, {
+      executionRunId: runId,
+      projectId,
+      captureIdentity,
+      evidence: buildEvidenceBundleInput(
         runId,
         changedFiles,
         classification,
@@ -1363,30 +1354,10 @@ const persistEvidenceCapture = async (
         nextEvidenceEventSequence(aggregate),
         decisionPacketChecksum,
         environmentFingerprint
-      )
-    );
-    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment(
-      buildReviewAssessmentInput(evidenceBundle.id, runId, counts)
-    );
-    const memoryCandidates = materializeFeedbackDeltaMemoryCandidates(
-      memoryCandidateProposals,
-      aggregate.taskContract.projectId,
-      runId
-    );
-    const evidenceBackedUsefulness = evidenceBackedUsefulnessOutcomesFor({
-      aggregate,
-      changedFiles,
-      commands,
-      decisionPacketChecksum,
-      evidenceBundleId: evidenceBundle.id,
-      knowledgeOutcomes: usefulness.knowledgeOutcomes,
-      reviewAssessmentId: reviewAssessment.id,
-      sourceOutcomes: usefulness.sourceOutcomes,
-      targetEvidence
-    });
-    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta(
-      buildFeedbackDeltaInput(
-        reviewAssessment.id,
+      ),
+      review: buildReviewAssessmentInput(runId, counts),
+      feedback: buildFeedbackDeltaInput(
+        captureIdentity,
         runId,
         counts,
         memoryCandidates,
@@ -1396,25 +1367,29 @@ const persistEvidenceCapture = async (
         decisionPacketChecksum,
         evalCandidateProposals,
         environmentFingerprint
-      )
-    );
-    const feedbackMaintenanceQueueRecordId = await enqueueAuthorizedFeedbackMaintenance({
-      aggregate,
-      authorization: usefulness.authorization,
-      databaseRuntime,
-      feedbackDeltaId: feedbackDelta.id,
-      knowledgeOutcomes: evidenceBackedUsefulness.knowledgeOutcomes,
-      sourceOutcomes: evidenceBackedUsefulness.sourceOutcomes
+      ),
+      ...(usefulness.authorization?.authorized === true &&
+        hasReviewableUsefulnessFeedback(
+          evidenceBackedUsefulness.sourceOutcomes,
+          evidenceBackedUsefulness.knowledgeOutcomes
+        )
+        ? {
+            maintenance: {
+              reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
+            }
+          }
+        : {})
     });
 
     return buildPersistedEvidenceIdentity({
+      captureIdentity,
       authorization: usefulness.authorization,
       decisionPacketChecksum,
-      evidenceBundleId: evidenceBundle.id,
-      feedbackDeltaId: feedbackDelta.id,
-      feedbackMaintenanceQueueRecordId,
+      evidenceBundleId: atomicResult.evidenceBundle.id,
+      feedbackDeltaId: atomicResult.feedbackDelta.id,
+      feedbackMaintenanceQueueRecordId: atomicResult.feedbackMaintenanceQueueRecordId,
       knowledgeOutcomes: evidenceBackedUsefulness.knowledgeOutcomes,
-      reviewAssessmentId: reviewAssessment.id,
+      reviewAssessmentId: atomicResult.reviewAssessment.id,
       sourceOutcomes: evidenceBackedUsefulness.sourceOutcomes
     });
   } finally {

@@ -190,6 +190,13 @@
       "when": 1783672989747,
       "tag": "0026_curved_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1783680236230,
+      "tag": "0027_nebulous_boom_boom",
+      "breakpoints": true
     }
   ]
 }

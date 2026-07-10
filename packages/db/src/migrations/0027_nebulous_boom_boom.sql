@@ -1,0 +1,2 @@
+ALTER TABLE "evidence_bundles" ADD COLUMN "capture_identity" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "evidence_bundles_execution_capture_identity_unique" ON "evidence_bundles" USING btree ("execution_run_id","capture_identity");

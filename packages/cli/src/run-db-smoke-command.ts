@@ -304,6 +304,8 @@ const runHarnessEvidenceSmokeTarget: DbSmokeTargetHandler = async (
       `Evidence bundle: ${report.evidenceBundleId}`,
       `Review assessment: ${report.reviewAssessmentId}`,
       `Feedback delta: ${report.feedbackDeltaId}`,
+      `Feedback outbox events: ${report.feedbackOutboxEventCount}`,
+      `Feedback maintenance queue records: ${report.feedbackMaintenanceQueueCount}`,
       `Evidence bundles: ${report.evidenceBundleCount}`,
       `Review assessments: ${report.reviewAssessmentCount}`,
       `Feedback deltas: ${report.feedbackDeltaCount}`,

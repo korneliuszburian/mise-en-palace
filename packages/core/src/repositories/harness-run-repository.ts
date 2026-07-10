@@ -59,6 +59,7 @@ export type CreateEvidenceBundleStatus = Extract<EvidenceBundle["status"], "draf
 
 export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   executionRunId: string;
+  captureIdentity?: string;
   status?: CreateEvidenceBundleStatus;
   changedFiles: string[];
   commands: EvidenceCommand[];
@@ -129,6 +130,26 @@ export interface CreateEvalFeedbackDeltaOnceResult {
   created: boolean;
 }
 
+export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
+  executionRunId: ExecutionRunId;
+  projectId: ProjectId;
+  captureIdentity: string;
+  evidence: Omit<CreateEvidenceBundleInput, "executionRunId" | "captureIdentity">;
+  review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
+  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
+  maintenance?: {
+    reason: string;
+  };
+}
+
+export interface CreateEvidenceFeedbackOnceResult {
+  evidenceBundle: EvidenceBundle;
+  reviewAssessment: ReviewAssessment;
+  feedbackDelta: FeedbackDelta;
+  feedbackMaintenanceQueueRecordId?: string;
+  created: boolean;
+}
+
 export interface HarnessRunAggregate {
   operatorIntent: OperatorIntent;
   taskContract: TaskContract;
@@ -156,6 +177,9 @@ export interface HarnessRunRepository {
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;
+  createEvidenceFeedbackOnce?(
+    input: CreateEvidenceFeedbackOnceInput
+  ): Promise<CreateEvidenceFeedbackOnceResult>;
   createEvalFeedbackDeltaOnce?(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;

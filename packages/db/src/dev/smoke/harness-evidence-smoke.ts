@@ -2,6 +2,7 @@ import {
   eq,
   sql
 } from "drizzle-orm";
+import postgres from "postgres";
 
 import {
   cleanupHarnessCompilerSmokeRows,
@@ -12,8 +13,23 @@ import {
   DrizzleProjectRepository
 } from "../../repositories/index.js";
 import {
+  DrizzleHarnessRunRepository
+} from "../../repositories/index.js";
+import type {
+  CreateEvidenceFeedbackOnceInput
+} from "@krn/core/repositories";
+import {
+  createKrnDatabase
+} from "../../database.js";
+import type {
+  KrnDatabase
+} from "../../database.js";
+import {
   feedbackDeltas,
-  outboxEvents
+  maintenanceQueues,
+  outboxEvents,
+  evidenceBundles,
+  reviewAssessments
 } from "../../schema/index.js";
 export interface HarnessEvidenceSmokeInput {
   databaseUrl: string;
@@ -28,6 +44,8 @@ export interface HarnessEvidenceSmokeReport {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+  feedbackOutboxEventCount: number;
+  feedbackMaintenanceQueueCount: number;
   runEventCount: number;
   evidenceBundleCount: number;
   reviewAssessmentCount: number;
@@ -51,6 +69,9 @@ type HarnessEvidenceRepository = Awaited<
 
 interface SmokeFeedbackDeltaInput {
   harnessRunRepository: HarnessEvidenceRepository;
+  db: KrnDatabase;
+  databaseUrl: string;
+  projectId: string;
   executionRunId: string;
   marker: string;
   changedFile: string;
@@ -58,6 +79,7 @@ interface SmokeFeedbackDeltaInput {
   evidenceEventMessage: string;
   reviewSummary: string;
   metadata?: Record<string, unknown>;
+  maintenance?: { reason: string };
 }
 
 interface SmokeFeedbackDeltaOutput {
@@ -69,57 +91,209 @@ interface SmokeFeedbackDeltaOutput {
 const createSmokeFeedbackDelta = async (
   input: SmokeFeedbackDeltaInput
 ): Promise<SmokeFeedbackDeltaOutput> => {
-  const evidenceBundle = await input.harnessRunRepository.createEvidenceBundle({
+  const createEvidenceFeedbackOnce = input.harnessRunRepository.createEvidenceFeedbackOnce;
+
+  if (createEvidenceFeedbackOnce === undefined) {
+    throw new Error("Harness evidence smoke requires atomic evidence feedback persistence");
+  }
+
+  const atomicInput = {
     executionRunId: input.executionRunId,
-    status: "captured",
-    changedFiles: [input.changedFile],
-    commands: [{
-      command: "pnpm typecheck",
-      status: "passed"
-    }],
-    diffRisk: "low",
-    reviewBurden: "Smoke proof only.",
-    rollbackPath: "Delete smoke marker rows.",
-    event: {
-      sequence: 2,
-      type: input.evidenceEventType,
-      message: input.evidenceEventMessage,
-      payload: {
+    projectId: input.projectId,
+    captureIdentity: `harness-evidence:${input.marker}`,
+    evidence: {
+      status: "captured" as const,
+      changedFiles: [input.changedFile],
+      commands: [{
+        command: "pnpm typecheck",
+        status: "passed" as const
+      }],
+      diffRisk: "low" as const,
+      reviewBurden: "Smoke proof only.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 2,
+        type: input.evidenceEventType,
+        message: input.evidenceEventMessage,
+        payload: {
+          smokeId: input.marker
+        }
+      },
+      metadata: {
+        smokeId: input.marker,
+        ...(input.metadata ?? {})
+      }
+    },
+    review: {
+      status: "pending" as const,
+      reviewer: "krn-smoke",
+      summary: input.reviewSummary,
+      findings: [],
+      metadata: {
         smokeId: input.marker
       }
     },
-    metadata: {
-      smokeId: input.marker,
-      ...(input.metadata ?? {})
-    }
-  });
-  const reviewAssessment = await input.harnessRunRepository.createReviewAssessment({
-    evidenceBundleId: evidenceBundle.id,
-    status: "pending",
-    reviewer: "krn-smoke",
-    summary: input.reviewSummary,
-    findings: [],
-    metadata: {
-      smokeId: input.marker
-    }
-  });
-  const feedbackDelta = await input.harnessRunRepository.createFeedbackDelta({
-    reviewAssessmentId: reviewAssessment.id,
-    status: "candidate",
-    memoryCandidates: [],
-    sourceDecisions: [],
-    evalCandidates: [],
-    metadata: {
-      smokeId: input.marker,
-      ...(input.metadata ?? {})
-    }
-  });
+    feedback: {
+      status: "candidate" as const,
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        smokeId: input.marker,
+        ...(input.metadata ?? {})
+      }
+    },
+    ...(input.maintenance === undefined ? {} : { maintenance: input.maintenance })
+  } satisfies CreateEvidenceFeedbackOnceInput;
+  const retryClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
 
-  return {
-    evidenceBundleId: evidenceBundle.id,
-    reviewAssessmentId: reviewAssessment.id,
-    feedbackDeltaId: feedbackDelta.id
-  };
+  try {
+    const retryRepository = new DrizzleHarnessRunRepository(createKrnDatabase(retryClient));
+    const [first, retry] = await Promise.all([
+      createEvidenceFeedbackOnce.call(input.harnessRunRepository, atomicInput),
+      retryRepository.createEvidenceFeedbackOnce(atomicInput)
+    ]);
+
+    if (
+      first.created === retry.created ||
+      first.evidenceBundle.id !== retry.evidenceBundle.id ||
+      first.reviewAssessment.id !== retry.reviewAssessment.id ||
+      first.feedbackDelta.id !== retry.feedbackDelta.id
+    ) {
+      throw new Error("Harness evidence smoke atomic retry produced duplicate chain rows");
+    }
+
+    await verifyEvidenceFeedbackFaultInjection(input, atomicInput);
+
+    return {
+      evidenceBundleId: first.evidenceBundle.id,
+      reviewAssessmentId: first.reviewAssessment.id,
+      feedbackDeltaId: first.feedbackDelta.id
+    };
+  } finally {
+    await retryClient.end();
+  }
+};
+
+const expectRejectedEvidenceFeedback = async (
+  repository: HarnessEvidenceRepository,
+  input: Parameters<NonNullable<HarnessEvidenceRepository["createEvidenceFeedbackOnce"]>>[0]
+): Promise<void> => {
+  if (repository.createEvidenceFeedbackOnce === undefined) {
+    throw new Error("Harness evidence fault proof requires atomic evidence feedback persistence");
+  }
+
+  await expectPromiseToReject(
+    repository.createEvidenceFeedbackOnce.call(repository, input)
+  );
+};
+
+const expectPromiseToReject = async (promise: Promise<unknown>): Promise<void> => {
+  try {
+    await promise;
+  } catch {
+    return;
+  }
+
+  throw new Error("Harness evidence fault injection unexpectedly committed");
+};
+
+type AtomicEvidenceFeedbackInput = Parameters<
+  NonNullable<HarnessEvidenceRepository["createEvidenceFeedbackOnce"]>
+>[0];
+
+const evidenceFeedbackFaultStages = [
+  "after_evidence_bundle",
+  "after_review_assessment",
+  "after_feedback_delta",
+  "after_maintenance_queue"
+] as const;
+
+const smokeCountValue = (rows: readonly { count: number }[]): number =>
+  rows[0]?.count ?? 0;
+
+const faultRowCountsFor = async (
+  db: KrnDatabase,
+  faultIdentity: string,
+  maintenanceReason: string
+): Promise<readonly number[]> => [
+  smokeCountValue(await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(evidenceBundles)
+    .where(eq(evidenceBundles.captureIdentity, faultIdentity))),
+  smokeCountValue(await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(reviewAssessments)
+    .innerJoin(evidenceBundles, eq(reviewAssessments.evidenceBundleId, evidenceBundles.id))
+    .where(eq(evidenceBundles.captureIdentity, faultIdentity))),
+  smokeCountValue(await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(feedbackDeltas)
+    .where(sql`${feedbackDeltas.metadata}->>'captureIdentity' = ${faultIdentity}`)),
+  smokeCountValue(await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(outboxEvents)
+    .where(sql`${outboxEvents.payload}->>'captureIdentity' = ${faultIdentity}`)),
+  smokeCountValue(await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(maintenanceQueues)
+    .where(sql`${maintenanceQueues.payload}->>'reason' = ${maintenanceReason}`))
+];
+
+const verifyEvidenceFeedbackFaultStage = async (
+  input: SmokeFeedbackDeltaInput,
+  atomicInput: AtomicEvidenceFeedbackInput,
+  faultStage: (typeof evidenceFeedbackFaultStages)[number]
+): Promise<void> => {
+  const faultIdentity = `${atomicInput.captureIdentity}:fault:${faultStage}`;
+  const maintenanceReason = `Fault-injection maintenance proof ${faultIdentity}`;
+  const faultClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
+
+  try {
+    const faultRepository = new DrizzleHarnessRunRepository(
+      createKrnDatabase(faultClient),
+      {
+        faultAfterStage: (stage) => {
+          if (stage === faultStage) {
+            throw new Error(`Injected evidence feedback failure at ${stage}`);
+          }
+        }
+      }
+    );
+    await expectRejectedEvidenceFeedback(faultRepository, {
+      ...atomicInput,
+      captureIdentity: faultIdentity,
+      evidence: {
+        ...atomicInput.evidence,
+        metadata: {
+          ...atomicInput.evidence.metadata,
+          smokeId: faultIdentity
+        }
+      },
+      maintenance: {
+        reason: maintenanceReason
+      }
+    });
+  } finally {
+    await faultClient.end();
+  }
+
+  const counts = await faultRowCountsFor(input.db, faultIdentity, maintenanceReason);
+
+  if (counts.some((count) => count !== 0)) {
+    throw new Error(
+      `Harness evidence fault injection left partial rows at ${faultStage}: ${counts.join(",")}`
+    );
+  }
+};
+
+const verifyEvidenceFeedbackFaultInjection = async (
+  input: SmokeFeedbackDeltaInput,
+  atomicInput: AtomicEvidenceFeedbackInput
+): Promise<void> => {
+  for (const faultStage of evidenceFeedbackFaultStages) {
+    await verifyEvidenceFeedbackFaultStage(input, atomicInput, faultStage);
+  }
 };
 
 export const runHarnessEvidenceSmokeCheck = async (
@@ -144,6 +318,15 @@ export const runHarnessEvidenceSmokeCheck = async (
       await db
         .delete(outboxEvents)
         .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${otherFeedbackDeltaId}`);
+      await db
+        .delete(maintenanceQueues)
+        .where(sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${otherFeedbackDeltaId}`);
+    }
+
+    if (feedbackDeltaId !== undefined) {
+      await db
+        .delete(maintenanceQueues)
+        .where(sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${feedbackDeltaId}`);
     }
 
     return cleanupHarnessCompilerSmokeRows({
@@ -178,6 +361,9 @@ export const runHarnessEvidenceSmokeCheck = async (
     retrievalRunId = compiledRetrievalRunId;
     const feedbackDelta = await createSmokeFeedbackDelta({
       harnessRunRepository,
+      db,
+      databaseUrl: input.databaseUrl,
+      projectId: project.id,
       executionRunId: executionRun.id,
       marker,
       changedFile: "smoke/harness-evidence.ts",
@@ -200,6 +386,9 @@ export const runHarnessEvidenceSmokeCheck = async (
           evidenceRefs: ["smoke:harness-evidence:source-relevant"],
           doesNotProve: "This smoke does not prove broad source truth."
         }]
+      },
+      maintenance: {
+        reason: "Atomic harness evidence smoke maintenance proof."
       }
     });
     feedbackDeltaId = feedbackDelta.feedbackDeltaId;
@@ -319,6 +508,9 @@ export const runHarnessEvidenceSmokeCheck = async (
     });
     const otherFeedbackDelta = await createSmokeFeedbackDelta({
       harnessRunRepository,
+      db,
+      databaseUrl: input.databaseUrl,
+      projectId: otherProject.id,
       executionRunId: otherExecutionRun.id,
       marker,
       changedFile: "smoke/harness-evidence-other.ts",
@@ -397,14 +589,26 @@ export const runHarnessEvidenceSmokeCheck = async (
     const reviewAssessmentCount = readBack.reviewAssessments.length;
     const feedbackDeltaCount = readBack.feedbackDeltas.length;
     const runEventCount = readBack.runEvents.length;
+    const feedbackOutboxEventCount = (await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${feedbackDelta.feedbackDeltaId}`))[0]?.count ?? 0;
+    const feedbackMaintenanceQueueCount = (await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(maintenanceQueues)
+      .where(sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${feedbackDelta.feedbackDeltaId}`))[0]?.count ?? 0;
 
     if (
       evidenceBundleCount !== 1 ||
       reviewAssessmentCount !== 1 ||
       feedbackDeltaCount !== 103 ||
-      runEventCount !== 2
+      runEventCount !== 2 ||
+      feedbackOutboxEventCount !== 1 ||
+      feedbackMaintenanceQueueCount !== 1
     ) {
-      throw new Error("Harness evidence smoke readback did not match linked records");
+      throw new Error(
+        `Harness evidence smoke readback did not match linked records: evidence=${evidenceBundleCount}, review=${reviewAssessmentCount}, feedback=${feedbackDeltaCount}, events=${runEventCount}, outbox=${feedbackOutboxEventCount}, maintenance=${feedbackMaintenanceQueueCount}`
+      );
     }
 
     const remainingMarkerCount = await cleanup();
@@ -416,6 +620,8 @@ export const runHarnessEvidenceSmokeCheck = async (
       evidenceBundleId: feedbackDelta.evidenceBundleId,
       reviewAssessmentId: feedbackDelta.reviewAssessmentId,
       feedbackDeltaId: feedbackDelta.feedbackDeltaId,
+      feedbackOutboxEventCount,
+      feedbackMaintenanceQueueCount,
       runEventCount,
       evidenceBundleCount,
       reviewAssessmentCount,
