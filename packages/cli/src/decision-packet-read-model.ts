@@ -154,8 +154,12 @@ export interface DecisionPacketReadModel {
     id: string;
     title: string;
     objective: string;
+    constraints: string[];
+    nonGoals: string[];
+    acceptance: string[];
     status: string;
   };
+  nextAction?: string;
   knowledgeSelection?: KnowledgePlanSelection;
   context: {
     status: string;

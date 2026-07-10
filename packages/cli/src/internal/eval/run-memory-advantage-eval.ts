@@ -17,7 +17,8 @@ import {
   renderExecutionBriefText
 } from "@krn/codex-adapter";
 import {
-  compileHarnessPlan
+  compileHarnessPlan,
+  decisionPacketForCompiledPlan
 } from "@krn/harness";
 import type {
   SearchDocumentRecord,
@@ -2120,11 +2121,7 @@ const compilePlanBriefReadback = async (
     }
   }, runtime.compilerDependencies);
   const brief = createExecutionBrief({
-    taskContract: compiled.taskContract,
-    contextAssembly: compiled.contextAssembly,
-    capabilityPlan: compiled.capabilityPlan,
-    evidenceContract: compiled.evidenceContract,
-    nextAction: compiled.nextAction
+    packet: decisionPacketForCompiledPlan(compiled)
   });
   const renderedBrief = renderExecutionBriefText(brief);
   const { memoryRecordIds, sourceClaimIds } = selectedContextIds(compiled.contextAssembly);

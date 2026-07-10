@@ -1,8 +1,5 @@
 import type {
-  CapabilityPlan,
-  ContextAssembly,
-  EvidenceContract,
-  TaskContract
+  DecisionPacket
 } from "@krn/core";
 import type {
   ExecutionBrief,
@@ -21,12 +18,7 @@ import {
   executionBriefSectionProfiles
 } from "./contracts.js";
 export interface RenderExecutionBriefInput {
-  taskContract: TaskContract;
-  contextAssembly: ContextAssembly;
-  capabilityPlan: CapabilityPlan;
-  evidenceContract: EvidenceContract;
-  nextAction: string;
-  evidenceGaps?: readonly ExecutionBriefEvidenceGap[];
+  packet: DecisionPacket;
 }
 
 const renderList = (items: readonly string[]): string[] =>
@@ -180,51 +172,6 @@ const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   `Rollback path: ${brief.evidenceContract.rollbackPath}`
 ];
 
-const toContextInclusions = (
-  contextAssembly: ContextAssembly
-): ExecutionBriefContextInclusion[] =>
-  contextAssembly.inclusions.map((inclusion) => ({
-    subjectType: inclusion.subjectType,
-    subjectId: inclusion.subjectId,
-    reason: inclusion.reason,
-    expectedUse: inclusion.expectedUse,
-    sourceAuthority: inclusion.sourceAuthority
-  }));
-
-const toContextExclusions = (
-  contextAssembly: ContextAssembly
-): ExecutionBriefContextExclusion[] =>
-  contextAssembly.exclusions.map((exclusion) => ({
-    subjectType: exclusion.subjectType,
-    subjectId: exclusion.subjectId,
-    reason: exclusion.reason,
-    explanation: exclusion.explanation,
-    sourceAuthority: exclusion.sourceAuthority
-  }));
-
-const toObservationPrefix = (
-  contextAssembly: ContextAssembly
-): ExecutionBriefObservationPrefixItem[] =>
-  contextAssembly.observationPrefix?.items.map((item) => ({
-    observationId: item.observationId,
-    kind: item.kind,
-    confidence: item.confidence,
-    priority: item.priority,
-    summary: item.summary,
-    sourceRangeCount: item.sourceRangeCount,
-    reason: item.reason,
-    score: item.score
-  })) ?? [];
-
-const toObservationPrefixWarnings = (
-  contextAssembly: ContextAssembly
-): ExecutionBriefObservationPrefixWarning[] =>
-  contextAssembly.observationPrefix?.warnings.map((warning) => ({
-    observationId: warning.observationId,
-    warning: warning.warning,
-    summary: warning.summary
-  })) ?? [];
-
 const renderObservationPrefix = (
   items: readonly ExecutionBriefObservationPrefixItem[],
   warnings: readonly ExecutionBriefObservationPrefixWarning[]
@@ -256,20 +203,6 @@ const renderObservationPrefix = (
   ];
 };
 
-const sourceClaimsSelected = (
-  inclusions: readonly ExecutionBriefContextInclusion[]
-): string[] =>
-  inclusions
-    .filter((inclusion) => inclusion.subjectType === "source_claim")
-    .map((inclusion) => inclusion.subjectId);
-
-const memoryRecordsSelected = (
-  inclusions: readonly ExecutionBriefContextInclusion[]
-): string[] =>
-  inclusions
-    .filter((inclusion) => inclusion.subjectType === "memory_record")
-    .map((inclusion) => inclusion.subjectId);
-
 const antiMemoryWarnings = (
   exclusions: readonly ExecutionBriefContextExclusion[]
 ): string[] =>
@@ -294,50 +227,81 @@ const renderEvidenceGaps = (
     ].join(" | ")
   );
 
+const missingEvidenceContractGap: ExecutionBriefEvidenceGap = {
+  id: "evidence-gap:missing-active-contract",
+  reason: "The DecisionPacket has no active task-bound EvidenceContract.",
+  verificationRequired: "Bind a current EvidenceContract before treating any command as required verification."
+};
+
 export const createExecutionBrief = (input: RenderExecutionBriefInput): ExecutionBrief => {
-  const includedContext = toContextInclusions(input.contextAssembly);
-  const explicitExclusions = toContextExclusions(input.contextAssembly);
-  const observationPrefix = toObservationPrefix(input.contextAssembly);
-  const observationPrefixWarnings = toObservationPrefixWarnings(input.contextAssembly);
+  const { packet } = input;
+  const includedContext = packet.contextInclusions.map((inclusion) => ({ ...inclusion }));
+  const explicitExclusions = packet.contextExclusions.map((exclusion) => ({ ...exclusion }));
+  const sourceClaimsSelected = includedContext
+    .filter((inclusion) => inclusion.subjectType === "source_claim")
+    .map((inclusion) => inclusion.subjectId);
+  const memoryRecordsSelected = includedContext
+    .filter((inclusion) => inclusion.subjectType === "memory_record")
+    .map((inclusion) => inclusion.subjectId);
+  const evidenceContract = packet.evidenceContract === undefined
+    ? {
+        active: false,
+        commands: [],
+        diffRisk: "unknown" as const,
+        reviewBurden: "unknown: no active EvidenceContract was supplied.",
+        rollbackPath: "unknown: no active EvidenceContract was supplied."
+      }
+    : {
+        active: true,
+        commands: packet.evidenceContract.commands.map((command) =>
+          command.required ? `${command.command} (required)` : command.command
+        ),
+        diffRisk: packet.evidenceContract.diffRisk,
+        reviewBurden: packet.evidenceContract.reviewBurden,
+        rollbackPath: packet.evidenceContract.rollbackPath
+      };
+  const evidenceGaps = [
+    ...packet.evidenceGaps,
+    ...(packet.evidenceContract === undefined ? [missingEvidenceContractGap] : [])
+  ];
+  const doesNotProve = [...new Set([
+    ...packet.doesNotProve,
+    ...packet.nonProofs,
+    "Codex executed the work.",
+    "Memory was mutated.",
+    "Maintenance queue records were processed by a runtime."
+  ])];
 
   return {
     formatVersion: executionBriefFormatVersion,
+    abstentionStatus: packet.abstentionScore.status,
     title: "KRN Codex Execution Brief",
-    objective: input.taskContract.objective,
-    nonGoals: input.taskContract.nonGoals,
+    objective: packet.task.objective,
+    nonGoals: [...packet.task.nonGoals],
     currentTaskContract: {
-      id: input.taskContract.id,
-      title: input.taskContract.title,
-      objective: input.taskContract.objective,
-      constraints: input.taskContract.constraints,
-      acceptance: input.taskContract.acceptance
+      id: packet.task.id,
+      title: packet.task.title,
+      objective: packet.task.objective,
+      constraints: [...packet.task.constraints],
+      acceptance: [...packet.task.acceptance]
     },
     includedContext,
-    observationPrefix,
-    observationPrefixWarnings,
+    observationPrefix: [],
+    observationPrefixWarnings: [],
     untrustedContextWarnings: untrustedContextWarnings(includedContext),
     explicitExclusions,
-    sourceClaimsSelected: sourceClaimsSelected(includedContext),
-    memoryRecordsSelected: memoryRecordsSelected(includedContext),
+    sourceClaimsSelected,
+    memoryRecordsSelected,
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
-    evidenceGaps: [...(input.evidenceGaps ?? [])],
-    toolBoundaries: input.capabilityPlan.toolBoundaries,
-    evidenceContract: {
-      commands: input.evidenceContract.commands.map((command) =>
-        command.required ? `${command.command} (required)` : command.command
-      ),
-      diffRisk: input.evidenceContract.diffRisk,
-      reviewBurden: input.evidenceContract.reviewBurden,
-      rollbackPath: input.evidenceContract.rollbackPath
-    },
-    stopCondition: "Stop before Codex execution or hidden state mutation.",
-    rollbackExpectation: input.evidenceContract.rollbackPath,
-    nextAction: input.nextAction,
-    doesNotProve: [
-      "Codex executed the work.",
-      "Memory was mutated.",
-      "Maintenance queue records were processed by a runtime."
-    ]
+    evidenceGaps,
+    toolBoundaries: [...packet.toolBoundaries],
+    evidenceContract,
+    stopCondition: packet.abstentionScore.status === "abstain"
+      ? "Do not execute; the DecisionPacket abstains until its evidence gaps are resolved."
+      : "Stop before Codex execution or hidden state mutation.",
+    rollbackExpectation: evidenceContract.rollbackPath,
+    nextAction: packet.nextAction,
+    doesNotProve
   };
 };
 
@@ -354,6 +318,7 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const lines = [
     brief.title,
     `Format Version: ${brief.formatVersion}`,
+    `Packet Status: ${brief.abstentionStatus}`,
     "",
     `Objective: ${brief.objective}`,
     "",
@@ -384,6 +349,7 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     ...renderToolBoundaries(brief),
     "",
     "Evidence Contract:",
+    `Active: ${brief.evidenceContract.active ? "yes" : "no (unverified)"}`,
     ...renderEvidenceContract(brief),
     "",
     `Stop Condition: ${brief.stopCondition}`,

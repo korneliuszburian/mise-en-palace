@@ -3,6 +3,7 @@ import {
   buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion,
   type CapabilityPlan,
+  type ContextAssembly,
   type ContextObservationPrefix,
   type DecisionPacket,
   type DecisionPacketTaskStandard,
@@ -215,6 +216,114 @@ const evidenceContractFor = (testCase: DecisionPacketCase): EvidenceContract => 
     evalCaseId: testCase.id
   }
 });
+
+const packetForBriefInput = (input: {
+  taskContract: TaskContract;
+  contextAssembly: ContextAssembly;
+  capabilityPlan: CapabilityPlan;
+  evidenceContract: EvidenceContract;
+  nextAction: string;
+  evidenceGaps?: readonly {
+    id: string;
+    reason: string;
+    verificationRequired: string;
+  }[];
+}): DecisionPacket => {
+  const contextInclusions = input.contextAssembly.inclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    expectedUse: item.expectedUse,
+    sourceAuthority: item.sourceAuthority
+  }));
+  const contextExclusions = input.contextAssembly.exclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    explanation: item.explanation,
+    sourceAuthority: item.sourceAuthority
+  }));
+  const sourceClaimIds = contextInclusions
+    .filter((item) => item.subjectType === "source_claim")
+    .map((item) => item.subjectId);
+  const memoryRefs = contextInclusions
+    .filter((item) => item.subjectType === "memory_record")
+    .map((item) => item.subjectId);
+  const evidenceGaps = [...(input.evidenceGaps ?? [])];
+  const sourceConsensus = buildDecisionPacketSourceConsensus({
+    sourceClaimIds,
+    caveatedSourceClaimIds: [],
+    unsupportedSourceClaimIds: [],
+    conflictingSourceClaimIds: [],
+    unknownSourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    staleDecisionIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    sourceRejectionIds: [],
+    conflictedDecisionIds: [],
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+  });
+
+  return {
+    formatVersion: decisionPacketFormatVersion,
+    task: {
+      id: input.taskContract.id,
+      title: input.taskContract.title,
+      objective: input.taskContract.objective,
+      constraints: input.taskContract.constraints,
+      nonGoals: input.taskContract.nonGoals,
+      acceptance: input.taskContract.acceptance
+    },
+    contextInclusions,
+    contextExclusions,
+    toolBoundaries: input.capabilityPlan.toolBoundaries,
+    evidenceContract: input.evidenceContract,
+    nextAction: input.nextAction,
+    governingDecisionIds: [],
+    governingStatements: [],
+    taskStandardDecisions: [],
+    sourceClaimIds,
+    caveatedSourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    sourceRejectionIds: [],
+    memoryRefs,
+    caveatedMemoryRefs: [],
+    staleDecisionIds: [],
+    staleKnowledgeIds: [],
+    noiseKnowledgeIds: [],
+    unknownKnowledgeIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    falsifiers: [],
+    verificationCommands: input.evidenceContract.commands.map((item) => item.command),
+    evidenceGaps,
+    sourceConsensus,
+    abstentionScore: buildDecisionPacketAbstentionScore({
+      governingDecisionIds: [],
+      sourceConsensus
+    }),
+    doesNotProve: ["This compile-time packet does not prove source truth."],
+    nonProofs: ["This compile-time packet does not prove source truth."],
+    noiseDecisionIds: [],
+    severeStaleAuthorityIds: [],
+    brief: {
+      includedContextCount: contextInclusions.length,
+      observationPrefixCount: input.contextAssembly.observationPrefix?.items.length ?? 0,
+      explicitExclusionCount: contextExclusions.length,
+      sourceClaimUseCount: sourceClaimIds.length,
+      memoryRecordUseCount: memoryRefs.length,
+      includedSourceClaimIds: sourceClaimIds,
+      includedMemoryRecordIds: memoryRefs,
+      excludedSourceClaimIds: [],
+      excludedMemoryRecordIds: [],
+      excludedAntiMemoryRecordIds: [],
+      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    }
+  };
+};
 
 const observationPrefixFor = (
   testCase: DecisionPacketCase
@@ -535,7 +644,9 @@ export const buildDecisionPacketWithEngine = async (
     evidenceContract,
     nextAction: "Use the governed decision packet before coding."
   };
-  const baseBrief = createExecutionBrief(briefInput);
+  const baseBrief = createExecutionBrief({
+    packet: packetForBriefInput(briefInput)
+  });
   const decisionsById = decisionById(fixture.decisions);
   const sourceRows = includedDecisionRows(fixture, baseBrief);
   const memoryRows = includedMemoryRows(fixture, baseBrief);
@@ -612,13 +723,33 @@ export const buildDecisionPacketWithEngine = async (
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
   });
-  const brief = createExecutionBrief({
-    ...briefInput,
-    evidenceGaps
-  });
-
-  return {
+  const packetWithoutSummary = {
     formatVersion: decisionPacketFormatVersion,
+    task: {
+      id: briefInput.taskContract.id,
+      title: briefInput.taskContract.title,
+      objective: briefInput.taskContract.objective,
+      constraints: briefInput.taskContract.constraints,
+      nonGoals: briefInput.taskContract.nonGoals,
+      acceptance: briefInput.taskContract.acceptance
+    },
+    contextInclusions: contextAssembly.inclusions.map((item) => ({
+      subjectType: item.subjectType,
+      subjectId: item.subjectId,
+      reason: item.reason,
+      expectedUse: item.expectedUse,
+      sourceAuthority: item.sourceAuthority
+    })),
+    contextExclusions: contextAssembly.exclusions.map((item) => ({
+      subjectType: item.subjectType,
+      subjectId: item.subjectId,
+      reason: item.reason,
+      explanation: item.explanation,
+      sourceAuthority: item.sourceAuthority
+    })),
+    toolBoundaries: briefInput.capabilityPlan.toolBoundaries,
+    evidenceContract,
+    nextAction: briefInput.nextAction,
     governingDecisionIds: supportedGoverningDecisionIds,
     governingStatements: unique(supportedGoverningRows.map((decision) => decision.statement).filter(nonEmpty)),
     taskStandardDecisions: taskStandardDecisionsFor(supportedGoverningRows),
@@ -654,8 +785,27 @@ export const buildDecisionPacketWithEngine = async (
     noiseDecisionIds: supportedGoverningDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
     severeStaleAuthorityIds,
     brief: {
+      includedContextCount: contextAssembly.inclusions.length,
+      observationPrefixCount: contextAssembly.observationPrefix?.items.length ?? 0,
+      explicitExclusionCount: contextAssembly.exclusions.length,
+      sourceClaimUseCount: sourceClaimIds.length,
+      memoryRecordUseCount: memoryRows.length,
+      includedSourceClaimIds: sourceClaimIds,
+      includedMemoryRecordIds: memoryRows.map((decision) => `memory:decision:${decision.id}`),
+      excludedSourceClaimIds: briefSubjectIds(baseBrief.explicitExclusions, "source_claim"),
+      excludedMemoryRecordIds: briefSubjectIds(baseBrief.explicitExclusions, "memory_record"),
+      excludedAntiMemoryRecordIds: briefSubjectIds(baseBrief.explicitExclusions, "anti_memory_record"),
+      evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    }
+  };
+  const packet = packetWithoutSummary as DecisionPacket;
+  const brief = createExecutionBrief({ packet });
+
+  return {
+    ...packet,
+    brief: {
+      ...packet.brief,
       includedContextCount: brief.includedContext.length,
-      observationPrefixCount: brief.observationPrefix.length,
       explicitExclusionCount: brief.explicitExclusions.length,
       sourceClaimUseCount: brief.sourceClaimsSelected.length,
       memoryRecordUseCount: brief.memoryRecordsSelected.length,

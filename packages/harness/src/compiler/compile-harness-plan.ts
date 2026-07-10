@@ -2,11 +2,15 @@ import type {
   CapabilityPlan,
   CodexAdapterPlanRef,
   ContextAssembly,
+  DecisionPacket,
   HarnessPlan,
   OperatorIntent,
   ProjectId,
   TaskContract,
   WorkspaceId
+} from "@krn/core";
+import {
+  decisionPacketFormatVersion
 } from "@krn/core";
 import {
   applyContextROI,
@@ -107,6 +111,107 @@ export interface HarnessCompileResult {
   evidenceContract: EvidenceContract;
   nextAction: string;
 }
+
+export const decisionPacketForCompiledPlan = (
+  result: HarnessCompileResult
+): DecisionPacket => {
+  const contextInclusions = result.contextAssembly.inclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    expectedUse: item.expectedUse,
+    sourceAuthority: item.sourceAuthority
+  }));
+  const contextExclusions = result.contextAssembly.exclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    explanation: item.explanation,
+    sourceAuthority: item.sourceAuthority
+  }));
+  const sourceClaimIds = contextInclusions
+    .filter((item) => item.subjectType === "source_claim")
+    .map((item) => item.subjectId);
+  const memoryRefs = contextInclusions
+    .filter((item) => item.subjectType === "memory_record")
+    .map((item) => item.subjectId);
+
+  return {
+    formatVersion: decisionPacketFormatVersion,
+    task: {
+      id: result.taskContract.id,
+      title: result.taskContract.title,
+      objective: result.taskContract.objective,
+      constraints: result.taskContract.constraints,
+      nonGoals: result.taskContract.nonGoals,
+      acceptance: result.taskContract.acceptance
+    },
+    contextInclusions,
+    contextExclusions,
+    toolBoundaries: result.capabilityPlan.toolBoundaries,
+    evidenceContract: result.evidenceContract,
+    nextAction: result.nextAction,
+    governingDecisionIds: [],
+    governingStatements: [],
+    taskStandardDecisions: [],
+    sourceClaimIds,
+    caveatedSourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    sourceRejectionIds: [],
+    memoryRefs,
+    caveatedMemoryRefs: [],
+    staleDecisionIds: [],
+    staleKnowledgeIds: [],
+    noiseKnowledgeIds: [],
+    unknownKnowledgeIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    falsifiers: [],
+    verificationCommands: result.evidenceContract.commands.map((item) => item.command),
+    evidenceGaps: [],
+    sourceConsensus: {
+      decisionLinkedSourceClaimIds: [],
+      caveatedSourceClaimIds: [],
+      unsupportedSourceClaimIds: [],
+      conflictingSourceClaimIds: [],
+      unknownSourceClaimIds: [],
+      sourceDecisionEdgeIds: [],
+      sourceDecisionTargets: [],
+      staleDecisionIds: [],
+      supersededPathIds: [],
+      rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+      sourceRejectionIds: [],
+      conflictedDecisionIds: [],
+      evidenceGapIds: [],
+      doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
+    },
+    abstentionScore: {
+      status: "abstain",
+      score: 0,
+      reasons: ["missing_governing_decision"],
+      evidenceGapIds: [],
+      doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
+    },
+    doesNotProve: ["A compile-time packet does not prove source truth or persisted authority."],
+    nonProofs: ["A compile-time packet does not prove source truth or persisted authority."],
+    noiseDecisionIds: [],
+    severeStaleAuthorityIds: [],
+    brief: {
+      includedContextCount: contextInclusions.length,
+      observationPrefixCount: 0,
+      explicitExclusionCount: contextExclusions.length,
+      sourceClaimUseCount: sourceClaimIds.length,
+      memoryRecordUseCount: memoryRefs.length,
+      includedSourceClaimIds: sourceClaimIds,
+      includedMemoryRecordIds: memoryRefs,
+      excludedSourceClaimIds: [],
+      excludedMemoryRecordIds: [],
+      excludedAntiMemoryRecordIds: [],
+      evidenceGapIds: []
+    }
+  };
+};
 
 const defaultMemoryLimit = 25;
 const defaultSourceLimit = 25;

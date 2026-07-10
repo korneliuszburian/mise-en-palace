@@ -123,8 +123,9 @@ export interface ExecutionBriefTaskContract {
 }
 
 export interface ExecutionBriefEvidenceContract {
+  active: boolean;
   commands: string[];
-  diffRisk: DiffRisk;
+  diffRisk: DiffRisk | "unknown";
   reviewBurden: string;
   rollbackPath: string;
 }
@@ -137,6 +138,7 @@ export interface ExecutionBriefEvidenceGap {
 
 export interface ExecutionBrief {
   formatVersion: ExecutionBriefFormatVersion;
+  abstentionStatus: "ready" | "weak_context" | "abstain";
   title: string;
   objective: string;
   nonGoals: string[];

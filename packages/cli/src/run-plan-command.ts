@@ -10,6 +10,7 @@ import {
   activationRetrievalDiagnosticsFromMetadata,
   assessTargetOwnerFileRecall,
   compileHarnessPlan,
+  decisionPacketForCompiledPlan,
   formatActivationRetrievalDiagnostics,
   searchKnowledgeReadModels,
   tokenizeActivationText
@@ -792,13 +793,7 @@ const compilePlanForCommand = (
   );
 
 const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
-  renderExecutionBrief({
-    taskContract: result.taskContract,
-    contextAssembly: result.contextAssembly,
-    capabilityPlan: result.capabilityPlan,
-    evidenceContract: result.evidenceContract,
-    nextAction: result.nextAction
-  });
+  renderExecutionBrief({ packet: decisionPacketForCompiledPlan(result) });
 
 const targetReadModelMetadata = (
   targetReadModel: TargetActivationReadModel | undefined,

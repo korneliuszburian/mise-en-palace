@@ -14,6 +14,9 @@ import type {
   EvidenceContract
 } from "./evidence-contract.js";
 import type {
+  DiffRisk
+} from "./evidence-bundle.js";
+import type {
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
@@ -82,6 +85,41 @@ export interface DecisionPacketSourceDecisionTarget {
   targetType: SourceDecisionTargetType;
   targetId: string;
   sourceDecisionEdgeIds: readonly string[];
+}
+
+export interface DecisionPacketTask {
+  id: string;
+  title: string;
+  objective: string;
+  constraints: readonly string[];
+  nonGoals: readonly string[];
+  acceptance: readonly string[];
+}
+
+export interface DecisionPacketContextInclusion {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  reason: string;
+  expectedUse: string;
+  sourceAuthority: SourceAuthorityLabel;
+}
+
+export interface DecisionPacketContextExclusion {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  reason: string;
+  explanation: string;
+  sourceAuthority: SourceAuthorityLabel;
+}
+
+export interface DecisionPacketEvidenceContract {
+  commands: readonly {
+    command: string;
+    required: boolean;
+  }[];
+  diffRisk: DiffRisk;
+  reviewBurden: string;
+  rollbackPath: string;
 }
 
 export type DecisionPacketAbstentionStatus =
@@ -237,6 +275,12 @@ export const buildDecisionPacketAbstentionScore = (input: {
 
 export interface DecisionPacket {
   formatVersion: DecisionPacketFormatVersion;
+  task: DecisionPacketTask;
+  contextInclusions: readonly DecisionPacketContextInclusion[];
+  contextExclusions: readonly DecisionPacketContextExclusion[];
+  toolBoundaries: readonly string[];
+  evidenceContract?: DecisionPacketEvidenceContract;
+  nextAction: string;
   governingDecisionIds: readonly string[];
   governingStatements: readonly string[];
   taskStandardDecisions: readonly DecisionPacketTaskStandard[];
@@ -277,7 +321,10 @@ export interface DecisionPacketReadModelInput {
     exclusionDetails?: readonly DecisionPacketContextExclusionInput[];
     activationTrace?: DecisionPacketActivationTraceInput;
   };
-  evidenceContract?: Pick<EvidenceContract, "commands">;
+  task?: DecisionPacketTask;
+  toolBoundaries?: readonly string[];
+  nextAction?: string;
+  evidenceContract?: Pick<EvidenceContract, "commands" | "diffRisk" | "reviewBurden" | "rollbackPath">;
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
   feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
   proof: {
@@ -289,12 +336,16 @@ export interface DecisionPacketContextInclusionInput {
   subjectType: ContextSubjectType;
   subjectId: string;
   sourceAuthority: SourceAuthorityLabel;
+  reason?: string;
+  expectedUse?: string;
 }
 
 export interface DecisionPacketContextExclusionInput {
   subjectType: ContextSubjectType;
   subjectId: string;
   reason: string;
+  explanation?: string;
+  sourceAuthority?: SourceAuthorityLabel;
 }
 
 export interface DecisionPacketActivationTraceInput {
@@ -924,6 +975,44 @@ export const buildDecisionPacketFromReadModel = (
 
   return {
     formatVersion: decisionPacketFormatVersion,
+    task: readModel.task ?? {
+      id: readModel.run.id,
+      title: "Task contract unavailable",
+      objective: "The persisted task objective is unavailable in this packet.",
+      constraints: [],
+      nonGoals: ["Do not execute Codex without a task-bound packet."],
+      acceptance: []
+    },
+    contextInclusions: inclusions.map((inclusion) => ({
+      subjectType: inclusion.subjectType,
+      subjectId: inclusion.subjectId,
+      reason: inclusion.reason ?? "Selected by the current activation result.",
+      expectedUse: inclusion.expectedUse ?? "Use only within the current task boundary.",
+      sourceAuthority: inclusion.sourceAuthority
+    })),
+    contextExclusions: exclusions.map((exclusion) => ({
+      subjectType: exclusion.subjectType,
+      subjectId: exclusion.subjectId,
+      reason: exclusion.reason,
+      explanation: exclusion.explanation ?? "Excluded by the current activation result.",
+      sourceAuthority: exclusion.sourceAuthority ?? "low"
+    })),
+    toolBoundaries: [...(readModel.toolBoundaries ?? [])],
+    ...(readModel.evidenceContract === undefined
+      ? {}
+      : {
+          evidenceContract: {
+            commands: readModel.evidenceContract.commands.map((command) => ({
+              command: command.command,
+              required: command.required
+            })),
+            diffRisk: readModel.evidenceContract.diffRisk,
+            reviewBurden: readModel.evidenceContract.reviewBurden,
+            rollbackPath: readModel.evidenceContract.rollbackPath
+          }
+        }),
+    nextAction: readModel.nextAction ??
+      "Review the DecisionPacket evidence gaps before taking an implementation action.",
     governingDecisionIds,
     governingStatements: governingStatementsFor(readModel),
     taskStandardDecisions: taskStandardDecisionsFor(readModel),

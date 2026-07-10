@@ -15,6 +15,7 @@ describe("Codex adapter contracts", () => {
   test("model bounded Codex-facing outputs without execution authority", () => {
     const brief: ExecutionBrief = {
       formatVersion: executionBriefFormatVersion,
+      abstentionStatus: "ready",
       title: "KRN Codex Execution Brief",
       objective: "Render a bounded Codex brief.",
       nonGoals: ["do not invoke Codex"],
@@ -52,6 +53,7 @@ describe("Codex adapter contracts", () => {
       evidenceGaps: [],
       toolBoundaries: ["Do not invoke Codex from the renderer."],
       evidenceContract: {
+        active: true,
         commands: ["pnpm typecheck"],
         diffRisk: "medium",
         reviewBurden: "focused adapter contract review",

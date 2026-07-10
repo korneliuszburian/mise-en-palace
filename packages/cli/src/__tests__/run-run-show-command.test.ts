@@ -909,7 +909,7 @@ describe("runRunShowCommand", () => {
       "This command result does not prove memory quality, source truth, review correctness, or production readiness."
     );
     expect(result.stdout).not.toContain("promote");
-    expect(result.stdout).not.toContain("mutate");
+    expect(result.stdout).not.toContain("memory record apply");
     expect(closed).toBe(true);
   });
 });

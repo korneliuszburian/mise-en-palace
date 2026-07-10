@@ -81,9 +81,6 @@ export const runCodexBriefCommand = async (
 
     const { renderedBrief } = renderCodexBriefFromAggregate({
       aggregate,
-      includeTaskContractInCapabilityPlan: true,
-      createdAt: runtime.now(),
-      createId: runtime.createId,      nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
     const knowledgeSelection = knowledgeSelectionFromMetadata(

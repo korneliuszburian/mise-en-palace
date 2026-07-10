@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
   CapabilityPlan,
   ContextAssembly,
+  DecisionPacket,
   HarnessPlan,
   TaskContract
 } from "@krn/core";
@@ -181,14 +182,119 @@ const evidenceContract: EvidenceContract = {
   metadata: {}
 };
 
+const packetForBrief = (input: {
+  taskContract: TaskContract;
+  contextAssembly: ContextAssembly;
+  capabilityPlan: CapabilityPlan;
+  evidenceContract?: EvidenceContract;
+  nextAction: string;
+  evidenceGaps?: readonly {
+    id: string;
+    reason: string;
+    verificationRequired: string;
+  }[];
+}): DecisionPacket => ({
+  formatVersion: "krn.decisionPacket.v1",
+  task: {
+    id: input.taskContract.id,
+    title: input.taskContract.title,
+    objective: input.taskContract.objective,
+    constraints: input.taskContract.constraints,
+    nonGoals: input.taskContract.nonGoals,
+    acceptance: input.taskContract.acceptance
+  },
+  contextInclusions: input.contextAssembly.inclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    expectedUse: item.expectedUse,
+    sourceAuthority: item.sourceAuthority
+  })),
+  contextExclusions: input.contextAssembly.exclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    explanation: item.explanation,
+    sourceAuthority: item.sourceAuthority
+  })),
+  toolBoundaries: input.capabilityPlan.toolBoundaries,
+  ...(input.evidenceContract === undefined ? {} : { evidenceContract: input.evidenceContract }),
+  nextAction: input.nextAction,
+  governingDecisionIds: [],
+  governingStatements: [],
+  taskStandardDecisions: [],
+  sourceClaimIds: input.contextAssembly.inclusions
+    .filter((item) => item.subjectType === "source_claim")
+    .map((item) => item.subjectId),
+  caveatedSourceClaimIds: [],
+  sourceDecisionEdgeIds: [],
+  sourceDecisionTargets: [],
+  sourceRejectionIds: [],
+  memoryRefs: input.contextAssembly.inclusions
+    .filter((item) => item.subjectType === "memory_record")
+    .map((item) => item.subjectId),
+  caveatedMemoryRefs: [],
+  staleDecisionIds: [],
+  staleKnowledgeIds: [],
+  noiseKnowledgeIds: [],
+  unknownKnowledgeIds: [],
+  supersededPathIds: [],
+  rejectedPathIds: input.contextAssembly.exclusions.map((item) => item.subjectId),
+  falsifiers: [],
+  verificationCommands: input.evidenceContract?.commands.map((item) => item.command) ?? [],
+  evidenceGaps: [...(input.evidenceGaps ?? [])],
+  sourceConsensus: {
+    decisionLinkedSourceClaimIds: [],
+    caveatedSourceClaimIds: [],
+    unsupportedSourceClaimIds: [],
+    conflictingSourceClaimIds: [],
+    unknownSourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    staleDecisionIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: [],
+    sourceRejectionIds: [],
+    conflictedDecisionIds: [],
+    evidenceGapIds: (input.evidenceGaps ?? []).map((item) => item.id),
+    doesNotProve: "Test packet does not prove source truth."
+  },
+  abstentionScore: {
+    status: input.contextAssembly.status === "abstained" ? "abstain" : "ready",
+    score: input.contextAssembly.status === "abstained" ? 0 : 100,
+    reasons: [],
+    evidenceGapIds: (input.evidenceGaps ?? []).map((item) => item.id),
+    doesNotProve: "Test packet does not prove source truth."
+  },
+  doesNotProve: ["Test packet does not prove source truth."],
+  nonProofs: ["Test packet does not prove source truth."],
+  noiseDecisionIds: [],
+  severeStaleAuthorityIds: [],
+  brief: {
+    includedContextCount: input.contextAssembly.inclusions.length,
+    observationPrefixCount: 0,
+    explicitExclusionCount: input.contextAssembly.exclusions.length,
+    sourceClaimUseCount: input.contextAssembly.inclusions.filter((item) => item.subjectType === "source_claim").length,
+    memoryRecordUseCount: input.contextAssembly.inclusions.filter((item) => item.subjectType === "memory_record").length,
+    includedSourceClaimIds: [],
+    includedMemoryRecordIds: [],
+    excludedSourceClaimIds: [],
+    excludedMemoryRecordIds: [],
+    excludedAntiMemoryRecordIds: [],
+    evidenceGapIds: (input.evidenceGaps ?? []).map((item) => item.id)
+  }
+});
+
 describe("renderExecutionBrief", () => {
   it("creates a typed execution brief artifact before rendering text", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
 
     expect(brief.currentTaskContract).toEqual({
@@ -201,25 +307,8 @@ describe("renderExecutionBrief", () => {
     expect(brief.formatVersion).toBe(executionBriefFormatVersion);
     expect(brief.sourceClaimsSelected).toEqual(["claim-1"]);
     expect(brief.memoryRecordsSelected).toEqual(["memory-1"]);
-    expect(brief.observationPrefix).toEqual([
-      {
-        observationId: "observation-1",
-        kind: "operator_feedback",
-        confidence: "high",
-        priority: "critical",
-        summary: "DB readiness should be proven from store-backed checks, not markdown notes.",
-        sourceRangeCount: 1,
-        reason: "Observation matches doctor readiness and has source range evidence.",
-        score: 98
-      }
-    ]);
-    expect(brief.observationPrefixWarnings).toEqual([
-      {
-        observationId: "observation-1",
-        warning: "gap",
-        summary: "Observation records the failure knowledge but does not prove current DB readiness."
-      }
-    ]);
+    expect(brief.observationPrefix).toEqual([]);
+    expect(brief.observationPrefixWarnings).toEqual([]);
     expect(brief.untrustedContextWarnings).toEqual([]);
     expect(brief.antiMemoryWarnings).toEqual([
       "anti_memory_record:anti-1 | unsafe | Do not treat old markdown memory as runtime truth."
@@ -238,19 +327,21 @@ describe("renderExecutionBrief", () => {
     });
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
       kind: "optional",
-      rendered: true,
-      itemCount: 2,
+      rendered: false,
+      itemCount: 0,
       emptyBehavior: "omit_when_empty"
     });
   });
 
   it("renders a bounded Codex execution brief with exclusions and evidence", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
     const rendered = renderExecutionBriefText(brief);
 
@@ -265,10 +356,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
-    expect(rendered).toContain("Observation Prefix:");
-    expect(rendered).toContain("observation:observation-1");
-    expect(rendered).toContain("source_ranges=1");
-    expect(rendered).toContain("warning:observation-1");
+    expect(rendered).not.toContain("Observation Prefix:");
     expect(rendered).not.toContain("Untrusted Context Warnings:");
     expect(rendered).toContain("Constraints:");
     expect(rendered).toContain("- no runtime markdown memory");
@@ -295,11 +383,13 @@ describe("renderExecutionBrief", () => {
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly: minimalContextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: minimalContextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
     const rendered = renderExecutionBriefText(brief);
 
@@ -325,17 +415,19 @@ describe("renderExecutionBrief", () => {
 
   it("renders evidence gaps as Codex-facing packet guidance", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly: minimalContextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Do not treat weak context as authority.",
-      evidenceGaps: [{
-        id: "evidence-gap:task-1:no-governing-decision",
-        reason: "No current governed decision matched this task.",
-        verificationRequired:
-          "Promote source-backed decision evidence before turning this into implementation guidance."
-      }]
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: minimalContextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Do not treat weak context as authority.",
+        evidenceGaps: [{
+          id: "evidence-gap:task-1:no-governing-decision",
+          reason: "No current governed decision matched this task.",
+          verificationRequired:
+            "Promote source-backed decision evidence before turning this into implementation guidance."
+        }]
+      })
     });
     const rendered = renderExecutionBriefText(brief);
 
@@ -366,11 +458,13 @@ describe("renderExecutionBrief", () => {
       }))
     };
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly: overloadedContextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: overloadedContextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
 
     const profile = describeExecutionBriefProfile(brief);
@@ -381,24 +475,26 @@ describe("renderExecutionBrief", () => {
 
   it("warns when selected context is not a trusted tier", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly: {
-        ...contextAssembly,
-        inclusions: [
-          ...contextAssembly.inclusions,
-          {
-            subjectType: "source_claim",
-            subjectId: "claim-hypothesis",
-            reason: "Hypothesis source may help identify risk.",
-            expectedUse: "Use only as a risk hypothesis.",
-            tokenEstimate: 20,
-            sourceAuthority: "hypothesis"
-          }
-        ]
-      },
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: {
+          ...contextAssembly,
+          inclusions: [
+            ...contextAssembly.inclusions,
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-hypothesis",
+              reason: "Hypothesis source may help identify risk.",
+              expectedUse: "Use only as a risk hypothesis.",
+              tokenEstimate: 20,
+              sourceAuthority: "hypothesis"
+            }
+          ]
+        },
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
 
     expect(brief.untrustedContextWarnings).toEqual([
@@ -412,13 +508,63 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("treat as untrusted selected context");
   });
 
+  it("does not invent verification commands when the packet has no active contract", () => {
+    const brief = createExecutionBrief({
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: minimalContextAssembly,
+        capabilityPlan,
+        nextAction: "Bind the active EvidenceContract before execution."
+      })
+    });
+
+    expect(brief.evidenceContract).toMatchObject({
+      active: false,
+      commands: [],
+      diffRisk: "unknown"
+    });
+    expect(brief.evidenceGaps).toContainEqual({
+      id: "evidence-gap:missing-active-contract",
+      reason: "The DecisionPacket has no active task-bound EvidenceContract.",
+      verificationRequired: "Bind a current EvidenceContract before treating any command as required verification."
+    });
+
+    const rendered = renderExecutionBriefText(brief);
+    expect(rendered).toContain("Packet Status: ready");
+    expect(rendered).toContain("Active: no (unverified)");
+    expect(rendered).not.toContain("pnpm typecheck");
+  });
+
+  it("keeps an abstaining packet non-actionable", () => {
+    const brief = createExecutionBrief({
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: { ...minimalContextAssembly, status: "abstained" },
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Resolve the packet evidence gap before execution.",
+        evidenceGaps: [{
+          id: "evidence-gap:task-1:authority",
+          reason: "No current authority is available.",
+          verificationRequired: "Review the source decision before execution."
+        }]
+      })
+    });
+
+    expect(brief.abstentionStatus).toBe("abstain");
+    expect(brief.stopCondition).toContain("Do not execute");
+    expect(renderExecutionBriefText(brief)).toContain("Packet Status: abstain");
+  });
+
   it("keeps the existing renderExecutionBrief wrapper stable", () => {
     const rendered = renderExecutionBrief({
-      taskContract,
-      contextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Implement the smallest missing doctor check."
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest missing doctor check."
+      })
     });
 
     expect(rendered).toContain("KRN Codex Execution Brief");

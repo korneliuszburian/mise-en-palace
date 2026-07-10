@@ -8,6 +8,7 @@ import {
   applyContextROI,
   assembleContext,
   compileHarnessPlan,
+  decisionPacketForCompiledPlan,
   persistActivationTrace,
   promoteAntiMemoryCandidateThroughGate,
   promoteMemoryCandidateThroughGate,
@@ -16,18 +17,12 @@ import {
   proposeMemoryRevision,
   retrieveActivationCandidates
 } from "@krn/harness";
-import type {
-  EvidenceContract
-} from "@krn/harness";
 import {
   buildMemoryStalenessMaintenancePreview,
   sourceUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import type {
-  CapabilityPlan,
-  ContextAssembly,
-  HarnessPlan,
-  TaskContract
+  DecisionPacket
 } from "@krn/core";
 
 import type { KrnDatabase } from "../../database.js";
@@ -52,16 +47,7 @@ export interface BrainLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
-  renderExecutionBrief(input: BrainLoopExecutionBriefInput): string;
-}
-
-export interface BrainLoopExecutionBriefInput {
-  taskContract: TaskContract;
-  harnessPlan: HarnessPlan;
-  contextAssembly: ContextAssembly;
-  capabilityPlan: CapabilityPlan;
-  evidenceContract: EvidenceContract;
-  nextAction: string;
+  renderExecutionBrief(packet: DecisionPacket): string;
 }
 
 export interface BrainLoopSmokeReport {
@@ -735,14 +721,9 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === memoryRecord.id
     ).length;
-    const nextRunCodexBrief = input.renderExecutionBrief({
-      taskContract: nextCompile.taskContract,
-      harnessPlan: nextCompile.harnessPlan,
-      contextAssembly: nextCompile.contextAssembly,
-      capabilityPlan: nextCompile.capabilityPlan,
-      evidenceContract: nextCompile.evidenceContract,
-      nextAction: nextCompile.nextAction
-    });
+    const nextRunCodexBrief = input.renderExecutionBrief(
+      decisionPacketForCompiledPlan(nextCompile)
+    );
     const nextRunCodexBriefRendered = nextRunCodexBrief.trim().length > 0;
     const nextRunCodexBriefIncludesMemory = nextRunCodexBrief.includes(memoryRecord.id);
     const nextRunCodexBriefIncludesNonProofBoundary =

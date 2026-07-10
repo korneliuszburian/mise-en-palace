@@ -1,3 +1,6 @@
+import {
+  createHash
+} from "node:crypto";
 import postgres from "postgres";
 import type {
   Sql
@@ -6,16 +9,12 @@ import type {
   ExecutionBrief
 } from "@krn/codex-adapter";
 import {
-  parseEvidenceContract
+  buildDecisionPacketContractReadback
 } from "@krn/core";
 import {
   createExecutionBrief,
   renderExecutionBriefText
 } from "@krn/codex-adapter";
-import {
-  createCapabilityPlan,
-  createEvidenceContract
-} from "@krn/harness";
 import type {
   EvidenceContract
 } from "@krn/harness";
@@ -38,6 +37,9 @@ import type {
 import type {
   DatabaseRuntimeInput
 } from "./database-runtime.js";
+import {
+  buildDecisionPacketReadModel
+} from "./decision-packet-read-model-builders.js";
 
 export interface CountRow {
   count: number;
@@ -81,18 +83,17 @@ interface BrainStoreReadiness {
 
 interface RenderCodexBriefFromAggregateInput {
   aggregate: HarnessRunAggregate;
-  createdAt: string;
-  createId(prefix: string): string;
-  nextActionFallback: string;
-  includeTaskContractInCapabilityPlan?: boolean;
   missingContextMessage: string;
 }
 
 export interface RenderedCodexBrief {
   brief: ExecutionBrief;
   renderedBrief: string;
-  evidenceContract: EvidenceContract;
+  evidenceContract: EvidenceContract | undefined;
 }
+
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 export const normalizeSmokeSlugPart = (value: string): string => {
   const smokeSlugPart = value
@@ -267,25 +268,26 @@ export const renderCodexBriefFromAggregate = (
     throw new Error(input.missingContextMessage);
   }
 
-  const evidenceContract =
-    parseEvidenceContract(input.aggregate.harnessPlan.metadata.evidenceContract) ??
-    createEvidenceContract(input.aggregate.taskContract);
-  const capabilityPlan = createCapabilityPlan({
-    harnessPlan: input.aggregate.harnessPlan,
-    ...(input.includeTaskContractInCapabilityPlan === true
-      ? { taskContract: input.aggregate.taskContract }
-      : {}),
-    hasContext: contextAssembly.inclusions.length > 0,
-    createdAt: input.createdAt,
-    createId: input.createId
-  });
+  const packet = buildDecisionPacketContractReadback({
+    readModel: buildDecisionPacketReadModel(input.aggregate),
+    generatedAt: input.aggregate.executionRun.updatedAt,
+    sha256Hex
+  }).packet;
   const brief = createExecutionBrief({
-    taskContract: input.aggregate.taskContract,
-    contextAssembly,
-    capabilityPlan,
-    evidenceContract,
-    nextAction: input.aggregate.harnessPlan.nextAction ?? input.nextActionFallback
+    packet
   });
+  const evidenceContract = packet.evidenceContract === undefined
+    ? undefined
+    : {
+        commands: packet.evidenceContract.commands.map((command) => ({
+          command: command.command,
+          required: command.required
+        })),
+        diffRisk: packet.evidenceContract.diffRisk,
+        reviewBurden: packet.evidenceContract.reviewBurden,
+        rollbackPath: packet.evidenceContract.rollbackPath,
+        metadata: {}
+      } satisfies EvidenceContract;
 
   return {
     brief,

@@ -561,7 +561,7 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
     smokeId: runtime.createId("memory-loop-smoke"),
-    renderExecutionBrief: (input) => renderExecutionBriefText(createExecutionBrief(input))
+    renderExecutionBrief: (packet) => renderExecutionBriefText(createExecutionBrief({ packet }))
   });
 
   return smokeResultFromCleanup(

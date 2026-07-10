@@ -162,9 +162,9 @@ const renderedBriefCoversContract = (
   rendered.renderedBrief.includes("Explicit Exclusions:") &&
   !rendered.renderedBrief.includes("Explicit Exclusions:\n- none") &&
   rendered.renderedBrief.includes("Evidence Contract:") &&
-  rendered.evidenceContract.commands.every((command) =>
+  rendered.evidenceContract?.commands.every((command) =>
     rendered.renderedBrief.includes(command.command)
-  );
+  ) === true;
 
 const hasBoundedSelectedContext = (
   input: {
@@ -504,9 +504,7 @@ export const runCodexAdapterSmokeCheck = async (
 
     const rendered = renderCodexBriefFromAggregate({
       aggregate,
-      createdAt: now,
-      createId: (prefix) => `${prefix}-${marker}-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",      missingContextMessage: "Codex adapter smoke failed to read back persisted run"
+      missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });
     const proof = assertCodexAdapterBoundary({
       aggregate,

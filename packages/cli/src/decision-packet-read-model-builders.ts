@@ -383,6 +383,9 @@ const taskResource = (
   id: aggregate.taskContract.id,
   title: aggregate.taskContract.title,
   objective: aggregate.taskContract.objective,
+  constraints: [...aggregate.taskContract.constraints],
+  nonGoals: [...aggregate.taskContract.nonGoals],
+  acceptance: [...aggregate.taskContract.acceptance],
   status: aggregate.taskContract.status
 });
 
@@ -510,6 +513,9 @@ export const buildDecisionPacketReadModel = (
     run: runResource(aggregate, projectResolution),
     task: taskResource(aggregate),
     ...(knowledgeSelection === undefined ? {} : { knowledgeSelection }),
+    ...(aggregate.harnessPlan.nextAction === undefined
+      ? {}
+      : { nextAction: aggregate.harnessPlan.nextAction }),
     context: contextResource(aggregate, activationTrace),
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
     evidenceBundles: aggregate.evidenceBundles.map((bundle) =>

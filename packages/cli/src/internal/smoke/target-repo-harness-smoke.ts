@@ -1304,9 +1304,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
 
     const { renderedBrief: baselineRenderedBrief } = renderCodexBriefFromAggregate({
       aggregate: baselineAggregate,
-      createdAt: now,
-      createId: (prefix) => `${prefix}-${marker}-baseline-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: "Target repo harness smoke failed to read back baseline run"
     });
     const baselineProof = assertTargetBaselineReadback({
@@ -1410,9 +1407,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
 
     const { renderedBrief } = renderCodexBriefFromAggregate({
       aggregate,
-      createdAt: now,
-      createId: (prefix) => `${prefix}-${marker}-readback`,
-      nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
     const planProof = assertTargetPlanReadback({

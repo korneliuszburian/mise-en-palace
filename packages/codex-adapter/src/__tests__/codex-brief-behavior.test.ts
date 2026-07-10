@@ -3,6 +3,7 @@ import type {
   CapabilityPlan,
   ContextAssembly,
   BehaviorFixture,
+  DecisionPacket,
   HarnessPlan,
   TaskContract
 } from "@krn/core";
@@ -126,6 +127,94 @@ const expectedRenderedBriefFragments = [
   "- Codex executed the work."
 ] as const;
 
+const packet: DecisionPacket = {
+  formatVersion: "krn.decisionPacket.v1",
+  task: {
+    id: taskContract.id,
+    title: taskContract.title,
+    objective: taskContract.objective,
+    constraints: taskContract.constraints,
+    nonGoals: taskContract.nonGoals,
+    acceptance: taskContract.acceptance
+  },
+  contextInclusions: contextAssembly.inclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    expectedUse: item.expectedUse,
+    sourceAuthority: item.sourceAuthority
+  })),
+  contextExclusions: contextAssembly.exclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    explanation: item.explanation,
+    sourceAuthority: item.sourceAuthority
+  })),
+  toolBoundaries: capabilityPlan.toolBoundaries,
+  evidenceContract,
+  nextAction: "Execute the bounded source repair.",
+  governingDecisionIds: [],
+  governingStatements: [],
+  taskStandardDecisions: [],
+  sourceClaimIds: ["claim-codex-brief-contract"],
+  caveatedSourceClaimIds: [],
+  sourceDecisionEdgeIds: [],
+  sourceDecisionTargets: [],
+  sourceRejectionIds: [],
+  memoryRefs: [],
+  caveatedMemoryRefs: [],
+  staleDecisionIds: [],
+  staleKnowledgeIds: [],
+  noiseKnowledgeIds: [],
+  unknownKnowledgeIds: [],
+  supersededPathIds: [],
+  rejectedPathIds: ["claim-promptfoo-as-truth"],
+  falsifiers: [],
+  verificationCommands: evidenceContract.commands.map((item) => item.command),
+  evidenceGaps: [],
+  sourceConsensus: {
+    decisionLinkedSourceClaimIds: [],
+    caveatedSourceClaimIds: [],
+    unsupportedSourceClaimIds: [],
+    conflictingSourceClaimIds: [],
+    unknownSourceClaimIds: [],
+    sourceDecisionEdgeIds: [],
+    sourceDecisionTargets: [],
+    staleDecisionIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: [],
+    sourceRejectionIds: [],
+    conflictedDecisionIds: [],
+    evidenceGapIds: [],
+    doesNotProve: "This test packet does not prove source truth."
+  },
+  abstentionScore: {
+    status: "ready",
+    score: 100,
+    reasons: [],
+    evidenceGapIds: [],
+    doesNotProve: "This test packet does not prove source truth."
+  },
+  doesNotProve: ["This test packet does not prove source truth."],
+  nonProofs: ["This test packet does not prove source truth."],
+  noiseDecisionIds: [],
+  severeStaleAuthorityIds: [],
+  brief: {
+    includedContextCount: 1,
+    observationPrefixCount: 0,
+    explicitExclusionCount: 1,
+    sourceClaimUseCount: 1,
+    memoryRecordUseCount: 0,
+    includedSourceClaimIds: ["claim-codex-brief-contract"],
+    includedMemoryRecordIds: [],
+    excludedSourceClaimIds: ["claim-promptfoo-as-truth"],
+    excludedMemoryRecordIds: [],
+    excludedAntiMemoryRecordIds: [],
+    evidenceGapIds: []
+  }
+};
+
 const includesAllFragments = (
   rendered: string,
   fragments: readonly string[]
@@ -173,11 +262,7 @@ const task: BehaviorFixture = {
 describe("codex brief behavior fixture", () => {
   it("guards the dogfood-derived execution brief review contract", () => {
     const brief = createExecutionBrief({
-      taskContract,
-      contextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: "Execute the bounded source repair."
+      packet
     });
     const rendered = renderExecutionBriefText(brief);
     const passed = includesAllFragments(rendered, expectedRenderedBriefFragments);

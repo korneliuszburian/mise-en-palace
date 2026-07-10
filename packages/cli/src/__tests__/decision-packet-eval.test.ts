@@ -478,6 +478,39 @@ describe("runDecisionPacketEval", () => {
 
     const packet: DecisionPacket = {
       formatVersion: "krn.decisionPacket.v1",
+      task: {
+        id: testCase.id,
+        title: testCase.id,
+        objective: testCase.task,
+        constraints: [],
+        nonGoals: ["Do not execute Codex."],
+        acceptance: []
+      },
+      contextInclusions: [{
+        subjectType: "source_claim",
+        subjectId: "source-claim:store-backed-memory-no-markdown",
+        reason: "Selected by the decision-packet eval.",
+        expectedUse: "Apply the governed runtime-memory boundary.",
+        sourceAuthority: "project-decision"
+      }],
+      contextExclusions: [{
+        subjectType: "source_claim",
+        subjectId: "source-claim:cast-json-record",
+        reason: "stale",
+        explanation: "Stale decision path.",
+        sourceAuthority: "low"
+      }],
+      toolBoundaries: ["Do not execute Codex."],
+      evidenceContract: {
+        commands: [{
+          command: "pnpm --filter @krn/cli test -- decision-packet-eval",
+          required: true
+        }],
+        diffRisk: "medium",
+        reviewBurden: "Review decision-packet eval evidence.",
+        rollbackPath: "Revert the eval change."
+      },
+      nextAction: "Use the governed decision packet before coding.",
       governingDecisionIds: ["store-backed-memory-no-markdown"],
       governingStatements: [
         "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
