@@ -79,7 +79,7 @@ const unusedSourceRepository = {
     throw new Error("getSourceClaimById should not be called");
   },
   async getSourceClaimForProject(_projectId: string, id: string): Promise<never> {
-    return this.getSourceClaimById(id);
+    return this.getSourceClaimById(id) as Promise<never>;
   },
   async listClaimsForProject(): Promise<never> {
     throw new Error("listClaimsForProject should not be called");
