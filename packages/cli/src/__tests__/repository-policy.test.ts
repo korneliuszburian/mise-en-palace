@@ -35,5 +35,15 @@ describe("repository policy boundaries", () => {
     expect(gitignore).not.toContain("tests/fixtures/");
     expect(gitignore).not.toContain("packages/db/src/migrations/");
   });
-});
 
+  it("requires third-party workflow actions to use reviewed immutable SHAs", () => {
+    const workflow = readRootFile(".github/workflows/ci.yml");
+    const usesLines = workflow.split("\n").filter((line) => line.includes("uses:"));
+
+    expect(usesLines).toHaveLength(6);
+    expect(usesLines.every((line) =>
+      /uses:\s+[^@\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/u.test(line)
+    )).toBe(true);
+    expect(usesLines.some((line) => /@[vA-Za-z]/u.test(line))).toBe(false);
+  });
+});
