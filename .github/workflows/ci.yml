@@ -54,7 +54,7 @@ jobs:
         run: pnpm quality:fallow:ci
 
       - name: KRN behavior and docs smoke
-        run: pnpm eval:krn:smoke
+        run: pnpm eval:required
 
       - name: Committed range whitespace check
         shell: bash

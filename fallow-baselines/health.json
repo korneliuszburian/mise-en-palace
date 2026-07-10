@@ -1,0 +1,68 @@
+{
+  "finding_counts": {
+    "packages/cli/src/database-runtime.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/internal/eval/paired-live-codex-repair.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/internal/eval/persist-paired-live-codex-repair.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/internal/eval/run-decision-packet-eval.ts": {
+      "complexity_moderate": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/internal/eval/run-paired-live-codex-repair.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/internal/smoke/run-decision-corpus-import-db-smoke.ts": {
+      "complexity_high": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/run-memory-record-apply-command.ts": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "packages/db/src/dev/smoke/harness-evidence-smoke.ts": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "packages/db/src/dev/smoke/memory-governance-smoke.ts": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "packages/db/src/migration-readiness.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": [
+    "packages/db/src/schema/reference-columns.ts:high impact",
+    "packages/core/src/metadata.ts:high impact",
+    "packages/db/src/repositories/repository-value-readers.ts:high impact",
+    "packages/cli/src/memory-record-knowledge-read-model.ts:high impact",
+    "packages/core/src/evidence-contract.ts:high impact"
+  ]
+}

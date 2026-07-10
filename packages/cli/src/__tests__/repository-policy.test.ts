@@ -175,4 +175,55 @@ describe("repository policy boundaries", () => {
     expect(codeowners).toContain("/.github/ @korneliuszburian");
     expect(codeowners).toContain("/SECURITY.md @korneliuszburian");
   });
+
+  it("keeps one canonical executable required-eval profile with explicit test files", () => {
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+    const scripts = packageJson.scripts ?? {};
+    const workflow = readRootFile(".github/workflows/ci.yml");
+
+    expect(scripts["eval:required"]).toBeTruthy();
+    expect(scripts["eval:ci"]).toBeUndefined();
+    expect(scripts["eval:behavior:smoke"]).toBeUndefined();
+    expect(scripts["eval:krn:smoke"]).toBeUndefined();
+    expect(scripts["eval:required:behavior-gates"]).toContain("exec vitest run");
+    expect(scripts["eval:required:behavior-gates"]).toContain(
+      "src/__tests__/krn-behavior-gate.test.ts",
+    );
+    expect(scripts["eval:required:readback-falsifiers"]).toContain(
+      "src/__tests__/decision-packet-eval.test.ts",
+    );
+    expect(scripts["eval:required:readback-falsifiers"]).not.toContain("test --");
+    expect(scripts["eval:required:codex-brief-render"]).toContain(
+      "src/__tests__/codex-brief-behavior.test.ts",
+    );
+    expect(workflow).toContain("run: pnpm eval:required");
+    expect(workflow).not.toContain("eval:krn:smoke");
+  });
+
+  it("keeps Fallow baselines versioned, category-specific, and visible", () => {
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      devDependencies?: Record<string, string>;
+      scripts?: Record<string, string>;
+    };
+    const fallowPolicy = readRootFile("fallow-baselines/README.md");
+    const fallowConfig = readRootFile(".fallowrc.json");
+
+    expect(packageJson.devDependencies?.fallow).toBe("2.103.0");
+    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
+      "--dead-code-baseline fallow-baselines/dead-code.json",
+    );
+    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
+      "--health-baseline fallow-baselines/health.json",
+    );
+    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
+      "--dupes-baseline fallow-baselines/dupes.json",
+    );
+    expect(fallowPolicy).toContain("Fallow `2.103.0` (schema version `7`)");
+    expect(fallowPolicy).toMatch(/No aggregate\s+Fallow score/u);
+    expect(fallowPolicy).toContain("@korneliuszburian");
+    expect(fallowConfig).toContain("tests/fixtures/**");
+    expect(fallowConfig).toContain("**/*.typecheck.ts");
+  });
 });

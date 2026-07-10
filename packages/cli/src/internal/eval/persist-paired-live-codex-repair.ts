@@ -1,9 +1,6 @@
 import {
   pairedRepairEvalCandidate,
-  runHeldOutTargetRepairChecker,
-  scorePairedRepairs,
-  type HeldOutCheckerInput,
-  type PairedRepairScore
+  runPairedRepairChecker
 } from "./paired-live-codex-repair.js";
 import {
   runEvidenceCaptureCommand
@@ -45,18 +42,6 @@ const readBackPersistedCandidate = (value: unknown, candidateId: string): boolea
   );
 };
 
-const runScore = async (input: {
-  readonly baseline: HeldOutCheckerInput;
-  readonly krn: HeldOutCheckerInput;
-}): Promise<PairedRepairScore> => {
-  const [baseline, krn] = await Promise.all([
-    runHeldOutTargetRepairChecker(input.baseline),
-    runHeldOutTargetRepairChecker(input.krn)
-  ]);
-
-  return scorePairedRepairs({ baseline, krn });
-};
-
 const main = async (): Promise<void> => {
   const [
     runId,
@@ -82,7 +67,7 @@ const main = async (): Promise<void> => {
     );
   }
 
-  const score = await runScore({
+  const score = await runPairedRepairChecker({
     baseline: { targetRoot: baselineRoot, checkerRoot, initialCommit: baselineCommit },
     krn: { targetRoot: krnRoot, checkerRoot, initialCommit: krnCommit }
   });

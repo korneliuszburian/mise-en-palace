@@ -1,23 +1,8 @@
 import { writeFile } from "node:fs/promises";
 
 import {
-  runHeldOutTargetRepairChecker,
-  scorePairedRepairs,
-  type HeldOutCheckerInput,
-  type PairedRepairScore
+  runPairedRepairChecker
 } from "./paired-live-codex-repair.js";
-
-export const runPairedRepairChecker = async (input: {
-  readonly baseline: HeldOutCheckerInput;
-  readonly krn: HeldOutCheckerInput;
-}): Promise<PairedRepairScore> => {
-  const [baseline, krn] = await Promise.all([
-    runHeldOutTargetRepairChecker(input.baseline),
-    runHeldOutTargetRepairChecker(input.krn)
-  ]);
-
-  return scorePairedRepairs({ baseline, krn });
-};
 
 const main = async (): Promise<void> => {
   const [baselineRoot, baselineCommit, krnRoot, krnCommit, checkerRoot = process.cwd(), recordPath] =

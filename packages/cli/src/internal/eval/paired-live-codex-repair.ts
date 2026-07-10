@@ -204,7 +204,7 @@ const checkUnknownFirst = (files: TargetSourceFiles): HeldOutCheck => {
     passed: hasUnknownBoundary && !hasAnyBoundary,
     details: hasUnknownBoundary && !hasAnyBoundary
       ? "JSON boundary is unknown-first."
-      : "JSON.parse output is not proven unknown-first."
+      : "External JSON output is not proven unknown-first."
   };
 };
 
@@ -478,7 +478,7 @@ const observeInput = (
   }
 };
 
-export const runHeldOutTargetRepairChecker = async (
+const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
   const sourceFiles = await readTargetSourceFiles(input.targetRoot);
@@ -550,4 +550,16 @@ export const runHeldOutTargetRepairChecker = async (
     runtimeAvailable,
     observations
   });
+};
+
+export const runPairedRepairChecker = async (input: {
+  readonly baseline: HeldOutCheckerInput;
+  readonly krn: HeldOutCheckerInput;
+}): Promise<PairedRepairScore> => {
+  const [baseline, krn] = await Promise.all([
+    runHeldOutTargetRepairChecker(input.baseline),
+    runHeldOutTargetRepairChecker(input.krn)
+  ]);
+
+  return scorePairedRepairs({ baseline, krn });
 };

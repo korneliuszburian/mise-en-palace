@@ -1,19 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
+import { resolveScriptRoot } from "./parse-script-root.mjs";
 
 const REQUIRED_SCRIPTS = ["test", "typecheck"];
 const WORKSPACE_PACKAGE_ROOT = "packages";
-
-function parseArguments(argv) {
-  const rootFlagIndex = argv.indexOf("--root");
-  const root = rootFlagIndex === -1 ? process.cwd() : argv[rootFlagIndex + 1];
-
-  if (!root || root.startsWith("--")) {
-    throw new Error("--root requires a directory path");
-  }
-
-  return resolve(root);
-}
 
 function readWorkspacePackages(root) {
   const packagesRoot = join(root, WORKSPACE_PACKAGE_ROOT);
@@ -37,22 +27,22 @@ function readWorkspacePackages(root) {
     });
 }
 
+function missingScripts(manifest) {
+  return REQUIRED_SCRIPTS.filter(
+    (scriptName) => typeof manifest.scripts?.[scriptName] !== "string",
+  );
+}
+
 function main() {
-  const root = parseArguments(process.argv.slice(2));
+  const root = resolveScriptRoot(process.argv.slice(2));
   const packages = readWorkspacePackages(root);
-  const violations = [];
+  const violations = packages.flatMap(({ manifestPath, manifest }) => {
+    const missing = missingScripts(manifest);
 
-  for (const { manifestPath, manifest } of packages) {
-    const missingScripts = REQUIRED_SCRIPTS.filter(
-      (scriptName) => typeof manifest.scripts?.[scriptName] !== "string",
-    );
-
-    if (missingScripts.length > 0) {
-      violations.push(
-        `${manifest.name ?? manifestPath}: missing ${missingScripts.join(", ")}`,
-      );
-    }
-  }
+    return missing.length === 0
+      ? []
+      : [`${manifest.name ?? manifestPath}: missing ${missing.join(", ")}`];
+  });
 
   if (violations.length > 0) {
     console.error("Workspace script contract failed:");
