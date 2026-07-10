@@ -1004,7 +1004,7 @@ describe("runCli", () => {
     );
   });
 
-  it("persists helped memory record apply without feedback event", async () => {
+  it("rejects helped memory record apply without fresh verification evidence", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1111,24 +1111,12 @@ describe("runCli", () => {
       }
     );
 
-    expect(result.exitCode).toBe(0);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
-    expect(result.stdout).toContain("memoryApplication: memory-application-1");
-    expect(result.stdout).toContain("memoryRecord: memory-record-1");
-    expect(result.stdout).toContain("outcome: helped");
-    expect(result.stdout).toContain("Memory Core mutation: none");
-    expect(result.stdout).toContain("recommendationOutcome: helped");
-    expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
-    expect(result.stdout).toContain("recommendationMutation: none");
-    expect(result.stdout).toContain("Feedback event: none");
-    expect(result.stdout).toContain("Follow-up candidate: none");
-    expect(capturedApplication).toMatchObject({
-      memoryRecordId: "memory-record-1",
-      executionRunId: "execution-run-1",
-      outcome: "helped",
-      notes: "Guided M23 decision to avoid a separate graph DB"
-    });
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "helped memory application requires a fresh successful verification EvidenceBundle"
+    );
+    expect(capturedApplication).toBeUndefined();
   });
 
   it("does not repeat the same packet-bound memory application", async () => {
@@ -1145,8 +1133,8 @@ describe("runCli", () => {
       runId: "execution-run-1",
       memoryId: "memory-record-1",
       decisionPacketChecksum: packetBinding.packetChecksum,
-      outcome: "helped" as const,
-      notes: "Replay should not strengthen this memory twice.",
+      outcome: "neutral" as const,
+      notes: "Replay should not record this packet twice.",
       metadata: {}
     };
     const run = () => runMemoryRecordApplyCommand({

@@ -7,6 +7,7 @@ import {
   readMetadataStringList
 } from "./metadata.js";
 import type { IsoTimestamp } from "./time.js";
+import type { EvidenceContract } from "./evidence-contract.js";
 
 export const evidenceBundleStatuses = [
   "draft",
@@ -580,4 +581,37 @@ export const toEvidenceCommandReadback = (
   }
 
   return normalizeDefaultTemplateCommand(command);
+};
+
+export const evidenceBundleProvesHelped = (input: {
+  bundle: EvidenceBundle;
+  evidenceContract: EvidenceContract | undefined;
+  packetChecksum: string;
+  packetGeneratedAt: IsoTimestamp;
+}): boolean => {
+  const bundleCreatedAt = Date.parse(input.bundle.createdAt);
+  const packetGeneratedAt = Date.parse(input.packetGeneratedAt);
+
+  if (
+    (input.bundle.status !== "captured" && input.bundle.status !== "verified") ||
+    readMetadataString(input.bundle.metadata, "decisionPacketChecksum") !== input.packetChecksum ||
+    input.evidenceContract === undefined ||
+    !Number.isFinite(bundleCreatedAt) ||
+    !Number.isFinite(packetGeneratedAt) ||
+    bundleCreatedAt < packetGeneratedAt
+  ) {
+    return false;
+  }
+
+  const activeCommands = new Set(input.evidenceContract.commands.map((command) => command.command));
+
+  return input.bundle.commands
+    .map(toEvidenceCommandReadback)
+    .some((command) =>
+      command.status === "passed" &&
+      activeCommands.has(command.command) &&
+      (command.kind === "command_runner" ||
+        command.kind === "captured_output_file" ||
+        command.kind === "external_log")
+    );
 };

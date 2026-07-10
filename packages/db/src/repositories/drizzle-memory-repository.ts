@@ -9,6 +9,10 @@ import type {
   MemoryRecord,
   ProjectId
 } from "@krn/core";
+import {
+  evidenceBundleProvesHelped,
+  parseEvidenceContract
+} from "@krn/core";
 import type {
   CreateAntiMemoryRecordInput,
   CreateAntiMemoryCandidateInput,
@@ -37,11 +41,15 @@ import {
   memoryFeedbackEvents,
   memoryRecordVersions,
   memoryRecords,
+  evidenceBundles,
+  executionRuns,
+  harnessPlans,
   outboxEvents
 } from "../schema/index.js";
 import {
   fromIsoTimestamp,
-  requireReturnedRow
+  requireReturnedRow,
+  toIsoTimestamp
 } from "./repository-value-readers.js";
 import {
   mapAntiMemoryRecord,
@@ -49,7 +57,8 @@ import {
   mapMemoryApplication,
   mapMemoryCandidate,
   mapMemoryFeedbackEvent,
-  mapMemoryRecord
+  mapMemoryRecord,
+  mapEvidenceBundle
 } from "./mappers.js";
 
 const smokePayload = (
@@ -976,15 +985,75 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     }
   }
 
+  private async assertHelpedApplicationEvidence(
+    input: RecordMemoryApplicationInput & { packetChecksum?: string },
+    tx: KrnDatabase
+  ): Promise<void> {
+    if (input.outcome !== "helped") {
+      return;
+    }
+
+    if (input.evidenceBundleId === undefined || input.packetChecksum === undefined) {
+      throw new Error(
+        "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+      );
+    }
+
+    const [linked] = await tx
+      .select({
+        bundle: evidenceBundles,
+        executionRun: executionRuns,
+        harnessPlan: harnessPlans
+      })
+      .from(evidenceBundles)
+      .innerJoin(executionRuns, eq(executionRuns.id, evidenceBundles.executionRunId))
+      .innerJoin(harnessPlans, eq(harnessPlans.id, executionRuns.harnessPlanId))
+      .where(and(
+        eq(evidenceBundles.id, input.evidenceBundleId),
+        eq(evidenceBundles.executionRunId, input.executionRunId)
+      ))
+      .limit(1);
+
+    if (linked === undefined) {
+      throw new Error(
+        "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+      );
+    }
+
+    const bundle = mapEvidenceBundle(linked.bundle);
+    const evidenceContract = parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract);
+    const valid = evidenceBundleProvesHelped({
+      bundle,
+      evidenceContract,
+      packetChecksum: input.packetChecksum,
+      packetGeneratedAt: toIsoTimestamp(linked.executionRun.updatedAt)
+    });
+
+    if (!valid) {
+      throw new Error(
+        "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+      );
+    }
+  }
+
   private async insertMemoryApplication(
     input: RecordMemoryApplicationInput,
     tx: KrnDatabase,
     decisionPacketChecksum?: string
   ): Promise<MemoryApplication> {
+    const persistenceInput = decisionPacketChecksum === undefined
+      ? input
+      : {
+          ...input,
+          metadata: {
+            ...input.metadata,
+            decisionPacketChecksum
+          }
+        };
     const row = requireReturnedRow(
       await tx
         .insert(memoryApplications)
-        .values(this.memoryApplicationInsertValues(input, decisionPacketChecksum))
+        .values(this.memoryApplicationInsertValues(persistenceInput, decisionPacketChecksum))
         .returning(),
       "recordMemoryApplication"
     );
@@ -997,13 +1066,17 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async recordMemoryApplication(
     input: RecordMemoryApplicationInput
   ): Promise<MemoryApplication> {
-    return this.db.transaction(async (tx) => this.insertMemoryApplication(input, tx));
+    return this.db.transaction(async (tx) => {
+      await this.assertHelpedApplicationEvidence(input, tx);
+      return this.insertMemoryApplication(input, tx, input.packetChecksum);
+    });
   }
 
   async recordMemoryApplicationOnce(
     input: RecordMemoryApplicationOnceInput
   ): Promise<RecordMemoryApplicationOnceResult> {
     return this.db.transaction(async (tx) => {
+      await this.assertHelpedApplicationEvidence(input, tx);
       const metadata = {
         ...input.metadata,
         decisionPacketChecksum: input.packetChecksum

@@ -1,5 +1,7 @@
 import {
   buildFeedbackRecommendationReadback,
+  evidenceBundleProvesHelped,
+  parseEvidenceContract,
   parseMemoryApplicationInput,
   parseMemoryFeedbackEventInput
 } from "@krn/core";
@@ -230,6 +232,48 @@ const createRuntime = async (
   });
 };
 
+const hasFreshHelpedVerification = (input: {
+  aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
+  evidenceBundleId: string | undefined;
+  packetChecksum: string;
+  runId: string;
+}): boolean => {
+  const aggregate = input.aggregate;
+
+  if (aggregate === undefined || input.evidenceBundleId === undefined) {
+    return false;
+  }
+
+  const bundle = aggregate.evidenceBundles.find((candidate) => candidate.id === input.evidenceBundleId);
+
+  return bundle !== undefined &&
+    bundle.executionRunId === input.runId &&
+    evidenceBundleProvesHelped({
+      bundle,
+      evidenceContract: parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract),
+      packetChecksum: input.packetChecksum,
+      packetGeneratedAt: aggregate.executionRun.updatedAt
+    });
+};
+
+const assertHelpedMemoryApplicationEvidence = (input: {
+  outcome: MemoryApplicationOutcome;
+  aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
+  evidenceBundleId: string | undefined;
+  packetChecksum: string;
+  runId: string;
+}): void => {
+  if (input.outcome !== "helped") {
+    return;
+  }
+
+  if (!hasFreshHelpedVerification(input)) {
+    throw new Error(
+      "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+    );
+  }
+};
+
 export const runMemoryRecordApplyCommand = async (
   runtime: MemoryRecordApplyCommandRuntime
 ): Promise<MemoryRecordApplyCommandResult> => {
@@ -294,6 +338,14 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error("usefulness write rejected: memory record project does not match the run task project");
     }
 
+    assertHelpedMemoryApplicationEvidence({
+      outcome: applicationInput.outcome,
+      aggregate,
+      evidenceBundleId: command.evidenceBundleId,
+      packetChecksum: authorization.packetChecksum,
+      runId: applicationInput.executionRunId
+    });
+
     const recordApplicationOnce = databaseRuntime.memoryRepository.recordMemoryApplicationOnce;
 
     if (recordApplicationOnce === undefined) {
@@ -312,12 +364,16 @@ export const runMemoryRecordApplyCommand = async (
       expectedUse: applicationInput.expectedUse,
       outcome: applicationInput.outcome,
       notes: applicationInput.notes,
+      ...(command.evidenceBundleId === undefined ? {} : { evidenceBundleId: command.evidenceBundleId }),
       packetChecksum: authorization.packetChecksum,
       metadata: {
         ...applicationInput.metadata,
         decisionPacketChecksum: authorization.packetChecksum,
         decisionPacketEvidenceRef: authorization.packetEvidenceRef,
-        usefulnessSubject: `memory_record:${applicationInput.memoryRecordId}`
+        usefulnessSubject: `memory_record:${applicationInput.memoryRecordId}`,
+        ...(command.evidenceBundleId === undefined
+          ? {}
+          : { verificationEvidenceBundleId: command.evidenceBundleId })
       }
     });
 

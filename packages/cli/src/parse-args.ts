@@ -337,6 +337,7 @@ export type CliCommand =
       runId?: string;
       memoryId?: string;
       decisionPacketChecksum?: string;
+      evidenceBundleId?: string;
       outcome?: string;
       notes?: string;
       expectedUse?: string;

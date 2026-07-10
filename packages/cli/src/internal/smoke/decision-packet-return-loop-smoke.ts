@@ -1138,6 +1138,8 @@ const runSelectorFeedbackProof = async (
     };
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
+    readonly packetChecksum: string;
+    readonly verificationEvidenceBundleId: string;
     readonly feedbackDeltaId: string;
     readonly marker: string;
     readonly projectId: string;
@@ -1280,6 +1282,8 @@ const runSelectorFeedbackProof = async (
     expectedUse: "Retain useful DecisionPacket selector feedback memory on the next packet.",
     outcome: "helped",
     notes: "Store-backed helped feedback should keep this memory eligible for next activation.",
+    packetChecksum: input.packetChecksum,
+    evidenceBundleId: input.verificationEvidenceBundleId,
     metadata: {
       smokeId: input.marker,
       selectorFeedbackProof: "helped"
@@ -1441,6 +1445,7 @@ const runSelectorFeedbackProof = async (
   };
 };
 
+// fallow-ignore-next-line complexity -- this DB smoke intentionally sequences packet binding, evidence, feedback, maintenance, and selector readback falsifiers
 export const runDecisionPacketReturnLoopSmokeCheck = async (
   input: DecisionPacketReturnLoopSmokeInput
 ): Promise<DecisionPacketReturnLoopSmokeReport> => {
@@ -1517,6 +1522,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       harnessRunRepository,
       memoryRepository,
       project,
+      result,
       retrievalRepository,
       retrievalRunId: compiledRetrievalRunId,
       sourceRepository,
@@ -1617,9 +1623,13 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       commandOutcomes: [{
-        command: "pnpm --filter @krn/cli test -- decision-packet",
+        command: result.evidenceContract.commands.find((command) => command.required)?.command ??
+          result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
         status: "passed",
-        provenance: "operator_reported"
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: "2026-07-07T12:00:01.000Z",
+        outputRef: `smoke:${marker}:decision-packet-verification`
       }],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
@@ -1790,6 +1800,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       baseRuntime,
       commandRuntime,
       executionRunId: executionRun.id,
+      packetChecksum: firstPacket.packetIdentity.checksum,
+      verificationEvidenceBundleId: aggregateAfterMatching?.evidenceBundles.at(-1)?.id ?? "",
       feedbackDeltaId: staleFeedbackDelta.id,
       marker,
       projectId: project.id,

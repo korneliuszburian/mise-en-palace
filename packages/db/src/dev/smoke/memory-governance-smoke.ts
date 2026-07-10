@@ -114,8 +114,10 @@ export const runMemoryGovernanceSmokeCheck = async (
 
     const {
       executionRun,
+      harnessRunRepository,
       memoryRepository,
       project,
+      result,
       retrievalRunId: compiledRetrievalRunId,
       sourceRepository
     } = await createCompiledSmokeExecution({
@@ -125,7 +127,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       db,
       eventMessage: "Memory governance smoke plan created",
       eventType: "smoke.memory_governance.plan_persisted",
-      includeEvidenceContract: false,
+      includeEvidenceContract: true,
       marker,
       nonGoals: ["do not mutate runtime markdown memory"],
       projectSlug,
@@ -290,10 +292,45 @@ export const runMemoryGovernanceSmokeCheck = async (
       "expected proposed or candidate status",
       "Memory governance allowed rejection after acceptance"
     );
+    const packetChecksum = `memory-governance-packet-${marker}`;
+    const verificationCapturedAt = new Date(
+      Date.parse(executionRun.updatedAt) + 1000
+    ).toISOString();
+    const verificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: [{
+        command: result.evidenceContract.commands.find((command) => command.required)?.command ??
+          result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: verificationCapturedAt,
+        outputRef: `smoke:${marker}:memory-governance-verification`
+      }],
+      diffRisk: "low",
+      reviewBurden: "Memory governance smoke proof.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 2,
+        type: "smoke.memory_governance.verification_captured",
+        message: "Memory governance verification evidence captured",
+        payload: {
+          smokeId: marker,
+          decisionPacketChecksum: packetChecksum
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        decisionPacketChecksum: packetChecksum
+      }
+    });
     const packetBoundApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
-      packetChecksum: `memory-governance-packet-${marker}`,
+      packetChecksum,
+      evidenceBundleId: verificationEvidenceBundle.id,
       expectedUse: "Guide memory governance smoke.",
       outcome: "helped",
       notes: "Verified explicit promotion and application feedback.",

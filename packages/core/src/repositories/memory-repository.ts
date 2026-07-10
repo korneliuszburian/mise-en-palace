@@ -98,6 +98,8 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   expectedUse: string;
   outcome: MemoryApplicationOutcome;
   notes: string;
+  evidenceBundleId?: string;
+  packetChecksum?: string;
 }
 
 export interface RecordMemoryApplicationOnceInput extends RecordMemoryApplicationInput {

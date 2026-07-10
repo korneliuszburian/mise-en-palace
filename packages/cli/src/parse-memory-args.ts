@@ -75,7 +75,7 @@ export const formatMemoryCandidateRejectUsage = (): string =>
 
 export const formatMemoryRecordApplyUsage = (): string =>
   [
-    "Usage: krn memory record apply --run-id <id> --memory-id <id> --decision-packet-checksum <sha256> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--persist]",
+    "Usage: krn memory record apply --run-id <id> --memory-id <id> --decision-packet-checksum <sha256> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--evidence-bundle-id <id>] [--persist]",
     "",
     "Required:",
     "--run-id",
@@ -88,6 +88,7 @@ export const formatMemoryRecordApplyUsage = (): string =>
     "--expected-use <text>",
     "--task-contract-id <id>",
     "--context-assembly-id <id>",
+    "--evidence-bundle-id <id> (required for helped; must contain fresh active-contract verification)",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -331,6 +332,7 @@ const memoryRecordApplyStringOptions = {
   "--run-id": "runId",
   "--memory-id": "memoryId",
   "--decision-packet-checksum": "decisionPacketChecksum",
+  "--evidence-bundle-id": "evidenceBundleId",
   "--outcome": "outcome",
   "--notes": "notes",
   "--expected-use": "expectedUse",
@@ -586,6 +588,9 @@ const parseMemoryRecordApplyToken = (
       },
       decisionPacketChecksum: (command, value) => {
         command.decisionPacketChecksum = value;
+      },
+      evidenceBundleId: (command, value) => {
+        command.evidenceBundleId = value;
       },
       outcome: (command, value) => {
         command.outcome = value;

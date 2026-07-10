@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  evidenceBundleProvesHelped,
   toEvidenceCommandReadback,
   normalizeTargetEvidence,
   parseEvidenceBundleMetadataReadback,
@@ -45,6 +46,48 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
 });
 
 describe("evidence bundle completeness", () => {
+  test("requires fresh active-contract execution proof for helped", () => {
+    const evidenceContract = {
+      commands: [{ command: "pnpm typecheck", required: true }],
+      diffRisk: "low" as const,
+      reviewBurden: "review",
+      rollbackPath: "revert",
+      metadata: {}
+    };
+    const packetGeneratedAt = "2026-06-23T07:00:00.000Z";
+    const packetChecksum = "packet-checksum";
+
+    expect(evidenceBundleProvesHelped({
+      bundle: bundle({
+        metadata: { decisionPacketChecksum: packetChecksum },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "operator_reported"
+        }]
+      }),
+      evidenceContract,
+      packetChecksum,
+      packetGeneratedAt
+    })).toBe(false);
+
+    expect(evidenceBundleProvesHelped({
+      bundle: bundle({
+        metadata: { decisionPacketChecksum: packetChecksum },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "command_runner",
+          exitCode: 0,
+          capturedAt: now
+        }]
+      }),
+      evidenceContract,
+      packetChecksum,
+      packetGeneratedAt
+    })).toBe(true);
+  });
+
   test("normalizes legacy command rows with weak default provenance", () => {
     expect(toEvidenceCommandReadback({
       command: "pnpm test",

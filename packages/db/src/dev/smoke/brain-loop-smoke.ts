@@ -364,7 +364,19 @@ export const runBrainLoopSmokeCheck = async (
     },
     harnessPlan: {
       summary: "DB-backed governed memory loop smoke",
-      nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it."
+      nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it.",
+      metadata: {
+        evidenceContract: {
+          commands: [
+            { command: "pnpm typecheck", required: true },
+            { command: "pnpm test", required: true },
+            { command: "git diff --check", required: true }
+          ],
+          diffRisk: "high",
+          reviewBurden: "DB smoke proof only.",
+          rollbackPath: "Delete smoke marker rows."
+        }
+      }
     }
   });
   const {
@@ -408,10 +420,12 @@ export const runBrainLoopSmokeCheck = async (
       status: "captured",
       changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
       commands: [{
-        command: "pnpm db:smoke:memory-loop",
+        command: "pnpm typecheck",
         status: "passed",
-        provenance: "operator_reported",
-        assertedBy: "memory-loop-smoke",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: new Date(Date.parse(executionRun.updatedAt) + 1000).toISOString(),
+        outputRef: `smoke:${marker}:memory-loop-verification`,
         doesNotProve: "This command does not prove product readiness, ranking quality, maintenance execution, or autonomous memory quality."
       }],
       diffRisk: "low",
@@ -427,6 +441,7 @@ export const runBrainLoopSmokeCheck = async (
       },
       metadata: {
         smokeId: marker,
+        decisionPacketChecksum: `memory-loop-packet-${marker}`,
         doesNotProve: "Evidence capture does not mutate Memory Core without review."
       }
     });
@@ -656,6 +671,8 @@ export const runBrainLoopSmokeCheck = async (
       expectedUse: "Verify next activation reused reviewed memory.",
       outcome: "helped",
       notes: "DB-backed memory loop smoke included reviewed memory in context.",
+      packetChecksum: `memory-loop-packet-${marker}`,
+      evidenceBundleId: evidenceBundle.id,
       metadata: {
         smokeId: marker
       }
@@ -1147,7 +1164,7 @@ export const runBrainLoopSmokeCheck = async (
       },
       {
         label: "decision packet falsifier command",
-        passed: decisionPacketFalsifierCommands.includes("pnpm db:smoke:memory-loop")
+        passed: decisionPacketFalsifierCommands.includes("pnpm typecheck")
       },
       {
         label: "decision packet non-proof boundary",

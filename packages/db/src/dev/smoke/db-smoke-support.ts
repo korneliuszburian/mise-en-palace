@@ -164,6 +164,7 @@ export interface SmokeHarnessPlanSeed {
   nextAction: string;
   status?: "ready" | "draft" | "running" | "blocked" | "completed";
   summary: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SmokeContextAssemblySeed {
@@ -582,7 +583,8 @@ const createSmokeHarnessRecords = async (
     summary: input.harnessPlan.summary,
     nextAction: input.harnessPlan.nextAction,
     metadata: {
-      smokeId: input.marker
+      smokeId: input.marker,
+      ...(input.harnessPlan.metadata ?? {})
     }
   });
   const contextAssembly = input.contextAssembly === undefined ? undefined :

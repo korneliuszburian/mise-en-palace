@@ -585,7 +585,7 @@ describe("decision packet CLI", () => {
         feedback: {
           memoryRecordApplyExample:
             expect.stringMatching(
-              /--decision-packet-checksum [a-f0-9]{64} .*--notes "<why>"/u
+              /--decision-packet-checksum [a-f0-9]{64} .*--evidence-bundle-id <evidence-bundle-id> .*--notes "<why>"/u
             ),
           sourceUsefulnessExample: expect.stringContaining("packet:"),
           sourceDecisionUsefulnessExample: expect.stringContaining(

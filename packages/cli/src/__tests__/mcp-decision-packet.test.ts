@@ -121,7 +121,7 @@ const packetJson = {
       doesNotProve: "Evidence capture does not execute commands."
     },
     feedback: {
-      memoryRecordApplyExample: "krn memory record apply --run-id run-agent-1 --memory-id <memory-id>",
+      memoryRecordApplyExample: "krn memory record apply --run-id run-agent-1 --memory-id <memory-id> --evidence-bundle-id <evidence-bundle-id>",
       sourceUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness claim:<id>=helped",
       sourceDecisionUsefulnessExample:

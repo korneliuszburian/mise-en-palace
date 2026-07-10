@@ -1019,7 +1019,7 @@ export const buildDecisionPacketReturnChannels = (input: {
     },
     feedback: {
       memoryRecordApplyExample:
-        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> ${packetChecksumOption} --outcome helped --notes "<why>" --persist`,
+        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> ${packetChecksumOption} --outcome helped --evidence-bundle-id <evidence-bundle-id> --notes "<why>" --persist`,
       sourceUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       sourceDecisionUsefulnessExample:
@@ -1027,7 +1027,7 @@ export const buildDecisionPacketReturnChannels = (input: {
       knowledgeUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:
-        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum evidence only binds feedback to the rendered packet snapshot."
+        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum binds the rendered packet snapshot; helped additionally requires a later successful verifier from the active EvidenceContract."
     }
   };
 };
