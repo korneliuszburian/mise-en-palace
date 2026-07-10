@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
@@ -29,6 +30,8 @@ import type {
   RecordMemoryApplicationInput,
   RecordMemoryApplicationOnceInput,
   RecordMemoryApplicationOnceResult,
+  RecordMemoryApplicationWithEffectsOnceInput,
+  RecordMemoryApplicationWithEffectsOnceResult,
   SupersedeMemoryRecordInput
 } from "@krn/core/repositories/internal";
 
@@ -130,6 +133,7 @@ interface AntiMemoryCandidateInvariantInput {
 type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
 type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
 type AntiMemoryCandidateInsertRow = typeof antiMemoryCandidates.$inferInsert;
+type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
 
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
@@ -466,8 +470,20 @@ const antiMemoryCandidateInsertValues = (
   return row;
 };
 
+export type MemoryApplicationPersistenceStage =
+  | "after_application"
+  | "after_counter"
+  | "after_feedback"
+  | "after_candidate"
+  | "after_outbox";
+
 export class DrizzleMemoryRepository implements MemoryRepository {
-  constructor(private readonly db: KrnDatabase) {}
+  constructor(
+    private readonly db: KrnDatabase,
+    private readonly options: {
+      faultAfterStage?: (stage: MemoryApplicationPersistenceStage) => void;
+    } = {}
+  ) {}
 
   async createMemoryRecord(input: CreateMemoryRecordInput): Promise<MemoryRecord> {
     assertMemoryCoreInvariants(input, "Memory record");
@@ -1072,52 +1088,269 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
   }
 
+  private async insertMemoryApplicationOnceRow(
+    input: RecordMemoryApplicationOnceInput,
+    tx: KrnDatabase
+  ): Promise<{ row: MemoryApplicationRow; created: boolean }> {
+    const metadata = {
+      ...input.metadata,
+      decisionPacketChecksum: input.packetChecksum
+    };
+    const [createdRow] = await tx
+      .insert(memoryApplications)
+      .values(this.memoryApplicationInsertValues({ ...input, metadata }, input.packetChecksum))
+      .onConflictDoNothing({
+        target: [
+          memoryApplications.memoryRecordId,
+          memoryApplications.executionRunId,
+          memoryApplications.decisionPacketChecksum
+        ]
+      })
+      .returning();
+
+    if (createdRow !== undefined) {
+      return { row: createdRow, created: true };
+    }
+
+    const [existing] = await tx
+      .select()
+      .from(memoryApplications)
+      .where(and(
+        eq(memoryApplications.memoryRecordId, input.memoryRecordId),
+        eq(memoryApplications.executionRunId, input.executionRunId),
+        eq(memoryApplications.decisionPacketChecksum, input.packetChecksum)
+      ))
+      .limit(1);
+
+    return {
+      row: requireReturnedRow(
+        existing === undefined ? [] : [existing],
+        "recordMemoryApplicationOnce"
+      ),
+      created: false
+    };
+  }
+
+  private async readMemoryApplicationEffects(
+    application: MemoryApplicationRow,
+    tx: KrnDatabase
+  ): Promise<Pick<RecordMemoryApplicationWithEffectsOnceResult, "feedbackEvent" | "antiMemoryCandidate">> {
+    const feedbackRow = await tx.query.memoryFeedbackEvents.findFirst({
+      where: sql`${memoryFeedbackEvents.metadata}->>'memoryApplicationId' = ${application.id}`
+    });
+    const candidateRow = await tx.query.antiMemoryCandidates.findFirst({
+      where: sql`${antiMemoryCandidates.metadata}->>'memoryApplicationId' = ${application.id}`
+    });
+
+    return {
+      ...(feedbackRow === undefined ? {} : { feedbackEvent: mapMemoryFeedbackEvent(feedbackRow) }),
+      ...(candidateRow === undefined
+        ? {}
+        : { antiMemoryCandidate: mapAntiMemoryCandidate(candidateRow) })
+    };
+  }
+
+  private async createNegativeMemoryCandidateEffect(
+    input: RecordMemoryApplicationWithEffectsOnceInput,
+    feedbackInput: NonNullable<RecordMemoryApplicationWithEffectsOnceInput["negativeEffects"]>,
+    applicationRow: MemoryApplicationRow,
+    feedbackRow: InferSelectModel<typeof memoryFeedbackEvents>,
+    tx: KrnDatabase
+  ): Promise<AntiMemoryCandidate> {
+    const memoryRecordRow = await tx.query.memoryRecords.findFirst({
+      where: eq(memoryRecords.id, input.memoryRecordId)
+    });
+    if (memoryRecordRow === undefined) {
+      throw new Error(`MemoryRecord not found: ${input.memoryRecordId}`);
+    }
+
+    const maintenanceIdentity = `memory-application:${applicationRow.id}:${input.outcome}`;
+    const candidateInput: CreateAntiMemoryCandidateInput = {
+      projectId: memoryRecordRow.projectId,
+      executionRunId: input.executionRunId,
+      proposedBy: "krn-memory-feedback",
+      maintenanceIdentity,
+      key: feedbackInput.candidate.key,
+      rejectedClaim: feedbackInput.candidate.rejectedClaim,
+      reason: feedbackInput.candidate.reason,
+      invalidatedBySourceClaimIds: feedbackInput.candidate.invalidatedBySourceClaimIds,
+      appliesTo: feedbackInput.candidate.appliesTo,
+      ...(feedbackInput.candidate.mayRevisitWhen === undefined
+        ? {}
+        : { mayRevisitWhen: feedbackInput.candidate.mayRevisitWhen }),
+      summary: feedbackInput.candidate.summary,
+      body: feedbackInput.candidate.body,
+      owner: feedbackInput.candidate.owner,
+      confidence: feedbackInput.candidate.confidence,
+      sourceLineage: feedbackInput.candidate.sourceLineage,
+      metadata: {
+        ...feedbackInput.metadata,
+        memoryApplicationId: applicationRow.id,
+        memoryFeedbackEventId: feedbackRow.id,
+        applicationOutcome: input.outcome,
+        doesNotProve:
+          "This candidate does not prove the memory should be invalidated or demoted without review."
+      }
+    };
+    assertAntiMemoryCandidateInvariants(candidateInput, "Anti-memory candidate");
+    const [candidateInserted] = await tx
+      .insert(antiMemoryCandidates)
+      .values(antiMemoryCandidateInsertValues(candidateInput))
+      .onConflictDoNothing({
+        target: [antiMemoryCandidates.projectId, antiMemoryCandidates.maintenanceIdentity]
+      })
+      .returning();
+    const candidateRow = candidateInserted ?? await tx.query.antiMemoryCandidates.findFirst({
+      where: and(
+        eq(antiMemoryCandidates.projectId, candidateInput.projectId),
+        eq(antiMemoryCandidates.maintenanceIdentity, maintenanceIdentity)
+      )
+    });
+    const resolvedCandidateRow = requireReturnedRow(
+      candidateRow === undefined ? [] : [candidateRow],
+      "recordMemoryApplicationWithEffectsOnce.createAntiMemoryCandidate"
+    );
+    await this.options.faultAfterStage?.("after_candidate");
+
+    return mapAntiMemoryCandidate(resolvedCandidateRow);
+  }
+
   async recordMemoryApplicationOnce(
     input: RecordMemoryApplicationOnceInput
   ): Promise<RecordMemoryApplicationOnceResult> {
     return this.db.transaction(async (tx) => {
       await this.assertHelpedApplicationEvidence(input, tx);
-      const metadata = {
-        ...input.metadata,
-        decisionPacketChecksum: input.packetChecksum
-      };
-      const [createdRow] = await tx
-        .insert(memoryApplications)
-        .values(this.memoryApplicationInsertValues({ ...input, metadata }, input.packetChecksum))
-        .onConflictDoNothing({
-          target: [
-            memoryApplications.memoryRecordId,
-            memoryApplications.executionRunId,
-            memoryApplications.decisionPacketChecksum
-          ]
-        })
-        .returning();
+      const applicationResult = await this.insertMemoryApplicationOnceRow(input, tx);
 
-      if (createdRow !== undefined) {
+      if (applicationResult.created) {
         await this.applyMemoryApplicationOutcome(input, tx);
         return {
-          application: mapMemoryApplication(createdRow),
+          application: mapMemoryApplication(applicationResult.row),
           created: true
         };
       }
 
-      const [existing] = await tx
-        .select()
-        .from(memoryApplications)
-        .where(and(
-          eq(memoryApplications.memoryRecordId, input.memoryRecordId),
-          eq(memoryApplications.executionRunId, input.executionRunId),
-          eq(memoryApplications.decisionPacketChecksum, input.packetChecksum)
-        ))
-        .limit(1);
+      return {
+        application: mapMemoryApplication(applicationResult.row),
+        created: false
+      };
+    });
+  }
 
-      if (existing === undefined) {
-        throw new Error("Memory application conflict did not return the winning row");
+  async recordMemoryApplicationWithEffectsOnce(
+    input: RecordMemoryApplicationWithEffectsOnceInput
+  ): Promise<RecordMemoryApplicationWithEffectsOnceResult> {
+    if (
+      (input.outcome === "hurt" || input.outcome === "stale") &&
+      (input.negativeEffects === undefined ||
+        input.negativeEffects.outcome !== input.outcome)
+    ) {
+      throw new Error("negative memory application requires its review effects");
+    }
+
+    return this.db.transaction(async (tx) => {
+      await this.assertHelpedApplicationEvidence(input, tx);
+      const applicationResult = await this.insertMemoryApplicationOnceRow(input, tx);
+
+      if (!applicationResult.created) {
+        return {
+          application: mapMemoryApplication(applicationResult.row),
+          ...(await this.readMemoryApplicationEffects(applicationResult.row, tx)),
+          created: false
+        };
       }
 
+      await this.options.faultAfterStage?.("after_application");
+      await this.applyMemoryApplicationOutcome(input, tx);
+      await this.options.faultAfterStage?.("after_counter");
+
+      if (input.negativeEffects === undefined) {
+        await tx.insert(outboxEvents).values({
+          topic: "memory.application.created",
+          payload: {
+            ...smokePayload(input.metadata),
+            memoryApplicationId: applicationResult.row.id,
+            memoryRecordId: applicationResult.row.memoryRecordId,
+            executionRunId: applicationResult.row.executionRunId
+          }
+        });
+        await this.options.faultAfterStage?.("after_outbox");
+
+        return {
+          application: mapMemoryApplication(applicationResult.row),
+          created: true
+        };
+      }
+
+      const feedbackInput = input.negativeEffects;
+      const feedbackRow = requireReturnedRow(
+        await tx
+          .insert(memoryFeedbackEvents)
+          .values({
+            memoryRecordId: input.memoryRecordId,
+            executionRunId: input.executionRunId,
+            eventType: feedbackInput.eventType,
+            direction: "negative",
+            note: feedbackInput.note,
+            reason: feedbackInput.reason,
+            ...(feedbackInput.evidenceRef === undefined
+              ? {}
+              : { evidenceRef: feedbackInput.evidenceRef }),
+            metadata: {
+              ...feedbackInput.metadata,
+              memoryApplicationId: applicationResult.row.id,
+              applicationOutcome: input.outcome
+            }
+          })
+          .returning(),
+        "recordMemoryApplicationWithEffectsOnce.createMemoryFeedbackEvent"
+      );
+      await this.options.faultAfterStage?.("after_feedback");
+
+      const antiMemoryCandidate = await this.createNegativeMemoryCandidateEffect(
+        input,
+        feedbackInput,
+        applicationResult.row,
+        feedbackRow,
+        tx
+      );
+
+      await tx.insert(outboxEvents).values([
+        {
+          topic: "memory.application.created",
+          payload: {
+            ...smokePayload(input.metadata),
+            memoryApplicationId: applicationResult.row.id,
+            memoryRecordId: applicationResult.row.memoryRecordId,
+            executionRunId: applicationResult.row.executionRunId
+          }
+        },
+        {
+          topic: "memory.feedback.created",
+          payload: {
+            ...smokePayload(input.metadata),
+            memoryApplicationId: applicationResult.row.id,
+            memoryFeedbackEventId: feedbackRow.id,
+            memoryRecordId: feedbackRow.memoryRecordId
+          }
+        },
+        {
+          topic: "anti_memory.candidate.created",
+          payload: {
+            ...smokePayload(input.metadata),
+            memoryApplicationId: applicationResult.row.id,
+            antiMemoryCandidateId: antiMemoryCandidate.id,
+            projectId: antiMemoryCandidate.projectId
+          }
+        }
+      ]);
+      await this.options.faultAfterStage?.("after_outbox");
+
       return {
-        application: mapMemoryApplication(existing),
-        created: false
+        application: mapMemoryApplication(applicationResult.row),
+        feedbackEvent: mapMemoryFeedbackEvent(feedbackRow),
+        antiMemoryCandidate,
+        created: true
       };
     });
   }

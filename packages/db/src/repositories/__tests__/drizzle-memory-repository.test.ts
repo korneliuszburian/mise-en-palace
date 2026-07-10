@@ -20,6 +20,7 @@ const methodNames = [
   "supersedeMemoryRecord",
   "recordMemoryApplication",
   "recordMemoryApplicationOnce",
+  "recordMemoryApplicationWithEffectsOnce",
   "createMemoryFeedbackEvent",
   "createAntiMemoryCandidate",
   "getAntiMemoryCandidateById",

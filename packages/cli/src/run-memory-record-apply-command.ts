@@ -2,8 +2,7 @@ import {
   buildFeedbackRecommendationReadback,
   evidenceBundleProvesHelped,
   parseEvidenceContract,
-  parseMemoryApplicationInput,
-  parseMemoryFeedbackEventInput
+  parseMemoryApplicationInput
 } from "@krn/core";
 import type {
   AntiMemoryCandidate,
@@ -11,7 +10,6 @@ import type {
   FeedbackRecommendationReadback,
   MemoryApplication,
   MemoryApplicationOutcome,
-  MemoryFeedbackEvent,
   MemoryFeedbackEventType
 } from "@krn/core";
 import {
@@ -54,7 +52,7 @@ const defaultExpectedUse = (command: MemoryRecordApplyCommand): string =>
 
 const feedbackEventTypeForOutcome = (
   outcome: MemoryApplicationOutcome
-): MemoryFeedbackEventType | undefined => {
+): Extract<MemoryFeedbackEventType, "demoted" | "stale_detected"> | undefined => {
   if (outcome === "hurt") {
     return "demoted";
   }
@@ -157,60 +155,6 @@ const formatPersisted = (
       ? "Candidate reviewability: not_applicable"
       : "Candidate reviewability: review"
   ].join("\n");
-
-const proposeAntiMemoryCandidate = async (
-  databaseRuntime: DatabaseRuntime,
-  input: {
-    memoryRecord: Awaited<ReturnType<DatabaseRuntime["memoryRepository"]["getMemoryRecordById"]>>;
-    memoryApplication: MemoryApplication;
-    feedbackEvent: MemoryFeedbackEvent;
-    outcome: Extract<MemoryApplicationOutcome, "hurt" | "stale">;
-    notes: string;
-  }
-): Promise<AntiMemoryCandidate | undefined> => {
-  const memoryRecord = input.memoryRecord;
-
-  if (memoryRecord === undefined || memoryRecord.sourceLineage.length === 0) {
-    return undefined;
-  }
-
-  return databaseRuntime.memoryRepository.createAntiMemoryCandidate({
-    projectId: memoryRecord.projectId,
-    ...(input.memoryApplication.executionRunId === undefined
-      ? {}
-      : { executionRunId: input.memoryApplication.executionRunId }),
-    proposedBy: "krn-memory-feedback",
-    key: `feedback:${memoryRecord.key}:${input.outcome}`,
-    rejectedClaim: memoryRecord.summary,
-    reason: input.notes,
-    invalidatedBySourceClaimIds: memoryRecord.sourceLineage.map((lineage) => lineage.sourceId),
-    appliesTo: memoryRecord.key,
-    ...(memoryRecord.invalidationRule === undefined
-      ? {}
-      : { mayRevisitWhen: memoryRecord.invalidationRule }),
-    summary: `Review ${input.outcome} memory feedback for ${memoryRecord.key}`,
-    body: `Memory application ${input.memoryApplication.id} recorded outcome ${input.outcome}: ${input.notes}`,
-    owner: memoryRecord.owner,
-    confidence: input.outcome === "stale" ? 70 : 60,
-    sourceLineage: memoryRecord.sourceLineage,
-    metadata: {
-      memoryRecordId: memoryRecord.id,
-      memoryApplicationId: input.memoryApplication.id,
-      memoryFeedbackEventId: input.feedbackEvent.id,
-      applicationOutcome: input.outcome,
-      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review.",
-      reflectionCandidateEvidence: {
-        provenance: "local_operator_note",
-        evidenceRefs: [
-          `memory-application:${input.memoryApplication.id}`,
-          `memory-feedback-event:${input.feedbackEvent.id}`
-        ],
-        doesNotProve:
-          "Operator feedback does not prove the anti-memory candidate should be promoted without review."
-      }
-    }
-  });
-};
 
 const createRuntime = async (
   runtime: MemoryRecordApplyCommandRuntime
@@ -346,13 +290,44 @@ export const runMemoryRecordApplyCommand = async (
       runId: applicationInput.executionRunId
     });
 
-    const recordApplicationOnce = databaseRuntime.memoryRepository.recordMemoryApplicationOnce;
+    const recordApplicationWithEffectsOnce =
+      databaseRuntime.memoryRepository.recordMemoryApplicationWithEffectsOnce;
 
-    if (recordApplicationOnce === undefined) {
-      throw new Error("Atomic packet-bound memory application persistence is required");
+    if (recordApplicationWithEffectsOnce === undefined) {
+      throw new Error("Atomic packet-bound memory application effects persistence is required");
     }
 
-    const applicationResult = await recordApplicationOnce({
+    const feedbackEventType = feedbackEventTypeForOutcome(applicationInput.outcome);
+    const negativeEffects = feedbackEventType === undefined
+      ? undefined
+      : {
+          outcome: applicationInput.outcome as Extract<MemoryApplicationOutcome, "hurt" | "stale">,
+          eventType: feedbackEventType,
+          note: applicationInput.notes,
+          reason: applicationInput.notes,
+          evidenceRef: authorization.packetEvidenceRef,
+          metadata: {
+            ...applicationInput.metadata,
+            applicationOutcome: applicationInput.outcome
+          },
+          candidate: {
+            key: `feedback:${memoryRecord.key}:${applicationInput.outcome}`,
+            rejectedClaim: memoryRecord.summary,
+            reason: applicationInput.notes,
+            invalidatedBySourceClaimIds: memoryRecord.sourceLineage.map((lineage) => lineage.sourceId),
+            appliesTo: memoryRecord.key,
+            ...(memoryRecord.invalidationRule === undefined
+              ? {}
+              : { mayRevisitWhen: memoryRecord.invalidationRule }),
+            summary: `Review ${applicationInput.outcome} memory feedback for ${memoryRecord.key}`,
+            body: `Memory application outcome ${applicationInput.outcome}: ${applicationInput.notes}`,
+            owner: memoryRecord.owner,
+            confidence: applicationInput.outcome === "stale" ? 70 : 60,
+            sourceLineage: memoryRecord.sourceLineage
+          }
+        };
+
+    const applicationResult = await recordApplicationWithEffectsOnce({
       memoryRecordId: applicationInput.memoryRecordId,
       executionRunId: applicationInput.executionRunId,
       ...(applicationInput.taskContractId === undefined
@@ -374,111 +349,37 @@ export const runMemoryRecordApplyCommand = async (
         ...(command.evidenceBundleId === undefined
           ? {}
           : { verificationEvidenceBundleId: command.evidenceBundleId })
-      }
+      },
+      ...(negativeEffects === undefined ? {} : { negativeEffects })
     });
 
-    if (!applicationResult.created) {
-      const existingApplication = applicationResult.application;
-      return {
-        stdout: formatPersisted(
-          existingApplication,
-          undefined,
-          undefined,
-          memoryFeedbackRecommendationReadback({
-            memoryRecordId: applicationInput.memoryRecordId,
-            outcome: existingApplication.outcome ?? applicationInput.outcome,
-            reason: existingApplication.notes ?? applicationInput.expectedUse,
-            evidenceRefs: [authorization.packetEvidenceRef]
-          })
-        )
-      };
-    }
-
     const memoryApplication = applicationResult.application;
-
-    const feedbackEventType = feedbackEventTypeForOutcome(applicationInput.outcome);
     const baseRecommendationInput = {
       memoryRecordId: applicationInput.memoryRecordId,
       outcome: applicationInput.outcome,
       reason: applicationInput.notes ?? applicationInput.expectedUse
     } as const;
 
-    if (feedbackEventType === undefined) {
-      return {
-        stdout: formatPersisted(
-          memoryApplication,
-          undefined,
-          undefined,
-          memoryFeedbackRecommendationReadback({
-            ...baseRecommendationInput,
-            evidenceRefs: [`memory-application:${memoryApplication.id}`]
-          })
-        )
-      };
-    }
-
-    if (applicationInput.outcome !== "hurt" && applicationInput.outcome !== "stale") {
-      return {
-        stdout: formatPersisted(
-          memoryApplication,
-          undefined,
-          undefined,
-          memoryFeedbackRecommendationReadback({
-            ...baseRecommendationInput,
-            evidenceRefs: [`memory-application:${memoryApplication.id}`]
-          })
-        )
-      };
-    }
-
-    const feedbackInput = parseMemoryFeedbackEventInput({
-      memoryRecordId: applicationInput.memoryRecordId,
-      executionRunId: applicationInput.executionRunId,
-      eventType: feedbackEventType,
-      direction: "negative",
-      note: applicationInput.notes,
-      reason: applicationInput.notes,
-      evidenceRef: `memory-application:${memoryApplication.id}`,
-      metadata: {
-        ...applicationInput.metadata,
-        applicationOutcome: applicationInput.outcome
-      }
-    });
-    const feedbackEvent = await databaseRuntime.memoryRepository.createMemoryFeedbackEvent({
-      memoryRecordId: feedbackInput.memoryRecordId,
-      ...(feedbackInput.executionRunId === undefined
-        ? {}
-        : { executionRunId: feedbackInput.executionRunId }),
-      ...(feedbackInput.feedbackDeltaId === undefined
-        ? {}
-        : { feedbackDeltaId: feedbackInput.feedbackDeltaId }),
-      eventType: feedbackInput.eventType,
-      direction: feedbackInput.direction,
-      note: feedbackInput.note,
-      reason: feedbackInput.reason,
-      ...(feedbackInput.evidenceRef === undefined
-        ? {}
-        : { evidenceRef: feedbackInput.evidenceRef }),
-      metadata: feedbackInput.metadata
-    });
-    const antiMemoryCandidate = await proposeAntiMemoryCandidate(databaseRuntime, {
-      memoryRecord,
-      memoryApplication,
-      feedbackEvent,
-      outcome: applicationInput.outcome,
-      notes: applicationInput.notes
-    });
     const recommendation = memoryFeedbackRecommendationReadback({
       ...baseRecommendationInput,
       evidenceRefs: [
         `memory-application:${memoryApplication.id}`,
-        `memory-feedback-event:${feedbackEvent.id}`,
-        ...(antiMemoryCandidate === undefined ? [] : [`anti-memory-candidate:${antiMemoryCandidate.id}`])
+        ...(applicationResult.feedbackEvent === undefined
+          ? []
+          : [`memory-feedback-event:${applicationResult.feedbackEvent.id}`]),
+        ...(applicationResult.antiMemoryCandidate === undefined
+          ? []
+          : [`anti-memory-candidate:${applicationResult.antiMemoryCandidate.id}`])
       ]
     });
 
     return {
-      stdout: formatPersisted(memoryApplication, feedbackEvent.id, antiMemoryCandidate, recommendation)
+      stdout: formatPersisted(
+        memoryApplication,
+        applicationResult.feedbackEvent?.id,
+        applicationResult.antiMemoryCandidate,
+        recommendation
+      )
     };
   } finally {
     await databaseRuntime.close();

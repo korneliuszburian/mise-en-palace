@@ -112,6 +112,39 @@ export interface RecordMemoryApplicationOnceResult {
   created: boolean;
 }
 
+export type MemoryApplicationNegativeOutcome = Extract<MemoryApplicationOutcome, "hurt" | "stale">;
+
+export interface RecordMemoryApplicationNegativeEffectsInput extends RepositoryMetadata {
+  outcome: MemoryApplicationNegativeOutcome;
+  eventType: Extract<MemoryFeedbackEventType, "demoted" | "stale_detected">;
+  note: string;
+  reason: string;
+  evidenceRef?: string;
+  candidate: {
+    key: string;
+    rejectedClaim: string;
+    reason: string;
+    invalidatedBySourceClaimIds: string[];
+    appliesTo: string;
+    mayRevisitWhen?: string;
+    summary: string;
+    body: string;
+    owner: string;
+    confidence: number;
+    sourceLineage: SourceLineageRef[];
+  };
+}
+
+export interface RecordMemoryApplicationWithEffectsOnceInput
+  extends RecordMemoryApplicationOnceInput {
+  negativeEffects?: RecordMemoryApplicationNegativeEffectsInput;
+}
+
+export interface RecordMemoryApplicationWithEffectsOnceResult extends RecordMemoryApplicationOnceResult {
+  feedbackEvent?: MemoryFeedbackEvent;
+  antiMemoryCandidate?: AntiMemoryCandidate;
+}
+
 export interface CreateMemoryFeedbackEventInput extends RepositoryMetadata {
   memoryRecordId: MemoryRecord["id"];
   executionRunId?: ExecutionRunId;
@@ -198,6 +231,9 @@ export interface MemoryRepository {
   recordMemoryApplicationOnce?(
     input: RecordMemoryApplicationOnceInput
   ): Promise<RecordMemoryApplicationOnceResult>;
+  recordMemoryApplicationWithEffectsOnce?(
+    input: RecordMemoryApplicationWithEffectsOnceInput
+  ): Promise<RecordMemoryApplicationWithEffectsOnceResult>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
   getAntiMemoryCandidateById(id: string): Promise<AntiMemoryCandidate | undefined>;

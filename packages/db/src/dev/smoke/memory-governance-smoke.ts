@@ -16,7 +16,9 @@ import {
 } from "../../repositories/index.js";
 import {
   antiMemoryRecords,
+  antiMemoryCandidates,
   memoryApplications,
+  memoryFeedbackEvents,
   memoryRecords,
   memoryRecordVersions,
   outboxEvents,
@@ -339,8 +341,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     } as const;
 
-    if (memoryRepository.recordMemoryApplicationOnce === undefined) {
-      throw new Error("Memory governance smoke requires atomic packet-bound application persistence");
+    if (memoryRepository.recordMemoryApplicationWithEffectsOnce === undefined) {
+      throw new Error("Memory governance smoke requires atomic packet-bound application effects persistence");
     }
 
     const packetApplicationClients = [
@@ -348,7 +350,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
     ];
     let applicationResults: readonly Awaited<
-      ReturnType<DrizzleMemoryRepository["recordMemoryApplicationOnce"]>
+      ReturnType<DrizzleMemoryRepository["recordMemoryApplicationWithEffectsOnce"]>
     >[] = [];
 
     try {
@@ -363,8 +365,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
 
       applicationResults = await Promise.all([
-        firstPacketApplicationRepository.recordMemoryApplicationOnce(packetBoundApplication),
-        secondPacketApplicationRepository.recordMemoryApplicationOnce(packetBoundApplication)
+        firstPacketApplicationRepository.recordMemoryApplicationWithEffectsOnce(packetBoundApplication),
+        secondPacketApplicationRepository.recordMemoryApplicationWithEffectsOnce(packetBoundApplication)
       ]);
     } finally {
       await Promise.all(packetApplicationClients.map((packetApplicationClient) => packetApplicationClient.end()));
@@ -378,6 +380,145 @@ export const runMemoryGovernanceSmokeCheck = async (
 
     const memoryApplication = firstApplicationResult.application;
     const createdApplicationCount = applicationResults.filter((result) => result?.created).length;
+
+    const negativePacketApplication = {
+      memoryRecordId: memoryRecord.id,
+      executionRunId: executionRun.id,
+      packetChecksum: `${packetChecksum}:stale`,
+      expectedUse: "Verify stale application creates one review chain.",
+      outcome: "stale" as const,
+      notes: "Stale memory must create reviewable negative effects atomically.",
+      metadata: {
+        smokeId: marker,
+        applicationKind: "negative-race"
+      },
+      negativeEffects: {
+        outcome: "stale" as const,
+        eventType: "stale_detected" as const,
+        note: "Stale memory must create reviewable negative effects atomically.",
+        reason: "Stale memory was observed by the governance smoke.",
+        evidenceRef: `smoke:${marker}:stale-application`,
+        metadata: {
+          smokeId: marker,
+          applicationKind: "negative-race"
+        },
+        candidate: {
+          key: `feedback:memory-governance-smoke:${marker}:stale`,
+          rejectedClaim: memoryRecord.summary,
+          reason: "Stale memory was observed by the governance smoke.",
+          invalidatedBySourceClaimIds: memoryRecord.sourceLineage.map((lineage) => lineage.sourceId),
+          appliesTo: memoryRecord.key,
+          ...(memoryRecord.invalidationRule === undefined
+            ? {}
+            : { mayRevisitWhen: memoryRecord.invalidationRule }),
+          summary: "Review stale memory feedback from governance smoke.",
+          body: "This stale feedback must remain reviewable and atomic.",
+          owner: memoryRecord.owner,
+          confidence: 70,
+          sourceLineage: memoryRecord.sourceLineage
+        }
+      }
+    } as const;
+    const negativeClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+    let negativeResults: readonly Awaited<
+      ReturnType<DrizzleMemoryRepository["recordMemoryApplicationWithEffectsOnce"]>
+    >[] = [];
+
+    try {
+      const negativeRepositories = negativeClients.map(
+        (negativeClient) => new DrizzleMemoryRepository(createKrnDatabase(negativeClient))
+      );
+      const [firstNegativeRepository, secondNegativeRepository] = negativeRepositories;
+      if (firstNegativeRepository === undefined || secondNegativeRepository === undefined) {
+        throw new Error("Memory governance smoke did not create negative race repositories");
+      }
+      negativeResults = await Promise.all([
+        firstNegativeRepository.recordMemoryApplicationWithEffectsOnce(negativePacketApplication),
+        secondNegativeRepository.recordMemoryApplicationWithEffectsOnce(negativePacketApplication)
+      ]);
+    } finally {
+      await Promise.all(negativeClients.map((negativeClient) => negativeClient.end()));
+    }
+
+    const negativeApplicationCount = negativeResults.filter((result) => result.created).length;
+    const negativeApplication = negativeResults[0]?.application;
+    const negativeFeedbackRows = await db
+      .select()
+      .from(memoryFeedbackEvents)
+      .where(sql`${memoryFeedbackEvents.metadata}->>'smokeId' = ${marker}
+        AND ${memoryFeedbackEvents.metadata}->>'applicationKind' = 'negative-race'`);
+    const negativeCandidateRows = await db
+      .select()
+      .from(antiMemoryCandidates)
+      .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}
+        AND ${antiMemoryCandidates.metadata}->>'applicationKind' = 'negative-race'`);
+    const negativeOutboxRows = await db
+      .select()
+      .from(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
+
+    const faultStages = [
+      "after_application",
+      "after_counter",
+      "after_feedback",
+      "after_candidate",
+      "after_outbox"
+    ] as const;
+    for (const stage of faultStages) {
+      const faultClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
+      try {
+        const faultRepository = new DrizzleMemoryRepository(createKrnDatabase(faultClient), {
+          faultAfterStage: (observedStage) => {
+            if (observedStage === stage) {
+              throw new Error(`fault:${stage}`);
+            }
+          }
+        });
+        await assertRejected(
+          faultRepository.recordMemoryApplicationWithEffectsOnce({
+            ...negativePacketApplication,
+            packetChecksum: `${packetChecksum}:fault:${stage}`,
+            metadata: {
+              smokeId: marker,
+              faultStage: stage
+            },
+            negativeEffects: {
+              ...negativePacketApplication.negativeEffects,
+              metadata: {
+                smokeId: marker,
+                faultStage: stage
+              }
+            }
+          }),
+          `fault:${stage}`,
+          `Memory governance fault injection did not fail at ${stage}`
+        );
+      } finally {
+        await faultClient.end();
+      }
+    }
+    const faultApplicationRows = await db
+      .select()
+      .from(memoryApplications)
+      .where(sql`${memoryApplications.metadata}->>'smokeId' = ${marker}
+        AND ${memoryApplications.metadata}->>'faultStage' IS NOT NULL`);
+    const faultFeedbackRows = await db
+      .select()
+      .from(memoryFeedbackEvents)
+      .where(sql`${memoryFeedbackEvents.metadata}->>'smokeId' = ${marker}
+        AND ${memoryFeedbackEvents.metadata}->>'faultStage' IS NOT NULL`);
+    const faultCandidateRows = await db
+      .select()
+      .from(antiMemoryCandidates)
+      .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}
+        AND ${antiMemoryCandidates.metadata}->>'faultStage' IS NOT NULL`);
+    const applicationRows = await db
+      .select()
+      .from(memoryApplications)
+      .where(eq(memoryApplications.id, memoryApplication.id));
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const projectMemoryRecords = await memoryRepository.listMemoryRecordsForProject(project.id);
     const invalidatedMemoryRecord = await memoryRepository.invalidateMemoryRecord({
@@ -667,10 +808,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       .select()
       .from(memoryRecordVersions)
       .where(eq(memoryRecordVersions.memoryRecordId, memoryRecord.id));
-    const applicationRows = await db
-      .select()
-      .from(memoryApplications)
-      .where(eq(memoryApplications.id, memoryApplication.id));
     const outboxRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(outboxEvents)
@@ -718,6 +855,31 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "packet-bound memory feedback counted once",
         passed: readBackMemoryRecord?.positiveFeedbackCount === 1
+      },
+      {
+        label: "negative packet application won once",
+        passed: negativeApplicationCount === 1 && negativeApplication !== undefined
+      },
+      {
+        label: "negative feedback effect created once",
+        passed: negativeFeedbackRows.length === 1
+      },
+      {
+        label: "negative anti-memory candidate created once",
+        passed: negativeCandidateRows.length === 1
+      },
+      {
+        label: "negative effect outbox chain exists",
+        passed: negativeOutboxRows.filter((row) =>
+          ["memory.application.created", "memory.feedback.created", "anti_memory.candidate.created"]
+            .includes(row.topic)
+        ).length >= 3
+      },
+      {
+        label: "fault injection leaves no partial application effects",
+        passed: faultApplicationRows.length === 0 &&
+          faultFeedbackRows.length === 0 &&
+          faultCandidateRows.length === 0
       },
       {
         label: "memory application record lineage",

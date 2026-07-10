@@ -1174,7 +1174,7 @@ describe("runCli", () => {
               updatedAt: now
             };
           },
-          async recordMemoryApplicationOnce(input) {
+          async recordMemoryApplicationWithEffectsOnce(input) {
             if (application === undefined) {
               recordCalls += 1;
               application = {
@@ -1188,7 +1188,7 @@ describe("runCli", () => {
                 createdAt: now
               };
 
-              return { application, created: true };
+            return { application, created: true };
             }
 
             return { application, created: false };
@@ -1297,7 +1297,44 @@ describe("runCli", () => {
                 updatedAt: now
               };
             },
-            async recordMemoryApplicationOnce(input) {
+            async recordMemoryApplicationWithEffectsOnce(input) {
+              const feedbackInput = input.negativeEffects;
+              if (feedbackInput === undefined) {
+                throw new Error("negative effects are required in this test");
+              }
+
+              const feedbackEvent = {
+                id: "memory-feedback-event-1",
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                eventType: feedbackInput.eventType,
+                direction: "negative" as const,
+                note: feedbackInput.note,
+                reason: feedbackInput.reason,
+                evidenceRef: feedbackInput.evidenceRef,
+                metadata: feedbackInput.metadata ?? {},
+                createdAt: now
+              };
+              capturedFeedbackEvent = {
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                eventType: feedbackInput.eventType,
+                direction: "negative",
+                note: feedbackInput.note,
+                reason: feedbackInput.reason,
+                evidenceRef: feedbackInput.evidenceRef,
+                metadata: feedbackInput.metadata
+              };
+              const candidateInput = {
+                projectId: "project-1",
+                executionRunId: input.executionRunId,
+                proposedBy: "krn-memory-feedback",
+                maintenanceIdentity: "memory-application:test",
+                ...feedbackInput.candidate,
+                metadata: feedbackInput.metadata
+              };
+              capturedAntiMemoryCandidate = candidateInput;
+
               return {
                 application: {
                   id: "memory-application-1",
@@ -1309,30 +1346,11 @@ describe("runCli", () => {
                   metadata: input.metadata ?? {},
                   createdAt: now
                 },
-                created: true
+                created: true,
+                feedbackEvent,
+                antiMemoryCandidate: createPersistedAntiMemoryCandidate(candidateInput)
               };
             },
-            async createMemoryFeedbackEvent(input) {
-              capturedFeedbackEvent = input;
-
-              return {
-                id: "memory-feedback-event-1",
-                memoryRecordId: input.memoryRecordId,
-                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-                ...(input.eventType === undefined ? {} : { eventType: input.eventType }),
-                direction: input.direction,
-                note: input.note,
-                ...(input.reason === undefined ? {} : { reason: input.reason }),
-                ...(input.evidenceRef === undefined ? {} : { evidenceRef: input.evidenceRef }),
-                metadata: input.metadata ?? {},
-                createdAt: now
-              };
-            },
-            async createAntiMemoryCandidate(input) {
-              capturedAntiMemoryCandidate = input;
-
-              return createPersistedAntiMemoryCandidate(input);
-            }
           },
           harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
           async close() {
@@ -1361,7 +1379,7 @@ describe("runCli", () => {
       eventType,
       direction: "negative",
       reason: "Graph traversal now exceeds Postgres edge-table performance",
-      evidenceRef: "memory-application:memory-application-1"
+      evidenceRef: `packet:${packetBinding.packetChecksum}`
     });
     expect(capturedAntiMemoryCandidate).toMatchObject({
       projectId: "project-1",
@@ -1374,17 +1392,7 @@ describe("runCli", () => {
       confidence: expectedConfidence
     });
     expect(capturedAntiMemoryCandidate?.metadata).toMatchObject({
-      applicationOutcome: outcome,
-      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review.",
-      reflectionCandidateEvidence: {
-        provenance: "local_operator_note",
-        evidenceRefs: [
-          "memory-application:memory-application-1",
-          "memory-feedback-event:memory-feedback-event-1"
-        ],
-        doesNotProve:
-          "Operator feedback does not prove the anti-memory candidate should be promoted without review."
-      }
+      applicationOutcome: outcome
     });
   });
 
