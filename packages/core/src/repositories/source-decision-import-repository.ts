@@ -4,6 +4,30 @@ import type {
   SourceDecision
 } from "@krn/core";
 
+export type SourceDecisionEvidenceStatus =
+  | "captured"
+  | "missing"
+  | "digest_mismatch"
+  | "externally_unverified";
+
+export interface SourceDecisionEvidenceProvenance {
+  kind: "local_file" | "source_artifact" | "source_snapshot";
+  uri: string;
+  path?: string;
+  sourceArtifactId?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface SourceDecisionEvidenceLookup {
+  status: SourceDecisionEvidenceStatus;
+  evidenceRef: string;
+  content?: string;
+  contentHash?: string;
+  capturedAt?: string;
+  provenance?: SourceDecisionEvidenceProvenance;
+  reason?: string;
+}
+
 export interface SourceDecisionImportLookupInput {
   projectId: ProjectId;
   importId: string;
@@ -13,6 +37,8 @@ export interface SourceDecisionImportLookupInput {
 export interface SourceDecisionImportReadback {
   decisionId: string;
   contentHash: string;
+  evidenceStatus: SourceDecisionEvidenceStatus;
+  evidenceContentHash?: string;
   sourceArtifactId: string;
   sourceChunkId: string;
   sourceClaimId: string;
@@ -39,6 +65,11 @@ export type SourceDecisionImportLookup =
     };
 
 export interface SourceDecisionImportRepository {
+  getCapturedSourceEvidence(input: {
+    projectId: ProjectId;
+    evidenceRef: string;
+  }): Promise<SourceDecisionEvidenceLookup>;
+
   getSourceDecisionImportRow(
     input: SourceDecisionImportLookupInput
   ): Promise<SourceDecisionImportLookup>;

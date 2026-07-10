@@ -513,6 +513,10 @@ describe("runDecisionCorpusImport", () => {
       searchLexical: async () => []
     };
     const sourceDecisionImportRepository: NonNullable<DatabaseRuntime["sourceDecisionImportRepository"]> = {
+      getCapturedSourceEvidence: async ({ evidenceRef }) => ({
+        status: "missing" as const,
+        evidenceRef
+      }),
       getSourceDecisionImportRow: async () => ({ status: "missing" })
     };
     const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
@@ -536,7 +540,18 @@ describe("runDecisionCorpusImport", () => {
         baseFixturePath
       },
       smokeId: "unit-smoke",
-      now
+      now,
+      resolveEvidence: async ({ evidenceRef, now: capturedAt }) => ({
+        status: "captured" as const,
+        evidenceRef,
+        content: `captured test evidence for ${evidenceRef}`,
+        capturedAt,
+        provenance: {
+          kind: "local_file" as const,
+          uri: `test-fixture://${evidenceRef}`,
+          path: evidenceRef
+        }
+      })
     });
 
     expect(rows).toHaveLength(11);
@@ -655,13 +670,138 @@ describe("runDecisionCorpusImport", () => {
       fixture: {
         ...fixture(),
         decisions: fixture().decisions.map((row, index) => index === 0
-          ? { ...row, evidenceRef: "missing-evidence-ref" }
+          ? { ...row, evidenceRef: "../outside-evidence.md" }
           : row),
         baseFixturePath
       },
       smokeId: "unit-smoke",
       now
     })).rejects.toThrow("unresolvable evidenceRef");
+    expect(repositoryWriteCount).toBe(0);
+  });
+
+  it("rejects syntactically valid but uncaptured evidence before repository writes", async () => {
+    let repositoryWriteCount = 0;
+    const failWrite = async (): Promise<never> => {
+      repositoryWriteCount += 1;
+      throw new Error("repository write should not run");
+    };
+    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
+      createSourceArtifact: failWrite,
+      createSourceChunk: failWrite,
+      createSourceClaim: failWrite,
+      getSourceClaimById: async () => undefined,
+      listClaimsForProject: async () => [],
+      createSourceClaimEdge: failWrite,
+      listSourceClaimEdgesForClaim: async () => [],
+      listSourceDecisionEdgesForClaim: async () => [],
+      createSourceDecision: failWrite,
+      createSourceDecisionEdge: failWrite,
+      getSourceDecisionEdgeById: async () => undefined,
+      createSourceRejection: failWrite
+    };
+    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
+      createSearchDocument: failWrite,
+      searchLexical: async () => []
+    };
+    const sourceDecisionImportRepository: NonNullable<DatabaseRuntime["sourceDecisionImportRepository"]> = {
+      getCapturedSourceEvidence: async ({ evidenceRef }) => ({
+        status: "missing" as const,
+        evidenceRef
+      }),
+      getSourceDecisionImportRow: async () => ({ status: "missing" })
+    };
+    const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
+      _lockKey,
+      work
+    ) => work({
+      sourceRepository,
+      retrievalRepository,
+      sourceDecisionImportRepository
+    });
+    const firstDecision = fixture().decisions[0];
+
+    if (firstDecision === undefined) {
+      throw new Error("missing first decision corpus row");
+    }
+
+    await expect(persistDecisionCorpusImport({
+      runtime: {
+        sourceRepository,
+        retrievalRepository,
+        sourceDecisionImportRepository,
+        withTransaction
+      },
+      projectId: "project-1",
+      fixture: {
+        ...fixture(),
+        decisions: [{
+          ...firstDecision,
+          evidenceRef: "run-evidence/missing-captured-evidence.md"
+        }],
+        cases: [],
+        baseFixturePath
+      },
+      smokeId: "unit-smoke",
+      now,
+      authorizedRepoRoot: process.cwd()
+    })).rejects.toThrow("cannot create governing authority");
+
+    await expect(persistDecisionCorpusImport({
+      runtime: {
+        sourceRepository,
+        retrievalRepository,
+        sourceDecisionImportRepository,
+        withTransaction
+      },
+      projectId: "project-1",
+      fixture: {
+        ...fixture(),
+        decisions: [{
+          ...firstDecision,
+          evidenceRef: "https://example.com/uncaptured-source"
+        }],
+        cases: [],
+        baseFixturePath
+      },
+      smokeId: "unit-smoke-url",
+      now,
+      authorizedRepoRoot: process.cwd()
+    })).rejects.toThrow("externally_unverified");
+
+    await expect(persistDecisionCorpusImport({
+      runtime: {
+        sourceRepository,
+        retrievalRepository,
+        sourceDecisionImportRepository,
+        withTransaction
+      },
+      projectId: "project-1",
+      fixture: {
+        ...fixture(),
+        decisions: [{
+          ...firstDecision,
+          evidenceRef: "run-evidence/digest-mismatch.md"
+        }],
+        cases: [],
+        baseFixturePath
+      },
+      smokeId: "unit-smoke-digest",
+      now,
+      authorizedRepoRoot: process.cwd(),
+      resolveEvidence: async ({ evidenceRef, now: capturedAt }) => ({
+        status: "captured" as const,
+        evidenceRef,
+        content: "captured bytes",
+        contentHash: "wrong-digest",
+        capturedAt,
+        provenance: {
+          kind: "local_file" as const,
+          uri: `test-fixture://${evidenceRef}`,
+          path: evidenceRef
+        }
+      })
+    })).rejects.toThrow("cannot create governing authority");
     expect(repositoryWriteCount).toBe(0);
   });
 });

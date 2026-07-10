@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { readFile, realpath, stat } from "node:fs/promises";
+import path from "node:path";
 
 import type {
   ProjectId,
@@ -6,6 +8,7 @@ import type {
   SourceDecision
 } from "@krn/core";
 import type {
+  SourceDecisionEvidenceLookup,
   SourceDecisionImportLookup,
   SourceDecisionImportReadback,
   SourceDecisionImportRepository
@@ -48,7 +51,8 @@ interface SourceDecisionImportRepositories {
 interface PreparedSourceDecisionImportRow {
   readonly row: DecisionCorpusImportRow;
   readonly metadata: Record<string, unknown>;
-  readonly evidenceRef: string;
+  readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
+  readonly evidenceContentHash?: string;
   readonly uri: string;
   readonly artifactContentHash: string;
   readonly chunkContent: string;
@@ -57,6 +61,8 @@ interface PreparedSourceDecisionImportRow {
 
 export interface PersistedSourceDecisionImportRow {
   readonly decisionId: string;
+  readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
+  readonly evidenceContentHash?: string;
   readonly sourceArtifactId: string;
   readonly sourceChunkId: string;
   readonly sourceClaimId: string;
@@ -76,7 +82,17 @@ export interface PersistSourceDecisionImportInput {
   readonly smokeId?: string;
   readonly importedBy: string;
   readonly now: string;
+  readonly authorizedRepoRoot?: string;
+  readonly resolveEvidence?: SourceDecisionEvidenceResolver;
 }
+
+export type SourceDecisionEvidenceResolver = (input: {
+  projectId: ProjectId;
+  decisionId: string;
+  evidenceRef: string;
+  now: string;
+  authorizedRepoRoot?: string;
+}) => Promise<SourceDecisionEvidenceLookup>;
 
 export interface SourceDecisionImportCounts {
   readonly decisionCount: number;
@@ -110,6 +126,31 @@ const normalizeImportText = (value: string): string =>
 const contentHash = (value: string): string =>
   createHash("sha256").update(value, "utf8").digest("hex");
 
+const localEvidenceRefPattern = /^([A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*)(?::[1-9][0-9]*)?(?:#[A-Za-z0-9._/-]+)?$/u;
+
+const isTraversalPath = (localPath: string): boolean =>
+  localPath.split("/").some((segment) => segment === "." || segment === "..");
+
+const isSafeLocalEvidenceRef = (evidenceRef: string): boolean => {
+  const localPath = localEvidenceRefPattern.exec(evidenceRef)?.[1];
+
+  return localPath !== undefined && !isTraversalPath(localPath);
+};
+
+const requireHttpEvidenceRef = (evidenceRef: string, decisionId: string): string => {
+  try {
+    const url = new URL(evidenceRef);
+
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      throw new Error("unsupported URL protocol");
+    }
+  } catch {
+    throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+  }
+
+  return evidenceRef;
+};
+
 const resolveEvidenceRef = (value: string, decisionId: string): string => {
   const evidenceRef = normalizeImportText(value);
 
@@ -118,23 +159,10 @@ const resolveEvidenceRef = (value: string, decisionId: string): string => {
   }
 
   if (evidenceRef.startsWith("https://") || evidenceRef.startsWith("http://")) {
-    try {
-      const url = new URL(evidenceRef);
-
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
-        throw new Error("unsupported URL protocol");
-      }
-    } catch {
-      throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
-    }
-
-    return evidenceRef;
+    return requireHttpEvidenceRef(evidenceRef, decisionId);
   }
 
-  if (
-    /^run-evidence\/[A-Za-z0-9][A-Za-z0-9._/-]*\.md(?:#[A-Za-z0-9._/-]+)?$/u.test(evidenceRef) ||
-    /^KRN_ROADMAP\.md(?::[1-9][0-9]*)?(?:#[A-Za-z0-9._/-]+)?$/u.test(evidenceRef)
-  ) {
+  if (isSafeLocalEvidenceRef(evidenceRef)) {
     return evidenceRef;
   }
 
@@ -144,7 +172,7 @@ const resolveEvidenceRef = (value: string, decisionId: string): string => {
 const metadataForRow = (
   input: PersistSourceDecisionImportInput,
   row: DecisionCorpusImportRow,
-  evidenceRef: string
+  evidence: SourceDecisionEvidenceLookup
 ): Record<string, unknown> => ({
   importId: input.importId,
   ...(input.smokeId === undefined ? {} : { smokeId: input.smokeId }),
@@ -152,16 +180,269 @@ const metadataForRow = (
   importedAt: input.now,
   decisionCorpusImportId: row.id,
   decisionCorpusStatus: row.status,
-  evidenceRef
+  evidenceRef: evidence.evidenceRef,
+  evidenceStatus: evidence.status,
+  ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
+  ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
+  ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
+  ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason })
 });
 
-const prepareImportRows = (
+const parseLocalEvidencePath = (evidenceRef: string, decisionId: string): string => {
+  const match = localEvidenceRefPattern.exec(evidenceRef);
+  const localPath = match?.[1];
+
+  if (localPath === undefined) {
+    throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+  }
+
+  if (isTraversalPath(localPath)) {
+    throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+  }
+
+  return localPath;
+};
+
+const capturedEvidenceWithCanonicalHash = (
+  evidence: SourceDecisionEvidenceLookup,
+  decisionId: string
+): SourceDecisionEvidenceLookup => {
+  if (evidence.status !== "captured") {
+    return evidence;
+  }
+
+  if (
+    evidence.content === undefined ||
+    evidence.provenance === undefined ||
+    evidence.capturedAt === undefined
+  ) {
+    throw new Error(`decision ${decisionId} has captured evidence without content, provenance, or capture time`);
+  }
+
+  const actualHash = contentHash(evidence.content);
+  const reportedHash = evidence.contentHash?.replace(/^sha256:/u, "");
+
+  if (reportedHash !== undefined && reportedHash !== actualHash) {
+    return {
+      ...evidence,
+      status: "digest_mismatch",
+      reason: "captured evidence digest does not match the captured bytes"
+    };
+  }
+
+  return {
+    ...evidence,
+    contentHash: actualHash
+  };
+};
+
+const requireAuthorizedEvidenceRoot = async (input: {
+  authorizedRepoRoot?: string;
+  decisionId: string;
+}): Promise<string> => {
+  if (input.authorizedRepoRoot === undefined) {
+    throw new Error(`decision ${input.decisionId} requires an authorized repository root for local evidence`);
+  }
+
+  return realpath(path.resolve(input.authorizedRepoRoot)).catch(() => {
+    throw new Error(`authorized repository root is unavailable for decision ${input.decisionId}`);
+  });
+};
+
+const relativePathInsideEvidenceRoot = (
+  root: string,
+  candidate: string,
+  decisionId: string
+): string => {
+  const relativePath = path.relative(root, candidate);
+
+  if (
+    relativePath.length === 0 ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new Error(`decision ${decisionId} evidenceRef resolves outside the authorized repository root`);
+  }
+
+  return relativePath;
+};
+
+const resolveLocalEvidenceFile = async (input: {
+  candidate: string;
+  decisionId: string;
+  evidenceRef: string;
+  root: string;
+}): Promise<SourceDecisionEvidenceLookup | {
+  resolvedPath: string;
+  resolvedRelativePath: string;
+}> => {
+  let resolvedPath: string;
+
+  try {
+    resolvedPath = await realpath(input.candidate);
+  } catch {
+    return {
+      status: "missing",
+      evidenceRef: input.evidenceRef,
+      reason: "local evidence file does not exist inside the authorized repository root"
+    };
+  }
+
+  const resolvedRelativePath = relativePathInsideEvidenceRoot(
+    input.root,
+    resolvedPath,
+    input.decisionId
+  );
+  const fileStats = await stat(resolvedPath);
+
+  if (!fileStats.isFile()) {
+    return {
+      status: "missing",
+      evidenceRef: input.evidenceRef,
+      reason: "local evidence reference does not resolve to a regular file"
+    };
+  }
+
+  return { resolvedPath, resolvedRelativePath };
+};
+
+const resolveLocalEvidence = async (input: {
+  authorizedRepoRoot?: string;
+  decisionId: string;
+  evidenceRef: string;
+  now: string;
+}): Promise<SourceDecisionEvidenceLookup> => {
+  const root = await requireAuthorizedEvidenceRoot(input);
+  const localPath = parseLocalEvidencePath(input.evidenceRef, input.decisionId);
+  const candidate = path.resolve(root, localPath);
+  relativePathInsideEvidenceRoot(root, candidate, input.decisionId);
+  const resolved = await resolveLocalEvidenceFile({
+    candidate,
+    decisionId: input.decisionId,
+    evidenceRef: input.evidenceRef,
+    root
+  });
+
+  if ("status" in resolved) {
+    return resolved;
+  }
+
+  const content = await readFile(resolved.resolvedPath, "utf8");
+
+  return {
+    status: "captured",
+    evidenceRef: input.evidenceRef,
+    content,
+    contentHash: contentHash(content),
+    capturedAt: input.now,
+    provenance: {
+      kind: "local_file",
+      uri: `file://${resolved.resolvedPath}`,
+      path: resolved.resolvedRelativePath
+    }
+  };
+};
+
+const resolveEvidence = async (input: {
+  decisionId: string;
+  evidenceRef: string;
+  now: string;
+  projectId: ProjectId;
+  authorizedRepoRoot?: string;
+  resolveEvidence?: SourceDecisionEvidenceResolver;
+  sourceDecisionImportRepository?: SourceDecisionImportRepository;
+}): Promise<SourceDecisionEvidenceLookup> => {
+  if (input.resolveEvidence !== undefined) {
+    return capturedEvidenceWithCanonicalHash(
+      await input.resolveEvidence({
+        projectId: input.projectId,
+        decisionId: input.decisionId,
+        evidenceRef: input.evidenceRef,
+        now: input.now,
+        ...(input.authorizedRepoRoot === undefined
+          ? {}
+          : { authorizedRepoRoot: input.authorizedRepoRoot })
+      }),
+      input.decisionId
+    );
+  }
+
+  if (input.evidenceRef.startsWith("http://") || input.evidenceRef.startsWith("https://")) {
+    const capturedEvidence = input.sourceDecisionImportRepository?.getCapturedSourceEvidence;
+
+    if (capturedEvidence === undefined) {
+      return {
+        status: "externally_unverified",
+        evidenceRef: input.evidenceRef,
+        reason: "URL evidence requires a project-scoped captured SourceArtifact or SourceSnapshot"
+      };
+    }
+
+    const lookup = await capturedEvidence.call(input.sourceDecisionImportRepository, {
+      projectId: input.projectId,
+      evidenceRef: input.evidenceRef
+    });
+
+    return capturedEvidenceWithCanonicalHash(
+      lookup.status === "missing"
+        ? {
+            ...lookup,
+            status: "externally_unverified",
+            reason: lookup.reason ?? "URL has no project-scoped captured SourceArtifact or SourceSnapshot"
+          }
+        : lookup,
+      input.decisionId
+    );
+  }
+
+  return resolveLocalEvidence(input);
+};
+
+const requireCapturedEvidenceForAuthority = (
+  row: DecisionCorpusImportRow,
+  evidence: SourceDecisionEvidenceLookup
+): void => {
+  if (row.status !== "current" || evidence.status === "captured") {
+    return;
+  }
+
+  throw new Error(
+    `decision ${row.id} cannot create governing authority: evidence ${evidence.evidenceRef} is ${evidence.status}${
+      evidence.reason === undefined ? "" : ` (${evidence.reason})`
+    }`
+  );
+};
+
+const prepareImportRows = async (
   input: PersistSourceDecisionImportInput
-): readonly PreparedSourceDecisionImportRow[] => input.fixture.decisions.map((row) => {
-  const evidenceRef = resolveEvidenceRef(row.evidenceRef, row.id);
+): Promise<readonly PreparedSourceDecisionImportRow[]> => {
+  const rowsWithEvidenceRefs = input.fixture.decisions.map((row) => ({
+    row,
+    evidenceRef: resolveEvidenceRef(row.evidenceRef, row.id)
+  }));
+
+  return Promise.all(rowsWithEvidenceRefs.map(async ({ row, evidenceRef }) => {
+  const evidence = await resolveEvidence({
+    decisionId: row.id,
+    evidenceRef,
+    now: input.now,
+    projectId: input.projectId,
+    ...(input.authorizedRepoRoot === undefined
+      ? {}
+      : { authorizedRepoRoot: input.authorizedRepoRoot }),
+    ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence }),
+    ...(input.runtime.sourceDecisionImportRepository === undefined
+      ? {}
+      : { sourceDecisionImportRepository: input.runtime.sourceDecisionImportRepository })
+  });
+
+  requireCapturedEvidenceForAuthority(row, evidence);
+
   const normalizedRow = JSON.stringify({
     doesNotProve: normalizeImportText(row.doesNotProve),
+    evidenceContentHash: evidence.contentHash ?? null,
     evidenceRef,
+    evidenceStatus: evidence.status,
     falsifier: normalizeImportText(row.falsifier),
     noteText: normalizeImportText(row.noteText),
     status: row.status,
@@ -169,18 +450,23 @@ const prepareImportRows = (
     taskScopes: row.taskScopes.map(normalizeImportText),
     title: normalizeImportText(row.title)
   });
-  const chunkContent = `${normalizeImportText(row.statement)}\n\n${normalizeImportText(row.noteText)}`;
+  const capturedContent = evidence.content === undefined
+    ? ""
+    : `\n\nCaptured evidence (${evidence.evidenceRef}):\n${evidence.content}`;
+  const chunkContent = `${normalizeImportText(row.statement)}\n\n${normalizeImportText(row.noteText)}${capturedContent}`;
 
   return {
     row,
-    metadata: metadataForRow(input, row, evidenceRef),
-    evidenceRef,
+    metadata: metadataForRow(input, row, evidence),
+    evidenceStatus: evidence.status,
+    ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
     uri: `source-decision-import://${input.importId}/${row.id}`,
-    artifactContentHash: contentHash(`krn.source-decision-import.v1\n${normalizedRow}`),
+    artifactContentHash: contentHash(`krn.source-decision-import.v2\n${normalizedRow}`),
     chunkContent,
-    chunkContentHash: contentHash(`krn.source-decision-import.chunk.v1\n${chunkContent}`)
+    chunkContentHash: contentHash(`krn.source-decision-import.chunk.v2\n${chunkContent}`)
   };
-});
+  }));
+};
 
 const createSourceArtifactAndChunk = async (
   sourceRepository: SourceDecisionImportSourceRepository,
@@ -342,6 +628,8 @@ const persistedRowFromReadback = (
   row: SourceDecisionImportReadback
 ): PersistedSourceDecisionImportRow => ({
   decisionId: row.decisionId,
+  evidenceStatus: row.evidenceStatus,
+  ...(row.evidenceContentHash === undefined ? {} : { evidenceContentHash: row.evidenceContentHash }),
   sourceArtifactId: row.sourceArtifactId,
   sourceChunkId: row.sourceChunkId,
   sourceClaimId: row.sourceClaimId,
@@ -476,6 +764,15 @@ const projectScopedImportedSourceClaimReadback = async (input: {
   return sourceClaim;
 };
 
+const persistedEvidenceFields = (
+  prepared: PreparedSourceDecisionImportRow
+): Pick<PersistedSourceDecisionImportRow, "evidenceStatus" | "evidenceContentHash"> => ({
+  evidenceStatus: prepared.evidenceStatus,
+  ...(prepared.evidenceContentHash === undefined
+    ? {}
+    : { evidenceContentHash: prepared.evidenceContentHash })
+});
+
 const persistSourceDecisionImportRow = async (input: {
   readonly createSourceDecision: CreateSourceDecision;
   readonly importId: string;
@@ -530,6 +827,7 @@ const persistSourceDecisionImportRow = async (input: {
   if (row.status === "rejected") {
     return {
       decisionId: row.id,
+      ...persistedEvidenceFields(input.prepared),
       sourceArtifactId: sourceArtifact.id,
       sourceChunkId: sourceChunk.id,
       sourceClaimId: sourceClaim.id,
@@ -549,6 +847,7 @@ const persistSourceDecisionImportRow = async (input: {
 
   return {
     decisionId: row.id,
+    ...persistedEvidenceFields(input.prepared),
     sourceArtifactId: sourceArtifact.id,
     sourceChunkId: sourceChunk.id,
     sourceClaimId: sourceClaim.id,
@@ -605,7 +904,7 @@ export const persistSourceDecisionImport = async (
   input: PersistSourceDecisionImportInput
 ): Promise<readonly PersistedSourceDecisionImportRow[]> => {
   validateSourceDecisionImportFixture(input.fixture);
-  const preparedRows = prepareImportRows(input);
+  const preparedRows = await prepareImportRows(input);
 
   if (
     preparedRows.some((prepared) => prepared.row.status === "stale") &&

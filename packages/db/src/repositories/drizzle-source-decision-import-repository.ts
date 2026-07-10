@@ -1,8 +1,10 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, ne, or } from "drizzle-orm";
 import type {
   SourceDecisionImportLookup,
   SourceDecisionImportLookupInput,
-  SourceDecisionImportRepository
+  SourceDecisionImportRepository,
+  SourceDecisionEvidenceLookup,
+  SourceDecisionEvidenceStatus
 } from "@krn/core/repositories/internal";
 
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
@@ -13,11 +15,164 @@ import {
   sourceClaims,
   sourceDecisionEdges,
   sourceDecisions,
-  sourceRejections
+  sourceRejections,
+  sourceSnapshots
 } from "../schema/index.js";
+
+type SourceEvidenceQueryRow = {
+  sourceArtifact: {
+    id: string;
+    uri: string;
+    contentHash: string;
+    capturedAt: Date;
+  };
+  sourceChunk: {
+    content: string;
+    contentHash: string;
+  } | null;
+  sourceSnapshot: {
+    id: string;
+    snapshotUri: string;
+    contentHash: string;
+    capturedAt: Date;
+  } | null;
+};
+
+const missingSourceEvidence = (
+  evidenceRef: string
+): SourceDecisionEvidenceLookup => ({
+  status: "missing",
+  evidenceRef,
+  reason: "no project-scoped captured SourceArtifact or SourceSnapshot matches the URL"
+});
+
+const mismatchedSourceEvidence = (
+  evidenceRef: string,
+  reason: string
+): SourceDecisionEvidenceLookup => ({
+  status: "digest_mismatch",
+  evidenceRef,
+  reason
+});
+
+const sourceEvidenceHash = (row: SourceEvidenceQueryRow): string =>
+  row.sourceSnapshot?.contentHash ?? row.sourceArtifact.contentHash;
+
+const sourceEvidenceCapturedAt = (row: SourceEvidenceQueryRow): string =>
+  (row.sourceSnapshot?.capturedAt ?? row.sourceArtifact.capturedAt).toISOString();
+
+const sourceEvidenceProvenance = (
+  row: SourceEvidenceQueryRow
+): NonNullable<SourceDecisionEvidenceLookup["provenance"]> => {
+  if (row.sourceSnapshot === null) {
+    return {
+      kind: "source_artifact",
+      uri: row.sourceArtifact.uri,
+      sourceArtifactId: row.sourceArtifact.id
+    };
+  }
+
+  return {
+    kind: "source_snapshot",
+    uri: row.sourceSnapshot.snapshotUri,
+    sourceArtifactId: row.sourceArtifact.id,
+    sourceSnapshotId: row.sourceSnapshot.id
+  };
+};
+
+const sourceEvidenceLookupFromRow = (
+  evidenceRef: string,
+  row: SourceEvidenceQueryRow | undefined
+): SourceDecisionEvidenceLookup => {
+  if (row === undefined) {
+    return missingSourceEvidence(evidenceRef);
+  }
+
+  if (row.sourceChunk === null) {
+    return mismatchedSourceEvidence(
+      evidenceRef,
+      "captured source has no ordinal-zero SourceChunk containing the captured bytes"
+    );
+  }
+
+  const capturedHash = sourceEvidenceHash(row);
+
+  if (row.sourceChunk.contentHash !== capturedHash) {
+    return mismatchedSourceEvidence(
+      evidenceRef,
+      "captured source digest does not match the stored SourceChunk bytes"
+    );
+  }
+
+  return {
+    status: "captured",
+    evidenceRef,
+    content: row.sourceChunk.content,
+    contentHash: capturedHash,
+    capturedAt: sourceEvidenceCapturedAt(row),
+    provenance: sourceEvidenceProvenance(row)
+  };
+};
+
+const sourceEvidenceStatusSet = new Set<string>([
+  "captured",
+  "missing",
+  "digest_mismatch",
+  "externally_unverified"
+]);
+
+const sourceEvidenceStatusFromMetadata = (
+  metadata: Record<string, unknown>
+): SourceDecisionEvidenceStatus => {
+  const status = metadata["evidenceStatus"];
+
+  return typeof status === "string" && sourceEvidenceStatusSet.has(status)
+    ? status as SourceDecisionEvidenceStatus
+    : "externally_unverified";
+};
+
+const sourceEvidenceContentHashFromMetadata = (
+  metadata: Record<string, unknown>
+): string | undefined => {
+  const contentHash = metadata["evidenceContentHash"];
+
+  return typeof contentHash === "string" ? contentHash : undefined;
+};
 
 export class DrizzleSourceDecisionImportRepository implements SourceDecisionImportRepository {
   constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
+
+  async getCapturedSourceEvidence(input: {
+    projectId: string;
+    evidenceRef: string;
+  }): Promise<SourceDecisionEvidenceLookup> {
+    const rows = await this.db
+      .select({
+        sourceArtifact: sourceArtifacts,
+        sourceChunk: sourceChunks,
+        sourceSnapshot: sourceSnapshots
+      })
+      .from(sourceArtifacts)
+      .leftJoin(sourceChunks, and(
+        eq(sourceChunks.sourceArtifactId, sourceArtifacts.id),
+        eq(sourceChunks.ordinal, 0)
+      ))
+      .leftJoin(sourceSnapshots, and(
+        eq(sourceSnapshots.sourceArtifactId, sourceArtifacts.id),
+        eq(sourceSnapshots.snapshotUri, input.evidenceRef)
+      ))
+      .where(and(
+        eq(sourceArtifacts.projectId, input.projectId),
+        ne(sourceArtifacts.sourceAuthority, "project-decision"),
+        or(
+          eq(sourceArtifacts.uri, input.evidenceRef),
+          eq(sourceSnapshots.snapshotUri, input.evidenceRef)
+        )
+      ))
+      .orderBy(desc(sourceSnapshots.capturedAt), desc(sourceArtifacts.capturedAt))
+      .limit(1);
+    return sourceEvidenceLookupFromRow(input.evidenceRef, rows[0]);
+  }
 
   async getSourceDecisionImportRow(
     input: SourceDecisionImportLookupInput
@@ -72,11 +227,17 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       };
     }
 
+    const evidenceContentHash = sourceEvidenceContentHashFromMetadata(row.sourceArtifact.metadata);
+
     return {
       status: "complete",
       row: {
         decisionId: input.decisionId,
         contentHash: row.sourceArtifact.contentHash,
+        evidenceStatus: sourceEvidenceStatusFromMetadata(row.sourceArtifact.metadata),
+        ...(evidenceContentHash === undefined
+          ? {}
+          : { evidenceContentHash }),
         sourceArtifactId: row.sourceArtifact.id,
         sourceChunkId: row.sourceChunk.id,
         sourceClaimId: row.sourceClaim.id,

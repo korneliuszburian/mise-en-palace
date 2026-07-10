@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import postgres from "postgres";
 
 import {
@@ -48,6 +49,8 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly changedReplayRejected: boolean;
   readonly atomicFailureRolledBack: boolean;
   readonly governingDecisionId: string;
+  readonly governingEvidenceStatus: PersistedDecisionCorpusRow["evidenceStatus"];
+  readonly externalEvidenceStatus: PersistedDecisionCorpusRow["evidenceStatus"];
   readonly governingSourceClaimId: string;
   readonly governingSourceDecisionEdgeId: string;
   readonly governingSearchDocumentId: string;
@@ -83,6 +86,66 @@ const markerTables = [
 
 const smokeSource = "krn db smoke decision-corpus-import";
 
+const externalEvidenceRef = "https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design";
+
+const hashCapturedEvidence = (content: string): string =>
+  createHash("sha256").update(content, "utf8").digest("hex");
+
+const smokeImportFixture = (
+  fixture: ReturnType<typeof loadDecisionCorpusImportFixture>
+): ReturnType<typeof loadDecisionCorpusImportFixture> => ({
+  ...fixture,
+  decisions: fixture.decisions.map((row) =>
+    row.status === "current" && !row.evidenceRef.startsWith("http://") && !row.evidenceRef.startsWith("https://")
+      ? { ...row, evidenceRef: "KRN_ROADMAP.md" }
+      : row
+  )
+});
+
+const seedCapturedExternalEvidence = async (input: {
+  runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>;
+  projectId: string;
+  smokeId: string;
+}): Promise<void> => {
+  const createSourceChunk = input.runtime.sourceRepository.createSourceChunk;
+
+  if (createSourceChunk === undefined) {
+    throw new Error("decision corpus import DB smoke cannot create captured evidence chunk");
+  }
+
+  const content = [
+    "Recorded source-evidence fixture for the decision-corpus import DB smoke.",
+    "This byte payload exists only to prove that a URL must resolve through a project-scoped captured SourceArtifact.",
+    "It does not prove the remote page is current, true, complete, or semantically applicable."
+  ].join("\n");
+  const contentHash = hashCapturedEvidence(content);
+  const sourceArtifact = await input.runtime.sourceRepository.createSourceArtifact({
+    projectId: input.projectId,
+    kind: "url",
+    sourceAuthority: "practitioner",
+    uri: externalEvidenceRef,
+    title: "Decision corpus import external evidence fixture",
+    contentHash,
+    metadata: {
+      smokeId: input.smokeId,
+      captureKind: "source_evidence_fixture",
+      doesNotProve: "This fixture does not prove remote source truth, freshness, completeness, or interpretation."
+    }
+  });
+
+  await createSourceChunk({
+    sourceArtifactId: sourceArtifact.id,
+    ordinal: 0,
+    heading: "Recorded capture",
+    content,
+    contentHash,
+    metadata: {
+      smokeId: input.smokeId,
+      captureKind: "source_evidence_fixture"
+    }
+  });
+};
+
 type PersistDecisionCorpusImportInput =
   Omit<Parameters<typeof persistSourceDecisionImport>[0], "importId" | "importedBy"> & {
     readonly smokeId: string;
@@ -98,7 +161,11 @@ export const persistDecisionCorpusImport = async (
     importId: input.smokeId,
     smokeId: input.smokeId,
     importedBy: "krn db smoke decision-corpus-import",
-    now: input.now
+    now: input.now,
+    ...(input.authorizedRepoRoot === undefined
+      ? {}
+      : { authorizedRepoRoot: input.authorizedRepoRoot }),
+    ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence })
   });
 };
 
@@ -152,22 +219,29 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       createId
     });
     const projectId = runtime.projectId;
-    const fixture = loadDecisionCorpusImportFixture(
+    const fixture = smokeImportFixture(loadDecisionCorpusImportFixture(
       `${input.repoRoot}/tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json`
-    );
+    ));
+    await seedCapturedExternalEvidence({
+      runtime,
+      projectId,
+      smokeId: input.smokeId
+    });
     const persistedRows = await persistDecisionCorpusImport({
       runtime,
       projectId,
       fixture,
       smokeId: input.smokeId,
-      now: input.now
+      now: input.now,
+      authorizedRepoRoot: input.repoRoot
     });
     const replayRows = await persistDecisionCorpusImport({
       runtime,
       projectId,
       fixture,
       smokeId: input.smokeId,
-      now: input.now
+      now: input.now,
+      authorizedRepoRoot: input.repoRoot
     });
     const replayStable = JSON.stringify(replayRows) === JSON.stringify(persistedRows);
     const replayArtifactRows = await client<{ count: number }[]>`
@@ -191,7 +265,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         projectId,
         fixture: changedFixture,
         smokeId: input.smokeId,
-        now: input.now
+        now: input.now,
+        authorizedRepoRoot: input.repoRoot
       });
     } catch (error) {
       changedReplayRejected = error instanceof Error &&
@@ -249,7 +324,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         importId: failureImportId,
         smokeId: input.smokeId,
         importedBy: "krn db smoke decision-corpus-import atomic-failure",
-        now: input.now
+        now: input.now,
+        authorizedRepoRoot: input.repoRoot
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes("injected row failure")) {
@@ -278,6 +354,23 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     }
 
     const governingRow = requiredPersistedRow(persistedRows, firstCase.expectedDecisionId);
+    const externalDecision = fixture.decisions.find((row) => row.evidenceRef === externalEvidenceRef);
+
+    if (externalDecision === undefined) {
+      throw new Error("decision corpus import DB smoke fixture requires captured URL evidence");
+    }
+
+    const externalEvidenceRow = requiredPersistedRow(persistedRows, externalDecision.id);
+
+    if (
+      governingRow.evidenceStatus !== "captured" ||
+      governingRow.evidenceContentHash === undefined ||
+      externalEvidenceRow.evidenceStatus !== "captured" ||
+      externalEvidenceRow.evidenceContentHash === undefined
+    ) {
+      throw new Error("decision corpus import DB smoke did not read back captured evidence status and digest");
+    }
+
     const governingSourceDecisionEdgeId = requireString(
       governingRow.sourceDecisionEdgeId,
       "governing SourceDecisionEdge"
@@ -394,6 +487,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       changedReplayRejected,
       atomicFailureRolledBack,
       governingDecisionId: firstCase.expectedDecisionId,
+      governingEvidenceStatus: governingRow.evidenceStatus,
+      externalEvidenceStatus: externalEvidenceRow.evidenceStatus,
       governingSourceClaimId: governingRow.sourceClaimId,
       governingSourceDecisionEdgeId,
       governingSearchDocumentId,

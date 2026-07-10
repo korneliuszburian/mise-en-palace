@@ -56,6 +56,7 @@ export type CreateSourceDecisionImportDatabaseRuntime = (
 
 interface LoadedSourceDecisionImportFixture {
   readonly filePath: string;
+  readonly repoRoot: string;
   readonly fixture: DecisionCorpusImportFixture;
 }
 
@@ -101,6 +102,7 @@ const resolveImportFixture = async (
 
   return {
     filePath,
+    repoRoot,
     fixture: {
       ...parsed,
       baseFixturePath
@@ -113,6 +115,7 @@ const summarizeRows = (
 ): readonly string[] =>
   rows.map((row) => [
     `- ${row.decisionId}:`,
+    `evidence=${row.evidenceStatus}`,
     `sourceClaim=${row.sourceClaimId}`,
     `sourceDecision=${row.sourceDecisionId}`,
     ...(row.sourceDecisionEdgeId === undefined ? [] : [`sourceDecisionEdge=${row.sourceDecisionEdgeId}`]),
@@ -227,7 +230,8 @@ const persistLoadedSourceDecisionImport = async (
     fixture: loaded.fixture,
     importId: runtime.createId("source-decision-import"),
     importedBy: "krn source decision import",
-    now: runtime.now()
+    now: runtime.now(),
+    authorizedRepoRoot: loaded.repoRoot
   });
 
   return {

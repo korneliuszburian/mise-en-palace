@@ -771,6 +771,8 @@ const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
       `Changed replay rejected: ${report.changedReplayRejected ? "yes" : "no"}`,
       `Atomic failure rolled back: ${report.atomicFailureRolledBack ? "yes" : "no"}`,
       `Governing decision: ${report.governingDecisionId}`,
+      `Governing evidence status: ${report.governingEvidenceStatus}`,
+      `External evidence status: ${report.externalEvidenceStatus}`,
       `Governing SourceClaim: ${report.governingSourceClaimId}`,
       `Governing SourceDecisionEdge: ${report.governingSourceDecisionEdgeId}`,
       `Governing SearchDocument: ${report.governingSearchDocumentId}`,
