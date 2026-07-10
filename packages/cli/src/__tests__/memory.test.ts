@@ -1311,7 +1311,9 @@ describe("runCli", () => {
                 direction: "negative" as const,
                 note: feedbackInput.note,
                 reason: feedbackInput.reason,
-                evidenceRef: feedbackInput.evidenceRef,
+                ...(feedbackInput.evidenceRef === undefined
+                  ? {}
+                  : { evidenceRef: feedbackInput.evidenceRef }),
                 metadata: feedbackInput.metadata ?? {},
                 createdAt: now
               };
@@ -1322,8 +1324,10 @@ describe("runCli", () => {
                 direction: "negative",
                 note: feedbackInput.note,
                 reason: feedbackInput.reason,
-                evidenceRef: feedbackInput.evidenceRef,
-                metadata: feedbackInput.metadata
+                ...(feedbackInput.evidenceRef === undefined
+                  ? {}
+                  : { evidenceRef: feedbackInput.evidenceRef }),
+                metadata: feedbackInput.metadata ?? {}
               };
               const candidateInput = {
                 projectId: "project-1",
@@ -1331,7 +1335,7 @@ describe("runCli", () => {
                 proposedBy: "krn-memory-feedback",
                 maintenanceIdentity: "memory-application:test",
                 ...feedbackInput.candidate,
-                metadata: feedbackInput.metadata
+                metadata: feedbackInput.metadata ?? {}
               };
               capturedAntiMemoryCandidate = candidateInput;
 
