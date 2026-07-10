@@ -1,0 +1,2 @@
+ALTER TABLE "memory_applications" ADD COLUMN "decision_packet_checksum" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "memory_applications_packet_identity_unique" ON "memory_applications" USING btree ("memory_record_id","execution_run_id","decision_packet_checksum");

@@ -162,6 +162,13 @@
       "when": 1783649401094,
       "tag": "0022_right_molecule_man",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1783657427699,
+      "tag": "0023_dapper_chamber",
+      "breakpoints": true
     }
   ]
 }

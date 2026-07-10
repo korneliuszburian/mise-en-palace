@@ -4,45 +4,57 @@ const SUPPORTED_PLATFORMS = new Set(["linux", "darwin"]);
 const SUPPORTED_SHELLS = new Set(["bash", "dash", "sh", "zsh"]);
 const WINDOWS_SHELLS = new Set(["cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe"]);
 
-const optionValue = (argv, option) => {
+const optionValue = (argv, option, fallback) => {
   const index = argv.indexOf(option);
   if (index === -1) {
-    return undefined;
+    return fallback;
   }
 
-  const value = index === -1 ? undefined : argv[index + 1];
+  const value = argv[index + 1];
 
-  if (value === undefined || value.startsWith("--")) {
+  if (typeof value !== "string" || value.startsWith("--")) {
     throw new Error(`${option} requires a value`);
   }
 
   return value;
 };
 
+const isWsl = (argv) =>
+  argv.includes("--wsl") || process.env.WSL_INTEROP !== undefined || process.env.WSL_DISTRO_NAME !== undefined;
+
 const parseArguments = (argv) => ({
-  platform: optionValue(argv, "--platform") ?? process.platform,
-  shell: optionValue(argv, "--shell") ?? process.env.SHELL,
-  wsl: argv.includes("--wsl") || process.env.WSL_INTEROP !== undefined || process.env.WSL_DISTRO_NAME !== undefined
+  platform: optionValue(argv, "--platform", process.platform),
+  shell: optionValue(argv, "--shell", process.env.SHELL),
+  wsl: isWsl(argv)
 });
 
 const shellName = (shell) => shell === undefined ? undefined : path.basename(shell).toLowerCase();
 
-const failureFor = ({ platform, shell }) => {
+const platformFailure = (platform) => {
   if (!SUPPORTED_PLATFORMS.has(platform)) {
     return `platform ${platform} is unsupported; use Linux, macOS, or WSL with a POSIX shell`;
   }
 
-  const name = shellName(shell);
-  if (name !== undefined && WINDOWS_SHELLS.has(name)) {
+  return undefined;
+};
+
+const shellFailureMessage = (name) => {
+  if (WINDOWS_SHELLS.has(name)) {
     return `shell ${name} is unsupported; use WSL/Linux/macOS with bash, sh, dash, or zsh`;
   }
 
-  if (name !== undefined && !SUPPORTED_SHELLS.has(name)) {
-    return `shell ${name} is outside the tested contract; use bash, sh, dash, or zsh`;
-  }
-
-  return undefined;
+  return SUPPORTED_SHELLS.has(name)
+    ? undefined
+    : `shell ${name} is outside the tested contract; use bash, sh, dash, or zsh`;
 };
+
+const shellFailure = (shell) => {
+  const name = shellName(shell);
+
+  return name === undefined ? undefined : shellFailureMessage(name);
+};
+
+const failureFor = ({ platform, shell }) => platformFailure(platform) ?? shellFailure(shell);
 
 const main = () => {
   const context = parseArguments(process.argv.slice(2));

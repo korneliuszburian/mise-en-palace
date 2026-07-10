@@ -932,31 +932,29 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
   }
 
-  private async insertMemoryApplication(
+  private memoryApplicationInsertValues = (
+    input: RecordMemoryApplicationInput,
+    decisionPacketChecksum?: string
+  ) => ({
+    memoryRecordId: input.memoryRecordId,
+    executionRunId: input.executionRunId,
+    ...(decisionPacketChecksum === undefined ? {} : { decisionPacketChecksum }),
+    ...(input.taskContractId === undefined
+      ? {}
+      : { taskContractId: input.taskContractId }),
+    ...(input.contextAssemblyId === undefined
+      ? {}
+      : { contextAssemblyId: input.contextAssemblyId }),
+    expectedUse: input.expectedUse,
+    outcome: input.outcome,
+    notes: input.notes,
+    metadata: input.metadata ?? {}
+  });
+
+  private async applyMemoryApplicationOutcome(
     input: RecordMemoryApplicationInput,
     tx: KrnDatabase
-  ): Promise<MemoryApplication> {
-    const row = requireReturnedRow(
-      await tx
-        .insert(memoryApplications)
-        .values({
-          memoryRecordId: input.memoryRecordId,
-          executionRunId: input.executionRunId,
-          ...(input.taskContractId === undefined
-            ? {}
-            : { taskContractId: input.taskContractId }),
-          ...(input.contextAssemblyId === undefined
-            ? {}
-            : { contextAssemblyId: input.contextAssemblyId }),
-          expectedUse: input.expectedUse,
-          outcome: input.outcome,
-          notes: input.notes,
-          metadata: input.metadata ?? {}
-        })
-        .returning(),
-      "recordMemoryApplication"
-    );
-
+  ): Promise<void> {
     if (input.outcome === "helped") {
       await tx
         .update(memoryRecords)
@@ -976,6 +974,22 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         })
         .where(eq(memoryRecords.id, input.memoryRecordId));
     }
+  }
+
+  private async insertMemoryApplication(
+    input: RecordMemoryApplicationInput,
+    tx: KrnDatabase,
+    decisionPacketChecksum?: string
+  ): Promise<MemoryApplication> {
+    const row = requireReturnedRow(
+      await tx
+        .insert(memoryApplications)
+        .values(this.memoryApplicationInsertValues(input, decisionPacketChecksum))
+        .returning(),
+      "recordMemoryApplication"
+    );
+
+    await this.applyMemoryApplicationOutcome(input, tx);
 
     return mapMemoryApplication(row);
   }
@@ -990,15 +1004,29 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     input: RecordMemoryApplicationOnceInput
   ): Promise<RecordMemoryApplicationOnceResult> {
     return this.db.transaction(async (tx) => {
-      const binding = [
-        input.memoryRecordId,
-        input.executionRunId,
-        input.packetChecksum
-      ].join(":");
+      const metadata = {
+        ...input.metadata,
+        decisionPacketChecksum: input.packetChecksum
+      };
+      const [createdRow] = await tx
+        .insert(memoryApplications)
+        .values(this.memoryApplicationInsertValues({ ...input, metadata }, input.packetChecksum))
+        .onConflictDoNothing({
+          target: [
+            memoryApplications.memoryRecordId,
+            memoryApplications.executionRunId,
+            memoryApplications.decisionPacketChecksum
+          ]
+        })
+        .returning();
 
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${binding}, 0))`
-      );
+      if (createdRow !== undefined) {
+        await this.applyMemoryApplicationOutcome(input, tx);
+        return {
+          application: mapMemoryApplication(createdRow),
+          created: true
+        };
+      }
 
       const [existing] = await tx
         .select()
@@ -1006,26 +1034,17 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         .where(and(
           eq(memoryApplications.memoryRecordId, input.memoryRecordId),
           eq(memoryApplications.executionRunId, input.executionRunId),
-          sql`${memoryApplications.metadata} ->> 'decisionPacketChecksum' = ${input.packetChecksum}`
+          eq(memoryApplications.decisionPacketChecksum, input.packetChecksum)
         ))
         .limit(1);
 
-      if (existing !== undefined) {
-        return {
-          application: mapMemoryApplication(existing),
-          created: false
-        };
+      if (existing === undefined) {
+        throw new Error("Memory application conflict did not return the winning row");
       }
 
       return {
-        application: await this.insertMemoryApplication({
-          ...input,
-          metadata: {
-            ...input.metadata,
-            decisionPacketChecksum: input.packetChecksum
-          }
-        }, tx),
-        created: true
+        application: mapMemoryApplication(existing),
+        created: false
       };
     });
   }

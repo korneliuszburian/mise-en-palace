@@ -303,6 +303,7 @@ export const memoryApplications = pgTable(
   "memory_applications",
   {
     ...memoryRunAnchorColumns(),
+    decisionPacketChecksum: text("decision_packet_checksum"),
     taskContractId: taskContractIdColumn(),
     contextAssemblyId: uuid("context_assembly_id").references(() => contextAssemblies.id, {
       onDelete: "set null"
@@ -316,6 +317,11 @@ export const memoryApplications = pgTable(
   (table) => [
     index("memory_applications_memory_record_id_idx").on(table.memoryRecordId),
     index("memory_applications_execution_run_id_idx").on(table.executionRunId),
+    uniqueIndex("memory_applications_packet_identity_unique").on(
+      table.memoryRecordId,
+      table.executionRunId,
+      table.decisionPacketChecksum
+    ),
     index("memory_applications_task_contract_id_idx").on(table.taskContractId),
     index("memory_applications_context_assembly_id_idx").on(table.contextAssemblyId)
   ]

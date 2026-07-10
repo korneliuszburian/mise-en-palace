@@ -77,6 +77,7 @@ export interface MemoryGovernanceSmokeReport {
   cleanedUp: boolean;
 }
 
+// fallow-ignore-next-line complexity -- this DB smoke intentionally sequences lifecycle, independent-connection, and exact readback falsifiers
 export const runMemoryGovernanceSmokeCheck = async (
   input: MemoryGovernanceSmokeInput
 ): Promise<MemoryGovernanceSmokeReport> => {
@@ -305,10 +306,32 @@ export const runMemoryGovernanceSmokeCheck = async (
       throw new Error("Memory governance smoke requires atomic packet-bound application persistence");
     }
 
-    const applicationResults = await Promise.all([
-      memoryRepository.recordMemoryApplicationOnce(packetBoundApplication),
-      memoryRepository.recordMemoryApplicationOnce(packetBoundApplication)
-    ]);
+    const packetApplicationClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+    let applicationResults: readonly Awaited<
+      ReturnType<DrizzleMemoryRepository["recordMemoryApplicationOnce"]>
+    >[] = [];
+
+    try {
+      const packetApplicationRepositories = packetApplicationClients.map(
+        (packetApplicationClient) => new DrizzleMemoryRepository(createKrnDatabase(packetApplicationClient))
+      );
+      const [firstPacketApplicationRepository, secondPacketApplicationRepository] =
+        packetApplicationRepositories;
+
+      if (firstPacketApplicationRepository === undefined || secondPacketApplicationRepository === undefined) {
+        throw new Error("Memory governance smoke did not create two packet application repositories");
+      }
+
+      applicationResults = await Promise.all([
+        firstPacketApplicationRepository.recordMemoryApplicationOnce(packetBoundApplication),
+        secondPacketApplicationRepository.recordMemoryApplicationOnce(packetBoundApplication)
+      ]);
+    } finally {
+      await Promise.all(packetApplicationClients.map((packetApplicationClient) => packetApplicationClient.end()));
+    }
 
     const [firstApplicationResult, replayApplicationResult] = applicationResults;
 
@@ -662,6 +685,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "memory application record lineage",
         passed: applicationRows[0]?.memoryRecordId === memoryRecord.id
+      },
+      {
+        label: "memory application packet checksum is typed and unique",
+        passed: applicationRows[0]?.decisionPacketChecksum === packetBoundApplication.packetChecksum
       },
       {
         label: "anti-memory candidate accepted",
