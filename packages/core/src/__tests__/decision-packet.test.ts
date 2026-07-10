@@ -294,6 +294,27 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("keeps project-scoped owner-file directives out of governing authority", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        inclusions: readModel.context.inclusions + 1,
+        inclusionDetails: [
+          ...readModel.context.inclusionDetails,
+          {
+            subjectType: "owner_file",
+            subjectId: "owner-file:project-1:AGENTS.md",
+            sourceAuthority: "project-decision"
+          }
+        ]
+      }
+    });
+
+    expect(packet.governingDecisionIds).toEqual(["source-decision-current"]);
+    expect(packet.governingStatements).not.toContain("owner-file:project-1:AGENTS.md");
+  });
+
   it("uses the active evidence contract instead of historical command observations", () => {
     const packet = buildDecisionPacketFromReadModel({
       ...readModel,

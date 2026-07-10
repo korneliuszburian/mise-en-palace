@@ -79,7 +79,7 @@ const requiredTargetCandidate = (
 };
 
 describe("owner-file recall", () => {
-  it("surfaces DB readiness owner files as typed search candidates", () => {
+  it("surfaces DB readiness owner files as project-scoped owner-file candidates", () => {
     const candidates = buildOwnerFileRecallCandidates(
       taskContract("Improve DB readiness reporting for checked Postgres endpoint output")
     );
@@ -92,11 +92,61 @@ describe("owner-file recall", () => {
     );
     expect(candidates[0]).toMatchObject({
       kind: "search",
-      subjectType: "search_document",
-      subjectId: "11111111-1111-4111-8111-111111111001",
-      sourceAuthority: "project-decision"
+      subjectType: "owner_file",
+      sourceAuthority: "project-decision",
+      metadata: {
+        projectId: "project-1",
+        ownerFilePath: "packages/cli/src/run-db-readiness-command.ts"
+      }
     });
+    expect(candidates[0]?.subjectId).not.toBe("11111111-1111-4111-8111-111111111001");
+    expect(candidates[0]?.id).toContain("owner-file:project-1:packages/cli/src/run-db-readiness-command.ts");
     expect(candidates[0]?.searchDocumentId).toBeUndefined();
+  });
+
+  it("excludes target owner files outside their project-scoped root", () => {
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract("Repair target owner-file readiness"),
+      {
+        targetReadModel: {
+          projectId: "project-1",
+          projectKernelId: "kernel-1",
+          repoInstallationIds: ["repo-installation-1"],
+          localPathHints: ["/tmp/typescript-basic"],
+          sourceSeeds: [],
+          ownerFiles: [
+            {
+              projectId: "project-2",
+              path: "src/other-project.ts",
+              root: "src",
+              kind: "implementation_entry",
+              reason: "wrong project"
+            },
+            {
+              path: "../outside.ts",
+              root: "src",
+              kind: "implementation_entry",
+              reason: "outside root"
+            },
+            {
+              path: "tests/readiness.test.ts",
+              root: "src",
+              kind: "behavior_test",
+              reason: "outside named source root"
+            }
+          ],
+          trustExclusions: []
+        }
+      }
+    );
+
+    expect(candidates).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({ targetReadModelKind: "owner_file" })
+        })
+      ])
+    );
   });
 
   it("does not add owner files for weak generic readiness matches", () => {

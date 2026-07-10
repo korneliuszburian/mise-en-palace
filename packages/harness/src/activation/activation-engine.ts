@@ -181,25 +181,6 @@ const searchDocumentProvenance = (
   }
 });
 
-const nonGoverningSearchCandidate = (
-  resolution: Extract<SearchDocumentAuthorityResolution, { kind: "unlinked" }>
-) => {
-  const candidate = toSearchCandidate(resolution.document);
-
-  return {
-    ...candidate,
-    reason: resolution.explanation,
-    expectedUse:
-      "Use only as non-governing indexed search evidence; resolve a canonical subject before treating it as authority.",
-    metadata: {
-      ...candidate.metadata,
-      searchDocumentAuthority: "unlinked_index_evidence",
-      doesNotProve:
-        "An unlinked SearchDocument does not prove current source or memory authority."
-    }
-  };
-};
-
 const rejectedSearchCandidate = (
   document: Extract<SearchDocumentAuthorityResolution, { kind: "rejected" }>["document"]
 ) => {
@@ -785,7 +766,12 @@ export const retrieveActivationCandidates = async (
   );
   const searchCandidates = searchDocumentResolutions.flatMap((resolution) => {
     if (resolution.kind === "unlinked") {
-      return [firstRankedCandidate([nonGoverningSearchCandidate(resolution)], sourceQuery)];
+      const candidate = firstRankedCandidate([rejectedSearchCandidate(resolution.document)], sourceQuery);
+
+      return [markExcluded(candidate, {
+        reason: "unsafe",
+        explanation: resolution.explanation
+      })];
     }
 
     if (resolution.kind === "rejected") {

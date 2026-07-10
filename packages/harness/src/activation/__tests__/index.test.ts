@@ -1213,9 +1213,26 @@ describe("activation engine", () => {
         subjectType: "search_document",
         subjectId: "search-document-marker",
         searchDocumentId: "search-document-marker",
-        metadata: expect.objectContaining({
-          searchDocumentAuthority: "unlinked_index_evidence"
-        })
+        exclusion: {
+          reason: "unsafe",
+          explanation: "SearchDocument has no canonical subject link; it remains non-governing search evidence."
+        }
+      })
+    ]);
+    const context = assembleContext({
+      id: "context-unlinked-search-document",
+      harnessPlanId: "harness-plan-unlinked-search-document",
+      candidates: result.candidates,
+      createdAt: now
+    });
+
+    expect(context.inclusions).toEqual([]);
+    expect(context.exclusions).toEqual([
+      expect.objectContaining({
+        subjectType: "search_document",
+        subjectId: "search-document-marker",
+        reason: "unsafe",
+        explanation: "SearchDocument has no canonical subject link; it remains non-governing search evidence."
       })
     ]);
   });

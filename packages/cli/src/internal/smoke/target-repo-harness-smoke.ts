@@ -137,6 +137,7 @@ interface TargetPlanReadbackProof {
   codexBriefRendered: boolean;
   targetProjectLinked: boolean;
   memoryIncluded: boolean;
+  ownerFileIncluded: boolean;
   memoryRendered: boolean;
   contextBytes: number;
   approximateTokens: number;
@@ -368,6 +369,9 @@ const targetPlanReadbackProof = (
     inclusion.subjectType === "memory_record" &&
     inclusion.subjectId === input.memoryRecordId
   );
+  const ownerFileIncluded = contextAssembly.inclusions.some((inclusion) =>
+    inclusion.subjectType === "owner_file"
+  );
   const contextBytes = Buffer.byteLength(input.renderedBrief, "utf8");
 
   return {
@@ -375,6 +379,7 @@ const targetPlanReadbackProof = (
     codexBriefRendered,
     targetProjectLinked,
     memoryIncluded,
+    ownerFileIncluded,
     memoryRendered: input.memoryRendered,
     contextBytes,
     approximateTokens: Math.ceil(contextBytes / 4)
@@ -401,6 +406,7 @@ const assertTargetPlanReadback = (
     input.aggregate.executionRun.id === input.executionRunId,
     proof.codexBriefRendered,
     proof.targetProjectLinked,
+    proof.ownerFileIncluded,
     proof.memoryIncluded,
     proof.memoryRendered,
     proof.contextBytes > 0
@@ -433,6 +439,7 @@ const assertTargetBaselineReadback = (
     input.aggregate.executionRun.id === input.executionRunId,
     proof.codexBriefRendered,
     proof.targetProjectLinked,
+    proof.ownerFileIncluded,
     !proof.memoryIncluded,
     !proof.memoryRendered,
     proof.contextBytes > 0
@@ -1141,6 +1148,15 @@ export const runTargetRepoHarnessSmokeCheck = async (
         trustExclusions: targetFixtureTrustExclusions
       }
     });
+    const targetReadModel = {
+      projectId: project.id,
+      projectKernelId: projectKernel.id,
+      repoInstallationIds: [repoInstallation.id],
+      localPathHints: [repoPath],
+      sourceSeeds: targetFixtureSourceSeeds,
+      ownerFiles: targetFixtureOwnerFiles,
+      trustExclusions: targetFixtureTrustExclusions
+    };
     const createSmokeId = createSmokeIdFactory(marker);
     const baselineResult = await compileHarnessPlan(
       {
@@ -1175,6 +1191,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
             phase: "baseline"
           }
         },
+        targetReadModel,
         tokenBudget: 420,
         metadata: {
           command: "db:smoke:target-repo-harness",
@@ -1331,6 +1348,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
             smokeId: marker
           }
         },
+        targetReadModel,
         tokenBudget: 420,
         metadata: {
           command: "db:smoke:target-repo-harness",

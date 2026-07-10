@@ -141,6 +141,11 @@ export const formatSourceSearchCandidate = (
 const candidateLabel = (candidate: RankedActivationCandidate): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
 
+const canonicalProjectionIdFor = (
+  candidate: RankedActivationCandidate
+): string | undefined => candidate.searchDocumentId ??
+  (candidate.searchDocumentIds?.length === 1 ? candidate.searchDocumentIds[0] : undefined);
+
 export const sourceSearchCandidateToOutput = (
   candidate: RankedActivationCandidate,
   status: SourceSearchCandidateStatus,
@@ -182,7 +187,7 @@ export const sourceSearchCandidateToOutput = (
     expectedUse: candidate.expectedUse,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
-    searchDocumentId: candidate.searchDocumentId,
+    searchDocumentId: canonicalProjectionIdFor(candidate),
     sourceClaimId,
     sourceArtifactId,
     sourceChunkId,

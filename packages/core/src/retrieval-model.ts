@@ -15,6 +15,7 @@ export const retrievalSubjectTypes = [
   "anti_memory_record",
   "task_contract",
   "search_document",
+  "owner_file",
   "evidence_bundle",
   "review_assessment",
   "architecture_decision",

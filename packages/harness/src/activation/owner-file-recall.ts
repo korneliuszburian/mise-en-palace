@@ -1,4 +1,5 @@
 import type {
+  ProjectId,
   TaskContract
 } from "@krn/core";
 
@@ -29,6 +30,7 @@ export interface TargetActivationTrustExclusion {
 }
 
 export interface TargetActivationOwnerFile {
+  projectId?: ProjectId;
   path: string;
   root: string;
   kind: string;
@@ -36,6 +38,7 @@ export interface TargetActivationOwnerFile {
 }
 
 export interface TargetActivationReadModel {
+  projectId?: ProjectId;
   projectKernelId?: string;
   repoInstallationIds: readonly string[];
   localPathHints: readonly string[];
@@ -113,8 +116,12 @@ const candidatePathId = (path: string): string =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
-const targetBoundaryKey = (readModel: TargetActivationReadModel): string =>
+const targetBoundaryKey = (
+  readModel: TargetActivationReadModel,
+  projectId?: ProjectId
+): string =>
   [
+    projectId ?? readModel.projectId ?? "no-project",
     readModel.projectKernelId ?? "no-kernel",
     ...readModel.repoInstallationIds,
     ...readModel.localPathHints
@@ -153,8 +160,11 @@ const deterministicUuid = (key: string): string => {
 const deterministicSlugHash = (key: string): string =>
   deterministicUuid(key).replace(/-/g, "").slice(0, 12);
 
-const targetBoundarySlug = (readModel: TargetActivationReadModel): string => {
-  const boundaryKey = targetBoundaryKey(readModel);
+const targetBoundarySlug = (
+  readModel: TargetActivationReadModel,
+  projectId?: ProjectId
+): string => {
+  const boundaryKey = targetBoundaryKey(readModel, projectId);
   const readableBoundary = candidatePathId(
     readModel.repoInstallationIds[0] ??
     readModel.projectKernelId ??
@@ -176,17 +186,18 @@ const matchingTermCount = (
     ...entry.terms
   ].join(" ")).filter((term) => taskTerms.has(term)).length;
 
-const ownerFileCandidateId = (entry: OwnerFileRecallEntry): string =>
-  `owner-file:${entry.path}`;
+const ownerFileCandidateId = (projectId: ProjectId, entry: OwnerFileRecallEntry): string =>
+  `owner-file:${projectId}:${entry.path}`;
 
 const toOwnerFileCandidate = (
   entry: OwnerFileRecallEntry,
-  matchCount: number
+  matchCount: number,
+  projectId: ProjectId
 ): ActivationCandidate => ({
-  id: ownerFileCandidateId(entry),
+  id: ownerFileCandidateId(projectId, entry),
   kind: "search",
-  subjectType: "search_document",
-  subjectId: entry.id,
+  subjectType: "owner_file",
+  subjectId: deterministicUuid(`owner-file:${projectId}:${entry.path}`),
   text: [entry.path, entry.title, entry.summary, ...entry.terms].join(" "),
   sourceAuthority: "project-decision",
   reason: `Owner-file recall: ${entry.path}`,
@@ -195,6 +206,7 @@ const toOwnerFileCandidate = (
   lexicalScore: matchCount * 20,
   metadata: {
     source: "owner_file_recall",
+    projectId,
     ownerFileSubjectId: entry.id,
     ownerFilePath: entry.path,
     title: entry.title,
@@ -222,6 +234,38 @@ const targetPathBasename = (targetPath: string): string => {
   return parts[parts.length - 1] ?? targetPathKey;
 };
 
+const isRelativeTargetPath = (targetPath: string): boolean => {
+  const invalidPrefixes = ["/", "../"];
+
+  return targetPath.length > 0 &&
+    !invalidPrefixes.some((prefix) =>
+      targetPath === prefix || targetPath.startsWith(prefix)
+    );
+};
+
+const isPathWithinRoot = (path: string, root: string): boolean => {
+  const normalizedPath = normalizeTargetPath(path);
+  const normalizedRoot = normalizeTargetPath(root);
+
+  if (!isRelativeTargetPath(normalizedPath) || !isRelativeTargetPath(normalizedRoot)) {
+    return false;
+  }
+
+  return normalizedRoot === "." ||
+    normalizedPath === normalizedRoot ||
+    normalizedPath.startsWith(`${normalizedRoot}/`);
+};
+
+const ownerFileIsInScope = (
+  ownerFile: TargetActivationOwnerFile,
+  taskProjectId: ProjectId | undefined,
+  readModel: TargetActivationReadModel
+): boolean =>
+  taskProjectId !== undefined &&
+  (readModel.projectId === undefined || readModel.projectId === taskProjectId) &&
+  (ownerFile.projectId === undefined || ownerFile.projectId === taskProjectId) &&
+  isPathWithinRoot(ownerFile.path, ownerFile.root);
+
 const isAgentGuidancePath = (targetPath: string): boolean => {
   const basename = targetPathBasename(targetPath);
 
@@ -248,10 +292,11 @@ const sourceSeedCoveredByOwnerFile = (
 const toTargetSeedCandidate = (
   seed: TargetActivationSourceSeed,
   matchCount: number,
-  readModel: TargetActivationReadModel
+  readModel: TargetActivationReadModel,
+  projectId: ProjectId
 ): ActivationCandidate => {
-  const boundaryKey = targetBoundaryKey(readModel);
-  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryKey = targetBoundaryKey(readModel, projectId);
+  const boundarySlug = targetBoundarySlug(readModel, projectId);
   const boundaryLabel = targetBoundaryLabel(readModel);
   const candidateSlug = candidatePathId(seed.path);
   const subjectId = deterministicUuid(`target-source-seed:${boundaryKey}:${seed.path}`);
@@ -274,6 +319,7 @@ const toTargetSeedCandidate = (
     lexicalScore: matchCount * 30,
     metadata: {
       source: "target_project_read_model",
+      projectId,
       targetReadModelKind: "source_seed",
       targetPath: seed.path,
       seedKind: seed.kind,
@@ -298,10 +344,11 @@ const targetOwnerFileMatchCount = (
 const toTargetOwnerFileCandidate = (
   ownerFile: TargetActivationOwnerFile,
   matchCount: number,
-  readModel: TargetActivationReadModel
+  readModel: TargetActivationReadModel,
+  projectId: ProjectId
 ): ActivationCandidate => {
-  const boundaryKey = targetBoundaryKey(readModel);
-  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryKey = targetBoundaryKey(readModel, projectId);
+  const boundarySlug = targetBoundarySlug(readModel, projectId);
   const boundaryLabel = targetBoundaryLabel(readModel);
   const candidateSlug = candidatePathId(ownerFile.path);
   const subjectId = deterministicUuid(`target-owner-file:${boundaryKey}:${ownerFile.path}`);
@@ -309,7 +356,7 @@ const toTargetOwnerFileCandidate = (
   return {
     id: `target-owner-file:${boundarySlug}:${candidateSlug}`,
     kind: "search",
-    subjectType: "search_document",
+    subjectType: "owner_file",
     subjectId,
     text: [
       ownerFile.path,
@@ -326,6 +373,7 @@ const toTargetOwnerFileCandidate = (
     contextRoiScore: 100,
     metadata: {
       source: "target_project_read_model",
+      projectId,
       targetReadModelKind: "owner_file",
       targetPath: ownerFile.path,
       targetRoot: ownerFile.root,
@@ -338,15 +386,16 @@ const toTargetOwnerFileCandidate = (
 };
 
 const toTargetTrustExclusionCandidate = (
-  readModel: TargetActivationReadModel
+  readModel: TargetActivationReadModel,
+  projectId: ProjectId
 ): ActivationCandidate | undefined => {
   if (readModel.trustExclusions.length === 0) {
     return undefined;
   }
 
   const patterns = readModel.trustExclusions.map((exclusion) => exclusion.pathPattern);
-  const boundaryKey = targetBoundaryKey(readModel);
-  const boundarySlug = targetBoundarySlug(readModel);
+  const boundaryKey = targetBoundaryKey(readModel, projectId);
+  const boundarySlug = targetBoundarySlug(readModel, projectId);
   const boundaryLabel = targetBoundaryLabel(readModel);
 
   return {
@@ -367,6 +416,7 @@ const toTargetTrustExclusionCandidate = (
     lexicalScore: 80,
     metadata: {
       source: "target_project_read_model",
+      projectId,
       targetReadModelKind: "trust_exclusions",
       trustExclusions: readModel.trustExclusions,
       repoInstallationIds: readModel.repoInstallationIds,
@@ -381,10 +431,14 @@ const buildTargetProjectRecallCandidates = (
 ): ActivationCandidate[] => {
   const taskTerms = new Set(tokenizeActivationText([task.title, task.objective].join(" ")));
   const ownerFiles = readModel.ownerFiles ?? [];
-  const ownerFileCandidates = ownerFiles.map((ownerFile) => {
+  const ownerFileCandidates = ownerFiles.flatMap((ownerFile) => {
+    if (!ownerFileIsInScope(ownerFile, task.projectId, readModel) || task.projectId === undefined) {
+      return [];
+    }
+
     const matchCount = targetOwnerFileMatchCount(taskTerms, ownerFile);
 
-    return toTargetOwnerFileCandidate(ownerFile, matchCount, readModel);
+    return [toTargetOwnerFileCandidate(ownerFile, matchCount, readModel, task.projectId)];
   });
   const sourceSeedCandidates = readModel.sourceSeeds.flatMap((seed) => {
     if (sourceSeedCoveredByOwnerFile(seed, ownerFiles)) {
@@ -393,9 +447,13 @@ const buildTargetProjectRecallCandidates = (
 
     const matchCount = targetSeedMatchCount(taskTerms, seed);
 
-    return matchCount >= 1 ? [toTargetSeedCandidate(seed, matchCount, readModel)] : [];
+    return matchCount >= 1 && task.projectId !== undefined
+      ? [toTargetSeedCandidate(seed, matchCount, readModel, task.projectId)]
+      : [];
   });
-  const trustExclusionCandidate = toTargetTrustExclusionCandidate(readModel);
+  const trustExclusionCandidate = task.projectId === undefined
+    ? undefined
+    : toTargetTrustExclusionCandidate(readModel, task.projectId);
 
   return [
     ...ownerFileCandidates,
@@ -439,11 +497,16 @@ export const buildOwnerFileRecallCandidates = (
     return buildTargetProjectRecallCandidates(task, options.targetReadModel);
   }
 
+  if (task.projectId === undefined) {
+    return [];
+  }
+
+  const projectId = task.projectId;
   const taskTerms = new Set(tokenizeActivationText([task.title, task.objective].join(" ")));
 
   return ownerFileRecallCatalog.flatMap((entry) => {
     const matchCount = matchingTermCount(taskTerms, entry);
 
-    return matchCount >= 3 ? [toOwnerFileCandidate(entry, matchCount)] : [];
+    return matchCount >= 3 ? [toOwnerFileCandidate(entry, matchCount, projectId)] : [];
   });
 };

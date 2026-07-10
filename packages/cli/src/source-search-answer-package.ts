@@ -55,12 +55,13 @@ export interface SourceSearchAnswerPackage {
 export const buildSourceSearchMissingEvidence = (input: {
   supportingClaimCount: number;
   supportingDocumentCount: number;
+  canonicalProjectionCount?: number;
   linkedDocumentCount?: number;
 }): readonly string[] => [
   ...(input.supportingClaimCount === 0
     ? ["SourceClaim evidence in the answer package for this query"]
     : []),
-  ...(input.supportingDocumentCount === 0
+  ...(input.supportingDocumentCount === 0 && (input.canonicalProjectionCount ?? 0) === 0
     ? input.supportingClaimCount > 0
       ? [
           input.linkedDocumentCount !== undefined && input.linkedDocumentCount > 0
@@ -74,6 +75,7 @@ export const buildSourceSearchMissingEvidence = (input: {
 export const classifySourceSearchAnswerUsefulness = (input: {
   supportingClaimCount: number;
   supportingDocumentCount: number;
+  canonicalProjectionCount?: number;
   decisionLinkedClaimCount?: number;
 }): {
   answerUsefulness: SourceSearchAnswerUsefulness;
@@ -83,13 +85,18 @@ export const classifySourceSearchAnswerUsefulness = (input: {
     input.decisionLinkedClaimCount !== undefined && input.decisionLinkedClaimCount > 0
       ? "Answer package includes decision-linked SourceClaim evidence."
       : "Answer package includes accepted SourceClaim evidence without decision-linked authority.";
+  const hasDocumentEvidence = input.supportingDocumentCount > 0 ||
+    (input.canonicalProjectionCount ?? 0) > 0;
+  const documentEvidenceReason = input.supportingDocumentCount > 0
+    ? "Answer package includes SearchDocument retrieval evidence."
+    : "Answer package includes a SearchDocument projection for canonical SourceClaim evidence.";
 
-  if (input.supportingClaimCount > 0 && input.supportingDocumentCount > 0) {
+  if (input.supportingClaimCount > 0 && hasDocumentEvidence) {
     return {
       answerUsefulness: "useful",
       reasons: [
         sourceClaimEvidenceReason,
-        "Answer package includes SearchDocument retrieval evidence."
+        documentEvidenceReason
       ]
     };
   }
@@ -141,6 +148,59 @@ export const buildSourceSearchQueryShapeDiagnostics = (input: {
   return [];
 };
 
+const canonicalProjectionCountFor = (
+  candidates: readonly RankedActivationCandidate[]
+): number => candidates.filter(
+  (candidate) => candidate.subjectType === "source_claim" &&
+    (candidate.searchDocumentId !== undefined || (candidate.searchDocumentIds?.length ?? 0) > 0)
+).length;
+
+const recommendedNextActionFor = (input: {
+  supportingClaimCount: number;
+  supportingDocumentCount: number;
+  canonicalProjectionCount: number;
+}): string => {
+  if (input.supportingClaimCount > 0 && input.supportingDocumentCount > 0) {
+    return "Use the supporting claims/documents as a Knowledge Application Gate, then verify the selected knowledge against the target slice.";
+  }
+
+  if (input.supportingClaimCount > 0 && input.canonicalProjectionCount > 0) {
+    return "Use the supporting claims and their canonical SearchDocument projections as a Knowledge Application Gate, then verify the selected knowledge against the target slice.";
+  }
+
+  if (input.supportingClaimCount > 0) {
+    return "Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval.";
+  }
+
+  if (input.supportingDocumentCount > 0) {
+    return "Inspect the documents and verify whether a SourceClaim should exist before relying on them.";
+  }
+
+  return "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";
+};
+
+const answerUsefulnessReasonsFor = (input: {
+  baseReasons: readonly string[];
+  linkedDocumentCount: number;
+  relationSupportCount: number;
+  sourceDecisionSupportCount: number;
+  missingDecisionSupportCount: number;
+}): readonly string[] => [
+  ...input.baseReasons,
+  ...(input.linkedDocumentCount === 0
+    ? []
+    : [`Answer package found ${input.linkedDocumentCount} artifact-linked SearchDocument reference(s) for supporting SourceClaims.`]),
+  ...(input.relationSupportCount === 0
+    ? []
+    : ["Answer package includes SourceClaimEdge relation support."]),
+  ...(input.sourceDecisionSupportCount === 0
+    ? []
+    : ["Answer package includes SourceDecisionEdge decision support."]),
+  ...(input.missingDecisionSupportCount === 0
+    ? []
+    : ["Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."])
+];
+
 export const buildSourceSearchAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
@@ -164,6 +224,7 @@ export const buildSourceSearchAnswerPackage = (input: {
       candidate.subjectType === "search_document" &&
       candidate.searchDocumentId !== undefined
   );
+  const canonicalProjectionCount = canonicalProjectionCountFor(input.included);
   const neutralOrNoise = included.filter(
     (candidate) =>
       candidate.subjectType !== "source_claim" &&
@@ -179,11 +240,13 @@ export const buildSourceSearchAnswerPackage = (input: {
   const missingEvidence = buildSourceSearchMissingEvidence({
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length,
+    canonicalProjectionCount,
     linkedDocumentCount
   });
   const answerUsefulness = classifySourceSearchAnswerUsefulness({
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length,
+    canonicalProjectionCount,
     decisionLinkedClaimCount: supportingClaims.filter(
       (candidate) => candidate.sourceDecisionSupportState === "linked"
     ).length
@@ -212,14 +275,11 @@ export const buildSourceSearchAnswerPackage = (input: {
   const missingDecisionSupportCount = supportingClaims.filter(
     (candidate) => candidate.sourceDecisionSupportState === "missing"
   ).length;
-  const recommendedNextAction =
-    supportingClaims.length > 0 && supportingDocuments.length > 0
-      ? "Use the supporting claims/documents as a Knowledge Application Gate, then verify the selected knowledge against the target slice."
-      : supportingClaims.length > 0
-        ? "Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
-        : supportingDocuments.length > 0
-          ? "Inspect the documents and verify whether a SourceClaim should exist before relying on them."
-          : "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";
+  const recommendedNextAction = recommendedNextActionFor({
+    supportingClaimCount: supportingClaims.length,
+    supportingDocumentCount: supportingDocuments.length,
+    canonicalProjectionCount
+  });
   const doesNotProve = [
     input.diagnostics.doesNotProve,
     "source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation"
@@ -228,21 +288,13 @@ export const buildSourceSearchAnswerPackage = (input: {
   return {
     answer: `Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
     answerUsefulness: answerUsefulness.answerUsefulness,
-    answerUsefulnessReasons: [
-      ...answerUsefulness.reasons,
-      ...(linkedDocumentCount === 0
-        ? []
-        : [`Answer package found ${linkedDocumentCount} artifact-linked SearchDocument reference(s) for supporting SourceClaims.`]),
-      ...(input.relationSupport.length === 0
-        ? []
-        : ["Answer package includes SourceClaimEdge relation support."]),
-      ...(input.sourceDecisionSupport.length === 0
-        ? []
-        : ["Answer package includes SourceDecisionEdge decision support."]),
-      ...(missingDecisionSupportCount === 0
-        ? []
-        : ["Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."])
-    ],
+    answerUsefulnessReasons: answerUsefulnessReasonsFor({
+      baseReasons: answerUsefulness.reasons,
+      linkedDocumentCount,
+      relationSupportCount: input.relationSupport.length,
+      sourceDecisionSupportCount: input.sourceDecisionSupport.length,
+      missingDecisionSupportCount
+    }),
     queryShapeDiagnostics,
     supportingClaims,
     supportingDocuments,

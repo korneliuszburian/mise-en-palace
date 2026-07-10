@@ -275,7 +275,7 @@ describe("runMemoryAdvantageEval", () => {
           method: "utf8_bytes_div_4"
         },
         supportingClaims: 1,
-        supportingDocuments: 1
+        supportingDocuments: 0
       },
       "source_contribution": {
         selectedSourceClaimIds: ["source:external-review-advisory-after-large-slice"],
@@ -934,7 +934,7 @@ describe("runMemoryAdvantageEval", () => {
         selectedSourceClaimIds: ["source:secret-review-context-denylist"],
         requiredKnowledgeId: "source:secret-review-context-denylist",
         supportingClaims: 1,
-        supportingDocuments: 1,
+        supportingDocuments: 0,
         exclusions: [
           {
             memoryId: "memory:knowledge:paste-secret-env-files-for-review-source-conflict",
@@ -1007,7 +1007,7 @@ describe("runMemoryAdvantageEval", () => {
         selectedSourceClaimIds: ["source:current-source-decision-edge-ranking"],
         requiredKnowledgeId: "source:current-source-decision-edge-ranking",
         supportingClaims: 1,
-        supportingDocuments: 1,
+        supportingDocuments: 0,
         exclusions: [],
         sourceExclusions: [
           {

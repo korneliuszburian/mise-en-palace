@@ -862,7 +862,7 @@ describe("compileHarnessPlan", () => {
     expect("requiredSkills" in result.taskContract).toBe(false);
   });
 
-  it("activates search candidates and records anti-memory conflicts as explicit exclusions", async () => {
+  it("excludes unlinked search candidates and records anti-memory conflicts as explicit exclusions", async () => {
     const retrievalRepository = new FakeRetrievalRepository([
       searchDocument({
         id: "search-activation",
@@ -908,11 +908,16 @@ describe("compileHarnessPlan", () => {
       }
     );
 
-    expect(result.contextAssembly.inclusions.map((item) => item.subjectId)).toContain(
+    expect(result.contextAssembly.inclusions.map((item) => item.subjectId)).not.toContain(
       "search-activation"
     );
     expect(result.contextAssembly.exclusions).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          subjectId: "search-activation",
+          reason: "unsafe",
+          explanation: "SearchDocument has no canonical subject link; it remains non-governing search evidence."
+        }),
         expect.objectContaining({
           subjectId: "claim-crawler",
           reason: "unsafe",
@@ -924,7 +929,7 @@ describe("compileHarnessPlan", () => {
       expect.arrayContaining([
         expect.objectContaining({
           kind: "search",
-          status: "included",
+          status: "excluded",
           searchDocumentId: "search-activation"
         })
       ])
@@ -966,8 +971,7 @@ describe("compileHarnessPlan", () => {
     expect(result.contextAssembly.inclusions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          subjectType: "search_document",
-          subjectId: "11111111-1111-4111-8111-111111111001",
+          subjectType: "owner_file",
           reason: "Owner-file recall: packages/cli/src/run-db-readiness-command.ts"
         })
       ])
@@ -977,9 +981,11 @@ describe("compileHarnessPlan", () => {
         expect.objectContaining({
           kind: "search",
           status: "included",
-          subjectId: "11111111-1111-4111-8111-111111111001",
+          subjectType: "owner_file",
+          subjectId: expect.any(String),
           metadata: expect.objectContaining({
             source: "owner_file_recall",
+            projectId: "project-1",
             ownerFileSubjectId: "11111111-1111-4111-8111-111111111001",
             ownerFilePath: "packages/cli/src/run-db-readiness-command.ts"
           })
@@ -988,14 +994,15 @@ describe("compileHarnessPlan", () => {
     );
     expect(
       retrievalRepository.candidates.find((candidate) =>
-        candidate.subjectId === "11111111-1111-4111-8111-111111111001"
+        candidate.metadata.ownerFileSubjectId === "11111111-1111-4111-8111-111111111001"
       )
     ).not.toHaveProperty("searchDocumentId");
     expect(retrievalRepository.decisions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           decision: "included",
-          subjectId: "11111111-1111-4111-8111-111111111001"
+          subjectType: "owner_file",
+          subjectId: expect.any(String)
         })
       ])
     );
@@ -1166,7 +1173,7 @@ describe("compileHarnessPlan", () => {
     expect(result.contextAssembly.inclusions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          subjectType: "search_document",
+          subjectType: "owner_file",
           reason: "Target owner file: tests/readiness.test.ts"
         })
       ])

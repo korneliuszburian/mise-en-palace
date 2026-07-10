@@ -1,0 +1,1 @@
+ALTER TYPE "public"."retrieval_subject_type" ADD VALUE 'owner_file' BEFORE 'evidence_bundle';

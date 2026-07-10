@@ -1014,8 +1014,9 @@ const searchDocumentFromClaim = (
 ): SearchDocumentRecord => ({
   id: `search:${claim.id}`,
   projectId,
-  subjectType: "source_artifact",
-  subjectId: claim.sourceArtifactId,
+  subjectType: "source_claim",
+  subjectId: claim.id,
+  sourceClaimId: claim.id,
   sourceArtifactId: claim.sourceArtifactId,
   sourceAuthority: claim.sourceAuthority,
   validityStatus: "active",

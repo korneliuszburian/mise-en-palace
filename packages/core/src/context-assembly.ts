@@ -43,7 +43,8 @@ export type ContextSubjectType =
   | "memory_record"
   | "anti_memory_record"
   | "task_contract"
-  | "search_document";
+  | "search_document"
+  | "owner_file";
 
 export interface ContextInclusion extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;

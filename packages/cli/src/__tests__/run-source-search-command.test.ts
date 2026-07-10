@@ -83,7 +83,7 @@ const includedSearchCandidate = (
 ): RankedActivationCandidate => ({
   id: "candidate-owner-file",
   kind: "search",
-  subjectType: "search_document",
+  subjectType: "owner_file",
   subjectId: "owner-file:packages/harness/src/activation/activation-engine.ts",
   text: "Owner-file recall for activation-engine.ts",
   sourceAuthority: "project-decision",
@@ -418,6 +418,11 @@ describe("runSourceSearchCommand", () => {
       "included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     ]);
     expect(buildSourceSearchMissingEvidence({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0,
+      canonicalProjectionCount: 1
+    })).toEqual([]);
+    expect(buildSourceSearchMissingEvidence({
       supportingClaimCount: 0,
       supportingDocumentCount: 1
     })).toEqual([
@@ -447,6 +452,17 @@ describe("runSourceSearchCommand", () => {
       supportingClaimCount: 1,
       supportingDocumentCount: 0
     }).answerUsefulness).toBe("partly_useful_missing_document");
+    expect(classifySourceSearchAnswerUsefulness({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0,
+      canonicalProjectionCount: 1
+    })).toEqual({
+      answerUsefulness: "useful",
+      reasons: [
+        "Answer package includes accepted SourceClaim evidence without decision-linked authority.",
+        "Answer package includes a SearchDocument projection for canonical SourceClaim evidence."
+      ]
+    });
     expect(classifySourceSearchAnswerUsefulness({
       supportingClaimCount: 0,
       supportingDocumentCount: 1
@@ -553,10 +569,10 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("DB writes: none");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Answer package preview:");
-    expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
-    expect(result.stdout).toContain("answer usefulness: useful");
+    expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("answer usefulness: partly_useful_missing_document");
     expect(result.stdout).toContain("- Answer package includes accepted SourceClaim evidence without decision-linked authority.");
-    expect(result.stdout).toContain("- Answer package includes SearchDocument retrieval evidence.");
+    expect(result.stdout).toContain("- Answer package is missing included SearchDocument evidence.");
     expect(result.stdout).toContain("query shape diagnostics:");
     expect(result.stdout).toContain("- none detected by current diagnostics");
     expect(result.stdout).toContain("supporting claims:");
@@ -566,7 +582,7 @@ describe("runSourceSearchCommand", () => {
       `caveat:Accepted SourceClaim ${sourceClaimId} has no SourceDecisionEdge support in this readback`
     );
     expect(result.stdout).toContain("supporting documents:");
-    expect(result.stdout).toContain(`- search_document:${searchDocumentId}`);
+    expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("source claim document links:");
     expect(result.stdout).toContain(
       `- source_claim:${sourceClaimId} linkedSearchDocumentCount:1 linkedSearchDocumentIds:${searchDocumentId} linkKinds:source_artifact`
@@ -574,8 +590,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("relation support:");
     expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("missing evidence:");
-    expect(result.stdout).toContain("- none detected by current diagnostics");
-    expect(result.stdout).toContain("recommended next action: Use the supporting claims/documents as a Knowledge Application Gate");
+    expect(result.stdout).toContain("- included SearchDocument evidence for this combined query; artifact-linked SearchDocuments are visible but were not included by lexical retrieval");
+    expect(result.stdout).toContain("recommended next action: Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval.");
     expect(result.stdout).toContain(`source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain(`search_document:${searchDocumentId}`);
     expect(result.stdout).toContain("Included candidates:");
@@ -622,17 +638,19 @@ describe("runSourceSearchCommand", () => {
 
     const answerPackage = objectValue(output.answerPackage, "answerPackage");
 
-    expect(answerPackage.answer).toContain("1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
-    expect(answerPackage.answerUsefulness).toBe("useful");
+    expect(answerPackage.answer).toContain("1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(answerPackage.answerUsefulness).toBe("partly_useful_missing_document");
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toEqual([
       "Answer package includes accepted SourceClaim evidence without decision-linked authority.",
-      "Answer package includes SearchDocument retrieval evidence.",
+      "Answer package is missing included SearchDocument evidence.",
       "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims.",
       "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
     ]);
     expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([]);
-    expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Knowledge Application Gate");
-    expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([]);
+    expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval.");
+    expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([
+      "included SearchDocument evidence for this combined query; artifact-linked SearchDocuments are visible but were not included by lexical retrieval"
+    ]);
     expect(arrayValue(answerPackage.doesNotProve, "doesNotProve")).toContain(
       "source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation"
     );
@@ -641,7 +659,6 @@ describe("runSourceSearchCommand", () => {
     const supportingDocuments = arrayValue(answerPackage.supportingDocuments, "supportingDocuments");
     const sourceClaimDocumentLinks = arrayValue(answerPackage.sourceClaimDocumentLinks, "sourceClaimDocumentLinks");
     const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
-    const firstDocument = objectValue(supportingDocuments[0], "first supporting document");
     const firstDocumentLink = objectValue(sourceClaimDocumentLinks[0], "first source claim document link");
 
     expect(firstClaim.label).toBe(`source_claim:${sourceClaimId}`);
@@ -662,8 +679,7 @@ describe("runSourceSearchCommand", () => {
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
       "Answer package includes accepted SourceClaim evidence without SourceDecisionEdge readback."
     );
-    expect(firstDocument.label).toBe(`search_document:${searchDocumentId}`);
-    expect(firstDocument.reviewability).toBe("ready");
+    expect(supportingDocuments).toEqual([]);
     expect(firstDocumentLink.sourceClaimId).toBe(sourceClaimId);
     expect(firstDocumentLink.linkedSearchDocumentCount).toBe(1);
     expect(arrayValue(firstDocumentLink.linkedSearchDocumentIds, "linked ids")).toEqual([
@@ -677,8 +693,14 @@ describe("runSourceSearchCommand", () => {
     const proof = objectValue(output.proof, "proof");
     const runtimeOutput = objectValue(output.runtime, "runtime");
 
-    expect(includedCandidates).toHaveLength(2);
-    expect(excludedCandidates).toHaveLength(0);
+    expect(includedCandidates).toHaveLength(1);
+    expect(excludedCandidates).toHaveLength(1);
+    expect(excludedCandidates[0]).toMatchObject({
+      label: `search_document:${searchDocumentId}`,
+      status: "excluded",
+      exclusionReason: "unsafe",
+      exclusionExplanation: "SearchDocument has no canonical subject link; it remains non-governing search evidence."
+    });
     expect(noMatchGuidance).toContain("if an expected SearchDocument is excluded, inspect score and budget before changing ranking");
     expect(arrayValue(proof.proves, "proof.proves")).toContain(
       "readback shows inclusion/exclusion, scores, reviewability, and proof boundaries"
@@ -745,7 +767,7 @@ describe("runSourceSearchCommand", () => {
       return [outputCandidate.sourceClaimId, outputCandidate];
     }));
 
-    expect(supportingDocuments).toHaveLength(1);
+    expect(supportingDocuments).toHaveLength(0);
     for (const [id, status] of [
       [proposedSourceClaimId, "proposed"],
       [rejectedSourceClaimId, "rejected"],
