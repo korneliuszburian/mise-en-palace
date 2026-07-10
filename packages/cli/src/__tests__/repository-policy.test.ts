@@ -154,4 +154,25 @@ describe("repository policy boundaries", () => {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
   });
+
+  it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
+    const security = readRootFile("SECURITY.md");
+    const contributing = readRootFile("CONTRIBUTING.md");
+    const codeowners = readRootFile(".github/CODEOWNERS");
+    const license = readRootFile("LICENSE.md");
+
+    expect(license).toContain("no license grant");
+    expect(license).toContain("not an external release");
+    expect(security).toContain("Report suspected vulnerabilities privately");
+    expect(security).toMatch(/no public\s+response or remediation SLA/u);
+    expect(security).toContain("external release readiness");
+    expect(contributing).toContain("AGENTS.md");
+    expect(contributing).toContain("CONTEXT.md");
+    expect(contributing).toContain("CONVENTIONS.md");
+    expect(contributing).toContain("Beads");
+    expect(contributing).toContain("pnpm quality:fallow:ci");
+    expect(codeowners).toContain("/packages/db/src/migrations/ @korneliuszburian");
+    expect(codeowners).toContain("/.github/ @korneliuszburian");
+    expect(codeowners).toContain("/SECURITY.md @korneliuszburian");
+  });
 });

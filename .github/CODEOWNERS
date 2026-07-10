@@ -1,0 +1,10 @@
+# Internal alpha: the repository owner reviews every path.
+* @korneliuszburian
+
+# Sensitive boundaries remain explicit for future ownership changes.
+/packages/core/src/ @korneliuszburian
+/packages/db/src/ @korneliuszburian
+/packages/db/src/migrations/ @korneliuszburian
+/.github/ @korneliuszburian
+/SECURITY.md @korneliuszburian
+/LICENSE.md @korneliuszburian
