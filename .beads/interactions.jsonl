@@ -1056,3 +1056,5 @@
 {"id":"int-9caefab4","kind":"field_change","created_at":"2026-07-10T06:18:01.407469367Z","actor":"korneliuszburian","issue_id":"mise-en-palace-rel001","extra":{"field":"status","new_value":"open","old_value":"closed"}}
 {"id":"int-81ab4f7d","kind":"field_change","created_at":"2026-07-10T06:18:01.407573393Z","actor":"korneliuszburian","issue_id":"mise-en-palace-rel001","extra":{"field":"priority","new_value":"2","old_value":"3"}}
 {"id":"int-cd6410ac","kind":"field_change","created_at":"2026-07-10T06:18:02.513975998Z","actor":"korneliuszburian","issue_id":"mise-en-palace-81pd","extra":{"field":"status","new_value":"open","old_value":"closed"}}
+{"id":"int-3c33a7bd","kind":"field_change","created_at":"2026-07-10T07:13:51.55518322Z","actor":"korneliuszburian","issue_id":"mise-en-palace-frbx","extra":{"field":"priority","new_value":"1","old_value":"2"}}
+{"id":"int-b7d4e01c","kind":"field_change","created_at":"2026-07-10T07:13:52.443430915Z","actor":"korneliuszburian","issue_id":"mise-en-palace-h0qz","extra":{"field":"priority","new_value":"1","old_value":"2"}}
