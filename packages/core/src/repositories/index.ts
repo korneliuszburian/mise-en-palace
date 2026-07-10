@@ -41,6 +41,12 @@ export type {
   SourceRepository
 } from "./source-repository.js";
 export type {
+  SourceDecisionImportLookup,
+  SourceDecisionImportLookupInput,
+  SourceDecisionImportReadback,
+  SourceDecisionImportRepository
+} from "./source-decision-import-repository.js";
+export type {
   ActivationDecisionRecord,
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,

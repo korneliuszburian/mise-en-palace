@@ -8,6 +8,9 @@ import {
 import {
   createDatabaseRuntime
 } from "../../database-runtime.js";
+import type {
+  DatabaseRuntimeTransaction
+} from "../../database-runtime.js";
 import {
   loadDecisionCorpusImportFixture
 } from "../eval/run-decision-corpus-import.js";
@@ -40,6 +43,10 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly importedDecisionCount: number;
   readonly importedCaseCount: number;
   readonly persistedRows: readonly PersistedDecisionCorpusRow[];
+  readonly replayStable: boolean;
+  readonly replayPersistedArtifactCount: number;
+  readonly changedReplayRejected: boolean;
+  readonly atomicFailureRolledBack: boolean;
   readonly governingDecisionId: string;
   readonly governingSourceClaimId: string;
   readonly governingSourceDecisionEdgeId: string;
@@ -155,6 +162,115 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       smokeId: input.smokeId,
       now: input.now
     });
+    const replayRows = await persistDecisionCorpusImport({
+      runtime,
+      projectId,
+      fixture,
+      smokeId: input.smokeId,
+      now: input.now
+    });
+    const replayStable = JSON.stringify(replayRows) === JSON.stringify(persistedRows);
+    const replayArtifactRows = await client<{ count: number }[]>`
+      select count(*)::int as count
+      from source_artifacts
+      where project_id = ${projectId}
+        and import_id = ${input.smokeId}
+    `;
+    const replayPersistedArtifactCount = replayArtifactRows[0]?.count ?? 0;
+    const changedFixture = {
+      ...fixture,
+      decisions: fixture.decisions.map((row, index) => index === 0
+        ? { ...row, noteText: `${row.noteText} changed under the same import identity` }
+        : row)
+    };
+    let changedReplayRejected = false;
+
+    try {
+      await persistDecisionCorpusImport({
+        runtime,
+        projectId,
+        fixture: changedFixture,
+        smokeId: input.smokeId,
+        now: input.now
+      });
+    } catch (error) {
+      changedReplayRejected = error instanceof Error &&
+        error.message.includes("conflicts with existing content");
+    }
+
+    const withTransaction = runtime.withTransaction;
+
+    if (withTransaction === undefined) {
+      throw new Error("decision corpus import DB smoke cannot inject transaction failure");
+    }
+
+    const failureImportId = `${input.smokeId}:atomic-failure`;
+    const failureWithTransaction: NonNullable<typeof runtime.withTransaction> = async <T>(
+      lockKey: string,
+      work: (transactionRuntime: DatabaseRuntimeTransaction) => Promise<T>
+    ): Promise<T> => withTransaction(lockKey, async (transactionRuntime) => {
+        const createSourceDecision = transactionRuntime.sourceRepository.createSourceDecision;
+
+        if (createSourceDecision === undefined) {
+          throw new Error("decision corpus import DB smoke cannot inject decision failure");
+        }
+
+        let decisionWriteCount = 0;
+        const failingSourceRepository = {
+          ...transactionRuntime.sourceRepository,
+          createSourceDecision: async (...args: Parameters<typeof createSourceDecision>) => {
+            const sourceDecision = await createSourceDecision(...args);
+            decisionWriteCount += 1;
+
+            if (decisionWriteCount === 2) {
+              throw new Error("decision corpus import DB smoke injected row failure");
+            }
+
+            return sourceDecision;
+          }
+        };
+
+        return work({
+          ...transactionRuntime,
+          sourceRepository: failingSourceRepository
+        });
+      });
+    const failureRuntime = {
+      ...runtime,
+      withTransaction: failureWithTransaction
+    };
+    let atomicFailureRolledBack = false;
+
+    try {
+      await persistSourceDecisionImport({
+        runtime: failureRuntime,
+        projectId,
+        fixture,
+        importId: failureImportId,
+        smokeId: input.smokeId,
+        importedBy: "krn db smoke decision-corpus-import atomic-failure",
+        now: input.now
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("injected row failure")) {
+        const failureRows = await client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_artifacts
+          where project_id = ${projectId}
+            and import_id = ${failureImportId}
+        `;
+        atomicFailureRolledBack = (failureRows[0]?.count ?? 0) === 0;
+      }
+    }
+
+    if (
+      !replayStable ||
+      replayPersistedArtifactCount !== fixture.decisions.length ||
+      !changedReplayRejected ||
+      !atomicFailureRolledBack
+    ) {
+      throw new Error("decision corpus import DB smoke failed replay or atomicity proof");
+    }
     const firstCase = fixture.cases[0];
 
     if (firstCase === undefined) {
@@ -273,6 +389,10 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       importedDecisionCount: fixture.decisions.length,
       importedCaseCount: fixture.cases.length,
       persistedRows,
+      replayStable,
+      replayPersistedArtifactCount,
+      changedReplayRejected,
+      atomicFailureRolledBack,
       governingDecisionId: firstCase.expectedDecisionId,
       governingSourceClaimId: governingRow.sourceClaimId,
       governingSourceDecisionEdgeId,

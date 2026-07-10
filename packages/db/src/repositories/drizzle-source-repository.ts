@@ -33,7 +33,7 @@ import type {
   SourceRepository
 } from "@krn/core/repositories/internal";
 
-import type { KrnDatabase } from "../database.js";
+import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   outboxEvents,
   sourceArtifacts,
@@ -255,7 +255,7 @@ export const assertSourceClaimEdgeGovernance = (
 };
 
 export class DrizzleSourceRepository implements SourceRepository {
-  constructor(private readonly db: KrnDatabase) {}
+  constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
   async createSourceArtifact(input: CreateSourceArtifactInput): Promise<SourceArtifactRecord> {
     const row = requireReturnedRow(
@@ -263,6 +263,8 @@ export class DrizzleSourceRepository implements SourceRepository {
         .insert(sourceArtifacts)
         .values({
           ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+          ...(input.importId === undefined ? {} : { importId: input.importId }),
+          ...(input.importRowId === undefined ? {} : { importRowId: input.importRowId }),
           kind: input.kind,
           sourceAuthority: input.sourceAuthority,
           uri: input.uri,

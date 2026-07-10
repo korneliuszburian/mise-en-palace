@@ -1,6 +1,15 @@
+import { createHash } from "node:crypto";
+
 import type {
-  ProjectId
+  ProjectId,
+  SourceClaim,
+  SourceDecision
 } from "@krn/core";
+import type {
+  SourceDecisionImportLookup,
+  SourceDecisionImportReadback,
+  SourceDecisionImportRepository
+} from "@krn/core/repositories/internal";
 import type {
   DecisionCorpusImportFixture,
   DecisionCorpusImportRow
@@ -17,17 +26,33 @@ import {
 
 type SourceDecisionImportRuntime = Pick<
   DatabaseRuntime,
-  "sourceRepository" | "retrievalRepository"
+  | "sourceRepository"
+  | "retrievalRepository"
+  | "sourceDecisionImportRepository"
+  | "withTransaction"
 >;
 type SourceDecisionImportSourceRepository = SourceDecisionImportRuntime["sourceRepository"];
 type SourceDecisionImportRetrievalRepository =
   NonNullable<SourceDecisionImportRuntime["retrievalRepository"]>;
 type CreateSourceDecision =
   NonNullable<SourceDecisionImportSourceRepository["createSourceDecision"]>;
+type WithDatabaseTransaction = NonNullable<DatabaseRuntime["withTransaction"]>;
 
 interface SourceDecisionImportRepositories {
   readonly retrievalRepository: SourceDecisionImportRetrievalRepository;
   readonly createSourceDecision: CreateSourceDecision;
+  readonly sourceDecisionImportRepository: SourceDecisionImportRepository;
+  readonly withTransaction: WithDatabaseTransaction;
+}
+
+interface PreparedSourceDecisionImportRow {
+  readonly row: DecisionCorpusImportRow;
+  readonly metadata: Record<string, unknown>;
+  readonly evidenceRef: string;
+  readonly uri: string;
+  readonly artifactContentHash: string;
+  readonly chunkContent: string;
+  readonly chunkContentHash: string;
 }
 
 export interface PersistedSourceDecisionImportRow {
@@ -79,9 +104,47 @@ export const validateSourceDecisionImportFixture = (
   buildImportedDecisionCorpus(fixture, base);
 };
 
+const normalizeImportText = (value: string): string =>
+  value.replace(/\r\n?/gu, "\n").trim().replace(/[ \t]+/gu, " ");
+
+const contentHash = (value: string): string =>
+  createHash("sha256").update(value, "utf8").digest("hex");
+
+const resolveEvidenceRef = (value: string, decisionId: string): string => {
+  const evidenceRef = normalizeImportText(value);
+
+  if (evidenceRef.length === 0) {
+    throw new Error(`decision ${decisionId} has an empty evidenceRef`);
+  }
+
+  if (evidenceRef.startsWith("https://") || evidenceRef.startsWith("http://")) {
+    try {
+      const url = new URL(evidenceRef);
+
+      if (url.protocol !== "https:" && url.protocol !== "http:") {
+        throw new Error("unsupported URL protocol");
+      }
+    } catch {
+      throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+    }
+
+    return evidenceRef;
+  }
+
+  if (
+    /^run-evidence\/[A-Za-z0-9][A-Za-z0-9._/-]*\.md(?:#[A-Za-z0-9._/-]+)?$/u.test(evidenceRef) ||
+    /^KRN_ROADMAP\.md(?::[1-9][0-9]*)?(?:#[A-Za-z0-9._/-]+)?$/u.test(evidenceRef)
+  ) {
+    return evidenceRef;
+  }
+
+  throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+};
+
 const metadataForRow = (
   input: PersistSourceDecisionImportInput,
-  row: DecisionCorpusImportRow
+  row: DecisionCorpusImportRow,
+  evidenceRef: string
 ): Record<string, unknown> => ({
   importId: input.importId,
   ...(input.smokeId === undefined ? {} : { smokeId: input.smokeId }),
@@ -89,14 +152,41 @@ const metadataForRow = (
   importedAt: input.now,
   decisionCorpusImportId: row.id,
   decisionCorpusStatus: row.status,
-  evidenceRef: row.evidenceRef
+  evidenceRef
+});
+
+const prepareImportRows = (
+  input: PersistSourceDecisionImportInput
+): readonly PreparedSourceDecisionImportRow[] => input.fixture.decisions.map((row) => {
+  const evidenceRef = resolveEvidenceRef(row.evidenceRef, row.id);
+  const normalizedRow = JSON.stringify({
+    doesNotProve: normalizeImportText(row.doesNotProve),
+    evidenceRef,
+    falsifier: normalizeImportText(row.falsifier),
+    noteText: normalizeImportText(row.noteText),
+    status: row.status,
+    statement: normalizeImportText(row.statement),
+    taskScopes: row.taskScopes.map(normalizeImportText),
+    title: normalizeImportText(row.title)
+  });
+  const chunkContent = `${normalizeImportText(row.statement)}\n\n${normalizeImportText(row.noteText)}`;
+
+  return {
+    row,
+    metadata: metadataForRow(input, row, evidenceRef),
+    evidenceRef,
+    uri: `source-decision-import://${input.importId}/${row.id}`,
+    artifactContentHash: contentHash(`krn.source-decision-import.v1\n${normalizedRow}`),
+    chunkContent,
+    chunkContentHash: contentHash(`krn.source-decision-import.chunk.v1\n${chunkContent}`)
+  };
 });
 
 const createSourceArtifactAndChunk = async (
   sourceRepository: SourceDecisionImportSourceRepository,
   projectId: ProjectId,
-  row: DecisionCorpusImportRow,
-  metadata: Record<string, unknown>
+  importId: string,
+  prepared: PreparedSourceDecisionImportRow
 ) => {
   if (sourceRepository.createSourceChunk === undefined) {
     throw new Error("SourceChunk creation is unavailable for source decision import");
@@ -106,19 +196,21 @@ const createSourceArtifactAndChunk = async (
     projectId,
     kind: "doc",
     sourceAuthority: "project-decision",
-    uri: `source-decision-import://${row.id}`,
-    title: row.title,
-    contentHash: `source-decision-import:${row.id}`,
-    metadata
+    uri: prepared.uri,
+    title: prepared.row.title,
+    contentHash: prepared.artifactContentHash,
+    importId,
+    importRowId: prepared.row.id,
+    metadata: prepared.metadata
   });
   const sourceChunk = await sourceRepository.createSourceChunk({
     sourceArtifactId: sourceArtifact.id,
     ordinal: 0,
-    heading: row.title,
-    content: `${row.statement}\n\n${row.noteText}`,
-    tokenCount: row.statement.split(/\s+/u).length + row.noteText.split(/\s+/u).length,
-    contentHash: `source-decision-import:${row.id}:chunk`,
-    metadata
+    heading: prepared.row.title,
+    content: prepared.chunkContent,
+    tokenCount: prepared.chunkContent.split(/\s+/u).length,
+    contentHash: prepared.chunkContentHash,
+    metadata: prepared.metadata
   });
 
   return { sourceArtifact, sourceChunk };
@@ -169,7 +261,7 @@ const createDecisionSupport = async (
     ? await input.sourceRepository.createSourceDecisionEdge({
         sourceClaimId: input.sourceClaimId,
         targetType: "architecture_decision",
-        targetId: `source-decision-import:${input.row.id}`,
+        targetId: `source-decision-import:${input.metadata["importId"]}:${input.row.id}`,
         supportType: "implementation-boundary",
         confidence: "high",
         notes: input.row.noteText,
@@ -225,37 +317,148 @@ const assertImportRepositories = (
     throw new Error("SearchDocument creation is unavailable for source decision import");
   }
 
+  if (runtime.sourceRepository.createSourceChunk === undefined) {
+    throw new Error("SourceChunk creation is unavailable for source decision import");
+  }
+
+  if (runtime.sourceDecisionImportRepository === undefined) {
+    throw new Error("Source decision import readback is unavailable");
+  }
+
+  if (runtime.withTransaction === undefined) {
+    throw new Error("Source decision import transaction is unavailable");
+  }
+
   return {
     retrievalRepository: runtime.retrievalRepository,
-    createSourceDecision: createSourceDecision.bind(runtime.sourceRepository)
+    createSourceDecision: createSourceDecision.bind(runtime.sourceRepository),
+    sourceDecisionImportRepository: runtime.sourceDecisionImportRepository,
+    withTransaction: runtime.withTransaction
   };
 };
 
-export const persistSourceDecisionImport = async (
-  input: PersistSourceDecisionImportInput
-): Promise<readonly PersistedSourceDecisionImportRow[]> => {
-  const sourceRepository = input.runtime.sourceRepository;
-  const {
-    retrievalRepository,
-    createSourceDecision
-  } = assertImportRepositories(input.runtime);
+const persistedRowFromReadback = (
+  row: SourceDecisionImportReadback
+): PersistedSourceDecisionImportRow => ({
+  decisionId: row.decisionId,
+  sourceArtifactId: row.sourceArtifactId,
+  sourceChunkId: row.sourceChunkId,
+  sourceClaimId: row.sourceClaimId,
+  sourceClaimStatus: row.sourceClaimStatus,
+  sourceDecisionId: row.sourceDecisionId,
+  sourceDecisionStatus: row.sourceDecisionStatus,
+  ...(row.sourceDecisionEdgeId === undefined
+    ? {}
+    : { sourceDecisionEdgeId: row.sourceDecisionEdgeId }),
+  ...(row.searchDocumentId === undefined ? {} : { searchDocumentId: row.searchDocumentId }),
+  ...(row.sourceRejectionId === undefined ? {} : { sourceRejectionId: row.sourceRejectionId })
+});
 
-  validateSourceDecisionImportFixture(input.fixture);
+const expectedDecisionStatusFor = (
+  row: DecisionCorpusImportRow
+): SourceDecision["status"] =>
+  row.status === "rejected" ? "reject" : row.status === "stale" ? "defer" : "adopt";
 
-  if (
-    input.fixture.decisions.some((row) => row.status === "stale") &&
-    sourceRepository.deprecateSourceClaim === undefined
-  ) {
-    throw new Error("SourceClaim deprecation is unavailable for stale source decision import");
+const expectedClaimStatusFor = (
+  row: DecisionCorpusImportRow
+): SourceClaim["status"] =>
+  row.status === "rejected" ? "rejected" : row.status === "stale" ? "deprecated" : "accepted";
+
+const existingImportRows = async (
+  repository: SourceDecisionImportRepository,
+  projectId: ProjectId,
+  importId: string,
+  preparedRows: readonly PreparedSourceDecisionImportRow[]
+): Promise<readonly PersistedSourceDecisionImportRow[] | undefined> => {
+  const lookups = await Promise.all(preparedRows.map((prepared) =>
+    repository.getSourceDecisionImportRow({
+      projectId,
+      importId,
+      decisionId: prepared.row.id
+    })
+  ));
+  const existing = lookups.filter((lookup): lookup is Extract<SourceDecisionImportLookup, { status: "complete" | "partial" }> =>
+    lookup.status !== "missing"
+  );
+
+  if (existing.length === 0) {
+    return undefined;
   }
 
-  return Promise.all(input.fixture.decisions.map(async (row) => {
-    const metadata = metadataForRow(input, row);
+  const partial = existing.filter((lookup) => lookup.status === "partial");
+  const complete = existing.filter((lookup): lookup is Extract<SourceDecisionImportLookup, { status: "complete" }> =>
+    lookup.status === "complete"
+  );
+  const missing = lookups.filter((lookup) => lookup.status === "missing");
+
+  if (partial.length > 0 || missing.length > 0) {
+    const existingIds = [
+      ...partial.map((lookup) => lookup.sourceArtifactId),
+      ...complete.map((lookup) => lookup.row.decisionId)
+    ];
+
+    throw new Error(
+      `source decision import ${importId} has partial existing records; conflicting rows: ${existingIds.join(", ")}`
+    );
+  }
+
+  const completeRows = complete.map((lookup) => lookup.row);
+  const preparedById = new Map(preparedRows.map((prepared) => [prepared.row.id, prepared]));
+  const conflicts = completeRows.filter((row) => {
+    const prepared = preparedById.get(row.decisionId);
+
+    return prepared === undefined ||
+      row.contentHash !== prepared.artifactContentHash ||
+      row.sourceClaimStatus !== expectedClaimStatusFor(prepared.row) ||
+      row.sourceDecisionStatus !== expectedDecisionStatusFor(prepared.row);
+  });
+
+  if (conflicts.length > 0) {
+    throw new Error(
+      `source decision import ${importId} conflicts with existing content: ${conflicts
+        .map((row) => row.decisionId)
+        .join(", ")}`
+    );
+  }
+
+  const rowsById = new Map(completeRows.map((row) => [row.decisionId, row]));
+
+  return preparedRows.map((prepared) => {
+    const row = rowsById.get(prepared.row.id);
+
+    if (row === undefined) {
+      throw new Error(`source decision import ${importId} missing replay row ${prepared.row.id}`);
+    }
+
+    return persistedRowFromReadback(row);
+  });
+};
+
+const persistSourceDecisionImportRows = async (
+  input: {
+    readonly runtime: Pick<DatabaseRuntime, "sourceRepository" | "retrievalRepository">;
+    readonly projectId: ProjectId;
+    readonly importId: string;
+    readonly preparedRows: readonly PreparedSourceDecisionImportRow[];
+  }
+): Promise<readonly PersistedSourceDecisionImportRow[]> => {
+  const sourceRepository = input.runtime.sourceRepository;
+  const retrievalRepository = input.runtime.retrievalRepository;
+  const createSourceDecision = sourceRepository.createSourceDecision;
+
+  if (createSourceDecision === undefined || retrievalRepository === undefined) {
+    throw new Error("Source decision import write repositories are unavailable");
+  }
+
+  const rows: PersistedSourceDecisionImportRow[] = [];
+
+  for (const prepared of input.preparedRows) {
+    const row = prepared.row;
     const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
       sourceRepository,
       input.projectId,
-      row,
-      metadata
+      input.importId,
+      prepared
     );
     const sourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
@@ -268,28 +471,30 @@ export const persistSourceDecisionImport = async (
       supportType: row.status === "rejected" ? "rejection" : "implementation-boundary",
       consumer: "source decision import",
       falsifier: row.falsifier,
-      metadata
+      metadata: prepared.metadata
     });
     const sourceDecision = await createSourceDecision({
       projectId: input.projectId,
       sourceClaimId: sourceClaim.id,
-      status: row.status === "rejected"
-        ? "reject"
-        : row.status === "stale"
-          ? "defer"
-          : "adopt",
+      status: expectedDecisionStatusFor(row),
       decision: row.statement,
       rationale: row.noteText,
       falsifier: row.falsifier,
       consumer: "source decision import",
-      metadata
+      metadata: prepared.metadata
     });
+
     if (row.status === "stale") {
-      await sourceRepository.deprecateSourceClaim!({
+      if (sourceRepository.deprecateSourceClaim === undefined) {
+        throw new Error("SourceClaim deprecation is unavailable for stale source decision import");
+      }
+
+      await sourceRepository.deprecateSourceClaim({
         sourceClaimId: sourceClaim.id,
         revisitWhen: "Refresh imported decision evidence before future activation."
       });
     }
+
     const sourceClaimReadback = await sourceRepository.getSourceClaimById(sourceClaim.id);
 
     if (sourceClaimReadback === undefined) {
@@ -297,16 +502,7 @@ export const persistSourceDecisionImport = async (
     }
 
     if (row.status === "rejected") {
-      const sourceRejectionId = await createRejectedPath({
-        sourceRepository,
-        projectId: input.projectId,
-        row,
-        sourceArtifactId: sourceArtifact.id,
-        sourceClaimId: sourceClaim.id,
-        metadata
-      });
-
-      return {
+      rows.push({
         decisionId: row.id,
         sourceArtifactId: sourceArtifact.id,
         sourceChunkId: sourceChunk.id,
@@ -314,11 +510,19 @@ export const persistSourceDecisionImport = async (
         sourceClaimStatus: sourceClaimReadback.status,
         sourceDecisionId: sourceDecision.id,
         sourceDecisionStatus: sourceDecision.status,
-        sourceRejectionId
-      };
+        sourceRejectionId: await createRejectedPath({
+          sourceRepository,
+          projectId: input.projectId,
+          row,
+          sourceArtifactId: sourceArtifact.id,
+          sourceClaimId: sourceClaim.id,
+          metadata: prepared.metadata
+        })
+      });
+      continue;
     }
 
-    return {
+    rows.push({
       decisionId: row.id,
       sourceArtifactId: sourceArtifact.id,
       sourceChunkId: sourceChunk.id,
@@ -335,8 +539,50 @@ export const persistSourceDecisionImport = async (
         sourceChunkId: sourceChunk.id,
         sourceClaimId: sourceClaim.id,
         sourceDecisionId: sourceDecision.id,
-        metadata
+        metadata: prepared.metadata
       })
-    };
-  }));
+    });
+  }
+
+  return rows;
+};
+
+export const persistSourceDecisionImport = async (
+  input: PersistSourceDecisionImportInput
+): Promise<readonly PersistedSourceDecisionImportRow[]> => {
+  validateSourceDecisionImportFixture(input.fixture);
+  const preparedRows = prepareImportRows(input);
+
+  if (
+    preparedRows.some((prepared) => prepared.row.status === "stale") &&
+    input.runtime.sourceRepository.deprecateSourceClaim === undefined
+  ) {
+    throw new Error("SourceClaim deprecation is unavailable for source decision import");
+  }
+
+  const repositories = assertImportRepositories(input.runtime);
+
+  return repositories.withTransaction(input.importId, async (transactionRuntime) => {
+    if (transactionRuntime.sourceDecisionImportRepository === undefined) {
+      throw new Error("Source decision import transaction readback is unavailable");
+    }
+
+    const existingRows = await existingImportRows(
+      transactionRuntime.sourceDecisionImportRepository,
+      input.projectId,
+      input.importId,
+      preparedRows
+    );
+
+    if (existingRows !== undefined) {
+      return existingRows;
+    }
+
+    return persistSourceDecisionImportRows({
+      runtime: transactionRuntime,
+      projectId: input.projectId,
+      importId: input.importId,
+      preparedRows
+    });
+  });
 };

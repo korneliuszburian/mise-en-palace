@@ -124,6 +124,8 @@ export interface OutboxEventRecord {
 export interface SourceArtifactRecord {
   id: SourceArtifactId;
   projectId?: ProjectId;
+  importId?: string;
+  importRowId?: string;
   kind: "doc" | "file" | "url" | "paper" | "run" | "operator_input" | "external_doc";
   sourceAuthority: SourceAuthorityLabel;
   uri: string;
@@ -370,6 +372,8 @@ export interface CreateProjectKernelInput extends RepositoryMetadata {
 
 export interface CreateSourceArtifactInput extends RepositoryMetadata {
   projectId?: ProjectId;
+  importId?: string;
+  importRowId?: string;
   kind: SourceArtifactRecord["kind"];
   sourceAuthority: SourceArtifactRecord["sourceAuthority"];
   uri: string;

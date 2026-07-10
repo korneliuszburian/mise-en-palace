@@ -665,6 +665,8 @@ export const mapFeedbackDelta = (
 export const mapSourceArtifact = (row: SourceArtifactRow): SourceArtifactRecord => ({
   id: row.id,
   ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  ...(row.importId === null ? {} : { importId: row.importId }),
+  ...(row.importRowId === null ? {} : { importRowId: row.importRowId }),
   kind: row.kind,
   sourceAuthority: row.sourceAuthority,
   uri: row.uri,

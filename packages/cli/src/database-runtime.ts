@@ -1,6 +1,7 @@
 import postgres from "postgres";
 import {
-  createKrnDatabase
+  createKrnDatabase,
+  sql
 } from "@krn/db";
 import {
   DrizzleHarnessRunRepository,
@@ -10,6 +11,7 @@ import {
   DrizzleProjectRepository,
   DrizzleReflectionRepository,
   DrizzleRetrievalRepository,
+  DrizzleSourceDecisionImportRepository,
   DrizzleSourceRepository
 } from "@krn/db/adapters";
 import type {
@@ -30,6 +32,7 @@ import type {
   RepoInstallationRecord,
   RetrievalRepository,
   SearchDocumentRecord,
+  SourceDecisionImportRepository,
   SourceRepository,
   WorkspaceRecord
 } from "@krn/core/repositories/internal";
@@ -92,6 +95,11 @@ export interface DatabaseRuntime {
   projectResolution?: ProjectResolution;
   projectKernel?: ProjectKernelRecord;
   repoInstallations?: RepoInstallationRecord[];
+  sourceDecisionImportRepository?: SourceDecisionImportRepository;
+  withTransaction?<T>(
+    lockKey: string,
+    work: (runtime: DatabaseRuntimeTransaction) => Promise<T>
+  ): Promise<T>;
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository: Pick<
     HarnessRunRepository,
@@ -173,6 +181,12 @@ export interface DatabaseRuntime {
     ): Promise<ObservationItem[]>;
   };
   close(): Promise<void>;
+}
+
+export interface DatabaseRuntimeTransaction {
+  sourceRepository: DatabaseRuntime["sourceRepository"];
+  retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>;
+  sourceDecisionImportRepository?: SourceDecisionImportRepository;
 }
 
 export interface ObserveDatabaseRuntimeInput {
@@ -481,6 +495,44 @@ const loadRepoInstallations = async (
     ? repository.listRepoInstallationsForProject(projectId)
     : undefined;
 
+const createDatabaseRuntimeTransactionRepositories = (
+  sourceRepository: DrizzleSourceRepository,
+  retrievalRepository: DrizzleRetrievalRepository,
+  sourceDecisionImportRepository: DrizzleSourceDecisionImportRepository
+): DatabaseRuntimeTransaction => ({
+  sourceRepository: {
+    createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
+    createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
+    deprecateSourceClaim: (...args) => sourceRepository.deprecateSourceClaim(...args),
+    createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
+    getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
+    getSourceClaimForProject: (...args) => sourceRepository.getSourceClaimForProject(...args),
+    listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
+    createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
+    createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
+    getSourceDecisionById: (...args) => sourceRepository.getSourceDecisionById(...args),
+    listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
+    createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
+    getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
+    listSourceDecisionEdgesForClaim: (...args) => sourceRepository.listSourceDecisionEdgesForClaim(...args),
+    listSourceDecisionKnowledgeSources: (...args) =>
+      sourceRepository.listSourceDecisionKnowledgeSources(...args),
+    listRejectedSourceDecisionKnowledgeSources: (...args) =>
+      sourceRepository.listRejectedSourceDecisionKnowledgeSources(...args),
+    createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args),
+    listSourceRejectionsForClaim: (...args) =>
+      sourceRepository.listSourceRejectionsForClaim(...args)
+  },
+  retrievalRepository: {
+    createSearchDocument: (searchDocumentInput) =>
+      retrievalRepository.createSearchDocument(searchDocumentInput),
+    searchLexical: (searchInput) => retrievalRepository.searchLexical(searchInput),
+    listSearchDocumentsForSourceLinks: (sourceLinksInput) =>
+      retrievalRepository.listSearchDocumentsForSourceLinks(sourceLinksInput)
+  },
+  sourceDecisionImportRepository
+});
+
 export interface ReflectDatabaseRuntime {
   getRunSnapshot(executionRunId: string): Promise<ReflectRunSnapshot | undefined>;
   projectExists(projectId: string): Promise<boolean>;
@@ -510,6 +562,7 @@ const createDatabaseRuntimeForClient = async (
   const projectRepository = new DrizzleProjectRepository(db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const sourceRepository = new DrizzleSourceRepository(db);
+  const sourceDecisionImportRepository = new DrizzleSourceDecisionImportRepository(db);
   const retrievalRepository = new DrizzleRetrievalRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
   const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
@@ -546,37 +599,13 @@ const createDatabaseRuntimeForClient = async (
     runtimeProject.project.id,
     runtimeProject.shouldLoadProjectScopedMetadata
   );
-  const sourceSearchRetrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
-    createSearchDocument: (searchDocumentInput) =>
-      retrievalRepository.createSearchDocument(searchDocumentInput),
-    searchLexical: (searchInput) => retrievalRepository.searchLexical(searchInput),
-    listSearchDocumentsForSourceLinks: (sourceLinksInput) =>
-      retrievalRepository.listSearchDocumentsForSourceLinks(sourceLinksInput)
-  };
-  const sourceSearchSourceRepository: DatabaseRuntime["sourceRepository"] = {
-    createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
-    createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
-    deprecateSourceClaim: (...args) => sourceRepository.deprecateSourceClaim(...args),
-    createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
-    getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
-    getSourceClaimForProject: (...args) => sourceRepository.getSourceClaimForProject(...args),
-    listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
-    createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
-    createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
-    getSourceDecisionById: (...args) => sourceRepository.getSourceDecisionById(...args),
-    listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
-    createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
-    getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
-    listSourceDecisionEdgesForClaim: (...args) =>
-      sourceRepository.listSourceDecisionEdgesForClaim(...args),
-    listSourceDecisionKnowledgeSources: (...args) =>
-      sourceRepository.listSourceDecisionKnowledgeSources(...args),
-    listRejectedSourceDecisionKnowledgeSources: (...args) =>
-      sourceRepository.listRejectedSourceDecisionKnowledgeSources(...args),
-    createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args),
-    listSourceRejectionsForClaim: (...args) =>
-      sourceRepository.listSourceRejectionsForClaim(...args)
-  };
+  const sourceSearchRepositories = createDatabaseRuntimeTransactionRepositories(
+    sourceRepository,
+    retrievalRepository,
+    sourceDecisionImportRepository
+  );
+  const sourceSearchRetrievalRepository = sourceSearchRepositories.retrievalRepository;
+  const sourceSearchSourceRepository = sourceSearchRepositories.sourceRepository;
   const readbackHarnessRunRepository: DatabaseRuntime["harnessRunRepository"] = {
     createExecutionRun: (...args) => harnessRunRepository.createExecutionRun(...args),
     getHarnessRunByExecutionRunId: (...args) =>
@@ -619,6 +648,18 @@ const createDatabaseRuntimeForClient = async (
     harnessRunRepository: readbackHarnessRunRepository,
     sourceRepository: sourceSearchSourceRepository,
     retrievalRepository: sourceSearchRetrievalRepository,
+    sourceDecisionImportRepository,
+    withTransaction: async <T>(
+      lockKey: string,
+      work: (runtime: DatabaseRuntimeTransaction) => Promise<T>
+    ) => db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
+      return work(createDatabaseRuntimeTransactionRepositories(
+        new DrizzleSourceRepository(tx),
+        new DrizzleRetrievalRepository(tx),
+        new DrizzleSourceDecisionImportRepository(tx)
+      ));
+    }),
     memoryRepository,
     maintenanceQueueRepository,
     observationRepository,

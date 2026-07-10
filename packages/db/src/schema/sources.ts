@@ -67,6 +67,8 @@ export const sourceArtifacts = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: nullableProjectIdColumn(),
+    importId: text("import_id"),
+    importRowId: text("import_row_id"),
     kind: sourceArtifactKind("kind").notNull(),
     sourceAuthority: sourceAuthorityLabel("trust_tier").notNull(),
     uri: text("uri").notNull(),
@@ -79,6 +81,11 @@ export const sourceArtifacts = pgTable(
   },
   (table) => [
     uniqueIndex("source_artifacts_uri_hash_unique").on(table.uri, table.contentHash),
+    uniqueIndex("source_artifacts_project_import_row_unique").on(
+      table.projectId,
+      table.importId,
+      table.importRowId
+    ),
     index("source_artifacts_project_id_idx").on(table.projectId),
     index("source_artifacts_kind_idx").on(table.kind),
     index("source_artifacts_trust_tier_idx").on(table.sourceAuthority)

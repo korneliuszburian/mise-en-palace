@@ -38,7 +38,7 @@ import {
   type ContextExclusionReason
 } from "@krn/core";
 
-import type { KrnDatabase } from "../database.js";
+import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   activationDecisions,
   contextExclusions,
@@ -377,7 +377,7 @@ const activationDecisionInsertValues = (
 });
 
 export class DrizzleRetrievalRepository implements RetrievalRepository {
-  constructor(private readonly db: KrnDatabase) {}
+  constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
   async createSearchDocument(input: CreateSearchDocumentInput): Promise<SearchDocumentRecord> {
     const row = requireReturnedRow(

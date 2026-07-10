@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => {
     projectRepository,
     harnessRunRepository: {},
     sourceRepository,
+    sourceDecisionImportRepository: {},
     drizzleSourceRepository,
     retrievalRepository: {},
     memoryRepository: {},
@@ -45,7 +46,8 @@ vi.mock("postgres", () => ({
 }));
 
 vi.mock("@krn/db", () => ({
-  createKrnDatabase: mocks.createKrnDatabase
+  createKrnDatabase: mocks.createKrnDatabase,
+  sql: vi.fn()
 }));
 
 vi.mock("@krn/db/adapters", () => ({
@@ -56,6 +58,9 @@ vi.mock("@krn/db/adapters", () => ({
     return mocks.harnessRunRepository;
   }),
   DrizzleSourceRepository: mocks.drizzleSourceRepository,
+  DrizzleSourceDecisionImportRepository: vi.fn(function DrizzleSourceDecisionImportRepository() {
+    return mocks.sourceDecisionImportRepository;
+  }),
   DrizzleRetrievalRepository: vi.fn(function DrizzleRetrievalRepository() {
     return mocks.retrievalRepository;
   }),

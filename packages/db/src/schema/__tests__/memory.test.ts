@@ -59,6 +59,7 @@ describe("memory governance schema", () => {
     expect("executionRunId" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("feedbackDeltaId" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("proposedBy" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("maintenanceIdentity" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("status" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("reviewer" in memorySchema.antiMemoryCandidates).toBe(true);
     expect("reviewedAt" in memorySchema.antiMemoryCandidates).toBe(true);

@@ -5,4 +5,5 @@ export * from "../outbox-repository.js";
 export * from "../project-repository.js";
 export * from "../retrieval-repository.js";
 export * from "../source-repository.js";
+export * from "../source-decision-import-repository.js";
 export * from "../types.js";

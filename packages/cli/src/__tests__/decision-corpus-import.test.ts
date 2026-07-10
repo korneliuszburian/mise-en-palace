@@ -490,10 +490,23 @@ describe("runDecisionCorpusImport", () => {
       },
       searchLexical: async () => []
     };
+    const sourceDecisionImportRepository: NonNullable<DatabaseRuntime["sourceDecisionImportRepository"]> = {
+      getSourceDecisionImportRow: async () => ({ status: "missing" })
+    };
+    const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
+      _lockKey,
+      work
+    ) => work({
+      sourceRepository,
+      retrievalRepository,
+      sourceDecisionImportRepository
+    });
     const rows = await persistDecisionCorpusImport({
       runtime: {
         sourceRepository,
-        retrievalRepository
+        retrievalRepository,
+        sourceDecisionImportRepository,
+        withTransaction
       },
       projectId: "project-1",
       fixture: {
@@ -583,6 +596,39 @@ describe("runDecisionCorpusImport", () => {
       smokeId: "unit-smoke",
       now
     })).rejects.toThrow("case decision-corpus-import-task expectedDecisionId must reference a current decision");
+    expect(repositoryWriteCount).toBe(0);
+  });
+
+  it("rejects an unresolvable evidence reference before repository writes", async () => {
+    let repositoryWriteCount = 0;
+    const failWrite = async (): Promise<never> => {
+      repositoryWriteCount += 1;
+      throw new Error("repository write should not run");
+    };
+    const sourceRepository = {
+      createSourceArtifact: failWrite
+    } as DatabaseRuntime["sourceRepository"];
+    const retrievalRepository = {
+      createSearchDocument: failWrite,
+      searchLexical: async () => []
+    } as NonNullable<DatabaseRuntime["retrievalRepository"]>;
+
+    await expect(persistDecisionCorpusImport({
+      runtime: {
+        sourceRepository,
+        retrievalRepository
+      },
+      projectId: "project-1",
+      fixture: {
+        ...fixture(),
+        decisions: fixture().decisions.map((row, index) => index === 0
+          ? { ...row, evidenceRef: "missing-evidence-ref" }
+          : row),
+        baseFixturePath
+      },
+      smokeId: "unit-smoke",
+      now
+    })).rejects.toThrow("unresolvable evidenceRef");
     expect(repositoryWriteCount).toBe(0);
   });
 });
