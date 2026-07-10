@@ -519,6 +519,7 @@ export const runBrainLoopSmokeCheck = async (
       sourceDecisionTraceTargetsForRun.map((target) =>
         sourceRepository.createSourceDecisionEdge({
           sourceClaimId: sourceClaim.id,
+          sourceDecisionId: sourceDecision.id,
           targetType: target.targetType,
           targetId: target.targetId,
           supportType: "implementation-boundary",

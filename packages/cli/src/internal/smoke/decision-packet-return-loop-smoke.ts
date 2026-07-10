@@ -403,6 +403,7 @@ const createFeedbackSourceClaim = async (
   const decisionTargetId = `architecture-decision:feedback:${input.marker}:${input.proof}`;
   await input.sourceRepository.createSourceDecisionEdge({
     sourceClaimId: claim.id,
+    sourceDecisionId: decision.id,
     targetType: "architecture_decision",
     targetId: decisionTargetId,
     supportType: "decision",
@@ -931,7 +932,7 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "current"
     }
   });
-  await sourceRepository.createSourceDecision({
+  const supersededDecision = await sourceRepository.createSourceDecision({
     projectId: input.projectId,
     sourceClaimId: supersededClaim.id,
     status: "adopt",
@@ -965,6 +966,7 @@ const runSourceConsensusProof = async (
   const supersededDecisionId = `architecture-decision:source-consensus:${input.marker}:superseded`;
   const currentSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
     sourceClaimId: currentClaim.id,
+    sourceDecisionId: currentDecision.id,
     targetType: "architecture_decision",
     targetId: currentDecisionId,
     supportType: "decision",
@@ -977,6 +979,7 @@ const runSourceConsensusProof = async (
   });
   const supersededSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
     sourceClaimId: supersededClaim.id,
+    sourceDecisionId: supersededDecision.id,
     targetType: "architecture_decision",
     targetId: supersededDecisionId,
     supportType: "decision",

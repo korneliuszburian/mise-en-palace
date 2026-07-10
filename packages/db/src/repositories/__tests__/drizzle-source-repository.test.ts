@@ -45,9 +45,11 @@ const createKnowledgeSourceDb = (rows: readonly unknown[]) => ({
     from: () => ({
       innerJoin: () => ({
         innerJoin: () => ({
-          where: () => ({
-            orderBy: () => ({
-              limit: () => Promise.resolve(rows)
+          innerJoin: () => ({
+            where: () => ({
+              orderBy: () => ({
+                limit: () => Promise.resolve(rows)
+              })
             })
           })
         })
@@ -101,6 +103,7 @@ const knowledgeSourceRow = (input: {
     sourceDecisionEdge: {
       id: `source-decision-edge-${input.id}`,
       sourceClaimId,
+      sourceDecisionId: `source-decision-${input.id}`,
       targetType: "memory_record",
       targetId: `knowledge-${input.id}`,
       supportType: input.edgeSupportType ?? "implementation-boundary",
@@ -231,6 +234,7 @@ describe("DrizzleSourceRepository", () => {
 
     expect(() => assertSourceDecisionEdgeGovernance({
       sourceClaimId: "source-claim-1",
+      sourceDecisionId: "source-decision-1",
       targetType: "harness_run",
       targetId: "execution-run-1",
       supportType: "background",
@@ -240,6 +244,19 @@ describe("DrizzleSourceRepository", () => {
 
     expect(() => assertSourceDecisionEdgeGovernance({
       sourceClaimId: "source-claim-1",
+      targetType: "harness_run",
+      targetId: "execution-run-1",
+      supportType: "implementation-boundary",
+      confidence: "medium",
+      notes: "Reviewed source decision support is required.",
+      sourceDecisionId: undefined
+    } as Parameters<typeof assertSourceDecisionEdgeGovernance>[0])).toThrow(
+      "SourceDecisionEdge requires sourceDecisionId"
+    );
+
+    expect(() => assertSourceDecisionEdgeGovernance({
+      sourceClaimId: "source-claim-1",
+      sourceDecisionId: "source-decision-1",
       targetType: "harness_run",
       targetId: " ",
       supportType: "implementation-boundary",

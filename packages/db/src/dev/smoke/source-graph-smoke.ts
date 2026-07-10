@@ -8,11 +8,14 @@ import {
 import type {
   SourceClaim,
   SourceClaimEdge,
+  SourceDecision,
+  SourceDecisionEdge,
   SourceConsensusTimelineReadback
 } from "@krn/core";
 import type {
   SourceRepository
 } from "@krn/core/repositories";
+import type { KrnDatabase } from "../../database.js";
 import type { SourceClaimTransitionSmokeReport } from "./source-claim-transition-smoke.js";
 
 import {
@@ -26,8 +29,10 @@ import {
 import { runSourceClaimTransitionSmokeCheck } from "./source-claim-transition-smoke.js";
 import {
   outboxEvents,
+  sourceDecisionEdges,
   sourceRejections
 } from "../../schema/index.js";
+import { DrizzleProjectRepository } from "../../repositories/drizzle-project-repository.js";
 
 export interface SourceGraphSmokeInput {
   databaseUrl: string;
@@ -67,6 +72,9 @@ export interface SourceGraphSmokeReport {
   sourceConsensusSupersededCount: number;
   sourceConsensusRejectedCount: number;
   sourceConsensusRelationEvidenceGapCount: number;
+  projectIsolationRejectedWrites: number;
+  sourceDecisionIdentityReadbackPassed: boolean;
+  legacyDecisionEdgeExcluded: boolean;
   outboxEventCount: number;
   sourceClaimTransition: SourceClaimTransitionSmokeReport;
   remainingMarkerCount: number;
@@ -117,6 +125,197 @@ const isSourceGraphInfluenceMetadata = (
   }
 
   return value.edgeKinds.every((edgeKind) => typeof edgeKind === "string");
+};
+
+const sourceWriteRejectedFor = async (
+  operation: () => Promise<unknown>,
+  expectedMessage: string
+): Promise<boolean> => {
+  try {
+    await operation();
+    return false;
+  } catch (error) {
+    return error instanceof Error && error.message.includes(expectedMessage);
+  }
+};
+
+interface SourceProjectIsolationSmokeProof {
+  projectIsolationRejectedWrites: number;
+  sourceDecisionIdentityReadbackPassed: boolean;
+  legacyDecisionEdgeExcluded: boolean;
+}
+
+const createSourceProjectIsolationSmokeProof = async (input: {
+  db: KrnDatabase;
+  executionRunId: string;
+  marker: string;
+  project: Readonly<{ id: string; workspaceId: string }>;
+  sourceClaim: SourceClaim;
+  sourceDecision: SourceDecision;
+  sourceDecisionEdge: SourceDecisionEdge;
+  sourceRepository: SourceRepository;
+}): Promise<SourceProjectIsolationSmokeProof> => {
+  const foreignProject = await new DrizzleProjectRepository(input.db).createProject({
+    workspaceId: input.project.workspaceId,
+    slug: `source-graph-foreign-${input.marker}`,
+    displayName: `source graph foreign ${input.marker}`,
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const foreignSourceArtifact = await input.sourceRepository.createSourceArtifact({
+    projectId: foreignProject.id,
+    kind: "operator_input",
+    sourceAuthority: "project-decision",
+    uri: `operator://source-graph-smoke/${input.marker}/foreign`,
+    title: "Foreign source graph smoke source",
+    contentHash: `source-graph-smoke-${input.marker}-foreign`,
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const foreignSourceClaim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: foreignSourceArtifact.id,
+    claim: "Foreign project source graph claim must not govern the primary project.",
+    mechanism: "Project-scoped source artifacts bind the claim to a separate project.",
+    krnImplication: "Cross-project source authority must fail closed.",
+    doesNotProve: "This probe does not prove source truth.",
+    sourceAuthority: "project-decision",
+    supportType: "implementation-boundary",
+    consumer: "src002 project isolation smoke",
+    falsifier: "The foreign source claim governs the primary project.",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const mismatchedAdoptionRejected = await sourceWriteRejectedFor(
+    () => input.sourceRepository.createSourceDecision({
+      projectId: input.project.id,
+      sourceClaimId: foreignSourceClaim.id,
+      status: "adopt",
+      decision: "Attempt a cross-project adoption.",
+      rationale: "This must be rejected by the source artifact project boundary.",
+      falsifier: "The foreign claim is adopted into the primary project.",
+      consumer: "src002 project isolation smoke",
+      metadata: { smokeId: input.marker }
+    }),
+    "SourceDecision projectId must match"
+  );
+  const foreignSourceDecision = await input.sourceRepository.createSourceDecision({
+    projectId: foreignProject.id,
+    sourceClaimId: foreignSourceClaim.id,
+    status: "adopt",
+    decision: "Adopt the foreign source graph probe only in its own project.",
+    rationale: "The foreign claim and artifact share the foreign project boundary.",
+    falsifier: "The source graph readback crosses project boundaries.",
+    consumer: "src002 project isolation smoke",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const foreignSourceDecisionEdge = await input.sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: foreignSourceClaim.id,
+    sourceDecisionId: foreignSourceDecision.id,
+    targetType: "harness_run",
+    targetId: input.executionRunId,
+    supportType: "implementation-boundary",
+    confidence: "high",
+    notes: "Foreign project source decision edge must remain project scoped.",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const crossProjectDecisionEdgeRejected = await sourceWriteRejectedFor(
+    () => input.sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: input.sourceClaim.id,
+      sourceDecisionId: foreignSourceDecision.id,
+      targetType: "harness_run",
+      targetId: input.executionRunId,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "A foreign decision must not support the primary claim.",
+      metadata: { smokeId: input.marker }
+    }),
+    "getSourceDecisionEdgeContext did not return a row"
+  );
+  const crossProjectClaimEdgeRejected = await sourceWriteRejectedFor(
+    () => input.sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: input.sourceClaim.id,
+      toSourceClaimId: foreignSourceClaim.id,
+      kind: "supports",
+      metadata: {
+        smokeId: input.marker,
+        consumer: "src002 project isolation smoke",
+        doesNotProve: "Cross-project claim edges must not persist."
+      }
+    }),
+    "SourceClaimEdge requires source records from the same project"
+  );
+  const crossProjectRejectionRejected = await sourceWriteRejectedFor(
+    () => input.sourceRepository.createSourceRejection({
+      projectId: input.project.id,
+      sourceArtifactId: foreignSourceArtifact.id,
+      sourceClaimId: foreignSourceClaim.id,
+      title: "Foreign project rejection probe",
+      attemptedClaim: "A foreign project rejection should be accepted.",
+      rejectedBecause: "unsupported",
+      reason: "Project mismatch must fail before the write.",
+      doesNotProve: "This probe does not prove source truth.",
+      consumer: "src002 project isolation smoke",
+      metadata: { smokeId: input.marker }
+    }),
+    "SourceRejection source artifact project does not match projectId"
+  );
+  const primaryKnowledgeSources = await input.sourceRepository.listSourceDecisionKnowledgeSources(
+    input.project.id,
+    20
+  );
+  const sourceDecisionIdentityReadbackPassed = primaryKnowledgeSources.some((source) =>
+    source.sourceDecision.id === input.sourceDecision.id &&
+    source.sourceDecisionEdge.id === input.sourceDecisionEdge.id &&
+    source.sourceDecisionEdge.sourceDecisionId === input.sourceDecision.id
+  ) && !primaryKnowledgeSources.some((source) =>
+    source.sourceDecision.id === foreignSourceDecision.id ||
+    source.sourceDecisionEdge.id === foreignSourceDecisionEdge.id
+  );
+  const [legacyDecisionEdge] = await input.db
+    .insert(sourceDecisionEdges)
+    .values({
+      sourceClaimId: input.sourceClaim.id,
+      targetType: "harness_run",
+      targetId: `legacy-source-decision-edge:${input.marker}`,
+      supportType: "implementation-boundary",
+      confidence: "low",
+      notes: "Legacy edge intentionally lacks exact SourceDecision identity.",
+      metadata: {
+        smokeId: input.marker,
+        legacyProjectIsolationProbe: true
+      }
+    })
+    .returning({ id: sourceDecisionEdges.id });
+  const currentEdgesForPrimaryClaim = await input.sourceRepository.listSourceDecisionEdgesForClaim(
+    input.sourceClaim.id
+  );
+  const legacyDecisionEdgeExcluded = legacyDecisionEdge !== undefined &&
+    currentEdgesForPrimaryClaim.some((edge) => edge.id === input.sourceDecisionEdge.id) &&
+    !currentEdgesForPrimaryClaim.some((edge) => edge.id === legacyDecisionEdge.id);
+  const projectIsolationRejectedWrites = [
+    mismatchedAdoptionRejected,
+    crossProjectDecisionEdgeRejected,
+    crossProjectClaimEdgeRejected,
+    crossProjectRejectionRejected
+  ].filter(Boolean).length;
+
+  return {
+    projectIsolationRejectedWrites,
+    sourceDecisionIdentityReadbackPassed,
+    legacyDecisionEdgeExcluded
+  };
 };
 
 const sourceConsensusRelationEvidenceGapCount = (
@@ -460,6 +659,7 @@ export const runSourceGraphSmokeCheck = async (
     });
     const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
       sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
       targetType: "harness_run",
       targetId: executionRun.id,
       supportType: "implementation-boundary",
@@ -468,6 +668,20 @@ export const runSourceGraphSmokeCheck = async (
       metadata: {
         smokeId: marker
       }
+    });
+    const {
+      projectIsolationRejectedWrites,
+      sourceDecisionIdentityReadbackPassed,
+      legacyDecisionEdgeExcluded
+    } = await createSourceProjectIsolationSmokeProof({
+      db,
+      executionRunId: executionRun.id,
+      marker,
+      project,
+      sourceClaim,
+      sourceDecision,
+      sourceDecisionEdge,
+      sourceRepository
     });
     const runClaims = await sourceRepository.listSourceClaimsForRun(executionRun.id);
     const runDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
@@ -555,8 +769,21 @@ export const runSourceGraphSmokeCheck = async (
           (edge) =>
             edge.id === sourceDecisionEdge.id &&
             edge.sourceClaimId === sourceClaim.id &&
+            edge.sourceDecisionId === sourceDecision.id &&
             edge.targetId === executionRun.id
         )
+      },
+      {
+        label: "source decision project isolation writes rejected",
+        passed: projectIsolationRejectedWrites === 4
+      },
+      {
+        label: "source decision identity project readback",
+        passed: sourceDecisionIdentityReadbackPassed
+      },
+      {
+        label: "legacy source decision edge excluded from activation readback",
+        passed: legacyDecisionEdgeExcluded
       },
       {
         label: "source claim invalidation edge listed",
@@ -650,6 +877,9 @@ export const runSourceGraphSmokeCheck = async (
       sourceConsensusSupersededCount: consensusReadback.supersededCount,
       sourceConsensusRejectedCount: consensusReadback.rejectedCount,
       sourceConsensusRelationEvidenceGapCount: consensusReadback.relationEvidenceGapCount,
+      projectIsolationRejectedWrites,
+      sourceDecisionIdentityReadbackPassed,
+      legacyDecisionEdgeExcluded,
       outboxEventCount: outboxRows[0]?.count ?? 0,
       sourceClaimTransition,
       remainingMarkerCount,

@@ -369,6 +369,7 @@ const seedRealRecallClaim = async (
 
   await runtime.sourceRepository.createSourceDecisionEdge({
     sourceClaimId,
+    sourceDecisionId,
     targetType: "architecture_decision",
     targetId: `real-recall-advantage-${variant.artifactSlug}-${decision.id}`,
     supportType: "implementation-boundary",

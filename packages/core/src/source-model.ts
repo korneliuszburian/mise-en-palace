@@ -253,6 +253,8 @@ export interface SourceDecision {
 export interface SourceDecisionEdge {
   id: SourceDecisionEdgeId;
   sourceClaimId: SourceClaimId;
+  /** Legacy rows may omit this until the src005 contraction quarantines them. */
+  sourceDecisionId?: SourceDecisionId;
   targetType: SourceDecisionTargetType;
   targetId: string;
   supportType: SourceSupportType;

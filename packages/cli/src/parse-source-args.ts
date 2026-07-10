@@ -130,10 +130,11 @@ export const formatSourceArtifactPreviewUsage = (): string =>
 
 export const formatSourceDecisionLinkUsage = (): string =>
   [
-    "Usage: krn source decision link --source-claim-id <id> --target-type <type> --target-id <id> --support-type <type> --confidence <low|medium|high> --notes \"...\" [--persist]",
+    "Usage: krn source decision link --source-claim-id <id> --source-decision-id <id> --target-type <type> --target-id <id> --support-type <type> --confidence <low|medium|high> --notes \"...\" [--persist]",
     "",
     "Required:",
     "--source-claim-id",
+    "--source-decision-id",
     "--target-type",
     "--target-id",
     "--support-type",
@@ -279,6 +280,7 @@ const sourceClaimRejectStringOptions = {
 
 const sourceDecisionLinkStringOptions = {
   "--source-claim-id": "sourceClaimId",
+  "--source-decision-id": "sourceDecisionId",
   "--target-type": "targetType",
   "--target-id": "targetId",
   "--support-type": "supportType",
@@ -495,6 +497,7 @@ const hasSourceDecisionLinkRequiredFields = (
 ): boolean =>
   [
     sourceCommand.sourceClaimId,
+    sourceCommand.sourceDecisionId,
     sourceCommand.targetType,
     sourceCommand.targetId,
     sourceCommand.supportType,
@@ -1292,6 +1295,9 @@ const parseSourceDecisionLinkToken = (
     assignOption: mapStringOptionAssignment<SourceDecisionLinkCommand, SourceDecisionLinkStringKey>({
       sourceClaimId: (command, value) => {
         command.sourceClaimId = value;
+      },
+      sourceDecisionId: (command, value) => {
+        command.sourceDecisionId = value;
       },
       targetType: (command, value) => {
         command.targetType = value;

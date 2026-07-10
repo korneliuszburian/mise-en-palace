@@ -526,6 +526,7 @@ export const runBrainSearchDbSmokeCheck = async (
 
     const sourceDecisionEdge = await runtime.sourceRepository.createSourceDecisionEdge({
       sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
       targetType: "architecture_decision",
       targetId: `memory-search-dogfood-${input.smokeId}`,
       supportType: "implementation-boundary",

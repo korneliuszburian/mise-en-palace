@@ -364,6 +364,7 @@ export const runCodexAdapterSmokeCheck = async (
     });
     await sourceRepository.createSourceDecisionEdge({
       sourceClaimId: adapterClaim.id,
+      sourceDecisionId: adapterDecision.id,
       targetType: "architecture_decision",
       targetId: adapterDecision.id,
       supportType: "implementation-boundary",

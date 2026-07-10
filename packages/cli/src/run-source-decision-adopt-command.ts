@@ -137,9 +137,19 @@ export const runSourceDecisionAdoptCommand = async (
       consumer: decisionInput.consumer,
       metadata: decisionInput.metadata
     });
+    if (
+      decisionInput.sourceClaimId !== undefined &&
+      databaseRuntime.sourceRepository.getSourceClaimForProject === undefined
+    ) {
+      throw new Error("Project-scoped SourceClaim lookup is unavailable");
+    }
+
     const sourceClaimReadback = decisionInput.sourceClaimId === undefined
       ? undefined
-      : await databaseRuntime.sourceRepository.getSourceClaimById(decisionInput.sourceClaimId);
+      : await databaseRuntime.sourceRepository.getSourceClaimForProject?.(
+          databaseRuntime.projectId,
+          decisionInput.sourceClaimId
+        );
 
     if (sourceClaimReadback === undefined) {
       throw new Error(`SourceClaim readback missing after adoption: ${decisionInput.sourceClaimId}`);
@@ -156,6 +166,7 @@ export const runSourceDecisionAdoptCommand = async (
     if (command.link === true) {
       const edgeInput = parseSourceDecisionEdgeInput({
         sourceClaimId: decisionInput.sourceClaimId,
+        sourceDecisionId: sourceDecision.id,
         targetType: command.linkTargetType,
         targetId: command.linkTargetId,
         supportType: command.linkSupportType,
@@ -165,6 +176,7 @@ export const runSourceDecisionAdoptCommand = async (
       });
       const sourceDecisionEdge = await databaseRuntime.sourceRepository.createSourceDecisionEdge({
         sourceClaimId: edgeInput.sourceClaimId,
+        sourceDecisionId: edgeInput.sourceDecisionId,
         targetType: edgeInput.targetType,
         targetId: edgeInput.targetId,
         supportType: edgeInput.supportType,

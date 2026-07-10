@@ -22,6 +22,7 @@ describe("source graph schema", () => {
     expect(sourceSchema.sourceDecisionEdgeConfidence.enumValues).toEqual(sourceDecisionEdgeConfidences);
     expect(sourceSchema.sourceRejectionReason.enumValues).toEqual(sourceRejectionReasons);
     expect("sourceDecisionEdges" in sourceSchema).toBe(true);
+    expect("sourceDecisionId" in sourceSchema.sourceDecisionEdges).toBe(true);
     expect("importId" in sourceSchema.sourceArtifacts).toBe(true);
     expect("importRowId" in sourceSchema.sourceArtifacts).toBe(true);
   });

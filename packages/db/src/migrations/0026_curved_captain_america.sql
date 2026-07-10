@@ -1,0 +1,3 @@
+ALTER TABLE "source_decision_edges" ADD COLUMN "source_decision_id" uuid;--> statement-breakpoint
+ALTER TABLE "source_decision_edges" ADD CONSTRAINT "source_decision_edges_source_decision_id_source_decisions_id_fk" FOREIGN KEY ("source_decision_id") REFERENCES "public"."source_decisions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "source_decision_edges_source_decision_id_idx" ON "source_decision_edges" USING btree ("source_decision_id");

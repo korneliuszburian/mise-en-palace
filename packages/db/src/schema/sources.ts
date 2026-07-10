@@ -210,6 +210,9 @@ export const sourceDecisionEdges = pgTable(
     sourceClaimId: uuid("source_claim_id")
       .notNull()
       .references(() => sourceClaims.id, { onDelete: "cascade" }),
+    sourceDecisionId: uuid("source_decision_id").references(() => sourceDecisions.id, {
+      onDelete: "set null"
+    }),
     targetType: sourceDecisionTargetType("target_type").notNull(),
     targetId: text("target_id").notNull(),
     supportType: sourceSupportType("support_type").notNull(),
@@ -220,6 +223,7 @@ export const sourceDecisionEdges = pgTable(
   },
   (table) => [
     index("source_decision_edges_source_claim_id_idx").on(table.sourceClaimId),
+    index("source_decision_edges_source_decision_id_idx").on(table.sourceDecisionId),
     index("source_decision_edges_target_idx").on(table.targetType, table.targetId),
     index("source_decision_edges_support_type_idx").on(table.supportType),
     index("source_decision_edges_confidence_idx").on(table.confidence)

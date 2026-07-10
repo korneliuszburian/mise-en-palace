@@ -43,6 +43,7 @@ const formatPreview = (
     "",
     "Source decision edge preview:",
     `sourceClaimId: ${edge.sourceClaimId}`,
+    `sourceDecisionId: ${edge.sourceDecisionId}`,
     `target: ${edge.targetType}/${edge.targetId}`,
     `supportType: ${edge.supportType}`,
     `confidence: ${edge.confidence}`,
@@ -62,6 +63,7 @@ const formatPersisted = (
     `sourceDecisionEdge: ${edgeId}`,
     `sourceDecisionEdgeReadback: ${readback}`,
     `sourceClaimId: ${edge.sourceClaimId}`,
+    `sourceDecisionId: ${edge.sourceDecisionId}`,
     `target: ${edge.targetType}/${edge.targetId}`,
     `supportType: ${edge.supportType}`,
     `confidence: ${edge.confidence}`,
@@ -77,6 +79,7 @@ export const runSourceDecisionLinkCommand = async (
   const command = runtime.command;
   const edgeInput = parseSourceDecisionEdgeInput({
     sourceClaimId: command.sourceClaimId,
+    sourceDecisionId: command.sourceDecisionId,
     targetType: command.targetType,
     targetId: command.targetId,
     supportType: command.supportType,
@@ -107,7 +110,12 @@ export const runSourceDecisionLinkCommand = async (
   });
 
   try {
-    const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(
+    if (databaseRuntime.sourceRepository.getSourceClaimForProject === undefined) {
+      throw new Error("Project-scoped SourceClaim lookup is unavailable");
+    }
+
+    const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimForProject(
+      databaseRuntime.projectId,
       edgeInput.sourceClaimId
     );
 
@@ -123,6 +131,7 @@ export const runSourceDecisionLinkCommand = async (
 
     const sourceDecisionEdge = await databaseRuntime.sourceRepository.createSourceDecisionEdge({
       sourceClaimId: edgeInput.sourceClaimId,
+      sourceDecisionId: edgeInput.sourceDecisionId,
       targetType: edgeInput.targetType,
       targetId: edgeInput.targetId,
       supportType: edgeInput.supportType,

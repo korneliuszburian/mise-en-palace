@@ -258,9 +258,10 @@ const createDecisionSupport = async (
     }
   });
   const sourceDecisionEdge = input.row.status === "current"
-    ? await input.sourceRepository.createSourceDecisionEdge({
-        sourceClaimId: input.sourceClaimId,
-        targetType: "architecture_decision",
+      ? await input.sourceRepository.createSourceDecisionEdge({
+          sourceClaimId: input.sourceClaimId,
+          sourceDecisionId: input.sourceDecisionId,
+          targetType: "architecture_decision",
         targetId: `source-decision-import:${input.metadata["importId"]}:${input.row.id}`,
         supportType: "implementation-boundary",
         confidence: "high",
@@ -434,6 +435,140 @@ const existingImportRows = async (
   });
 };
 
+const deprecateImportedSourceClaimIfStale = async (input: {
+  readonly sourceRepository: SourceDecisionImportSourceRepository;
+  readonly row: DecisionCorpusImportRow;
+  readonly sourceClaimId: string;
+}): Promise<void> => {
+  if (input.row.status !== "stale") {
+    return;
+  }
+
+  if (input.sourceRepository.deprecateSourceClaim === undefined) {
+    throw new Error("SourceClaim deprecation is unavailable for stale source decision import");
+  }
+
+  await input.sourceRepository.deprecateSourceClaim({
+    sourceClaimId: input.sourceClaimId,
+    revisitWhen: "Refresh imported decision evidence before future activation."
+  });
+};
+
+const projectScopedImportedSourceClaimReadback = async (input: {
+  readonly sourceRepository: SourceDecisionImportSourceRepository;
+  readonly projectId: ProjectId;
+  readonly decisionId: string;
+  readonly sourceClaimId: string;
+}): Promise<SourceClaim> => {
+  if (input.sourceRepository.getSourceClaimForProject === undefined) {
+    throw new Error("Project-scoped SourceClaim lookup is unavailable for source decision import");
+  }
+
+  const sourceClaim = await input.sourceRepository.getSourceClaimForProject(
+    input.projectId,
+    input.sourceClaimId
+  );
+
+  if (sourceClaim === undefined) {
+    throw new Error(`missing SourceClaim readback for imported decision ${input.decisionId}`);
+  }
+
+  return sourceClaim;
+};
+
+const persistSourceDecisionImportRow = async (input: {
+  readonly createSourceDecision: CreateSourceDecision;
+  readonly importId: string;
+  readonly prepared: PreparedSourceDecisionImportRow;
+  readonly projectId: ProjectId;
+  readonly retrievalRepository: SourceDecisionImportRetrievalRepository;
+  readonly sourceRepository: SourceDecisionImportSourceRepository;
+}): Promise<PersistedSourceDecisionImportRow> => {
+  const row = input.prepared.row;
+  const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
+    input.sourceRepository,
+    input.projectId,
+    input.importId,
+    input.prepared
+  );
+  const sourceClaim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
+    claim: row.statement,
+    mechanism: row.noteText,
+    krnImplication: row.statement,
+    doesNotProve: row.doesNotProve,
+    sourceAuthority: "project-decision",
+    supportType: row.status === "rejected" ? "rejection" : "implementation-boundary",
+    consumer: "source decision import",
+    falsifier: row.falsifier,
+    metadata: input.prepared.metadata
+  });
+  const sourceDecision = await input.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: sourceClaim.id,
+    status: expectedDecisionStatusFor(row),
+    decision: row.statement,
+    rationale: row.noteText,
+    falsifier: row.falsifier,
+    consumer: "source decision import",
+    metadata: input.prepared.metadata
+  });
+
+  await deprecateImportedSourceClaimIfStale({
+    sourceRepository: input.sourceRepository,
+    row,
+    sourceClaimId: sourceClaim.id
+  });
+  const sourceClaimReadback = await projectScopedImportedSourceClaimReadback({
+    sourceRepository: input.sourceRepository,
+    projectId: input.projectId,
+    decisionId: row.id,
+    sourceClaimId: sourceClaim.id
+  });
+
+  if (row.status === "rejected") {
+    return {
+      decisionId: row.id,
+      sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      sourceClaimId: sourceClaim.id,
+      sourceClaimStatus: sourceClaimReadback.status,
+      sourceDecisionId: sourceDecision.id,
+      sourceDecisionStatus: sourceDecision.status,
+      sourceRejectionId: await createRejectedPath({
+        sourceRepository: input.sourceRepository,
+        projectId: input.projectId,
+        row,
+        sourceArtifactId: sourceArtifact.id,
+        sourceClaimId: sourceClaim.id,
+        metadata: input.prepared.metadata
+      })
+    };
+  }
+
+  return {
+    decisionId: row.id,
+    sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
+    sourceClaimId: sourceClaim.id,
+    sourceClaimStatus: sourceClaimReadback.status,
+    sourceDecisionId: sourceDecision.id,
+    sourceDecisionStatus: sourceDecision.status,
+    ...await createDecisionSupport({
+      sourceRepository: input.sourceRepository,
+      retrievalRepository: input.retrievalRepository,
+      projectId: input.projectId,
+      row,
+      sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
+      metadata: input.prepared.metadata
+    })
+  };
+};
+
 const persistSourceDecisionImportRows = async (
   input: {
     readonly runtime: Pick<DatabaseRuntime, "sourceRepository" | "retrievalRepository">;
@@ -453,95 +588,14 @@ const persistSourceDecisionImportRows = async (
   const rows: PersistedSourceDecisionImportRow[] = [];
 
   for (const prepared of input.preparedRows) {
-    const row = prepared.row;
-    const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
+    rows.push(await persistSourceDecisionImportRow({
+      createSourceDecision,
+      retrievalRepository,
       sourceRepository,
-      input.projectId,
-      input.importId,
-      prepared
-    );
-    const sourceClaim = await sourceRepository.createSourceClaim({
-      sourceArtifactId: sourceArtifact.id,
-      sourceChunkId: sourceChunk.id,
-      claim: row.statement,
-      mechanism: row.noteText,
-      krnImplication: row.statement,
-      doesNotProve: row.doesNotProve,
-      sourceAuthority: "project-decision",
-      supportType: row.status === "rejected" ? "rejection" : "implementation-boundary",
-      consumer: "source decision import",
-      falsifier: row.falsifier,
-      metadata: prepared.metadata
-    });
-    const sourceDecision = await createSourceDecision({
       projectId: input.projectId,
-      sourceClaimId: sourceClaim.id,
-      status: expectedDecisionStatusFor(row),
-      decision: row.statement,
-      rationale: row.noteText,
-      falsifier: row.falsifier,
-      consumer: "source decision import",
-      metadata: prepared.metadata
-    });
-
-    if (row.status === "stale") {
-      if (sourceRepository.deprecateSourceClaim === undefined) {
-        throw new Error("SourceClaim deprecation is unavailable for stale source decision import");
-      }
-
-      await sourceRepository.deprecateSourceClaim({
-        sourceClaimId: sourceClaim.id,
-        revisitWhen: "Refresh imported decision evidence before future activation."
-      });
-    }
-
-    const sourceClaimReadback = await sourceRepository.getSourceClaimById(sourceClaim.id);
-
-    if (sourceClaimReadback === undefined) {
-      throw new Error(`missing SourceClaim readback for imported decision ${row.id}`);
-    }
-
-    if (row.status === "rejected") {
-      rows.push({
-        decisionId: row.id,
-        sourceArtifactId: sourceArtifact.id,
-        sourceChunkId: sourceChunk.id,
-        sourceClaimId: sourceClaim.id,
-        sourceClaimStatus: sourceClaimReadback.status,
-        sourceDecisionId: sourceDecision.id,
-        sourceDecisionStatus: sourceDecision.status,
-        sourceRejectionId: await createRejectedPath({
-          sourceRepository,
-          projectId: input.projectId,
-          row,
-          sourceArtifactId: sourceArtifact.id,
-          sourceClaimId: sourceClaim.id,
-          metadata: prepared.metadata
-        })
-      });
-      continue;
-    }
-
-    rows.push({
-      decisionId: row.id,
-      sourceArtifactId: sourceArtifact.id,
-      sourceChunkId: sourceChunk.id,
-      sourceClaimId: sourceClaim.id,
-      sourceClaimStatus: sourceClaimReadback.status,
-      sourceDecisionId: sourceDecision.id,
-      sourceDecisionStatus: sourceDecision.status,
-      ...await createDecisionSupport({
-        sourceRepository,
-        retrievalRepository,
-        projectId: input.projectId,
-        row,
-        sourceArtifactId: sourceArtifact.id,
-        sourceChunkId: sourceChunk.id,
-        sourceClaimId: sourceClaim.id,
-        sourceDecisionId: sourceDecision.id,
-        metadata: prepared.metadata
-      })
-    });
+      importId: input.importId,
+      prepared
+    }));
   }
 
   return rows;

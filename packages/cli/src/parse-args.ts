@@ -484,6 +484,7 @@ export type CliCommand =
       kind: "sourceDecisionLink";
       persist: boolean;
       sourceClaimId?: string;
+      sourceDecisionId?: string;
       targetType?: string;
       targetId?: string;
       supportType?: string;

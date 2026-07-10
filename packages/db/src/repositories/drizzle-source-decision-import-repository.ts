@@ -36,7 +36,10 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       .leftJoin(sourceChunks, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
       .leftJoin(sourceClaims, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .leftJoin(sourceDecisions, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
-      .leftJoin(sourceDecisionEdges, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
+      .leftJoin(sourceDecisionEdges, and(
+        eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id),
+        eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id)
+      ))
       .leftJoin(
         searchDocuments,
         and(

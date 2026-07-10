@@ -72,6 +72,9 @@ const formatSourceDecisionSupport = (
     : sourceDecisionSupport.map((decision) =>
         [
           `- source_claim:${decision.sourceClaimId}`,
+          ...(decision.sourceDecisionId === undefined
+            ? []
+            : [` source_decision:${decision.sourceDecisionId}`]),
           ` edge:${decision.sourceDecisionEdgeId}`,
           ` target:${decision.targetType}/${decision.targetId}`,
           ` supportType:${decision.supportType}`,

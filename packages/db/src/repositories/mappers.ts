@@ -738,6 +738,7 @@ export const mapSourceDecisionEdge = (
 ): SourceDecisionEdge => ({
   id: row.id,
   sourceClaimId: row.sourceClaimId,
+  ...(row.sourceDecisionId === null ? {} : { sourceDecisionId: row.sourceDecisionId }),
   targetType: row.targetType,
   targetId: row.targetId,
   supportType: row.supportType,

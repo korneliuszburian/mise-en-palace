@@ -366,6 +366,27 @@ describe("runDecisionCorpusImport", () => {
               updatedAt: now
             };
       },
+      getSourceClaimForProject: async (_projectId: string, id: string) => {
+        const claim = claims.get(id);
+
+        return claim === undefined
+          ? undefined
+          : {
+              id,
+              sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
+              claim: id,
+              mechanism: id,
+              krnImplication: id,
+              doesNotProve: id,
+              sourceAuthority: "project-decision" as const,
+              supportType: "implementation-boundary" as const,
+              consumer: "decision corpus import",
+              status: claim.status,
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            };
+      },
       createSourceDecision: async (input) => {
         const id = nextId("source-decision");
 
@@ -424,7 +445,7 @@ describe("runDecisionCorpusImport", () => {
           updatedAt: now
         };
       },
-      createSourceDecisionEdge: async () => {
+      createSourceDecisionEdge: async (input) => {
         const id = nextId("source-decision-edge");
 
         decisionEdges.push(id);
@@ -432,6 +453,7 @@ describe("runDecisionCorpusImport", () => {
         return {
           id,
           sourceClaimId: claims.keys().next().value ?? "source-claim-missing",
+          sourceDecisionId: input.sourceDecisionId,
           targetType: "architecture_decision" as const,
           targetId: id,
           supportType: "implementation-boundary" as const,

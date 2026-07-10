@@ -54,6 +54,7 @@ export interface CreateSourceDecisionInput {
 
 export interface CreateSourceDecisionEdgeInput {
   sourceClaimId: SourceDecisionEdge["sourceClaimId"];
+  sourceDecisionId: NonNullable<SourceDecisionEdge["sourceDecisionId"]>;
   targetType: SourceDecisionEdge["targetType"];
   targetId: SourceDecisionEdge["targetId"];
   supportType: SourceDecisionEdge["supportType"];

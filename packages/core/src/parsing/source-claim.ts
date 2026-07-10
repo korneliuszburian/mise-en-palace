@@ -69,6 +69,7 @@ export const SourceClaimInputSchema = z.object({
 
 export const SourceDecisionEdgeInputSchema = z.object({
   sourceClaimId: RequiredTextSchema,
+  sourceDecisionId: RequiredTextSchema,
   targetType: SourceDecisionTargetTypeSchema,
   targetId: RequiredTextSchema,
   supportType: SourceSupportTypeSchema,

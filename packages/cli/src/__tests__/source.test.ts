@@ -78,6 +78,9 @@ const unusedSourceRepository = {
   async getSourceClaimById(): Promise<never> {
     throw new Error("getSourceClaimById should not be called");
   },
+  async getSourceClaimForProject(_projectId: string, id: string): Promise<never> {
+    return this.getSourceClaimById(id);
+  },
   async listClaimsForProject(): Promise<never> {
     throw new Error("listClaimsForProject should not be called");
   },
@@ -661,6 +664,7 @@ describe("runCli", () => {
               return {
                 id: "source-decision-edge-1",
                 sourceClaimId: input.sourceClaimId,
+                sourceDecisionId: input.sourceDecisionId,
                 targetType: input.targetType,
                 targetId: input.targetId,
                 supportType: input.supportType,
@@ -990,6 +994,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",
@@ -1029,6 +1035,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",
@@ -1064,6 +1072,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",
@@ -1102,6 +1112,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",
@@ -1170,6 +1182,7 @@ describe("runCli", () => {
               return {
                 id: "source-decision-edge-1",
                 sourceClaimId: "source-claim-1",
+                sourceDecisionId: "source-decision-1",
                 targetType: "harness_run",
                 targetId: "execution-run-1",
                 supportType: "implementation-boundary",
@@ -1214,6 +1227,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",
@@ -1291,6 +1306,8 @@ describe("runCli", () => {
         "link",
         "--source-claim-id",
         "source-claim-1",
+        "--source-decision-id",
+        "source-decision-1",
         "--target-type",
         "harness_run",
         "--target-id",

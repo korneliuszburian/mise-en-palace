@@ -183,6 +183,13 @@
       "when": 1783670942990,
       "tag": "0025_far_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1783672989747,
+      "tag": "0026_curved_captain_america",
+      "breakpoints": true
     }
   ]
 }

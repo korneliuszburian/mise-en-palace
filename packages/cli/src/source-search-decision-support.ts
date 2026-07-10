@@ -20,6 +20,7 @@ export type SourceSearchDecisionSupportState =
 
 export interface SourceSearchDecisionSupport {
   sourceClaimId: SourceClaim["id"];
+  sourceDecisionId?: string;
   sourceDecisionEdgeId: string;
   targetType: SourceDecisionEdge["targetType"];
   targetId: string;
@@ -59,6 +60,7 @@ const sourceDecisionSupportFromEdge = (
   edge: SourceDecisionEdge
 ): SourceSearchDecisionSupport => ({
   sourceClaimId: edge.sourceClaimId,
+  ...(edge.sourceDecisionId === undefined ? {} : { sourceDecisionId: edge.sourceDecisionId }),
   sourceDecisionEdgeId: edge.id,
   targetType: edge.targetType,
   targetId: edge.targetId,
@@ -165,10 +167,12 @@ const sourceDecisionSupportScore = (
 const sourceDecisionSupportTargets = (
   support: readonly SourceSearchDecisionSupport[]
 ): readonly {
+  sourceDecisionId?: string;
   sourceDecisionEdgeId: string;
   targetType: SourceDecisionEdge["targetType"];
   targetId: string;
 }[] => support.map((item) => ({
+  ...(item.sourceDecisionId === undefined ? {} : { sourceDecisionId: item.sourceDecisionId }),
   sourceDecisionEdgeId: item.sourceDecisionEdgeId,
   targetType: item.targetType,
   targetId: item.targetId

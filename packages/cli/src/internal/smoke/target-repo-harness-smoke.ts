@@ -1424,6 +1424,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
     });
     await sourceRepository.createSourceDecisionEdge({
       sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
       targetType: "harness_run",
       targetId: executionRun.id,
       supportType: "implementation-boundary",

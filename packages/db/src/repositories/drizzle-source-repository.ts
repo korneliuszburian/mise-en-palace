@@ -97,10 +97,44 @@ const sourceClaimProjection = {
   updatedAt: sourceClaims.updatedAt
 } as const;
 
+const sourceDecisionEdgeProjection = {
+  id: sourceDecisionEdges.id,
+  sourceClaimId: sourceDecisionEdges.sourceClaimId,
+  sourceDecisionId: sourceDecisionEdges.sourceDecisionId,
+  targetType: sourceDecisionEdges.targetType,
+  targetId: sourceDecisionEdges.targetId,
+  supportType: sourceDecisionEdges.supportType,
+  confidence: sourceDecisionEdges.confidence,
+  notes: sourceDecisionEdges.notes,
+  metadata: sourceDecisionEdges.metadata,
+  createdAt: sourceDecisionEdges.createdAt
+} as const;
+
 interface SourceDecisionClaimContext {
   sourceClaim: SourceClaim;
   sourceArtifactProjectId: string | null;
 }
+
+interface SourceClaimProjectContext extends SourceDecisionClaimContext {}
+
+interface SourceDecisionEdgeContext {
+  sourceClaim: SourceClaim;
+  sourceDecision: SourceDecision;
+  sourceArtifactProjectId: string | null;
+}
+
+const selectSourceClaimProjectRow = (
+  tx: KrnDatabaseTransaction,
+  sourceClaimId: string
+) => tx
+  .select({
+    sourceClaim: sourceClaims,
+    sourceArtifactProjectId: sourceArtifacts.projectId
+  })
+  .from(sourceClaims)
+  .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+  .where(eq(sourceClaims.id, sourceClaimId))
+  .limit(1);
 
 const getSourceDecisionClaim = async (
   tx: KrnDatabaseTransaction,
@@ -111,20 +145,57 @@ const getSourceDecisionClaim = async (
   }
 
   const row = requireReturnedRow(
-    await tx
-      .select({
-        sourceClaim: sourceClaims,
-        sourceArtifactProjectId: sourceArtifacts.projectId
-      })
-      .from(sourceClaims)
-      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
-      .where(eq(sourceClaims.id, sourceClaimId))
-      .limit(1),
+    await selectSourceClaimProjectRow(tx, sourceClaimId),
     "getSourceClaimForSourceDecision"
   );
 
   return {
     sourceClaim: mapSourceClaim(row.sourceClaim),
+    sourceArtifactProjectId: row.sourceArtifactProjectId
+  };
+};
+
+const getSourceClaimProjectContext = async (
+  tx: KrnDatabaseTransaction,
+  sourceClaimId: string,
+  operation: string
+): Promise<SourceClaimProjectContext> => {
+  const row = requireReturnedRow(
+    await selectSourceClaimProjectRow(tx, sourceClaimId),
+    operation
+  );
+
+  return {
+    sourceClaim: mapSourceClaim(row.sourceClaim),
+    sourceArtifactProjectId: row.sourceArtifactProjectId
+  };
+};
+
+const getSourceDecisionEdgeContext = async (
+  tx: KrnDatabaseTransaction,
+  input: Pick<CreateSourceDecisionEdgeInput, "sourceClaimId" | "sourceDecisionId">
+): Promise<SourceDecisionEdgeContext> => {
+  const row = requireReturnedRow(
+    await tx
+      .select({
+        sourceClaim: sourceClaims,
+        sourceDecision: sourceDecisions,
+        sourceArtifactProjectId: sourceArtifacts.projectId
+      })
+      .from(sourceDecisions)
+      .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(and(
+        eq(sourceDecisions.id, input.sourceDecisionId),
+        eq(sourceClaims.id, input.sourceClaimId)
+      ))
+      .limit(1),
+    "getSourceDecisionEdgeContext"
+  );
+
+  return {
+    sourceClaim: mapSourceClaim(row.sourceClaim),
+    sourceDecision: mapSourceDecision(row.sourceDecision),
     sourceArtifactProjectId: row.sourceArtifactProjectId
   };
 };
@@ -143,7 +214,119 @@ const resolveSourceDecisionProjectId = (
     );
   }
 
+  if (sourceArtifactProjectId === null && inputProjectId !== undefined) {
+    throw new Error(
+      "SourceDecision projectId cannot be caller-invented for a project-less SourceArtifact"
+    );
+  }
+
   return sourceArtifactProjectId ?? inputProjectId;
+};
+
+const assertSameSourceProject = (
+  leftProjectId: string | null,
+  rightProjectId: string | null,
+  label: string
+): void => {
+  if (
+    leftProjectId === null ||
+    rightProjectId === null ||
+    leftProjectId !== rightProjectId
+  ) {
+    throw new Error(`${label} requires source records from the same project`);
+  }
+};
+
+const assertSourceDecisionEdgeContext = (
+  context: SourceDecisionEdgeContext
+): void => {
+  assertSourceDecisionSourceClaimCanSupport(context.sourceClaim);
+
+  if (context.sourceDecision.status !== "adopt") {
+    throw new Error(
+      `SourceDecisionEdge requires adopted SourceDecision; current status ${context.sourceDecision.status}`
+    );
+  }
+
+  if (context.sourceDecision.sourceClaimId !== context.sourceClaim.id) {
+    throw new Error("SourceDecisionEdge requires SourceDecision and SourceClaim to match");
+  }
+
+  if (
+    context.sourceDecision.projectId === undefined ||
+    context.sourceArtifactProjectId === null ||
+    context.sourceDecision.projectId !== context.sourceArtifactProjectId
+  ) {
+    throw new Error("SourceDecisionEdge requires SourceDecision and SourceClaim project to match");
+  }
+};
+
+const requireLinkedSourceRejectionProject = (
+  input: CreateSourceRejectionInput
+): void => {
+  if (
+    (input.sourceArtifactId !== undefined || input.sourceClaimId !== undefined) &&
+    input.projectId === undefined
+  ) {
+    throw new Error("SourceRejection projectId is required for linked source records");
+  }
+};
+
+const assertSourceRejectionArtifactProject = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateSourceRejectionInput
+): Promise<void> => {
+  if (input.sourceArtifactId === undefined) {
+    return;
+  }
+
+  const artifact = requireReturnedRow(
+    await tx
+      .select({ projectId: sourceArtifacts.projectId })
+      .from(sourceArtifacts)
+      .where(eq(sourceArtifacts.id, input.sourceArtifactId))
+      .limit(1),
+    "getSourceArtifactForSourceRejection"
+  );
+
+  if (artifact.projectId !== input.projectId) {
+    throw new Error("SourceRejection source artifact project does not match projectId");
+  }
+};
+
+const assertSourceRejectionClaimProject = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateSourceRejectionInput
+): Promise<void> => {
+  if (input.sourceClaimId === undefined) {
+    return;
+  }
+
+  const claim = await getSourceClaimProjectContext(
+    tx,
+    input.sourceClaimId,
+    "getSourceClaimForSourceRejection"
+  );
+
+  if (claim.sourceArtifactProjectId !== input.projectId) {
+    throw new Error("SourceRejection source claim project does not match projectId");
+  }
+
+  if (
+    input.sourceArtifactId !== undefined &&
+    input.sourceArtifactId !== claim.sourceClaim.sourceArtifactId
+  ) {
+    throw new Error("SourceRejection source claim and source artifact do not match");
+  }
+};
+
+const validateSourceRejectionReferences = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateSourceRejectionInput
+): Promise<void> => {
+  requireLinkedSourceRejectionProject(input);
+  await assertSourceRejectionArtifactProject(tx, input);
+  await assertSourceRejectionClaimProject(tx, input);
 };
 
 const arbitrateSourceClaimTerminalReview = async (
@@ -199,6 +382,7 @@ const canSourceDecisionSeedKnowledge = (
   source.sourceDecision.sourceClaimId === source.sourceClaim.id &&
   source.sourceClaim.status === "accepted" &&
   source.sourceDecisionEdge.sourceClaimId === source.sourceClaim.id &&
+  source.sourceDecisionEdge.sourceDecisionId === source.sourceDecision.id &&
   isDecisionGradeSourceSupportType(source.sourceDecisionEdge.supportType);
 
 const canRejectedSourceDecisionSeedAntiMemory = (
@@ -270,10 +454,17 @@ export const assertSourceDecisionGovernance = (
 export const assertSourceDecisionEdgeGovernance = (
   input: Pick<
     CreateSourceDecisionEdgeInput,
-    "sourceClaimId" | "targetType" | "targetId" | "supportType" | "confidence" | "notes"
+    | "sourceClaimId"
+    | "sourceDecisionId"
+    | "targetType"
+    | "targetId"
+    | "supportType"
+    | "confidence"
+    | "notes"
   >
 ): void => {
   requireText(input.sourceClaimId, "SourceDecisionEdge requires sourceClaimId");
+  requireText(input.sourceDecisionId, "SourceDecisionEdge requires sourceDecisionId");
   requireText(input.targetType, "SourceDecisionEdge requires targetType");
   requireText(input.targetId, "SourceDecisionEdge requires targetId");
   requireText(input.confidence, "SourceDecisionEdge requires confidence");
@@ -552,9 +743,14 @@ export class DrizzleSourceRepository implements SourceRepository {
       })
       .from(sourceDecisions)
       .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
-      .innerJoin(sourceDecisionEdges, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .innerJoin(sourceDecisionEdges, and(
+        eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id),
+        eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id)
+      ))
       .where(and(
         eq(sourceDecisions.projectId, projectId),
+        eq(sourceDecisions.projectId, sourceArtifacts.projectId),
         eq(sourceDecisions.status, "adopt"),
         eq(sourceClaims.status, "accepted"),
         inArray(sourceDecisionEdges.supportType, decisionGradeSourceSupportTypes)
@@ -583,9 +779,11 @@ export class DrizzleSourceRepository implements SourceRepository {
       })
       .from(sourceDecisions)
       .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .innerJoin(sourceRejections, eq(sourceRejections.sourceClaimId, sourceClaims.id))
       .where(and(
         eq(sourceDecisions.projectId, projectId),
+        eq(sourceDecisions.projectId, sourceArtifacts.projectId),
         eq(sourceDecisions.status, "reject"),
         eq(sourceClaims.status, "rejected"),
         eq(sourceRejections.projectId, projectId)
@@ -606,25 +804,24 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceClaimEdgeGovernance(input);
 
     return this.db.transaction(async (tx) => {
-      const fromSourceClaim = requireReturnedRow(
-        await tx
-          .select()
-          .from(sourceClaims)
-          .where(eq(sourceClaims.id, input.fromSourceClaimId))
-          .limit(1),
+      const fromSourceClaim = await getSourceClaimProjectContext(
+        tx,
+        input.fromSourceClaimId,
         "getFromSourceClaimForSourceClaimEdge"
       );
-      const toSourceClaim = requireReturnedRow(
-        await tx
-          .select()
-          .from(sourceClaims)
-          .where(eq(sourceClaims.id, input.toSourceClaimId))
-          .limit(1),
+      const toSourceClaim = await getSourceClaimProjectContext(
+        tx,
+        input.toSourceClaimId,
         "getToSourceClaimForSourceClaimEdge"
       );
 
-      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(fromSourceClaim));
-      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(toSourceClaim));
+      assertSourceDecisionSourceClaimCanSupport(fromSourceClaim.sourceClaim);
+      assertSourceDecisionSourceClaimCanSupport(toSourceClaim.sourceClaim);
+      assertSameSourceProject(
+        fromSourceClaim.sourceArtifactProjectId,
+        toSourceClaim.sourceArtifactProjectId,
+        "SourceClaimEdge"
+      );
 
       const row = requireReturnedRow(
         await tx
@@ -672,22 +869,15 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceDecisionEdgeGovernance(input);
 
     return this.db.transaction(async (tx) => {
-      const sourceClaim = requireReturnedRow(
-        await tx
-          .select()
-          .from(sourceClaims)
-          .where(eq(sourceClaims.id, input.sourceClaimId))
-          .limit(1),
-        "getSourceClaimForSourceDecisionEdge"
-      );
-
-      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(sourceClaim));
+      const context = await getSourceDecisionEdgeContext(tx, input);
+      assertSourceDecisionEdgeContext(context);
 
       const row = requireReturnedRow(
         await tx
           .insert(sourceDecisionEdges)
           .values({
             sourceClaimId: input.sourceClaimId,
+            sourceDecisionId: input.sourceDecisionId,
             targetType: input.targetType,
             targetId: input.targetId,
             supportType: input.supportType,
@@ -705,6 +895,7 @@ export class DrizzleSourceRepository implements SourceRepository {
           ...smokePayload(input.metadata),
           sourceDecisionEdgeId: row.id,
           sourceClaimId: row.sourceClaimId,
+          sourceDecisionId: row.sourceDecisionId,
           targetType: row.targetType,
           targetId: row.targetId
         }
@@ -730,9 +921,19 @@ export class DrizzleSourceRepository implements SourceRepository {
     sourceClaimId: SourceDecisionEdge["sourceClaimId"]
   ): Promise<SourceDecisionEdge[]> {
     const rows = await this.db
-      .select()
+      .select(sourceDecisionEdgeProjection)
       .from(sourceDecisionEdges)
-      .where(eq(sourceDecisionEdges.sourceClaimId, sourceClaimId));
+      .innerJoin(sourceDecisions, eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id))
+      .innerJoin(sourceClaims, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(and(
+        eq(sourceDecisionEdges.sourceClaimId, sourceClaimId),
+        eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id),
+        eq(sourceDecisions.sourceClaimId, sourceClaims.id),
+        eq(sourceDecisions.status, "adopt"),
+        eq(sourceClaims.status, "accepted"),
+        eq(sourceDecisions.projectId, sourceArtifacts.projectId)
+      ));
 
     return rows.map(mapSourceDecisionEdge);
   }
@@ -741,17 +942,7 @@ export class DrizzleSourceRepository implements SourceRepository {
     executionRunId: ExecutionRunId
   ): Promise<SourceDecisionEdge[]> {
     const rows = await this.db
-      .select({
-        id: sourceDecisionEdges.id,
-        sourceClaimId: sourceDecisionEdges.sourceClaimId,
-        targetType: sourceDecisionEdges.targetType,
-        targetId: sourceDecisionEdges.targetId,
-        supportType: sourceDecisionEdges.supportType,
-        confidence: sourceDecisionEdges.confidence,
-        notes: sourceDecisionEdges.notes,
-        metadata: sourceDecisionEdges.metadata,
-        createdAt: sourceDecisionEdges.createdAt
-      })
+      .select(sourceDecisionEdgeProjection)
       .from(sourceDecisionEdges)
       .innerJoin(sourceClaims, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
       .where(eq(sourceClaims.executionRunId, executionRunId));
@@ -761,6 +952,8 @@ export class DrizzleSourceRepository implements SourceRepository {
 
   async createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection> {
     return this.db.transaction(async (tx) => {
+      await validateSourceRejectionReferences(tx, input);
+
       const row = requireReturnedRow(
         await tx
           .insert(sourceRejections)
