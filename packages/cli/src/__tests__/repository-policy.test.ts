@@ -244,6 +244,32 @@ describe("repository policy boundaries", () => {
     expect(agents).toContain("docs/VERIFICATION_GATES.md");
   });
 
+  it("keeps focused architecture decision links valid and complete", () => {
+    const index = readRootFile("docs/adr/README.md");
+    const adrPaths = [
+      "docs/adr/0002-index-subordinate-to-canonical-authority.md",
+      "docs/adr/0003-usefulness-evidence-states.md",
+      "docs/adr/0004-decision-packet-application-identity.md",
+      "docs/adr/0005-active-versus-historical-evidence.md",
+      "docs/adr/0006-bounded-mcp-transport.md"
+    ];
+    const requiredSections = [
+      "## Decision",
+      "## Rejected alternative",
+      "## Consumer",
+      "## Falsifier",
+      "## Contraction / rollback"
+    ];
+
+    for (const adrPath of adrPaths) {
+      const adr = readRootFile(adrPath);
+      expect(index).toContain(`./${adrPath.slice("docs/adr/".length)}`);
+      for (const section of requiredSections) {
+        expect(adr, `${adrPath} missing ${section}`).toContain(section);
+      }
+    }
+  });
+
   it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
     const security = readRootFile("SECURITY.md");
     const contributing = readRootFile("CONTRIBUTING.md");
