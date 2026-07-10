@@ -551,6 +551,8 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       proposedBy: "maintenance:expire_stale_memory",
       key: "memory-expired-1",
+      maintenanceIdentity:
+        "maintenance:expire_stale_memory:maintenance-queue-1:memory-expired-1:review_memory_invalidation",
       appliesTo: "frontend-template-standard",
       status: "candidate",
       metadata: {
@@ -680,6 +682,8 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates[0]).toMatchObject({
       feedbackDeltaId: "feedback-delta-1",
       proposedBy: "maintenance:review_feedback_delta",
+      maintenanceIdentity:
+        "maintenance:review_feedback_delta:maintenance-queue-1:source_claim:source-claim-stale-1:stale",
       invalidatedBySourceClaimIds: ["source-claim-stale-1"],
       appliesTo: "source_claim:source-claim-stale-1",
       metadata: {

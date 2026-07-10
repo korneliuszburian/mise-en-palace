@@ -1,0 +1,2 @@
+ALTER TABLE "anti_memory_candidates" ADD COLUMN "maintenance_identity" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "anti_memory_candidates_project_maintenance_identity_unique" ON "anti_memory_candidates" USING btree ("project_id","maintenance_identity");

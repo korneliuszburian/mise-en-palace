@@ -435,6 +435,9 @@ const antiMemoryCandidateInsertValues = (
   const row: AntiMemoryCandidateInsertRow = {
     projectId: input.projectId,
     proposedBy: input.proposedBy,
+    ...(input.maintenanceIdentity === undefined
+      ? {}
+      : { maintenanceIdentity: input.maintenanceIdentity }),
     key: input.key,
     status: input.status ?? "candidate",
     invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
@@ -1061,24 +1064,50 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     assertAntiMemoryCandidateInvariants(input, "Anti-memory candidate");
 
     return this.db.transaction(async (tx) => {
-      const row = requireReturnedRow(
-        await tx
-          .insert(antiMemoryCandidates)
-          .values(antiMemoryCandidateInsertValues(input))
-          .returning(),
+      const insert = tx
+        .insert(antiMemoryCandidates)
+        .values(antiMemoryCandidateInsertValues(input));
+      const insertedRows = input.maintenanceIdentity === undefined
+        ? await insert.returning()
+        : await insert
+          .onConflictDoNothing({
+            target: [antiMemoryCandidates.projectId, antiMemoryCandidates.maintenanceIdentity]
+          })
+          .returning();
+      let row = insertedRows[0];
+      const created = row !== undefined;
+
+      if (row === undefined && input.maintenanceIdentity !== undefined) {
+        row = (await tx
+          .select()
+          .from(antiMemoryCandidates)
+          .where(and(
+            eq(antiMemoryCandidates.projectId, input.projectId),
+            eq(antiMemoryCandidates.maintenanceIdentity, input.maintenanceIdentity)
+          ))
+          .limit(1))[0];
+      }
+
+      const resolvedRow = requireReturnedRow(
+        row === undefined ? [] : [row],
         "createAntiMemoryCandidate"
       );
 
-      await tx.insert(outboxEvents).values({
-        topic: "anti_memory.candidate.created",
-        payload: {
-          ...smokePayload(input.metadata),
-          antiMemoryCandidateId: row.id,
-          projectId: row.projectId
-        }
-      });
+      if (created) {
+        await tx.insert(outboxEvents).values({
+          topic: "anti_memory.candidate.created",
+          payload: {
+            ...smokePayload(input.metadata),
+            ...(input.maintenanceIdentity === undefined
+              ? {}
+              : { maintenanceIdentity: input.maintenanceIdentity }),
+            antiMemoryCandidateId: resolvedRow.id,
+            projectId: resolvedRow.projectId
+          }
+        });
+      }
 
-      return mapAntiMemoryCandidate(row);
+      return mapAntiMemoryCandidate(resolvedRow);
     });
   }
 

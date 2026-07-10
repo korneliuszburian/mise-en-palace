@@ -1006,3 +1006,4 @@
 {"id":"int-f231d35b","kind":"field_change","created_at":"2026-07-10T01:25:27.179213212Z","actor":"korneliuszburian","issue_id":"mise-en-palace-b83t","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-809adcfb","kind":"field_change","created_at":"2026-07-10T01:36:21.523114535Z","actor":"korneliuszburian","issue_id":"mise-en-palace-8d6v","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-be023d5b","kind":"field_change","created_at":"2026-07-10T01:47:27.355804587Z","actor":"korneliuszburian","issue_id":"mise-en-palace-x0rk","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-37db9260","kind":"field_change","created_at":"2026-07-10T01:55:56.297878868Z","actor":"korneliuszburian","issue_id":"mise-en-palace-upnx","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}

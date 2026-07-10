@@ -200,6 +200,7 @@ export interface AntiMemoryCandidate extends ValidityWindow {
   executionRunId?: ExecutionRunId;
   feedbackDeltaId?: FeedbackDeltaId;
   proposedBy: string;
+  maintenanceIdentity?: string;
   key: string;
   status: AntiMemoryCandidateStatus;
   rejectedClaim?: string;

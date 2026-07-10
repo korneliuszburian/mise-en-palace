@@ -137,6 +137,7 @@ const knowledgeSubjectFor = (
 
 const antiMemoryCandidateForFeedback = (input: {
   readonly feedbackDelta: FeedbackDelta;
+  readonly maintenanceQueueRecordId: string;
   readonly projectId: string;
   readonly outcome: FeedbackMaintenanceOutcome;
   readonly subject: FeedbackMaintenanceSubject;
@@ -159,6 +160,9 @@ const antiMemoryCandidateForFeedback = (input: {
     projectId: input.projectId,
     feedbackDeltaId: input.feedbackDelta.id,
     proposedBy: "maintenance:review_feedback_delta",
+    maintenanceIdentity:
+      `maintenance:review_feedback_delta:${input.maintenanceQueueRecordId}:` +
+      `${subject.subjectRef}:${outcome.outcome}`,
     key: `feedback-maintenance:${input.feedbackDelta.id}:${subject.subjectRef}:${outcome.outcome}`,
     status: "candidate",
     rejectedClaim:
@@ -244,7 +248,7 @@ export const createFeedbackDeltaMaintenanceHandler = (
 ): MaintenanceQueueHandler => ({
   jobType: "review_feedback_delta",
   declaredWrites: ["anti_memory_candidates"],
-  async run({ job }) {
+  async run({ job, record }) {
     if (job.jobType !== "review_feedback_delta") {
       return {
         status: "skipped",
@@ -296,6 +300,7 @@ export const createFeedbackDeltaMaintenanceHandler = (
       const antiMemoryCandidate = await input.memoryRepository.createAntiMemoryCandidate(
         antiMemoryCandidateForFeedback({
           feedbackDelta: feedbackDeltaRecord,
+          maintenanceQueueRecordId: record.id,
           outcome: candidate.outcome,
           projectId: job.payload.projectId,
           subject: candidate.subject,

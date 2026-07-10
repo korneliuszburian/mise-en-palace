@@ -2,6 +2,7 @@ import type {
   Sql
 } from "postgres";
 import {
+  buildMaintenanceQueueWriteBoundaryReadback,
   describeMaintenanceJob
 } from "@krn/core";
 
@@ -13,6 +14,15 @@ import {
 import {
   DrizzleMaintenanceQueueRepository
 } from "../../repositories/drizzle-maintenance-queue-repository.js";
+import {
+  DrizzleMemoryRepository
+} from "../../repositories/drizzle-memory-repository.js";
+import {
+  DrizzleProjectRepository
+} from "../../repositories/drizzle-project-repository.js";
+import {
+  createExpireStaleMemoryMaintenanceHandler
+} from "../../repositories/expire-stale-memory-maintenance-handler.js";
 import {
   maintenanceQueueTypes
 } from "../../repositories/maintenance-queue-types.js";
@@ -37,11 +47,16 @@ export interface MaintenanceQueueSmokeReport {
   queuedReadbackCount: number;
   claimedRecordCount: number;
   recoveredRecordCount: number;
+  candidateConcurrentRunCount: number;
+  candidateReplayRunCount: number;
+  candidatePersistedCount: number;
+  candidateStableId: boolean;
   successRecordedCount: number;
   skipRecordedCount: number;
   retryRecordedCount: number;
   deadLetterRecordedCount: number;
   cleanupDeletedCount: number;
+  candidateCleanupDeletedCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -257,6 +272,47 @@ const settleMaintenanceQueueSmokeRecord = async (
   return settlementKind;
 };
 
+const candidateIdFromOutcome = (
+  outcome: Awaited<ReturnType<ReturnType<typeof createExpireStaleMemoryMaintenanceHandler>["run"]>>,
+  label: string
+): string => {
+  if (outcome.status !== "succeeded" || outcome.createdReviewCandidates?.length !== 1) {
+    throw new Error(`Maintenance queue smoke ${label} did not create one review candidate`);
+  }
+
+  const candidate = outcome.createdReviewCandidates[0];
+
+  if (candidate === undefined) {
+    throw new Error(`Maintenance queue smoke ${label} did not return a candidate id`);
+  }
+
+  return candidate.id;
+};
+
+const createCandidateProofProject = async (
+  projectRepository: DrizzleProjectRepository,
+  marker: string
+) => {
+  const workspace = await projectRepository.createWorkspace({
+    slug: `maintenance-queue-candidate-${marker}`,
+    displayName: `Maintenance queue candidate ${marker}`,
+    metadata: {
+      fixtureMarker: marker,
+      smokeId: marker
+    }
+  });
+  const project = await projectRepository.createProject({
+    workspaceId: workspace.id,
+    slug: `maintenance-queue-candidate-${marker}`,
+    displayName: `Maintenance queue candidate ${marker}`,
+    metadata: {
+      smokeId: marker
+    }
+  });
+
+  return project;
+};
+
 export const runMaintenanceQueueSmokeCheck = async (
   input: MaintenanceQueueSmokeInput
 ): Promise<MaintenanceQueueSmokeReport> => {
@@ -268,11 +324,15 @@ export const runMaintenanceQueueSmokeCheck = async (
 
   const marker = normalizeSmokeSlugPart(input.smokeId);
   const { client, db } = createSmokeDatabase(input.databaseUrl);
+  const concurrentCandidateDatabaseA = createSmokeDatabase(input.databaseUrl);
+  const concurrentCandidateDatabaseB = createSmokeDatabase(input.databaseUrl);
   const repository = new DrizzleMaintenanceQueueRepository(db);
+  const projectRepository = new DrizzleProjectRepository(db);
   const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
 
   try {
+    await projectRepository.cleanupFixtureProjectRecords(marker);
     await deleteMarkerRows(client, marker);
 
     const enqueuedRecords: MaintenanceQueueRecord[] = [];
@@ -349,9 +409,120 @@ export const runMaintenanceQueueSmokeCheck = async (
       throw new Error("Maintenance queue smoke record settlement counts did not match expected proof");
     }
 
+    const candidateProject = await createCandidateProofProject(projectRepository, marker);
+    const candidateMemoryRepositoryA = new DrizzleMemoryRepository(
+      concurrentCandidateDatabaseA.db
+    );
+    const candidateMemoryRepositoryB = new DrizzleMemoryRepository(
+      concurrentCandidateDatabaseB.db
+    );
+    const staleMemory = await candidateMemoryRepositoryA.createMemoryRecord({
+      projectId: candidateProject.id,
+      key: `maintenance-queue-smoke:${marker}:stale-memory`,
+      kind: "procedure",
+      summary: "A stale memory used to prove candidate replay safety.",
+      body: "This memory exists only to drive the maintenance candidate smoke.",
+      owner: "maintenance-queue-smoke",
+      confidence: 70,
+      applicationGuidance: "Review the candidate before any durable mutation.",
+      invalidationRule: "A newer reviewed memory replaces this stale fixture.",
+      sourceLineage: [{
+        sourceId: `maintenance-queue-smoke:${marker}`,
+        note: "maintenance candidate idempotency smoke"
+      }],
+      isUserPreference: false,
+      validFrom: "2026-07-01T00:00:00.000Z",
+      validUntil: "2026-07-02T00:00:00.000Z",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const candidateProofRecord: MaintenanceQueueRecord = {
+      id: `maintenance-candidate-proof-${marker}`,
+      jobType: "expire_stale_memory",
+      queueKey: `expire_stale_memory:candidate-proof:${marker}`,
+      status: "running",
+      payload: {
+        projectId: candidateProject.id,
+        reason: "maintenance candidate idempotency smoke",
+        olderThan: "2026-07-08T00:00:00.000Z"
+      },
+      attempts: 1,
+      maxAttempts: 3,
+      runAfter: "2026-07-08T00:00:00.000Z",
+      lockedAt: "2026-07-08T00:00:00.000Z",
+      lockedBy: "maintenance-candidate-idempotency-smoke",
+      createdAt: "2026-07-08T00:00:00.000Z",
+      updatedAt: "2026-07-08T00:00:00.000Z"
+    };
+    const candidateProofJob = {
+      jobType: "expire_stale_memory" as const,
+      payload: {
+        projectId: candidateProject.id,
+        reason: "maintenance candidate idempotency smoke",
+        olderThan: "2026-07-08T00:00:00.000Z"
+      }
+    };
+    const candidateProofWriteBoundary = buildMaintenanceQueueWriteBoundaryReadback(
+      "expire_stale_memory"
+    );
+    const candidateHandlerA = createExpireStaleMemoryMaintenanceHandler({
+      memoryRepository: candidateMemoryRepositoryA
+    });
+    const candidateHandlerB = createExpireStaleMemoryMaintenanceHandler({
+      memoryRepository: candidateMemoryRepositoryB
+    });
+    const [concurrentOutcomeA, concurrentOutcomeB] = await Promise.all([
+      candidateHandlerA.run({
+        record: candidateProofRecord,
+        job: candidateProofJob,
+        writeBoundary: candidateProofWriteBoundary
+      }),
+      candidateHandlerB.run({
+        record: candidateProofRecord,
+        job: candidateProofJob,
+        writeBoundary: candidateProofWriteBoundary
+      })
+    ]);
+    const concurrentCandidateIdA = candidateIdFromOutcome(
+      concurrentOutcomeA,
+      "concurrent run A"
+    );
+    const concurrentCandidateIdB = candidateIdFromOutcome(
+      concurrentOutcomeB,
+      "concurrent run B"
+    );
+    const replayOutcome = await candidateHandlerA.run({
+      record: candidateProofRecord,
+      job: candidateProofJob,
+      writeBoundary: candidateProofWriteBoundary
+    });
+    const replayCandidateId = candidateIdFromOutcome(replayOutcome, "replay run");
+    const candidateRows = await client<{ count: number }[]>`
+      select count(*)::int as count
+      from anti_memory_candidates
+      where project_id = ${candidateProject.id}
+        and maintenance_identity = ${
+          `maintenance:expire_stale_memory:${candidateProofRecord.id}:` +
+          `${staleMemory.id}:review_memory_invalidation`
+        }
+    `;
+    const candidatePersistedCount = candidateRows[0]?.count ?? 0;
+    const candidateStableId =
+      concurrentCandidateIdA === concurrentCandidateIdB &&
+      concurrentCandidateIdA === replayCandidateId;
+
+    if (candidatePersistedCount !== 1 || !candidateStableId) {
+      throw new Error("Maintenance queue smoke duplicated a semantic maintenance candidate");
+    }
+
     const cleanup = await repository.cleanupTestMaintenanceQueues({ maintenanceQueueIds });
     const remainingMarkerCount = await countMarkerRows(client, marker);
-    cleanedUp = cleanup.deletedCount === enqueuedRecords.length && remainingMarkerCount === 0;
+    const candidateCleanupDeletedCount = await projectRepository.cleanupFixtureProjectRecords(marker);
+    cleanedUp =
+      cleanup.deletedCount === enqueuedRecords.length &&
+      candidateCleanupDeletedCount === 1 &&
+      remainingMarkerCount === 0;
 
     return {
       writeBoundaryValidatedCount: writeBoundary.writeBoundaryValidatedCount,
@@ -359,22 +530,31 @@ export const runMaintenanceQueueSmokeCheck = async (
       queuedReadbackCount,
       claimedRecordCount,
       recoveredRecordCount,
+      candidateConcurrentRunCount: 2,
+      candidateReplayRunCount: 1,
+      candidatePersistedCount,
+      candidateStableId,
       successRecordedCount: settlementCounts.success,
       skipRecordedCount: settlementCounts.skip,
       retryRecordedCount: settlementCounts.retry,
       deadLetterRecordedCount: settlementCounts.deadLetter,
       cleanupDeletedCount: cleanup.deletedCount,
+      candidateCleanupDeletedCount,
       remainingMarkerCount,
       cleanedUp
     };
   } catch (error) {
+    await projectRepository.cleanupFixtureProjectRecords(marker);
     await deleteMarkerRows(client, marker);
     throw error;
   } finally {
     if (!cleanedUp) {
+      await projectRepository.cleanupFixtureProjectRecords(marker);
       await deleteMarkerRows(client, marker);
     }
 
     await client.end();
+    await concurrentCandidateDatabaseA.client.end();
+    await concurrentCandidateDatabaseB.client.end();
   }
 };

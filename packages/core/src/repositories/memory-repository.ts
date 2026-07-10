@@ -142,6 +142,7 @@ export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
   executionRunId?: ExecutionRunId;
   feedbackDeltaId?: FeedbackDeltaId;
   proposedBy: string;
+  maintenanceIdentity?: string;
   key: string;
   status?: MemoryCandidateCreateStatus;
   rejectedClaim?: string;

@@ -88,11 +88,11 @@ const memoryGuidanceColumns = () => ({
 const memoryCandidateProposalColumns = () => ({
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: requiredProjectIdColumn(),
-  executionRunId: executionRunIdColumn(),
-  feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
-    onDelete: "set null"
-  }),
-  proposedBy: text("proposed_by").notNull()
+    executionRunId: executionRunIdColumn(),
+    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
+      onDelete: "set null"
+    }),
+    proposedBy: text("proposed_by").notNull()
 });
 
 const memoryCandidateReviewColumns = () => ({
@@ -266,6 +266,7 @@ export const antiMemoryCandidates = pgTable(
   "anti_memory_candidates",
   {
     ...memoryCandidateProposalColumns(),
+    maintenanceIdentity: text("maintenance_identity"),
     key: text("key").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     ...antiMemoryEvidenceColumns(),
@@ -275,6 +276,10 @@ export const antiMemoryCandidates = pgTable(
     index("anti_memory_candidates_project_id_idx").on(table.projectId),
     index("anti_memory_candidates_execution_run_id_idx").on(table.executionRunId),
     index("anti_memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
+    uniqueIndex("anti_memory_candidates_project_maintenance_identity_unique").on(
+      table.projectId,
+      table.maintenanceIdentity
+    ),
     index("anti_memory_candidates_status_idx").on(table.status),
     index("anti_memory_candidates_key_idx").on(table.key),
     index("anti_memory_candidates_valid_until_idx").on(table.validUntil),

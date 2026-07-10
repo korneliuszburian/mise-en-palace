@@ -51,6 +51,9 @@ const antiMemoryCandidateFor = (input: {
   return {
     projectId: input.projectId,
     proposedBy: "maintenance:expire_stale_memory",
+    maintenanceIdentity:
+      `maintenance:expire_stale_memory:${input.maintenanceQueueRecordId}:` +
+      `${candidate.memoryRecordId}:${candidate.action}`,
     key: candidate.memoryRecordId,
     status: "candidate",
     rejectedClaim:

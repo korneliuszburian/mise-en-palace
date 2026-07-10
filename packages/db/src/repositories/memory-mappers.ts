@@ -291,6 +291,9 @@ export const mapAntiMemoryCandidate = (row: AntiMemoryCandidateRow): AntiMemoryC
     projectId: row.projectId,
     ...candidateRunRefs(row),
     proposedBy: row.proposedBy,
+    ...(row.maintenanceIdentity === null
+      ? {}
+      : { maintenanceIdentity: row.maintenanceIdentity }),
     key: row.key,
     status: row.status,
     ...antiMemoryFields(row),
