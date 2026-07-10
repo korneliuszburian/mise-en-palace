@@ -97,6 +97,7 @@ describe("repository policy boundaries", () => {
     expect(workflow).toContain('github.event.before');
     expect(workflow).toContain("git rev-list --max-parents=0 HEAD");
     expect(workflow).toContain('git diff --check "$base_sha" "${{ github.sha }}"');
+    expect(workflow.match(/fetch-depth: 0/gu)).toHaveLength(3);
     expect(workflow.match(/run: git diff --check\n/gu)).toHaveLength(2);
     expect(workflow).toContain("timeout --signal=TERM --kill-after=10s 120s pnpm db:ready");
     expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
