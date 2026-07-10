@@ -263,4 +263,14 @@ describe("repository policy boundaries", () => {
     expect(workflow).not.toContain("continue-on-error: true");
     expect(workflow.split("uses:").length - 1).toBe(9);
   });
+
+  it("keeps Beads history validation and retention policy explicit", () => {
+    const operations = readRootFile("docs/BEADS_OPERATIONS.md");
+    const contributing = readRootFile("CONTRIBUTING.md");
+
+    expect(operations).toContain("180 days");
+    expect(operations).toContain("No automated destructive compaction is enabled");
+    expect(operations).toContain("validate-beads-history.mjs validate");
+    expect(contributing).toContain("Beads");
+  });
 });

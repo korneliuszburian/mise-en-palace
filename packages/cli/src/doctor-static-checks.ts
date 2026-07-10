@@ -5,13 +5,9 @@ import {
   renderExecutionBriefText
 } from "@krn/codex-adapter";
 import {
-  DrizzleProjectRepository,
   DrizzleMaintenanceQueueRepository,
   runMaintenanceQueueRecord
 } from "@krn/db/adapters";
-import {
-  runInitConnectSmokeCheck
-} from "@krn/db/dev";
 import {
   outboxEvents,
   projectKernels,
@@ -43,9 +39,6 @@ import {
 import {
   runInitCommand
 } from "./run-init-command.js";
-import {
-  runTargetRepoHarnessSmokeCheck
-} from "./internal/smoke/target-repo-harness-smoke.js";
 
 const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
   const exists = await Promise.all(paths.map((targetPath) => pathExists(targetPath)));
@@ -284,7 +277,7 @@ const hasDbSmokeRoute = (
   return parsed?.kind === "dbSmoke" && parsed.target === target;
 };
 
-const hasInitConnectSmokeProof = (
+const hasInitConnectSmokeCapability = (
   packageJson: Record<string, unknown> | undefined
 ): boolean =>
   readScriptStatus(
@@ -292,10 +285,9 @@ const hasInitConnectSmokeProof = (
     "db:smoke:init-connect",
     "krn db smoke init-connect"
   ).startsWith("available") &&
-  hasDbSmokeRoute("initConnect", "init-connect") &&
-  hasFunction(runInitConnectSmokeCheck);
+  hasDbSmokeRoute("initConnect", "init-connect");
 
-const hasTargetHarnessSmokeProof = (
+const hasTargetHarnessSmokeCapability = (
   packageJson: Record<string, unknown> | undefined
 ): boolean =>
   readScriptStatus(
@@ -303,15 +295,7 @@ const hasTargetHarnessSmokeProof = (
     "db:smoke:target-repo-harness",
     "krn db smoke target-repo-harness"
   ).startsWith("available") &&
-  hasDbSmokeRoute("targetRepoHarness", "target-repo-harness") &&
-  hasFunction(runTargetRepoHarnessSmokeCheck);
-
-const hasCrossProjectLeakageProof = (
-  targetHarnessSmokeProven: boolean
-): boolean =>
-  targetHarnessSmokeProven &&
-  hasFunction(DrizzleProjectRepository.prototype.getLatestProjectKernel) &&
-  hasFunction(DrizzleProjectRepository.prototype.listRepoInstallationsForProject);
+  hasDbSmokeRoute("targetRepoHarness", "target-repo-harness");
 
 const hasForbiddenTargetSurface = async (fixturePath: string): Promise<boolean> =>
   await pathExistsAny([
@@ -329,9 +313,8 @@ export const checkTargetRepoReadiness = async (repoRoot: string): Promise<Doctor
   const initCommandAvailable = hasTargetInitCommand();
   const fixtureAvailable = await hasTargetFixture(fixturePath);
   const projectRegistrationSchemaPresent = hasProjectRegistrationSchema();
-  const initConnectSmokeProven = hasInitConnectSmokeProof(packageJson);
-  const targetHarnessSmokeProven = hasTargetHarnessSmokeProof(packageJson);
-  const crossProjectLeakageProofKnown = hasCrossProjectLeakageProof(targetHarnessSmokeProven);
+  const initConnectSmokeAvailable = hasInitConnectSmokeCapability(packageJson);
+  const targetHarnessSmokeAvailable = hasTargetHarnessSmokeCapability(packageJson);
   const forbiddenSurfacePresent = await hasForbiddenTargetSurface(fixturePath);
 
   return [
@@ -361,25 +344,25 @@ export const checkTargetRepoReadiness = async (repoRoot: string): Promise<Doctor
     },
     {
       label: "Init-connect smoke",
-      status: initConnectSmokeProven
-        ? "proven (pnpm db:smoke:init-connect)"
+      status: initConnectSmokeAvailable
+        ? "available (pnpm db:smoke:init-connect; run it for proof)"
         : "unverified (pnpm db:smoke:init-connect missing)",
-      outcome: initConnectSmokeProven ? "proven" : "runtime_unverified",
-      severity: passOrWarning(initConnectSmokeProven)
+      outcome: initConnectSmokeAvailable ? "available" : "runtime_unverified",
+      severity: passOrWarning(initConnectSmokeAvailable)
     },
     {
       label: "Target repo harness smoke",
-      status: targetHarnessSmokeProven
-        ? "proven (pnpm db:smoke:target-repo-harness)"
+      status: targetHarnessSmokeAvailable
+        ? "available (pnpm db:smoke:target-repo-harness; run it for proof)"
         : "unverified (pnpm db:smoke:target-repo-harness missing)",
-      outcome: targetHarnessSmokeProven ? "proven" : "runtime_unverified",
-      severity: passOrWarning(targetHarnessSmokeProven)
+      outcome: targetHarnessSmokeAvailable ? "available" : "runtime_unverified",
+      severity: passOrWarning(targetHarnessSmokeAvailable)
     },
     {
       label: "Cross-project leakage proof",
-      status: crossProjectLeakageProofKnown ? "known" : "unproven",
-      outcome: crossProjectLeakageProofKnown ? "known" : "runtime_unverified",
-      severity: passOrWarning(crossProjectLeakageProofKnown)
+      status: "unverified (run pnpm db:smoke:target-repo-harness)",
+      outcome: "runtime_unverified",
+      severity: "warning"
     },
     {
       label: "Target repo forbidden surfaces",

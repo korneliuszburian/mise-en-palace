@@ -11,8 +11,22 @@ import {
   deriveTargetRepoReadiness
 } from "../doctor-readiness.js";
 import { runCli } from "../run-cli.js";
+import type {
+  DoctorCheck
+} from "../run-doctor-command.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const currentProof = {
+  command: "pnpm krn doctor",
+  status: "passed" as const,
+  capturedAt: new Date().toISOString(),
+  freshness: "current" as const,
+  storeIdentity: "postgres://localhost:54329/krn#doctor-test"
+};
+const currentProjectProof = {
+  ...currentProof,
+  projectId: "project-fixture"
+};
 
 describe("runCli", () => {
   it("prints a read-only doctor report", async () => {
@@ -100,11 +114,15 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Project registration schema: present (Project, RepoInstallation, ProjectKernel)"
     );
-    expect(result.stdout).toContain("Init-connect smoke: proven (pnpm db:smoke:init-connect)");
     expect(result.stdout).toContain(
-      "Target repo harness smoke: proven (pnpm db:smoke:target-repo-harness)"
+      "Init-connect smoke: available (pnpm db:smoke:init-connect; run it for proof)"
     );
-    expect(result.stdout).toContain("Cross-project leakage proof: known");
+    expect(result.stdout).toContain(
+      "Target repo harness smoke: available (pnpm db:smoke:target-repo-harness; run it for proof)"
+    );
+    expect(result.stdout).toContain(
+      "Cross-project leakage proof: unverified (run pnpm db:smoke:target-repo-harness)"
+    );
     expect(result.stdout).toContain("Target repo forbidden surfaces: absent");
     expect(result.stdout).toContain(
       "Target repo readiness: preview only (set KRN_DATABASE_URL and run init-connect and target repo harness smokes for proof)"
@@ -185,11 +203,17 @@ describe("runCli", () => {
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (4/4 applied)" }
     ];
-    const sourceGraphReady = [
+    const sourceGraphReady: DoctorCheck[] = [
       { label: "Source graph schema", status: "ready (8/8 tables present)" },
       { label: "SourceRepository read path", status: "reachable" },
       { label: "Source graph smoke", status: "available (pnpm db:smoke:source-graph)" },
-      { label: "Source graph runtime proof", status: "ready (claims 1, edges 1, rejections 1)" },
+      {
+        label: "Source graph runtime proof",
+        status: "ready (claims 1, edges 1, rejections 1)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProof
+      },
       { label: "Source crawler/research layer", status: "absent" },
       { label: "Separate graph DB", status: "absent" }
     ];
@@ -219,13 +243,16 @@ describe("runCli", () => {
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (5/5 applied)" }
     ];
-    const memoryGovernanceReady = [
+    const memoryGovernanceReady: DoctorCheck[] = [
       { label: "Memory governance schema", status: "ready (7/7 tables present)" },
       { label: "MemoryRepository read path", status: "reachable" },
       { label: "Memory governance smoke", status: "available (pnpm db:smoke:memory-governance)" },
       {
         label: "Memory governance runtime proof",
-        status: "ready (candidates 1, records 1, applications 1, anti-memory 1)"
+        status: "ready (candidates 1, records 1, applications 1, anti-memory 1)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProof
       },
       { label: "Runtime markdown memory", status: "absent" },
       { label: "Automatic memory mutation", status: "absent" }
@@ -270,7 +297,7 @@ describe("runCli", () => {
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (6/6 applied)" }
     ];
-    const retrievalReady = [
+    const retrievalReady: DoctorCheck[] = [
       { label: "Retrieval substrate schema", status: "ready (8/8 tables present)" },
       { label: "RetrievalRepository read path", status: "reachable" },
       {
@@ -279,7 +306,10 @@ describe("runCli", () => {
       },
       {
         label: "Retrieval substrate runtime proof",
-        status: "ready (search documents 4, candidates 2, activation decisions 2, exclusions 1)"
+        status: "ready (search documents 4, candidates 2, activation decisions 2, exclusions 1)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProof
       },
       { label: "Separate vector/search DB", status: "absent" },
       { label: "Naive RAG dump command", status: "absent" }
@@ -324,13 +354,16 @@ describe("runCli", () => {
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (3/3 applied)" }
     ];
-    const activationReady = [
+    const activationReady: DoctorCheck[] = [
       { label: "Activation domain contracts", status: "present" },
       { label: "Activation engine surface", status: "present" },
       { label: "Activation smoke", status: "available (pnpm db:smoke:activation)" },
       {
         label: "Activation smoke runtime proof",
-        status: "ready (decisions 6, inclusions 2, exclusions 4)"
+        status: "ready (decisions 6, inclusions 2, exclusions 4)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProof
       },
       { label: "Broad context dump", status: "absent" },
       { label: "Core requiredSkills field", status: "absent" }
@@ -411,7 +444,7 @@ describe("runCli", () => {
       { label: "pgvector", status: "available" },
       { label: "migrations", status: "verified (8/8 applied)" }
     ];
-    const targetRepoReady = [
+    const targetRepoReady: DoctorCheck[] = [
       {
         label: "Target repo init command",
         status: "available (krn init --connect --repo <path> --persist)"
@@ -424,12 +457,27 @@ describe("runCli", () => {
         label: "Project registration schema",
         status: "present (Project, RepoInstallation, ProjectKernel)"
       },
-      { label: "Init-connect smoke", status: "proven (pnpm db:smoke:init-connect)" },
+      {
+        label: "Init-connect smoke",
+        status: "proven (pnpm db:smoke:init-connect)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProjectProof
+      },
       {
         label: "Target repo harness smoke",
-        status: "proven (pnpm db:smoke:target-repo-harness)"
+        status: "proven (pnpm db:smoke:target-repo-harness)",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProjectProof
       },
-      { label: "Cross-project leakage proof", status: "known" },
+      {
+        label: "Cross-project leakage proof",
+        status: "known",
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProjectProof
+      },
       { label: "Target repo forbidden surfaces", status: "absent" }
     ];
 

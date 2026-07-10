@@ -23,6 +23,15 @@ import type {
   DoctorCheck
 } from "../run-doctor-command.js";
 
+const currentProjectProof = {
+  command: "pnpm krn doctor",
+  status: "passed" as const,
+  capturedAt: new Date().toISOString(),
+  freshness: "current" as const,
+  storeIdentity: "postgres://localhost:54329/krn#doctor-test",
+  projectId: "project-fixture"
+};
+
 const postgresReadyTyped: DoctorCheck[] = [
   {
     label: "Postgres config",
@@ -237,19 +246,22 @@ describe("doctorReadiness", () => {
         label: "Init-connect smoke",
         status: "init-connect proof ok after wording change",
         outcome: "proven",
-        severity: "pass"
+        severity: "pass",
+        proof: currentProjectProof
       },
       {
         label: "Target repo harness smoke",
         status: "target harness proof ok after wording change",
         outcome: "proven",
-        severity: "pass"
+        severity: "pass",
+        proof: currentProjectProof
       },
       {
         label: "Cross-project leakage proof",
         status: "project scope proof ok after wording change",
-        outcome: "known",
-        severity: "pass"
+        outcome: "proven",
+        severity: "pass",
+        proof: currentProjectProof
       },
       {
         label: "Target repo forbidden surfaces",

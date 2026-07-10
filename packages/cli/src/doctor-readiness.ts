@@ -2,6 +2,9 @@ import type {
   DoctorCheck,
   DoctorOutcome
 } from "./run-doctor-command.js";
+import {
+  isCurrentDoctorProof
+} from "./doctor-proof.js";
 
 const findCheck = (
   checks: readonly DoctorCheck[],
@@ -17,6 +20,12 @@ const findCheckOutcome = (
   checks: readonly DoctorCheck[],
   label: DoctorCheck["label"]
 ): DoctorOutcome | undefined => findCheck(checks, label)?.outcome;
+
+const hasCurrentRuntimeProof = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"],
+  expectation: Parameters<typeof isCurrentDoctorProof>[1] = {}
+): boolean => isCurrentDoctorProof(findCheck(checks, label), expectation);
 
 export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): DoctorCheck => {
   const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
@@ -193,7 +202,10 @@ export const deriveSourceGraphReadiness = (
     "Source graph smoke",
     "available"
   );
-  const runtimeProofStatus = findCheckStatus(sourceGraphChecks, "Source graph runtime proof");
+  const runtimeProofPresent = hasCurrentRuntimeProof(
+    sourceGraphChecks,
+    "Source graph runtime proof"
+  );
   const sourceCrawlerStatus = findCheckStatus(sourceGraphChecks, "Source crawler/research layer");
   const graphDbStatus = findCheckStatus(sourceGraphChecks, "Separate graph DB");
 
@@ -246,7 +258,7 @@ export const deriveSourceGraphReadiness = (
     };
   }
 
-  if (runtimeProofStatus?.startsWith("ready") !== true) {
+  if (!runtimeProofPresent) {
     return {
       label: "Source graph readiness",
       status: "runtime unverified (run pnpm db:smoke:source-graph)"
@@ -276,7 +288,7 @@ export const deriveMemoryGovernanceReadiness = (
     "Memory governance smoke",
     "available"
   );
-  const runtimeProofStatus = findCheckStatus(
+  const runtimeProofPresent = hasCurrentRuntimeProof(
     memoryGovernanceChecks,
     "Memory governance runtime proof"
   );
@@ -342,7 +354,7 @@ export const deriveMemoryGovernanceReadiness = (
     };
   }
 
-  if (runtimeProofStatus?.startsWith("ready") !== true) {
+  if (!runtimeProofPresent) {
     return {
       label: "Memory governance readiness",
       status: "runtime unverified (run pnpm db:smoke:memory-governance)"
@@ -372,7 +384,7 @@ export const deriveRetrievalSubstrateReadiness = (
     "Retrieval substrate smoke",
     "available"
   );
-  const runtimeProofStatus = findCheckStatus(
+  const runtimeProofPresent = hasCurrentRuntimeProof(
     retrievalChecks,
     "Retrieval substrate runtime proof"
   );
@@ -429,7 +441,7 @@ export const deriveRetrievalSubstrateReadiness = (
     };
   }
 
-  if (runtimeProofStatus?.startsWith("ready") !== true) {
+  if (!runtimeProofPresent) {
     return {
       label: "Retrieval substrate readiness",
       status: "runtime unverified (run pnpm db:smoke:retrieval-substrate)"
@@ -459,7 +471,7 @@ export const deriveActivationReadiness = (
     "Activation smoke",
     "available"
   );
-  const runtimeProofStatus = findCheckStatus(
+  const runtimeProofPresent = hasCurrentRuntimeProof(
     activationChecks,
     "Activation smoke runtime proof"
   );
@@ -537,7 +549,7 @@ export const deriveActivationReadiness = (
     };
   }
 
-  if (runtimeProofStatus?.startsWith("ready") !== true) {
+  if (!runtimeProofPresent) {
     return {
       label: "Activation readiness",
       status: "runtime unverified (run pnpm db:smoke:activation)"
@@ -769,23 +781,20 @@ export const deriveTargetRepoReadiness = (
     "present",
     (status) => status?.startsWith("present") === true
   );
-  const initConnectSmokeProven = hasCheckOutcome(
+  const initConnectSmokeProven = hasCurrentRuntimeProof(
     targetRepoChecks,
     "Init-connect smoke",
-    "proven",
-    (status) => status?.startsWith("proven") === true
+    { requiresProjectId: true }
   );
-  const targetHarnessSmokeProven = hasCheckOutcome(
+  const targetHarnessSmokeProven = hasCurrentRuntimeProof(
     targetRepoChecks,
     "Target repo harness smoke",
-    "proven",
-    (status) => status?.startsWith("proven") === true
+    { requiresProjectId: true }
   );
-  const leakageProofKnown = hasCheckOutcome(
+  const leakageProofKnown = hasCurrentRuntimeProof(
     targetRepoChecks,
     "Cross-project leakage proof",
-    "known",
-    (status) => status === "known"
+    { requiresProjectId: true }
   );
   const forbiddenSurfacePresent = hasCheckOutcome(
     targetRepoChecks,
@@ -822,13 +831,6 @@ export const deriveTargetRepoReadiness = (
     };
   }
 
-  if (!leakageProofKnown) {
-    return {
-      label: "Target repo readiness",
-      status: "runtime unverified (cross-project leakage proof missing)"
-    };
-  }
-
   if (brainStore.postgresNotConfigured) {
     return {
       label: "Target repo readiness",
@@ -848,6 +850,13 @@ export const deriveTargetRepoReadiness = (
     return {
       label: "Target repo readiness",
       status: "blocked (memory store not ready)"
+    };
+  }
+
+  if (!leakageProofKnown) {
+    return {
+      label: "Target repo readiness",
+      status: "runtime unverified (cross-project leakage proof missing)"
     };
   }
 

@@ -15,6 +15,9 @@ Before changing code:
 4. Keep the consumer, falsifier, and non-proof boundary explicit. Use the
    repo-local skill required by the task.
 
+Beads history validation, retention, and redaction ownership are defined in
+`docs/BEADS_OPERATIONS.md`; run its validator before any manual archive.
+
 For a code change, run the smallest relevant proof path and then the root gates:
 
 ```sh

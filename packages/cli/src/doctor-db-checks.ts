@@ -27,6 +27,10 @@ import {
   readScriptStatus,
   readTreeText
 } from "./doctor-readiness-support.js";
+import {
+  createDoctorProof,
+  formatDoctorProof
+} from "./doctor-proof.js";
 
 const findCheckStatus = (
   checks: readonly DoctorCheck[],
@@ -62,6 +66,34 @@ const skippedChecks = (
   labels: readonly DoctorCheck["label"][],
   gate: Extract<BrainStoreGate, { kind: "skipped" }>
 ): DoctorCheck[] => labels.map((label) => skippedCheck(label, gate));
+
+const runtimeProofCheck = (
+  label: DoctorCheck["label"],
+  databaseUrl: string,
+  probeName: string,
+  smokeCommand: string,
+  runtimeProofReady: boolean,
+  details: string
+): DoctorCheck => {
+  if (!runtimeProofReady) {
+    return {
+      label,
+      status: `unverified (run ${smokeCommand})`,
+      outcome: "runtime_unverified",
+      severity: "warning"
+    };
+  }
+
+  const proof = createDoctorProof(databaseUrl, probeName);
+
+  return {
+    label,
+    status: formatDoctorProof(proof, details),
+    outcome: "proven",
+    severity: "pass",
+    proof
+  };
+};
 
 type MigrationReadinessReport = Awaited<ReturnType<typeof inspectMigrationReadiness>>;
 
@@ -423,12 +455,14 @@ export const checkSourceGraph = async (
           : `failed (${report.sourceRepositoryError ?? "unknown source repository error"})`
       },
       smokeCheck,
-      {
-        label: "Source graph runtime proof",
-        status: report.runtimeProofReady
-          ? `ready (claims ${report.sourceClaimCount}, edges ${report.sourceDecisionEdgeCount}, rejections ${report.sourceRejectionCount})`
-          : "unverified (run pnpm db:smoke:source-graph)"
-      },
+      runtimeProofCheck(
+        "Source graph runtime proof",
+        gate.databaseUrl,
+        "source-graph",
+        "pnpm db:smoke:source-graph",
+        report.runtimeProofReady,
+        `claims ${report.sourceClaimCount}, edges ${report.sourceDecisionEdgeCount}, rejections ${report.sourceRejectionCount}`
+      ),
       ...forbiddenChecks
     ];
   } catch (error) {
@@ -501,12 +535,14 @@ export const checkMemoryGovernance = async (
           : `failed (${report.memoryRepositoryError ?? "unknown memory repository error"})`
       },
       smokeCheck,
-      {
-        label: "Memory governance runtime proof",
-        status: report.runtimeProofReady
-          ? `ready (candidates ${report.memoryCandidateCount}, records ${report.memoryRecordCount}, applications ${report.memoryApplicationCount}, anti-memory ${report.antiMemoryRecordCount})`
-          : "unverified (run pnpm db:smoke:memory-governance)"
-      },
+      runtimeProofCheck(
+        "Memory governance runtime proof",
+        gate.databaseUrl,
+        "memory-governance",
+        "pnpm db:smoke:memory-governance",
+        report.runtimeProofReady,
+        `candidates ${report.memoryCandidateCount}, records ${report.memoryRecordCount}, applications ${report.memoryApplicationCount}, anti-memory ${report.antiMemoryRecordCount}`
+      ),
       ...forbiddenChecks
     ];
   } catch (error) {
@@ -600,12 +636,14 @@ export const checkRetrievalSubstrate = async (
           : `failed (${report.retrievalRepositoryError ?? "unknown retrieval repository error"})`
       },
       smokeCheck,
-      {
-        label: "Retrieval substrate runtime proof",
-        status: report.runtimeProofReady
-          ? `ready (search documents ${report.searchDocumentCount}, candidates ${report.retrievalCandidateCount}, activation decisions ${report.activationDecisionCount}, exclusions ${report.contextExclusionCount})`
-          : "unverified (run pnpm db:smoke:retrieval-substrate)"
-      },
+      runtimeProofCheck(
+        "Retrieval substrate runtime proof",
+        gate.databaseUrl,
+        "retrieval-substrate",
+        "pnpm db:smoke:retrieval-substrate",
+        report.runtimeProofReady,
+        `search documents ${report.searchDocumentCount}, candidates ${report.retrievalCandidateCount}, activation decisions ${report.activationDecisionCount}, exclusions ${report.contextExclusionCount}`
+      ),
       ...forbiddenChecks
     ];
   } catch (error) {
@@ -725,12 +763,14 @@ export const checkActivation = async (
 
     return [
       ...baseChecks,
-      {
-        label: "Activation smoke runtime proof",
-        status: report.runtimeProofReady
-          ? `ready (decisions ${report.activationDecisionCount}, inclusions ${report.contextItemCount}, exclusions ${report.contextExclusionCount})`
-          : "unverified (run pnpm db:smoke:activation)"
-      },
+      runtimeProofCheck(
+        "Activation smoke runtime proof",
+        gate.databaseUrl,
+        "activation",
+        "pnpm db:smoke:activation",
+        report.runtimeProofReady,
+        `decisions ${report.activationDecisionCount}, inclusions ${report.contextItemCount}, exclusions ${report.contextExclusionCount}`
+      ),
       ...forbiddenChecks
     ];
   } catch (error) {

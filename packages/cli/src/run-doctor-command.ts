@@ -41,11 +41,21 @@ export interface DoctorResult {
   stdout: string;
 }
 
+export interface DoctorProofEvidence {
+  command: string;
+  status: "passed" | "failed";
+  capturedAt: string;
+  freshness: "current" | "stale";
+  storeIdentity: string;
+  projectId?: string;
+}
+
 export interface DoctorCheck {
   label: string;
   status: string;
   outcome?: DoctorOutcome;
   severity?: DoctorSeverity;
+  proof?: DoctorProofEvidence;
 }
 
 export type DoctorOutcome =

@@ -52,6 +52,22 @@ describe("doctorStaticChecks", () => {
       expect(check.outcome, check.label).toEqual(expect.any(String));
       expect(check.severity, check.label).toMatch(/^(pass|warning|failure)$/);
     }
+
+    expect(checks.find((check) => check.label === "Init-connect smoke")).toMatchObject({
+      outcome: "available",
+      status: "available (pnpm db:smoke:init-connect; run it for proof)",
+      severity: "pass"
+    });
+    expect(checks.find((check) => check.label === "Target repo harness smoke")).toMatchObject({
+      outcome: "available",
+      status: "available (pnpm db:smoke:target-repo-harness; run it for proof)",
+      severity: "pass"
+    });
+    expect(checks.find((check) => check.label === "Cross-project leakage proof")).toMatchObject({
+      outcome: "runtime_unverified",
+      status: "unverified (run pnpm db:smoke:target-repo-harness)",
+      severity: "warning"
+    });
   });
 
   it("does not import write or shell execution modules", async () => {
