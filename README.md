@@ -114,3 +114,12 @@ rtk git diff --check
 Do not claim DB runtime truth unless the relevant DB command ran in the current
 environment with `KRN_DATABASE_URL` configured or the default local compose DB
 was reachable.
+
+### Local Postgres boundary
+
+`compose.yaml` is an internal-alpha development profile, not a production
+deployment. It binds Postgres to `127.0.0.1:54329` by default; the `krn/krn`
+credentials are local development credentials and are not safe for production.
+Remote or container-network access requires the explicit
+`KRN_POSTGRES_BIND_ADDRESS` override. The pgvector image is pinned by digest in
+both Compose and CI; update that digest only after a reviewed DB gate run.
