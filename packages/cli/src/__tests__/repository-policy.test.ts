@@ -422,6 +422,16 @@ describe("repository policy boundaries", () => {
       pattern: "GitHub token",
     });
     expect(exception?.reason).toContain("fake token");
+    expect(baseline.secretExceptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: "packages/cli/src/__tests__/beads-history.test.ts",
+        pattern: "secret-shaped assignment"
+      }),
+      expect.objectContaining({
+        path: "packages/cli/src/__tests__/security-policy.test.ts",
+        pattern: "AWS access key"
+      })
+    ]));
     expect(baseline.dependencyVulnerabilityExceptions).toEqual([]);
   });
 

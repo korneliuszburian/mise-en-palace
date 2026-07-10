@@ -12,6 +12,16 @@
       "path": "packages/harness/src/observations/__tests__/observer-input.test.ts",
       "pattern": "GitHub token",
       "reason": "The fixture contains a fake token to prove observer redaction; it is not a credential."
+    },
+    {
+      "path": "packages/cli/src/__tests__/beads-history.test.ts",
+      "pattern": "secret-shaped assignment",
+      "reason": "The fixture contains a deliberately fake secret-shaped value to prove Beads history rejection; it is not a credential."
+    },
+    {
+      "path": "packages/cli/src/__tests__/security-policy.test.ts",
+      "pattern": "AWS access key",
+      "reason": "The fixture contains a deliberately fake AWS-shaped value to prove secret scanning; it is not a credential."
     }
   ],
   "dependencyVulnerabilityExceptions": []
