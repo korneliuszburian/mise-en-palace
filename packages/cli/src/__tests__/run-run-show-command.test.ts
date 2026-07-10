@@ -238,7 +238,11 @@ const aggregate: HarnessRunAggregate = {
     commands: [{
       command: "pnpm typecheck",
       status: "passed",
-      provenance: "operator_reported",
+      provenance: "captured_output_file",
+      exitCode: 0,
+      capturedAt: now,
+      outputRef: "test-output:run-show",
+      assertedBy: "run-show-test",
       doesNotProve:
         "This command result does not prove memory quality, source truth, review correctness, or production readiness."
     }],
@@ -251,6 +255,7 @@ const aggregate: HarnessRunAggregate = {
         unrelated: [],
         unknown: []
       },
+      decisionPacketChecksum: "packet-run-show",
       targetEvidence: {
         targetRepo: "../wilq-seo",
         mode: "observation_only",
@@ -470,7 +475,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("- handoffArtifact: review-evidence/target/HANDOFF.md");
     expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
     expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
-    expect(result.stdout).toContain("pnpm typecheck: passed | provenance=operator_reported");
+    expect(result.stdout).toContain("pnpm typecheck: passed | provenance=captured_output_file");
     expect(result.stdout).toContain("doesNotProve: This command result does not prove memory quality");
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
     expect(result.stdout).toContain("source_decision_candidate:source-decision-candidate-1");
@@ -579,6 +584,19 @@ describe("runRunShowCommand", () => {
       intended: [],
       unrelated: [],
       unknown: ["packages/cli/src/run-run-show-command.ts"]
+    });
+    expect(parsed.evidenceBundles[0]).toMatchObject({
+      executionRunId: "run-1",
+      createdAt: now,
+      updatedAt: now,
+      freshness: "fresh_current",
+      packetChecksum: "packet-run-show"
+    });
+    expect(parsed.evidenceBundles[0]?.commands[0]).toMatchObject({
+      exitCode: 0,
+      capturedAt: now,
+      outputRef: "test-output:run-show",
+      assertedBy: "run-show-test"
     });
     expect(parsed.feedbackDeltas[0]?.candidates).toEqual(
       expect.arrayContaining([
@@ -747,7 +765,7 @@ describe("runRunShowCommand", () => {
         commands: [{
           command: "pnpm typecheck",
           status: "passed",
-          provenance: "operator_reported",
+          provenance: "captured_output_file",
           doesNotProve:
             "This command result does not prove memory quality, source truth, review correctness, or production readiness."
         }]

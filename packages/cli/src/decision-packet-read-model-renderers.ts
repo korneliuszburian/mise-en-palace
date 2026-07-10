@@ -28,7 +28,8 @@ import {
   knowledgeSelectionResource,
   decisionPacketReadModelCandidates,
   decisionPacketReadModelKnowledgeUsefulnessOutcomes,
-  decisionPacketReadModelSourceUsefulnessOutcomes
+  decisionPacketReadModelSourceUsefulnessOutcomes,
+  evidenceBundleFreshness
 } from "./decision-packet-read-model-builders.js";
 import {
   decisionPacketReadModelDoesNotProve,
@@ -45,6 +46,18 @@ const renderCommand = (command: EvidenceCommand): string[] => {
 
   return [
     `- ${commandReadback.command}: ${commandReadback.status} | provenance=${commandReadback.provenance}`,
+    ...(!('exitCode' in commandReadback) || commandReadback.exitCode === undefined
+      ? []
+      : [`  exitCode: ${commandReadback.exitCode}`]),
+    ...(!('outputRef' in commandReadback) || commandReadback.outputRef === undefined
+      ? []
+      : [`  outputRef: ${commandReadback.outputRef}`]),
+    ...(!('capturedAt' in commandReadback) || commandReadback.capturedAt === undefined
+      ? []
+      : [`  capturedAt: ${commandReadback.capturedAt}`]),
+    ...(!('assertedBy' in commandReadback) || commandReadback.assertedBy === undefined
+      ? []
+      : [`  assertedBy: ${commandReadback.assertedBy}`]),
     `  doesNotProve: ${commandReadback.doesNotProve}`
   ];
 };
@@ -300,7 +313,13 @@ const renderEvidenceBundle = (
       const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
 
       return [
-        `- ${bundle.id}: status=${bundle.status} diffRisk=${bundle.diffRisk}`,
+        `- ${bundle.id}: status=${bundle.status} freshness=${evidenceBundleFreshness(bundle, aggregate.executionRun.updatedAt)} diffRisk=${bundle.diffRisk}`,
+        `  executionRunId: ${bundle.executionRunId}`,
+        `  createdAt: ${bundle.createdAt}`,
+        `  updatedAt: ${bundle.updatedAt}`,
+        ...(typeof bundle.metadata.decisionPacketChecksum === "string"
+          ? [`  packetChecksum: ${bundle.metadata.decisionPacketChecksum}`]
+          : []),
         `  changedFiles: ${bundle.changedFiles.length}`,
         "  changed file classification:",
         `  - intended=${metadataArrayLength(bundle.metadata, "changedFileClassification", "intended")}`,

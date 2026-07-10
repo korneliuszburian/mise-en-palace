@@ -22,7 +22,10 @@ import { buildDecisionPacketFromReadModel } from "@krn/core";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
-import { buildDecisionPacketReadModel } from "../decision-packet-read-model-builders.js";
+import {
+  buildDecisionPacketReadModel,
+  evidenceBundleFreshness
+} from "../decision-packet-read-model-builders.js";
 import {
   authorizePacketUsefulness,
   currentDecisionPacketBindingForAggregate
@@ -533,6 +536,25 @@ const expectDefaultTemplateCommands = (
 };
 
 describe("runCli", () => {
+  it("marks evidence from before the run reference as historical", () => {
+    const referenceTime = "2026-06-21T12:00:00.000Z";
+    const bundle = {
+      id: "evidence-freshness",
+      executionRunId: "run-freshness",
+      createdAt: referenceTime
+    } as HarnessRunAggregate["evidenceBundles"][number];
+
+    expect(evidenceBundleFreshness(bundle, referenceTime)).toBe("fresh_current");
+    expect(evidenceBundleFreshness(
+      { ...bundle, createdAt: "2026-06-20T12:00:00.000Z" },
+      referenceTime
+    )).toBe("stale_historical");
+    expect(evidenceBundleFreshness(
+      { ...bundle, createdAt: "not-a-time" },
+      referenceTime
+    )).toBe("unknown");
+  });
+
   it("prints evidence capture verification examples in help", async () => {
     const result = await runCli(["--help"], {
       env: {},

@@ -51,6 +51,7 @@ import type {
   DecisionPacketReadModelContextInclusion,
   DecisionPacketReadModelContext,
   DecisionPacketReadModelEvidenceBundle,
+  DecisionPacketReadModelEvidenceFreshness,
   DecisionPacketReadModelFeedbackDelta,
   DecisionPacketReadModelKnowledgeUsefulnessOutcome,
   DecisionPacketReadModelProof,
@@ -72,6 +73,18 @@ const commandResource = (command: EvidenceCommand): DecisionPacketReadModelComma
     command: commandReadback.command,
     status: commandReadback.status,
     provenance: commandReadback.provenance,
+    ...(!('exitCode' in commandReadback) || commandReadback.exitCode === undefined
+      ? {}
+      : { exitCode: commandReadback.exitCode }),
+    ...(!('outputRef' in commandReadback) || commandReadback.outputRef === undefined
+      ? {}
+      : { outputRef: commandReadback.outputRef }),
+    ...(!('capturedAt' in commandReadback) || commandReadback.capturedAt === undefined
+      ? {}
+      : { capturedAt: commandReadback.capturedAt }),
+    ...(!('assertedBy' in commandReadback) || commandReadback.assertedBy === undefined
+      ? {}
+      : { assertedBy: commandReadback.assertedBy }),
     doesNotProve: commandReadback.doesNotProve
   };
 };
@@ -398,14 +411,35 @@ const contextResource = (
   };
 };
 
+export const evidenceBundleFreshness = (
+  bundle: HarnessRunAggregate["evidenceBundles"][number],
+  referenceTime: string
+): DecisionPacketReadModelEvidenceFreshness => {
+  const createdAt = Date.parse(bundle.createdAt);
+  const reference = Date.parse(referenceTime);
+
+  if (!Number.isFinite(createdAt) || !Number.isFinite(reference)) {
+    return "unknown";
+  }
+
+  return createdAt >= reference ? "fresh_current" : "stale_historical";
+};
+
 const evidenceBundleResource = (
-  bundle: HarnessRunAggregate["evidenceBundles"][number]
+  bundle: HarnessRunAggregate["evidenceBundles"][number],
+  referenceTime: string
 ): DecisionPacketReadModelEvidenceBundle => {
   const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+  const packetChecksum = readMetadataString(bundle.metadata, "decisionPacketChecksum");
 
   return {
     id: bundle.id,
+    executionRunId: bundle.executionRunId,
+    createdAt: bundle.createdAt,
+    updatedAt: bundle.updatedAt,
     status: bundle.status,
+    freshness: evidenceBundleFreshness(bundle, referenceTime),
+    ...(packetChecksum === undefined ? {} : { packetChecksum }),
     diffRisk: bundle.diffRisk,
     reviewBurden: bundle.reviewBurden,
     rollbackPath: bundle.rollbackPath,
@@ -478,7 +512,9 @@ export const buildDecisionPacketReadModel = (
     ...(knowledgeSelection === undefined ? {} : { knowledgeSelection }),
     context: contextResource(aggregate, activationTrace),
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
-    evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
+    evidenceBundles: aggregate.evidenceBundles.map((bundle) =>
+      evidenceBundleResource(bundle, aggregate.executionRun.updatedAt)
+    ),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
     feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaResource),
     proof: proofResource()

@@ -21,11 +21,19 @@ import type { ProjectResolution } from "./database-runtime.js";
 import type { KnowledgePlanSelection } from "./knowledge-selection.js";
 
 export type DecisionPacketReadModelOutputFormat = "text" | "json";
+export type DecisionPacketReadModelEvidenceFreshness =
+  | "fresh_current"
+  | "stale_historical"
+  | "unknown";
 
 export interface DecisionPacketReadModelCommand {
   command: string;
   status: EvidenceCommand["status"];
   provenance: EvidenceCommandReadback["provenance"];
+  exitCode?: number;
+  outputRef?: string;
+  capturedAt?: string;
+  assertedBy?: string;
   doesNotProve: string;
 }
 
@@ -161,7 +169,12 @@ export interface DecisionPacketReadModel {
   evidenceContract?: EvidenceContract;
   evidenceBundles: {
     id: string;
+    executionRunId: string;
+    createdAt: string;
+    updatedAt: string;
     status: string;
+    freshness: DecisionPacketReadModelEvidenceFreshness;
+    packetChecksum?: string;
     diffRisk: string;
     reviewBurden: string;
     rollbackPath: string;
