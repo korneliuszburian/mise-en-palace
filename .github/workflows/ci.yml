@@ -45,6 +45,9 @@ jobs:
       - name: Toolchain and workspace contracts
         run: pnpm toolchain:check -- --allow-missing-rtk
 
+      - name: Node 22 type boundary
+        run: pnpm node22:type-boundary
+
       - name: Platform contract
         run: pnpm platform:check
 

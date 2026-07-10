@@ -156,6 +156,19 @@ describe("repository policy boundaries", () => {
     }
   });
 
+  it("runs the supported runtime contract before every alpha verification gate", () => {
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+
+    expect(packageJson.scripts?.["alpha:verify:fast"]?.startsWith(
+      "pnpm toolchain:check && pnpm node22:type-boundary &&"
+    )).toBe(true);
+    expect(packageJson.scripts?.["alpha:verify:full"]?.startsWith(
+      "pnpm toolchain:check && pnpm node22:type-boundary &&"
+    )).toBe(true);
+  });
+
   it("tests every declared platform target and rejects native Windows shells", () => {
     const checker = join(repoRoot, "scripts/check-platform.mjs");
     expect(readRootFile("README.md")).toContain("Native Windows shells are not supported");

@@ -18,6 +18,7 @@
     "@krn/core": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "22.20.1",
     "vitest": "^4.1.9"
   }
 }

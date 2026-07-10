@@ -660,6 +660,16 @@
       "replayOwner": "@korneliuszburian",
       "mode": "static_fixture",
       "archival": null
+    },
+    {
+      "path": "tests/fixtures/node22-type-boundary/post-node22-api.ts",
+      "consumer": "Node 22 declaration boundary checker",
+      "provenance": "repository-owned negative compile fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
     }
   ]
 }

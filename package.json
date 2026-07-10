@@ -75,6 +75,7 @@
     "release:check": "node scripts/check-release-boundary.mjs",
     "fixtures:check": "node scripts/check-fixture-ownership.mjs",
     "toolchain:check": "node scripts/check-toolchain.mjs",
+    "node22:type-boundary": "node scripts/check-node22-type-boundary.mjs",
     "security:secrets": "node scripts/security-policy.mjs secrets --tracked",
     "security:licenses": "mkdir -p .local-lab/security && pnpm licenses list --json > .local-lab/security/licenses.json && node scripts/security-policy.mjs licenses --report .local-lab/security/licenses.json",
     "security:dependency-audit": "node scripts/security-policy.mjs dependency-audit",
@@ -83,13 +84,14 @@
     "quality:fallow:report": "node scripts/run-fallow-report.mjs",
     "quality:fallow:ci": "fallow audit --format compact --dead-code-baseline fallow-baselines/dead-code.json --health-baseline fallow-baselines/health.json --dupes-baseline fallow-baselines/dupes.json",
     "alpha:verify": "pnpm alpha:verify:fast",
-    "alpha:verify:fast": "pnpm typecheck && pnpm test && pnpm krn doctor",
-    "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:required && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-governance && pnpm db:smoke:eval-feedback-persistence && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && pnpm eval:db && git diff --check",
+    "alpha:verify:fast": "pnpm toolchain:check && pnpm node22:type-boundary && pnpm typecheck && pnpm test && pnpm krn doctor",
+    "alpha:verify:full": "pnpm toolchain:check && pnpm node22:type-boundary && pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:required && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-governance && pnpm db:smoke:eval-feedback-persistence && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && pnpm eval:db && git diff --check",
     "test": "pnpm workspace:check && pnpm -r --workspace-concurrency=1 test",
     "typecheck": "pnpm workspace:check && pnpm -r --workspace-concurrency=1 typecheck"
   },
   "devDependencies": {
     "@beads/bd": "^1.0.4",
+    "@types/node": "22.20.1",
     "fallow": "2.103.0",
     "typescript": "5.9.3"
   }
