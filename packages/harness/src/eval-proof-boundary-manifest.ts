@@ -184,8 +184,8 @@ export const evalProofBoundaryManifest = [
   },
   {
     id: "recorded-codex-decision-packet-obedience-eval",
-    command: "pnpm eval:codex-decision-packet-obedience",
-    scriptName: "eval:codex-decision-packet-obedience",
+    command: "pnpm eval:codex-decision-packet-obedience:recorded",
+    scriptName: "eval:codex-decision-packet-obedience:recorded",
     owner: "recorded Codex output evidence-shape comparator",
     tier: "required",
     requiredFor: ["local-static", "handoff"],
@@ -202,20 +202,20 @@ export const evalProofBoundaryManifest = [
     ]
   },
   {
-    id: "recorded-codex-live-pilot-eval",
-    command: "pnpm eval:codex-decision-packet-obedience:live-pilot",
-    scriptName: "eval:codex-decision-packet-obedience:live-pilot",
-    owner: "recorded live-pilot Codex output comparator",
-    tier: "live_manual",
+    id: "recorded-codex-replay-eval",
+    command: "pnpm eval:codex-decision-packet-obedience:recorded-replay",
+    scriptName: "eval:codex-decision-packet-obedience:recorded-replay",
+    owner: "dated recorded-replay Codex output comparator",
+    tier: "recorded_replay",
     requiredFor: ["local-static"],
     proves: [
-      "the recorded live-pilot fixture still satisfies the Codex decision-packet obedience evidence-shape comparator",
-      "the paired decision-packet fixture still passes before recorded live-pilot comparison"
+      "the dated recorded-replay fixture still satisfies the Codex decision-packet obedience evidence-shape comparator",
+      "the paired decision-packet fixture still passes before recorded-replay comparison"
     ],
     doesNotProve: [
-      "a live Codex call ran in the current shell",
+      "a current-shell Codex call ran",
       "future Codex output will obey KRN briefs",
-      "the live-pilot sample generalizes",
+      "the recorded-replay sample generalizes",
       "KRN is product-ready"
     ]
   },
@@ -350,7 +350,7 @@ export const evalProofBoundaryManifest = [
   command: string;
   scriptName?: string;
   owner: string;
-  tier: "required" | "db" | "live_manual";
+  tier: "required" | "db" | "recorded_replay";
   requiredFor: readonly (
     | "local-static"
     | "ci-fast"

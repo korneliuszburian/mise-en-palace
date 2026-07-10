@@ -12,14 +12,14 @@ const fixturePath = fileURLToPath(
     import.meta.url
   )
 );
-const livePilotFixturePath = fileURLToPath(
+const recordedReplayFixturePath = fileURLToPath(
   new URL(
-    "../../../../tests/fixtures/codex-decision-packet-obedience/live-pilot-2026-07-06.json",
+    "../../../../tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json",
     import.meta.url
   )
 );
 const fixture = () => loadCodexDecisionPacketObedienceFixture(fixturePath);
-const livePilotFixture = () => loadCodexDecisionPacketObedienceFixture(livePilotFixturePath);
+const recordedReplayFixture = () => loadCodexDecisionPacketObedienceFixture(recordedReplayFixturePath);
 
 describe("runCodexDecisionPacketObedienceEval", () => {
   it("checks recorded Codex output against decision-packet obedience signals", async () => {
@@ -30,6 +30,8 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     expect(result).toMatchObject({
       kind: "krn.codexDecisionPacketObedience.eval.v1",
       fixtureVersion: "1",
+      mode: "recorded",
+      capturedAt: "2026-07-01",
       status: "pass",
       sourceEvalKind: "krn.decisionPacket.eval.v1",
       sourceScorerModel: "DecisionPacketEvalCase.v1",
@@ -78,11 +80,13 @@ describe("runCodexDecisionPacketObedienceEval", () => {
     expect(result.proof.doesNotProve).toContain("live Codex execution");
   });
 
-  it("checks the live Codex pilot output against decision-packet obedience signals", async () => {
-    const result = await runCodexDecisionPacketObedienceEval(livePilotFixture());
+  it("checks a dated recorded replay against decision-packet obedience signals", async () => {
+    const result = await runCodexDecisionPacketObedienceEval(recordedReplayFixture());
 
     expect(result).toMatchObject({
       kind: "krn.codexDecisionPacketObedience.eval.v1",
+      mode: "recorded",
+      capturedAt: "2026-07-06",
       status: "pass",
       metrics: {
         caseCount: 1,
@@ -96,7 +100,7 @@ describe("runCodexDecisionPacketObedienceEval", () => {
       }
     });
     expect(result.cases[0]).toMatchObject({
-      id: "live-memory-runtime-obedience-2026-07-06",
+      id: "recorded-replay-memory-runtime-obedience-2026-07-06",
       decisionPacketCaseId: "memory-runtime-task",
       status: "pass",
       briefIncludesPacket: true,

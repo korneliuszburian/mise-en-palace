@@ -10,7 +10,7 @@ import {
 
 describe("eval proof boundary manifest", () => {
   it("keeps every gate tied to proof and non-proof boundaries", () => {
-    const validTiers = new Set(["required", "db", "live_manual"]);
+    const validTiers = new Set(["required", "db", "recorded_replay"]);
 
     for (const entry of evalProofBoundaryManifest) {
       expect(entry.id.trim().length).toBeGreaterThan(0);

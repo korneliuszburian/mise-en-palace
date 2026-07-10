@@ -1,14 +1,16 @@
 {
   "version": "1",
+  "captureMode": "recorded_replay",
+  "capturedAt": "2026-07-06",
   "decisionPacketFixturePath": "../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
   "cases": [
     {
-      "id": "live-memory-runtime-obedience-2026-07-06",
+      "id": "recorded-replay-memory-runtime-obedience-2026-07-06",
       "decisionPacketCaseId": "memory-runtime-task",
       "expectedGoverningDecisionId": "store-backed-memory-no-markdown",
       "expectedStaleDecisionIds": ["markdown-runtime-memory"],
       "expectedRejectedPathIds": ["create-markdown-memory-files"],
-      "expectedBriefReceiptRef": "live-obedience:decision-packet-brief-read",
+      "expectedBriefReceiptRef": "recorded-replay:decision-packet-brief-read",
       "output": {
         "summary": "Choose store-backed-memory-no-markdown: KRN should use store-backed MemoryRecord and SourceClaim evidence for runtime memory, and reject creating markdown runtime memory files.",
         "evidenceRefs": [
@@ -17,12 +19,12 @@
           "rejected:create-markdown-memory-files"
         ],
         "verification": [
-          "live-obedience:decision-packet-brief-read",
-          "live-obedience:stale-boundary=markdown-runtime-memory",
-          "live-obedience:rejected-path=create-markdown-memory-files"
+          "recorded-replay:decision-packet-brief-read",
+          "recorded-replay:stale-boundary=markdown-runtime-memory",
+          "recorded-replay:rejected-path=create-markdown-memory-files"
         ],
         "changedFiles": [
-          "tests/fixtures/codex-decision-packet-obedience/live-pilot-2026-07-06.json"
+          "tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json"
         ],
         "doesNotProve": "packet quality only; does not prove live Codex obedience; does not prove source truth"
       }

@@ -55,6 +55,8 @@ interface ObedienceCaseFixture {
 
 interface CodexDecisionPacketObedienceFixture {
   readonly version: "1";
+  readonly captureMode: "recorded_replay";
+  readonly capturedAt: string;
   readonly decisionPacketFixturePath: string;
   readonly cases: readonly ObedienceCaseFixture[];
 }
@@ -76,6 +78,8 @@ interface CodexDecisionPacketObedienceCaseReadback {
 export interface CodexDecisionPacketObedienceEvalResult {
   readonly kind: "krn.codexDecisionPacketObedience.eval.v1";
   readonly fixtureVersion: "1";
+  readonly mode: "recorded";
+  readonly capturedAt: string;
   readonly status: ObedienceStatus;
   readonly sourceEvalKind: DecisionPacketEvalKind;
   readonly sourceScorerModel: DecisionPacketEvalScorerModel;
@@ -126,8 +130,18 @@ const parseFixture = (
     throw new Error("version must be 1");
   }
 
+  const captureMode = stringValue(value["captureMode"], "captureMode");
+
+  if (captureMode !== "recorded_replay") {
+    throw new Error("captureMode must be recorded_replay");
+  }
+
+  const capturedAt = stringValue(value["capturedAt"], "capturedAt");
+
   return {
     version,
+    captureMode,
+    capturedAt,
     decisionPacketFixturePath: stringValue(value["decisionPacketFixturePath"], "decisionPacketFixturePath"),
     cases: recordArray(value["cases"], "cases").map((testCase, index) => ({
       id: stringValue(testCase["id"], `cases[${index}].id`),
@@ -348,6 +362,8 @@ export const runCodexDecisionPacketObedienceEval = async (
   return {
     kind: "krn.codexDecisionPacketObedience.eval.v1",
     fixtureVersion: fixture.version,
+    mode: "recorded",
+    capturedAt: fixture.capturedAt,
     status,
     sourceEvalKind: decisionPacketEvalKind,
     sourceScorerModel: decisionPacketEvalScorerModel,

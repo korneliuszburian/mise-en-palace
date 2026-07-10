@@ -1,5 +1,7 @@
 {
   "version": "1",
+  "captureMode": "recorded_replay",
+  "capturedAt": "2026-07-01",
   "decisionPacketFixturePath": "../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
   "cases": [
     {
