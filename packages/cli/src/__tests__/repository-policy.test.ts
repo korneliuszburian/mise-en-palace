@@ -155,6 +155,44 @@ describe("repository policy boundaries", () => {
     }
   });
 
+  it("tests every declared platform target and rejects native Windows shells", () => {
+    const checker = join(repoRoot, "scripts/check-platform.mjs");
+    expect(readRootFile("README.md")).toContain("Native Windows shells are not supported");
+    expect(readRootFile("CONTRIBUTING.md")).toContain("Linux/macOS/WSL");
+    const supportedTargets = [
+      ["--platform", "linux", "--shell", "bash", "--wsl"],
+      ["--platform", "darwin", "--shell", "zsh"],
+      ["--platform", "linux", "--shell", "sh"]
+    ];
+
+    for (const args of supportedTargets) {
+      expect(execFileSync(process.execPath, [checker, ...args], {
+        cwd: repoRoot,
+        encoding: "utf8"
+      })).toContain("Platform contract passed");
+    }
+
+    let failure: { status?: number; stderr?: string } | undefined;
+    try {
+      execFileSync(process.execPath, [
+        checker,
+        "--platform",
+        "win32",
+        "--shell",
+        "powershell.exe"
+      ], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: "pipe"
+      });
+    } catch (error) {
+      failure = error as { status?: number; stderr?: string };
+    }
+
+    expect(failure?.status).toBe(1);
+    expect(failure?.stderr).toContain("use Linux, macOS, or WSL");
+  });
+
   it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
     const security = readRootFile("SECURITY.md");
     const contributing = readRootFile("CONTRIBUTING.md");

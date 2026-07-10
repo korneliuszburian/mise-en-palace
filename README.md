@@ -101,6 +101,14 @@ explicit `--allow-missing-rtk` fallback because GitHub-hosted runners execute
 their workflow commands through native `run:` steps; this fallback does not
 change the local agent rule.
 
+Platform contract:
+
+- Supported: Linux and macOS with `bash`, `sh`, `dash`, or `zsh`; WSL is
+  supported through its POSIX Linux environment.
+- Native Windows shells are not supported. Use WSL or a POSIX host before
+  running repository commands.
+- Check the bootstrap boundary with `rtk pnpm platform:check`.
+
 Fast local gate:
 
 ```sh

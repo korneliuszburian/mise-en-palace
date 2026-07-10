@@ -18,6 +18,10 @@ Before changing code:
 Beads history validation, retention, and redaction ownership are defined in
 `docs/BEADS_OPERATIONS.md`; run its validator before any manual archive.
 
+The supported shell contract is Linux/macOS/WSL with `bash`, `sh`, `dash`, or
+`zsh`. Native Windows shells are unsupported; run the repository from WSL or a
+POSIX host and verify the boundary with `rtk pnpm platform:check`.
+
 For a code change, run the smallest relevant proof path and then the root gates:
 
 ```sh
