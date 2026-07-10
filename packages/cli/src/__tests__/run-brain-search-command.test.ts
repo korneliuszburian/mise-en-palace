@@ -906,9 +906,13 @@ describe("runBrainSearchCommand", () => {
           projectId: "project-1",
           compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
           harnessRunRepository: {
-            async listFeedbackDeltasForProject(projectId, limit) {
-              expect(projectId).toBe("project-1");
-              expect(limit).toBe(100);
+            async listFeedbackDeltasForSubjects(input) {
+              expect(input.projectId).toBe("project-1");
+              expect(input.limitPerSubject).toBe(100);
+              expect(input.subjects).toEqual([
+                { kind: "knowledge", id: "memory-record-stale" },
+                { kind: "knowledge", id: "memory-record-current" }
+              ]);
 
               return [staleFeedbackDelta];
             }

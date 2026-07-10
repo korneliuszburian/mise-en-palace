@@ -38,7 +38,9 @@ export interface BrainRecallCommandRuntime {
    * knowledgeUsefulnessFromKnowledgeOutcomes). Seed-only corpus
    * usefulnessFeedbackFiles may still be supplied and are merged alongside.
    */
-  usefulnessProvider?: () => Promise<KnowledgeUsefulnessFeedback[]>;
+  usefulnessProvider?: (
+    readModels: readonly KnowledgeReadModel[]
+  ) => Promise<KnowledgeUsefulnessFeedback[]>;
 }
 
 export interface BrainRecallCommandResult {
@@ -253,7 +255,7 @@ export const runBrainRecallCommand = async (
   const loaded = await loadKnowledgeReadModels(runtime, cwd);
   const storeUsefulness = runtime.usefulnessProvider === undefined
     ? []
-    : await runtime.usefulnessProvider();
+    : await runtime.usefulnessProvider(loaded.readModels);
   const source: "explicit_files" | "memory_store" =
     runtime.readModelProvider === undefined ? "explicit_files" : "memory_store";
   const usefulnessSource: "explicit_files" | "store_backed" =

@@ -1,4 +1,5 @@
 import {
+  eq,
   sql
 } from "drizzle-orm";
 
@@ -11,6 +12,7 @@ import {
   DrizzleProjectRepository
 } from "../../repositories/index.js";
 import {
+  feedbackDeltas,
   outboxEvents
 } from "../../schema/index.js";
 export interface HarnessEvidenceSmokeInput {
@@ -31,6 +33,9 @@ export interface HarnessEvidenceSmokeReport {
   reviewAssessmentCount: number;
   feedbackDeltaCount: number;
   projectFeedbackDeltaCount: number;
+  subjectFeedbackDeltaCount: number;
+  subjectFeedbackRelevant: boolean;
+  sourceSubjectFeedbackRetrieved: boolean;
   otherProjectFeedbackDeltaCount: number;
   otherProjectFeedbackDeltaExcluded: boolean;
   remainingMarkerCount: number;
@@ -49,6 +54,7 @@ interface SmokeFeedbackDeltaInput {
   evidenceEventType: string;
   evidenceEventMessage: string;
   reviewSummary: string;
+  metadata?: Record<string, unknown>;
 }
 
 interface SmokeFeedbackDeltaOutput {
@@ -80,7 +86,8 @@ const createSmokeFeedbackDelta = async (
       }
     },
     metadata: {
-      smokeId: input.marker
+      smokeId: input.marker,
+      ...(input.metadata ?? {})
     }
   });
   const reviewAssessment = await input.harnessRunRepository.createReviewAssessment({
@@ -100,7 +107,8 @@ const createSmokeFeedbackDelta = async (
     sourceDecisions: [],
     evalCandidates: [],
     metadata: {
-      smokeId: input.marker
+      smokeId: input.marker,
+      ...(input.metadata ?? {})
     }
   });
 
@@ -172,9 +180,83 @@ export const runHarnessEvidenceSmokeCheck = async (
       changedFile: "smoke/harness-evidence.ts",
       evidenceEventType: "smoke.harness_evidence.evidence_captured",
       evidenceEventMessage: "Persisted harness evidence smoke captured",
-      reviewSummary: "Smoke evidence captured."
+      reviewSummary: "Smoke evidence captured.",
+      metadata: {
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "knowledge:older-relevant",
+          outcome: "stale",
+          reason: "Older relevant feedback must remain visible after unrelated newer deltas.",
+          evidenceRefs: ["smoke:harness-evidence:older-relevant"],
+          doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+        }],
+        sourceUsefulnessOutcomes: [{
+          sourceClaimId: "source-claim-older-relevant",
+          sourceDecisionId: "source-decision-older-relevant",
+          outcome: "stale",
+          reason: "Source subject feedback must remain project-scoped and bounded.",
+          evidenceRefs: ["smoke:harness-evidence:source-relevant"],
+          doesNotProve: "This smoke does not prove broad source truth."
+        }]
+      }
     });
     feedbackDeltaId = feedbackDelta.feedbackDeltaId;
+
+    const olderRelevantTimestamp = new Date(Date.UTC(2026, 6, 7));
+    await db
+      .update(feedbackDeltas)
+      .set({
+        createdAt: olderRelevantTimestamp,
+        updatedAt: olderRelevantTimestamp
+      })
+      .where(eq(feedbackDeltas.id, feedbackDelta.feedbackDeltaId));
+
+    const distractorFeedbackDeltas = Array.from({ length: 101 }, (_, index) => ({
+      reviewAssessmentId: feedbackDelta.reviewAssessmentId,
+      status: "candidate" as const,
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        smokeId: marker,
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: `knowledge:unrelated-${index}`,
+          outcome: "helped",
+          reason: "Unrelated newer feedback is a retrieval-horizon distractor.",
+          evidenceRefs: [`smoke:harness-evidence:unrelated-${index}`],
+          doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+        }]
+      },
+      createdAt: new Date(Date.UTC(2026, 6, 8, 0, 0, index)),
+      updatedAt: new Date(Date.UTC(2026, 6, 8, 0, 0, index))
+    }));
+    await db.insert(feedbackDeltas).values(distractorFeedbackDeltas);
+    const latestRelevantRows = await db
+      .insert(feedbackDeltas)
+      .values({
+        reviewAssessmentId: feedbackDelta.reviewAssessmentId,
+        status: "candidate",
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: [],
+        metadata: {
+          smokeId: marker,
+          knowledgeUsefulnessOutcomes: [{
+            knowledgeId: "knowledge:older-relevant",
+            outcome: "helped",
+            reason: "The newer same-subject outcome must win deterministically.",
+            evidenceRefs: ["smoke:harness-evidence:newer-relevant"],
+            doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+          }]
+        },
+        createdAt: new Date(Date.UTC(2026, 6, 9)),
+        updatedAt: new Date(Date.UTC(2026, 6, 9))
+      })
+      .returning({ id: feedbackDeltas.id });
+    const latestRelevantId = latestRelevantRows[0]?.id;
+
+    if (latestRelevantId === undefined) {
+      throw new Error("Harness evidence smoke failed to create newer subject feedback");
+    }
 
     const projectRepository = new DrizzleProjectRepository(db);
     const otherProject = await projectRepository.createProject({
@@ -244,15 +326,37 @@ export const runHarnessEvidenceSmokeCheck = async (
     otherFeedbackDeltaId = otherFeedbackDelta.feedbackDeltaId;
 
     const projectFeedbackDeltas =
-      await harnessRunRepository.listFeedbackDeltasForProject(project.id);
+      await harnessRunRepository.listFeedbackDeltasForProject(project.id, 200);
+    const subjectFeedbackDeltas = await harnessRunRepository.listFeedbackDeltasForSubjects({
+      projectId: project.id,
+      subjects: [{
+        kind: "knowledge",
+        id: "knowledge:older-relevant"
+      }],
+      limitPerSubject: 1
+    });
+    const subjectFeedbackRelevant = subjectFeedbackDeltas[0]?.id === latestRelevantId;
+    const sourceSubjectFeedbackDeltas = await harnessRunRepository.listFeedbackDeltasForSubjects({
+      projectId: project.id,
+      subjects: [
+        { kind: "source_claim", id: "source-claim-older-relevant" },
+        { kind: "source_decision", id: "source-decision-older-relevant" }
+      ],
+      limitPerSubject: 1
+    });
+    const sourceSubjectFeedbackRetrieved = sourceSubjectFeedbackDeltas.some((delta) =>
+      delta.id === feedbackDelta.feedbackDeltaId
+    );
     const otherProjectFeedbackDeltas =
       await harnessRunRepository.listFeedbackDeltasForProject(otherProject.id);
     const otherProjectFeedbackDeltaExcluded =
       projectFeedbackDeltas.every((delta) => delta.id !== otherFeedbackDelta.feedbackDeltaId);
 
     if (
-      projectFeedbackDeltas.length !== 1 ||
-      projectFeedbackDeltas[0]?.id !== feedbackDelta.feedbackDeltaId ||
+      projectFeedbackDeltas.length !== 103 ||
+      !subjectFeedbackRelevant ||
+      subjectFeedbackDeltas.length !== 1 ||
+      !sourceSubjectFeedbackRetrieved ||
       otherProjectFeedbackDeltas.length !== 1 ||
       otherProjectFeedbackDeltas[0]?.id !== otherFeedbackDelta.feedbackDeltaId ||
       !otherProjectFeedbackDeltaExcluded
@@ -274,7 +378,7 @@ export const runHarnessEvidenceSmokeCheck = async (
     if (
       evidenceBundleCount !== 1 ||
       reviewAssessmentCount !== 1 ||
-      feedbackDeltaCount !== 1 ||
+      feedbackDeltaCount !== 103 ||
       runEventCount !== 2
     ) {
       throw new Error("Harness evidence smoke readback did not match linked records");
@@ -294,6 +398,9 @@ export const runHarnessEvidenceSmokeCheck = async (
       reviewAssessmentCount,
       feedbackDeltaCount,
       projectFeedbackDeltaCount: projectFeedbackDeltas.length,
+      subjectFeedbackDeltaCount: subjectFeedbackDeltas.length,
+      subjectFeedbackRelevant,
+      sourceSubjectFeedbackRetrieved,
       otherProjectFeedbackDeltaCount: otherProjectFeedbackDeltas.length,
       otherProjectFeedbackDeltaExcluded,
       remainingMarkerCount,

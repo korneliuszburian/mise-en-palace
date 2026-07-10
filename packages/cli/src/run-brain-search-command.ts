@@ -46,7 +46,8 @@ import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
-  applyStoreKnowledgeUsefulnessFeedback
+  applyStoreKnowledgeUsefulnessFeedback,
+  listStoreKnowledgeUsefulnessFeedback
 } from "./store-knowledge-usefulness-selection.js";
 
 export type BrainSearchCommand = Extract<CliCommand, { kind: "brainSearch" }>;
@@ -86,17 +87,6 @@ const emptyStoreMemoryReadback = (reason?: string): BrainRecallReadback => ({
   },
   queries: []
 });
-
-const listStoreFeedbackDeltas = async (
-  databaseRuntime: DatabaseRuntime
-) => {
-  const listFeedbackDeltasForProject =
-    databaseRuntime.harnessRunRepository.listFeedbackDeltasForProject;
-
-  return listFeedbackDeltasForProject === undefined
-    ? []
-    : await listFeedbackDeltasForProject(databaseRuntime.projectId, 100);
-};
 
 const buildStoreMemoryReadback = (
   input: {
@@ -157,9 +147,14 @@ const readStoreMemoryFromDatabase = async (
     input.limit,
     { terms: tokenizeActivationText(input.query) }
   );
-  const feedbackDeltas = await listStoreFeedbackDeltas(input.databaseRuntime);
+  const readModels = records.map(memoryRecordToKnowledgeReadModel);
+  const feedbackDeltas = await listStoreKnowledgeUsefulnessFeedback({
+    projectId: input.databaseRuntime.projectId,
+    readModels,
+    harnessRunRepository: input.databaseRuntime.harnessRunRepository
+  });
   const usefulnessSelection = applyStoreKnowledgeUsefulnessFeedback(
-    records.map(memoryRecordToKnowledgeReadModel),
+    readModels,
     feedbackDeltas
   );
 

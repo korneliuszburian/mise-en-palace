@@ -101,7 +101,9 @@ export interface DatabaseRuntime {
     | "createFeedbackDelta"
   > & Partial<Pick<
     HarnessRunRepository,
-    "listFeedbackDeltasForProject" | "createEvalFeedbackDeltaOnce"
+    | "listFeedbackDeltasForProject"
+    | "listFeedbackDeltasForSubjects"
+    | "createEvalFeedbackDeltaOnce"
   >>;
   sourceRepository: Pick<
     SourceRepository,
@@ -590,7 +592,14 @@ const createDatabaseRuntimeForClient = async (
           >) => harnessRunRepository.createEvalFeedbackDeltaOnce!(...args)
         }),
     listFeedbackDeltasForProject: (...args) =>
-      harnessRunRepository.listFeedbackDeltasForProject(...args)
+      harnessRunRepository.listFeedbackDeltasForProject(...args),
+    ...(harnessRunRepository.listFeedbackDeltasForSubjects === undefined
+      ? {}
+      : {
+          listFeedbackDeltasForSubjects: (...args: Parameters<
+            NonNullable<HarnessRunRepository["listFeedbackDeltasForSubjects"]>
+          >) => harnessRunRepository.listFeedbackDeltasForSubjects!(...args)
+        })
   };
 
   return {

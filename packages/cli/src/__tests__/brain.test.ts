@@ -92,7 +92,14 @@ const createBrainRecallDatabaseRuntime = (
     async createFeedbackDelta() {
       throw new Error("createFeedbackDelta should not be called");
     },
-    async listFeedbackDeltasForProject() {
+    async listFeedbackDeltasForSubjects(input) {
+      expect(input.projectId).toBe("project-1");
+      expect(input.limitPerSubject).toBe(100);
+      expect(input.subjects).toEqual([{
+        kind: "knowledge",
+        id: feedbackKnowledgeId
+      }]);
+
       return [knowledgeFeedbackDelta(feedbackKnowledgeId)];
     }
   },

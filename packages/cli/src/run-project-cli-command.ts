@@ -8,6 +8,9 @@ import {
   knowledgeUsefulnessFromKnowledgeOutcomes
 } from "@krn/harness";
 import type {
+  KnowledgeReadModel
+} from "@krn/harness";
+import type {
   CliCommand
 } from "./parse-args.js";
 import type {
@@ -34,6 +37,9 @@ import {
 import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
+import {
+  listStoreKnowledgeUsefulnessFeedback
+} from "./store-knowledge-usefulness-selection.js";
 import {
   runBrainRecallCommand
 } from "./run-brain-recall-command.js";
@@ -142,18 +148,13 @@ const createKnowledgeStoreProviders = async (
     }
   };
 
-  const usefulnessProvider = async () =>
+  const usefulnessProvider = async (readModels: readonly KnowledgeReadModel[]) =>
     withRuntime(async (runtime) => {
-      const listFeedbackDeltasForProject =
-        runtime.harnessRunRepository.listFeedbackDeltasForProject;
-
-      if (listFeedbackDeltasForProject === undefined) {
-        return [];
-      }
-
-      const feedbackDeltas = await listFeedbackDeltasForProject(
-        runtime.projectId
-      );
+      const feedbackDeltas = await listStoreKnowledgeUsefulnessFeedback({
+        projectId: runtime.projectId,
+        readModels,
+        harnessRunRepository: runtime.harnessRunRepository
+      });
 
       return feedbackDeltasToKnowledgeUsefulness(feedbackDeltas);
     });

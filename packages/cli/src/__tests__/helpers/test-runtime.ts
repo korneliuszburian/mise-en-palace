@@ -23,6 +23,7 @@ import type {
   CreateSourceDecisionEdgeInput,
   CreateSourceRejectionInput,
   InvalidateMemoryRecordInput,
+  ListFeedbackDeltasForSubjectsInput,
   PromoteAntiMemoryCandidateInput,
   PromoteMemoryCandidateInput,
   RejectAntiMemoryCandidateInput,
@@ -202,7 +203,7 @@ export const runPersistedPlanWithCapturedMetadata = async (
           async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<never> {
             throw new Error("createFeedbackDelta should not be called");
           },
-          async listFeedbackDeltasForProject() {
+          async listFeedbackDeltasForSubjects(_input: ListFeedbackDeltasForSubjectsInput) {
             return [...(options.feedbackDeltas ?? [])];
           }
         };

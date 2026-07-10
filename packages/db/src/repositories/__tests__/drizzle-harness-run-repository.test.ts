@@ -28,6 +28,22 @@ describe("DrizzleHarnessRunRepository", () => {
     expect(typeof DrizzleHarnessRunRepository.prototype.createEvalFeedbackDeltaOnce).toBe(
       "function"
     );
+    expect(typeof DrizzleHarnessRunRepository.prototype.listFeedbackDeltasForSubjects).toBe(
+      "function"
+    );
+  });
+
+  it("returns no subject feedback without querying when no candidates are active", async () => {
+    const db = {
+      select: () => {
+        throw new Error("empty subject retrieval must not query the database");
+      }
+    } as unknown as KrnDatabase;
+
+    await expect(new DrizzleHarnessRunRepository(db).listFeedbackDeltasForSubjects({
+      projectId: "project-1",
+      subjects: []
+    })).resolves.toEqual([]);
   });
 
   it("normalizes evidence command provenance before persistence", () => {

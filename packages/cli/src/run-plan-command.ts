@@ -72,7 +72,8 @@ import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
-  applyStoreKnowledgeUsefulnessFeedback
+  applyStoreKnowledgeUsefulnessFeedback,
+  listStoreKnowledgeUsefulnessFeedback
 } from "./store-knowledge-usefulness-selection.js";
 
 export interface PlanCommandRuntime extends BaseCommandRuntime {
@@ -110,7 +111,10 @@ interface CompilerRuntimeResolution {
   projectResolution?: ProjectResolution;
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun"> &
-    Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">>;
+    Partial<Pick<
+      HarnessRunRepository,
+      "listFeedbackDeltasForSubjects"
+    >>;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
   close(): Promise<void>;
 }
@@ -570,16 +574,16 @@ const readKnowledgeSelection = async (
     20,
     { terms: tokenizeActivationText(query) }
   );
-  const listFeedbackDeltasForProject =
-    compilerRuntime.harnessRunRepository?.listFeedbackDeltasForProject;
-  const feedbackDeltas = listFeedbackDeltasForProject === undefined
-    ? []
-    : await listFeedbackDeltasForProject(
-      compilerRuntime.projectId,
-      100
-    );
+  const knowledgeReadModels = records.map(memoryRecordToKnowledgeReadModel);
+  const feedbackDeltas = await listStoreKnowledgeUsefulnessFeedback({
+    projectId: compilerRuntime.projectId,
+    readModels: knowledgeReadModels,
+    ...(compilerRuntime.harnessRunRepository === undefined
+      ? {}
+      : { harnessRunRepository: compilerRuntime.harnessRunRepository })
+  });
   const usefulnessSelection = applyStoreKnowledgeUsefulnessFeedback(
-    records.map(memoryRecordToKnowledgeReadModel),
+    knowledgeReadModels,
     feedbackDeltas
   );
   const readModels = searchKnowledgeReadModels(

@@ -84,6 +84,23 @@ export interface CreateFeedbackDeltaInput extends RepositoryMetadata {
   evalCandidates: FeedbackDelta["evalCandidates"];
 }
 
+export type FeedbackSubjectKind =
+  | "memory_record"
+  | "knowledge"
+  | "source_claim"
+  | "source_decision";
+
+export interface FeedbackSubjectReference {
+  kind: FeedbackSubjectKind;
+  id: string;
+}
+
+export interface ListFeedbackDeltasForSubjectsInput {
+  projectId: ProjectId;
+  subjects: readonly FeedbackSubjectReference[];
+  limitPerSubject?: number;
+}
+
 export interface CreateEvalFeedbackDeltaOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
   projectId: ProjectId;
@@ -131,6 +148,9 @@ export interface HarnessRunRepository {
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;
   listFeedbackDeltasForProject(projectId: string, limit?: number): Promise<FeedbackDelta[]>;
+  listFeedbackDeltasForSubjects?(
+    input: ListFeedbackDeltasForSubjectsInput
+  ): Promise<FeedbackDelta[]>;
   getHarnessRunByExecutionRunId(
     executionRunId: ExecutionRunId
   ): Promise<HarnessRunAggregate | undefined>;

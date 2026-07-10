@@ -7,9 +7,12 @@ export type {
   CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
+  FeedbackSubjectKind,
+  FeedbackSubjectReference,
   CreateReviewAssessmentInput,
   HarnessRunAggregate,
   HarnessRunRepository,
+  ListFeedbackDeltasForSubjectsInput,
   UpdateExecutionRunStatusInput
 } from "./harness-run-repository.js";
 export type {

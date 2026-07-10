@@ -7,6 +7,10 @@ import {
   sql
 } from "drizzle-orm";
 import type {
+  SQL,
+  SQLWrapper
+} from "drizzle-orm";
+import type {
   ContextAssembly,
   EvidenceBundle,
   EvidenceCommand,
@@ -32,12 +36,14 @@ import type {
   CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
+  FeedbackSubjectReference,
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
   CreateTaskContractInput,
   HarnessRunAggregate,
   HarnessRunRepository,
+  ListFeedbackDeltasForSubjectsInput,
   UpdateExecutionRunStatusInput
 } from "@krn/core/repositories/internal";
 
@@ -88,6 +94,103 @@ export const evidenceCommandsForPersistence = (
   commands: readonly EvidenceCommand[]
 ): EvidenceCommandReadback[] =>
   commands.map(toEvidenceCommandReadback);
+
+const feedbackMetadataSubjectMatch = (
+  field: "knowledgeId" | "sourceClaimId" | "sourceDecisionId",
+  id: string
+): SQL => {
+  switch (field) {
+    case "knowledgeId":
+      return sql`exists (
+        select 1
+        from jsonb_array_elements(
+          coalesce(${feedbackDeltas.metadata}->'knowledgeUsefulnessOutcomes', '[]'::jsonb)
+        ) as outcome
+        where outcome->>'knowledgeId' = ${id}
+      )`;
+    case "sourceClaimId":
+      return sql`exists (
+        select 1
+        from jsonb_array_elements(
+          coalesce(${feedbackDeltas.metadata}->'sourceUsefulnessOutcomes', '[]'::jsonb)
+        ) as outcome
+        where outcome->>'sourceClaimId' = ${id}
+      )`;
+    case "sourceDecisionId":
+      return sql`exists (
+        select 1
+        from jsonb_array_elements(
+          coalesce(${feedbackDeltas.metadata}->'sourceUsefulnessOutcomes', '[]'::jsonb)
+        ) as outcome
+        where outcome->>'sourceDecisionId' = ${id}
+      )`;
+  }
+};
+
+const feedbackMetadataCandidateMatch = (
+  field: "sourceClaimCandidates" | "sourceDecisionCandidates",
+  id: string
+): SQL => {
+  const candidates = field === "sourceClaimCandidates"
+    ? sql`coalesce(${feedbackDeltas.metadata}->'sourceClaimCandidates', '[]'::jsonb)`
+    : sql`coalesce(${feedbackDeltas.metadata}->'sourceDecisionCandidates', '[]'::jsonb)`;
+
+  return sql`exists (
+    select 1
+    from jsonb_array_elements(${candidates}) as candidate
+    where candidate->>'id' = ${id}
+  )`;
+};
+
+const feedbackMemorySourceClaimMatch = (id: string): SQL => sql`exists (
+  select 1
+  from jsonb_array_elements(coalesce(${feedbackDeltas.memoryCandidates}, '[]'::jsonb)) as candidate,
+       jsonb_array_elements_text(coalesce(candidate->'sourceClaimIds', '[]'::jsonb)) as source_claim_id
+  where source_claim_id = ${id}
+)`;
+
+const feedbackJsonCandidateSubjectMatch = (
+  column: SQLWrapper,
+  id: string
+): SQL => sql`exists (
+  select 1
+  from jsonb_array_elements(coalesce(${column}, '[]'::jsonb)) as candidate
+  where candidate->>'id' = ${id}
+)`;
+
+const feedbackSubjectMatch = (subject: FeedbackSubjectReference): SQL => {
+  switch (subject.kind) {
+    case "knowledge":
+      return feedbackMetadataSubjectMatch("knowledgeId", subject.id);
+    case "memory_record": {
+      const knowledgeMatch = feedbackMetadataSubjectMatch("knowledgeId", subject.id);
+      const candidateMatch = feedbackJsonCandidateSubjectMatch(
+        feedbackDeltas.memoryCandidates,
+        subject.id
+      );
+
+      return sql`(${knowledgeMatch}) or (${candidateMatch})`;
+    }
+    case "source_claim":
+      return sql`(
+        ${feedbackMetadataSubjectMatch("sourceClaimId", subject.id)}
+      ) or (
+        ${feedbackMetadataCandidateMatch("sourceClaimCandidates", subject.id)}
+      ) or (
+        ${feedbackMemorySourceClaimMatch(subject.id)}
+      )`;
+    case "source_decision": {
+      const usefulnessMatch = feedbackMetadataSubjectMatch("sourceDecisionId", subject.id);
+      const proposalMatch = feedbackMetadataCandidateMatch("sourceDecisionCandidates", subject.id);
+      const candidateMatch = feedbackJsonCandidateSubjectMatch(
+        feedbackDeltas.sourceDecisions,
+        subject.id
+      );
+
+      return sql`(${usefulnessMatch}) or (${proposalMatch}) or (${candidateMatch})`;
+    }
+  }
+};
 
 export const validateEvidenceBundleInputForPersistence = (
   input: CreateEvidenceBundleInput
@@ -584,6 +687,79 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       .limit(limit);
 
     return rows.map((row) => mapFeedbackDelta(row.feedbackDelta));
+  }
+
+  async listFeedbackDeltasForSubjects(
+    input: ListFeedbackDeltasForSubjectsInput
+  ): Promise<FeedbackDelta[]> {
+    const limitPerSubject = input.limitPerSubject ?? 100;
+
+    if (!Number.isInteger(limitPerSubject) || limitPerSubject <= 0) {
+      return [];
+    }
+
+    const subjects = [...new Map(
+      input.subjects
+        .map((subject) => ({
+          kind: subject.kind,
+          id: subject.id.trim()
+        }))
+        .filter((subject) => subject.id.length > 0)
+        .map((subject) => [`${subject.kind}:${subject.id}`, subject] as const)
+    ).values()];
+
+    if (subjects.length === 0) {
+      return [];
+    }
+
+    const rowsBySubject = await Promise.all(subjects.map((subject) =>
+      this.db
+        .select({ feedbackDelta: feedbackDeltas })
+        .from(feedbackDeltas)
+        .innerJoin(
+          reviewAssessments,
+          eq(feedbackDeltas.reviewAssessmentId, reviewAssessments.id)
+        )
+        .innerJoin(
+          evidenceBundles,
+          eq(reviewAssessments.evidenceBundleId, evidenceBundles.id)
+        )
+        .innerJoin(
+          executionRuns,
+          eq(evidenceBundles.executionRunId, executionRuns.id)
+        )
+        .innerJoin(
+          harnessPlans,
+          eq(executionRuns.harnessPlanId, harnessPlans.id)
+        )
+        .innerJoin(
+          taskContracts,
+          eq(harnessPlans.taskContractId, taskContracts.id)
+        )
+        .where(and(
+          eq(taskContracts.projectId, input.projectId),
+          feedbackSubjectMatch(subject)
+        ))
+        .orderBy(desc(feedbackDeltas.createdAt), desc(feedbackDeltas.id))
+        .limit(limitPerSubject)
+    ));
+    const uniqueRows = new Map<string, (typeof rowsBySubject)[number][number]["feedbackDelta"]>();
+
+    for (const rows of rowsBySubject) {
+      for (const row of rows) {
+        uniqueRows.set(row.feedbackDelta.id, row.feedbackDelta);
+      }
+    }
+
+    return [...uniqueRows.values()]
+      .sort((left, right) => {
+        const createdAtDifference = right.createdAt.getTime() - left.createdAt.getTime();
+
+        return createdAtDifference === 0
+          ? right.id.localeCompare(left.id)
+          : createdAtDifference;
+      })
+      .map(mapFeedbackDelta);
   }
 
   async getHarnessRunByExecutionRunId(
