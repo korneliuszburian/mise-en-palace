@@ -1,8 +1,10 @@
 import {
+  and,
   asc,
   eq,
   inArray,
-  desc
+  desc,
+  sql
 } from "drizzle-orm";
 import type {
   ContextAssembly,
@@ -26,6 +28,8 @@ import {
 import type {
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
+  CreateEvalFeedbackDeltaOnceInput,
+  CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
   CreateHarnessPlanInput,
@@ -106,6 +110,40 @@ export const validateEvidenceBundleInputForPersistence = (
     rollbackPath: parsed.rollbackPath,
     metadata: parsed.metadata
   };
+};
+
+const insertEvidenceBundleAndEvent = async (
+  tx: KrnDatabase,
+  input: CreateEvidenceBundleInput,
+  operation: string
+) => {
+  const row = requireReturnedRow(
+    await tx
+      .insert(evidenceBundles)
+      .values({
+        executionRunId: input.executionRunId,
+        status: input.status ?? "captured",
+        changedFiles: input.changedFiles,
+        commands: evidenceCommandsForPersistence(input.commands),
+        diffRisk: input.diffRisk,
+        reviewBurden: input.reviewBurden,
+        rollbackPath: input.rollbackPath,
+        metadata: input.metadata ?? {}
+      })
+      .returning(),
+    operation
+  );
+
+  await tx.insert(runEvents).values({
+    executionRunId: input.executionRunId,
+    sequence: input.event.sequence,
+    type: input.event.type,
+    severity: input.event.severity ?? "info",
+    message: input.event.message,
+    payload: input.event.payload ?? {}
+  });
+
+  return row;
 };
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
@@ -350,31 +388,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     const evidenceInput = validateEvidenceBundleInputForPersistence(input);
 
     return this.db.transaction(async (tx) => {
-      const row = requireReturnedRow(
-        await tx
-          .insert(evidenceBundles)
-          .values({
-            executionRunId: evidenceInput.executionRunId,
-            status: evidenceInput.status ?? "captured",
-            changedFiles: evidenceInput.changedFiles,
-            commands: evidenceCommandsForPersistence(evidenceInput.commands),
-            diffRisk: evidenceInput.diffRisk,
-            reviewBurden: evidenceInput.reviewBurden,
-            rollbackPath: evidenceInput.rollbackPath,
-            metadata: evidenceInput.metadata ?? {}
-          })
-          .returning(),
-        "createEvidenceBundle"
-      );
-
-      await tx.insert(runEvents).values({
-        executionRunId: evidenceInput.executionRunId,
-        sequence: evidenceInput.event.sequence,
-        type: evidenceInput.event.type,
-        severity: evidenceInput.event.severity ?? "info",
-        message: evidenceInput.event.message,
-        payload: evidenceInput.event.payload ?? {}
-      });
+      const row = await insertEvidenceBundleAndEvent(tx, evidenceInput, "createEvidenceBundle");
 
       return mapEvidenceBundle(row);
     });
@@ -425,6 +439,119 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       });
 
       return mapFeedbackDelta(row);
+    });
+  }
+
+  async createEvalFeedbackDeltaOnce(
+    input: CreateEvalFeedbackDeltaOnceInput
+  ): Promise<CreateEvalFeedbackDeltaOnceResult> {
+    const executionIdentity = input.executionIdentity.trim();
+
+    if (executionIdentity.length === 0) {
+      throw new Error("createEvalFeedbackDeltaOnce requires execution identity");
+    }
+
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${executionIdentity}, 0))`
+      );
+
+      const existingEvidenceBundleRow = await tx.query.evidenceBundles.findFirst({
+        where: and(
+          eq(evidenceBundles.executionRunId, input.executionRunId),
+          sql`${evidenceBundles.metadata} ->> 'evalExecutionIdentity' = ${executionIdentity}`
+        )
+      });
+
+      if (existingEvidenceBundleRow !== undefined) {
+        const existingReviewAssessmentRow = await tx.query.reviewAssessments.findFirst({
+          where: eq(reviewAssessments.evidenceBundleId, existingEvidenceBundleRow.id)
+        });
+
+        if (existingReviewAssessmentRow === undefined) {
+          throw new Error(
+            `Eval feedback persistence is incomplete for ${executionIdentity}: review assessment missing`
+          );
+        }
+
+        const existingFeedbackDeltaRow = await tx.query.feedbackDeltas.findFirst({
+          where: eq(feedbackDeltas.reviewAssessmentId, existingReviewAssessmentRow.id)
+        });
+
+        if (existingFeedbackDeltaRow === undefined) {
+          throw new Error(
+            `Eval feedback persistence is incomplete for ${executionIdentity}: feedback delta missing`
+          );
+        }
+
+        return {
+          evidenceBundle: mapEvidenceBundle(existingEvidenceBundleRow),
+          reviewAssessment: mapReviewAssessment(existingReviewAssessmentRow),
+          feedbackDelta: mapFeedbackDelta(existingFeedbackDeltaRow),
+          created: false
+        };
+      }
+
+      const evidenceInput = validateEvidenceBundleInputForPersistence({
+        ...input.evidence,
+        executionRunId: input.executionRunId,
+        metadata: {
+          ...(input.evidence.metadata ?? {}),
+          evalExecutionIdentity: executionIdentity,
+          projectId: input.projectId
+        }
+      });
+      const evidenceBundleRow = await insertEvidenceBundleAndEvent(
+        tx,
+        evidenceInput,
+        "createEvalFeedbackDeltaOnce.evidenceBundle"
+      );
+
+      const reviewAssessmentRow = requireReturnedRow(
+        await tx
+          .insert(reviewAssessments)
+          .values({
+            evidenceBundleId: evidenceBundleRow.id,
+            status: input.review.status ?? "pending",
+            reviewer: input.review.reviewer,
+            summary: input.review.summary,
+            findings: input.review.findings,
+            metadata: input.review.metadata ?? {}
+          })
+          .returning(),
+        "createEvalFeedbackDeltaOnce.reviewAssessment"
+      );
+      const feedbackDeltaRow = requireReturnedRow(
+        await tx
+          .insert(feedbackDeltas)
+          .values({
+            reviewAssessmentId: reviewAssessmentRow.id,
+            status: input.feedback.status ?? "candidate",
+            memoryCandidates: input.feedback.memoryCandidates,
+            sourceDecisions: input.feedback.sourceDecisions,
+            evalCandidates: input.feedback.evalCandidates,
+            metadata: input.feedback.metadata ?? {}
+          })
+          .returning(),
+        "createEvalFeedbackDeltaOnce.feedbackDelta"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "feedback.delta.created",
+        payload: {
+          feedbackDeltaId: feedbackDeltaRow.id,
+          reviewAssessmentId: reviewAssessmentRow.id,
+          evalExecutionIdentity: executionIdentity,
+          projectId: input.projectId
+        }
+      });
+
+      return {
+        evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+        reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
+        feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
+        created: true
+      };
     });
   }
 

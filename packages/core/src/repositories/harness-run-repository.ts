@@ -12,6 +12,7 @@ import type {
   FeedbackDeltaCreateStatus,
   HarnessPlan,
   OperatorIntent,
+  ProjectId,
   ReviewAssessment,
   ReviewFinding,
   TaskContract
@@ -83,6 +84,22 @@ export interface CreateFeedbackDeltaInput extends RepositoryMetadata {
   evalCandidates: FeedbackDelta["evalCandidates"];
 }
 
+export interface CreateEvalFeedbackDeltaOnceInput extends RepositoryMetadata {
+  executionRunId: ExecutionRunId;
+  projectId: ProjectId;
+  executionIdentity: string;
+  evidence: Omit<CreateEvidenceBundleInput, "executionRunId">;
+  review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
+  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
+}
+
+export interface CreateEvalFeedbackDeltaOnceResult {
+  evidenceBundle: EvidenceBundle;
+  reviewAssessment: ReviewAssessment;
+  feedbackDelta: FeedbackDelta;
+  created: boolean;
+}
+
 export interface HarnessRunAggregate {
   operatorIntent: OperatorIntent;
   taskContract: TaskContract;
@@ -110,6 +127,9 @@ export interface HarnessRunRepository {
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;
+  createEvalFeedbackDeltaOnce?(
+    input: CreateEvalFeedbackDeltaOnceInput
+  ): Promise<CreateEvalFeedbackDeltaOnceResult>;
   listFeedbackDeltasForProject(projectId: string, limit?: number): Promise<FeedbackDelta[]>;
   getHarnessRunByExecutionRunId(
     executionRunId: ExecutionRunId

@@ -104,6 +104,7 @@ export type CliCommand =
         | "harnessEvidence"
         | "sourceGraph"
         | "memoryGovernance"
+        | "evalFeedbackPersistence"
         | "retrievalSubstrate"
         | "activation"
         | "brainLoop"

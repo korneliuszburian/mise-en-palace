@@ -51,6 +51,12 @@ describe("parseDbArgs", () => {
         target: "brainSearch"
       }
     });
+    expect(parseDbArgs(["smoke", "eval-feedback-persistence"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "evalFeedbackPersistence"
+      }
+    });
     expect(parseDbArgs(["smoke", "run-show"])).toEqual({
       command: {
         kind: "dbSmoke",

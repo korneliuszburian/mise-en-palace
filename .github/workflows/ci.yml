@@ -102,6 +102,9 @@ jobs:
       - name: DB memory governance smoke
         run: pnpm db:smoke:memory-governance
 
+      - name: DB eval feedback persistence smoke
+        run: pnpm db:smoke:eval-feedback-persistence
+
       - name: DB memory loop smoke
         run: pnpm db:smoke:memory-loop
 

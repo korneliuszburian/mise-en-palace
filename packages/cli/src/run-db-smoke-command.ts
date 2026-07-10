@@ -46,6 +46,9 @@ import {
   type DecisionPacketReturnLoopSmokeReport,
   runDecisionPacketReturnLoopSmokeCheck
 } from "./internal/smoke/decision-packet-return-loop-smoke.js";
+import {
+  runEvalFeedbackPersistenceSmokeCheck
+} from "./internal/smoke/eval-feedback-persistence-smoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -57,6 +60,7 @@ export interface DbSmokeRuntime {
     | "harnessEvidence"
     | "sourceGraph"
     | "memoryGovernance"
+    | "evalFeedbackPersistence"
     | "retrievalSubstrate"
     | "activation"
     | "brainLoop"
@@ -126,6 +130,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Memory Governance Smoke",
     skippedLine: "Memory governance smoke: skipped (database not configured)",
     failureLabel: "Memory governance smoke"
+  },
+  evalFeedbackPersistence: {
+    title: "KRN Eval Feedback Persistence Smoke",
+    skippedLine: "Eval feedback persistence smoke: skipped (database not configured)",
+    failureLabel: "Eval feedback persistence smoke"
   },
   retrievalSubstrate: {
     title: "KRN Retrieval Substrate Smoke",
@@ -391,6 +400,38 @@ const runMemoryGovernanceSmokeTarget: DbSmokeTargetHandler = async (
       `Outbox events: ${report.outboxEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Memory governance smoke")
+    ]
+  );
+};
+
+const runEvalFeedbackPersistenceSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runEvalFeedbackPersistenceSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    repoRoot: context.repoRoot,
+    smokeId: runtime.createId("eval-feedback-persistence-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Eval Feedback Persistence Smoke",
+    report.cleanedUp,
+    [
+      `Smoke id: ${report.smokeId}`,
+      `Project: ${report.projectId}`,
+      `Execution run: ${report.executionRunId}`,
+      `Failing eval candidates: ${report.failingEvalCandidateCount}`,
+      `Persisted eval candidates: ${report.persistedEvalCandidateCount}`,
+      `First persistence created: ${report.firstPersistenceCreated ? "yes" : "no"}`,
+      `Retry persistence created: ${report.retryPersistenceCreated ? "yes" : "no"}`,
+      `Retry feedback delta: ${report.retryFeedbackDeltaId}`,
+      `Readback feedback delta: ${report.readbackFeedbackDeltaId}`,
+      `Passing eval persisted: ${report.passingEvalPersisted ? "yes" : "no"}`,
+      `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Eval feedback persistence smoke")
     ]
   );
 };
@@ -987,6 +1028,7 @@ const dbSmokeTargetHandlers = {
   harnessEvidence: runHarnessEvidenceSmokeTarget,
   sourceGraph: runSourceGraphSmokeTarget,
   memoryGovernance: runMemoryGovernanceSmokeTarget,
+  evalFeedbackPersistence: runEvalFeedbackPersistenceSmokeTarget,
   retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
   activation: runActivationSmokeTarget,
   brainLoop: runBrainLoopSmokeTarget,

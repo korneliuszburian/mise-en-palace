@@ -2,9 +2,12 @@ export * from "../activation-readiness.js";
 export * from "./smoke/activation-smoke.js";
 export * from "./smoke/brain-loop-smoke.js";
 export {
+  assertSmokeReadbackChecks,
   cleanupHarnessCompilerSmokeRows,
   createCompiledSmokeExecution,
-  createHarnessCompilerSmokeRuntime
+  createHarnessCompilerSmokeRuntime,
+  createSmokeRuntime,
+  requireSmokeReadbackValue
 } from "./smoke/db-smoke-support.js";
 export * from "./smoke/harness-evidence-smoke.js";
 export * from "./smoke/maintenance-boundary-smoke.js";

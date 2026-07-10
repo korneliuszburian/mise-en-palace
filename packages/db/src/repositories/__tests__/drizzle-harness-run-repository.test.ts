@@ -25,6 +25,9 @@ describe("DrizzleHarnessRunRepository", () => {
     expect(typeof DrizzleHarnessRunRepository.prototype.getHarnessRunByExecutionRunId).toBe(
       "function"
     );
+    expect(typeof DrizzleHarnessRunRepository.prototype.createEvalFeedbackDeltaOnce).toBe(
+      "function"
+    );
   });
 
   it("normalizes evidence command provenance before persistence", () => {

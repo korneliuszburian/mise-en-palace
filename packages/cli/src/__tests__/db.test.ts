@@ -141,8 +141,15 @@ describe("runCli", () => {
     expect(packageJson.scripts?.["alpha:verify:full"]).toContain(
       "pnpm db:smoke:memory-governance"
     );
+    expect(packageJson.scripts?.["alpha:verify:full"]).toContain(
+      "pnpm db:smoke:eval-feedback-persistence"
+    );
+    expect(packageJson.scripts?.["db:smoke:eval-feedback-persistence"]).toContain(
+      "db smoke eval-feedback-persistence"
+    );
     expect(workflow).toContain("run: pnpm eval:db");
     expect(workflow).toContain("run: pnpm db:smoke:memory-governance");
+    expect(workflow).toContain("run: pnpm db:smoke:eval-feedback-persistence");
   });
 
   it("fails real recall eval when any distractor-competition case loses", () => {
@@ -179,6 +186,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Internal/dev commands:");
     expect(result.stdout).toContain("krn db readiness");
     expect(result.stdout).toContain("krn db smoke [target]");
+    expect(result.stdout).toContain("eval-feedback-persistence");
     expect(result.stdout).toContain("decision-corpus-import");
     expect(result.stdout).toContain("real-recall-advantage");
     expect(result.stdout).toContain(

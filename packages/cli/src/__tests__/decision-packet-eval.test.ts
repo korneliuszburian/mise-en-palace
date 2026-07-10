@@ -20,6 +20,9 @@ import {
   classifyDecisionPacketForEval,
   runDecisionPacketEval
 } from "../internal/eval/run-decision-packet-eval.js";
+import {
+  buildDecisionPacketEvalFailurePersistenceInput
+} from "../internal/eval/run-decision-packet-eval-persistence.js";
 
 const fixturePath = fileURLToPath(
   new URL("../../../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json", import.meta.url)
@@ -744,5 +747,133 @@ describe("runDecisionPacketEval", () => {
         "failure:stale_authority"
       ])
     });
+  });
+
+  it("builds opt-in failure persistence through the reviewed feedback seam", async () => {
+    const rawFixture = loadMutableFixture();
+
+    for (const decision of rawFixture.decisions) {
+      if (decision["status"] === "current") {
+        delete decision["sourceDecisionEdgeId"];
+      }
+    }
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+    const persistenceInput = buildDecisionPacketEvalFailurePersistenceInput({
+      evalCommand: "pnpm --filter @krn/cli eval:decision-packet failing-fixture.json",
+      executionRunId: "execution-run-eval-1",
+      now: "2026-07-09T12:00:00.000Z",
+      projectId: "project-eval-1",
+      result
+    });
+    const caseCandidate = persistenceInput?.feedback.evalCandidates.find((candidate) =>
+      candidate.caseId === "memory-runtime-task"
+    );
+
+    expect(result.status).toBe("fail");
+    expect(caseCandidate).toMatchObject({
+      caseId: "memory-runtime-task",
+      failureClass: "missing_evidence_fidelity",
+      metadata: {
+        caseId: "memory-runtime-task",
+        failureClass: "missing_evidence_fidelity"
+      }
+    });
+    expect(persistenceInput).toMatchObject({
+      executionRunId: "execution-run-eval-1",
+      projectId: "project-eval-1",
+      executionIdentity:
+        "project-eval-1:execution-run-eval-1:krn.decisionPacket.eval.v1:1",
+      evidence: {
+        status: "captured",
+        commands: [{
+          command: "pnpm --filter @krn/cli eval:decision-packet failing-fixture.json",
+          status: "failed",
+          provenance: "operator_reported"
+        }],
+        metadata: {
+          evalExecutionIdentity:
+            "project-eval-1:execution-run-eval-1:krn.decisionPacket.eval.v1:1",
+          projectId: "project-eval-1",
+          candidateCount: result.evalCandidates.length
+        }
+      },
+      review: {
+        status: "pending",
+        reviewer: "krn-decision-packet-eval",
+        findings: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.stringContaining("DecisionPacket eval failure")
+          })
+        ])
+      },
+      feedback: {
+        status: "candidate",
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: expect.arrayContaining([
+          expect.objectContaining({
+            projectId: "project-eval-1",
+            status: "candidate",
+            metadata: expect.objectContaining({
+              doesNotProve: expect.any(String),
+              evidenceRefs: expect.any(Array),
+              observedSignal: expect.any(Object)
+            })
+          })
+        ])
+      }
+    });
+  });
+
+  it("preserves suite-threshold identity for opt-in failure persistence", async () => {
+    const rawFixture = loadMutableFixture();
+
+    rawFixture.cases = rawFixture.cases.filter((testCase) =>
+      testCase["expectedEvidenceGap"] === undefined
+    );
+
+    const result = await runDecisionPacketEval(parseDecisionPacketEvalFixture(rawFixture));
+    const persistenceInput = buildDecisionPacketEvalFailurePersistenceInput({
+      evalCommand: "pnpm --filter @krn/cli eval:decision-packet suite-threshold-fixture.json",
+      executionRunId: "execution-run-eval-threshold",
+      now: "2026-07-09T12:00:00.000Z",
+      projectId: "project-eval-1",
+      result
+    });
+
+    expect(result.status).toBe("fail");
+    expect(result.evalCandidates).toEqual([
+      expect.objectContaining({
+        caseId: "decision-packet-eval-suite",
+        failureClass: "threshold_violation"
+      })
+    ]);
+    expect(persistenceInput?.feedback.evalCandidates).toEqual([
+      expect.objectContaining({
+        caseId: "decision-packet-eval-suite",
+        failureClass: "threshold_violation",
+        metadata: expect.objectContaining({
+          caseId: "decision-packet-eval-suite",
+          failureClass: "threshold_violation",
+          evidenceRefs: expect.arrayContaining([
+            "threshold:minimumAbstentionCaseCount"
+          ])
+        })
+      })
+    ]);
+  });
+
+  it("does not build a persistence input for a passing eval", async () => {
+    const result = await runDecisionPacketEval(loadDecisionPacketEvalFixture(fixturePath));
+
+    expect(result.status).toBe("pass");
+    expect(buildDecisionPacketEvalFailurePersistenceInput({
+      evalCommand: "pnpm --filter @krn/cli eval:decision-packet passing-fixture.json",
+      executionRunId: "execution-run-eval-pass",
+      now: "2026-07-09T12:00:00.000Z",
+      projectId: "project-eval-1",
+      result
+    })).toBeUndefined();
   });
 });

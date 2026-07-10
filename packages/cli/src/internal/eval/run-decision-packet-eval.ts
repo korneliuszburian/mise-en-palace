@@ -35,6 +35,14 @@ import type {
 import {
   loadDecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
+import {
+  createDatabaseRuntime,
+  defaultProjectSlug,
+  defaultWorkspaceSlug
+} from "../../database-runtime.js";
+import {
+  persistDecisionPacketEvalFailures
+} from "./run-decision-packet-eval-persistence.js";
 
 export type {
   DecisionPacketEvalCaseReadback,
@@ -55,6 +63,103 @@ const evalCandidateDoesNotProve =
   "DecisionPacket eval candidates identify reviewable deterministic failures; they do not prove source truth, live Codex behavior, production retrieval quality, or that the proposed fix is correct.";
 const missingBriefPropagationReason =
   "packet-selected guidance is missing from Codex-facing brief";
+
+interface DecisionPacketEvalCliOptions {
+  fixturePath: string;
+  persistFailures: boolean;
+  runId?: string;
+  projectId?: string;
+}
+
+const requiredOptionValue = (
+  argv: readonly string[],
+  index: number,
+  option: string
+): string => {
+  const value = argv[index + 1]?.trim();
+
+  if (value === undefined || value.length === 0 || value.startsWith("--")) {
+    throw new Error(`${option} requires a non-empty value`);
+  }
+
+  return value;
+};
+
+const parseDecisionPacketEvalCliOptions = (
+  argv: readonly string[]
+): DecisionPacketEvalCliOptions => {
+  let fixturePath: string | undefined;
+  let persistFailures = false;
+  let runId: string | undefined;
+  let projectId: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+
+    if (argument === undefined) {
+      continue;
+    }
+
+    if (argument === "--persist-failures") {
+      persistFailures = true;
+      continue;
+    }
+
+    if (argument === "--run-id") {
+      runId = requiredOptionValue(argv, index, argument);
+      index += 1;
+      continue;
+    }
+
+    if (argument === "--project-id") {
+      projectId = requiredOptionValue(argv, index, argument);
+      index += 1;
+      continue;
+    }
+
+    if (argument.startsWith("--")) {
+      throw new Error(`Unknown DecisionPacket eval option: ${argument}`);
+    }
+
+    if (fixturePath !== undefined) {
+      throw new Error("DecisionPacket eval accepts only one fixture path");
+    }
+
+    fixturePath = argument;
+  }
+
+  if (!persistFailures) {
+    return {
+      fixturePath: fixturePath ?? "",
+      persistFailures
+    };
+  }
+
+  if (runId === undefined) {
+    throw new Error("--persist-failures requires --run-id");
+  }
+
+  if (projectId === undefined) {
+    throw new Error("--persist-failures requires --project-id");
+  }
+
+  return {
+    fixturePath: fixturePath ?? "",
+    persistFailures,
+    runId,
+    projectId
+  };
+};
+
+const evalDatabaseUrl = (): string => {
+  const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("--persist-failures requires KRN_DATABASE_URL");
+  }
+
+  return databaseUrl;
+};
 
 const decisionById = (
   decisions: readonly DecisionPacketDecision[]
@@ -922,7 +1027,55 @@ export const runDecisionPacketEval = async (
 };
 
 if (isCliEntrypoint(import.meta.url)) {
-  await writeJsonEvalResult(async () =>
-    runDecisionPacketEval(loadDecisionPacketEvalFixture(process.argv[2] ?? ""))
-  );
+  await writeJsonEvalResult(async () => {
+    const options = parseDecisionPacketEvalCliOptions(process.argv.slice(2));
+    const result = await runDecisionPacketEval(loadDecisionPacketEvalFixture(options.fixturePath));
+
+    if (!options.persistFailures) {
+      return result;
+    }
+
+    const runId = options.runId;
+    const projectId = options.projectId;
+
+    if (runId === undefined || projectId === undefined) {
+      throw new Error("--persist-failures requires --run-id and --project-id");
+    }
+
+    const databaseRuntime = await createDatabaseRuntime({
+      databaseUrl: evalDatabaseUrl(),
+      workspaceSlug: defaultWorkspaceSlug,
+      projectSlug: defaultProjectSlug,
+      projectId,
+      requireProjectKernelForExplicitProject: false,
+      now: () => new Date().toISOString(),
+      createId: (prefix) => `${prefix}:decision-packet-eval`
+    });
+
+    try {
+      const persistence = await persistDecisionPacketEvalFailures({
+        result,
+        executionRunId: runId,
+        projectId,
+        evalCommand: process.argv.slice(1).join(" "),
+        now: new Date().toISOString(),
+        harnessRunRepository: databaseRuntime.harnessRunRepository
+      });
+
+      return {
+        ...result,
+        persistence: persistence === undefined
+          ? { status: "skipped", reason: "eval_passed" }
+          : {
+              status: persistence.created ? "created" : "existing",
+              evidenceBundleId: persistence.evidenceBundle.id,
+              reviewAssessmentId: persistence.reviewAssessment.id,
+              feedbackDeltaId: persistence.feedbackDelta.id,
+              candidateCount: persistence.feedbackDelta.evalCandidates.length
+            }
+      };
+    } finally {
+      await databaseRuntime.close();
+    }
+  });
 }
