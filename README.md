@@ -88,6 +88,19 @@ Still not built:
 
 ## Verification
 
+Toolchain contract:
+
+```sh
+rtk pnpm toolchain:check
+```
+
+The repository supports the Node version in `.node-version` and exact pnpm
+version in `package.json`. Local agent commands require the `rtk` proxy because
+`AGENTS.md` makes it the shell boundary. CI runs the same check with the
+explicit `--allow-missing-rtk` fallback because GitHub-hosted runners execute
+their workflow commands through native `run:` steps; this fallback does not
+change the local agent rule.
+
 Fast local gate:
 
 ```sh

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": "22.x",
+    "pnpm": "10.32.1"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@beads/bd"
@@ -67,6 +71,7 @@
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",
     "beads:doctor": "bd doctor",
+    "toolchain:check": "node scripts/check-toolchain.mjs",
     "workspace:check": "node scripts/check-workspace-scripts.mjs",
     "quality:fallow": "pnpm quality:fallow:report",
     "quality:fallow:report": "mkdir -p .local-lab/fallow && (fallow --skip health --format compact --output-file .local-lab/fallow/dead-dupes.compact.txt || true) && (fallow health --format compact --output-file .local-lab/fallow/health.compact.txt || true)",

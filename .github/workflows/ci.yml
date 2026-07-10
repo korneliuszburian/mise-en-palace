@@ -32,13 +32,16 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Workspace and toolchain contract
+      - name: Toolchain and workspace contracts
+        run: pnpm toolchain:check -- --allow-missing-rtk
+
+      - name: Workspace script contract
         run: pnpm workspace:check
 
       - name: Typecheck
@@ -102,11 +105,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Toolchain contract
+        run: pnpm toolchain:check -- --allow-missing-rtk
 
       - name: DB ready
         run: timeout --signal=TERM --kill-after=10s 120s pnpm db:ready

@@ -101,4 +101,57 @@ describe("repository policy boundaries", () => {
     expect(workflow).toContain("timeout --signal=TERM --kill-after=10s 120s pnpm db:ready");
     expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
   });
+
+  it("keeps the Node and pnpm declarations shared with CI and self-checkable", () => {
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      packageManager?: string;
+      engines?: Record<string, string>;
+    };
+    const nodeVersion = readRootFile(".node-version").trim();
+    const workflow = readRootFile(".github/workflows/ci.yml");
+    const checker = join(repoRoot, "scripts/check-toolchain.mjs");
+
+    expect(packageJson.packageManager).toBe("pnpm@10.32.1");
+    expect(packageJson.engines?.node).toBe(`${nodeVersion}.x`);
+    expect(packageJson.engines?.pnpm).toBe("10.32.1");
+    expect(workflow.match(/node-version-file: \.node-version/gu)).toHaveLength(2);
+    expect(workflow.match(/pnpm toolchain:check -- --allow-missing-rtk/gu)).toHaveLength(2);
+
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-toolchain-contract-"));
+    const currentNodeMajor = process.versions.node.split(".")[0];
+
+    try {
+      writeFileSync(join(fixtureRoot, ".node-version"), `${currentNodeMajor}\n`);
+      writeFileSync(
+        join(fixtureRoot, "package.json"),
+        JSON.stringify({ packageManager: "pnpm@10.32.1" }),
+      );
+
+      expect(execFileSync(process.execPath, [checker, "--root", fixtureRoot, "--allow-missing-rtk"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+      })).toContain("Toolchain contract passed");
+
+      writeFileSync(
+        join(fixtureRoot, "package.json"),
+        JSON.stringify({ packageManager: "pnpm@0.0.0" }),
+      );
+
+      let failure: { status?: number; stderr?: string } | undefined;
+      try {
+        execFileSync(process.execPath, [checker, "--root", fixtureRoot, "--allow-missing-rtk"], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          stdio: "pipe",
+        });
+      } catch (error) {
+        failure = error as { status?: number; stderr?: string };
+      }
+
+      expect(failure?.status).toBe(1);
+      expect(failure?.stderr).toContain("pnpm 10.32.1 is unsupported; use pnpm 0.0.0");
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
 });
