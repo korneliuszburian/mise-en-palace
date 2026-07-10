@@ -79,7 +79,7 @@
     "security:dependency-audit": "node scripts/security-policy.mjs dependency-audit",
     "workspace:check": "node scripts/check-workspace-scripts.mjs",
     "quality:fallow": "pnpm quality:fallow:report",
-    "quality:fallow:report": "mkdir -p .local-lab/fallow && (fallow --skip health --format compact --output-file .local-lab/fallow/dead-dupes.compact.txt || true) && (fallow health --format compact --output-file .local-lab/fallow/health.compact.txt || true)",
+    "quality:fallow:report": "node scripts/run-fallow-report.mjs",
     "quality:fallow:ci": "fallow audit --format compact --dead-code-baseline fallow-baselines/dead-code.json --health-baseline fallow-baselines/health.json --dupes-baseline fallow-baselines/dupes.json",
     "alpha:verify": "pnpm alpha:verify:fast",
     "alpha:verify:fast": "pnpm typecheck && pnpm test && pnpm krn doctor",

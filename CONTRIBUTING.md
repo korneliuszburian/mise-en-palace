@@ -36,6 +36,10 @@ rtk proxy pnpm quality:fallow:ci
 rtk git diff --check
 ```
 
+The canonical gate map is maintained in `docs/VERIFICATION_GATES.md`. The
+Fallow report lane is explicitly NON-GATING; use `quality:fallow:ci` for the
+required gate.
+
 Changes touching Postgres, migrations, retrieval, authority, evidence, or
 feedback also require the relevant current DB readiness/smoke and eval proof.
 If Postgres or Codex is unavailable, report the result as blocked or

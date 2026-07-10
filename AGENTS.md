@@ -58,6 +58,7 @@ For code quality:
   exceptions explicitly, and never delete runtime/fixture files without owner
   evidence;
 - CI runs `pnpm quality:fallow:ci` as the changed-files Fallow gate.
+- The canonical gate map is maintained in `docs/VERIFICATION_GATES.md`.
 
 For naming and API shape:
 

@@ -227,6 +227,23 @@ describe("repository policy boundaries", () => {
     expect(failure?.stderr).toContain("@krn/core");
   });
 
+  it("distinguishes the non-gating report lane from canonical gates", () => {
+    const rootPackage = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+    const contributing = readRootFile("CONTRIBUTING.md");
+    const agents = readRootFile("AGENTS.md");
+    const gates = readRootFile("docs/VERIFICATION_GATES.md");
+
+    expect(rootPackage.scripts?.["quality:fallow:report"]).toContain("run-fallow-report.mjs");
+    expect(rootPackage.scripts?.["quality:fallow:ci"]).not.toContain("|| true");
+    expect(gates).toContain("FALLOW REPORT (NON-GATING)");
+    expect(gates).toContain("pnpm eval:required");
+    expect(gates).toContain("pnpm eval:db");
+    expect(contributing).toContain("docs/VERIFICATION_GATES.md");
+    expect(agents).toContain("docs/VERIFICATION_GATES.md");
+  });
+
   it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
     const security = readRootFile("SECURITY.md");
     const contributing = readRootFile("CONTRIBUTING.md");
