@@ -2,6 +2,22 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Local secrets and generated verification output. Keep .env.example tracked.
+.env
+.env.*
+!.env.example
+coverage/
+*.lcov
+*.log
+logs/
+reports/
+
+# Local editor and operating-system noise.
+.DS_Store
+.idea/
+*.swp
+*.swo
+
 # Local scratchpads for isolated agent research; includes reviewer-layer-autonomy-research.
 .local-lab/
 

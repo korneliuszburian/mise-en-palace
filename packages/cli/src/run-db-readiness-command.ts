@@ -79,12 +79,14 @@ export const runDbReadinessCommand = async (
         "Postgres config: configured",
         `Postgres endpoint: ${redactedPostgresEndpoint(databaseUrl)}`,
         "Postgres: reachable",
+        `Postgres server version: ${report.postgresServerVersion}`,
         `Migrations expected: ${report.expectedMigrationCount}`,
         `Migrations applied: ${report.appliedMigrationCount}`,
         `Migrations identity: ${report.migrationIdentityStatus}`,
         ...report.migrationIdentityDetails.map((detail) => `Migration detail: ${detail}`),
         `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
         `pgvector: ${report.pgvectorAvailable ? "available" : "missing"}`,
+        `pgvector version: ${report.pgvectorVersion ?? "not installed"}`,
         ...(ready
           ? []
           : [

@@ -37,6 +37,8 @@ export interface MigrationReadinessReport {
   migrationIdentityDetails: readonly string[];
   migrationsVerified: boolean;
   pgvectorAvailable: boolean;
+  postgresServerVersion: string;
+  pgvectorVersion?: string;
 }
 
 const migrationIdentityKey = (identity: MigrationIdentity): string =>
@@ -128,15 +130,27 @@ const inspectMigrationState = async (
         order by id
       `
     : [];
-  const vectorRows = await client<{ available: boolean }[]>`
-    select exists (
-      select 1
-      from pg_extension
-      where extname = 'vector'
-    ) as available
+  const runtimeRows = await client<{
+    serverVersion: string;
+    pgvectorAvailable: boolean;
+    pgvectorVersion: string | null;
+  }[]>`
+    select
+      current_setting('server_version') as "serverVersion",
+      exists (
+        select 1
+        from pg_extension
+        where extname = 'vector'
+      ) as "pgvectorAvailable",
+      (
+        select extversion
+        from pg_extension
+        where extname = 'vector'
+      ) as "pgvectorVersion"
   `;
   const appliedMigrationCount = migrationRows.length;
-  const pgvectorAvailable = vectorRows[0]?.available === true;
+  const runtime = runtimeRows[0];
+  const pgvectorAvailable = runtime?.pgvectorAvailable === true;
   const migrationIdentity = migrationTablePresent
     ? compareMigrationIdentities(expectedMigrations, migrationRows)
     : {
@@ -152,7 +166,11 @@ const inspectMigrationState = async (
     migrationIdentityStatus: migrationIdentity.status,
     migrationIdentityDetails: migrationIdentity.details,
     migrationsVerified: migrationIdentity.status === "verified",
-    pgvectorAvailable
+    pgvectorAvailable,
+    postgresServerVersion: runtime?.serverVersion ?? "unknown",
+    ...(runtime?.pgvectorVersion === null || runtime?.pgvectorVersion === undefined
+      ? {}
+      : { pgvectorVersion: runtime.pgvectorVersion })
   };
 };
 
