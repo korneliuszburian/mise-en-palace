@@ -1298,6 +1298,7 @@ const runSelectorFeedbackProof = async (
       expectedUse: "Demote stale DecisionPacket selector feedback memory on the next packet.",
       outcome: "stale",
       notes: `Store-backed stale feedback ${attempt} should make this memory unsafe for next activation.`,
+      packetChecksum: `${input.packetChecksum}-stale-${attempt}`,
       metadata: {
         smokeId: input.marker,
         selectorFeedbackProof: "stale",

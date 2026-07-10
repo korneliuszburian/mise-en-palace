@@ -598,6 +598,7 @@ describe("memory governance mappers", () => {
       id: "memory-application-1",
       memoryRecordId: "memory-record-1",
       executionRunId: "run-1",
+      decisionPacketChecksum: "packet-1",
       taskContractId: null,
       contextAssemblyId: null,
       expectedUse: "Guide storage decisions.",
@@ -611,8 +612,34 @@ describe("memory governance mappers", () => {
       id: "memory-application-1",
       memoryRecordId: "memory-record-1",
       executionRunId: "run-1",
+      packetChecksum: "packet-1",
+      proofClass: "packet_bound",
       outcome: "helped"
     });
+  });
+
+  it("marks NULL packet identity as legacy history", () => {
+    const mapMemoryApplication = mapper("mapMemoryApplication");
+
+    const result = mapMemoryApplication({
+      id: "legacy-memory-application-1",
+      memoryRecordId: "memory-record-legacy",
+      executionRunId: null,
+      decisionPacketChecksum: null,
+      taskContractId: null,
+      contextAssemblyId: null,
+      expectedUse: "Historical application.",
+      outcome: "helped",
+      notes: "No packet identity was persisted.",
+      metadata: {},
+      createdAt
+    });
+
+    expect(result).toMatchObject({
+      id: "legacy-memory-application-1",
+      proofClass: "legacy_history"
+    });
+    expect(result.packetChecksum).toBeUndefined();
   });
 
   it("maps M23 anti-memory source and run linkage", () => {

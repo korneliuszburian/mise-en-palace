@@ -1,0 +1,1 @@
+ALTER TABLE "memory_applications" ADD CONSTRAINT "memory_applications_packet_checksum_non_empty" CHECK ("memory_applications"."decision_packet_checksum" IS NULL OR length(btrim("memory_applications"."decision_packet_checksum")) > 0);

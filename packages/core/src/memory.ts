@@ -91,6 +91,7 @@ export type MemoryPromotionDecision = typeof memoryPromotionDecisions[number];
 export type MemoryApplicationOutcome = typeof memoryApplicationOutcomes[number];
 export type MemoryFeedbackDirection = typeof memoryFeedbackDirections[number];
 export type MemoryFeedbackEventType = typeof memoryFeedbackEventTypes[number];
+export type MemoryApplicationProofClass = "packet_bound" | "legacy_history";
 
 export interface SourceLineageRef {
   sourceId: string;
@@ -150,6 +151,8 @@ export interface MemoryApplication {
   id: MemoryApplicationId;
   memoryRecordId: MemoryRecordId;
   executionRunId?: ExecutionRunId;
+  packetChecksum?: string;
+  proofClass: MemoryApplicationProofClass;
   taskContractId?: TaskContractId;
   contextAssemblyId?: ContextAssemblyId;
   expectedUse: string;

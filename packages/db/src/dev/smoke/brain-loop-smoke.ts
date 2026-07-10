@@ -757,9 +757,10 @@ export const runBrainLoopSmokeCheck = async (
         taskContractId: taskContract.id,
         contextAssemblyId: nextCompile.contextAssembly.id,
         expectedUse: "Verify negative application feedback downgrades future activation.",
-        outcome: "hurt",
-        notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
-        metadata: {
+      outcome: "hurt",
+      notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
+      packetChecksum: `memory-loop-downgrade-packet-${marker}-${attempt}`,
+      metadata: {
           smokeId: marker,
           feedbackLoop: "downgrade",
           attempt

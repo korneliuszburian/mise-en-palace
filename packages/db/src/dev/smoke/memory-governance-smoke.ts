@@ -519,6 +519,111 @@ export const runMemoryGovernanceSmokeCheck = async (
       .select()
       .from(memoryApplications)
       .where(eq(memoryApplications.id, memoryApplication.id));
+    const legacyOnlyMemoryRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-legacy-only:${marker}`,
+      kind: "constraint",
+      summary: "Legacy-only memory must not strengthen ranking",
+      body: "Historical applications without packet identity remain inspectable history.",
+      owner: "kernel",
+      confidence: 80,
+      applicationGuidance: "Do not use legacy application rows as usefulness proof.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        integrityProbe: "legacy-only"
+      }
+    });
+    const counterIntegrityMemoryRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-counter-integrity:${marker}`,
+      kind: "constraint",
+      summary: "Packet-bound memory counter integrity",
+      body: "Only canonical packet applications may affect ranking counters.",
+      owner: "kernel",
+      confidence: 85,
+      applicationGuidance: "Use only after packet-bound application evidence is present.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        integrityProbe: "counter-rebuild"
+      }
+    });
+    await db.insert(memoryApplications).values([
+      {
+        memoryRecordId: legacyOnlyMemoryRecord.id,
+        executionRunId: null,
+        decisionPacketChecksum: null,
+        expectedUse: "Legacy fixture only.",
+        outcome: "helped",
+        notes: "No packet identity was persisted.",
+        metadata: { smokeId: marker, integrityProbe: "legacy-only" }
+      },
+      {
+        memoryRecordId: legacyOnlyMemoryRecord.id,
+        executionRunId: null,
+        decisionPacketChecksum: null,
+        expectedUse: "Legacy fixture only.",
+        outcome: "helped",
+        notes: "Duplicate legacy identity remains history.",
+        metadata: { smokeId: marker, integrityProbe: "legacy-only" }
+      },
+      {
+        memoryRecordId: counterIntegrityMemoryRecord.id,
+        executionRunId: null,
+        decisionPacketChecksum: null,
+        expectedUse: "Legacy fixture only.",
+        outcome: "helped",
+        notes: "No packet identity was persisted.",
+        metadata: { smokeId: marker, integrityProbe: "counter-rebuild" }
+      },
+      {
+        memoryRecordId: counterIntegrityMemoryRecord.id,
+        executionRunId: null,
+        decisionPacketChecksum: null,
+        expectedUse: "Legacy fixture only.",
+        outcome: "hurt",
+        notes: "Legacy negative history has no ranking authority.",
+        metadata: { smokeId: marker, integrityProbe: "counter-rebuild" }
+      }
+    ]);
+    await db
+      .update(memoryRecords)
+      .set({ positiveFeedbackCount: 99, negativeFeedbackCount: 88 })
+      .where(sql`${memoryRecords.id} in (${legacyOnlyMemoryRecord.id}, ${counterIntegrityMemoryRecord.id})`);
+    await memoryRepository.recordMemoryApplication({
+      memoryRecordId: counterIntegrityMemoryRecord.id,
+      executionRunId: executionRun.id,
+      packetChecksum,
+      evidenceBundleId: verificationEvidenceBundle.id,
+      expectedUse: "Prove a packet-bound application survives counter rebuild.",
+      outcome: "helped",
+      notes: "Only this current packet application may contribute positive ranking feedback.",
+      metadata: {
+        smokeId: marker,
+        integrityProbe: "counter-rebuild"
+      }
+    });
+    if (memoryRepository.rebuildMemoryApplicationCounters === undefined) {
+      throw new Error("Memory governance smoke requires memory application counter rebuild");
+    }
+    const counterRebuild = await memoryRepository.rebuildMemoryApplicationCounters();
+    const counterRebuildReplay = await memoryRepository.rebuildMemoryApplicationCounters();
+    const legacyOnlyAfterRebuild = await memoryRepository.getMemoryRecordById(
+      legacyOnlyMemoryRecord.id
+    );
+    const counterIntegrityAfterRebuild = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+    const rankedMemoryRecords = await memoryRepository.listActiveMemory(project.id, 100);
+    const legacyOnlyRank = rankedMemoryRecords.findIndex(
+      (record) => record.id === legacyOnlyMemoryRecord.id
+    );
+    const counterIntegrityRank = rankedMemoryRecords.findIndex(
+      (record) => record.id === counterIntegrityMemoryRecord.id
+    );
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const projectMemoryRecords = await memoryRepository.listMemoryRecordsForProject(project.id);
     const invalidatedMemoryRecord = await memoryRepository.invalidateMemoryRecord({
@@ -888,6 +993,28 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "memory application packet checksum is typed and unique",
         passed: applicationRows[0]?.decisionPacketChecksum === packetBoundApplication.packetChecksum
+      },
+      {
+        label: "legacy application rows remain inspectable and unbound",
+        passed: counterRebuild.legacyApplicationCount >= 4
+      },
+      {
+        label: "legacy rows do not strengthen counters",
+        passed: legacyOnlyAfterRebuild?.positiveFeedbackCount === 0 &&
+          legacyOnlyAfterRebuild.negativeFeedbackCount === 0
+      },
+      {
+        label: "canonical application rebuild is deterministic",
+        passed: counterIntegrityAfterRebuild?.positiveFeedbackCount === 1 &&
+          counterIntegrityAfterRebuild.negativeFeedbackCount === 0 &&
+          counterRebuild.canonicalApplicationCount === counterRebuildReplay.canonicalApplicationCount &&
+          counterRebuild.canonicalOutcomeCounts.helped === counterRebuildReplay.canonicalOutcomeCounts.helped
+      },
+      {
+        label: "ranking uses rebuilt canonical counters",
+        passed: counterIntegrityRank >= 0 &&
+          legacyOnlyRank >= 0 &&
+          counterIntegrityRank < legacyOnlyRank
       },
       {
         label: "anti-memory candidate accepted",

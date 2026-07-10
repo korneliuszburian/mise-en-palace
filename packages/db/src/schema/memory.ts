@@ -323,7 +323,11 @@ export const memoryApplications = pgTable(
       table.decisionPacketChecksum
     ),
     index("memory_applications_task_contract_id_idx").on(table.taskContractId),
-    index("memory_applications_context_assembly_id_idx").on(table.contextAssemblyId)
+    index("memory_applications_context_assembly_id_idx").on(table.contextAssemblyId),
+    check(
+      "memory_applications_packet_checksum_non_empty",
+      sql`${table.decisionPacketChecksum} IS NULL OR length(btrim(${table.decisionPacketChecksum})) > 0`
+    )
   ]
 );
 

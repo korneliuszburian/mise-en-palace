@@ -99,7 +99,7 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   outcome: MemoryApplicationOutcome;
   notes: string;
   evidenceBundleId?: string;
-  packetChecksum?: string;
+  packetChecksum: string;
 }
 
 export interface RecordMemoryApplicationOnceInput extends RecordMemoryApplicationInput {
@@ -143,6 +143,13 @@ export interface RecordMemoryApplicationWithEffectsOnceInput
 export interface RecordMemoryApplicationWithEffectsOnceResult extends RecordMemoryApplicationOnceResult {
   feedbackEvent?: MemoryFeedbackEvent;
   antiMemoryCandidate?: AntiMemoryCandidate;
+}
+
+export interface RebuildMemoryApplicationCountersResult {
+  canonicalApplicationCount: number;
+  legacyApplicationCount: number;
+  rebuiltMemoryRecordCount: number;
+  canonicalOutcomeCounts: Record<MemoryApplicationOutcome, number>;
 }
 
 export interface CreateMemoryFeedbackEventInput extends RepositoryMetadata {
@@ -234,6 +241,7 @@ export interface MemoryRepository {
   recordMemoryApplicationWithEffectsOnce?(
     input: RecordMemoryApplicationWithEffectsOnceInput
   ): Promise<RecordMemoryApplicationWithEffectsOnceResult>;
+  rebuildMemoryApplicationCounters?(): Promise<RebuildMemoryApplicationCountersResult>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
   getAntiMemoryCandidateById(id: string): Promise<AntiMemoryCandidate | undefined>;

@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
   ExecutionRunId,
   MemoryApplication,
+  MemoryApplicationOutcome,
   MemoryCandidate,
   MemoryFeedbackEvent,
   MemoryRecord,
@@ -32,6 +33,7 @@ import type {
   RecordMemoryApplicationOnceResult,
   RecordMemoryApplicationWithEffectsOnceInput,
   RecordMemoryApplicationWithEffectsOnceResult,
+  RebuildMemoryApplicationCountersResult,
   SupersedeMemoryRecordInput
 } from "@krn/core/repositories/internal";
 
@@ -134,6 +136,14 @@ type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
 type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
 type AntiMemoryCandidateInsertRow = typeof antiMemoryCandidates.$inferInsert;
 type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
+
+type MemoryApplicationCounterState = {
+  canonicalOutcomeCounts: Record<MemoryApplicationOutcome, number>;
+  countsByMemoryRecord: Map<
+    string,
+    { positiveFeedbackCount: number; negativeFeedbackCount: number }
+  >;
+};
 
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
@@ -959,11 +969,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
   private memoryApplicationInsertValues = (
     input: RecordMemoryApplicationInput,
-    decisionPacketChecksum?: string
+    decisionPacketChecksum: string
   ) => ({
     memoryRecordId: input.memoryRecordId,
     executionRunId: input.executionRunId,
-    ...(decisionPacketChecksum === undefined ? {} : { decisionPacketChecksum }),
+    decisionPacketChecksum,
     ...(input.taskContractId === undefined
       ? {}
       : { taskContractId: input.taskContractId }),
@@ -973,8 +983,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     expectedUse: input.expectedUse,
     outcome: input.outcome,
     notes: input.notes,
-    metadata: input.metadata ?? {}
+    metadata: {
+      ...input.metadata,
+      decisionPacketChecksum,
+      ...(input.evidenceBundleId === undefined
+        ? {}
+        : { verificationEvidenceBundleId: input.evidenceBundleId })
+    }
   });
+
+  private assertPacketBoundApplication = (
+    input: Pick<RecordMemoryApplicationInput, "executionRunId" | "packetChecksum">
+  ): void => {
+    if (input.executionRunId.trim().length === 0 || input.packetChecksum.trim().length === 0) {
+      throw new Error(
+        "memory application requires a non-empty execution run and DecisionPacket checksum"
+      );
+    }
+  };
 
   private async applyMemoryApplicationOutcome(
     input: RecordMemoryApplicationInput,
@@ -1015,20 +1041,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       );
     }
 
-    const [linked] = await tx
-      .select({
-        bundle: evidenceBundles,
-        executionRun: executionRuns,
-        harnessPlan: harnessPlans
-      })
-      .from(evidenceBundles)
-      .innerJoin(executionRuns, eq(executionRuns.id, evidenceBundles.executionRunId))
-      .innerJoin(harnessPlans, eq(harnessPlans.id, executionRuns.harnessPlanId))
-      .where(and(
-        eq(evidenceBundles.id, input.evidenceBundleId),
-        eq(evidenceBundles.executionRunId, input.executionRunId)
-      ))
-      .limit(1);
+    const linked = await this.findApplicationEvidenceBundle(
+      input.evidenceBundleId,
+      input.executionRunId,
+      tx
+    );
 
     if (linked === undefined) {
       throw new Error(
@@ -1052,24 +1069,39 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     }
   }
 
+  private async findApplicationEvidenceBundle(
+    evidenceBundleId: string,
+    executionRunId: string,
+    tx: KrnDatabase
+  ) {
+    const [linked] = await tx
+      .select({
+        bundle: evidenceBundles,
+        executionRun: executionRuns,
+        harnessPlan: harnessPlans
+      })
+      .from(evidenceBundles)
+      .innerJoin(executionRuns, eq(executionRuns.id, evidenceBundles.executionRunId))
+      .innerJoin(harnessPlans, eq(harnessPlans.id, executionRuns.harnessPlanId))
+      .where(and(
+        eq(evidenceBundles.id, evidenceBundleId),
+        eq(evidenceBundles.executionRunId, executionRunId),
+        inArray(evidenceBundles.status, ["captured", "verified"])
+      ))
+      .limit(1);
+
+    return linked;
+  }
+
   private async insertMemoryApplication(
     input: RecordMemoryApplicationInput,
     tx: KrnDatabase,
-    decisionPacketChecksum?: string
+    decisionPacketChecksum: string
   ): Promise<MemoryApplication> {
-    const persistenceInput = decisionPacketChecksum === undefined
-      ? input
-      : {
-          ...input,
-          metadata: {
-            ...input.metadata,
-            decisionPacketChecksum
-          }
-        };
     const row = requireReturnedRow(
       await tx
         .insert(memoryApplications)
-        .values(this.memoryApplicationInsertValues(persistenceInput, decisionPacketChecksum))
+        .values(this.memoryApplicationInsertValues(input, decisionPacketChecksum))
         .returning(),
       "recordMemoryApplication"
     );
@@ -1082,6 +1114,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async recordMemoryApplication(
     input: RecordMemoryApplicationInput
   ): Promise<MemoryApplication> {
+    this.assertPacketBoundApplication(input);
     return this.db.transaction(async (tx) => {
       await this.assertHelpedApplicationEvidence(input, tx);
       return this.insertMemoryApplication(input, tx, input.packetChecksum);
@@ -1092,6 +1125,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     input: RecordMemoryApplicationOnceInput,
     tx: KrnDatabase
   ): Promise<{ row: MemoryApplicationRow; created: boolean }> {
+    this.assertPacketBoundApplication(input);
     const metadata = {
       ...input.metadata,
       decisionPacketChecksum: input.packetChecksum
@@ -1218,6 +1252,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async recordMemoryApplicationOnce(
     input: RecordMemoryApplicationOnceInput
   ): Promise<RecordMemoryApplicationOnceResult> {
+    this.assertPacketBoundApplication(input);
     return this.db.transaction(async (tx) => {
       await this.assertHelpedApplicationEvidence(input, tx);
       const applicationResult = await this.insertMemoryApplicationOnceRow(input, tx);
@@ -1240,6 +1275,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async recordMemoryApplicationWithEffectsOnce(
     input: RecordMemoryApplicationWithEffectsOnceInput
   ): Promise<RecordMemoryApplicationWithEffectsOnceResult> {
+    this.assertPacketBoundApplication(input);
     if (
       (input.outcome === "hurt" || input.outcome === "stale") &&
       (input.negativeEffects === undefined ||
@@ -1351,6 +1387,145 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         feedbackEvent: mapMemoryFeedbackEvent(feedbackRow),
         antiMemoryCandidate,
         created: true
+      };
+    });
+  }
+
+  private async isCanonicalMemoryApplication(
+    row: MemoryApplicationRow,
+    tx: KrnDatabase
+  ): Promise<boolean> {
+    if (
+      row.executionRunId === null ||
+      row.decisionPacketChecksum === null ||
+      row.decisionPacketChecksum.trim().length === 0 ||
+      row.outcome === null
+    ) {
+      return false;
+    }
+
+    if (row.outcome !== "helped") {
+      return true;
+    }
+
+    const verificationEvidenceBundleId = row.metadata.verificationEvidenceBundleId;
+    if (typeof verificationEvidenceBundleId !== "string") {
+      return false;
+    }
+
+    const linked = await this.findApplicationEvidenceBundle(
+      verificationEvidenceBundleId,
+      row.executionRunId,
+      tx
+    );
+
+    if (linked === undefined) {
+      return false;
+    }
+
+    return evidenceBundleProvesHelped({
+      bundle: mapEvidenceBundle(linked.bundle),
+      evidenceContract: parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract),
+      packetChecksum: row.decisionPacketChecksum,
+      packetGeneratedAt: toIsoTimestamp(linked.executionRun.updatedAt)
+    });
+  }
+
+  private async classifyMemoryApplications(tx: KrnDatabase): Promise<{
+    applicationRows: MemoryApplicationRow[];
+    canonicalApplications: MemoryApplicationRow[];
+  }> {
+    const applicationRows = await tx.select().from(memoryApplications);
+    const canonicalApplications: MemoryApplicationRow[] = [];
+
+    for (const row of applicationRows) {
+      if (await this.isCanonicalMemoryApplication(row, tx)) {
+        canonicalApplications.push(row);
+      }
+    }
+
+    return { applicationRows, canonicalApplications };
+  }
+
+  private memoryApplicationCounterState(
+    canonicalApplications: readonly MemoryApplicationRow[]
+  ): MemoryApplicationCounterState {
+    const canonicalOutcomeCounts: Record<MemoryApplicationOutcome, number> = {
+      helped: 0,
+      hurt: 0,
+      neutral: 0,
+      stale: 0
+    };
+    const countsByMemoryRecord = new Map<
+      string,
+      { positiveFeedbackCount: number; negativeFeedbackCount: number }
+    >();
+
+    for (const row of canonicalApplications) {
+      if (row.outcome === null) {
+        continue;
+      }
+
+      canonicalOutcomeCounts[row.outcome] += 1;
+      const counts = countsByMemoryRecord.get(row.memoryRecordId) ?? {
+        positiveFeedbackCount: 0,
+        negativeFeedbackCount: 0
+      };
+      if (row.outcome === "helped") {
+        counts.positiveFeedbackCount += 1;
+      }
+      if (row.outcome === "hurt" || row.outcome === "stale") {
+        counts.negativeFeedbackCount += 1;
+      }
+      countsByMemoryRecord.set(row.memoryRecordId, counts);
+    }
+
+    return { canonicalOutcomeCounts, countsByMemoryRecord };
+  }
+
+  private async persistMemoryApplicationCounters(
+    state: MemoryApplicationCounterState,
+    tx: KrnDatabase
+  ): Promise<number> {
+    const memoryRecordRows = await tx.select({ id: memoryRecords.id }).from(memoryRecords);
+    await tx
+      .update(memoryRecords)
+      .set({
+        positiveFeedbackCount: 0,
+        negativeFeedbackCount: 0,
+        updatedAt: new Date()
+      })
+      .where(isNotNull(memoryRecords.id));
+
+    for (const [memoryRecordId, counts] of state.countsByMemoryRecord) {
+      await tx
+        .update(memoryRecords)
+        .set({
+          positiveFeedbackCount: counts.positiveFeedbackCount,
+          negativeFeedbackCount: counts.negativeFeedbackCount,
+          updatedAt: new Date()
+        })
+        .where(eq(memoryRecords.id, memoryRecordId));
+    }
+
+    return memoryRecordRows.length;
+  }
+
+  // fallow-ignore-next-line unused-class-member -- public repair boundary consumed by the real PostgreSQL governance smoke and future doctor repair flow
+  async rebuildMemoryApplicationCounters(): Promise<RebuildMemoryApplicationCountersResult> {
+    return this.db.transaction(async (tx) => {
+      const { applicationRows, canonicalApplications } = await this.classifyMemoryApplications(tx);
+      const counterState = this.memoryApplicationCounterState(canonicalApplications);
+      const rebuiltMemoryRecordCount = await this.persistMemoryApplicationCounters(
+        counterState,
+        tx
+      );
+
+      return {
+        canonicalApplicationCount: canonicalApplications.length,
+        legacyApplicationCount: applicationRows.length - canonicalApplications.length,
+        rebuiltMemoryRecordCount,
+        canonicalOutcomeCounts: counterState.canonicalOutcomeCounts
       };
     });
   }

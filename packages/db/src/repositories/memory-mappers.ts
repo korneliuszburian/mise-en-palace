@@ -310,6 +310,15 @@ export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplicati
   id: row.id,
   memoryRecordId: row.memoryRecordId,
   ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.decisionPacketChecksum === null
+    ? {}
+    : { packetChecksum: row.decisionPacketChecksum }),
+  proofClass:
+    row.executionRunId !== null &&
+    row.decisionPacketChecksum !== null &&
+    row.decisionPacketChecksum.trim().length > 0
+      ? "packet_bound"
+      : "legacy_history",
   ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),
   ...(row.contextAssemblyId === null ? {} : { contextAssemblyId: row.contextAssemblyId }),
   expectedUse: row.expectedUse,
