@@ -66,6 +66,7 @@
       "implements": "SourceRepository",
       "members": [
         "createSourceChunk",
+        "deprecateSourceClaim",
         "createSourceClaimEdge",
         "listSourceClaimEdgesForClaim",
         "createSourceDecisionEdge",

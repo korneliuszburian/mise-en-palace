@@ -35,6 +35,7 @@ export type {
   CreateSourceDecisionEdgeInput,
   CreateSourceDecisionInput,
   CreateSourceRejectionInput,
+  DeprecateSourceClaimInput,
   RejectedSourceDecisionKnowledgeSource,
   SourceDecisionKnowledgeSource,
   SourceRepository

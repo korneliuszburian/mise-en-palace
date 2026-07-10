@@ -22,6 +22,7 @@ import type {
   CreateSourceChunkInput,
   CreateSourceClaimEdgeInput,
   CreateSourceClaimInput,
+  DeprecateSourceClaimInput,
   CreateSourceDecisionInput,
   CreateSourceDecisionEdgeInput,
   CreateSourceRejectionInput,
@@ -323,6 +324,38 @@ export class DrizzleSourceRepository implements SourceRepository {
     );
 
     return mapSourceClaim(row);
+  }
+
+  async deprecateSourceClaim(input: DeprecateSourceClaimInput): Promise<SourceClaim> {
+    requireText(input.revisitWhen, "DeprecateSourceClaim requires revisitWhen");
+
+    return this.db.transaction(async (tx) => {
+      const row = requireReturnedRow(
+        await tx
+          .update(sourceClaims)
+          .set({
+            status: "deprecated",
+            revisitWhen: input.revisitWhen,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(sourceClaims.id, input.sourceClaimId),
+            inArray(sourceClaims.status, ["proposed", "accepted"])
+          ))
+          .returning(),
+        "deprecateSourceClaim"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "source.claim.deprecated",
+        payload: {
+          sourceClaimId: row.id,
+          revisitWhen: row.revisitWhen
+        }
+      });
+
+      return mapSourceClaim(row);
+    });
   }
 
   async getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined> {

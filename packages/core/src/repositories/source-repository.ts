@@ -36,6 +36,11 @@ export interface CreateSourceClaimInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface DeprecateSourceClaimInput {
+  sourceClaimId: SourceClaim["id"];
+  revisitWhen: string;
+}
+
 export interface CreateSourceDecisionInput {
   projectId?: ProjectId;
   sourceClaimId?: string;
@@ -103,6 +108,7 @@ export interface SourceRepository {
   createSourceArtifact(input: CreateSourceArtifactInput): Promise<SourceArtifactRecord>;
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
   createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim>;
+  deprecateSourceClaim?(input: DeprecateSourceClaimInput): Promise<SourceClaim>;
   getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined>;
   getSourceClaimForProject?(
     projectId: ProjectId,

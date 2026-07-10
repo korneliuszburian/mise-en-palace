@@ -269,7 +269,7 @@ describe("runDecisionCorpusImport", () => {
   it("persists compact import rows through source and retrieval repositories", async () => {
     const claims = new Map<string, {
       id: string;
-      status: "proposed" | "accepted" | "rejected";
+      status: "proposed" | "accepted" | "rejected" | "deprecated";
     }>();
     const artifacts: string[] = [];
     const chunks: string[] = [];
@@ -374,7 +374,11 @@ describe("runDecisionCorpusImport", () => {
         if (input.sourceClaimId !== undefined) {
           claims.set(input.sourceClaimId, {
             id: input.sourceClaimId,
-            status: input.status === "reject" ? "rejected" : "accepted"
+            status: input.status === "reject"
+              ? "rejected"
+              : input.status === "adopt"
+                ? "accepted"
+                : "proposed"
           });
         }
 
@@ -387,6 +391,34 @@ describe("runDecisionCorpusImport", () => {
           rationale: id,
           falsifier: id,
           consumer: "decision corpus import",
+          metadata: {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      deprecateSourceClaim: async ({ sourceClaimId }) => {
+        const claim = claims.get(sourceClaimId);
+
+        if (claim === undefined) {
+          throw new Error(`missing source claim ${sourceClaimId}`);
+        }
+
+        claims.set(sourceClaimId, {
+          ...claim,
+          status: "deprecated"
+        });
+
+        return {
+          id: sourceClaimId,
+          sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
+          claim: sourceClaimId,
+          mechanism: sourceClaimId,
+          krnImplication: sourceClaimId,
+          doesNotProve: sourceClaimId,
+          sourceAuthority: "project-decision" as const,
+          supportType: "implementation-boundary" as const,
+          consumer: "decision corpus import",
+          status: "deprecated" as const,
           metadata: {},
           createdAt: now,
           updatedAt: now
@@ -476,17 +508,11 @@ describe("runDecisionCorpusImport", () => {
     expect(artifacts).toHaveLength(11);
     expect(chunks).toHaveLength(11);
     expect(decisions).toHaveLength(11);
-    expect(decisionEdges).toHaveLength(8);
-    expect(searchDocuments).toMatchObject([
-      { validityStatus: "active" },
-      { validityStatus: "active" },
-      { validityStatus: "active" },
-      { validityStatus: "active" },
-      { validityStatus: "active" },
-      { validityStatus: "active" },
-      { validityStatus: "invalidated" },
-      { validityStatus: "invalidated" }
-    ]);
+    expect(decisionEdges).toHaveLength(6);
+    expect(searchDocuments.filter(({ validityStatus }) => validityStatus === "active"))
+      .toHaveLength(6);
+    expect(searchDocuments.filter(({ validityStatus }) => validityStatus === "expired"))
+      .toHaveLength(2);
     expect(rejections).toHaveLength(3);
     expect(rows.map((row) => [row.decisionId, row.sourceClaimStatus])).toEqual([
       ["decision-corpus-import-path", "accepted"],
@@ -495,14 +521,22 @@ describe("runDecisionCorpusImport", () => {
       ["third-repo-portability-before-breadth", "accepted"],
       ["anti-vanity-naming-source-backed", "accepted"],
       ["memory-first-research-intake-loop", "accepted"],
-      ["manual-fixture-editing-only", "accepted"],
-      ["recorded-obedience-proves-live-codex", "accepted"],
+      ["manual-fixture-editing-only", "deprecated"],
+      ["recorded-obedience-proves-live-codex", "deprecated"],
       ["import-without-link-validation", "rejected"],
       ["product-readiness-from-live-pilot", "rejected"],
       ["research-link-as-authority", "rejected"]
     ]);
     expect(rows.find((row) => row.decisionId === "decision-corpus-import-path")?.sourceDecisionEdgeId)
       .toMatch(/^source-decision-edge-/u);
+    expect(rows.find((row) => row.decisionId === "manual-fixture-editing-only")?.sourceDecisionEdgeId)
+      .toBeUndefined();
+    expect(rows.find((row) => row.decisionId === "recorded-obedience-proves-live-codex")?.sourceDecisionEdgeId)
+      .toBeUndefined();
+    expect(rows.find((row) => row.decisionId === "manual-fixture-editing-only")?.sourceDecisionStatus)
+      .toBe("defer");
+    expect(rows.find((row) => row.decisionId === "recorded-obedience-proves-live-codex")?.sourceDecisionStatus)
+      .toBe("defer");
     expect(rows.find((row) => row.decisionId === "import-without-link-validation")?.sourceRejectionId)
       .toMatch(/^source-rejection-/u);
   });

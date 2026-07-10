@@ -48,6 +48,7 @@ export interface PersistSourceDecisionImportInput {
   readonly projectId: ProjectId;
   readonly fixture: DecisionCorpusImportFixture;
   readonly importId: string;
+  readonly smokeId?: string;
   readonly importedBy: string;
   readonly now: string;
 }
@@ -83,6 +84,7 @@ const metadataForRow = (
   row: DecisionCorpusImportRow
 ): Record<string, unknown> => ({
   importId: input.importId,
+  ...(input.smokeId === undefined ? {} : { smokeId: input.smokeId }),
   importedBy: input.importedBy,
   importedAt: input.now,
   decisionCorpusImportId: row.id,
@@ -135,18 +137,6 @@ const createDecisionSupport = async (
     readonly metadata: Record<string, unknown>;
   }
 ): Promise<Pick<PersistedSourceDecisionImportRow, "sourceDecisionEdgeId" | "searchDocumentId">> => {
-  const sourceDecisionEdge = await input.sourceRepository.createSourceDecisionEdge({
-    sourceClaimId: input.sourceClaimId,
-    targetType: "architecture_decision",
-    targetId: `source-decision-import:${input.row.id}`,
-    supportType: "implementation-boundary",
-    confidence: input.row.status === "current" ? "high" : "medium",
-    notes: input.row.noteText,
-    metadata: {
-      ...input.metadata,
-      sourceDecisionId: input.sourceDecisionId
-    }
-  });
   const searchDocument = await input.retrievalRepository.createSearchDocument({
     projectId: input.projectId,
     subjectType: "source_claim",
@@ -156,7 +146,7 @@ const createDecisionSupport = async (
     sourceClaimId: input.sourceClaimId,
     sourceDecisionId: input.sourceDecisionId,
     sourceAuthority: "project-decision",
-    validityStatus: input.row.status === "stale" ? "invalidated" : "active",
+    validityStatus: input.row.status === "stale" ? "expired" : "active",
     title: input.row.title,
     body: `${input.row.statement}\n\n${input.row.noteText}`,
     searchText: [
@@ -175,9 +165,23 @@ const createDecisionSupport = async (
       sourceDecisionId: input.sourceDecisionId
     }
   });
+  const sourceDecisionEdge = input.row.status === "current"
+    ? await input.sourceRepository.createSourceDecisionEdge({
+        sourceClaimId: input.sourceClaimId,
+        targetType: "architecture_decision",
+        targetId: `source-decision-import:${input.row.id}`,
+        supportType: "implementation-boundary",
+        confidence: "high",
+        notes: input.row.noteText,
+        metadata: {
+          ...input.metadata,
+          sourceDecisionId: input.sourceDecisionId
+        }
+      })
+    : undefined;
 
   return {
-    sourceDecisionEdgeId: sourceDecisionEdge.id,
+    ...(sourceDecisionEdge === undefined ? {} : { sourceDecisionEdgeId: sourceDecisionEdge.id }),
     searchDocumentId: searchDocument.id
   };
 };
@@ -238,6 +242,13 @@ export const persistSourceDecisionImport = async (
 
   validateSourceDecisionImportFixture(input.fixture);
 
+  if (
+    input.fixture.decisions.some((row) => row.status === "stale") &&
+    sourceRepository.deprecateSourceClaim === undefined
+  ) {
+    throw new Error("SourceClaim deprecation is unavailable for stale source decision import");
+  }
+
   return Promise.all(input.fixture.decisions.map(async (row) => {
     const metadata = metadataForRow(input, row);
     const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
@@ -262,13 +273,23 @@ export const persistSourceDecisionImport = async (
     const sourceDecision = await createSourceDecision({
       projectId: input.projectId,
       sourceClaimId: sourceClaim.id,
-      status: row.status === "rejected" ? "reject" : "adopt",
+      status: row.status === "rejected"
+        ? "reject"
+        : row.status === "stale"
+          ? "defer"
+          : "adopt",
       decision: row.statement,
       rationale: row.noteText,
       falsifier: row.falsifier,
       consumer: "source decision import",
       metadata
     });
+    if (row.status === "stale") {
+      await sourceRepository.deprecateSourceClaim!({
+        sourceClaimId: sourceClaim.id,
+        revisitWhen: "Refresh imported decision evidence before future activation."
+      });
+    }
     const sourceClaimReadback = await sourceRepository.getSourceClaimById(sourceClaim.id);
 
     if (sourceClaimReadback === undefined) {

@@ -121,6 +121,7 @@ export interface DatabaseRuntime {
   > & Partial<Pick<
     SourceRepository,
     | "createSourceChunk"
+    | "deprecateSourceClaim"
     | "createSourceDecision"
     | "getSourceDecisionById"
     | "listSourceDecisionKnowledgeSources"
@@ -555,6 +556,7 @@ const createDatabaseRuntimeForClient = async (
   const sourceSearchSourceRepository: DatabaseRuntime["sourceRepository"] = {
     createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
     createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
+    deprecateSourceClaim: (...args) => sourceRepository.deprecateSourceClaim(...args),
     createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
     getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
     getSourceClaimForProject: (...args) => sourceRepository.getSourceClaimForProject(...args),

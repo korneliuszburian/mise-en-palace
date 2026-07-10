@@ -45,6 +45,15 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly governingSourceDecisionEdgeId: string;
   readonly governingSearchDocumentId: string;
   readonly sourceSearchSelectedGoverningClaim: boolean;
+  readonly staleDecisionId: string;
+  readonly staleSourceClaimId: string;
+  readonly staleSourceClaimStatus: string;
+  readonly staleSourceClaimRevisitWhen: string;
+  readonly staleSourceDecisionStatus: string;
+  readonly staleSearchDocumentId: string;
+  readonly staleSearchDocumentValidityStatus: string;
+  readonly staleSourceDecisionEdgeCount: number;
+  readonly sourceSearchSelectedStaleClaim: boolean;
   readonly sourceSearchSupportingClaimCount: number;
   readonly sourceSearchSupportingDocumentCount: number;
   readonly sourceSearchDecisionSupportCount: number;
@@ -80,6 +89,7 @@ export const persistDecisionCorpusImport = async (
     projectId: input.projectId,
     fixture: input.fixture,
     importId: input.smokeId,
+    smokeId: input.smokeId,
     importedBy: "krn db smoke decision-corpus-import",
     now: input.now
   });
@@ -177,6 +187,78 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       throw new Error("decision corpus import DB smoke did not select the governing SourceClaim");
     }
 
+    const staleDecision = fixture.decisions.find((row) => row.status === "stale");
+
+    if (staleDecision === undefined) {
+      throw new Error("decision corpus import DB smoke fixture requires a stale decision");
+    }
+
+    const staleRow = requiredPersistedRow(persistedRows, staleDecision.id);
+    const staleSearchDocumentId = requireString(
+      staleRow.searchDocumentId,
+      "stale SearchDocument"
+    );
+    const staleSourceClaim = await runtime.sourceRepository.getSourceClaimById(
+      staleRow.sourceClaimId
+    );
+    const getSourceDecisionById = runtime.sourceRepository.getSourceDecisionById;
+
+    if (staleSourceClaim === undefined) {
+      throw new Error("decision corpus import DB smoke missing stale SourceClaim readback");
+    }
+
+    if (getSourceDecisionById === undefined) {
+      throw new Error("decision corpus import DB smoke cannot read stale SourceDecision");
+    }
+
+    const staleSourceDecision = await getSourceDecisionById(staleRow.sourceDecisionId);
+
+    if (staleSourceDecision === undefined) {
+      throw new Error("decision corpus import DB smoke missing stale SourceDecision readback");
+    }
+
+    const staleSourceDecisionEdges = await runtime.sourceRepository.listSourceDecisionEdgesForClaim(
+      staleRow.sourceClaimId
+    );
+    const staleSourceClaimRevisitWhen = requireString(
+      staleSourceClaim.revisitWhen,
+      "stale SourceClaim revisitWhen"
+    );
+    const staleSearchDocumentRows = await client<{ validity_status: string }[]>`
+      select validity_status
+      from search_documents
+      where id = ${staleSearchDocumentId}
+    `;
+    const staleSearchDocumentValidityStatus = staleSearchDocumentRows[0]?.validity_status;
+
+    if (staleSearchDocumentValidityStatus === undefined) {
+      throw new Error("decision corpus import DB smoke missing stale SearchDocument readback");
+    }
+
+    const staleSourceSearchJson = await runSmokeSourceSearch(
+      input,
+      createId,
+      createSmokeDatabaseRuntime,
+      staleDecision.statement,
+      "decision-corpus-import stale DB smoke"
+    );
+    const sourceSearchSelectedStaleClaim = sourceSearchIncludesClaim(
+      staleSourceSearchJson,
+      staleRow.sourceClaimId
+    );
+
+    if (
+      staleSourceClaim.status !== "deprecated" ||
+      staleSourceDecision.status !== "defer" ||
+      staleSearchDocumentValidityStatus !== "expired" ||
+      staleSourceDecisionEdges.length !== 0 ||
+      sourceSearchSelectedStaleClaim
+    ) {
+      throw new Error(
+        "decision corpus import DB smoke allowed stale source decision authority"
+      );
+    }
+
     const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
       markerTables,
@@ -196,6 +278,15 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       governingSourceDecisionEdgeId,
       governingSearchDocumentId,
       sourceSearchSelectedGoverningClaim,
+      staleDecisionId: staleDecision.id,
+      staleSourceClaimId: staleRow.sourceClaimId,
+      staleSourceClaimStatus: staleSourceClaim.status,
+      staleSourceClaimRevisitWhen,
+      staleSourceDecisionStatus: staleSourceDecision.status,
+      staleSearchDocumentId,
+      staleSearchDocumentValidityStatus,
+      staleSourceDecisionEdgeCount: staleSourceDecisionEdges.length,
+      sourceSearchSelectedStaleClaim,
       sourceSearchSupportingClaimCount: countValue(sourceSearchJson.answerPackage?.supportingClaims),
       sourceSearchSupportingDocumentCount: countValue(sourceSearchJson.answerPackage?.supportingDocuments),
       sourceSearchDecisionSupportCount: countValue(sourceSearchJson.answerPackage?.sourceDecisionSupport),

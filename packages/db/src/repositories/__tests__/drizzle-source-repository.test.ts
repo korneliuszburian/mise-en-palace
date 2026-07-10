@@ -22,6 +22,7 @@ const methodNames = [
   "createSourceArtifact",
   "createSourceChunk",
   "createSourceClaim",
+  "deprecateSourceClaim",
   "getSourceClaimById",
   "getSourceClaimForProject",
   "listClaimsForProject",
