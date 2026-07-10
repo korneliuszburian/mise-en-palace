@@ -18,6 +18,7 @@ jobs:
   fast:
     name: Typecheck, tests, and eval smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -37,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Workspace and toolchain contract
+        run: pnpm workspace:check
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -49,12 +53,25 @@ jobs:
       - name: KRN behavior and docs smoke
         run: pnpm eval:krn:smoke
 
-      - name: Diff check
+      - name: Committed range whitespace check
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            base_sha="${{ github.event.before }}"
+          else
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+          git diff --check "$base_sha" "${{ github.sha }}"
+
+      - name: Working tree whitespace check
         run: git diff --check
 
   db:
     name: DB readiness and smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         # Keep aligned with compose.yaml; update only with a reviewed DB gate run.
@@ -92,7 +109,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: DB ready
-        run: pnpm db:ready
+        run: timeout --signal=TERM --kill-after=10s 120s pnpm db:ready
 
       - name: Drizzle check
         run: pnpm --filter @krn/db db:check
@@ -124,5 +141,23 @@ jobs:
       - name: DB product-loop eval
         run: pnpm eval:db
 
-      - name: Diff check
+      - name: Committed range whitespace check
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+          elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            base_sha="${{ github.event.before }}"
+          else
+            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+          git diff --check "$base_sha" "${{ github.sha }}"
+
+      - name: Working tree whitespace check
+        if: ${{ !cancelled() }}
         run: git diff --check
+
+      - name: DB diagnostics after failure
+        if: ${{ failure() || cancelled() }}
+        run: docker ps -a --no-trunc || true

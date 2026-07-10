@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -45,5 +47,58 @@ describe("repository policy boundaries", () => {
       /uses:\s+[^@\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/u.test(line)
     )).toBe(true);
     expect(usesLines.some((line) => /@[vA-Za-z]/u.test(line))).toBe(false);
+  });
+
+  it("requires every source workspace package to expose test and typecheck scripts", () => {
+    const rootPackage = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+    const checker = join(repoRoot, "scripts/check-workspace-scripts.mjs");
+
+    expect(rootPackage.scripts?.test).not.toContain("--if-present");
+    expect(rootPackage.scripts?.typecheck).not.toContain("--if-present");
+    expect(execFileSync(process.execPath, [checker], { cwd: repoRoot, encoding: "utf8" })).toContain(
+      "Workspace script contract passed",
+    );
+
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-workspace-contract-"));
+    const fixturePackageRoot = join(fixtureRoot, "packages/missing-scripts");
+    mkdirSync(join(fixturePackageRoot, "src"), { recursive: true });
+    writeFileSync(
+      join(fixturePackageRoot, "package.json"),
+      JSON.stringify({ name: "@fixture/missing-scripts" }),
+    );
+
+    try {
+      let failure: { status?: number; stderr?: string } | undefined;
+      try {
+        execFileSync(process.execPath, [checker, "--root", fixtureRoot], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          stdio: "pipe",
+        });
+      } catch (error) {
+        failure = error as { status?: number; stderr?: string };
+      }
+
+      expect(failure?.status).toBe(1);
+      expect(failure?.stderr).toContain("missing test, typecheck");
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("makes CI whitespace checks range-aware and bounded", () => {
+    const workflow = readRootFile(".github/workflows/ci.yml");
+
+    expect(workflow).toContain("timeout-minutes: 15");
+    expect(workflow).toContain("timeout-minutes: 30");
+    expect(workflow).toContain('github.event.pull_request.base.sha');
+    expect(workflow).toContain('github.event.before');
+    expect(workflow).toContain("git rev-list --max-parents=0 HEAD");
+    expect(workflow).toContain('git diff --check "$base_sha" "${{ github.sha }}"');
+    expect(workflow.match(/run: git diff --check\n/gu)).toHaveLength(2);
+    expect(workflow).toContain("timeout --signal=TERM --kill-after=10s 120s pnpm db:ready");
+    expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
   });
 });

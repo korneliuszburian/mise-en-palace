@@ -67,14 +67,15 @@
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",
     "beads:doctor": "bd doctor",
+    "workspace:check": "node scripts/check-workspace-scripts.mjs",
     "quality:fallow": "pnpm quality:fallow:report",
     "quality:fallow:report": "mkdir -p .local-lab/fallow && (fallow --skip health --format compact --output-file .local-lab/fallow/dead-dupes.compact.txt || true) && (fallow health --format compact --output-file .local-lab/fallow/health.compact.txt || true)",
     "quality:fallow:ci": "fallow audit --format compact",
     "alpha:verify": "pnpm alpha:verify:fast",
     "alpha:verify:fast": "pnpm typecheck && pnpm test && pnpm krn doctor",
     "alpha:verify:full": "pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:krn:smoke && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-governance && pnpm db:smoke:eval-feedback-persistence && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && pnpm eval:db && git diff --check",
-    "test": "pnpm -r --workspace-concurrency=1 --if-present test",
-    "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck"
+    "test": "pnpm workspace:check && pnpm -r --workspace-concurrency=1 test",
+    "typecheck": "pnpm workspace:check && pnpm -r --workspace-concurrency=1 typecheck"
   },
   "devDependencies": {
     "@beads/bd": "^1.0.4",
