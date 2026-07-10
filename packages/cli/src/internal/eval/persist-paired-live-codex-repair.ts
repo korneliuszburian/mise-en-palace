@@ -8,6 +8,9 @@ import {
 import {
   runDecisionPacketCommand
 } from "../../run-decision-packet-command.js";
+import {
+  collectEnvironmentFingerprint
+} from "../../environment-fingerprint.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -70,6 +73,12 @@ const main = async (): Promise<void> => {
   const score = await runPairedRepairChecker({
     baseline: { targetRoot: baselineRoot, checkerRoot, initialCommit: baselineCommit },
     krn: { targetRoot: krnRoot, checkerRoot, initialCommit: krnCommit }
+  });
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot: checkerRoot,
+    databaseUrl,
+    evaluatorVersion: "paired-live-codex-repair.v1",
+    checkerVersion: "paired-live-codex-repair-checker.v1"
   });
   const now = new Date().toISOString();
   const candidate = pairedRepairEvalCandidate({
@@ -163,6 +172,7 @@ const main = async (): Promise<void> => {
     outcome: score.outcome,
     candidateId: candidate.id,
     packetChecksum,
+    environmentFingerprint,
     persistedInDecisionPacket: persisted,
     evidenceIdentity,
     score,

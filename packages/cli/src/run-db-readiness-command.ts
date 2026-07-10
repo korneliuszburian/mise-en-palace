@@ -11,6 +11,10 @@ import {
   missingDbConfigRecovery,
   unreachablePostgresRecovery
 } from "./db-recovery-guidance.js";
+import {
+  collectEnvironmentFingerprint,
+  environmentFingerprintLines
+} from "./environment-fingerprint.js";
 
 export interface DbReadinessRuntime {
   env: Record<string, string | undefined>;
@@ -45,11 +49,18 @@ export const runDbReadinessCommand = async (
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl,
+    evaluatorVersion: "db-readiness.v1"
+  });
+  const attachFingerprint = (stdout: string): string =>
+    `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
       exitCode: 1,
-      stdout: [
+      stdout: attachFingerprint([
         "KRN DB Readiness",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
@@ -58,7 +69,7 @@ export const runDbReadinessCommand = async (
         `Next action: ${missingDbConfigRecovery()}`,
         `Does not prove: ${dbBootstrapDoesNotProve}`,
         "Memory store readiness: blocked (database not configured)"
-      ].join("\n") + "\n"
+      ].join("\n") + "\n")
     };
   }
 
@@ -71,7 +82,7 @@ export const runDbReadinessCommand = async (
 
     return {
       exitCode: ready ? 0 : 1,
-      stdout: [
+      stdout: attachFingerprint([
         "KRN DB Readiness",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
@@ -94,12 +105,12 @@ export const runDbReadinessCommand = async (
               "Does not prove: a reachable database is not ready until migrations and pgvector are ready"
             ]),
         `Memory store readiness: ${ready ? "ready" : "blocked (pgvector and migrations must be ready)"}`
-      ].join("\n") + "\n"
+      ].join("\n") + "\n")
     };
   } catch (error) {
     return {
       exitCode: 1,
-      stdout: [
+      stdout: attachFingerprint([
         "KRN DB Readiness",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
@@ -110,7 +121,7 @@ export const runDbReadinessCommand = async (
         `Next action: ${unreachablePostgresRecovery()}`,
         `Does not prove: ${dbBootstrapDoesNotProve}`,
         "Memory store readiness: blocked (migration readiness failed)"
-      ].join("\n") + "\n"
+      ].join("\n") + "\n")
     };
   }
 };

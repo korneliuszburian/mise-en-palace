@@ -308,6 +308,7 @@ const createCapturingMaintenanceQueueRepository = (
 
 const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+  expect(stdout).toMatch(/Environment fingerprint: [a-f0-9]{64}/u);
   expect(stdout).toContain("Run ID: execution-run-1");
   expect(stdout).toContain("Persisted IDs:");
   expect(stdout).toContain("evidenceBundle: evidence-bundle-1");
@@ -361,6 +362,12 @@ const expectPersistedEvidenceCandidates = (capture: EvidencePersistenceCapture):
 
 const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): void => {
   expect(capture.feedbackDeltaMetadata).toMatchObject({
+    environmentFingerprint: {
+      kind: "krn.environmentFingerprint.v1",
+      id: expect.stringMatching(/^[a-f0-9]{64}$/u)
+    }
+  });
+  expect(capture.feedbackDeltaMetadata).toMatchObject({
     sourceUsefulnessOutcomes: [{
       sourceClaimId: "source-claim-1",
       outcome: "selected",
@@ -380,6 +387,10 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
     "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."
   );
   expect(capture.evidenceBundle?.metadata).toMatchObject({
+    environmentFingerprint: {
+      kind: "krn.environmentFingerprint.v1",
+      id: expect.stringMatching(/^[a-f0-9]{64}$/u)
+    },
     intendedFiles: ["KRN_ROADMAP.md"],
     changedFileClassification: {
       intended: ["KRN_ROADMAP.md"],

@@ -47,6 +47,10 @@ import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
+  collectEnvironmentFingerprint,
+  environmentFingerprintLines
+} from "./environment-fingerprint.js";
+import {
   authorizePacketUsefulness,
   usefulnessAuthorizationDowngradeReason
 } from "./packet-usefulness-authorization.js";
@@ -753,7 +757,8 @@ const buildEvidenceBundleInput = (
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
   eventSequence: number,
-  decisionPacketChecksum: string | undefined
+  decisionPacketChecksum: string | undefined,
+  environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): CreateEvidenceBundleInput => ({
   executionRunId: runId,
   status: "captured",
@@ -784,7 +789,8 @@ const buildEvidenceBundleInput = (
       decisionPacketChecksum,
       decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}`
     }),
-    ...(targetEvidence === undefined ? {} : { targetEvidence })
+    ...(targetEvidence === undefined ? {} : { targetEvidence }),
+    environmentFingerprint
   }
 });
 
@@ -813,7 +819,8 @@ const buildFeedbackDeltaInput = (
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
   decisionPacketChecksum: string | undefined,
-  evalCandidateProposals: readonly EvalCandidateProposal[]
+  evalCandidateProposals: readonly EvalCandidateProposal[],
+  environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): CreateFeedbackDeltaInput => ({
   reviewAssessmentId,
   status: "candidate",
@@ -835,7 +842,8 @@ const buildFeedbackDeltaInput = (
       : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
     ...(knowledgeUsefulnessOutcomes === undefined || knowledgeUsefulnessOutcomes.length === 0
       ? {}
-      : { knowledgeUsefulnessOutcomes: [...knowledgeUsefulnessOutcomes] })
+      : { knowledgeUsefulnessOutcomes: [...knowledgeUsefulnessOutcomes] }),
+    environmentFingerprint
   }
 });
 
@@ -1265,10 +1273,12 @@ const renderEvidenceCaptureOutput = (input: {
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>;
 }): string => [
   "KRN Evidence Capture",
   `Captured at: ${input.runtime.now()}`,
   persistenceLine(persistenceLabel(input.runtime)),
+  ...environmentFingerprintLines(input.environmentFingerprint),
   ...(input.runtime.runId === undefined ? [] : [`Run ID: ${input.runtime.runId}`]),
   renderDecisionPacketBinding(input.decisionPacketChecksum),
   commandInputHint,
@@ -1311,7 +1321,8 @@ const persistEvidenceCapture = async (
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[],
-  evalCandidateProposals: readonly EvalCandidateProposal[]
+  evalCandidateProposals: readonly EvalCandidateProposal[],
+  environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): Promise<PersistedEvidenceIdentity> => {
   const { databaseUrl, runId } = resolveEvidencePersistenceConfig(runtime);
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
@@ -1350,7 +1361,8 @@ const persistEvidenceCapture = async (
         targetEvidence,
         counts,
         nextEvidenceEventSequence(aggregate),
-        decisionPacketChecksum
+        decisionPacketChecksum,
+        environmentFingerprint
       )
     );
     const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment(
@@ -1382,7 +1394,8 @@ const persistEvidenceCapture = async (
         evidenceBackedUsefulness.sourceOutcomes,
         evidenceBackedUsefulness.knowledgeOutcomes,
         decisionPacketChecksum,
-        evalCandidateProposals
+        evalCandidateProposals,
+        environmentFingerprint
       )
     );
     const feedbackMaintenanceQueueRecordId = await enqueueAuthorizedFeedbackMaintenance({
@@ -1413,6 +1426,12 @@ export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
 ): Promise<EvidenceCaptureResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "evidence-capture.v1",
+    checkerVersion: "evidence-capture-checker.v1"
+  });
   const statusOutput = await readGitStatus(runtime);
   const changedFiles = parseChangedFiles(statusOutput, {
     repoRoot,
@@ -1442,7 +1461,8 @@ export const runEvidenceCaptureCommand = async (
       runtime.knowledgeUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals,
-      runtime.evalCandidateProposals ?? []
+      runtime.evalCandidateProposals ?? [],
+      environmentFingerprint
     )
     : undefined;
   const feedbackCandidate =
@@ -1468,7 +1488,8 @@ export const runEvidenceCaptureCommand = async (
       sourceDecisionCandidates,
       sourceUsefulnessOutcomes: renderedSourceUsefulnessOutcomes,
       targetEvidence,
-      evalCandidateProposals: runtime.evalCandidateProposals ?? []
+      evalCandidateProposals: runtime.evalCandidateProposals ?? [],
+      environmentFingerprint
     })
   };
 };

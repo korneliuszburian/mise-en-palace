@@ -3,6 +3,9 @@ import { writeFile } from "node:fs/promises";
 import {
   runPairedRepairChecker
 } from "./paired-live-codex-repair.js";
+import {
+  collectEnvironmentFingerprint
+} from "../../environment-fingerprint.js";
 
 const main = async (): Promise<void> => {
   const [baselineRoot, baselineCommit, krnRoot, krnCommit, checkerRoot = process.cwd(), recordPath] =
@@ -26,10 +29,16 @@ const main = async (): Promise<void> => {
       initialCommit: krnCommit
     }
   });
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot: checkerRoot,
+    evaluatorVersion: "paired-live-codex-repair.v1",
+    checkerVersion: "paired-live-codex-repair-checker.v1"
+  });
 
   const output = {
     kind: "krn.pairedLiveCodexRepair.score.v1",
     ...result,
+    environmentFingerprint,
     inputs: {
       baselineRoot,
       baselineCommit,

@@ -35,6 +35,14 @@ platform, workspace, typecheck, tests, Fallow, required evals, and committed
 whitespace; its DB job covers readiness, schema, DB smokes, and `eval:db`; its
 scheduled security job covers dependency, secret, and license policy.
 
+## Proof artifact envelope
+
+DB readiness/smoke output, eval JSON, paired-trial records, doctor proof, and
+persisted evidence carry a secret-free `krn.environmentFingerprint.v1`. It
+binds the artifact to the git/lockfile, runtime, database, evaluator/checker,
+protocol, and schema inputs; it identifies execution conditions but does not
+prove that the command or product behavior succeeded.
+
 ## Non-gating lanes
 
 - `rtk pnpm quality:fallow:report` prints `FALLOW REPORT (NON-GATING)` and

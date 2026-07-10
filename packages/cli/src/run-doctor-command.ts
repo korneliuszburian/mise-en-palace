@@ -30,6 +30,10 @@ import {
   checkCodexAdapter,
   checkTargetRepoReadiness
 } from "./doctor-static-checks.js";
+import {
+  collectEnvironmentFingerprint,
+  environmentFingerprintLines
+} from "./environment-fingerprint.js";
 
 export interface DoctorRuntime {
   env: Record<string, string | undefined>;
@@ -48,6 +52,7 @@ export interface DoctorProofEvidence {
   freshness: "current" | "stale";
   storeIdentity: string;
   projectId?: string;
+  environmentFingerprintId?: string;
 }
 
 export interface DoctorCheck {
@@ -162,6 +167,11 @@ export const hasDoctorFailure = (checks: readonly DoctorCheck[]): boolean =>
 
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "doctor.v1"
+  });
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
   const harnessPersistenceChecks = await checkHarnessPersistence(
@@ -236,10 +246,19 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     ...targetRepoChecks,
     deriveTargetRepoReadiness(postgresChecks, targetRepoChecks),
     ...(await checkRepoFiles(repoRoot))
-  ];
+  ].map((check) => check.proof === undefined
+    ? check
+    : {
+      ...check,
+      proof: {
+        ...check.proof,
+        environmentFingerprintId: environmentFingerprint.id
+      }
+    });
   const stdout = [
     "KRN Doctor",
     `Repo root: ${repoRoot}`,
+    ...environmentFingerprintLines(environmentFingerprint),
     ...checks.map((check) => `${check.label}: ${check.status}`)
   ].join("\n");
   const failed = hasDoctorFailure(checks);

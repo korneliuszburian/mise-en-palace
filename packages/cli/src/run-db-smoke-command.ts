@@ -49,6 +49,10 @@ import {
 import {
   runEvalFeedbackPersistenceSmokeCheck
 } from "./internal/smoke/eval-feedback-persistence-smoke.js";
+import {
+  collectEnvironmentFingerprint,
+  environmentFingerprintLines
+} from "./environment-fingerprint.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -243,6 +247,14 @@ const smokeResultFromCleanup = (
   lines: string[]
 ): DbSmokeResult =>
   smokeResult(cleanedUp ? 0 : 1, context, title, lines);
+
+const attachEnvironmentFingerprint = (
+  result: DbSmokeResult,
+  fingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
+): DbSmokeResult => ({
+  ...result,
+  stdout: `${result.stdout}${output([...environmentFingerprintLines(fingerprint)])}`
+});
 
 const runHarnessPlanSmokeTarget: DbSmokeTargetHandler = async (
   context,
@@ -1071,9 +1083,14 @@ export const runDbSmokeCommand = async (
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
   const targetMetadata = dbSmokeTargetMetadata[runtime.target];
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl,
+    evaluatorVersion: `db-smoke:${runtime.target}`
+  });
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    return {
+    return attachEnvironmentFingerprint({
       exitCode: 1,
       stdout: output([
         targetMetadata.title,
@@ -1083,7 +1100,7 @@ export const runDbSmokeCommand = async (
         `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and start docker compose up -d krn-postgres`,
         targetMetadata.skippedLine
       ])
-    };
+    }, environmentFingerprint);
   }
 
   const context = {
@@ -1094,9 +1111,12 @@ export const runDbSmokeCommand = async (
   };
 
   try {
-    return await dbSmokeTargetHandlers[runtime.target](context, runtime);
+    return attachEnvironmentFingerprint(
+      await dbSmokeTargetHandlers[runtime.target](context, runtime),
+      environmentFingerprint
+    );
   } catch (error) {
-    return {
+    return attachEnvironmentFingerprint({
       exitCode: 1,
       stdout: output([
         targetMetadata.title,
@@ -1105,6 +1125,6 @@ export const runDbSmokeCommand = async (
         "Postgres config: configured",
         `${targetMetadata.failureLabel}: failed (${errorMessage(error)})`
       ])
-    };
+    }, environmentFingerprint);
   }
 };
