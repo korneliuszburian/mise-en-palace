@@ -22,6 +22,7 @@
         "createHarnessPlan",
         "createReviewAssessment",
         "createFeedbackDelta",
+        "getFeedbackDeltaForProject",
         "updateExecutionRunStatus"
       ]
     },

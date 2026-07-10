@@ -36,6 +36,9 @@ export interface HarnessEvidenceSmokeReport {
   subjectFeedbackDeltaCount: number;
   subjectFeedbackRelevant: boolean;
   sourceSubjectFeedbackRetrieved: boolean;
+  exactFeedbackLookupFound: boolean;
+  wrongProjectFeedbackLookupClosed: boolean;
+  missingFeedbackLookupDistinct: boolean;
   otherProjectFeedbackDeltaCount: number;
   otherProjectFeedbackDeltaExcluded: boolean;
   remainingMarkerCount: number;
@@ -349,6 +352,23 @@ export const runHarnessEvidenceSmokeCheck = async (
     );
     const otherProjectFeedbackDeltas =
       await harnessRunRepository.listFeedbackDeltasForProject(otherProject.id);
+    const exactFeedbackLookup = await harnessRunRepository.getFeedbackDeltaForProject(
+      project.id,
+      feedbackDelta.feedbackDeltaId
+    );
+    const wrongProjectFeedbackLookup = await harnessRunRepository.getFeedbackDeltaForProject(
+      otherProject.id,
+      feedbackDelta.feedbackDeltaId
+    );
+    const missingFeedbackLookup = await harnessRunRepository.getFeedbackDeltaForProject(
+      project.id,
+      "00000000-0000-4000-8000-000000000000"
+    );
+    const exactFeedbackLookupFound =
+      exactFeedbackLookup.status === "found" &&
+      exactFeedbackLookup.feedbackDelta.id === feedbackDelta.feedbackDeltaId;
+    const wrongProjectFeedbackLookupClosed = wrongProjectFeedbackLookup.status === "wrong_project";
+    const missingFeedbackLookupDistinct = missingFeedbackLookup.status === "missing";
     const otherProjectFeedbackDeltaExcluded =
       projectFeedbackDeltas.every((delta) => delta.id !== otherFeedbackDelta.feedbackDeltaId);
 
@@ -357,6 +377,9 @@ export const runHarnessEvidenceSmokeCheck = async (
       !subjectFeedbackRelevant ||
       subjectFeedbackDeltas.length !== 1 ||
       !sourceSubjectFeedbackRetrieved ||
+      !exactFeedbackLookupFound ||
+      !wrongProjectFeedbackLookupClosed ||
+      !missingFeedbackLookupDistinct ||
       otherProjectFeedbackDeltas.length !== 1 ||
       otherProjectFeedbackDeltas[0]?.id !== otherFeedbackDelta.feedbackDeltaId ||
       !otherProjectFeedbackDeltaExcluded
@@ -401,6 +424,9 @@ export const runHarnessEvidenceSmokeCheck = async (
       subjectFeedbackDeltaCount: subjectFeedbackDeltas.length,
       subjectFeedbackRelevant,
       sourceSubjectFeedbackRetrieved,
+      exactFeedbackLookupFound,
+      wrongProjectFeedbackLookupClosed,
+      missingFeedbackLookupDistinct,
       otherProjectFeedbackDeltaCount: otherProjectFeedbackDeltas.length,
       otherProjectFeedbackDeltaExcluded,
       remainingMarkerCount,

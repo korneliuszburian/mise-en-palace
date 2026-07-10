@@ -21,6 +21,7 @@ import type {
   HarnessCompilerDependencies
 } from "@krn/harness";
 import type {
+  FeedbackDeltaLookupRepository,
   HarnessRunRepository,
   MemoryRepository,
   ProjectRecord,
@@ -221,10 +222,7 @@ export interface MaintenanceQueueDatabaseRuntimeInput {
 
 export interface MaintenanceQueueDatabaseRuntime {
   maintenanceQueueRepository: MaintenanceQueueRepository;
-  harnessRunRepository: Pick<
-    HarnessRunRepository,
-    "listFeedbackDeltasForProject"
-  >;
+  harnessRunRepository: FeedbackDeltaLookupRepository;
   memoryRepository: Pick<
     MemoryRepository,
     | "listMemoryRecordsForProject"

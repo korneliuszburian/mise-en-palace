@@ -31,6 +31,9 @@ describe("DrizzleHarnessRunRepository", () => {
     expect(typeof DrizzleHarnessRunRepository.prototype.listFeedbackDeltasForSubjects).toBe(
       "function"
     );
+    expect(typeof DrizzleHarnessRunRepository.prototype.getFeedbackDeltaForProject).toBe(
+      "function"
+    );
   });
 
   it("returns no subject feedback without querying when no candidates are active", async () => {

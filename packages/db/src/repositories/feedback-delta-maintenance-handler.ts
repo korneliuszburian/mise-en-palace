@@ -12,7 +12,8 @@ import {
   sourceUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import type {
-  HarnessRunRepository,
+  FeedbackDeltaLookupRepository,
+  FeedbackDeltaProjectLookup,
   MemoryRepository,
   SourceRepository
 } from "@krn/core/repositories/internal";
@@ -53,10 +54,9 @@ type FeedbackMaintenanceCandidate = {
 };
 
 export interface CreateFeedbackDeltaMaintenanceHandlerInput {
-  readonly harnessRunRepository: Pick<HarnessRunRepository, "listFeedbackDeltasForProject">;
+  readonly harnessRunRepository: FeedbackDeltaLookupRepository;
   readonly memoryRepository: Pick<MemoryRepository, "createAntiMemoryCandidate">;
   readonly sourceRepository: Pick<SourceRepository, "getSourceDecisionById">;
-  readonly feedbackDeltaSearchLimit?: number;
   readonly now?: () => IsoTimestamp;
 }
 
@@ -234,14 +234,10 @@ const findFeedbackDelta = async (
   input: CreateFeedbackDeltaMaintenanceHandlerInput,
   projectId: string,
   feedbackDeltaId: string
-): Promise<FeedbackDelta | undefined> => {
-  const feedbackDeltas = await input.harnessRunRepository.listFeedbackDeltasForProject(
-    projectId,
-    input.feedbackDeltaSearchLimit ?? 500
-  );
-
-  return feedbackDeltas.find((feedbackDelta) => feedbackDelta.id === feedbackDeltaId);
-};
+): Promise<FeedbackDeltaProjectLookup> => input.harnessRunRepository.getFeedbackDeltaForProject(
+  projectId,
+  feedbackDeltaId
+);
 
 export const createFeedbackDeltaMaintenanceHandler = (
   input: CreateFeedbackDeltaMaintenanceHandlerInput
@@ -262,15 +258,26 @@ export const createFeedbackDeltaMaintenanceHandler = (
       job.payload.feedbackDeltaId
     );
 
-    if (feedbackDelta === undefined) {
+    if (feedbackDelta.status === "missing") {
       return {
         status: "skipped",
-        reason: `FeedbackDelta ${job.payload.feedbackDeltaId} was not found for project ${job.payload.projectId}`
+        reason:
+          `FeedbackDelta ${job.payload.feedbackDeltaId} does not exist; maintenance cannot be applied`
       };
     }
 
+    if (feedbackDelta.status === "wrong_project") {
+      return {
+        status: "skipped",
+        reason:
+          `FeedbackDelta ${job.payload.feedbackDeltaId} belongs to another project; maintenance failed closed`
+      };
+    }
+
+    const feedbackDeltaRecord = feedbackDelta.feedbackDelta;
+
     const candidates = await feedbackMaintenanceCandidatesFor({
-      feedbackDelta,
+      feedbackDelta: feedbackDeltaRecord,
       sourceRepository: input.sourceRepository
     });
 
@@ -278,7 +285,7 @@ export const createFeedbackDeltaMaintenanceHandler = (
       return {
         status: "skipped",
         reason:
-          `FeedbackDelta ${feedbackDelta.id} has no source-claim, source-decision-with-linked-claim, or knowledge usefulness outcomes with a maintenance consumer`
+          `FeedbackDelta ${feedbackDeltaRecord.id} has no source-claim, source-decision-with-linked-claim, or knowledge usefulness outcomes with a maintenance consumer`
       };
     }
 
@@ -288,7 +295,7 @@ export const createFeedbackDeltaMaintenanceHandler = (
     for (const candidate of candidates) {
       const antiMemoryCandidate = await input.memoryRepository.createAntiMemoryCandidate(
         antiMemoryCandidateForFeedback({
-          feedbackDelta,
+          feedbackDelta: feedbackDeltaRecord,
           outcome: candidate.outcome,
           projectId: job.payload.projectId,
           subject: candidate.subject,

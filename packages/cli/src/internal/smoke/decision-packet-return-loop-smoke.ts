@@ -12,6 +12,7 @@ import type {
   HarnessCompilerDependencies
 } from "@krn/harness";
 import type {
+  FeedbackDeltaLookupRepository,
   HarnessRunRepository,
   MemoryRepository,
   RetrievalRepository,
@@ -109,6 +110,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
   feedbackMaintenanceAntiMemoryCandidateId: string;
   feedbackMaintenanceCandidateLinkedToFeedbackDelta: boolean;
+  feedbackMaintenanceDelayedLookupResolved: boolean;
   feedbackMaintenanceDirectMutationDelta: number;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
@@ -206,6 +208,7 @@ interface FeedbackMaintenanceProofResult {
   handlerBoundaryPassed: boolean;
   antiMemoryCandidateId: string;
   candidateLinkedToFeedbackDelta: boolean;
+  delayedLookupResolved: boolean;
   directMutationDelta: number;
 }
 
@@ -748,7 +751,7 @@ const runFeedbackMaintenanceProof = async (
     readonly feedbackDelta: FeedbackDelta;
     readonly repositories: {
       readonly maintenanceQueueRepository: DrizzleMaintenanceQueueRepository;
-      readonly harnessRunRepository: HarnessRunRepository;
+      readonly harnessRunRepository: FeedbackDeltaLookupRepository;
       readonly memoryRepository: MemoryRepository;
       readonly sourceRepository: SourceRepository;
     };
@@ -805,6 +808,8 @@ const runFeedbackMaintenanceProof = async (
     handlerBoundaryPassed: readback.handlerWriteBoundary?.status === "passed",
     antiMemoryCandidateId: candidate.id,
     candidateLinkedToFeedbackDelta: candidate.feedbackDeltaId === input.feedbackDelta.id,
+    delayedLookupResolved:
+      readback.status === "succeeded" && candidate.feedbackDeltaId === input.feedbackDelta.id,
     directMutationDelta: directMutationCountAfter - directMutationCountBefore
   };
 };
@@ -822,7 +827,7 @@ const runSourceConsensusProof = async (
     readonly marker: string;
     readonly projectId: string;
     readonly repositories: {
-      readonly harnessRunRepository: HarnessRunRepository;
+      readonly harnessRunRepository: HarnessRunRepository & FeedbackDeltaLookupRepository;
       readonly memoryRepository: MemoryRepository;
       readonly sourceRepository: SourceRepository;
       readonly retrievalRepository: RetrievalRepository;
@@ -1134,7 +1139,7 @@ const runSelectorFeedbackProof = async (
     readonly marker: string;
     readonly projectId: string;
     readonly repositories: {
-      readonly harnessRunRepository: HarnessRunRepository;
+      readonly harnessRunRepository: HarnessRunRepository & FeedbackDeltaLookupRepository;
       readonly memoryRepository: MemoryRepository;
       readonly sourceRepository: SourceRepository;
       readonly retrievalRepository: RetrievalRepository;
@@ -1728,6 +1733,40 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       matchingFeedbackWasAccepted &&
       nextPacketRetainsActivatedDecision &&
       !nextPacket.packet.governingDecisionIds.includes(helpedFeedbackSource.claimId);
+
+    await client`
+      insert into feedback_deltas (
+        review_assessment_id,
+        status,
+        memory_candidates,
+        source_decisions,
+        eval_candidates,
+        metadata,
+        created_at,
+        updated_at
+      )
+      select
+        ${staleFeedbackDelta.reviewAssessmentId}::uuid,
+        'candidate'::feedback_delta_status,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        jsonb_build_object(
+          'smokeId', ${marker}::text,
+          'knowledgeUsefulnessOutcomes', jsonb_build_array(
+            jsonb_build_object(
+              'knowledgeId', 'knowledge:maintenance-delay-' || newer.index::text,
+              'outcome', 'helped',
+              'reason', 'Unrelated newer feedback must not hide the queued delta.',
+              'evidenceRefs', jsonb_build_array('smoke:maintenance-delay'),
+              'doesNotProve', 'This row does not prove broad usefulness ranking quality.'
+            )
+          )
+        ),
+        now(),
+        now()
+      from generate_series(1, 501) as newer(index)
+    `;
     const feedbackMaintenanceProof = await runFeedbackMaintenanceProof({
       client,
       marker,
@@ -1891,6 +1930,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       feedbackMaintenanceAntiMemoryCandidateId: feedbackMaintenanceProof.antiMemoryCandidateId,
       feedbackMaintenanceCandidateLinkedToFeedbackDelta:
         feedbackMaintenanceProof.candidateLinkedToFeedbackDelta,
+      feedbackMaintenanceDelayedLookupResolved:
+        feedbackMaintenanceProof.delayedLookupResolved,
       feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0

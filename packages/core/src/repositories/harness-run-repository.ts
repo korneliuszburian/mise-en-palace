@@ -101,6 +101,18 @@ export interface ListFeedbackDeltasForSubjectsInput {
   limitPerSubject?: number;
 }
 
+export type FeedbackDeltaProjectLookup =
+  | { status: "found"; feedbackDelta: FeedbackDelta }
+  | { status: "missing" }
+  | { status: "wrong_project" };
+
+export interface FeedbackDeltaLookupRepository {
+  getFeedbackDeltaForProject(
+    projectId: ProjectId,
+    feedbackDeltaId: string
+  ): Promise<FeedbackDeltaProjectLookup>;
+}
+
 export interface CreateEvalFeedbackDeltaOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
   projectId: ProjectId;
@@ -151,6 +163,10 @@ export interface HarnessRunRepository {
   listFeedbackDeltasForSubjects?(
     input: ListFeedbackDeltasForSubjectsInput
   ): Promise<FeedbackDelta[]>;
+  getFeedbackDeltaForProject?(
+    projectId: ProjectId,
+    feedbackDeltaId: string
+  ): Promise<FeedbackDeltaProjectLookup>;
   getHarnessRunByExecutionRunId(
     executionRunId: ExecutionRunId
   ): Promise<HarnessRunAggregate | undefined>;

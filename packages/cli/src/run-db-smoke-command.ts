@@ -299,6 +299,9 @@ const runHarnessEvidenceSmokeTarget: DbSmokeTargetHandler = async (
       `Subject feedback deltas: ${report.subjectFeedbackDeltaCount}`,
       `Subject feedback relevant: ${report.subjectFeedbackRelevant ? "yes" : "no"}`,
       `Source subject feedback retrieved: ${report.sourceSubjectFeedbackRetrieved ? "yes" : "no"}`,
+      `Exact feedback lookup found: ${report.exactFeedbackLookupFound ? "yes" : "no"}`,
+      `Wrong-project feedback lookup closed: ${report.wrongProjectFeedbackLookupClosed ? "yes" : "no"}`,
+      `Missing feedback lookup distinct: ${report.missingFeedbackLookupDistinct ? "yes" : "no"}`,
       `Other project feedback deltas: ${report.otherProjectFeedbackDeltaCount}`,
       `Other project feedback excluded: ${report.otherProjectFeedbackDeltaExcluded ? "yes" : "no"}`,
       `Run events: ${report.runEventCount}`,
@@ -806,6 +809,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Feedback maintenance handler boundary passed: ${yesNo(report.feedbackMaintenanceHandlerBoundaryPassed)}`,
   `Feedback maintenance anti-memory candidate: ${report.feedbackMaintenanceAntiMemoryCandidateId}`,
   `Feedback maintenance candidate linked to feedback delta: ${yesNo(report.feedbackMaintenanceCandidateLinkedToFeedbackDelta)}`,
+  `Feedback maintenance delayed exact lookup: ${yesNo(report.feedbackMaintenanceDelayedLookupResolved)}`,
   `Feedback maintenance direct mutation delta: ${report.feedbackMaintenanceDirectMutationDelta}`,
   `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
   ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")

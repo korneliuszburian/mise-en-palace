@@ -16,6 +16,7 @@ import type {
   EvidenceCommand,
   ExecutionRun,
   FeedbackDelta,
+  ProjectId,
   HarnessPlan,
   EvidenceCommandReadback,
   OperatorIntent,
@@ -37,6 +38,7 @@ import type {
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
   FeedbackSubjectReference,
+  FeedbackDeltaProjectLookup,
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
@@ -687,6 +689,54 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       .limit(limit);
 
     return rows.map((row) => mapFeedbackDelta(row.feedbackDelta));
+  }
+
+  async getFeedbackDeltaForProject(
+    projectId: ProjectId,
+    feedbackDeltaId: string
+  ): Promise<FeedbackDeltaProjectLookup> {
+    const rows = await this.db
+      .select({
+        feedbackDelta: feedbackDeltas,
+        linkedProjectId: taskContracts.projectId
+      })
+      .from(feedbackDeltas)
+      .innerJoin(
+        reviewAssessments,
+        eq(feedbackDeltas.reviewAssessmentId, reviewAssessments.id)
+      )
+      .innerJoin(
+        evidenceBundles,
+        eq(reviewAssessments.evidenceBundleId, evidenceBundles.id)
+      )
+      .innerJoin(
+        executionRuns,
+        eq(evidenceBundles.executionRunId, executionRuns.id)
+      )
+      .innerJoin(
+        harnessPlans,
+        eq(executionRuns.harnessPlanId, harnessPlans.id)
+      )
+      .innerJoin(
+        taskContracts,
+        eq(harnessPlans.taskContractId, taskContracts.id)
+      )
+      .where(eq(feedbackDeltas.id, feedbackDeltaId))
+      .limit(1);
+    const row = rows[0];
+
+    if (row === undefined) {
+      return { status: "missing" };
+    }
+
+    if (row.linkedProjectId !== projectId) {
+      return { status: "wrong_project" };
+    }
+
+    return {
+      status: "found",
+      feedbackDelta: mapFeedbackDelta(row.feedbackDelta)
+    };
   }
 
   async listFeedbackDeltasForSubjects(

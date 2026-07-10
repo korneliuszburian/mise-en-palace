@@ -172,11 +172,14 @@ describe("runMaintenanceQueueCommand", () => {
       createMaintenanceQueueDatabaseRuntime: async () => ({
         maintenanceQueueRepository,
         harnessRunRepository: {
-          async listFeedbackDeltasForProject(projectId, limit) {
+          async getFeedbackDeltaForProject(projectId, feedbackDeltaId) {
             expect(projectId).toBe("project-1");
-            expect(limit).toBe(500);
+            expect(feedbackDeltaId).toBe("feedback-delta-1");
 
-            return [feedbackDelta];
+            return {
+              status: "found",
+              feedbackDelta
+            };
           }
         },
         memoryRepository: {
@@ -266,8 +269,8 @@ describe("runMaintenanceQueueCommand", () => {
       createMaintenanceQueueDatabaseRuntime: async () => ({
         maintenanceQueueRepository,
         harnessRunRepository: {
-          async listFeedbackDeltasForProject() {
-            throw new Error("listFeedbackDeltasForProject should not be called");
+          async getFeedbackDeltaForProject() {
+            throw new Error("getFeedbackDeltaForProject should not be called");
           }
         },
         memoryRepository: {

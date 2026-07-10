@@ -646,11 +646,14 @@ describe("runMaintenanceQueueRecord", () => {
       handlers: [
         createFeedbackDeltaMaintenanceHandler({
           harnessRunRepository: {
-            async listFeedbackDeltasForProject(projectId, limit) {
+            async getFeedbackDeltaForProject(projectId, feedbackDeltaId) {
               expect(projectId).toBe("project-1");
-              expect(limit).toBe(500);
+              expect(feedbackDeltaId).toBe("feedback-delta-1");
 
-              return [feedback];
+              return {
+                status: "found",
+                feedbackDelta: feedback
+              };
             }
           },
           memoryRepository,
@@ -735,5 +738,73 @@ describe("runMaintenanceQueueRecord", () => {
     expect(memoryRepository.createdAntiMemoryCandidates.map((candidate) => candidate.appliesTo))
       .not.toContain("source_decision:source-decision-hurt-1");
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
+  });
+
+  it("distinguishes missing and wrong-project feedback lookups without writing candidates", async () => {
+    for (const lookupStatus of ["missing", "wrong_project"] as const) {
+      const repository = new FakeMaintenanceQueueRepository(
+        runningRecord({
+          jobType: "review_feedback_delta",
+          payload: {
+            projectId: "project-1",
+            feedbackDeltaId: "feedback-delta-1",
+            reason: "lookup boundary"
+          }
+        })
+      );
+      const memoryRepository = new FakeFeedbackMaintenanceMemoryRepository();
+      const result = await runMaintenanceQueueRecord({
+        repository,
+        recordId: "maintenance-queue-1",
+        handlers: [createFeedbackDeltaMaintenanceHandler({
+          harnessRunRepository: {
+            async getFeedbackDeltaForProject(projectId, feedbackDeltaId) {
+              expect(projectId).toBe("project-1");
+              expect(feedbackDeltaId).toBe("feedback-delta-1");
+
+              return { status: lookupStatus };
+            }
+          },
+          memoryRepository,
+          sourceRepository: new FakeFeedbackMaintenanceSourceRepository(new Map())
+        })]
+      });
+
+      expect(result.status).toBe("skipped");
+      expect(result.record.lastError).toContain(
+        lookupStatus === "missing" ? "does not exist" : "belongs to another project"
+      );
+      expect(memoryRepository.createdAntiMemoryCandidates).toEqual([]);
+    }
+  });
+
+  it("keeps repository lookup failures on retry/dead-letter handling", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "review_feedback_delta",
+        payload: {
+          projectId: "project-1",
+          feedbackDeltaId: "feedback-delta-1",
+          reason: "retry boundary"
+        }
+      })
+    );
+    const result = await runMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      handlers: [createFeedbackDeltaMaintenanceHandler({
+        harnessRunRepository: {
+          async getFeedbackDeltaForProject() {
+            throw new Error("database unavailable");
+          }
+        },
+        memoryRepository: new FakeFeedbackMaintenanceMemoryRepository(),
+        sourceRepository: new FakeFeedbackMaintenanceSourceRepository(new Map())
+      })]
+    });
+
+    expect(result.status).toBe("retried");
+    expect(result.record.lastError).toBe("database unavailable");
+    expect(repository.calls).toEqual(["claim:maintenance-queue-1", "retry:maintenance-queue-1"]);
   });
 });

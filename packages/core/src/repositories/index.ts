@@ -7,6 +7,8 @@ export type {
   CreateEvalFeedbackDeltaOnceResult,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
+  FeedbackDeltaLookupRepository,
+  FeedbackDeltaProjectLookup,
   FeedbackSubjectKind,
   FeedbackSubjectReference,
   CreateReviewAssessmentInput,
