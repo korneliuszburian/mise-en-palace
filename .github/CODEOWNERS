@@ -7,4 +7,5 @@
 /packages/db/src/migrations/ @korneliuszburian
 /.github/ @korneliuszburian
 /SECURITY.md @korneliuszburian
+/security-baseline.json @korneliuszburian
 /LICENSE.md @korneliuszburian

@@ -42,7 +42,7 @@ describe("repository policy boundaries", () => {
     const workflow = readRootFile(".github/workflows/ci.yml");
     const usesLines = workflow.split("\n").filter((line) => line.includes("uses:"));
 
-    expect(usesLines).toHaveLength(6);
+    expect(usesLines).toHaveLength(9);
     expect(usesLines.every((line) =>
       /uses:\s+[^@\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/u.test(line)
     )).toBe(true);
@@ -114,7 +114,7 @@ describe("repository policy boundaries", () => {
     expect(packageJson.packageManager).toBe("pnpm@10.32.1");
     expect(packageJson.engines?.node).toBe(`${nodeVersion}.x`);
     expect(packageJson.engines?.pnpm).toBe("10.32.1");
-    expect(workflow.match(/node-version-file: \.node-version/gu)).toHaveLength(2);
+    expect(workflow.match(/node-version-file: \.node-version/gu)).toHaveLength(3);
     expect(workflow.match(/pnpm toolchain:check -- --allow-missing-rtk/gu)).toHaveLength(2);
 
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-toolchain-contract-"));
@@ -174,6 +174,7 @@ describe("repository policy boundaries", () => {
     expect(codeowners).toContain("/packages/db/src/migrations/ @korneliuszburian");
     expect(codeowners).toContain("/.github/ @korneliuszburian");
     expect(codeowners).toContain("/SECURITY.md @korneliuszburian");
+    expect(codeowners).toContain("/security-baseline.json @korneliuszburian");
   });
 
   it("keeps one canonical executable required-eval profile with explicit test files", () => {
@@ -225,5 +226,41 @@ describe("repository policy boundaries", () => {
     expect(fallowPolicy).toContain("@korneliuszburian");
     expect(fallowConfig).toContain("tests/fixtures/**");
     expect(fallowConfig).toContain("**/*.typecheck.ts");
+  });
+
+  it("keeps security exceptions and allowlists reviewed in a tracked baseline", () => {
+    const baseline = JSON.parse(readRootFile("security-baseline.json")) as {
+      allowedLicenses?: string[];
+      secretExceptions?: Array<{ path?: string; pattern?: string; reason?: string }>;
+      dependencyVulnerabilityExceptions?: string[];
+    };
+    const exception = baseline.secretExceptions?.[0];
+
+    expect(baseline.allowedLicenses).toEqual([
+      "Apache-2.0",
+      "BSD-3-Clause",
+      "ISC",
+      "MIT",
+      "MPL-2.0",
+      "Unlicense",
+    ]);
+    expect(exception).toMatchObject({
+      path: "packages/harness/src/observations/__tests__/observer-input.test.ts",
+      pattern: "GitHub token",
+    });
+    expect(exception?.reason).toContain("fake token");
+    expect(baseline.dependencyVulnerabilityExceptions).toEqual([]);
+  });
+
+  it("keeps staged security scans blocking and scheduled without mutable actions", () => {
+    const workflow = readRootFile(".github/workflows/ci.yml");
+
+    expect(workflow).toContain('cron: "17 3 * * 1"');
+    expect(workflow).toContain("name: Dependency, secret, and license policy");
+    expect(workflow).toContain("run: pnpm security:dependency-audit");
+    expect(workflow).toContain("run: pnpm security:secrets");
+    expect(workflow).toContain("run: pnpm security:licenses");
+    expect(workflow).not.toContain("continue-on-error: true");
+    expect(workflow.split("uses:").length - 1).toBe(9);
   });
 });
