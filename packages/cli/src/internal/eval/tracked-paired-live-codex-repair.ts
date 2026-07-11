@@ -403,7 +403,7 @@ export const runTrackedPairedTrial = async (input: {
 const loadTrackedTrialManifest = async (path: string): Promise<PairedTrialManifest> => {
   const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
   if (!isRecord(parsed) || parsed["kind"] !== "krn.pairedLiveCodexRepairManifest.v1") throw new Error("Invalid tracked paired-trial manifest");
-  return parsed as unknown as PairedTrialManifest;
+  return parsed as PairedTrialManifest;
 };
 
 export const defaultTrackedTrialManifestPath = (): string =>
