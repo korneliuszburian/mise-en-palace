@@ -161,7 +161,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "M24 retrieval substrate smoke",
       falsifier: "Retrieval substrate smoke readback or cleanup fails.",
-      revisitWhen: "M25 activation ranking changes the retrieval contract.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -196,6 +196,116 @@ export const runRetrievalSubstrateSmokeCheck = async (
         smokeId: marker
       }
     });
+
+    const temporalBoundaryNow = taskContract.updatedAt;
+    const temporalBoundaryMemory = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `retrieval-substrate-smoke:${marker}:current`,
+      kind: "constraint",
+      status: "active",
+      summary: "Temporal boundary retrieval test",
+      body: "temporal-boundary current record",
+      owner: "retrieval-substrate-smoke",
+      confidence: 95,
+      applicationGuidance: "This current record must survive the bounded retrieval limit.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      validFrom: temporalBoundaryNow,
+      metadata: {
+        smokeId: marker,
+        temporalBoundary: true
+      }
+    });
+    const expiredMemoryIds: string[] = [];
+    for (const index of Array.from({ length: 25 }, (_, value) => value)) {
+      const expiredMemory = await memoryRepository.createMemoryRecord({
+        projectId: project.id,
+        key: `retrieval-substrate-smoke:${marker}:expired:${index}`,
+        kind: "constraint",
+        status: "active",
+        summary: "Temporal boundary retrieval test",
+        body: "temporal-boundary expired distractor",
+        owner: "retrieval-substrate-smoke",
+        confidence: 95,
+        applicationGuidance: "Should be excluded before the bounded retrieval limit.",
+        invalidationRule: "This smoke record expires before activation.",
+        sourceLineage: [{ sourceId: sourceClaim.id }],
+        isUserPreference: false,
+        validFrom: "2026-01-01T00:00:00.000Z",
+        validUntil: "2026-01-02T00:00:00.000Z",
+        metadata: {
+          smokeId: marker,
+          temporalBoundary: true
+        }
+      });
+      expiredMemoryIds.push(expiredMemory.id);
+    }
+    const currentTemporalRecords = await memoryRepository.listActiveMemory(project.id, 1, {
+      terms: ["temporal-boundary"],
+      now: temporalBoundaryNow
+    });
+    if (
+      currentTemporalRecords.length !== 1 ||
+      currentTemporalRecords[0]?.id !== temporalBoundaryMemory.id ||
+      currentTemporalRecords.some((record) => expiredMemoryIds.includes(record.id))
+    ) {
+      throw new Error("Temporal eligibility was applied after the active-memory limit");
+    }
+
+    const sourcePosition26Claim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      executionRunId: executionRun.id,
+      claim: "Source position-26 relevant claim",
+      mechanism: "The relevant source claim must be found before the bounded limit.",
+      krnImplication: "Retrieval preserves task-relevant source authority.",
+      doesNotProve: "The claim is true outside this project scope.",
+      falsifier: "The bounded source retrieval returns an unrelated claim.",
+      sourceAuthority: "high",
+      supportType: "implementation-boundary",
+      consumer: "retrieval-substrate-smoke",
+      status: "proposed",
+      metadata: {
+        smokeId: marker,
+        position26: true
+      }
+    });
+    const sourcePosition26Claims: string[] = [];
+    for (const index of Array.from({ length: 25 }, (_, value) => value)) {
+      const distractorClaim = await sourceRepository.createSourceClaim({
+        sourceArtifactId: sourceArtifact.id,
+        executionRunId: executionRun.id,
+        claim: `Source position-26 distractor ${index}`,
+        mechanism: "This unrelated source claim must not consume the relevant limit.",
+        krnImplication: "It is not relevant to the position-26 query.",
+        doesNotProve: "The relevant claim was selected.",
+        falsifier: "The source relevance boundary returns a distractor.",
+        sourceAuthority: "medium",
+        supportType: "implementation-boundary",
+        consumer: "retrieval-substrate-smoke",
+        status: "proposed",
+        metadata: {
+          smokeId: marker,
+          position26: true
+        }
+      });
+      sourcePosition26Claims.push(distractorClaim.id);
+    }
+    const relevantSourceClaims = await sourceRepository.listClaimsForProject(
+      project.id,
+      1,
+      {
+        terms: ["position-26 relevant"],
+        now: temporalBoundaryNow
+      }
+    );
+    if (
+      relevantSourceClaims.length !== 1 ||
+      relevantSourceClaims[0]?.id !== sourcePosition26Claim.id ||
+      relevantSourceClaims.some((claim) => sourcePosition26Claims.includes(claim.id))
+    ) {
+      throw new Error("Source lifecycle/relevance eligibility was applied after the limit");
+    }
+
     const sourceDocument = await retrievalRepository.createSearchDocument({
       projectId: project.id,
       subjectType: "source_claim",

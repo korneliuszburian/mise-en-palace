@@ -78,12 +78,14 @@ describe("DrizzleMemoryRepository", () => {
     expect(order.map(orderColumnName)).toEqual([
       "negative_feedback_count",
       "positive_feedback_count",
-      "updated_at"
+      "updated_at",
+      "id"
     ]);
     expect(order.map(orderDirection)).toEqual([
       "asc",
       "desc",
-      "desc"
+      "desc",
+      "asc"
     ]);
   });
 

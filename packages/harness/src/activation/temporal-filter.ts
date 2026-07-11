@@ -5,8 +5,19 @@ import {
   markExcluded
 } from "./types.js";
 
-const isPastOrNow = (timestamp: string, now: string): boolean =>
-  new Date(timestamp).getTime() <= new Date(now).getTime();
+const parseTimestamp = (timestamp: string): number => {
+  const parsed = Date.parse(timestamp);
+
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+};
+
+const invalidTimeExclusion = (
+  candidate: RankedActivationCandidate,
+  field: string
+): RankedActivationCandidate => markExcluded(candidate, {
+  reason: "stale",
+  explanation: `Candidate has invalid ${field}; temporal eligibility fails closed.`
+});
 
 const statusExclusion = (
   candidate: RankedActivationCandidate
@@ -37,9 +48,18 @@ const statusExclusion = (
 
 const invalidatedAtExclusion = (
   candidate: RankedActivationCandidate,
-  now: string
+  nowAt: number
 ): RankedActivationCandidate | undefined => {
-  if (candidate.invalidatedAt === undefined || !isPastOrNow(candidate.invalidatedAt, now)) {
+  if (candidate.invalidatedAt === undefined) {
+    return undefined;
+  }
+
+  const invalidatedAt = parseTimestamp(candidate.invalidatedAt);
+  if (!Number.isFinite(invalidatedAt)) {
+    return invalidTimeExclusion(candidate, "invalidatedAt");
+  }
+
+  if (invalidatedAt > nowAt) {
     return undefined;
   }
 
@@ -51,9 +71,18 @@ const invalidatedAtExclusion = (
 
 const validUntilExclusion = (
   candidate: RankedActivationCandidate,
-  now: string
+  nowAt: number
 ): RankedActivationCandidate | undefined => {
-  if (candidate.validUntil === undefined || !isPastOrNow(candidate.validUntil, now)) {
+  if (candidate.validUntil === undefined) {
+    return undefined;
+  }
+
+  const validUntil = parseTimestamp(candidate.validUntil);
+  if (!Number.isFinite(validUntil)) {
+    return invalidTimeExclusion(candidate, "validUntil");
+  }
+
+  if (validUntil > nowAt) {
     return undefined;
   }
 
@@ -63,13 +92,43 @@ const validUntilExclusion = (
   });
 };
 
+const validFromExclusion = (
+  candidate: RankedActivationCandidate,
+  nowAt: number
+): RankedActivationCandidate | undefined => {
+  if (candidate.validFrom === undefined) {
+    return undefined;
+  }
+
+  const validFrom = parseTimestamp(candidate.validFrom);
+  if (!Number.isFinite(validFrom)) {
+    return invalidTimeExclusion(candidate, "validFrom");
+  }
+
+  if (validFrom <= nowAt) {
+    return undefined;
+  }
+
+  return markExcluded(candidate, {
+    reason: "stale",
+    explanation: "Candidate validity window has not started."
+  });
+};
+
 const temporalExclusion = (
   candidate: RankedActivationCandidate,
   now: string
-): RankedActivationCandidate | undefined =>
-  statusExclusion(candidate) ??
-  invalidatedAtExclusion(candidate, now) ??
-  validUntilExclusion(candidate, now);
+): RankedActivationCandidate | undefined => {
+  const nowAt = parseTimestamp(now);
+  if (!Number.isFinite(nowAt)) {
+    return invalidTimeExclusion(candidate, "now");
+  }
+
+  return statusExclusion(candidate) ??
+    validFromExclusion(candidate, nowAt) ??
+    invalidatedAtExclusion(candidate, nowAt) ??
+    validUntilExclusion(candidate, nowAt);
+};
 
 export const applyTemporalFilter = (
   candidates: readonly RankedActivationCandidate[],

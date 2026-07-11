@@ -90,6 +90,7 @@ export interface ActivationCandidateRepositories {
 
 export interface RetrieveActivationCandidatesInput {
   taskContract: TaskContract;
+  now?: string;
   memoryQuery?: ActivationQuery;
   sourceQuery?: ActivationQuery;
   targetReadModel?: TargetActivationReadModel;
@@ -607,6 +608,7 @@ const sourceRejectionsForClaims = async (
 export const retrieveActivationCandidates = async (
   input: RetrieveActivationCandidatesInput
 ): Promise<RetrieveActivationCandidatesResult> => {
+  const activationNow = input.now ?? input.taskContract.updatedAt;
   const memoryQuery = input.memoryQuery ?? buildMemoryQuery(input.taskContract);
   const sourceQuery = input.sourceQuery ?? buildSourceQuery(input.taskContract);
 
@@ -636,11 +638,12 @@ export const retrieveActivationCandidates = async (
   const initialMemoryRecords = await input.repositories.memoryRepository.listActiveMemory(
     input.taskContract.projectId,
     input.limits.memory,
-    { terms: memoryQuery.terms }
+    { terms: memoryQuery.terms, now: activationNow }
   );
   const initialSourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
     input.taskContract.projectId,
-    input.limits.source
+    input.limits.source,
+    { terms: sourceQuery.terms, now: activationNow }
   );
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const searchDocumentResolutions = await resolveSearchDocumentAuthority({
@@ -686,7 +689,7 @@ export const retrieveActivationCandidates = async (
     sourceClaimEdges,
     sourceDecisionEdges: [...sourceDecisionEdgesByClaimId.values()].flat(),
     sourceRejections,
-    now: input.taskContract.updatedAt
+    now: activationNow
   });
   const sourceConsensusEntriesByClaimId = new Map<SourceClaim["id"], SourceConsensusTimelineEntry>(
     sourceConsensus.entries.map((entry) => [entry.sourceClaimId, entry])
@@ -694,7 +697,8 @@ export const retrieveActivationCandidates = async (
   const currentAuthoritySourceClaimIds = new Set(sourceConsensus.currentSourceClaimIds);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
-    input.limits.antiMemory
+    input.limits.antiMemory,
+    { now: activationNow }
   );
   const antiMemoryCandidates =
     input.repositories.memoryRepository.listAntiMemoryCandidates === undefined
@@ -714,7 +718,7 @@ export const retrieveActivationCandidates = async (
           sourceDecisionEdges.map((edge) => edge.id);
         const authorityAssessment = assessSourceClaimAuthority({
           claim,
-          now: input.taskContract.updatedAt,
+          now: activationNow,
           decisionSupportEdgeIds,
           ...(sourceConsensusEntry === undefined
             ? {}
@@ -733,7 +737,7 @@ export const retrieveActivationCandidates = async (
               })
         });
         const sourceClaimReviewSignals = assessSourceClaimReviewSignals(claim, {
-          now: input.taskContract.updatedAt,
+          now: activationNow,
           sourceDecisionCount: decisionSupportEdgeIds.length
         });
         const candidate = toSourceClaimCandidate(claim);

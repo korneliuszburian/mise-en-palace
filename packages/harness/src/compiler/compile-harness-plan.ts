@@ -261,6 +261,7 @@ const retrieveCompilerActivationCandidates = (
   dependencies: HarnessCompilerDependencies
 ): Promise<RetrievedActivationCandidates> => retrieveActivationCandidates({
   taskContract,
+  now: dependencies.now(),
   limits: {
     memory: defaultMemoryLimit,
     source: defaultSourceLimit,

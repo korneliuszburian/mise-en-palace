@@ -177,6 +177,8 @@ export interface CreateAntiMemoryRecordInput extends RepositoryMetadata {
   owner: string;
   confidence: number;
   sourceLineage: SourceLineageRef[];
+  validFrom?: string;
+  validUntil?: string;
 }
 
 export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
@@ -203,6 +205,11 @@ export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
 
 export interface ActiveMemorySelectionOptions {
   terms?: readonly string[];
+  now?: string;
+}
+
+export interface AntiMemorySelectionOptions {
+  now?: string;
 }
 
 export interface PromoteAntiMemoryCandidateInput extends RepositoryMetadata {
@@ -251,7 +258,11 @@ export interface MemoryRepository {
   rejectAntiMemoryCandidate(input: RejectAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
   listAntiMemoryCandidates(projectId: ProjectId, limit: number): Promise<AntiMemoryCandidate[]>;
   createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord>;
-  listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]>;
+  listAntiMemoryForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: AntiMemorySelectionOptions
+  ): Promise<AntiMemoryRecord[]>;
   listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]>;
 }
 

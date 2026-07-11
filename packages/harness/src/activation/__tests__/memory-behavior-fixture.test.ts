@@ -214,6 +214,51 @@ describe("golden memory behavior cases", () => {
     });
   });
 
+  it("applies the half-open validity window and fails closed for time errors", () => {
+    const query = buildMemoryQuery(task({}));
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-future",
+        validFrom: "2026-06-23T10:00:00.001Z"
+      })),
+      toMemoryCandidate(memoryRecord({
+        id: "memory-starts-now",
+        validFrom: now,
+        validUntil: "2026-06-23T11:00:00.000Z"
+      })),
+      toMemoryCandidate(memoryRecord({
+        id: "memory-ends-now",
+        validUntil: now
+      })),
+      toMemoryCandidate(memoryRecord({
+        id: "memory-invalid-time",
+        validUntil: "not-a-date"
+      }))
+    ], query);
+
+    const filtered = applyTemporalFilter(ranked, now);
+
+    expect(filtered.find((candidate) => candidate.subjectId === "memory-future")?.exclusion)
+      .toMatchObject({ reason: "stale" });
+    expect(filtered.find((candidate) => candidate.subjectId === "memory-starts-now")?.exclusion)
+      .toBeUndefined();
+    expect(filtered.find((candidate) => candidate.subjectId === "memory-ends-now")?.exclusion)
+      .toMatchObject({ reason: "stale" });
+    expect(filtered.find((candidate) => candidate.subjectId === "memory-invalid-time")?.exclusion)
+      .toMatchObject({ reason: "stale" });
+  });
+
+  it("fails closed when the activation timestamp is invalid", () => {
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({ id: "memory-invalid-now" }))
+    ], buildMemoryQuery(task({})));
+
+    expect(applyTemporalFilter(ranked, "not-a-date")[0]?.exclusion).toMatchObject({
+      reason: "stale",
+      explanation: expect.stringContaining("invalid now")
+    });
+  });
+
   it("abstains when memory support is weak", () => {
     const ranked = rankCandidates([
       toMemoryCandidate(memoryRecord({

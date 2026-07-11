@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql
+} from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import type {
   AntiMemoryCandidate,
@@ -19,6 +31,7 @@ import type {
   CreateAntiMemoryRecordInput,
   CreateAntiMemoryCandidateInput,
   ActiveMemorySelectionOptions,
+  AntiMemorySelectionOptions,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
@@ -105,8 +118,15 @@ export const antiMemoryPromotionMetadata = (
 export const activeMemorySelectionOrder = () => [
   asc(memoryRecords.negativeFeedbackCount),
   desc(memoryRecords.positiveFeedbackCount),
-  desc(memoryRecords.updatedAt)
+  desc(memoryRecords.updatedAt),
+  asc(memoryRecords.id)
 ];
+
+const selectionDate = (value: string | undefined): Date | undefined => {
+  const timestamp = value === undefined ? Date.now() : Date.parse(value);
+
+  return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
+};
 
 interface MemoryCoreInvariantInput {
   summary: string;
@@ -560,6 +580,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     limit: number,
     options?: ActiveMemorySelectionOptions
   ): Promise<MemoryRecord[]> {
+    const now = selectionDate(options?.now);
+    if (now === undefined) {
+      return [];
+    }
+
     const terms = [...new Set(
       (options?.terms ?? [])
         .map((term) => term.trim().toLowerCase())
@@ -580,6 +605,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       where: and(
         eq(memoryRecords.projectId, projectId),
         eq(memoryRecords.status, "active"),
+        lte(memoryRecords.validFrom, now),
+        or(isNull(memoryRecords.validUntil), gt(memoryRecords.validUntil, now)),
+        or(isNull(memoryRecords.invalidatedAt), gt(memoryRecords.invalidatedAt, now)),
         relevanceFilter
       ),
       orderBy: activeMemorySelectionOrder(),
@@ -1763,6 +1791,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           ...(input.mayRevisitWhen === undefined
             ? {}
             : { mayRevisitWhen: input.mayRevisitWhen }),
+          ...(input.validFrom === undefined
+            ? {}
+            : { validFrom: fromIsoTimestamp(input.validFrom) }),
+          ...(input.validUntil === undefined
+            ? {}
+            : { validUntil: fromIsoTimestamp(input.validUntil) }),
           summary: input.summary,
           body: input.body,
           owner: input.owner,
@@ -1777,10 +1811,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return mapAntiMemoryRecord(row);
   }
 
-  async listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]> {
+  async listAntiMemoryForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: AntiMemorySelectionOptions
+  ): Promise<AntiMemoryRecord[]> {
+    const now = selectionDate(options?.now);
+    if (now === undefined) {
+      return [];
+    }
+
     const rows = await this.db.query.antiMemoryRecords.findMany({
-      where: eq(antiMemoryRecords.projectId, projectId),
-      orderBy: asc(antiMemoryRecords.createdAt),
+      where: and(
+        eq(antiMemoryRecords.projectId, projectId),
+        lte(antiMemoryRecords.validFrom, now),
+        or(isNull(antiMemoryRecords.validUntil), gt(antiMemoryRecords.validUntil, now)),
+        or(isNull(antiMemoryRecords.invalidatedAt), gt(antiMemoryRecords.invalidatedAt, now))
+      ),
+      orderBy: [asc(antiMemoryRecords.createdAt), asc(antiMemoryRecords.id)],
       limit
     });
 

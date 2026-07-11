@@ -1,4 +1,4 @@
-import { and, desc, inArray, or, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type {
   ExecutionRunId,
   ProjectId,
@@ -30,6 +30,7 @@ import type {
   SourceArtifactRecord,
   SourceChunkRecord,
   SourceDecisionKnowledgeSource,
+  SourceClaimSelectionOptions,
   SourceRepository
 } from "@krn/core/repositories/internal";
 
@@ -96,6 +97,12 @@ const sourceClaimProjection = {
   createdAt: sourceClaims.createdAt,
   updatedAt: sourceClaims.updatedAt
 } as const;
+
+const selectionDate = (value: string | undefined): Date | undefined => {
+  const timestamp = value === undefined ? Date.now() : Date.parse(value);
+
+  return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
+};
 
 const sourceDecisionEdgeProjection = {
   id: sourceDecisionEdges.id,
@@ -649,12 +656,50 @@ export class DrizzleSourceRepository implements SourceRepository {
     return row === undefined ? undefined : mapSourceClaim(row);
   }
 
-  async listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]> {
+  async listClaimsForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: SourceClaimSelectionOptions
+  ): Promise<SourceClaim[]> {
+    const now = selectionDate(options?.now);
+    if (now === undefined) {
+      return [];
+    }
+    const nowIso = now.toISOString();
+
+    const terms = [...new Set(
+      (options?.terms ?? [])
+        .map((term) => term.trim().toLowerCase())
+        .filter((term) => term.length > 0)
+    )];
+    const searchableText = sql`lower(concat_ws(' ',
+      ${sourceClaims.claim},
+      ${sourceClaims.mechanism},
+      ${sourceClaims.krnImplication},
+      ${sourceClaims.doesNotProve},
+      ${sourceClaims.consumer},
+      ${sourceClaims.falsifier}
+    ))`;
+    const relevanceFilter = terms.length === 0
+      ? undefined
+      : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
+    const revisitWhenFilter = sql`CASE
+      WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
+      WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
+        THEN ${sourceClaims.revisitWhen} > ${nowIso}
+      ELSE false
+    END`;
     const rows = await this.db
       .select(sourceClaimProjection)
       .from(sourceClaims)
       .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
-      .where(eq(sourceArtifacts.projectId, projectId))
+      .where(and(
+        eq(sourceArtifacts.projectId, projectId),
+        inArray(sourceClaims.status, ["proposed", "accepted"]),
+        relevanceFilter,
+        revisitWhenFilter
+      ))
+      .orderBy(desc(sourceClaims.updatedAt), asc(sourceClaims.id))
       .limit(limit);
 
     return rows.map(mapSourceClaim);

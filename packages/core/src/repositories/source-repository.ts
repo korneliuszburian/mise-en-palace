@@ -99,6 +99,11 @@ export interface SourceDecisionKnowledgeSource {
   sourceDecisionEdge: SourceDecisionEdge;
 }
 
+export interface SourceClaimSelectionOptions {
+  terms?: readonly string[];
+  now?: string;
+}
+
 export interface RejectedSourceDecisionKnowledgeSource {
   sourceDecision: SourceDecision;
   sourceClaim: SourceClaim;
@@ -115,7 +120,11 @@ export interface SourceRepository {
     projectId: ProjectId,
     id: SourceClaim["id"]
   ): Promise<SourceClaim | undefined>;
-  listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
+  listClaimsForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: SourceClaimSelectionOptions
+  ): Promise<SourceClaim[]>;
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
   getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined>;

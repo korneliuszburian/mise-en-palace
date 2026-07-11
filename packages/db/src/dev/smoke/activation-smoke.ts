@@ -208,7 +208,7 @@ export const runActivationSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "M25 activation smoke",
       falsifier: "Activation smoke readback or cleanup fails.",
-      revisitWhen: "M25 activation policy changes.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -225,7 +225,7 @@ export const runActivationSmokeCheck = async (
       supportType: "rejection",
       consumer: "M25 activation smoke",
       falsifier: "Anti-memory fails to block crawler scope.",
-      revisitWhen: "A later milestone explicitly accepts crawler scope.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -242,7 +242,7 @@ export const runActivationSmokeCheck = async (
       supportType: "risk",
       consumer: "M25 activation smoke",
       falsifier: "Source safety accepts a claim without mechanism.",
-      revisitWhen: "Never for M25.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
       status: "proposed",
       metadata: {
         smokeId: marker
@@ -338,6 +338,7 @@ export const runActivationSmokeCheck = async (
       invalidatedBySourceClaimIds: [crawlerClaim.id],
       appliesTo: "M25 activation smoke",
       mayRevisitWhen: "A later source-crawler milestone is accepted.",
+      validFrom: past,
       summary: "Do not add crawler for M25 activation",
       body: "Use existing source, memory, and search substrate before adding crawler scope.",
       owner: "kernel",
@@ -421,6 +422,7 @@ export const runActivationSmokeCheck = async (
 
     const retrieved = await retrieveActivationCandidates({
       taskContract,
+      now,
       limits: {
         memory: 25,
         source: 25,
@@ -652,7 +654,7 @@ export const runActivationSmokeCheck = async (
         { label: "activation decisions", passed: activationDecisionCount >= 5 },
         { label: "included decisions", passed: includedDecisionCount >= 1 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
-        { label: "stale decisions", passed: staleDecisionCount === 1 },
+        { label: "stale decisions are filtered before activation", passed: staleDecisionCount === 0 },
         { label: "context items", passed: contextItemCount >= 1 },
         { label: "context exclusions", passed: contextExclusionCount >= 3 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
