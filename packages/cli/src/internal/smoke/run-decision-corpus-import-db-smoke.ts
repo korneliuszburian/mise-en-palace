@@ -46,6 +46,7 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly persistedRows: readonly PersistedDecisionCorpusRow[];
   readonly replayStable: boolean;
   readonly replayPersistedArtifactCount: number;
+  readonly partialReplayRejected: boolean;
   readonly changedReplayRejected: boolean;
   readonly atomicFailureRolledBack: boolean;
   readonly governingDecisionId: string;
@@ -251,6 +252,39 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         and import_id = ${input.smokeId}
     `;
     const replayPersistedArtifactCount = replayArtifactRows[0]?.count ?? 0;
+    const partialSmokeId = `${input.smokeId}-partial-replay`;
+    const partialRows = await persistDecisionCorpusImport({
+      runtime,
+      projectId,
+      fixture,
+      smokeId: partialSmokeId,
+      now: input.now,
+      authorizedRepoRoot: input.repoRoot
+    });
+    const partialCurrentRow = partialRows.find((row) =>
+      row.sourceDecisionEdgeId !== undefined && row.searchDocumentId !== undefined
+    );
+    if (partialCurrentRow?.searchDocumentId === undefined) {
+      throw new Error("decision corpus import DB smoke missing current row for partial replay falsifier");
+    }
+    await client`
+      delete from search_documents
+      where id = ${partialCurrentRow.searchDocumentId}
+    `;
+    let partialReplayRejected = false;
+    try {
+      await persistDecisionCorpusImport({
+        runtime,
+        projectId,
+        fixture,
+        smokeId: partialSmokeId,
+        now: input.now,
+        authorizedRepoRoot: input.repoRoot
+      });
+    } catch (error) {
+      partialReplayRejected = error instanceof Error &&
+        error.message.includes("partial existing records");
+    }
     const changedFixture = {
       ...fixture,
       decisions: fixture.decisions.map((row, index) => index === 0
@@ -342,6 +376,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     if (
       !replayStable ||
       replayPersistedArtifactCount !== fixture.decisions.length ||
+      !partialReplayRejected ||
       !changedReplayRejected ||
       !atomicFailureRolledBack
     ) {
@@ -468,6 +503,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       );
     }
 
+    await cleanupSourceSmokeMarkers(client, markerTables, partialSmokeId, smokeSource);
     const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
       markerTables,
@@ -484,6 +520,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       persistedRows,
       replayStable,
       replayPersistedArtifactCount,
+      partialReplayRejected,
       changedReplayRejected,
       atomicFailureRolledBack,
       governingDecisionId: firstCase.expectedDecisionId,
