@@ -46,6 +46,17 @@ export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]
     };
   }
 
+  const sourceAuthorityIntegrityStatus = findCheckStatus(
+    postgresChecks,
+    "Source authority integrity"
+  );
+  if (sourceAuthorityIntegrityStatus?.startsWith("blocked") === true) {
+    return {
+      label: "Memory store readiness",
+      status: "blocked (source authority integrity unverified)"
+    };
+  }
+
   if (pgvectorStatus === "available" && migrationStatus?.startsWith("verified") === true) {
     return {
       label: "Memory store readiness",
@@ -86,6 +97,12 @@ const hasStatusPrefix = (
   prefix: string
 ): boolean => findCheckStatus(checks, label)?.startsWith(prefix) === true;
 
+const sourceAuthorityIntegrityBlocked = (checks: readonly DoctorCheck[]): boolean => {
+  const status = findCheckStatus(checks, "Source authority integrity");
+
+  return status !== undefined && !status.startsWith("clean");
+};
+
 const hasCheckOutcome = (
   checks: readonly DoctorCheck[],
   label: DoctorCheck["label"],
@@ -104,6 +121,7 @@ interface BrainStoreOutcomeFlags {
   postgresUnreachable: boolean;
   pgvectorAvailable: boolean;
   migrationsVerified: boolean;
+  sourceAuthorityIntegrityClean: boolean;
 }
 
 const readBrainStoreOutcomeFlags = (
@@ -132,6 +150,12 @@ const readBrainStoreOutcomeFlags = (
     "migrations",
     "migrations_verified",
     (status) => status?.startsWith("verified") === true
+  ),
+  sourceAuthorityIntegrityClean: hasCheckOutcome(
+    postgresChecks,
+    "Source authority integrity",
+    "ready",
+    (status) => status?.startsWith("clean") === true || status === undefined
   )
 });
 
@@ -161,7 +185,11 @@ export const deriveHarnessPersistenceReadiness = (
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true ||
+    sourceAuthorityIntegrityBlocked(postgresChecks)
+  ) {
     return {
       label: "Harness persistence readiness",
       status: "blocked (memory store not ready)"
@@ -223,7 +251,11 @@ export const deriveSourceGraphReadiness = (
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true ||
+    sourceAuthorityIntegrityBlocked(postgresChecks)
+  ) {
     return {
       label: "Source graph readiness",
       status: "blocked (memory store not ready)"
@@ -316,7 +348,11 @@ export const deriveMemoryGovernanceReadiness = (
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true ||
+    sourceAuthorityIntegrityBlocked(postgresChecks)
+  ) {
     return {
       label: "Memory governance readiness",
       status: "blocked (memory store not ready)"
@@ -406,7 +442,11 @@ export const deriveRetrievalSubstrateReadiness = (
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true ||
+    sourceAuthorityIntegrityBlocked(postgresChecks)
+  ) {
     return {
       label: "Retrieval substrate readiness",
       status: "blocked (memory store not ready)"
@@ -492,7 +532,11 @@ export const deriveActivationReadiness = (
     };
   }
 
-  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+  if (
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true ||
+    sourceAuthorityIntegrityBlocked(postgresChecks)
+  ) {
     return {
       label: "Activation readiness",
       status: "blocked (memory store not ready)"
@@ -633,7 +677,11 @@ export const deriveCodexAdapterReadiness = (
     };
   }
 
-  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
+  if (
+    !brainStore.pgvectorAvailable ||
+    !brainStore.migrationsVerified ||
+    !brainStore.sourceAuthorityIntegrityClean
+  ) {
     return {
       label: "Codex adapter readiness",
       status: "blocked (memory store not ready)"
@@ -744,7 +792,11 @@ export const deriveMaintenanceQueueReadiness = (
     };
   }
 
-  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
+  if (
+    !brainStore.pgvectorAvailable ||
+    !brainStore.migrationsVerified ||
+    !brainStore.sourceAuthorityIntegrityClean
+  ) {
     return {
       label: "Maintenance queue readiness",
       status: "blocked (memory store not ready)"
@@ -846,7 +898,11 @@ export const deriveTargetRepoReadiness = (
     };
   }
 
-  if (!brainStore.pgvectorAvailable || !brainStore.migrationsVerified) {
+  if (
+    !brainStore.pgvectorAvailable ||
+    !brainStore.migrationsVerified ||
+    !brainStore.sourceAuthorityIntegrityClean
+  ) {
     return {
       label: "Target repo readiness",
       status: "blocked (memory store not ready)"

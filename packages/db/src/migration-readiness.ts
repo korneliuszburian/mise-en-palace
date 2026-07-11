@@ -206,7 +206,19 @@ export const inspectMigrationReadiness = (
   input: MigrationReadinessInput
 ): Promise<MigrationReadinessReport> => withMigrationClient(
   input,
-  (client) => inspectMigrationState(client, input.migrationsFolder)
+  async (client) => {
+    const report = await inspectMigrationState(client, input.migrationsFolder);
+    const sourceAuthorityIntegrity = await inspectSourceAuthorityIntegrity({
+      databaseUrl: input.databaseUrl,
+      storeName: "postgres",
+      schemaIdentity: `${report.migrationIdentityStatus}:${report.appliedMigrationCount}/${report.expectedMigrationCount}`
+    });
+
+    return {
+      ...report,
+      sourceAuthorityIntegrity
+    };
+  }
 );
 
 export const runMigrationReadinessCheck = async (

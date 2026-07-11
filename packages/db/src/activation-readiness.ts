@@ -113,14 +113,10 @@ export const inspectActivationReadiness = async (
       staleDecisionCount: counts.staleDecisionCount,
       contextItemCount: counts.contextItemCount,
       contextExclusionCount: counts.contextExclusionCount,
-      runtimeProofReady:
-        counts.searchDocumentCount > 0 &&
-        counts.retrievalCandidateCount > 0 &&
-        counts.activationDecisionCount > 0 &&
-        counts.includedDecisionCount > 0 &&
-        counts.contextItemCount > 0 &&
-        counts.contextExclusionCount > 0 &&
-        counts.excludedDecisionCount + counts.conflictDecisionCount + counts.staleDecisionCount > 0
+      // Historical rows are a readback, not proof that the current activation
+      // engine executed successfully. The bounded activation smoke owns that
+      // proof; doctor must remain unverified until it has run.
+      runtimeProofReady: false
     };
   } finally {
     await client.end();

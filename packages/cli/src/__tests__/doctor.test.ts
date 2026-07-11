@@ -161,6 +161,18 @@ describe("runCli", () => {
       label: "Memory store readiness",
       status: "blocked (pgvector missing)"
     });
+
+    expect(
+      deriveBrainStoreReadiness([
+        { label: "Postgres config", status: "configured and reachable" },
+        { label: "pgvector", status: "available" },
+        { label: "migrations", status: "verified (3/3 applied)" },
+        { label: "Source authority integrity", status: "blocked (2 violations)" }
+      ])
+    ).toEqual({
+      label: "Memory store readiness",
+      status: "blocked (source authority integrity unverified)"
+    });
   });
 
   it("distinguishes doctor harness persistence readiness blockers", () => {

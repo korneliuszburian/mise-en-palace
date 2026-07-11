@@ -157,7 +157,8 @@ const missingPostgresChecks = (): DoctorCheck[] => [
 const configuredPostgresChecks = (
   report: MigrationReadinessReport
 ): DoctorCheck[] => {
-  const ready = report.pgvectorAvailable && report.migrationsVerified;
+  const sourceAuthorityIntegrityReady = report.sourceAuthorityIntegrity?.integrityReady === true;
+  const ready = report.pgvectorAvailable && report.migrationsVerified && sourceAuthorityIntegrityReady;
 
   return [
     {
@@ -187,6 +188,14 @@ const configuredPostgresChecks = (
     {
       label: "Postgres next action",
       status: ready ? "none" : connectedButNotReadyRecovery()
+    },
+    {
+      label: "Source authority integrity",
+      status: sourceAuthorityIntegrityReady
+        ? `clean (${report.sourceAuthorityIntegrity?.violationCount ?? 0} violations)`
+        : `blocked (${report.sourceAuthorityIntegrity?.violationCount ?? "unverified"} violations)`,
+      outcome: sourceAuthorityIntegrityReady ? "ready" : "blocked",
+      severity: sourceAuthorityIntegrityReady ? "pass" : "warning"
     }
   ];
 };
@@ -229,6 +238,10 @@ const brainStoreGate = (
   const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
   const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
   const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const sourceAuthorityIntegrityStatus = findCheckStatus(
+    postgresChecks,
+    "Source authority integrity"
+  );
 
   if (postgresStatus?.startsWith("not configured") === true) {
     return {
@@ -248,7 +261,9 @@ const brainStoreGate = (
     databaseUrl === undefined ||
     databaseUrl.trim().length === 0 ||
     pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
+    migrationStatus?.startsWith("verified") !== true ||
+    (sourceAuthorityIntegrityStatus !== undefined &&
+      !sourceAuthorityIntegrityStatus.startsWith("clean"))
   ) {
     return {
       kind: "skipped",
