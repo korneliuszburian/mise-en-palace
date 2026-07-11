@@ -47,6 +47,7 @@ export interface SourceDecisionImportReadback {
   sourceDecisionStatus: SourceDecision["status"];
   sourceDecisionEdgeId?: string;
   searchDocumentId?: string;
+  searchDocumentValidityStatus?: "active" | "expired" | "invalidated";
   sourceRejectionId?: string;
 }
 

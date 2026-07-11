@@ -174,6 +174,7 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     return sourceEvidenceLookupFromRow(input.evidenceRef, rows[0]);
   }
 
+  // fallow-ignore-next-line complexity -- replay readback enforces duplicate and status-specific graph completeness at the store boundary
   async getSourceDecisionImportRow(
     input: SourceDecisionImportLookupInput
   ): Promise<SourceDecisionImportLookup> {
@@ -208,7 +209,7 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
         eq(sourceArtifacts.importId, input.importId),
         eq(sourceArtifacts.importRowId, input.decisionId)
       ))
-      .limit(1);
+      ;
     const row = rows[0];
 
     if (row === undefined) {
@@ -216,6 +217,7 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     }
 
     if (
+      rows.length > 1 ||
       row.sourceChunk === null ||
       row.sourceClaim === null ||
       row.sourceDecision === null
@@ -228,6 +230,33 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     }
 
     const evidenceContentHash = sourceEvidenceContentHashFromMetadata(row.sourceArtifact.metadata);
+    const sourceDecisionEdge = row.sourceDecisionEdge;
+    const searchDocument = row.searchDocument;
+    const sourceRejection = row.sourceRejection;
+    const lifecycleComplete = row.sourceDecision.status === "adopt"
+      ? sourceDecisionEdge !== null &&
+        searchDocument !== null &&
+        searchDocument.validityStatus === "active" &&
+        sourceRejection === null
+      : row.sourceDecision.status === "defer"
+        ? sourceDecisionEdge === null &&
+          searchDocument !== null &&
+          searchDocument.validityStatus === "expired" &&
+          sourceRejection === null &&
+          row.sourceClaim.status === "deprecated"
+        : row.sourceDecision.status === "reject" &&
+          sourceDecisionEdge === null &&
+          searchDocument === null &&
+          sourceRejection !== null &&
+          row.sourceClaim.status === "rejected";
+
+    if (!lifecycleComplete) {
+      return {
+        status: "partial",
+        sourceArtifactId: row.sourceArtifact.id,
+        contentHash: row.sourceArtifact.contentHash
+      };
+    }
 
     return {
       status: "complete",
@@ -247,12 +276,15 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
         ...(row.sourceDecisionEdge === null
           ? {}
           : { sourceDecisionEdgeId: row.sourceDecisionEdge.id }),
-        ...(row.searchDocument === null
+        ...(searchDocument === null
           ? {}
-          : { searchDocumentId: row.searchDocument.id }),
-        ...(row.sourceRejection === null
+          : {
+              searchDocumentId: searchDocument.id,
+              searchDocumentValidityStatus: searchDocument.validityStatus
+            }),
+        ...(sourceRejection === null
           ? {}
-          : { sourceRejectionId: row.sourceRejection.id })
+          : { sourceRejectionId: sourceRejection.id })
       }
     };
   }
