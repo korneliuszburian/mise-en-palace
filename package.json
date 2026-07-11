@@ -2,7 +2,6 @@
   "name": "mise-en-palace",
   "version": "0.0.0",
   "private": true,
-  "prepublishOnly": "node scripts/check-release-boundary.mjs",
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "engines": {
@@ -73,6 +72,7 @@
     "beads:roundtrip": "node scripts/validate-beads-history.mjs roundtrip --issues .beads/issues.jsonl --interactions .beads/interactions.jsonl",
     "platform:check": "node scripts/check-platform.mjs",
     "release:check": "node scripts/check-release-boundary.mjs",
+    "prepublishOnly": "node scripts/check-release-boundary.mjs",
     "fixtures:check": "node scripts/check-fixture-ownership.mjs",
     "toolchain:check": "node scripts/check-toolchain.mjs",
     "node22:type-boundary": "node scripts/check-node22-type-boundary.mjs",

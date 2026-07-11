@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -315,14 +315,13 @@ describe("repository policy boundaries", () => {
     const packageJson = JSON.parse(readRootFile("package.json")) as {
       private?: boolean;
       version?: string;
-      prepublishOnly?: string;
       scripts?: Record<string, string>;
     };
 
     expect(packageJson.private).toBe(true);
     expect(packageJson.version).toBe("0.0.0");
     expect(packageJson.scripts?.["release:check"]).toContain("check-release-boundary.mjs");
-    expect(packageJson.prepublishOnly).toBe("node scripts/check-release-boundary.mjs");
+    expect(packageJson.scripts?.prepublishOnly).toBe("node scripts/check-release-boundary.mjs");
     expect(releaseDocs).toContain("compiled artifacts");
     expect(releaseDocs).toContain("SBOM");
     expect(releaseDocs).toContain("migration and upgrade");
@@ -342,6 +341,35 @@ describe("repository policy boundaries", () => {
     expect(failure?.stderr).toContain("internal alpha");
     expect(failure?.stderr).toContain("@krn/core");
   });
+
+  it("makes every source package publish hook execute the internal-alpha guard", () => {
+    const packageManifests = [
+      join(repoRoot, "package.json"),
+      ...readdirSync(join(repoRoot, "packages"), { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => join(repoRoot, "packages", entry.name, "package.json"))
+        .filter((path) => existsSync(path))
+    ];
+
+    for (const manifestPath of packageManifests) {
+      const packageRoot = dirname(manifestPath);
+      let failure: { status?: number; stderr?: string; stdout?: string } | undefined;
+      try {
+        execFileSync("pnpm", ["run", "prepublishOnly"], {
+          cwd: packageRoot,
+          encoding: "utf8",
+          stdio: "pipe"
+        });
+      } catch (error) {
+        failure = error as { status?: number; stderr?: string; stdout?: string };
+      }
+
+      expect(failure?.status, manifestPath).toBe(1);
+      expect(`${failure?.stdout ?? ""}\n${failure?.stderr ?? ""}`, manifestPath).toContain(
+        "Release boundary blocked: this repository is an internal alpha."
+      );
+    }
+  }, 20_000);
 
   it("distinguishes the non-gating report lane from canonical gates", () => {
     const rootPackage = JSON.parse(readRootFile("package.json")) as {
