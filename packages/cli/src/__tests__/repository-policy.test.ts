@@ -99,13 +99,18 @@ describe("repository policy boundaries", () => {
     expect(packageJson.scripts?.["check:whitespace:committed"]).toBe(
       "node scripts/check-committed-whitespace.mjs",
     );
-    expect(workflow.match(/pnpm check:whitespace:committed/gu)).toHaveLength(2);
+    expect(workflow.match(/pnpm check:whitespace:committed/gu) ?? []).toHaveLength(0);
     expect(workflow).toContain("KRN_WHITESPACE_EVENT");
     expect(workflow).toContain("KRN_WHITESPACE_BEFORE");
     expect(workflow).toContain("KRN_WHITESPACE_PR_BASE");
+    expect(workflow.match(/run: pnpm verify:fast\n/gu)).toHaveLength(1);
+    expect(workflow.match(/run: pnpm verify:db\n/gu)).toHaveLength(1);
+    expect(packageJson.scripts?.["verify:fast"]).toContain("pnpm check:whitespace:committed");
+    expect(packageJson.scripts?.["verify:fast"]).toContain("git diff --check");
     expect(workflow.match(/fetch-depth: 0/gu)).toHaveLength(3);
-    expect(workflow.match(/run: git diff --check\n/gu)).toHaveLength(2);
-    expect(workflow).toContain("timeout --signal=TERM --kill-after=10s 120s pnpm db:ready");
+    expect(packageJson.scripts?.["verify:db"]).toContain(
+      "timeout --signal=TERM --kill-after=10s 120s pnpm db:ready",
+    );
     expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
   });
 
@@ -200,6 +205,7 @@ describe("repository policy boundaries", () => {
     const packageJson = JSON.parse(readRootFile("package.json")) as {
       packageManager?: string;
       engines?: Record<string, string>;
+      scripts?: Record<string, string>;
     };
     const nodeVersion = readRootFile(".node-version").trim();
     const workflow = readRootFile(".github/workflows/ci.yml");
@@ -209,7 +215,10 @@ describe("repository policy boundaries", () => {
     expect(packageJson.engines?.node).toBe(`${nodeVersion}.x`);
     expect(packageJson.engines?.pnpm).toBe("10.32.1");
     expect(workflow.match(/node-version-file: \.node-version/gu)).toHaveLength(3);
-    expect(workflow.match(/pnpm toolchain:check -- --allow-missing-rtk/gu)).toHaveLength(2);
+    expect(workflow.match(/pnpm toolchain:check -- --allow-missing-rtk/gu) ?? []).toHaveLength(0);
+    expect(packageJson.scripts?.["verify:fast"]).toContain(
+      "pnpm toolchain:check -- --allow-missing-rtk",
+    );
 
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-toolchain-contract-"));
     const currentNodeMajor = process.versions.node.split(".")[0];
@@ -257,9 +266,9 @@ describe("repository policy boundaries", () => {
     expect(packageJson.scripts?.["alpha:verify:fast"]?.startsWith(
       "pnpm toolchain:check && pnpm node22:type-boundary &&"
     )).toBe(true);
-    expect(packageJson.scripts?.["alpha:verify:full"]?.startsWith(
-      "pnpm toolchain:check && pnpm node22:type-boundary &&"
-    )).toBe(true);
+    expect(packageJson.scripts?.["alpha:verify:full"]).toBe(
+      "pnpm verify:fast && pnpm verify:db",
+    );
   });
 
   it("tests every declared platform target and rejects native Windows shells", () => {
@@ -479,8 +488,58 @@ describe("repository policy boundaries", () => {
     expect(scripts["eval:required:codex-brief-render"]).toContain(
       "src/__tests__/codex-brief-behavior.test.ts",
     );
-    expect(workflow).toContain("run: pnpm eval:required");
+    expect(scripts["verify:fast"]).toContain("pnpm eval:required");
     expect(workflow).not.toContain("eval:krn:smoke");
+  });
+
+  it("uses identical package-owned fast and DB profiles for CI and alpha full", () => {
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+    const scripts = packageJson.scripts ?? {};
+    const workflow = readRootFile(".github/workflows/ci.yml");
+    const fast = scripts["verify:fast"] ?? "";
+    const db = scripts["verify:db"] ?? "";
+    const requiredFast = [
+      "toolchain:check",
+      "node22:type-boundary",
+      "platform:check",
+      "workspace:check",
+      "fixtures:check",
+      "typecheck",
+      "test",
+      "quality:fallow:ci",
+      "eval:required",
+      "check:whitespace:committed",
+      "git diff --check"
+    ];
+    const requiredDb = [
+      "db:ready",
+      "@krn/db db:check",
+      "db:smoke",
+      "db:smoke:memory-governance",
+      "db:smoke:eval-feedback-persistence",
+      "db:smoke:memory-loop",
+      "db:smoke:memory-search",
+      "db:smoke:run-show",
+      "db:smoke:maintenance-queue",
+      "db:smoke:source-graph",
+      "db:smoke:activation",
+      "db:smoke:decision-corpus-import",
+      "eval:db:retrieval-substrate",
+      "eval:db:decision-packet-return-loop",
+      "eval:db:target-repo-harness"
+    ];
+
+    expect(requiredFast.every((command) => fast.includes(command))).toBe(true);
+    expect(requiredDb.every((command) => db.includes(command))).toBe(true);
+    expect(scripts["alpha:verify:full"]).toBe("pnpm verify:fast && pnpm verify:db");
+    expect(workflow).toContain("run: pnpm verify:fast");
+    expect(workflow).toContain("run: pnpm verify:db");
+    for (const command of requiredDb) {
+      const escaped = command.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+      expect((db.match(new RegExp(`${escaped}(?=\\s|&&|$)`, "gu")) ?? [])).toHaveLength(1);
+    }
   });
 
   it("keeps Fallow baselines versioned, category-specific, and visible", () => {

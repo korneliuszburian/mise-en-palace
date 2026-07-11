@@ -137,19 +137,19 @@ describe("runCli", () => {
     const packageJson = await readRootPackageJson(repoRoot);
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
 
-    expect(packageJson.scripts?.["alpha:verify:full"]).toContain("pnpm eval:db");
-    expect(packageJson.scripts?.["alpha:verify:full"]).toContain(
+    expect(packageJson.scripts?.["alpha:verify:full"]).toBe(
+      "pnpm verify:fast && pnpm verify:db"
+    );
+    expect(packageJson.scripts?.["verify:db"]).toContain(
       "pnpm db:smoke:memory-governance"
     );
-    expect(packageJson.scripts?.["alpha:verify:full"]).toContain(
+    expect(packageJson.scripts?.["verify:db"]).toContain(
       "pnpm db:smoke:eval-feedback-persistence"
     );
     expect(packageJson.scripts?.["db:smoke:eval-feedback-persistence"]).toContain(
       "db smoke eval-feedback-persistence"
     );
-    expect(workflow).toContain("run: pnpm eval:db");
-    expect(workflow).toContain("run: pnpm db:smoke:memory-governance");
-    expect(workflow).toContain("run: pnpm db:smoke:eval-feedback-persistence");
+    expect(workflow).toContain("run: pnpm verify:db");
   });
 
   it("fails real recall eval when any distractor-competition case loses", () => {

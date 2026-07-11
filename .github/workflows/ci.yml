@@ -42,46 +42,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Toolchain and workspace contracts
-        run: pnpm toolchain:check -- --allow-missing-rtk
-
-      - name: Node 22 type boundary
-        run: pnpm node22:type-boundary
-
-      - name: Platform contract
-        run: pnpm platform:check
-
-      - name: Workspace script contract
-        run: pnpm workspace:check
-
-      - name: Fixture ownership contract
-        run: pnpm fixtures:check
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Test
-        run: pnpm test
-
-      - name: Fallow quality gate
+      - name: Fast verification profile
         env:
           KRN_COMMIT_EVENT: ${{ github.event_name }}
           KRN_COMMIT_BEFORE: ${{ github.event.before }}
           KRN_COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
-        run: pnpm quality:fallow:ci
-
-      - name: KRN behavior and docs smoke
-        run: pnpm eval:required
-
-      - name: Committed range whitespace check
-        env:
           KRN_WHITESPACE_EVENT: ${{ github.event_name }}
           KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
           KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
-        run: pnpm check:whitespace:committed
-
-      - name: Working tree whitespace check
-        run: git diff --check
+        run: pnpm verify:fast
 
   db:
     name: DB readiness and smoke
@@ -125,53 +94,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Toolchain contract
-        run: pnpm toolchain:check -- --allow-missing-rtk
-
-      - name: DB ready
-        run: timeout --signal=TERM --kill-after=10s 120s pnpm db:ready
-
-      - name: Drizzle check
-        run: pnpm --filter @krn/db db:check
-
-      - name: DB smoke
-        run: pnpm db:smoke
-
-      - name: DB memory governance smoke
-        run: pnpm db:smoke:memory-governance
-
-      - name: DB eval feedback persistence smoke
-        run: pnpm db:smoke:eval-feedback-persistence
-
-      - name: DB memory loop smoke
-        run: pnpm db:smoke:memory-loop
-
-      - name: DB memory search smoke
-        run: pnpm db:smoke:memory-search
-
-      - name: DB run show smoke
-        run: pnpm db:smoke:run-show
-
-      - name: DB maintenance queue smoke
-        run: pnpm db:smoke:maintenance-queue
-
-      - name: DB source graph smoke
-        run: pnpm db:smoke:source-graph
-
-      - name: DB product-loop eval
-        run: pnpm eval:db
-
-      - name: Committed range whitespace check
+      - name: DB verification profile
         if: ${{ !cancelled() }}
-        env:
-          KRN_WHITESPACE_EVENT: ${{ github.event_name }}
-          KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
-          KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
-        run: pnpm check:whitespace:committed
-
-      - name: Working tree whitespace check
-        if: ${{ !cancelled() }}
-        run: git diff --check
+        run: pnpm verify:db
 
       - name: DB diagnostics after failure
         if: ${{ failure() || cancelled() }}
