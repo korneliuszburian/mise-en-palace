@@ -283,9 +283,8 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     source.sourceDecision.id === foreignSourceDecision.id ||
     source.sourceDecisionEdge.id === foreignSourceDecisionEdge.id
   );
-  const [legacyDecisionEdge] = await input.db
-    .insert(sourceDecisionEdges)
-    .values({
+  const legacyDecisionEdgeRejected = await sourceWriteRejectedFor(
+    () => input.db.insert(sourceDecisionEdges).values({
       sourceClaimId: input.sourceClaim.id,
       targetType: "harness_run",
       targetId: `legacy-source-decision-edge:${input.marker}`,
@@ -296,14 +295,10 @@ const createSourceProjectIsolationSmokeProof = async (input: {
         smokeId: input.marker,
         legacyProjectIsolationProbe: true
       }
-    })
-    .returning({ id: sourceDecisionEdges.id });
-  const currentEdgesForPrimaryClaim = await input.sourceRepository.listSourceDecisionEdgesForClaim(
-    input.sourceClaim.id
+    }),
+    "source_decision_id"
   );
-  const legacyDecisionEdgeExcluded = legacyDecisionEdge !== undefined &&
-    currentEdgesForPrimaryClaim.some((edge) => edge.id === input.sourceDecisionEdge.id) &&
-    !currentEdgesForPrimaryClaim.some((edge) => edge.id === legacyDecisionEdge.id);
+  const legacyDecisionEdgeExcluded = legacyDecisionEdgeRejected;
   const projectIsolationRejectedWrites = [
     mismatchedAdoptionRejected,
     crossProjectDecisionEdgeRejected,
