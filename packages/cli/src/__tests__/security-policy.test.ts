@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -86,6 +86,58 @@ describe("security policy scanner", () => {
       const failure = runFailure(["dependency-report", "--report", vulnerablePath]);
       expect(failure?.status).toBe(1);
       expect(failure?.stderr).toContain("high or critical dependency advisories");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // fallow-ignore-next-line complexity -- one fixture exercises tracked, historical, exception, and unreadable-input branches
+  it("scans tracked env examples and added-then-removed history with exact exceptions", () => {
+    const root = mkdtempSync(join(tmpdir(), "krn-security-history-"));
+    const exceptionPath = join(root, "packages/harness/src/observations/__tests__/observer-input.test.ts");
+
+    try {
+      const reviewedGithubToken = ["ghp_", "1234567890abcdef1234567890abcdef123456"].join("");
+      const changedGithubToken = ["ghp_", "differentreviewedvalue1234567890abcdef"].join("");
+      mkdirSync(join(root, "packages/harness/src/observations/__tests__"), { recursive: true });
+      writeFileSync(join(root, "security-baseline.json"), readFileSync(join(repoRoot, "security-baseline.json")));
+      writeFileSync(join(root, ".env.example"), "KRN_FIXTURE_SECRET=example-only\n");
+      writeFileSync(exceptionPath, `output: "${reviewedGithubToken}"\n`);
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: root });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: root });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: root });
+      execFileSync("git", ["add", "."], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: root });
+      const baseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: root,
+        encoding: "utf8",
+      }).trim();
+
+      writeFileSync(join(root, "removed.env"), "AWS_ACCESS_KEY_ID=AKIA1234567890ABCDEF\n");
+      execFileSync("git", ["add", "removed.env"], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "add secret"], { cwd: root });
+      execFileSync("git", ["rm", "--quiet", "removed.env"], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "remove secret"], { cwd: root });
+
+      const historyFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(historyFailure?.status).toBe(1);
+      expect(historyFailure?.stderr).toContain("removed.env: AWS access key");
+      expect(historyFailure?.stderr).not.toContain("AKIA1234567890ABCDEF");
+
+      writeFileSync(join(root, ".env.example"), `KRN_API_KEY=${reviewedGithubToken}\n`);
+      const envFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(envFailure?.status).toBe(1);
+      expect(envFailure?.stderr).toContain(".env.example: GitHub token");
+      expect(envFailure?.stderr).not.toContain(reviewedGithubToken);
+
+      writeFileSync(exceptionPath, `output: "${changedGithubToken}"\n`);
+      const exceptionFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(exceptionFailure?.status).toBe(1);
+      expect(exceptionFailure?.stderr).toContain("observer-input.test.ts: GitHub token");
+      expect(exceptionFailure?.stderr).not.toContain(changedGithubToken);
+
+      const unreadableFailure = runFailure(["secrets", "--root", root, "--path", join(root, "missing.txt")]);
+      expect(unreadableFailure?.status).toBe(1);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

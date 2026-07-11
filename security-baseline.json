@@ -11,16 +11,25 @@
     {
       "path": "packages/harness/src/observations/__tests__/observer-input.test.ts",
       "pattern": "GitHub token",
+      "matchSha256": "199163e14049bac77807991e8490a34c2e2ca6781c96cbbdd4baf086f7baab10",
       "reason": "The fixture contains a fake token to prove observer redaction; it is not a credential."
+    },
+    {
+      "path": "packages/harness/src/observations/observerInput.test.ts",
+      "pattern": "GitHub token",
+      "matchSha256": "199163e14049bac77807991e8490a34c2e2ca6781c96cbbdd4baf086f7baab10",
+      "reason": "Historical fixture path retained for the same reviewed fake token; it is not a credential."
     },
     {
       "path": "packages/cli/src/__tests__/beads-history.test.ts",
       "pattern": "secret-shaped assignment",
+      "matchSha256": "d98792bcad0656a0a026172f1556f5a00bc635c117916b374c6f826360e661c5",
       "reason": "The fixture contains a deliberately fake secret-shaped value to prove Beads history rejection; it is not a credential."
     },
     {
       "path": "packages/cli/src/__tests__/security-policy.test.ts",
       "pattern": "AWS access key",
+      "matchSha256": "743554670c6065b3f7f13ac4f07e392f977b3556ceb7457411633c454bcbece8",
       "reason": "The fixture contains a deliberately fake AWS-shaped value to prove secret scanning; it is not a credential."
     }
   ],

@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { join, relative } from "node:path";
+import { resolveCommittedRange } from "./resolve-committed-range.mjs";
 
 const SECRET_PATTERNS = [
   { name: "AWS access key", pattern: /\bAKIA[0-9A-Z]{16}\b/u },
@@ -42,14 +44,21 @@ function readJsonReport(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+// fallow-ignore-next-line complexity -- baseline validation keeps exact exception fields fail-closed
 function readSecurityBaseline() {
-  return readJsonReport(join(process.cwd(), "security-baseline.json"));
+  const baseline = readJsonReport(join(process.cwd(), "security-baseline.json"));
+  for (const exception of baseline.secretExceptions ?? []) {
+    if (typeof exception.matchSha256 !== "string" || !/^[0-9a-f]{64}$/u.test(exception.matchSha256)) {
+      throw new Error("security-baseline secret exceptions require an exact matchSha256");
+    }
+  }
+  return baseline;
 }
 
 function trackedTextFiles() {
   return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
     .split("\0")
-    .filter((path) => path.length > 0 && basename(path) !== ".env.example");
+    .filter((path) => path.length > 0);
 }
 
 function candidateTextFiles(path) {
@@ -70,30 +79,60 @@ function readTextFile(path) {
   }
 }
 
-function exceptionNames(path, baseline) {
+function exceptionMatches(path, name, match, baseline) {
   const relativePath = relative(process.cwd(), path).replaceAll("\\", "/");
-  return new Set(
-    (baseline.secretExceptions ?? [])
-      .filter((exception) => exception.path === relativePath)
-      .map((exception) => exception.pattern),
+  const matchSha256 = createHash("sha256").update(match).digest("hex");
+  return (baseline.secretExceptions ?? []).some((exception) =>
+    exception.path === relativePath &&
+    exception.pattern === name &&
+    exception.matchSha256 === matchSha256
   );
 }
 
 function secretFindingsForContent(path, content, baseline) {
-  if (content === undefined || content.includes("\u0000")) {
+  if (content === undefined) {
+    throw new Error(`unreadable tracked input: ${path}`);
+  }
+
+  if (content.includes("\u0000")) {
     return [];
   }
 
-  const exceptions = exceptionNames(path, baseline);
-  return SECRET_PATTERNS.flatMap(({ name, pattern }) =>
-    exceptions.has(name) || !pattern.test(content) ? [] : [`${path}: ${name}`],
-  );
+  return SECRET_PATTERNS.flatMap(({ name, pattern }) => {
+    const globalPattern = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`);
+    return [...content.matchAll(globalPattern)].some((match) =>
+      !exceptionMatches(path, name, match[0], baseline)
+    ) ? [`${path}: ${name}`] : [];
+  });
 }
 
 function secretFindings(path, baseline) {
   return candidateTextFiles(path).flatMap((file) =>
     secretFindingsForContent(file, readTextFile(file), baseline),
   );
+}
+
+// fallow-ignore-next-line complexity -- patch parsing preserves added secrets across commit add/remove sequences
+function historySecretFindings(range, baseline) {
+  const patch = execFileSync(
+    "git",
+    ["log", "--format=", "--no-ext-diff", "--unified=0", `${range.baseSha}..${range.headSha}`],
+    { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
+  );
+  let path;
+  const findings = [];
+
+  for (const line of patch.split("\n")) {
+    if (line.startsWith("+++ b/")) {
+      path = line.slice(6);
+      continue;
+    }
+    if (path !== undefined && line.startsWith("+") && !line.startsWith("+++")) {
+      findings.push(...secretFindingsForContent(path, line.slice(1), baseline));
+    }
+  }
+
+  return findings;
 }
 
 function licenseFindings(report, baseline) {
@@ -144,7 +183,19 @@ function fail(message, details = []) {
 }
 
 function runSecrets(argv) {
-  const findings = secretFindings(optionValue(argv, "--path"), readSecurityBaseline());
+  const baseline = readSecurityBaseline();
+  const path = optionValue(argv, "--path");
+  const findings = secretFindings(path, baseline);
+
+  if (path === undefined) {
+    const explicitBase = optionValue(argv, "--range-base");
+    const range = resolveCommittedRange({
+      env: explicitBase === undefined
+        ? process.env
+        : { ...process.env, KRN_COMMIT_EVENT: "push", KRN_COMMIT_BEFORE: explicitBase },
+    });
+    findings.push(...historySecretFindings(range, baseline));
+  }
 
   if (findings.length > 0) {
     fail("secret-shaped content detected", findings);
@@ -231,6 +282,11 @@ function runDependencyAudit() {
 
 function main() {
   const [mode, ...argv] = process.argv.slice(2);
+
+  const root = optionValue(argv, "--root");
+  if (root !== undefined) {
+    process.chdir(root);
+  }
 
   const handlers = {
     secrets: () => runSecrets(argv),

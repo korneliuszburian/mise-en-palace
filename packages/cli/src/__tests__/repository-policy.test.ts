@@ -656,16 +656,19 @@ describe("repository policy boundaries", () => {
     expect(exception).toMatchObject({
       path: "packages/harness/src/observations/__tests__/observer-input.test.ts",
       pattern: "GitHub token",
+      matchSha256: "199163e14049bac77807991e8490a34c2e2ca6781c96cbbdd4baf086f7baab10",
     });
     expect(exception?.reason).toContain("fake token");
     expect(baseline.secretExceptions).toEqual(expect.arrayContaining([
       expect.objectContaining({
         path: "packages/cli/src/__tests__/beads-history.test.ts",
-        pattern: "secret-shaped assignment"
+        pattern: "secret-shaped assignment",
+        matchSha256: "d98792bcad0656a0a026172f1556f5a00bc635c117916b374c6f826360e661c5",
       }),
       expect.objectContaining({
         path: "packages/cli/src/__tests__/security-policy.test.ts",
-        pattern: "AWS access key"
+        pattern: "AWS access key",
+        matchSha256: "743554670c6065b3f7f13ac4f07e392f977b3556ceb7457411633c454bcbece8",
       })
     ]));
     expect(baseline.dependencyVulnerabilityExceptions).toEqual([]);
@@ -678,6 +681,9 @@ describe("repository policy boundaries", () => {
     expect(workflow).toContain("name: Dependency, secret, and license policy");
     expect(workflow).toContain("run: pnpm security:dependency-audit");
     expect(workflow).toContain("run: pnpm security:secrets");
+    expect(workflow).toContain("KRN_COMMIT_EVENT");
+    expect(workflow).toContain("KRN_COMMIT_BEFORE");
+    expect(workflow).toContain("KRN_COMMIT_PR_BASE");
     expect(workflow).toContain("run: pnpm security:licenses");
     expect(workflow).not.toContain("continue-on-error: true");
     expect(workflow.split("uses:").length - 1).toBe(9);
