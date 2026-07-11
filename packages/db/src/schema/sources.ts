@@ -261,6 +261,26 @@ export const sourceRejections = pgTable(
   ]
 );
 
+export const sourceAuthorityQuarantines = pgTable(
+  "source_authority_quarantines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityType: text("entity_type").notNull(),
+    entityId: uuid("entity_id").notNull(),
+    reason: text("reason").notNull(),
+    metadata: metadataColumn(),
+    quarantinedAt: timestamp("quarantined_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("source_authority_quarantines_entity_reason_unique").on(
+      table.entityType,
+      table.entityId,
+      table.reason
+    ),
+    index("source_authority_quarantines_entity_idx").on(table.entityType, table.entityId)
+  ]
+);
+
 export const sourceSnapshots = pgTable(
   "source_snapshots",
   {

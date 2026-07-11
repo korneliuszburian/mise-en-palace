@@ -19,6 +19,7 @@ describe("source authority integrity readiness", () => {
     async () => {
       const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
       const marker = `source-authority-integrity-${crypto.randomUUID()}`;
+      await client.unsafe("set session_replication_role = replica");
       const workspace = await client<{ id: string }[]>`
         insert into workspaces (slug, display_name, metadata)
         values (${marker}, 'Source authority integrity smoke', ${client.json({ smokeId: marker })})
@@ -146,9 +147,79 @@ describe("source authority integrity readiness", () => {
         ]));
       } finally {
         await client`delete from workspaces where id = ${workspaceId}`;
+        await client.unsafe("set session_replication_role = origin");
         await client.end();
       }
       void evidenceChunk;
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "rejects new cross-project, arbitrary-edge, and competing terminal writes",
+    async () => {
+      const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const marker = `source-authority-constraints-${crypto.randomUUID()}`;
+      const workspace = await client<{ id: string }[]>`
+        insert into workspaces (slug, display_name, metadata)
+        values (${marker}, 'Source authority constraint smoke', ${client.json({ smokeId: marker })})
+        returning id
+      `;
+      const workspaceId = workspace[0]!.id;
+      const projects = await client<{ id: string }[]>`
+        insert into projects (workspace_id, slug, display_name, metadata)
+        values
+          (${workspaceId}, ${`${marker}-one`}, 'Constraint one', ${client.json({ smokeId: marker })}),
+          (${workspaceId}, ${`${marker}-two`}, 'Constraint two', ${client.json({ smokeId: marker })})
+        returning id
+      `;
+      const projectOne = projects[0]!.id;
+      const projectTwo = projects[1]!.id;
+      const artifact = await client<{ id: string }[]>`
+        insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash, metadata)
+        values (${projectOne}, 'doc', 'project-decision', ${`source-authority://${marker}/artifact`}, 'constraint artifact', ${`sha256:${marker}`}, ${client.json({ smokeId: marker })})
+        returning id
+      `;
+      const claim = await client<{ id: string }[]>`
+        insert into source_claims (source_artifact_id, claim, mechanism, krn_implication, does_not_prove, trust_tier, support_type, consumer, status, metadata)
+        values (${artifact[0]!.id}, 'constraint claim', 'mechanism', 'implication', 'non-proof', 'project-decision', 'implementation-boundary', 'constraint smoke', 'accepted', ${client.json({ smokeId: marker })})
+        returning id
+      `;
+      const decision = await client<{ id: string }[]>`
+        insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
+        values (${projectOne}, ${claim[0]!.id}, 'adopt', 'adopted', 'rationale', 'falsifier', 'constraint smoke', ${client.json({ smokeId: marker })})
+        returning id
+      `;
+
+      try {
+        await expect(client`
+          insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
+          values (${projectTwo}, ${claim[0]!.id}, 'adopt', 'cross-project', 'rationale', 'falsifier', 'constraint smoke', ${client.json({ smokeId: marker })})
+        `).rejects.toThrow("governing SourceDecision project");
+
+        const arbitraryClaim = await client<{ id: string }[]>`
+          insert into source_claims (source_artifact_id, claim, mechanism, krn_implication, does_not_prove, trust_tier, support_type, consumer, status, metadata)
+          values (${artifact[0]!.id}, 'arbitrary edge claim', 'mechanism', 'implication', 'non-proof', 'project-decision', 'implementation-boundary', 'constraint smoke', 'proposed', ${client.json({ smokeId: marker })})
+          returning id
+        `;
+        const arbitraryDecision = await client<{ id: string }[]>`
+          insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
+          values (${projectOne}, ${arbitraryClaim[0]!.id}, 'reject', 'rejected', 'rationale', 'falsifier', 'constraint smoke', ${client.json({ smokeId: marker })})
+          returning id
+        `;
+        await expect(client`
+          insert into source_decision_edges (source_claim_id, source_decision_id, target_type, target_id, support_type, confidence, notes, metadata)
+          values (${arbitraryClaim[0]!.id}, ${arbitraryDecision[0]!.id}, 'architecture_decision', ${`${marker}-arbitrary`}, 'implementation-boundary', 'high', 'arbitrary', ${client.json({ smokeId: marker })})
+        `).rejects.toThrow("SourceDecisionEdge requires same-project adopted reviewed SourceDecision");
+
+        await expect(client`
+          insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
+          values (${projectOne}, ${claim[0]!.id}, 'reject', 'competing', 'rationale', 'falsifier', 'constraint smoke', ${client.json({ smokeId: marker })})
+        `).rejects.toThrow();
+      } finally {
+        await client`delete from workspaces where id = ${workspaceId}`;
+        await client.end();
+      }
+      void decision;
     }
   );
 });

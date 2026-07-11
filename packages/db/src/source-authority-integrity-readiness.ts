@@ -46,7 +46,8 @@ const requiredSourceAuthorityTables = [
   "source_decisions",
   "source_decision_edges",
   "source_rejections",
-  "search_documents"
+  "search_documents",
+  "source_authority_quarantines"
 ] as const;
 
 type RawViolation = {
@@ -80,7 +81,12 @@ const inspectViolations = async (
       from source_decisions sd
       join source_claims sc on sc.id = sd.source_claim_id
       join source_artifacts sa on sa.id = sc.source_artifact_id
-      where sd.project_id is distinct from sa.project_id
+      where sd.status in ('adopt', 'reject')
+        and sd.project_id is distinct from sa.project_id
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_decision' and quarantine.entity_id = sd.id
+        )
     ),
     terminal_review_counts as (
       select
@@ -101,6 +107,10 @@ const inspectViolations = async (
         'terminal SourceClaim status has no matching terminal SourceDecision'::text as detail
       from terminal_review_counts
       where status in ('accepted', 'rejected', 'deprecated') and terminal_count = 0
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_claim' and quarantine.entity_id = terminal_review_counts.id
+        )
     ),
     conflicting_reviews as (
       select
@@ -108,7 +118,11 @@ const inspectViolations = async (
         id::text as subject_id,
         'SourceClaim has multiple or contradictory terminal SourceDecisions'::text as detail
       from terminal_review_counts
-      where terminal_count > 1 or (adopt_count > 0 and reject_count > 0)
+      where (terminal_count > 1 or (adopt_count > 0 and reject_count > 0))
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_claim' and quarantine.entity_id = terminal_review_counts.id
+        )
     ),
     status_mismatches as (
       select
@@ -116,10 +130,15 @@ const inspectViolations = async (
         trc.id::text as subject_id,
         'SourceClaim lifecycle status does not match its terminal SourceDecision'::text as detail
       from terminal_review_counts trc
-      where
+      where (
         (trc.status = 'accepted' and (trc.adopt_count <> 1 or trc.terminal_count <> 1)) or
         (trc.status = 'deprecated' and (trc.defer_count <> 1 or trc.terminal_count <> 1)) or
         (trc.status = 'rejected' and (trc.reject_count <> 1 or trc.terminal_count <> 1))
+      )
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_claim' and quarantine.entity_id = trc.id
+        )
     ),
     invalid_edges as (
       select
@@ -130,7 +149,7 @@ const inspectViolations = async (
       left join source_claims sc on sc.id = sde.source_claim_id
       left join source_artifacts sa on sa.id = sc.source_artifact_id
       left join source_decisions sd on sd.id = sde.source_decision_id
-      where
+      where (
         sde.source_decision_id is null or
         sc.id is null or
         sa.id is null or
@@ -139,6 +158,11 @@ const inspectViolations = async (
         sd.status <> 'adopt' or
         sc.status <> 'accepted' or
         sd.project_id is distinct from sa.project_id
+      )
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_decision_edge' and quarantine.entity_id = sde.id
+        )
     ),
     invalid_search as (
       select
@@ -162,6 +186,10 @@ const inspectViolations = async (
           sd.project_id is distinct from sa.project_id or
           decision.project_id is distinct from sa.project_id
         )
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'search_document' and quarantine.entity_id = sd.id
+        )
     ),
     incomplete_imports as (
       select distinct
@@ -175,7 +203,12 @@ const inspectViolations = async (
       left join source_decision_edges edge on edge.source_claim_id = sc.id and edge.source_decision_id = decision.id
       left join search_documents search on search.source_artifact_id = sa.id
       left join source_rejections rejection on rejection.source_artifact_id = sa.id and rejection.source_claim_id = sc.id
-      where sa.import_id is not null and (
+      where sa.import_id is not null
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_artifact' and quarantine.entity_id = sa.id
+        )
+        and (
         chunk.id is null or
         sc.id is null or
         decision.id is null or
@@ -206,6 +239,10 @@ const inspectViolations = async (
         decision.metadata->>'evidenceContentHash' is distinct from sa.metadata->>'evidenceContentHash' or
         decision.metadata->>'evidenceContentHash' is distinct from chunk.metadata->>'evidenceContentHash'
       )
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_decision' and quarantine.entity_id = decision.id
+        )
     )
     select
       concat(kind, ':', subject_id) as id,
