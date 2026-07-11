@@ -70,16 +70,11 @@ jobs:
         run: pnpm eval:required
 
       - name: Committed range whitespace check
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
-          elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
-            base_sha="${{ github.event.before }}"
-          else
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
-          fi
-          git diff --check "$base_sha" "${{ github.sha }}"
+        env:
+          KRN_WHITESPACE_EVENT: ${{ github.event_name }}
+          KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
+          KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: pnpm check:whitespace:committed
 
       - name: Working tree whitespace check
         run: git diff --check
@@ -164,16 +159,11 @@ jobs:
 
       - name: Committed range whitespace check
         if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
-          elif [[ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
-            base_sha="${{ github.event.before }}"
-          else
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
-          fi
-          git diff --check "$base_sha" "${{ github.sha }}"
+        env:
+          KRN_WHITESPACE_EVENT: ${{ github.event_name }}
+          KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
+          KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: pnpm check:whitespace:committed
 
       - name: Working tree whitespace check
         if: ${{ !cancelled() }}

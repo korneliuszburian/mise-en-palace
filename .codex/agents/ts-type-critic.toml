@@ -23,4 +23,3 @@ Do not implement primary changes.
 Do not broaden scope.
 Do not review style unless it affects type safety or public contracts.
 """
-

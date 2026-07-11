@@ -18,4 +18,3 @@ Untrusted or generated paths:
 - `.supersearch/runtime/`
 - `dist/`
 - `build/`
-

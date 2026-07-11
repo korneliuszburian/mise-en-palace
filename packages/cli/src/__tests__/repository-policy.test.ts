@@ -90,17 +90,110 @@ describe("repository policy boundaries", () => {
 
   it("makes CI whitespace checks range-aware and bounded", () => {
     const workflow = readRootFile(".github/workflows/ci.yml");
+    const packageJson = JSON.parse(readRootFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
 
     expect(workflow).toContain("timeout-minutes: 15");
     expect(workflow).toContain("timeout-minutes: 30");
-    expect(workflow).toContain('github.event.pull_request.base.sha');
-    expect(workflow).toContain('github.event.before');
-    expect(workflow).toContain("git rev-list --max-parents=0 HEAD");
-    expect(workflow).toContain('git diff --check "$base_sha" "${{ github.sha }}"');
+    expect(packageJson.scripts?.["check:whitespace:committed"]).toBe(
+      "node scripts/check-committed-whitespace.mjs",
+    );
+    expect(workflow.match(/pnpm check:whitespace:committed/gu)).toHaveLength(2);
+    expect(workflow).toContain("KRN_WHITESPACE_EVENT");
+    expect(workflow).toContain("KRN_WHITESPACE_BEFORE");
+    expect(workflow).toContain("KRN_WHITESPACE_PR_BASE");
     expect(workflow.match(/fetch-depth: 0/gu)).toHaveLength(3);
     expect(workflow.match(/run: git diff --check\n/gu)).toHaveLength(2);
     expect(workflow).toContain("timeout --signal=TERM --kill-after=10s 120s pnpm db:ready");
     expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
+  });
+
+  it("selects deterministic whitespace bases and rejects committed whitespace", () => {
+    const checker = join(repoRoot, "scripts/check-committed-whitespace.mjs");
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-whitespace-contract-"));
+
+    try {
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: fixtureRoot });
+      writeFileSync(join(fixtureRoot, "clean.txt"), "clean\n");
+      execFileSync("git", ["add", "clean.txt"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "clean"], { cwd: fixtureRoot });
+      const rootSha = execFileSync("git", ["rev-list", "--max-parents=0", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+
+      const runBase = (env: Record<string, string>): string =>
+        execFileSync(process.execPath, [checker, "--print-base"], {
+          cwd: fixtureRoot,
+          encoding: "utf8",
+          env: { ...process.env, ...env },
+        }).trim();
+
+      expect(runBase({
+        KRN_WHITESPACE_EVENT: "pull_request",
+        KRN_WHITESPACE_PR_BASE: "pr-base-sha",
+        KRN_WHITESPACE_BEFORE: "",
+      })).toBe("pr-base-sha");
+      expect(runBase({
+        KRN_WHITESPACE_EVENT: "push",
+        KRN_WHITESPACE_PR_BASE: "",
+        KRN_WHITESPACE_BEFORE: "push-before-sha",
+      })).toBe("push-before-sha");
+      expect(runBase({
+        KRN_WHITESPACE_EVENT: "schedule",
+        KRN_WHITESPACE_PR_BASE: "",
+        KRN_WHITESPACE_BEFORE: "",
+      })).toBe(rootSha);
+      expect(runBase({
+        KRN_WHITESPACE_EVENT: "workflow_dispatch",
+        KRN_WHITESPACE_PR_BASE: "",
+        KRN_WHITESPACE_BEFORE: "0000000000000000000000000000000000000000",
+      })).toBe(rootSha);
+
+      writeFileSync(join(fixtureRoot, "bad.txt"), "bad trailing-space \n");
+      execFileSync("git", ["add", "bad.txt"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "bad whitespace"], {
+        cwd: fixtureRoot,
+      });
+
+      let failure: { status?: number; stderr?: string; stdout?: string } | undefined;
+      try {
+        execFileSync(process.execPath, [checker], {
+          cwd: fixtureRoot,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            KRN_WHITESPACE_EVENT: "push",
+            KRN_WHITESPACE_BEFORE: rootSha,
+            KRN_WHITESPACE_PR_BASE: "",
+          },
+          stdio: "pipe",
+        });
+      } catch (error) {
+        failure = error as { status?: number; stderr?: string };
+      }
+
+      expect(failure?.status).toBeGreaterThan(0);
+      expect(`${failure?.stdout ?? ""}${failure?.stderr ?? ""}`).toContain("bad.txt");
+
+      writeFileSync(join(fixtureRoot, "clean.txt"), "working-tree trailing-space \n");
+      let workingTreeFailure: { status?: number } | undefined;
+      try {
+        execFileSync("git", ["diff", "--check"], { cwd: fixtureRoot, stdio: "pipe" });
+      } catch (error) {
+        workingTreeFailure = error as { status?: number };
+      }
+      expect(workingTreeFailure?.status).toBeGreaterThan(0);
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   });
 
   it("keeps the Node and pnpm declarations shared with CI and self-checkable", () => {
