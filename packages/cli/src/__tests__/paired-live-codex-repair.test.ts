@@ -78,8 +78,82 @@ describe("paired live Codex repair eval", () => {
     });
 
     expect(result.status).toBe("pass");
-    expect(result.score).toBe(11);
+    expect(result.score).toBe(3);
     expect(result.checks.every((check) => check.passed)).toBe(true);
+  });
+
+  it("does not award advantage for static tokens without held-out behavior", () => {
+    const result = scoreTargetRepair({
+      sourceFiles: {
+        "src/config.ts": "const prose = 'unknown';",
+        "src/userService.ts": "const prose = 'CreateUserResult';",
+        "tests/userService.test.ts": "invalid_json missing_email invalid_role"
+      },
+      changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+      commands: {
+        test: command(),
+        typecheck: command(),
+        diffCheck: command()
+      },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation({ accepted: true, savedUserDelta: 1 }),
+        missingEmail: observation({ accepted: true, savedUserDelta: 1 }),
+        invalidRole: observation({ accepted: true, savedUserDelta: 1 })
+      }
+    });
+
+    expect(result.status).toBe("fail");
+    expect(result.score).toBe(0);
+  });
+
+  it("does not count validity gates as paired advantage", () => {
+    const result = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+      commands: {
+        test: command(1),
+        typecheck: command(),
+        diffCheck: command()
+      },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(result.status).toBe("invalid");
+    expect(result.score).toBe(3);
+  });
+
+  it("invalidates an untracked forbidden file from the preflight manifest", () => {
+    const result = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/config.ts", "package.json"],
+      changeManifest: {
+        status: "known",
+        trackedFiles: ["src/config.ts"],
+        untrackedFiles: ["package.json"],
+        changedFiles: ["src/config.ts", "package.json"],
+        forbiddenFiles: ["package.json"],
+        statusOutput: "?? package.json"
+      },
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(result.status).toBe("invalid");
+    expect(result.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "preflight", passed: false }),
+      expect.objectContaining({ name: "forbidden_files", passed: false })
+    ]));
   });
 
   it("invalidates an arm when the target test or forbidden-file boundary fails", () => {

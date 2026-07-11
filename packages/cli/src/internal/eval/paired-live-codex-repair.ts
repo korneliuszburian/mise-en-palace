@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { EvalCandidateProposal } from "@krn/core";
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
@@ -21,10 +21,21 @@ export type CommandResult = {
   readonly exitCode: number | null;
   readonly stdout: string;
   readonly stderr: string;
+  readonly durationMs?: number;
+};
+
+export type TargetChangeManifest = {
+  readonly status: "known" | "unknown";
+  readonly trackedFiles: readonly string[];
+  readonly untrackedFiles: readonly string[];
+  readonly changedFiles: readonly string[];
+  readonly forbiddenFiles: readonly string[];
+  readonly statusOutput: string;
 };
 
 export type HeldOutCheck = {
   readonly name:
+  | "preflight"
   | "invalid_json"
   | "missing_email"
   | "invalid_role"
@@ -45,6 +56,13 @@ export type HeldOutArmScore = {
   readonly score: number;
   readonly checks: readonly HeldOutCheck[];
   readonly changedFiles: readonly string[];
+  readonly changeManifest?: TargetChangeManifest;
+  readonly commands?: {
+    readonly test: CommandResult;
+    readonly typecheck: CommandResult;
+    readonly diffCheck: CommandResult;
+  };
+  readonly runtimeCommand?: CommandResult;
 };
 
 export type PairedRepairScore = {
@@ -122,11 +140,13 @@ type TargetSourceFiles = Readonly<Record<string, string | undefined>>;
 export type TargetRepairScoreInput = {
   readonly sourceFiles: TargetSourceFiles;
   readonly changedFiles: readonly string[];
+  readonly changeManifest?: TargetChangeManifest;
   readonly commands: {
     readonly test: CommandResult;
     readonly typecheck: CommandResult;
     readonly diffCheck: CommandResult;
   };
+  readonly runtimeCommand?: CommandResult;
   readonly runtimeAvailable: boolean;
   readonly observations: {
     readonly invalidJson: HeldOutObservation;
@@ -256,10 +276,44 @@ const checkAllowedFiles = (changedFiles: readonly string[]): HeldOutCheck => {
   };
 };
 
+const knownChangeManifest = (changedFiles: readonly string[]): TargetChangeManifest => {
+  const uniqueFiles = [...new Set(changedFiles)];
+  const forbiddenFiles = uniqueFiles.filter((path) =>
+    !path.startsWith("src/") &&
+    !path.startsWith("tests/") &&
+    !path.startsWith("docs/")
+  );
+
+  return {
+    status: "known",
+    trackedFiles: uniqueFiles,
+    untrackedFiles: [],
+    changedFiles: uniqueFiles,
+    forbiddenFiles,
+    statusOutput: "synthetic test manifest"
+  };
+};
+
+const checkPreflight = (manifest: TargetChangeManifest): HeldOutCheck => {
+  const isPassed = manifest.status === "known" && manifest.forbiddenFiles.length === 0;
+
+  return {
+    name: "preflight",
+    passed: isPassed,
+    details: isPassed
+      ? "Target change manifest was captured before target execution."
+      : manifest.status === "unknown"
+        ? "Target change manifest could not be captured before target execution."
+        : `Forbidden target changes were detected before execution: ${manifest.forbiddenFiles.join(", ")}`
+  };
+};
+
 export const scoreTargetRepair = (
   input: TargetRepairScoreInput
 ): HeldOutArmScore => {
+  const changeManifest = input.changeManifest ?? knownChangeManifest(input.changedFiles);
   const checks: HeldOutCheck[] = [
+    checkPreflight(changeManifest),
     {
       name: "invalid_json",
       passed: observationPassed(input.observations.invalidJson),
@@ -309,22 +363,35 @@ export const scoreTargetRepair = (
     }
   ];
   const requiredForValidity = new Set<HeldOutCheck["name"]>([
+    "preflight",
     "forbidden_files",
     "target_test",
     "target_typecheck",
     "target_diff_check",
     "held_out_runtime"
   ]);
+  const behaviorChecks = new Set<HeldOutCheck["name"]>([
+    "invalid_json",
+    "missing_email",
+    "invalid_role"
+  ]);
   const invalid = checks.some((check) =>
     requiredForValidity.has(check.name) && !check.passed
   );
-  const score = checks.filter((check) => check.passed).length;
+  const score = checks.filter((check) =>
+    behaviorChecks.has(check.name) && check.passed
+  ).length;
 
   return {
-    status: invalid ? "invalid" : score === checks.length ? "pass" : "fail",
+    status: invalid
+      ? "invalid"
+      : score === behaviorChecks.size ? "pass" : "fail",
     score,
     checks,
-    changedFiles: [...input.changedFiles]
+    changedFiles: [...input.changedFiles],
+    changeManifest,
+    commands: input.commands,
+    ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand })
   };
 };
 
@@ -367,17 +434,46 @@ export const scorePairedRepairs = (input: {
   };
 };
 
+type RunCommandOptions = {
+  readonly env?: NodeJS.ProcessEnv;
+  readonly timeoutMs?: number;
+};
+
 const runCommand = (
   command: string,
   args: readonly string[],
-  cwd: string
+  cwd: string,
+  options: RunCommandOptions = {}
 ): Promise<CommandResult> => new Promise((resolve) => {
+  const startedAt = Date.now();
   const child = spawn(command, args, {
     cwd,
+    env: options.env,
     stdio: ["ignore", "pipe", "pipe"]
   });
   let stdout = "";
   let stderr = "";
+  let timedOut = false;
+  const timeout = options.timeoutMs === undefined
+    ? undefined
+    : setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+    }, options.timeoutMs);
+
+  const finish = (exitCode: number | null): void => {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
+    resolve({
+      command,
+      args: [...args],
+      exitCode: timedOut ? null : exitCode,
+      stdout,
+      stderr: timedOut ? `${stderr}command timed out` : stderr,
+      durationMs: Date.now() - startedAt
+    });
+  };
 
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();
@@ -386,24 +482,53 @@ const runCommand = (
     stderr += chunk.toString();
   });
   child.on("error", (error: Error) => {
-    resolve({
-      command,
-      args: [...args],
-      exitCode: null,
-      stdout,
-      stderr: `${stderr}${error.message}`
-    });
+    stderr = `${stderr}${error.message}`;
+    finish(null);
   });
-  child.on("close", (exitCode) => {
-    resolve({
-      command,
-      args: [...args],
-      exitCode,
-      stdout,
-      stderr
-    });
-  });
+  child.on("close", finish);
 });
+
+const targetEnvironment = (sandboxRoot: string): NodeJS.ProcessEnv => ({
+  PATH: process.env.PATH,
+  CI: process.env.CI ?? "1",
+  NODE_ENV: "test",
+  HOME: sandboxRoot,
+  TMPDIR: sandboxRoot,
+  TMP: sandboxRoot,
+  TEMP: sandboxRoot
+});
+
+const targetCommandTimeoutMs = 120_000;
+
+const targetPreflight = async (input: HeldOutCheckerInput): Promise<TargetChangeManifest> => {
+  const [status, tracked, untracked] = await Promise.all([
+    runCommand("git", ["status", "--short", "--untracked-files=all"], input.targetRoot),
+    runCommand("git", ["diff", input.initialCommit, "--name-only"], input.targetRoot),
+    runCommand("git", ["ls-files", "--others", "--exclude-standard"], input.targetRoot)
+  ]);
+  const trackedFiles = tracked.exitCode === 0
+    ? tracked.stdout.split("\n").map((path) => path.trim()).filter(Boolean)
+    : [];
+  const untrackedFiles = untracked.exitCode === 0
+    ? untracked.stdout.split("\n").map((path) => path.trim()).filter(Boolean)
+    : [];
+  const changedFiles = [...new Set([...trackedFiles, ...untrackedFiles])];
+  const forbiddenFiles = changedFiles.filter((path) =>
+    !path.startsWith("src/") &&
+    !path.startsWith("tests/") &&
+    !path.startsWith("docs/")
+  );
+  const statusKnown = status.exitCode === 0 && tracked.exitCode === 0 && untracked.exitCode === 0;
+
+  return {
+    status: statusKnown ? "known" : "unknown",
+    trackedFiles,
+    untrackedFiles,
+    changedFiles,
+    forbiddenFiles,
+    statusOutput: status.stdout
+  };
+};
 
 const readTargetSourceFiles = async (
   targetRoot: string
@@ -430,9 +555,6 @@ const unknownObservation = (): HeldOutObservation => ({
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isFunction = (value: unknown): value is (...args: unknown[]) => unknown =>
-  typeof value === "function";
 
 const observeInput = (
   createUser: (...args: unknown[]) => unknown,
@@ -478,20 +600,134 @@ const observeInput = (
   }
 };
 
+const runtimeWorkerMarker = "KRN_HELD_OUT_RUNTIME:";
+
+type RuntimeObservations = {
+  readonly invalidJson: HeldOutObservation;
+  readonly missingEmail: HeldOutObservation;
+  readonly invalidRole: HeldOutObservation;
+};
+
+const unknownRuntimeObservations = (): RuntimeObservations => ({
+  invalidJson: unknownObservation(),
+  missingEmail: unknownObservation(),
+  invalidRole: unknownObservation()
+});
+
+const runHeldOutRuntimeWorker = async (
+  compileRoot: string,
+  targetRoot: string,
+  checkerRoot: string,
+  sandboxRoot: string
+): Promise<{
+  readonly command: CommandResult;
+  readonly runtimeAvailable: boolean;
+  readonly observations: RuntimeObservations;
+}> => {
+  const command = await runCommand(
+    process.execPath,
+    [
+      "--experimental-permission",
+      `--allow-fs-read=${compileRoot}`,
+      `--allow-fs-read=${targetRoot}`,
+      `--allow-fs-read=${checkerRoot}`,
+      "--import",
+      "tsx",
+      fileURLToPath(import.meta.url),
+      "--worker-runtime",
+      compileRoot
+    ],
+    checkerRoot,
+    {
+      env: targetEnvironment(sandboxRoot),
+      timeoutMs: targetCommandTimeoutMs
+    }
+  );
+  const outputLines = command.stdout.split("\n");
+  let markerLine: string | undefined;
+  for (const line of outputLines.reverse()) {
+    if (line.startsWith(runtimeWorkerMarker)) {
+      markerLine = line;
+      break;
+    }
+  }
+
+  if (command.exitCode !== 0 || markerLine === undefined) {
+    return { command, runtimeAvailable: false, observations: unknownRuntimeObservations() };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(markerLine.slice(runtimeWorkerMarker.length));
+    if (!isRecord(parsed) || parsed["runtimeAvailable"] !== true || !isRecord(parsed["observations"])) {
+      throw new Error("Malformed held-out runtime envelope");
+    }
+    const observations = parsed["observations"];
+    if (!isRecord(observations) ||
+      !isRecord(observations["invalidJson"]) ||
+      !isRecord(observations["missingEmail"]) ||
+      !isRecord(observations["invalidRole"])) {
+      throw new Error("Malformed held-out observations");
+    }
+
+    return {
+      command,
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observations["invalidJson"] as HeldOutObservation,
+        missingEmail: observations["missingEmail"] as HeldOutObservation,
+        invalidRole: observations["invalidRole"] as HeldOutObservation
+      }
+    };
+  } catch {
+    return { command, runtimeAvailable: false, observations: unknownRuntimeObservations() };
+  }
+};
+
 const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
+  const preflight = await targetPreflight(input);
   const sourceFiles = await readTargetSourceFiles(input.targetRoot);
-  const [test, typecheck, diffCheck, changedFilesResult] = await Promise.all([
-    runCommand("pnpm", ["test"], input.targetRoot),
-    runCommand("pnpm", ["exec", "tsc", "-p", "tsconfig.json", "--noEmit"], input.targetRoot),
-    runCommand("git", ["diff", input.initialCommit, "--check"], input.targetRoot),
-    runCommand("git", ["diff", input.initialCommit, "--name-only"], input.targetRoot)
+  const skipped = (command: string): CommandResult => ({
+    command,
+    args: [],
+    exitCode: null,
+    stdout: "",
+    stderr: "skipped because target preflight was invalid",
+    durationMs: 0
+  });
+
+  if (preflight.status === "unknown" || preflight.forbiddenFiles.length > 0) {
+    return scoreTargetRepair({
+      sourceFiles,
+      changedFiles: preflight.changedFiles,
+      changeManifest: preflight,
+      commands: {
+        test: skipped("pnpm test"),
+        typecheck: skipped("pnpm exec tsc"),
+        diffCheck: skipped("git diff --check")
+      },
+      runtimeAvailable: false,
+      observations: unknownRuntimeObservations()
+    });
+  }
+
+  const sandboxRoot = await mkdtemp(join(tmpdir(), "krn-paired-sandbox-"));
+  const environment = targetEnvironment(sandboxRoot);
+  const [test, typecheck, diffCheck] = await Promise.all([
+    runCommand("pnpm", ["test"], input.targetRoot, {
+      env: environment,
+      timeoutMs: targetCommandTimeoutMs
+    }),
+    runCommand("pnpm", ["exec", "tsc", "-p", "tsconfig.json", "--noEmit"], input.targetRoot, {
+      env: environment,
+      timeoutMs: targetCommandTimeoutMs
+    }),
+    runCommand("git", ["diff", input.initialCommit, "--check"], input.targetRoot, {
+      env: environment,
+      timeoutMs: targetCommandTimeoutMs
+    })
   ]);
-  const changedFiles = changedFilesResult.stdout
-    .split("\n")
-    .map((path) => path.trim())
-    .filter((path) => path.length > 0);
   const compileRoot = await mkdtemp(join(tmpdir(), "krn-paired-repair-"));
   const compile = await runCommand(
     "pnpm",
@@ -505,48 +741,43 @@ const runHeldOutTargetRepairChecker = async (
       "--noEmit",
       "false"
     ],
-    input.checkerRoot
+    input.checkerRoot,
+    {
+      env: environment,
+      timeoutMs: targetCommandTimeoutMs
+    }
   );
   let runtimeAvailable = false;
-  let observations = {
-    invalidJson: unknownObservation(),
-    missingEmail: unknownObservation(),
-    invalidRole: unknownObservation()
-  };
+  let observations = unknownRuntimeObservations();
+  let runtimeCommand = skipped("held-out runtime");
 
   if (compile.exitCode === 0) {
-    try {
-      const moduleValue: unknown = await import(
-        `${pathToFileURL(join(compileRoot, "src/userService.js")).href}?checker=${Date.now()}`
-      );
-      const service = isRecord(moduleValue) ? moduleValue : {};
-      const createUser = service["createUserFromJson"];
-      const listUsers = service["listSavedUsers"];
-
-      if (isFunction(createUser) && isFunction(listUsers)) {
-        runtimeAvailable = true;
-        observations = {
-          invalidJson: observeInput(createUser, listUsers, "{", {}),
-          missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" }), {}),
-          invalidRole: observeInput(
-            createUser,
-            listUsers,
-            JSON.stringify({ email: "held-out@example.com", role: "owner" }),
-            {}
-          )
-        };
-      }
-    } catch {
-      runtimeAvailable = false;
-    }
+    const runtime = await runHeldOutRuntimeWorker(
+      compileRoot,
+      input.targetRoot,
+      input.checkerRoot,
+      sandboxRoot
+    );
+    runtimeAvailable = runtime.runtimeAvailable;
+    runtimeCommand = runtime.command;
+    observations = runtime.observations;
   }
 
   await rm(compileRoot, { recursive: true, force: true });
+  await rm(sandboxRoot, { recursive: true, force: true });
+  const postflight = await targetPreflight(input);
+  const finalManifest: TargetChangeManifest = {
+    ...postflight,
+    changedFiles: [...new Set([...preflight.changedFiles, ...postflight.changedFiles])],
+    forbiddenFiles: [...new Set([...preflight.forbiddenFiles, ...postflight.forbiddenFiles])]
+  };
 
   return scoreTargetRepair({
     sourceFiles,
-    changedFiles,
+    changedFiles: finalManifest.changedFiles,
+    changeManifest: finalManifest,
     commands: { test, typecheck, diffCheck },
+    runtimeCommand,
     runtimeAvailable,
     observations
   });
@@ -563,3 +794,47 @@ export const runPairedRepairChecker = async (input: {
 
   return scorePairedRepairs({ baseline, krn });
 };
+
+const runRuntimeWorker = async (compileRoot: string): Promise<void> => {
+  try {
+    const moduleValue: unknown = await import(
+      `${pathToFileURL(join(compileRoot, "src/userService.js")).href}?checker=${Date.now()}`
+    );
+    const service = isRecord(moduleValue) ? moduleValue : {};
+    const createUser = service["createUserFromJson"];
+    const listUsers = service["listSavedUsers"];
+
+    if (typeof createUser !== "function" || typeof listUsers !== "function") {
+      throw new Error("held-out target exports are unavailable");
+    }
+
+    const observations: RuntimeObservations = {
+      invalidJson: observeInput(
+        createUser as (...args: unknown[]) => unknown,
+        listUsers as (...args: unknown[]) => unknown,
+        "{",
+        {}
+      ),
+      missingEmail: observeInput(
+        createUser as (...args: unknown[]) => unknown,
+        listUsers as (...args: unknown[]) => unknown,
+        JSON.stringify({ role: "admin" }),
+        {}
+      ),
+      invalidRole: observeInput(
+        createUser as (...args: unknown[]) => unknown,
+        listUsers as (...args: unknown[]) => unknown,
+        JSON.stringify({ email: "held-out@example.com", role: "owner" }),
+        {}
+      )
+    };
+    process.stdout.write(`${runtimeWorkerMarker}${JSON.stringify({ runtimeAvailable: true, observations })}\n`);
+  } catch {
+    process.stdout.write(`${runtimeWorkerMarker}${JSON.stringify({ runtimeAvailable: false })}\n`);
+    process.exitCode = 1;
+  }
+};
+
+if (process.argv[2] === "--worker-runtime" && process.argv[3] !== undefined) {
+  await runRuntimeWorker(process.argv[3]);
+}

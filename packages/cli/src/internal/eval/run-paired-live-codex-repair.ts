@@ -49,6 +49,8 @@ const main = async (): Promise<void> => {
     proof: {
       proves: [
         "the KRN-owned checker compiled and exercised each target outside its target root",
+        "tracked and untracked target changes were captured before execution and rechecked after execution",
+        "held-out runtime execution used an allowlisted environment and Node filesystem permissions",
         "held-out invalid JSON, missing email, and invalid role behavior was observed",
         "unknown-first, finite result, focused tests, forbidden files, and target verification were scored",
         "the paired outcome was derived from equal checker rules"

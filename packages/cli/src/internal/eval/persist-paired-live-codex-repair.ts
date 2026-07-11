@@ -2,6 +2,9 @@ import {
   pairedRepairEvalCandidate,
   runPairedRepairChecker
 } from "./paired-live-codex-repair.js";
+import type {
+  HeldOutArmScore
+} from "./paired-live-codex-repair.js";
 import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
@@ -44,6 +47,55 @@ const readBackPersistedCandidate = (value: unknown, candidateId: string): boolea
     isRecord(feedback) && readCandidate(feedback, candidateId)
   );
 };
+
+const commandEvidence = (
+  arm: "baseline" | "krn",
+  label: string,
+  result: {
+    readonly command: string;
+    readonly args: readonly string[];
+    readonly exitCode: number | null;
+    readonly stderr: string;
+    readonly durationMs?: number;
+  },
+  capturedAt: string,
+  runId: string
+) => ({
+  command: `${arm}:${label} ${result.command} ${result.args.join(" ")}`.trim(),
+  status: result.stderr.includes("skipped")
+    ? "skipped" as const
+    : result.exitCode === 0
+      ? "passed" as const
+      : "failed" as const,
+  provenance: "command_runner" as const,
+  ...(result.exitCode === null ? {} : { exitCode: result.exitCode }),
+  capturedAt,
+  outputRef: `checker:paired-live-codex-repair:${runId}:${arm}:${label}`,
+  assertedBy: "krn-paired-live-codex-repair",
+  doesNotProve: `Command outcome (${result.durationMs ?? "unknown"}ms) does not prove arbitrary-repository portability or product readiness.`
+});
+
+const targetChangedFiles = (
+  arm: "baseline" | "krn",
+  score: HeldOutArmScore
+) => score.changeManifest === undefined
+  ? score.changedFiles.map((path) => ({
+      status: "modified",
+      path: `${arm}/${path}`,
+      ownership: "unknown"
+    }))
+  : [
+      ...score.changeManifest.trackedFiles.map((path) => ({
+        status: "modified",
+        path: `${arm}/${path}`,
+        ownership: "unknown"
+      })),
+      ...score.changeManifest.untrackedFiles.map((path) => ({
+        status: "untracked",
+        path: `${arm}/${path}`,
+        ownership: "unknown"
+      }))
+    ];
 
 const main = async (): Promise<void> => {
   const [
@@ -94,46 +146,41 @@ const main = async (): Promise<void> => {
     createdAt: now
   });
   const commandOutcomes = [
-    "pnpm test",
-    "pnpm exec tsc -p tsconfig.json --noEmit",
-    "git diff --check",
-    "KRN held-out paired repair checker"
-  ].map((command) => ({
-    command,
-    status: "passed" as const,
-    provenance: "command_runner" as const,
-    exitCode: 0,
-    capturedAt: now,
-    outputRef: `checker:paired-live-codex-repair:${runId}`,
-    assertedBy: "krn-paired-live-codex-repair",
-    doesNotProve: "The command result does not prove arbitrary-repository portability or product readiness."
-  }));
+    ...(score.baseline.commands === undefined ? [] : [
+      commandEvidence("baseline", "test", score.baseline.commands.test, now, runId),
+      commandEvidence("baseline", "typecheck", score.baseline.commands.typecheck, now, runId),
+      commandEvidence("baseline", "diff-check", score.baseline.commands.diffCheck, now, runId)
+    ]),
+    ...(score.baseline.runtimeCommand === undefined ? [] : [
+      commandEvidence("baseline", "held-out-runtime", score.baseline.runtimeCommand, now, runId)
+    ]),
+    ...(score.krn.commands === undefined ? [] : [
+      commandEvidence("krn", "test", score.krn.commands.test, now, runId),
+      commandEvidence("krn", "typecheck", score.krn.commands.typecheck, now, runId),
+      commandEvidence("krn", "diff-check", score.krn.commands.diffCheck, now, runId)
+    ]),
+    ...(score.krn.runtimeCommand === undefined ? [] : [
+      commandEvidence("krn", "held-out-runtime", score.krn.runtimeCommand, now, runId)
+    ])
+  ];
   const targetEvidence = {
     targetRepo: `${baselineRoot};${krnRoot}`,
     mode: "headless_repair",
-    dirtyBefore: "clean",
+    dirtyBefore: "unknown",
     dirtyAfter: "dirty",
-    ownedChanges: "owned_by_current_krn_run",
+    ownedChanges: "unknown",
     targetStatusFreshness: "fresh_current_task",
-    targetPatchLifecycle: "handed_off_unresolved",
+    targetPatchLifecycle: "unknown",
     allowedWrites: ["src/**", "tests/**", "docs/**"],
     forbiddenWrites: ["parent KRN packages", "other target repos", "network", "secrets", "commits", "pushes"],
     changedFiles: [
-      ...score.baseline.changedFiles.map((path) => ({
-        status: "modified",
-        path: `baseline/${path}`,
-        ownership: "owned_by_current_krn_run"
-      })),
-      ...score.krn.changedFiles.map((path) => ({
-        status: "modified",
-        path: `krn/${path}`,
-        ownership: "owned_by_current_krn_run"
-      }))
+      ...targetChangedFiles("baseline", score.baseline),
+      ...targetChangedFiles("krn", score.krn)
     ],
     commands: commandOutcomes.map((command) => command.command),
     doesNotProve: [
       "The tie does not prove that the DecisionPacket improved the target implementation.",
-      "Disposable target patches were not committed to the controlled source fixture.",
+      "Target patch ownership and lifecycle were not supplied by the checker and remain unknown.",
       "This single trial does not prove arbitrary-repository portability or product readiness."
     ]
   } as const;
@@ -179,6 +226,8 @@ const main = async (): Promise<void> => {
     proof: {
       proves: [
         "the actual paired checker outcome was stored as a reviewable EvalCandidate",
+        "the persisted evidence retained each arm command status, exit code, duration, and output reference",
+        "the persisted target manifest included tracked and untracked paths with unknown ownership unless supplied by the target owner",
         "the candidate retained the originating packet checksum and target/checker evidence refs",
         "the candidate was visible after persistence through DecisionPacket readback",
         "tie was recorded as neutral rather than helped"
