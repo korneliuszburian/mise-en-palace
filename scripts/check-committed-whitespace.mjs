@@ -1,50 +1,33 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import process from "node:process";
+import { forwardProcessResult } from "./forward-process-result.mjs";
+import { resolveCommittedRange } from "./resolve-committed-range.mjs";
 
-const ZERO_SHA = "0".repeat(40);
-
-export const selectWhitespaceBase = ({
-  eventName,
-  beforeSha,
-  prBaseSha,
-  rootSha,
-}) => {
-  if (eventName === "pull_request" && prBaseSha) {
-    return prBaseSha;
-  }
-
-  if (eventName === "push" && beforeSha && beforeSha !== ZERO_SHA) {
-    return beforeSha;
-  }
-
-  return rootSha;
+const runWhitespaceCheck = (range) => {
+  const result = spawnSync("git", ["diff", "--check", range.baseSha, range.headSha], {
+    encoding: "utf8",
+  });
+  const status = forwardProcessResult(result);
+  if (status !== 0) process.exit(status);
+  console.log(`Committed whitespace check passed for ${range.baseSha}..${range.headSha}`);
 };
 
-const git = (args) => execFileSync("git", args, { encoding: "utf8" }).trim();
-
+// fallow-ignore-next-line complexity -- CLI boundary preserves provider env fallback and git diagnostics
 const main = () => {
-  const headSha = git(["rev-parse", "HEAD"]);
-  const rootSha = git(["rev-list", "--max-parents=0", "HEAD"]).split(/\s+/u)[0];
-  const baseSha = selectWhitespaceBase({
-    eventName: process.env.KRN_WHITESPACE_EVENT ?? process.env.GITHUB_EVENT_NAME ?? "",
-    beforeSha: process.env.KRN_WHITESPACE_BEFORE ?? "",
-    prBaseSha: process.env.KRN_WHITESPACE_PR_BASE ?? "",
-    rootSha,
+  const range = resolveCommittedRange({
+    env: {
+      KRN_COMMIT_EVENT: process.env.KRN_WHITESPACE_EVENT ?? process.env.GITHUB_EVENT_NAME ?? "",
+      KRN_COMMIT_BEFORE: process.env.KRN_WHITESPACE_BEFORE ?? "",
+      KRN_COMMIT_PR_BASE: process.env.KRN_WHITESPACE_PR_BASE ?? "",
+    },
   });
 
   if (process.argv.includes("--print-base")) {
-    console.log(baseSha);
+    console.log(range.baseSha);
     return;
   }
 
-  const result = spawnSync("git", ["diff", "--check", baseSha, headSha], {
-    encoding: "utf8",
-  });
-  if (result.stdout) process.stdout.write(result.stdout);
-  if (result.stderr) process.stderr.write(result.stderr);
-  if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
-  console.log(`Committed whitespace check passed for ${baseSha}..${headSha}`);
+  runWhitespaceCheck(range);
 };
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {

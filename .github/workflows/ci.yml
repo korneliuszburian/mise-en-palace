@@ -64,6 +64,10 @@ jobs:
         run: pnpm test
 
       - name: Fallow quality gate
+        env:
+          KRN_COMMIT_EVENT: ${{ github.event_name }}
+          KRN_COMMIT_BEFORE: ${{ github.event.before }}
+          KRN_COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
         run: pnpm quality:fallow:ci
 
       - name: KRN behavior and docs smoke

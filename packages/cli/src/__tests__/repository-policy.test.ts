@@ -138,14 +138,14 @@ describe("repository policy boundaries", () => {
 
       expect(runBase({
         KRN_WHITESPACE_EVENT: "pull_request",
-        KRN_WHITESPACE_PR_BASE: "pr-base-sha",
+        KRN_WHITESPACE_PR_BASE: rootSha,
         KRN_WHITESPACE_BEFORE: "",
-      })).toBe("pr-base-sha");
+      })).toBe(rootSha);
       expect(runBase({
         KRN_WHITESPACE_EVENT: "push",
         KRN_WHITESPACE_PR_BASE: "",
-        KRN_WHITESPACE_BEFORE: "push-before-sha",
-      })).toBe("push-before-sha");
+        KRN_WHITESPACE_BEFORE: rootSha,
+      })).toBe(rootSha);
       expect(runBase({
         KRN_WHITESPACE_EVENT: "schedule",
         KRN_WHITESPACE_PR_BASE: "",
@@ -492,20 +492,90 @@ describe("repository policy boundaries", () => {
     const fallowConfig = readRootFile(".fallowrc.json");
 
     expect(packageJson.devDependencies?.fallow).toBe("2.103.0");
-    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
-      "--dead-code-baseline fallow-baselines/dead-code.json",
+    expect(packageJson.scripts?.["quality:fallow:ci"]).toBe(
+      "node scripts/run-fallow-ci.mjs",
     );
-    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
-      "--health-baseline fallow-baselines/health.json",
-    );
-    expect(packageJson.scripts?.["quality:fallow:ci"]).toContain(
-      "--dupes-baseline fallow-baselines/dupes.json",
-    );
+    const fallowCi = readRootFile("scripts/run-fallow-ci.mjs");
+    expect(fallowCi).toContain("--changed-since");
+    expect(fallowCi).toContain("--dead-code-baseline");
+    expect(fallowCi).toContain("--health-baseline");
+    expect(fallowCi).toContain("--dupes-baseline");
+    const workflow = readRootFile(".github/workflows/ci.yml");
+    expect(workflow).toContain("KRN_COMMIT_EVENT");
+    expect(workflow).toContain("KRN_COMMIT_BEFORE");
+    expect(workflow).toContain("KRN_COMMIT_PR_BASE");
     expect(fallowPolicy).toContain("Fallow `2.103.0` (schema version `7`)");
     expect(fallowPolicy).toMatch(/No aggregate\s+Fallow score/u);
     expect(fallowPolicy).toContain("@korneliuszburian");
     expect(fallowConfig).toContain("tests/fixtures/**");
     expect(fallowConfig).toContain("**/*.typecheck.ts");
+  });
+
+  it("passes the committed fixed point to Fallow and fails a changed defect", () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fallow-contract-"));
+    const baselineRoot = join(fixtureRoot, "fallow-baselines");
+    mkdirSync(baselineRoot, { recursive: true });
+
+    try {
+      for (const baseline of ["dead-code.json", "health.json", "dupes.json"]) {
+        writeFileSync(join(baselineRoot, baseline), readRootFile(`fallow-baselines/${baseline}`));
+      }
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: fixtureRoot });
+      writeFileSync(join(fixtureRoot, "bad.js"), "export const clean = 1;\n");
+      execFileSync("git", ["add", "bad.js", "fallow-baselines"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "clean"], { cwd: fixtureRoot });
+      const baseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+      writeFileSync(
+        join(fixtureRoot, "bad.js"),
+        "export function bad(value) { if (value === 1) return 1; if (value === 2) return 2; if (value === 3) return 3; if (value === 4) return 4; if (value === 5) return 5; if (value === 6) return 6; if (value === 7) return 7; return 0; }\n",
+      );
+      execFileSync("git", ["add", "bad.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "defect"], { cwd: fixtureRoot });
+
+      const runFallow = (env: Record<string, string>) => {
+        let failure: { status?: number; stdout?: string; stderr?: string } | undefined;
+        try {
+          execFileSync(process.execPath, [join(repoRoot, "scripts/run-fallow-ci.mjs"), "--root", fixtureRoot], {
+            cwd: repoRoot,
+            encoding: "utf8",
+            env: { ...process.env, ...env },
+            stdio: "pipe",
+          });
+        } catch (error) {
+          failure = error as { status?: number; stdout?: string; stderr?: string };
+        }
+        return `${failure?.stdout ?? ""}${failure?.stderr ?? ""}`;
+      };
+
+      const pushOutput = runFallow({
+        KRN_COMMIT_EVENT: "push",
+        KRN_COMMIT_BEFORE: baseSha,
+        KRN_COMMIT_PR_BASE: "",
+      });
+      const pullRequestOutput = runFallow({
+        KRN_COMMIT_EVENT: "pull_request",
+        KRN_COMMIT_BEFORE: "",
+        KRN_COMMIT_PR_BASE: baseSha,
+      });
+
+      expect(pushOutput).toContain(`base=${baseSha}`);
+      expect(pushOutput).toContain("changedFiles=1");
+      expect(pushOutput).toContain("high-complexity:bad.js");
+      expect(pullRequestOutput).toContain(`base=${baseSha}`);
+      expect(pullRequestOutput).toContain("changedFiles=1");
+      expect(pullRequestOutput).toContain("high-complexity:bad.js");
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   });
 
   it("keeps security exceptions and allowlists reviewed in a tracked baseline", () => {

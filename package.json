@@ -83,7 +83,7 @@
     "check:whitespace:committed": "node scripts/check-committed-whitespace.mjs",
     "quality:fallow": "pnpm quality:fallow:report",
     "quality:fallow:report": "node scripts/run-fallow-report.mjs",
-    "quality:fallow:ci": "fallow audit --format compact --dead-code-baseline fallow-baselines/dead-code.json --health-baseline fallow-baselines/health.json --dupes-baseline fallow-baselines/dupes.json",
+    "quality:fallow:ci": "node scripts/run-fallow-ci.mjs",
     "alpha:verify": "pnpm alpha:verify:fast",
     "alpha:verify:fast": "pnpm toolchain:check && pnpm node22:type-boundary && pnpm typecheck && pnpm test && pnpm krn doctor",
     "alpha:verify:full": "pnpm toolchain:check && pnpm node22:type-boundary && pnpm typecheck && pnpm test && pnpm krn doctor && pnpm quality:fallow:ci && pnpm eval:required && pnpm db:ready && pnpm --filter @krn/db db:check && pnpm db:smoke && pnpm db:smoke:memory-governance && pnpm db:smoke:eval-feedback-persistence && pnpm db:smoke:memory-loop && pnpm db:smoke:memory-search && pnpm eval:db && pnpm check:whitespace:committed && git diff --check",
