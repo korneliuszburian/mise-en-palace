@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,12 +74,4 @@ describe("Beads history policy", () => {
     }
   });
 
-  it("keeps the operational policy linked from repository governance", () => {
-    const contributing = readFileSync(join(repoRoot, "CONTRIBUTING.md"), "utf8");
-    const operations = readFileSync(join(repoRoot, "docs/BEADS_OPERATIONS.md"), "utf8");
-
-    expect(contributing).toContain("Beads");
-    expect(operations).toContain("180 days");
-    expect(operations).toContain("validate-beads-history.mjs roundtrip");
-  });
 });

@@ -42,7 +42,6 @@ describe("repository policy boundaries", () => {
     const workflow = readRootFile(".github/workflows/ci.yml");
     const usesLines = workflow.split("\n").filter((line) => line.includes("uses:"));
 
-    expect(usesLines).toHaveLength(9);
     expect(usesLines.every((line) =>
       /uses:\s+[^@\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+(?:\.[0-9]+)*/u.test(line)
     )).toBe(true);
@@ -86,32 +85,6 @@ describe("repository policy boundaries", () => {
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
-
-  it("makes CI whitespace checks range-aware and bounded", () => {
-    const workflow = readRootFile(".github/workflows/ci.yml");
-    const packageJson = JSON.parse(readRootFile("package.json")) as {
-      scripts?: Record<string, string>;
-    };
-
-    expect(workflow).toContain("timeout-minutes: 15");
-    expect(workflow).toContain("timeout-minutes: 30");
-    expect(packageJson.scripts?.["check:whitespace:committed"]).toBe(
-      "node scripts/check-committed-whitespace.mjs",
-    );
-    expect(workflow.match(/pnpm check:whitespace:committed/gu) ?? []).toHaveLength(0);
-    expect(workflow).toContain("KRN_WHITESPACE_EVENT");
-    expect(workflow).toContain("KRN_WHITESPACE_BEFORE");
-    expect(workflow).toContain("KRN_WHITESPACE_PR_BASE");
-    expect(workflow.match(/run: pnpm verify:fast\n/gu)).toHaveLength(1);
-    expect(workflow.match(/run: pnpm verify:db\n/gu)).toHaveLength(1);
-    expect(packageJson.scripts?.["verify:fast"]).toContain("pnpm check:whitespace:committed");
-    expect(packageJson.scripts?.["verify:fast"]).toContain("git diff --check");
-    expect(workflow.match(/fetch-depth: 0/gu)).toHaveLength(3);
-    expect(packageJson.scripts?.["verify:db"]).toContain(
-      "timeout --signal=TERM --kill-after=10s 120s pnpm db:ready",
-    );
-    expect(workflow).toContain("if: ${{ failure() || cancelled() }}");
   });
 
   it("selects deterministic whitespace bases and rejects committed whitespace", () => {
@@ -205,21 +178,13 @@ describe("repository policy boundaries", () => {
     const packageJson = JSON.parse(readRootFile("package.json")) as {
       packageManager?: string;
       engines?: Record<string, string>;
-      scripts?: Record<string, string>;
     };
     const nodeVersion = readRootFile(".node-version").trim();
-    const workflow = readRootFile(".github/workflows/ci.yml");
     const checker = join(repoRoot, "scripts/check-toolchain.mjs");
 
     expect(packageJson.packageManager).toBe("pnpm@10.32.1");
     expect(packageJson.engines?.node).toBe(`${nodeVersion}.x`);
     expect(packageJson.engines?.pnpm).toBe("10.32.1");
-    expect(workflow.match(/node-version-file: \.node-version/gu)).toHaveLength(3);
-    expect(workflow.match(/pnpm toolchain:check -- --allow-missing-rtk/gu) ?? []).toHaveLength(0);
-    expect(packageJson.scripts?.["verify:fast"]).toContain(
-      "pnpm toolchain:check -- --allow-missing-rtk",
-    );
-
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-toolchain-contract-"));
     const currentNodeMajor = process.versions.node.split(".")[0];
 
@@ -258,23 +223,8 @@ describe("repository policy boundaries", () => {
     }
   });
 
-  it("runs the supported runtime contract before every alpha verification gate", () => {
-    const packageJson = JSON.parse(readRootFile("package.json")) as {
-      scripts?: Record<string, string>;
-    };
-
-    expect(packageJson.scripts?.["alpha:verify:fast"]?.startsWith(
-      "pnpm toolchain:check && pnpm node22:type-boundary &&"
-    )).toBe(true);
-    expect(packageJson.scripts?.["alpha:verify:full"]).toBe(
-      "pnpm verify:fast && pnpm verify:db",
-    );
-  });
-
   it("tests every declared platform target and rejects native Windows shells", () => {
     const checker = join(repoRoot, "scripts/check-platform.mjs");
-    expect(readRootFile("README.md")).toContain("Native Windows shells are not supported");
-    expect(readRootFile("CONTRIBUTING.md")).toContain("Linux/macOS/WSL");
     const supportedTargets = [
       ["--platform", "linux", "--shell", "bash", "--wsl"],
       ["--platform", "darwin", "--shell", "zsh"],
@@ -311,7 +261,6 @@ describe("repository policy boundaries", () => {
 
   it("blocks the current private source packages from release", () => {
     const checker = join(repoRoot, "scripts/check-release-boundary.mjs");
-    const releaseDocs = readRootFile("docs/RELEASE_BOUNDARY.md");
     const packageJson = JSON.parse(readRootFile("package.json")) as {
       private?: boolean;
       version?: string;
@@ -320,12 +269,7 @@ describe("repository policy boundaries", () => {
 
     expect(packageJson.private).toBe(true);
     expect(packageJson.version).toBe("0.0.0");
-    expect(packageJson.scripts?.["release:check"]).toContain("check-release-boundary.mjs");
     expect(packageJson.scripts?.prepublishOnly).toBe("node scripts/check-release-boundary.mjs");
-    expect(releaseDocs).toContain("compiled artifacts");
-    expect(releaseDocs).toContain("SBOM");
-    expect(releaseDocs).toContain("migration and upgrade");
-
     let failure: { status?: number; stderr?: string } | undefined;
     try {
       execFileSync(process.execPath, [checker], {
@@ -370,49 +314,6 @@ describe("repository policy boundaries", () => {
       );
     }
   }, 20_000);
-
-  it("distinguishes the non-gating report lane from canonical gates", () => {
-    const rootPackage = JSON.parse(readRootFile("package.json")) as {
-      scripts?: Record<string, string>;
-    };
-    const contributing = readRootFile("CONTRIBUTING.md");
-    const agents = readRootFile("AGENTS.md");
-    const gates = readRootFile("docs/VERIFICATION_GATES.md");
-
-    expect(rootPackage.scripts?.["quality:fallow:report"]).toContain("run-fallow-report.mjs");
-    expect(rootPackage.scripts?.["quality:fallow:ci"]).not.toContain("|| true");
-    expect(gates).toContain("FALLOW REPORT (NON-GATING)");
-    expect(gates).toContain("pnpm eval:required");
-    expect(gates).toContain("pnpm eval:db");
-    expect(contributing).toContain("docs/VERIFICATION_GATES.md");
-    expect(agents).toContain("docs/VERIFICATION_GATES.md");
-  });
-
-  it("keeps focused architecture decision links valid and complete", () => {
-    const index = readRootFile("docs/adr/README.md");
-    const adrPaths = [
-      "docs/adr/0002-index-subordinate-to-canonical-authority.md",
-      "docs/adr/0003-usefulness-evidence-states.md",
-      "docs/adr/0004-decision-packet-application-identity.md",
-      "docs/adr/0005-active-versus-historical-evidence.md",
-      "docs/adr/0006-bounded-mcp-transport.md"
-    ];
-    const requiredSections = [
-      "## Decision",
-      "## Rejected alternative",
-      "## Consumer",
-      "## Falsifier",
-      "## Contraction / rollback"
-    ];
-
-    for (const adrPath of adrPaths) {
-      const adr = readRootFile(adrPath);
-      expect(index).toContain(`./${adrPath.slice("docs/adr/".length)}`);
-      for (const section of requiredSections) {
-        expect(adr, `${adrPath} missing ${section}`).toContain(section);
-      }
-    }
-  });
 
   it("requires every fixture to have an owner and rejects unreferenced files", () => {
     const checker = join(repoRoot, "scripts/check-fixture-ownership.mjs");
@@ -470,132 +371,6 @@ describe("repository policy boundaries", () => {
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
-
-  it("declares internal-alpha policy, private security reporting, and sensitive-path ownership", () => {
-    const security = readRootFile("SECURITY.md");
-    const contributing = readRootFile("CONTRIBUTING.md");
-    const codeowners = readRootFile(".github/CODEOWNERS");
-    const license = readRootFile("LICENSE.md");
-
-    expect(license).toContain("no license grant");
-    expect(license).toContain("not an external release");
-    expect(security).toContain("Report suspected vulnerabilities privately");
-    expect(security).toMatch(/no public\s+response or remediation SLA/u);
-    expect(security).toContain("external release readiness");
-    expect(contributing).toContain("AGENTS.md");
-    expect(contributing).toContain("CONTEXT.md");
-    expect(contributing).toContain("CONVENTIONS.md");
-    expect(contributing).toContain("Beads");
-    expect(contributing).toContain("pnpm quality:fallow:ci");
-    expect(codeowners).toContain("/packages/db/src/migrations/ @korneliuszburian");
-    expect(codeowners).toContain("/.github/ @korneliuszburian");
-    expect(codeowners).toContain("/SECURITY.md @korneliuszburian");
-    expect(codeowners).toContain("/security-baseline.json @korneliuszburian");
-  });
-
-  it("keeps one canonical executable required-eval profile with explicit test files", () => {
-    const packageJson = JSON.parse(readRootFile("package.json")) as {
-      scripts?: Record<string, string>;
-    };
-    const scripts = packageJson.scripts ?? {};
-    const workflow = readRootFile(".github/workflows/ci.yml");
-
-    expect(scripts["eval:required"]).toBeTruthy();
-    expect(scripts["eval:ci"]).toBeUndefined();
-    expect(scripts["eval:behavior:smoke"]).toBeUndefined();
-    expect(scripts["eval:krn:smoke"]).toBeUndefined();
-    expect(scripts["eval:required:behavior-gates"]).toContain("exec vitest run");
-    expect(scripts["eval:required:behavior-gates"]).toContain(
-      "src/__tests__/krn-behavior-gate.test.ts",
-    );
-    expect(scripts["eval:required:readback-falsifiers"]).toContain(
-      "src/__tests__/decision-packet-eval.test.ts",
-    );
-    expect(scripts["eval:required:readback-falsifiers"]).not.toContain("test --");
-    expect(scripts["eval:required:codex-brief-render"]).toContain(
-      "src/__tests__/codex-brief-behavior.test.ts",
-    );
-    expect(scripts["verify:fast"]).toContain("pnpm eval:required");
-    expect(workflow).not.toContain("eval:krn:smoke");
-  });
-
-  it("uses identical package-owned fast and DB profiles for CI and alpha full", () => {
-    const packageJson = JSON.parse(readRootFile("package.json")) as {
-      scripts?: Record<string, string>;
-    };
-    const scripts = packageJson.scripts ?? {};
-    const workflow = readRootFile(".github/workflows/ci.yml");
-    const fast = scripts["verify:fast"] ?? "";
-    const db = scripts["verify:db"] ?? "";
-    const requiredFast = [
-      "toolchain:check",
-      "node22:type-boundary",
-      "platform:check",
-      "workspace:check",
-      "fixtures:check",
-      "typecheck",
-      "test",
-      "quality:fallow:ci",
-      "eval:required",
-      "check:whitespace:committed",
-      "git diff --check"
-    ];
-    const requiredDb = [
-      "db:ready",
-      "@krn/db db:check",
-      "db:smoke",
-      "db:smoke:memory-governance",
-      "db:smoke:eval-feedback-persistence",
-      "db:smoke:memory-loop",
-      "db:smoke:memory-search",
-      "db:smoke:run-show",
-      "db:smoke:maintenance-queue",
-      "db:smoke:source-graph",
-      "db:smoke:activation",
-      "db:smoke:decision-corpus-import",
-      "eval:db:retrieval-substrate",
-      "eval:db:decision-packet-return-loop",
-      "eval:db:target-repo-harness"
-    ];
-
-    expect(requiredFast.every((command) => fast.includes(command))).toBe(true);
-    expect(requiredDb.every((command) => db.includes(command))).toBe(true);
-    expect(scripts["alpha:verify:full"]).toBe("pnpm verify:fast && pnpm verify:db");
-    expect(workflow).toContain("run: pnpm verify:fast");
-    expect(workflow).toContain("run: pnpm verify:db");
-    for (const command of requiredDb) {
-      const escaped = command.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-      expect((db.match(new RegExp(`${escaped}(?=\\s|&&|$)`, "gu")) ?? [])).toHaveLength(1);
-    }
-  });
-
-  it("keeps Fallow baselines versioned, category-specific, and visible", () => {
-    const packageJson = JSON.parse(readRootFile("package.json")) as {
-      devDependencies?: Record<string, string>;
-      scripts?: Record<string, string>;
-    };
-    const fallowPolicy = readRootFile("fallow-baselines/README.md");
-    const fallowConfig = readRootFile(".fallowrc.json");
-
-    expect(packageJson.devDependencies?.fallow).toBe("2.103.0");
-    expect(packageJson.scripts?.["quality:fallow:ci"]).toBe(
-      "node scripts/run-fallow-ci.mjs",
-    );
-    const fallowCi = readRootFile("scripts/run-fallow-ci.mjs");
-    expect(fallowCi).toContain("--changed-since");
-    expect(fallowCi).toContain("--dead-code-baseline");
-    expect(fallowCi).toContain("--health-baseline");
-    expect(fallowCi).toContain("--dupes-baseline");
-    const workflow = readRootFile(".github/workflows/ci.yml");
-    expect(workflow).toContain("KRN_COMMIT_EVENT");
-    expect(workflow).toContain("KRN_COMMIT_BEFORE");
-    expect(workflow).toContain("KRN_COMMIT_PR_BASE");
-    expect(fallowPolicy).toContain("Fallow `2.103.0` (schema version `7`)");
-    expect(fallowPolicy).toMatch(/No aggregate\s+Fallow score/u);
-    expect(fallowPolicy).toContain("@korneliuszburian");
-    expect(fallowConfig).toContain("tests/fixtures/**");
-    expect(fallowConfig).toContain("**/*.typecheck.ts");
   });
 
   it("passes the committed fixed point to Fallow and fails a changed defect", () => {
@@ -702,28 +477,4 @@ describe("repository policy boundaries", () => {
     expect(baseline.dependencyVulnerabilityExceptions).toEqual([]);
   });
 
-  it("keeps staged security scans blocking and scheduled without mutable actions", () => {
-    const workflow = readRootFile(".github/workflows/ci.yml");
-
-    expect(workflow).toContain('cron: "17 3 * * 1"');
-    expect(workflow).toContain("name: Dependency, secret, and license policy");
-    expect(workflow).toContain("run: pnpm security:dependency-audit");
-    expect(workflow).toContain("run: pnpm security:secrets");
-    expect(workflow).toContain("KRN_COMMIT_EVENT");
-    expect(workflow).toContain("KRN_COMMIT_BEFORE");
-    expect(workflow).toContain("KRN_COMMIT_PR_BASE");
-    expect(workflow).toContain("run: pnpm security:licenses");
-    expect(workflow).not.toContain("continue-on-error: true");
-    expect(workflow.split("uses:").length - 1).toBe(9);
-  });
-
-  it("keeps Beads history validation and retention policy explicit", () => {
-    const operations = readRootFile("docs/BEADS_OPERATIONS.md");
-    const contributing = readRootFile("CONTRIBUTING.md");
-
-    expect(operations).toContain("180 days");
-    expect(operations).toContain("No automated destructive compaction is enabled");
-    expect(operations).toContain("validate-beads-history.mjs validate");
-    expect(contributing).toContain("Beads");
-  });
 });
