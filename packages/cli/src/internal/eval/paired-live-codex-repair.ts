@@ -614,7 +614,7 @@ const unknownRuntimeObservations = (): RuntimeObservations => ({
   invalidRole: unknownObservation()
 });
 
-const runHeldOutRuntimeWorker = async (
+export const runHeldOutRuntimeWorker = async (
   compileRoot: string,
   targetRoot: string,
   checkerRoot: string,

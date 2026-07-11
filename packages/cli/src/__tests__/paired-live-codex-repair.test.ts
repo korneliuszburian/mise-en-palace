@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,6 +9,7 @@ import {
   pairedRepairUsefulnessOutcome,
   scorePairedRepairs,
   scoreTargetRepair,
+  runHeldOutRuntimeWorker,
   type CommandResult,
   type HeldOutObservation
 } from "../internal/eval/paired-live-codex-repair.js";
@@ -154,6 +158,36 @@ describe("paired live Codex repair eval", () => {
       expect.objectContaining({ name: "preflight", passed: false }),
       expect.objectContaining({ name: "forbidden_files", passed: false })
     ]));
+  });
+
+  it("fails closed when target code attempts to read a host sentinel", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-live-containment-test-"));
+    const compileRoot = await mkdtemp(join(root, "compiled-"));
+    const sandboxRoot = await mkdtemp(join(root, "sandbox-"));
+    const sentinel = join(root, "host-secret.txt");
+    const moduleRoot = join(compileRoot, "src");
+    await writeFile(sentinel, "must-not-be-read", "utf8");
+    await mkdir(moduleRoot, { recursive: true });
+    await writeFile(join(moduleRoot, "userService.js"), [
+      "import { readFileSync } from 'node:fs';",
+      `readFileSync(${JSON.stringify(sentinel)}, 'utf8');`,
+      "export const createUserFromJson = () => ({ kind: 'invalid_input' });",
+      "export const listSavedUsers = () => [];"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(
+        compileRoot,
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+
+      expect(result.runtimeAvailable).toBe(false);
+      expect(await readFile(sentinel, "utf8")).toBe("must-not-be-read");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("invalidates an arm when the target test or forbidden-file boundary fails", () => {
