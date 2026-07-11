@@ -179,6 +179,18 @@ const inspectMigrationState = async (
   };
 };
 
+const withSourceAuthorityIntegrity = async (
+  input: MigrationReadinessInput,
+  report: MigrationReadinessReport
+): Promise<MigrationReadinessReport> => ({
+  ...report,
+  sourceAuthorityIntegrity: await inspectSourceAuthorityIntegrity({
+    databaseUrl: input.databaseUrl,
+    storeName: "postgres",
+    schemaIdentity: `${report.migrationIdentityStatus}:${report.appliedMigrationCount}/${report.expectedMigrationCount}`
+  })
+});
+
 const withMigrationClient = async (
   input: MigrationReadinessInput,
   task: (client: Sql) => Promise<MigrationReadinessReport>
@@ -208,16 +220,7 @@ export const inspectMigrationReadiness = (
   input,
   async (client) => {
     const report = await inspectMigrationState(client, input.migrationsFolder);
-    const sourceAuthorityIntegrity = await inspectSourceAuthorityIntegrity({
-      databaseUrl: input.databaseUrl,
-      storeName: "postgres",
-      schemaIdentity: `${report.migrationIdentityStatus}:${report.appliedMigrationCount}/${report.expectedMigrationCount}`
-    });
-
-    return {
-      ...report,
-      sourceAuthorityIntegrity
-    };
+    return withSourceAuthorityIntegrity(input, report);
   }
 );
 
@@ -232,15 +235,6 @@ export const runMigrationReadinessCheck = async (
     });
 
     const report = await inspectMigrationState(client, input.migrationsFolder);
-    const sourceAuthorityIntegrity = await inspectSourceAuthorityIntegrity({
-      databaseUrl: input.databaseUrl,
-      storeName: "postgres",
-      schemaIdentity: `${report.migrationIdentityStatus}:${report.appliedMigrationCount}/${report.expectedMigrationCount}`
-    });
-
-    return {
-      ...report,
-      sourceAuthorityIntegrity
-    };
+    return withSourceAuthorityIntegrity(input, report);
   }
 );

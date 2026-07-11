@@ -161,44 +161,55 @@ const configuredPostgresChecks = (
   const ready = report.pgvectorAvailable && report.migrationsVerified && sourceAuthorityIntegrityReady;
 
   return [
-    {
-      label: "Postgres mode",
-      status: ready ? "ready" : "connected but not ready",
-      outcome: ready ? "ready" : "incomplete",
-      severity: ready ? "pass" : "warning"
-    },
+    configuredPostgresModeCheck(ready),
     {
       label: "Postgres config",
       status: "configured and reachable",
       outcome: "configured_reachable",
       severity: "pass"
     },
-    {
-      label: "pgvector",
-      status: report.pgvectorAvailable ? "available" : "missing",
-      outcome: report.pgvectorAvailable ? "pgvector_available" : "pgvector_missing",
-      severity: report.pgvectorAvailable ? "pass" : "warning"
-    },
+    configuredPgvectorCheck(report),
     {
       label: "migrations",
       status: migrationStatus(report),
       outcome: migrationOutcome(report),
       severity: migrationSeverity(report)
     },
-    {
-      label: "Postgres next action",
-      status: ready ? "none" : connectedButNotReadyRecovery()
-    },
-    {
-      label: "Source authority integrity",
-      status: sourceAuthorityIntegrityReady
-        ? `clean (${report.sourceAuthorityIntegrity?.violationCount ?? 0} violations)`
-        : `blocked (${report.sourceAuthorityIntegrity?.violationCount ?? "unverified"} violations)`,
-      outcome: sourceAuthorityIntegrityReady ? "ready" : "blocked",
-      severity: sourceAuthorityIntegrityReady ? "pass" : "warning"
-    }
+    configuredPostgresNextAction(ready),
+    configuredSourceAuthorityIntegrityCheck(report, sourceAuthorityIntegrityReady)
   ];
 };
+
+const configuredPostgresModeCheck = (ready: boolean): DoctorCheck => ({
+  label: "Postgres mode",
+  status: ready ? "ready" : "connected but not ready",
+  outcome: ready ? "ready" : "incomplete",
+  severity: ready ? "pass" : "warning"
+});
+
+const configuredPgvectorCheck = (report: MigrationReadinessReport): DoctorCheck => ({
+  label: "pgvector",
+  status: report.pgvectorAvailable ? "available" : "missing",
+  outcome: report.pgvectorAvailable ? "pgvector_available" : "pgvector_missing",
+  severity: report.pgvectorAvailable ? "pass" : "warning"
+});
+
+const configuredPostgresNextAction = (ready: boolean): DoctorCheck => ({
+  label: "Postgres next action",
+  status: ready ? "none" : connectedButNotReadyRecovery()
+});
+
+const configuredSourceAuthorityIntegrityCheck = (
+  report: MigrationReadinessReport,
+  ready: boolean
+): DoctorCheck => ({
+  label: "Source authority integrity",
+  status: ready
+    ? `clean (${report.sourceAuthorityIntegrity?.violationCount ?? 0} violations)`
+    : `blocked (${report.sourceAuthorityIntegrity?.violationCount ?? "unverified"} violations)`,
+  outcome: ready ? "ready" : "blocked",
+  severity: ready ? "pass" : "warning"
+});
 
 const unreachablePostgresChecks = (message: string): DoctorCheck[] => [
   {
