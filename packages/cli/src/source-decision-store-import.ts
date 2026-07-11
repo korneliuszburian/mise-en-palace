@@ -192,12 +192,21 @@ const metadataForRow = (
   decisionCorpusImportId: row.id,
   decisionCorpusStatus: row.status,
   evidenceRef: evidence.evidenceRef,
+  ...sourceEvidenceFields(evidence)
+});
+
+const sourceEvidenceFields = (
+  evidence: SourceDecisionEvidenceLookup
+): Pick<
+  PreparedSourceDecisionImportRow,
+  "evidenceStatus" | "evidenceContentHash" | "evidenceCapturedAt" | "evidenceFreshness" | "evidenceProvenance" | "evidenceReason"
+> => ({
   evidenceStatus: evidence.status,
   ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
   ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
+  evidenceFreshness: evidence.freshness ?? "unknown",
   ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
-  ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),
-  evidenceFreshness: evidence.freshness ?? "unknown"
+  ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason })
 });
 
 const parseLocalEvidencePath = (evidenceRef: string, decisionId: string): string => {
@@ -426,15 +435,11 @@ const requireCapturedEvidenceForAuthority = (
   );
 };
 
-const prepareImportRows = async (
-  input: PersistSourceDecisionImportInput
-): Promise<readonly PreparedSourceDecisionImportRow[]> => {
-  const rowsWithEvidenceRefs = input.fixture.decisions.map((row) => ({
-    row,
-    evidenceRef: resolveEvidenceRef(row.evidenceRef, row.id)
-  }));
-
-  return Promise.all(rowsWithEvidenceRefs.map(async ({ row, evidenceRef }) => {
+const prepareImportRow = async (
+  input: PersistSourceDecisionImportInput,
+  row: DecisionCorpusImportRow,
+  evidenceRef: string
+): Promise<PreparedSourceDecisionImportRow> => {
   const evidence = await resolveEvidence({
     decisionId: row.id,
     evidenceRef,
@@ -476,18 +481,25 @@ const prepareImportRows = async (
     row,
     evidenceRef,
     metadata: metadataForRow(input, row, evidence),
-    evidenceStatus: evidence.status,
-    ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
-    ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
-    evidenceFreshness: evidence.freshness ?? "unknown",
-    ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
-    ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),
+    ...sourceEvidenceFields(evidence),
     uri: `source-decision-import://${input.importId}/${row.id}`,
     artifactContentHash: contentHash(`krn.source-decision-import.v2\n${normalizedRow}`),
     chunkContent,
     chunkContentHash: contentHash(`krn.source-decision-import.chunk.v2\n${chunkContent}`)
   };
+};
+
+const prepareImportRows = async (
+  input: PersistSourceDecisionImportInput
+): Promise<readonly PreparedSourceDecisionImportRow[]> => {
+  const rowsWithEvidenceRefs = input.fixture.decisions.map((row) => ({
+    row,
+    evidenceRef: resolveEvidenceRef(row.evidenceRef, row.id)
   }));
+
+  return Promise.all(rowsWithEvidenceRefs.map(({ row, evidenceRef }) =>
+    prepareImportRow(input, row, evidenceRef)
+  ));
 };
 
 const createSourceArtifactAndChunk = async (

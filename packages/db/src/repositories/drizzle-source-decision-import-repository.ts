@@ -160,6 +160,19 @@ const sourceEvidenceFreshnessFromMetadata = (
     : "unknown";
 };
 
+const sourceEvidenceProvenanceKind = (
+  value: unknown
+): SourceDecisionEvidenceProvenance["kind"] | undefined => {
+  switch (value) {
+    case "local_file":
+    case "source_artifact":
+    case "source_snapshot":
+      return value;
+    default:
+      return undefined;
+  }
+};
+
 const sourceEvidenceProvenanceFromMetadata = (
   metadata: Record<string, unknown>
 ): SourceDecisionEvidenceProvenance | undefined => {
@@ -173,12 +186,9 @@ const sourceEvidenceProvenanceFromMetadata = (
     Object.entries(value)
   );
 
-  const kind = candidate.kind;
+  const kind = sourceEvidenceProvenanceKind(candidate.kind);
 
-  if (
-    (kind !== "local_file" && kind !== "source_artifact" && kind !== "source_snapshot") ||
-    typeof candidate.uri !== "string"
-  ) {
+  if (kind === undefined || typeof candidate.uri !== "string") {
     return undefined;
   }
 
