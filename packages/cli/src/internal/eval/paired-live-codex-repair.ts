@@ -434,12 +434,13 @@ export const scorePairedRepairs = (input: {
   };
 };
 
-type RunCommandOptions = {
+export type RunCommandOptions = {
   readonly env?: NodeJS.ProcessEnv;
   readonly timeoutMs?: number;
+  readonly input?: string;
 };
 
-const runCommand = (
+export const runCommand = (
   command: string,
   args: readonly string[],
   cwd: string,
@@ -449,7 +450,7 @@ const runCommand = (
   const child = spawn(command, args, {
     cwd,
     env: options.env,
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["pipe", "pipe", "pipe"]
   });
   let stdout = "";
   let stderr = "";
@@ -474,6 +475,9 @@ const runCommand = (
       durationMs: Date.now() - startedAt
     });
   };
+
+  if (options.input !== undefined) child.stdin.end(options.input);
+  else child.stdin.end();
 
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();

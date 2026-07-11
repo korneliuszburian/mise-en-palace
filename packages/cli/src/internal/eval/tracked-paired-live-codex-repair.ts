@@ -2,11 +2,11 @@ import { createHash } from "node:crypto";
 import { cp, mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import {
   buildPairedRepairPrompts,
+  runCommand,
   runPairedRepairChecker,
   type CommandResult,
   type PairedRepairScore
@@ -94,20 +94,7 @@ const isRecord = (value: unknown): value is JsonRecord =>
 const sha256 = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 
-const canonicalJson = (value: unknown): string => {
-  if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(",")}]`;
-  }
-
-  if (isRecord(value)) {
-    return `{${Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
-      .join(",")}}`;
-  }
-
-  return JSON.stringify(value) ?? "null";
-};
+const serializedJson = (value: unknown): string => JSON.stringify(value) ?? "null";
 
 const readString = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 ? value : undefined;
@@ -120,24 +107,26 @@ const readStringArray = (value: unknown): readonly string[] =>
 const nestedRecord = (value: JsonRecord | undefined, key: string): JsonRecord | undefined =>
   value !== undefined && isRecord(value[key]) ? value[key] : undefined;
 
+const missingReason = (condition: boolean, reason: string): string | undefined =>
+  condition ? undefined : reason;
+
 const packetShapeReasons = (
   root: JsonRecord | undefined,
   manifest: Pick<PairedTrialManifest, "runId" | "projectId" | "taskId">
 ): { readonly reasons: readonly string[]; readonly body?: JsonRecord; readonly checksum?: string } => {
-  const reasons: string[] = [];
   const request = nestedRecord(root, "request");
   const identity = nestedRecord(root, "packetIdentity");
   const body = nestedRecord(root, "packet");
   const task = nestedRecord(body, "task");
   const checksum = readString(identity?.["checksum"]);
 
-  if (root?.["kind"] !== "krn.decisionPacketReadback.v1") reasons.push("packet kind is not the bounded DecisionPacket readback");
-  if (request?.["runId"] !== manifest.runId) reasons.push("packet runId does not match the trial manifest");
-  if (checksum === undefined) reasons.push("packet checksum is missing");
-  if (task?.["id"] !== manifest.taskId) reasons.push("packet task id does not match the trial manifest");
-  if (typeof task?.["objective"] !== "string" || !task["objective"].includes(manifest.projectId)) {
-    reasons.push("packet task is not bound to the manifest project");
-  }
+  const reasons = [
+    missingReason(root?.["kind"] === "krn.decisionPacketReadback.v1", "packet kind is not the bounded DecisionPacket readback"),
+    missingReason(request?.["runId"] === manifest.runId, "packet runId does not match the trial manifest"),
+    missingReason(checksum !== undefined, "packet checksum is missing"),
+    missingReason(task?.["id"] === manifest.taskId, "packet task id does not match the trial manifest"),
+    missingReason(typeof task?.["objective"] === "string" && task["objective"].includes(manifest.projectId), "packet task is not bound to the manifest project")
+  ].filter((reason): reason is string => reason !== undefined);
 
   return { reasons, ...(body === undefined ? {} : { body }), ...(checksum === undefined ? {} : { checksum }) };
 };
@@ -207,41 +196,9 @@ const runProcess = (
   command: string,
   args: readonly string[],
   options: ProcessOptions
-): Promise<CommandResult> => new Promise((resolveResult) => {
-  const startedAt = Date.now();
-  const child = spawn(command, args, {
-    cwd: options.cwd,
-    env: options.env,
-    stdio: ["pipe", "pipe", "pipe"]
-  });
-  let stdout = "";
-  let stderr = "";
-  let timedOut = false;
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    child.kill("SIGTERM");
-  }, options.timeoutMs);
-
-  if (options.input !== undefined) child.stdin.end(options.input);
-  else child.stdin.end();
-  child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
-  child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
-  child.on("error", (error: Error) => {
-    clearTimeout(timeout);
-    resolveResult({ command, args: [...args], exitCode: null, stdout, stderr: `${stderr}${error.message}`, durationMs: Date.now() - startedAt });
-  });
-  child.on("close", (exitCode) => {
-    clearTimeout(timeout);
-    resolveResult({
-      command,
-      args: [...args],
-      exitCode: timedOut ? null : exitCode,
-      stdout,
-      stderr: timedOut ? `${stderr}command timed out` : stderr,
-      durationMs: Date.now() - startedAt
-    });
-  });
-});
+): Promise<CommandResult> => options.input === undefined
+  ? runCommand(command, args, options.cwd, { env: options.env, timeoutMs: options.timeoutMs })
+  : runCommand(command, args, options.cwd, { env: options.env, timeoutMs: options.timeoutMs, input: options.input });
 
 const allowlistedEnvironment = (sandboxRoot: string, targetRoot: string): NodeJS.ProcessEnv => ({
   PATH: process.env.PATH,
@@ -300,7 +257,7 @@ const trialConditions = (manifest: PairedTrialManifest): JsonRecord => ({
   containment: manifest.containment
 });
 
-const environmentProfileHash = (sandboxRoot: string): string => sha256(canonicalJson({
+const environmentProfileHash = (sandboxRoot: string): string => sha256(serializedJson({
   PATH: process.env.PATH ?? "",
   CI: "1",
   NODE_ENV: "test",
@@ -312,7 +269,7 @@ const environmentProfileHash = (sandboxRoot: string): string => sha256(canonical
   sandboxRootPresent: sandboxRoot.length > 0
 }));
 
-const artifactHash = (artifact: Omit<TrackedTrialArtifact, "artifactHash">): string => sha256(canonicalJson(artifact));
+const artifactHash = (artifact: Omit<TrackedTrialArtifact, "artifactHash">): string => sha256(serializedJson(artifact));
 
 export const buildTrackedTrialArtifact = (
   artifact: Omit<TrackedTrialArtifact, "artifactHash">
@@ -325,7 +282,7 @@ export const runTrackedPairedTrial = async (input: {
   readonly packet: unknown;
   readonly packetFetchFailure?: string;
 }): Promise<TrackedTrialArtifact> => {
-  const manifestHash = sha256(canonicalJson(input.manifest));
+  const manifestHash = sha256(serializedJson(input.manifest));
   const sourceTreeHash = await hashTree(input.sourceRoot);
   const packetValidation = validateTrialPacket(input.packet, input.manifest);
   const conditions = trialConditions(input.manifest);
