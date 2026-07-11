@@ -1,3 +1,9 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+
 import {
   describe,
   expect,
@@ -43,6 +49,41 @@ describe("environment fingerprint", () => {
 
     expect(replay).toEqual(first);
     expect(changedProtocol.id).not.toBe(first.id);
+    expect(buildEnvironmentFingerprint({
+      ...fingerprintInputs,
+      worktreeIdentity: "dirty-a"
+    }).id).not.toBe(buildEnvironmentFingerprint({
+      ...fingerprintInputs,
+      worktreeIdentity: "dirty-b"
+    }).id);
+  });
+
+  it("discovers a renamed git root and distinguishes clean from failed inspection", async () => {
+    const execFileAsync = promisify(execFile);
+    const renamedRoot = await mkdtemp(path.join(os.tmpdir(), "krn-renamed-clone-"));
+    const noGitRoot = await mkdtemp(path.join(os.tmpdir(), "krn-no-git-"));
+
+    try {
+      await execFileAsync("git", ["init", "-q"], { cwd: renamedRoot });
+      await execFileAsync("git", ["config", "user.email", "krn-test@example.invalid"], { cwd: renamedRoot });
+      await execFileAsync("git", ["config", "user.name", "KRN Test"], { cwd: renamedRoot });
+      await writeFile(path.join(renamedRoot, "README.md"), "clean clone\n", "utf8");
+      await execFileAsync("git", ["add", "README.md"], { cwd: renamedRoot });
+      await execFileAsync("git", ["commit", "-qm", "test: clean clone"], { cwd: renamedRoot });
+
+      const clean = await collectEnvironmentFingerprint({ repoRoot: renamedRoot });
+      const failed = await collectEnvironmentFingerprint({ repoRoot: noGitRoot });
+
+      expect(clean.inputs.gitDirty).toBe(false);
+      expect(clean.inputs.worktreeIdentity).toMatch(/^[a-f0-9]{64}$/u);
+      expect(failed.inputs.gitDirty).toBe("unknown");
+      expect(failed.inputs.worktreeIdentity).toBe("unknown");
+    } finally {
+      await Promise.all([
+        rm(renamedRoot, { recursive: true, force: true }),
+        rm(noGitRoot, { recursive: true, force: true })
+      ]);
+    }
   });
 
   it("keeps collected inputs secret-free and independent of absolute paths", async () => {
