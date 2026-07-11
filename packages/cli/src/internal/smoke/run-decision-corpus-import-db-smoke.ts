@@ -20,6 +20,10 @@ import {
   type PersistedSourceDecisionImportRow
 } from "../../source-decision-store-import.js";
 import {
+  evaluateSourceCoverage,
+  type SourceCoverageReport
+} from "../../source-coverage.js";
+import {
   runSmokeSourceSearch,
   sourceSearchIncludesClaim
 } from "./source-search-smoke-runner.js";
@@ -44,6 +48,7 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly importedDecisionCount: number;
   readonly importedCaseCount: number;
   readonly persistedRows: readonly PersistedDecisionCorpusRow[];
+  readonly coverage: SourceCoverageReport;
   readonly replayStable: boolean;
   readonly replayPersistedArtifactCount: number;
   readonly partialReplayRejected: boolean;
@@ -94,14 +99,32 @@ const hashCapturedEvidence = (content: string): string =>
 
 const smokeImportFixture = (
   fixture: ReturnType<typeof loadDecisionCorpusImportFixture>
-): ReturnType<typeof loadDecisionCorpusImportFixture> => ({
-  ...fixture,
-  decisions: fixture.decisions.map((row) =>
+): ReturnType<typeof loadDecisionCorpusImportFixture> => {
+  const decisions = fixture.decisions.map((row) =>
     row.status === "current" && !row.evidenceRef.startsWith("http://") && !row.evidenceRef.startsWith("https://")
       ? { ...row, evidenceRef: "KRN_ROADMAP.md" }
       : row
-  )
-});
+  );
+
+  return {
+    ...fixture,
+    decisions,
+    ...(fixture.coverageScope === undefined
+      ? {}
+      : {
+          coverageScope: {
+            declaredRows: fixture.coverageScope.declaredRows.map((declaredRow) => ({
+              ...declaredRow,
+              evidenceRefs: [
+                decisions.find((row) => row.id === declaredRow.decisionId)?.evidenceRef ??
+                  declaredRow.evidenceRefs[0] ??
+                  ""
+              ]
+            }))
+          }
+        })
+  };
+};
 
 const seedCapturedExternalEvidence = async (input: {
   runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>;
@@ -400,8 +423,12 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     if (
       governingRow.evidenceStatus !== "captured" ||
       governingRow.evidenceContentHash === undefined ||
+      governingRow.evidenceCapturedAt === undefined ||
+      governingRow.evidenceProvenance === undefined ||
       externalEvidenceRow.evidenceStatus !== "captured" ||
-      externalEvidenceRow.evidenceContentHash === undefined
+      externalEvidenceRow.evidenceContentHash === undefined ||
+      externalEvidenceRow.evidenceCapturedAt === undefined ||
+      externalEvidenceRow.evidenceProvenance === undefined
     ) {
       throw new Error("decision corpus import DB smoke did not read back captured evidence status and digest");
     }
@@ -503,6 +530,20 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       );
     }
 
+    const coverage = evaluateSourceCoverage({
+      scope: fixture.coverageScope,
+      evidence: persistedRows.map((row) => ({
+        decisionId: row.decisionId,
+        evidenceRef: row.evidenceRef,
+        status: row.evidenceStatus,
+        ...(row.evidenceCapturedAt === undefined ? {} : { capturedAt: row.evidenceCapturedAt }),
+        ...(row.evidenceContentHash === undefined ? {} : { contentHash: row.evidenceContentHash }),
+        freshness: row.evidenceFreshness,
+        ...(row.evidenceProvenance === undefined ? {} : { provenance: row.evidenceProvenance }),
+        ...(row.evidenceReason === undefined ? {} : { reason: row.evidenceReason })
+      }))
+    });
+
     await cleanupSourceSmokeMarkers(client, markerTables, partialSmokeId, smokeSource);
     const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
@@ -518,6 +559,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       importedDecisionCount: fixture.decisions.length,
       importedCaseCount: fixture.cases.length,
       persistedRows,
+      coverage,
       replayStable,
       replayPersistedArtifactCount,
       partialReplayRejected,

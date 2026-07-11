@@ -71,7 +71,17 @@ describe("runDecisionCorpusImport", () => {
         staleDecisionCount: 2,
         rejectedDecisionCount: 3
       },
-      decisionPacketStatus: "pass"
+      decisionPacketStatus: "pass",
+      coverage: {
+        status: "incomplete",
+        declaredRowCount: 11,
+        missingRowCount: 0,
+        declaredEvidenceRefCount: 11,
+        capturedEvidenceRefCount: 0,
+        missingEvidenceRefCount: 10,
+        mismatchedEvidenceRefCount: 0,
+        externallyUnverifiedEvidenceRefCount: 1
+      }
     });
     expect(result.importedDecisionIds).toEqual([
       "decision-corpus-import-path",

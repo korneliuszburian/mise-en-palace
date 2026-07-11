@@ -10,6 +10,8 @@ export type SourceDecisionEvidenceStatus =
   | "digest_mismatch"
   | "externally_unverified";
 
+export type SourceDecisionEvidenceFreshness = "current" | "stale" | "unknown";
+
 export interface SourceDecisionEvidenceProvenance {
   kind: "local_file" | "source_artifact" | "source_snapshot";
   uri: string;
@@ -24,6 +26,7 @@ export interface SourceDecisionEvidenceLookup {
   content?: string;
   contentHash?: string;
   capturedAt?: string;
+  freshness?: SourceDecisionEvidenceFreshness;
   provenance?: SourceDecisionEvidenceProvenance;
   reason?: string;
 }
@@ -36,9 +39,14 @@ export interface SourceDecisionImportLookupInput {
 
 export interface SourceDecisionImportReadback {
   decisionId: string;
+  evidenceRef: string;
   contentHash: string;
   evidenceStatus: SourceDecisionEvidenceStatus;
   evidenceContentHash?: string;
+  evidenceCapturedAt?: string;
+  evidenceFreshness?: SourceDecisionEvidenceFreshness;
+  evidenceProvenance?: SourceDecisionEvidenceProvenance;
+  evidenceReason?: string;
   sourceArtifactId: string;
   sourceChunkId: string;
   sourceClaimId: string;

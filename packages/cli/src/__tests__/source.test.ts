@@ -387,6 +387,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: disabled");
     expect(result.stdout).toContain("decisions: 11 (current=6, stale=2, rejected=3)");
     expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("coverage: incomplete");
+    expect(result.stdout).toContain("declaredRows=11");
     expect(result.stdout).toContain("doesNotProve: source truth");
   });
 

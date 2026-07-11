@@ -4,6 +4,8 @@ import type {
   SourceDecisionImportLookupInput,
   SourceDecisionImportRepository,
   SourceDecisionEvidenceLookup,
+  SourceDecisionEvidenceFreshness,
+  SourceDecisionEvidenceProvenance,
   SourceDecisionEvidenceStatus
 } from "@krn/core/repositories/internal";
 
@@ -110,6 +112,7 @@ const sourceEvidenceLookupFromRow = (
     content: row.sourceChunk.content,
     contentHash: capturedHash,
     capturedAt: sourceEvidenceCapturedAt(row),
+    freshness: "unknown",
     provenance: sourceEvidenceProvenance(row)
   };
 };
@@ -137,6 +140,63 @@ const sourceEvidenceContentHashFromMetadata = (
   const contentHash = metadata["evidenceContentHash"];
 
   return typeof contentHash === "string" ? contentHash : undefined;
+};
+
+const sourceEvidenceCapturedAtFromMetadata = (
+  metadata: Record<string, unknown>
+): string | undefined => {
+  const capturedAt = metadata["evidenceCapturedAt"];
+
+  return typeof capturedAt === "string" ? capturedAt : undefined;
+};
+
+const sourceEvidenceFreshnessFromMetadata = (
+  metadata: Record<string, unknown>
+): SourceDecisionEvidenceFreshness => {
+  const freshness = metadata["evidenceFreshness"];
+
+  return freshness === "current" || freshness === "stale" || freshness === "unknown"
+    ? freshness
+    : "unknown";
+};
+
+const sourceEvidenceProvenanceFromMetadata = (
+  metadata: Record<string, unknown>
+): SourceDecisionEvidenceProvenance | undefined => {
+  const value = metadata["evidenceProvenance"];
+
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const candidate: Record<string, unknown> = Object.fromEntries(
+    Object.entries(value)
+  );
+
+  const kind = candidate.kind;
+
+  if (
+    (kind !== "local_file" && kind !== "source_artifact" && kind !== "source_snapshot") ||
+    typeof candidate.uri !== "string"
+  ) {
+    return undefined;
+  }
+
+  return {
+    kind,
+    uri: candidate.uri,
+    ...(typeof candidate.path === "string" ? { path: candidate.path } : {}),
+    ...(typeof candidate.sourceArtifactId === "string" ? { sourceArtifactId: candidate.sourceArtifactId } : {}),
+    ...(typeof candidate.sourceSnapshotId === "string" ? { sourceSnapshotId: candidate.sourceSnapshotId } : {})
+  };
+};
+
+const sourceEvidenceReasonFromMetadata = (
+  metadata: Record<string, unknown>
+): string | undefined => {
+  const reason = metadata["evidenceReason"];
+
+  return typeof reason === "string" ? reason : undefined;
 };
 
 export class DrizzleSourceDecisionImportRepository implements SourceDecisionImportRepository {
@@ -262,11 +322,24 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       status: "complete",
       row: {
         decisionId: input.decisionId,
+        evidenceRef: typeof row.sourceArtifact.metadata["evidenceRef"] === "string"
+          ? row.sourceArtifact.metadata["evidenceRef"]
+          : row.sourceArtifact.uri,
         contentHash: row.sourceArtifact.contentHash,
         evidenceStatus: sourceEvidenceStatusFromMetadata(row.sourceArtifact.metadata),
         ...(evidenceContentHash === undefined
           ? {}
           : { evidenceContentHash }),
+        ...(sourceEvidenceCapturedAtFromMetadata(row.sourceArtifact.metadata) === undefined
+          ? {}
+          : { evidenceCapturedAt: sourceEvidenceCapturedAtFromMetadata(row.sourceArtifact.metadata) }),
+        evidenceFreshness: sourceEvidenceFreshnessFromMetadata(row.sourceArtifact.metadata),
+        ...(sourceEvidenceProvenanceFromMetadata(row.sourceArtifact.metadata) === undefined
+          ? {}
+          : { evidenceProvenance: sourceEvidenceProvenanceFromMetadata(row.sourceArtifact.metadata) }),
+        ...(sourceEvidenceReasonFromMetadata(row.sourceArtifact.metadata) === undefined
+          ? {}
+          : { evidenceReason: sourceEvidenceReasonFromMetadata(row.sourceArtifact.metadata) }),
         sourceArtifactId: row.sourceArtifact.id,
         sourceChunkId: row.sourceChunk.id,
         sourceClaimId: row.sourceClaim.id,

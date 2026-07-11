@@ -5,6 +5,54 @@
   "topK": 3,
   "minimumKrnWinRate": 0.75,
   "maximumNotesWinRate": 0,
+  "coverageScope": {
+    "declaredRows": [
+      {
+        "decisionId": "decision-corpus-import-path",
+        "evidenceRefs": ["run-evidence/2026-07-06-codex-decision-packet-obedience-we82.md"]
+      },
+      {
+        "decisionId": "db-backed-decision-corpus-import",
+        "evidenceRefs": ["run-evidence/2026-07-06-decision-corpus-import-db-kj09.md"]
+      },
+      {
+        "decisionId": "live-codex-packet-obedience-pilot",
+        "evidenceRefs": ["run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md"]
+      },
+      {
+        "decisionId": "third-repo-portability-before-breadth",
+        "evidenceRefs": ["run-evidence/2026-07-06-third-repo-portability-79cm.md"]
+      },
+      {
+        "decisionId": "anti-vanity-naming-source-backed",
+        "evidenceRefs": ["run-evidence/2026-07-06-naming-api-surface-81i0.md"]
+      },
+      {
+        "decisionId": "memory-first-research-intake-loop",
+        "evidenceRefs": ["https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design"]
+      },
+      {
+        "decisionId": "manual-fixture-editing-only",
+        "evidenceRefs": ["KRN_ROADMAP.md"]
+      },
+      {
+        "decisionId": "recorded-obedience-proves-live-codex",
+        "evidenceRefs": ["run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md"]
+      },
+      {
+        "decisionId": "import-without-link-validation",
+        "evidenceRefs": ["KRN_ROADMAP.md:65"]
+      },
+      {
+        "decisionId": "product-readiness-from-live-pilot",
+        "evidenceRefs": ["run-evidence/2026-07-06-live-codex-decision-packet-obedience-9u9w.md"]
+      },
+      {
+        "decisionId": "research-link-as-authority",
+        "evidenceRefs": ["KRN_ROADMAP.md#decision-rule"]
+      }
+    ]
+  },
   "decisions": [
     {
       "id": "decision-corpus-import-path",

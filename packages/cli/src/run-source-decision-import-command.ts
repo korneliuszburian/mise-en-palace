@@ -26,6 +26,11 @@ import type {
   CliCommand
 } from "./parse-args.js";
 import {
+  evaluateSourceCoverage,
+  type SourceCoverageEvidence,
+  type SourceCoverageReport
+} from "./source-coverage.js";
+import {
   parseDecisionCorpusImportFixture
 } from "./internal/eval/run-decision-corpus-import.js";
 import type {
@@ -63,6 +68,7 @@ interface LoadedSourceDecisionImportFixture {
 interface PersistedSourceDecisionImport {
   readonly projectId: string;
   readonly rows: readonly PersistedSourceDecisionImportRow[];
+  readonly coverage: SourceCoverageReport;
 }
 
 const importReadbackDoesNotProve = [
@@ -116,6 +122,7 @@ const summarizeRows = (
   rows.map((row) => [
     `- ${row.decisionId}:`,
     `evidence=${row.evidenceStatus}`,
+    `freshness=${row.evidenceFreshness}`,
     `sourceClaim=${row.sourceClaimId}`,
     `sourceDecision=${row.sourceDecisionId}`,
     ...(row.sourceDecisionEdgeId === undefined ? [] : [`sourceDecisionEdge=${row.sourceDecisionEdgeId}`]),
@@ -123,11 +130,24 @@ const summarizeRows = (
     ...(row.sourceRejectionId === undefined ? [] : [`sourceRejection=${row.sourceRejectionId}`])
   ].join(" "));
 
+const coverageFor = (
+  fixture: DecisionCorpusImportFixture,
+  evidence: readonly SourceCoverageEvidence[]
+): SourceCoverageReport => evaluateSourceCoverage({
+  ...(fixture.coverageScope === undefined ? {} : { scope: fixture.coverageScope }),
+  evidence
+});
+
+const previewCoverageFor = (
+  fixture: DecisionCorpusImportFixture
+): SourceCoverageReport => coverageFor(fixture, []);
+
 const formatSourceDecisionImportText = (
   input: {
     readonly persistenceLabel: string;
     readonly filePath: string;
     readonly fixture: DecisionCorpusImportFixture;
+    readonly coverage: SourceCoverageReport;
     readonly projectId?: string;
     readonly rows?: readonly PersistedSourceDecisionImportRow[];
   }
@@ -149,11 +169,12 @@ const formatSourceDecisionImportText = (
           "Persisted rows:",
           ...summarizeRows(input.rows)
         ]),
+    `coverage: ${input.coverage.status} (declaredRows=${input.coverage.declaredRowCount}, capturedRows=${input.coverage.capturedRowCount}, missingRows=${input.coverage.missingRowCount}, declaredEvidenceRefs=${input.coverage.declaredEvidenceRefCount}, capturedEvidenceRefs=${input.coverage.capturedEvidenceRefCount}, missingEvidenceRefs=${input.coverage.missingEvidenceRefCount}, mismatchedEvidenceRefs=${input.coverage.mismatchedEvidenceRefCount}, externallyUnverified=${input.coverage.externallyUnverifiedEvidenceRefCount})`,
     "",
     "Proof:",
     "- compact source-to-decision rows parsed unknown-first and validated before store writes",
     "- current/stale/rejected import statuses map to existing source/retrieval rows",
-    `doesNotProve: ${importReadbackDoesNotProve.join(", ")}`
+    `doesNotProve: ${[...importReadbackDoesNotProve, ...input.coverage.doesNotProve].join(", ")}`
   ].join("\n");
 };
 
@@ -162,6 +183,7 @@ const formatSourceDecisionImportJson = (
     readonly persisted: boolean;
     readonly filePath: string;
     readonly fixture: DecisionCorpusImportFixture;
+    readonly coverage: SourceCoverageReport;
     readonly projectId?: string;
     readonly rows?: readonly PersistedSourceDecisionImportRow[];
   }
@@ -172,13 +194,14 @@ const formatSourceDecisionImportJson = (
   file: input.filePath,
   corpusName: input.fixture.corpusName,
   counts: sourceDecisionImportCounts(input.fixture),
+  coverage: input.coverage,
   ...(input.rows === undefined ? {} : { rows: input.rows }),
   proof: {
     proves: [
       "compact source-to-decision rows parsed unknown-first and validated before store writes",
       "current/stale/rejected import statuses map to existing source/retrieval rows"
     ],
-    doesNotProve: importReadbackDoesNotProve
+    doesNotProve: [...importReadbackDoesNotProve, ...input.coverage.doesNotProve]
   }
 }, null, 2);
 
@@ -191,12 +214,14 @@ const previewSourceDecisionImport = (
         persisted: false,
         filePath: loaded.filePath,
         fixture: loaded.fixture,
+        coverage: previewCoverageFor(loaded.fixture),
         ...(command.projectId === undefined ? {} : { projectId: command.projectId })
       })
     : formatSourceDecisionImportText({
         persistenceLabel: noStorePreviewLabel,
         filePath: loaded.filePath,
         fixture: loaded.fixture,
+        coverage: previewCoverageFor(loaded.fixture),
         ...(command.projectId === undefined ? {} : { projectId: command.projectId })
       });
 
@@ -236,7 +261,17 @@ const persistLoadedSourceDecisionImport = async (
 
   return {
     projectId,
-    rows
+    rows,
+    coverage: coverageFor(loaded.fixture, rows.map((row) => ({
+      decisionId: row.decisionId,
+      evidenceRef: row.evidenceRef,
+      status: row.evidenceStatus,
+      ...(row.evidenceCapturedAt === undefined ? {} : { capturedAt: row.evidenceCapturedAt }),
+      ...(row.evidenceContentHash === undefined ? {} : { contentHash: row.evidenceContentHash }),
+      freshness: row.evidenceFreshness,
+      ...(row.evidenceProvenance === undefined ? {} : { provenance: row.evidenceProvenance }),
+      ...(row.evidenceReason === undefined ? {} : { reason: row.evidenceReason })
+    })))
   };
 };
 
@@ -251,14 +286,16 @@ const formatPersistedSourceDecisionImport = (
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         projectId: persisted.projectId,
-        rows: persisted.rows
+        rows: persisted.rows,
+        coverage: persisted.coverage
       })
     : formatSourceDecisionImportText({
         persistenceLabel: postgresPersistedLabel,
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         projectId: persisted.projectId,
-        rows: persisted.rows
+        rows: persisted.rows,
+        coverage: persisted.coverage
       });
 
 export const runSourceDecisionImportCommand = async (

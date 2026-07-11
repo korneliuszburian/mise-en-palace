@@ -8,6 +8,7 @@ import type {
   SourceDecision
 } from "@krn/core";
 import type {
+  SourceDecisionEvidenceFreshness,
   SourceDecisionEvidenceLookup,
   SourceDecisionImportLookup,
   SourceDecisionImportReadback,
@@ -50,9 +51,14 @@ interface SourceDecisionImportRepositories {
 
 interface PreparedSourceDecisionImportRow {
   readonly row: DecisionCorpusImportRow;
+  readonly evidenceRef: string;
   readonly metadata: Record<string, unknown>;
   readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
   readonly evidenceContentHash?: string;
+  readonly evidenceCapturedAt?: string;
+  readonly evidenceFreshness: SourceDecisionEvidenceFreshness;
+  readonly evidenceProvenance?: SourceDecisionEvidenceLookup["provenance"];
+  readonly evidenceReason?: string;
   readonly uri: string;
   readonly artifactContentHash: string;
   readonly chunkContent: string;
@@ -61,8 +67,13 @@ interface PreparedSourceDecisionImportRow {
 
 export interface PersistedSourceDecisionImportRow {
   readonly decisionId: string;
+  readonly evidenceRef: string;
   readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
   readonly evidenceContentHash?: string;
+  readonly evidenceCapturedAt?: string;
+  readonly evidenceFreshness: SourceDecisionEvidenceFreshness;
+  readonly evidenceProvenance?: SourceDecisionEvidenceLookup["provenance"];
+  readonly evidenceReason?: string;
   readonly sourceArtifactId: string;
   readonly sourceChunkId: string;
   readonly sourceClaimId: string;
@@ -185,7 +196,8 @@ const metadataForRow = (
   ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
   ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
   ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
-  ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason })
+  ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),
+  evidenceFreshness: evidence.freshness ?? "unknown"
 });
 
 const parseLocalEvidencePath = (evidenceRef: string, decisionId: string): string => {
@@ -335,6 +347,7 @@ const resolveLocalEvidence = async (input: {
     content,
     contentHash: contentHash(content),
     capturedAt: input.now,
+    freshness: "unknown",
     provenance: {
       kind: "local_file",
       uri: `file://${resolved.resolvedPath}`,
@@ -443,6 +456,10 @@ const prepareImportRows = async (
     evidenceContentHash: evidence.contentHash ?? null,
     evidenceRef,
     evidenceStatus: evidence.status,
+    ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
+    evidenceFreshness: evidence.freshness ?? "unknown",
+    ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
+    ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),
     falsifier: normalizeImportText(row.falsifier),
     noteText: normalizeImportText(row.noteText),
     status: row.status,
@@ -457,9 +474,14 @@ const prepareImportRows = async (
 
   return {
     row,
+    evidenceRef,
     metadata: metadataForRow(input, row, evidence),
     evidenceStatus: evidence.status,
     ...(evidence.contentHash === undefined ? {} : { evidenceContentHash: evidence.contentHash }),
+    ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
+    evidenceFreshness: evidence.freshness ?? "unknown",
+    ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
+    ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),
     uri: `source-decision-import://${input.importId}/${row.id}`,
     artifactContentHash: contentHash(`krn.source-decision-import.v2\n${normalizedRow}`),
     chunkContent,
@@ -628,7 +650,12 @@ const persistedRowFromReadback = (
   row: SourceDecisionImportReadback
 ): PersistedSourceDecisionImportRow => ({
   decisionId: row.decisionId,
+  evidenceRef: row.evidenceRef,
   evidenceStatus: row.evidenceStatus,
+  ...(row.evidenceCapturedAt === undefined ? {} : { evidenceCapturedAt: row.evidenceCapturedAt }),
+  evidenceFreshness: row.evidenceFreshness ?? "unknown",
+  ...(row.evidenceProvenance === undefined ? {} : { evidenceProvenance: row.evidenceProvenance }),
+  ...(row.evidenceReason === undefined ? {} : { evidenceReason: row.evidenceReason }),
   ...(row.evidenceContentHash === undefined ? {} : { evidenceContentHash: row.evidenceContentHash }),
   sourceArtifactId: row.sourceArtifactId,
   sourceChunkId: row.sourceChunkId,
@@ -766,8 +793,13 @@ const projectScopedImportedSourceClaimReadback = async (input: {
 
 const persistedEvidenceFields = (
   prepared: PreparedSourceDecisionImportRow
-): Pick<PersistedSourceDecisionImportRow, "evidenceStatus" | "evidenceContentHash"> => ({
+): Pick<PersistedSourceDecisionImportRow, "evidenceRef" | "evidenceStatus" | "evidenceContentHash" | "evidenceCapturedAt" | "evidenceFreshness" | "evidenceProvenance" | "evidenceReason"> => ({
+  evidenceRef: prepared.evidenceRef,
   evidenceStatus: prepared.evidenceStatus,
+  ...(prepared.evidenceCapturedAt === undefined ? {} : { evidenceCapturedAt: prepared.evidenceCapturedAt }),
+  evidenceFreshness: prepared.evidenceFreshness,
+  ...(prepared.evidenceProvenance === undefined ? {} : { evidenceProvenance: prepared.evidenceProvenance }),
+  ...(prepared.evidenceReason === undefined ? {} : { evidenceReason: prepared.evidenceReason }),
   ...(prepared.evidenceContentHash === undefined
     ? {}
     : { evidenceContentHash: prepared.evidenceContentHash })

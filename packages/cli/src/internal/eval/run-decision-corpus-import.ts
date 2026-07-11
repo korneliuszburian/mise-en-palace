@@ -36,6 +36,11 @@ import type {
 import type {
   DecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
+import {
+  evaluateSourceCoverage,
+  type SourceCoverageReport,
+  type SourceCoverageScope
+} from "../../source-coverage.js";
 
 export type ImportedDecisionStatus = DecisionCorpusStatus;
 type ImportedDecision = DecisionPacketEvalFixture["decisions"][number];
@@ -70,6 +75,7 @@ export interface DecisionCorpusImportFixture {
   readonly topK: number;
   readonly minimumKrnWinRate: number;
   readonly maximumNotesWinRate: number;
+  readonly coverageScope?: SourceCoverageScope;
   readonly decisions: readonly DecisionCorpusImportRow[];
   readonly cases: readonly DecisionCorpusImportCase[];
 }
@@ -97,6 +103,7 @@ export interface DecisionCorpusImportResult {
   readonly importedDecisionIds: readonly string[];
   readonly importedCaseIds: readonly string[];
   readonly decisionPacketStatus: "pass" | "fail";
+  readonly coverage: SourceCoverageReport;
   readonly proof: {
     readonly proves: readonly string[];
     readonly doesNotProve: readonly string[];
@@ -126,6 +133,32 @@ const parseImportCase = (
   baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
 });
 
+const parseCoverageScope = (
+  value: unknown
+): SourceCoverageScope | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw new Error("coverageScope must be an object");
+  }
+
+  const scope = value;
+  const declaredRows = recordArray(scope["declaredRows"], "coverageScope.declaredRows")
+    .map((row, index) => ({
+      decisionId: stringValue(row["decisionId"], `coverageScope.declaredRows[${index}].decisionId`),
+      evidenceRefs: stringArrayValue(
+        row["evidenceRefs"],
+        `coverageScope.declaredRows[${index}].evidenceRefs`
+      )
+    }));
+
+  assertUniqueIds(declaredRows.map((row) => row.decisionId), "coverage scope rows");
+
+  return { declaredRows };
+};
+
 export const parseDecisionCorpusImportFixture = (
   value: unknown
 ): DecisionCorpusImportFixture => {
@@ -139,6 +172,7 @@ export const parseDecisionCorpusImportFixture = (
 
   const decisions = recordArray(value["decisions"], "decisions").map(parseImportDecision);
   const cases = recordArray(value["cases"], "cases").map(parseImportCase);
+  const coverageScope = parseCoverageScope(value["coverageScope"]);
 
   assertUniqueIds(decisions.map((decision) => decision.id), "import decisions");
   assertUniqueIds(cases.map((testCase) => testCase.id), "import cases");
@@ -150,6 +184,7 @@ export const parseDecisionCorpusImportFixture = (
     topK: numberValue(value["topK"], "topK"),
     minimumKrnWinRate: numberValue(value["minimumKrnWinRate"], "minimumKrnWinRate"),
     maximumNotesWinRate: numberValue(value["maximumNotesWinRate"], "maximumNotesWinRate"),
+    ...(coverageScope === undefined ? {} : { coverageScope }),
     decisions,
     cases
   };
@@ -314,6 +349,17 @@ export const runDecisionCorpusImport = async (
   const status = decisionPacket.status === "pass"
     ? "pass"
     : "fail";
+  const coverage = evaluateSourceCoverage({
+    ...(fixture.coverageScope === undefined ? {} : { scope: fixture.coverageScope }),
+    evidence: fixture.decisions.map((decision) => ({
+      decisionId: decision.id,
+      evidenceRef: decision.evidenceRef,
+      status: decision.evidenceRef.startsWith("http://") || decision.evidenceRef.startsWith("https://")
+        ? "externally_unverified" as const
+        : "missing" as const,
+      freshness: "unknown" as const
+    }))
+  });
 
   return {
     kind: "krn.decisionCorpusImport.v1",
@@ -338,12 +384,14 @@ export const runDecisionCorpusImport = async (
     importedDecisionIds: fixture.decisions.map((decision) => decision.id),
     importedCaseIds: fixture.cases.map((testCase) => testCase.id),
     decisionPacketStatus: decisionPacket.status,
+    coverage,
     proof: {
       proves: [
         "compact source-to-decision import rows can be converted into decision-packet corpus rows",
         "the importer rejects duplicate imported ids and collisions with the base corpus before merge",
         "the importer validates current, stale, and rejected decision links for imported cases",
-        "the merged corpus still passes the decision-packet eval gate"
+        "the merged corpus still passes the decision-packet eval gate",
+        `source coverage is reported as ${coverage.status} against the declared scope only`
       ],
       doesNotProve: [
         "DB ingestion",
@@ -351,7 +399,8 @@ export const runDecisionCorpusImport = async (
         "automatic source promotion",
         "live Codex obedience",
         "arbitrary corpus quality",
-        "product readiness"
+        "product readiness",
+        ...coverage.doesNotProve
       ]
     }
   };
