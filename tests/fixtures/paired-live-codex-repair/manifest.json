@@ -1,0 +1,45 @@
+{
+  "kind": "krn.pairedLiveCodexRepairManifest.v1",
+  "scenario": "weak-json-boundary",
+  "sourcePath": "tests/fixtures/target-repos/weak-json-boundary-typescript",
+  "projectId": "weak-json-boundary-typescript",
+  "taskId": "weak-json-repair",
+  "task": "Repair the weak JSON input and typed result boundary in this controlled TypeScript target.",
+  "requiredDecisionIds": [
+    "weak-json-parse-unknown",
+    "weak-json-result-union",
+    "weak-json-invalid-json-test"
+  ],
+  "runId": "paired-live-codex-repair-current",
+  "codex": {
+    "command": "codex",
+    "args": [
+      "exec",
+      "--model",
+      "gpt-5.6",
+      "--sandbox",
+      "workspace-write",
+      "--ask-for-approval",
+      "never",
+      "{prompt}"
+    ],
+    "cliVersion": "pinned-by-lockfile-and-recorded-version",
+    "profileHash": "manifest-profile-v1",
+    "permissions": "workspace-write-target-only",
+    "networkPolicy": "disabled",
+    "budget": {
+      "maxTokens": 16000,
+      "timeoutMs": 120000
+    }
+  },
+  "containment": {
+    "command": "bwrap",
+    "network": "disabled",
+    "workspaceWriteRoot": "{targetRoot}",
+    "homeRoot": "{sandboxRoot}"
+  },
+  "checker": {
+    "heldOut": true,
+    "outcome": "win|tie|loss|invalid"
+  }
+}
