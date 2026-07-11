@@ -643,7 +643,7 @@ export const retrieveActivationCandidates = async (
   const initialSourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
     input.taskContract.projectId,
     input.limits.source,
-    { terms: sourceQuery.terms, now: activationNow }
+    { terms: sourceQuery.terms, now: activationNow, includeHistorical: true }
   );
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const searchDocumentResolutions = await resolveSearchDocumentAuthority({

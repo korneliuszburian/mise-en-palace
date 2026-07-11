@@ -102,6 +102,7 @@ export interface SourceDecisionKnowledgeSource {
 export interface SourceClaimSelectionOptions {
   terms?: readonly string[];
   now?: string;
+  includeHistorical?: boolean;
 }
 
 export interface RejectedSourceDecisionKnowledgeSource {

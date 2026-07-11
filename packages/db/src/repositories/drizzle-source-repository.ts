@@ -104,6 +104,50 @@ const selectionDate = (value: string | undefined): Date | undefined => {
   return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
 };
 
+const normalizedSelectionTerms = (terms: readonly string[] | undefined): string[] => [...new Set(
+  (terms ?? [])
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length > 0)
+)];
+
+const sourceSearchableText = () => sql`lower(concat_ws(' ',
+  ${sourceClaims.claim},
+  ${sourceClaims.mechanism},
+  ${sourceClaims.krnImplication},
+  ${sourceClaims.doesNotProve},
+  ${sourceClaims.consumer},
+  ${sourceClaims.falsifier}
+))`;
+
+const sourceRelevanceFilter = (
+  terms: readonly string[],
+  searchableText: ReturnType<typeof sourceSearchableText>
+) => terms.length === 0
+  ? undefined
+  : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
+
+const sourceRelevanceScore = (
+  terms: readonly string[],
+  searchableText: ReturnType<typeof sourceSearchableText>
+) => terms.length === 0
+  ? undefined
+  : sql<number>`(${sql.join(
+      terms.map((term) => sql`CASE WHEN strpos(${searchableText}, ${term}) > 0 THEN 1 ELSE 0 END`),
+      sql` + `
+    )})`;
+
+const sourceLifecycleFilter = (includeHistorical: boolean | undefined) =>
+  includeHistorical === true
+    ? undefined
+    : inArray(sourceClaims.status, ["proposed", "accepted"]);
+
+const sourceTemporalFilter = (nowIso: string) => sql`CASE
+  WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
+  WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
+    THEN ${sourceClaims.revisitWhen} > ${nowIso}
+  ELSE false
+END`;
+
 const sourceDecisionEdgeProjection = {
   id: sourceDecisionEdges.id,
   sourceClaimId: sourceDecisionEdges.sourceClaimId,
@@ -667,39 +711,25 @@ export class DrizzleSourceRepository implements SourceRepository {
     }
     const nowIso = now.toISOString();
 
-    const terms = [...new Set(
-      (options?.terms ?? [])
-        .map((term) => term.trim().toLowerCase())
-        .filter((term) => term.length > 0)
-    )];
-    const searchableText = sql`lower(concat_ws(' ',
-      ${sourceClaims.claim},
-      ${sourceClaims.mechanism},
-      ${sourceClaims.krnImplication},
-      ${sourceClaims.doesNotProve},
-      ${sourceClaims.consumer},
-      ${sourceClaims.falsifier}
-    ))`;
-    const relevanceFilter = terms.length === 0
-      ? undefined
-      : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
-    const revisitWhenFilter = sql`CASE
-      WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
-      WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
-        THEN ${sourceClaims.revisitWhen} > ${nowIso}
-      ELSE false
-    END`;
+    const terms = normalizedSelectionTerms(options?.terms);
+    const searchableText = sourceSearchableText();
+    const relevanceFilter = sourceRelevanceFilter(terms, searchableText);
+    const relevanceScore = sourceRelevanceScore(terms, searchableText);
     const rows = await this.db
       .select(sourceClaimProjection)
       .from(sourceClaims)
       .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .where(and(
         eq(sourceArtifacts.projectId, projectId),
-        inArray(sourceClaims.status, ["proposed", "accepted"]),
+        sourceLifecycleFilter(options?.includeHistorical),
         relevanceFilter,
-        revisitWhenFilter
+        sourceTemporalFilter(nowIso)
       ))
-      .orderBy(desc(sourceClaims.updatedAt), asc(sourceClaims.id))
+      .orderBy(
+        ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),
+        desc(sourceClaims.updatedAt),
+        asc(sourceClaims.id)
+      )
       .limit(limit);
 
     return rows.map(mapSourceClaim);
