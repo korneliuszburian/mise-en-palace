@@ -78,7 +78,8 @@ export const runDbReadinessCommand = async (
       databaseUrl,
       migrationsFolder
     });
-    const ready = report.migrationsVerified && report.pgvectorAvailable;
+    const sourceAuthorityIntegrityReady = report.sourceAuthorityIntegrity?.integrityReady === true;
+    const ready = report.migrationsVerified && report.pgvectorAvailable && sourceAuthorityIntegrityReady;
 
     return {
       exitCode: ready ? 0 : 1,
@@ -98,13 +99,22 @@ export const runDbReadinessCommand = async (
         `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
         `pgvector: ${report.pgvectorAvailable ? "available" : "missing"}`,
         `pgvector version: ${report.pgvectorVersion ?? "not installed"}`,
+        `Source authority integrity: ${sourceAuthorityIntegrityReady ? "clean" : "blocked"}`,
+        ...(report.sourceAuthorityIntegrity === undefined
+          ? []
+          : [
+              `Source authority violations: ${report.sourceAuthorityIntegrity.violationCount}`,
+              ...report.sourceAuthorityIntegrity.violations.map((violation) =>
+                `Source authority violation: ${violation.id} (${violation.detail})`
+              )
+            ]),
         ...(ready
           ? []
           : [
               `Next action: ${connectedButNotReadyRecovery()}`,
-              "Does not prove: a reachable database is not ready until migrations and pgvector are ready"
+              "Does not prove: a reachable database is not ready until migrations, pgvector, and source authority integrity are ready"
             ]),
-        `Memory store readiness: ${ready ? "ready" : "blocked (pgvector and migrations must be ready)"}`
+        `Memory store readiness: ${ready ? "ready" : "blocked (migrations, pgvector, and source authority integrity must be ready)"}`
       ].join("\n") + "\n")
     };
   } catch (error) {

@@ -1,0 +1,279 @@
+import postgres, { type Sql, type TransactionSql } from "postgres";
+
+import { inspectDatabaseRequiredTables } from "./readiness-support.js";
+
+export type SourceAuthorityIntegrityViolationKind =
+  | "project_mismatch"
+  | "missing_terminal_review"
+  | "conflicting_terminal_review"
+  | "claim_decision_status_mismatch"
+  | "governing_edge_without_current_reviewed_decision"
+  | "active_search_without_canonical_authority"
+  | "incomplete_import_lifecycle"
+  | "captured_evidence_missing_or_mismatched";
+
+export interface SourceAuthorityIntegrityViolation {
+  id: string;
+  kind: SourceAuthorityIntegrityViolationKind;
+  subjectId: string;
+  detail: string;
+}
+
+export interface SourceAuthorityIntegrityReadinessInput {
+  databaseUrl: string;
+  storeName?: string;
+  schemaIdentity?: string;
+}
+
+export interface SourceAuthorityIntegrityReadinessReport {
+  storeName: string;
+  schemaIdentity: string;
+  checkedAt: string;
+  requiredTables: readonly string[];
+  presentTables: readonly string[];
+  missingTables: readonly string[];
+  schemaReady: boolean;
+  readOnly: boolean;
+  violationCount: number;
+  violations: readonly SourceAuthorityIntegrityViolation[];
+  integrityReady: boolean;
+}
+
+const requiredSourceAuthorityTables = [
+  "source_artifacts",
+  "source_chunks",
+  "source_claims",
+  "source_decisions",
+  "source_decision_edges",
+  "source_rejections",
+  "search_documents"
+] as const;
+
+type RawViolation = {
+  id: string;
+  kind: SourceAuthorityIntegrityViolationKind;
+  subjectId: string;
+  detail: string;
+};
+
+const violation = (
+  kind: SourceAuthorityIntegrityViolationKind,
+  subjectId: string,
+  detail: string
+): SourceAuthorityIntegrityViolation => ({
+  id: `${kind}:${subjectId}`,
+  kind,
+  subjectId,
+  detail
+});
+
+const inspectViolations = async (
+  client: Sql | TransactionSql
+): Promise<SourceAuthorityIntegrityViolation[]> => {
+  const rows = await client<RawViolation[]>`
+    with
+    project_mismatches as (
+      select
+        'project_mismatch'::text as kind,
+        sd.id::text as subject_id,
+        'SourceDecision project differs from its SourceArtifact project'::text as detail
+      from source_decisions sd
+      join source_claims sc on sc.id = sd.source_claim_id
+      join source_artifacts sa on sa.id = sc.source_artifact_id
+      where sd.project_id is distinct from sa.project_id
+    ),
+    terminal_review_counts as (
+      select
+        sc.id,
+        sc.status,
+        count(sd.id) filter (where sd.status in ('adopt', 'reject', 'defer'))::int as terminal_count,
+        count(sd.id) filter (where sd.status = 'adopt')::int as adopt_count,
+        count(sd.id) filter (where sd.status = 'reject')::int as reject_count,
+        count(sd.id) filter (where sd.status = 'defer')::int as defer_count
+      from source_claims sc
+      left join source_decisions sd on sd.source_claim_id = sc.id
+      group by sc.id, sc.status
+    ),
+    missing_reviews as (
+      select
+        'missing_terminal_review'::text as kind,
+        id::text as subject_id,
+        'terminal SourceClaim status has no matching terminal SourceDecision'::text as detail
+      from terminal_review_counts
+      where status in ('accepted', 'rejected', 'deprecated') and terminal_count = 0
+    ),
+    conflicting_reviews as (
+      select
+        'conflicting_terminal_review'::text as kind,
+        id::text as subject_id,
+        'SourceClaim has multiple or contradictory terminal SourceDecisions'::text as detail
+      from terminal_review_counts
+      where terminal_count > 1 or (adopt_count > 0 and reject_count > 0)
+    ),
+    status_mismatches as (
+      select
+        'claim_decision_status_mismatch'::text as kind,
+        trc.id::text as subject_id,
+        'SourceClaim lifecycle status does not match its terminal SourceDecision'::text as detail
+      from terminal_review_counts trc
+      where
+        (trc.status = 'accepted' and (trc.adopt_count <> 1 or trc.terminal_count <> 1)) or
+        (trc.status = 'deprecated' and (trc.defer_count <> 1 or trc.terminal_count <> 1)) or
+        (trc.status = 'rejected' and (trc.reject_count <> 1 or trc.terminal_count <> 1))
+    ),
+    invalid_edges as (
+      select
+        'governing_edge_without_current_reviewed_decision'::text as kind,
+        sde.id::text as subject_id,
+        'SourceDecisionEdge is not linked to the same-project adopted reviewed decision'::text as detail
+      from source_decision_edges sde
+      left join source_claims sc on sc.id = sde.source_claim_id
+      left join source_artifacts sa on sa.id = sc.source_artifact_id
+      left join source_decisions sd on sd.id = sde.source_decision_id
+      where
+        sde.source_decision_id is null or
+        sc.id is null or
+        sa.id is null or
+        sd.id is null or
+        sd.source_claim_id is distinct from sc.id or
+        sd.status <> 'adopt' or
+        sc.status <> 'accepted' or
+        sd.project_id is distinct from sa.project_id
+    ),
+    invalid_search as (
+      select
+        'active_search_without_canonical_authority'::text as kind,
+        sd.id::text as subject_id,
+        'active source SearchDocument has no same-project current canonical authority'::text as detail
+      from search_documents sd
+      left join source_claims sc on sc.id = sd.source_claim_id
+      left join source_artifacts sa on sa.id = sc.source_artifact_id
+      left join source_decisions decision on decision.id = sd.source_decision_id
+      where
+        sd.validity_status = 'active' and
+        (sd.source_claim_id is not null or sd.source_decision_id is not null) and
+        (
+          sc.id is null or
+          sa.id is null or
+          decision.id is null or
+          decision.source_claim_id is distinct from sc.id or
+          decision.status <> 'adopt' or
+          sc.status <> 'accepted' or
+          sd.project_id is distinct from sa.project_id or
+          decision.project_id is distinct from sa.project_id
+        )
+    ),
+    incomplete_imports as (
+      select distinct
+        'incomplete_import_lifecycle'::text as kind,
+        sa.id::text as subject_id,
+        'imported SourceArtifact is missing a complete status-aware lifecycle'::text as detail
+      from source_artifacts sa
+      left join source_chunks chunk on chunk.source_artifact_id = sa.id and chunk.ordinal = 0
+      left join source_claims sc on sc.source_artifact_id = sa.id
+      left join source_decisions decision on decision.source_claim_id = sc.id
+      left join source_decision_edges edge on edge.source_claim_id = sc.id and edge.source_decision_id = decision.id
+      left join search_documents search on search.source_artifact_id = sa.id
+      left join source_rejections rejection on rejection.source_artifact_id = sa.id and rejection.source_claim_id = sc.id
+      where sa.import_id is not null and (
+        chunk.id is null or
+        sc.id is null or
+        decision.id is null or
+        (sa.metadata->>'decisionCorpusStatus' = 'current' and (
+          decision.status <> 'adopt' or sc.status <> 'accepted' or edge.id is null or search.id is null or search.validity_status <> 'active'
+        )) or
+        (sa.metadata->>'decisionCorpusStatus' = 'stale' and (
+          decision.status <> 'defer' or sc.status <> 'deprecated' or edge.id is not null or search.id is null or search.validity_status <> 'expired'
+        )) or
+        (sa.metadata->>'decisionCorpusStatus' = 'rejected' and (
+          decision.status <> 'reject' or sc.status <> 'rejected' or rejection.id is null or search.id is not null
+        ))
+      )
+    ),
+    invalid_evidence as (
+      select
+        'captured_evidence_missing_or_mismatched'::text as kind,
+        decision.id::text as subject_id,
+        'governing SourceDecision does not carry matching captured evidence provenance'::text as detail
+      from source_decisions decision
+      join source_claims sc on sc.id = decision.source_claim_id
+      join source_artifacts sa on sa.id = sc.source_artifact_id
+      left join source_chunks chunk on chunk.source_artifact_id = sa.id and chunk.ordinal = 0
+      where decision.status = 'adopt' and (
+        coalesce(decision.metadata->>'evidenceStatus', '') <> 'captured' or
+        nullif(decision.metadata->>'evidenceContentHash', '') is null or
+        decision.metadata->>'evidenceContentHash' is distinct from sc.metadata->>'evidenceContentHash' or
+        decision.metadata->>'evidenceContentHash' is distinct from sa.metadata->>'evidenceContentHash' or
+        decision.metadata->>'evidenceContentHash' is distinct from chunk.metadata->>'evidenceContentHash'
+      )
+    )
+    select
+      concat(kind, ':', subject_id) as id,
+      kind,
+      subject_id as "subjectId",
+      detail
+    from (
+      select * from project_mismatches
+      union all select * from missing_reviews
+      union all select * from conflicting_reviews
+      union all select * from status_mismatches
+      union all select * from invalid_edges
+      union all select * from invalid_search
+      union all select * from incomplete_imports
+      union all select * from invalid_evidence
+    ) violations
+    order by kind, subject_id
+  `;
+
+  return rows.map((row) => violation(row.kind, row.subjectId, row.detail));
+};
+
+export const inspectSourceAuthorityIntegrity = async (
+  input: SourceAuthorityIntegrityReadinessInput
+): Promise<SourceAuthorityIntegrityReadinessReport> => {
+  const databaseUrl = input.databaseUrl.trim();
+
+  if (databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for source authority integrity readiness");
+  }
+
+  const client = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+  const checkedAt = new Date().toISOString();
+
+  try {
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredSourceAuthorityTables);
+    if (!tableInspection.schemaReady) {
+      return {
+        storeName: input.storeName ?? "postgres",
+        schemaIdentity: input.schemaIdentity ?? "unknown",
+        checkedAt,
+        ...tableInspection,
+        readOnly: true,
+        violationCount: 0,
+        violations: [],
+        integrityReady: false
+      };
+    }
+
+    return await client.begin(async (tx) => {
+      await tx`set transaction read only`;
+      const readOnlyRows = await tx<{ readOnly: string }[]>`
+        select current_setting('transaction_read_only') as "readOnly"
+      `;
+      const violations = await inspectViolations(tx);
+
+      return {
+        storeName: input.storeName ?? "postgres",
+        schemaIdentity: input.schemaIdentity ?? "unknown",
+        checkedAt,
+        ...tableInspection,
+        readOnly: readOnlyRows[0]?.readOnly === "on",
+        violationCount: violations.length,
+        violations,
+        integrityReady: readOnlyRows[0]?.readOnly === "on" && violations.length === 0
+      };
+    });
+  } finally {
+    await client.end();
+  }
+};

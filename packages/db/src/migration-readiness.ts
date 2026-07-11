@@ -4,6 +4,10 @@ import postgres from "postgres";
 import type { Sql } from "postgres";
 
 import { createKrnDatabase } from "./database.js";
+import {
+  inspectSourceAuthorityIntegrity,
+  type SourceAuthorityIntegrityReadinessReport
+} from "./source-authority-integrity-readiness.js";
 
 export interface MigrationReadinessInput {
   databaseUrl: string;
@@ -39,6 +43,7 @@ export interface MigrationReadinessReport {
   pgvectorAvailable: boolean;
   postgresServerVersion: string;
   pgvectorVersion?: string;
+  sourceAuthorityIntegrity?: SourceAuthorityIntegrityReadinessReport;
 }
 
 const migrationIdentityKey = (identity: MigrationIdentity): string =>
@@ -214,6 +219,16 @@ export const runMigrationReadinessCheck = async (
       migrationsFolder: input.migrationsFolder
     });
 
-    return await inspectMigrationState(client, input.migrationsFolder);
+    const report = await inspectMigrationState(client, input.migrationsFolder);
+    const sourceAuthorityIntegrity = await inspectSourceAuthorityIntegrity({
+      databaseUrl: input.databaseUrl,
+      storeName: "postgres",
+      schemaIdentity: `${report.migrationIdentityStatus}:${report.appliedMigrationCount}/${report.expectedMigrationCount}`
+    });
+
+    return {
+      ...report,
+      sourceAuthorityIntegrity
+    };
   }
 );
