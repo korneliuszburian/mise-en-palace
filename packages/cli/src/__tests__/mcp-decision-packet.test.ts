@@ -195,17 +195,51 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const runtime = (
   handler: DecisionPacketMcpRuntime["runDecisionPacket"] = async () => ({
     stdout: `${JSON.stringify(packetJson)}\n`
-  })
+  }),
+  initialized = true
 ): DecisionPacketMcpRuntime => ({
   env: {
     KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
   },
   now: () => now,
   createId: (prefix) => `${prefix}:test`,
+  session: { initialized },
   runDecisionPacket: handler
 });
 
 describe("DecisionPacket MCP wrapper", () => {
+  it("requires the pinned initialize lifecycle before tools are available", async () => {
+    const sessionRuntime = runtime(undefined, false);
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "before-init",
+      method: "tools/list"
+    }, sessionRuntime)).resolves.toMatchObject({
+      error: {
+        code: -32002,
+        message: "Server not initialized"
+      }
+    });
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "initialize",
+      method: "initialize",
+      params: { protocolVersion: "2025-06-18" }
+    }, sessionRuntime)).resolves.toMatchObject({
+      result: { protocolVersion: "2025-06-18" }
+    });
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "after-init",
+      method: "tools/list"
+    }, sessionRuntime)).resolves.toMatchObject({
+      result: { tools: [{ name: "krn_decision_packet" }] }
+    });
+  });
+
   it("advertises a tools-only MCP wrapper and the decision packet tool", async () => {
     const initialized = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
@@ -330,7 +364,7 @@ describe("DecisionPacket MCP wrapper", () => {
       id: "initialize-missing-version",
       error: {
         code: -32602,
-        message: "initialize requires a protocolVersion"
+        message: "initialize requires protocolVersion 2025-06-18"
       }
     });
 
@@ -433,6 +467,14 @@ describe("DecisionPacket MCP wrapper", () => {
         }
       }
     });
+
+    const result = isRecord(reply) ? reply["result"] : undefined;
+    expect(isRecord(result) ? result["content"] : undefined).toEqual([{
+      type: "text",
+      text: expect.stringContaining("checksum=" + "a".repeat(64))
+    }]);
+    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
+    expect(isRecord(structuredContent) && !("readModel" in structuredContent)).toBe(true);
   });
 
   it("preserves abstention and evidence gaps in structured tool output", async () => {
@@ -502,6 +544,33 @@ describe("DecisionPacket MCP wrapper", () => {
       }
     }, runtime());
 
+    expect(reply).toMatchObject({
+      error: {
+        code: -32602,
+        message: "krn_decision_packet requires a non-empty runId argument"
+      }
+    });
+  });
+
+  it("rejects unknown tool argument properties before packet execution", async () => {
+    let executed = false;
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "extra-argument",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1",
+          mutate: true
+        }
+      }
+    }, runtime(async () => {
+      executed = true;
+      return { stdout: `${JSON.stringify(packetJson)}\n` };
+    }));
+
+    expect(executed).toBe(false);
     expect(reply).toMatchObject({
       error: {
         code: -32602,

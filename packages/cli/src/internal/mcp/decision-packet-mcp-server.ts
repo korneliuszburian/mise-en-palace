@@ -70,10 +70,15 @@ export interface DecisionPacketMcpRuntime {
   readonly env: Record<string, string | undefined>;
   now(): string;
   createId(prefix: string): string;
+  readonly session?: DecisionPacketMcpSession;
   readonly createDatabaseRuntime?: CreateRunShowDatabaseRuntime;
   readonly runDecisionPacket?: (
     runtime: DecisionPacketCommandRuntime
   ) => Promise<DecisionPacketCommandResult>;
+}
+
+export interface DecisionPacketMcpSession {
+  initialized: boolean;
 }
 
 const protocolVersion = "2025-06-18";
@@ -120,11 +125,27 @@ const jsonResult = (
 ): ToolCallResult => ({
   content: [{
     type: "text",
-    text: JSON.stringify(value)
+    text: packetSummary(value)
   }],
   structuredContent: value,
   isError: false
 });
+
+// fallow-ignore-next-line complexity -- bounded text rendering validates several optional packet fields without copying structured payload
+const packetSummary = (value: JsonValue): string => {
+  if (!isJsonObject(value)) {
+    return "KRN DecisionPacket result";
+  }
+
+  const identity = isJsonObject(value["packetIdentity"]) ? value["packetIdentity"] : undefined;
+  const packet = isJsonObject(value["packet"]) ? value["packet"] : undefined;
+  const packetId = identity?.["packetId"];
+  const checksum = identity?.["checksum"];
+  const governing = stringArray(packet?.["governingDecisionIds"]);
+  const gaps = Array.isArray(packet?.["evidenceGaps"]) ? packet["evidenceGaps"].length : 0;
+
+  return `KRN DecisionPacket ${String(packetId ?? "unknown")} checksum=${String(checksum ?? "unknown")} governing=${governing.length} evidenceGaps=${gaps}`;
+};
 
 const isJsonObject = (
   value: JsonValue | undefined
@@ -171,6 +192,28 @@ const annotateMcpTransportProof = (
       )
     }
   };
+};
+
+const boundedReadback = (value: JsonValue): JsonValue => {
+  if (!isJsonObject(value)) {
+    return value;
+  }
+
+  const allowedKeys = new Set([
+    "kind",
+    "access",
+    "mutation",
+    "surface",
+    "request",
+    "packetIdentity",
+    "packet",
+    "returnChannels",
+    "proof"
+  ]);
+
+  return Object.fromEntries(
+    Object.entries(value).filter(([key]) => allowedKeys.has(key))
+  ) as JsonObject;
 };
 
 const response = (
@@ -224,14 +267,10 @@ const toolDefinition = (): JsonValue => ({
 });
 
 const initializeResult = (
-  params: unknown
+  _params: unknown
 ): JsonValue => {
-  const requestedVersion = isRecord(params) && typeof params["protocolVersion"] === "string"
-    ? params["protocolVersion"]
-    : protocolVersion;
-
   return {
-    protocolVersion: requestedVersion === protocolVersion ? requestedVersion : protocolVersion,
+    protocolVersion,
     capabilities: {
       tools: {
         listChanged: false
@@ -267,9 +306,10 @@ const runDecisionPacket = async (
     return textResult("krn decision packet command returned non-JSON tool content", true);
   }
 
-  return jsonResult(annotateMcpTransportProof(parsed));
+  return jsonResult(boundedReadback(annotateMcpTransportProof(parsed)));
 };
 
+// fallow-ignore-next-line complexity -- protocol boundary distinguishes schema, tool, argument, and execution failure channels
 const runToolCall = async (
   runtime: DecisionPacketMcpRuntime,
   params: unknown
@@ -280,6 +320,16 @@ const runToolCall = async (
       error: {
         code: -32602,
         message: "tools/call params must be an object"
+      }
+    };
+  }
+
+  if (Object.keys(params).some((key) => key !== "name" && key !== "arguments")) {
+    return {
+      kind: "protocol_error",
+      error: {
+        code: -32602,
+        message: "tools/call params contain an unknown property"
       }
     };
   }
@@ -296,7 +346,12 @@ const runToolCall = async (
 
   const args = params["arguments"];
 
-  if (!isRecord(args) || typeof args["runId"] !== "string" || args["runId"].trim().length === 0) {
+  if (
+    !isRecord(args) ||
+    Object.keys(args).some((key) => key !== "runId") ||
+    typeof args["runId"] !== "string" ||
+    args["runId"].trim().length === 0
+  ) {
     return {
       kind: "protocol_error",
       error: {
@@ -354,23 +409,32 @@ export const handleDecisionPacketMcpMessage = async (
     return undefined;
   }
 
+  const session = sessionFor(runtime);
+
   switch (message.method) {
     case "initialize":
-      if (!isRecord(message.params) || typeof message.params["protocolVersion"] !== "string") {
+      if (!isRecord(message.params) || message.params["protocolVersion"] !== protocolVersion) {
         return errorResponse(
           requestId(message),
           -32602,
-          "initialize requires a protocolVersion"
+          `initialize requires protocolVersion ${protocolVersion}`
         );
       }
+      session.initialized = true;
       return response(requestId(message), initializeResult(message.params));
     case "ping":
       return response(requestId(message), {});
     case "tools/list":
+      if (!session.initialized) {
+        return errorResponse(requestId(message), -32002, "Server not initialized");
+      }
       return response(requestId(message), {
         tools: [toolDefinition()]
       });
     case "tools/call": {
+      if (!session.initialized) {
+        return errorResponse(requestId(message), -32002, "Server not initialized");
+      }
       const outcome = await runToolCall(runtime, message.params);
       return outcome.kind === "protocol_error"
         ? errorResponse(requestId(message), outcome.error.code, outcome.error.message)
@@ -388,8 +452,26 @@ interface WritableOutput {
 const defaultRuntime = (): DecisionPacketMcpRuntime => ({
   env: process.env,
   now: () => new Date().toISOString(),
-  createId: (prefix) => `${prefix}:${randomUUID()}`
+  createId: (prefix) => `${prefix}:${randomUUID()}`,
+  session: { initialized: false }
 });
+
+const sessions = new WeakMap<object, DecisionPacketMcpSession>();
+
+const sessionFor = (runtime: DecisionPacketMcpRuntime): DecisionPacketMcpSession => {
+  if (runtime.session !== undefined) {
+    return runtime.session;
+  }
+
+  const existing = sessions.get(runtime);
+  if (existing !== undefined) {
+    return existing;
+  }
+
+  const created = { initialized: false };
+  sessions.set(runtime, created);
+  return created;
+};
 
 export const serveDecisionPacketMcpStdio = async (
   input: AsyncIterable<Buffer | string>,
