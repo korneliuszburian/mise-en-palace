@@ -300,6 +300,9 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     }
 
     const evidenceContentHash = sourceEvidenceContentHashFromMetadata(row.sourceArtifact.metadata);
+    const evidenceCapturedAt = sourceEvidenceCapturedAtFromMetadata(row.sourceArtifact.metadata);
+    const evidenceProvenance = sourceEvidenceProvenanceFromMetadata(row.sourceArtifact.metadata);
+    const evidenceReason = sourceEvidenceReasonFromMetadata(row.sourceArtifact.metadata);
     const sourceDecisionEdge = row.sourceDecisionEdge;
     const searchDocument = row.searchDocument;
     const sourceRejection = row.sourceRejection;
@@ -340,16 +343,16 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
         ...(evidenceContentHash === undefined
           ? {}
           : { evidenceContentHash }),
-        ...(sourceEvidenceCapturedAtFromMetadata(row.sourceArtifact.metadata) === undefined
+        ...(evidenceCapturedAt === undefined
           ? {}
-          : { evidenceCapturedAt: sourceEvidenceCapturedAtFromMetadata(row.sourceArtifact.metadata) }),
+          : { evidenceCapturedAt }),
         evidenceFreshness: sourceEvidenceFreshnessFromMetadata(row.sourceArtifact.metadata),
-        ...(sourceEvidenceProvenanceFromMetadata(row.sourceArtifact.metadata) === undefined
+        ...(evidenceProvenance === undefined
           ? {}
-          : { evidenceProvenance: sourceEvidenceProvenanceFromMetadata(row.sourceArtifact.metadata) }),
-        ...(sourceEvidenceReasonFromMetadata(row.sourceArtifact.metadata) === undefined
+          : { evidenceProvenance }),
+        ...(evidenceReason === undefined
           ? {}
-          : { evidenceReason: sourceEvidenceReasonFromMetadata(row.sourceArtifact.metadata) }),
+          : { evidenceReason }),
         sourceArtifactId: row.sourceArtifact.id,
         sourceChunkId: row.sourceChunk.id,
         sourceClaimId: row.sourceClaim.id,

@@ -531,7 +531,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     }
 
     const coverage = evaluateSourceCoverage({
-      scope: fixture.coverageScope,
+      ...(fixture.coverageScope === undefined ? {} : { scope: fixture.coverageScope }),
       evidence: persistedRows.map((row) => ({
         decisionId: row.decisionId,
         evidenceRef: row.evidenceRef,
