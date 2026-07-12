@@ -183,6 +183,17 @@ const runReadbackHarnessCommand = (
   });
 };
 
+const evidencePacketBindingFor = (
+  command: Extract<HarnessCliCommand, { kind: "evidenceCapture" }>
+) => ({
+  ...(command.decisionPacketChecksum === undefined
+    ? {}
+    : { decisionPacketChecksum: command.decisionPacketChecksum }),
+  ...(command.decisionPacketGeneratedAt === undefined
+    ? {}
+    : { decisionPacketGeneratedAt: command.decisionPacketGeneratedAt })
+});
+
 const runEvidenceCliCommand = (
   command: Extract<HarnessCliCommand, { kind: "evidenceCapture" }>,
   context: HarnessCliCommandContext
@@ -194,12 +205,7 @@ const runEvidenceCliCommand = (
     createId: context.createId,
     persist: command.persist,
     ...(command.runId === undefined ? {} : { runId: command.runId }),
-    ...(command.decisionPacketChecksum === undefined
-      ? {}
-      : { decisionPacketChecksum: command.decisionPacketChecksum }),
-    ...(command.decisionPacketGeneratedAt === undefined
-      ? {}
-      : { decisionPacketGeneratedAt: command.decisionPacketGeneratedAt }),
+    ...evidencePacketBindingFor(command),
     ...(command.intendedFiles === undefined ? {} : { intendedFiles: command.intendedFiles }),
     ...(command.commandOutcomes === undefined
       ? {}

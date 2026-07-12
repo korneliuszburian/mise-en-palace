@@ -608,6 +608,33 @@ const requiredEvidenceHandler = (
     };
   };
 
+const packetGeneratedAtEvidenceHandler: EvidenceOptionHandler = (rest, index, state) => {
+  const parsed = parseNonEmptyOption(
+    rest,
+    index,
+    "--decision-packet-generated-at",
+    "--decision-packet-generated-at requires a valid ISO timestamp"
+  );
+
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  if (!Number.isFinite(Date.parse(parsed.value))) {
+    return {
+      ok: false,
+      error: "--decision-packet-generated-at requires a valid ISO timestamp"
+    };
+  }
+
+  state.decisionPacketGeneratedAt = parsed.value;
+
+  return {
+    ok: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
 const allowedEvidenceHandler = (
   optionName: EvidenceOptionName,
   allowed: readonly string[],
@@ -673,13 +700,7 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       state.decisionPacketChecksum = value;
     }
   ),
-  "--decision-packet-generated-at": requiredEvidenceHandler(
-    "--decision-packet-generated-at",
-    "--decision-packet-generated-at requires a valid ISO timestamp",
-    (state, value) => {
-      state.decisionPacketGeneratedAt = value;
-    }
-  ),
+  "--decision-packet-generated-at": packetGeneratedAtEvidenceHandler,
   "--intended-file": requiredEvidenceHandler(
     "--intended-file",
     "--intended-file requires a non-empty path",
@@ -1058,6 +1079,15 @@ const buildTargetEvidence = (
   };
 };
 
+const decisionPacketBindingFor = (state: EvidenceParseState) => ({
+  ...(state.decisionPacketChecksum === undefined
+    ? {}
+    : { decisionPacketChecksum: state.decisionPacketChecksum }),
+  ...(state.decisionPacketGeneratedAt === undefined
+    ? {}
+    : { decisionPacketGeneratedAt: state.decisionPacketGeneratedAt })
+});
+
 export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] !== "capture") {
     return {
@@ -1120,15 +1150,6 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  if (
-    state.decisionPacketGeneratedAt !== undefined &&
-    !Number.isFinite(Date.parse(state.decisionPacketGeneratedAt))
-  ) {
-    return {
-      error: "--decision-packet-generated-at requires a valid ISO timestamp"
-    };
-  }
-
   const targetEvidenceResult = buildTargetEvidence(state);
 
   if (targetEvidenceResult.error !== undefined) {
@@ -1142,10 +1163,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       kind: "evidenceCapture",
       persist: state.persist,
       ...(state.runId === undefined ? {} : { runId: state.runId.trim() }),
-      ...(state.decisionPacketChecksum === undefined ? {} : { decisionPacketChecksum: state.decisionPacketChecksum }),
-      ...(state.decisionPacketGeneratedAt === undefined
-        ? {}
-        : { decisionPacketGeneratedAt: state.decisionPacketGeneratedAt }),
+      ...decisionPacketBindingFor(state),
       ...(state.intendedFiles.length === 0 ? {} : { intendedFiles: state.intendedFiles }),
       ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
       ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),

@@ -1041,6 +1041,18 @@ interface PreparedUsefulnessOutcomes {
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
 }
 
+const callerPacketUsefulnessBinding = (input: {
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+}) => ({
+  ...(input.callerPacketChecksum === undefined
+    ? {}
+    : { callerPacketChecksum: input.callerPacketChecksum }),
+  ...(input.callerPacketGeneratedAt === undefined
+    ? {}
+    : { callerPacketGeneratedAt: input.callerPacketGeneratedAt })
+});
+
 const prepareUsefulnessOutcomes = (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly callerPacketChecksum: string | undefined;
@@ -1074,12 +1086,7 @@ const prepareUsefulnessOutcomes = (input: {
         aggregate: input.aggregate,
         runId: input.runId,
         runtimeProjectId: input.runtimeProjectId,
-        ...(input.callerPacketChecksum === undefined
-          ? {}
-          : { callerPacketChecksum: input.callerPacketChecksum }),
-        ...(input.callerPacketGeneratedAt === undefined
-          ? {}
-          : { callerPacketGeneratedAt: input.callerPacketGeneratedAt }),
+        ...callerPacketUsefulnessBinding(input),
         subjects: usefulnessSubjects
       });
   const downgradeUnauthorized = <T extends {
