@@ -97,6 +97,9 @@ interface SourceDecisionImportOutput {
   readonly importId: string;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
 const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput => {
   const jsonStart = stdout.indexOf('{\n  "kind": "source_decision_import"');
 
@@ -107,8 +110,7 @@ const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput 
   const parsed: unknown = JSON.parse(stdout.slice(jsonStart));
 
   if (
-    typeof parsed !== "object" ||
-    parsed === null ||
+    !isRecord(parsed) ||
     typeof parsed["persistence"] !== "string" ||
     (parsed["persistence"] !== "enabled" && parsed["persistence"] !== "disabled") ||
     typeof parsed["importId"] !== "string"
