@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "baseFixturePath": "tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
+  "corpusName": "source-import-retry-fixture",
+  "topK": 3,
+  "minimumKrnWinRate": 0.75,
+  "maximumNotesWinRate": 0,
+  "coverageScope": {
+    "declaredRows": [
+      {
+        "decisionId": "source-import-retry-fixture",
+        "evidenceRefs": ["KRN_ROADMAP.md"]
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "source-import-retry-fixture",
+      "title": "Source import retry fixture",
+      "statement": "A byte-identical source decision import must retain one semantic graph across retries.",
+      "status": "current",
+      "evidenceRef": "KRN_ROADMAP.md",
+      "falsifier": "The same project and source fixture create multiple imported authority graphs after a lost-response retry.",
+      "doesNotProve": "This fixture does not prove source truth or safe historical duplicate repair.",
+      "noteText": "Source import retry fixture. A byte-identical source decision import must retain one semantic graph across retries."
+    }
+  ],
+  "cases": []
+}

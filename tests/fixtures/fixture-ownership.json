@@ -262,6 +262,16 @@
       "archival": null
     },
     {
+      "path": "tests/fixtures/decision-corpus-ingest/source-import-retry.json",
+      "consumer": "source decision import retry boundary test",
+      "provenance": "repository-owned real-PostgreSQL retry falsifier",
+      "capturedAt": "2026-07-12",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
       "path": "tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json",
       "consumer": "memory advantage eval",
       "provenance": "repository-owned test/eval fixture",
