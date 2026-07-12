@@ -1623,21 +1623,28 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
         "does not expose canonical selected SourceDecision ids"
       );
+    const requiredVerificationCommands = result.evidenceContract.commands.filter(
+      (command) => command.required
+    );
+
+    if (requiredVerificationCommands.length === 0) {
+      throw new Error("DecisionPacket return-loop smoke requires an active required verification command");
+    }
+
     const matchingEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
-      commandOutcomes: [{
-        command: result.evidenceContract.commands.find((command) => command.required)?.command ??
-          result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
+      commandOutcomes: requiredVerificationCommands.map((command, index) => ({
+        command: command.command,
         status: "passed",
         provenance: "command_runner",
         exitCode: 0,
         capturedAt: "2026-07-07T12:00:01.000Z",
-        outputRef: `smoke:${marker}:decision-packet-verification`
-      }],
+        outputRef: `smoke:${marker}:decision-packet-verification:${index}`
+      })),
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
           claimId: helpedFeedbackSource.claimId,

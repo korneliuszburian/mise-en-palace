@@ -126,6 +126,11 @@ export interface BrainLoopSmokeReport {
 }
 
 const now = smokeFixtureClocks.brainLoop.now;
+const requiredEvidenceCommands = [
+  "pnpm typecheck",
+  "pnpm test",
+  "git diff --check"
+] as const;
 const memoryOriginRepoInstallationId = "repo-installation-memory-loop-source";
 const nextRunRepoInstallationId = "repo-installation-memory-loop-consumer";
 const downgradedRunRepoInstallationId = "repo-installation-memory-loop-rejector";
@@ -353,11 +358,7 @@ export const runBrainLoopSmokeCheck = async (
       nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it.",
       metadata: {
         evidenceContract: {
-          commands: [
-            { command: "pnpm typecheck", required: true },
-            { command: "pnpm test", required: true },
-            { command: "git diff --check", required: true }
-          ],
+          commands: requiredEvidenceCommands.map((command) => ({ command, required: true })),
           diffRisk: "high",
           reviewBurden: "DB smoke proof only.",
           rollbackPath: "Delete smoke marker rows."
@@ -405,15 +406,15 @@ export const runBrainLoopSmokeCheck = async (
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
-      commands: [{
-        command: "pnpm typecheck",
-        status: "passed",
-        provenance: "command_runner",
+      commands: requiredEvidenceCommands.map((command, index) => ({
+        command,
+        status: "passed" as const,
+        provenance: "command_runner" as const,
         exitCode: 0,
         capturedAt: new Date(Date.parse(executionRun.updatedAt) + 1000).toISOString(),
-        outputRef: `smoke:${marker}:memory-loop-verification`,
+        outputRef: `smoke:${marker}:memory-loop-verification:${index}`,
         doesNotProve: "This command does not prove product readiness, ranking quality, maintenance execution, or autonomous memory quality."
-      }],
+      })),
       diffRisk: "low",
       reviewBurden: "DB smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
