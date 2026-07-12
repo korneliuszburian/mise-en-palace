@@ -97,6 +97,9 @@ export type CliCommand =
       kind: "dbReadiness";
     }
   | {
+      kind: "dbMigrate";
+    }
+  | {
       kind: "dbSmoke";
       target:
         | "project"
@@ -606,6 +609,7 @@ const usage = [
   "",
   "Internal/dev commands:",
   "krn db --help",
+  "krn db migrate",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|memory-loop|memory-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "  note: DB readiness/smoke commands prove local runtime plumbing only; they are not product workflow or quality authority"

@@ -46,7 +46,7 @@ const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 
 const missingDecisionPacketDatabaseUrlMessage = [
   "KRN_DATABASE_URL is required for krn decision packet",
-  `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:ready before readback`,
+  `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:migrate && pnpm db:ready before readback`,
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
 ].join("\n");
 

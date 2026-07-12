@@ -177,7 +177,7 @@ export const createCapabilityPlan = (input: CreateCapabilityPlanInput): Capabili
     pushRequirement(requirements, {
       kind: "db_migration",
       reason: "Memory/schema tasks that touch persistence require brain-store migration readiness evidence.",
-      requiredEvidence: ["pnpm db:ready", "relevant DB smoke"]
+      requiredEvidence: ["pnpm db:migrate && pnpm db:ready", "relevant DB smoke"]
     });
   }
 

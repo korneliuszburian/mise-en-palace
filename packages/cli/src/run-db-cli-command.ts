@@ -6,6 +6,9 @@ import type {
   CliRuntime
 } from "./run-cli.js";
 import {
+  runDbMigrateCommand
+} from "./run-db-migrate-command.js";
+import {
   runDbReadinessCommand
 } from "./run-db-readiness-command.js";
 import {
@@ -18,6 +21,7 @@ import {
 type DbCliCommand = Extract<
   CliCommand,
   | { kind: "doctor" }
+  | { kind: "dbMigrate" }
   | { kind: "dbReadiness" }
   | { kind: "dbSmoke" }
 >;
@@ -56,12 +60,14 @@ const dbCommandError = (
 
 const isDbCliCommand = (command: CliCommand): command is DbCliCommand => (
   command.kind === "doctor" ||
+  command.kind === "dbMigrate" ||
   command.kind === "dbReadiness" ||
   command.kind === "dbSmoke"
 );
 
 const dbFallbackMessages = {
   doctor: "Unknown doctor error",
+  dbMigrate: "Unknown DB migrate error",
   dbReadiness: "Unknown DB readiness error",
   dbSmoke: "Unknown DB smoke error"
 } satisfies Record<DbCliCommand["kind"], string>;
@@ -79,6 +85,13 @@ const runSelectedDbCommand = async (
 
   if (command.kind === "dbReadiness") {
     return runDbReadinessCommand({
+      env: context.env,
+      cwd: context.cwd
+    });
+  }
+
+  if (command.kind === "dbMigrate") {
+    return runDbMigrateCommand({
       env: context.env,
       cwd: context.cwd
     });

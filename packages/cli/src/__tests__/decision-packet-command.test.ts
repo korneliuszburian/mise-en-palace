@@ -638,6 +638,6 @@ describe("decision packet CLI", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn decision packet");
-    expect(result.stderr).toContain("run pnpm db:ready before readback");
+    expect(result.stderr).toContain("run pnpm db:migrate && pnpm db:ready before readback");
   });
 });

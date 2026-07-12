@@ -9,7 +9,7 @@ import type {
   Sql
 } from "postgres";
 import {
-  runMigrationReadinessCheck,
+  inspectMigrationReadiness,
   smokeFixtureClocks
 } from "@krn/db/dev";
 import {
@@ -1086,7 +1086,7 @@ const assertDecisionPacketConsumerProof = (
 export const runTargetRepoHarnessSmokeCheck = async (
   input: TargetRepoHarnessSmokeInput
 ): Promise<TargetRepoHarnessSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
+  const readiness = await inspectMigrationReadiness({
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder
   });

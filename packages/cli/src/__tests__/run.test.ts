@@ -34,7 +34,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Usage: krn run show --run-id <execution-run-id> [--json]");
     expect(result.stdout).toContain("requires: KRN_DATABASE_URL and a persisted execution run");
-    expect(result.stdout).toContain("verify DB first: pnpm db:ready");
+    expect(result.stdout).toContain("verify DB first: pnpm db:migrate && pnpm db:ready");
   });
 
   it("explains how to unblock run show without database config", async () => {
@@ -44,7 +44,7 @@ describe("runCli", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn run show");
     expect(result.stderr).toContain(
-      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn and run pnpm db:ready before readback"
+      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn and run pnpm db:migrate && pnpm db:ready before readback"
     );
     expect(result.stderr).toContain(
       "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
@@ -128,11 +128,11 @@ describe("runCli", () => {
       },
       {
         args: ["db", "--help"],
-        usage: "Usage: krn db readiness|smoke"
+        usage: "Usage: krn db migrate|readiness|smoke"
       },
       {
         args: ["db", "-h"],
-        usage: "Usage: krn db readiness|smoke"
+        usage: "Usage: krn db migrate|readiness|smoke"
       },
       {
         args: ["memory", "--help"],

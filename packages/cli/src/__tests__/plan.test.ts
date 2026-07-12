@@ -112,7 +112,7 @@ describe("runCli", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn plan --persist");
     expect(result.stderr).toContain(
-      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:ready"
+      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:migrate; pnpm db:ready"
     );
   });
 

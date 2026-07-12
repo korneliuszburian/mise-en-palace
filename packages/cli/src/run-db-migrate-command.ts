@@ -1,13 +1,13 @@
 import path from "node:path";
+
 import {
-  inspectMigrationReadiness
+  migrateDatabase
 } from "@krn/db/dev";
+
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
 import {
-  connectedButNotReadyRecovery,
-  dbBootstrapDoesNotProve,
   missingDbConfigRecovery,
   unreachablePostgresRecovery
 } from "./db-recovery-guidance.js";
@@ -15,36 +15,29 @@ import {
   collectEnvironmentFingerprint,
   environmentFingerprintLines
 } from "./environment-fingerprint.js";
+import {
+  redactedPostgresEndpoint
+} from "./run-db-readiness-command.js";
 
-export interface DbReadinessRuntime {
+export interface DbMigrateRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
 }
 
-export interface DbReadinessResult {
+export interface DbMigrateResult {
   exitCode: number;
   stdout: string;
 }
 
 const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : "unknown DB readiness error";
+  error instanceof Error ? error.message : "unknown DB migration error";
 
-export const redactedPostgresEndpoint = (databaseUrl: string): string => {
-  try {
-    const parsed = new URL(databaseUrl);
-    parsed.username = "";
-    parsed.password = "";
-    parsed.search = "";
-    parsed.hash = "";
-    return parsed.toString();
-  } catch {
-    return "unparseable KRN_DATABASE_URL";
-  }
-};
+const migrationDoesNotProve =
+  "applying migrations does not prove source authority integrity, data correctness, backups, or product readiness";
 
-export const runDbReadinessCommand = async (
-  runtime: DbReadinessRuntime
-): Promise<DbReadinessResult> => {
+export const runDbMigrateCommand = async (
+  runtime: DbMigrateRuntime
+): Promise<DbMigrateResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
@@ -52,7 +45,7 @@ export const runDbReadinessCommand = async (
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot,
     databaseUrl,
-    evaluatorVersion: "db-readiness.v1"
+    evaluatorVersion: "db-migrate.v1"
   });
   const attachFingerprint = (stdout: string): string =>
     `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
@@ -61,33 +54,31 @@ export const runDbReadinessCommand = async (
     return {
       exitCode: 1,
       stdout: attachFingerprint([
-        "KRN DB Readiness",
+        "KRN DB Migrate",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "DB mode: preview/no-DB",
         "Postgres config: missing KRN_DATABASE_URL",
         `Next action: ${missingDbConfigRecovery()}`,
-        `Does not prove: ${dbBootstrapDoesNotProve}`,
-        "Memory store readiness: blocked (database not configured)"
+        `Does not prove: ${migrationDoesNotProve}`
       ].join("\n") + "\n")
     };
   }
 
   try {
-    const report = await inspectMigrationReadiness({
+    const report = await migrateDatabase({
       databaseUrl,
       migrationsFolder
     });
-    const sourceAuthorityIntegrityReady = report.sourceAuthorityIntegrity?.integrityReady === true;
-    const ready = report.migrationsVerified && report.pgvectorAvailable && sourceAuthorityIntegrityReady;
+    const migrated = report.migrationsVerified && report.pgvectorAvailable;
 
     return {
-      exitCode: ready ? 0 : 1,
+      exitCode: migrated ? 0 : 1,
       stdout: attachFingerprint([
-        "KRN DB Readiness",
+        "KRN DB Migrate",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
-        `DB mode: ${ready ? "ready" : "connected but not ready"}`,
+        `DB mode: ${migrated ? "migrations applied" : "connected but migration incomplete"}`,
         "Postgres config: configured",
         `Postgres endpoint: ${redactedPostgresEndpoint(databaseUrl)}`,
         "Postgres: reachable",
@@ -99,38 +90,22 @@ export const runDbReadinessCommand = async (
         `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
         `pgvector: ${report.pgvectorAvailable ? "available" : "missing"}`,
         `pgvector version: ${report.pgvectorVersion ?? "not installed"}`,
-        `Source authority integrity: ${sourceAuthorityIntegrityReady ? "clean" : "blocked"}`,
-        ...(report.sourceAuthorityIntegrity === undefined
-          ? []
-          : [
-              `Source authority violations: ${report.sourceAuthorityIntegrity.violationCount}`,
-              ...report.sourceAuthorityIntegrity.violations.map((violation) =>
-                `Source authority violation: ${violation.id} (${violation.detail})`
-              )
-            ]),
-        ...(ready
-          ? []
-          : [
-              `Next action: ${connectedButNotReadyRecovery()}`,
-              "Does not prove: a reachable database is not ready until migrations, pgvector, and source authority integrity are ready"
-            ]),
-        `Memory store readiness: ${ready ? "ready" : "blocked (migrations, pgvector, and source authority integrity must be ready)"}`
+        `Does not prove: ${migrationDoesNotProve}`
       ].join("\n") + "\n")
     };
   } catch (error) {
     return {
       exitCode: 1,
       stdout: attachFingerprint([
-        "KRN DB Readiness",
+        "KRN DB Migrate",
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
-        "DB mode: configured but unreachable",
+        "DB mode: configured but migration failed",
         "Postgres config: configured",
         `Postgres endpoint: ${redactedPostgresEndpoint(databaseUrl)}`,
-        `Postgres/migrations: failed (${errorMessage(error)})`,
+        `Postgres/migrate: failed (${errorMessage(error)})`,
         `Next action: ${unreachablePostgresRecovery()}`,
-        `Does not prove: ${dbBootstrapDoesNotProve}`,
-        "Memory store readiness: blocked (migration readiness failed)"
+        `Does not prove: ${migrationDoesNotProve}`
       ].join("\n") + "\n")
     };
   }

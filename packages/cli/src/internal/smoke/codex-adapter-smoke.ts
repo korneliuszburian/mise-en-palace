@@ -2,7 +2,7 @@ import type {
   Sql
 } from "postgres";
 import {
-  runMigrationReadinessCheck,
+  inspectMigrationReadiness,
   smokeFixtureClocks
 } from "@krn/db/dev";
 import {
@@ -278,7 +278,7 @@ export const formatCodexAdapterSmokeReportLines = reportLines;
 export const runCodexAdapterSmokeCheck = async (
   input: CodexAdapterSmokeInput
 ): Promise<CodexAdapterSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
+  const readiness = await inspectMigrationReadiness({
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder
   });

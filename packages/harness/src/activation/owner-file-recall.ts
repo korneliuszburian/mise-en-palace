@@ -69,7 +69,7 @@ const ownerFileRecallCatalog = [
     id: "11111111-1111-4111-8111-111111111001",
     path: "packages/cli/src/run-db-readiness-command.ts",
     title: "DB readiness CLI command owner",
-    summary: "Owns krn db readiness output, Postgres readiness reporting, migrations status, pgvector status, and DB endpoint display.",
+    summary: "Owns krn db migrate/readiness output, Postgres migration and readiness reporting, migrations status, pgvector status, and DB endpoint display.",
     terms: ["db", "database", "readiness", "postgres", "endpoint", "migration", "migrations", "pgvector"]
   },
   {

@@ -10,7 +10,7 @@ export const formatRunUsage = (): string =>
     "krn run show --run-id <execution-run-id> [--json]",
     "  note: run show reads persisted state; it does not mutate memory, evidence, or run records",
     "  requires: KRN_DATABASE_URL and a persisted execution run",
-    "  verify DB first: pnpm db:ready"
+    "  verify DB first: pnpm db:migrate && pnpm db:ready"
   ].join("\n") + "\n";
 
 export const parseRunArgs = (rest: readonly string[]): ParseArgsResult => {

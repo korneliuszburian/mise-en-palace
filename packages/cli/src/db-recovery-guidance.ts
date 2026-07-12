@@ -7,18 +7,20 @@ const localPostgresStartAction = "docker compose up -d krn-postgres";
 
 const localPostgresStatusAction = "docker compose ps krn-postgres";
 
+const dbMigrateAction = "pnpm db:migrate";
+
 const dbReadyAction = "pnpm db:ready";
 
 const dbSmokeAction = "pnpm db:smoke";
 
 export const missingDbConfigRecovery = (): string =>
-  `${localDbConfigAction}; ${localPostgresStartAction}; ${dbReadyAction}`;
+  `${localDbConfigAction}; ${localPostgresStartAction}; ${dbMigrateAction}; ${dbReadyAction}`;
 
 export const unreachablePostgresRecovery = (): string =>
-  `${localPostgresStartAction}; ${localPostgresStatusAction}; ${dbReadyAction}`;
+  `${localPostgresStartAction}; ${localPostgresStatusAction}; ${dbMigrateAction}; ${dbReadyAction}`;
 
 export const connectedButNotReadyRecovery = (): string =>
-  `${dbReadyAction}; ${dbSmokeAction}`;
+  `${dbMigrateAction}; ${dbReadyAction}; ${dbSmokeAction}`;
 
 export const dbBootstrapDoesNotProve =
-  "starting Postgres does not prove migrations, pgvector, or persistence until pnpm db:ready and pnpm db:smoke pass";
+  "starting Postgres does not prove migrations, pgvector, or persistence until pnpm db:migrate, pnpm db:ready, and pnpm db:smoke pass";

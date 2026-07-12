@@ -24,6 +24,7 @@ For DB-backed changes, also run the current store proof with
 `KRN_DATABASE_URL` configured:
 
 ```sh
+rtk pnpm db:migrate
 rtk pnpm db:ready
 rtk pnpm --filter @krn/db db:check
 rtk pnpm db:smoke

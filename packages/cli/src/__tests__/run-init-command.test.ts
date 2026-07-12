@@ -192,7 +192,7 @@ describe("runCli init", () => {
       "KRN_DATABASE_URL is required for krn init --connect --persist"
     );
     expect(result.stderr).toContain(
-      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:ready"
+      "Next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:migrate; pnpm db:ready"
     );
     expect(result.stderr).toContain(
       "Does not prove: setting KRN_DATABASE_URL does not prove the requested persisted command is valid, commands executed, or Memory Core mutated"

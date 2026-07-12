@@ -16,7 +16,7 @@ import {
 
 import type { KrnDatabase } from "../../database.js";
 import { createKrnDatabase } from "../../database.js";
-import { runMigrationReadinessCheck } from "../../migration-readiness.js";
+import { inspectMigrationReadiness } from "../../migration-readiness.js";
 import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
@@ -327,7 +327,7 @@ export const ensureSmokeBrainStoreReady = async (
   migrationsFolder: string,
   smokeName: string
 ): Promise<void> => {
-  const readiness = await runMigrationReadinessCheck({
+  const readiness = await inspectMigrationReadiness({
     databaseUrl,
     migrationsFolder
   });

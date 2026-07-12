@@ -185,6 +185,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Internal/dev commands:");
     expect(result.stdout).toContain("krn db readiness");
+    expect(result.stdout).toContain("krn db migrate");
     expect(result.stdout).toContain("krn db smoke [target]");
     expect(result.stdout).toContain("eval-feedback-persistence");
     expect(result.stdout).toContain("decision-corpus-import");

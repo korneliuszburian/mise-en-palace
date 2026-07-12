@@ -26,6 +26,14 @@ describe("parseDbArgs", () => {
     });
   });
 
+  it("parses explicit db migration", () => {
+    expect(parseDbArgs(["migrate"])).toEqual({
+      command: {
+        kind: "dbMigrate"
+      }
+    });
+  });
+
   it("parses default and named db smoke targets", () => {
     expect(parseDbArgs(["smoke"])).toEqual({
       command: {

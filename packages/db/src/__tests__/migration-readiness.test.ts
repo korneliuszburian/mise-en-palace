@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   compareMigrationIdentities,
   inspectMigrationReadiness,
-  runMigrationReadinessCheck,
+  migrateDatabase,
   type MigrationIdentity
 } from "../migration-readiness.js";
 
@@ -33,6 +33,12 @@ const databaseUrlFor = (input: string, databaseName: string): string => {
   parsed.pathname = `/${databaseName}`;
   return parsed.toString();
 };
+
+const quoteIdentifier = (value: string): string =>
+  `"${value.replaceAll("\"", "\"\"")}"`;
+
+const quoteLiteral = (value: string): string =>
+  `'${value.replaceAll("'", "''")}'`;
 
 const snapshotMigrationSchema = async (databaseUrl: string): Promise<MigrationSchemaSnapshot> => {
   const client = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
@@ -100,6 +106,85 @@ const createDisposableDatabase = async (databaseUrl: string): Promise<{
   };
 };
 
+const createReadOnlyDatabaseRole = async (databaseUrl: string): Promise<{
+  readonly databaseUrl: string;
+  readonly cleanup: () => Promise<void>;
+}> => {
+  const parsed = new URL(databaseUrl);
+  const databaseName = decodeURIComponent(parsed.pathname.slice(1));
+  const roleName = `krn_readiness_readonly_${crypto.randomUUID().replaceAll("-", "")}`;
+  const password = crypto.randomUUID();
+  const adminClient = postgres(databaseUrlFor(databaseUrl, "postgres"), {
+    max: 1,
+    onnotice: () => undefined
+  });
+  const databaseClient = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+
+  try {
+    await adminClient.unsafe(
+      `create role ${quoteIdentifier(roleName)} login nosuperuser nocreatedb nocreaterole noinherit password ${quoteLiteral(password)}`
+    );
+    await adminClient.unsafe(
+      `grant connect on database ${quoteIdentifier(databaseName)} to ${quoteIdentifier(roleName)}`
+    );
+    await databaseClient.unsafe("revoke create on schema public from public");
+    await databaseClient.unsafe(`grant usage on schema public, drizzle to ${quoteIdentifier(roleName)}`);
+    await databaseClient.unsafe(`grant select on all tables in schema public, drizzle to ${quoteIdentifier(roleName)}`);
+  } catch (error) {
+    await databaseClient.end();
+    await adminClient.unsafe(`drop role if exists ${quoteIdentifier(roleName)}`);
+    await adminClient.end();
+    throw error;
+  }
+
+  await databaseClient.end();
+  const readOnlyUrl = new URL(databaseUrl);
+  readOnlyUrl.username = roleName;
+  readOnlyUrl.password = password;
+
+  return {
+    databaseUrl: readOnlyUrl.toString(),
+    cleanup: async () => {
+      const cleanupClient = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+
+      try {
+        await cleanupClient.unsafe(`drop owned by ${quoteIdentifier(roleName)}`);
+      } finally {
+        await cleanupClient.end();
+      }
+
+      try {
+        await adminClient.unsafe(`drop role if exists ${quoteIdentifier(roleName)}`);
+      } finally {
+        await adminClient.end();
+      }
+    }
+  };
+};
+
+const readOnlyRolePrivileges = async (databaseUrl: string): Promise<{
+  readonly canInsertSourceClaim: boolean;
+  readonly canCreatePublicTable: boolean;
+}> => {
+  const client = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+
+  try {
+    const rows = await client<{ canInsertSourceClaim: boolean; canCreatePublicTable: boolean }[]>`
+      select
+        has_table_privilege(current_user, 'public.source_claims', 'insert') as "canInsertSourceClaim",
+        has_schema_privilege(current_user, 'public', 'create') as "canCreatePublicTable"
+    `;
+    const privileges = rows[0];
+
+    return {
+      canInsertSourceClaim: privileges?.canInsertSourceClaim === true,
+      canCreatePublicTable: privileges?.canCreatePublicTable === true
+    };
+  } finally {
+    await client.end();
+  }
+};
+
 describe("compareMigrationIdentities", () => {
   it("accepts an exact ordered identity match", () => {
     expect(compareMigrationIdentities(
@@ -129,20 +214,26 @@ describe("compareMigrationIdentities", () => {
 
 describe("migration readiness boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "demonstrates that the current readiness command applies migrations to an empty disposable database",
+    "requires explicit migration before a missing schema can become ready",
     async () => {
       const expectedMigrationIdentities = readMigrationFiles({ migrationsFolder }).map(
         (migration) => `${migration.hash}@${migration.folderMillis}`
       );
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      let readOnlyRole: Awaited<ReturnType<typeof createReadOnlyDatabaseRole>> | undefined;
 
       try {
-        const beforeReadiness = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
-        const readiness = await runMigrationReadinessCheck({
+        const beforeMigration = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
+        const missingMigrationInspection = await inspectMigrationReadiness({
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
         });
-        const afterReadiness = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
+        const afterMissingMigrationInspection = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
+        const migration = await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        const afterMigration = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
         const beforeInspection = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
         const inspection = await inspectMigrationReadiness({
           databaseUrl: disposableDatabase.databaseUrl,
@@ -150,29 +241,51 @@ describe("migration readiness boundary", () => {
         });
         const afterInspection = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
 
-        expect(beforeReadiness).toEqual({
+        expect(beforeMigration).toEqual({
           migrationTablePresent: false,
           appliedMigrationCount: 0,
           appliedMigrationIdentities: [],
           sourceClaimsPresent: false,
           sourceClaimColumnCount: 0
         });
-        expect(readiness).toMatchObject({
+        expect(missingMigrationInspection).toMatchObject({
+          migrationTablePresent: false,
+          appliedMigrationCount: 0,
+          migrationIdentityStatus: "unavailable",
+          migrationsVerified: false
+        });
+        expect(afterMissingMigrationInspection).toEqual(beforeMigration);
+        expect(migration).toMatchObject({
           migrationTablePresent: true,
-          appliedMigrationCount: readiness.expectedMigrationCount,
+          appliedMigrationCount: migration.expectedMigrationCount,
           migrationsVerified: true
         });
-        expect(afterReadiness).toMatchObject({
+        expect(afterMigration).toMatchObject({
           migrationTablePresent: true,
-          appliedMigrationCount: readiness.expectedMigrationCount,
+          appliedMigrationCount: migration.expectedMigrationCount,
           appliedMigrationIdentities: expectedMigrationIdentities,
           sourceClaimsPresent: true
         });
-        expect(afterReadiness.sourceClaimColumnCount).toBeGreaterThan(0);
-        expect(afterReadiness).not.toEqual(beforeReadiness);
+        expect(afterMigration.sourceClaimColumnCount).toBeGreaterThan(0);
+        expect(afterMigration).not.toEqual(beforeMigration);
+        readOnlyRole = await createReadOnlyDatabaseRole(disposableDatabase.databaseUrl);
+        expect(await readOnlyRolePrivileges(readOnlyRole.databaseUrl)).toEqual({
+          canInsertSourceClaim: false,
+          canCreatePublicTable: false
+        });
+        const readOnlyBeforeInspection = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
+        const readOnlyInspection = await inspectMigrationReadiness({
+          databaseUrl: readOnlyRole.databaseUrl,
+          migrationsFolder
+        });
+        const readOnlyAfterInspection = await snapshotMigrationSchema(disposableDatabase.databaseUrl);
+
+        expect(readOnlyInspection.migrationsVerified).toBe(true);
+        expect(readOnlyAfterInspection).toEqual(readOnlyBeforeInspection);
         expect(inspection.migrationsVerified).toBe(true);
         expect(afterInspection).toEqual(beforeInspection);
       } finally {
+        await readOnlyRole?.cleanup();
         await disposableDatabase.cleanup();
       }
     }

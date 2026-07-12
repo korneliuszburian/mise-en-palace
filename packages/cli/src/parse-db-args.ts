@@ -4,10 +4,11 @@ import type {
 } from "./parse-args.js";
 
 const dbUsage = [
-  "Usage: krn db readiness|smoke",
+  "Usage: krn db migrate|readiness|smoke",
   "[harness-plan|harness-evidence|source-graph|memory-governance|eval-feedback-persistence|retrieval-substrate|activation|memory-loop|memory-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "",
   "Internal/dev commands:",
+  "krn db migrate",
   "krn db readiness",
   "krn db smoke [target]",
   "",
@@ -53,6 +54,14 @@ export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
     return {
       command: {
         kind: "dbReadiness"
+      }
+    };
+  }
+
+  if (rest.length === 1 && rest[0] === "migrate") {
+    return {
+      command: {
+        kind: "dbMigrate"
       }
     };
   }
