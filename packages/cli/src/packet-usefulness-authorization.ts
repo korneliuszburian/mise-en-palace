@@ -27,23 +27,26 @@ export interface PacketUsefulnessSubject {
   evidenceRefs?: readonly string[];
 }
 
-export interface PacketUsefulnessAuthorizationInput {
+export interface PacketBindingAuthorizationInput {
   aggregate: HarnessRunAggregate;
   runId: string;
   runtimeProjectId: string;
   callerPacketChecksum?: string;
   callerPacketGeneratedAt?: IsoTimestamp;
+}
+
+export interface PacketUsefulnessAuthorizationInput extends PacketBindingAuthorizationInput {
   subjects: readonly PacketUsefulnessSubject[];
 }
 
-export interface PacketUsefulnessBinding {
+export interface DecisionPacketBinding {
   packetChecksum: string;
   packetEvidenceRef: string;
   packetGeneratedAt: IsoTimestamp;
 }
 
-export type PacketUsefulnessAuthorization =
-  | (PacketUsefulnessBinding & {
+export type PacketAuthorization =
+  | (DecisionPacketBinding & {
       authorized: true;
       projectId: string;
     })
@@ -69,7 +72,7 @@ const currentPacketForAggregate = (
 export const currentDecisionPacketBindingForAggregate = (
   aggregate: HarnessRunAggregate,
   packetGeneratedAt: IsoTimestamp
-): PacketUsefulnessBinding => {
+): DecisionPacketBinding => {
   const packetIdentity = currentPacketForAggregate(aggregate, packetGeneratedAt).packetIdentity;
 
   return {
@@ -119,35 +122,41 @@ const normalizePacketGeneratedAt = (
   return normalized;
 };
 
-export const authorizePacketUsefulness = (
-  input: PacketUsefulnessAuthorizationInput
-): PacketUsefulnessAuthorization => {
-  const reject = (reason: string): PacketUsefulnessAuthorization => ({
-    authorized: false,
-    reason,
-    ...(input.aggregate.taskContract.projectId === undefined
-      ? {}
-      : { projectId: input.aggregate.taskContract.projectId })
-  });
+const rejectPacketAuthorization = (
+  input: PacketBindingAuthorizationInput,
+  reason: string
+): PacketAuthorization => ({
+  authorized: false,
+  reason,
+  ...(input.aggregate.taskContract.projectId === undefined
+    ? {}
+    : { projectId: input.aggregate.taskContract.projectId })
+});
+
+export const authorizePacketBinding = (
+  input: PacketBindingAuthorizationInput
+): PacketAuthorization => {
+  const reject = (reason: string): PacketAuthorization =>
+    rejectPacketAuthorization(input, reason);
 
   if (input.runId !== input.aggregate.executionRun.id) {
-    return reject("usefulness write rejected: run id does not match the fetched harness run");
+    return reject("DecisionPacket binding rejected: run id does not match the fetched harness run");
   }
 
   const taskProjectId = input.aggregate.taskContract.projectId;
 
   if (taskProjectId === undefined) {
-    return reject("usefulness write rejected: run task has no project identity");
+    return reject("DecisionPacket binding rejected: run task has no project identity");
   }
 
   if (input.runtimeProjectId !== taskProjectId) {
-    return reject("usefulness write rejected: runtime project does not match the run task project");
+    return reject("DecisionPacket binding rejected: runtime project does not match the run task project");
   }
 
   const packetGeneratedAt = normalizePacketGeneratedAt(input.callerPacketGeneratedAt);
 
   if (packetGeneratedAt === undefined) {
-    return reject("usefulness write rejected: exact DecisionPacket generatedAt is required");
+    return reject("DecisionPacket binding rejected: exact DecisionPacket generatedAt is required");
   }
 
   const currentBinding = currentDecisionPacketBindingForAggregate(
@@ -156,20 +165,7 @@ export const authorizePacketUsefulness = (
   );
 
   if (input.callerPacketChecksum !== currentBinding.packetChecksum) {
-    return reject("usefulness write rejected: packet checksum is not the current reconstructed packet checksum");
-  }
-
-  const subjects = selectedSubjectIds(input.aggregate, packetGeneratedAt);
-  const packetEvidenceRef = currentBinding.packetEvidenceRef;
-
-  for (const subject of input.subjects) {
-    if (!subjects.get(subject.kind)?.has(subject.id)) {
-      return reject(`usefulness write rejected: ${subject.kind}:${subject.id} is not selected by the current packet`);
-    }
-
-    if (subject.evidenceRefs !== undefined && !subject.evidenceRefs.includes(packetEvidenceRef)) {
-      return reject(`usefulness write rejected: ${subject.kind}:${subject.id} lacks the current packet evidence ref`);
-    }
+    return reject("DecisionPacket binding rejected: packet checksum is not the current reconstructed packet checksum");
   }
 
   return {
@@ -179,8 +175,39 @@ export const authorizePacketUsefulness = (
   };
 };
 
+export const authorizePacketUsefulness = (
+  input: PacketUsefulnessAuthorizationInput
+): PacketAuthorization => {
+  const authorization = authorizePacketBinding(input);
+
+  if (!authorization.authorized) {
+    return authorization;
+  }
+
+  const subjects = selectedSubjectIds(input.aggregate, authorization.packetGeneratedAt);
+  const packetEvidenceRef = authorization.packetEvidenceRef;
+
+  for (const subject of input.subjects) {
+    if (!subjects.get(subject.kind)?.has(subject.id)) {
+      return rejectPacketAuthorization(
+        input,
+        `usefulness write rejected: ${subject.kind}:${subject.id} is not selected by the current packet`
+      );
+    }
+
+    if (subject.evidenceRefs !== undefined && !subject.evidenceRefs.includes(packetEvidenceRef)) {
+      return rejectPacketAuthorization(
+        input,
+        `usefulness write rejected: ${subject.kind}:${subject.id} lacks the current packet evidence ref`
+      );
+    }
+  }
+
+  return authorization;
+};
+
 export const usefulnessAuthorizationDowngradeReason = (
-  authorization: PacketUsefulnessAuthorization
+  authorization: PacketAuthorization
 ): string => authorization.authorized
   ? "Downgraded: usefulness write was not authorized by the current packet."
   : authorization.reason;

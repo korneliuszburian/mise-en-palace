@@ -27,10 +27,11 @@ import {
   evidenceBundleFreshness
 } from "../decision-packet-read-model-builders.js";
 import {
+  authorizePacketBinding,
   authorizePacketUsefulness,
   currentDecisionPacketBindingForAggregate
 } from "../packet-usefulness-authorization.js";
-import type { PacketUsefulnessAuthorization } from "../packet-usefulness-authorization.js";
+import type { PacketAuthorization } from "../packet-usefulness-authorization.js";
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -127,8 +128,8 @@ type EnqueueMaintenanceQueueInput = Parameters<
   NonNullable<DatabaseRuntime["maintenanceQueueRepository"]>["enqueueMaintenanceQueue"]
 >[0];
 
-const expectPacketUsefulnessRejection = (
-  authorization: PacketUsefulnessAuthorization,
+const expectPacketAuthorizationRejection = (
+  authorization: PacketAuthorization,
   expectedReason: string
 ): void => {
   expect(authorization.authorized).toBe(false);
@@ -1096,6 +1097,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
     expect(result.stdout).toContain("outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("packet checksum is not the current reconstructed packet checksum");
+    expect(result.stdout).toContain("DecisionPacket: unbound (DecisionPacket binding rejected: packet checksum is not the current reconstructed packet checksum).");
+    expect(result.stdout).not.toContain("DecisionPacket: checksum=fake-packet");
+    expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
@@ -1169,6 +1173,20 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "DecisionPacket: unbound (no --decision-packet-checksum supplied)."
+    );
+    expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-current",
+        outcome: "unknown"
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:frontend-template",
+        outcome: "unknown"
+      }]
+    });
     expect(capture.maintenanceQueueInputs).toBeUndefined();
     expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
     expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
@@ -1249,6 +1267,76 @@ describe("runCli", () => {
         outcome: "selected",
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }]
+    });
+  });
+
+  it("preserves packet checksum for evidence-only capture", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      `DecisionPacket: checksum=${packetBinding.packetChecksum} | evidenceRef=${packetBinding.packetEvidenceRef}`
+    );
+    expect(result.stdout).toContain(
+      `decisionPacketEvidenceRef: ${packetBinding.packetEvidenceRef}`
+    );
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+    });
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
     });
   });
 
@@ -1366,6 +1454,61 @@ describe("runCli", () => {
     expect(packet.abstentionScore.reasons).toContain("caveated_memory_authority");
   });
 
+  it("validates current, stale, and missing packet bindings before usefulness subjects", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    type PacketBindingCase =
+      | {
+          readonly callerPacketChecksum?: string;
+          readonly callerPacketGeneratedAt?: string;
+          readonly expectedAuthorized: true;
+        }
+      | {
+          readonly callerPacketChecksum?: string;
+          readonly callerPacketGeneratedAt?: string;
+          readonly expectedAuthorized: false;
+          readonly reason: string;
+        };
+    const cases: readonly PacketBindingCase[] = [{
+      callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
+      expectedAuthorized: true
+    }, {
+      callerPacketChecksum: "stale-packet-checksum",
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
+      expectedAuthorized: false,
+      reason: "current reconstructed packet checksum"
+    }, {
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
+      expectedAuthorized: false,
+      reason: "current reconstructed packet checksum"
+    }, {
+      callerPacketChecksum: binding.packetChecksum,
+      expectedAuthorized: false,
+      reason: "exact DecisionPacket generatedAt is required"
+    }];
+
+    for (const testCase of cases) {
+      const authorization = authorizePacketBinding({
+        aggregate,
+        runId: aggregate.executionRun.id,
+        runtimeProjectId: "project-1",
+        ...(testCase.callerPacketChecksum === undefined
+          ? {}
+          : { callerPacketChecksum: testCase.callerPacketChecksum }),
+        ...(testCase.callerPacketGeneratedAt === undefined
+          ? {}
+          : { callerPacketGeneratedAt: testCase.callerPacketGeneratedAt })
+      });
+
+      expect(authorization.authorized).toBe(testCase.expectedAuthorized);
+
+      if (testCase.expectedAuthorized === false) {
+        expectPacketAuthorizationRejection(authorization, testCase.reason);
+      }
+    }
+  });
+
   it("rejects usefulness bound to a stale reconstructed packet", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const staleBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
@@ -1400,7 +1543,7 @@ describe("runCli", () => {
       }]
     });
 
-    expectPacketUsefulnessRejection(authorization, "current reconstructed packet checksum");
+    expectPacketAuthorizationRejection(authorization, "current reconstructed packet checksum");
   });
 
   it("rejects usefulness when the checksum and packet issuance differ", () => {
@@ -1425,7 +1568,7 @@ describe("runCli", () => {
       }]
     });
 
-    expectPacketUsefulnessRejection(authorization, "current reconstructed packet checksum");
+    expectPacketAuthorizationRejection(authorization, "current reconstructed packet checksum");
   });
 
   it("rejects a store subject absent from the current packet", () => {
@@ -1445,7 +1588,7 @@ describe("runCli", () => {
       }]
     });
 
-    expectPacketUsefulnessRejection(authorization, "not selected by the current packet");
+    expectPacketAuthorizationRejection(authorization, "not selected by the current packet");
   });
 
   it("does not treat an architecture decision target as a SourceDecision id", () => {
@@ -1510,7 +1653,7 @@ describe("runCli", () => {
       }]
     });
 
-    expectPacketUsefulnessRejection(authorization, "not selected by the current packet");
+    expectPacketAuthorizationRejection(authorization, "not selected by the current packet");
   });
 
   it("rejects usefulness when runtime and task projects differ", () => {
@@ -1530,7 +1673,7 @@ describe("runCli", () => {
       }]
     });
 
-    expectPacketUsefulnessRejection(authorization, "runtime project does not match");
+    expectPacketAuthorizationRejection(authorization, "runtime project does not match");
   });
 
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {

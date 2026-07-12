@@ -28,6 +28,8 @@ import {
 } from "@krn/core";
 import type {
   CreateEvidenceBundleInput,
+  CreateEvidenceFeedbackOnceInput,
+  CreateEvidenceFeedbackOnceResult,
   CreateFeedbackDeltaInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
@@ -52,8 +54,13 @@ import {
   environmentFingerprintLines
 } from "./environment-fingerprint.js";
 import {
+  authorizePacketBinding,
   authorizePacketUsefulness,
   usefulnessAuthorizationDowngradeReason
+} from "./packet-usefulness-authorization.js";
+import type {
+  DecisionPacketBinding,
+  PacketAuthorization
 } from "./packet-usefulness-authorization.js";
 import type {
   CreateDatabaseRuntime
@@ -107,8 +114,10 @@ interface PersistedEvidenceIdentity {
   feedbackMaintenanceQueueRecordId?: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  decisionPacketChecksum?: string;
   decisionPacketEvidenceRef?: string;
   decisionPacketGeneratedAt?: string;
+  packetBindingRejectionReason?: string;
   usefulnessAuthorizationReason?: string;
 }
 
@@ -472,15 +481,20 @@ const normalizeDecisionPacketGeneratedAt = (
     : generatedAt;
 };
 
-const renderDecisionPacketBinding = (
-  decisionPacketChecksum: string | undefined
-): string => {
-  const checksum = normalizeDecisionPacketChecksum(decisionPacketChecksum);
+const renderDecisionPacketBinding = (input: {
+  readonly decisionPacketChecksum: string | undefined;
+  readonly rejectionReason?: string;
+}): string => {
+  const checksum = normalizeDecisionPacketChecksum(input.decisionPacketChecksum);
   const evidenceRef = decisionPacketEvidenceRef(checksum);
 
-  return evidenceRef === undefined
+  if (evidenceRef !== undefined) {
+    return `DecisionPacket: checksum=${checksum} | evidenceRef=${evidenceRef}`;
+  }
+
+  return input.rejectionReason === undefined
     ? "DecisionPacket: unbound (no --decision-packet-checksum supplied)."
-    : `DecisionPacket: checksum=${checksum} | evidenceRef=${evidenceRef}`;
+    : `DecisionPacket: unbound (${input.rejectionReason}).`;
 };
 
 const commandInputHint =
@@ -1035,13 +1049,11 @@ type UsefulnessAuthorization = ReturnType<typeof authorizePacketUsefulness>;
 
 interface PreparedUsefulnessOutcomes {
   authorization: UsefulnessAuthorization | undefined;
-  decisionPacketChecksum: string | undefined;
-  decisionPacketGeneratedAt: string | undefined;
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
 }
 
-const callerPacketUsefulnessBinding = (input: {
+const callerPacketBinding = (input: {
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
 }) => ({
@@ -1053,11 +1065,124 @@ const callerPacketUsefulnessBinding = (input: {
     : { callerPacketGeneratedAt: input.callerPacketGeneratedAt })
 });
 
+const packetAuthorizationForEvidenceCapture = (input: {
+  readonly aggregate: HarnessRunAggregate;
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+  readonly runId: string;
+  readonly runtimeProjectId: string;
+}): PacketAuthorization | undefined => {
+  if (input.callerPacketChecksum === undefined && input.callerPacketGeneratedAt === undefined) {
+    return undefined;
+  }
+
+  return authorizePacketBinding({
+    aggregate: input.aggregate,
+    runId: input.runId,
+    runtimeProjectId: input.runtimeProjectId,
+    ...callerPacketBinding(input)
+  });
+};
+
+interface EvidenceCapturePacketBinding {
+  readonly authorization: PacketAuthorization | undefined;
+  readonly binding: DecisionPacketBinding | undefined;
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+}
+
+const packetBindingForEvidenceCapture = (input: {
+  readonly aggregate: HarnessRunAggregate;
+  readonly decisionPacketChecksum: string | undefined;
+  readonly decisionPacketGeneratedAt: string | undefined;
+  readonly runId: string;
+  readonly runtimeProjectId: string;
+}): EvidenceCapturePacketBinding => {
+  const callerPacketChecksum = normalizeDecisionPacketChecksum(input.decisionPacketChecksum);
+  const callerPacketGeneratedAt = normalizeDecisionPacketGeneratedAt(
+    input.decisionPacketGeneratedAt
+  );
+  const authorization = packetAuthorizationForEvidenceCapture({
+    aggregate: input.aggregate,
+    callerPacketChecksum,
+    callerPacketGeneratedAt,
+    runId: input.runId,
+    runtimeProjectId: input.runtimeProjectId
+  });
+
+  return {
+    authorization,
+    binding: authorization?.authorized === true ? authorization : undefined,
+    callerPacketChecksum,
+    callerPacketGeneratedAt
+  };
+};
+
+const evidenceCaptureProjectIdFor = (
+  aggregate: HarnessRunAggregate,
+  runtimeProjectId: string | undefined
+): string => {
+  const projectId = aggregate.taskContract.projectId ?? runtimeProjectId;
+
+  if (projectId === undefined) {
+    throw new Error(`No project identity found for --run-id ${aggregate.executionRun.id}`);
+  }
+
+  return projectId;
+};
+
+const requireEvidenceFeedbackPersistence = (
+  createEvidenceFeedbackOnce:
+    | ((input: CreateEvidenceFeedbackOnceInput) => Promise<CreateEvidenceFeedbackOnceResult>)
+    | undefined
+): (input: CreateEvidenceFeedbackOnceInput) => Promise<CreateEvidenceFeedbackOnceResult> => {
+  if (createEvidenceFeedbackOnce === undefined) {
+    throw new Error("Evidence feedback atomic persistence is unavailable");
+  }
+
+  return createEvidenceFeedbackOnce;
+};
+
+const requireEvidenceCaptureAggregate = async (
+  harnessRunRepository: {
+    getHarnessRunByExecutionRunId(runId: string): Promise<HarnessRunAggregate | undefined>;
+  },
+  runId: string
+): Promise<HarnessRunAggregate> => {
+  const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(runId);
+
+  if (aggregate === undefined) {
+    throw new Error(`No persisted harness run found for --run-id ${runId}`);
+  }
+
+  return aggregate;
+};
+
+const evidenceFeedbackMaintenanceFor = (input: {
+  readonly authorization: UsefulnessAuthorization | undefined;
+  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+}): Pick<CreateEvidenceFeedbackOnceInput, "maintenance"> => {
+  if (
+    input.authorization?.authorized !== true ||
+    !hasReviewableUsefulnessFeedback(input.sourceOutcomes, input.knowledgeOutcomes)
+  ) {
+    return {};
+  }
+
+  return {
+    maintenance: {
+      reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
+    }
+  };
+};
+
 const prepareUsefulnessOutcomes = (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly packetAuthorization: PacketAuthorization | undefined;
   readonly runId: string;
   readonly runtimeProjectId: string;
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
@@ -1080,13 +1205,13 @@ const prepareUsefulnessOutcomes = (input: {
       evidenceRefs: outcome.evidenceRefs
     }))
   ];
-  const authorization = usefulnessSubjects.length === 0
-    ? undefined
+  const authorization = input.packetAuthorization?.authorized === false || usefulnessSubjects.length === 0
+    ? input.packetAuthorization
     : authorizePacketUsefulness({
         aggregate: input.aggregate,
         runId: input.runId,
         runtimeProjectId: input.runtimeProjectId,
-        ...callerPacketUsefulnessBinding(input),
+        ...callerPacketBinding(input),
         subjects: usefulnessSubjects
       });
   const downgradeUnauthorized = <T extends {
@@ -1103,12 +1228,6 @@ const prepareUsefulnessOutcomes = (input: {
 
   return {
     authorization,
-    decisionPacketChecksum: authorization?.authorized === true
-      ? authorization.packetChecksum
-      : undefined,
-    decisionPacketGeneratedAt: authorization?.authorized === true
-      ? authorization.packetGeneratedAt
-      : undefined,
     sourceOutcomes: downgradeUnauthorized(input.sourceUsefulnessOutcomes),
     knowledgeOutcomes: downgradeUnauthorized(input.knowledgeUsefulnessOutcomes)
   };
@@ -1168,37 +1287,63 @@ const materializeFeedbackDeltaMemoryCandidates = (
   ? []
   : proposals.map((proposal) => materializeFeedbackDeltaMemoryCandidate(proposal, projectId, runId));
 
-const buildPersistedEvidenceIdentity = (input: {
-  readonly authorization: UsefulnessAuthorization | undefined;
-  readonly decisionPacketChecksum: string | undefined;
-  readonly decisionPacketGeneratedAt: string | undefined;
-  readonly evidenceBundleId: string;
-  readonly feedbackDeltaId: string;
-  readonly feedbackMaintenanceQueueRecordId: string | undefined;
-  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
-  readonly reviewAssessmentId: string;
-  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
-  readonly captureIdentity: string;
-}): PersistedEvidenceIdentity => {
-  const identity: PersistedEvidenceIdentity = {
-    captureIdentity: input.captureIdentity,
-    evidenceBundleId: input.evidenceBundleId,
-    reviewAssessmentId: input.reviewAssessmentId,
-    feedbackDeltaId: input.feedbackDeltaId
+const feedbackMaintenanceQueueIdentityFor = (
+  feedbackMaintenanceQueueRecordId: string | undefined
+): Pick<PersistedEvidenceIdentity, "feedbackMaintenanceQueueRecordId"> =>
+  feedbackMaintenanceQueueRecordId === undefined
+    ? {}
+    : { feedbackMaintenanceQueueRecordId };
+
+const packetBindingIdentityFor = (
+  authorization: PacketAuthorization | undefined
+): Pick<
+  PersistedEvidenceIdentity,
+  | "decisionPacketChecksum"
+  | "decisionPacketEvidenceRef"
+  | "decisionPacketGeneratedAt"
+  | "packetBindingRejectionReason"
+> => {
+  if (authorization === undefined) {
+    return {};
+  }
+
+  if (!authorization.authorized) {
+    return { packetBindingRejectionReason: authorization.reason };
+  }
+
+  return {
+    decisionPacketChecksum: authorization.packetChecksum,
+    decisionPacketEvidenceRef: authorization.packetEvidenceRef,
+    decisionPacketGeneratedAt: authorization.packetGeneratedAt
   };
+};
 
-  if (input.feedbackMaintenanceQueueRecordId !== undefined) {
-    identity.feedbackMaintenanceQueueRecordId = input.feedbackMaintenanceQueueRecordId;
+const usefulnessAuthorizationIdentityFor = (
+  authorization: UsefulnessAuthorization | undefined,
+  packetBindingRejectionReason: string | undefined
+): Pick<PersistedEvidenceIdentity, "usefulnessAuthorizationReason"> => {
+  if (
+    authorization === undefined ||
+    authorization.authorized ||
+    authorization.reason === packetBindingRejectionReason
+  ) {
+    return {};
   }
 
-  if (input.decisionPacketChecksum !== undefined && input.decisionPacketGeneratedAt !== undefined) {
-    identity.decisionPacketEvidenceRef = `packet:${input.decisionPacketChecksum}`;
-    identity.decisionPacketGeneratedAt = input.decisionPacketGeneratedAt;
-  }
+  return { usefulnessAuthorizationReason: authorization.reason };
+};
 
-  if (input.authorization?.authorized === false && input.authorization.reason !== undefined) {
-    identity.usefulnessAuthorizationReason = input.authorization.reason;
-  }
+const usefulnessOutcomesIdentityFor = (input: {
+  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+}): Pick<
+  PersistedEvidenceIdentity,
+  "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes"
+> => {
+  const identity: Pick<
+    PersistedEvidenceIdentity,
+    "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes"
+  > = {};
 
   if (input.sourceOutcomes !== undefined) {
     identity.sourceUsefulnessOutcomes = input.sourceOutcomes;
@@ -1209,6 +1354,37 @@ const buildPersistedEvidenceIdentity = (input: {
   }
 
   return identity;
+};
+
+const buildPersistedEvidenceIdentity = (input: {
+  readonly authorization: UsefulnessAuthorization | undefined;
+  readonly packetAuthorization: PacketAuthorization | undefined;
+  readonly evidenceBundleId: string;
+  readonly feedbackDeltaId: string;
+  readonly feedbackMaintenanceQueueRecordId: string | undefined;
+  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly reviewAssessmentId: string;
+  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly captureIdentity: string;
+}): PersistedEvidenceIdentity => {
+  const packetBindingIdentity = packetBindingIdentityFor(input.packetAuthorization);
+
+  return {
+    captureIdentity: input.captureIdentity,
+    evidenceBundleId: input.evidenceBundleId,
+    reviewAssessmentId: input.reviewAssessmentId,
+    feedbackDeltaId: input.feedbackDeltaId,
+    ...feedbackMaintenanceQueueIdentityFor(input.feedbackMaintenanceQueueRecordId),
+    ...packetBindingIdentity,
+    ...usefulnessAuthorizationIdentityFor(
+      input.authorization,
+      packetBindingIdentity.packetBindingRejectionReason
+    ),
+    ...usefulnessOutcomesIdentityFor({
+      sourceOutcomes: input.sourceOutcomes,
+      knowledgeOutcomes: input.knowledgeOutcomes
+    })
+  };
 };
 
 const renderPersistedEvidenceIdentity = (
@@ -1228,6 +1404,10 @@ const renderPersistedEvidenceIdentity = (
 
   if (identity.usefulnessAuthorizationReason !== undefined) {
     lines.push(`usefulnessAuthorization: ${identity.usefulnessAuthorizationReason}`);
+  }
+
+  if (identity.packetBindingRejectionReason !== undefined) {
+    lines.push(`packetBinding: unbound (${identity.packetBindingRejectionReason})`);
   }
 
   if (identity.feedbackMaintenanceQueueRecordId !== undefined) {
@@ -1252,6 +1432,7 @@ const renderEvidenceCaptureOutput = (input: {
   readonly changedFileClassification: ChangedFileClassification;
   readonly commands: readonly EvidenceCommandReadback[];
   readonly decisionPacketChecksum: string | undefined;
+  readonly packetBindingRejectionReason?: string;
   readonly diffRisk: DiffRisk;
   readonly feedbackCandidate: string;
   readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
@@ -1269,7 +1450,12 @@ const renderEvidenceCaptureOutput = (input: {
   persistenceLine(persistenceLabel(input.runtime)),
   ...environmentFingerprintLines(input.environmentFingerprint),
   ...(input.runtime.runId === undefined ? [] : [`Run ID: ${input.runtime.runId}`]),
-  renderDecisionPacketBinding(input.decisionPacketChecksum),
+  renderDecisionPacketBinding({
+    decisionPacketChecksum: input.decisionPacketChecksum,
+    ...(input.packetBindingRejectionReason === undefined
+      ? {}
+      : { rejectionReason: input.packetBindingRejectionReason })
+  }),
   commandInputHint,
   commandExecutionNotice,
   "Changed files:",
@@ -1324,25 +1510,24 @@ const persistEvidenceCapture = async (
   });
 
   try {
-    const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(runId);
-
-    if (aggregate === undefined) {
-      throw new Error(`No persisted harness run found for --run-id ${runId}`);
-    }
+    const aggregate = await requireEvidenceCaptureAggregate(
+      databaseRuntime.harnessRunRepository,
+      runId
+    );
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
-    const projectId = aggregate.taskContract.projectId ?? databaseRuntime.projectId;
-    if (projectId === undefined) {
-      throw new Error(`No project identity found for --run-id ${runId}`);
-    }
-    const callerPacketChecksum = normalizeDecisionPacketChecksum(runtime.decisionPacketChecksum);
-    const callerPacketGeneratedAt = normalizeDecisionPacketGeneratedAt(
-      runtime.decisionPacketGeneratedAt
-    );
+    const projectId = evidenceCaptureProjectIdFor(aggregate, databaseRuntime.projectId);
+    const packet = packetBindingForEvidenceCapture({
+      aggregate,
+      decisionPacketChecksum: runtime.decisionPacketChecksum,
+      decisionPacketGeneratedAt: runtime.decisionPacketGeneratedAt,
+      runId,
+      runtimeProjectId: databaseRuntime.projectId
+    });
     const captureIdentity = evidenceCaptureIdentityFor({
       runId,
       projectId,
-      decisionPacketChecksum: callerPacketChecksum,
+      decisionPacketChecksum: packet.binding?.packetChecksum,
       environmentFingerprintId: environmentFingerprint.id,
       changedFiles,
       commands,
@@ -1355,15 +1540,14 @@ const persistEvidenceCapture = async (
     });
     const usefulness = prepareUsefulnessOutcomes({
       aggregate,
-      callerPacketChecksum,
-      callerPacketGeneratedAt,
+      callerPacketChecksum: packet.callerPacketChecksum,
+      callerPacketGeneratedAt: packet.callerPacketGeneratedAt,
       knowledgeUsefulnessOutcomes,
+      packetAuthorization: packet.authorization,
       runId,
       runtimeProjectId: databaseRuntime.projectId,
       sourceUsefulnessOutcomes
     });
-    const decisionPacketChecksum = usefulness.decisionPacketChecksum;
-    const decisionPacketGeneratedAt = usefulness.decisionPacketGeneratedAt;
     const memoryCandidates = materializeFeedbackDeltaMemoryCandidates(
       memoryCandidateProposals,
       projectId,
@@ -1373,15 +1557,14 @@ const persistEvidenceCapture = async (
       captureIdentity,
       changedFiles,
       commands,
-      decisionPacketChecksum,
+      decisionPacketChecksum: packet.binding?.packetChecksum,
       knowledgeOutcomes: usefulness.knowledgeOutcomes,
       sourceOutcomes: usefulness.sourceOutcomes,
       targetEvidence
     });
-    const createEvidenceFeedbackOnce = databaseRuntime.harnessRunRepository.createEvidenceFeedbackOnce;
-    if (createEvidenceFeedbackOnce === undefined) {
-      throw new Error("Evidence feedback atomic persistence is unavailable");
-    }
+    const createEvidenceFeedbackOnce = requireEvidenceFeedbackPersistence(
+      databaseRuntime.harnessRunRepository.createEvidenceFeedbackOnce
+    );
     const atomicResult = await createEvidenceFeedbackOnce.call(databaseRuntime.harnessRunRepository, {
       executionRunId: runId,
       projectId,
@@ -1395,8 +1578,8 @@ const persistEvidenceCapture = async (
         targetEvidence,
         counts,
         nextEvidenceEventSequence(aggregate),
-        decisionPacketChecksum,
-        decisionPacketGeneratedAt,
+        packet.binding?.packetChecksum,
+        packet.binding?.packetGeneratedAt,
         environmentFingerprint
       ),
       review: buildReviewAssessmentInput(runId, counts),
@@ -1408,29 +1591,22 @@ const persistEvidenceCapture = async (
         sourceDecisionCandidates,
         evidenceBackedUsefulness.sourceOutcomes,
         evidenceBackedUsefulness.knowledgeOutcomes,
-        decisionPacketChecksum,
-        decisionPacketGeneratedAt,
+        packet.binding?.packetChecksum,
+        packet.binding?.packetGeneratedAt,
         evalCandidateProposals,
         environmentFingerprint
       ),
-      ...(usefulness.authorization?.authorized === true &&
-        hasReviewableUsefulnessFeedback(
-          evidenceBackedUsefulness.sourceOutcomes,
-          evidenceBackedUsefulness.knowledgeOutcomes
-        )
-        ? {
-            maintenance: {
-              reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
-            }
-          }
-        : {})
+      ...evidenceFeedbackMaintenanceFor({
+        authorization: usefulness.authorization,
+        sourceOutcomes: evidenceBackedUsefulness.sourceOutcomes,
+        knowledgeOutcomes: evidenceBackedUsefulness.knowledgeOutcomes
+      })
     });
 
     return buildPersistedEvidenceIdentity({
       captureIdentity,
       authorization: usefulness.authorization,
-      decisionPacketChecksum,
-      decisionPacketGeneratedAt,
+      packetAuthorization: packet.authorization,
       evidenceBundleId: atomicResult.evidenceBundle.id,
       feedbackDeltaId: atomicResult.feedbackDelta.id,
       feedbackMaintenanceQueueRecordId: atomicResult.feedbackMaintenanceQueueRecordId,
@@ -1499,7 +1675,12 @@ export const runEvidenceCaptureCommand = async (
     stdout: renderEvidenceCaptureOutput({
       changedFileClassification,
       commands,
-      decisionPacketChecksum: runtime.decisionPacketChecksum,
+      decisionPacketChecksum: runtime.persist
+        ? persistedIdentity?.decisionPacketChecksum
+        : runtime.decisionPacketChecksum,
+      ...(persistedIdentity?.packetBindingRejectionReason === undefined
+        ? {}
+        : { packetBindingRejectionReason: persistedIdentity.packetBindingRejectionReason }),
       diffRisk,
       feedbackCandidate,
       knowledgeUsefulnessOutcomes: renderedKnowledgeUsefulnessOutcomes,
