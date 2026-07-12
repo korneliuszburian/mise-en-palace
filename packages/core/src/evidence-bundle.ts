@@ -174,6 +174,7 @@ export type EvidenceCommandReadback =
 
 export type EvidenceCommandHelpedProofFailureReason =
   | "not_execution_backed"
+  | "unresolved_output_reference"
   | "missing_captured_at"
   | "invalid_captured_at"
   | "invalid_packet_generated_at"
@@ -604,11 +605,6 @@ export const toEvidenceCommandReadback = (
   return normalizeDefaultTemplateCommand(command);
 };
 
-type ExecutionBackedEvidenceCommand = Extract<
-  EvidenceCommandReadback,
-  { kind: "captured_output_file" | "command_runner" | "external_log" }
->;
-
 const ineligibleCommandHelpedProof = (
   reason: EvidenceCommandHelpedProofFailureReason
 ): EvidenceCommandHelpedProofAssessment => ({
@@ -616,15 +612,8 @@ const ineligibleCommandHelpedProof = (
   reason
 });
 
-const isExecutionBackedEvidenceCommand = (
-  command: EvidenceCommandReadback
-): command is ExecutionBackedEvidenceCommand =>
-  command.kind === "captured_output_file" ||
-  command.kind === "command_runner" ||
-  command.kind === "external_log";
-
 const commandCaptureAssessment = (
-  command: ExecutionBackedEvidenceCommand,
+  command: CommandRunnerEvidenceCommand,
   packetGeneratedAt: IsoTimestamp
 ): EvidenceCommandHelpedProofAssessment | undefined => {
   const capturedAt = command.capturedAt?.trim();
@@ -651,7 +640,7 @@ const commandCaptureAssessment = (
 };
 
 const commandStatusAssessment = (
-  command: ExecutionBackedEvidenceCommand
+  command: CommandRunnerEvidenceCommand
 ): EvidenceCommandHelpedProofAssessment => {
   if (command.status === "passed") {
     if (command.exitCode === undefined) {
@@ -674,7 +663,14 @@ export const assessEvidenceCommandHelpedProof = (input: {
   command: EvidenceCommandReadback;
   packetGeneratedAt: IsoTimestamp;
 }): EvidenceCommandHelpedProofAssessment => {
-  if (!isExecutionBackedEvidenceCommand(input.command)) {
+  if (
+    input.command.kind === "captured_output_file" ||
+    input.command.kind === "external_log"
+  ) {
+    return ineligibleCommandHelpedProof("unresolved_output_reference");
+  }
+
+  if (input.command.kind !== "command_runner") {
     return ineligibleCommandHelpedProof("not_execution_backed");
   }
 

@@ -130,7 +130,7 @@ describe("evidence bundle completeness", () => {
         exitCode: 0,
         outputRef: "missing-output.txt"
       },
-      reason: "missing_captured_at"
+      reason: "unresolved_output_reference"
     }] as const satisfies readonly {
       readonly command: EvidenceCommand;
       readonly reason: EvidenceCommandHelpedProofFailureReason;
@@ -151,6 +151,62 @@ describe("evidence bundle completeness", () => {
       status: "passed",
       provenance: "operator_reported"
     }])).toBe(false);
+  });
+
+  test("keeps unresolved output references visible but outside helped proof", () => {
+    const cases = [{
+      command: {
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "captured_output_file",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: "missing-output.txt"
+      } satisfies EvidenceCommand,
+      kind: "captured_output_file"
+    }, {
+      command: {
+        command: "pnpm test",
+        status: "passed",
+        provenance: "captured_output_file",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: "unreadable-output.txt"
+      } satisfies EvidenceCommand,
+      kind: "captured_output_file"
+    }, {
+      command: {
+        command: "KRN CI",
+        status: "passed",
+        provenance: "external_log",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: "tampered-external-log"
+      } satisfies EvidenceCommand,
+      kind: "external_log"
+    }, {
+      command: {
+        command: "legacy CI",
+        status: "passed",
+        provenance: "external_log",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: "legacy-external-log-reference"
+      } satisfies EvidenceCommand,
+      kind: "external_log"
+    }] as const;
+
+    for (const testCase of cases) {
+      expect(toEvidenceCommandReadback(testCase.command)).toMatchObject({
+        kind: testCase.kind,
+        outputRef: testCase.command.outputRef
+      });
+      expect(commandProofAssessment(testCase.command)).toEqual({
+        status: "ineligible",
+        reason: "unresolved_output_reference"
+      });
+      expect(provesHelped([testCase.command])).toBe(false);
+    }
   });
 
   test("requires every distinct required command while optional rows remain informative", () => {

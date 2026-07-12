@@ -96,6 +96,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   let retrievalRunId: string | undefined;
   let incoherentCommandEvidenceRejected = false;
   let missingRequiredCommandEvidenceRejected = false;
+  let unresolvedOutputReferenceEvidenceRejected = false;
   let mismatchedPacketIssuanceRejected = false;
 
   const cleanup = async (): Promise<number> => {
@@ -319,6 +320,14 @@ export const runMemoryGovernanceSmokeCheck = async (
       capturedAt: verificationCapturedAt,
       outputRef
     });
+    const unresolvedOutputCommand = (command: string, outputRef: string) => ({
+      command,
+      status: "passed" as const,
+      provenance: "captured_output_file" as const,
+      exitCode: 0,
+      capturedAt: verificationCapturedAt,
+      outputRef
+    });
     const incoherentPacketChecksum = `${packetChecksum}:incoherent`;
     const incoherentVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
@@ -375,6 +384,33 @@ export const runMemoryGovernanceSmokeCheck = async (
         decisionPacketGeneratedAt: packetGeneratedAt
       }
     });
+    const unresolvedOutputPacketChecksum = `${packetChecksum}:unresolved-output`;
+    const unresolvedOutputEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: requiredVerificationCommands.map((command, index) => unresolvedOutputCommand(
+        command.command,
+        `smoke:${marker}:memory-governance-unresolved-output:${index}`
+      )),
+      diffRisk: "low",
+      reviewBurden: "Memory governance unresolved output reference falsifier.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 4,
+        type: "smoke.memory_governance.unresolved_output_verification_captured",
+        message: "Memory governance unresolved output verification evidence captured",
+        payload: {
+          smokeId: marker,
+          decisionPacketChecksum: unresolvedOutputPacketChecksum
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        decisionPacketChecksum: unresolvedOutputPacketChecksum,
+        decisionPacketGeneratedAt: packetGeneratedAt
+      }
+    });
     const verificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
       status: "captured",
@@ -388,7 +424,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance smoke proof.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 4,
+        sequence: 5,
         type: "smoke.memory_governance.verification_captured",
         message: "Memory governance verification evidence captured",
         payload: {
@@ -441,6 +477,34 @@ export const runMemoryGovernanceSmokeCheck = async (
       "Memory governance accepted incomplete required command evidence"
     );
     missingRequiredCommandEvidenceRejected = true;
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        packetChecksum: unresolvedOutputPacketChecksum,
+        evidenceBundleId: unresolvedOutputEvidenceBundle.id,
+        metadata: {
+          smokeId: marker,
+          evidenceFalsifier: "unresolved-output-reference"
+        }
+      }),
+      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "Memory governance accepted unresolved output reference evidence"
+    );
+    unresolvedOutputReferenceEvidenceRejected = true;
+    const unresolvedOutputApplicationRows = await db
+      .select()
+      .from(memoryApplications)
+      .where(eq(memoryApplications.decisionPacketChecksum, unresolvedOutputPacketChecksum));
+    const [unresolvedOutputMemoryRecord] = await db
+      .select({ positiveFeedbackCount: memoryRecords.positiveFeedbackCount })
+      .from(memoryRecords)
+      .where(eq(memoryRecords.id, memoryRecord.id));
+    const unresolvedOutputOutboxRows = await db
+      .select()
+      .from(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}
+        AND ${outboxEvents.payload}->>'evidenceFalsifier' = 'unresolved-output-reference'`);
 
     const packetApplicationClients = [
       postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
@@ -1081,6 +1145,14 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "incomplete required command evidence cannot create helped application",
         passed: missingRequiredCommandEvidenceRejected
+      },
+      {
+        label: "unresolved output reference evidence cannot create helped application",
+        passed:
+          unresolvedOutputReferenceEvidenceRejected &&
+          unresolvedOutputApplicationRows.length === 0 &&
+          unresolvedOutputMemoryRecord?.positiveFeedbackCount === 0 &&
+          unresolvedOutputOutboxRows.length === 0
       },
       {
         label: "negative packet application won once",

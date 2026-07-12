@@ -1130,6 +1130,125 @@ describe("runCli", () => {
     expect(capturedApplication).toBeUndefined();
   });
 
+  it("rejects helped memory record apply with an unresolved output reference", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate = memoryHarnessRunAggregate("project-1");
+    aggregate.harnessPlan.metadata = {
+      evidenceContract: {
+        commands: [{ command: "pnpm typecheck", required: true }],
+        diffRisk: "low",
+        reviewBurden: "review",
+        rollbackPath: "revert",
+        metadata: {}
+      }
+    };
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    aggregate.evidenceBundles = [{
+      id: "evidence-bundle-unresolved-output",
+      executionRunId: "execution-run-1",
+      status: "captured",
+      changedFiles: [],
+      commands: [{
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "captured_output_file",
+        exitCode: 0,
+        capturedAt: "2026-06-21T12:00:01.000Z",
+        outputRef: "missing-output.txt"
+      }],
+      diffRisk: "low",
+      reviewBurden: "review",
+      rollbackPath: "revert",
+      metadata: {
+        decisionPacketChecksum: packetBinding.packetChecksum,
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+      },
+      createdAt: now,
+      updatedAt: now
+    }];
+
+    const result = await runCli(
+      [
+        "memory",
+        "record",
+        "apply",
+        "--run-id",
+        "execution-run-1",
+        "--memory-id",
+        "memory-record-1",
+        "--decision-packet-checksum",
+        packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
+        "--evidence-bundle-id",
+        "evidence-bundle-unresolved-output",
+        "--outcome",
+        "helped",
+        "--notes",
+        "Guided M23 decision to avoid a separate graph DB",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async getMemoryRecordById(id) {
+              return {
+                id,
+                projectId: "project-1",
+                currentVersionId: "memory-record-version-1",
+                key: "memory:memory-candidate-1",
+                kind: "constraint",
+                status: "active",
+                summary: "Use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                validFrom: now,
+                positiveFeedbackCount: 0,
+                negativeFeedbackCount: 0,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: {
+            ...createMemoryHarnessRunRepository(dependencies, "project-1"),
+            async getHarnessRunByExecutionRunId() {
+              return aggregate;
+            }
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "helped memory application requires a fresh successful verification EvidenceBundle"
+    );
+  });
+
   it("does not repeat the same packet-bound memory application", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
