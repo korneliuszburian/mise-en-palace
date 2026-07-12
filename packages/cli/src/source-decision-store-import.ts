@@ -51,6 +51,7 @@ interface SourceDecisionImportRepositories {
 
 interface PreparedSourceDecisionImportRow {
   readonly row: DecisionCorpusImportRow;
+  readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
   readonly evidenceRef: string;
   readonly metadata: Record<string, unknown>;
   readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
@@ -435,6 +436,16 @@ const requireCapturedEvidenceForAuthority = (
   );
 };
 
+const authorityLifecycleStatusFor = (
+  row: DecisionCorpusImportRow,
+  evidence: SourceDecisionEvidenceLookup
+): DecisionCorpusImportRow["status"] =>
+  row.status === "current" &&
+  evidence.status === "captured" &&
+  evidence.freshness !== "current"
+    ? "stale"
+    : row.status;
+
 const prepareImportRow = async (
   input: PersistSourceDecisionImportInput,
   row: DecisionCorpusImportRow,
@@ -455,6 +466,7 @@ const prepareImportRow = async (
   });
 
   requireCapturedEvidenceForAuthority(row, evidence);
+  const authorityLifecycleStatus = authorityLifecycleStatusFor(row, evidence);
 
   const normalizedRow = JSON.stringify({
     doesNotProve: normalizeImportText(row.doesNotProve),
@@ -479,6 +491,7 @@ const prepareImportRow = async (
 
   return {
     row,
+    authorityLifecycleStatus,
     evidenceRef,
     metadata: metadataForRow(input, row, evidence),
     ...sourceEvidenceFields(evidence),
@@ -542,6 +555,7 @@ const createDecisionSupport = async (
     readonly retrievalRepository: SourceDecisionImportRetrievalRepository;
     readonly projectId: ProjectId;
     readonly row: DecisionCorpusImportRow;
+    readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
     readonly sourceArtifactId: string;
     readonly sourceChunkId: string;
     readonly sourceClaimId: string;
@@ -558,7 +572,7 @@ const createDecisionSupport = async (
     sourceClaimId: input.sourceClaimId,
     sourceDecisionId: input.sourceDecisionId,
     sourceAuthority: "project-decision",
-    validityStatus: input.row.status === "stale" ? "expired" : "active",
+    validityStatus: input.authorityLifecycleStatus === "stale" ? "expired" : "active",
     title: input.row.title,
     body: `${input.row.statement}\n\n${input.row.noteText}`,
     searchText: [
@@ -577,7 +591,7 @@ const createDecisionSupport = async (
       sourceDecisionId: input.sourceDecisionId
     }
   });
-  const sourceDecisionEdge = input.row.status === "current"
+  const sourceDecisionEdge = input.authorityLifecycleStatus === "current"
       ? await input.sourceRepository.createSourceDecisionEdge({
           sourceClaimId: input.sourceClaimId,
           sourceDecisionId: input.sourceDecisionId,
@@ -683,14 +697,22 @@ const persistedRowFromReadback = (
 });
 
 const expectedDecisionStatusFor = (
-  row: DecisionCorpusImportRow
+  authorityLifecycleStatus: DecisionCorpusImportRow["status"]
 ): SourceDecision["status"] =>
-  row.status === "rejected" ? "reject" : row.status === "stale" ? "defer" : "adopt";
+  authorityLifecycleStatus === "rejected"
+    ? "reject"
+    : authorityLifecycleStatus === "stale"
+      ? "defer"
+      : "adopt";
 
 const expectedClaimStatusFor = (
-  row: DecisionCorpusImportRow
+  authorityLifecycleStatus: DecisionCorpusImportRow["status"]
 ): SourceClaim["status"] =>
-  row.status === "rejected" ? "rejected" : row.status === "stale" ? "deprecated" : "accepted";
+  authorityLifecycleStatus === "rejected"
+    ? "rejected"
+    : authorityLifecycleStatus === "stale"
+      ? "deprecated"
+      : "accepted";
 
 const existingImportRows = async (
   repository: SourceDecisionImportRepository,
@@ -737,8 +759,8 @@ const existingImportRows = async (
 
     return prepared === undefined ||
       row.contentHash !== prepared.artifactContentHash ||
-      row.sourceClaimStatus !== expectedClaimStatusFor(prepared.row) ||
-      row.sourceDecisionStatus !== expectedDecisionStatusFor(prepared.row);
+      row.sourceClaimStatus !== expectedClaimStatusFor(prepared.authorityLifecycleStatus) ||
+      row.sourceDecisionStatus !== expectedDecisionStatusFor(prepared.authorityLifecycleStatus);
   });
 
   if (conflicts.length > 0) {
@@ -762,12 +784,12 @@ const existingImportRows = async (
   });
 };
 
-const deprecateImportedSourceClaimIfStale = async (input: {
+const deprecateImportedSourceClaimIfInactive = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
-  readonly row: DecisionCorpusImportRow;
+  readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
   readonly sourceClaimId: string;
 }): Promise<void> => {
-  if (input.row.status !== "stale") {
+  if (input.authorityLifecycleStatus !== "stale") {
     return;
   }
 
@@ -826,6 +848,7 @@ const persistSourceDecisionImportRow = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
 }): Promise<PersistedSourceDecisionImportRow> => {
   const row = input.prepared.row;
+  const authorityLifecycleStatus = input.prepared.authorityLifecycleStatus;
   const { sourceArtifact, sourceChunk } = await createSourceArtifactAndChunk(
     input.sourceRepository,
     input.projectId,
@@ -848,7 +871,7 @@ const persistSourceDecisionImportRow = async (input: {
   const sourceDecision = await input.createSourceDecision({
     projectId: input.projectId,
     sourceClaimId: sourceClaim.id,
-    status: expectedDecisionStatusFor(row),
+    status: expectedDecisionStatusFor(authorityLifecycleStatus),
     decision: row.statement,
     rationale: row.noteText,
     falsifier: row.falsifier,
@@ -856,9 +879,9 @@ const persistSourceDecisionImportRow = async (input: {
     metadata: input.prepared.metadata
   });
 
-  await deprecateImportedSourceClaimIfStale({
+  await deprecateImportedSourceClaimIfInactive({
     sourceRepository: input.sourceRepository,
-    row,
+    authorityLifecycleStatus,
     sourceClaimId: sourceClaim.id
   });
   const sourceClaimReadback = await projectScopedImportedSourceClaimReadback({
@@ -868,7 +891,7 @@ const persistSourceDecisionImportRow = async (input: {
     sourceClaimId: sourceClaim.id
   });
 
-  if (row.status === "rejected") {
+  if (authorityLifecycleStatus === "rejected") {
     return {
       decisionId: row.id,
       ...persistedEvidenceFields(input.prepared),
@@ -903,6 +926,7 @@ const persistSourceDecisionImportRow = async (input: {
       retrievalRepository: input.retrievalRepository,
       projectId: input.projectId,
       row,
+      authorityLifecycleStatus,
       sourceArtifactId: sourceArtifact.id,
       sourceChunkId: sourceChunk.id,
       sourceClaimId: sourceClaim.id,

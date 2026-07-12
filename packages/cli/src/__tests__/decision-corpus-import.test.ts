@@ -556,6 +556,7 @@ describe("runDecisionCorpusImport", () => {
         evidenceRef,
         content: `captured test evidence for ${evidenceRef}`,
         capturedAt,
+        freshness: "current" as const,
         provenance: {
           kind: "local_file" as const,
           uri: `test-fixture://${evidenceRef}`,

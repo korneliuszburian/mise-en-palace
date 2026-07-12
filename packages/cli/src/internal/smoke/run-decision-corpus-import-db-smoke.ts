@@ -1,4 +1,7 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import postgres from "postgres";
 
 import {
@@ -93,6 +96,7 @@ const markerTables = [
 const smokeSource = "krn db smoke decision-corpus-import";
 
 const externalEvidenceRef = "https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design";
+const currentFixtureEvidenceRef = "KRN_ROADMAP.md";
 
 const hashCapturedEvidence = (content: string): string =>
   createHash("sha256").update(content, "utf8").digest("hex");
@@ -168,6 +172,49 @@ const seedCapturedExternalEvidence = async (input: {
       captureKind: "source_evidence_fixture"
     }
   });
+};
+
+const smokeEvidenceResolver = (input: {
+  readonly repoRoot: string;
+  readonly runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>;
+}) => async ({
+  evidenceRef,
+  now,
+  projectId
+}: {
+  readonly evidenceRef: string;
+  readonly now: string;
+  readonly projectId: string;
+}) => {
+  if (evidenceRef !== currentFixtureEvidenceRef) {
+    const sourceDecisionImportRepository = input.runtime.sourceDecisionImportRepository;
+
+    if (sourceDecisionImportRepository === undefined) {
+      throw new Error("decision corpus import DB smoke cannot read captured URL evidence");
+    }
+
+    return sourceDecisionImportRepository.getCapturedSourceEvidence({
+      projectId,
+      evidenceRef
+    });
+  }
+
+  const evidencePath = path.join(input.repoRoot, evidenceRef);
+  const content = await readFile(evidencePath, "utf8");
+
+  return {
+    status: "captured" as const,
+    evidenceRef,
+    content,
+    contentHash: hashCapturedEvidence(content),
+    capturedAt: now,
+    freshness: "current" as const,
+    provenance: {
+      kind: "local_file" as const,
+      uri: pathToFileURL(evidencePath).toString(),
+      path: evidenceRef
+    }
+  };
 };
 
 type PersistDecisionCorpusImportInput =
@@ -251,13 +298,18 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       projectId,
       smokeId: input.smokeId
     });
+    const resolveEvidence = smokeEvidenceResolver({
+      repoRoot: input.repoRoot,
+      runtime
+    });
     const persistedRows = await persistDecisionCorpusImport({
       runtime,
       projectId,
       fixture,
       smokeId: input.smokeId,
       now: input.now,
-      authorizedRepoRoot: input.repoRoot
+      authorizedRepoRoot: input.repoRoot,
+      resolveEvidence
     });
     const replayRows = await persistDecisionCorpusImport({
       runtime,
@@ -265,7 +317,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       fixture,
       smokeId: input.smokeId,
       now: input.now,
-      authorizedRepoRoot: input.repoRoot
+      authorizedRepoRoot: input.repoRoot,
+      resolveEvidence
     });
     const replayStable = JSON.stringify(replayRows) === JSON.stringify(persistedRows);
     const replayArtifactRows = await client<{ count: number }[]>`
@@ -282,7 +335,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       fixture,
       smokeId: partialSmokeId,
       now: input.now,
-      authorizedRepoRoot: input.repoRoot
+      authorizedRepoRoot: input.repoRoot,
+      resolveEvidence
     });
     const partialCurrentRow = partialRows.find((row) =>
       row.sourceDecisionEdgeId !== undefined && row.searchDocumentId !== undefined
@@ -302,7 +356,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         fixture,
         smokeId: partialSmokeId,
         now: input.now,
-        authorizedRepoRoot: input.repoRoot
+        authorizedRepoRoot: input.repoRoot,
+        resolveEvidence
       });
     } catch (error) {
       partialReplayRejected = error instanceof Error &&
@@ -323,7 +378,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         fixture: changedFixture,
         smokeId: input.smokeId,
         now: input.now,
-        authorizedRepoRoot: input.repoRoot
+        authorizedRepoRoot: input.repoRoot,
+        resolveEvidence
       });
     } catch (error) {
       changedReplayRejected = error instanceof Error &&
@@ -382,7 +438,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         smokeId: input.smokeId,
         importedBy: "krn db smoke decision-corpus-import atomic-failure",
         now: input.now,
-        authorizedRepoRoot: input.repoRoot
+        authorizedRepoRoot: input.repoRoot,
+        resolveEvidence
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes("injected row failure")) {

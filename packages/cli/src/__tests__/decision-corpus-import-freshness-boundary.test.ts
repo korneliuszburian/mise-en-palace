@@ -25,12 +25,13 @@ const fixturePath = fileURLToPath(
   )
 );
 
-const nonCurrentFreshnessCases = [
+const freshnessCases = [
+  { decisionId: "live-codex-packet-obedience-pilot", freshness: "current" },
   { decisionId: "decision-corpus-import-path", freshness: "unknown" },
   { decisionId: "db-backed-decision-corpus-import", freshness: "stale" }
 ] as const;
 
-type NonCurrentEvidenceFreshness = typeof nonCurrentFreshnessCases[number]["freshness"];
+type EvidenceFreshness = typeof freshnessCases[number]["freshness"];
 
 const fixtureWithCurrentDecision = (decisionId: string) => {
   const fixture = loadDecisionCorpusImportFixture(fixturePath);
@@ -50,7 +51,7 @@ const fixtureWithCurrentDecision = (decisionId: string) => {
   };
 };
 
-const capturedEvidenceResolver = (freshness: NonCurrentEvidenceFreshness) =>
+const capturedEvidenceResolver = (freshness: EvidenceFreshness) =>
   async (input: { readonly evidenceRef: string; readonly now: string }) => ({
     status: "captured" as const,
     evidenceRef: input.evidenceRef,
@@ -77,49 +78,65 @@ const requiredPersistedRow = (
   return row;
 };
 
-interface CurrentAuthorityProjection {
+interface ImportLifecycleProjection {
   readonly decisionId: string;
   readonly evidenceFreshness: PersistedDecisionCorpusRow["evidenceFreshness"];
+  readonly sourceChunkId: string;
   readonly sourceClaimStatus: string;
   readonly sourceDecisionStatus: string;
+  readonly sourceDecisionEdgeCount: number;
   readonly searchDocumentValidityStatus: string;
 }
 
-const currentAuthorityProjection = async (
+const importLifecycleProjection = async (
   client: ReturnType<typeof postgres>,
   row: PersistedDecisionCorpusRow
-): Promise<CurrentAuthorityProjection> => {
-  if (row.sourceDecisionEdgeId === undefined || row.searchDocumentId === undefined) {
-    throw new Error(`missing governing projection for ${row.decisionId}`);
+): Promise<ImportLifecycleProjection> => {
+  if (row.searchDocumentId === undefined) {
+    throw new Error(`missing retained SearchDocument for ${row.decisionId}`);
   }
 
   const projections = await client<{
+    sourceChunkId: string;
     sourceClaimStatus: string;
     sourceDecisionStatus: string;
+    sourceDecisionEdgeCount: number;
     searchDocumentValidityStatus: string;
   }[]>`
     select
+      source_chunks.id as "sourceChunkId",
       source_claims.status::text as "sourceClaimStatus",
       source_decisions.status::text as "sourceDecisionStatus",
+      count(source_decision_edges.id)::int as "sourceDecisionEdgeCount",
       search_documents.validity_status::text as "searchDocumentValidityStatus"
-    from source_claims
+    from source_artifacts
+    join source_chunks
+      on source_chunks.id = ${row.sourceChunkId}
+      and source_chunks.source_artifact_id = source_artifacts.id
+    join source_claims
+      on source_claims.id = ${row.sourceClaimId}
+      and source_claims.source_artifact_id = source_artifacts.id
     join source_decisions
       on source_decisions.id = ${row.sourceDecisionId}
       and source_decisions.source_claim_id = source_claims.id
-    join source_decision_edges
-      on source_decision_edges.id = ${row.sourceDecisionEdgeId}
-      and source_decision_edges.source_claim_id = source_claims.id
+    left join source_decision_edges
+      on source_decision_edges.source_claim_id = source_claims.id
       and source_decision_edges.source_decision_id = source_decisions.id
     join search_documents
       on search_documents.id = ${row.searchDocumentId}
       and search_documents.source_claim_id = source_claims.id
       and search_documents.source_decision_id = source_decisions.id
-    where source_claims.id = ${row.sourceClaimId}
+    where source_artifacts.id = ${row.sourceArtifactId}
+    group by
+      source_chunks.id,
+      source_claims.status,
+      source_decisions.status,
+      search_documents.validity_status
   `;
   const projection = projections[0];
 
   if (projection === undefined) {
-    throw new Error(`missing persisted governing projection for ${row.decisionId}`);
+    throw new Error(`missing persisted import lifecycle for ${row.decisionId}`);
   }
 
   return {
@@ -131,7 +148,7 @@ const currentAuthorityProjection = async (
 
 describe("decision corpus import evidence freshness boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "reproduces governing authority from captured stale and unknown evidence",
+    "defers captured stale and unknown evidence for current governing imports",
     async () => {
       const marker = `decision-corpus-import-freshness-${crypto.randomUUID()}`;
       const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
@@ -147,7 +164,7 @@ describe("decision corpus import evidence freshness boundary", () => {
         });
         const rows: PersistedDecisionCorpusRow[] = [];
 
-        for (const freshnessCase of nonCurrentFreshnessCases) {
+        for (const freshnessCase of freshnessCases) {
           const persistedRows = await persistDecisionCorpusImport({
             runtime,
             projectId: runtime.projectId,
@@ -160,24 +177,37 @@ describe("decision corpus import evidence freshness boundary", () => {
           rows.push(requiredPersistedRow(persistedRows, freshnessCase.decisionId));
         }
 
-        const authorityProjections = await Promise.all(rows.map((row) =>
-          currentAuthorityProjection(client, row)
+        const lifecycleProjections = await Promise.all(rows.map((row) =>
+          importLifecycleProjection(client, row)
         ));
 
-        expect(authorityProjections).toEqual([
+        expect(lifecycleProjections).toEqual([
+          {
+            decisionId: "live-codex-packet-obedience-pilot",
+            evidenceFreshness: "current",
+            sourceChunkId: expect.any(String),
+            sourceClaimStatus: "accepted",
+            sourceDecisionStatus: "adopt",
+            sourceDecisionEdgeCount: 1,
+            searchDocumentValidityStatus: "active"
+          },
           {
             decisionId: "decision-corpus-import-path",
             evidenceFreshness: "unknown",
-            sourceClaimStatus: "accepted",
-            sourceDecisionStatus: "adopt",
-            searchDocumentValidityStatus: "active"
+            sourceChunkId: expect.any(String),
+            sourceClaimStatus: "deprecated",
+            sourceDecisionStatus: "defer",
+            sourceDecisionEdgeCount: 0,
+            searchDocumentValidityStatus: "expired"
           },
           {
             decisionId: "db-backed-decision-corpus-import",
             evidenceFreshness: "stale",
-            sourceClaimStatus: "accepted",
-            sourceDecisionStatus: "adopt",
-            searchDocumentValidityStatus: "active"
+            sourceChunkId: expect.any(String),
+            sourceClaimStatus: "deprecated",
+            sourceDecisionStatus: "defer",
+            sourceDecisionEdgeCount: 0,
+            searchDocumentValidityStatus: "expired"
           }
         ]);
       } finally {
