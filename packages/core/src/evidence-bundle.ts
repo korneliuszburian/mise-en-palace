@@ -6,6 +6,7 @@ import {
   readMetadataString,
   readMetadataStringList
 } from "./metadata.js";
+import { isIsoTimestamp } from "./time.js";
 import type { IsoTimestamp } from "./time.js";
 import type { EvidenceContract } from "./evidence-contract.js";
 
@@ -170,6 +171,26 @@ export type EvidenceCommandReadback =
   | CapturedOutputFileEvidenceCommand
   | CommandRunnerEvidenceCommand
   | ExternalLogEvidenceCommand;
+
+export type EvidenceCommandHelpedProofFailureReason =
+  | "not_execution_backed"
+  | "missing_captured_at"
+  | "invalid_captured_at"
+  | "invalid_packet_generated_at"
+  | "captured_before_packet_issuance"
+  | "missing_exit_code"
+  | "passed_nonzero_exit_code"
+  | "failed_zero_exit_code"
+  | "command_not_passed";
+
+export type EvidenceCommandHelpedProofAssessment =
+  | {
+      status: "eligible";
+    }
+  | {
+      status: "ineligible";
+      reason: EvidenceCommandHelpedProofFailureReason;
+    };
 
 export interface EvidenceBundle {
   id: EvidenceBundleId;
@@ -583,6 +604,84 @@ export const toEvidenceCommandReadback = (
   return normalizeDefaultTemplateCommand(command);
 };
 
+type ExecutionBackedEvidenceCommand = Extract<
+  EvidenceCommandReadback,
+  { kind: "captured_output_file" | "command_runner" | "external_log" }
+>;
+
+const ineligibleCommandHelpedProof = (
+  reason: EvidenceCommandHelpedProofFailureReason
+): EvidenceCommandHelpedProofAssessment => ({
+  status: "ineligible",
+  reason
+});
+
+const isExecutionBackedEvidenceCommand = (
+  command: EvidenceCommandReadback
+): command is ExecutionBackedEvidenceCommand =>
+  command.kind === "captured_output_file" ||
+  command.kind === "command_runner" ||
+  command.kind === "external_log";
+
+const commandCaptureAssessment = (
+  command: ExecutionBackedEvidenceCommand,
+  packetGeneratedAt: IsoTimestamp
+): EvidenceCommandHelpedProofAssessment | undefined => {
+  const capturedAt = command.capturedAt?.trim();
+
+  if (capturedAt === undefined || capturedAt.length === 0) {
+    return ineligibleCommandHelpedProof("missing_captured_at");
+  }
+
+  const capturedAtMillis = Date.parse(capturedAt);
+
+  if (!isIsoTimestamp(capturedAt) || !Number.isFinite(capturedAtMillis)) {
+    return ineligibleCommandHelpedProof("invalid_captured_at");
+  }
+
+  const packetGeneratedAtMillis = Date.parse(packetGeneratedAt);
+
+  if (!Number.isFinite(packetGeneratedAtMillis)) {
+    return ineligibleCommandHelpedProof("invalid_packet_generated_at");
+  }
+
+  return capturedAtMillis < packetGeneratedAtMillis
+    ? ineligibleCommandHelpedProof("captured_before_packet_issuance")
+    : undefined;
+};
+
+const commandStatusAssessment = (
+  command: ExecutionBackedEvidenceCommand
+): EvidenceCommandHelpedProofAssessment => {
+  if (command.status === "passed") {
+    if (command.exitCode === undefined) {
+      return ineligibleCommandHelpedProof("missing_exit_code");
+    }
+
+    return command.exitCode === 0
+      ? { status: "eligible" }
+      : ineligibleCommandHelpedProof("passed_nonzero_exit_code");
+  }
+
+  if (command.status === "failed" && command.exitCode === 0) {
+    return ineligibleCommandHelpedProof("failed_zero_exit_code");
+  }
+
+  return ineligibleCommandHelpedProof("command_not_passed");
+};
+
+export const assessEvidenceCommandHelpedProof = (input: {
+  command: EvidenceCommandReadback;
+  packetGeneratedAt: IsoTimestamp;
+}): EvidenceCommandHelpedProofAssessment => {
+  if (!isExecutionBackedEvidenceCommand(input.command)) {
+    return ineligibleCommandHelpedProof("not_execution_backed");
+  }
+
+  return commandCaptureAssessment(input.command, input.packetGeneratedAt) ??
+    commandStatusAssessment(input.command);
+};
+
 export const evidenceBundleProvesHelped = (input: {
   bundle: EvidenceBundle;
   evidenceContract: EvidenceContract | undefined;
@@ -609,10 +708,10 @@ export const evidenceBundleProvesHelped = (input: {
   return input.bundle.commands
     .map(toEvidenceCommandReadback)
     .some((command) =>
-      command.status === "passed" &&
       activeCommands.has(command.command) &&
-      (command.kind === "command_runner" ||
-        command.kind === "captured_output_file" ||
-        command.kind === "external_log")
+      assessEvidenceCommandHelpedProof({
+        command,
+        packetGeneratedAt: input.packetGeneratedAt
+      }).status === "eligible"
     );
 };

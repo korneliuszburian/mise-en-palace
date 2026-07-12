@@ -7,6 +7,7 @@ import type {
   TargetEvidenceInput
 } from "@krn/core";
 import {
+  isIsoTimestamp,
   isSourceUsefulnessOutcome
 } from "@krn/core";
 import {
@@ -17,7 +18,7 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--captured-at <iso-timestamp>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
@@ -61,6 +62,21 @@ const parseExitCode = (value: string): number | undefined => {
   return parsed;
 };
 
+const incoherentCommandExitCodeError = (
+  status: EvidenceCommandStatus,
+  exitCode: number | undefined
+): string | undefined => {
+  if (status === "passed" && exitCode !== undefined && exitCode !== 0) {
+    return "--status passed requires --exit-code 0";
+  }
+
+  if (status === "failed" && exitCode === 0) {
+    return "--status failed requires a non-zero --exit-code";
+  }
+
+  return undefined;
+};
+
 const pushPendingCommand = (
   commands: EvidenceCommand[],
   pending: Partial<EvidenceCommand> | undefined
@@ -81,10 +97,19 @@ const pushPendingCommand = (
     };
   }
 
+  const exitCodeError = incoherentCommandExitCodeError(pending.status, pending.exitCode);
+
+  if (exitCodeError !== undefined) {
+    return { error: exitCodeError };
+  }
+
   commands.push({
     command: pending.command.trim(),
     status: pending.status,
     ...(pending.exitCode === undefined ? {} : { exitCode: pending.exitCode }),
+    ...(pending.capturedAt === undefined || pending.capturedAt.trim().length === 0
+      ? {}
+      : { capturedAt: pending.capturedAt.trim() }),
     ...(pending.outputPath === undefined || pending.outputPath.trim().length === 0
       ? {}
       : { outputPath: pending.outputPath.trim() })
@@ -548,6 +573,7 @@ const evidenceOptionNames = [
   "--memory-usefulness",
   "--status",
   "--exit-code",
+  "--captured-at",
   "--output"
 ] as const;
 
@@ -620,7 +646,7 @@ const packetGeneratedAtEvidenceHandler: EvidenceOptionHandler = (rest, index, st
     return parsed;
   }
 
-  if (!Number.isFinite(Date.parse(parsed.value))) {
+  if (!isIsoTimestamp(parsed.value)) {
     return {
       ok: false,
       error: "--decision-packet-generated-at requires a valid ISO timestamp"
@@ -973,6 +999,42 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
     state.pendingCommand = {
       ...state.pendingCommand,
       exitCode
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--captured-at": (rest, index, state) => {
+    const parsed = parseNonEmptyOption(
+      rest,
+      index,
+      "--captured-at",
+      "--captured-at requires a valid ISO timestamp"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--captured-at requires a preceding --command"
+      };
+    }
+
+    if (!isIsoTimestamp(parsed.value)) {
+      return {
+        ok: false,
+        error: "--captured-at requires a valid ISO timestamp"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      capturedAt: parsed.value
     };
 
     return {

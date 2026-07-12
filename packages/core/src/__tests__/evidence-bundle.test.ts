@@ -1,12 +1,15 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  assessEvidenceCommandHelpedProof,
   evidenceBundleProvesHelped,
   toEvidenceCommandReadback,
   normalizeTargetEvidence,
   parseEvidenceBundleMetadataReadback,
   targetEvidenceFromMetadata,
-  type EvidenceBundle
+  type EvidenceBundle,
+  type EvidenceCommand,
+  type EvidenceCommandHelpedProofFailureReason
 } from "../evidence-bundle.js";
 
 const now = "2026-06-23T07:10:00.000Z";
@@ -69,38 +72,71 @@ const provesHelped = (
   packetGeneratedAt: "2026-06-23T07:00:00.000Z"
 });
 
+const commandProofAssessment = (command: EvidenceCommand) =>
+  assessEvidenceCommandHelpedProof({
+    command: toEvidenceCommandReadback(command),
+    packetGeneratedAt: "2026-06-23T07:00:00.000Z"
+  });
+
 describe("evidence bundle completeness", () => {
-  test("reproduces fixed-point helped false positives for stale, incoherent, optional, and unresolved verification", () => {
-    expect(provesHelped([{
-      command: "pnpm typecheck",
-      status: "passed",
-      provenance: "command_runner",
-      exitCode: 0,
-      capturedAt: "2026-06-23T06:59:59.000Z"
-    }])).toBe(true);
+  test("rejects stale, incoherent, malformed, and timeless command proof with typed reasons", () => {
+    const cases = [{
+      command: {
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: "2026-06-23T06:59:59.000Z"
+      },
+      reason: "captured_before_packet_issuance"
+    }, {
+      command: {
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 7,
+        capturedAt: now
+      },
+      reason: "passed_nonzero_exit_code"
+    }, {
+      command: {
+        command: "pnpm typecheck",
+        status: "failed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: now
+      },
+      reason: "failed_zero_exit_code"
+    }, {
+      command: {
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: "June 23, 2026 07:10:00 GMT"
+      },
+      reason: "invalid_captured_at"
+    }, {
+      command: {
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "captured_output_file",
+        exitCode: 0,
+        outputRef: "missing-output.txt"
+      },
+      reason: "missing_captured_at"
+    }] as const satisfies readonly {
+      readonly command: EvidenceCommand;
+      readonly reason: EvidenceCommandHelpedProofFailureReason;
+    }[];
 
-    expect(provesHelped([{
-      command: "pnpm typecheck",
-      status: "passed",
-      provenance: "command_runner",
-      exitCode: 7,
-      capturedAt: now
-    }])).toBe(true);
-
-    expect(provesHelped([{
-      command: "pnpm typecheck",
-      status: "passed",
-      provenance: "command_runner",
-      exitCode: 0,
-      capturedAt: now
-    }], false)).toBe(true);
-
-    expect(provesHelped([{
-      command: "pnpm typecheck",
-      status: "passed",
-      provenance: "captured_output_file",
-      outputRef: "missing-output.txt"
-    }])).toBe(true);
+    for (const testCase of cases) {
+      expect(commandProofAssessment(testCase.command)).toEqual({
+        status: "ineligible",
+        reason: testCase.reason
+      });
+      expect(provesHelped([testCase.command])).toBe(false);
+    }
   });
 
   test("keeps operator-only reports outside the mechanical helped predicate", () => {
