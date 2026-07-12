@@ -87,6 +87,28 @@ type CompletedEvidenceCommand =
       error: string;
     };
 
+const optionalEvidenceCommandFields = (
+  pending: Partial<EvidenceCommand>
+): Partial<Omit<EvidenceCommand, "command" | "status">> => {
+  const fields: Partial<Omit<EvidenceCommand, "command" | "status">> = {};
+  const capturedAt = pending.capturedAt?.trim();
+  const outputPath = pending.outputPath?.trim();
+
+  if (pending.exitCode !== undefined) {
+    fields.exitCode = pending.exitCode;
+  }
+
+  if (capturedAt !== undefined && capturedAt.length > 0) {
+    fields.capturedAt = capturedAt;
+  }
+
+  if (outputPath !== undefined && outputPath.length > 0) {
+    fields.outputPath = outputPath;
+  }
+
+  return fields;
+};
+
 const completeEvidenceCommand = (
   pending: Partial<EvidenceCommand>
 ): CompletedEvidenceCommand => {
@@ -119,13 +141,7 @@ const completeEvidenceCommand = (
     command: {
       command,
       status,
-      ...(pending.exitCode === undefined ? {} : { exitCode: pending.exitCode }),
-      ...(pending.capturedAt === undefined || pending.capturedAt.trim().length === 0
-        ? {}
-        : { capturedAt: pending.capturedAt.trim() }),
-      ...(pending.outputPath === undefined || pending.outputPath.trim().length === 0
-        ? {}
-        : { outputPath: pending.outputPath.trim() })
+      ...optionalEvidenceCommandFields(pending)
     }
   };
 };
