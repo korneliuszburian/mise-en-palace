@@ -301,20 +301,21 @@ export const runMemoryGovernanceSmokeCheck = async (
     const verificationCapturedAt = new Date(
       Date.parse(executionRun.updatedAt) + 1000
     ).toISOString();
+    const verificationCommand = (exitCode: number, outputRef: string) => ({
+      command: result.evidenceContract.commands.find((command) => command.required)?.command ??
+        result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
+      status: "passed" as const,
+      provenance: "command_runner" as const,
+      exitCode,
+      capturedAt: verificationCapturedAt,
+      outputRef
+    });
     const incoherentPacketChecksum = `${packetChecksum}:incoherent`;
     const incoherentVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: [],
-      commands: [{
-        command: result.evidenceContract.commands.find((command) => command.required)?.command ??
-          result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
-        status: "passed",
-        provenance: "command_runner",
-        exitCode: 7,
-        capturedAt: verificationCapturedAt,
-        outputRef: `smoke:${marker}:memory-governance-incoherent-verification`
-      }],
+      commands: [verificationCommand(7, `smoke:${marker}:memory-governance-incoherent-verification`)],
       diffRisk: "low",
       reviewBurden: "Memory governance incoherent command falsifier.",
       rollbackPath: "Delete smoke marker rows.",
@@ -337,15 +338,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: [],
-      commands: [{
-        command: result.evidenceContract.commands.find((command) => command.required)?.command ??
-          result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
-        status: "passed",
-        provenance: "command_runner",
-        exitCode: 0,
-        capturedAt: verificationCapturedAt,
-        outputRef: `smoke:${marker}:memory-governance-verification`
-      }],
+      commands: [verificationCommand(0, `smoke:${marker}:memory-governance-verification`)],
       diffRisk: "low",
       reviewBurden: "Memory governance smoke proof.",
       rollbackPath: "Delete smoke marker rows.",

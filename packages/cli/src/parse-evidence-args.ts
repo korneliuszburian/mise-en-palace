@@ -77,6 +77,59 @@ const incoherentCommandExitCodeError = (
   return undefined;
 };
 
+type CompletedEvidenceCommand =
+  | {
+      ok: true;
+      command: EvidenceCommand;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+const completeEvidenceCommand = (
+  pending: Partial<EvidenceCommand>
+): CompletedEvidenceCommand => {
+  const command = pending.command?.trim();
+
+  if (command === undefined || command.length === 0) {
+    return {
+      ok: false,
+      error: "--command requires a non-empty value"
+    };
+  }
+
+  const status = pending.status;
+
+  if (status === undefined) {
+    return {
+      ok: false,
+      error: "--command requires --status passed|failed|skipped|missing|not_run"
+    };
+  }
+
+  const exitCodeError = incoherentCommandExitCodeError(status, pending.exitCode);
+
+  if (exitCodeError !== undefined) {
+    return { ok: false, error: exitCodeError };
+  }
+
+  return {
+    ok: true,
+    command: {
+      command,
+      status,
+      ...(pending.exitCode === undefined ? {} : { exitCode: pending.exitCode }),
+      ...(pending.capturedAt === undefined || pending.capturedAt.trim().length === 0
+        ? {}
+        : { capturedAt: pending.capturedAt.trim() }),
+      ...(pending.outputPath === undefined || pending.outputPath.trim().length === 0
+        ? {}
+        : { outputPath: pending.outputPath.trim() })
+    }
+  };
+};
+
 const pushPendingCommand = (
   commands: EvidenceCommand[],
   pending: Partial<EvidenceCommand> | undefined
@@ -85,35 +138,13 @@ const pushPendingCommand = (
     return {};
   }
 
-  if (pending.command === undefined || pending.command.trim().length === 0) {
-    return {
-      error: "--command requires a non-empty value"
-    };
+  const completed = completeEvidenceCommand(pending);
+
+  if (!completed.ok) {
+    return { error: completed.error };
   }
 
-  if (pending.status === undefined) {
-    return {
-      error: "--command requires --status passed|failed|skipped|missing|not_run"
-    };
-  }
-
-  const exitCodeError = incoherentCommandExitCodeError(pending.status, pending.exitCode);
-
-  if (exitCodeError !== undefined) {
-    return { error: exitCodeError };
-  }
-
-  commands.push({
-    command: pending.command.trim(),
-    status: pending.status,
-    ...(pending.exitCode === undefined ? {} : { exitCode: pending.exitCode }),
-    ...(pending.capturedAt === undefined || pending.capturedAt.trim().length === 0
-      ? {}
-      : { capturedAt: pending.capturedAt.trim() }),
-    ...(pending.outputPath === undefined || pending.outputPath.trim().length === 0
-      ? {}
-      : { outputPath: pending.outputPath.trim() })
-  });
+  commands.push(completed.command);
 
   return {};
 };
