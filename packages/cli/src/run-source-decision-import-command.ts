@@ -37,6 +37,7 @@ import type {
   DecisionCorpusImportFixture
 } from "./internal/eval/run-decision-corpus-import.js";
 import {
+  deriveSourceDecisionImportIdentity,
   persistSourceDecisionImport,
   sourceDecisionImportCounts,
   validateSourceDecisionImportFixture,
@@ -62,11 +63,13 @@ export type CreateSourceDecisionImportDatabaseRuntime = (
 interface LoadedSourceDecisionImportFixture {
   readonly filePath: string;
   readonly repoRoot: string;
+  readonly identityFixture: DecisionCorpusImportFixture;
   readonly fixture: DecisionCorpusImportFixture;
 }
 
 interface PersistedSourceDecisionImport {
   readonly projectId: string;
+  readonly importId: string;
   readonly rows: readonly PersistedSourceDecisionImportRow[];
   readonly coverage: SourceCoverageReport;
 }
@@ -109,6 +112,7 @@ const resolveImportFixture = async (
   return {
     filePath,
     repoRoot,
+    identityFixture: parsed,
     fixture: {
       ...parsed,
       baseFixturePath
@@ -148,6 +152,7 @@ const formatSourceDecisionImportText = (
     readonly filePath: string;
     readonly fixture: DecisionCorpusImportFixture;
     readonly coverage: SourceCoverageReport;
+    readonly importId: string;
     readonly projectId?: string;
     readonly rows?: readonly PersistedSourceDecisionImportRow[];
   }
@@ -158,6 +163,7 @@ const formatSourceDecisionImportText = (
     "KRN Source Decision Import",
     persistenceLine(input.persistenceLabel),
     ...(input.projectId === undefined ? [] : [`projectId: ${input.projectId}`]),
+    `importId: ${input.importId}`,
     `file: ${path.relative(process.cwd(), input.filePath)}`,
     `corpus: ${input.fixture.corpusName}`,
     `decisions: ${counts.decisionCount} (current=${counts.currentDecisionCount}, stale=${counts.staleDecisionCount}, rejected=${counts.rejectedDecisionCount})`,
@@ -184,6 +190,7 @@ const formatSourceDecisionImportJson = (
     readonly filePath: string;
     readonly fixture: DecisionCorpusImportFixture;
     readonly coverage: SourceCoverageReport;
+    readonly importId: string;
     readonly projectId?: string;
     readonly rows?: readonly PersistedSourceDecisionImportRow[];
   }
@@ -191,6 +198,7 @@ const formatSourceDecisionImportJson = (
   kind: "source_decision_import",
   persistence: input.persisted ? "enabled" : "disabled",
   ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+  importId: input.importId,
   file: input.filePath,
   corpusName: input.fixture.corpusName,
   counts: sourceDecisionImportCounts(input.fixture),
@@ -207,7 +215,8 @@ const formatSourceDecisionImportJson = (
 
 const previewSourceDecisionImport = (
   command: SourceDecisionImportCommand,
-  loaded: LoadedSourceDecisionImportFixture
+  loaded: LoadedSourceDecisionImportFixture,
+  importId: string
 ): string =>
   command.json === true
     ? formatSourceDecisionImportJson({
@@ -215,6 +224,7 @@ const previewSourceDecisionImport = (
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         coverage: previewCoverageFor(loaded.fixture),
+        importId,
         ...(command.projectId === undefined ? {} : { projectId: command.projectId })
       })
     : formatSourceDecisionImportText({
@@ -222,8 +232,13 @@ const previewSourceDecisionImport = (
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         coverage: previewCoverageFor(loaded.fixture),
+        importId,
         ...(command.projectId === undefined ? {} : { projectId: command.projectId })
       });
+
+const sourceDecisionImportProjectIdentity = (
+  command: SourceDecisionImportCommand
+): string => command.projectId ?? `workspace:${defaultWorkspaceSlug};project:${defaultProjectSlug}`;
 
 const createSourceDecisionImportRuntime = async (
   runtime: SourceDecisionImportCommandRuntime,
@@ -246,14 +261,15 @@ const persistLoadedSourceDecisionImport = async (
   runtime: SourceDecisionImportCommandRuntime,
   command: SourceDecisionImportCommand,
   loaded: LoadedSourceDecisionImportFixture,
-  databaseRuntime: DatabaseRuntime
+  databaseRuntime: DatabaseRuntime,
+  importId: string
 ): Promise<PersistedSourceDecisionImport> => {
   const projectId = command.projectId ?? databaseRuntime.projectId;
   const rows = await persistSourceDecisionImport({
     runtime: databaseRuntime,
     projectId,
     fixture: loaded.fixture,
-    importId: runtime.createId("source-decision-import"),
+    importId,
     importedBy: "krn source decision import",
     now: runtime.now(),
     authorizedRepoRoot: loaded.repoRoot
@@ -261,6 +277,7 @@ const persistLoadedSourceDecisionImport = async (
 
   return {
     projectId,
+    importId,
     rows,
     coverage: coverageFor(loaded.fixture, rows.map((row) => ({
       decisionId: row.decisionId,
@@ -286,6 +303,7 @@ const formatPersistedSourceDecisionImport = (
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         projectId: persisted.projectId,
+        importId: persisted.importId,
         rows: persisted.rows,
         coverage: persisted.coverage
       })
@@ -294,6 +312,7 @@ const formatPersistedSourceDecisionImport = (
         filePath: loaded.filePath,
         fixture: loaded.fixture,
         projectId: persisted.projectId,
+        importId: persisted.importId,
         rows: persisted.rows,
         coverage: persisted.coverage
       });
@@ -305,9 +324,13 @@ export const runSourceDecisionImportCommand = async (
   const loaded = await resolveImportFixture(runtime.cwd, command.file ?? "");
 
   validateSourceDecisionImportFixture(loaded.fixture);
+  const importId = deriveSourceDecisionImportIdentity({
+    projectIdentity: sourceDecisionImportProjectIdentity(command),
+    fixture: loaded.identityFixture
+  });
 
   if (!command.persist) {
-    return { stdout: previewSourceDecisionImport(command, loaded) };
+    return { stdout: previewSourceDecisionImport(command, loaded, importId) };
   }
 
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
@@ -319,7 +342,13 @@ export const runSourceDecisionImportCommand = async (
   const databaseRuntime = await createSourceDecisionImportRuntime(runtime, command, databaseUrl);
 
   try {
-    const persisted = await persistLoadedSourceDecisionImport(runtime, command, loaded, databaseRuntime);
+    const persisted = await persistLoadedSourceDecisionImport(
+      runtime,
+      command,
+      loaded,
+      databaseRuntime,
+      importId
+    );
 
     return {
       stdout: formatPersistedSourceDecisionImport(command, loaded, persisted)

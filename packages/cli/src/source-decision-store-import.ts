@@ -138,6 +138,80 @@ const normalizeImportText = (value: string): string =>
 const contentHash = (value: string): string =>
   createHash("sha256").update(value, "utf8").digest("hex");
 
+const compareImportText = (left: string, right: string): number =>
+  left < right ? -1 : left > right ? 1 : 0;
+
+const canonicalImportTextList = (values: readonly string[]): readonly string[] =>
+  values.map(normalizeImportText).sort(compareImportText);
+
+const canonicalSourceDecisionImportManifest = (
+  fixture: DecisionCorpusImportFixture
+) => ({
+  version: fixture.version,
+  baseFixturePath: normalizeImportText(fixture.baseFixturePath),
+  corpusName: normalizeImportText(fixture.corpusName),
+  topK: fixture.topK,
+  minimumKrnWinRate: fixture.minimumKrnWinRate,
+  maximumNotesWinRate: fixture.maximumNotesWinRate,
+  coverageScope: fixture.coverageScope === undefined
+    ? null
+    : {
+        declaredRows: fixture.coverageScope.declaredRows
+          .map((row) => ({
+            decisionId: normalizeImportText(row.decisionId),
+            evidenceRefs: canonicalImportTextList(row.evidenceRefs)
+          }))
+          .sort((left, right) => compareImportText(left.decisionId, right.decisionId))
+      },
+  decisions: fixture.decisions
+    .map((row) => ({
+      id: row.id,
+      title: normalizeImportText(row.title),
+      statement: normalizeImportText(row.statement),
+      status: row.status,
+      taskScopes: canonicalImportTextList(row.taskScopes),
+      evidenceRef: normalizeImportText(row.evidenceRef),
+      falsifier: normalizeImportText(row.falsifier),
+      doesNotProve: normalizeImportText(row.doesNotProve),
+      noteText: normalizeImportText(row.noteText)
+    }))
+    .sort((left, right) => compareImportText(left.id, right.id)),
+  cases: fixture.cases
+    .map((row) => ({
+      id: row.id,
+      task: normalizeImportText(row.task),
+      expectedDecisionId: normalizeImportText(row.expectedDecisionId),
+      staleDecisionIds: canonicalImportTextList(row.staleDecisionIds),
+      rejectedDecisionIds: canonicalImportTextList(row.rejectedDecisionIds),
+      baselineFailureRationale: normalizeImportText(row.baselineFailureRationale)
+    }))
+    .sort((left, right) => compareImportText(left.id, right.id))
+});
+
+/**
+ * Public CLI retries need an identity that is independent of process clocks
+ * and database-generated IDs. The project selector and canonical corpus
+ * manifest are the complete semantic input at this boundary; captured-source
+ * byte changes remain protected by the persisted artifact hash conflict check.
+ */
+export const deriveSourceDecisionImportIdentity = (input: {
+  readonly projectIdentity: string;
+  readonly fixture: DecisionCorpusImportFixture;
+}): string => {
+  const projectIdentity = normalizeImportText(input.projectIdentity);
+
+  if (projectIdentity.length === 0) {
+    throw new Error("source decision import project identity must not be empty");
+  }
+
+  return `source-decision-import:${contentHash(
+    `krn.source-decision-import.identity.v1\n${JSON.stringify({
+      projectIdentity,
+      manifest: canonicalSourceDecisionImportManifest(input.fixture)
+    })}`
+  )}`;
+};
+
 const localEvidenceRefPattern = /^([A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*)(?::[1-9][0-9]*)?(?:#[A-Za-z0-9._/-]+)?$/u;
 
 const isTraversalPath = (localPath: string): boolean =>
@@ -468,12 +542,12 @@ const prepareImportRow = async (
   requireCapturedEvidenceForAuthority(row, evidence);
   const authorityLifecycleStatus = authorityLifecycleStatusFor(row, evidence);
 
+  // Capture time is provenance, not semantic corpus content: retry clocks must not change it.
   const normalizedRow = JSON.stringify({
     doesNotProve: normalizeImportText(row.doesNotProve),
     evidenceContentHash: evidence.contentHash ?? null,
     evidenceRef,
     evidenceStatus: evidence.status,
-    ...(evidence.capturedAt === undefined ? {} : { evidenceCapturedAt: evidence.capturedAt }),
     evidenceFreshness: evidence.freshness ?? "unknown",
     ...(evidence.provenance === undefined ? {} : { evidenceProvenance: evidence.provenance }),
     ...(evidence.reason === undefined ? {} : { evidenceReason: evidence.reason }),

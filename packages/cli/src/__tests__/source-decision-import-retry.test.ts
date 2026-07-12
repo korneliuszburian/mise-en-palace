@@ -68,7 +68,10 @@ const createDisposableDatabase = async (input: string): Promise<{
   };
 };
 
-const runSourceImportCli = async (input: string) =>
+const runSourceImportCli = async (input: {
+  readonly databaseUrl?: string;
+  readonly persist: boolean;
+}) =>
   execFileAsync("pnpm", [
     "--filter",
     "@krn/cli",
@@ -78,16 +81,46 @@ const runSourceImportCli = async (input: string) =>
     "import",
     "--file",
     fixturePath,
-    "--persist",
+    ...(input.persist ? ["--persist"] : []),
     "--json"
   ], {
     cwd: repoRoot,
     encoding: "utf8",
     env: {
       ...process.env,
-      KRN_DATABASE_URL: input
+      ...(input.databaseUrl === undefined ? {} : { KRN_DATABASE_URL: input.databaseUrl })
     }
   });
+
+interface SourceDecisionImportOutput {
+  readonly persistence: "enabled" | "disabled";
+  readonly importId: string;
+}
+
+const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput => {
+  const jsonStart = stdout.indexOf('{\n  "kind": "source_decision_import"');
+
+  if (jsonStart < 0) {
+    throw new Error("source decision import CLI did not emit JSON output");
+  }
+
+  const parsed: unknown = JSON.parse(stdout.slice(jsonStart));
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    typeof parsed["persistence"] !== "string" ||
+    (parsed["persistence"] !== "enabled" && parsed["persistence"] !== "disabled") ||
+    typeof parsed["importId"] !== "string"
+  ) {
+    throw new Error("source decision import CLI did not emit a typed import identity");
+  }
+
+  return {
+    persistence: parsed["persistence"],
+    importId: parsed["importId"]
+  };
+};
 
 const duplicateImportGraphCounts = async (
   client: ReturnType<typeof postgres>
@@ -157,7 +190,7 @@ const duplicateImportGraphCounts = async (
 
 describe("source decision import retry boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "shows a lost-response retry creates two semantic graphs through independent CLI processes",
+    "keeps a byte-identical lost-response retry in one semantic graph across independent CLI processes",
     async () => {
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
       const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
@@ -167,8 +200,15 @@ describe("source decision import retry boundary", () => {
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
         });
-        const first = await runSourceImportCli(disposableDatabase.databaseUrl);
-        const second = await runSourceImportCli(disposableDatabase.databaseUrl);
+        const preview = await runSourceImportCli({ persist: false });
+        const first = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          persist: true
+        });
+        const second = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          persist: true
+        });
         const importRows = await client<{ importId: string }[]>`
           select import_id as "importId"
           from source_artifacts
@@ -176,18 +216,24 @@ describe("source decision import retry boundary", () => {
           order by import_id
         `;
 
-        expect(first.stdout).toContain('"persistence": "enabled"');
-        expect(second.stdout).toContain('"persistence": "enabled"');
-        expect(importRows.map((row) => row.importId)).toHaveLength(2);
-        expect(new Set(importRows.map((row) => row.importId)).size).toBe(2);
+        const previewResult = sourceDecisionImportOutput(preview.stdout);
+        const firstResult = sourceDecisionImportOutput(first.stdout);
+        const secondResult = sourceDecisionImportOutput(second.stdout);
+
+        expect(previewResult.persistence).toBe("disabled");
+        expect(firstResult.persistence).toBe("enabled");
+        expect(secondResult.persistence).toBe("enabled");
+        expect(firstResult.importId).toBe(previewResult.importId);
+        expect(secondResult.importId).toBe(firstResult.importId);
+        expect(importRows.map((row) => row.importId)).toEqual([firstResult.importId]);
         expect(await duplicateImportGraphCounts(client)).toEqual({
-          artifactCount: 2,
+          artifactCount: 1,
           projectCount: 1,
-          chunkCount: 2,
-          claimCount: 2,
-          decisionCount: 2,
+          chunkCount: 1,
+          claimCount: 1,
+          decisionCount: 1,
           decisionEdgeCount: 0,
-          searchDocumentCount: 2,
+          searchDocumentCount: 1,
           rejectionCount: 0
         });
       } finally {
