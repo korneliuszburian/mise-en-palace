@@ -45,7 +45,69 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
   ...overrides
 });
 
+const helpedEvidenceContract = (required: boolean) => ({
+  commands: [{ command: "pnpm typecheck", required }],
+  diffRisk: "low" as const,
+  reviewBurden: "review",
+  rollbackPath: "revert",
+  metadata: {}
+});
+
+const provesHelped = (
+  commands: EvidenceBundle["commands"],
+  required = true
+): boolean => evidenceBundleProvesHelped({
+  bundle: bundle({
+    metadata: { decisionPacketChecksum: "packet-checksum" },
+    commands
+  }),
+  evidenceContract: helpedEvidenceContract(required),
+  packetChecksum: "packet-checksum",
+  packetGeneratedAt: "2026-06-23T07:00:00.000Z"
+});
+
 describe("evidence bundle completeness", () => {
+  test("reproduces fixed-point helped false positives for stale, incoherent, optional, and unresolved verification", () => {
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: "2026-06-23T06:59:59.000Z"
+    }])).toBe(true);
+
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 7,
+      capturedAt: now
+    }])).toBe(true);
+
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: now
+    }], false)).toBe(true);
+
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "captured_output_file",
+      outputRef: "missing-output.txt"
+    }])).toBe(true);
+  });
+
+  test("keeps operator-only reports outside the mechanical helped predicate", () => {
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "operator_reported"
+    }])).toBe(false);
+  });
+
   test("requires fresh active-contract execution proof for helped", () => {
     const evidenceContract = {
       commands: [{ command: "pnpm typecheck", required: true }],
