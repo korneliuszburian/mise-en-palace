@@ -11,6 +11,7 @@ import {
   type EvidenceCommand,
   type EvidenceCommandHelpedProofFailureReason
 } from "../evidence-bundle.js";
+import type { EvidenceContract } from "../evidence-contract.js";
 
 const now = "2026-06-23T07:10:00.000Z";
 
@@ -48,17 +49,22 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
   ...overrides
 });
 
-const helpedEvidenceContract = (required: boolean) => ({
-  commands: [{ command: "pnpm typecheck", required }],
+const contractForCommands = (commands: EvidenceContract["commands"]): EvidenceContract => ({
+  commands,
   diffRisk: "low" as const,
   reviewBurden: "review",
   rollbackPath: "revert",
   metadata: {}
 });
 
+const helpedEvidenceContract = (required: boolean): EvidenceContract =>
+  contractForCommands([{ command: "pnpm typecheck", required }]);
+
 const provesHelped = (
   commands: EvidenceBundle["commands"],
-  required = true
+  contractCommands: EvidenceContract["commands"] = [
+    { command: "pnpm typecheck", required: true }
+  ]
 ): boolean => evidenceBundleProvesHelped({
   bundle: bundle({
     metadata: {
@@ -67,7 +73,7 @@ const provesHelped = (
     },
     commands
   }),
-  evidenceContract: helpedEvidenceContract(required),
+  evidenceContract: contractForCommands(contractCommands),
   packetChecksum: "packet-checksum",
   packetGeneratedAt: "2026-06-23T07:00:00.000Z"
 });
@@ -145,6 +151,53 @@ describe("evidence bundle completeness", () => {
       status: "passed",
       provenance: "operator_reported"
     }])).toBe(false);
+  });
+
+  test("requires every distinct required command while optional rows remain informative", () => {
+    const passed = (command: string): EvidenceCommand => ({
+      command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: now
+    });
+    const failed = (command: string): EvidenceCommand => ({
+      command,
+      status: "failed",
+      provenance: "command_runner",
+      exitCode: 1,
+      capturedAt: now
+    });
+    const requiredTypecheckAndTest = [
+      { command: "pnpm typecheck", required: true },
+      { command: "pnpm test", required: true }
+    ];
+
+    expect(provesHelped([passed("pnpm typecheck")], requiredTypecheckAndTest)).toBe(false);
+    expect(provesHelped([
+      passed("pnpm typecheck"),
+      failed("pnpm test")
+    ], requiredTypecheckAndTest)).toBe(false);
+    expect(provesHelped([
+      passed("pnpm typecheck"),
+      failed("pnpm test")
+    ], [
+      { command: "pnpm typecheck", required: true },
+      { command: "pnpm test", required: false }
+    ])).toBe(true);
+    expect(provesHelped(
+      [passed("pnpm typecheck")],
+      [{ command: "pnpm typecheck", required: false }]
+    )).toBe(false);
+    expect(provesHelped([passed("pnpm typecheck")], [])).toBe(false);
+    expect(provesHelped([
+      passed("pnpm typecheck"),
+      passed("pnpm test")
+    ], [
+      { command: "pnpm typecheck", required: true },
+      { command: "pnpm typecheck", required: true },
+      { command: "pnpm test", required: true }
+    ])).toBe(true);
   });
 
   test("requires fresh active-contract execution proof for helped", () => {

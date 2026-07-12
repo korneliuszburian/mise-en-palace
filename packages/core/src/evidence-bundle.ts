@@ -703,15 +703,24 @@ export const evidenceBundleProvesHelped = (input: {
     return false;
   }
 
-  const activeCommands = new Set(input.evidenceContract.commands.map((command) => command.command));
+  const requiredCommands = new Set(
+    input.evidenceContract.commands
+      .filter((command) => command.required)
+      .map((command) => command.command)
+  );
 
-  return input.bundle.commands
+  if (requiredCommands.size === 0) {
+    return false;
+  }
+
+  const provenCommands = new Set(input.bundle.commands
     .map(toEvidenceCommandReadback)
-    .some((command) =>
-      activeCommands.has(command.command) &&
+    .filter((command) =>
       assessEvidenceCommandHelpedProof({
         command,
         packetGeneratedAt: input.packetGeneratedAt
-      }).status === "eligible"
-    );
+      }).status === "eligible")
+    .map((command) => command.command));
+
+  return [...requiredCommands].every((command) => provenCommands.has(command));
 };

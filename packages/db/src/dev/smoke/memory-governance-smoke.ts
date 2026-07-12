@@ -95,6 +95,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   const task = `memory governance smoke ${marker}`;
   let retrievalRunId: string | undefined;
   let incoherentCommandEvidenceRejected = false;
+  let missingRequiredCommandEvidenceRejected = false;
   let mismatchedPacketIssuanceRejected = false;
 
   const cleanup = async (): Promise<number> => {
@@ -301,9 +302,17 @@ export const runMemoryGovernanceSmokeCheck = async (
     const verificationCapturedAt = new Date(
       Date.parse(executionRun.updatedAt) + 1000
     ).toISOString();
-    const verificationCommand = (exitCode: number, outputRef: string) => ({
-      command: result.evidenceContract.commands.find((command) => command.required)?.command ??
-        result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
+    const requiredVerificationCommands = result.evidenceContract.commands.filter(
+      (command) => command.required
+    );
+    const firstRequiredVerificationCommand = requiredVerificationCommands[0];
+
+    if (firstRequiredVerificationCommand === undefined) {
+      throw new Error("Memory governance smoke requires an active required verification command");
+    }
+
+    const verificationCommand = (command: string, exitCode: number, outputRef: string) => ({
+      command,
       status: "passed" as const,
       provenance: "command_runner" as const,
       exitCode,
@@ -315,7 +324,11 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: [],
-      commands: [verificationCommand(7, `smoke:${marker}:memory-governance-incoherent-verification`)],
+      commands: [verificationCommand(
+        firstRequiredVerificationCommand.command,
+        7,
+        `smoke:${marker}:memory-governance-incoherent-verification`
+      )],
       diffRisk: "low",
       reviewBurden: "Memory governance incoherent command falsifier.",
       rollbackPath: "Delete smoke marker rows.",
@@ -334,16 +347,48 @@ export const runMemoryGovernanceSmokeCheck = async (
         decisionPacketGeneratedAt: packetGeneratedAt
       }
     });
+    const missingRequiredPacketChecksum = `${packetChecksum}:missing-required`;
+    const missingRequiredVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: [verificationCommand(
+        firstRequiredVerificationCommand.command,
+        0,
+        `smoke:${marker}:memory-governance-missing-required-verification`
+      )],
+      diffRisk: "low",
+      reviewBurden: "Memory governance missing required command falsifier.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 3,
+        type: "smoke.memory_governance.missing_required_verification_captured",
+        message: "Memory governance partial verification evidence captured",
+        payload: {
+          smokeId: marker,
+          decisionPacketChecksum: missingRequiredPacketChecksum
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        decisionPacketChecksum: missingRequiredPacketChecksum,
+        decisionPacketGeneratedAt: packetGeneratedAt
+      }
+    });
     const verificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: [],
-      commands: [verificationCommand(0, `smoke:${marker}:memory-governance-verification`)],
+      commands: requiredVerificationCommands.map((command, index) => verificationCommand(
+        command.command,
+        0,
+        `smoke:${marker}:memory-governance-verification:${index}`
+      )),
       diffRisk: "low",
       reviewBurden: "Memory governance smoke proof.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 3,
+        sequence: 4,
         type: "smoke.memory_governance.verification_captured",
         message: "Memory governance verification evidence captured",
         payload: {
@@ -385,6 +430,17 @@ export const runMemoryGovernanceSmokeCheck = async (
       "Memory governance accepted passed command evidence with a non-zero exit code"
     );
     incoherentCommandEvidenceRejected = true;
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        packetChecksum: missingRequiredPacketChecksum,
+        evidenceBundleId: missingRequiredVerificationEvidenceBundle.id
+      }),
+      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "Memory governance accepted incomplete required command evidence"
+    );
+    missingRequiredCommandEvidenceRejected = true;
 
     const packetApplicationClients = [
       postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
@@ -1021,6 +1077,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "incoherent command evidence cannot create helped application",
         passed: incoherentCommandEvidenceRejected
+      },
+      {
+        label: "incomplete required command evidence cannot create helped application",
+        passed: missingRequiredCommandEvidenceRejected
       },
       {
         label: "negative packet application won once",
