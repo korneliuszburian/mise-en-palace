@@ -30,6 +30,7 @@ import {
   authorizePacketUsefulness,
   currentDecisionPacketBindingForAggregate
 } from "../packet-usefulness-authorization.js";
+import type { PacketUsefulnessAuthorization } from "../packet-usefulness-authorization.js";
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -125,6 +126,19 @@ type EvidenceHarnessRunRepository =
 type EnqueueMaintenanceQueueInput = Parameters<
   NonNullable<DatabaseRuntime["maintenanceQueueRepository"]>["enqueueMaintenanceQueue"]
 >[0];
+
+const expectPacketUsefulnessRejection = (
+  authorization: PacketUsefulnessAuthorization,
+  expectedReason: string
+): void => {
+  expect(authorization.authorized).toBe(false);
+
+  if (authorization.authorized) {
+    throw new Error("Expected packet usefulness authorization to be rejected");
+  }
+
+  expect(authorization.reason).toContain(expectedReason);
+};
 
 export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   operatorIntent: {
@@ -1386,8 +1400,7 @@ describe("runCli", () => {
       }]
     });
 
-    expect(authorization.authorized).toBe(false);
-    expect(authorization.reason).toContain("current reconstructed packet checksum");
+    expectPacketUsefulnessRejection(authorization, "current reconstructed packet checksum");
   });
 
   it("rejects usefulness when the checksum and packet issuance differ", () => {
@@ -1412,8 +1425,7 @@ describe("runCli", () => {
       }]
     });
 
-    expect(authorization.authorized).toBe(false);
-    expect(authorization.reason).toContain("current reconstructed packet checksum");
+    expectPacketUsefulnessRejection(authorization, "current reconstructed packet checksum");
   });
 
   it("rejects a store subject absent from the current packet", () => {
@@ -1433,8 +1445,7 @@ describe("runCli", () => {
       }]
     });
 
-    expect(authorization.authorized).toBe(false);
-    expect(authorization.reason).toContain("not selected by the current packet");
+    expectPacketUsefulnessRejection(authorization, "not selected by the current packet");
   });
 
   it("does not treat an architecture decision target as a SourceDecision id", () => {
@@ -1499,8 +1510,7 @@ describe("runCli", () => {
       }]
     });
 
-    expect(authorization.authorized).toBe(false);
-    expect(authorization.reason).toContain("not selected by the current packet");
+    expectPacketUsefulnessRejection(authorization, "not selected by the current packet");
   });
 
   it("rejects usefulness when runtime and task projects differ", () => {
@@ -1520,8 +1530,7 @@ describe("runCli", () => {
       }]
     });
 
-    expect(authorization.authorized).toBe(false);
-    expect(authorization.reason).toContain("runtime project does not match");
+    expectPacketUsefulnessRejection(authorization, "runtime project does not match");
   });
 
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
