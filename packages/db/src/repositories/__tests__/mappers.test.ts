@@ -604,7 +604,9 @@ describe("memory governance mappers", () => {
       expectedUse: "Guide storage decisions.",
       outcome: "helped",
       notes: "Prevented adding a separate memory store.",
-      metadata: {},
+      metadata: {
+        decisionPacketGeneratedAt: createdAt.toISOString()
+      },
       createdAt
     });
 
@@ -613,6 +615,7 @@ describe("memory governance mappers", () => {
       memoryRecordId: "memory-record-1",
       executionRunId: "run-1",
       packetChecksum: "packet-1",
+      packetGeneratedAt: createdAt.toISOString(),
       proofClass: "packet_bound",
       outcome: "helped"
     });

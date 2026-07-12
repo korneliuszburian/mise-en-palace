@@ -721,10 +721,29 @@ describe("DecisionPacket builder", () => {
     expect(first.returnChannels.evidence.persistedCommand).toContain(
       `--decision-packet-checksum ${first.packetIdentity.checksum}`
     );
+    expect(first.returnChannels.evidence.persistedCommand).toContain(
+      `--decision-packet-generated-at ${first.packetIdentity.generatedAt}`
+    );
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
       "does not expose canonical selected SourceDecision ids"
     );
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
+  });
+
+  it("gives each packet issuance its own checksum", () => {
+    const first = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+    const later = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: "2026-07-12T10:01:00.000Z",
+      sha256Hex: fakeSha256Hex
+    });
+
+    expect(later.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
+    expect(later.packetIdentity.generatedAt).not.toBe(first.packetIdentity.generatedAt);
   });
 });

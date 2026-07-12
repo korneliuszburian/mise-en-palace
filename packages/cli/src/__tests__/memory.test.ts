@@ -944,6 +944,8 @@ describe("runCli", () => {
         "memory-record-1",
         "--decision-packet-checksum",
         "preview-checksum",
+        "--decision-packet-generated-at",
+        now,
         "--outcome",
         "helped",
         "--notes",
@@ -984,6 +986,8 @@ describe("runCli", () => {
         "memory-record-1",
         "--decision-packet-checksum",
         "unresolved-without-database",
+        "--decision-packet-generated-at",
+        now,
         "--outcome",
         "helped",
         "--notes",
@@ -1009,7 +1013,10 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
+    const packetBinding = currentDecisionPacketBindingForAggregate(
+      memoryHarnessRunAggregate("project-1"),
+      now
+    );
     let capturedApplication: RecordMemoryApplicationInput | undefined;
     const result = await runCli(
       [
@@ -1022,6 +1029,8 @@ describe("runCli", () => {
         "memory-record-1",
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--outcome",
         "helped",
         "--notes",
@@ -1126,7 +1135,10 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
+    const packetBinding = currentDecisionPacketBindingForAggregate(
+      memoryHarnessRunAggregate("project-1"),
+      now
+    );
     let application: MemoryApplication | undefined;
     let recordCalls = 0;
     const command = {
@@ -1135,6 +1147,7 @@ describe("runCli", () => {
       runId: "execution-run-1",
       memoryId: "memory-record-1",
       decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
       outcome: "neutral" as const,
       notes: "Replay should not record this packet twice.",
       metadata: {}
@@ -1225,7 +1238,10 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    const packetBinding = currentDecisionPacketBindingForAggregate(memoryHarnessRunAggregate("project-1"));
+    const packetBinding = currentDecisionPacketBindingForAggregate(
+      memoryHarnessRunAggregate("project-1"),
+      now
+    );
     let capturedFeedbackEvent: CreateMemoryFeedbackEventInput | undefined;
     let capturedAntiMemoryCandidate:
       | Parameters<typeof unusedMemoryRepository.createAntiMemoryCandidate>[0]
@@ -1241,6 +1257,8 @@ describe("runCli", () => {
         "memory-record-1",
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--outcome",
         outcome,
         "--notes",

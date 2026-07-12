@@ -127,6 +127,7 @@ interface DecisionPacketSmokeJson {
   packetIdentity: {
     checksum: string;
     evidenceRef: string;
+    generatedAt: string;
   };
   packet: {
     governingDecisionIds: readonly string[];
@@ -229,7 +230,8 @@ const readPacketIdentity = (
 
   return {
     checksum: readRequiredString(packetIdentity, "checksum", "DecisionPacket smoke readback missed checksum"),
-    evidenceRef: readRequiredString(packetIdentity, "evidenceRef", "DecisionPacket smoke readback missed evidenceRef")
+    evidenceRef: readRequiredString(packetIdentity, "evidenceRef", "DecisionPacket smoke readback missed evidenceRef"),
+    generatedAt: readRequiredString(packetIdentity, "generatedAt", "DecisionPacket smoke readback missed generatedAt")
   };
 };
 
@@ -1139,6 +1141,7 @@ const runSelectorFeedbackProof = async (
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
     readonly packetChecksum: string;
+    readonly packetGeneratedAt: string;
     readonly verificationEvidenceBundleId: string;
     readonly feedbackDeltaId: string;
     readonly marker: string;
@@ -1283,6 +1286,7 @@ const runSelectorFeedbackProof = async (
     outcome: "helped",
     notes: "Store-backed helped feedback should keep this memory eligible for next activation.",
     packetChecksum: input.packetChecksum,
+    packetGeneratedAt: input.packetGeneratedAt,
     evidenceBundleId: input.verificationEvidenceBundleId,
     metadata: {
       smokeId: input.marker,
@@ -1299,6 +1303,7 @@ const runSelectorFeedbackProof = async (
       outcome: "stale",
       notes: `Store-backed stale feedback ${attempt} should make this memory unsafe for next activation.`,
       packetChecksum: `${input.packetChecksum}-stale-${attempt}`,
+      packetGeneratedAt: input.packetGeneratedAt,
       metadata: {
         smokeId: input.marker,
         selectorFeedbackProof: "stale",
@@ -1623,6 +1628,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       persist: true,
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
+      decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
       commandOutcomes: [{
         command: result.evidenceContract.commands.find((command) => command.required)?.command ??
           result.evidenceContract.commands[0]?.command ?? "pnpm typecheck",
@@ -1666,6 +1672,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       persist: true,
       runId: executionRun.id,
       decisionPacketChecksum: packetAfterMatching.packetIdentity.checksum,
+      decisionPacketGeneratedAt: packetAfterMatching.packetIdentity.generatedAt,
       commandOutcomes: [{
         command: "pnpm --filter @krn/cli test -- decision-packet-stale-feedback",
         status: "passed",
@@ -1701,6 +1708,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       persist: true,
       runId: executionRun.id,
       decisionPacketChecksum: mismatchedChecksum,
+      decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
       commandOutcomes: [{
         command: "pnpm --filter @krn/cli test -- mismatched-decision-packet",
         status: "passed",
@@ -1802,6 +1810,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       commandRuntime,
       executionRunId: executionRun.id,
       packetChecksum: firstPacket.packetIdentity.checksum,
+      packetGeneratedAt: firstPacket.packetIdentity.generatedAt,
       verificationEvidenceBundleId: aggregateAfterMatching?.evidenceBundles.at(-1)?.id ?? "",
       feedbackDeltaId: staleFeedbackDelta.id,
       marker,

@@ -178,6 +178,8 @@ describe("parseMemoryArgs", () => {
       "memory-1",
       "--decision-packet-checksum",
       "packet-checksum-1",
+      "--decision-packet-generated-at",
+      "2026-06-21T12:00:00.000Z",
       "--evidence-bundle-id",
       "evidence-bundle-1",
       "--outcome",
@@ -200,6 +202,7 @@ describe("parseMemoryArgs", () => {
         runId: "run-1",
         memoryId: "memory-1",
         decisionPacketChecksum: "packet-checksum-1",
+        decisionPacketGeneratedAt: "2026-06-21T12:00:00.000Z",
         evidenceBundleId: "evidence-bundle-1",
         outcome: "helped",
         notes: "Useful",
@@ -433,6 +436,29 @@ describe("parseMemoryArgs", () => {
       expect(parsed.command).toBeUndefined();
       expect(parsed.error).toContain(invalidCase.usage);
     }
+  });
+
+  it("rejects an invalid memory application packet issuance timestamp", () => {
+    const parsed = parseMemoryArgs([
+      "record",
+      "apply",
+      "--run-id",
+      "run-1",
+      "--memory-id",
+      "memory-1",
+      "--decision-packet-checksum",
+      "packet-1",
+      "--decision-packet-generated-at",
+      "not-a-timestamp",
+      "--outcome",
+      "neutral",
+      "--notes",
+      "The packet was selected."
+    ]);
+
+    expect(parsed).toMatchObject({
+      error: expect.stringContaining("--decision-packet-generated-at must be a valid ISO timestamp")
+    });
   });
 
   it("parses memory command help and rejects unsupported shapes", () => {

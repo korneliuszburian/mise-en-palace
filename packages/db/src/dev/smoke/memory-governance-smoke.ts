@@ -94,6 +94,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   const task = `memory governance smoke ${marker}`;
   let retrievalRunId: string | undefined;
+  let mismatchedPacketIssuanceRejected = false;
 
   const cleanup = async (): Promise<number> => {
     await cleanupMemoryGovernanceSmokeRows({
@@ -295,6 +296,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       "Memory governance allowed rejection after acceptance"
     );
     const packetChecksum = `memory-governance-packet-${marker}`;
+    const packetGeneratedAt = executionRun.updatedAt;
     const verificationCapturedAt = new Date(
       Date.parse(executionRun.updatedAt) + 1000
     ).toISOString();
@@ -325,13 +327,15 @@ export const runMemoryGovernanceSmokeCheck = async (
       },
       metadata: {
         smokeId: marker,
-        decisionPacketChecksum: packetChecksum
+        decisionPacketChecksum: packetChecksum,
+        decisionPacketGeneratedAt: packetGeneratedAt
       }
     });
     const packetBoundApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
       packetChecksum,
+      packetGeneratedAt,
       evidenceBundleId: verificationEvidenceBundle.id,
       expectedUse: "Guide memory governance smoke.",
       outcome: "helped",
@@ -381,10 +385,21 @@ export const runMemoryGovernanceSmokeCheck = async (
     const memoryApplication = firstApplicationResult.application;
     const createdApplicationCount = applicationResults.filter((result) => result?.created).length;
 
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        packetGeneratedAt: new Date(Date.parse(packetGeneratedAt) - 1).toISOString()
+      }),
+      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "Memory governance accepted verification evidence from a different packet issuance"
+    );
+    mismatchedPacketIssuanceRejected = true;
+
     const negativePacketApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
       packetChecksum: `${packetChecksum}:stale`,
+      packetGeneratedAt,
       expectedUse: "Verify stale application creates one review chain.",
       outcome: "stale" as const,
       notes: "Stale memory must create reviewable negative effects atomically.",
@@ -597,6 +612,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       memoryRecordId: counterIntegrityMemoryRecord.id,
       executionRunId: executionRun.id,
       packetChecksum,
+      packetGeneratedAt,
       evidenceBundleId: verificationEvidenceBundle.id,
       expectedUse: "Prove a packet-bound application survives counter rebuild.",
       outcome: "helped",
@@ -960,6 +976,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "packet-bound memory feedback counted once",
         passed: readBackMemoryRecord?.positiveFeedbackCount === 1
+      },
+      {
+        label: "different packet issuance cannot reuse verification evidence",
+        passed: mismatchedPacketIssuanceRejected
       },
       {
         label: "negative packet application won once",

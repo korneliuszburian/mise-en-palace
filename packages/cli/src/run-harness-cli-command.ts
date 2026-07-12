@@ -197,6 +197,9 @@ const runEvidenceCliCommand = (
     ...(command.decisionPacketChecksum === undefined
       ? {}
       : { decisionPacketChecksum: command.decisionPacketChecksum }),
+    ...(command.decisionPacketGeneratedAt === undefined
+      ? {}
+      : { decisionPacketGeneratedAt: command.decisionPacketGeneratedAt }),
     ...(command.intendedFiles === undefined ? {} : { intendedFiles: command.intendedFiles }),
     ...(command.commandOutcomes === undefined
       ? {}

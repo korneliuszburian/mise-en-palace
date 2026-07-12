@@ -16,6 +16,7 @@ import type {
   MemoryRecordStatus,
   MemoryRecordVersionId,
   ProjectId,
+  IsoTimestamp,
   SourceClaimId,
   SourceLineageRef,
   TaskContractId,
@@ -100,6 +101,7 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   notes: string;
   evidenceBundleId?: string;
   packetChecksum: string;
+  packetGeneratedAt: IsoTimestamp;
 }
 
 export interface RecordMemoryApplicationOnceInput extends RecordMemoryApplicationInput {

@@ -127,6 +127,7 @@ export type CliCommand =
       persist: boolean;
       runId?: string;
       decisionPacketChecksum?: string;
+      decisionPacketGeneratedAt?: string;
       intendedFiles?: readonly string[];
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
@@ -340,6 +341,7 @@ export type CliCommand =
       runId?: string;
       memoryId?: string;
       decisionPacketChecksum?: string;
+      decisionPacketGeneratedAt?: string;
       evidenceBundleId?: string;
       outcome?: string;
       notes?: string;

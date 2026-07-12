@@ -180,6 +180,7 @@ const hasFreshHelpedVerification = (input: {
   aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
   evidenceBundleId: string | undefined;
   packetChecksum: string;
+  packetGeneratedAt: string;
   runId: string;
 }): boolean => {
   const aggregate = input.aggregate;
@@ -196,7 +197,7 @@ const hasFreshHelpedVerification = (input: {
       bundle,
       evidenceContract: parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract),
       packetChecksum: input.packetChecksum,
-      packetGeneratedAt: aggregate.executionRun.updatedAt
+      packetGeneratedAt: input.packetGeneratedAt
     });
 };
 
@@ -205,6 +206,7 @@ const assertHelpedMemoryApplicationEvidence = (input: {
   aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
   evidenceBundleId: string | undefined;
   packetChecksum: string;
+  packetGeneratedAt: string;
   runId: string;
 }): void => {
   if (input.outcome !== "helped") {
@@ -265,6 +267,9 @@ export const runMemoryRecordApplyCommand = async (
       ...(command.decisionPacketChecksum === undefined
         ? {}
         : { callerPacketChecksum: command.decisionPacketChecksum }),
+      ...(command.decisionPacketGeneratedAt === undefined
+        ? {}
+        : { callerPacketGeneratedAt: command.decisionPacketGeneratedAt }),
       subjects: [{
         kind: "memory_record",
         id: applicationInput.memoryRecordId,
@@ -287,6 +292,7 @@ export const runMemoryRecordApplyCommand = async (
       aggregate,
       evidenceBundleId: command.evidenceBundleId,
       packetChecksum: authorization.packetChecksum,
+      packetGeneratedAt: authorization.packetGeneratedAt,
       runId: applicationInput.executionRunId
     });
 
@@ -341,10 +347,12 @@ export const runMemoryRecordApplyCommand = async (
       notes: applicationInput.notes,
       ...(command.evidenceBundleId === undefined ? {} : { evidenceBundleId: command.evidenceBundleId }),
       packetChecksum: authorization.packetChecksum,
+      packetGeneratedAt: authorization.packetGeneratedAt,
       metadata: {
         ...applicationInput.metadata,
         decisionPacketChecksum: authorization.packetChecksum,
         decisionPacketEvidenceRef: authorization.packetEvidenceRef,
+        decisionPacketGeneratedAt: authorization.packetGeneratedAt,
         usefulnessSubject: `memory_record:${applicationInput.memoryRecordId}`,
         ...(command.evidenceBundleId === undefined
           ? {}

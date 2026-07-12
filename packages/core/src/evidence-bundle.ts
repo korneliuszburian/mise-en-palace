@@ -595,6 +595,7 @@ export const evidenceBundleProvesHelped = (input: {
   if (
     (input.bundle.status !== "captured" && input.bundle.status !== "verified") ||
     readMetadataString(input.bundle.metadata, "decisionPacketChecksum") !== input.packetChecksum ||
+    readMetadataString(input.bundle.metadata, "decisionPacketGeneratedAt") !== input.packetGeneratedAt ||
     input.evidenceContract === undefined ||
     !Number.isFinite(bundleCreatedAt) ||
     !Number.isFinite(packetGeneratedAt) ||

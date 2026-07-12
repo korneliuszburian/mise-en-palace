@@ -10,7 +10,7 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
     "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
@@ -35,14 +35,27 @@ describe("parseEvidenceArgs", () => {
       "--run-id= run-1 ",
       "--decision-packet-checksum",
       " abc123 ",
+      "--decision-packet-generated-at",
+      "2026-06-21T12:00:00.000Z",
       "--persist"
     ])).toEqual({
       command: {
         kind: "evidenceCapture",
         persist: true,
         runId: "run-1",
-        decisionPacketChecksum: "abc123"
+        decisionPacketChecksum: "abc123",
+        decisionPacketGeneratedAt: "2026-06-21T12:00:00.000Z"
       }
+    });
+  });
+
+  it("rejects an invalid DecisionPacket issuance timestamp", () => {
+    expect(parseEvidenceArgs([
+      "capture",
+      "--decision-packet-generated-at",
+      "not-a-timestamp"
+    ])).toEqual({
+      error: "--decision-packet-generated-at requires a valid ISO timestamp"
     });
   });
 

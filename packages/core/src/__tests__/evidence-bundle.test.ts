@@ -58,7 +58,10 @@ const provesHelped = (
   required = true
 ): boolean => evidenceBundleProvesHelped({
   bundle: bundle({
-    metadata: { decisionPacketChecksum: "packet-checksum" },
+    metadata: {
+      decisionPacketChecksum: "packet-checksum",
+      decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z"
+    },
     commands
   }),
   evidenceContract: helpedEvidenceContract(required),
@@ -121,7 +124,10 @@ describe("evidence bundle completeness", () => {
 
     expect(evidenceBundleProvesHelped({
       bundle: bundle({
-        metadata: { decisionPacketChecksum: packetChecksum },
+        metadata: {
+          decisionPacketChecksum: packetChecksum,
+          decisionPacketGeneratedAt: packetGeneratedAt
+        },
         commands: [{
           command: "pnpm typecheck",
           status: "passed",
@@ -135,7 +141,10 @@ describe("evidence bundle completeness", () => {
 
     expect(evidenceBundleProvesHelped({
       bundle: bundle({
-        metadata: { decisionPacketChecksum: packetChecksum },
+        metadata: {
+          decisionPacketChecksum: packetChecksum,
+          decisionPacketGeneratedAt: packetGeneratedAt
+        },
         commands: [{
           command: "pnpm typecheck",
           status: "passed",
@@ -148,6 +157,27 @@ describe("evidence bundle completeness", () => {
       packetChecksum,
       packetGeneratedAt
     })).toBe(true);
+  });
+
+  test("rejects verification evidence bound to another packet issuance", () => {
+    expect(evidenceBundleProvesHelped({
+      bundle: bundle({
+        metadata: {
+          decisionPacketChecksum: "packet-checksum",
+          decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z"
+        },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "command_runner",
+          exitCode: 0,
+          capturedAt: now
+        }]
+      }),
+      evidenceContract: helpedEvidenceContract(true),
+      packetChecksum: "packet-checksum",
+      packetGeneratedAt: "2026-06-23T07:01:00.000Z"
+    })).toBe(false);
   });
 
   test("normalizes legacy command rows with weak default provenance", () => {

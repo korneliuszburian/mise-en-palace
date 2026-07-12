@@ -24,6 +24,7 @@ import {
   isRecord,
   metadataOrEmpty,
   optionalIsoTimestamp,
+  stringOrUndefined,
   stringListOrEmpty,
   toIsoTimestamp
 } from "./repository-value-readers.js";
@@ -306,27 +307,36 @@ export const mapAntiMemoryCandidate = (row: AntiMemoryCandidateRow): AntiMemoryC
   };
 };
 
-export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplication => ({
-  id: row.id,
-  memoryRecordId: row.memoryRecordId,
-  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-  ...(row.decisionPacketChecksum === null
-    ? {}
-    : { packetChecksum: row.decisionPacketChecksum }),
-  proofClass:
-    row.executionRunId !== null &&
-    row.decisionPacketChecksum !== null &&
-    row.decisionPacketChecksum.trim().length > 0
-      ? "packet_bound"
-      : "legacy_history",
-  ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),
-  ...(row.contextAssemblyId === null ? {} : { contextAssemblyId: row.contextAssemblyId }),
-  expectedUse: row.expectedUse,
-  ...(row.outcome === null ? {} : { outcome: row.outcome }),
-  ...(row.notes === null ? {} : { notes: row.notes }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt)
-});
+export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplication => {
+  const metadata = metadataOrEmpty(row.metadata);
+  const packetGeneratedAt = stringOrUndefined(metadata.decisionPacketGeneratedAt);
+  const hasPacketGeneratedAt =
+    packetGeneratedAt !== undefined && Number.isFinite(Date.parse(packetGeneratedAt));
+
+  return {
+    id: row.id,
+    memoryRecordId: row.memoryRecordId,
+    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+    ...(row.decisionPacketChecksum === null
+      ? {}
+      : { packetChecksum: row.decisionPacketChecksum }),
+    ...(packetGeneratedAt === undefined || !hasPacketGeneratedAt ? {} : { packetGeneratedAt }),
+    proofClass:
+      row.executionRunId !== null &&
+      row.decisionPacketChecksum !== null &&
+      row.decisionPacketChecksum.trim().length > 0 &&
+      hasPacketGeneratedAt
+        ? "packet_bound"
+        : "legacy_history",
+    ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),
+    ...(row.contextAssemblyId === null ? {} : { contextAssemblyId: row.contextAssemblyId }),
+    expectedUse: row.expectedUse,
+    ...(row.outcome === null ? {} : { outcome: row.outcome }),
+    ...(row.notes === null ? {} : { notes: row.notes }),
+    metadata,
+    createdAt: toIsoTimestamp(row.createdAt)
+  };
+};
 
 export const mapMemoryFeedbackEvent = (
   row: MemoryFeedbackEventRow

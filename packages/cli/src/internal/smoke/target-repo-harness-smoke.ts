@@ -153,6 +153,7 @@ interface DecisionPacketConsumerProof {
   initialized: boolean;
   toolListed: boolean;
   checksum: string;
+  generatedAt: string;
   evidenceRef: string;
   sourceUsefulnessExample: string;
   memoryIncluded: boolean;
@@ -728,6 +729,11 @@ const readMcpDecisionPacketProof = async (input: {
     "checksum",
     "Target repo harness smoke expected checksum string in DecisionPacket MCP output"
   );
+  const generatedAt = readRequiredString(
+    packetIdentity,
+    "generatedAt",
+    "Target repo harness smoke expected generatedAt string in DecisionPacket MCP output"
+  );
   const evidenceRef = readRequiredString(
     packetIdentity,
     "evidenceRef",
@@ -753,12 +759,14 @@ const readMcpDecisionPacketProof = async (input: {
     initialized: instructions.includes("Use krn_decision_packet"),
     toolListed,
     checksum,
+    generatedAt,
     evidenceRef,
     sourceUsefulnessExample,
     memoryIncluded: memoryRefs.includes(input.memoryRecordId),
     returnChannelBound:
       evidenceRef === `packet:${checksum}` &&
       persistedCommand.includes(checksum) &&
+      persistedCommand.includes(`--decision-packet-generated-at ${generatedAt}`) &&
       sourceUsefulnessExample.includes(evidenceRef)
   };
 };
@@ -875,6 +883,7 @@ const capturePacketBoundTargetEvidence = async (input: {
     persist: true,
     runId: input.executionRunId,
     decisionPacketChecksum: input.decisionPacketProof.checksum,
+    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
     commandOutcomes: [targetCommandProof.evidenceCommand],
     targetEvidence: {
       targetRepo: input.targetRepoPath,

@@ -75,12 +75,13 @@ export const formatMemoryCandidateRejectUsage = (): string =>
 
 export const formatMemoryRecordApplyUsage = (): string =>
   [
-    "Usage: krn memory record apply --run-id <id> --memory-id <id> --decision-packet-checksum <sha256> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--evidence-bundle-id <id>] [--persist]",
+    "Usage: krn memory record apply --run-id <id> --memory-id <id> --decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--evidence-bundle-id <id>] [--persist]",
     "",
     "Required:",
     "--run-id",
     "--memory-id",
     "--decision-packet-checksum",
+    "--decision-packet-generated-at",
     "--outcome",
     "--notes",
     "",
@@ -259,6 +260,7 @@ const hasMemoryRecordApplyRequiredFields = (
     memoryCommand.runId,
     memoryCommand.memoryId,
     memoryCommand.decisionPacketChecksum,
+    memoryCommand.decisionPacketGeneratedAt,
     memoryCommand.outcome,
     memoryCommand.notes
   ].every(hasText);
@@ -332,6 +334,7 @@ const memoryRecordApplyStringOptions = {
   "--run-id": "runId",
   "--memory-id": "memoryId",
   "--decision-packet-checksum": "decisionPacketChecksum",
+  "--decision-packet-generated-at": "decisionPacketGeneratedAt",
   "--evidence-bundle-id": "evidenceBundleId",
   "--outcome": "outcome",
   "--notes": "notes",
@@ -588,6 +591,9 @@ const parseMemoryRecordApplyToken = (
       },
       decisionPacketChecksum: (command, value) => {
         command.decisionPacketChecksum = value;
+      },
+      decisionPacketGeneratedAt: (command, value) => {
+        command.decisionPacketGeneratedAt = value;
       },
       evidenceBundleId: (command, value) => {
         command.evidenceBundleId = value;
@@ -935,6 +941,15 @@ const parseMemoryRecordApplyArgs = (rest: readonly string[]): ParseArgsResult =>
   if (!hasMemoryRecordApplyRequiredFields(memoryCommand)) {
     return {
       error: formatMemoryRecordApplyUsage()
+    };
+  }
+
+  if (
+    memoryCommand.decisionPacketGeneratedAt === undefined ||
+    !Number.isFinite(Date.parse(memoryCommand.decisionPacketGeneratedAt))
+  ) {
+    return {
+      error: `--decision-packet-generated-at must be a valid ISO timestamp\n${formatMemoryRecordApplyUsage()}`
     };
   }
 

@@ -783,7 +783,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
-    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -823,6 +823,8 @@ describe("runCli", () => {
         `knowledge:ts-boundary-unknown-first-result-state=selected|Memory selected the unknown-first parser shape|${packetBinding.packetEvidenceRef}|Does not prove future memory recall quality`,
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--persist"
       ],
       {
@@ -867,7 +869,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
-    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -881,6 +883,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--target-repo",
         "../typescript-basic",
         "--target-mode",
@@ -950,7 +954,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
-    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -968,6 +972,8 @@ describe("runCli", () => {
         applicationPath,
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--verification",
         `${verificationCommand}=passed`,
         "--source-usefulness",
@@ -1035,6 +1041,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--decision-packet-checksum",
         "fake-packet",
+        "--decision-packet-generated-at",
+        now,
         "--intended-file",
         "packages/cli/src/run-evidence-capture-command.ts",
         "--memory-usefulness",
@@ -1159,7 +1167,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
-    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -1173,6 +1181,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--source-usefulness",
         `claim:source-claim-current=helped|Current packet source helped|${packetBinding.packetEvidenceRef}|Does not prove future source selection quality`,
         "--source-usefulness",
@@ -1235,7 +1245,7 @@ describe("runCli", () => {
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
-    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
@@ -1249,6 +1259,8 @@ describe("runCli", () => {
         "execution-run-1",
         "--decision-packet-checksum",
         packetBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        packetBinding.packetGeneratedAt,
         "--source-usefulness",
         `claim:source-claim-stale=stale|Selected source claim became stale|${packetBinding.packetEvidenceRef}|Does not demote source truth without review`,
         "--memory-usefulness",
@@ -1342,7 +1354,7 @@ describe("runCli", () => {
 
   it("rejects usefulness bound to a stale reconstructed packet", () => {
     const aggregate = createEvidencePersistenceAggregate();
-    const staleBinding = currentDecisionPacketBindingForAggregate(aggregate);
+    const staleBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const contextAssembly = aggregate.contextAssembly;
     if (contextAssembly === undefined) {
       throw new Error("Expected aggregate context assembly");
@@ -1366,6 +1378,7 @@ describe("runCli", () => {
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
       callerPacketChecksum: staleBinding.packetChecksum,
+      callerPacketGeneratedAt: staleBinding.packetGeneratedAt,
       subjects: [{
         kind: "source_claim",
         id: "source-claim-1",
@@ -1377,15 +1390,42 @@ describe("runCli", () => {
     expect(authorization.reason).toContain("current reconstructed packet checksum");
   });
 
+  it("rejects usefulness when the checksum and packet issuance differ", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const firstPacketGeneratedAt = now;
+    const laterPacketGeneratedAt = "2026-06-21T12:01:00.000Z";
+    const firstBinding = currentDecisionPacketBindingForAggregate(
+      aggregate,
+      firstPacketGeneratedAt
+    );
+
+    const authorization = authorizePacketUsefulness({
+      aggregate,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      callerPacketChecksum: firstBinding.packetChecksum,
+      callerPacketGeneratedAt: laterPacketGeneratedAt,
+      subjects: [{
+        kind: "source_claim",
+        id: "source-claim-1",
+        evidenceRefs: [firstBinding.packetEvidenceRef]
+      }]
+    });
+
+    expect(authorization.authorized).toBe(false);
+    expect(authorization.reason).toContain("current reconstructed packet checksum");
+  });
+
   it("rejects a store subject absent from the current packet", () => {
     const aggregate = createEvidencePersistenceAggregate();
-    const binding = currentDecisionPacketBindingForAggregate(aggregate);
+    const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
 
     const authorization = authorizePacketUsefulness({
       aggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
       callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
         kind: "source_claim",
         id: "store-only-claim",
@@ -1440,7 +1480,7 @@ describe("runCli", () => {
     const packet = buildDecisionPacketFromReadModel(
       buildDecisionPacketReadModel(aggregateWithDecisionTarget)
     );
-    const binding = currentDecisionPacketBindingForAggregate(aggregateWithDecisionTarget);
+    const binding = currentDecisionPacketBindingForAggregate(aggregateWithDecisionTarget, now);
 
     expect(packet.sourceDecisionTargets).toEqual([expect.objectContaining({
       targetId: "architecture-target-1"
@@ -1451,6 +1491,7 @@ describe("runCli", () => {
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
       callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
         kind: "source_decision",
         id: "architecture-target-1",
@@ -1464,13 +1505,14 @@ describe("runCli", () => {
 
   it("rejects usefulness when runtime and task projects differ", () => {
     const aggregate = createEvidencePersistenceAggregate();
-    const binding = currentDecisionPacketBindingForAggregate(aggregate);
+    const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
 
     const authorization = authorizePacketUsefulness({
       aggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-b",
       callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
         kind: "source_claim",
         id: "source-claim-1",

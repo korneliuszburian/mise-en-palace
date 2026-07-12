@@ -428,6 +428,7 @@ export const runBrainLoopSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: `memory-loop-packet-${marker}`,
+        decisionPacketGeneratedAt: now,
         doesNotProve: "Evidence capture does not mutate Memory Core without review."
       }
     });
@@ -658,6 +659,7 @@ export const runBrainLoopSmokeCheck = async (
       outcome: "helped",
       notes: "DB-backed memory loop smoke included reviewed memory in context.",
       packetChecksum: `memory-loop-packet-${marker}`,
+      packetGeneratedAt: now,
       evidenceBundleId: evidenceBundle.id,
       metadata: {
         smokeId: marker
@@ -741,6 +743,7 @@ export const runBrainLoopSmokeCheck = async (
       outcome: "hurt",
       notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
       packetChecksum: `memory-loop-downgrade-packet-${marker}-${attempt}`,
+      packetGeneratedAt: now,
       metadata: {
           smokeId: marker,
           feedbackLoop: "downgrade",

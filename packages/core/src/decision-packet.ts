@@ -1069,6 +1069,7 @@ export const buildDecisionPacketIdentity = (input: {
   readonly sha256Hex: DecisionPacketSha256Hex;
 }): DecisionPacketIdentity => {
   const checksum = input.sha256Hex(canonicalJson({
+    generatedAt: input.generatedAt,
     packet: input.packet,
     request: {
       runId: input.runId
@@ -1095,28 +1096,31 @@ export const buildDecisionPacketReturnChannels = (input: {
   readonly runId: string;
   readonly packetIdentity: DecisionPacketIdentity;
 }): DecisionPacketReturnChannels => {
-  const packetChecksumOption = `--decision-packet-checksum ${input.packetIdentity.checksum}`;
+  const packetBindingOptions = [
+    `--decision-packet-checksum ${input.packetIdentity.checksum}`,
+    `--decision-packet-generated-at ${input.packetIdentity.generatedAt}`
+  ].join(" ");
 
   return {
     evidence: {
       command:
-        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --verification "<command>=passed"`,
+        `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --verification "<command>=passed"`,
       persistedCommand:
-        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --verification "<command>=passed" --persist`,
+        `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --verification "<command>=passed" --persist`,
       doesNotProve:
         "Evidence capture records supplied outcomes; it does not execute commands, prove Codex followed the packet, or prove the packet remained current after render time."
     },
     feedback: {
       memoryRecordApplyExample:
-        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> ${packetChecksumOption} --outcome helped --evidence-bundle-id <evidence-bundle-id> --notes "<why>" --persist`,
+        `krn memory record apply --run-id ${input.runId} --memory-id <memory-id> ${packetBindingOptions} --outcome helped --evidence-bundle-id <evidence-bundle-id> --notes "<why>" --persist`,
       sourceUsefulnessExample:
-        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       sourceDecisionUsefulnessExample:
         "Unavailable: the DecisionPacket does not expose canonical selected SourceDecision ids; use claim-scoped feedback.",
       knowledgeUsefulnessExample:
-        `krn evidence capture --run-id ${input.runId} ${packetChecksumOption} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
+        `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:
-        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum binds the rendered packet snapshot; helped additionally requires a later successful verifier from the active EvidenceContract."
+        "Feedback commands are return channels; they do not promote memory/source truth without the existing review gates. Packet checksum and generatedAt bind the rendered packet issuance; helped additionally requires a later successful verifier from the active EvidenceContract."
     }
   };
 };
@@ -1155,7 +1159,7 @@ export const buildDecisionPacketContractReadback = (input: {
         "a headless consumer can request a read-only DecisionPacket contract through CLI JSON",
         "the response names evidence and feedback return channels without invoking Codex or mutating memory",
         "the DecisionPacket command exposes the compact DecisionPacket separately from the diagnostic read model",
-        "return-channel commands carry a packet checksum evidence ref for later freshness checks"
+        "return-channel commands carry the packet checksum and exact generatedAt for later freshness checks"
       ],
       doesNotProve: [
         "MCP integration",

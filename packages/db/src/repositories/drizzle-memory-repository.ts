@@ -21,6 +21,7 @@ import type {
   MemoryCandidate,
   MemoryFeedbackEvent,
   MemoryRecord,
+  IsoTimestamp,
   ProjectId
 } from "@krn/core";
 import {
@@ -66,8 +67,7 @@ import {
 } from "../schema/index.js";
 import {
   fromIsoTimestamp,
-  requireReturnedRow,
-  toIsoTimestamp
+  requireReturnedRow
 } from "./repository-value-readers.js";
 import {
   mapAntiMemoryRecord,
@@ -94,6 +94,16 @@ const antiMemoryRecordKeyForCandidate = (
   candidate: AntiMemoryCandidate,
   input: PromoteAntiMemoryCandidateInput
 ): string => input.recordKey ?? candidate.key;
+
+const packetGeneratedAtFromMetadata = (
+  metadata: Record<string, unknown>
+): IsoTimestamp | undefined => {
+  const value = metadata.decisionPacketGeneratedAt;
+
+  return typeof value === "string" && Number.isFinite(Date.parse(value))
+    ? value
+    : undefined;
+};
 
 export const memoryPromotionMetadata = (
   candidate: MemoryCandidate,
@@ -1014,6 +1024,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     metadata: {
       ...input.metadata,
       decisionPacketChecksum,
+      decisionPacketGeneratedAt: input.packetGeneratedAt,
       ...(input.evidenceBundleId === undefined
         ? {}
         : { verificationEvidenceBundleId: input.evidenceBundleId })
@@ -1021,11 +1032,15 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   });
 
   private assertPacketBoundApplication = (
-    input: Pick<RecordMemoryApplicationInput, "executionRunId" | "packetChecksum">
+    input: Pick<RecordMemoryApplicationInput, "executionRunId" | "packetChecksum" | "packetGeneratedAt">
   ): void => {
-    if (input.executionRunId.trim().length === 0 || input.packetChecksum.trim().length === 0) {
+    if (
+      input.executionRunId.trim().length === 0 ||
+      input.packetChecksum.trim().length === 0 ||
+      !Number.isFinite(Date.parse(input.packetGeneratedAt))
+    ) {
       throw new Error(
-        "memory application requires a non-empty execution run and DecisionPacket checksum"
+        "memory application requires a non-empty execution run, DecisionPacket checksum, and packet generatedAt"
       );
     }
   };
@@ -1087,7 +1102,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       bundle,
       evidenceContract,
       packetChecksum: input.packetChecksum,
-      packetGeneratedAt: toIsoTimestamp(linked.executionRun.updatedAt)
+      packetGeneratedAt: input.packetGeneratedAt
     });
 
     if (!valid) {
@@ -1432,6 +1447,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return false;
     }
 
+    const packetGeneratedAt = packetGeneratedAtFromMetadata(row.metadata);
+
+    if (packetGeneratedAt === undefined) {
+      return false;
+    }
+
     if (row.outcome !== "helped") {
       return true;
     }
@@ -1455,7 +1476,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       bundle: mapEvidenceBundle(linked.bundle),
       evidenceContract: parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract),
       packetChecksum: row.decisionPacketChecksum,
-      packetGeneratedAt: toIsoTimestamp(linked.executionRun.updatedAt)
+      packetGeneratedAt
     });
   }
 
