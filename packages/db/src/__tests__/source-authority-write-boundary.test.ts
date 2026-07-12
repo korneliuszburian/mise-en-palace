@@ -9,47 +9,85 @@ import { inspectSourceAuthorityIntegrity } from "../source-authority-integrity-r
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 
+interface SourceAuthorityWriteBoundaryFixture {
+  readonly client: ReturnType<typeof postgres>;
+  readonly marker: string;
+  readonly projectId: string;
+  readonly sourceRepository: DrizzleSourceRepository;
+  readonly sourceUri: string;
+  readonly workspaceId: string;
+}
+
+const requiredId = (rows: readonly { id: string }[], label: string): string => {
+  const id = rows[0]?.id;
+
+  if (id === undefined) {
+    throw new Error(`source authority write boundary ${label} was not created`);
+  }
+
+  return id;
+};
+
+const createFixture = async (url: string): Promise<SourceAuthorityWriteBoundaryFixture> => {
+  const client = postgres(url, { max: 1, onnotice: () => undefined });
+  const marker = `source-authority-write-boundary-${crypto.randomUUID()}`;
+  const sourceUri = `source-authority://${marker}/uncaptured`;
+
+  try {
+    const workspace = await client<{ id: string }[]>`
+      insert into workspaces (slug, display_name, metadata)
+      values (${marker}, 'Source authority write boundary', ${client.json({ smokeId: marker })})
+      returning id
+    `;
+    const workspaceId = requiredId(workspace, "workspace");
+    const project = await client<{ id: string }[]>`
+      insert into projects (workspace_id, slug, display_name, metadata)
+      values (${workspaceId}, ${marker}, 'Source authority write boundary', ${client.json({ smokeId: marker })})
+      returning id
+    `;
+    const projectId = requiredId(project, "project");
+
+    return {
+      client,
+      marker,
+      projectId,
+      sourceRepository: new DrizzleSourceRepository(createKrnDatabase(client)),
+      sourceUri,
+      workspaceId
+    };
+  } catch (error) {
+    await client`delete from workspaces where slug = ${marker}`;
+    await client.end();
+    throw error;
+  }
+};
+
+const cleanupFixture = async (fixture: SourceAuthorityWriteBoundaryFixture): Promise<void> => {
+  await fixture.client`delete from outbox_events where payload->>'smokeId' = ${fixture.marker}`;
+  await fixture.client`delete from source_decision_edges where metadata->>'smokeId' = ${fixture.marker}`;
+  await fixture.client`delete from source_decisions where metadata->>'smokeId' = ${fixture.marker}`;
+  await fixture.client`delete from source_artifacts where uri = ${fixture.sourceUri}`;
+  await fixture.client`delete from workspaces where id = ${fixture.workspaceId}`;
+  await fixture.client.end();
+};
+
 describe("source authority write boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "reproduces governing authority persisted without captured evidence",
     async () => {
-      const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
-      const marker = `source-authority-write-boundary-${crypto.randomUUID()}`;
-      const sourceUri = `source-authority://${marker}/uncaptured`;
-      let workspaceId: string | undefined;
+      const fixture = await createFixture(databaseUrl!);
 
       try {
-        const workspace = await client<{ id: string }[]>`
-          insert into workspaces (slug, display_name, metadata)
-          values (${marker}, 'Source authority write boundary', ${client.json({ smokeId: marker })})
-          returning id
-        `;
-        workspaceId = workspace[0]?.id;
-        if (workspaceId === undefined) {
-          throw new Error("source authority write boundary workspace was not created");
-        }
-
-        const project = await client<{ id: string }[]>`
-          insert into projects (workspace_id, slug, display_name, metadata)
-          values (${workspaceId}, ${marker}, 'Source authority write boundary', ${client.json({ smokeId: marker })})
-          returning id
-        `;
-        const projectId = project[0]?.id;
-        if (projectId === undefined) {
-          throw new Error("source authority write boundary project was not created");
-        }
-
-        const sourceRepository = new DrizzleSourceRepository(createKrnDatabase(client));
-        const sourceArtifact = await sourceRepository.createSourceArtifact({
-          projectId,
+        const sourceArtifact = await fixture.sourceRepository.createSourceArtifact({
+          projectId: fixture.projectId,
           kind: "doc",
           sourceAuthority: "project-decision",
-          uri: sourceUri,
+          uri: fixture.sourceUri,
           title: "Uncaptured governing source",
-          contentHash: `sha256:${marker}`,
-          metadata: { smokeId: marker }
+          contentHash: `sha256:${fixture.marker}`,
+          metadata: { smokeId: fixture.marker }
         });
-        const sourceClaim = await sourceRepository.createSourceClaim({
+        const sourceClaim = await fixture.sourceRepository.createSourceClaim({
           sourceArtifactId: sourceArtifact.id,
           claim: "A governing source must have captured bytes.",
           mechanism: "Captured bytes bind source authority to inspectable evidence.",
@@ -59,38 +97,38 @@ describe("source authority write boundary", () => {
           supportType: "implementation-boundary",
           consumer: "source authority write boundary",
           falsifier: "An uncaptured claim becomes adopted decision support.",
-          metadata: { smokeId: marker }
+          metadata: { smokeId: fixture.marker }
         });
-        const sourceDecision = await sourceRepository.createSourceDecision({
-          projectId,
+        const sourceDecision = await fixture.sourceRepository.createSourceDecision({
+          projectId: fixture.projectId,
           sourceClaimId: sourceClaim.id,
           status: "adopt",
           decision: "Adopt uncaptured source authority.",
           rationale: "This should be rejected before authority is persisted.",
           falsifier: "The uncaptured source claim becomes governing.",
           consumer: "source authority write boundary",
-          metadata: { smokeId: marker }
+          metadata: { smokeId: fixture.marker }
         });
-        const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+        const sourceDecisionEdge = await fixture.sourceRepository.createSourceDecisionEdge({
           sourceClaimId: sourceClaim.id,
           sourceDecisionId: sourceDecision.id,
           targetType: "architecture_decision",
-          targetId: `${marker}-target`,
+          targetId: `${fixture.marker}-target`,
           supportType: "implementation-boundary",
           confidence: "high",
           notes: "This edge must not exist without captured evidence.",
-          metadata: { smokeId: marker }
+          metadata: { smokeId: fixture.marker }
         });
-        const claimReadback = await client<{ status: string }[]>`
+        const claimReadback = await fixture.client<{ status: string }[]>`
           select status::text as status from source_claims where id = ${sourceClaim.id}
         `;
-        const decisionCount = await client<{ count: number }[]>`
+        const decisionCount = await fixture.client<{ count: number }[]>`
           select count(*)::int as count from source_decisions where id = ${sourceDecision.id}
         `;
-        const edgeCount = await client<{ count: number }[]>`
+        const edgeCount = await fixture.client<{ count: number }[]>`
           select count(*)::int as count from source_decision_edges where id = ${sourceDecisionEdge.id}
         `;
-        const sourceChunkCount = await client<{ count: number }[]>`
+        const sourceChunkCount = await fixture.client<{ count: number }[]>`
           select count(*)::int as count from source_chunks where source_artifact_id = ${sourceArtifact.id}
         `;
         const integrity = await inspectSourceAuthorityIntegrity({ databaseUrl: databaseUrl! });
@@ -112,14 +150,7 @@ describe("source authority write boundary", () => {
           evidenceViolations: ["captured_evidence_missing_or_mismatched"]
         });
       } finally {
-        await client`delete from outbox_events where payload->>'smokeId' = ${marker}`;
-        await client`delete from source_decision_edges where metadata->>'smokeId' = ${marker}`;
-        await client`delete from source_decisions where metadata->>'smokeId' = ${marker}`;
-        await client`delete from source_artifacts where uri = ${sourceUri}`;
-        if (workspaceId !== undefined) {
-          await client`delete from workspaces where id = ${workspaceId}`;
-        }
-        await client.end();
+        await cleanupFixture(fixture);
       }
     }
   );
