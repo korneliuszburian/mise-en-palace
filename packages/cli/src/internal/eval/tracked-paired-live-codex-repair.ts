@@ -1030,9 +1030,8 @@ export const buildTrackedTrialArtifact = (
 
 export const verifyTrackedTrialArtifact = (value: unknown): value is TrackedTrialArtifact => {
   if (!isTrackedTrialArtifactShape(value)) return false;
-  const content = { ...value };
-  delete content["artifactHash"];
-  return artifactHash(content) === value.artifactHash;
+  const { artifactHash: expectedArtifactHash, ...content } = value;
+  return artifactHash(content) === expectedArtifactHash;
 };
 
 const phaseRecordMatchesArtifact = (
@@ -1681,7 +1680,10 @@ export const runTrackedPairedTrial = async (
   }
   const packetResult = await resolveTrialPacket(input);
   const context = buildTrialContext(input.manifest, sourceTreeHash, packetResult.packet);
-  const initialFailure = initialTrialFailure({ packetFetchFailure: packetResult.failure }, context);
+  const initialFailure = initialTrialFailure(
+    packetResult.failure === undefined ? {} : { packetFetchFailure: packetResult.failure },
+    context
+  );
   if (initialFailure !== undefined) {
     return finalizeTrackedTrial({ context, journal: journalResult.journal, artifact: initialFailure });
   }
