@@ -36,6 +36,38 @@ describe("DrizzleHarnessRunRepository", () => {
     );
   });
 
+  it("reads the persisted aggregate in a repeatable-read read-only transaction", async () => {
+    const transactionCalls: Array<{
+      readonly accessMode: string | undefined;
+      readonly isolationLevel: string | undefined;
+    }> = [];
+    const db = {
+      transaction: async (
+        callback: (transaction: {
+          readonly query: {
+            readonly executionRuns: { readonly findFirst: () => Promise<undefined> };
+          };
+        }) => Promise<unknown>,
+        options: { readonly accessMode?: string; readonly isolationLevel?: string }
+      ) => {
+        transactionCalls.push(options);
+        return callback({
+          query: {
+            executionRuns: { findFirst: async () => undefined }
+          }
+        });
+      }
+    } as unknown as KrnDatabase;
+
+    await expect(
+      new DrizzleHarnessRunRepository(db).getHarnessRunByExecutionRunId("missing-execution-run")
+    ).resolves.toBeUndefined();
+    expect(transactionCalls).toEqual([{
+      accessMode: "read only",
+      isolationLevel: "repeatable read"
+    }]);
+  });
+
   it("returns no subject feedback without querying when no candidates are active", async () => {
     const db = {
       select: () => {

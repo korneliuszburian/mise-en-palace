@@ -54,7 +54,7 @@ import type {
   UpdateExecutionRunStatusInput
 } from "@krn/core/repositories/internal";
 
-import type { KrnDatabase } from "../database.js";
+import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   contextAssemblies,
   evidenceBundles,
@@ -497,8 +497,11 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     private readonly options: DrizzleHarnessRunRepositoryOptions = {}
   ) {}
 
-  private async findHarnessRunSpineRows(executionRunId: string) {
-    const executionRunRow = await this.db.query.executionRuns.findFirst({
+  private async findHarnessRunSpineRows(
+    db: KrnDatabase | KrnDatabaseTransaction,
+    executionRunId: string
+  ) {
+    const executionRunRow = await db.query.executionRuns.findFirst({
       where: eq(executionRuns.id, executionRunId)
     });
 
@@ -507,19 +510,19 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     }
 
     const harnessPlanRow = requireLinkedRow(
-      await this.db.query.harnessPlans.findFirst({
+      await db.query.harnessPlans.findFirst({
         where: eq(harnessPlans.id, executionRunRow.harnessPlanId)
       }),
       "getHarnessRunByExecutionRunId.harnessPlan"
     );
     const taskContractRow = requireLinkedRow(
-      await this.db.query.taskContracts.findFirst({
+      await db.query.taskContracts.findFirst({
         where: eq(taskContracts.id, harnessPlanRow.taskContractId)
       }),
       "getHarnessRunByExecutionRunId.taskContract"
     );
     const operatorIntentRow = requireLinkedRow(
-      await this.db.query.operatorIntents.findFirst({
+      await db.query.operatorIntents.findFirst({
         where: eq(operatorIntents.id, taskContractRow.operatorIntentId)
       }),
       "getHarnessRunByExecutionRunId.operatorIntent"
@@ -533,22 +536,25 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     };
   }
 
-  private async findEvidenceReviewFeedbackRows(executionRunId: string) {
-    const evidenceBundleRows = await this.db.query.evidenceBundles.findMany({
+  private async findEvidenceReviewFeedbackRows(
+    db: KrnDatabase | KrnDatabaseTransaction,
+    executionRunId: string
+  ) {
+    const evidenceBundleRows = await db.query.evidenceBundles.findMany({
       where: eq(evidenceBundles.executionRunId, executionRunId)
     });
     const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
     const reviewAssessmentRows =
       evidenceBundleIds.length === 0
         ? []
-        : await this.db.query.reviewAssessments.findMany({
+        : await db.query.reviewAssessments.findMany({
             where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds)
           });
     const reviewAssessmentIds = reviewAssessmentRows.map((row) => row.id);
     const feedbackDeltaRows =
       reviewAssessmentIds.length === 0
         ? []
-        : await this.db.query.feedbackDeltas.findMany({
+        : await db.query.feedbackDeltas.findMany({
             where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds)
           });
 
@@ -559,7 +565,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     };
   }
 
-  private async findActivationTrace(contextAssembly: ContextAssembly | undefined) {
+  private async findActivationTrace(
+    db: KrnDatabase | KrnDatabaseTransaction,
+    contextAssembly: ContextAssembly | undefined
+  ) {
     if (contextAssembly === undefined) {
       return undefined;
     }
@@ -570,10 +579,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       return undefined;
     }
 
-    const retrievalCandidateRows = await this.db.query.retrievalCandidates.findMany({
+    const retrievalCandidateRows = await db.query.retrievalCandidates.findMany({
       where: eq(retrievalCandidates.retrievalRunId, retrievalRunId)
     });
-    const activationDecisionRows = await this.db.query.activationDecisions.findMany({
+    const activationDecisionRows = await db.query.activationDecisions.findMany({
       where: eq(activationDecisions.retrievalRunId, retrievalRunId)
     });
 
@@ -1087,39 +1096,41 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async getHarnessRunByExecutionRunId(
     executionRunId: string
   ): Promise<HarnessRunAggregate | undefined> {
-    const spineRows = await this.findHarnessRunSpineRows(executionRunId);
+    return this.db.transaction(async (tx) => {
+      const spineRows = await this.findHarnessRunSpineRows(tx, executionRunId);
 
-    if (spineRows === undefined) {
-      return undefined;
-    }
+      if (spineRows === undefined) {
+        return undefined;
+      }
 
-    const contextAssemblyRow = await this.db.query.contextAssemblies.findFirst({
-      where: eq(contextAssemblies.harnessPlanId, spineRows.harnessPlanRow.id)
-    });
-    const {
-      evidenceBundleRows,
-      reviewAssessmentRows,
-      feedbackDeltaRows
-    } = await this.findEvidenceReviewFeedbackRows(executionRunId);
-    const runEventRows = await this.db.query.runEvents.findMany({
-      where: eq(runEvents.executionRunId, executionRunId),
-      orderBy: asc(runEvents.sequence)
-    });
-    const contextAssembly =
-      contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
-    const activationTrace = await this.findActivationTrace(contextAssembly);
+      const contextAssemblyRow = await tx.query.contextAssemblies.findFirst({
+        where: eq(contextAssemblies.harnessPlanId, spineRows.harnessPlanRow.id)
+      });
+      const {
+        evidenceBundleRows,
+        reviewAssessmentRows,
+        feedbackDeltaRows
+      } = await this.findEvidenceReviewFeedbackRows(tx, executionRunId);
+      const runEventRows = await tx.query.runEvents.findMany({
+        where: eq(runEvents.executionRunId, executionRunId),
+        orderBy: asc(runEvents.sequence)
+      });
+      const contextAssembly =
+        contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
+      const activationTrace = await this.findActivationTrace(tx, contextAssembly);
 
-    return {
-      operatorIntent: mapOperatorIntent(spineRows.operatorIntentRow),
-      taskContract: mapTaskContract(spineRows.taskContractRow),
-      harnessPlan: mapHarnessPlan(spineRows.harnessPlanRow),
-      ...(contextAssembly === undefined ? {} : { contextAssembly }),
-      ...(activationTrace === undefined ? {} : { activationTrace }),
-      executionRun: mapExecutionRun(spineRows.executionRunRow),
-      evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
-      reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
-      feedbackDeltas: feedbackDeltaRows.map(mapFeedbackDelta),
-      runEvents: runEventRows.map(mapRunEvent)
-    };
+      return {
+        operatorIntent: mapOperatorIntent(spineRows.operatorIntentRow),
+        taskContract: mapTaskContract(spineRows.taskContractRow),
+        harnessPlan: mapHarnessPlan(spineRows.harnessPlanRow),
+        ...(contextAssembly === undefined ? {} : { contextAssembly }),
+        ...(activationTrace === undefined ? {} : { activationTrace }),
+        executionRun: mapExecutionRun(spineRows.executionRunRow),
+        evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
+        reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
+        feedbackDeltas: feedbackDeltaRows.map(mapFeedbackDelta),
+        runEvents: runEventRows.map(mapRunEvent)
+      };
+    }, { isolationLevel: "repeatable read", accessMode: "read only" });
   }
 }
