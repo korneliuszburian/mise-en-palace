@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -138,6 +139,73 @@ describe("security policy scanner", () => {
 
       const unreadableFailure = runFailure(["secrets", "--root", root, "--path", join(root, "missing.txt")]);
       expect(unreadableFailure?.status).toBe(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  // fallow-ignore-next-line complexity -- one disposable history fixture proves exact path, pattern, and hash binding
+  it("accepts only an exact synthetic historical secret-shaped assignment", () => {
+    const root = mkdtempSync(join(tmpdir(), "krn-security-synthetic-history-"));
+    const canonicalPath = "packages/cli/src/__tests__/paired-history.test.ts";
+    const otherPath = "packages/cli/src/__tests__/other-history.test.ts";
+    const canonicalFile = join(root, canonicalPath);
+    const otherFile = join(root, otherPath);
+    const marker = ["client_secret: \"", "KRN_SYNTHETIC_TRIAL_VALUE_20260713", "\""].join("");
+    const changedMarker = ["client_secret: \"", "KRN_SYNTHETIC_TRIAL_CHANGED_20260713", "\""].join("");
+    const baseline = (secretExceptions: unknown[]) => JSON.stringify({
+      allowedLicenses: [],
+      secretExceptions,
+    });
+    const exception = {
+      path: canonicalPath,
+      pattern: "secret-shaped assignment",
+      matchSha256: createHash("sha256").update(marker).digest("hex"),
+      reason: "The disposable fixture is synthetic test data, not a credential.",
+    };
+
+    try {
+      mkdirSync(join(root, "packages/cli/src/__tests__"), { recursive: true });
+      writeFileSync(join(root, "security-baseline.json"), baseline([]));
+      writeFileSync(canonicalFile, "export const fixture = true;\n");
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: root });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: root });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: root });
+      execFileSync("git", ["add", "."], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: root });
+      const baseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: root,
+        encoding: "utf8",
+      }).trim();
+
+      writeFileSync(canonicalFile, `${marker}\n`);
+      execFileSync("git", ["add", canonicalPath], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "add synthetic fixture"], { cwd: root });
+
+      const unreviewedFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(unreviewedFailure?.status).toBe(1);
+      expect(unreviewedFailure?.stderr).toContain(`${canonicalPath}: secret-shaped assignment`);
+
+      writeFileSync(join(root, "security-baseline.json"), baseline([exception]));
+      expect(execFileSync(process.execPath, [scanner, "secrets", "--root", root, "--range-base", baseSha], {
+        cwd: repoRoot,
+        encoding: "utf8",
+      })).toContain("Security policy passed");
+
+      writeFileSync(canonicalFile, `${changedMarker}\n`);
+      execFileSync("git", ["add", canonicalPath], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "change synthetic marker"], { cwd: root });
+      const changedFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(changedFailure?.status).toBe(1);
+      expect(changedFailure?.stderr).toContain(`${canonicalPath}: secret-shaped assignment`);
+
+      writeFileSync(canonicalFile, `${marker}\n`);
+      writeFileSync(otherFile, `${marker}\n`);
+      execFileSync("git", ["add", canonicalPath, otherPath], { cwd: root });
+      execFileSync("git", ["commit", "--quiet", "-m", "copy marker to another path"], { cwd: root });
+      const pathFailure = runFailure(["secrets", "--root", root, "--range-base", baseSha]);
+      expect(pathFailure?.status).toBe(1);
+      expect(pathFailure?.stderr).toContain(`${otherPath}: secret-shaped assignment`);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

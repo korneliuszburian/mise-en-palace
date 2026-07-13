@@ -31,6 +31,12 @@
       "pattern": "AWS access key",
       "matchSha256": "743554670c6065b3f7f13ac4f07e392f977b3556ceb7457411633c454bcbece8",
       "reason": "The fixture contains a deliberately fake AWS-shaped value to prove secret scanning; it is not a credential."
+    },
+    {
+      "path": "packages/cli/src/__tests__/tracked-paired-live-codex-repair.test.ts",
+      "pattern": "secret-shaped assignment",
+      "matchSha256": "daed58dc518774fca8c9f2dee0cb17ee0edf8fe242f3f0b0e3d23264471492eb",
+      "reason": "Historical paired-trial test code contains a synthetic fake-tool environment assignment; it is not a credential."
     }
   ],
   "dependencyVulnerabilityExceptions": []
