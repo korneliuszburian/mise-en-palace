@@ -28,6 +28,16 @@ import {
 
 const now = "2026-06-24T08:00:00.000Z";
 
+const nonCurrentTemporalMetadata = [
+  { validFrom: "2026-06-25T00:00:00.000Z" },
+  { validUntil: "2026-06-23T23:59:59.999Z" },
+  { validUntil: now },
+  { invalidatedAt: now },
+  { validFrom: "not-a-timestamp" },
+  { validUntil: "not-a-timestamp" },
+  { invalidatedAt: "not-a-timestamp" }
+] as const;
+
 const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   id: "source-claim-1",
   sourceArtifactId: "source-artifact-1",
@@ -252,6 +262,50 @@ describe("source review signals", () => {
     expect(isSourceClaimTemporallyValid(invalidNowClaim, "not-a-date")).toBe(false);
     expect(isSourceClaimTemporallyValid(invalidRevisitClaim, now)).toBe(false);
     expect(isSourceClaimTemporallyValid(sourceClaim({}), now)).toBe(true);
+  });
+
+  test("currently treats metadata-bounded SourceClaims as current authority", () => {
+    for (const metadata of nonCurrentTemporalMetadata) {
+      expect(isSourceClaimTemporallyValid(sourceClaim({ metadata }), now)).toBe(true);
+    }
+  });
+
+  test("currently allows metadata-bounded SourceClaimEdges to rank down source consensus", () => {
+    for (const metadata of nonCurrentTemporalMetadata) {
+      const currentClaim = sourceClaim({
+        id: "source-claim-current-temporal-edge",
+        createdAt: "2026-06-20T00:00:00.000Z"
+      });
+      const supersededClaim = sourceClaim({
+        id: "source-claim-superseded-temporal-edge",
+        createdAt: "2026-06-19T00:00:00.000Z"
+      });
+      const timeline = buildSourceConsensusTimelineReadback({
+        sourceClaims: [currentClaim, supersededClaim],
+        sourceClaimEdges: [sourceClaimEdge({
+          id: "source-claim-edge-temporal-boundary",
+          fromSourceClaimId: currentClaim.id,
+          toSourceClaimId: supersededClaim.id,
+          kind: "supersedes",
+          metadata: {
+            consumer: "source temporal boundary",
+            doesNotProve: "This relation does not prove source truth.",
+            evidenceRef: "source-artifact:temporal-boundary",
+            ...metadata
+          }
+        })],
+        sourceDecisionEdges: [sourceDecisionEdge({
+          id: "source-decision-edge-temporal-boundary",
+          sourceClaimId: currentClaim.id
+        })],
+        now
+      });
+
+      expect(timeline.supersededSourceClaimIds).toEqual([supersededClaim.id]);
+      expect(timeline.entries.find((entry) =>
+        entry.sourceClaimId === supersededClaim.id
+      )?.supersededBySourceClaimIds).toEqual([currentClaim.id]);
+    }
   });
 
   test("blocks accepted source claims with invalid temporal metadata", () => {
