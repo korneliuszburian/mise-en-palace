@@ -237,6 +237,33 @@ interface SourceConsensusProofResult {
   rejectedClaimHasFormalRejection: boolean;
 }
 
+interface SourcePacketProofRepositories {
+  readonly harnessRunRepository: HarnessRunRepository;
+  readonly sourceRepository: SourceRepository;
+  readonly retrievalRepository: RetrievalRepository;
+}
+
+interface SourcePacketProofInput {
+  readonly baseRuntime: {
+    readonly cwd: string;
+    readonly env: { readonly KRN_DATABASE_URL: string };
+    readonly now: () => string;
+    readonly createId: (prefix: string) => string;
+  };
+  readonly commandRuntime: DatabaseRuntime;
+  readonly executionRunId: string;
+  readonly marker: string;
+  readonly projectId: string;
+  readonly repositories: SourcePacketProofRepositories;
+  readonly workspaceId: string;
+}
+
+interface SourceConsensusProofInput extends SourcePacketProofInput {
+  readonly repositories: SourcePacketProofRepositories & {
+    readonly memoryRepository: MemoryRepository;
+  };
+}
+
 interface SourceDissentProofResult {
   proofRunId: string;
   retrievalRunId: string | undefined;
@@ -1022,25 +1049,7 @@ const runFeedbackMaintenanceProof = async (
 };
 
 const runSourceConsensusProof = async (
-  input: {
-    readonly baseRuntime: {
-      readonly cwd: string;
-      readonly env: { readonly KRN_DATABASE_URL: string };
-      readonly now: () => string;
-      readonly createId: (prefix: string) => string;
-    };
-    readonly commandRuntime: DatabaseRuntime;
-    readonly executionRunId: string;
-    readonly marker: string;
-    readonly projectId: string;
-    readonly repositories: {
-      readonly harnessRunRepository: HarnessRunRepository & FeedbackDeltaLookupRepository;
-      readonly memoryRepository: MemoryRepository;
-      readonly sourceRepository: SourceRepository;
-      readonly retrievalRepository: RetrievalRepository;
-    };
-    readonly workspaceId: string;
-  }
+  input: SourceConsensusProofInput
 ): Promise<SourceConsensusProofResult> => {
   const {
     harnessRunRepository,
@@ -1415,24 +1424,7 @@ const runSourceConsensusProof = async (
 };
 
 const runUnresolvedAcceptedSourceDissentProof = async (
-  input: {
-    readonly baseRuntime: {
-      readonly cwd: string;
-      readonly env: { readonly KRN_DATABASE_URL: string };
-      readonly now: () => string;
-      readonly createId: (prefix: string) => string;
-    };
-    readonly commandRuntime: DatabaseRuntime;
-    readonly executionRunId: string;
-    readonly marker: string;
-    readonly projectId: string;
-    readonly repositories: {
-      readonly harnessRunRepository: HarnessRunRepository;
-      readonly sourceRepository: SourceRepository;
-      readonly retrievalRepository: RetrievalRepository;
-    };
-    readonly workspaceId: string;
-  }
+  input: SourcePacketProofInput
 ): Promise<SourceDissentProofResult> => {
   const {
     harnessRunRepository,
