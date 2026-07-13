@@ -1,5 +1,6 @@
 import {
   knowledgeUsefulnessOutcomesFromMetadata,
+  decisionPacketBindingReadbackFromMetadata,
   parseEvidenceContract,
   buildFeedbackRecommendationReadback,
   readMetadataObjectList,
@@ -434,6 +435,7 @@ const evidenceBundleResource = (
 ): DecisionPacketReadModelEvidenceBundle => {
   const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
   const packetChecksum = readMetadataString(bundle.metadata, "decisionPacketChecksum");
+  const packetBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
 
   return {
     id: bundle.id,
@@ -443,6 +445,7 @@ const evidenceBundleResource = (
     status: bundle.status,
     freshness: evidenceBundleFreshness(bundle, referenceTime),
     ...(packetChecksum === undefined ? {} : { packetChecksum }),
+    packetBinding,
     diffRisk: bundle.diffRisk,
     reviewBurden: bundle.reviewBurden,
     rollbackPath: bundle.rollbackPath,

@@ -1,4 +1,5 @@
 import {
+  decisionPacketBindingReadbackFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
   toEvidenceCommandReadback
@@ -311,6 +312,7 @@ const renderEvidenceBundle = (
     "Evidence Bundles:",
     ...aggregate.evidenceBundles.flatMap((bundle) => {
       const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+      const packetBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
 
       return [
         `- ${bundle.id}: status=${bundle.status} freshness=${evidenceBundleFreshness(bundle, aggregate.executionRun.updatedAt)} diffRisk=${bundle.diffRisk}`,
@@ -320,6 +322,11 @@ const renderEvidenceBundle = (
         ...(typeof bundle.metadata.decisionPacketChecksum === "string"
           ? [`  packetChecksum: ${bundle.metadata.decisionPacketChecksum}`]
           : []),
+        `  packetBinding: ${packetBinding.status}`,
+        ...(packetBinding.checksum === undefined ? [] : [`  packetBindingChecksum: ${packetBinding.checksum}`]),
+        ...(packetBinding.evidenceRef === undefined ? [] : [`  packetBindingEvidenceRef: ${packetBinding.evidenceRef}`]),
+        ...(packetBinding.generatedAt === undefined ? [] : [`  packetBindingGeneratedAt: ${packetBinding.generatedAt}`]),
+        ...(packetBinding.reason === undefined ? [] : [`  packetBindingReason: ${packetBinding.reason}`]),
         `  changedFiles: ${bundle.changedFiles.length}`,
         "  changed file classification:",
         `  - intended=${metadataArrayLength(bundle.metadata, "changedFileClassification", "intended")}`,

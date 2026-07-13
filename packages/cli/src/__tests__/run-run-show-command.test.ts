@@ -463,6 +463,7 @@ describe("runRunShowCommand", () => {
     );
     expect(result.stdout).toContain("- targetReadModel: not_provided sourceSeeds=0 ownerFiles=0 trustExclusions=0");
     expect(result.stdout).toContain("changed file classification:");
+    expect(result.stdout).toContain("packetBinding: legacy_unknown");
     expect(result.stdout).toContain("- intended=1");
     expect(result.stdout).toContain("- unrelated=0");
     expect(result.stdout).toContain("- unknown=0");
@@ -620,6 +621,90 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).not.toContain("missing-array");
   });
 
+  it("classifies persisted DecisionPacket binding state without calling legacy metadata current", async () => {
+    const cases = [{
+      name: "current binding",
+      metadata: {
+        decisionPacketBindingState: "bound_current",
+        decisionPacketChecksum: "packet-bound",
+        decisionPacketEvidenceRef: "packet:packet-bound",
+        decisionPacketGeneratedAt: now
+      },
+      expected: {
+        status: "bound_current",
+        checksum: "packet-bound",
+        evidenceRef: "packet:packet-bound",
+        generatedAt: now
+      }
+    }, {
+      name: "explicit unbound binding",
+      metadata: {
+        decisionPacketBindingState: "unbound",
+        decisionPacketBindingReason: "DecisionPacket binding rejected: exact DecisionPacket generatedAt is required"
+      },
+      expected: {
+        status: "unbound",
+        reason: "DecisionPacket binding rejected: exact DecisionPacket generatedAt is required"
+      }
+    }, {
+      name: "internally mismatched binding",
+      metadata: {
+        decisionPacketBindingState: "bound_current",
+        decisionPacketChecksum: "packet-bound",
+        decisionPacketEvidenceRef: "packet:other",
+        decisionPacketGeneratedAt: now
+      },
+      expected: {
+        status: "mismatch"
+      }
+    }, {
+      name: "legacy binding metadata",
+      metadata: {
+        decisionPacketChecksum: "packet-legacy"
+      },
+      expected: {
+        status: "legacy_unknown"
+      }
+    }] as const;
+
+    for (const testCase of cases) {
+      const result = await runRunShowCommand({
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        runId: "run-1",
+        format: "json",
+        createDatabaseRuntime: async () => ({
+          harnessRunRepository: {
+            async getHarnessRunByExecutionRunId(runId: string) {
+              if (runId !== "run-1") {
+                return undefined;
+              }
+
+              return {
+                ...aggregate,
+                evidenceBundles: aggregate.evidenceBundles.map((bundle) => ({
+                  ...bundle,
+                  metadata: testCase.metadata
+                }))
+              };
+            }
+          },
+          async close() {}
+        })
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      if (!isRecord(parsed) || !Array.isArray(parsed.evidenceBundles) || !isRecord(parsed.evidenceBundles[0])) {
+        throw new Error(`run show JSON missed evidence bundle for ${testCase.name}`);
+      }
+
+      expect(parsed.evidenceBundles[0].packetBinding).toMatchObject(testCase.expected);
+    }
+  });
+
   it("renders read-only typed json for external consumers", async () => {
     let closed = false;
     const result = await runRunShowCommand({
@@ -735,6 +820,9 @@ describe("runRunShowCommand", () => {
         }
       },
       evidenceBundles: [{
+        packetBinding: {
+          status: "legacy_unknown"
+        },
         changedFiles: {
           classification: {
             source: "metadata",

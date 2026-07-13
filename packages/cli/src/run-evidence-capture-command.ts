@@ -10,6 +10,7 @@ import {
 } from "node:util";
 import type {
   DiffRisk,
+  DecisionPacketBindingWriteState,
   EvalCandidateProposal,
   EvidenceCommand,
   EvidenceCommandReadback,
@@ -124,6 +125,14 @@ interface PersistedEvidenceIdentity {
 interface EvidencePersistenceConfig {
   databaseUrl: string;
   runId: string;
+}
+
+interface PersistedDecisionPacketBindingMetadata {
+  decisionPacketBindingState: DecisionPacketBindingWriteState;
+  decisionPacketBindingReason?: string;
+  decisionPacketChecksum?: string;
+  decisionPacketEvidenceRef?: string;
+  decisionPacketGeneratedAt?: string;
 }
 
 const canonicalCaptureIdentityJson = (value: unknown): string => {
@@ -818,8 +827,7 @@ const buildEvidenceBundleInput = (
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
   eventSequence: number,
-  decisionPacketChecksum: string | undefined,
-  decisionPacketGeneratedAt: string | undefined,
+  packetBindingMetadata: PersistedDecisionPacketBindingMetadata,
   environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): CreateEvidenceBundleInput => ({
   executionRunId: runId,
@@ -847,11 +855,7 @@ const buildEvidenceBundleInput = (
       hasUnrelatedFiles: classification.unrelated.length > 0,
       unrelatedFileCount: classification.unrelated.length
     },
-    ...(decisionPacketChecksum === undefined || decisionPacketGeneratedAt === undefined ? {} : {
-      decisionPacketChecksum,
-      decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}`,
-      decisionPacketGeneratedAt
-    }),
+    ...packetBindingMetadata,
     ...(targetEvidence === undefined ? {} : { targetEvidence }),
     environmentFingerprint
   }
@@ -879,8 +883,7 @@ const buildFeedbackDeltaInput = (
   sourceDecisionCandidates: readonly SourceDecision[],
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
-  decisionPacketChecksum: string | undefined,
-  decisionPacketGeneratedAt: string | undefined,
+  packetBindingMetadata: PersistedDecisionPacketBindingMetadata,
   evalCandidateProposals: readonly EvalCandidateProposal[],
   environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): Omit<CreateFeedbackDeltaInput, "reviewAssessmentId"> => ({
@@ -895,11 +898,7 @@ const buildFeedbackDeltaInput = (
     memoryCandidateProposalCount: memoryCandidates.length,
     memoryCandidateRowCount: 0,
     sourceDecisionCandidateCount: sourceDecisionCandidates.length,
-    ...(decisionPacketChecksum === undefined || decisionPacketGeneratedAt === undefined ? {} : {
-      decisionPacketChecksum,
-      decisionPacketEvidenceRef: `packet:${decisionPacketChecksum}`,
-      decisionPacketGeneratedAt
-    }),
+    ...packetBindingMetadata,
     ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
       ? {}
       : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
@@ -1115,6 +1114,25 @@ const packetBindingForEvidenceCapture = (input: {
     binding: authorization?.authorized === true ? authorization : undefined,
     callerPacketChecksum,
     callerPacketGeneratedAt
+  };
+};
+
+const persistedPacketBindingMetadataFor = (
+  authorization: PacketAuthorization | undefined
+): PersistedDecisionPacketBindingMetadata => {
+  if (authorization?.authorized === true) {
+    return {
+      decisionPacketBindingState: "bound_current",
+      decisionPacketChecksum: authorization.packetChecksum,
+      decisionPacketEvidenceRef: authorization.packetEvidenceRef,
+      decisionPacketGeneratedAt: authorization.packetGeneratedAt
+    };
+  }
+
+  return {
+    decisionPacketBindingState: "unbound",
+    decisionPacketBindingReason:
+      authorization?.reason ?? "No DecisionPacket binding was supplied."
   };
 };
 
@@ -1524,6 +1542,7 @@ const persistEvidenceCapture = async (
       runId,
       runtimeProjectId: databaseRuntime.projectId
     });
+    const packetBindingMetadata = persistedPacketBindingMetadataFor(packet.authorization);
     const captureIdentity = evidenceCaptureIdentityFor({
       runId,
       projectId,
@@ -1578,8 +1597,7 @@ const persistEvidenceCapture = async (
         targetEvidence,
         counts,
         nextEvidenceEventSequence(aggregate),
-        packet.binding?.packetChecksum,
-        packet.binding?.packetGeneratedAt,
+        packetBindingMetadata,
         environmentFingerprint
       ),
       review: buildReviewAssessmentInput(runId, counts),
@@ -1591,8 +1609,7 @@ const persistEvidenceCapture = async (
         sourceDecisionCandidates,
         evidenceBackedUsefulness.sourceOutcomes,
         evidenceBackedUsefulness.knowledgeOutcomes,
-        packet.binding?.packetChecksum,
-        packet.binding?.packetGeneratedAt,
+        packetBindingMetadata,
         evalCandidateProposals,
         environmentFingerprint
       ),

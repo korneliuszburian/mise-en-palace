@@ -1,6 +1,7 @@
 import type {
   CandidateReviewability,
   ContextSubjectType,
+  DecisionPacketBindingReadback,
   EvidenceContract,
   EvidenceCommand,
   EvidenceCommandReadback,
@@ -179,6 +180,7 @@ export interface DecisionPacketReadModel {
     status: string;
     freshness: DecisionPacketReadModelEvidenceFreshness;
     packetChecksum?: string;
+    packetBinding: DecisionPacketBindingReadback;
     diffRisk: string;
     reviewBurden: string;
     rollbackPath: string;

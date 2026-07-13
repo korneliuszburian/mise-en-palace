@@ -1099,6 +1099,12 @@ describe("runCli", () => {
     expect(result.stdout).toContain("packet checksum is not the current reconstructed packet checksum");
     expect(result.stdout).toContain("DecisionPacket: unbound (DecisionPacket binding rejected: packet checksum is not the current reconstructed packet checksum).");
     expect(result.stdout).not.toContain("DecisionPacket: checksum=fake-packet");
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketBindingState: "unbound",
+      decisionPacketBindingReason: expect.stringContaining(
+        "packet checksum is not the current reconstructed packet checksum"
+      )
+    });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
@@ -1176,6 +1182,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "DecisionPacket: unbound (no --decision-packet-checksum supplied)."
     );
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketBindingState: "unbound",
+      decisionPacketBindingReason: "No DecisionPacket binding was supplied."
+    });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
@@ -1252,10 +1262,12 @@ describe("runCli", () => {
     expect(result.stdout).toContain(`DecisionPacket: checksum=${packetBinding.packetChecksum} | evidenceRef=${packetBinding.packetEvidenceRef}`);
     expect(result.stdout).toContain(`decisionPacketEvidenceRef: ${packetBinding.packetEvidenceRef}`);
     expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef
     });
     expect(capture.feedbackDeltaMetadata).toMatchObject({
+      decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
       sourceUsefulnessOutcomes: [{

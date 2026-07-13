@@ -213,6 +213,29 @@ export interface EvidenceBundleMetadata extends Record<string, unknown> {
   targetEvidence?: unknown;
 }
 
+export const decisionPacketBindingWriteStates = [
+  "bound_current",
+  "unbound"
+] as const;
+
+export type DecisionPacketBindingWriteState = typeof decisionPacketBindingWriteStates[number];
+
+export const decisionPacketBindingStatuses = [
+  ...decisionPacketBindingWriteStates,
+  "mismatch",
+  "legacy_unknown"
+] as const;
+
+export type DecisionPacketBindingStatus = typeof decisionPacketBindingStatuses[number];
+
+export interface DecisionPacketBindingReadback {
+  status: DecisionPacketBindingStatus;
+  checksum?: string;
+  evidenceRef?: string;
+  generatedAt?: IsoTimestamp;
+  reason?: string;
+}
+
 export interface EvidenceBundleMetadataReadback {
   diffSummary?: string;
   sourceRefs: string[];
@@ -330,6 +353,107 @@ const trimmedOptionalString = (value: string | undefined): string | undefined =>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const decisionPacketBindingMismatch = (reason: string): DecisionPacketBindingReadback => ({
+  status: "mismatch",
+  reason
+});
+
+interface DecisionPacketBindingMetadataFields {
+  stateValue: unknown;
+  state: string | undefined;
+  checksum: string | undefined;
+  evidenceRef: string | undefined;
+  generatedAt: string | undefined;
+  reason: string | undefined;
+}
+
+const decisionPacketBindingMetadataFields = (
+  metadata: Record<string, unknown>
+): DecisionPacketBindingMetadataFields => ({
+  stateValue: metadata.decisionPacketBindingState,
+  state: readMetadataString(metadata, "decisionPacketBindingState"),
+  checksum: readMetadataString(metadata, "decisionPacketChecksum"),
+  evidenceRef: readMetadataString(metadata, "decisionPacketEvidenceRef"),
+  generatedAt: readMetadataString(metadata, "decisionPacketGeneratedAt"),
+  reason: readMetadataString(metadata, "decisionPacketBindingReason")
+});
+
+const boundCurrentBindingReadback = (
+  fields: DecisionPacketBindingMetadataFields
+): DecisionPacketBindingReadback => {
+  if (fields.checksum === undefined || fields.evidenceRef !== `packet:${fields.checksum}`) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket bound_current metadata has an inconsistent checksum or evidence ref."
+    );
+  }
+
+  if (fields.generatedAt === undefined || !isIsoTimestamp(fields.generatedAt)) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket bound_current metadata is missing a valid generatedAt."
+    );
+  }
+
+  if (fields.reason !== undefined) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket bound_current metadata must not include an unbound reason."
+    );
+  }
+
+  return {
+    status: "bound_current",
+    checksum: fields.checksum,
+    evidenceRef: fields.evidenceRef,
+    generatedAt: fields.generatedAt
+  };
+};
+
+const unboundBindingReadback = (
+  fields: DecisionPacketBindingMetadataFields
+): DecisionPacketBindingReadback => {
+  const hasPacketIdentity = [
+    fields.checksum,
+    fields.evidenceRef,
+    fields.generatedAt
+  ].some((field) => field !== undefined);
+
+  if (hasPacketIdentity || fields.reason === undefined) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket unbound metadata must contain only its rejection reason."
+    );
+  }
+
+  return {
+    status: "unbound",
+    reason: fields.reason
+  };
+};
+
+export const decisionPacketBindingReadbackFromMetadata = (
+  metadata: Record<string, unknown>
+): DecisionPacketBindingReadback => {
+  const fields = decisionPacketBindingMetadataFields(metadata);
+
+  if (fields.stateValue !== undefined && fields.state === undefined) {
+    return decisionPacketBindingMismatch("DecisionPacket binding state is malformed.");
+  }
+
+  if (fields.state === undefined) {
+    return {
+      status: "legacy_unknown",
+      reason: "DecisionPacket binding state was not recorded for this historical evidence bundle."
+    };
+  }
+
+  switch (fields.state) {
+    case "bound_current":
+      return boundCurrentBindingReadback(fields);
+    case "unbound":
+      return unboundBindingReadback(fields);
+    default:
+      return decisionPacketBindingMismatch("DecisionPacket binding state is not recognized.");
+  }
+};
 
 export const parseEvidenceBundleMetadataReadback = (
   input: unknown
