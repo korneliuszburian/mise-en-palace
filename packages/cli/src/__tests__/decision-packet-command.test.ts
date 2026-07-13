@@ -138,7 +138,7 @@ const aggregate: HarnessRunAggregate = {
       subjectType: "source_claim",
       subjectId: "claim-agent-superseded",
       reason: "superseded",
-      explanation: "Superseded source claim should be visible as a rejected packet path.",
+      explanation: "Superseded source claim should be visible as a superseded packet path.",
       sourceAuthority: "project-decision"
     }],
     metadata: {},
@@ -496,7 +496,7 @@ describe("decision packet CLI", () => {
           }],
           staleDecisionIds: [],
           supersededPathIds: ["claim-agent-superseded"],
-          rejectedPathIds: ["anti-memory-agent-1", "claim-agent-superseded"],
+          rejectedPathIds: ["anti-memory-agent-1"],
           sourceRejectionIds: ["source-rejection-agent-1"],
           conflictedDecisionIds: [],
           evidenceGapIds: [
@@ -527,7 +527,7 @@ describe("decision packet CLI", () => {
         unknownKnowledgeIds: [],
         staleDecisionIds: [],
         supersededPathIds: ["claim-agent-superseded"],
-        rejectedPathIds: ["anti-memory-agent-1", "claim-agent-superseded"],
+        rejectedPathIds: ["anti-memory-agent-1"],
         noiseDecisionIds: [],
         severeStaleAuthorityIds: [],
         verificationCommands: ["pnpm --filter frontend test"],

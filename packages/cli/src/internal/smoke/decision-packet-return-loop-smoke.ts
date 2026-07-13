@@ -103,8 +103,8 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusPacketSupersededPathIds: readonly string[];
   sourceConsensusPacketSourceRejectionIds: readonly string[];
   sourceConsensusCurrentClaimGoverned: boolean;
-  sourceConsensusSupersededClaimRejectedPath: boolean;
-  sourceConsensusRejectedClaimRejectedPath: boolean;
+  sourceConsensusSupersededClaimIsNonGoverning: boolean;
+  sourceConsensusRejectedClaimHasFormalRejection: boolean;
   feedbackMaintenanceQueueRecordId: string;
   feedbackMaintenanceQueueStatus: string;
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
@@ -199,8 +199,8 @@ interface SourceConsensusProofResult {
   packetSupersededPathIds: readonly string[];
   packetSourceRejectionIds: readonly string[];
   currentClaimGoverned: boolean;
-  supersededClaimRejectedPath: boolean;
-  rejectedClaimRejectedPath: boolean;
+  supersededClaimIsNonGoverning: boolean;
+  rejectedClaimHasFormalRejection: boolean;
 }
 
 interface FeedbackMaintenanceProofResult {
@@ -340,6 +340,25 @@ const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
     returnChannels: readReturnChannels(parsed)
   };
 };
+
+const isSupersededClaimNonGoverning = (input: {
+  readonly packet: DecisionPacketSmokeJson["packet"];
+  readonly supersededClaimId: string;
+  readonly supersededDecisionId: string;
+}): boolean =>
+  !input.packet.sourceClaimIds.includes(input.supersededClaimId) &&
+  !input.packet.governingDecisionIds.includes(input.supersededDecisionId) &&
+  input.packet.sourceConsensus.supersededPathIds.includes(input.supersededClaimId) &&
+  !input.packet.rejectedPathIds.includes(input.supersededClaimId);
+
+const hasFormalSourceRejection = (input: {
+  readonly packet: DecisionPacketSmokeJson["packet"];
+  readonly rejectedClaimId: string;
+  readonly sourceRejectionId: string;
+}): boolean =>
+  !input.packet.sourceClaimIds.includes(input.rejectedClaimId) &&
+  input.packet.sourceConsensus.sourceRejectionIds.includes(input.sourceRejectionId) &&
+  !input.packet.rejectedPathIds.includes(input.rejectedClaimId);
 
 const sourceUsefulnessOutcome = (input: {
   readonly claimId?: string;
@@ -1097,14 +1116,16 @@ const runSourceConsensusProof = async (
     packet.packet.sourceConsensus.decisionLinkedSourceClaimIds.includes(currentClaim.id) &&
     packet.packet.governingDecisionIds.includes(currentDecisionId) &&
     packetSourceDecisionEdgeIds.includes(currentSourceDecisionEdge.id);
-  const supersededClaimRejectedPath =
-    !packet.packet.sourceClaimIds.includes(supersededClaim.id) &&
-    !packet.packet.governingDecisionIds.includes(supersededDecisionId) &&
-    packetSupersededPathIds.includes(supersededClaim.id) &&
-    packetRejectedPathIds.includes(supersededClaim.id);
-  const rejectedClaimRejectedPath =
-    !packet.packet.sourceClaimIds.includes(rejectedClaim.id) &&
-    packetRejectedPathIds.includes(rejectedClaim.id);
+  const supersededClaimIsNonGoverning = isSupersededClaimNonGoverning({
+    packet: packet.packet,
+    supersededClaimId: supersededClaim.id,
+    supersededDecisionId
+  });
+  const rejectedClaimHasFormalRejection = hasFormalSourceRejection({
+    packet: packet.packet,
+    rejectedClaimId: rejectedClaim.id,
+    sourceRejectionId: sourceRejection.id
+  });
 
   return {
     proofRunId: proofRun.id,
@@ -1125,8 +1146,8 @@ const runSourceConsensusProof = async (
     packetSupersededPathIds,
     packetSourceRejectionIds: packet.packet.sourceConsensus.sourceRejectionIds,
     currentClaimGoverned,
-    supersededClaimRejectedPath,
-    rejectedClaimRejectedPath
+    supersededClaimIsNonGoverning,
+    rejectedClaimHasFormalRejection
   };
 };
 
@@ -1885,19 +1906,20 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `decisionEdgeIds=${sourceConsensusProof.packetSourceDecisionEdgeIds.join(",")}`
       },
       {
-        label: "source consensus superseded claim rejected path",
-        passed: sourceConsensusProof.supersededClaimRejectedPath,
+        label: "source consensus superseded claim stays non-governing",
+        passed: sourceConsensusProof.supersededClaimIsNonGoverning,
         detail:
           `sourceClaimIds=${sourceConsensusProof.packetSourceClaimIds.join(",")}; ` +
           `rejectedPathIds=${sourceConsensusProof.packetRejectedPathIds.join(",")}; ` +
           `supersededPathIds=${sourceConsensusProof.packetSupersededPathIds.join(",")}`
       },
       {
-        label: "source consensus rejected claim rejected path",
-        passed: sourceConsensusProof.rejectedClaimRejectedPath,
+        label: "source consensus rejected claim has formal rejection",
+        passed: sourceConsensusProof.rejectedClaimHasFormalRejection,
         detail:
           `sourceClaimIds=${sourceConsensusProof.packetSourceClaimIds.join(",")}; ` +
-          `rejectedPathIds=${sourceConsensusProof.packetRejectedPathIds.join(",")}`
+          `rejectedPathIds=${sourceConsensusProof.packetRejectedPathIds.join(",")}; ` +
+          `sourceRejectionIds=${sourceConsensusProof.packetSourceRejectionIds.join(",")}`
       }
     ]);
 
@@ -1954,9 +1976,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       sourceConsensusPacketSupersededPathIds: sourceConsensusProof.packetSupersededPathIds,
       sourceConsensusPacketSourceRejectionIds: sourceConsensusProof.packetSourceRejectionIds,
       sourceConsensusCurrentClaimGoverned: sourceConsensusProof.currentClaimGoverned,
-      sourceConsensusSupersededClaimRejectedPath:
-        sourceConsensusProof.supersededClaimRejectedPath,
-      sourceConsensusRejectedClaimRejectedPath: sourceConsensusProof.rejectedClaimRejectedPath,
+      sourceConsensusSupersededClaimIsNonGoverning:
+        sourceConsensusProof.supersededClaimIsNonGoverning,
+      sourceConsensusRejectedClaimHasFormalRejection:
+        sourceConsensusProof.rejectedClaimHasFormalRejection,
       feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,
       feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
       feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,
