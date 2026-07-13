@@ -608,6 +608,66 @@ describe("DecisionPacket builder", () => {
     expect(packet.abstentionScore.status).toBe("abstain");
   });
 
+  it("does not treat an unsupported source claim as formal rejected-path evidence", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-governing-plus-unsupported-source",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 2,
+        exclusions: 0,
+        inclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-governing",
+          sourceAuthority: "project-decision"
+        }, {
+          subjectType: "source_claim",
+          subjectId: "claim-unsupported",
+          sourceAuthority: "medium"
+        }],
+        activationTrace: {
+          candidates: [{
+            subjectType: "source_claim",
+            subjectId: "claim-governing",
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-governing"],
+              targets: [{
+                sourceDecisionEdgeId: "edge-governing",
+                targetType: "architecture_decision",
+                targetId: "decision-governing"
+              }]
+            }
+          }, {
+            subjectType: "source_claim",
+            subjectId: "claim-unsupported",
+            sourceClaimAuthorityStatus: "evidence_gap",
+            sourceClaimAuthorityReasons: ["missing_source_decision_support"]
+          }],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.governingDecisionIds).toEqual(["decision-governing"]);
+    expect(packet.sourceConsensus.unsupportedSourceClaimIds).toEqual(["claim-unsupported"]);
+    expect(packet.sourceRejectionIds).toEqual([]);
+    expect(packet.rejectedPathIds).toEqual([]);
+    expect(packet.abstentionScore).toMatchObject({
+      status: "abstain",
+      reasons: expect.arrayContaining([
+        "evidence_gap",
+        "caveated_source_authority",
+        "missing_rejected_path_evidence"
+      ])
+    });
+  });
+
   it("treats hurt and rejected usefulness feedback as maintenance caveats", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
