@@ -555,7 +555,7 @@ const prepareImportRow = async (
     noteText: normalizeImportText(row.noteText),
     status: row.status,
     statement: normalizeImportText(row.statement),
-    taskScopes: row.taskScopes.map(normalizeImportText),
+    taskScopes: canonicalImportTextList(row.taskScopes),
     title: normalizeImportText(row.title)
   });
   const capturedContent = evidence.content === undefined

@@ -1,5 +1,12 @@
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
+import {
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -11,7 +18,9 @@ import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 
 import {
-  createDatabaseRuntime
+  createDatabaseRuntime,
+  defaultProjectSlug,
+  defaultWorkspaceSlug
 } from "../database-runtime.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
@@ -74,6 +83,7 @@ const createDisposableDatabase = async (input: string): Promise<{
 
 const runSourceImportCli = async (input: {
   readonly databaseUrl?: string;
+  readonly filePath?: string;
   readonly persist: boolean;
 }) =>
   execFileAsync("pnpm", [
@@ -85,7 +95,7 @@ const runSourceImportCli = async (input: {
     "decision",
     "import",
     "--file",
-    fixturePath,
+    input.filePath ?? fixturePath,
     ...(input.persist ? ["--persist"] : []),
     "--json"
   ], {
@@ -121,6 +131,20 @@ const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput 
     persistence: parsed["persistence"],
     importId: parsed["importId"]
   };
+};
+
+const writeReorderedTaskScopesFixture = async (filePath: string): Promise<void> => {
+  const fixture = await readFile(fixturePath, "utf8");
+  const reordered = fixture.replace(
+    '"taskScopes": ["source-import-retry", "source-authority"]',
+    '"taskScopes": ["source-authority", "source-import-retry"]'
+  );
+
+  if (reordered === fixture) {
+    throw new Error("source import retry fixture is missing reorderable task scopes");
+  }
+
+  await writeFile(filePath, reordered, "utf8");
 };
 
 const duplicateImportGraphCounts = async (
@@ -191,20 +215,23 @@ const duplicateImportGraphCounts = async (
 
 describe("source decision import retry boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "keeps a byte-identical lost-response retry in one semantic graph across independent CLI processes",
+    "keeps byte-identical and canonical-equivalent retries in one graph across independent CLI processes",
     async () => {
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
       const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+      const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "krn-source-import-retry-"));
+      const reorderedFixturePath = path.join(temporaryDirectory, "reordered-task-scopes.json");
 
       try {
+        await writeReorderedTaskScopesFixture(reorderedFixturePath);
         await migrateDatabase({
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
         });
         const setupRuntime = await createDatabaseRuntime({
           databaseUrl: disposableDatabase.databaseUrl,
-          workspaceSlug: "mise-en-palace",
-          projectSlug: "mise-en-palace",
+          workspaceSlug: defaultWorkspaceSlug,
+          projectSlug: defaultProjectSlug,
           requireProjectKernelForExplicitProject: false,
           now: () => "2026-07-13T00:00:00.000Z",
           createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
@@ -221,6 +248,15 @@ describe("source decision import retry boundary", () => {
             persist: true
           })
         ]);
+        const previewResult = sourceDecisionImportOutput(preview.stdout);
+        const firstResult = sourceDecisionImportOutput(first.stdout);
+        const secondResult = sourceDecisionImportOutput(second.stdout);
+        const reordered = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: reorderedFixturePath,
+          persist: true
+        });
+        const reorderedResult = sourceDecisionImportOutput(reordered.stdout);
         const importRows = await client<{ importId: string }[]>`
           select import_id as "importId"
           from source_artifacts
@@ -228,15 +264,13 @@ describe("source decision import retry boundary", () => {
           order by import_id
         `;
 
-        const previewResult = sourceDecisionImportOutput(preview.stdout);
-        const firstResult = sourceDecisionImportOutput(first.stdout);
-        const secondResult = sourceDecisionImportOutput(second.stdout);
-
         expect(previewResult.persistence).toBe("disabled");
         expect(firstResult.persistence).toBe("enabled");
         expect(secondResult.persistence).toBe("enabled");
+        expect(reorderedResult.persistence).toBe("enabled");
         expect(firstResult.importId).toBe(previewResult.importId);
         expect(secondResult.importId).toBe(firstResult.importId);
+        expect(reorderedResult.importId).toBe(firstResult.importId);
         expect(importRows.map((row) => row.importId)).toEqual([firstResult.importId]);
         expect(await duplicateImportGraphCounts(client)).toEqual({
           artifactCount: 1,
@@ -251,6 +285,7 @@ describe("source decision import retry boundary", () => {
       } finally {
         await client.end();
         await disposableDatabase.cleanup();
+        await rm(temporaryDirectory, { recursive: true, force: true });
       }
     },
     60_000

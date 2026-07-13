@@ -19,6 +19,7 @@
       "title": "Source import retry fixture",
       "statement": "A byte-identical source decision import must retain one semantic graph across retries.",
       "status": "current",
+      "taskScopes": ["source-import-retry", "source-authority"],
       "evidenceRef": "KRN_ROADMAP.md",
       "falsifier": "The same project and source fixture create multiple imported authority graphs after a lost-response retry.",
       "doesNotProve": "This fixture does not prove source truth or safe historical duplicate repair.",
