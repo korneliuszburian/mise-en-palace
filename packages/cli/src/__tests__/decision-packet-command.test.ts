@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type {
-  HarnessRunAggregate,
-  HarnessRunRepository
+  HarnessRunAggregate
 } from "@krn/core/repositories";
 
 import type {
-  CreateRunShowDatabaseRuntime
-} from "../run-run-show-command.js";
+  DatabaseRuntime
+} from "../database-runtime.js";
+import {
+  createNoStoreCompilerDependencies
+} from "../no-store-repositories.js";
+import type {
+  CreateDatabaseRuntime
+} from "../run-plan-command.js";
 import {
   runCli
 } from "../run-cli.js";
@@ -63,6 +68,10 @@ const isDecisionPacketJson = (value: unknown): value is DecisionPacketJson =>
   value !== null &&
   "packetIdentity" in value &&
   "returnChannels" in value;
+
+const notUsed = (method: string): never => {
+  throw new Error(method + " should not be called");
+};
 
 const aggregate: HarnessRunAggregate = {
   operatorIntent: {
@@ -331,41 +340,143 @@ const aggregate: HarnessRunAggregate = {
 const createFixtureDatabaseRuntime = (
   aggregateForReadback: HarnessRunAggregate,
   onClose: () => void
-): CreateRunShowDatabaseRuntime => async () => ({
-  harnessRunRepository: {
+): CreateDatabaseRuntime => async (runtimeInput) => {
+  const dependencies = createNoStoreCompilerDependencies(runtimeInput);
+  const harnessRunRepository = {
+    ...dependencies.harnessRunRepository,
+    async createExecutionRun() {
+      return notUsed("createExecutionRun");
+    },
     async getHarnessRunByExecutionRunId(runId: string) {
       return runId === "run-agent-1" ? aggregateForReadback : undefined;
+    },
+    async createEvidenceBundle() {
+      return notUsed("createEvidenceBundle");
+    },
+    async createReviewAssessment() {
+      return notUsed("createReviewAssessment");
+    },
+    async createFeedbackDelta() {
+      return notUsed("createFeedbackDelta");
     }
-  } satisfies Pick<HarnessRunRepository, "getHarnessRunByExecutionRunId">,
-  async close() {
-    onClose();
-  }
-});
+  } satisfies DatabaseRuntime["harnessRunRepository"];
+  const sourceRepository = {
+    ...dependencies.sourceRepository,
+    async createSourceArtifact() {
+      return notUsed("createSourceArtifact");
+    },
+    async createSourceClaim() {
+      return notUsed("createSourceClaim");
+    },
+    async getSourceClaimById() {
+      return notUsed("getSourceClaimById");
+    },
+    async createSourceClaimEdge() {
+      return notUsed("createSourceClaimEdge");
+    },
+    async createSourceDecisionEdge() {
+      return notUsed("createSourceDecisionEdge");
+    },
+    async getSourceDecisionEdgeById() {
+      return notUsed("getSourceDecisionEdgeById");
+    },
+    async createSourceRejection() {
+      return notUsed("createSourceRejection");
+    }
+  } satisfies DatabaseRuntime["sourceRepository"];
+  const memoryRepository = {
+    async createMemoryCandidate() {
+      return notUsed("createMemoryCandidate");
+    },
+    async getMemoryCandidateById() {
+      return notUsed("getMemoryCandidateById");
+    },
+    async promoteReviewedMemoryCandidate() {
+      return notUsed("promoteReviewedMemoryCandidate");
+    },
+    async rejectMemoryCandidate() {
+      return notUsed("rejectMemoryCandidate");
+    },
+    async getMemoryRecordById() {
+      return notUsed("getMemoryRecordById");
+    },
+    async listMemoryRecordsForProject() {
+      return [];
+    },
+    async invalidateMemoryRecord() {
+      return notUsed("invalidateMemoryRecord");
+    },
+    async recordMemoryApplication() {
+      return notUsed("recordMemoryApplication");
+    },
+    async createMemoryFeedbackEvent() {
+      return notUsed("createMemoryFeedbackEvent");
+    },
+    async createAntiMemoryCandidate() {
+      return notUsed("createAntiMemoryCandidate");
+    },
+    async getAntiMemoryCandidateById() {
+      return notUsed("getAntiMemoryCandidateById");
+    },
+    async promoteReviewedAntiMemoryCandidate() {
+      return notUsed("promoteReviewedAntiMemoryCandidate");
+    },
+    async rejectAntiMemoryCandidate() {
+      return notUsed("rejectAntiMemoryCandidate");
+    },
+    async listActiveMemory() {
+      return [];
+    }
+  } satisfies DatabaseRuntime["memoryRepository"];
 
-const aggregateWithoutFormalNegativeEvidence = (): HarnessRunAggregate => ({
-  ...aggregate,
-  contextAssembly: {
-    ...aggregate.contextAssembly,
-    exclusions: [{
-      subjectType: "source_claim",
-      subjectId: "claim-agent-unsafe",
-      reason: "unsafe",
-      explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
-      sourceAuthority: "project-decision"
-    }]
-  },
-  activationTrace: {
-    ...aggregate.activationTrace,
-    candidates: aggregate.activationTrace.candidates.map((candidate) => ({
-      ...candidate,
-      metadata: {
-        ...candidate.metadata,
-        sourceRejectionIds: []
-      }
-    })),
-    decisions: []
+  return {
+    workspaceId: "workspace-1",
+    projectId: "project-1",
+    compilerDependencies: {
+      ...dependencies,
+      harnessRunRepository
+    },
+    harnessRunRepository,
+    sourceRepository,
+    memoryRepository,
+    async close() {
+      onClose();
+    }
+  };
+};
+
+const aggregateWithoutFormalNegativeEvidence = (): HarnessRunAggregate => {
+  const contextAssembly = aggregate.contextAssembly;
+  const activationTrace = aggregate.activationTrace;
+  if (contextAssembly === undefined || activationTrace === undefined) {
+    throw new Error("decision packet fixture requires context assembly and activation trace");
   }
-});
+
+  return {
+    ...aggregate,
+    contextAssembly: {
+      ...contextAssembly,
+      exclusions: [{
+        subjectType: "source_claim",
+        subjectId: "claim-agent-unsafe",
+        reason: "unsafe",
+        explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+        sourceAuthority: "project-decision"
+      }]
+    },
+    activationTrace: {
+      ...activationTrace,
+      candidates: activationTrace.candidates.map((candidate) => ({
+        ...candidate,
+        metadata: {
+          ...candidate.metadata,
+          sourceRejectionIds: []
+        }
+      })),
+      decisions: []
+    }
+  };
+};
 
 describe("decision packet CLI", () => {
   it("returns a read-only DecisionPacket and evidence return channels for headless agents", async () => {
