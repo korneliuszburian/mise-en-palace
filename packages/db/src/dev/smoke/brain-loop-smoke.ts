@@ -629,13 +629,7 @@ export const runBrainLoopSmokeCheck = async (
         canonicalRevisionTokens: bounded
           .map((candidate) => candidate.metadata.canonicalRevision)
           .filter((revision): revision is Record<string, unknown> => (
-            typeof revision === "object" &&
-            revision !== null &&
-            !Array.isArray(revision) &&
-            draftContext.inclusions.some((inclusion) => (
-              inclusion.subjectType === (revision as Record<string, unknown>).subjectType &&
-              inclusion.subjectId === (revision as Record<string, unknown>).subjectId
-            ))
+            typeof revision === "object" && revision !== null && !Array.isArray(revision)
           ))
       }
     });
@@ -645,7 +639,13 @@ export const runBrainLoopSmokeCheck = async (
       ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
       inclusions: draftContext.inclusions,
       exclusions: draftContext.exclusions,
-      metadata: draftContext.metadata
+      metadata: {
+        ...draftContext.metadata,
+        canonicalRevisionTokens: (draftContext.metadata.canonicalRevisionTokens as Record<string, unknown>[])
+          .filter((revision) => draftContext.inclusions.some((inclusion) => (
+            inclusion.subjectType === revision.subjectType && inclusion.subjectId === revision.subjectId
+          )))
+      }
     });
     setContextAssemblyId(contextAssembly.id);
 

@@ -556,13 +556,7 @@ export const runActivationSmokeCheck = async (
         canonicalRevisionTokens: filteredCandidates
           .map((candidate) => candidate.metadata.canonicalRevision)
           .filter((revision): revision is Record<string, unknown> => (
-            typeof revision === "object" &&
-            revision !== null &&
-            !Array.isArray(revision) &&
-            draftContext.inclusions.some((inclusion) => (
-              inclusion.subjectType === (revision as Record<string, unknown>).subjectType &&
-              inclusion.subjectId === (revision as Record<string, unknown>).subjectId
-            ))
+            typeof revision === "object" && revision !== null && !Array.isArray(revision)
           ))
       }
     });
@@ -574,6 +568,10 @@ export const runActivationSmokeCheck = async (
       exclusions: draftContext.exclusions,
       metadata: {
         ...draftContext.metadata,
+        canonicalRevisionTokens: (draftContext.metadata.canonicalRevisionTokens as Record<string, unknown>[])
+          .filter((revision) => draftContext.inclusions.some((inclusion) => (
+            inclusion.subjectType === revision.subjectType && inclusion.subjectId === revision.subjectId
+          ))),
         ...(draftContext.observationPrefix === undefined
           ? {}
           : { observationPrefixSnapshot: draftContext.observationPrefix })
