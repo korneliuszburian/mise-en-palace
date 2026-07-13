@@ -291,6 +291,9 @@ describe("source review signals", () => {
     expect(assessSourceClaimTemporalValidity(sourceClaim({}), now)).toEqual({
       status: "current"
     });
+    expect(assessSourceClaimTemporalValidity({ status: "accepted" }, now)).toEqual({
+      status: "current"
+    });
 
     expect(isSourceClaimTemporallyValid(invalidNowClaim, "not-a-date")).toBe(false);
     expect(isSourceClaimTemporallyValid(invalidRevisitClaim, now)).toBe(false);

@@ -50,8 +50,12 @@ export type SourceClaimTemporalValidity =
       readonly reason: "rejected_or_deprecated";
     };
 
+type SourceClaimTemporalInput = Pick<SourceClaim, "status" | "revisitWhen"> & {
+  readonly metadata?: Record<string, unknown>;
+};
+
 export const assessSourceClaimTemporalValidity = (
-  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen" | "metadata">,
+  sourceClaim: SourceClaimTemporalInput,
   now: string
 ): SourceClaimTemporalValidity => {
   if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
@@ -61,7 +65,7 @@ export const assessSourceClaimTemporalValidity = (
     };
   }
 
-  const metadataValidity = assessSourceMetadataTemporalValidity(sourceClaim.metadata, now);
+  const metadataValidity = assessSourceMetadataTemporalValidity(sourceClaim.metadata ?? {}, now);
 
   if (metadataValidity.status !== "current") {
     return metadataValidity;
@@ -93,7 +97,7 @@ export const assessSourceClaimTemporalValidity = (
 };
 
 export const isSourceClaimTemporallyValid = (
-  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen" | "metadata">,
+  sourceClaim: SourceClaimTemporalInput,
   now: string
 ): boolean => {
   return assessSourceClaimTemporalValidity(sourceClaim, now).status === "current";
@@ -101,7 +105,7 @@ export const isSourceClaimTemporallyValid = (
 
 export type SourceClaimOverrideClaim = Pick<
   SourceClaim,
-  "id" | "status" | "sourceAuthority" | "revisitWhen" | "metadata" | "createdAt"
+  "id" | "status" | "sourceAuthority" | "revisitWhen" | "createdAt"
 >;
 
 export type SourceClaimOverrideAssessment =
