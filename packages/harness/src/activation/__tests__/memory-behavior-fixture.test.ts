@@ -25,6 +25,16 @@ import {
 
 const now = "2026-06-23T10:00:00.000Z";
 
+const nonCurrentSourceTemporalActivationCases = [
+  ["future-valid-from", { validFrom: "2026-06-23T10:00:00.001Z" }, "stale"],
+  ["expired-valid-until", { validUntil: "2026-06-23T09:59:59.999Z" }, "stale"],
+  ["valid-until-equal-now", { validUntil: now }, "stale"],
+  ["invalidated-at-now", { invalidatedAt: now }, "invalidated"],
+  ["malformed-valid-from", { validFrom: "not-a-timestamp" }, "stale"],
+  ["malformed-valid-until", { validUntil: "not-a-timestamp" }, "stale"],
+  ["malformed-invalidated-at", { invalidatedAt: "not-a-timestamp" }, "stale"]
+] as const;
+
 const task = (overrides: Partial<TaskContract>): TaskContract => ({
   id: "task-1",
   operatorIntentId: "intent-1",
@@ -246,6 +256,23 @@ describe("golden memory behavior cases", () => {
       .toMatchObject({ reason: "stale" });
     expect(filtered.find((candidate) => candidate.subjectId === "memory-invalid-time")?.exclusion)
       .toMatchObject({ reason: "stale" });
+  });
+
+  it("applies the source temporal window before activation", () => {
+    const filtered = applyTemporalFilter(rankCandidates(
+      nonCurrentSourceTemporalActivationCases.map(([id, metadata]) =>
+        toSourceClaimCandidate(sourceClaim({
+          id: `source-claim-${id}`,
+          metadata
+        }))
+      ),
+      buildSourceQuery(task({}))
+    ), now);
+
+    for (const [id, _metadata, exclusionReason] of nonCurrentSourceTemporalActivationCases) {
+      expect(filtered.find((candidate) => candidate.subjectId === `source-claim-${id}`)?.exclusion)
+        .toMatchObject({ reason: exclusionReason });
+    }
   });
 
   it("fails closed when the activation timestamp is invalid", () => {

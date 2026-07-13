@@ -431,6 +431,7 @@ describe("activation engine", () => {
     ], {
       edges: [edge],
       seedSourceClaimIds: [seedSourceClaim.id],
+      now,
       graphScore: 12
     });
     const ranked = rankCandidates(influenced, query);
@@ -454,6 +455,52 @@ describe("activation engine", () => {
     });
     expect(disconnected?.graphScore).toBe(0);
     expect(disconnected?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
+  });
+
+  it("does not let an expired SourceClaimEdge change activation scores", () => {
+    const currentClaim = sourceClaim({ id: "claim-current-edge" });
+    const historicalClaim = sourceClaim({ id: "claim-historical-edge" });
+    const expiredEdge: SourceClaimEdge = {
+      id: "edge-expired",
+      fromSourceClaimId: currentClaim.id,
+      toSourceClaimId: historicalClaim.id,
+      kind: "invalidates",
+      metadata: {
+        consumer: "activation-engine-test",
+        doesNotProve: "This expired edge does not prove current source authority.",
+        evidenceRef: "test:expired-source-claim-edge",
+        validUntil: now
+      },
+      createdAt: now
+    };
+
+    const influenced = applySourceClaimEdgeInfluence([
+      toSourceClaimCandidate(currentClaim),
+      toSourceClaimCandidate(historicalClaim)
+    ], {
+      edges: [expiredEdge],
+      seedSourceClaimIds: [currentClaim.id],
+      now,
+      graphScore: 30
+    });
+    const rankDown = applySourceClaimEdgeRankDown([
+      toSourceClaimCandidate(currentClaim),
+      toSourceClaimCandidate(historicalClaim)
+    ], {
+      edges: [expiredEdge],
+      rankDownAuthoritySourceClaimIds: [currentClaim.id],
+      now,
+      graphPenalty: 30
+    });
+
+    expect(influenced.find((candidate) => candidate.subjectId === historicalClaim.id)?.graphScore)
+      .toBeUndefined();
+    expect(influenced.find((candidate) => candidate.subjectId === historicalClaim.id)?.metadata)
+      .not.toHaveProperty("sourceClaimEdgeInfluence");
+    expect(rankDown.find((candidate) => candidate.subjectId === historicalClaim.id)?.graphScore)
+      .toBeUndefined();
+    expect(rankDown.find((candidate) => candidate.subjectId === historicalClaim.id)?.metadata)
+      .not.toHaveProperty("sourceClaimEdgeRankDown");
   });
 
   it("reports unsupported SourceClaimEdge influence without boosting authority", () => {
@@ -487,6 +534,7 @@ describe("activation engine", () => {
     ], {
       edges: [unsupportedEdge],
       seedSourceClaimIds: [seedSourceClaim.id],
+      now,
       graphScore: 30
     }), query);
     const connected = influenced.find((candidate) =>
@@ -580,6 +628,7 @@ describe("activation engine", () => {
       ], {
         edges: [edge],
         seedSourceClaimIds: [seedSourceClaim.id],
+        now,
         graphScore: 30
       }),
       query
@@ -686,6 +735,7 @@ describe("activation engine", () => {
           proposedEdge
         ],
         rankDownAuthoritySourceClaimIds: [activeClaim.id],
+        now,
         graphPenalty: 30
       }),
       buildSourceQuery(task)
@@ -747,6 +797,7 @@ describe("activation engine", () => {
       ], {
         edges: [contradictsEdge],
         rankDownAuthoritySourceClaimIds: [acceptedDissent.id],
+        now,
         graphPenalty: 30
       }),
       buildSourceQuery(task)
@@ -841,6 +892,7 @@ describe("activation engine", () => {
       ], {
         edges: [edge],
         seedSourceClaimIds: [seedSourceClaim.id],
+        now,
         graphScore: 30
       }),
       query
@@ -1790,7 +1842,18 @@ describe("activation engine", () => {
       revisitWhen: "not-a-timestamp",
       falsifier: "An invalid-time claim reaches active authority."
     });
-    const retrieved = await retrieveDecisionLinkedSourceCandidates([validClaim, invalidClaim]);
+    const malformedMetadataClaim = sourceClaim({
+      id: "claim-malformed-metadata-time",
+      claim: "Malformed source metadata should not guide activation.",
+      supportType: "implementation-boundary",
+      metadata: { validUntil: false },
+      falsifier: "A non-string temporal metadata value reaches active authority."
+    });
+    const retrieved = await retrieveDecisionLinkedSourceCandidates([
+      validClaim,
+      invalidClaim,
+      malformedMetadataClaim
+    ]);
     const result = applyActivationFilters({
       candidates: retrieved.candidates,
       antiMemoryRecords: retrieved.antiMemoryRecords,
@@ -1804,6 +1867,20 @@ describe("activation engine", () => {
 
     expect(bySubjectId.get("claim-valid-time")?.exclusion).toBeUndefined();
     expect(bySubjectId.get("claim-invalid-time")).toMatchObject({
+      sourceClaimAuthorityStatus: "blocked",
+      sourceClaimAuthorityReasons: expect.arrayContaining(["invalid_time"]),
+      sourceClaimReviewSignals: expect.arrayContaining([
+        expect.objectContaining({
+          kind: "invalid_source_claim_time",
+          severity: "blocking"
+        })
+      ]),
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("invalid_source_claim_time")
+      }
+    });
+    expect(bySubjectId.get("claim-malformed-metadata-time")).toMatchObject({
       sourceClaimAuthorityStatus: "blocked",
       sourceClaimAuthorityReasons: expect.arrayContaining(["invalid_time"]),
       sourceClaimReviewSignals: expect.arrayContaining([

@@ -1,15 +1,14 @@
+import {
+  assessTemporalWindow,
+  type TemporalWindowInvalidReason
+} from "@krn/core";
+
 import type {
   RankedActivationCandidate
 } from "./types.js";
 import {
   markExcluded
 } from "./types.js";
-
-const parseTimestamp = (timestamp: string): number => {
-  const parsed = Date.parse(timestamp);
-
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-};
 
 const invalidTimeExclusion = (
   candidate: RankedActivationCandidate,
@@ -46,88 +45,50 @@ const statusExclusion = (
   return undefined;
 };
 
-const invalidatedAtExclusion = (
-  candidate: RankedActivationCandidate,
-  nowAt: number
-): RankedActivationCandidate | undefined => {
-  if (candidate.invalidatedAt === undefined) {
-    return undefined;
+const invalidTimeField = (reason: TemporalWindowInvalidReason): string => {
+  switch (reason) {
+    case "invalid_now":
+      return "now";
+    case "invalid_valid_from":
+      return "validFrom";
+    case "invalid_valid_until":
+      return "validUntil";
+    case "invalid_invalidated_at":
+      return "invalidatedAt";
   }
-
-  const invalidatedAt = parseTimestamp(candidate.invalidatedAt);
-  if (!Number.isFinite(invalidatedAt)) {
-    return invalidTimeExclusion(candidate, "invalidatedAt");
-  }
-
-  if (invalidatedAt > nowAt) {
-    return undefined;
-  }
-
-  return markExcluded(candidate, {
-    reason: "invalidated",
-    explanation: candidate.invalidationReason ?? "Candidate invalidation time has passed."
-  });
-};
-
-const validUntilExclusion = (
-  candidate: RankedActivationCandidate,
-  nowAt: number
-): RankedActivationCandidate | undefined => {
-  if (candidate.validUntil === undefined) {
-    return undefined;
-  }
-
-  const validUntil = parseTimestamp(candidate.validUntil);
-  if (!Number.isFinite(validUntil)) {
-    return invalidTimeExclusion(candidate, "validUntil");
-  }
-
-  if (validUntil > nowAt) {
-    return undefined;
-  }
-
-  return markExcluded(candidate, {
-    reason: "stale",
-    explanation: "Candidate validity window has expired."
-  });
-};
-
-const validFromExclusion = (
-  candidate: RankedActivationCandidate,
-  nowAt: number
-): RankedActivationCandidate | undefined => {
-  if (candidate.validFrom === undefined) {
-    return undefined;
-  }
-
-  const validFrom = parseTimestamp(candidate.validFrom);
-  if (!Number.isFinite(validFrom)) {
-    return invalidTimeExclusion(candidate, "validFrom");
-  }
-
-  if (validFrom <= nowAt) {
-    return undefined;
-  }
-
-  return markExcluded(candidate, {
-    reason: "stale",
-    explanation: "Candidate validity window has not started."
-  });
 };
 
 const temporalExclusion = (
   candidate: RankedActivationCandidate,
   now: string
 ): RankedActivationCandidate | undefined => {
-  const nowAt = parseTimestamp(now);
-  if (!Number.isFinite(nowAt)) {
-    return invalidTimeExclusion(candidate, "now");
+  const temporalValidity = assessTemporalWindow(candidate, now);
+
+  if (temporalValidity.status === "current") {
+    return undefined;
   }
 
-  return statusExclusion(candidate) ??
-    validFromExclusion(candidate, nowAt) ??
-    invalidatedAtExclusion(candidate, nowAt) ??
-    validUntilExclusion(candidate, nowAt);
+  if (temporalValidity.status === "invalid") {
+    return invalidTimeExclusion(candidate, invalidTimeField(temporalValidity.reason));
+  }
+
+  switch (temporalValidity.reason) {
+    case "before_valid_from":
+      return markExcluded(candidate, {
+        reason: "stale",
+        explanation: "Candidate validity window has not started."
+      });
+    case "invalidated":
+      return markExcluded(candidate, {
+        reason: "invalidated",
+        explanation: candidate.invalidationReason ?? "Candidate invalidation time has passed."
+      });
+    case "valid_until_elapsed":
+      return markExcluded(candidate, {
+        reason: "stale",
+        explanation: "Candidate validity window has expired."
+      });
+  }
 };
 
 export const applyTemporalFilter = (
@@ -139,5 +100,5 @@ export const applyTemporalFilter = (
       return candidate;
     }
 
-    return temporalExclusion(candidate, now) ?? candidate;
+    return statusExclusion(candidate) ?? temporalExclusion(candidate, now) ?? candidate;
   });

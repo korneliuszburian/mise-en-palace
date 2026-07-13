@@ -760,11 +760,13 @@ export const retrieveActivationCandidates = async (
         };
       }), {
         edges: sourceClaimEdges,
-        seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
+        seedSourceClaimIds: sourceClaims.map((claim) => claim.id),
+        now: activationNow
       }),
       {
         edges: sourceClaimEdges,
-        rankDownAuthoritySourceClaimIds: sourceConsensus.currentSourceClaimIds
+        rankDownAuthoritySourceClaimIds: sourceConsensus.currentSourceClaimIds,
+        now: activationNow
       }
     ),
     sourceQuery

@@ -1037,6 +1037,7 @@ const runRelationGroundedQaReadback = (now: string): BehaviorFixtureProof => {
       ], {
         edges: [edge],
         seedSourceClaimIds: [seed.id],
+        now,
         graphScore: 30
       }),
       query

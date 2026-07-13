@@ -66,7 +66,7 @@ export const assessSourceClaimReviewSignals = (
   if (claim.status === "accepted" && input.now !== undefined) {
     const temporalValidity = assessSourceClaimTemporalValidity(claim, input.now);
 
-    if (temporalValidity.status === "invalid_time") {
+    if (temporalValidity.status === "invalid") {
       signals.push({
         kind: "invalid_source_claim_time",
         severity: "blocking",
@@ -76,13 +76,13 @@ export const assessSourceClaimReviewSignals = (
       });
     }
 
-    if (temporalValidity.status === "stale") {
+    if (temporalValidity.status === "historical") {
       signals.push({
         kind: "stale_accepted_claim",
         severity: "warning",
         sourceClaimId: claim.id,
         reason:
-          "Accepted SourceClaim is past revisitWhen and needs refresh, deprecation, or replacement before continued use."
+          "Accepted SourceClaim is outside its current temporal window and needs refresh, deprecation, or replacement before continued use."
       });
     }
   }

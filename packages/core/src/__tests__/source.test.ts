@@ -28,14 +28,47 @@ import {
 
 const now = "2026-06-24T08:00:00.000Z";
 
-const nonCurrentTemporalMetadata = [
-  { validFrom: "2026-06-25T00:00:00.000Z" },
-  { validUntil: "2026-06-23T23:59:59.999Z" },
-  { validUntil: now },
-  { invalidatedAt: now },
-  { validFrom: "not-a-timestamp" },
-  { validUntil: "not-a-timestamp" },
-  { invalidatedAt: "not-a-timestamp" }
+const nonCurrentTemporalCases = [
+  [
+    "future validFrom",
+    { validFrom: "2026-06-25T00:00:00.000Z" },
+    { status: "historical", reason: "before_valid_from" }
+  ],
+  [
+    "expired validUntil",
+    { validUntil: "2026-06-23T23:59:59.999Z" },
+    { status: "historical", reason: "valid_until_elapsed" }
+  ],
+  [
+    "validUntil equal to now",
+    { validUntil: now },
+    { status: "historical", reason: "valid_until_elapsed" }
+  ],
+  [
+    "invalidatedAt equal to now",
+    { invalidatedAt: now },
+    { status: "historical", reason: "invalidated" }
+  ],
+  [
+    "malformed validFrom",
+    { validFrom: "not-a-timestamp" },
+    { status: "invalid", reason: "invalid_valid_from" }
+  ],
+  [
+    "malformed validUntil",
+    { validUntil: "not-a-timestamp" },
+    { status: "invalid", reason: "invalid_valid_until" }
+  ],
+  [
+    "non-string validUntil",
+    { validUntil: false },
+    { status: "invalid", reason: "invalid_valid_until" }
+  ],
+  [
+    "malformed invalidatedAt",
+    { invalidatedAt: "not-a-timestamp" },
+    { status: "invalid", reason: "invalid_invalidated_at" }
+  ]
 ] as const;
 
 const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
@@ -209,7 +242,7 @@ describe("source review signals", () => {
         severity: "warning",
         sourceClaimId: "source-claim-1",
         reason:
-          "Accepted SourceClaim is past revisitWhen and needs refresh, deprecation, or replacement before continued use."
+          "Accepted SourceClaim is outside its current temporal window and needs refresh, deprecation, or replacement before continued use."
       },
       {
         kind: "accepted_claim_without_decision",
@@ -242,21 +275,21 @@ describe("source review signals", () => {
     });
 
     expect(assessSourceClaimTemporalValidity(invalidNowClaim, "not-a-date")).toEqual({
-      status: "invalid_time",
+      status: "invalid",
       reason: "invalid_now"
     });
     expect(assessSourceClaimTemporalValidity(invalidRevisitClaim, now)).toEqual({
-      status: "invalid_time",
+      status: "invalid",
       reason: "invalid_revisit_when"
     });
     expect(assessSourceClaimTemporalValidity(sourceClaim({
       revisitWhen: "2026-06-01T00:00:00.000Z"
     }), now)).toEqual({
-      status: "stale",
+      status: "historical",
       reason: "revisit_when_elapsed"
     });
     expect(assessSourceClaimTemporalValidity(sourceClaim({}), now)).toEqual({
-      status: "valid"
+      status: "current"
     });
 
     expect(isSourceClaimTemporallyValid(invalidNowClaim, "not-a-date")).toBe(false);
@@ -264,14 +297,27 @@ describe("source review signals", () => {
     expect(isSourceClaimTemporallyValid(sourceClaim({}), now)).toBe(true);
   });
 
-  test("currently treats metadata-bounded SourceClaims as current authority", () => {
-    for (const metadata of nonCurrentTemporalMetadata) {
-      expect(isSourceClaimTemporallyValid(sourceClaim({ metadata }), now)).toBe(true);
-    }
-  });
+  test.each(nonCurrentTemporalCases)(
+    "treats %s SourceClaims as non-current authority",
+    (_description, metadata, temporalValidity) => {
+      const claim = sourceClaim({ metadata });
 
-  test("currently allows metadata-bounded SourceClaimEdges to rank down source consensus", () => {
-    for (const metadata of nonCurrentTemporalMetadata) {
+      expect(assessSourceClaimTemporalValidity(claim, now)).toEqual(temporalValidity);
+      expect(isSourceClaimTemporallyValid(claim, now)).toBe(false);
+      expect(assessSourceClaimAuthority({
+        claim,
+        now,
+        decisionSupportEdgeIds: ["source-decision-edge-temporal-boundary"]
+      })).toMatchObject({
+        status: temporalValidity.status === "invalid" ? "blocked" : "stale",
+        temporalValidity
+      });
+    }
+  );
+
+  test.each(nonCurrentTemporalCases)(
+    "does not allow %s SourceClaimEdges to rank down source consensus",
+    (_description, metadata, temporalValidity) => {
       const currentClaim = sourceClaim({
         id: "source-claim-current-temporal-edge",
         createdAt: "2026-06-20T00:00:00.000Z"
@@ -301,11 +347,76 @@ describe("source review signals", () => {
         now
       });
 
-      expect(timeline.supersededSourceClaimIds).toEqual([supersededClaim.id]);
+      expect(timeline.currentSourceClaimIds).toEqual([currentClaim.id]);
+      expect(timeline.supersededSourceClaimIds).toEqual([]);
       expect(timeline.entries.find((entry) =>
         entry.sourceClaimId === supersededClaim.id
-      )?.supersededBySourceClaimIds).toEqual([currentClaim.id]);
+      )?.supersededBySourceClaimIds).toEqual([]);
+      expect(timeline.entries.find((entry) =>
+        entry.sourceClaimId === supersededClaim.id
+      )?.relationEvidence.find((evidence) =>
+        evidence.sourceClaimEdgeId === "source-claim-edge-temporal-boundary"
+      )?.temporalValidity).toEqual(temporalValidity);
     }
+  );
+
+  test.each(nonCurrentTemporalCases)(
+    "does not let %s SourceClaims caveat current source consensus",
+    (_description, metadata) => {
+      const historicalClaim = sourceClaim({
+        id: "source-claim-historical-dissent",
+        metadata,
+        createdAt: "2026-06-20T00:00:00.000Z"
+      });
+      const currentClaim = sourceClaim({
+        id: "source-claim-current-dissent",
+        createdAt: "2026-06-19T00:00:00.000Z"
+      });
+      const timeline = buildSourceConsensusTimelineReadback({
+        sourceClaims: [historicalClaim, currentClaim],
+        sourceClaimEdges: [sourceClaimEdge({
+          id: "source-claim-edge-current-dissent",
+          fromSourceClaimId: historicalClaim.id,
+          toSourceClaimId: currentClaim.id,
+          kind: "contradicts",
+          metadata: {
+            consumer: "source temporal boundary",
+            doesNotProve: "This relation does not prove source truth.",
+            evidenceRef: "source-artifact:temporal-boundary"
+          }
+        })],
+        sourceDecisionEdges: [
+          sourceDecisionEdge({
+            id: "source-decision-edge-historical-dissent",
+            sourceClaimId: historicalClaim.id
+          }),
+          sourceDecisionEdge({
+            id: "source-decision-edge-current-dissent",
+            sourceClaimId: currentClaim.id
+          })
+        ],
+        now
+      });
+
+      expect(timeline.currentSourceClaimIds).toEqual([currentClaim.id]);
+      expect(timeline.caveatedSourceClaimIds).toEqual([]);
+      expect(timeline.entries.find((entry) =>
+        entry.sourceClaimId === currentClaim.id
+      )).toMatchObject({
+        state: "current_authority",
+        authorityState: "accepted",
+        caveats: []
+      });
+    }
+  );
+
+  test("treats revisitWhen equal to now as historical", () => {
+    expect(assessSourceClaimTemporalValidity(sourceClaim({
+      revisitWhen: now
+    }), now)).toEqual({
+      status: "historical",
+      reason: "revisit_when_elapsed"
+    });
   });
 
   test("blocks accepted source claims with invalid temporal metadata", () => {

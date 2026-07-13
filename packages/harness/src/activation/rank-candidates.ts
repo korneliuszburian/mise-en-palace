@@ -4,10 +4,12 @@ import type {
 import type {
   MemoryRecord,
   MemoryRecordReviewSignal,
+  IsoTimestamp,
   SourceClaim,
   SourceClaimEdge
 } from "@krn/core";
 import {
+  assessSourceMetadataTemporalValidity,
   assessMemoryRecordReviewSignals,
   classifySourceClaimTaxonomy,
   projectStandardDecisionFromMemoryRecord,
@@ -218,6 +220,7 @@ const memoryReviewSignalMetadata = (
 export interface SourceClaimEdgeInfluenceInput {
   edges: readonly SourceClaimEdge[];
   seedSourceClaimIds: readonly SourceClaim["id"][];
+  now: IsoTimestamp;
   graphScore?: number;
 }
 
@@ -323,6 +326,10 @@ export const applySourceClaimEdgeInfluence = (
   const influenceBySourceClaimId = new Map<SourceClaim["id"], SourceClaimEdgeInfluence>();
 
   for (const edge of input.edges) {
+    if (assessSourceMetadataTemporalValidity(edge.metadata, input.now).status !== "current") {
+      continue;
+    }
+
     const connectedSourceClaimId = connectedSourceClaimIdFor(edge, seedSourceClaimIds);
 
     if (connectedSourceClaimId === undefined) {
@@ -364,6 +371,7 @@ export const applySourceClaimEdgeInfluence = (
 export interface SourceClaimEdgeRankDownInput {
   edges: readonly SourceClaimEdge[];
   rankDownAuthoritySourceClaimIds: readonly SourceClaim["id"][];
+  now: IsoTimestamp;
   graphPenalty?: number;
 }
 
@@ -381,6 +389,10 @@ export const applySourceClaimEdgeRankDown = (
 
   for (const edge of input.edges) {
     if (!isSourceClaimEdgeRankDownKind(edge.kind)) {
+      continue;
+    }
+
+    if (assessSourceMetadataTemporalValidity(edge.metadata, input.now).status !== "current") {
       continue;
     }
 
@@ -470,6 +482,8 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
 
 export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate => {
   const taxonomy = classifySourceClaimTaxonomy(claim);
+  const temporalMetadata = readSourceRelationMetadataReadback(claim.metadata);
+  const validUntil = temporalMetadata.validUntil ?? claim.revisitWhen;
 
   return {
     id: claim.id,
@@ -488,7 +502,13 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
     hasMechanism: claim.mechanism.trim().length > 0,
     doesNotProve: claim.doesNotProve,
     sourceClaimStatus: claim.status,
-    ...(claim.revisitWhen === undefined ? {} : { validUntil: claim.revisitWhen }),
+    ...(temporalMetadata.validFrom === undefined
+      ? {}
+      : { validFrom: temporalMetadata.validFrom }),
+    ...(validUntil === undefined ? {} : { validUntil }),
+    ...(temporalMetadata.invalidatedAt === undefined
+      ? {}
+      : { invalidatedAt: temporalMetadata.invalidatedAt }),
     metadata: {
       sourceArtifactId: claim.sourceArtifactId,
       sourceClaimStatus: claim.status,

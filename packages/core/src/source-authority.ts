@@ -7,9 +7,11 @@ import {
 } from "./source-model.js";
 import { hasSourceText } from "./source-text.js";
 import {
-  parseTimestampMs,
+  assessTemporalWindow,
+  type TemporalWindowAssessment,
   type IsoTimestamp
 } from "./time.js";
+import { assessSourceMetadataTemporalValidity } from "./source-metadata.js";
 
 const uniqueStrings = (values: readonly string[]): readonly string[] => [...new Set(values)];
 
@@ -34,16 +36,14 @@ const hasSourceDecisionOverrideProvenance = (value: string | undefined): boolean
 };
 
 export type SourceClaimTemporalValidity =
+  | TemporalWindowAssessment
   | {
-      readonly status: "valid";
-    }
-  | {
-      readonly status: "stale";
+      readonly status: "historical";
       readonly reason: "revisit_when_elapsed";
     }
   | {
-      readonly status: "invalid_time";
-      readonly reason: "invalid_now" | "invalid_revisit_when";
+      readonly status: "invalid";
+      readonly reason: "invalid_revisit_when";
     }
   | {
       readonly status: "inactive";
@@ -51,7 +51,7 @@ export type SourceClaimTemporalValidity =
     };
 
 export const assessSourceClaimTemporalValidity = (
-  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
+  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen" | "metadata">,
   now: string
 ): SourceClaimTemporalValidity => {
   if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
@@ -61,52 +61,47 @@ export const assessSourceClaimTemporalValidity = (
     };
   }
 
-  const nowAt = parseTimestampMs(now);
+  const metadataValidity = assessSourceMetadataTemporalValidity(sourceClaim.metadata, now);
 
-  if (nowAt === undefined) {
-    return {
-      status: "invalid_time",
-      reason: "invalid_now"
-    };
+  if (metadataValidity.status !== "current") {
+    return metadataValidity;
   }
 
   if (sourceClaim.revisitWhen === undefined) {
-    return {
-      status: "valid"
-    };
+    return metadataValidity;
   }
 
-  const revisitAt = parseTimestampMs(sourceClaim.revisitWhen);
+  const revisitValidity = assessTemporalWindow({
+    validUntil: sourceClaim.revisitWhen
+  }, now);
 
-  if (revisitAt === undefined) {
+  if (revisitValidity.status === "invalid") {
     return {
-      status: "invalid_time",
+      status: "invalid",
       reason: "invalid_revisit_when"
     };
   }
 
-  if (revisitAt < nowAt) {
+  if (revisitValidity.status === "historical") {
     return {
-      status: "stale",
+      status: "historical",
       reason: "revisit_when_elapsed"
     };
   }
 
-  return {
-    status: "valid"
-  };
+  return revisitValidity;
 };
 
 export const isSourceClaimTemporallyValid = (
-  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
+  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen" | "metadata">,
   now: string
 ): boolean => {
-  return assessSourceClaimTemporalValidity(sourceClaim, now).status === "valid";
+  return assessSourceClaimTemporalValidity(sourceClaim, now).status === "current";
 };
 
 export type SourceClaimOverrideClaim = Pick<
   SourceClaim,
-  "id" | "status" | "sourceAuthority" | "revisitWhen" | "createdAt"
+  "id" | "status" | "sourceAuthority" | "revisitWhen" | "metadata" | "createdAt"
 >;
 
 export type SourceClaimOverrideAssessment =
@@ -131,7 +126,7 @@ export const assessSourceClaimOverride = (input: {
   readonly overrideReason?: string;
   readonly overrideProvenanceRef?: string;
 }): SourceClaimOverrideAssessment => {
-  if (assessSourceClaimTemporalValidity(input.candidate, input.now).status !== "valid") {
+  if (assessSourceClaimTemporalValidity(input.candidate, input.now).status !== "current") {
     return {
       allowed: false,
       reason: "candidate_not_current_authority"
@@ -303,11 +298,11 @@ const sourceClaimTextAuthorityReasons = (
 const sourceClaimTemporalAuthorityReason = (
   temporalValidity: SourceClaimTemporalValidity
 ): SourceClaimAuthorityReason | undefined => {
-  if (temporalValidity.status === "invalid_time") {
+  if (temporalValidity.status === "invalid") {
     return "invalid_time";
   }
 
-  if (temporalValidity.status === "stale") {
+  if (temporalValidity.status === "historical") {
     return "stale";
   }
 
@@ -317,11 +312,11 @@ const sourceClaimTemporalAuthorityReason = (
 const sourceClaimTemporalAuthorityCaveats = (
   temporalValidity: SourceClaimTemporalValidity
 ): readonly string[] => {
-  if (temporalValidity.status === "invalid_time") {
+  if (temporalValidity.status === "invalid") {
     return [`invalid_time:${temporalValidity.reason}`];
   }
 
-  if (temporalValidity.status === "stale") {
+  if (temporalValidity.status === "historical") {
     return ["stale"];
   }
 
@@ -405,7 +400,7 @@ const sourceClaimIsBlockedAuthority = (input: {
   readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
 }): boolean =>
   input.claim.status !== "accepted" ||
-  input.temporalValidity.status === "invalid_time" ||
+  input.temporalValidity.status === "invalid" ||
   input.reasons.includes("missing_source_to_decision_fields") ||
   input.reasons.includes("decorative_support_type") ||
   input.supersededBySourceClaimIds.length > 0 ||
@@ -429,7 +424,7 @@ const sourceClaimAuthorityStatus = (input: {
     return "blocked";
   }
 
-  if (input.temporalValidity.status === "stale") {
+  if (input.temporalValidity.status === "historical") {
     return "stale";
   }
 

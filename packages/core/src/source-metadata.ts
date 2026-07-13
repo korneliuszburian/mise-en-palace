@@ -2,6 +2,11 @@ import {
   readMetadataString,
   readMetadataStringList
 } from "./metadata.js";
+import {
+  assessTemporalWindow,
+  type TemporalWindowInvalidReason,
+  type TemporalWindowAssessment
+} from "./time.js";
 
 export interface SourceRelationMetadataReadback {
   consumer?: string;
@@ -71,4 +76,40 @@ export const readSourceRelationMetadataReadback = (
     ...(validUntil === undefined ? {} : { validUntil }),
     ...(invalidatedAt === undefined ? {} : { invalidatedAt })
   };
+};
+
+const invalidTemporalMetadataReason = (
+  metadata: Record<string, unknown>
+): TemporalWindowInvalidReason | undefined => {
+  const fields: readonly (readonly [string, TemporalWindowInvalidReason])[] = [
+    ["validFrom", "invalid_valid_from"],
+    ["validUntil", "invalid_valid_until"],
+    ["invalidatedAt", "invalid_invalidated_at"]
+  ];
+
+  for (const [field, reason] of fields) {
+    const value = metadata[field];
+
+    if (value !== undefined && (typeof value !== "string" || value.trim().length === 0)) {
+      return reason;
+    }
+  }
+
+  return undefined;
+};
+
+export const assessSourceMetadataTemporalValidity = (
+  metadata: Record<string, unknown>,
+  now: string
+): TemporalWindowAssessment => {
+  const invalidReason = invalidTemporalMetadataReason(metadata);
+
+  if (invalidReason !== undefined) {
+    return {
+      status: "invalid",
+      reason: invalidReason
+    };
+  }
+
+  return assessTemporalWindow(readSourceRelationMetadataReadback(metadata), now);
 };
