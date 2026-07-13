@@ -160,6 +160,50 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
+  it("falsifies project-scoped anti-memory review by promoting a foreign SourceClaim", async () => {
+    let promoteCalled = false;
+    const foreignSourceClaimId = "source-claim-project-b";
+
+    const result = await promoteAntiMemoryCandidateThroughGate({
+      memoryRepository: {
+        async getAntiMemoryCandidateById() {
+          return candidate({
+            projectId: "project-a",
+            invalidatedBySourceClaimIds: [foreignSourceClaimId],
+            sourceLineage: [{ sourceId: foreignSourceClaimId }]
+          });
+        },
+        async promoteReviewedAntiMemoryCandidate() {
+          promoteCalled = true;
+          return {
+            ...antiMemoryRecord(),
+            projectId: "project-a"
+          };
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimById() {
+          return sourceClaim({
+            id: foreignSourceClaimId,
+            sourceArtifactId: "source-artifact-project-b"
+          });
+        }
+      },
+      review: {
+        candidateId: "anti-memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "source-claim-1"
+      }
+    });
+
+    expect(result.candidate.projectId).toBe("project-a");
+    expect(result.reviewedSourceClaims).toEqual([expect.objectContaining({
+      id: foreignSourceClaimId,
+      sourceArtifactId: "source-artifact-project-b"
+    })]);
+    expect(promoteCalled).toBe(true);
+  });
+
   it("promotes an approved anti-memory candidate through the reviewed port", async () => {
     let capturedPromotion: PromoteAntiMemoryCandidateInput | undefined;
 

@@ -744,6 +744,71 @@ describe("runMaintenanceQueueRecord", () => {
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
+  it("falsifies project-scoped feedback maintenance by creating a candidate from a foreign SourceDecision", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "review_feedback_delta",
+        payload: {
+          projectId: "project-a",
+          feedbackDeltaId: "feedback-delta-project-a",
+          reason: "review cross-project source decision feedback"
+        }
+      })
+    );
+    const memoryRepository = new FakeFeedbackMaintenanceMemoryRepository();
+    const foreignSourceDecisionId = "source-decision-project-b";
+    const feedback = feedbackDelta({
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId: foreignSourceDecisionId,
+        outcome: "stale",
+        reason: "Project A feedback must not nominate Project B source authority.",
+        evidenceRefs: ["packet:project-a"],
+        doesNotProve: "This feedback does not prove Project B source authority is false."
+      }]
+    });
+
+    const result = await runMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      handlers: [
+        createFeedbackDeltaMaintenanceHandler({
+          harnessRunRepository: {
+            async getFeedbackDeltaForProject() {
+              return {
+                status: "found",
+                feedbackDelta: {
+                  ...feedback,
+                  id: "feedback-delta-project-a"
+                }
+              };
+            }
+          },
+          memoryRepository,
+          sourceRepository: new FakeFeedbackMaintenanceSourceRepository(new Map([
+            [foreignSourceDecisionId, {
+              ...sourceDecision({
+                id: foreignSourceDecisionId,
+                sourceClaimId: "source-claim-project-b"
+              }),
+              projectId: "project-b"
+            }]
+          ]))
+        })
+      ]
+    });
+
+    expect(result.status).toBe("succeeded");
+    expect(memoryRepository.createdAntiMemoryCandidates).toEqual([expect.objectContaining({
+      projectId: "project-a",
+      invalidatedBySourceClaimIds: ["source-claim-project-b"],
+      appliesTo: "source_claim:source-claim-project-b",
+      metadata: expect.objectContaining({
+        sourceDecisionId: foreignSourceDecisionId,
+        sourceClaimId: "source-claim-project-b"
+      })
+    })]);
+  });
+
   it("distinguishes missing and wrong-project feedback lookups without writing candidates", async () => {
     for (const lookupStatus of ["missing", "wrong_project"] as const) {
       const repository = new FakeMaintenanceQueueRepository(

@@ -73,6 +73,7 @@ export interface SourceGraphSmokeReport {
   sourceConsensusRejectedCount: number;
   sourceConsensusRelationEvidenceGapCount: number;
   projectIsolationRejectedWrites: number;
+  unscopedForeignSourceClaimReadLeaks: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
   outboxEventCount: number;
@@ -141,6 +142,7 @@ const sourceWriteRejectedFor = async (
 
 interface SourceProjectIsolationSmokeProof {
   projectIsolationRejectedWrites: number;
+  unscopedForeignSourceClaimReadLeaks: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
 }
@@ -191,6 +193,18 @@ const createSourceProjectIsolationSmokeProof = async (input: {
       projectIsolationProbe: true
     }
   });
+  const unscopedForeignSourceClaim = await input.sourceRepository.getSourceClaimById(
+    foreignSourceClaim.id
+  );
+  const scopedForeignSourceClaim = input.sourceRepository.getSourceClaimForProject === undefined
+    ? undefined
+    : await input.sourceRepository.getSourceClaimForProject(
+      input.project.id,
+      foreignSourceClaim.id
+    );
+  const unscopedForeignSourceClaimReadLeaks =
+    unscopedForeignSourceClaim?.id === foreignSourceClaim.id &&
+    scopedForeignSourceClaim === undefined;
   const mismatchedAdoptionRejected = await sourceWriteRejectedFor(
     () => input.sourceRepository.createSourceDecision({
       projectId: input.project.id,
@@ -308,6 +322,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
 
   return {
     projectIsolationRejectedWrites,
+    unscopedForeignSourceClaimReadLeaks,
     sourceDecisionIdentityReadbackPassed,
     legacyDecisionEdgeExcluded
   };
@@ -666,6 +681,7 @@ export const runSourceGraphSmokeCheck = async (
     });
     const {
       projectIsolationRejectedWrites,
+      unscopedForeignSourceClaimReadLeaks,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded
     } = await createSourceProjectIsolationSmokeProof({
@@ -773,6 +789,10 @@ export const runSourceGraphSmokeCheck = async (
         passed: projectIsolationRejectedWrites === 4
       },
       {
+        label: "unscoped foreign SourceClaim read is observable for consumer isolation falsifiers",
+        passed: unscopedForeignSourceClaimReadLeaks
+      },
+      {
         label: "source decision identity project readback",
         passed: sourceDecisionIdentityReadbackPassed
       },
@@ -873,6 +893,7 @@ export const runSourceGraphSmokeCheck = async (
       sourceConsensusRejectedCount: consensusReadback.rejectedCount,
       sourceConsensusRelationEvidenceGapCount: consensusReadback.relationEvidenceGapCount,
       projectIsolationRejectedWrites,
+      unscopedForeignSourceClaimReadLeaks,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded,
       outboxEventCount: outboxRows[0]?.count ?? 0,

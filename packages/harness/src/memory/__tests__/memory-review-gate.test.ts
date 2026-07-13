@@ -247,6 +247,47 @@ describe("promoteMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
+  it("falsifies project-scoped memory review by promoting a foreign SourceClaim", async () => {
+    let promoteCalled = false;
+    const foreignSourceClaimId = "source-claim-project-b";
+
+    const result = await promoteMemoryCandidateThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate({
+            projectId: "project-a",
+            sourceClaimIds: [foreignSourceClaimId],
+            sourceLineage: [{ sourceId: foreignSourceClaimId }]
+          });
+        },
+        async promoteReviewedMemoryCandidate() {
+          promoteCalled = true;
+          return memoryRecord({ projectId: "project-a" });
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimById() {
+          return sourceClaim({
+            id: foreignSourceClaimId,
+            sourceArtifactId: "source-artifact-project-b"
+          });
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "raw-evidence:run-event-1"
+      }
+    });
+
+    expect(result.candidate.projectId).toBe("project-a");
+    expect(result.reviewedSourceClaims).toEqual([expect.objectContaining({
+      id: foreignSourceClaimId,
+      sourceArtifactId: "source-artifact-project-b"
+    })]);
+    expect(promoteCalled).toBe(true);
+  });
+
   it("rejects promotion from source claims that are not accepted authority", async () => {
     let promoteCalled = false;
 
