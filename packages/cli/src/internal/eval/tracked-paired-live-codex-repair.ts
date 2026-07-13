@@ -235,6 +235,9 @@ const serializedJson = (value: unknown): string => JSON.stringify(value) ?? "nul
 const readString = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 ? value : undefined;
 
+const isPresentString = (value: unknown): boolean =>
+  readString(value) !== undefined;
+
 const readStringArray = (value: unknown): readonly string[] =>
   Array.isArray(value) && value.every((item) => typeof item === "string")
     ? value
@@ -752,7 +755,7 @@ const isCommandResult = (value: unknown): value is CommandResult => {
 const isTrialToolObservation = (value: unknown): value is TrialToolObservation => {
   if (!isRecord(value)) return false;
   return readString(value["command"]) !== undefined &&
-    optionalValue(value, "executable", readString) &&
+    optionalValue(value, "executable", isPresentString) &&
     isCommandResult(value["version"]);
 };
 
@@ -760,7 +763,7 @@ const isTrialPacketValidation = (value: unknown): value is TrialPacketValidation
   if (!isRecord(value)) return false;
   return typeof value["valid"] === "boolean" &&
     isStringArray(value["reasons"]) &&
-    optionalValue(value, "checksum", readString);
+    optionalValue(value, "checksum", isPresentString);
 };
 
 const isTargetStateCommands = (value: unknown): boolean =>
@@ -773,8 +776,8 @@ const isTrialTargetState = (value: unknown): value is TrialTargetState => {
     typeof value["statusOutput"] === "string" &&
     isStringArray(value["trackedFiles"]) &&
     isStringArray(value["untrackedFiles"]) &&
-    optionalValue(value, "treeHash", readString) &&
-    optionalValue(value, "patchHash", readString) &&
+    optionalValue(value, "treeHash", isPresentString) &&
+    optionalValue(value, "patchHash", isPresentString) &&
     isTargetStateCommands(value["commands"]);
 };
 
@@ -830,8 +833,8 @@ const isObservedTrialConditions = (value: unknown): boolean => {
   if (!isRecord(value)) return false;
   return optionalValue(value, "containment", isTrialToolObservation) &&
     optionalValue(value, "codex", isTrialToolObservation) &&
-    optionalValue(value, "profileHash", readString) &&
-    optionalValue(value, "environmentProfileHash", readString) &&
+    optionalValue(value, "profileHash", isPresentString) &&
+    optionalValue(value, "environmentProfileHash", isPresentString) &&
     optionalValue(value, "environmentVariableNames", isStringArray) &&
     optionalValue(value, "credentialProvided", (credential) => typeof credential === "boolean");
 };
@@ -897,7 +900,7 @@ const isTrialPromptDelta = (value: unknown): boolean =>
   value["packetOnlyByConstruction"] === true;
 
 const isTrialExecutionFields = (value: JsonRecord): boolean =>
-  optionalValue(value, "environmentProfileHash", readString) &&
+  optionalValue(value, "environmentProfileHash", isPresentString) &&
   optionalValue(value, "attempt", isTrialAttempt) &&
   optionalValue(value, "invalidReasons", isStringArray) &&
   optionalValue(value, "promptDelta", isTrialPromptDelta) &&
@@ -992,7 +995,7 @@ const hasArtifactIdentity = (value: JsonRecord): boolean =>
 
 const hasArtifactPacket = (value: JsonRecord): boolean => {
   const packet = nestedRecord(value, "packet");
-  return optionalValue(packet ?? {}, "checksum", readString) &&
+  return optionalValue(packet ?? {}, "checksum", isPresentString) &&
     isTrialPacketValidation(packet?.["validation"]);
 };
 
@@ -1003,8 +1006,8 @@ const hasArtifactProof = (value: JsonRecord): boolean => {
 };
 
 const hasArtifactExecution = (value: JsonRecord): boolean =>
-  optionalValue(value, "baselineTreeHash", readString) &&
-  optionalValue(value, "krnTreeHash", readString) &&
+  optionalValue(value, "baselineTreeHash", isPresentString) &&
+  optionalValue(value, "krnTreeHash", isPresentString) &&
   isTrialExecution(value["execution"]) &&
   optionalValue(value, "score", isPairedRepairScore);
 
