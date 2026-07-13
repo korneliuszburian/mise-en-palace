@@ -212,8 +212,11 @@ describe("runMaintenanceQueueCommand", () => {
           }
         },
         sourceRepository: {
-          async getSourceDecisionById() {
-            return undefined;
+          async getSourceClaimForProject() {
+            throw new Error("getSourceClaimForProject should not be called");
+          },
+          async getSourceDecisionForProject() {
+            throw new Error("getSourceDecisionForProject should not be called");
           }
         },
         async close() {
@@ -282,8 +285,11 @@ describe("runMaintenanceQueueCommand", () => {
           }
         },
         sourceRepository: {
-          async getSourceDecisionById() {
-            throw new Error("getSourceDecisionById should not be called");
+          async getSourceClaimForProject() {
+            throw new Error("getSourceClaimForProject should not be called");
+          },
+          async getSourceDecisionForProject() {
+            throw new Error("getSourceDecisionForProject should not be called");
           }
         },
         async close() {
