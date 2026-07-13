@@ -78,6 +78,9 @@ const unusedSourceRepository = {
   async getSourceClaimById(): Promise<never> {
     throw new Error("getSourceClaimById should not be called");
   },
+  async getSourceClaimForProject(): Promise<never> {
+    throw new Error("getSourceClaimForProject should not be called");
+  },
   async listClaimsForProject(): Promise<never> {
     throw new Error("listClaimsForProject should not be called");
   },
@@ -653,12 +656,72 @@ describe("runCli", () => {
     expect(createRuntimeCalled).toBe(false);
   });
 
+  it("fails closed before memory candidate promotion when scoped source lookup is unavailable", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const { getSourceClaimForProject: _getSourceClaimForProject, ...sourceRepository } =
+      unusedSourceRepository;
+    let getCandidateCalled = false;
+    let closeCalled = false;
+
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "promote",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted",
+        "--evidence-reviewed-ref",
+        "raw-evidence:run-event-1",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository,
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async getMemoryCandidateById() {
+              getCandidateCalled = true;
+              throw new Error("getMemoryCandidateById should not be called");
+            }
+          },
+          harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
+          async close() {
+            closeCalled = true;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain(
+      "Project-scoped SourceClaim lookup is required before promoting memory candidates"
+    );
+    expect(getCandidateCalled).toBe(false);
+    expect(closeCalled).toBe(true);
+  });
+
   it("persists memory candidate promote through MemoryReviewGate", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
     let capturedPromotion: PromoteMemoryCandidateInput | undefined;
+    const scopedSourceClaimReads: Array<{ projectId: string; sourceClaimId: string }> = [];
     const result = await runCli(
       [
         "memory",
@@ -690,13 +753,17 @@ describe("runCli", () => {
           compilerDependencies: dependencies,
           sourceRepository: {
             ...unusedSourceRepository,
+            async getSourceClaimById() {
+              throw new Error("global source lookup must not be used by memory review");
+            },
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
             async createSourceClaim() {
               throw new Error("createSourceClaim should not be called");
             },
-            async getSourceClaimById(id) {
+            async getSourceClaimForProject(projectId, id) {
+              scopedSourceClaimReads.push({ projectId, sourceClaimId: id });
               return {
                 id,
                 sourceArtifactId: "source-artifact-1",
@@ -799,6 +866,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("evidenceReviewedRef: raw-evidence:run-event-1");
     expect(result.stdout).toContain("untrustedSourceReviewRef: security-review:source-lineage-1");
     expect(result.stdout).toContain("sourceClaimId: source-claim-1");
+    expect(scopedSourceClaimReads).toEqual([{
+      projectId: "project-1",
+      sourceClaimId: "source-claim-1"
+    }]);
     expect(capturedPromotion).toMatchObject({
       candidateId: "memory-candidate-1",
       reviewer: "operator",
@@ -1750,6 +1821,7 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`
     });
     let capturedPromotion: PromoteAntiMemoryCandidateInput | undefined;
+    const scopedSourceClaimReads: Array<{ projectId: string; sourceClaimId: string }> = [];
     const result = await runCli(
       [
         "memory",
@@ -1777,13 +1849,17 @@ describe("runCli", () => {
           compilerDependencies: dependencies,
           sourceRepository: {
             ...unusedSourceRepository,
+            async getSourceClaimById() {
+              throw new Error("global source lookup must not be used by anti-memory review");
+            },
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
             },
             async createSourceClaim() {
               throw new Error("createSourceClaim should not be called");
             },
-            async getSourceClaimById(id) {
+            async getSourceClaimForProject(projectId, id) {
+              scopedSourceClaimReads.push({ projectId, sourceClaimId: id });
               return {
                 id,
                 sourceArtifactId: "source-artifact-1",
@@ -1873,6 +1949,10 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Review gate: passed");
     expect(result.stdout).toContain("antiMemoryRecord: anti-memory-1");
+    expect(scopedSourceClaimReads).toEqual([{
+      projectId: "project-1",
+      sourceClaimId: "source-claim-1"
+    }]);
     expect(capturedPromotion).toMatchObject({
       candidateId: "anti-memory-candidate-1",
       reviewer: "operator",

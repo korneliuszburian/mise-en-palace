@@ -296,7 +296,10 @@ class BrainLoopMemoryRepository {
 }
 
 const sourceRepository = {
-  async getSourceClaimById(id: string): Promise<SourceClaim | undefined> {
+  async getSourceClaimForProject(
+    _projectId: string,
+    id: string
+  ): Promise<SourceClaim | undefined> {
     return id === sourceClaimId ? sourceClaim() : undefined;
   },
   async listClaimsForProject(): Promise<SourceClaim[]> {

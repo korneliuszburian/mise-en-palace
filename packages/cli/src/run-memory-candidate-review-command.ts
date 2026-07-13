@@ -164,9 +164,22 @@ const runPromote = async (
   const untrustedSourceReviewRef = trimmedOptional(command.untrustedSourceReviewRef);
 
   try {
+    const sourceRepository = databaseRuntime.sourceRepository;
+    const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+
+    if (getSourceClaimForProject === undefined) {
+      throw new Error(
+        "Project-scoped SourceClaim lookup is required before promoting memory candidates. No MemoryRecord created."
+      );
+    }
+
     const result = await promoteMemoryCandidateThroughGate({
       memoryRepository: databaseRuntime.memoryRepository,
-      sourceRepository: databaseRuntime.sourceRepository,
+      sourceRepository: {
+        getSourceClaimForProject(projectId, sourceClaimId) {
+          return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+        }
+      },
       review: {
         candidateId: reviewInput.candidateId,
         reviewer: reviewInput.reviewer,

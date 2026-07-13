@@ -134,7 +134,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim();
           }
         },
@@ -172,7 +172,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim();
           }
         },
@@ -202,7 +202,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim();
           }
         },
@@ -232,7 +232,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return undefined;
           }
         },
@@ -247,45 +247,42 @@ describe("promoteMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
-  it("falsifies project-scoped memory review by promoting a foreign SourceClaim", async () => {
+  it("rejects a foreign SourceClaim without promoting the memory candidate", async () => {
     let promoteCalled = false;
     const foreignSourceClaimId = "source-claim-project-b";
+    const scopedReads: Array<{ projectId: string; sourceClaimId: string }> = [];
 
-    const result = await promoteMemoryCandidateThroughGate({
-      memoryRepository: {
-        async getMemoryCandidateById() {
-          return candidate({
-            projectId: "project-a",
-            sourceClaimIds: [foreignSourceClaimId],
-            sourceLineage: [{ sourceId: foreignSourceClaimId }]
-          });
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate({
+              projectId: "project-a",
+              sourceClaimIds: [foreignSourceClaimId],
+              sourceLineage: [{ sourceId: foreignSourceClaimId }]
+            });
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord({ projectId: "project-a" });
+          }
         },
-        async promoteReviewedMemoryCandidate() {
-          promoteCalled = true;
-          return memoryRecord({ projectId: "project-a" });
+        sourceRepository: {
+          async getSourceClaimForProject(projectId: string, sourceClaimId: string) {
+            scopedReads.push({ projectId, sourceClaimId });
+            return undefined;
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
         }
-      },
-      sourceRepository: {
-        async getSourceClaimById() {
-          return sourceClaim({
-            id: foreignSourceClaimId,
-            sourceArtifactId: "source-artifact-project-b"
-          });
-        }
-      },
-      review: {
-        candidateId: "memory-candidate-1",
-        reviewer: "operator",
-        evidenceReviewedRef: "raw-evidence:run-event-1"
-      }
-    });
+      })
+    ).rejects.toThrow(`SourceClaim not found: ${foreignSourceClaimId}`);
 
-    expect(result.candidate.projectId).toBe("project-a");
-    expect(result.reviewedSourceClaims).toEqual([expect.objectContaining({
-      id: foreignSourceClaimId,
-      sourceArtifactId: "source-artifact-project-b"
-    })]);
-    expect(promoteCalled).toBe(true);
+    expect(scopedReads).toEqual([{ projectId: "project-a", sourceClaimId: foreignSourceClaimId }]);
+    expect(promoteCalled).toBe(false);
   });
 
   it("rejects promotion from source claims that are not accepted authority", async () => {
@@ -303,7 +300,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim({
               status: "proposed"
             });
@@ -337,7 +334,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim({
               sourceAuthority: "practitioner",
               consumer: "external-practitioner-note"
@@ -371,7 +368,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+          async getSourceClaimForProject() {
           return sourceClaim();
         }
       },
@@ -417,7 +414,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+          async getSourceClaimForProject() {
           return sourceClaim({
             sourceAuthority: "paper",
             consumer: "research-to-brain"
@@ -456,7 +453,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+          async getSourceClaimForProject() {
           return sourceClaim();
         }
       },
@@ -495,7 +492,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+          async getSourceClaimForProject() {
           return sourceClaim();
         }
       },

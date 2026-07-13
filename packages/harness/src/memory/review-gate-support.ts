@@ -1,10 +1,8 @@
 import type {
+  ProjectId,
   ReflectionCandidateEvidence,
   SourceClaim
 } from "@krn/core";
-import type {
-  SourceRepository
-} from "@krn/core/repositories";
 
 interface CandidateWithMetadata {
   metadata: Record<string, unknown>;
@@ -19,6 +17,13 @@ interface ReviewGateIdentityInput {
 export interface ReviewGateIdentity {
   candidateId: string;
   reviewer: string;
+}
+
+export interface ProjectScopedSourceClaimRepository {
+  getSourceClaimForProject(
+    projectId: ProjectId,
+    id: SourceClaim["id"]
+  ): Promise<SourceClaim | undefined>;
 }
 
 const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidence["provenance"]>([
@@ -140,13 +145,14 @@ const assertReviewedSourceClaimAccepted = (
 };
 
 export const reviewedSourceClaims = async (
-  sourceRepository: Pick<SourceRepository, "getSourceClaimById">,
+  sourceRepository: ProjectScopedSourceClaimRepository,
+  projectId: ProjectId,
   sourceClaimIds: readonly string[]
 ): Promise<SourceClaim[]> => {
   const sourceClaims: SourceClaim[] = [];
 
   for (const sourceClaimId of sourceClaimIds) {
-    const sourceClaim = await sourceRepository.getSourceClaimById(sourceClaimId);
+    const sourceClaim = await sourceRepository.getSourceClaimForProject(projectId, sourceClaimId);
 
     if (sourceClaim === undefined) {
       throw new Error(`SourceClaim not found: ${sourceClaimId}`);

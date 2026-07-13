@@ -7,9 +7,6 @@ import type {
   MemoryRepository,
   PromoteMemoryCandidateInput
 } from "@krn/core/repositories/internal";
-import type {
-  SourceRepository
-} from "@krn/core/repositories/internal";
 import {
   assertReviewableCandidateEvidence,
   assertReviewGateConfidence,
@@ -17,6 +14,9 @@ import {
   readReviewGateIdentity,
   requireReviewGateTrimmed,
   reviewedSourceClaims as readReviewedSourceClaims
+} from "./review-gate-support.js";
+import type {
+  ProjectScopedSourceClaimRepository
 } from "./review-gate-support.js";
 
 export interface MemoryReviewGateReview {
@@ -33,7 +33,7 @@ export interface PromoteMemoryCandidateThroughGateInput {
     MemoryRepository,
     "getMemoryCandidateById" | "promoteReviewedMemoryCandidate"
   >;
-  sourceRepository: Pick<SourceRepository, "getSourceClaimById">;
+  sourceRepository: ProjectScopedSourceClaimRepository;
   review: MemoryReviewGateReview;
 }
 
@@ -95,9 +95,13 @@ function assertCandidateReviewable(
 }
 
 const reviewedSourceClaims = async (
-  sourceRepository: Pick<SourceRepository, "getSourceClaimById">,
+  sourceRepository: ProjectScopedSourceClaimRepository,
   candidate: MemoryCandidate
-): Promise<SourceClaim[]> => readReviewedSourceClaims(sourceRepository, candidate.sourceClaimIds);
+): Promise<SourceClaim[]> => readReviewedSourceClaims(
+  sourceRepository,
+  candidate.projectId,
+  candidate.sourceClaimIds
+);
 
 const untrustedReviewedSourceClaims = (
   sourceClaims: readonly SourceClaim[]

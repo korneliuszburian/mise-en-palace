@@ -103,7 +103,7 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim();
           }
         },
@@ -143,7 +143,7 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim();
           }
         },
@@ -160,48 +160,45 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
-  it("falsifies project-scoped anti-memory review by promoting a foreign SourceClaim", async () => {
+  it("rejects a foreign SourceClaim without promoting the anti-memory candidate", async () => {
     let promoteCalled = false;
     const foreignSourceClaimId = "source-claim-project-b";
+    const scopedReads: Array<{ projectId: string; sourceClaimId: string }> = [];
 
-    const result = await promoteAntiMemoryCandidateThroughGate({
-      memoryRepository: {
-        async getAntiMemoryCandidateById() {
-          return candidate({
-            projectId: "project-a",
-            invalidatedBySourceClaimIds: [foreignSourceClaimId],
-            sourceLineage: [{ sourceId: foreignSourceClaimId }]
-          });
+    await expect(
+      promoteAntiMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getAntiMemoryCandidateById() {
+            return candidate({
+              projectId: "project-a",
+              invalidatedBySourceClaimIds: [foreignSourceClaimId],
+              sourceLineage: [{ sourceId: foreignSourceClaimId }]
+            });
+          },
+          async promoteReviewedAntiMemoryCandidate() {
+            promoteCalled = true;
+            return {
+              ...antiMemoryRecord(),
+              projectId: "project-a"
+            };
+          }
         },
-        async promoteReviewedAntiMemoryCandidate() {
-          promoteCalled = true;
-          return {
-            ...antiMemoryRecord(),
-            projectId: "project-a"
-          };
+        sourceRepository: {
+          async getSourceClaimForProject(projectId: string, sourceClaimId: string) {
+            scopedReads.push({ projectId, sourceClaimId });
+            return undefined;
+          }
+        },
+        review: {
+          candidateId: "anti-memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "source-claim-1"
         }
-      },
-      sourceRepository: {
-        async getSourceClaimById() {
-          return sourceClaim({
-            id: foreignSourceClaimId,
-            sourceArtifactId: "source-artifact-project-b"
-          });
-        }
-      },
-      review: {
-        candidateId: "anti-memory-candidate-1",
-        reviewer: "operator",
-        evidenceReviewedRef: "source-claim-1"
-      }
-    });
+      })
+    ).rejects.toThrow(`SourceClaim not found: ${foreignSourceClaimId}`);
 
-    expect(result.candidate.projectId).toBe("project-a");
-    expect(result.reviewedSourceClaims).toEqual([expect.objectContaining({
-      id: foreignSourceClaimId,
-      sourceArtifactId: "source-artifact-project-b"
-    })]);
-    expect(promoteCalled).toBe(true);
+    expect(scopedReads).toEqual([{ projectId: "project-a", sourceClaimId: foreignSourceClaimId }]);
+    expect(promoteCalled).toBe(false);
   });
 
   it("promotes an approved anti-memory candidate through the reviewed port", async () => {
@@ -218,7 +215,7 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+          async getSourceClaimForProject() {
           return sourceClaim();
         }
       },
@@ -265,7 +262,7 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
           }
         },
         sourceRepository: {
-          async getSourceClaimById() {
+          async getSourceClaimForProject() {
             return sourceClaim({
               status: "proposed"
             });

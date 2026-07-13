@@ -340,7 +340,7 @@ describe("proposeMemoryConsolidation", () => {
         }
       },
       sourceRepository: {
-        async getSourceClaimById() {
+        async getSourceClaimForProject() {
           throw new Error("source claims are not needed for lineage-only anti-memory");
         }
       },

@@ -148,9 +148,22 @@ const runPromote = async (
   );
 
   try {
+    const sourceRepository = databaseRuntime.sourceRepository;
+    const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+
+    if (getSourceClaimForProject === undefined) {
+      throw new Error(
+        "Project-scoped SourceClaim lookup is required before promoting anti-memory candidates. No AntiMemoryRecord created."
+      );
+    }
+
     const result = await promoteAntiMemoryCandidateThroughGate({
       memoryRepository: databaseRuntime.memoryRepository,
-      sourceRepository: databaseRuntime.sourceRepository,
+      sourceRepository: {
+        getSourceClaimForProject(projectId, sourceClaimId) {
+          return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+        }
+      },
       review: {
         candidateId: reviewInput.candidateId,
         reviewer: reviewInput.reviewer,

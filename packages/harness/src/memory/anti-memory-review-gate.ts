@@ -7,9 +7,6 @@ import type {
   MemoryRepository,
   PromoteAntiMemoryCandidateInput
 } from "@krn/core/repositories/internal";
-import type {
-  SourceRepository
-} from "@krn/core/repositories/internal";
 import {
   assertReviewableCandidateEvidence,
   assertReviewGateConfidence,
@@ -17,6 +14,9 @@ import {
   readReviewGateIdentity,
   requireReviewGateTrimmed,
   reviewedSourceClaims
+} from "./review-gate-support.js";
+import type {
+  ProjectScopedSourceClaimRepository
 } from "./review-gate-support.js";
 
 export interface AntiMemoryReviewGateReview {
@@ -32,7 +32,7 @@ export interface PromoteAntiMemoryCandidateThroughGateInput {
     MemoryRepository,
     "getAntiMemoryCandidateById" | "promoteReviewedAntiMemoryCandidate"
   >;
-  sourceRepository: Pick<SourceRepository, "getSourceClaimById">;
+  sourceRepository: ProjectScopedSourceClaimRepository;
   review: AntiMemoryReviewGateReview;
 }
 
@@ -116,6 +116,7 @@ export const promoteAntiMemoryCandidateThroughGate = async (
   assertCandidateReviewable(candidate);
   const sourceClaims = await reviewedSourceClaims(
     input.sourceRepository,
+    candidate.projectId,
     candidateSourceClaimIds(candidate)
   );
   const promotionInput: PromoteAntiMemoryCandidateInput = {
