@@ -447,7 +447,10 @@ const resolveRuntimeProject = async (
     | "projectSlug"
     | "repoPathHint"
     | "workspaceSlug"
-  >
+  >,
+  options: {
+    readonly createSlugFallback: boolean;
+  }
 ): Promise<RuntimeProjectResolution> => {
   const repoPathHint = trimmedValue(input.repoPathHint);
   const explicitLookup = await lookupExplicitProject(repository, input.projectId);
@@ -466,7 +469,9 @@ const resolveRuntimeProject = async (
     repoPathHint
   );
   const fallbackProject =
-    explicitProject !== undefined || connectedProject !== undefined
+    !options.createSlugFallback ||
+    explicitProject !== undefined ||
+    connectedProject !== undefined
       ? undefined
       : await resolveWorkspaceSlugProject(repository, input);
   const project = explicitProject ?? connectedProject ?? fallbackProject;
@@ -489,6 +494,32 @@ const resolveRuntimeProject = async (
       explicitLookup.explicitProjectId !== undefined || connectedProject !== undefined,
     explicitProjectId: explicitLookup.explicitProjectId
   };
+};
+
+const resolveRuntimeProjectWithFallbackLock = async (
+  db: ReturnType<typeof createKrnDatabase>,
+  repository: ProjectRepository,
+  input: DatabaseRuntimeInput
+): Promise<RuntimeProjectResolution> => {
+  const existingResolution = await resolveRuntimeProject(repository, input, {
+    createSlugFallback: false
+  });
+
+  if (existingResolution.kind !== "unresolved") {
+    return existingResolution;
+  }
+
+  const fallbackWorkspaceIdentity = `workspace:${input.workspaceSlug}`;
+
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${fallbackWorkspaceIdentity}, 0))`
+    );
+
+    return resolveRuntimeProject(new DrizzleProjectRepository(tx), input, {
+      createSlugFallback: true
+    });
+  });
 };
 
 const loadProjectKernel = async (
@@ -583,7 +614,11 @@ const createDatabaseRuntimeForClient = async (
   const memoryRepository = new DrizzleMemoryRepository(db);
   const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
-  const runtimeProject = await resolveRuntimeProject(projectRepository, input);
+  const runtimeProject = await resolveRuntimeProjectWithFallbackLock(
+    db,
+    projectRepository,
+    input
+  );
 
   if (runtimeProject.kind === "missing_explicit_project") {
     throw new Error(`Project not found for --project ${runtimeProject.explicitProjectId}`);

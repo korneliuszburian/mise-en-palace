@@ -110,6 +110,7 @@ const runSourceImportCli = async (input: {
 interface SourceDecisionImportOutput {
   readonly persistence: "enabled" | "disabled";
   readonly importId: string;
+  readonly projectId?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -129,7 +130,10 @@ const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput 
 
   return {
     persistence: parsed["persistence"],
-    importId: parsed["importId"]
+    importId: parsed["importId"],
+    ...(typeof parsed["projectId"] === "string"
+      ? { projectId: parsed["projectId"] }
+      : {})
   };
 };
 
@@ -214,6 +218,157 @@ const duplicateImportGraphCounts = async (
 };
 
 describe("source decision import retry boundary", () => {
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "converges concurrent first-use fallback project initialization",
+    async () => {
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        const [first, second] = await Promise.all([
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            persist: true
+          }),
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            persist: true
+          })
+        ]);
+        const firstResult = sourceDecisionImportOutput(first.stdout);
+        const secondResult = sourceDecisionImportOutput(second.stdout);
+        const scopeRows = await client<{
+          workspaceCount: number;
+          projectCount: number;
+          projectId: string | null;
+        }[]>`
+          select
+            (
+              select count(*)::int
+              from workspaces
+            ) as "workspaceCount",
+            (
+              select count(*)::int
+              from projects
+            ) as "projectCount",
+            (
+              select projects.id
+              from projects
+              inner join workspaces on workspaces.id = projects.workspace_id
+              where workspaces.slug = ${defaultWorkspaceSlug}
+                and projects.slug = ${defaultProjectSlug}
+            ) as "projectId"
+        `;
+
+        expect(firstResult.persistence).toBe("enabled");
+        expect(secondResult.persistence).toBe("enabled");
+        expect(firstResult.projectId).toBeDefined();
+        expect(secondResult.projectId).toBe(firstResult.projectId);
+        expect(scopeRows[0]).toEqual({
+          workspaceCount: 1,
+          projectCount: 1,
+          projectId: firstResult.projectId
+        });
+      } finally {
+        await client.end();
+        await disposableDatabase.cleanup();
+      }
+    },
+    60_000
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "serializes workspace initialization before resolving different fallback projects",
+    async () => {
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+      const runtimes: Awaited<ReturnType<typeof createDatabaseRuntime>>[] = [];
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        await client.unsafe(`
+          create function delay_workspace_insert() returns trigger
+          language plpgsql
+          as $$
+          begin
+            perform pg_sleep(0.25);
+            return new;
+          end
+          $$
+        `);
+        await client.unsafe(`
+          create trigger delay_workspace_insert
+          before insert on workspaces
+          for each row execute function delay_workspace_insert()
+        `);
+
+        const resolutions = await Promise.allSettled([
+          createDatabaseRuntime({
+            databaseUrl: disposableDatabase.databaseUrl,
+            workspaceSlug: defaultWorkspaceSlug,
+            projectSlug: "fallback-a",
+            now: () => "2026-07-13T00:00:00.000Z",
+            createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
+          }),
+          createDatabaseRuntime({
+            databaseUrl: disposableDatabase.databaseUrl,
+            workspaceSlug: defaultWorkspaceSlug,
+            projectSlug: "fallback-b",
+            now: () => "2026-07-13T00:00:00.000Z",
+            createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
+          })
+        ]);
+
+        for (const resolution of resolutions) {
+          if (resolution.status === "fulfilled") {
+            runtimes.push(resolution.value);
+          }
+        }
+
+        expect(resolutions.map((resolution) => resolution.status)).toEqual([
+          "fulfilled",
+          "fulfilled"
+        ]);
+        const [first, second] = runtimes;
+
+        if (first === undefined || second === undefined) {
+          throw new Error("both fallback runtime resolutions must succeed");
+        }
+
+        const scopeRows = await client<{
+          workspaceCount: number;
+          projectCount: number;
+          projectWorkspaceCount: number;
+        }[]>`
+          select
+            (select count(*)::int from workspaces) as "workspaceCount",
+            (select count(*)::int from projects) as "projectCount",
+            (select count(distinct workspace_id)::int from projects) as "projectWorkspaceCount"
+        `;
+
+        expect(first.workspaceId).toBe(second.workspaceId);
+        expect(first.projectId).not.toBe(second.projectId);
+        expect(scopeRows[0]).toEqual({
+          workspaceCount: 1,
+          projectCount: 2,
+          projectWorkspaceCount: 1
+        });
+      } finally {
+        await Promise.all(runtimes.map(async (runtime) => runtime.close()));
+        await client.end();
+        await disposableDatabase.cleanup();
+      }
+    },
+    60_000
+  );
+
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps byte-identical and canonical-equivalent retries in one graph across independent CLI processes",
     async () => {

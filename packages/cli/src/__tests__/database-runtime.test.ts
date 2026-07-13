@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => {
   const client = {
     end: vi.fn<() => Promise<void>>(async () => {})
   };
+  const transactionExecute = vi.fn(async () => []);
+  const database = {
+    transaction: vi.fn(async (
+      work: (transaction: { execute: typeof transactionExecute }) => Promise<unknown>
+    ) => work({ execute: transactionExecute }))
+  };
   const projectRepository = {
     findWorkspaceBySlug: vi.fn(),
     createWorkspace: vi.fn(),
@@ -27,7 +33,9 @@ const mocks = vi.hoisted(() => {
 
   return {
     client,
-    createKrnDatabase: vi.fn(),
+    database,
+    transactionExecute,
+    createKrnDatabase: vi.fn(() => database),
     postgres: vi.fn(() => client),
     projectRepository,
     harnessRunRepository: {},
@@ -126,7 +134,27 @@ describe("createDatabaseRuntime", () => {
     })).rejects.toThrow("ProjectKernel not found for --project project-1");
 
     expect(mocks.projectRepository.listRepoInstallationsForProject).not.toHaveBeenCalled();
+    expect(mocks.database.transaction).not.toHaveBeenCalled();
     expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not lock fallback scope when a connected repo path resolves", async () => {
+    const { createDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.projectRepository.getProjectByRepoPath.mockResolvedValue(project);
+
+    const runtime = await createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      repoPathHint: "/connected/repo",
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    });
+
+    expect(runtime.projectResolution?.kind).toBe("connected_repo_path");
+    expect(mocks.database.transaction).not.toHaveBeenCalled();
+    expect(mocks.projectRepository.findWorkspaceBySlug).not.toHaveBeenCalled();
+    await runtime.close();
   });
 
   it("closes the database client when runtime initialization fails after project resolution", async () => {
@@ -219,5 +247,7 @@ describe("createDatabaseRuntime", () => {
       metadata: {}
     })).resolves.toBe(sourceChunk);
     expect(createSourceChunk).toHaveBeenCalledTimes(1);
+    expect(mocks.database.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.transactionExecute).toHaveBeenCalledTimes(1);
   });
 });
