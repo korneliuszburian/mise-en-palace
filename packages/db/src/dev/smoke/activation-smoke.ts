@@ -556,7 +556,13 @@ export const runActivationSmokeCheck = async (
         canonicalRevisionTokens: filteredCandidates
           .map((candidate) => candidate.metadata.canonicalRevision)
           .filter((revision): revision is Record<string, unknown> => (
-            typeof revision === "object" && revision !== null && !Array.isArray(revision)
+            typeof revision === "object" &&
+            revision !== null &&
+            !Array.isArray(revision) &&
+            draftContext.inclusions.some((inclusion) => (
+              inclusion.subjectType === (revision as Record<string, unknown>).subjectType &&
+              inclusion.subjectId === (revision as Record<string, unknown>).subjectId
+            ))
           ))
       }
     });
