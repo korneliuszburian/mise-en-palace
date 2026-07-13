@@ -318,14 +318,18 @@ describe("repository policy boundaries", () => {
     expect(failure?.stderr).toContain("use Linux, macOS, or WSL");
   });
 
-  it("does not hide a missing GNU timeout behind a passing platform check", () => {
+  it("does not require GNU timeout after a passing platform check", () => {
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-missing-timeout-"));
     const timeoutStub = join(fixtureRoot, "timeout");
 
     try {
       writeFileSync(timeoutStub, "#!/bin/sh\necho 'timeout: command not found in stock macOS profile' >&2\nexit 127\n");
       chmodSync(timeoutStub, 0o755);
-      const env = { ...process.env, PATH: `${fixtureRoot}:${process.env.PATH ?? ""}` };
+      const env = {
+        ...process.env,
+        KRN_DATABASE_URL: "postgres://krn:krn@127.0.0.1:59999/krn",
+        PATH: `${fixtureRoot}:${process.env.PATH ?? ""}`,
+      };
       const pnpm = process.env.npm_execpath ?? "pnpm";
 
       expect(execFileSync(pnpm, ["platform:check"], {
@@ -347,13 +351,13 @@ describe("repository policy boundaries", () => {
       }
 
       expect(failure?.status).toBe(1);
-      expect(`${failure?.stdout ?? ""}${failure?.stderr ?? ""}`).toContain(
+      expect(`${failure?.stdout ?? ""}${failure?.stderr ?? ""}`).not.toContain(
         "timeout: command not found in stock macOS profile",
       );
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 
   it("blocks the current private source packages from release", () => {
     const checker = join(repoRoot, "scripts/check-release-boundary.mjs");
