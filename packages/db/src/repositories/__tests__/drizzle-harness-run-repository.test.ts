@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import crypto from "node:crypto";
+import postgres from "postgres";
 import type { EvalCandidateProposal } from "@krn/core";
 
 import type { KrnDatabase } from "../../database.js";
@@ -7,6 +9,8 @@ import {
   evidenceCommandsForPersistence,
   validateEvidenceBundleInputForPersistence
 } from "../drizzle-harness-run-repository.js";
+
+const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 
 const evalCandidate: EvalCandidateProposal = {
   id: "eval-candidate-1",
@@ -67,6 +71,52 @@ describe("DrizzleHarnessRunRepository", () => {
       isolationLevel: "repeatable read"
     }]);
   });
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "keeps a two-connection aggregate read on one PostgreSQL snapshot",
+    async () => {
+      const marker = `krn_harness_snapshot_${crypto.randomUUID().replaceAll("-", "")}`;
+      const reader = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const writer = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+
+      try {
+        await reader.unsafe(`create table ${marker} (id integer primary key, value text not null)`);
+        await reader.unsafe(`insert into ${marker} (id, value) values (1, 'before')`);
+
+        let firstValue: string | undefined;
+        let secondValue: string | undefined;
+
+        await reader.unsafe("begin transaction isolation level repeatable read read only");
+        try {
+          const firstRows = await reader.unsafe<{ value: string }[]>(
+            `select value from ${marker} where id = 1`
+          );
+          firstValue = firstRows[0]?.value;
+
+          await writer.unsafe(`update ${marker} set value = 'after' where id = 1`);
+
+          const secondRows = await reader.unsafe<{ value: string }[]>(
+            `select value from ${marker} where id = 1`
+          );
+          secondValue = secondRows[0]?.value;
+          await reader.unsafe("commit");
+        } catch (error) {
+          await reader.unsafe("rollback");
+          throw error;
+        }
+
+        expect(firstValue).toBe("before");
+        expect(secondValue).toBe("before");
+        const writerRows = await writer.unsafe<{ value: string }[]>(
+          `select value from ${marker} where id = 1`
+        );
+        expect(writerRows[0]?.value).toBe("after");
+      } finally {
+        await reader.unsafe(`drop table if exists ${marker}`);
+        await Promise.all([reader.end(), writer.end()]);
+      }
+    }
+  );
 
   it("returns no subject feedback without querying when no candidates are active", async () => {
     const db = {
