@@ -440,6 +440,122 @@ describe("repository policy boundaries", () => {
     }
   });
 
+  it("exposes the root fallback for local, scheduled, and manual Fallow gates", () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fallow-root-fallback-"));
+    const baselineRoot = join(fixtureRoot, "fallow-baselines");
+    mkdirSync(baselineRoot, { recursive: true });
+
+    try {
+      for (const baseline of ["dead-code.json", "health.json", "dupes.json"]) {
+        writeFileSync(join(baselineRoot, baseline), readRootFile(`fallow-baselines/${baseline}`));
+      }
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: fixtureRoot });
+      writeFileSync(join(fixtureRoot, "historical.js"), "export const historical = 1;\n");
+      writeFileSync(join(fixtureRoot, "current.js"), "export const current = 1;\n");
+      execFileSync("git", ["add", "historical.js", "current.js", "fallow-baselines"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["commit", "--quiet", "-m", "clean root"], { cwd: fixtureRoot });
+      const rootSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+
+      writeFileSync(
+        join(fixtureRoot, "historical.js"),
+        "export function historical(value) { if (value === 1) return 1; if (value === 2) return 2; if (value === 3) return 3; if (value === 4) return 4; if (value === 5) return 5; if (value === 6) return 6; if (value === 7) return 7; return 0; }\n",
+      );
+      execFileSync("git", ["add", "historical.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "historical defect"], {
+        cwd: fixtureRoot,
+      });
+      const reviewedBaseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+
+      writeFileSync(join(fixtureRoot, "current.js"), "export const current = 2;\n");
+      execFileSync("git", ["add", "current.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "current clean change"], {
+        cwd: fixtureRoot,
+      });
+
+      const runFallow = (env: Record<string, string>) => {
+        try {
+          return {
+            status: 0,
+            output: execFileSync(
+              process.execPath,
+              [join(repoRoot, "scripts/run-fallow-ci.mjs"), "--root", fixtureRoot],
+              {
+                cwd: repoRoot,
+                encoding: "utf8",
+                env: { ...process.env, ...env },
+                stdio: "pipe",
+              },
+            ),
+          };
+        } catch (error) {
+          const failure = error as { status?: number; stdout?: string; stderr?: string };
+          return {
+            status: failure.status ?? 1,
+            output: `${failure.stdout ?? ""}${failure.stderr ?? ""}`,
+          };
+        }
+      };
+
+      for (const [name, env] of [
+        ["local", { KRN_COMMIT_EVENT: "", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
+        ["schedule", { KRN_COMMIT_EVENT: "schedule", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
+        [
+          "workflow_dispatch",
+          { KRN_COMMIT_EVENT: "workflow_dispatch", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" },
+        ],
+      ] as const) {
+        const result = runFallow(env);
+
+        expect(result.status, name).toBe(1);
+        expect(result.output, name).toContain(`base=${rootSha}`);
+        expect(result.output, name).toContain("changedFiles=2");
+        expect(result.output, name).toContain("high-complexity:historical.js");
+      }
+
+      for (const [name, env] of [
+        [
+          "push",
+          {
+            KRN_COMMIT_EVENT: "push",
+            KRN_COMMIT_BEFORE: reviewedBaseSha,
+            KRN_COMMIT_PR_BASE: "",
+          },
+        ],
+        [
+          "pull_request",
+          {
+            KRN_COMMIT_EVENT: "pull_request",
+            KRN_COMMIT_BEFORE: "",
+            KRN_COMMIT_PR_BASE: reviewedBaseSha,
+          },
+        ],
+      ] as const) {
+        const result = runFallow(env);
+
+        expect(result.status, name).toBe(0);
+        expect(result.output, name).toContain(`base=${reviewedBaseSha}`);
+        expect(result.output, name).toContain("changedFiles=1");
+        expect(result.output, name).not.toContain("high-complexity:historical.js");
+      }
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   it("keeps security exceptions and allowlists reviewed in a tracked baseline", () => {
     const baseline = JSON.parse(readRootFile("security-baseline.json")) as {
       allowedLicenses?: string[];
