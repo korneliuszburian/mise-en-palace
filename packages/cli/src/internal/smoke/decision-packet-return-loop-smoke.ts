@@ -115,14 +115,17 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusSupersededClaimIsNonGoverning: boolean;
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
   sourceDissentProofRunId: string;
-  sourceDissentGoverningClaimId: string;
+  sourceDissentCandidateClaimId: string;
   sourceDissentDissentingClaimId: string;
-  sourceDissentGoverningDecisionId: string;
+  sourceDissentCandidateDecisionId: string;
   sourceDissentPacketSourceClaimIds: readonly string[];
   sourceDissentPacketConflictingSourceClaimIds: readonly string[];
+  sourceDissentPacketDecisionLinkedSourceClaimIds: readonly string[];
+  sourceDissentPacketGoverningDecisionIds: readonly string[];
+  sourceDissentPacketSourceDecisionEdgeIds: readonly string[];
   sourceDissentPacketStatus: string;
   sourceDissentPacketReasons: readonly string[];
-  sourceDissentBriefRemainsExecutable: boolean;
+  sourceDissentBriefStopsExecution: boolean;
   feedbackMaintenanceQueueRecordId: string;
   feedbackMaintenanceQueueStatus: string;
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
@@ -154,6 +157,7 @@ interface DecisionPacketSmokeJson {
     memoryRefs: readonly string[];
     rejectedPathIds: readonly string[];
     sourceClaimIds: readonly string[];
+    sourceDecisionEdgeIds: readonly string[];
     sourceRejectionIds: readonly string[];
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readonly string[];
@@ -267,14 +271,17 @@ interface SourceConsensusProofInput extends SourcePacketProofInput {
 interface SourceDissentProofResult {
   proofRunId: string;
   retrievalRunId: string | undefined;
-  governingClaimId: string;
+  candidateClaimId: string;
   dissentingClaimId: string;
-  governingDecisionId: string;
+  candidateDecisionId: string;
   packetSourceClaimIds: readonly string[];
   packetConflictingSourceClaimIds: readonly string[];
+  packetDecisionLinkedSourceClaimIds: readonly string[];
+  packetGoverningDecisionIds: readonly string[];
+  packetSourceDecisionEdgeIds: readonly string[];
   packetStatus: string;
   packetReasons: readonly string[];
-  briefRemainsExecutable: boolean;
+  briefStopsExecution: boolean;
 }
 
 interface FeedbackMaintenanceProofResult {
@@ -336,6 +343,7 @@ const readPacket = (
     memoryRefs: readStringArray(packet, "memoryRefs"),
     rejectedPathIds: readStringArray(packet, "rejectedPathIds"),
     sourceClaimIds: readStringArray(packet, "sourceClaimIds"),
+    sourceDecisionEdgeIds: readStringArray(packet, "sourceDecisionEdgeIds"),
     sourceRejectionIds: readStringArray(packet, "sourceRejectionIds"),
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readStringArray(sourceConsensus, "decisionLinkedSourceClaimIds"),
@@ -1544,7 +1552,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       unresolvedAcceptedSourceDissentProof: "dissenting"
     }
   });
-  await sourceRepository.createSourceClaimEdge({
+  const dissentingSourceClaimEdge = await sourceRepository.createSourceClaimEdge({
     fromSourceClaimId: dissentingClaim.id,
     toSourceClaimId: governingClaim.id,
     kind: "contradicts",
@@ -1601,7 +1609,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       message: "DecisionPacket return-loop smoke created unresolved accepted source dissent proof run",
       payload: {
         smokeId: input.marker,
-        governingClaimId: governingClaim.id,
+        candidateClaimId: governingClaim.id,
         dissentingClaimId: dissentingClaim.id
       }
     },
@@ -1658,6 +1666,13 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       sourceClaimAuthority: {
         status: "caveated",
         reasons: ["accepted_with_dissenting_source_claims"]
+      },
+      sourceClaimEdgeInfluence: {
+        edgeIds: [dissentingSourceClaimEdge.id],
+        edgeKinds: ["contradicts"],
+        seedSourceClaimIds: [dissentingClaim.id],
+        doesNotProve:
+          "This persisted relation makes accepted dissent reviewable; it does not resolve which claim is true."
       },
       sourceDecisionSupportBoost: {
         sourceDecisionEdgeIds: [governingSourceDecisionEdge.id],
@@ -1730,17 +1745,21 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   return {
     proofRunId: proofRun.id,
     retrievalRunId: retrievalRun.id,
-    governingClaimId: governingClaim.id,
+    candidateClaimId: governingClaim.id,
     dissentingClaimId: dissentingClaim.id,
-    governingDecisionId,
+    candidateDecisionId: governingDecisionId,
     packetSourceClaimIds: packet.packet.sourceClaimIds,
     packetConflictingSourceClaimIds: packet.packet.sourceConsensus.conflictingSourceClaimIds,
+    packetDecisionLinkedSourceClaimIds:
+      packet.packet.sourceConsensus.decisionLinkedSourceClaimIds,
+    packetGoverningDecisionIds: packet.packet.governingDecisionIds,
+    packetSourceDecisionEdgeIds: packet.packet.sourceDecisionEdgeIds,
     packetStatus: packet.packet.abstentionScore.status,
     packetReasons: packet.packet.abstentionScore.reasons,
-    briefRemainsExecutable:
-      packet.packet.abstentionScore.status !== "abstain" &&
-      brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation.") &&
-      !brief.stdout.includes("Do not execute; the DecisionPacket abstains")
+    briefStopsExecution:
+      packet.packet.abstentionScore.status === "abstain" &&
+      brief.stdout.includes("Do not execute; the DecisionPacket abstains") &&
+      !brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation.")
   };
 };
 
@@ -2562,25 +2581,32 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `sourceRejectionIds=${sourceConsensusProof.packetSourceRejectionIds.join(",")}`
       },
       {
-        label: "unresolved accepted source dissent falsifier exposes executable weak context",
+        label: "unresolved accepted source dissent abstains without governing guidance",
         passed:
-          sourceDissentProof.packetStatus === "weak_context" &&
+          sourceDissentProof.packetStatus === "abstain" &&
           sourceDissentProof.packetReasons.includes("conflicting_authority") &&
-          sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.governingClaimId) &&
+          sourceDissentProof.packetReasons.includes("unresolved_accepted_source_dissent") &&
+          sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.candidateClaimId) &&
           sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.dissentingClaimId) &&
           sourceDissentProof.packetConflictingSourceClaimIds.includes(
-            sourceDissentProof.governingClaimId
+            sourceDissentProof.candidateClaimId
           ) &&
-          sourceDissentProof.briefRemainsExecutable,
+          sourceDissentProof.packetDecisionLinkedSourceClaimIds.length === 0 &&
+          sourceDissentProof.packetGoverningDecisionIds.length === 0 &&
+          sourceDissentProof.packetSourceDecisionEdgeIds.length === 0 &&
+          sourceDissentProof.briefStopsExecution,
         detail:
           `runId=${sourceDissentProof.proofRunId}; ` +
           `status=${sourceDissentProof.packetStatus}; ` +
           `reasons=${sourceDissentProof.packetReasons.join(",")}; ` +
-          `governingClaimId=${sourceDissentProof.governingClaimId}; ` +
+          `candidateClaimId=${sourceDissentProof.candidateClaimId}; ` +
           `dissentingClaimId=${sourceDissentProof.dissentingClaimId}; ` +
           `sourceClaimIds=${sourceDissentProof.packetSourceClaimIds.join(",")}; ` +
           `conflictingSourceClaimIds=${sourceDissentProof.packetConflictingSourceClaimIds.join(",")}; ` +
-          `briefRemainsExecutable=${sourceDissentProof.briefRemainsExecutable}`
+          `decisionLinkedSourceClaimIds=${sourceDissentProof.packetDecisionLinkedSourceClaimIds.join(",")}; ` +
+          `governingDecisionIds=${sourceDissentProof.packetGoverningDecisionIds.join(",")}; ` +
+          `sourceDecisionEdgeIds=${sourceDissentProof.packetSourceDecisionEdgeIds.join(",")}; ` +
+          `briefStopsExecution=${sourceDissentProof.briefStopsExecution}`
       }
     ]);
 
@@ -2647,15 +2673,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       sourceConsensusRejectedClaimHasFormalRejection:
         sourceConsensusProof.rejectedClaimHasFormalRejection,
       sourceDissentProofRunId: sourceDissentProof.proofRunId,
-      sourceDissentGoverningClaimId: sourceDissentProof.governingClaimId,
+      sourceDissentCandidateClaimId: sourceDissentProof.candidateClaimId,
       sourceDissentDissentingClaimId: sourceDissentProof.dissentingClaimId,
-      sourceDissentGoverningDecisionId: sourceDissentProof.governingDecisionId,
+      sourceDissentCandidateDecisionId: sourceDissentProof.candidateDecisionId,
       sourceDissentPacketSourceClaimIds: sourceDissentProof.packetSourceClaimIds,
       sourceDissentPacketConflictingSourceClaimIds:
         sourceDissentProof.packetConflictingSourceClaimIds,
+      sourceDissentPacketDecisionLinkedSourceClaimIds:
+        sourceDissentProof.packetDecisionLinkedSourceClaimIds,
+      sourceDissentPacketGoverningDecisionIds:
+        sourceDissentProof.packetGoverningDecisionIds,
+      sourceDissentPacketSourceDecisionEdgeIds:
+        sourceDissentProof.packetSourceDecisionEdgeIds,
       sourceDissentPacketStatus: sourceDissentProof.packetStatus,
       sourceDissentPacketReasons: sourceDissentProof.packetReasons,
-      sourceDissentBriefRemainsExecutable: sourceDissentProof.briefRemainsExecutable,
+      sourceDissentBriefStopsExecution: sourceDissentProof.briefStopsExecution,
       feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,
       feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
       feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,

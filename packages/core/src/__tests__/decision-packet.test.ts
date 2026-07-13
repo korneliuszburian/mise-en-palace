@@ -254,6 +254,26 @@ const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInpu
         subjectId: "claim-governing",
         sourceClaimAuthorityStatus: "caveated",
         sourceClaimAuthorityReasons: ["accepted_with_dissenting_source_claims"],
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          memoryRecordId: "memory-unresolved-source-dissent",
+          key: "unresolved-source-dissent",
+          sourceRefs: ["claim-governing", "claim-dissenting"],
+          mechanism: "Accepted dissent has no reviewed canonical resolution.",
+          krnImplication: "Do not render source-conflicted guidance as governing authority.",
+          decision: "Do not execute unresolved source dissent as project guidance.",
+          consumer: "DecisionPacket",
+          falsifier: "An unresolved source dissent packet emits this as governing guidance.",
+          validFrom: "2026-07-08T00:00:00.000Z",
+          doesNotProve: "Does not determine which accepted source claim is true."
+        },
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-dissenting-contradicts-governing"],
+          edgeKinds: ["contradicts"],
+          seedSourceClaimIds: ["claim-dissenting"],
+          doesNotProve:
+            "The relation makes dissent reviewable; it does not resolve which accepted claim is true."
+        },
         sourceDecisionSupportBoost: {
           sourceDecisionEdgeIds: ["source-decision-edge-governing"],
           targets: [{
@@ -342,6 +362,57 @@ const sourceClaimExclusionReadModel = (input: {
   feedbackDeltas: [],
   proof: {
     doesNotProve: ["source truth"]
+  }
+});
+
+const deferredSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
+  run: {
+    id: "run-deferred-source-dissent",
+    updatedAt: now
+  },
+  context: {
+    inclusions: 2,
+    exclusions: 1,
+    inclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-deferred-current",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "anti_memory_record",
+      subjectId: "anti-memory-deferred-review",
+      sourceAuthority: "project-decision"
+    }],
+    exclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-deferred-proposal",
+      reason: "deferred",
+      explanation: "Deferred source dissent is not accepted authority.",
+      sourceAuthority: "medium"
+    }],
+    activationTrace: {
+      candidates: [{
+        subjectType: "source_claim",
+        subjectId: "claim-deferred-current",
+        sourceRejectionIds: ["source-rejection-deferred"],
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["edge-deferred-current"],
+          targets: [{
+            sourceDecisionEdgeId: "edge-deferred-current",
+            targetType: "architecture_decision",
+            targetId: "decision-deferred-current"
+          }]
+        }
+      }],
+      decisions: [{
+        reason: "anti_memory_block",
+        antiMemoryRecordId: "anti-memory-deferred-review"
+      }]
+    }
+  },
+  evidenceBundles: [],
+  feedbackDeltas: [],
+  proof: {
+    doesNotProve: ["source truth", "future proposal quality"]
   }
 });
 
@@ -841,20 +912,74 @@ describe("DecisionPacket builder", () => {
     });
   });
 
-  it.fails("abstains on unresolved accepted source dissent", () => {
+  it("abstains on unresolved accepted source dissent", () => {
     const packet = buildDecisionPacketFromReadModel(unresolvedAcceptedSourceDissentReadModel());
 
-    expect(packet.governingDecisionIds).toEqual(["decision-unresolved-source-dissent"]);
-    expect(packet.sourceConsensus.decisionLinkedSourceClaimIds).toEqual([
-      "claim-governing",
-      "claim-dissenting"
-    ]);
+    expect(packet.sourceClaimIds).toEqual(["claim-governing", "claim-dissenting"]);
+    expect(packet.governingDecisionIds).toEqual([]);
+    expect(packet.governingStatements).toEqual([]);
+    expect(packet.taskStandardDecisions).toEqual([]);
+    expect(packet.falsifiers).toEqual([]);
+    expect(packet.sourceDecisionEdgeIds).toEqual([]);
+    expect(packet.sourceDecisionTargets).toEqual([]);
+    expect(packet.sourceConsensus.decisionLinkedSourceClaimIds).toEqual([]);
     expect(packet.sourceConsensus.conflictingSourceClaimIds).toEqual(["claim-governing"]);
-    expect(packet.evidenceGaps).toEqual([]);
-    expect(packet.abstentionScore).toMatchObject({
-      status: "abstain",
-      reasons: ["conflicting_authority"]
-    });
+    expect(packet.sourceConsensus.sourceDecisionEdgeIds).toEqual([]);
+    expect(packet.evidenceGaps).toEqual(expect.arrayContaining([expect.objectContaining({
+      id: "evidence-gap:run-unresolved-accepted-source-dissent:unresolved-accepted-source-dissent:claim-governing"
+    })]));
+    expect(packet.abstentionScore.status).toBe("abstain");
+    expect(packet.abstentionScore.reasons).toContain("unresolved_accepted_source_dissent");
+  });
+
+  it.each([
+    {
+      label: "resolved",
+      readModel: sourceClaimExclusionReadModel({
+        reason: "superseded",
+        sourceRejectionIds: ["source-rejection-resolved"]
+      }),
+      governingDecisionId: "decision-governing"
+    },
+    {
+      label: "rejected",
+      readModel: sourceClaimExclusionReadModel({
+        reason: "unsafe",
+        sourceRejectionIds: ["source-rejection-rejected"]
+      }),
+      governingDecisionId: "decision-governing"
+    },
+    {
+      label: "deferred",
+      readModel: deferredSourceDissentReadModel(),
+      governingDecisionId: "decision-deferred-current",
+      deferredSourceClaimId: "claim-deferred-proposal"
+    }
+  ] satisfies readonly {
+    label: string;
+    readModel: DecisionPacketReadModelInput;
+    governingDecisionId: string;
+    deferredSourceClaimId?: string;
+  }[])("does not manufacture an unresolved accepted-dissent stop for $label source context", ({
+    readModel,
+    governingDecisionId,
+    deferredSourceClaimId
+  }) => {
+    const packet = buildDecisionPacketFromReadModel(readModel);
+
+    expect(packet.governingDecisionIds).toEqual([governingDecisionId]);
+    expect(packet.abstentionScore.reasons).not.toContain("unresolved_accepted_source_dissent");
+    expect(packet.evidenceGaps.map((gap) => gap.id)).not.toContain(
+      expect.stringContaining(":unresolved-accepted-source-dissent:")
+    );
+
+    if (deferredSourceClaimId !== undefined) {
+      expect(packet.contextExclusions).toContainEqual(expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: deferredSourceClaimId,
+        reason: "deferred"
+      }));
+    }
   });
 
   it("exposes unsupported, conflicting, and unknown source authority in the packet", () => {

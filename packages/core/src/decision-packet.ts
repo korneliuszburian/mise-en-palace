@@ -135,6 +135,7 @@ export type DecisionPacketAbstentionReason =
   | "stale_authority"
   | "missing_rejected_path_evidence"
   | "conflicting_authority"
+  | "unresolved_accepted_source_dissent"
   | "evidence_gap";
 
 export interface DecisionPacketAbstentionScore {
@@ -173,12 +174,49 @@ export const decisionPacketNegativePathsForContext = (input: {
     .map((item) => item.subjectId))
 });
 
+const decisionLinkedSourceClaimIdsFor = (input: {
+  readonly sourceClaimIds: readonly string[];
+  readonly caveatedSourceClaimIds: readonly string[];
+  readonly conflictingSourceClaimIds: readonly string[];
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
+}): string[] => {
+  if (input.unresolvedAcceptedDissentSourceClaimIds.length > 0) {
+    return [];
+  }
+
+  const nonGoverningSourceClaimIds = new Set([
+    ...input.caveatedSourceClaimIds,
+    ...input.conflictingSourceClaimIds
+  ]);
+
+  return unique(input.sourceClaimIds.filter((sourceClaimId) =>
+    !nonGoverningSourceClaimIds.has(sourceClaimId)
+  ));
+};
+
+const governingSourceClaimIdsFor = (input: {
+  readonly sourceClaimIds: readonly string[];
+  readonly conflictingSourceClaimIds: readonly string[];
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
+}): string[] => {
+  if (input.unresolvedAcceptedDissentSourceClaimIds.length > 0) {
+    return [];
+  }
+
+  const conflictingSourceClaimIds = new Set(input.conflictingSourceClaimIds);
+
+  return unique(input.sourceClaimIds.filter((sourceClaimId) =>
+    !conflictingSourceClaimIds.has(sourceClaimId)
+  ));
+};
+
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
   readonly unsupportedSourceClaimIds: readonly string[];
   readonly conflictingSourceClaimIds: readonly string[];
   readonly unknownSourceClaimIds: readonly string[];
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
   readonly sourceDecisionEdgeIds: readonly string[];
   readonly sourceDecisionTargets: readonly DecisionPacketSourceDecisionTarget[];
   readonly staleDecisionIds: readonly string[];
@@ -188,12 +226,8 @@ export const buildDecisionPacketSourceConsensus = (input: {
   readonly conflictedDecisionIds: readonly string[];
   readonly evidenceGapIds: readonly string[];
 }): DecisionPacketSourceConsensus => {
-  const caveatedSourceClaimIds = new Set(input.caveatedSourceClaimIds);
-
   return {
-    decisionLinkedSourceClaimIds: unique(input.sourceClaimIds.filter((sourceClaimId) =>
-      !caveatedSourceClaimIds.has(sourceClaimId)
-    )),
+    decisionLinkedSourceClaimIds: decisionLinkedSourceClaimIdsFor(input),
     caveatedSourceClaimIds: unique(input.caveatedSourceClaimIds),
     unsupportedSourceClaimIds: unique(input.unsupportedSourceClaimIds),
     conflictingSourceClaimIds: unique(input.conflictingSourceClaimIds),
@@ -249,6 +283,13 @@ export const buildDecisionPacketAbstentionScore = (input: {
   }
 
   if (input.sourceConsensus.evidenceGapIds.some((id) =>
+    id.includes(":unresolved-accepted-source-dissent:")
+  )) {
+    reasons.push("unresolved_accepted_source_dissent");
+    score -= 60;
+  }
+
+  if (input.sourceConsensus.evidenceGapIds.some((id) =>
     id.includes(":caveated-memory-authority:")
   )) {
     reasons.push("caveated_memory_authority");
@@ -273,7 +314,8 @@ export const buildDecisionPacketAbstentionScore = (input: {
   const status: DecisionPacketAbstentionStatus =
     reasons.includes("missing_governing_decision") ||
     reasons.includes("evidence_gap") ||
-    reasons.includes("missing_decision_linked_source")
+    reasons.includes("missing_decision_linked_source") ||
+    reasons.includes("unresolved_accepted_source_dissent")
       ? "abstain"
       : reasons.length > 0
         ? "weak_context"
@@ -601,6 +643,13 @@ const conflictingSourceClaimIdsFor = (
   )
 ]);
 
+const unresolvedAcceptedDissentSourceClaimIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
+  sourceClaimAuthorityCandidateFor(readModel, sourceClaimId)
+    ?.sourceClaimAuthorityReasons?.includes("accepted_with_dissenting_source_claims") === true
+);
+
 const unknownSourceClaimIdsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => sourceClaimIdsFor(readModel).filter((sourceClaimId) => {
@@ -721,10 +770,19 @@ const verificationCommandsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => unique(readModel.evidenceContract?.commands.map((command) => command.command) ?? []);
 
-const taskStandardDecisionsFor = (
-  readModel: DecisionPacketReadModelInput
-): DecisionPacketTaskStandard[] => {
-  const decisions = includedActivationCandidatesFor(readModel).flatMap((candidate) =>
+const governingGuidanceCandidatesFor = (input: {
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
+}): readonly DecisionPacketActivationCandidateInput[] =>
+  input.unresolvedAcceptedDissentSourceClaimIds.length > 0
+    ? []
+    : includedActivationCandidatesFor(input.readModel);
+
+const taskStandardDecisionsFor = (input: {
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
+}): DecisionPacketTaskStandard[] => {
+  const decisions = governingGuidanceCandidatesFor(input).flatMap((candidate) =>
     candidate.projectStandardDecision === undefined
       ? []
       : [{
@@ -759,9 +817,10 @@ const taskStandardDecisionsFor = (
   return [...byKey.values()];
 };
 
-const governingStatementsFor = (
-  readModel: DecisionPacketReadModelInput
-): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
+const governingStatementsFor = (input: {
+  readonly readModel: DecisionPacketReadModelInput;
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
+}): string[] => unique(governingGuidanceCandidatesFor(input).flatMap((candidate) =>
   candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
 ));
 
@@ -838,6 +897,7 @@ const evidenceGapsFor = (input: {
   readonly runId: string;
   readonly governingDecisionIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
+  readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
   readonly caveatedMemoryRefs: readonly string[];
   readonly severeStaleAuthorityIds: readonly string[];
 }): DecisionPacketEvidenceGap[] => [
@@ -855,6 +915,13 @@ const evidenceGapsFor = (input: {
       `SourceClaim ${sourceClaimId} is included without current decision-linked authority or has maintenance feedback caveats.`,
     verificationRequired:
       "Link the claim to a current SourceDecisionEdge or refresh/review the source claim before treating it as governing authority."
+  })),
+  ...input.unresolvedAcceptedDissentSourceClaimIds.map((sourceClaimId): DecisionPacketEvidenceGap => ({
+    id: `evidence-gap:${input.runId}:unresolved-accepted-source-dissent:${sourceClaimId}`,
+    reason:
+      `SourceClaim ${sourceClaimId} is selected with accepted dissent that has no reviewed canonical resolution.`,
+    verificationRequired:
+      "Record a reviewed canonical resolution that rejects, supersedes, or otherwise resolves the accepted dissent before treating either path as governing authority."
   })),
   ...input.caveatedMemoryRefs.map((memoryRef): DecisionPacketEvidenceGap => ({
     id: `evidence-gap:${input.runId}:caveated-memory-authority:${memoryRef}`,
@@ -920,9 +987,21 @@ export const buildDecisionPacketFromReadModel = (
   const caveatedSourceClaimIds = caveatedSourceClaimIdsFor(readModel);
   const unsupportedSourceClaimIds = unsupportedSourceClaimIdsFor(readModel);
   const conflictingSourceClaimIds = conflictingSourceClaimIdsFor(readModel);
+  const unresolvedAcceptedDissentSourceClaimIds = unresolvedAcceptedDissentSourceClaimIdsFor(readModel);
   const unknownSourceClaimIds = unknownSourceClaimIdsFor(readModel);
-  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(readModel, sourceClaimIds);
-  const sourceDecisionTargets = sourceDecisionTargetsFor(readModel, sourceClaimIds);
+  const governingSourceClaimIds = governingSourceClaimIdsFor({
+    sourceClaimIds,
+    conflictingSourceClaimIds,
+    unresolvedAcceptedDissentSourceClaimIds
+  });
+  const sourceDecisionEdgeIds = sourceDecisionEdgeIdsFor(
+    readModel,
+    governingSourceClaimIds
+  );
+  const sourceDecisionTargets = sourceDecisionTargetsFor(
+    readModel,
+    governingSourceClaimIds
+  );
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
   const memoryRefs = memoryRefsFor(readModel);
@@ -961,6 +1040,7 @@ export const buildDecisionPacketFromReadModel = (
       runId: readModel.run.id,
       governingDecisionIds,
       caveatedSourceClaimIds,
+      unresolvedAcceptedDissentSourceClaimIds,
       caveatedMemoryRefs,
       severeStaleAuthorityIds
     }),
@@ -976,6 +1056,7 @@ export const buildDecisionPacketFromReadModel = (
     unsupportedSourceClaimIds,
     conflictingSourceClaimIds,
     unknownSourceClaimIds,
+    unresolvedAcceptedDissentSourceClaimIds,
     sourceDecisionEdgeIds,
     sourceDecisionTargets,
     staleDecisionIds,
@@ -985,6 +1066,12 @@ export const buildDecisionPacketFromReadModel = (
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
   });
+  const governingGuidanceInput = {
+    readModel,
+    unresolvedAcceptedDissentSourceClaimIds
+  };
+  const taskStandardDecisions = taskStandardDecisionsFor(governingGuidanceInput);
+  const governingStatements = governingStatementsFor(governingGuidanceInput);
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -1027,8 +1114,8 @@ export const buildDecisionPacketFromReadModel = (
     nextAction: readModel.nextAction ??
       "Review the DecisionPacket evidence gaps before taking an implementation action.",
     governingDecisionIds,
-    governingStatements: governingStatementsFor(readModel),
-    taskStandardDecisions: taskStandardDecisionsFor(readModel),
+    governingStatements,
+    taskStandardDecisions,
     sourceClaimIds,
     caveatedSourceClaimIds,
     sourceDecisionEdgeIds,
@@ -1042,7 +1129,7 @@ export const buildDecisionPacketFromReadModel = (
     unknownKnowledgeIds,
     supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
-    falsifiers: unique(taskStandardDecisionsFor(readModel).map((decision) => decision.falsifier)),
+    falsifiers: unique(taskStandardDecisions.map((decision) => decision.falsifier)),
     verificationCommands: verificationCommandsFor(readModel),
     evidenceGaps,
     sourceConsensus,

@@ -261,6 +261,7 @@ const packetForBriefInput = (input: {
     unsupportedSourceClaimIds: [],
     conflictingSourceClaimIds: [],
     unknownSourceClaimIds: [],
+    unresolvedAcceptedDissentSourceClaimIds: [],
     sourceDecisionEdgeIds: [],
     sourceDecisionTargets: [],
     staleDecisionIds: [],
@@ -725,6 +726,7 @@ export const buildDecisionPacketWithEngine = async (
       .map((decision) => decision.sourceClaimId)),
     conflictingSourceClaimIds: [],
     unknownSourceClaimIds: [],
+    unresolvedAcceptedDissentSourceClaimIds: [],
     conflictedDecisionIds: severeStaleAuthorityIds,
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
   });
