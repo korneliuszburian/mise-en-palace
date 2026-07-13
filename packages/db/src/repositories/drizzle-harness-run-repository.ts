@@ -112,40 +112,51 @@ const invalidCanonicalRevisionToken = (): never => {
   throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
 };
 
+const requiredRevisionString = (record: Record<string, unknown>, key: string): string => {
+  const value = record[key];
+
+  return typeof value === "string" ? value : invalidCanonicalRevisionToken();
+};
+
+const revisionSubjectType = (
+  record: Record<string, unknown>
+): "memory_record" | "source_claim" => {
+  const value = record.subjectType;
+
+  return value === "memory_record" || value === "source_claim"
+    ? value
+    : invalidCanonicalRevisionToken();
+};
+
+const optionalRevisionString = (
+  record: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = record[key];
+
+  return value === undefined
+    ? undefined
+    : typeof value === "string"
+      ? value
+      : invalidCanonicalRevisionToken();
+};
+
 const canonicalRevisionTokenFrom = (item: unknown): CanonicalRevisionToken => {
   if (typeof item !== "object" || item === null || Array.isArray(item)) {
     return invalidCanonicalRevisionToken();
   }
 
   const record = item as Record<string, unknown>;
-  const subjectType = record.subjectType;
-  const subjectId = record.subjectId;
-  const updatedAt = record.updatedAt;
-  const status = record.status;
-  const currentVersionId = record.currentVersionId;
-
-  if (subjectType !== "memory_record" && subjectType !== "source_claim") {
-    return invalidCanonicalRevisionToken();
-  }
-  if (typeof subjectId !== "string") {
-    return invalidCanonicalRevisionToken();
-  }
-  if (typeof updatedAt !== "string") {
-    return invalidCanonicalRevisionToken();
-  }
-  if (typeof status !== "string") {
-    return invalidCanonicalRevisionToken();
-  }
-  if (currentVersionId !== undefined && typeof currentVersionId !== "string") {
-    return invalidCanonicalRevisionToken();
-  }
+  const currentVersionId = optionalRevisionString(record, "currentVersionId");
 
   return {
-    subjectType,
-    subjectId,
-    updatedAt,
-    status,
-    ...(currentVersionId === undefined ? {} : { currentVersionId })
+    subjectType: revisionSubjectType(record),
+    subjectId: requiredRevisionString(record, "subjectId"),
+    updatedAt: requiredRevisionString(record, "updatedAt"),
+    status: requiredRevisionString(record, "status"),
+    ...(currentVersionId === undefined
+      ? {}
+      : { currentVersionId })
   };
 };
 
