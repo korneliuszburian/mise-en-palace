@@ -72,6 +72,21 @@ const smokePayload = (metadata: Record<string, unknown> | undefined): Record<str
   return typeof smokeId === "string" ? { smokeId } : {};
 };
 
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+};
+
 const requireText = (value: string | undefined, message: string): void => {
   if (value === undefined || value.trim().length === 0) {
     throw new Error(message);
@@ -559,6 +574,10 @@ export const assertSourceClaimEdgeGovernance = (
   requireText(input.metadata.consumer, "SourceClaimEdge requires metadata.consumer");
   requireText(input.metadata.doesNotProve, "SourceClaimEdge requires metadata.doesNotProve");
 
+  if (input.fromSourceClaimId === input.toSourceClaimId) {
+    throw new Error("SourceClaimEdge requires distinct fromSourceClaimId and toSourceClaimId");
+  }
+
   if (
     sourceClaimEdgeKindsRequiringSupportRef.has(input.kind) &&
     !hasText(input.metadata.evidenceRef) &&
@@ -910,6 +929,31 @@ export class DrizzleSourceRepository implements SourceRepository {
         toSourceClaim.sourceArtifactProjectId,
         "SourceClaimEdge"
       );
+
+      const matchingEdges = await tx
+        .select()
+        .from(sourceClaimEdges)
+        .where(and(
+          eq(sourceClaimEdges.fromSourceClaimId, input.fromSourceClaimId),
+          eq(sourceClaimEdges.toSourceClaimId, input.toSourceClaimId),
+          eq(sourceClaimEdges.kind, input.kind)
+        ))
+        .orderBy(asc(sourceClaimEdges.createdAt), asc(sourceClaimEdges.id))
+        .limit(2);
+
+      if (matchingEdges.length > 1) {
+        throw new Error("SourceClaimEdge semantic identity is ambiguous");
+      }
+
+      const existingEdge = matchingEdges[0];
+
+      if (existingEdge !== undefined) {
+        if (canonicalJson(existingEdge.metadata) !== canonicalJson(input.metadata)) {
+          throw new Error("SourceClaimEdge semantic identity has conflicting metadata");
+        }
+
+        return mapSourceClaimEdge(existingEdge);
+      }
 
       const row = requireReturnedRow(
         await tx
