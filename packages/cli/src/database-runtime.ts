@@ -617,6 +617,7 @@ const createDatabaseRuntimeForClient = async (
   const sourceSearchSourceRepository = sourceSearchRepositories.sourceRepository;
   const readbackHarnessRunRepository: DatabaseRuntime["harnessRunRepository"] = {
     createExecutionRun: (...args) => harnessRunRepository.createExecutionRun(...args),
+    updateExecutionRunStatus: (...args) => harnessRunRepository.updateExecutionRunStatus(...args),
     getHarnessRunByExecutionRunId: (...args) =>
       harnessRunRepository.getHarnessRunByExecutionRunId(...args),
     createEvidenceBundle: (...args) => harnessRunRepository.createEvidenceBundle(...args),

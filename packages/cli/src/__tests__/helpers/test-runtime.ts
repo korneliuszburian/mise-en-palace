@@ -13,6 +13,7 @@ import type {
   CreateAntiMemoryCandidateInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
+  UpdateExecutionRunStatusInput,
   CreateFeedbackDeltaInput,
   CreateMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
@@ -190,6 +191,9 @@ export const runPersistedPlanWithCapturedMetadata = async (
               createdAt: now,
               updatedAt: now
             };
+          },
+          async updateExecutionRunStatus(_input: UpdateExecutionRunStatusInput): Promise<never> {
+            throw new Error("updateExecutionRunStatus should not be called");
           },
           async getHarnessRunByExecutionRunId() {
             return undefined;

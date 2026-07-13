@@ -1154,6 +1154,7 @@ const createMemoryAdvantageRuntime = (
     },
     harnessRunRepository: {
       createExecutionRun: async () => throwingRepositoryMethod("createExecutionRun"),
+      updateExecutionRunStatus: async () => throwingRepositoryMethod("updateExecutionRunStatus"),
       getHarnessRunByExecutionRunId: async () => throwingRepositoryMethod("getHarnessRunByExecutionRunId"),
       createEvidenceBundle: async () => throwingRepositoryMethod("createEvidenceBundle"),
       createReviewAssessment: async () => throwingRepositoryMethod("createReviewAssessment"),
