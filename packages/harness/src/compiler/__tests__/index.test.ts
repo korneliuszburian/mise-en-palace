@@ -45,7 +45,8 @@ import type {
   TargetActivationReadModel
 } from "../../activation/index.js";
 import {
-  compileHarnessPlan
+  compileHarnessPlan,
+  decisionPacketForCompiledPlan
 } from "../index.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -752,6 +753,38 @@ describe("compileHarnessPlan", () => {
         exclusionCategory: "unsafe"
       })
     ]));
+  });
+
+  it("keeps an unsafe source exclusion out of formal rejected paths in a compiled packet", async () => {
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        tokenBudget: 500
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([
+          sourceClaim({ id: "claim-compiled-unsafe" })
+        ], [], []),
+        retrievalRepository: new FakeRetrievalRepository(),
+        now: () => now,
+        createId: (prefix) => `${prefix}-compiled-unsafe`
+      }
+    );
+    const packet = decisionPacketForCompiledPlan(result);
+
+    expect(packet.contextExclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: "claim-compiled-unsafe",
+        reason: "unsafe"
+      })
+    ]));
+    expect(packet.rejectedPathIds).toEqual([]);
+    expect(packet.sourceConsensus.rejectedPathIds).toEqual([]);
+    expect(packet.sourceRejectionIds).toEqual([]);
+    expect(packet.abstentionScore.status).toBe("abstain");
   });
 
   it("hardens capability requirements with priority and evidence outside TaskContract", async () => {

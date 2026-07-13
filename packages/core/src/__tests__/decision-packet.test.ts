@@ -7,6 +7,7 @@ import {
 import {
   buildDecisionPacketContractReadback,
   buildDecisionPacketFromReadModel,
+  decisionPacketNegativePathsForContext,
   type DecisionPacketReadModelInput
 } from "../decision-packet.js";
 import { parseEvidenceContract } from "../evidence-contract.js";
@@ -283,6 +284,55 @@ const sourceClaimExclusionReadModel = (input: {
 });
 
 describe("DecisionPacket builder", () => {
+  it("maps compile-time negative context without relabeling source exclusions as rejected paths", () => {
+    const paths = decisionPacketNegativePathsForContext({
+      contextInclusions: [{
+        subjectType: "anti_memory_record",
+        subjectId: "anti-memory-included",
+        reason: "Known unsafe path.",
+        expectedUse: "Do not use it.",
+        sourceAuthority: "medium"
+      }],
+      contextExclusions: [{
+        subjectType: "anti_memory_record",
+        subjectId: "anti-memory-excluded",
+        reason: "unsafe",
+        explanation: "Rejected anti-memory remains explicit.",
+        sourceAuthority: "medium"
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-unsafe",
+        reason: "unsafe",
+        explanation: "Unsafe source is not formal rejection authority.",
+        sourceAuthority: "project-decision"
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-stale",
+        reason: "stale",
+        explanation: "Stale source remains historical context.",
+        sourceAuthority: "project-decision"
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-invalidated",
+        reason: "invalidated",
+        explanation: "Invalidated source cannot govern.",
+        sourceAuthority: "project-decision"
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-superseded",
+        reason: "superseded",
+        explanation: "Superseded source remains a typed warning.",
+        sourceAuthority: "project-decision"
+      }]
+    });
+
+    expect(paths.rejectedPathIds).toEqual([
+      "anti-memory-included",
+      "anti-memory-excluded"
+    ]);
+    expect(paths.supersededPathIds).toEqual(["claim-superseded"]);
+  });
+
   it("builds governed packet signals from read model evidence", () => {
     const packet = buildDecisionPacketFromReadModel(readModel);
 

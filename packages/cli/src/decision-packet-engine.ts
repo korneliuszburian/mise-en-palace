@@ -2,6 +2,7 @@ import {
   buildDecisionPacketAbstentionScore,
   buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion,
+  decisionPacketNegativePathsForContext,
   type CapabilityPlan,
   type ContextAssembly,
   type ContextObservationPrefix,
@@ -250,6 +251,10 @@ const packetForBriefInput = (input: {
     .filter((item) => item.subjectType === "memory_record")
     .map((item) => item.subjectId);
   const evidenceGaps = [...(input.evidenceGaps ?? [])];
+  const negativePaths = decisionPacketNegativePathsForContext({
+    contextInclusions,
+    contextExclusions
+  });
   const sourceConsensus = buildDecisionPacketSourceConsensus({
     sourceClaimIds,
     caveatedSourceClaimIds: [],
@@ -259,8 +264,8 @@ const packetForBriefInput = (input: {
     sourceDecisionEdgeIds: [],
     sourceDecisionTargets: [],
     staleDecisionIds: [],
-    supersededPathIds: [],
-    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    supersededPathIds: negativePaths.supersededPathIds,
+    rejectedPathIds: negativePaths.rejectedPathIds,
     sourceRejectionIds: [],
     conflictedDecisionIds: [],
     evidenceGapIds: evidenceGaps.map((gap) => gap.id)
@@ -295,8 +300,8 @@ const packetForBriefInput = (input: {
     staleKnowledgeIds: [],
     noiseKnowledgeIds: [],
     unknownKnowledgeIds: [],
-    supersededPathIds: [],
-    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    supersededPathIds: negativePaths.supersededPathIds,
+    rejectedPathIds: negativePaths.rejectedPathIds,
     falsifiers: [],
     verificationCommands: input.evidenceContract.commands.map((item) => item.command),
     evidenceGaps,

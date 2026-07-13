@@ -10,7 +10,8 @@ import type {
   WorkspaceId
 } from "@krn/core";
 import {
-  decisionPacketFormatVersion
+  decisionPacketFormatVersion,
+  decisionPacketNegativePathsForContext
 } from "@krn/core";
 import {
   applyContextROI,
@@ -135,6 +136,10 @@ export const decisionPacketForCompiledPlan = (
   const memoryRefs = contextInclusions
     .filter((item) => item.subjectType === "memory_record")
     .map((item) => item.subjectId);
+  const negativePaths = decisionPacketNegativePathsForContext({
+    contextInclusions,
+    contextExclusions
+  });
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -165,8 +170,8 @@ export const decisionPacketForCompiledPlan = (
     staleKnowledgeIds: [],
     noiseKnowledgeIds: [],
     unknownKnowledgeIds: [],
-    supersededPathIds: [],
-    rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+    supersededPathIds: negativePaths.supersededPathIds,
+    rejectedPathIds: negativePaths.rejectedPathIds,
     falsifiers: [],
     verificationCommands: result.evidenceContract.commands.map((item) => item.command),
     evidenceGaps: [],
@@ -179,8 +184,8 @@ export const decisionPacketForCompiledPlan = (
       sourceDecisionEdgeIds: [],
       sourceDecisionTargets: [],
       staleDecisionIds: [],
-      supersededPathIds: [],
-      rejectedPathIds: contextExclusions.map((item) => item.subjectId),
+      supersededPathIds: negativePaths.supersededPathIds,
+      rejectedPathIds: negativePaths.rejectedPathIds,
       sourceRejectionIds: [],
       conflictedDecisionIds: [],
       evidenceGapIds: [],

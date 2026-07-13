@@ -157,6 +157,22 @@ const contextSubjectIds = (
   .filter((item) => item.subjectType === subjectType)
   .map((item) => item.subjectId));
 
+export const decisionPacketNegativePathsForContext = (input: {
+  readonly contextInclusions: readonly DecisionPacketContextInclusion[];
+  readonly contextExclusions: readonly DecisionPacketContextExclusion[];
+}): {
+  readonly rejectedPathIds: readonly string[];
+  readonly supersededPathIds: readonly string[];
+} => ({
+  rejectedPathIds: unique([
+    ...contextSubjectIds(input.contextInclusions, "anti_memory_record"),
+    ...contextSubjectIds(input.contextExclusions, "anti_memory_record")
+  ]),
+  supersededPathIds: unique(input.contextExclusions
+    .filter((item) => item.subjectType === "source_claim" && item.reason === "superseded")
+    .map((item) => item.subjectId))
+});
+
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
