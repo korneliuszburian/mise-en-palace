@@ -285,6 +285,21 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
 
+    const revisionSourceRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-revision-source:${marker}`,
+      kind: "constraint",
+      status: "active",
+      summary: "Atomic revision source",
+      body: "The source record remains active until the reviewed revision commits.",
+      owner: "kernel",
+      confidence: 90,
+      applicationGuidance: "Use only for the atomic revision smoke.",
+      invalidationRule: "Revisit after the revision probe.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: { smokeId: marker, lifecycleProbe: "atomic-memory-revision-source" }
+    });
     const revisionCandidate = await memoryRepository.createMemoryCandidate({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -315,7 +330,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       await assertRejected(
         faultRepository.applyReviewedMemoryRevision({
           candidateId: revisionCandidate.id,
-          sourceMemoryRecordId: memoryRecord.id,
+          sourceMemoryRecordId: revisionSourceRecord.id,
           reviewer: "memory-governance-revision-fault",
           reason: "Atomic revision fault probe",
           recordKey: `memory-governance-revision:${marker}`,
@@ -341,7 +356,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       const revisionRepositories = revisionClients.map((client) => new DrizzleMemoryRepository(createKrnDatabase(client)));
       const revisionResults = await Promise.allSettled(revisionRepositories.map((repository, index) => repository.applyReviewedMemoryRevision({
         candidateId: revisionCandidate.id,
-        sourceMemoryRecordId: memoryRecord.id,
+        sourceMemoryRecordId: revisionSourceRecord.id,
         reviewer: `memory-governance-revision-race-${index}`,
         reason: "Concurrent reviewed revision race",
         recordKey: `memory-governance-revision:${marker}`,
@@ -350,7 +365,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       const revisionRows = await db.select().from(memoryRecords).where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'atomic-memory-revision' AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
       const revisionOutboxRows = await db.select().from(outboxEvents).where(sql`
         (${outboxEvents.topic} = 'memory.candidate.promoted' AND ${outboxEvents.payload}->>'memoryCandidateId' = ${revisionCandidate.id})
-        OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${memoryRecord.id})
+        OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${revisionSourceRecord.id})
       `);
       const revisionCandidateReadback = await memoryRepository.getMemoryCandidateById(revisionCandidate.id);
       assertSmokeReadbackChecks([
