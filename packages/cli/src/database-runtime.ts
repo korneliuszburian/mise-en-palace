@@ -104,6 +104,7 @@ export interface DatabaseRuntime {
   harnessRunRepository: Pick<
     HarnessRunRepository,
     | "createExecutionRun"
+    | "updateExecutionRunStatus"
     | "getHarnessRunByExecutionRunId"
     | "createEvidenceBundle"
     | "createReviewAssessment"
