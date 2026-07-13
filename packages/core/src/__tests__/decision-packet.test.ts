@@ -404,6 +404,48 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("falsifies that the packet exposes canonical selected SourceDecision ids", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-canonical-source-decision",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 1,
+        exclusions: 0,
+        inclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-canonical-source-decision",
+          sourceAuthority: "project-decision"
+        }],
+        activationTrace: {
+          candidates: [{
+            subjectType: "source_claim",
+            subjectId: "claim-canonical-source-decision",
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-canonical-source-decision"],
+              sourceDecisionIds: ["source-decision-canonical-id"],
+              targets: [{
+                sourceDecisionEdgeId: "edge-canonical-source-decision",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-opaque-id"
+              }]
+            }
+          }],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.governingDecisionIds).toEqual(["architecture-target-opaque-id"]);
+    expect(packet).not.toHaveProperty("sourceDecisionIds");
+  });
+
   it("keeps project-scoped owner-file directives out of governing authority", () => {
     const packet = buildDecisionPacketFromReadModel({
       ...readModel,
