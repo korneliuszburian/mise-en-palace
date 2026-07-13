@@ -17,23 +17,33 @@
       "exec",
       "--model",
       "gpt-5.6",
+      "--profile",
+      "paired-live",
       "--sandbox",
       "workspace-write",
       "--ask-for-approval",
       "never",
       "{prompt}"
     ],
+    "model": "gpt-5.6",
     "cliVersion": "pinned-by-lockfile-and-recorded-version",
-    "profileHash": "manifest-profile-v1",
-    "permissions": "workspace-write-target-only",
+    "profile": {
+      "name": "paired-live",
+      "config": "model = \"gpt-5.6\"\n",
+      "hash": "b947b08a6cf9e5226a22b7aafe60a562bd9df912f08758e707ca8e93ac22a49f"
+    },
+    "permissions": {
+      "sandbox": "workspace-write",
+      "approval": "never"
+    },
     "networkPolicy": "disabled",
     "budget": {
-      "maxTokens": 16000,
       "timeoutMs": 120000
     }
   },
   "containment": {
     "command": "bwrap",
+    "version": "pinned-by-recorded-version",
     "network": "disabled",
     "workspaceWriteRoot": "{targetRoot}",
     "homeRoot": "{sandboxRoot}"

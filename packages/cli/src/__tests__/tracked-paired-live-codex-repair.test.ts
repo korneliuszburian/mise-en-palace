@@ -1,16 +1,25 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
   buildTrackedTrialArtifact,
   hashTree,
+  parseTrackedTrialManifest,
+  readTrackedTrialArtifact,
   runTrackedPairedTrial,
+  runTrackedTrialCommand,
   validateTrialPacket,
+  verifyTrackedTrialArtifact,
   type PairedTrialManifest
 } from "../internal/eval/tracked-paired-live-codex-repair.js";
 import type { PairedRepairScore } from "../internal/eval/paired-live-codex-repair.js";
+
+const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
+
+const profileConfig = "model = \"gpt-5.6\"\n";
 
 const manifest: PairedTrialManifest = {
   kind: "krn.pairedLiveCodexRepairManifest.v1",
@@ -23,15 +32,28 @@ const manifest: PairedTrialManifest = {
   runId: "run-1",
   codex: {
     command: "codex",
-    args: ["exec", "--model", "gpt-5.6", "{prompt}"],
+    args: [
+      "exec",
+      "--model",
+      "gpt-5.6",
+      "--profile",
+      "trial",
+      "--sandbox",
+      "workspace-write",
+      "--ask-for-approval",
+      "never",
+      "{prompt}"
+    ],
+    model: "gpt-5.6",
     cliVersion: "codex-test",
-    profileHash: "profile-1",
-    permissions: "workspace-write-target-only",
+    profile: { name: "trial", config: profileConfig, hash: sha256(profileConfig) },
+    permissions: { sandbox: "workspace-write", approval: "never" },
     networkPolicy: "disabled",
-    budget: { maxTokens: 1000, timeoutMs: 1000 }
+    budget: { timeoutMs: 1000 }
   },
   containment: {
     command: "missing-containment-for-test",
+    version: "bwrap-test",
     network: "disabled",
     workspaceWriteRoot: "{targetRoot}",
     homeRoot: "{sandboxRoot}"
@@ -85,25 +107,38 @@ const withProcessEnvironment = async <Value>(
   }
 };
 
-const makeFakeTool = async (path: string, armSource: string): Promise<void> => {
+const makeFakeCodex = async (
+  path: string,
+  armSource: string,
+  versionSource = "printf 'claimed-cli-version %s\\n' \"${KRN_TRIAL_HOST_SENTINEL:-missing}\""
+): Promise<void> => {
   await writeExecutable(path, [
     "#!/bin/sh",
     "if [ \"$1\" = \"--version\" ]; then",
-    "  printf '%s' \"${KRN_TRIAL_HOST_SENTINEL:-missing}\" > \"$KRN_TRIAL_HOST_PROBE\"",
-    "  printf 'wrong-cli 0.0.0\\n'",
+    `  ${versionSource}`,
     "  exit 0",
     "fi",
     armSource
   ].join("\n"));
 };
 
-const makeFakeGit = async (path: string): Promise<void> => {
+const makeFakeContainment = async (
+  path: string,
+  armSource: string,
+  versionSource = "printf 'claimed-bwrap 1\\n'"
+): Promise<void> => {
   await writeExecutable(path, [
     "#!/bin/sh",
-    "if [ \"$1\" = \"rev-parse\" ]; then",
-    "  printf 'fixture-commit\\n'",
+    "if [ \"$1\" = \"--version\" ]; then",
+    `  ${versionSource}`,
+    "  exit 0",
     "fi",
-    "exit 0"
+    "if [ \"$1\" = \"--die-with-parent\" ]; then",
+    "  while [ \"$1\" != \"--\" ]; do shift; done",
+    "  shift",
+    `  ${armSource}`,
+    "fi",
+    "exit 2"
   ].join("\n"));
 };
 
@@ -113,14 +148,13 @@ const runnableManifest = (binRoot: string, timeoutMs: number): PairedTrialManife
   codex: {
     ...manifest.codex,
     command: join(binRoot, "codex"),
-    cliVersion: "claimed-cli-version",
-    profileHash: "claimed-profile-hash",
-    permissions: "claimed-target-only-permissions",
-    budget: { maxTokens: 777, timeoutMs }
+    cliVersion: "claimed-cli-version missing",
+    budget: { timeoutMs }
   },
   containment: {
     ...manifest.containment,
-    command: join(binRoot, "bwrap")
+    command: join(binRoot, "bwrap"),
+    version: "claimed-bwrap 1"
   }
 });
 
@@ -159,7 +193,7 @@ describe("tracked paired live Codex repair", () => {
     expect(first).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("captures fixed-point tree hashing that treats VCS metadata as source content", async () => {
+  it("excludes VCS metadata from the source tree identity", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-trial-tree-vcs-"));
 
     try {
@@ -168,13 +202,13 @@ describe("tracked paired live Codex repair", () => {
       await mkdir(join(root, ".git"));
       await writeFile(join(root, ".git", "HEAD"), "ref: refs/heads/main\n", "utf8");
 
-      expect(await hashTree(root)).not.toBe(sourceHash);
+      expect(await hashTree(root)).toBe(sourceHash);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
   });
 
-  it("captures fixed-point tree hashing that omits executable modes", async () => {
+  it("binds executable modes into the source tree identity", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-trial-tree-mode-"));
 
     try {
@@ -183,7 +217,56 @@ describe("tracked paired live Codex repair", () => {
       const sourceHash = await hashTree(root);
       await chmod(file, 0o755);
 
-      expect(await hashTree(root)).toBe(sourceHash);
+      expect(await hashTree(root)).not.toBe(sourceHash);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("binds empty directories and their modes into the source tree identity", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-trial-tree-directory-"));
+
+    try {
+      const directory = join(root, "empty");
+      await mkdir(directory);
+      const sourceHash = await hashTree(root);
+      await chmod(directory, 0o700);
+
+      expect(await hashTree(root)).not.toBe(sourceHash);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects malformed and escaped command manifests before starting MCP", async () => {
+    expect(() => parseTrackedTrialManifest({ kind: manifest.kind, codex: {} })).toThrow(
+      "Invalid tracked paired-trial manifest"
+    );
+
+    const root = await mkdtemp(join(
+      resolve(process.cwd(), "../../tests/fixtures/paired-live-codex-repair"),
+      "krn-tracked-trial-manifest-"
+    ));
+    const escapedPath = join(root, "escaped.json");
+    const symlinkPath = join(root, "escaped-source");
+    const manifestSymlinkPath = join(root, "escaped-manifest.json");
+
+    try {
+      await writeFile(escapedPath, JSON.stringify({ ...manifest, sourcePath: "../outside" }), "utf8");
+      await symlink(tmpdir(), symlinkPath);
+      await symlink(tmpdir(), manifestSymlinkPath);
+      const symlinkManifestPath = join(root, "symlink.json");
+      await writeFile(symlinkManifestPath, JSON.stringify({
+        ...manifest,
+        sourcePath: relative(resolve(process.cwd(), "../.."), symlinkPath)
+      }), "utf8");
+
+      await expect(runTrackedTrialCommand(join(tmpdir(), "outside-trial-manifest.json"))).rejects.toThrow(
+        "trial manifest path must stay within the trusted repository root"
+      );
+      await expect(runTrackedTrialCommand(escapedPath)).rejects.toThrow("trial source path must stay within the trusted repository root");
+      await expect(runTrackedTrialCommand(symlinkManifestPath)).rejects.toThrow("trial source path must stay within the trusted repository root");
+      await expect(runTrackedTrialCommand(manifestSymlinkPath)).rejects.toThrow("trial manifest path must stay within the trusted repository root");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -202,27 +285,178 @@ describe("tracked paired live Codex repair", () => {
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining(["a live Codex repair"]));
   });
 
-  it("captures declared conditions, host environment, invalid exits, timeouts, and replay at the fixed point", async () => {
+  it("rejects unverifiable profile and token-budget declarations before execution", async () => {
+    const profileMismatch = await runTrackedPairedTrial({
+      manifest: {
+        ...manifest,
+        codex: {
+          ...manifest.codex,
+          profile: { ...manifest.codex.profile, hash: "wrong-profile-hash" }
+        }
+      },
+      sourceRoot,
+      checkerRoot: process.cwd(),
+      packet
+    });
+    const tokenBudgetClaim = await runTrackedPairedTrial({
+      manifest: {
+        ...manifest,
+        codex: {
+          ...manifest.codex,
+          budget: { ...manifest.codex.budget, maxTokens: 1000 } as unknown as PairedTrialManifest["codex"]["budget"]
+        }
+      },
+      sourceRoot,
+      checkerRoot: process.cwd(),
+      packet
+    });
+
+    expect(profileMismatch).toMatchObject({
+      status: "invalid",
+      execution: { invalidReasons: expect.arrayContaining(["Codex profile content does not match its pinned hash"]) }
+    });
+    expect(tokenBudgetClaim).toMatchObject({
+      status: "invalid",
+      execution: { invalidReasons: expect.arrayContaining(["Codex maxTokens is not an enforceable CLI budget"]) }
+    });
+  });
+
+  it("rejects an observed CLI-version mismatch before an arm starts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-version-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    const armCounter = join(root, "arms.txt");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), `printf x >> \"${armCounter}\"\nexit 0`);
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const invalidManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        codex: {
+          ...runnableManifest(binRoot, 1_000).codex,
+          cliVersion: "another-cli-version"
+        }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_OPENAI_API_KEY: "trial",
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: invalidManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: { ...packet, request: { runId: invalidManifest.runId } },
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result).toMatchObject({
+        status: "invalid",
+        execution: { invalidReasons: ["observed Codex CLI version does not match the manifest"] }
+      });
+      await expect(readFile(armCounter, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts a passed artifact only after both arms and the held-out checker are bound", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-passed-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    const packetPromptMarker = join(root, "packet-prompt.txt");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; fi`,
+      "exit 0"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const passedManifest = runnableManifest(binRoot, 1_000);
+      let fetchCalls = 0;
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_OPENAI_API_KEY: "trial",
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: passedManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        fetchPacket: async () => {
+          fetchCalls += 1;
+          return { packet: { ...packet, request: { runId: passedManifest.runId } } };
+        },
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+      expect(result.score?.outcome).toBe("tie");
+      expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
+        "claimed",
+        "conditions_observed",
+        "materialized",
+        "baseline_executed",
+        "krn_executed",
+        "checker_scored",
+        "finalized"
+      ]);
+      expect(fetchCalls).toBe(1);
+      expect(await readFile(packetPromptMarker, "utf8")).toBe("packet");
+      expect(verifyTrackedTrialArtifact(result)).toBe(true);
+      expect(await readTrackedTrialArtifact(join(root, "attempt"))).toEqual(result);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects unobserved conditions, host environment leakage, failed arms, timeouts, and replay", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-fairness-"));
     const source = await makeRunnableTargetSource();
     const binRoot = join(root, "bin");
-    const hostProbe = join(root, "host-probe.txt");
+    const armCounter = join(root, "arms.txt");
+    const codexProbeCounter = join(root, "codex-probes.txt");
+    const containmentProbeCounter = join(root, "containment-probes.txt");
+    const gitCredentialCounter = join(root, "git-credentials.txt");
     await mkdir(binRoot, { recursive: true });
-    await makeFakeTool(join(binRoot, "codex"), "exit 0");
-    await makeFakeTool(join(binRoot, "bwrap"), "exit 1");
-    // Keep the tree-hash falsifier isolated from later arm-condition falsifiers.
-    await makeFakeGit(join(binRoot, "git"));
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "test \"$(cat \"$CODEX_HOME/trial.config.toml\")\" = \"model = \\\"gpt-5.6\\\"\" || exit 3",
+      `printf x >> \"${armCounter}\"`,
+      "exit 1"
+    ].join("\n"), [
+      `printf p >> \"${codexProbeCounter}\"`,
+      "printf 'claimed-cli-version %s\\n' \"${KRN_TRIAL_HOST_SENTINEL:-missing}\""
+    ].join("\n"));
+    await makeFakeContainment(
+      join(binRoot, "bwrap"),
+      "exec \"$@\"",
+      `printf p >> \"${containmentProbeCounter}\"\nprintf 'claimed-bwrap 1\\n'`
+    );
+    await writeExecutable(join(binRoot, "git"), [
+      "#!/bin/sh",
+      `if [ -n "$OPENAI_API_KEY" ]; then printf x >> "${gitCredentialCounter}"; fi`,
+      "if [ \"$1\" = \"rev-parse\" ]; then printf 'fixture-commit\\n'; fi",
+      "exit 0"
+    ].join("\n"));
 
     try {
       const nonzeroManifest = runnableManifest(binRoot, 1_000);
       const timeoutManifest = runnableManifest(binRoot, 20);
+      const mismatchedManifest = { ...nonzeroManifest, runId: "mismatched-replay-run" };
       const replayPacket = {
         ...packet,
         request: { runId: nonzeroManifest.runId }
       };
-      const [first, replay, timeout] = await withProcessEnvironment({
+      const mismatchedPacket = { ...packet, request: { runId: mismatchedManifest.runId } };
+      let checkerCalls = 0;
+      let replayFetchCalls = 0;
+      let mismatchedFetchCalls = 0;
+      const countingChecker = async (): Promise<PairedRepairScore> => {
+        checkerCalls += 1;
+        return passingChecker();
+      };
+      const [first, replay, mismatched, timeout] = await withProcessEnvironment({
         KRN_TRIAL_HOST_SENTINEL: "host-secret-visible-to-probe",
-        KRN_TRIAL_HOST_PROBE: hostProbe,
         KRN_TRIAL_OPENAI_API_KEY: "trial",
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
       }, async () => {
@@ -230,41 +464,134 @@ describe("tracked paired live Codex repair", () => {
           manifest: nonzeroManifest,
           sourceRoot: source,
           checkerRoot: process.cwd(),
-          packet: replayPacket
-        }, passingChecker);
-        const replayResult = await runTrackedPairedTrial({
+          packet: replayPacket,
+          attemptDirectory: join(root, "first-attempt")
+        }, countingChecker);
+        const replayResult = await withProcessEnvironment({
+          KRN_TRIAL_OPENAI_API_KEY: undefined
+        }, () => runTrackedPairedTrial({
           manifest: nonzeroManifest,
           sourceRoot: source,
           checkerRoot: process.cwd(),
-          packet: replayPacket
-        }, passingChecker);
-        await makeFakeTool(join(binRoot, "bwrap"), "while :; do :; done");
+          fetchPacket: async () => {
+            replayFetchCalls += 1;
+            return { packet: replayPacket };
+          },
+          attemptDirectory: join(root, "first-attempt")
+        }, countingChecker));
+        const mismatchedResult = await withProcessEnvironment({
+          KRN_TRIAL_OPENAI_API_KEY: undefined
+        }, () => runTrackedPairedTrial({
+          manifest: mismatchedManifest,
+          sourceRoot: source,
+          checkerRoot: process.cwd(),
+          fetchPacket: async () => {
+            mismatchedFetchCalls += 1;
+            return { packet: mismatchedPacket };
+          },
+          attemptDirectory: join(root, "first-attempt")
+        }, countingChecker));
+        await makeFakeContainment(join(binRoot, "bwrap"), "while :; do :; done");
         const timeoutResult = await runTrackedPairedTrial({
           manifest: timeoutManifest,
           sourceRoot: source,
           checkerRoot: process.cwd(),
-          packet: replayPacket
-        }, passingChecker);
-        return [firstResult, replayResult, timeoutResult] as const;
+          packet: replayPacket,
+          attemptDirectory: join(root, "timeout-attempt")
+        }, countingChecker);
+        return [firstResult, replayResult, mismatchedResult, timeoutResult] as const;
       });
 
-      expect(await readFile(hostProbe, "utf8")).toBe("host-secret-visible-to-probe");
-      expect(first.execution.conditions).toMatchObject({
-        codexCli: "claimed-cli-version",
-        profileHash: "claimed-profile-hash",
-        permissions: "claimed-target-only-permissions",
-        budget: { maxTokens: 777, timeoutMs: 1_000 }
+      expect(first.execution.conditions.observed).toMatchObject({
+        profileHash: sha256(profileConfig),
+        credentialProvided: true,
+        codex: {
+          version: { stdout: "claimed-cli-version missing\n", exitCode: 0 }
+        }
       });
-      expect(first.execution.conditions).not.toHaveProperty("observedCodexCli");
-      expect(first.status).toBe("passed");
+      expect(first.execution.conditions.requested.codex).toMatchObject({
+        model: "gpt-5.6",
+        permissions: { sandbox: "workspace-write", approval: "never" },
+        timeoutMs: 1_000
+      });
+      expect(first.execution.conditions.observed?.environmentVariableNames).not.toContain("KRN_TRIAL_HOST_SENTINEL");
+      expect(first.status).toBe("invalid");
       expect(first.execution.baseline?.exitCode).toBe(1);
       expect(first.execution.krn?.exitCode).toBe(1);
-      expect(replay.status).toBe("passed");
-      expect(replay.runId).toBe(first.runId);
-      expect(replay.execution.baseline?.exitCode).toBe(1);
-      expect(timeout.status).toBe("passed");
+      expect(first.execution.targets?.baseline.before).toMatchObject({
+        status: "known",
+        trackedFiles: [],
+        untrackedFiles: []
+      });
+      expect(first.execution.targets?.baseline.after.patchHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(first.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
+        "claimed",
+        "conditions_observed",
+        "materialized",
+        "baseline_executed",
+        "krn_executed",
+        "finalized"
+      ]);
+      expect(verifyTrackedTrialArtifact(first)).toBe(true);
+      expect(await readTrackedTrialArtifact(join(root, "first-attempt"))).toEqual(first);
+      expect(await readFile(armCounter, "utf8")).toBe("xx");
+      expect(await readFile(codexProbeCounter, "utf8")).toBe("pp");
+      expect(await readFile(containmentProbeCounter, "utf8")).toBe("p");
+      await expect(readFile(gitCredentialCounter, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      expect(checkerCalls).toBe(0);
+      expect(replayFetchCalls).toBe(0);
+      expect(mismatched).toMatchObject({
+        status: "unverified",
+        execution: { invalidReasons: ["trial attempt was already claimed without a matching verifiable artifact"] }
+      });
+      expect(mismatchedFetchCalls).toBe(0);
+      expect(replay).toEqual(first);
+      expect(timeout.status).toBe("invalid");
       expect(timeout.execution.baseline?.exitCode).toBeNull();
       expect(timeout.execution.krn?.exitCode).toBeNull();
+      expect(checkerCalls).toBe(0);
+
+      const phasePath = join(root, "first-attempt", "01-claimed.json");
+      const artifactPath = join(root, "first-attempt", "artifact.json");
+      const phase = await readFile(phasePath, "utf8");
+      const artifactText = await readFile(artifactPath, "utf8");
+      await writeFile(phasePath, `${phase}tampered`, "utf8");
+      expect(await readTrackedTrialArtifact(join(root, "first-attempt"))).toBeUndefined();
+      await writeFile(phasePath, phase, "utf8");
+
+      const claimedPhase = JSON.parse(phase) as Record<string, unknown>;
+      const forgedPhase = {
+        ...claimedPhase,
+        detail: { ...(claimedPhase["detail"] as Record<string, unknown>), directoryHash: "forged-directory" }
+      };
+      const forgedPhaseText = JSON.stringify(forgedPhase);
+      const persisted = JSON.parse(artifactText) as Record<string, unknown>;
+      const persistedContent = { ...persisted };
+      delete persistedContent["artifactHash"];
+      const persistedExecution = persisted["execution"] as Record<string, unknown>;
+      const persistedAttempt = persistedExecution["attempt"] as Record<string, unknown>;
+      const persistedPhases = (persistedAttempt["phases"] as readonly Record<string, unknown>[]).map((entry, index) =>
+        index === 0 ? { ...entry, hash: sha256(forgedPhaseText) } : entry
+      );
+      const forgedArtifact = buildTrackedTrialArtifact({
+        ...persistedContent,
+        execution: {
+          ...persistedExecution,
+          attempt: { ...persistedAttempt, phases: persistedPhases }
+        }
+      } as unknown as Parameters<typeof buildTrackedTrialArtifact>[0]);
+      await writeFile(phasePath, forgedPhaseText, "utf8");
+      await writeFile(artifactPath, JSON.stringify(forgedArtifact), "utf8");
+      expect(verifyTrackedTrialArtifact(forgedArtifact)).toBe(true);
+      expect(await readTrackedTrialArtifact(join(root, "first-attempt"))).toBeUndefined();
+      await writeFile(phasePath, phase, "utf8");
+      await writeFile(artifactPath, artifactText, "utf8");
+
+      const tampered = JSON.parse(artifactText) as Record<string, unknown>;
+      tampered["status"] = "passed";
+      await writeFile(artifactPath, JSON.stringify(tampered), "utf8");
+      expect(verifyTrackedTrialArtifact(tampered)).toBe(false);
+      expect(await readTrackedTrialArtifact(join(root, "first-attempt"))).toBeUndefined();
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(source, { recursive: true, force: true });
@@ -279,12 +606,42 @@ describe("tracked paired live Codex repair", () => {
       sourceTreeHash: "source",
       runId: "run-1",
       packet: { validation: { valid: false, reasons: ["missing"] } },
-      execution: { conditions: {} },
+      execution: { conditions: {
+        requested: {
+          codex: {
+            command: "codex",
+            model: "gpt-5.6",
+            cliVersion: "codex-test",
+            profileName: "trial",
+            profileHash: "profile",
+            permissions: { sandbox: "workspace-write", approval: "never" },
+            networkPolicy: "disabled",
+            timeoutMs: 1_000
+          },
+          containment: manifest.containment,
+          armOrder: ["baseline", "krn"],
+          checker: manifest.checker
+        }
+      } },
       proof: { proves: ["refused"], doesNotProve: ["live repair"] }
     } as const;
     const artifact = buildTrackedTrialArtifact(base);
+    const malformedArtifact = buildTrackedTrialArtifact({
+      ...base,
+      packet: { validation: { valid: "not-a-boolean", reasons: [] } }
+    } as unknown as Parameters<typeof buildTrackedTrialArtifact>[0]);
+    const impossiblePassedArtifact = buildTrackedTrialArtifact({
+      ...base,
+      status: "passed",
+      packet: {
+        checksum: "packet-checksum",
+        validation: { valid: true, reasons: [], checksum: "packet-checksum" }
+      }
+    } as unknown as Parameters<typeof buildTrackedTrialArtifact>[0]);
 
     expect(artifact.artifactHash).toMatch(/^[a-f0-9]{64}$/);
     expect(buildTrackedTrialArtifact({ ...base, runId: "other-run" })).not.toEqual(artifact);
+    expect(verifyTrackedTrialArtifact(malformedArtifact)).toBe(false);
+    expect(verifyTrackedTrialArtifact(impossiblePassedArtifact)).toBe(false);
   });
 });
