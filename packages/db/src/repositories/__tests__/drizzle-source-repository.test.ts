@@ -28,6 +28,7 @@ const methodNames = [
   "listClaimsForProject",
   "listSourceClaimsForRun",
   "createSourceDecision",
+  "getSourceDecisionForProject",
   "listSourceDecisionKnowledgeSources",
   "listRejectedSourceDecisionKnowledgeSources",
   "createSourceClaimEdge",

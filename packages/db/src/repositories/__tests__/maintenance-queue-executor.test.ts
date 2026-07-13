@@ -3,6 +3,7 @@ import type {
   AntiMemoryCandidate,
   FeedbackDelta,
   MemoryRecord,
+  SourceClaim,
   SourceDecision
 } from "@krn/core";
 import type {
@@ -182,11 +183,40 @@ class FakeFeedbackMaintenanceMemoryRepository {
   }
 }
 
+type ProjectScopedSourceClaim = {
+  readonly projectId: string;
+  readonly sourceClaim: SourceClaim;
+};
+
 class FakeFeedbackMaintenanceSourceRepository {
-  constructor(private readonly sourceDecisions: ReadonlyMap<string, SourceDecision>) {}
+  readonly globalSourceDecisionReads: string[] = [];
+
+  constructor(
+    private readonly sourceDecisions: ReadonlyMap<string, SourceDecision>,
+    private readonly sourceClaims: ReadonlyMap<string, ProjectScopedSourceClaim> = new Map()
+  ) {}
 
   async getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined> {
+    this.globalSourceDecisionReads.push(id);
     return this.sourceDecisions.get(id);
+  }
+
+  async getSourceDecisionForProject(
+    projectId: string,
+    id: SourceDecision["id"]
+  ): Promise<SourceDecision | undefined> {
+    const sourceDecision = this.sourceDecisions.get(id);
+
+    return sourceDecision?.projectId === projectId ? sourceDecision : undefined;
+  }
+
+  async getSourceClaimForProject(
+    projectId: string,
+    id: SourceClaim["id"]
+  ): Promise<SourceClaim | undefined> {
+    const sourceClaim = this.sourceClaims.get(id);
+
+    return sourceClaim?.projectId === projectId ? sourceClaim.sourceClaim : undefined;
   }
 }
 
@@ -226,6 +256,22 @@ const sourceDecision = (
   rationale: "The source claim is useful enough to guide activation.",
   falsifier: "A rejected or stale linked source claim must remove this authority.",
   consumer: "feedback-maintenance-test",
+  metadata: {},
+  createdAt: isoNow,
+  updatedAt: isoNow
+});
+
+const sourceClaim = (id: string): SourceClaim => ({
+  id,
+  sourceArtifactId: `source-artifact:${id}`,
+  claim: `Source claim ${id}`,
+  mechanism: "Project-scoped source claim lookup must reject foreign identifiers.",
+  krnImplication: "Feedback maintenance must not nominate foreign source authority.",
+  doesNotProve: "This test fixture does not prove source authority truth.",
+  sourceAuthority: "project-decision",
+  supportType: "implementation-boundary",
+  consumer: "feedback-maintenance-test",
+  status: "accepted",
   metadata: {},
   createdAt: isoNow,
   updatedAt: isoNow
@@ -594,6 +640,19 @@ describe("runMaintenanceQueueRecord", () => {
         id: "source-decision-hurt-1",
         sourceClaimId: "source-claim-linked-hurt-1"
       })]
+    ]), new Map([
+      ["source-claim-stale-1", {
+        projectId: "project-1",
+        sourceClaim: sourceClaim("source-claim-stale-1")
+      }],
+      ["source-claim-linked-unknown-1", {
+        projectId: "project-1",
+        sourceClaim: sourceClaim("source-claim-linked-unknown-1")
+      }],
+      ["source-claim-linked-hurt-1", {
+        projectId: "project-1",
+        sourceClaim: sourceClaim("source-claim-linked-hurt-1")
+      }]
     ]));
     const feedback = feedbackDelta({
       sourceUsefulnessOutcomes: [{
@@ -741,10 +800,11 @@ describe("runMaintenanceQueueRecord", () => {
     });
     expect(memoryRepository.createdAntiMemoryCandidates.map((candidate) => candidate.appliesTo))
       .not.toContain("source_decision:source-decision-hurt-1");
+    expect(sourceRepository.globalSourceDecisionReads).toEqual([]);
     expect(repository.calls).toEqual(["claim:maintenance-queue-1", "success:maintenance-queue-1"]);
   });
 
-  it("falsifies project-scoped feedback maintenance by creating a candidate from a foreign SourceDecision", async () => {
+  it("skips foreign SourceDecision feedback without creating maintenance candidates", async () => {
     const repository = new FakeMaintenanceQueueRepository(
       runningRecord({
         jobType: "review_feedback_delta",
@@ -760,6 +820,76 @@ describe("runMaintenanceQueueRecord", () => {
     const feedback = feedbackDelta({
       sourceUsefulnessOutcomes: [{
         sourceDecisionId: foreignSourceDecisionId,
+        outcome: "stale",
+        reason: "Project A feedback must not nominate Project B source authority.",
+        evidenceRefs: ["packet:project-a"],
+        doesNotProve: "This feedback does not prove Project B source authority is false."
+      }]
+    });
+
+    const sourceRepository = new FakeFeedbackMaintenanceSourceRepository(new Map([
+      [foreignSourceDecisionId, {
+        ...sourceDecision({
+          id: foreignSourceDecisionId,
+          sourceClaimId: "source-claim-project-b"
+        }),
+        projectId: "project-b"
+      }]
+    ]));
+    const result = await runMaintenanceQueueRecord({
+      repository,
+      recordId: "maintenance-queue-1",
+      handlers: [
+        createFeedbackDeltaMaintenanceHandler({
+          harnessRunRepository: {
+            async getFeedbackDeltaForProject() {
+              return {
+                status: "found",
+                feedbackDelta: {
+                  ...feedback,
+                  id: "feedback-delta-project-a"
+                }
+              };
+            }
+          },
+          memoryRepository,
+          sourceRepository
+        })
+      ]
+    });
+
+    expect(result.status).toBe("skipped");
+    expect(result.record.lastError).toContain(
+      `SourceDecision ${foreignSourceDecisionId} is unavailable in project project-a; maintenance failed closed`
+    );
+    expect(memoryRepository.createdAntiMemoryCandidates).toEqual([]);
+    expect(sourceRepository.globalSourceDecisionReads).toEqual([]);
+    expect(repository.calls).toEqual(["claim:maintenance-queue-1", "skip:maintenance-queue-1"]);
+  });
+
+  it("skips mixed same-project and foreign SourceClaim feedback before creating candidates", async () => {
+    const repository = new FakeMaintenanceQueueRepository(
+      runningRecord({
+        jobType: "review_feedback_delta",
+        payload: {
+          projectId: "project-a",
+          feedbackDeltaId: "feedback-delta-project-a",
+          reason: "review cross-project source claim feedback"
+        }
+      })
+    );
+    const memoryRepository = new FakeFeedbackMaintenanceMemoryRepository();
+    const sameProjectSourceClaimId = "source-claim-project-a";
+    const foreignSourceClaimId = "source-claim-project-b";
+    const feedback = feedbackDelta({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: sameProjectSourceClaimId,
+        outcome: "stale",
+        reason: "Project A source feedback remains reviewable when every subject is scoped.",
+        evidenceRefs: ["packet:project-a"],
+        doesNotProve: "This feedback does not prove Project A source authority is false."
+      }, {
+        sourceClaimId: foreignSourceClaimId,
         outcome: "stale",
         reason: "Project A feedback must not nominate Project B source authority.",
         evidenceRefs: ["packet:project-a"],
@@ -784,29 +914,26 @@ describe("runMaintenanceQueueRecord", () => {
             }
           },
           memoryRepository,
-          sourceRepository: new FakeFeedbackMaintenanceSourceRepository(new Map([
-            [foreignSourceDecisionId, {
-              ...sourceDecision({
-                id: foreignSourceDecisionId,
-                sourceClaimId: "source-claim-project-b"
-              }),
-              projectId: "project-b"
-            }]
-          ]))
+          sourceRepository: new FakeFeedbackMaintenanceSourceRepository(
+            new Map(),
+            new Map([[sameProjectSourceClaimId, {
+              projectId: "project-a",
+              sourceClaim: sourceClaim(sameProjectSourceClaimId)
+            }], [foreignSourceClaimId, {
+              projectId: "project-b",
+              sourceClaim: sourceClaim(foreignSourceClaimId)
+            }]])
+          )
         })
       ]
     });
 
-    expect(result.status).toBe("succeeded");
-    expect(memoryRepository.createdAntiMemoryCandidates).toEqual([expect.objectContaining({
-      projectId: "project-a",
-      invalidatedBySourceClaimIds: ["source-claim-project-b"],
-      appliesTo: "source_claim:source-claim-project-b",
-      metadata: expect.objectContaining({
-        sourceDecisionId: foreignSourceDecisionId,
-        sourceClaimId: "source-claim-project-b"
-      })
-    })]);
+    expect(result.status).toBe("skipped");
+    expect(result.record.lastError).toContain(
+      `SourceClaim ${foreignSourceClaimId} is unavailable in project project-a; maintenance failed closed`
+    );
+    expect(memoryRepository.createdAntiMemoryCandidates).toEqual([]);
+    expect(repository.calls).toEqual(["claim:maintenance-queue-1", "skip:maintenance-queue-1"]);
   });
 
   it("distinguishes missing and wrong-project feedback lookups without writing candidates", async () => {

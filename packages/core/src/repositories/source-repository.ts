@@ -129,6 +129,10 @@ export interface SourceRepository {
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
   getSourceDecisionById(id: SourceDecision["id"]): Promise<SourceDecision | undefined>;
+  getSourceDecisionForProject?(
+    projectId: ProjectId,
+    id: SourceDecision["id"]
+  ): Promise<SourceDecision | undefined>;
   listSourceDecisionKnowledgeSources(
     projectId: ProjectId,
     limit: number

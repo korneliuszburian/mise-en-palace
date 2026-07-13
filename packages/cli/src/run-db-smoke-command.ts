@@ -374,6 +374,7 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Source consensus rejected claims: ${report.sourceConsensusRejectedCount}`,
       `Source consensus relation evidence gaps: ${report.sourceConsensusRelationEvidenceGapCount}`,
       `Unscoped foreign SourceClaim read leak: ${report.unscopedForeignSourceClaimReadLeaks}`,
+      `Project-scoped foreign SourceDecision read rejected: ${report.scopedForeignSourceDecisionReadRejected}`,
       `Outbox events: ${report.outboxEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Source graph smoke")
@@ -842,6 +843,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Feedback maintenance anti-memory candidate: ${report.feedbackMaintenanceAntiMemoryCandidateId}`,
   `Feedback maintenance candidate linked to feedback delta: ${yesNo(report.feedbackMaintenanceCandidateLinkedToFeedbackDelta)}`,
   `Feedback maintenance delayed exact lookup: ${yesNo(report.feedbackMaintenanceDelayedLookupResolved)}`,
+  `Feedback maintenance exact replay idempotent: ${yesNo(report.feedbackMaintenanceExactReplayIdempotent)}`,
   `Feedback maintenance direct mutation delta: ${report.feedbackMaintenanceDirectMutationDelta}`,
   `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
   ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")

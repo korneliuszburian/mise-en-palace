@@ -6,7 +6,9 @@ import type {
   SourceUsefulnessOutcomeFeedback
 } from "@krn/core";
 import {
-  buildMemoryStalenessMaintenancePreview
+  buildMaintenanceQueueWriteBoundaryReadback,
+  buildMemoryStalenessMaintenancePreview,
+  parseMaintenanceJob
 } from "@krn/core";
 import type {
   HarnessCompilerDependencies
@@ -115,6 +117,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   feedbackMaintenanceAntiMemoryCandidateId: string;
   feedbackMaintenanceCandidateLinkedToFeedbackDelta: boolean;
   feedbackMaintenanceDelayedLookupResolved: boolean;
+  feedbackMaintenanceExactReplayIdempotent: boolean;
   feedbackMaintenanceDirectMutationDelta: number;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
@@ -228,6 +231,7 @@ interface FeedbackMaintenanceProofResult {
   antiMemoryCandidateId: string;
   candidateLinkedToFeedbackDelta: boolean;
   delayedLookupResolved: boolean;
+  exactReplayIdempotent: boolean;
   directMutationDelta: number;
 }
 
@@ -870,28 +874,40 @@ const runFeedbackMaintenanceProof = async (
     );
   }
 
+  const sourceRepository = input.repositories.sourceRepository;
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+  const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
+
+  if (getSourceClaimForProject === undefined || getSourceDecisionForProject === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires project-scoped SourceClaim and SourceDecision lookups"
+    );
+  }
+
+  const feedbackMaintenanceHandler = createFeedbackDeltaMaintenanceHandler({
+    harnessRunRepository: input.repositories.harnessRunRepository,
+    memoryRepository: input.repositories.memoryRepository,
+    sourceRepository: {
+      getSourceClaimForProject(projectId, sourceClaimId) {
+        return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+      },
+      getSourceDecisionForProject(projectId, sourceDecisionId) {
+        return getSourceDecisionForProject.call(sourceRepository, projectId, sourceDecisionId);
+      }
+    },
+    now: () => "2026-07-07T12:00:00.000Z"
+  });
   const readback = await runMaintenanceQueueRecord({
     repository: input.repositories.maintenanceQueueRepository,
     recordId: queueRecord.id,
     claim: {
       lockedBy: "decision-packet-return-loop-smoke"
     },
-    handlers: [
-      createFeedbackDeltaMaintenanceHandler({
-        harnessRunRepository: input.repositories.harnessRunRepository,
-        memoryRepository: input.repositories.memoryRepository,
-        sourceRepository: input.repositories.sourceRepository,
-        now: () => "2026-07-07T12:00:00.000Z"
-      })
-    ]
+    handlers: [feedbackMaintenanceHandler]
   });
   const candidate = await findFeedbackMaintenanceAntiMemoryCandidate({
     client: input.client,
     feedbackDeltaId: input.feedbackDelta.id
-  });
-  const directMutationCountAfter = await countFeedbackMaintenanceForbiddenRows({
-    client: input.client,
-    marker: input.marker
   });
 
   if (candidate === undefined) {
@@ -899,6 +915,33 @@ const runFeedbackMaintenanceProof = async (
       "DecisionPacket return-loop smoke did not create feedback maintenance anti-memory candidate"
     );
   }
+
+  const feedbackOutboxCountBeforeReplay = await countFeedbackOutboxRows({
+    client: input.client,
+    feedbackDeltaIds: [input.feedbackDelta.id]
+  });
+  const replayJob = parseMaintenanceJob(readback.record.jobType, readback.record.payload);
+
+  if (replayJob?.jobType !== "review_feedback_delta") {
+    throw new Error("DecisionPacket return-loop smoke could not parse feedback maintenance replay job");
+  }
+
+  const replayOutcome = await feedbackMaintenanceHandler.run({
+    record: readback.record,
+    job: replayJob,
+    writeBoundary: buildMaintenanceQueueWriteBoundaryReadback(replayJob.jobType)
+  });
+  const feedbackOutboxCountAfterReplay = await countFeedbackOutboxRows({
+    client: input.client,
+    feedbackDeltaIds: [input.feedbackDelta.id]
+  });
+  const replayedCandidateId = replayOutcome.status === "succeeded"
+    ? replayOutcome.createdReviewCandidates?.[0]?.id
+    : undefined;
+  const directMutationCountAfter = await countFeedbackMaintenanceForbiddenRows({
+    client: input.client,
+    marker: input.marker
+  });
 
   return {
     queueRecordId: queueRecord.id,
@@ -908,6 +951,8 @@ const runFeedbackMaintenanceProof = async (
     candidateLinkedToFeedbackDelta: candidate.feedbackDeltaId === input.feedbackDelta.id,
     delayedLookupResolved:
       readback.status === "succeeded" && candidate.feedbackDeltaId === input.feedbackDelta.id,
+    exactReplayIdempotent:
+      replayedCandidateId === candidate.id && feedbackOutboxCountAfterReplay === feedbackOutboxCountBeforeReplay,
     directMutationDelta: directMutationCountAfter - directMutationCountBefore
   };
 };
@@ -2057,6 +2102,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         passed: feedbackMaintenanceProof.candidateLinkedToFeedbackDelta
       },
       {
+        label: "feedback maintenance exact replay is idempotent",
+        passed: feedbackMaintenanceProof.exactReplayIdempotent
+      },
+      {
         label: "feedback maintenance did not directly mutate durable truth",
         passed: feedbackMaintenanceProof.directMutationDelta === 0
       },
@@ -2173,6 +2222,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         feedbackMaintenanceProof.candidateLinkedToFeedbackDelta,
       feedbackMaintenanceDelayedLookupResolved:
         feedbackMaintenanceProof.delayedLookupResolved,
+      feedbackMaintenanceExactReplayIdempotent:
+        feedbackMaintenanceProof.exactReplayIdempotent,
       feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0

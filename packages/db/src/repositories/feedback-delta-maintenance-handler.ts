@@ -2,6 +2,8 @@ import type {
   FeedbackDelta,
   IsoTimestamp,
   KnowledgeUsefulnessOutcomeFeedback,
+  ProjectId,
+  SourceClaim,
   SourceDecision,
   SourceUsefulnessOutcomeFeedback
 } from "@krn/core";
@@ -14,8 +16,7 @@ import {
 import type {
   FeedbackDeltaLookupRepository,
   FeedbackDeltaProjectLookup,
-  MemoryRepository,
-  SourceRepository
+  MemoryRepository
 } from "@krn/core/repositories/internal";
 
 import type {
@@ -52,11 +53,45 @@ type FeedbackMaintenanceCandidate = {
   readonly outcome: FeedbackMaintenanceOutcome;
   readonly subject: FeedbackMaintenanceSubject;
 };
+type FeedbackMaintenanceCandidateLookup =
+  | {
+      readonly status: "candidate";
+      readonly candidate: FeedbackMaintenanceCandidate;
+    }
+  | {
+      readonly status: "ignored";
+    }
+  | {
+      readonly status: "unavailable";
+      readonly subjectKind: "SourceClaim" | "SourceDecision";
+      readonly subjectId: string;
+    };
+type FeedbackMaintenanceCandidatesResult =
+  | {
+      readonly status: "ready";
+      readonly candidates: readonly FeedbackMaintenanceCandidate[];
+    }
+  | {
+      readonly status: "unavailable";
+      readonly subjectKind: "SourceClaim" | "SourceDecision";
+      readonly subjectId: string;
+    };
+
+interface ProjectScopedFeedbackSourceRepository {
+  getSourceClaimForProject(
+    projectId: ProjectId,
+    id: SourceClaim["id"]
+  ): Promise<SourceClaim | undefined>;
+  getSourceDecisionForProject(
+    projectId: ProjectId,
+    id: SourceDecision["id"]
+  ): Promise<SourceDecision | undefined>;
+}
 
 export interface CreateFeedbackDeltaMaintenanceHandlerInput {
   readonly harnessRunRepository: FeedbackDeltaLookupRepository;
   readonly memoryRepository: Pick<MemoryRepository, "createAntiMemoryCandidate">;
-  readonly sourceRepository: Pick<SourceRepository, "getSourceDecisionById">;
+  readonly sourceRepository: ProjectScopedFeedbackSourceRepository;
   readonly now?: () => IsoTimestamp;
 }
 
@@ -195,43 +230,118 @@ const antiMemoryCandidateForFeedback = (input: {
   };
 };
 
-const feedbackMaintenanceCandidatesFor = async (
-  input: Pick<CreateFeedbackDeltaMaintenanceHandlerInput, "sourceRepository"> & {
-    readonly feedbackDelta: FeedbackDelta;
-  }
-): Promise<FeedbackMaintenanceCandidate[]> => {
-  const sourceOutcomes = sourceUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata);
-  const sourceDecisionCandidates = await Promise.all(
-    sourceOutcomes
-      .filter(hasReviewableSourceDecisionOutcome)
-      .map(async (outcome): Promise<FeedbackMaintenanceCandidate[]> => {
-        const sourceDecision =
-          await input.sourceRepository.getSourceDecisionById(outcome.sourceDecisionId);
-
-        return sourceDecision === undefined || !sourceDecisionHasClaim(sourceDecision)
-          ? []
-          : [{
-            outcome,
-            subject: sourceDecisionSubjectFor(outcome, sourceDecision)
-          }];
-      })
+const sourceClaimCandidateFor = async (input: {
+  readonly outcome: SourceClaimUsefulnessOutcomeFeedback;
+  readonly projectId: ProjectId;
+  readonly sourceRepository: ProjectScopedFeedbackSourceRepository;
+}): Promise<FeedbackMaintenanceCandidateLookup> => {
+  const sourceClaim = await input.sourceRepository.getSourceClaimForProject(
+    input.projectId,
+    input.outcome.sourceClaimId
   );
 
-  return [
-    ...sourceOutcomes
+  return sourceClaim === undefined
+    ? {
+      status: "unavailable",
+      subjectKind: "SourceClaim",
+      subjectId: input.outcome.sourceClaimId
+    }
+    : {
+      status: "candidate",
+      candidate: {
+        outcome: input.outcome,
+        subject: sourceClaimSubjectFor(input.outcome)
+      }
+    };
+};
+
+const sourceDecisionCandidateFor = async (input: {
+  readonly outcome: SourceDecisionUsefulnessOutcomeFeedback;
+  readonly projectId: ProjectId;
+  readonly sourceRepository: ProjectScopedFeedbackSourceRepository;
+}): Promise<FeedbackMaintenanceCandidateLookup> => {
+  const sourceDecision = await input.sourceRepository.getSourceDecisionForProject(
+    input.projectId,
+    input.outcome.sourceDecisionId
+  );
+
+  if (sourceDecision === undefined) {
+    return {
+      status: "unavailable",
+      subjectKind: "SourceDecision",
+      subjectId: input.outcome.sourceDecisionId
+    };
+  }
+
+  if (!sourceDecisionHasClaim(sourceDecision)) {
+    return { status: "ignored" };
+  }
+
+  const sourceClaim = await input.sourceRepository.getSourceClaimForProject(
+    input.projectId,
+    sourceDecision.sourceClaimId
+  );
+
+  return sourceClaim === undefined
+    ? {
+      status: "unavailable",
+      subjectKind: "SourceClaim",
+      subjectId: sourceDecision.sourceClaimId
+    }
+    : {
+      status: "candidate",
+      candidate: {
+        outcome: input.outcome,
+        subject: sourceDecisionSubjectFor(input.outcome, sourceDecision)
+      }
+    };
+};
+
+const feedbackMaintenanceCandidatesFor = async (input: {
+  readonly feedbackDelta: FeedbackDelta;
+  readonly projectId: ProjectId;
+  readonly sourceRepository: ProjectScopedFeedbackSourceRepository;
+}): Promise<FeedbackMaintenanceCandidatesResult> => {
+  const sourceOutcomes = sourceUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata);
+  const [sourceClaimLookups, sourceDecisionLookups] = await Promise.all([
+    Promise.all(sourceOutcomes
       .filter(hasReviewableSourceClaimOutcome)
-      .map((outcome) => ({
+      .map((outcome) => sourceClaimCandidateFor({
         outcome,
-        subject: sourceClaimSubjectFor(outcome)
-      })),
-    ...sourceDecisionCandidates.flat(),
-    ...knowledgeUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata)
-      .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
-      .map((outcome) => ({
+        projectId: input.projectId,
+        sourceRepository: input.sourceRepository
+      }))),
+    Promise.all(sourceOutcomes
+      .filter(hasReviewableSourceDecisionOutcome)
+      .map((outcome) => sourceDecisionCandidateFor({
         outcome,
-        subject: knowledgeSubjectFor(outcome)
-      }))
-  ];
+        projectId: input.projectId,
+        sourceRepository: input.sourceRepository
+      })))
+  ]);
+  const unavailable = [...sourceClaimLookups, ...sourceDecisionLookups].find((lookup) =>
+    lookup.status === "unavailable"
+  );
+
+  if (unavailable !== undefined && unavailable.status === "unavailable") {
+    return unavailable;
+  }
+
+  return {
+    status: "ready",
+    candidates: [
+      ...sourceClaimLookups.flatMap((lookup) =>
+        lookup.status === "candidate" ? [lookup.candidate] : []),
+      ...sourceDecisionLookups.flatMap((lookup) =>
+        lookup.status === "candidate" ? [lookup.candidate] : []),
+      ...knowledgeUsefulnessOutcomesFromMetadata(input.feedbackDelta.metadata)
+        .filter((outcome) => isReviewableFeedbackOutcome(outcome.outcome))
+        .map((outcome) => ({
+          outcome,
+          subject: knowledgeSubjectFor(outcome)
+        }))
+    ]
+  };
 };
 
 const findFeedbackDelta = async (
@@ -280,10 +390,22 @@ export const createFeedbackDeltaMaintenanceHandler = (
 
     const feedbackDeltaRecord = feedbackDelta.feedbackDelta;
 
-    const candidates = await feedbackMaintenanceCandidatesFor({
+    const candidateResult = await feedbackMaintenanceCandidatesFor({
       feedbackDelta: feedbackDeltaRecord,
+      projectId: job.payload.projectId,
       sourceRepository: input.sourceRepository
     });
+
+    if (candidateResult.status === "unavailable") {
+      return {
+        status: "skipped",
+        reason:
+          `${candidateResult.subjectKind} ${candidateResult.subjectId} is unavailable in project ` +
+          `${job.payload.projectId}; maintenance failed closed`
+      };
+    }
+
+    const { candidates } = candidateResult;
 
     if (candidates.length === 0) {
       return {

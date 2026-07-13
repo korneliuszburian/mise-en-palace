@@ -245,7 +245,10 @@ export interface MaintenanceQueueDatabaseRuntime {
     | "listMemoryRecordsForProject"
     | "createAntiMemoryCandidate"
   >;
-  sourceRepository: Pick<SourceRepository, "getSourceDecisionById">;
+  sourceRepository: {
+    getSourceClaimForProject: NonNullable<SourceRepository["getSourceClaimForProject"]>;
+    getSourceDecisionForProject: NonNullable<SourceRepository["getSourceDecisionForProject"]>;
+  };
   close(): Promise<void>;
 }
 
@@ -825,8 +828,10 @@ export const createMaintenanceQueueDatabaseRuntime = async (
       harnessRunRepository: new DrizzleHarnessRunRepository(db),
       memoryRepository: new DrizzleMemoryRepository(db),
       sourceRepository: {
-        getSourceDecisionById: (...args) =>
-          sourceRepository.getSourceDecisionById(...args)
+        getSourceClaimForProject: (...args) =>
+          sourceRepository.getSourceClaimForProject(...args),
+        getSourceDecisionForProject: (...args) =>
+          sourceRepository.getSourceDecisionForProject(...args)
       },
       close: closePostgresClient(client)
     };

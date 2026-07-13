@@ -74,6 +74,7 @@ export interface SourceGraphSmokeReport {
   sourceConsensusRelationEvidenceGapCount: number;
   projectIsolationRejectedWrites: number;
   unscopedForeignSourceClaimReadLeaks: boolean;
+  scopedForeignSourceDecisionReadRejected: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
   outboxEventCount: number;
@@ -143,6 +144,7 @@ const sourceWriteRejectedFor = async (
 interface SourceProjectIsolationSmokeProof {
   projectIsolationRejectedWrites: number;
   unscopedForeignSourceClaimReadLeaks: boolean;
+  scopedForeignSourceDecisionReadRejected: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
 }
@@ -196,13 +198,17 @@ const createSourceProjectIsolationSmokeProof = async (input: {
   const unscopedForeignSourceClaim = await input.sourceRepository.getSourceClaimById(
     foreignSourceClaim.id
   );
-  const scopedForeignSourceClaim = input.sourceRepository.getSourceClaimForProject === undefined
+  const getSourceClaimForProject = input.sourceRepository.getSourceClaimForProject;
+  const hasProjectScopedSourceClaimLookup = getSourceClaimForProject !== undefined;
+  const scopedForeignSourceClaim = getSourceClaimForProject === undefined
     ? undefined
-    : await input.sourceRepository.getSourceClaimForProject(
+    : await getSourceClaimForProject.call(
+      input.sourceRepository,
       input.project.id,
       foreignSourceClaim.id
     );
   const unscopedForeignSourceClaimReadLeaks =
+    hasProjectScopedSourceClaimLookup &&
     unscopedForeignSourceClaim?.id === foreignSourceClaim.id &&
     scopedForeignSourceClaim === undefined;
   const mismatchedAdoptionRejected = await sourceWriteRejectedFor(
@@ -231,6 +237,17 @@ const createSourceProjectIsolationSmokeProof = async (input: {
       projectIsolationProbe: true
     }
   });
+  const getSourceDecisionForProject = input.sourceRepository.getSourceDecisionForProject;
+  const hasProjectScopedSourceDecisionLookup = getSourceDecisionForProject !== undefined;
+  const scopedForeignSourceDecision = getSourceDecisionForProject === undefined
+    ? undefined
+    : await getSourceDecisionForProject.call(
+      input.sourceRepository,
+      input.project.id,
+      foreignSourceDecision.id
+    );
+  const scopedForeignSourceDecisionReadRejected =
+    hasProjectScopedSourceDecisionLookup && scopedForeignSourceDecision === undefined;
   const foreignSourceDecisionEdge = await input.sourceRepository.createSourceDecisionEdge({
     sourceClaimId: foreignSourceClaim.id,
     sourceDecisionId: foreignSourceDecision.id,
@@ -323,6 +340,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
   return {
     projectIsolationRejectedWrites,
     unscopedForeignSourceClaimReadLeaks,
+    scopedForeignSourceDecisionReadRejected,
     sourceDecisionIdentityReadbackPassed,
     legacyDecisionEdgeExcluded
   };
@@ -682,6 +700,7 @@ export const runSourceGraphSmokeCheck = async (
     const {
       projectIsolationRejectedWrites,
       unscopedForeignSourceClaimReadLeaks,
+      scopedForeignSourceDecisionReadRejected,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded
     } = await createSourceProjectIsolationSmokeProof({
@@ -793,6 +812,10 @@ export const runSourceGraphSmokeCheck = async (
         passed: unscopedForeignSourceClaimReadLeaks
       },
       {
+        label: "project-scoped foreign SourceDecision read rejects",
+        passed: scopedForeignSourceDecisionReadRejected
+      },
+      {
         label: "source decision identity project readback",
         passed: sourceDecisionIdentityReadbackPassed
       },
@@ -894,6 +917,7 @@ export const runSourceGraphSmokeCheck = async (
       sourceConsensusRelationEvidenceGapCount: consensusReadback.relationEvidenceGapCount,
       projectIsolationRejectedWrites,
       unscopedForeignSourceClaimReadLeaks,
+      scopedForeignSourceDecisionReadRejected,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded,
       outboxEventCount: outboxRows[0]?.count ?? 0,
