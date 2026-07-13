@@ -230,6 +230,107 @@ describe("DrizzleHarnessRunRepository", () => {
   });
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "records the confirmed illegal execution lifecycle matrix",
+    async () => {
+      const marker = `krn_execution_lifecycle_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "execution lifecycle falsifier",
+        workspacePrefix: "krn-execution-lifecycle",
+        projectSlug: "execution-lifecycle",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `execution lifecycle ${marker}`,
+        taskContract: {
+          title: "Falsify execution lifecycle states",
+          objective: "Record illegal execution run transitions before the guarded implementation.",
+          constraints: ["real PostgreSQL"],
+          nonGoals: ["do not normalize legacy rows"],
+          acceptance: ["illegal states are observable"]
+        },
+        harnessPlan: {
+          summary: "Execution lifecycle falsifier",
+          nextAction: "Record lifecycle state matrix."
+        }
+      });
+
+      try {
+        const createRun = (status: "planned" | "running" | "succeeded") =>
+          scaffold.harnessRunRepository.createExecutionRun({
+            harnessPlanId: scaffold.harnessPlan.id,
+            adapter: "lifecycle-falsifier",
+            status,
+            initialEvent: {
+              sequence: 1,
+              type: "smoke.execution_lifecycle.created",
+              message: `created ${status}`,
+              payload: { smokeId: marker, status }
+            },
+            metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
+          });
+
+        const succeededWithoutStarted = await createRun("succeeded");
+        const runningWithoutStarted = await createRun("running");
+        const plannedRun = await createRun("planned");
+        const succeededWithoutCompleted = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: plannedRun.id,
+          status: "succeeded",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_lifecycle.succeeded_without_completed",
+            message: "succeeded without completedAt",
+            payload: { smokeId: marker }
+          }
+        });
+        const terminalReversal = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: succeededWithoutStarted.id,
+          status: "running",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_lifecycle.terminal_reversal",
+            message: "terminal run returned to running",
+            payload: { smokeId: marker }
+          }
+        });
+        const sameStateRetry = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: runningWithoutStarted.id,
+          status: "running",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_lifecycle.same_state_retry",
+            message: "running retried as running",
+            payload: { smokeId: marker }
+          }
+        });
+
+        expect(succeededWithoutStarted.startedAt).toBeUndefined();
+        expect(runningWithoutStarted.startedAt).toBeUndefined();
+        expect(succeededWithoutCompleted.completedAt).toBeUndefined();
+        expect(terminalReversal.status).toBe("running");
+        expect(sameStateRetry.status).toBe("running");
+
+        const [{ executionRunCount }] = await scaffold.client<{ executionRunCount: number }[]>`
+          select count(*)::int as "executionRunCount"
+          from execution_runs
+          where metadata->>'smokeId' = ${marker}
+        `;
+        const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
+          select count(*)::int as "eventCount"
+          from run_events
+          where payload->>'smokeId' = ${marker}
+        `;
+        expect(executionRunCount).toBe(3);
+        expect(eventCount).toBe(6);
+      } finally {
+        await scaffold.cleanup();
+        await scaffold.client.end();
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps a two-connection aggregate read on one PostgreSQL snapshot",
     async () => {
       const marker = `krn_harness_snapshot_${crypto.randomUUID().replaceAll("-", "")}`;
