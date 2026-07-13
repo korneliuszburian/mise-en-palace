@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -316,6 +316,43 @@ describe("repository policy boundaries", () => {
 
     expect(failure?.status).toBe(1);
     expect(failure?.stderr).toContain("use Linux, macOS, or WSL");
+  });
+
+  it("does not hide a missing GNU timeout behind a passing platform check", () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-missing-timeout-"));
+    const timeoutStub = join(fixtureRoot, "timeout");
+
+    try {
+      writeFileSync(timeoutStub, "#!/bin/sh\necho 'timeout: command not found in stock macOS profile' >&2\nexit 127\n");
+      chmodSync(timeoutStub, 0o755);
+      const env = { ...process.env, PATH: `${fixtureRoot}:${process.env.PATH ?? ""}` };
+      const pnpm = process.env.npm_execpath ?? "pnpm";
+
+      expect(execFileSync(pnpm, ["platform:check"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env,
+      })).toContain("Platform contract passed");
+
+      let failure: { status?: number; stdout?: string; stderr?: string } | undefined;
+      try {
+        execFileSync(pnpm, ["verify:db"], {
+          cwd: repoRoot,
+          encoding: "utf8",
+          env,
+          stdio: "pipe",
+        });
+      } catch (error) {
+        failure = error as { status?: number; stdout?: string; stderr?: string };
+      }
+
+      expect(failure?.status).toBe(1);
+      expect(`${failure?.stdout ?? ""}${failure?.stderr ?? ""}`).toContain(
+        "timeout: command not found in stock macOS profile",
+      );
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   });
 
   it("blocks the current private source packages from release", () => {
