@@ -934,10 +934,7 @@ export const buildDecisionPacketFromReadModel = (
     ...inclusions
       .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
       .map((inclusion) => inclusion.subjectId),
-    ...antiMemoryBlockedPathIdsFor(readModel),
-    ...authoritySupersededPathIds,
-    ...sourceClaimExclusionIdsFor(readModel, nonGoverningSourceClaimExclusionReasons),
-    ...sourceDecisionIdsWithUsefulness(readModel, ["rejected"])
+    ...antiMemoryBlockedPathIdsFor(readModel)
   ]);
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
     governingDecisionIds,

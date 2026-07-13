@@ -226,6 +226,62 @@ const relationReadModel = (
   }
 });
 
+type NonGoverningSourceClaimExclusionReason =
+  | "invalidated"
+  | "stale"
+  | "superseded"
+  | "unsafe";
+
+const sourceClaimExclusionReadModel = (input: {
+  readonly reason: NonGoverningSourceClaimExclusionReason;
+  readonly sourceRejectionIds?: readonly string[];
+}): DecisionPacketReadModelInput => ({
+  run: {
+    id: `run-source-claim-exclusion-${input.reason}`,
+    updatedAt: now
+  },
+  context: {
+    inclusions: 1,
+    exclusions: 1,
+    inclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-governing",
+      sourceAuthority: "project-decision"
+    }],
+    exclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-excluded",
+      reason: input.reason
+    }],
+    activationTrace: {
+      candidates: [{
+        subjectType: "source_claim",
+        subjectId: "claim-governing",
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["edge-governing"],
+          targets: [{
+            sourceDecisionEdgeId: "edge-governing",
+            targetType: "architecture_decision",
+            targetId: "decision-governing"
+          }]
+        }
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-excluded",
+        ...(input.sourceRejectionIds === undefined
+          ? {}
+          : { sourceRejectionIds: input.sourceRejectionIds })
+      }],
+      decisions: []
+    }
+  },
+  evidenceBundles: [],
+  feedbackDeltas: [],
+  proof: {
+    doesNotProve: ["source truth"]
+  }
+});
+
 describe("DecisionPacket builder", () => {
   it("builds governed packet signals from read model evidence", () => {
     const packet = buildDecisionPacketFromReadModel(readModel);
@@ -271,10 +327,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.noiseKnowledgeIds).toEqual([]);
     expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
-    expect(packet.rejectedPathIds).toEqual([
-      "anti-memory-superseded-template",
-      "claim-superseded"
-    ]);
+    expect(packet.rejectedPathIds).toEqual(["anti-memory-superseded-template"]);
     expect(packet.sourceRejectionIds).toEqual(["source-rejection-current"]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
     expect(packet.severeStaleAuthorityIds).toEqual([]);
@@ -493,7 +546,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.sourceRejectionIds).toEqual([]);
   });
 
-  it("keeps authority-superseded source claims as superseded rejected paths", () => {
+  it("keeps authority-superseded source claims out of formal rejected paths", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-authority-superseded",
@@ -526,10 +579,98 @@ describe("DecisionPacket builder", () => {
     });
 
     expect(packet.supersededPathIds).toEqual(["claim-authority-superseded"]);
-    expect(packet.rejectedPathIds).toEqual(["claim-authority-superseded"]);
+    expect(packet.rejectedPathIds).toEqual([]);
     expect(packet.sourceConsensus.supersededPathIds).toEqual([
       "claim-authority-superseded"
     ]);
+  });
+
+  it.each([
+    ["unsafe", []],
+    ["stale", []],
+    ["invalidated", []],
+    ["superseded", ["claim-excluded"]]
+  ] satisfies readonly [NonGoverningSourceClaimExclusionReason, readonly string[]][])(
+    "keeps %s source exclusions out of formal rejected-path coverage",
+    (reason, supersededPathIds) => {
+      const packet = buildDecisionPacketFromReadModel(sourceClaimExclusionReadModel({ reason }));
+
+      expect(packet.rejectedPathIds).toEqual([]);
+      expect(packet.sourceRejectionIds).toEqual([]);
+      expect(packet.supersededPathIds).toEqual(supersededPathIds);
+      expect(packet.abstentionScore).toMatchObject({
+        status: "weak_context",
+        reasons: ["missing_rejected_path_evidence"]
+      });
+    }
+  );
+
+  it("uses a formal SourceRejection without relabeling its excluded claim", () => {
+    const packet = buildDecisionPacketFromReadModel(sourceClaimExclusionReadModel({
+      reason: "unsafe",
+      sourceRejectionIds: ["source-rejection-formal"]
+    }));
+
+    expect(packet.rejectedPathIds).toEqual([]);
+    expect(packet.sourceRejectionIds).toEqual(["source-rejection-formal"]);
+    expect(packet.abstentionScore).toMatchObject({
+      status: "ready",
+      reasons: []
+    });
+  });
+
+  it("does not let rejected usefulness feedback supply formal rejected-path coverage", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      run: {
+        id: "run-governing-rejected-feedback",
+        updatedAt: now
+      },
+      context: {
+        inclusions: 1,
+        exclusions: 0,
+        inclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-governing",
+          sourceAuthority: "project-decision"
+        }],
+        activationTrace: {
+          candidates: [{
+            subjectType: "source_claim",
+            subjectId: "claim-governing",
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-governing"],
+              sourceDecisionIds: ["decision-governing"],
+              targets: [{
+                sourceDecisionEdgeId: "edge-governing",
+                targetType: "architecture_decision",
+                targetId: "decision-governing"
+              }]
+            }
+          }],
+          decisions: []
+        }
+      },
+      evidenceBundles: [],
+      feedbackDeltas: [{
+        candidates: [],
+        sourceUsefulnessOutcomes: [{
+          sourceDecisionId: "decision-governing",
+          outcome: "rejected",
+          reason: "Feedback is diagnostic until a formal rejection is reviewed."
+        }],
+        knowledgeUsefulnessOutcomes: []
+      }],
+      proof: {
+        doesNotProve: ["source truth"]
+      }
+    });
+
+    expect(packet.rejectedPathIds).toEqual([]);
+    expect(packet.sourceRejectionIds).toEqual([]);
+    expect(packet.abstentionScore).toMatchObject({
+      status: "weak_context",
+      reasons: ["missing_rejected_path_evidence"]
+    });
   });
 
   it("keeps decision-linked relation evidence usable when the relation has support", () => {
