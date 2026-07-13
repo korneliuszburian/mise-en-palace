@@ -227,6 +227,68 @@ const relationReadModel = (
   }
 });
 
+const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
+  run: {
+    id: "run-unresolved-accepted-source-dissent",
+    updatedAt: now
+  },
+  context: {
+    inclusions: 3,
+    exclusions: 0,
+    inclusionDetails: [{
+      subjectType: "source_claim",
+      subjectId: "claim-governing",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "source_claim",
+      subjectId: "claim-dissenting",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "anti_memory_record",
+      subjectId: "anti-memory-reviewed",
+      sourceAuthority: "project-decision"
+    }],
+    activationTrace: {
+      candidates: [{
+        subjectType: "source_claim",
+        subjectId: "claim-governing",
+        sourceClaimAuthorityStatus: "caveated",
+        sourceClaimAuthorityReasons: ["accepted_with_dissenting_source_claims"],
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["source-decision-edge-governing"],
+          targets: [{
+            sourceDecisionEdgeId: "source-decision-edge-governing",
+            targetType: "architecture_decision",
+            targetId: "decision-unresolved-source-dissent"
+          }]
+        }
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-dissenting",
+        sourceClaimAuthorityStatus: "accepted",
+        sourceClaimAuthorityReasons: ["current_decision_linked_authority"],
+        sourceDecisionSupportBoost: {
+          sourceDecisionEdgeIds: ["source-decision-edge-dissenting"],
+          targets: [{
+            sourceDecisionEdgeId: "source-decision-edge-dissenting",
+            targetType: "architecture_decision",
+            targetId: "decision-unresolved-source-dissent"
+          }]
+        }
+      }],
+      decisions: [{
+        reason: "anti_memory_block",
+        antiMemoryRecordId: "anti-memory-reviewed"
+      }]
+    }
+  },
+  evidenceBundles: [],
+  feedbackDeltas: [],
+  proof: {
+    doesNotProve: ["source truth", "conflict resolution"]
+  }
+});
+
 type NonGoverningSourceClaimExclusionReason =
   | "invalidated"
   | "stale"
@@ -776,6 +838,22 @@ describe("DecisionPacket builder", () => {
     expect(packet.abstentionScore).toMatchObject({
       status: "ready",
       reasons: []
+    });
+  });
+
+  it.fails("abstains on unresolved accepted source dissent", () => {
+    const packet = buildDecisionPacketFromReadModel(unresolvedAcceptedSourceDissentReadModel());
+
+    expect(packet.governingDecisionIds).toEqual(["decision-unresolved-source-dissent"]);
+    expect(packet.sourceConsensus.decisionLinkedSourceClaimIds).toEqual([
+      "claim-governing",
+      "claim-dissenting"
+    ]);
+    expect(packet.sourceConsensus.conflictingSourceClaimIds).toEqual(["claim-governing"]);
+    expect(packet.evidenceGaps).toEqual([]);
+    expect(packet.abstentionScore).toMatchObject({
+      status: "abstain",
+      reasons: ["conflicting_authority"]
     });
   });
 

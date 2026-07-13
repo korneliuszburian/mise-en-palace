@@ -41,6 +41,9 @@ import {
   runDecisionPacketCommand
 } from "../../run-decision-packet-command.js";
 import {
+  runCodexBriefCommand
+} from "../../run-codex-brief-command.js";
+import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 import {
@@ -111,6 +114,15 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusNoFormalRejectionKeepsTypedState: boolean;
   sourceConsensusSupersededClaimIsNonGoverning: boolean;
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
+  sourceDissentProofRunId: string;
+  sourceDissentGoverningClaimId: string;
+  sourceDissentDissentingClaimId: string;
+  sourceDissentGoverningDecisionId: string;
+  sourceDissentPacketSourceClaimIds: readonly string[];
+  sourceDissentPacketConflictingSourceClaimIds: readonly string[];
+  sourceDissentPacketStatus: string;
+  sourceDissentPacketReasons: readonly string[];
+  sourceDissentBriefRemainsExecutable: boolean;
   feedbackMaintenanceQueueRecordId: string;
   feedbackMaintenanceQueueStatus: string;
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
@@ -146,6 +158,7 @@ interface DecisionPacketSmokeJson {
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readonly string[];
       caveatedSourceClaimIds: readonly string[];
+      conflictingSourceClaimIds: readonly string[];
       sourceDecisionEdgeIds: readonly string[];
       supersededPathIds: readonly string[];
       rejectedPathIds: readonly string[];
@@ -224,6 +237,19 @@ interface SourceConsensusProofResult {
   rejectedClaimHasFormalRejection: boolean;
 }
 
+interface SourceDissentProofResult {
+  proofRunId: string;
+  retrievalRunId: string | undefined;
+  governingClaimId: string;
+  dissentingClaimId: string;
+  governingDecisionId: string;
+  packetSourceClaimIds: readonly string[];
+  packetConflictingSourceClaimIds: readonly string[];
+  packetStatus: string;
+  packetReasons: readonly string[];
+  briefRemainsExecutable: boolean;
+}
+
 interface FeedbackMaintenanceProofResult {
   queueRecordId: string;
   queueStatus: string;
@@ -287,6 +313,7 @@ const readPacket = (
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readStringArray(sourceConsensus, "decisionLinkedSourceClaimIds"),
       caveatedSourceClaimIds: readStringArray(sourceConsensus, "caveatedSourceClaimIds"),
+      conflictingSourceClaimIds: readStringArray(sourceConsensus, "conflictingSourceClaimIds"),
       sourceDecisionEdgeIds: readStringArray(sourceConsensus, "sourceDecisionEdgeIds"),
       supersededPathIds: readStringArray(sourceConsensus, "supersededPathIds"),
       rejectedPathIds: readStringArray(sourceConsensus, "rejectedPathIds"),
@@ -1387,6 +1414,344 @@ const runSourceConsensusProof = async (
   };
 };
 
+const runUnresolvedAcceptedSourceDissentProof = async (
+  input: {
+    readonly baseRuntime: {
+      readonly cwd: string;
+      readonly env: { readonly KRN_DATABASE_URL: string };
+      readonly now: () => string;
+      readonly createId: (prefix: string) => string;
+    };
+    readonly commandRuntime: DatabaseRuntime;
+    readonly executionRunId: string;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly repositories: {
+      readonly harnessRunRepository: HarnessRunRepository;
+      readonly sourceRepository: SourceRepository;
+      readonly retrievalRepository: RetrievalRepository;
+    };
+    readonly workspaceId: string;
+  }
+): Promise<SourceDissentProofResult> => {
+  const {
+    harnessRunRepository,
+    retrievalRepository,
+    sourceRepository
+  } = input.repositories;
+  const sourceArtifact = await sourceRepository.createSourceArtifact({
+    projectId: input.projectId,
+    kind: "run",
+    uri: `operator://decision-packet-return-loop/${input.marker}/unresolved-source-dissent`,
+    title: "DecisionPacket unresolved accepted source dissent smoke source",
+    contentHash: `decision-packet-unresolved-source-dissent-${input.marker}`,
+    sourceAuthority: "project-decision",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: true
+    }
+  });
+  const governingClaim = await sourceRepository.createSourceClaim({
+    sourceArtifactId: sourceArtifact.id,
+    executionRunId: input.executionRunId,
+    claim:
+      "Unresolved accepted source dissent must stop DecisionPacket execution until a reviewed canonical resolution exists.",
+    mechanism:
+      "A current accepted SourceClaim with an accepted contradicting peer remains a reviewable conflict rather than unqualified task authority.",
+    krnImplication:
+      "DecisionPacket must expose the conflict without issuing executable governing guidance.",
+    doesNotProve:
+      "This smoke does not decide which accepted claim is true or prove broad source consensus quality.",
+    sourceAuthority: "project-decision",
+    supportType: "decision",
+    consumer: "DecisionPacket unresolved source dissent smoke",
+    falsifier:
+      "A DecisionPacket with this unresolved accepted dissent remains executable instead of abstaining.",
+    status: "proposed",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "governing"
+    }
+  });
+  const dissentingClaim = await sourceRepository.createSourceClaim({
+    sourceArtifactId: sourceArtifact.id,
+    executionRunId: input.executionRunId,
+    claim:
+      "An unresolved accepted source peer contradicts the governing DecisionPacket instruction and requires review before execution.",
+    mechanism:
+      "A decision-linked accepted SourceClaim contradicts the candidate governing claim while preserving both paths for canonical review.",
+    krnImplication:
+      "KRN must not treat retrieval score as conflict resolution.",
+    doesNotProve:
+      "This smoke does not prove the dissenting claim is true or resolve the conflict.",
+    sourceAuthority: "project-decision",
+    supportType: "decision",
+    consumer: "DecisionPacket unresolved source dissent smoke",
+    falsifier:
+      "The DecisionPacket silently drops the accepted dissent or issues executable guidance.",
+    status: "proposed",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "dissenting"
+    }
+  });
+  const governingSourceDecision = await sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: governingClaim.id,
+    status: "adopt",
+    decision: "Keep this source claim decision-linked while its accepted contradiction is unresolved.",
+    rationale:
+      "The claim has full source-to-decision fields; the open conflict is represented by a separate accepted source relation.",
+    falsifier:
+      "The DecisionPacket omits this accepted source claim from the unresolved conflict readback.",
+    consumer: "DecisionPacket unresolved source dissent smoke",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "governing"
+    }
+  });
+  const dissentingSourceDecision = await sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: dissentingClaim.id,
+    status: "adopt",
+    decision: "Keep the accepted contradictory source claim visible for review before execution.",
+    rationale:
+      "The accepted dissent is decision-linked so absence of support cannot mask the unresolved authority conflict.",
+    falsifier:
+      "The DecisionPacket treats the accepted contradiction as unsupported instead of explicit conflicting authority.",
+    consumer: "DecisionPacket unresolved source dissent smoke",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "dissenting"
+    }
+  });
+  const governingDecisionId = `architecture-decision:unresolved-source-dissent:${input.marker}`;
+  const governingSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: governingClaim.id,
+    sourceDecisionId: governingSourceDecision.id,
+    targetType: "architecture_decision",
+    targetId: governingDecisionId,
+    supportType: "decision",
+    confidence: "high",
+    notes: "DecisionPacket unresolved source dissent governing support.",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "governing"
+    }
+  });
+  const dissentingSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: dissentingClaim.id,
+    sourceDecisionId: dissentingSourceDecision.id,
+    targetType: "architecture_decision",
+    targetId: governingDecisionId,
+    supportType: "decision",
+    confidence: "high",
+    notes: "DecisionPacket unresolved source dissent peer support.",
+    metadata: {
+      smokeId: input.marker,
+      unresolvedAcceptedSourceDissentProof: "dissenting"
+    }
+  });
+  await sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: dissentingClaim.id,
+    toSourceClaimId: governingClaim.id,
+    kind: "contradicts",
+    metadata: {
+      smokeId: input.marker,
+      consumer: "DecisionPacket unresolved source dissent smoke",
+      sourceDecisionRef: dissentingSourceDecision.id,
+      doesNotProve:
+        "This relation proves only that the persisted smoke models unresolved accepted dissent, not source truth."
+    }
+  });
+  // Persist a legacy/partial activation state through repositories so the
+  // DecisionPacket boundary is tested independently of compiler filtering.
+  const smokeMetadata = {
+    smokeId: input.marker,
+    unresolvedAcceptedSourceDissentProof: true
+  };
+  const operatorIntent = await harnessRunRepository.createOperatorIntent({
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    source: "cli",
+    rawIntent: `unresolved accepted source dissent DecisionPacket proof ${input.marker}`,
+    metadata: smokeMetadata
+  });
+  const taskContract = await harnessRunRepository.createTaskContract({
+    operatorIntentId: operatorIntent.id,
+    projectId: input.projectId,
+    title: "Falsify executable unresolved accepted source dissent",
+    objective:
+      "Read a DecisionPacket with two accepted contradictory source claims and require a reviewed canonical resolution before execution.",
+    constraints: ["use source graph consensus", "render a read-only DecisionPacket"],
+    nonGoals: ["do not resolve source truth", "do not invoke live Codex"],
+    acceptance: [
+      "both accepted source claims remain visible",
+      "unresolved dissent is classified before execution"
+    ],
+    metadata: smokeMetadata
+  });
+  const harnessPlan = await harnessRunRepository.createHarnessPlan({
+    taskContractId: taskContract.id,
+    version: 1,
+    status: "ready",
+    summary: "Persisted unresolved accepted source dissent DecisionPacket proof",
+    nextAction: "Render the persisted DecisionPacket readback.",
+    metadata: smokeMetadata
+  });
+  const proofRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId: harnessPlan.id,
+    adapter: "codex",
+    status: "planned",
+    initialEvent: {
+      sequence: 1,
+      type: "smoke.decision_packet_return_loop.unresolved_accepted_source_dissent",
+      message: "DecisionPacket return-loop smoke created unresolved accepted source dissent proof run",
+      payload: {
+        smokeId: input.marker,
+        governingClaimId: governingClaim.id,
+        dissentingClaimId: dissentingClaim.id
+      }
+    },
+    metadata: {
+      smokeId: input.marker,
+      command: "db:smoke:decision-packet-return-loop",
+      phase: "unresolved-accepted-source-dissent-proof"
+    }
+  });
+  const retrievalRun = await retrievalRepository.startRetrievalRun({
+    projectId: input.projectId,
+    executionRunId: proofRun.id,
+    taskContractId: taskContract.id,
+    query: "unresolved accepted source dissent DecisionPacket proof",
+    tokenBudget: 360,
+    metadata: smokeMetadata
+  });
+  const contextAssembly = await harnessRunRepository.createContextAssembly({
+    harnessPlanId: harnessPlan.id,
+    status: "assembled",
+    tokenBudget: 360,
+    inclusions: [{
+      subjectType: "source_claim",
+      subjectId: governingClaim.id,
+      reason: "Persisted packet readback includes the decision-linked governing claim.",
+      expectedUse: "Expose unresolved accepted dissent before execution.",
+      sourceAuthority: "project-decision"
+    }, {
+      subjectType: "source_claim",
+      subjectId: dissentingClaim.id,
+      reason: "Persisted packet readback includes the accepted contradictory peer.",
+      expectedUse: "Expose unresolved accepted dissent before execution.",
+      sourceAuthority: "project-decision"
+    }],
+    exclusions: [],
+    metadata: {
+      ...smokeMetadata,
+      retrievalRunId: retrievalRun.id
+    }
+  });
+  await retrievalRepository.addCandidate({
+    retrievalRunId: retrievalRun.id,
+    kind: "source",
+    subjectType: "source_claim",
+    subjectId: governingClaim.id,
+    sourceAuthority: "project-decision",
+    lexicalScore: 100,
+    totalScore: 100,
+    score: 100,
+    status: "included",
+    reason: "Persisted source candidate has accepted decision support and unresolved accepted dissent.",
+    metadata: {
+      ...smokeMetadata,
+      sourceClaimAuthority: {
+        status: "caveated",
+        reasons: ["accepted_with_dissenting_source_claims"]
+      },
+      sourceDecisionSupportBoost: {
+        sourceDecisionEdgeIds: [governingSourceDecisionEdge.id],
+        sourceDecisionIds: [governingSourceDecision.id],
+        targets: [{
+          sourceDecisionEdgeId: governingSourceDecisionEdge.id,
+          targetType: "architecture_decision",
+          targetId: governingDecisionId
+        }],
+        confidence: ["high"],
+        supportTypes: ["decision"],
+        doesNotProve:
+          "Persisted decision support does not resolve the accepted source conflict."
+      }
+    }
+  });
+  await retrievalRepository.addCandidate({
+    retrievalRunId: retrievalRun.id,
+    kind: "source",
+    subjectType: "source_claim",
+    subjectId: dissentingClaim.id,
+    sourceAuthority: "project-decision",
+    lexicalScore: 99,
+    totalScore: 99,
+    score: 99,
+    status: "included",
+    reason: "Persisted source candidate is the accepted contradictory peer.",
+    metadata: {
+      ...smokeMetadata,
+      sourceClaimAuthority: {
+        status: "accepted",
+        reasons: ["current_decision_linked_authority"]
+      },
+      sourceDecisionSupportBoost: {
+        sourceDecisionEdgeIds: [dissentingSourceDecisionEdge.id],
+        sourceDecisionIds: [dissentingSourceDecision.id],
+        targets: [{
+          sourceDecisionEdgeId: dissentingSourceDecisionEdge.id,
+          targetType: "architecture_decision",
+          targetId: governingDecisionId
+        }],
+        confidence: ["high"],
+        supportTypes: ["decision"],
+        doesNotProve:
+          "Persisted decision support does not resolve the accepted source conflict."
+      }
+    }
+  });
+  await retrievalRepository.completeRetrievalRun({
+    retrievalRunId: retrievalRun.id,
+    status: "completed",
+    completedAt: "2026-07-07T12:00:00.000Z",
+    metadata: smokeMetadata
+  });
+  const packet = parseDecisionPacket((await runDecisionPacketCommand({
+    ...input.baseRuntime,
+    runId: proofRun.id,
+    createDatabaseRuntime: async () => input.commandRuntime
+  })).stdout);
+  const brief = await runCodexBriefCommand({
+    ...input.baseRuntime,
+    runId: proofRun.id,
+    createDatabaseRuntime: async () => input.commandRuntime
+  });
+
+  if (contextAssembly.metadata.retrievalRunId !== retrievalRun.id) {
+    throw new Error("Persisted source dissent proof context assembly lost its retrieval run binding");
+  }
+
+  return {
+    proofRunId: proofRun.id,
+    retrievalRunId: retrievalRun.id,
+    governingClaimId: governingClaim.id,
+    dissentingClaimId: dissentingClaim.id,
+    governingDecisionId,
+    packetSourceClaimIds: packet.packet.sourceClaimIds,
+    packetConflictingSourceClaimIds: packet.packet.sourceConsensus.conflictingSourceClaimIds,
+    packetStatus: packet.packet.abstentionScore.status,
+    packetReasons: packet.packet.abstentionScore.reasons,
+    briefRemainsExecutable:
+      packet.packet.abstentionScore.status !== "abstain" &&
+      brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation.") &&
+      !brief.stdout.includes("Do not execute; the DecisionPacket abstains")
+  };
+};
+
 const runSelectorFeedbackProof = async (
   input: {
     readonly baseRuntime: {
@@ -1725,6 +2090,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   let retrievalRunId: string | undefined;
   let selectorRetrievalRunId: string | undefined;
   let sourceConsensusRetrievalRunId: string | undefined;
+  let sourceDissentRetrievalRunId: string | undefined;
   const feedbackDeltaIds: string[] = [];
   const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
@@ -1738,7 +2104,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       marker,
       retrievalRunIds: [
         ...(selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]),
-        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId])
+        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId]),
+        ...(sourceDissentRetrievalRunId === undefined ? [] : [sourceDissentRetrievalRunId])
       ]
     });
     if (maintenanceQueueIds.length > 0) {
@@ -1770,7 +2137,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       marker,
       retrievalRunIds: [
         ...(selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]),
-        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId])
+        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId]),
+        ...(sourceDissentRetrievalRunId === undefined ? [] : [sourceDissentRetrievalRunId])
       ]
     });
 
@@ -2115,6 +2483,20 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       workspaceId: workspace.id
     });
     sourceConsensusRetrievalRunId = sourceConsensusProof.retrievalRunId;
+    const sourceDissentProof = await runUnresolvedAcceptedSourceDissentProof({
+      baseRuntime,
+      commandRuntime,
+      executionRunId: executionRun.id,
+      marker,
+      projectId: project.id,
+      repositories: {
+        harnessRunRepository,
+        sourceRepository,
+        retrievalRepository
+      },
+      workspaceId: workspace.id
+    });
+    sourceDissentRetrievalRunId = sourceDissentProof.retrievalRunId;
 
     assertReturnLoopChecks([
       { label: "return channel checksum binding", passed: returnChannelHasChecksum },
@@ -2186,6 +2568,27 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `sourceClaimIds=${sourceConsensusProof.packetSourceClaimIds.join(",")}; ` +
           `rejectedPathIds=${sourceConsensusProof.packetRejectedPathIds.join(",")}; ` +
           `sourceRejectionIds=${sourceConsensusProof.packetSourceRejectionIds.join(",")}`
+      },
+      {
+        label: "unresolved accepted source dissent falsifier exposes executable weak context",
+        passed:
+          sourceDissentProof.packetStatus === "weak_context" &&
+          sourceDissentProof.packetReasons.includes("conflicting_authority") &&
+          sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.governingClaimId) &&
+          sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.dissentingClaimId) &&
+          sourceDissentProof.packetConflictingSourceClaimIds.includes(
+            sourceDissentProof.governingClaimId
+          ) &&
+          sourceDissentProof.briefRemainsExecutable,
+        detail:
+          `runId=${sourceDissentProof.proofRunId}; ` +
+          `status=${sourceDissentProof.packetStatus}; ` +
+          `reasons=${sourceDissentProof.packetReasons.join(",")}; ` +
+          `governingClaimId=${sourceDissentProof.governingClaimId}; ` +
+          `dissentingClaimId=${sourceDissentProof.dissentingClaimId}; ` +
+          `sourceClaimIds=${sourceDissentProof.packetSourceClaimIds.join(",")}; ` +
+          `conflictingSourceClaimIds=${sourceDissentProof.packetConflictingSourceClaimIds.join(",")}; ` +
+          `briefRemainsExecutable=${sourceDissentProof.briefRemainsExecutable}`
       }
     ]);
 
@@ -2251,6 +2654,16 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceConsensusProof.supersededClaimIsNonGoverning,
       sourceConsensusRejectedClaimHasFormalRejection:
         sourceConsensusProof.rejectedClaimHasFormalRejection,
+      sourceDissentProofRunId: sourceDissentProof.proofRunId,
+      sourceDissentGoverningClaimId: sourceDissentProof.governingClaimId,
+      sourceDissentDissentingClaimId: sourceDissentProof.dissentingClaimId,
+      sourceDissentGoverningDecisionId: sourceDissentProof.governingDecisionId,
+      sourceDissentPacketSourceClaimIds: sourceDissentProof.packetSourceClaimIds,
+      sourceDissentPacketConflictingSourceClaimIds:
+        sourceDissentProof.packetConflictingSourceClaimIds,
+      sourceDissentPacketStatus: sourceDissentProof.packetStatus,
+      sourceDissentPacketReasons: sourceDissentProof.packetReasons,
+      sourceDissentBriefRemainsExecutable: sourceDissentProof.briefRemainsExecutable,
       feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,
       feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
       feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,
