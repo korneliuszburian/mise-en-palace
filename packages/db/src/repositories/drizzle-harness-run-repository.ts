@@ -172,6 +172,31 @@ const canonicalRevisionTokensFrom = (
   return value.map(canonicalRevisionTokenFrom);
 };
 
+const canonicalRevisionSubject = (
+  subjectType: CanonicalRevisionToken["subjectType"],
+  subjectId: string
+): string => `${subjectType}:${subjectId}`;
+
+const validateCanonicalRevisionCoverage = (
+  inclusions: ContextAssembly["inclusions"],
+  tokens: readonly CanonicalRevisionToken[]
+): void => {
+  for (const inclusion of inclusions) {
+    if (inclusion.subjectType !== "memory_record" && inclusion.subjectType !== "source_claim") {
+      continue;
+    }
+
+    const subject = canonicalRevisionSubject(inclusion.subjectType, inclusion.subjectId);
+    const matches = tokens.filter((token) => (
+      canonicalRevisionSubject(token.subjectType, token.subjectId) === subject
+    ));
+
+    if (matches.length !== 1) {
+      throw new Error(`createContextAssembly canonical revision coverage mismatch for ${subject}`);
+    }
+  }
+};
+
 const validateMemoryRevisionToken = async (
   tx: KrnDatabaseTransaction,
   token: CanonicalRevisionToken
@@ -792,6 +817,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async createContextAssembly(input: CreateContextAssemblyInput): Promise<ContextAssembly> {
     return this.db.transaction(async (tx) => {
       const metadata = input.metadata ?? {};
+      const tokens = canonicalRevisionTokensFrom(metadata);
+      validateCanonicalRevisionCoverage(input.inclusions, tokens);
       await validateCanonicalRevisionTokens(tx, metadata);
       const row = requireReturnedRow(
         await tx

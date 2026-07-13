@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import type { EvalCandidateProposal } from "@krn/core";
 
 import type { KrnDatabase } from "../../database.js";
+import {
+  cleanupActivationSmokeRows,
+  countActivationSmokeMarkerRows,
+  createSmokeHarnessScaffold
+} from "../../dev/smoke/db-smoke-support.js";
+import { contextAssemblies, outboxEvents, runEvents } from "../../schema/index.js";
 import {
   DrizzleHarnessRunRepository,
   evidenceCommandsForPersistence,
@@ -11,6 +19,7 @@ import {
 } from "../drizzle-harness-run-repository.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
 
 const evalCandidate: EvalCandidateProposal = {
   id: "eval-candidate-1",
@@ -126,6 +135,36 @@ describe("DrizzleHarnessRunRepository", () => {
     expect(insertCalled).toBe(false);
   });
 
+  it("rejects a canonical inclusion without matching revision coverage", async () => {
+    let insertCalled = false;
+    const db = {
+      transaction: async (callback: (transaction: unknown) => Promise<unknown>) => callback({
+        insert: () => ({
+          values: () => ({
+            returning: async () => {
+              insertCalled = true;
+              return [];
+            }
+          })
+        })
+      })
+    } as unknown as KrnDatabase;
+
+    await expect(new DrizzleHarnessRunRepository(db).createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: "memory-1",
+        reason: "task-relevant",
+        expectedUse: "apply",
+        sourceAuthority: "high"
+      }],
+      exclusions: [],
+      metadata: {}
+    })).rejects.toThrow("canonical revision coverage");
+    expect(insertCalled).toBe(false);
+  });
+
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps a two-connection aggregate read on one PostgreSQL snapshot",
     async () => {
@@ -168,6 +207,102 @@ describe("DrizzleHarnessRunRepository", () => {
       } finally {
         await reader.unsafe(`drop table if exists ${marker}`);
         await Promise.all([reader.end(), writer.end()]);
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "rejects a context packet after a concurrent canonical invalidation",
+    async () => {
+      const marker = `krn_context_race_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "context persistence race smoke",
+        workspacePrefix: "krn-context-race",
+        projectSlug: "context-persistence-race",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `context persistence race ${marker}`,
+        taskContract: {
+          title: "Reject stale context packet",
+          objective: "Persist context only when canonical revisions remain current.",
+          constraints: ["real PostgreSQL", "two independent connections"],
+          nonGoals: ["no retry", "no stale packet persistence"],
+          acceptance: ["stale canonical revision is rejected"]
+        },
+        harnessPlan: {
+          summary: "Context persistence race smoke",
+          nextAction: "Attempt stale context persistence after invalidation."
+        }
+      });
+      const writer = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+
+      try {
+        const memoryRecord = await scaffold.memoryRepository.createMemoryRecord({
+          projectId: scaffold.project.id,
+          key: `context-race:${marker}`,
+          kind: "constraint",
+          status: "active",
+          summary: "Race fixture",
+          body: "A canonical record selected before a concurrent invalidation.",
+          owner: "context-race-smoke",
+          confidence: 95,
+          applicationGuidance: "Use only while active.",
+          invalidationRule: "Invalidate when the race fixture is consumed.",
+          sourceLineage: [{ sourceId: `context-race-source:${marker}` }],
+          isUserPreference: false,
+          metadata: { smokeId: scaffold.marker }
+        });
+        await writer.unsafe("begin");
+        await writer.unsafe(
+          `select id from memory_records where id = '${memoryRecord.id}' for update`
+        );
+        const stalePersistence = scaffold.harnessRunRepository.createContextAssembly({
+          harnessPlanId: scaffold.harnessPlan.id,
+          inclusions: [],
+          exclusions: [],
+          metadata: {
+            smokeId: scaffold.marker,
+            canonicalRevisionTokens: [{
+              subjectType: "memory_record",
+              subjectId: memoryRecord.id,
+              updatedAt: memoryRecord.updatedAt,
+              status: memoryRecord.status,
+              currentVersionId: memoryRecord.currentVersionId
+            }]
+          }
+        });
+
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        await writer.unsafe(
+          `update memory_records set status = 'invalidated', invalidated_at = now(), invalidation_reason = 'race smoke', updated_at = now() where id = '${memoryRecord.id}'`
+        );
+        await writer.unsafe("commit");
+
+        await expect(stalePersistence).rejects.toThrow("canonical revision mismatch");
+        const afterContext = await scaffold.db
+          .select({ id: contextAssemblies.id })
+          .from(contextAssemblies)
+          .where(sql`${contextAssemblies.metadata}->>'smokeId' = ${scaffold.marker}`);
+        const afterEvents = await scaffold.db
+          .select({ id: runEvents.id })
+          .from(runEvents)
+          .where(sql`${runEvents.payload}->>'smokeId' = ${scaffold.marker}`);
+        const afterOutbox = await scaffold.db
+          .select({ id: outboxEvents.id })
+          .from(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'smokeId' = ${scaffold.marker}`);
+
+        expect(afterContext).toHaveLength(0);
+        expect(afterEvents).toHaveLength(0);
+        expect(afterOutbox).toHaveLength(0);
+      } finally {
+        await writer.unsafe("rollback").catch(() => undefined);
+        await writer.end();
+        await scaffold.cleanup();
+        await scaffold.client.end();
       }
     }
   );
