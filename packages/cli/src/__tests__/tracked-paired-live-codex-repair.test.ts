@@ -223,7 +223,7 @@ describe("tracked paired live Codex repair", () => {
       const [first, replay, timeout] = await withProcessEnvironment({
         KRN_TRIAL_HOST_SENTINEL: "host-secret-visible-to-probe",
         KRN_TRIAL_HOST_PROBE: hostProbe,
-        KRN_TRIAL_OPENAI_API_KEY: "test-only-credential",
+        KRN_TRIAL_OPENAI_API_KEY: "trial",
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
       }, async () => {
         const firstResult = await runTrackedPairedTrial({
