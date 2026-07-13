@@ -555,6 +555,20 @@ describe("compileHarnessPlan", () => {
       "memory-high",
       "claim-high"
     ]);
+    expect(result.contextAssembly.metadata.canonicalRevisionTokens).toEqual([
+      {
+        subjectType: "memory_record",
+        subjectId: "memory-high",
+        updatedAt: "2026-06-01T00:00:00.000Z",
+        status: "active"
+      },
+      {
+        subjectType: "source_claim",
+        subjectId: "claim-high",
+        updatedAt: "2026-06-01T00:00:00.000Z",
+        status: "accepted"
+      }
+    ]);
     expect(result.capabilityPlan.requirements.map((item) => item.kind)).toContain("type_safety");
     expect(result.codexAdapterPlanRef.adapterPlanId).toBe("codex-plan-1");
     expect(result.evidenceContract.commands.map((item) => item.command)).toEqual([

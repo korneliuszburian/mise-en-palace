@@ -217,6 +217,22 @@ const memoryReviewSignalMetadata = (
 ): Record<string, unknown> =>
   signals.length === 0 ? {} : { memoryReviewSignals: signals };
 
+const canonicalRevisionMetadata = (input: {
+  subjectType: "memory_record" | "source_claim";
+  subjectId: string;
+  updatedAt: IsoTimestamp;
+  status: string;
+  currentVersionId?: string;
+}): Record<string, unknown> => ({
+  canonicalRevision: {
+    subjectType: input.subjectType,
+    subjectId: input.subjectId,
+    updatedAt: input.updatedAt,
+    status: input.status,
+    ...(input.currentVersionId === undefined ? {} : { currentVersionId: input.currentVersionId })
+  }
+});
+
 export interface SourceClaimEdgeInfluenceInput {
   edges: readonly SourceClaimEdge[];
   seedSourceClaimIds: readonly SourceClaim["id"][];
@@ -474,6 +490,13 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
       positiveFeedbackCount: record.positiveFeedbackCount,
       negativeFeedbackCount: record.negativeFeedbackCount,
       feedbackPenalty: Math.min(0, memoryFeedbackScore(record)),
+      ...canonicalRevisionMetadata({
+        subjectType: "memory_record",
+        subjectId: record.id,
+        updatedAt: record.updatedAt,
+        status: record.status,
+        ...(record.currentVersionId === undefined ? {} : { currentVersionId: record.currentVersionId })
+      }),
       ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
       ...memoryReviewSignalMetadata(memoryReviewSignals)
     }
@@ -522,6 +545,12 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
       sourceUse: taxonomy.sourceUse,
       decisionGrade: taxonomy.decisionGrade,
       consumer: claim.consumer,
+      ...canonicalRevisionMetadata({
+        subjectType: "source_claim",
+        subjectId: claim.id,
+        updatedAt: claim.updatedAt,
+        status: claim.status
+      }),
       ...(claim.falsifier === undefined ? {} : { falsifier: claim.falsifier })
     }
   };

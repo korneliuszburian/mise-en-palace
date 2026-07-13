@@ -342,6 +342,14 @@ const filterActivationCandidates = (
   }
 );
 
+const canonicalRevisionTokensFor = (
+  candidates: readonly FilteredActivationCandidates[number][]
+): Record<string, unknown>[] => candidates
+  .map((candidate) => candidate.metadata.canonicalRevision)
+  .filter((revision): revision is Record<string, unknown> => (
+    typeof revision === "object" && revision !== null && !Array.isArray(revision)
+  ));
+
 const createPersistedContextAssembly = async (
   input: ResolvedHarnessCompileInput,
   harnessPlan: HarnessPlan,
@@ -361,7 +369,8 @@ const createPersistedContextAssembly = async (
     metadata: {
       retrievalRunId,
       conflictSets: conflictResult.conflictSets,
-      activationRetrievalDiagnostics: retrieved.diagnostics
+      activationRetrievalDiagnostics: retrieved.diagnostics,
+      canonicalRevisionTokens: canonicalRevisionTokensFor(filteredCandidates)
     }
   });
 

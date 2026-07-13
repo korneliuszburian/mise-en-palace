@@ -62,10 +62,12 @@ import {
   feedbackDeltas,
   harnessPlans,
   maintenanceQueues,
+  memoryRecords,
   operatorIntents,
   outboxEvents,
   reviewAssessments,
   runEvents,
+  sourceClaims,
   taskContracts
 } from "../schema/index.js";
 import {
@@ -96,6 +98,102 @@ const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
   }
 
   return row;
+};
+
+interface CanonicalRevisionToken {
+  readonly subjectType: "memory_record" | "source_claim";
+  readonly subjectId: string;
+  readonly updatedAt: string;
+  readonly status: string;
+  readonly currentVersionId?: string;
+}
+
+const canonicalRevisionTokensFrom = (
+  metadata: Record<string, unknown>
+): CanonicalRevisionToken[] => {
+  const value = metadata.canonicalRevisionTokens;
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
+    }
+
+    const record = item as Record<string, unknown>;
+    const subjectType = record.subjectType;
+    const subjectId = record.subjectId;
+    const updatedAt = record.updatedAt;
+    const status = record.status;
+    const currentVersionId = record.currentVersionId;
+
+    if (
+      (subjectType !== "memory_record" && subjectType !== "source_claim") ||
+      typeof subjectId !== "string" ||
+      typeof updatedAt !== "string" ||
+      typeof status !== "string" ||
+      (currentVersionId !== undefined && typeof currentVersionId !== "string")
+    ) {
+      throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
+    }
+
+    return {
+      subjectType,
+      subjectId,
+      updatedAt,
+      status,
+      ...(currentVersionId === undefined ? {} : { currentVersionId })
+    };
+  });
+};
+
+const validateCanonicalRevisionTokens = async (
+  tx: KrnDatabaseTransaction,
+  metadata: Record<string, unknown>
+): Promise<void> => {
+  for (const token of canonicalRevisionTokensFrom(metadata)) {
+    if (token.subjectType === "memory_record") {
+      const row = requireLinkedRow(
+        (await tx
+          .select({
+            updatedAt: memoryRecords.updatedAt,
+            status: memoryRecords.status,
+            currentVersionId: memoryRecords.currentVersionId
+          })
+          .from(memoryRecords)
+          .where(eq(memoryRecords.id, token.subjectId))
+          .for("update"))[0],
+        `createContextAssembly.memoryRecord.${token.subjectId}`
+      );
+
+      if (
+        row.updatedAt.toISOString() !== token.updatedAt ||
+        row.status !== token.status ||
+        (token.currentVersionId !== undefined && row.currentVersionId !== token.currentVersionId)
+      ) {
+        throw new Error(`createContextAssembly canonical revision mismatch for memory record ${token.subjectId}`);
+      }
+      continue;
+    }
+
+    const row = requireLinkedRow(
+      (await tx
+        .select({
+          updatedAt: sourceClaims.updatedAt,
+          status: sourceClaims.status
+        })
+        .from(sourceClaims)
+        .where(eq(sourceClaims.id, token.subjectId))
+        .for("update"))[0],
+      `createContextAssembly.sourceClaim.${token.subjectId}`
+    );
+
+    if (row.updatedAt.toISOString() !== token.updatedAt || row.status !== token.status) {
+      throw new Error(`createContextAssembly canonical revision mismatch for source claim ${token.subjectId}`);
+    }
+  }
 };
 
 export const evidenceCommandsForPersistence = (
@@ -656,28 +754,32 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createContextAssembly(input: CreateContextAssemblyInput): Promise<ContextAssembly> {
-    const row = requireReturnedRow(
-      await this.db
-        .insert(contextAssemblies)
-        .values({
-          harnessPlanId: input.harnessPlanId,
-          status: input.status ?? "assembled",
-          ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-          inclusionCount: input.inclusions.length,
-          exclusionCount: input.exclusions.length,
-          selectedContext: {
-            inclusions: input.inclusions
-          },
-          excludedContext: {
-            exclusions: input.exclusions
-          },
-          metadata: input.metadata ?? {}
-        })
-        .returning(),
-      "createContextAssembly"
-    );
+    return this.db.transaction(async (tx) => {
+      const metadata = input.metadata ?? {};
+      await validateCanonicalRevisionTokens(tx, metadata);
+      const row = requireReturnedRow(
+        await tx
+          .insert(contextAssemblies)
+          .values({
+            harnessPlanId: input.harnessPlanId,
+            status: input.status ?? "assembled",
+            ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
+            inclusionCount: input.inclusions.length,
+            exclusionCount: input.exclusions.length,
+            selectedContext: {
+              inclusions: input.inclusions
+            },
+            excludedContext: {
+              exclusions: input.exclusions
+            },
+            metadata
+          })
+          .returning(),
+        "createContextAssembly"
+      );
 
-    return mapContextAssembly(row);
+      return mapContextAssembly(row);
+    });
   }
 
   async createExecutionRun(input: CreateExecutionRunInput): Promise<ExecutionRun> {

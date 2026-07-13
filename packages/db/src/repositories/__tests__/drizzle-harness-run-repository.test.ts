@@ -72,6 +72,60 @@ describe("DrizzleHarnessRunRepository", () => {
     }]);
   });
 
+  it("fails closed for malformed canonical revision metadata", async () => {
+    const db = {
+      transaction: async (callback: (transaction: unknown) => Promise<unknown>) =>
+        callback({})
+    } as unknown as KrnDatabase;
+
+    await expect(new DrizzleHarnessRunRepository(db).createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [],
+      exclusions: [],
+      metadata: {
+        canonicalRevisionTokens: ["not-a-revision-token"]
+      }
+    })).rejects.toThrow("canonicalRevisionTokens contain an invalid token");
+  });
+
+  it("rejects a context assembly when a canonical revision changed before persistence", async () => {
+    let insertCalled = false;
+    const db = {
+      transaction: async (callback: (transaction: unknown) => Promise<unknown>) => callback({
+        select: () => ({
+          from: () => ({
+            where: () => ({
+              for: async () => [{
+                updatedAt: new Date("2026-06-01T00:00:01.000Z"),
+                status: "invalidated",
+                currentVersionId: null
+              }]
+            })
+          })
+        }),
+        insert: () => {
+          insertCalled = true;
+          throw new Error("stale context must not insert");
+        }
+      })
+    } as unknown as KrnDatabase;
+
+    await expect(new DrizzleHarnessRunRepository(db).createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [],
+      exclusions: [],
+      metadata: {
+        canonicalRevisionTokens: [{
+          subjectType: "memory_record",
+          subjectId: "memory-1",
+          updatedAt: "2026-06-01T00:00:00.000Z",
+          status: "active"
+        }]
+      }
+    })).rejects.toThrow("canonical revision mismatch");
+    expect(insertCalled).toBe(false);
+  });
+
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps a two-connection aggregate read on one PostgreSQL snapshot",
     async () => {
