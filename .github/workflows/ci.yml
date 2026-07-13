@@ -74,7 +74,7 @@ jobs:
       - name: Database tests
         run: pnpm --filter @krn/db test
       - name: CLI tests
-        run: pnpm --filter @krn/cli test
+        run: pnpm --filter @krn/cli exec vitest run --no-file-parallelism
       - name: KRN doctor
         run: pnpm krn doctor
       - name: Fallow changed-files quality gate
