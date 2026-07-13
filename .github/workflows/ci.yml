@@ -121,7 +121,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install PostgreSQL and pgvector
-        run: brew install postgresql@16 pgvector
+        run: |
+          brew untap aws/tap || true
+          brew install postgresql@16 pgvector
 
       - name: Start disposable PostgreSQL
         run: |
