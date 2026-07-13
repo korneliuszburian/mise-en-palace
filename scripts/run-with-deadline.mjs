@@ -44,14 +44,16 @@ const sendSignal = (child, signal) => process.platform === "win32"
   ? child.kill(signal)
   : process.kill(-child.pid, signal);
 
-const terminateProcessGroup = (child, signal) => {
-  if (child.pid === undefined) return;
-
+const sendSignalIfRunning = (child, signal) => {
   try {
     sendSignal(child, signal);
   } catch (error) {
     if (error?.code !== "ESRCH") throw error;
   }
+};
+
+const terminateProcessGroup = (child, signal) => {
+  if (child.pid !== undefined) sendSignalIfRunning(child, signal);
 };
 
 const exitCodeFor = (timedOut, code, signal) => {
