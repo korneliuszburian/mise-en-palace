@@ -61,8 +61,20 @@ jobs:
         run: pnpm fixtures:check
       - name: Typecheck
         run: pnpm typecheck
-      - name: Tests
-        run: pnpm test
+      - name: Test workspace contract
+        run: pnpm workspace:check
+      - name: Core tests
+        run: pnpm --filter @krn/core test
+      - name: Harness tests
+        run: pnpm --filter @krn/harness test
+      - name: Maintenance preview tests
+        run: pnpm --filter @krn/maintenance-preview test
+      - name: Codex adapter tests
+        run: pnpm --filter @krn/codex-adapter test
+      - name: Database tests
+        run: pnpm --filter @krn/db test
+      - name: CLI tests
+        run: pnpm --filter @krn/cli test
       - name: KRN doctor
         run: pnpm krn doctor
       - name: Fallow changed-files quality gate
