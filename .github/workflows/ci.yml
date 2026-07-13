@@ -131,7 +131,7 @@ jobs:
           export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
           until pg_isready -h localhost -p 5432; do sleep 1; done
           createdb -h localhost -U "$USER" krn
-          psql -h localhost -d krn -c "CREATE USER krn WITH PASSWORD 'krn';" || true
+          psql -h localhost -d krn -c "CREATE USER krn WITH PASSWORD 'krn' SUPERUSER CREATEDB;" || true
           psql -h localhost -d krn -c "ALTER DATABASE krn OWNER TO krn;"
           psql -h localhost -d krn -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
