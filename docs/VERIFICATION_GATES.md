@@ -33,7 +33,8 @@ rtk pnpm eval:db
 
 The GitHub workflow is the remote gate: its fast job covers toolchain,
 platform, workspace, typecheck, tests, Fallow, required evals, and committed
-whitespace; its DB job covers readiness, schema, DB smokes, and `eval:db`; its
+whitespace; its DB job covers readiness, the same configured-store root test
+followed by a second readiness check, schema, DB smokes, and `eval:db`; its
 scheduled security job covers dependency, secret, and license policy.
 
 ## Proof artifact envelope

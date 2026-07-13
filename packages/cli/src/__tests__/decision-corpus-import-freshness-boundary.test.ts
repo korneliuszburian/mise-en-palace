@@ -65,6 +65,48 @@ const capturedEvidenceResolver = (freshness: EvidenceFreshness) =>
     }
   });
 
+const fixtureResidueCount = async (
+  client: ReturnType<typeof postgres>,
+  marker: string
+): Promise<number> => {
+  const smokeId = `${marker}-%`;
+  const rows = await client<{ count: number }[]>`
+    select count(*)::int as count
+    from (
+      select id::text from workspaces where slug = ${marker}
+      union all select id::text from projects where slug = ${marker}
+      union all select id::text from source_artifacts where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from source_chunks where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from source_claims where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from source_decisions where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from source_decision_edges where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from search_documents where metadata->>'smokeId' like ${smokeId}
+      union all select id::text from outbox_events where payload->>'smokeId' like ${smokeId}
+    ) fixture_rows
+  `;
+
+  return rows[0]?.count ?? 0;
+};
+
+const cleanupFixture = async (
+  client: ReturnType<typeof postgres>,
+  marker: string
+): Promise<number> => {
+  const smokeId = `${marker}-%`;
+
+  await client`delete from outbox_events where payload->>'smokeId' like ${smokeId}`;
+  await client`delete from source_decision_edges where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from search_documents where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from source_decisions where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from source_chunks where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from source_claims where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from source_artifacts where metadata->>'smokeId' like ${smokeId}`;
+  await client`delete from projects where slug = ${marker}`;
+  await client`delete from workspaces where slug = ${marker}`;
+
+  return fixtureResidueCount(client, marker);
+};
+
 const requiredPersistedRow = (
   rows: readonly PersistedDecisionCorpusRow[],
   decisionId: string
@@ -153,6 +195,7 @@ describe("decision corpus import evidence freshness boundary", () => {
       const marker = `decision-corpus-import-freshness-${crypto.randomUUID()}`;
       const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
       let runtime: DatabaseRuntime | undefined;
+      let residueCount: number | undefined;
 
       try {
         runtime = await createDatabaseRuntime({
@@ -211,10 +254,17 @@ describe("decision corpus import evidence freshness boundary", () => {
           }
         ]);
       } finally {
-        await runtime?.close();
-        await client`delete from workspaces where slug = ${marker}`;
-        await client.end();
+        try {
+          try {
+            await runtime?.close();
+          } finally {
+            residueCount = await cleanupFixture(client, marker);
+          }
+        } finally {
+          await client.end();
+        }
       }
+      expect(residueCount).toBe(0);
     }
   );
 });
