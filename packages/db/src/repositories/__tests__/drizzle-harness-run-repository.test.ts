@@ -34,6 +34,168 @@ const evalCandidate: EvalCandidateProposal = {
 };
 
 describe("DrizzleHarnessRunRepository", () => {
+  const executionRunRow = (
+    status: "planned" | "running" | "succeeded" | "failed" | "blocked" | "cancelled",
+    timestamps: { startedAt?: Date; completedAt?: Date } = {}
+  ) => {
+    const createdAt = new Date("2026-07-13T10:00:00.000Z");
+
+    return {
+      id: "execution-run-1",
+      harnessPlanId: "harness-plan-1",
+      adapter: "codex",
+      status,
+      startedAt: timestamps.startedAt ?? null,
+      completedAt: timestamps.completedAt ?? null,
+      metadata: {},
+      createdAt,
+      updatedAt: createdAt
+    };
+  };
+
+  const fakeExecutionRunDatabase = (row: ReturnType<typeof executionRunRow>) => {
+    const insertedValues: unknown[] = [];
+    const transactionClient = {
+      insert: () => ({
+        values: (values: unknown) => {
+          insertedValues.push(values);
+          return {
+            returning: async () => insertedValues.length === 1 ? [row] : []
+          };
+        }
+      }),
+      update: () => ({
+        set: () => ({
+          where: () => ({
+            returning: async () => [row]
+          })
+        })
+      })
+    };
+
+    return {
+      db: {
+        transaction: async <T>(callback: (tx: typeof transactionClient) => Promise<T>) =>
+          callback(transactionClient)
+      } as unknown as KrnDatabase,
+      insertedValues
+    };
+  };
+
+  it.fails("rejects an execution run created directly in a terminal state", async () => {
+    const fake = fakeExecutionRunDatabase(executionRunRow("succeeded"));
+
+    await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
+      harnessPlanId: "harness-plan-1",
+      adapter: "codex",
+      status: "succeeded",
+      initialEvent: {
+        sequence: 1,
+        type: "run.created",
+        message: "Run created"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+  });
+
+  it.fails("rejects a terminal execution run without start and completion timestamps", async () => {
+    const fake = fakeExecutionRunDatabase(executionRunRow("failed"));
+
+    await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
+      harnessPlanId: "harness-plan-1",
+      adapter: "codex",
+      status: "failed",
+      initialEvent: {
+        sequence: 1,
+        type: "run.created",
+        message: "Run created"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+  });
+
+  it.fails("rejects a terminal run reversal and an incoherent completion update", async () => {
+    const fake = fakeExecutionRunDatabase(executionRunRow("succeeded", {
+      startedAt: new Date("2026-07-13T10:00:00.000Z")
+    }));
+    const repository = new DrizzleHarnessRunRepository(fake.db);
+
+    await expect(repository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      status: "running",
+      event: {
+        sequence: 2,
+        type: "run.restarted",
+        message: "Run restarted"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+
+    await expect(repository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      status: "succeeded",
+      completedAt: "2026-07-13T09:59:00.000Z",
+      event: {
+        sequence: 3,
+        type: "run.completed",
+        message: "Run completed"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+  });
+
+  it.fails("rejects running without a start and completion before the start", async () => {
+    const missingStart = fakeExecutionRunDatabase(executionRunRow("running"));
+
+    await expect(new DrizzleHarnessRunRepository(missingStart.db).createExecutionRun({
+      harnessPlanId: "harness-plan-1",
+      adapter: "codex",
+      status: "running",
+      initialEvent: {
+        sequence: 1,
+        type: "run.started",
+        message: "Run started"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+
+    const completionBeforeStart = fakeExecutionRunDatabase(executionRunRow("running", {
+      startedAt: new Date("2026-07-13T10:00:00.000Z")
+    }));
+
+    await expect(new DrizzleHarnessRunRepository(completionBeforeStart.db).updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      status: "succeeded",
+      completedAt: "2026-07-13T09:59:00.000Z",
+      event: {
+        sequence: 2,
+        type: "run.completed",
+        message: "Run completed"
+      }
+    })).rejects.toThrow("execution run lifecycle");
+  });
+
+  it.fails("does not append a second event for a same-state retry", async () => {
+    const fake = fakeExecutionRunDatabase(executionRunRow("running"));
+    const repository = new DrizzleHarnessRunRepository(fake.db);
+
+    await repository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      status: "running",
+      event: {
+        sequence: 2,
+        type: "run.started",
+        message: "Run started"
+      }
+    });
+    await repository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      status: "running",
+      event: {
+        sequence: 2,
+        type: "run.started",
+        message: "Run started"
+      }
+    });
+
+    expect(fake.insertedValues).toHaveLength(1);
+  });
+
   it("exposes persisted run aggregate readback by execution run id", () => {
     expect(typeof DrizzleHarnessRunRepository.prototype.getHarnessRunByExecutionRunId).toBe(
       "function"
