@@ -59,6 +59,31 @@ describe("run-with-deadline", () => {
     }
   });
 
+  it("force-kills descendants after the shell exits on SIGTERM", async () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-deadline-stubborn-child-"));
+    const marker = join(fixtureRoot, "child-finished");
+
+    try {
+      const childScript = [
+        "process.on('SIGTERM', () => process.exit(0));",
+        `setTimeout(() => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'late'), 250);`,
+      ].join(" ");
+      const script = [
+        "const { spawn } = await import('node:child_process');",
+        `spawn(process.execPath, ['-e', ${JSON.stringify(childScript)}]);`,
+        "process.on('SIGTERM', () => process.exit(0));",
+        "setInterval(() => {}, 1000);",
+      ].join(" ");
+      const result = run(script, 50, 50);
+
+      expect(result.status).toBe(124);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      expect(existsSync(marker)).toBe(false);
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
   it("keeps the canonical verify:db command inside the bounded shell", () => {
     const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
       scripts?: Record<string, string>;

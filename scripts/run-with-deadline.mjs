@@ -90,7 +90,8 @@ const run = ({ timeoutMs, graceMs, command }) => new Promise((resolve, reject) =
   });
 
   child.once("close", (code, signal) => {
-    clearTimers();
+    clearTimeout(deadlineTimer);
+    if (!timedOut) clearTimeout(killTimer);
     resolve(exitCodeFor(timedOut, code, signal));
   });
 });
