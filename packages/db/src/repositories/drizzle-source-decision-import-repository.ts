@@ -1,13 +1,22 @@
-import { and, desc, eq, ne, or } from "drizzle-orm";
+import { createHash } from "node:crypto";
+
+import { and, asc, desc, eq, gt, isNotNull, ne, or, sql } from "drizzle-orm";
 import type {
   SourceDecisionImportLookup,
   SourceDecisionImportLookupInput,
   SourceDecisionImportReconciliation,
+  SourceDecisionImportReconciliationItems,
+  SourceDecisionImportReconciliationReport,
+  SourceDecisionImportReconciliationRow,
+  SourceDecisionImportReconciliationViolation,
   SourceDecisionImportRepository,
   SourceDecisionEvidenceLookup,
   SourceDecisionEvidenceFreshness,
   SourceDecisionEvidenceProvenance,
   SourceDecisionEvidenceStatus
+} from "@krn/core/repositories/internal";
+import {
+  sourceDecisionImportReconciliationLimitMaximum
 } from "@krn/core/repositories/internal";
 
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
@@ -202,6 +211,292 @@ const sourceEvidenceProvenanceFromMetadata = (
   };
 };
 
+const reconciliationCorpusDigest = (
+  identifiedManifestJson: string,
+  missingIdentityManifestJson: string
+): string => `sha256:${createHash("sha256")
+  .update(identifiedManifestJson)
+  .update("\u0000")
+  .update(missingIdentityManifestJson)
+  .digest("hex")}`;
+
+const boundedReconciliationItems = <T>(
+  totalCount: number,
+  items: readonly T[]
+): SourceDecisionImportReconciliationItems<T> => ({
+  totalCount,
+  returnedCount: items.length,
+  truncated: totalCount > items.length,
+  items
+});
+
+const assertReconciliationLimit = (limit: number): void => {
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > sourceDecisionImportReconciliationLimitMaximum
+  ) {
+    throw new Error(
+      `source decision import reconciliation limit must be between 1 and ${sourceDecisionImportReconciliationLimitMaximum}`
+    );
+  }
+};
+
+const reconciliationAfterImportPredicate = (afterImportId: string | undefined) =>
+  afterImportId === undefined
+    ? undefined
+    : gt(sourceArtifacts.importId, afterImportId);
+
+const requiredReconciliationImportIds = (
+  rows: readonly { importId: string | null }[]
+): readonly string[] => rows.map((row) => {
+  if (row.importId === null) {
+    throw new Error("source decision import reconciliation selected a null import ID");
+  }
+
+  return row.importId;
+});
+
+const nextReconciliationCursor = (
+  imports: SourceDecisionImportReconciliationItems<unknown>,
+  selectedImportIds: readonly string[]
+): string | null => imports.truncated
+  ? selectedImportIds[selectedImportIds.length - 1] ?? null
+  : null;
+
+const reconciliationCountsSql = (projectId: string) => ({
+  sourceChunkCount: sql<number>`(
+    select count(*)::int
+    from source_chunks reconciliation_chunk
+    where reconciliation_chunk.source_artifact_id = source_artifacts.id
+  )`,
+  sourceClaimCount: sql<number>`(
+    select count(*)::int
+    from source_claims reconciliation_claim
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+  )`,
+  sourceClaimStatus: sql<string | null>`(
+    select reconciliation_claim.status::text
+    from source_claims reconciliation_claim
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+    order by reconciliation_claim.id
+    limit 1
+  )`,
+  sourceDecisionCount: sql<number>`(
+    select count(*)::int
+    from source_decisions reconciliation_decision
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_decision.source_claim_id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_decision.project_id = ${projectId}
+  )`,
+  sourceDecisionStatus: sql<string | null>`(
+    select reconciliation_decision.status::text
+    from source_decisions reconciliation_decision
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_decision.source_claim_id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_decision.project_id = ${projectId}
+    order by reconciliation_decision.id
+    limit 1
+  )`,
+  sourceDecisionEdgeCount: sql<number>`(
+    select count(*)::int
+    from source_decision_edges reconciliation_edge
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_edge.source_claim_id
+    inner join source_decisions reconciliation_decision
+      on reconciliation_decision.id = reconciliation_edge.source_decision_id
+      and reconciliation_decision.source_claim_id = reconciliation_claim.id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_decision.project_id = ${projectId}
+  )`,
+  searchDocumentCount: sql<number>`(
+    select count(*)::int
+    from search_documents reconciliation_document
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_document.source_claim_id
+    inner join source_decisions reconciliation_decision
+      on reconciliation_decision.id = reconciliation_document.source_decision_id
+      and reconciliation_decision.source_claim_id = reconciliation_claim.id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_decision.project_id = ${projectId}
+      and reconciliation_document.project_id = ${projectId}
+  )`,
+  searchDocumentValidityStatus: sql<string | null>`(
+    select reconciliation_document.validity_status::text
+    from search_documents reconciliation_document
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_document.source_claim_id
+    inner join source_decisions reconciliation_decision
+      on reconciliation_decision.id = reconciliation_document.source_decision_id
+      and reconciliation_decision.source_claim_id = reconciliation_claim.id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_decision.project_id = ${projectId}
+      and reconciliation_document.project_id = ${projectId}
+    order by reconciliation_document.id
+    limit 1
+  )`,
+  sourceRejectionCount: sql<number>`(
+    select count(*)::int
+    from source_rejections reconciliation_rejection
+    inner join source_claims reconciliation_claim
+      on reconciliation_claim.id = reconciliation_rejection.source_claim_id
+    where reconciliation_claim.source_artifact_id = source_artifacts.id
+      and reconciliation_rejection.project_id = ${projectId}
+  )`
+});
+
+const reconciliationLifecycleCompleteSql = (projectId: string) => {
+  const counts = reconciliationCountsSql(projectId);
+
+  return sql<boolean>`(
+    ${sourceArtifacts.importRowId} is not null
+    and ${counts.sourceChunkCount} = 1
+    and ${counts.sourceClaimCount} = 1
+    and ${counts.sourceDecisionCount} = 1
+    and (
+      (
+        ${counts.sourceDecisionStatus} = 'adopt'
+        and ${counts.sourceClaimStatus} = 'accepted'
+        and ${counts.sourceDecisionEdgeCount} = 1
+        and ${counts.searchDocumentCount} = 1
+        and ${counts.searchDocumentValidityStatus} = 'active'
+        and ${counts.sourceRejectionCount} = 0
+      )
+      or (
+        ${counts.sourceDecisionStatus} = 'defer'
+        and ${counts.sourceClaimStatus} = 'deprecated'
+        and ${counts.sourceDecisionEdgeCount} = 0
+        and ${counts.searchDocumentCount} = 1
+        and ${counts.searchDocumentValidityStatus} = 'expired'
+        and ${counts.sourceRejectionCount} = 0
+      )
+      or (
+        ${counts.sourceDecisionStatus} = 'reject'
+        and ${counts.sourceClaimStatus} = 'rejected'
+        and ${counts.sourceDecisionEdgeCount} = 0
+        and ${counts.searchDocumentCount} = 0
+        and ${counts.sourceRejectionCount} = 1
+      )
+    )
+  )`;
+};
+
+interface ReconciliationDiagnosticRow {
+  sourceArtifactId: string;
+  decisionId: string | null;
+  contentHash: string;
+  sourceChunkCount: number;
+  sourceChunkIds: string[];
+  sourceClaimCount: number;
+  sourceClaimIds: string[];
+  sourceClaimStatus: string | null;
+  sourceDecisionCount: number;
+  sourceDecisionIds: string[];
+  sourceDecisionStatus: string | null;
+  sourceDecisionEdgeCount: number;
+  sourceDecisionEdgeIds: string[];
+  searchDocumentCount: number;
+  searchDocumentIds: string[];
+  searchDocumentValidityStatus: string | null;
+  sourceRejectionCount: number;
+  sourceRejectionIds: string[];
+}
+
+const reconciliationCardinalityViolations = (
+  row: ReconciliationDiagnosticRow
+): SourceDecisionImportReconciliationViolation[] => {
+  const violations: SourceDecisionImportReconciliationViolation[] = [];
+
+  if (row.decisionId === null) violations.push("missing_import_row_id");
+  if (row.sourceChunkCount !== 1) violations.push("source_chunk_cardinality");
+  if (row.sourceClaimCount !== 1) violations.push("source_claim_cardinality");
+  if (row.sourceDecisionCount !== 1) violations.push("source_decision_cardinality");
+
+  return violations;
+};
+
+const expectedReconciliationLifecycle = (
+  sourceDecisionStatus: string | null
+) => sourceDecisionStatus === "adopt"
+  ? { claim: "accepted", edges: 1, documents: 1, validity: "active", rejections: 0 }
+  : sourceDecisionStatus === "defer"
+    ? { claim: "deprecated", edges: 0, documents: 1, validity: "expired", rejections: 0 }
+    : { claim: "rejected", edges: 0, documents: 0, validity: null, rejections: 1 };
+
+const reconciliationLifecycleViolations = (
+  row: ReconciliationDiagnosticRow
+): SourceDecisionImportReconciliationViolation[] => {
+  const violations: SourceDecisionImportReconciliationViolation[] = [];
+  const expected = expectedReconciliationLifecycle(row.sourceDecisionStatus);
+
+  if (row.sourceClaimCount === 1 && row.sourceClaimStatus !== expected.claim) {
+    violations.push("source_claim_status");
+  }
+  if (row.sourceDecisionEdgeCount !== expected.edges) {
+    violations.push("source_decision_edge_cardinality");
+  }
+  if (row.searchDocumentCount !== expected.documents) {
+    violations.push("search_document_cardinality");
+  }
+  if (
+    expected.validity !== null &&
+    row.searchDocumentCount === 1 &&
+    row.searchDocumentValidityStatus !== expected.validity
+  ) {
+    violations.push("search_document_validity");
+  }
+  if (row.sourceRejectionCount !== expected.rejections) {
+    violations.push("source_rejection_cardinality");
+  }
+
+  return violations;
+};
+
+const reconciliationViolations = (
+  row: ReconciliationDiagnosticRow
+): SourceDecisionImportReconciliationViolation[] => {
+  const violations = reconciliationCardinalityViolations(row);
+
+  if (row.sourceDecisionCount === 1) {
+    violations.push(...reconciliationLifecycleViolations(row));
+  }
+
+  return violations;
+};
+
+const reconciliationRowFromDiagnostic = (
+  row: ReconciliationDiagnosticRow
+): SourceDecisionImportReconciliationRow => {
+  const violations = reconciliationViolations(row);
+
+  return {
+    sourceArtifactId: row.sourceArtifactId,
+    decisionId: row.decisionId,
+    contentHash: row.contentHash,
+    lifecycle: violations.length === 0 ? "complete" : "partial",
+    violations,
+    components: {
+      sourceChunks: boundedReconciliationItems(row.sourceChunkCount, row.sourceChunkIds),
+      sourceClaims: boundedReconciliationItems(row.sourceClaimCount, row.sourceClaimIds),
+      sourceDecisions: boundedReconciliationItems(row.sourceDecisionCount, row.sourceDecisionIds),
+      sourceDecisionEdges: boundedReconciliationItems(
+        row.sourceDecisionEdgeCount,
+        row.sourceDecisionEdgeIds
+      ),
+      searchDocuments: boundedReconciliationItems(
+        row.searchDocumentCount,
+        row.searchDocumentIds
+      ),
+      sourceRejections: boundedReconciliationItems(
+        row.sourceRejectionCount,
+        row.sourceRejectionIds
+      )
+    }
+  };
+};
+
 const sourceEvidenceReasonFromMetadata = (
   metadata: Record<string, unknown>
 ): string | undefined => {
@@ -262,7 +557,10 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       .from(sourceArtifacts)
       .leftJoin(sourceChunks, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
       .leftJoin(sourceClaims, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
-      .leftJoin(sourceDecisions, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .leftJoin(sourceDecisions, and(
+        eq(sourceDecisions.sourceClaimId, sourceClaims.id),
+        eq(sourceDecisions.projectId, input.projectId)
+      ))
       .leftJoin(sourceDecisionEdges, and(
         eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id),
         eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id)
@@ -271,16 +569,20 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
         searchDocuments,
         and(
           eq(searchDocuments.sourceClaimId, sourceClaims.id),
-          eq(searchDocuments.sourceDecisionId, sourceDecisions.id)
+          eq(searchDocuments.sourceDecisionId, sourceDecisions.id),
+          eq(searchDocuments.projectId, input.projectId)
         )
       )
-      .leftJoin(sourceRejections, eq(sourceRejections.sourceClaimId, sourceClaims.id))
+      .leftJoin(sourceRejections, and(
+        eq(sourceRejections.sourceClaimId, sourceClaims.id),
+        eq(sourceRejections.projectId, input.projectId)
+      ))
       .where(and(
         eq(sourceArtifacts.projectId, input.projectId),
         eq(sourceArtifacts.importId, input.importId),
         eq(sourceArtifacts.importRowId, input.decisionId)
       ))
-      ;
+      .limit(2);
     const row = rows[0];
 
     if (row === undefined) {
@@ -308,7 +610,8 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     const searchDocument = row.searchDocument;
     const sourceRejection = row.sourceRejection;
     const lifecycleComplete = row.sourceDecision.status === "adopt"
-      ? sourceDecisionEdge !== null &&
+      ? row.sourceClaim.status === "accepted" &&
+        sourceDecisionEdge !== null &&
         searchDocument !== null &&
         searchDocument.validityStatus === "active" &&
         sourceRejection === null
@@ -376,95 +679,247 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     };
   }
 
-  async listSourceDecisionImportReconciliation(input: {
-    projectId: string;
-  }): Promise<readonly SourceDecisionImportReconciliation[]> {
-    const rows = await this.db
+  private async listReconciliationDiagnostics(
+    projectId: string,
+    importId: string,
+    limit: number
+  ): Promise<ReconciliationDiagnosticRow[]> {
+    const counts = reconciliationCountsSql(projectId);
+    const lifecycleComplete = reconciliationLifecycleCompleteSql(projectId);
+
+    return this.db
       .select({
-        importId: sourceArtifacts.importId,
-        importRowId: sourceArtifacts.importRowId,
+        sourceArtifactId: sourceArtifacts.id,
+        decisionId: sourceArtifacts.importRowId,
         contentHash: sourceArtifacts.contentHash,
-        sourceClaimId: sourceClaims.id,
-        sourceDecisionId: sourceDecisions.id,
-        sourceDecisionStatus: sourceDecisions.status,
-        sourceDecisionEdgeId: sourceDecisionEdges.id,
-        searchDocumentId: searchDocuments.id,
-        searchDocumentValidityStatus: searchDocuments.validityStatus,
-        sourceRejectionId: sourceRejections.id,
-        sourceClaimStatus: sourceClaims.status,
-        sourceChunkId: sourceChunks.id
+        ...counts,
+        sourceChunkIds: sql<string[]>`array(
+          select reconciliation_chunk.id::text
+          from source_chunks reconciliation_chunk
+          where reconciliation_chunk.source_artifact_id = source_artifacts.id
+          order by reconciliation_chunk.id
+          limit ${limit}
+        )`,
+        sourceClaimIds: sql<string[]>`array(
+          select reconciliation_claim.id::text
+          from source_claims reconciliation_claim
+          where reconciliation_claim.source_artifact_id = source_artifacts.id
+          order by reconciliation_claim.id
+          limit ${limit}
+        )`,
+        sourceDecisionIds: sql<string[]>`array(
+          select reconciliation_decision.id::text
+          from source_decisions reconciliation_decision
+          inner join source_claims reconciliation_claim
+            on reconciliation_claim.id = reconciliation_decision.source_claim_id
+          where reconciliation_claim.source_artifact_id = source_artifacts.id
+            and reconciliation_decision.project_id = ${projectId}
+          order by reconciliation_decision.id
+          limit ${limit}
+        )`,
+        sourceDecisionEdgeIds: sql<string[]>`array(
+          select reconciliation_edge.id::text
+          from source_decision_edges reconciliation_edge
+          inner join source_claims reconciliation_claim
+            on reconciliation_claim.id = reconciliation_edge.source_claim_id
+          inner join source_decisions reconciliation_decision
+            on reconciliation_decision.id = reconciliation_edge.source_decision_id
+            and reconciliation_decision.source_claim_id = reconciliation_claim.id
+          where reconciliation_claim.source_artifact_id = source_artifacts.id
+            and reconciliation_decision.project_id = ${projectId}
+          order by reconciliation_edge.id
+          limit ${limit}
+        )`,
+        searchDocumentIds: sql<string[]>`array(
+          select reconciliation_document.id::text
+          from search_documents reconciliation_document
+          inner join source_claims reconciliation_claim
+            on reconciliation_claim.id = reconciliation_document.source_claim_id
+          inner join source_decisions reconciliation_decision
+            on reconciliation_decision.id = reconciliation_document.source_decision_id
+            and reconciliation_decision.source_claim_id = reconciliation_claim.id
+          where reconciliation_claim.source_artifact_id = source_artifacts.id
+            and reconciliation_decision.project_id = ${projectId}
+            and reconciliation_document.project_id = ${projectId}
+          order by reconciliation_document.id
+          limit ${limit}
+        )`,
+        sourceRejectionIds: sql<string[]>`array(
+          select reconciliation_rejection.id::text
+          from source_rejections reconciliation_rejection
+          inner join source_claims reconciliation_claim
+            on reconciliation_claim.id = reconciliation_rejection.source_claim_id
+          where reconciliation_claim.source_artifact_id = source_artifacts.id
+            and reconciliation_rejection.project_id = ${projectId}
+          order by reconciliation_rejection.id
+          limit ${limit}
+        )`
       })
       .from(sourceArtifacts)
-      .leftJoin(sourceChunks, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
-      .leftJoin(sourceClaims, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
-      .leftJoin(sourceDecisions, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
-      .leftJoin(sourceDecisionEdges, and(
-        eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id),
-        eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id)
-      ))
-      .leftJoin(searchDocuments, and(
-        eq(searchDocuments.sourceClaimId, sourceClaims.id),
-        eq(searchDocuments.sourceDecisionId, sourceDecisions.id)
-      ))
-      .leftJoin(sourceRejections, eq(sourceRejections.sourceClaimId, sourceClaims.id))
       .where(and(
-        eq(sourceArtifacts.projectId, input.projectId)
+        eq(sourceArtifacts.projectId, projectId),
+        eq(sourceArtifacts.importId, importId)
+      ))
+      .orderBy(
+        asc(lifecycleComplete),
+        sql`${sourceArtifacts.importRowId} asc nulls first`,
+        asc(sourceArtifacts.id)
+      )
+      .limit(limit);
+  }
+
+  private async findEquivalentImportIds(
+    projectId: string,
+    importId: string,
+    identifiedManifestJson: string,
+    limit: number
+  ): Promise<SourceDecisionImportReconciliationItems<string>> {
+    const equivalentImportRows = await this.db
+      .select({
+        importId: sourceArtifacts.importId,
+        totalCount: sql<number>`count(*) over()::int`
+      })
+      .from(sourceArtifacts)
+      .where(and(
+        eq(sourceArtifacts.projectId, projectId),
+        isNotNull(sourceArtifacts.importId),
+        ne(sourceArtifacts.importId, importId)
+      ))
+      .groupBy(sourceArtifacts.importId)
+      .having(sql`
+        count(*) filter (where ${sourceArtifacts.importRowId} is null) = 0
+        and coalesce(
+          jsonb_object_agg(${sourceArtifacts.importRowId}, ${sourceArtifacts.contentHash})
+            filter (where ${sourceArtifacts.importRowId} is not null),
+          '{}'::jsonb
+        ) = ${identifiedManifestJson}::jsonb
+      `)
+      .orderBy(asc(sourceArtifacts.importId))
+      .limit(limit);
+    const equivalentImportIds = equivalentImportRows.flatMap(
+      (row) => row.importId === null ? [] : [row.importId]
+    );
+
+    return boundedReconciliationItems(
+      equivalentImportRows[0]?.totalCount ?? 0,
+      equivalentImportIds
+    );
+  }
+
+  private async summarizeImport(
+    projectId: string,
+    importId: string
+  ): Promise<{
+    rowCount: number;
+    completeRowCount: number;
+    missingIdentityCount: number;
+    identifiedManifestJson: string;
+    missingIdentityManifestJson: string;
+  }> {
+    const lifecycleComplete = reconciliationLifecycleCompleteSql(projectId);
+    const rows = await this.db
+      .select({
+        rowCount: sql<number>`count(*)::int`,
+        completeRowCount: sql<number>`count(*) filter (where ${lifecycleComplete})::int`,
+        missingIdentityCount: sql<number>`count(*) filter (
+          where ${sourceArtifacts.importRowId} is null
+        )::int`,
+        identifiedManifestJson: sql<string>`coalesce(
+          jsonb_object_agg(${sourceArtifacts.importRowId}, ${sourceArtifacts.contentHash})
+            filter (where ${sourceArtifacts.importRowId} is not null),
+          '{}'::jsonb
+        )::text`,
+        missingIdentityManifestJson: sql<string>`coalesce(
+          jsonb_object_agg(${sourceArtifacts.id}::text, ${sourceArtifacts.contentHash})
+            filter (where ${sourceArtifacts.importRowId} is null),
+          '{}'::jsonb
+        )::text`
+      })
+      .from(sourceArtifacts)
+      .where(and(
+        eq(sourceArtifacts.projectId, projectId),
+        eq(sourceArtifacts.importId, importId)
       ));
-    const grouped = new Map<string, {
-      rowCount: number;
-      completeRowCount: number;
-      decisionIds: Set<string>;
-      contentHashes: Set<string>;
-    }>();
+    const summary = rows[0];
 
-    for (const row of rows) {
-      if (row.importId === null || row.importRowId === null) {
-        continue;
-      }
-
-      const group = grouped.get(row.importId) ?? {
-        rowCount: 0,
-        completeRowCount: 0,
-        decisionIds: new Set<string>(),
-        contentHashes: new Set<string>()
-      };
-      group.rowCount += 1;
-      group.contentHashes.add(row.contentHash);
-      group.decisionIds.add(row.importRowId);
-      const complete = row.sourceChunkId !== null &&
-        row.sourceClaimId !== null &&
-        row.sourceDecisionId !== null &&
-        (row.sourceDecisionStatus === "adopt"
-          ? row.sourceDecisionEdgeId !== null &&
-            row.searchDocumentId !== null &&
-            row.searchDocumentValidityStatus === "active" &&
-            row.sourceRejectionId === null
-          : row.sourceDecisionStatus === "defer"
-            ? row.sourceDecisionEdgeId === null &&
-              row.searchDocumentId !== null &&
-              row.searchDocumentValidityStatus === "expired" &&
-              row.sourceRejectionId === null &&
-              row.sourceClaimStatus === "deprecated"
-            : row.sourceDecisionStatus === "reject" &&
-              row.sourceDecisionEdgeId === null &&
-              row.searchDocumentId === null &&
-              row.sourceRejectionId !== null &&
-              row.sourceClaimStatus === "rejected");
-      if (complete) {
-        group.completeRowCount += 1;
-      }
-      grouped.set(row.importId, group);
+    if (summary === undefined) {
+      throw new Error(`source decision import reconciliation lost import ${importId}`);
     }
 
-    return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right)).map(
-      ([importId, group]): SourceDecisionImportReconciliation => ({
-        importId,
-        rowCount: group.rowCount,
-        completeRowCount: group.completeRowCount,
-        partialRowCount: group.rowCount - group.completeRowCount,
-        decisionIds: [...group.decisionIds].sort(),
-        contentHashes: [...group.contentHashes].sort()
+    return summary;
+  }
+
+  private async reconcileImport(
+    projectId: string,
+    importId: string,
+    limit: number
+  ): Promise<SourceDecisionImportReconciliation> {
+    const summary = await this.summarizeImport(projectId, importId);
+    const [diagnostics, equivalentImportIds] = await Promise.all([
+      this.listReconciliationDiagnostics(projectId, importId, limit),
+      summary.missingIdentityCount === 0
+        ? this.findEquivalentImportIds(
+            projectId,
+            importId,
+            summary.identifiedManifestJson,
+            limit
+          )
+        : Promise.resolve(boundedReconciliationItems(0, []))
+    ]);
+    const rows = diagnostics.map(reconciliationRowFromDiagnostic);
+    const partialRowCount = summary.rowCount - summary.completeRowCount;
+
+    return {
+      importId,
+      lifecycle: partialRowCount === 0 ? "complete" : "partial",
+      corpusDigest: reconciliationCorpusDigest(
+        summary.identifiedManifestJson,
+        summary.missingIdentityManifestJson
+      ),
+      rowCount: summary.rowCount,
+      completeRowCount: summary.completeRowCount,
+      partialRowCount,
+      equivalentImportIds,
+      rows: boundedReconciliationItems(summary.rowCount, rows)
+    };
+  }
+
+  // fallow-ignore-next-line unused-class-member -- public read-snapshot repository boundary consumed through the interface by CLI and DB smoke
+  async listSourceDecisionImportReconciliation(input: {
+    projectId: string;
+    limit: number;
+    afterImportId?: string;
+  }): Promise<SourceDecisionImportReconciliationReport> {
+    assertReconciliationLimit(input.limit);
+
+    const importIdRows = await this.db
+      .select({
+        importId: sourceArtifacts.importId,
+        totalCount: sql<number>`count(*) over()::int`
       })
+      .from(sourceArtifacts)
+      .where(and(
+        eq(sourceArtifacts.projectId, input.projectId),
+        isNotNull(sourceArtifacts.importId),
+        reconciliationAfterImportPredicate(input.afterImportId)
+      ))
+      .groupBy(sourceArtifacts.importId)
+      .orderBy(asc(sourceArtifacts.importId))
+      .limit(input.limit);
+    const selectedImportIds = requiredReconciliationImportIds(importIdRows);
+    const imports = await Promise.all(selectedImportIds.map(
+      (importId) => this.reconcileImport(input.projectId, importId, input.limit)
+    ));
+    const boundedImports = boundedReconciliationItems(
+      importIdRows[0]?.totalCount ?? 0,
+      imports
     );
+
+    return {
+      limit: input.limit,
+      afterImportId: input.afterImportId ?? null,
+      nextAfterImportId: nextReconciliationCursor(boundedImports, selectedImportIds),
+      imports: boundedImports
+    };
   }
 }

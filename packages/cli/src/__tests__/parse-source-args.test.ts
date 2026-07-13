@@ -291,6 +291,67 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses bounded source decision reconciliation options", () => {
+    expect(parseSourceArgs([
+      "decision",
+      "reconcile",
+      "--project",
+      "project-explicit",
+      "--limit",
+      "12",
+      "--after",
+      "import-before",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "sourceDecisionReconcile",
+        projectId: "project-explicit",
+        limit: 12,
+        afterImportId: "import-before",
+        json: true
+      }
+    });
+
+    expect(parseSourceArgs([
+      "decision",
+      "reconcile",
+      "--project",
+      "project-explicit",
+      "--limit",
+      "0"
+    ])).toEqual({
+      error: "--limit must be a positive integer"
+    });
+
+    expect(parseSourceArgs([
+      "decision",
+      "reconcile",
+      "--project",
+      "project-explicit",
+      "--limit",
+      "26"
+    ])).toEqual({
+      error: "--limit must not exceed 25"
+    });
+
+    expect(parseSourceArgs(["decision", "reconcile"])).toEqual({
+      error: expect.stringContaining(
+        "Usage: krn source decision reconcile --project <project-id>"
+      )
+    });
+
+    expect(parseSourceArgs([
+      "decision",
+      "reconcile",
+      "--project",
+      "project-explicit",
+      "--after",
+      " "
+    ])).toEqual({
+      error: "--after requires a non-empty import ID"
+    });
+  });
+
   it("rejects source commands missing required fields", () => {
     const invalidCases = [
       {
@@ -453,6 +514,11 @@ describe("parseSourceArgs", () => {
     expect(parseSourceArgs(["decision", "gaps", "--help"])).toEqual({
       command: {
         kind: "sourceDecisionGapsHelp"
+      }
+    });
+    expect(parseSourceArgs(["decision", "reconcile", "--help"])).toEqual({
+      command: {
+        kind: "sourceDecisionReconcileHelp"
       }
     });
     expect(parseSourceArgs(["decision", "import", "--help"])).toEqual({

@@ -89,6 +89,10 @@ export interface ListSearchDocumentsForSourceLinksInput {
   limit?: number;
 }
 
+export type SourceDecisionImportReadSnapshotWork<T> = (
+  repository: SourceDecisionImportRepository
+) => Promise<T>;
+
 export interface DatabaseRuntime {
   workspaceId: string;
   projectId: string;
@@ -99,6 +103,9 @@ export interface DatabaseRuntime {
   withTransaction?<T>(
     lockKey: string,
     work: (runtime: DatabaseRuntimeTransaction) => Promise<T>
+  ): Promise<T>;
+  withSourceDecisionImportReadSnapshot?<T>(
+    work: SourceDecisionImportReadSnapshotWork<T>
   ): Promise<T>;
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository: Pick<
@@ -677,6 +684,28 @@ const createDatabaseRuntimeForClient = async (
         new DrizzleSourceDecisionImportRepository(tx)
       ));
     }),
+    withSourceDecisionImportReadSnapshot: async <T>(
+      work: SourceDecisionImportReadSnapshotWork<T>
+    ) => db.transaction(
+      async (tx) => {
+        const settings = await tx.execute<{
+          isolationLevel: string;
+          readOnly: string;
+        }>(sql`
+          select
+            current_setting('transaction_isolation') as "isolationLevel",
+            current_setting('transaction_read_only') as "readOnly"
+        `);
+        const snapshot = settings[0];
+
+        if (snapshot?.isolationLevel !== "repeatable read" || snapshot.readOnly !== "on") {
+          throw new Error("source decision import read snapshot is not repeatable-read and read-only");
+        }
+
+        return work(new DrizzleSourceDecisionImportRepository(tx));
+      },
+      { isolationLevel: "repeatable read", accessMode: "read only" }
+    ),
     memoryRepository,
     maintenanceQueueRepository,
     observationRepository,

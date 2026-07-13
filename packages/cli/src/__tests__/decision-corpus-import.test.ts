@@ -527,7 +527,18 @@ describe("runDecisionCorpusImport", () => {
         status: "missing" as const,
         evidenceRef
       }),
-      getSourceDecisionImportRow: async () => ({ status: "missing" })
+      getSourceDecisionImportRow: async () => ({ status: "missing" }),
+      listSourceDecisionImportReconciliation: async ({ limit }) => ({
+        limit,
+        afterImportId: null,
+        nextAfterImportId: null,
+        imports: {
+          totalCount: 0,
+          returnedCount: 0,
+          truncated: false,
+          items: []
+        }
+      })
     };
     const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
       _lockKey,
@@ -720,7 +731,18 @@ describe("runDecisionCorpusImport", () => {
         status: "missing" as const,
         evidenceRef
       }),
-      getSourceDecisionImportRow: async () => ({ status: "missing" })
+      getSourceDecisionImportRow: async () => ({ status: "missing" }),
+      listSourceDecisionImportReconciliation: async ({ limit }) => ({
+        limit,
+        afterImportId: null,
+        nextAfterImportId: null,
+        imports: {
+          totalCount: 0,
+          returnedCount: 0,
+          truncated: false,
+          items: []
+        }
+      })
     };
     const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
       _lockKey,

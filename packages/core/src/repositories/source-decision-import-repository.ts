@@ -37,13 +37,60 @@ export interface SourceDecisionImportLookupInput {
   decisionId: string;
 }
 
+export const sourceDecisionImportReconciliationLimitMaximum = 25;
+
+export interface SourceDecisionImportReconciliationItems<T> {
+  totalCount: number;
+  returnedCount: number;
+  truncated: boolean;
+  items: readonly T[];
+}
+
+export type SourceDecisionImportReconciliationViolation =
+  | "missing_import_row_id"
+  | "source_chunk_cardinality"
+  | "source_claim_cardinality"
+  | "source_decision_cardinality"
+  | "source_claim_status"
+  | "source_decision_edge_cardinality"
+  | "search_document_cardinality"
+  | "search_document_validity"
+  | "source_rejection_cardinality";
+
+export interface SourceDecisionImportReconciliationComponents {
+  sourceChunks: SourceDecisionImportReconciliationItems<string>;
+  sourceClaims: SourceDecisionImportReconciliationItems<string>;
+  sourceDecisions: SourceDecisionImportReconciliationItems<string>;
+  sourceDecisionEdges: SourceDecisionImportReconciliationItems<string>;
+  searchDocuments: SourceDecisionImportReconciliationItems<string>;
+  sourceRejections: SourceDecisionImportReconciliationItems<string>;
+}
+
+export interface SourceDecisionImportReconciliationRow {
+  sourceArtifactId: string;
+  decisionId: string | null;
+  contentHash: string;
+  lifecycle: "complete" | "partial";
+  violations: readonly SourceDecisionImportReconciliationViolation[];
+  components: SourceDecisionImportReconciliationComponents;
+}
+
 export interface SourceDecisionImportReconciliation {
   importId: string;
+  lifecycle: "complete" | "partial";
+  corpusDigest: string;
   rowCount: number;
   completeRowCount: number;
   partialRowCount: number;
-  decisionIds: readonly string[];
-  contentHashes: readonly string[];
+  equivalentImportIds: SourceDecisionImportReconciliationItems<string>;
+  rows: SourceDecisionImportReconciliationItems<SourceDecisionImportReconciliationRow>;
+}
+
+export interface SourceDecisionImportReconciliationReport {
+  limit: number;
+  afterImportId: string | null;
+  nextAfterImportId: string | null;
+  imports: SourceDecisionImportReconciliationItems<SourceDecisionImportReconciliation>;
 }
 
 export interface SourceDecisionImportReadback {
@@ -94,5 +141,7 @@ export interface SourceDecisionImportRepository {
 
   listSourceDecisionImportReconciliation(input: {
     projectId: ProjectId;
-  }): Promise<readonly SourceDecisionImportReconciliation[]>;
+    limit: number;
+    afterImportId?: string;
+  }): Promise<SourceDecisionImportReconciliationReport>;
 }

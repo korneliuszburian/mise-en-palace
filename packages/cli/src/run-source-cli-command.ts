@@ -33,20 +33,20 @@ import {
   runSourceDecisionImportCommand
 } from "./run-source-decision-import-command.js";
 import {
+  runSourceDecisionReconcileCommand
+} from "./run-source-decision-reconcile-command.js";
+import {
   runSourceSearchCommand
 } from "./run-source-search-command.js";
 
-type SourceCliCommand = Extract<
-  CliCommand,
-  | { kind: "sourceClaimAdd" }
-  | { kind: "sourceArtifactPreview" }
-  | { kind: "sourceClaimEdges" }
-  | { kind: "sourceSearch" }
-  | { kind: "sourceDecisionLink" }
-  | { kind: "sourceDecisionAdopt" }
-  | { kind: "sourceDecisionGaps" }
-  | { kind: "sourceDecisionImport" }
-  | { kind: "sourceClaimReject" }
+type SourceCliCommand = Exclude<
+  Extract<CliCommand, { kind: `source${string}` }>,
+  { kind: `${string}Help` }
+>;
+
+type SourceDecisionCliCommand = Extract<
+  SourceCliCommand,
+  { kind: `sourceDecision${string}` }
 >;
 
 interface SourceCliCommandContext {
@@ -97,17 +97,30 @@ const standardSourceInput = (context: SourceCliCommandContext) => ({
   ...databaseRuntimeOption(context)
 });
 
-const isSourceCliCommand = (command: CliCommand): command is SourceCliCommand => (
-  command.kind === "sourceClaimAdd" ||
-  command.kind === "sourceArtifactPreview" ||
-  command.kind === "sourceClaimEdges" ||
-    command.kind === "sourceSearch" ||
-    command.kind === "sourceDecisionLink" ||
-    command.kind === "sourceDecisionAdopt" ||
-    command.kind === "sourceDecisionGaps" ||
-    command.kind === "sourceDecisionImport" ||
-    command.kind === "sourceClaimReject"
-);
+const unreachableSourceCommand = (command: never): never => {
+  throw new Error(`Unreachable source command: ${JSON.stringify(command)}`);
+};
+
+// fallow-ignore-next-line complexity -- exhaustive discriminant selection keeps source routing compiler-checked
+const selectSourceCliCommand = (
+  command: CliCommand
+): SourceCliCommand | undefined => {
+  switch (command.kind) {
+    case "sourceClaimAdd":
+    case "sourceArtifactPreview":
+    case "sourceClaimEdges":
+    case "sourceSearch":
+    case "sourceDecisionLink":
+    case "sourceDecisionAdopt":
+    case "sourceDecisionGaps":
+    case "sourceDecisionReconcile":
+    case "sourceDecisionImport":
+    case "sourceClaimReject":
+      return command;
+    default:
+      return undefined;
+  }
+};
 
 const sourceFallbackMessages = {
   sourceClaimAdd: "Unknown source claim error",
@@ -117,96 +130,111 @@ const sourceFallbackMessages = {
   sourceDecisionLink: "Unknown source decision link error",
   sourceDecisionAdopt: "Unknown source decision adopt error",
   sourceDecisionGaps: "Unknown source decision gaps error",
+  sourceDecisionReconcile: "Unknown source decision reconcile error",
   sourceDecisionImport: "Unknown source decision import error",
   sourceClaimReject: "Unknown source claim reject error"
 } satisfies Record<SourceCliCommand["kind"], string>;
 
+const runSourceDecisionCommand = async (
+  command: SourceDecisionCliCommand,
+  context: SourceCliCommandContext
+): Promise<SourceCommandOutput> => {
+  switch (command.kind) {
+    case "sourceDecisionLink":
+      return runSourceDecisionLinkCommand({
+        ...standardSourceInput(context),
+        command
+      });
+    case "sourceDecisionAdopt":
+      return runSourceDecisionAdoptCommand({
+        ...standardSourceInput(context),
+        command
+      });
+    case "sourceDecisionGaps":
+      return runSourceDecisionGapsCommand({
+        ...standardSourceInput(context),
+        cwd: context.cwd,
+        command
+      });
+    case "sourceDecisionReconcile":
+      return runSourceDecisionReconcileCommand({
+        ...standardSourceInput(context),
+        cwd: context.cwd,
+        command
+      });
+    case "sourceDecisionImport":
+      return runSourceDecisionImportCommand({
+        ...standardSourceInput(context),
+        cwd: context.cwd,
+        command
+      });
+    default:
+      return unreachableSourceCommand(command);
+  }
+};
+
+// fallow-ignore-next-line complexity -- exhaustive source command dispatch preserves compiler-checked handler coverage
 const runSelectedSourceCommand = async (
   command: SourceCliCommand,
   context: SourceCliCommandContext
 ): Promise<SourceCommandOutput> => {
-  if (command.kind === "sourceClaimAdd") {
-    return runSourceClaimAddCommand({
-      ...standardSourceInput(context),
-      cwd: context.cwd,
-      command
-    });
+  switch (command.kind) {
+    case "sourceClaimAdd":
+      return runSourceClaimAddCommand({
+        ...standardSourceInput(context),
+        cwd: context.cwd,
+        command
+      });
+    case "sourceArtifactPreview":
+      return runSourceArtifactPreviewCommand({
+        cwd: context.cwd,
+        env: context.env,
+        now: context.now,
+        ...databaseRuntimeOption(context),
+        command
+      });
+    case "sourceClaimEdges":
+      return runSourceClaimEdgesCommand({
+        ...standardSourceInput(context),
+        command
+      });
+    case "sourceSearch":
+      return runSourceSearchCommand({
+        cwd: context.cwd,
+        ...standardSourceInput(context),
+        command
+      });
+    case "sourceDecisionLink":
+    case "sourceDecisionAdopt":
+    case "sourceDecisionGaps":
+    case "sourceDecisionReconcile":
+    case "sourceDecisionImport":
+      return runSourceDecisionCommand(command, context);
+    case "sourceClaimReject":
+      return runSourceClaimRejectCommand({
+        ...standardSourceInput(context),
+        cwd: context.cwd,
+        command
+      });
+    default:
+      return unreachableSourceCommand(command);
   }
-
-  if (command.kind === "sourceArtifactPreview") {
-    return runSourceArtifactPreviewCommand({
-      cwd: context.cwd,
-      env: context.env,
-      now: context.now,
-      ...databaseRuntimeOption(context),
-      command
-    });
-  }
-
-  if (command.kind === "sourceClaimEdges") {
-    return runSourceClaimEdgesCommand({
-      ...standardSourceInput(context),
-      command
-    });
-  }
-
-  if (command.kind === "sourceSearch") {
-    return runSourceSearchCommand({
-      cwd: context.cwd,
-      ...standardSourceInput(context),
-      command
-    });
-  }
-
-  if (command.kind === "sourceDecisionLink") {
-    return runSourceDecisionLinkCommand({
-      ...standardSourceInput(context),
-      command
-    });
-  }
-
-  if (command.kind === "sourceDecisionAdopt") {
-    return runSourceDecisionAdoptCommand({
-      ...standardSourceInput(context),
-      command
-    });
-  }
-
-  if (command.kind === "sourceDecisionGaps") {
-    return runSourceDecisionGapsCommand({
-      ...standardSourceInput(context),
-      cwd: context.cwd,
-      command
-    });
-  }
-
-  if (command.kind === "sourceDecisionImport") {
-    return runSourceDecisionImportCommand({
-      ...standardSourceInput(context),
-      cwd: context.cwd,
-      command
-    });
-  }
-
-  return runSourceClaimRejectCommand({
-    ...standardSourceInput(context),
-    cwd: context.cwd,
-    command
-  });
 };
 
 export const runSourceCliCommand = async (
   command: CliCommand,
   context: SourceCliCommandContext
 ): Promise<CliResult | undefined> => {
-  if (!isSourceCliCommand(command)) {
+  const sourceCommand = selectSourceCliCommand(command);
+
+  if (sourceCommand === undefined) {
     return undefined;
   }
 
   try {
-    const result = await runSelectedSourceCommand(command, context);
+    const result = await runSelectedSourceCommand(sourceCommand, context);
     return sourceCommandResult(result.stdout);
   } catch (error) {
-    return sourceCommandError(error, sourceFallbackMessages[command.kind], context);
+    return sourceCommandError(error, sourceFallbackMessages[sourceCommand.kind], context);
   }
 };

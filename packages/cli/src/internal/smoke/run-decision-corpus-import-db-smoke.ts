@@ -4,6 +4,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import postgres from "postgres";
 
+import type {
+  SourceDecisionImportReconciliationReport
+} from "@krn/core/repositories/internal";
 import {
   bindSmokeProjectRuntimeFactory,
   closeSmokeRuntimeAndClient,
@@ -57,6 +60,8 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly partialReplayRejected: boolean;
   readonly changedReplayRejected: boolean;
   readonly atomicFailureRolledBack: boolean;
+  readonly reconciliation: SourceDecisionImportReconciliationReport;
+  readonly reconciliationReadOnly: boolean;
   readonly governingDecisionId: string;
   readonly governingEvidenceStatus: PersistedDecisionCorpusRow["evidenceStatus"];
   readonly externalEvidenceStatus: PersistedDecisionCorpusRow["evidenceStatus"];
@@ -97,6 +102,67 @@ const smokeSource = "krn db smoke decision-corpus-import";
 
 const externalEvidenceRef = "https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design";
 const currentFixtureEvidenceRef = "KRN_ROADMAP.md";
+
+interface ImportReconciliationTableCounts {
+  readonly artifactCount: number;
+  readonly chunkCount: number;
+  readonly claimCount: number;
+  readonly decisionCount: number;
+  readonly decisionEdgeCount: number;
+  readonly searchDocumentCount: number;
+  readonly rejectionCount: number;
+}
+
+const importReconciliationTableCounts = async (
+  client: ReturnType<typeof postgres>,
+  projectId: string
+): Promise<ImportReconciliationTableCounts> => {
+  const rows = await client<ImportReconciliationTableCounts[]>`
+    select
+      (select count(*)::int from source_artifacts where project_id = ${projectId}) as "artifactCount",
+      (
+        select count(*)::int from source_chunks
+        join source_artifacts on source_artifacts.id = source_chunks.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "chunkCount",
+      (
+        select count(*)::int from source_claims
+        join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "claimCount",
+      (
+        select count(*)::int from source_decisions
+        join source_claims on source_claims.id = source_decisions.source_claim_id
+        join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "decisionCount",
+      (
+        select count(*)::int from source_decision_edges
+        join source_claims on source_claims.id = source_decision_edges.source_claim_id
+        join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "decisionEdgeCount",
+      (
+        select count(*)::int from search_documents
+        join source_claims on source_claims.id = search_documents.source_claim_id
+        join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "searchDocumentCount",
+      (
+        select count(*)::int from source_rejections
+        join source_claims on source_claims.id = source_rejections.source_claim_id
+        join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+        where source_artifacts.project_id = ${projectId}
+      ) as "rejectionCount"
+  `;
+  const counts = rows[0];
+
+  if (counts === undefined) {
+    throw new Error("decision corpus import DB smoke missing reconciliation table counts");
+  }
+
+  return counts;
+};
 
 const hashCapturedEvidence = (content: string): string =>
   createHash("sha256").update(content, "utf8").digest("hex");
@@ -272,12 +338,197 @@ const requireString = (
   return value;
 };
 
+const requireSmokeEqual = (
+  actual: unknown,
+  expected: unknown,
+  label: string
+): void => {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`decision corpus import DB smoke ${label} mismatch`);
+  }
+};
+
+const requiredReconciledImport = (
+  report: SourceDecisionImportReconciliationReport,
+  importId: string
+) => {
+  const reconciledImport = report.imports.items.find((item) => item.importId === importId);
+
+  if (reconciledImport === undefined) {
+    throw new Error(`decision corpus import DB smoke missing reconciliation import ${importId}`);
+  }
+
+  return reconciledImport;
+};
+
+interface DecisionCorpusImportReconciliationProofInput {
+  readonly client: ReturnType<typeof postgres>;
+  readonly runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>;
+  readonly projectId: string;
+  readonly fixture: PersistDecisionCorpusImportInput["fixture"];
+  readonly smokeId: string;
+  readonly partialSmokeId: string;
+  readonly partialSourceArtifactId: string;
+  readonly partialSourceChunkIds: readonly string[];
+  readonly now: string;
+  readonly repoRoot: string;
+  readonly resolveEvidence: NonNullable<PersistDecisionCorpusImportInput["resolveEvidence"]>;
+}
+
+interface DecisionCorpusImportReconciliationProof {
+  readonly equivalentSmokeId: string;
+  readonly reconciliation: SourceDecisionImportReconciliationReport;
+  readonly reconciliationReadOnly: boolean;
+}
+
+const proveDecisionCorpusImportReconciliation = async (
+  input: DecisionCorpusImportReconciliationProofInput
+): Promise<DecisionCorpusImportReconciliationProof> => {
+  const equivalentSmokeId = `${input.smokeId}-equivalent`;
+  await persistDecisionCorpusImport({
+    runtime: input.runtime,
+    projectId: input.projectId,
+    fixture: input.fixture,
+    smokeId: equivalentSmokeId,
+    now: input.now,
+    authorizedRepoRoot: input.repoRoot,
+    resolveEvidence: input.resolveEvidence
+  });
+  const countsBefore = await importReconciliationTableCounts(input.client, input.projectId);
+  const withReadSnapshot = input.runtime.withSourceDecisionImportReadSnapshot;
+
+  if (withReadSnapshot === undefined) {
+    throw new Error("decision corpus import DB smoke missing reconciliation read snapshot");
+  }
+
+  const readback = await withReadSnapshot(async (repository) => {
+    return {
+      full: await repository.listSourceDecisionImportReconciliation({
+        projectId: input.projectId,
+        limit: 10
+      }),
+      bounded: await repository.listSourceDecisionImportReconciliation({
+        projectId: input.projectId,
+        limit: 1
+      }),
+      paged: await repository.listSourceDecisionImportReconciliation({
+        projectId: input.projectId,
+        limit: 1,
+        afterImportId: input.smokeId
+      })
+    };
+  });
+  const currentImport = requiredReconciledImport(readback.full, input.smokeId);
+  const partialImport = requiredReconciledImport(readback.full, input.partialSmokeId);
+  const equivalentImport = requiredReconciledImport(readback.full, equivalentSmokeId);
+  const boundedImport = requiredReconciledImport(readback.bounded, input.smokeId);
+  const pagedImport = requiredReconciledImport(readback.paged, equivalentSmokeId);
+  const expectedEquivalentImportIds = [equivalentSmokeId];
+  const decisionCount = input.fixture.decisions.length;
+  const partialRow = partialImport.rows.items.find(
+    (row) => row.sourceArtifactId === input.partialSourceArtifactId
+  );
+
+  if (partialRow === undefined) {
+    throw new Error("decision corpus import DB smoke missing partial tuple diagnostics");
+  }
+
+  requireSmokeEqual(readback.full.imports.truncated, false, "full reconciliation truncation");
+  requireSmokeEqual(readback.full.imports.totalCount, 3, "full reconciliation total count");
+  requireSmokeEqual(readback.full.imports.returnedCount, 3, "full reconciliation import count");
+  requireSmokeEqual(currentImport.lifecycle, "complete", "current import lifecycle");
+  requireSmokeEqual(currentImport.rowCount, decisionCount, "current import row count");
+  requireSmokeEqual(currentImport.completeRowCount, decisionCount, "current complete row count");
+  requireSmokeEqual(currentImport.partialRowCount, 0, "current partial row count");
+  requireSmokeEqual(
+    currentImport.equivalentImportIds.items,
+    expectedEquivalentImportIds,
+    "current equivalent import IDs"
+  );
+  requireSmokeEqual(partialImport.lifecycle, "partial", "partial import lifecycle");
+  requireSmokeEqual(partialImport.rowCount, decisionCount, "partial import row count");
+  requireSmokeEqual(partialImport.completeRowCount, decisionCount - 1, "partial complete row count");
+  requireSmokeEqual(partialImport.partialRowCount, 1, "partial row count");
+  requireSmokeEqual(partialRow.decisionId, null, "partial missing decision identity");
+  requireSmokeEqual(partialRow.lifecycle, "partial", "partial tuple lifecycle");
+  requireSmokeEqual(
+    partialRow.violations,
+    [
+      "missing_import_row_id",
+      "source_chunk_cardinality",
+      "search_document_cardinality"
+    ],
+    "partial tuple violations"
+  );
+  requireSmokeEqual(
+    partialRow.components.sourceChunks.totalCount,
+    2,
+    "partial tuple chunk count"
+  );
+  requireSmokeEqual(
+    partialRow.components.sourceChunks.items,
+    [...input.partialSourceChunkIds].sort(),
+    "partial tuple chunk IDs"
+  );
+  requireSmokeEqual(
+    partialRow.components.searchDocuments.totalCount,
+    0,
+    "partial tuple search document count"
+  );
+  requireSmokeEqual(equivalentImport.lifecycle, "complete", "equivalent import lifecycle");
+  requireSmokeEqual(
+    equivalentImport.corpusDigest,
+    currentImport.corpusDigest,
+    "equivalent corpus digest"
+  );
+  requireSmokeEqual(readback.bounded.imports.truncated, true, "bounded reconciliation truncation");
+  requireSmokeEqual(readback.bounded.imports.returnedCount, 1, "bounded import count");
+  requireSmokeEqual(readback.bounded.afterImportId, null, "bounded reconciliation cursor start");
+  requireSmokeEqual(
+    readback.bounded.nextAfterImportId,
+    input.smokeId,
+    "bounded reconciliation next cursor"
+  );
+  requireSmokeEqual(
+    boundedImport.equivalentImportIds.items,
+    expectedEquivalentImportIds,
+    "bounded equivalent import IDs"
+  );
+  requireSmokeEqual(readback.paged.afterImportId, input.smokeId, "paged reconciliation cursor");
+  requireSmokeEqual(readback.paged.imports.totalCount, 2, "paged reconciliation remaining count");
+  requireSmokeEqual(readback.paged.imports.returnedCount, 1, "paged reconciliation import count");
+  requireSmokeEqual(
+    readback.paged.nextAfterImportId,
+    equivalentSmokeId,
+    "paged reconciliation next cursor"
+  );
+  requireSmokeEqual(pagedImport.importId, equivalentSmokeId, "paged reconciliation import ID");
+  const countsAfter = await importReconciliationTableCounts(input.client, input.projectId);
+  const reconciliationReadOnly = JSON.stringify(countsAfter) === JSON.stringify(countsBefore);
+
+  if (!reconciliationReadOnly) {
+    throw new Error("decision corpus import DB smoke reconciliation mutated persisted state");
+  }
+
+  return {
+    equivalentSmokeId,
+    reconciliation: readback.full,
+    reconciliationReadOnly
+  };
+};
+
 export const runDecisionCorpusImportDbSmokeCheck = async (
   input: DecisionCorpusImportDbSmokeInput
 ): Promise<DecisionCorpusImportDbSmokeReport> => {
   const client = postgres(input.databaseUrl, { max: 1 });
   const createId = createUniqueSmokeCreateId(input.smokeId);
+  const cleanupSmokeIds = [
+    `${input.smokeId}-equivalent`,
+    `${input.smokeId}-partial-replay`,
+    input.smokeId
+  ];
   let runtime: Awaited<ReturnType<typeof createDatabaseRuntime>> | undefined;
+  let primaryError: unknown;
 
   try {
     await cleanupSourceSmokeMarkers(client, markerTables, input.smokeId, smokeSource);
@@ -328,34 +579,6 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         and import_id = ${input.smokeId}
     `;
     const replayPersistedArtifactCount = replayArtifactRows[0]?.count ?? 0;
-    const reconciliationRepository = runtime.sourceDecisionImportRepository;
-    if (reconciliationRepository === undefined) {
-      throw new Error("decision corpus import DB smoke cannot read reconciliation report");
-    }
-    const reconciliationBefore = await reconciliationRepository.listSourceDecisionImportReconciliation({
-      projectId
-    });
-    const reconciledImport = reconciliationBefore.find((row) => row.importId === input.smokeId);
-    if (
-      reconciledImport === undefined ||
-      reconciledImport.rowCount !== fixture.decisions.length ||
-      reconciledImport.completeRowCount !== fixture.decisions.length ||
-      reconciledImport.partialRowCount !== 0 ||
-      reconciledImport.decisionIds.length !== fixture.decisions.length ||
-      reconciledImport.contentHashes.length !== fixture.decisions.length
-    ) {
-      throw new Error("decision corpus import DB smoke reconciliation readback was incomplete");
-    }
-    const reconciliationArtifactCountBefore = replayPersistedArtifactCount;
-    const reconciliationAfter = await reconciliationRepository.listSourceDecisionImportReconciliation({
-      projectId
-    });
-    if (
-      JSON.stringify(reconciliationAfter) !== JSON.stringify(reconciliationBefore) ||
-      reconciliationArtifactCountBefore !== replayPersistedArtifactCount
-    ) {
-      throw new Error("decision corpus import DB smoke reconciliation mutated persisted state");
-    }
     const partialSmokeId = `${input.smokeId}-partial-replay`;
     const partialRows = await persistDecisionCorpusImport({
       runtime,
@@ -372,9 +595,42 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     if (partialCurrentRow?.searchDocumentId === undefined) {
       throw new Error("decision corpus import DB smoke missing current row for partial replay falsifier");
     }
+    const duplicateChunkRows = await client<{ id: string }[]>`
+      insert into source_chunks (
+        source_artifact_id,
+        ordinal,
+        heading,
+        content,
+        token_count,
+        content_hash,
+        metadata
+      )
+      select
+        source_artifact_id,
+        ordinal + 1000,
+        heading,
+        content,
+        token_count,
+        content_hash,
+        metadata
+      from source_chunks
+      where id = ${partialCurrentRow.sourceChunkId}
+      returning id
+    `;
+    const duplicateChunkId = duplicateChunkRows[0]?.id;
+
+    if (duplicateChunkId === undefined) {
+      throw new Error("decision corpus import DB smoke failed to duplicate partial tuple chunk");
+    }
+
     await client`
       delete from search_documents
       where id = ${partialCurrentRow.searchDocumentId}
+    `;
+    await client`
+      update source_artifacts
+      set import_row_id = null
+      where id = ${partialCurrentRow.sourceArtifactId}
     `;
     let partialReplayRejected = false;
     try {
@@ -391,6 +647,20 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       partialReplayRejected = error instanceof Error &&
         error.message.includes("partial existing records");
     }
+    const reconciliationProof = await proveDecisionCorpusImportReconciliation({
+      client,
+      runtime,
+      projectId,
+      fixture,
+      smokeId: input.smokeId,
+      partialSmokeId,
+      partialSourceArtifactId: partialCurrentRow.sourceArtifactId,
+      partialSourceChunkIds: [partialCurrentRow.sourceChunkId, duplicateChunkId],
+      now: input.now,
+      repoRoot: input.repoRoot,
+      resolveEvidence
+    });
+    const { equivalentSmokeId, reconciliation, reconciliationReadOnly } = reconciliationProof;
     const changedFixture = {
       ...fixture,
       decisions: fixture.decisions.map((row, index) => index === 0
@@ -629,6 +899,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       }))
     });
 
+    await cleanupSourceSmokeMarkers(client, markerTables, equivalentSmokeId, smokeSource);
     await cleanupSourceSmokeMarkers(client, markerTables, partialSmokeId, smokeSource);
     const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
@@ -650,6 +921,8 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       partialReplayRejected,
       changedReplayRejected,
       atomicFailureRolledBack,
+      reconciliation,
+      reconciliationReadOnly,
       governingDecisionId: firstCase.expectedDecisionId,
       governingEvidenceStatus: governingRow.evidenceStatus,
       externalEvidenceStatus: externalEvidenceRow.evidenceStatus,
@@ -674,7 +947,30 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       remainingMarkerCount: markerCleanup.remainingMarkerCount,
       cleanedUp: markerCleanup.cleanedUp
     };
+  } catch (error) {
+    primaryError = error;
+    throw error;
   } finally {
-    await closeSmokeRuntimeAndClient(runtime, client);
+    let finalizationError: unknown;
+
+    try {
+      for (const smokeId of cleanupSmokeIds) {
+        await cleanupSourceSmokeMarkers(client, markerTables, smokeId, smokeSource);
+      }
+    } catch (error) {
+      finalizationError = error;
+    }
+
+    try {
+      await closeSmokeRuntimeAndClient(runtime, client);
+    } catch (error) {
+      if (finalizationError === undefined) {
+        finalizationError = error;
+      }
+    }
+
+    if (primaryError === undefined && finalizationError !== undefined) {
+      throw finalizationError;
+    }
   }
 };

@@ -1,6 +1,9 @@
 import type {
   SourceClaimEdgeKind
 } from "@krn/core";
+import {
+  sourceDecisionImportReconciliationLimitMaximum
+} from "@krn/core/repositories/internal";
 import type {
   CliCommand,
   ParseArgsResult
@@ -75,6 +78,21 @@ export const formatSourceDecisionGapsUsage = (): string =>
     "--json",
     "",
     "Note: read-only Postgres readback for accepted SourceClaims missing SourceDecisionEdge support. It does not mutate Beads, CI, Memory Core, or source status."
+  ].join("\n") + "\n";
+
+export const formatSourceDecisionReconcileUsage = (): string =>
+  [
+    "Usage: krn source decision reconcile --project <project-id> [--limit <n>] [--after <import-id>] [--json]",
+    "",
+    "Required:",
+    "--project <project-id>",
+    "",
+    "Optional:",
+    `--limit <1-${sourceDecisionImportReconciliationLimitMaximum}>`,
+    "--after <import-id>",
+    "--json",
+    "",
+    "Note: bounded read-only Postgres reconciliation for complete, partial, and semantically equivalent source decision imports. It does not repair data, choose canonical authority, mutate Memory Core, or prove source truth."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionImportUsage = (): string =>
@@ -245,6 +263,7 @@ type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" 
 type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
 type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
 type SourceDecisionImportCommand = Extract<CliCommand, { kind: "sourceDecisionImport" }>;
+type SourceDecisionReconcileCommand = Extract<CliCommand, { kind: "sourceDecisionReconcile" }>;
 
 type SourceTokenParseResult = CliTokenParseResult;
 type SourceFileOptionCommand = SourceArtifactPreviewCommand | SourceDecisionImportCommand;
@@ -907,18 +926,26 @@ const parseSourceSearchOption = (
   };
 };
 
-type SourceDecisionGapsOptionParser = (
+interface SourceDecisionReadbackOptions {
+  projectId?: string;
+  limit?: number;
+  json?: boolean;
+}
+
+type SourceDecisionReadbackOptionParser = (
   rest: readonly string[],
   index: number,
   arg: string,
-  sourceCommand: Extract<CliCommand, { kind: "sourceDecisionGaps" }>
+  sourceCommand: SourceDecisionReadbackOptions,
+  usage: string
 ) => SourceOptionParseResult;
 
-const parseSourceDecisionGapsProjectOption: SourceDecisionGapsOptionParser = (
+const parseSourceDecisionReadbackProjectOption: SourceDecisionReadbackOptionParser = (
   rest,
   index,
   arg,
-  sourceCommand
+  sourceCommand,
+  usage
 ) => {
   if (!optionMatches(arg, "--project")) {
     return {
@@ -926,7 +953,7 @@ const parseSourceDecisionGapsProjectOption: SourceDecisionGapsOptionParser = (
     };
   }
 
-  const parsed = parseProjectOption(rest, index, formatSourceDecisionGapsUsage());
+  const parsed = parseProjectOption(rest, index, usage);
 
   if ("error" in parsed) {
     return {
@@ -942,11 +969,12 @@ const parseSourceDecisionGapsProjectOption: SourceDecisionGapsOptionParser = (
   };
 };
 
-const parseSourceDecisionGapsLimitOption: SourceDecisionGapsOptionParser = (
+const parseSourceDecisionReadbackLimitOption: SourceDecisionReadbackOptionParser = (
   rest,
   index,
   arg,
-  sourceCommand
+  sourceCommand,
+  usage
 ) => {
   if (!optionMatches(arg, "--limit")) {
     return {
@@ -958,12 +986,12 @@ const parseSourceDecisionGapsLimitOption: SourceDecisionGapsOptionParser = (
     rest,
     index,
     "--limit",
-    formatSourceDecisionGapsUsage()
+    usage
   );
 
   if (parsed.error !== undefined || parsed.value === undefined) {
     return {
-      error: parsed.error ?? formatSourceDecisionGapsUsage()
+      error: parsed.error ?? usage
     };
   }
 
@@ -975,7 +1003,7 @@ const parseSourceDecisionGapsLimitOption: SourceDecisionGapsOptionParser = (
   };
 };
 
-const parseSourceDecisionGapsJsonOption: SourceDecisionGapsOptionParser = (
+const parseSourceDecisionReadbackJsonOption: SourceDecisionReadbackOptionParser = (
   _rest,
   index,
   arg,
@@ -995,23 +1023,24 @@ const parseSourceDecisionGapsJsonOption: SourceDecisionGapsOptionParser = (
   };
 };
 
-const sourceDecisionGapsOptionParsers: readonly SourceDecisionGapsOptionParser[] = [
-  parseSourceDecisionGapsProjectOption,
-  parseSourceDecisionGapsLimitOption,
-  parseSourceDecisionGapsJsonOption
+const sourceDecisionReadbackOptionParsers: readonly SourceDecisionReadbackOptionParser[] = [
+  parseSourceDecisionReadbackProjectOption,
+  parseSourceDecisionReadbackLimitOption,
+  parseSourceDecisionReadbackJsonOption
 ];
 
-const parseSourceDecisionGapsToken = (
+const parseSourceDecisionReadbackToken = (
   rest: readonly string[],
   index: number,
-  sourceCommand: Extract<CliCommand, { kind: "sourceDecisionGaps" }>
+  sourceCommand: SourceDecisionReadbackOptions,
+  usage: string
 ): SourceTokenParseResult => {
   const arg = rest[index];
 
   if (arg === undefined) {
     return {
       kind: "error",
-      error: formatSourceDecisionGapsUsage()
+      error: usage
     };
   }
 
@@ -1021,8 +1050,8 @@ const parseSourceDecisionGapsToken = (
     };
   }
 
-  for (const parseOption of sourceDecisionGapsOptionParsers) {
-    const parsed = parseOption(rest, index, arg, sourceCommand);
+  for (const parseOption of sourceDecisionReadbackOptionParsers) {
+    const parsed = parseOption(rest, index, arg, sourceCommand, usage);
 
     if ("error" in parsed) {
       return {
@@ -1041,7 +1070,7 @@ const parseSourceDecisionGapsToken = (
 
   return {
     kind: "error",
-    error: formatSourceDecisionGapsUsage()
+    error: usage
   };
 };
 
@@ -1699,7 +1728,12 @@ const parseSourceDecisionGapsArgs = (rest: readonly string[]): ParseArgsResult =
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const parsed = parseSourceDecisionGapsToken(rest, index, sourceCommand);
+    const parsed = parseSourceDecisionReadbackToken(
+      rest,
+      index,
+      sourceCommand,
+      formatSourceDecisionGapsUsage()
+    );
 
     if (parsed.kind === "help") {
       return {
@@ -1716,6 +1750,112 @@ const parseSourceDecisionGapsArgs = (rest: readonly string[]): ParseArgsResult =
     }
 
     index = parsed.nextIndex;
+  }
+
+  return {
+    command: sourceCommand
+  };
+};
+
+const parseSourceDecisionReconcileAfterOption = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceDecisionReconcileCommand
+): SourceOptionParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined || !optionMatches(arg, "--after")) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = optionValue(rest, index, "--after");
+  const afterImportId = parsed.value?.trim();
+
+  if (parsed.error !== undefined || afterImportId === undefined || afterImportId.length === 0) {
+    return {
+      error: parsed.error ?? "--after requires a non-empty import ID"
+    };
+  }
+
+  sourceCommand.afterImportId = afterImportId;
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+// fallow-ignore-next-line complexity -- command boundary distinguishes help, bounded options, required project, and parse errors
+const parseSourceDecisionReconcileArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceDecisionReconcileHelp"
+      }
+    };
+  }
+
+  const sourceCommand: SourceDecisionReconcileCommand = {
+    kind: "sourceDecisionReconcile"
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const parsedAfter = parseSourceDecisionReconcileAfterOption(
+      rest,
+      index,
+      sourceCommand
+    );
+
+    if ("error" in parsedAfter) {
+      return {
+        error: parsedAfter.error
+      };
+    }
+
+    if (parsedAfter.matched) {
+      index = parsedAfter.nextIndex;
+      continue;
+    }
+
+    const parsed = parseSourceDecisionReadbackToken(
+      rest,
+      index,
+      sourceCommand,
+      formatSourceDecisionReconcileUsage()
+    );
+
+    if (parsed.kind === "help") {
+      return {
+        command: {
+          kind: "sourceDecisionReconcileHelp"
+        }
+      };
+    }
+
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  if (sourceCommand.projectId === undefined) {
+    return {
+      error: formatSourceDecisionReconcileUsage()
+    };
+  }
+
+  if (
+    sourceCommand.limit !== undefined &&
+    sourceCommand.limit > sourceDecisionImportReconciliationLimitMaximum
+  ) {
+    return {
+      error: `--limit must not exceed ${sourceDecisionImportReconciliationLimitMaximum}`
+    };
   }
 
   return {
@@ -1779,6 +1919,7 @@ const sourceArgsParsers: ReadonlyMap<string, SourceArgsParser> = new Map([
   ["decision link", parseSourceDecisionLinkArgs],
   ["decision adopt", parseSourceDecisionAdoptArgs],
   ["decision gaps", parseSourceDecisionGapsArgs],
+  ["decision reconcile", parseSourceDecisionReconcileArgs],
   ["decision import", parseSourceDecisionImportArgs]
 ]);
 

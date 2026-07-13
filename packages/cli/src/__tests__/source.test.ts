@@ -365,6 +365,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("--file");
   });
 
+  it("prints source decision reconciliation help", async () => {
+    const result = await runCli(["source", "decision", "reconcile", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn source decision reconcile");
+    expect(result.stdout).toContain("--limit");
+    expect(result.stdout).toContain("read-only Postgres reconciliation");
+  });
+
   it("previews source decision import without DB writes", async () => {
     const result = await runCli(
       [

@@ -775,6 +775,13 @@ const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
       `Replay persisted artifact count: ${report.replayPersistedArtifactCount}`,
       `Changed replay rejected: ${report.changedReplayRejected ? "yes" : "no"}`,
       `Atomic failure rolled back: ${report.atomicFailureRolledBack ? "yes" : "no"}`,
+      `Reconciliation read-only: ${report.reconciliationReadOnly ? "yes" : "no"}`,
+      `Reconciliation list limit: ${report.reconciliation.limit}`,
+      `Reconciliation imports inspected: ${report.reconciliation.imports.returnedCount}/${report.reconciliation.imports.totalCount}`,
+      `Reconciliation truncated: ${report.reconciliation.imports.truncated ? "yes" : "no"}`,
+      ...report.reconciliation.imports.items.map((item) =>
+        `Reconciliation import ${item.importId}: lifecycle=${item.lifecycle}, rows=${item.rowCount}, complete=${item.completeRowCount}, partial=${item.partialRowCount}, equivalentImportIds=${item.equivalentImportIds.items.join(", ") || "none"}`
+      ),
       `Governing decision: ${report.governingDecisionId}`,
       `Governing evidence status: ${report.governingEvidenceStatus}`,
       `External evidence status: ${report.externalEvidenceStatus}`,
