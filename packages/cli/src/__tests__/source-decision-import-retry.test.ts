@@ -10,6 +10,10 @@ import {
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 
+import {
+  createDatabaseRuntime
+} from "../database-runtime.js";
+
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const execFileAsync = promisify(execFile);
 const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -197,6 +201,15 @@ describe("source decision import retry boundary", () => {
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
         });
+        const setupRuntime = await createDatabaseRuntime({
+          databaseUrl: disposableDatabase.databaseUrl,
+          workspaceSlug: "mise-en-palace",
+          projectSlug: "mise-en-palace",
+          requireProjectKernelForExplicitProject: false,
+          now: () => "2026-07-13T00:00:00.000Z",
+          createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
+        });
+        await setupRuntime.close();
         const preview = await runSourceImportCli({ persist: false });
         const [first, second] = await Promise.all([
           runSourceImportCli({
