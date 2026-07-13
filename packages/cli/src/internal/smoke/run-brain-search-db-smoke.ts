@@ -403,7 +403,6 @@ export const runBrainSearchDbSmokeCheck = async (
       harnessPlanId: sessionACompile.harnessPlan.id,
       adapter: "krn-db-smoke-memory-search",
       status: "planned",
-      startedAt: input.now,
       initialEvent: {
         sequence: 1,
         type: "smoke.memory_search.session_a.started",
