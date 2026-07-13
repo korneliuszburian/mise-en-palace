@@ -104,7 +104,6 @@ export interface DatabaseRuntime {
   harnessRunRepository: Pick<
     HarnessRunRepository,
     | "createExecutionRun"
-    | "updateExecutionRunStatus"
     | "getHarnessRunByExecutionRunId"
     | "createEvidenceBundle"
     | "createReviewAssessment"
@@ -112,6 +111,7 @@ export interface DatabaseRuntime {
   > & Partial<Pick<
     HarnessRunRepository,
     | "createEvidenceFeedbackOnce"
+    | "updateExecutionRunStatus"
     | "listFeedbackDeltasForProject"
     | "listFeedbackDeltasForSubjects"
     | "createEvalFeedbackDeltaOnce"

@@ -417,7 +417,11 @@ export const runBrainSearchDbSmokeCheck = async (
         session: "A"
       }
     });
-    await runtime.harnessRunRepository.updateExecutionRunStatus({
+    const updateExecutionRunStatus = runtime.harnessRunRepository.updateExecutionRunStatus;
+    if (updateExecutionRunStatus === undefined) {
+      throw new Error("Execution lifecycle updates are unavailable in the database runtime");
+    }
+    await updateExecutionRunStatus.call(runtime.harnessRunRepository, {
       executionRunId: sessionAExecutionRun.id,
       expectedStatus: "planned",
       status: "running",
@@ -436,7 +440,7 @@ export const runBrainSearchDbSmokeCheck = async (
         session: "A"
       }
     });
-    await runtime.harnessRunRepository.updateExecutionRunStatus({
+    await updateExecutionRunStatus.call(runtime.harnessRunRepository, {
       executionRunId: sessionAExecutionRun.id,
       expectedStatus: "running",
       status: "succeeded",
