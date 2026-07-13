@@ -123,12 +123,12 @@ jobs:
       - name: Install PostgreSQL and pgvector
         run: |
           brew untap aws/tap || true
-          brew install postgresql@16 pgvector
+          brew install postgresql@17 pgvector
 
       - name: Start disposable PostgreSQL
         run: |
-          brew services start postgresql@16
-          export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
+          brew services start postgresql@17
+          export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
           until pg_isready -h localhost -p 5432; do sleep 1; done
           createdb -h localhost -U "$USER" krn
           psql -h localhost -d krn -c "CREATE USER krn WITH PASSWORD 'krn';" || true
@@ -158,7 +158,7 @@ jobs:
 
       - name: Stop disposable PostgreSQL
         if: ${{ always() }}
-        run: brew services stop postgresql@16 || true
+        run: brew services stop postgresql@17 || true
 
   security:
     name: Dependency, secret, and license policy
