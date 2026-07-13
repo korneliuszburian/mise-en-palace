@@ -21,6 +21,13 @@ jobs:
     name: Typecheck, tests, and eval smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      KRN_COMMIT_EVENT: ${{ github.event_name }}
+      KRN_COMMIT_BEFORE: ${{ github.event.before }}
+      KRN_COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+      KRN_WHITESPACE_EVENT: ${{ github.event_name }}
+      KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
+      KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -42,15 +49,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Fast verification profile
-        env:
-          KRN_COMMIT_EVENT: ${{ github.event_name }}
-          KRN_COMMIT_BEFORE: ${{ github.event.before }}
-          KRN_COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
-          KRN_WHITESPACE_EVENT: ${{ github.event_name }}
-          KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
-          KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
-        run: pnpm verify:fast
+      - name: Toolchain contract
+        run: pnpm toolchain:check -- --allow-missing-rtk
+      - name: Node22 type boundary
+        run: pnpm node22:type-boundary
+      - name: Platform contract
+        run: pnpm platform:check
+      - name: Workspace contract
+        run: pnpm workspace:check
+      - name: Fixture contract
+        run: pnpm fixtures:check
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Tests
+        run: pnpm test
+      - name: KRN doctor
+        run: pnpm krn doctor
+      - name: Fallow changed-files quality gate
+        run: pnpm quality:fallow:ci
+      - name: Required evals
+        run: pnpm eval:required
+      - name: Committed whitespace
+        run: pnpm check:whitespace:committed
+      - name: Git diff whitespace
+        run: git diff --check
 
   db:
     name: DB readiness and smoke
