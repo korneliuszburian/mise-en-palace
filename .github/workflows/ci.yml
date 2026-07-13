@@ -102,6 +102,62 @@ jobs:
         if: ${{ failure() || cancelled() }}
         run: docker ps -a --no-trunc || true
 
+  macos:
+    name: macOS Node22 and disposable Postgres verification
+    runs-on: macos-14
+    timeout-minutes: 45
+    env:
+      KRN_DATABASE_URL: postgres://krn:krn@localhost:5432/krn
+      KRN_COMMIT_EVENT: ${{ github.event_name }}
+      KRN_COMMIT_BEFORE: ${{ github.event.before }}
+      KRN_COMMIT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+      KRN_WHITESPACE_EVENT: ${{ github.event_name }}
+      KRN_WHITESPACE_BEFORE: ${{ github.event.before }}
+      KRN_WHITESPACE_PR_BASE: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
+      - name: Install PostgreSQL and pgvector
+        run: brew install postgresql@16 pgvector
+
+      - name: Start disposable PostgreSQL
+        run: |
+          brew services start postgresql@16
+          export PATH="$(brew --prefix postgresql@16)/bin:$PATH"
+          until pg_isready -h localhost -p 5432; do sleep 1; done
+          createdb -h localhost -U "$USER" krn
+          psql -h localhost -d krn -c "CREATE USER krn WITH PASSWORD 'krn';" || true
+          psql -h localhost -d krn -c "ALTER DATABASE krn OWNER TO krn;"
+          psql -h localhost -d krn -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          version: 10.32.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Fast verification profile
+        run: pnpm verify:fast
+
+      - name: DB verification profile
+        run: pnpm verify:db
+
+      - name: Stop disposable PostgreSQL
+        if: ${{ always() }}
+        run: brew services stop postgresql@16 || true
+
   security:
     name: Dependency, secret, and license policy
     runs-on: ubuntu-latest
