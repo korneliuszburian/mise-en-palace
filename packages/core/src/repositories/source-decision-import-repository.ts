@@ -37,6 +37,15 @@ export interface SourceDecisionImportLookupInput {
   decisionId: string;
 }
 
+export interface SourceDecisionImportReconciliation {
+  importId: string;
+  rowCount: number;
+  completeRowCount: number;
+  partialRowCount: number;
+  decisionIds: readonly string[];
+  contentHashes: readonly string[];
+}
+
 export interface SourceDecisionImportReadback {
   decisionId: string;
   evidenceRef: string;
@@ -82,4 +91,8 @@ export interface SourceDecisionImportRepository {
   getSourceDecisionImportRow(
     input: SourceDecisionImportLookupInput
   ): Promise<SourceDecisionImportLookup>;
+
+  listSourceDecisionImportReconciliation(input: {
+    projectId: ProjectId;
+  }): Promise<readonly SourceDecisionImportReconciliation[]>;
 }

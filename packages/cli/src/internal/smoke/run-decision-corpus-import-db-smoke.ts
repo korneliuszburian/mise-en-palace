@@ -328,6 +328,34 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
         and import_id = ${input.smokeId}
     `;
     const replayPersistedArtifactCount = replayArtifactRows[0]?.count ?? 0;
+    const reconciliationRepository = runtime.sourceDecisionImportRepository;
+    if (reconciliationRepository === undefined) {
+      throw new Error("decision corpus import DB smoke cannot read reconciliation report");
+    }
+    const reconciliationBefore = await reconciliationRepository.listSourceDecisionImportReconciliation({
+      projectId
+    });
+    const reconciledImport = reconciliationBefore.find((row) => row.importId === input.smokeId);
+    if (
+      reconciledImport === undefined ||
+      reconciledImport.rowCount !== fixture.decisions.length ||
+      reconciledImport.completeRowCount !== fixture.decisions.length ||
+      reconciledImport.partialRowCount !== 0 ||
+      reconciledImport.decisionIds.length !== fixture.decisions.length ||
+      reconciledImport.contentHashes.length !== fixture.decisions.length
+    ) {
+      throw new Error("decision corpus import DB smoke reconciliation readback was incomplete");
+    }
+    const reconciliationArtifactCountBefore = replayPersistedArtifactCount;
+    const reconciliationAfter = await reconciliationRepository.listSourceDecisionImportReconciliation({
+      projectId
+    });
+    if (
+      JSON.stringify(reconciliationAfter) !== JSON.stringify(reconciliationBefore) ||
+      reconciliationArtifactCountBefore !== replayPersistedArtifactCount
+    ) {
+      throw new Error("decision corpus import DB smoke reconciliation mutated persisted state");
+    }
     const partialSmokeId = `${input.smokeId}-partial-replay`;
     const partialRows = await persistDecisionCorpusImport({
       runtime,

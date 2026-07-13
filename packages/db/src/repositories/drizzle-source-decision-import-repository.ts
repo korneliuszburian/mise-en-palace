@@ -2,6 +2,7 @@ import { and, desc, eq, ne, or } from "drizzle-orm";
 import type {
   SourceDecisionImportLookup,
   SourceDecisionImportLookupInput,
+  SourceDecisionImportReconciliation,
   SourceDecisionImportRepository,
   SourceDecisionEvidenceLookup,
   SourceDecisionEvidenceFreshness,
@@ -373,5 +374,97 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
           : { sourceRejectionId: sourceRejection.id })
       }
     };
+  }
+
+  async listSourceDecisionImportReconciliation(input: {
+    projectId: string;
+  }): Promise<readonly SourceDecisionImportReconciliation[]> {
+    const rows = await this.db
+      .select({
+        importId: sourceArtifacts.importId,
+        importRowId: sourceArtifacts.importRowId,
+        contentHash: sourceArtifacts.contentHash,
+        sourceClaimId: sourceClaims.id,
+        sourceDecisionId: sourceDecisions.id,
+        sourceDecisionStatus: sourceDecisions.status,
+        sourceDecisionEdgeId: sourceDecisionEdges.id,
+        searchDocumentId: searchDocuments.id,
+        searchDocumentValidityStatus: searchDocuments.validityStatus,
+        sourceRejectionId: sourceRejections.id,
+        sourceClaimStatus: sourceClaims.status,
+        sourceChunkId: sourceChunks.id
+      })
+      .from(sourceArtifacts)
+      .leftJoin(sourceChunks, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
+      .leftJoin(sourceClaims, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .leftJoin(sourceDecisions, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
+      .leftJoin(sourceDecisionEdges, and(
+        eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id),
+        eq(sourceDecisionEdges.sourceDecisionId, sourceDecisions.id)
+      ))
+      .leftJoin(searchDocuments, and(
+        eq(searchDocuments.sourceClaimId, sourceClaims.id),
+        eq(searchDocuments.sourceDecisionId, sourceDecisions.id)
+      ))
+      .leftJoin(sourceRejections, eq(sourceRejections.sourceClaimId, sourceClaims.id))
+      .where(and(
+        eq(sourceArtifacts.projectId, input.projectId)
+      ));
+    const grouped = new Map<string, {
+      rowCount: number;
+      completeRowCount: number;
+      decisionIds: Set<string>;
+      contentHashes: Set<string>;
+    }>();
+
+    for (const row of rows) {
+      if (row.importId === null || row.importRowId === null) {
+        continue;
+      }
+
+      const group = grouped.get(row.importId) ?? {
+        rowCount: 0,
+        completeRowCount: 0,
+        decisionIds: new Set<string>(),
+        contentHashes: new Set<string>()
+      };
+      group.rowCount += 1;
+      group.contentHashes.add(row.contentHash);
+      group.decisionIds.add(row.importRowId);
+      const complete = row.sourceChunkId !== null &&
+        row.sourceClaimId !== null &&
+        row.sourceDecisionId !== null &&
+        (row.sourceDecisionStatus === "adopt"
+          ? row.sourceDecisionEdgeId !== null &&
+            row.searchDocumentId !== null &&
+            row.searchDocumentValidityStatus === "active" &&
+            row.sourceRejectionId === null
+          : row.sourceDecisionStatus === "defer"
+            ? row.sourceDecisionEdgeId === null &&
+              row.searchDocumentId !== null &&
+              row.searchDocumentValidityStatus === "expired" &&
+              row.sourceRejectionId === null &&
+              row.sourceClaimStatus === "deprecated"
+            : row.sourceDecisionStatus === "reject" &&
+              row.sourceDecisionEdgeId === null &&
+              row.searchDocumentId === null &&
+              row.sourceRejectionId !== null &&
+              row.sourceClaimStatus === "rejected");
+      if (complete) {
+        group.completeRowCount += 1;
+      }
+      grouped.set(row.importId, group);
+    }
+
+    return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right)).map(
+      ([importId, group]): SourceDecisionImportReconciliation => ({
+        importId,
+        rowCount: group.rowCount,
+        completeRowCount: group.completeRowCount,
+        partialRowCount: group.rowCount - group.completeRowCount,
+        decisionIds: [...group.decisionIds].sort(),
+        contentHashes: [...group.contentHashes].sort()
+      })
+    );
   }
 }
