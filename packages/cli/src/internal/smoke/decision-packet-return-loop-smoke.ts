@@ -1615,6 +1615,11 @@ const runUnresolvedAcceptedSourceDissentProof = async (
         "This relation proves only that the persisted smoke models unresolved accepted dissent, not source truth."
     }
   });
+  const currentGoverningClaim = await sourceRepository.getSourceClaimById(governingClaim.id);
+  const currentDissentingClaim = await sourceRepository.getSourceClaimById(dissentingClaim.id);
+  if (currentGoverningClaim === undefined || currentDissentingClaim === undefined) {
+    throw new Error("DecisionPacket source dissent smoke lost its canonical claim revisions");
+  }
   // Persist a legacy/partial activation state through repositories so the
   // DecisionPacket boundary is tested independently of compiler filtering.
   const smokeMetadata = {
@@ -1699,7 +1704,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     metadata: {
       ...smokeMetadata,
       retrievalRunId: retrievalRun.id,
-      canonicalRevisionTokens: [governingClaim, dissentingClaim].map((claim) => ({
+      canonicalRevisionTokens: [currentGoverningClaim, currentDissentingClaim].map((claim) => ({
         subjectType: "source_claim",
         subjectId: claim.id,
         updatedAt: claim.updatedAt,
