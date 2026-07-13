@@ -523,7 +523,11 @@ describe("tracked paired live Codex repair", () => {
         trackedFiles: [],
         untrackedFiles: []
       });
-      expect(first.execution.targets?.baseline.after.patchHash).toMatch(/^[a-f0-9]{64}$/);
+      const baselineAfter = first.execution.targets?.baseline.after;
+      if (baselineAfter === undefined) {
+        throw new Error("the claimed trial must capture the baseline target after-state");
+      }
+      expect(baselineAfter.patchHash).toMatch(/^[a-f0-9]{64}$/);
       expect(first.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
         "conditions_observed",
