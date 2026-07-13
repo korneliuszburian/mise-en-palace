@@ -27,6 +27,7 @@ const fakeSha256Hex = (value: string): string => {
 const readModel = {
   run: {
     id: "run-decision-packet-1",
+    status: "planned",
     updatedAt: now
   },
   context: {
@@ -1241,5 +1242,26 @@ describe("DecisionPacket builder", () => {
 
     expect(later.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
     expect(later.packetIdentity.generatedAt).not.toBe(first.packetIdentity.generatedAt);
+  });
+
+  it("changes packet identity when the execution lifecycle status changes", () => {
+    const planned = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+    const running = buildDecisionPacketContractReadback({
+      readModel: {
+        ...readModel,
+        run: {
+          ...readModel.run,
+          status: "running"
+        }
+      },
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+
+    expect(running.packetIdentity.checksum).not.toBe(planned.packetIdentity.checksum);
   });
 });

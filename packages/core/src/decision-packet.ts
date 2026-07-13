@@ -370,6 +370,7 @@ export interface DecisionPacket {
 export interface DecisionPacketReadModelInput {
   run: {
     id: string;
+    status?: string;
     updatedAt: string;
   };
   context: {
@@ -478,6 +479,7 @@ export interface DecisionPacketIdentity {
   checksum: string;
   evidenceRef: string;
   generatedAt: string;
+  sourceRunStatus: string;
   sourceRunUpdatedAt: string;
   freshness: {
     status: "current_read_model_snapshot";
@@ -1174,6 +1176,7 @@ export const buildDecisionPacketIdentity = (input: {
     request: {
       runId: input.runId
     },
+    sourceRunStatus: input.readModel.run.status ?? "unknown",
     sourceRunUpdatedAt: input.readModel.run.updatedAt
   }));
 
@@ -1183,6 +1186,7 @@ export const buildDecisionPacketIdentity = (input: {
     checksum,
     evidenceRef: `packet:${checksum}`,
     generatedAt: input.generatedAt,
+    sourceRunStatus: input.readModel.run.status ?? "unknown",
     sourceRunUpdatedAt: input.readModel.run.updatedAt,
     freshness: {
       status: "current_read_model_snapshot",
