@@ -111,7 +111,7 @@ const packetGeneratedAtFromMetadata = (
 
 export const memoryPromotionMetadata = (
   candidate: MemoryCandidate,
-  input: PromoteMemoryCandidateInput
+  input: { metadata?: Record<string, unknown> }
 ): Record<string, unknown> => ({
   ...candidate.metadata,
   ...(input.metadata ?? {}),
@@ -820,10 +820,6 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
     if (reviewer.length === 0) throw new Error("applyReviewedMemoryRevision requires reviewer");
     if (reason.length === 0) throw new Error("applyReviewedMemoryRevision requires reason");
-    if (input.sourceMemoryRecordId === input.candidateId) {
-      throw new Error("applyReviewedMemoryRevision requires distinct candidate and source record IDs");
-    }
-
     return this.db.transaction(async (tx) => {
       const candidateRow = await tx.query.memoryCandidates.findFirst({
         where: eq(memoryCandidates.id, input.candidateId)
@@ -875,6 +871,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           version: 1,
           summary: candidateRow.summary,
           body: candidateRow.body,
+          owner: candidateRow.owner,
+          confidence: candidateRow.confidence,
           applicationGuidance: candidateRow.applicationGuidance,
           ...(candidateRow.invalidationRule === null ? {} : { invalidationRule: candidateRow.invalidationRule }),
           sourceLineage: candidateRow.sourceLineage,
