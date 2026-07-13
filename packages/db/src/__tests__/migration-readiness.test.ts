@@ -19,6 +19,7 @@ const migration = (hash: string, createdAt: string): MigrationIdentity => ({
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const migrationsFolder = fileURLToPath(new URL("../migrations", import.meta.url));
+const liveDatabaseTestTimeoutMs = 30_000;
 
 interface MigrationSchemaSnapshot {
   readonly migrationTablePresent: boolean;
@@ -288,6 +289,7 @@ describe("migration readiness boundary", () => {
         await readOnlyRole?.cleanup();
         await disposableDatabase.cleanup();
       }
-    }
+    },
+    liveDatabaseTestTimeoutMs
   );
 });
