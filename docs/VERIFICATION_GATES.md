@@ -37,6 +37,13 @@ whitespace; its DB job covers readiness, the same configured-store root test
 followed by a second readiness check, schema, DB smokes, and `eval:db`; its
 scheduled security job covers dependency, secret, and license policy.
 
+`quality:fallow:ci` prints its resolved base, head, and changed-file count. PR
+and ordinary push runs use their provider base; local, scheduled, manual, and
+initial-push runs derive `HEAD^..HEAD` when a parent exists. A reviewer may
+supply the verified `KRN_FALLOW_COMMIT_BASE=<commit>` explicitly. Missing
+provider bases, a missing parent, and invalid explicit bases fail closed. This
+is Fallow-only: the secret policy retains its separate full-history fallback.
+
 ## Proof artifact envelope
 
 DB readiness/smoke output, eval JSON, paired-trial records, doctor proof, and

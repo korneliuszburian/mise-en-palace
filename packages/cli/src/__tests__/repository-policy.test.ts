@@ -440,7 +440,7 @@ describe("repository policy boundaries", () => {
     }
   });
 
-  it("exposes the root fallback for local, scheduled, and manual Fallow gates", () => {
+  it("uses the current commit range for Fallow outside explicit push and PR bases", () => {
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fallow-root-fallback-"));
     const baselineRoot = join(fixtureRoot, "fallow-baselines");
     mkdirSync(baselineRoot, { recursive: true });
@@ -496,7 +496,7 @@ describe("repository policy boundaries", () => {
               {
                 cwd: repoRoot,
                 encoding: "utf8",
-                env: { ...process.env, ...env },
+                env: { ...process.env, KRN_FALLOW_COMMIT_BASE: "", ...env },
                 stdio: "pipe",
               },
             ),
@@ -511,22 +511,20 @@ describe("repository policy boundaries", () => {
       };
 
       for (const [name, env] of [
+        [
+          "initial push",
+          {
+            KRN_COMMIT_EVENT: "push",
+            KRN_COMMIT_BEFORE: "0000000000000000000000000000000000000000",
+            KRN_COMMIT_PR_BASE: "",
+          },
+        ],
         ["local", { KRN_COMMIT_EVENT: "", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
         ["schedule", { KRN_COMMIT_EVENT: "schedule", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
         [
           "workflow_dispatch",
           { KRN_COMMIT_EVENT: "workflow_dispatch", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" },
         ],
-      ] as const) {
-        const result = runFallow(env);
-
-        expect(result.status, name).toBe(1);
-        expect(result.output, name).toContain(`base=${rootSha}`);
-        expect(result.output, name).toContain("changedFiles=2");
-        expect(result.output, name).toContain("high-complexity:historical.js");
-      }
-
-      for (const [name, env] of [
         [
           "push",
           {
@@ -551,10 +549,48 @@ describe("repository policy boundaries", () => {
         expect(result.output, name).toContain("changedFiles=1");
         expect(result.output, name).not.toContain("high-complexity:historical.js");
       }
+
+      const explicitRoot = runFallow({
+        KRN_COMMIT_EVENT: "",
+        KRN_COMMIT_BEFORE: "",
+        KRN_COMMIT_PR_BASE: "",
+        KRN_FALLOW_COMMIT_BASE: rootSha,
+      });
+
+      expect(explicitRoot.status).toBe(1);
+      expect(explicitRoot.output).toContain(`base=${rootSha}`);
+      expect(explicitRoot.output).toContain("changedFiles=2");
+      expect(explicitRoot.output).toContain("high-complexity:historical.js");
+
+      const invalidExplicitBase = runFallow({
+        KRN_COMMIT_EVENT: "",
+        KRN_COMMIT_BEFORE: "",
+        KRN_COMMIT_PR_BASE: "",
+        KRN_FALLOW_COMMIT_BASE: "not-a-commit",
+      });
+      const missingPullRequestBase = runFallow({
+        KRN_COMMIT_EVENT: "pull_request",
+        KRN_COMMIT_BEFORE: "",
+        KRN_COMMIT_PR_BASE: "",
+      });
+      const missingPushBase = runFallow({
+        KRN_COMMIT_EVENT: "push",
+        KRN_COMMIT_BEFORE: "",
+        KRN_COMMIT_PR_BASE: "",
+      });
+
+      expect(invalidExplicitBase.status).toBe(1);
+      expect(invalidExplicitBase.output).toContain("Committed range base is invalid: not-a-commit");
+      expect(missingPullRequestBase.status).toBe(1);
+      expect(missingPullRequestBase.output).toContain(
+        "pull_request requires KRN_COMMIT_PR_BASE or KRN_FALLOW_COMMIT_BASE",
+      );
+      expect(missingPushBase.status).toBe(1);
+      expect(missingPushBase.output).toContain("push requires KRN_COMMIT_BEFORE or KRN_FALLOW_COMMIT_BASE");
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
+  }, 20_000);
 
   it("keeps security exceptions and allowlists reviewed in a tracked baseline", () => {
     const baseline = JSON.parse(readRootFile("security-baseline.json")) as {

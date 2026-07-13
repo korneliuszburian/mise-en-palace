@@ -35,7 +35,12 @@ const runFallow = (root, range) => {
 
 const main = () => {
   const root = resolveScriptRoot(process.argv.slice(2));
-  const range = resolveCommittedRange({ cwd: root });
+  const range = resolveCommittedRange({
+    cwd: root,
+    fallback: "head-parent",
+    explicitBase: process.env.KRN_FALLOW_COMMIT_BASE,
+    explicitBaseName: "KRN_FALLOW_COMMIT_BASE",
+  });
 
   console.log(
     `Fallow committed range: base=${range.baseSha} head=${range.headSha} changedFiles=${range.changedFiles.length}`,
