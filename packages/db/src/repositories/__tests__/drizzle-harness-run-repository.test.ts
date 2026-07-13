@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import type { EvalCandidateProposal } from "@krn/core";
 
-import type { KrnDatabase } from "../../database.js";
+import { createKrnDatabase, type KrnDatabase } from "../../database.js";
 import {
   cleanupActivationSmokeRows,
   countActivationSmokeMarkerRows,
@@ -56,6 +56,18 @@ describe("DrizzleHarnessRunRepository", () => {
   const fakeExecutionRunDatabase = (row: ReturnType<typeof executionRunRow>) => {
     const insertedValues: unknown[] = [];
     const transactionClient = {
+      query: {
+        executionRuns: {
+          findFirst: async () => row
+        }
+      },
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            for: async () => [row]
+          })
+        })
+      }),
       insert: () => ({
         values: (values: unknown) => {
           insertedValues.push(values);
@@ -82,7 +94,7 @@ describe("DrizzleHarnessRunRepository", () => {
     };
   };
 
-  it.fails("rejects an execution run created directly in a terminal state", async () => {
+  it("rejects an execution run created directly in a terminal state", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("succeeded"));
 
     await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
@@ -97,7 +109,7 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
-  it.fails("rejects a terminal execution run without start and completion timestamps", async () => {
+  it("rejects a terminal execution run without start and completion timestamps", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("failed"));
 
     await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
@@ -112,7 +124,7 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
-  it.fails("rejects a terminal run reversal and an incoherent completion update", async () => {
+  it("rejects a terminal run reversal and an incoherent completion update", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("succeeded", {
       startedAt: new Date("2026-07-13T10:00:00.000Z")
     }));
@@ -120,6 +132,7 @@ describe("DrizzleHarnessRunRepository", () => {
 
     await expect(repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
+      expectedStatus: "succeeded",
       status: "running",
       event: {
         sequence: 2,
@@ -130,6 +143,7 @@ describe("DrizzleHarnessRunRepository", () => {
 
     await expect(repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
+      expectedStatus: "succeeded",
       status: "succeeded",
       completedAt: "2026-07-13T09:59:00.000Z",
       event: {
@@ -140,7 +154,7 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
-  it.fails("rejects running without a start and completion before the start", async () => {
+  it("rejects running without a start and completion before the start", async () => {
     const missingStart = fakeExecutionRunDatabase(executionRunRow("running"));
 
     await expect(new DrizzleHarnessRunRepository(missingStart.db).createExecutionRun({
@@ -160,6 +174,7 @@ describe("DrizzleHarnessRunRepository", () => {
 
     await expect(new DrizzleHarnessRunRepository(completionBeforeStart.db).updateExecutionRunStatus({
       executionRunId: "execution-run-1",
+      expectedStatus: "running",
       status: "succeeded",
       completedAt: "2026-07-13T09:59:00.000Z",
       event: {
@@ -170,12 +185,13 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
-  it.fails("does not append a second event for a same-state retry", async () => {
+  it("does not append a second event for a same-state retry", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("running"));
     const repository = new DrizzleHarnessRunRepository(fake.db);
 
     await repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
+      expectedStatus: "running",
       status: "running",
       event: {
         sequence: 2,
@@ -185,6 +201,7 @@ describe("DrizzleHarnessRunRepository", () => {
     });
     await repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
+      expectedStatus: "running",
       status: "running",
       event: {
         sequence: 2,
@@ -193,7 +210,7 @@ describe("DrizzleHarnessRunRepository", () => {
       }
     });
 
-    expect(fake.insertedValues).toHaveLength(1);
+    expect(fake.insertedValues).toHaveLength(0);
   });
 
   it("exposes persisted run aggregate readback by execution run id", () => {
@@ -392,7 +409,7 @@ describe("DrizzleHarnessRunRepository", () => {
   });
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "records the confirmed illegal execution lifecycle matrix",
+    "guards legal execution lifecycle transitions and rejects illegal states",
     async () => {
       const marker = `krn_execution_lifecycle_${crypto.randomUUID().replaceAll("-", "")}`;
       const scaffold = await createSmokeHarnessScaffold({
@@ -419,59 +436,85 @@ describe("DrizzleHarnessRunRepository", () => {
       });
 
       try {
-        const createRun = (status: "planned" | "running" | "succeeded") =>
-          scaffold.harnessRunRepository.createExecutionRun({
-            harnessPlanId: scaffold.harnessPlan.id,
-            adapter: "lifecycle-falsifier",
-            status,
-            initialEvent: {
-              sequence: 1,
-              type: "smoke.execution_lifecycle.created",
-              message: `created ${status}`,
-              payload: { smokeId: marker, status }
-            },
-            metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
-          });
+        const createRun = () => scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "lifecycle-falsifier",
+          status: "planned",
+          initialEvent: {
+            sequence: 1,
+            type: "smoke.execution_lifecycle.created",
+            message: "created planned",
+            payload: { smokeId: marker, status: "planned" }
+          },
+          metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
+        });
 
-        const succeededWithoutStarted = await createRun("succeeded");
-        const runningWithoutStarted = await createRun("running");
-        const plannedRun = await createRun("planned");
-        const succeededWithoutCompleted = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+        await expect(scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "lifecycle-falsifier",
+          status: "succeeded",
+          initialEvent: {
+            sequence: 1,
+            type: "smoke.execution_lifecycle.illegal_create",
+            message: "terminal create must be rejected",
+            payload: { smokeId: marker }
+          },
+          metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
+        })).rejects.toThrow("execution run lifecycle");
+
+        const plannedRun = await createRun();
+        const runningRun = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: plannedRun.id,
+          expectedStatus: "planned",
+          status: "running",
+          startedAt: "2026-07-13T10:01:00.000Z",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_lifecycle.started",
+            message: "started with startedAt",
+            payload: { smokeId: marker }
+          }
+        });
+        const succeededRun = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: runningRun.id,
+          expectedStatus: "running",
+          status: "succeeded",
+          completedAt: "2026-07-13T10:02:00.000Z",
+          event: {
+            sequence: 3,
+            type: "smoke.execution_lifecycle.succeeded",
+            message: "completed coherently",
+            payload: { smokeId: marker }
+          }
+        });
+
+        await expect(scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: succeededRun.id,
+          expectedStatus: "succeeded",
+          status: "running",
+          event: {
+            sequence: 4,
+            type: "smoke.execution_lifecycle.terminal_reversal",
+            message: "terminal reversal must be rejected",
+            payload: { smokeId: marker }
+          }
+        })).rejects.toThrow("execution run lifecycle");
+
+        const sameStateRetry = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: succeededRun.id,
+          expectedStatus: "succeeded",
           status: "succeeded",
           event: {
-            sequence: 2,
-            type: "smoke.execution_lifecycle.succeeded_without_completed",
-            message: "succeeded without completedAt",
-            payload: { smokeId: marker }
-          }
-        });
-        const terminalReversal = await scaffold.harnessRunRepository.updateExecutionRunStatus({
-          executionRunId: succeededWithoutStarted.id,
-          status: "running",
-          event: {
-            sequence: 2,
-            type: "smoke.execution_lifecycle.terminal_reversal",
-            message: "terminal run returned to running",
-            payload: { smokeId: marker }
-          }
-        });
-        const sameStateRetry = await scaffold.harnessRunRepository.updateExecutionRunStatus({
-          executionRunId: runningWithoutStarted.id,
-          status: "running",
-          event: {
-            sequence: 2,
+            sequence: 4,
             type: "smoke.execution_lifecycle.same_state_retry",
-            message: "running retried as running",
+            message: "terminal retry is idempotent",
             payload: { smokeId: marker }
           }
         });
 
-        expect(succeededWithoutStarted.startedAt).toBeUndefined();
-        expect(runningWithoutStarted.startedAt).toBeUndefined();
-        expect(succeededWithoutCompleted.completedAt).toBeUndefined();
-        expect(terminalReversal.status).toBe("running");
-        expect(sameStateRetry.status).toBe("running");
+        expect(runningRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
+        expect(succeededRun.completedAt).toBe("2026-07-13T10:02:00.000Z");
+        expect(sameStateRetry.status).toBe("succeeded");
 
         const [{ executionRunCount }] = await scaffold.client<{ executionRunCount: number }[]>`
           select count(*)::int as "executionRunCount"
@@ -483,8 +526,8 @@ describe("DrizzleHarnessRunRepository", () => {
           from run_events
           where payload->>'smokeId' = ${marker}
         `;
-        expect(executionRunCount).toBe(3);
-        expect(eventCount).toBe(6);
+        expect(executionRunCount).toBe(1);
+        expect(eventCount).toBe(3);
       } finally {
         await scaffold.cleanup();
         await scaffold.client.end();
@@ -534,6 +577,110 @@ describe("DrizzleHarnessRunRepository", () => {
       } finally {
         await reader.unsafe(`drop table if exists ${marker}`);
         await Promise.all([reader.end(), writer.end()]);
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "allows exactly one concurrent execution lifecycle transition",
+    async () => {
+      const marker = `krn_execution_lifecycle_race_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "execution lifecycle race smoke",
+        workspacePrefix: "krn-execution-lifecycle-race",
+        projectSlug: "execution-lifecycle-race",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `execution lifecycle race ${marker}`,
+        taskContract: {
+          title: "Guard concurrent execution transitions",
+          objective: "Only one expected-status transition may append its event.",
+          constraints: ["real PostgreSQL", "two independent connections"],
+          nonGoals: ["no provider execution"],
+          acceptance: ["one winner, one stale loser, exact event count"]
+        },
+        harnessPlan: {
+          summary: "Execution lifecycle race smoke",
+          nextAction: "Race two terminal transitions from running."
+        }
+      });
+      const contenderClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+
+      try {
+        const contenderRepository = new DrizzleHarnessRunRepository(
+          createKrnDatabase(contenderClient)
+        );
+        const planned = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "lifecycle-race",
+          status: "planned",
+          initialEvent: {
+            sequence: 1,
+            type: "smoke.execution_lifecycle_race.created",
+            message: "race run created",
+            payload: { smokeId: marker }
+          },
+          metadata: { smokeId: marker }
+        });
+        await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: planned.id,
+          expectedStatus: "planned",
+          status: "running",
+          startedAt: "2026-07-13T10:01:00.000Z",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_lifecycle_race.started",
+            message: "race run started",
+            payload: { smokeId: marker }
+          }
+        });
+
+        const results = await Promise.allSettled([
+          scaffold.harnessRunRepository.updateExecutionRunStatus({
+            executionRunId: planned.id,
+            expectedStatus: "running",
+            status: "succeeded",
+            completedAt: "2026-07-13T10:02:00.000Z",
+            event: {
+              sequence: 3,
+              type: "smoke.execution_lifecycle_race.succeeded",
+              message: "success contender",
+              payload: { smokeId: marker, contender: "success" }
+            }
+          }),
+          contenderRepository.updateExecutionRunStatus({
+            executionRunId: planned.id,
+            expectedStatus: "running",
+            status: "failed",
+            completedAt: "2026-07-13T10:02:00.000Z",
+            event: {
+              sequence: 3,
+              type: "smoke.execution_lifecycle_race.failed",
+              message: "failure contender",
+              payload: { smokeId: marker, contender: "failure" }
+            }
+          })
+        ]);
+
+        expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+        expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
+
+        const [{ status }] = await scaffold.client<{ status: string }[]>`
+          select status from execution_runs where id = ${planned.id}
+        `;
+        const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
+          select count(*)::int as "eventCount"
+          from run_events
+          where payload->>'smokeId' = ${marker}
+        `;
+        expect(["succeeded", "failed"]).toContain(status);
+        expect(eventCount).toBe(3);
+      } finally {
+        await scaffold.cleanup();
+        await Promise.all([scaffold.client.end(), contenderClient.end()]);
       }
     }
   );

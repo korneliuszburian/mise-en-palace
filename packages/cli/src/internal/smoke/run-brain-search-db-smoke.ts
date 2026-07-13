@@ -402,12 +402,50 @@ export const runBrainSearchDbSmokeCheck = async (
     const sessionAExecutionRun = await runtime.harnessRunRepository.createExecutionRun({
       harnessPlanId: sessionACompile.harnessPlan.id,
       adapter: "krn-db-smoke-memory-search",
-      status: "succeeded",
+      status: "planned",
       startedAt: input.now,
       initialEvent: {
         sequence: 1,
         type: "smoke.memory_search.session_a.started",
         message: "Brain-search DB smoke Session A started",
+        payload: {
+          smokeId: input.smokeId,
+          query
+        }
+      },
+      metadata: {
+        ...metadata,
+        session: "A"
+      }
+    });
+    await runtime.harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: sessionAExecutionRun.id,
+      expectedStatus: "planned",
+      status: "running",
+      startedAt: input.now,
+      event: {
+        sequence: 2,
+        type: "smoke.memory_search.session_a.running",
+        message: "Brain-search DB smoke Session A started",
+        payload: {
+          smokeId: input.smokeId,
+          query
+        }
+      },
+      metadata: {
+        ...metadata,
+        session: "A"
+      }
+    });
+    await runtime.harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: sessionAExecutionRun.id,
+      expectedStatus: "running",
+      status: "succeeded",
+      completedAt: input.now,
+      event: {
+        sequence: 3,
+        type: "smoke.memory_search.session_a.succeeded",
+        message: "Brain-search DB smoke Session A completed",
         payload: {
           smokeId: input.smokeId,
           query

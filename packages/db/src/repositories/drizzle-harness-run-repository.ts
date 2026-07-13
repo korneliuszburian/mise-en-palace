@@ -21,7 +21,8 @@ import type {
   EvidenceCommandReadback,
   OperatorIntent,
   ReviewAssessment,
-  TaskContract
+  TaskContract,
+  ExecutionRunStatus
 } from "@krn/core";
 import {
   toEvidenceCommandReadback,
@@ -107,6 +108,127 @@ interface CanonicalRevisionToken {
   readonly status: string;
   readonly currentVersionId?: string;
 }
+
+const terminalExecutionRunStatuses: readonly ExecutionRunStatus[] = [
+  "succeeded",
+  "failed",
+  "blocked",
+  "cancelled"
+];
+
+const isTerminalExecutionRunStatus = (status: ExecutionRunStatus): boolean =>
+  terminalExecutionRunStatuses.includes(status);
+
+const executionRunTransitionIsAllowed = (
+  current: ExecutionRunStatus,
+  next: ExecutionRunStatus
+): boolean => {
+  switch (current) {
+    case "planned":
+      return next === "running" || next === "blocked" || next === "cancelled";
+    case "running":
+      return isTerminalExecutionRunStatus(next);
+    case "succeeded":
+    case "failed":
+    case "blocked":
+    case "cancelled":
+      return false;
+  }
+};
+
+const requireValidTimestamp = (value: string, field: string): Date => {
+  const timestamp = fromIsoTimestamp(value);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    throw new Error(`execution run lifecycle ${field} must be a valid ISO timestamp`);
+  }
+
+  return timestamp;
+};
+
+const validateExecutionRunCreation = (input: CreateExecutionRunInput): void => {
+  const status = input.status ?? "planned";
+
+  if (isTerminalExecutionRunStatus(status)) {
+    throw new Error(`execution run lifecycle cannot create terminal status ${status}`);
+  }
+
+  if (status === "planned" && input.startedAt !== undefined) {
+    throw new Error("execution run lifecycle planned status cannot have startedAt");
+  }
+
+  if (status === "running" && input.startedAt === undefined) {
+    throw new Error("execution run lifecycle running status requires startedAt");
+  }
+
+  if (input.startedAt !== undefined) {
+    requireValidTimestamp(input.startedAt, "startedAt");
+  }
+}
+
+const validateExecutionRunTransition = (input: UpdateExecutionRunStatusInput, current: {
+  readonly status: ExecutionRunStatus;
+  readonly startedAt: Date | null;
+  readonly completedAt: Date | null;
+}): boolean => {
+  if (current.status !== input.expectedStatus) {
+    throw new Error(
+      `execution run lifecycle expected ${input.expectedStatus} but found ${current.status}`
+    );
+  }
+
+  if (current.status === input.status) {
+    if (input.startedAt !== undefined || input.completedAt !== undefined) {
+      throw new Error(
+        "execution run lifecycle same-state retry cannot change timestamps"
+      );
+    }
+
+    return true;
+  }
+
+  if (!executionRunTransitionIsAllowed(current.status, input.status)) {
+    throw new Error(
+      `execution run lifecycle cannot transition from ${current.status} to ${input.status}`
+    );
+  }
+
+  if (input.status === "running") {
+    if (input.startedAt === undefined) {
+      throw new Error("execution run lifecycle running transition requires startedAt");
+    }
+
+    requireValidTimestamp(input.startedAt, "startedAt");
+    if (input.completedAt !== undefined) {
+      throw new Error("execution run lifecycle running transition cannot have completedAt");
+    }
+    return false;
+  }
+
+  if (!isTerminalExecutionRunStatus(input.status)) {
+    throw new Error("execution run lifecycle received an unsupported transition");
+  }
+
+  const startedAt = current.startedAt ?? (
+    input.startedAt === undefined
+      ? undefined
+      : requireValidTimestamp(input.startedAt, "startedAt")
+  );
+  if (startedAt === undefined) {
+    throw new Error("execution run lifecycle terminal transition requires startedAt");
+  }
+
+  if (input.completedAt === undefined) {
+    throw new Error("execution run lifecycle terminal transition requires completedAt");
+  }
+
+  const completedAt = requireValidTimestamp(input.completedAt, "completedAt");
+  if (completedAt.getTime() < startedAt.getTime()) {
+    throw new Error("execution run lifecycle completedAt cannot precede startedAt");
+  }
+
+  return false;
+};
 
 const invalidCanonicalRevisionToken = (): never => {
   throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
@@ -857,6 +979,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createExecutionRun(input: CreateExecutionRunInput): Promise<ExecutionRun> {
+    validateExecutionRunCreation(input);
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx
@@ -889,17 +1013,38 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
   async updateExecutionRunStatus(input: UpdateExecutionRunStatusInput): Promise<ExecutionRun> {
     return this.db.transaction(async (tx) => {
+      const currentRow = requireReturnedRow(
+        await tx
+          .select()
+          .from(executionRuns)
+          .where(eq(executionRuns.id, input.executionRunId))
+          .for("update"),
+        "updateExecutionRunStatus"
+      );
+      const isSameStateRetry = validateExecutionRunTransition(input, currentRow);
+
+      if (isSameStateRetry) {
+        return mapExecutionRun(currentRow);
+      }
+
       const row = requireReturnedRow(
         await tx
           .update(executionRuns)
           .set({
             status: input.status,
+            ...(input.status === "running" && input.startedAt !== undefined
+              ? { startedAt: fromIsoTimestamp(input.startedAt) }
+              : {}),
             ...(input.completedAt === undefined
               ? {}
               : { completedAt: fromIsoTimestamp(input.completedAt) }),
+            updatedAt: sql`now()`,
             ...(input.metadata === undefined ? {} : { metadata: input.metadata })
           })
-          .where(eq(executionRuns.id, input.executionRunId))
+          .where(and(
+            eq(executionRuns.id, input.executionRunId),
+            eq(executionRuns.status, input.expectedStatus)
+          ))
           .returning(),
         "updateExecutionRunStatus"
       );

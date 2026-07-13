@@ -49,7 +49,9 @@ export interface CreateExecutionRunInput extends RepositoryMetadata {
 
 export interface UpdateExecutionRunStatusInput {
   executionRunId: string;
+  expectedStatus: ExecutionRunStatus;
   status: ExecutionRunStatus;
+  startedAt?: string;
   completedAt?: string;
   event: RunEventInput;
   metadata?: Record<string, unknown>;
