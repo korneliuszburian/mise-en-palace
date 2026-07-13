@@ -845,6 +845,77 @@ const findFeedbackMaintenanceQueueRecord = async (
   return rows[0];
 };
 
+const createScopedFeedbackMaintenanceHandler = (
+  input: {
+    readonly harnessRunRepository: FeedbackDeltaLookupRepository;
+    readonly memoryRepository: MemoryRepository;
+    readonly sourceRepository: SourceRepository;
+  }
+): ReturnType<typeof createFeedbackDeltaMaintenanceHandler> => {
+  const sourceRepository = input.sourceRepository;
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+  const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
+
+  if (getSourceClaimForProject === undefined || getSourceDecisionForProject === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires project-scoped SourceClaim and SourceDecision lookups"
+    );
+  }
+
+  return createFeedbackDeltaMaintenanceHandler({
+    harnessRunRepository: input.harnessRunRepository,
+    memoryRepository: input.memoryRepository,
+    sourceRepository: {
+      getSourceClaimForProject(projectId, sourceClaimId) {
+        return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+      },
+      getSourceDecisionForProject(projectId, sourceDecisionId) {
+        return getSourceDecisionForProject.call(sourceRepository, projectId, sourceDecisionId);
+      }
+    },
+    now: () => "2026-07-07T12:00:00.000Z"
+  });
+};
+
+const replayFeedbackMaintenance = async (
+  input: {
+    readonly client: Sql;
+    readonly feedbackDeltaId: string;
+    readonly handler: ReturnType<typeof createFeedbackDeltaMaintenanceHandler>;
+    readonly readback: Awaited<ReturnType<typeof runMaintenanceQueueRecord>>;
+  }
+): Promise<{
+  readonly candidateId: string | undefined;
+  readonly outboxCountUnchanged: boolean;
+}> => {
+  const feedbackOutboxCountBeforeReplay = await countFeedbackOutboxRows({
+    client: input.client,
+    feedbackDeltaIds: [input.feedbackDeltaId]
+  });
+  const replayJob = parseMaintenanceJob(input.readback.record.jobType, input.readback.record.payload);
+
+  if (replayJob?.jobType !== "review_feedback_delta") {
+    throw new Error("DecisionPacket return-loop smoke could not parse feedback maintenance replay job");
+  }
+
+  const replayOutcome = await input.handler.run({
+    record: input.readback.record,
+    job: replayJob,
+    writeBoundary: buildMaintenanceQueueWriteBoundaryReadback(replayJob.jobType)
+  });
+  const feedbackOutboxCountAfterReplay = await countFeedbackOutboxRows({
+    client: input.client,
+    feedbackDeltaIds: [input.feedbackDeltaId]
+  });
+
+  return {
+    candidateId: replayOutcome.status === "succeeded"
+      ? replayOutcome.createdReviewCandidates?.[0]?.id
+      : undefined,
+    outboxCountUnchanged: feedbackOutboxCountAfterReplay === feedbackOutboxCountBeforeReplay
+  };
+};
+
 const runFeedbackMaintenanceProof = async (
   input: {
     readonly client: Sql;
@@ -874,28 +945,10 @@ const runFeedbackMaintenanceProof = async (
     );
   }
 
-  const sourceRepository = input.repositories.sourceRepository;
-  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
-  const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
-
-  if (getSourceClaimForProject === undefined || getSourceDecisionForProject === undefined) {
-    throw new Error(
-      "DecisionPacket return-loop smoke requires project-scoped SourceClaim and SourceDecision lookups"
-    );
-  }
-
-  const feedbackMaintenanceHandler = createFeedbackDeltaMaintenanceHandler({
+  const feedbackMaintenanceHandler = createScopedFeedbackMaintenanceHandler({
     harnessRunRepository: input.repositories.harnessRunRepository,
     memoryRepository: input.repositories.memoryRepository,
-    sourceRepository: {
-      getSourceClaimForProject(projectId, sourceClaimId) {
-        return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
-      },
-      getSourceDecisionForProject(projectId, sourceDecisionId) {
-        return getSourceDecisionForProject.call(sourceRepository, projectId, sourceDecisionId);
-      }
-    },
-    now: () => "2026-07-07T12:00:00.000Z"
+    sourceRepository: input.repositories.sourceRepository
   });
   const readback = await runMaintenanceQueueRecord({
     repository: input.repositories.maintenanceQueueRepository,
@@ -916,28 +969,12 @@ const runFeedbackMaintenanceProof = async (
     );
   }
 
-  const feedbackOutboxCountBeforeReplay = await countFeedbackOutboxRows({
+  const replay = await replayFeedbackMaintenance({
     client: input.client,
-    feedbackDeltaIds: [input.feedbackDelta.id]
+    feedbackDeltaId: input.feedbackDelta.id,
+    handler: feedbackMaintenanceHandler,
+    readback
   });
-  const replayJob = parseMaintenanceJob(readback.record.jobType, readback.record.payload);
-
-  if (replayJob?.jobType !== "review_feedback_delta") {
-    throw new Error("DecisionPacket return-loop smoke could not parse feedback maintenance replay job");
-  }
-
-  const replayOutcome = await feedbackMaintenanceHandler.run({
-    record: readback.record,
-    job: replayJob,
-    writeBoundary: buildMaintenanceQueueWriteBoundaryReadback(replayJob.jobType)
-  });
-  const feedbackOutboxCountAfterReplay = await countFeedbackOutboxRows({
-    client: input.client,
-    feedbackDeltaIds: [input.feedbackDelta.id]
-  });
-  const replayedCandidateId = replayOutcome.status === "succeeded"
-    ? replayOutcome.createdReviewCandidates?.[0]?.id
-    : undefined;
   const directMutationCountAfter = await countFeedbackMaintenanceForbiddenRows({
     client: input.client,
     marker: input.marker
@@ -952,7 +989,7 @@ const runFeedbackMaintenanceProof = async (
     delayedLookupResolved:
       readback.status === "succeeded" && candidate.feedbackDeltaId === input.feedbackDelta.id,
     exactReplayIdempotent:
-      replayedCandidateId === candidate.id && feedbackOutboxCountAfterReplay === feedbackOutboxCountBeforeReplay,
+      replay.candidateId === candidate.id && replay.outboxCountUnchanged,
     directMutationDelta: directMutationCountAfter - directMutationCountBefore
   };
 };
