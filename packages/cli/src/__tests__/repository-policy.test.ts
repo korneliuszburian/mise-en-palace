@@ -10,6 +10,65 @@ const readRootFile = (path: string): string => readFileSync(`${repoRoot}/${path}
 const pgvectorImage =
   "pgvector/pgvector:pg16@sha256:131dcf7ff6a900545df8e7e092c270aa8c6db2f2c818e408cb45ec21316b74e6";
 
+type FallowRun = { status: number; output: string };
+
+const runFallow = (fixtureRoot: string, env: Record<string, string>): FallowRun => {
+  try {
+    return {
+      status: 0,
+      output: execFileSync(
+        process.execPath,
+        [join(repoRoot, "scripts/run-fallow-ci.mjs"), "--root", fixtureRoot],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+          env: { ...process.env, KRN_FALLOW_COMMIT_BASE: "", ...env },
+          stdio: "pipe",
+        },
+      ),
+    };
+  } catch (error) {
+    const failure = error as { status?: number; stdout?: string; stderr?: string };
+    return {
+      status: failure.status ?? 1,
+      output: `${failure.stdout ?? ""}${failure.stderr ?? ""}`,
+    };
+  }
+};
+
+const committedRangeProfiles = (baseSha: string) => [
+  [
+    "initial push",
+    {
+      KRN_COMMIT_EVENT: "push",
+      KRN_COMMIT_BEFORE: "0000000000000000000000000000000000000000",
+      KRN_COMMIT_PR_BASE: "",
+    },
+  ],
+  ["local", { KRN_COMMIT_EVENT: "", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
+  ["schedule", { KRN_COMMIT_EVENT: "schedule", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
+  [
+    "workflow_dispatch",
+    { KRN_COMMIT_EVENT: "workflow_dispatch", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" },
+  ],
+  [
+    "push",
+    {
+      KRN_COMMIT_EVENT: "push",
+      KRN_COMMIT_BEFORE: baseSha,
+      KRN_COMMIT_PR_BASE: "",
+    },
+  ],
+  [
+    "pull_request",
+    {
+      KRN_COMMIT_EVENT: "pull_request",
+      KRN_COMMIT_BEFORE: "",
+      KRN_COMMIT_PR_BASE: baseSha,
+    },
+  ],
+] as const;
+
 describe("repository policy boundaries", () => {
   it("keeps development Postgres loopback-bound and image-pinned", () => {
     const compose = readRootFile("compose.yaml");
@@ -486,63 +545,8 @@ describe("repository policy boundaries", () => {
         cwd: fixtureRoot,
       });
 
-      const runFallow = (env: Record<string, string>) => {
-        try {
-          return {
-            status: 0,
-            output: execFileSync(
-              process.execPath,
-              [join(repoRoot, "scripts/run-fallow-ci.mjs"), "--root", fixtureRoot],
-              {
-                cwd: repoRoot,
-                encoding: "utf8",
-                env: { ...process.env, KRN_FALLOW_COMMIT_BASE: "", ...env },
-                stdio: "pipe",
-              },
-            ),
-          };
-        } catch (error) {
-          const failure = error as { status?: number; stdout?: string; stderr?: string };
-          return {
-            status: failure.status ?? 1,
-            output: `${failure.stdout ?? ""}${failure.stderr ?? ""}`,
-          };
-        }
-      };
-
-      for (const [name, env] of [
-        [
-          "initial push",
-          {
-            KRN_COMMIT_EVENT: "push",
-            KRN_COMMIT_BEFORE: "0000000000000000000000000000000000000000",
-            KRN_COMMIT_PR_BASE: "",
-          },
-        ],
-        ["local", { KRN_COMMIT_EVENT: "", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
-        ["schedule", { KRN_COMMIT_EVENT: "schedule", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" }],
-        [
-          "workflow_dispatch",
-          { KRN_COMMIT_EVENT: "workflow_dispatch", KRN_COMMIT_BEFORE: "", KRN_COMMIT_PR_BASE: "" },
-        ],
-        [
-          "push",
-          {
-            KRN_COMMIT_EVENT: "push",
-            KRN_COMMIT_BEFORE: reviewedBaseSha,
-            KRN_COMMIT_PR_BASE: "",
-          },
-        ],
-        [
-          "pull_request",
-          {
-            KRN_COMMIT_EVENT: "pull_request",
-            KRN_COMMIT_BEFORE: "",
-            KRN_COMMIT_PR_BASE: reviewedBaseSha,
-          },
-        ],
-      ] as const) {
-        const result = runFallow(env);
+      for (const [name, env] of committedRangeProfiles(reviewedBaseSha)) {
+        const result = runFallow(fixtureRoot, env);
 
         expect(result.status, name).toBe(0);
         expect(result.output, name).toContain(`base=${reviewedBaseSha}`);
@@ -550,7 +554,7 @@ describe("repository policy boundaries", () => {
         expect(result.output, name).not.toContain("high-complexity:historical.js");
       }
 
-      const explicitRoot = runFallow({
+      const explicitRoot = runFallow(fixtureRoot, {
         KRN_COMMIT_EVENT: "",
         KRN_COMMIT_BEFORE: "",
         KRN_COMMIT_PR_BASE: "",
@@ -562,18 +566,18 @@ describe("repository policy boundaries", () => {
       expect(explicitRoot.output).toContain("changedFiles=2");
       expect(explicitRoot.output).toContain("high-complexity:historical.js");
 
-      const invalidExplicitBase = runFallow({
+      const invalidExplicitBase = runFallow(fixtureRoot, {
         KRN_COMMIT_EVENT: "",
         KRN_COMMIT_BEFORE: "",
         KRN_COMMIT_PR_BASE: "",
         KRN_FALLOW_COMMIT_BASE: "not-a-commit",
       });
-      const missingPullRequestBase = runFallow({
+      const missingPullRequestBase = runFallow(fixtureRoot, {
         KRN_COMMIT_EVENT: "pull_request",
         KRN_COMMIT_BEFORE: "",
         KRN_COMMIT_PR_BASE: "",
       });
-      const missingPushBase = runFallow({
+      const missingPushBase = runFallow(fixtureRoot, {
         KRN_COMMIT_EVENT: "push",
         KRN_COMMIT_BEFORE: "",
         KRN_COMMIT_PR_BASE: "",
@@ -591,6 +595,85 @@ describe("repository policy boundaries", () => {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
   }, 20_000);
+
+  it("detects a current Fallow defect across every supported range source", () => {
+    const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fallow-current-defect-"));
+    const baselineRoot = join(fixtureRoot, "fallow-baselines");
+    mkdirSync(baselineRoot, { recursive: true });
+
+    try {
+      for (const baseline of ["dead-code.json", "health.json", "dupes.json"]) {
+        writeFileSync(join(baselineRoot, baseline), readRootFile(`fallow-baselines/${baseline}`));
+      }
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: fixtureRoot });
+      writeFileSync(join(fixtureRoot, "historical.js"), "export const historical = 1;\n");
+      writeFileSync(join(fixtureRoot, "current.js"), "export const current = 1;\n");
+      execFileSync("git", ["add", "historical.js", "current.js", "fallow-baselines"], {
+        cwd: fixtureRoot,
+      });
+      execFileSync("git", ["commit", "--quiet", "-m", "clean root"], { cwd: fixtureRoot });
+
+      writeFileSync(
+        join(fixtureRoot, "historical.js"),
+        "export function historical(value) { if (value === 1) return 1; if (value === 2) return 2; if (value === 3) return 3; if (value === 4) return 4; if (value === 5) return 5; if (value === 6) return 6; if (value === 7) return 7; return 0; }\n",
+      );
+      execFileSync("git", ["add", "historical.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "historical defect"], {
+        cwd: fixtureRoot,
+      });
+      const historicalBaseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+
+      writeFileSync(
+        join(fixtureRoot, "current.js"),
+        "export function current(value) { if (value === 1) return 1; if (value === 2) return 2; if (value === 3) return 3; if (value === 4) return 4; if (value === 5) return 5; if (value === 6) return 6; if (value === 7) return 7; return 0; }\n",
+      );
+      execFileSync("git", ["add", "current.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "current defect"], {
+        cwd: fixtureRoot,
+      });
+      const currentDefectSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: fixtureRoot,
+        encoding: "utf8",
+      }).trim();
+
+      for (const [name, env] of committedRangeProfiles(historicalBaseSha)) {
+        const result = runFallow(fixtureRoot, env);
+
+        expect(result.status, name).toBe(1);
+        expect(result.output, name).toContain(`base=${historicalBaseSha}`);
+        expect(result.output, name).toContain("changedFiles=1");
+        expect(result.output, name).toContain("high-complexity:current.js");
+        expect(result.output, name).not.toContain("high-complexity:historical.js");
+      }
+
+      writeFileSync(join(fixtureRoot, "current.js"), "export const current = 2;\n");
+      execFileSync("git", ["add", "current.js"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "--quiet", "-m", "remove current defect"], {
+        cwd: fixtureRoot,
+      });
+
+      for (const [name, env] of committedRangeProfiles(currentDefectSha)) {
+        const result = runFallow(fixtureRoot, env);
+
+        expect(result.status, name).toBe(0);
+        expect(result.output, name).toContain(`base=${currentDefectSha}`);
+        expect(result.output, name).toContain("changedFiles=1");
+        expect(result.output, name).not.toContain("high-complexity:current.js");
+        expect(result.output, name).not.toContain("high-complexity:historical.js");
+      }
+    } finally {
+      rmSync(fixtureRoot, { recursive: true, force: true });
+    }
+  }, 30_000);
 
   it("keeps security exceptions and allowlists reviewed in a tracked baseline", () => {
     const baseline = JSON.parse(readRootFile("security-baseline.json")) as {
