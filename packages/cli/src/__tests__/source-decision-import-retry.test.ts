@@ -73,6 +73,7 @@ const runSourceImportCli = async (input: {
   readonly persist: boolean;
 }) =>
   execFileAsync("pnpm", [
+    "--silent",
     "--filter",
     "@krn/cli",
     "krn",
@@ -101,13 +102,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput => {
-  const jsonStart = stdout.indexOf('{\n  "kind": "source_decision_import"');
-
-  if (jsonStart < 0) {
-    throw new Error("source decision import CLI did not emit JSON output");
-  }
-
-  const parsed: unknown = JSON.parse(stdout.slice(jsonStart));
+  const parsed: unknown = JSON.parse(stdout);
 
   if (
     !isRecord(parsed) ||
