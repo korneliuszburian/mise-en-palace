@@ -34,26 +34,34 @@ const parseArguments = (argv) => {
 
 const signalNumber = (signal) => ({ SIGTERM: 15, SIGKILL: 9 }[signal] ?? 1);
 
+const shellFor = () => process.platform === "win32" ? process.env.ComSpec ?? "cmd.exe" : process.env.SHELL ?? "/bin/sh";
+
+const shellArgumentsFor = (command) => process.platform === "win32"
+  ? ["/d", "/s", "/c", command]
+  : ["-c", command];
+
+const sendSignal = (child, signal) => process.platform === "win32"
+  ? child.kill(signal)
+  : process.kill(-child.pid, signal);
+
 const terminateProcessGroup = (child, signal) => {
   if (child.pid === undefined) return;
 
   try {
-    if (process.platform === "win32") {
-      child.kill(signal);
-    } else {
-      process.kill(-child.pid, signal);
-    }
+    sendSignal(child, signal);
   } catch (error) {
     if (error?.code !== "ESRCH") throw error;
   }
 };
 
+const exitCodeFor = (timedOut, code, signal) => {
+  if (timedOut) return 124;
+  if (signal === null) return code ?? 1;
+  return 128 + signalNumber(signal);
+};
+
 const run = ({ timeoutMs, graceMs, command }) => new Promise((resolve, reject) => {
-  const shell = process.platform === "win32" ? process.env.ComSpec ?? "cmd.exe" : process.env.SHELL ?? "/bin/sh";
-  const shellArguments = process.platform === "win32"
-    ? ["/d", "/s", "/c", command]
-    : ["-c", command];
-  const child = spawn(shell, shellArguments, {
+  const child = spawn(shellFor(), shellArgumentsFor(command), {
     cwd: process.cwd(),
     detached: process.platform !== "win32",
     stdio: "inherit",
@@ -81,11 +89,7 @@ const run = ({ timeoutMs, graceMs, command }) => new Promise((resolve, reject) =
 
   child.once("close", (code, signal) => {
     clearTimers();
-    if (timedOut) {
-      resolve(124);
-      return;
-    }
-    resolve(signal === null ? code ?? 1 : 128 + signalNumber(signal));
+    resolve(exitCodeFor(timedOut, code, signal));
   });
 });
 
