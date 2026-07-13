@@ -198,14 +198,16 @@ describe("source decision import retry boundary", () => {
           migrationsFolder
         });
         const preview = await runSourceImportCli({ persist: false });
-        const first = await runSourceImportCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          persist: true
-        });
-        const second = await runSourceImportCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          persist: true
-        });
+        const [first, second] = await Promise.all([
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            persist: true
+          }),
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            persist: true
+          })
+        ]);
         const importRows = await client<{ importId: string }[]>`
           select import_id as "importId"
           from source_artifacts
