@@ -475,7 +475,7 @@ export const runBrainSearchDbSmokeCheck = async (
       reviewBurden: "DB smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 2,
+        sequence: 4,
         type: "smoke.memory_search.session_a.evidence_captured",
         message: "Brain-search DB smoke Session A evidence captured",
         payload: {
