@@ -18,6 +18,7 @@ const methodNames = [
   "listMemoryRecordsForProject",
   "invalidateMemoryRecord",
   "supersedeMemoryRecord",
+  "applyReviewedMemoryRevision",
   "recordMemoryApplication",
   "recordMemoryApplicationOnce",
   "recordMemoryApplicationWithEffectsOnce",

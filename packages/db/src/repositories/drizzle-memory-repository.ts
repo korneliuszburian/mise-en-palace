@@ -35,6 +35,8 @@ import type {
   AntiMemorySelectionOptions,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
+  ApplyReviewedMemoryRevisionInput,
+  ApplyReviewedMemoryRevisionResult,
   CreateMemoryRecordInput,
   InvalidateMemoryRecordInput,
   MemoryRepository,
@@ -87,7 +89,9 @@ const smokePayload = (
   return typeof smokeId === "string" ? { smokeId } : {};
 };
 
-const memoryRecordKeyForCandidate = (input: PromoteMemoryCandidateInput): string =>
+const memoryRecordKeyForCandidate = (
+  input: Pick<PromoteMemoryCandidateInput, "candidateId" | "recordKey">
+): string =>
   input.recordKey ?? `memory:${input.candidateId}`;
 
 const antiMemoryRecordKeyForCandidate = (
@@ -517,11 +521,14 @@ export type MemoryApplicationPersistenceStage =
   | "after_candidate"
   | "after_outbox";
 
+export type MemoryRevisionPersistenceStage = "after_promotion";
+
 export class DrizzleMemoryRepository implements MemoryRepository {
   constructor(
     private readonly db: KrnDatabase,
     private readonly options: {
       faultAfterStage?: (stage: MemoryApplicationPersistenceStage) => void;
+      faultAfterRevisionStage?: (stage: MemoryRevisionPersistenceStage) => void;
     } = {}
   ) {}
 
@@ -803,6 +810,153 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
   async promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord> {
     return this.promoteMemoryCandidate(input);
+  }
+
+  async applyReviewedMemoryRevision(
+    input: ApplyReviewedMemoryRevisionInput
+  ): Promise<ApplyReviewedMemoryRevisionResult> {
+    const reviewer = input.reviewer.trim();
+    const reason = input.reason.trim();
+
+    if (reviewer.length === 0) throw new Error("applyReviewedMemoryRevision requires reviewer");
+    if (reason.length === 0) throw new Error("applyReviewedMemoryRevision requires reason");
+    if (input.sourceMemoryRecordId === input.candidateId) {
+      throw new Error("applyReviewedMemoryRevision requires distinct candidate and source record IDs");
+    }
+
+    return this.db.transaction(async (tx) => {
+      const candidateRow = await tx.query.memoryCandidates.findFirst({
+        where: eq(memoryCandidates.id, input.candidateId)
+      });
+      if (candidateRow === undefined) throw new Error(`Memory candidate ${input.candidateId} was not found`);
+
+      const candidate = mapMemoryCandidate(candidateRow);
+      ensurePromotableCandidate(candidate);
+      const now = new Date();
+      requireCandidateTransitionRow(
+        await tx.update(memoryCandidates).set({
+          status: "accepted",
+          reviewer,
+          reviewedAt: now,
+          metadata: memoryPromotionMetadata(candidate, input),
+          updatedAt: now
+        }).where(and(
+          eq(memoryCandidates.id, candidateRow.id),
+          inArray(memoryCandidates.status, ["proposed", "candidate"])
+        )).returning(),
+        "applyReviewedMemoryRevision.acceptCandidate",
+        candidateRow.id
+      );
+
+      const memoryRecordRow = requireReturnedRow(
+        await tx.insert(memoryRecords).values({
+          projectId: candidateRow.projectId,
+          key: memoryRecordKeyForCandidate(input),
+          kind: candidateRow.kind,
+          status: "active",
+          summary: candidateRow.summary,
+          body: candidateRow.body,
+          owner: candidateRow.owner,
+          confidence: candidateRow.confidence,
+          applicationGuidance: candidateRow.applicationGuidance,
+          ...(candidateRow.invalidationRule === null ? {} : { invalidationRule: candidateRow.invalidationRule }),
+          sourceLineage: candidateRow.sourceLineage,
+          isUserPreference: candidateRow.isUserPreference,
+          validFrom: candidateRow.validFrom,
+          ...(candidateRow.validUntil === null ? {} : { validUntil: candidateRow.validUntil }),
+          metadata: memoryPromotionMetadata(candidate, input)
+        }).returning(),
+        "applyReviewedMemoryRevision.insertReplacement"
+      );
+      const versionRow = requireReturnedRow(
+        await tx.insert(memoryRecordVersions).values({
+          memoryRecordId: memoryRecordRow.id,
+          createdFromCandidateId: candidateRow.id,
+          version: 1,
+          summary: candidateRow.summary,
+          body: candidateRow.body,
+          applicationGuidance: candidateRow.applicationGuidance,
+          ...(candidateRow.invalidationRule === null ? {} : { invalidationRule: candidateRow.invalidationRule }),
+          sourceLineage: candidateRow.sourceLineage,
+          validFrom: candidateRow.validFrom,
+          ...(candidateRow.validUntil === null ? {} : { validUntil: candidateRow.validUntil }),
+          metadata: memoryPromotionMetadata(candidate, input)
+        }).returning(),
+        "applyReviewedMemoryRevision.insertReplacementVersion"
+      );
+      const replacementRow = requireReturnedRow(
+        await tx.update(memoryRecords).set({ currentVersionId: versionRow.id, updatedAt: now })
+          .where(eq(memoryRecords.id, memoryRecordRow.id)).returning(),
+        "applyReviewedMemoryRevision.updateReplacement"
+      );
+      await tx.insert(outboxEvents).values({
+        topic: "memory.candidate.promoted",
+        payload: {
+          ...smokePayload(input.metadata),
+          memoryCandidateId: candidateRow.id,
+          memoryRecordId: replacementRow.id,
+          memoryRecordVersionId: versionRow.id,
+          projectId: candidateRow.projectId
+        }
+      });
+      await this.options.faultAfterRevisionStage?.("after_promotion");
+
+      const lockIds = [input.sourceMemoryRecordId, replacementRow.id].sort();
+      await tx.execute(sql`
+        SELECT id FROM ${memoryRecords}
+        WHERE id IN (${lockIds[0]}, ${lockIds[1]})
+        ORDER BY id FOR UPDATE
+      `);
+      const currentRow = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.sourceMemoryRecordId)
+      });
+      if (currentRow === undefined) throw new Error(`Memory record not found: ${input.sourceMemoryRecordId}`);
+      if (currentRow.projectId !== replacementRow.projectId) {
+        throw new Error("applyReviewedMemoryRevision requires records from the same project");
+      }
+      if (currentRow.status !== "active") {
+        throw new Error(`applyReviewedMemoryRevision requires an active source record; found ${currentRow.status}`);
+      }
+      const supersededAt = input.supersededAt === undefined ? now : fromIsoTimestamp(input.supersededAt);
+      const supersededRow = requireMemoryRecordTransitionRow(
+        await tx.update(memoryRecords).set({
+          status: "superseded",
+          invalidatedAt: supersededAt,
+          invalidationReason: reason,
+          metadata: {
+            ...currentRow.metadata,
+            supersessionReview: {
+              reviewer,
+              reason,
+              supersededAt: supersededAt.toISOString(),
+              supersededByMemoryRecordId: replacementRow.id
+            }
+          },
+          updatedAt: now
+        }).where(and(
+          eq(memoryRecords.id, input.sourceMemoryRecordId),
+          eq(memoryRecords.projectId, replacementRow.projectId),
+          eq(memoryRecords.status, "active")
+        )).returning(),
+        "applyReviewedMemoryRevision.supersedeSource",
+        input.sourceMemoryRecordId,
+        "active"
+      );
+      await tx.insert(outboxEvents).values({
+        topic: "memory.record.superseded",
+        payload: {
+          ...smokePayload(input.metadata),
+          memoryRecordId: currentRow.id,
+          supersededByMemoryRecordId: replacementRow.id,
+          projectId: currentRow.projectId
+        }
+      });
+
+      return {
+        memoryRecord: mapMemoryRecord(replacementRow),
+        supersededMemoryRecord: mapMemoryRecord(supersededRow)
+      };
+    });
   }
 
   async rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate> {

@@ -16,10 +16,9 @@ import type {
   CreateAntiMemoryCandidateInput,
   CreateMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
+  ApplyReviewedMemoryRevisionInput as RepositoryApplyReviewedMemoryRevisionInput,
   MemoryRepository,
-  PromoteMemoryCandidateInput,
-  RejectMemoryCandidateInput,
-  SupersedeMemoryRecordInput
+  RejectMemoryCandidateInput
 } from "@krn/core/repositories/internal";
 
 export interface ProposeMemoryConsolidationInput {
@@ -86,10 +85,7 @@ export interface ProposeMemoryRevisionResult {
 }
 
 export interface ApplyReviewedMemoryRevisionInput {
-  memoryRepository: Pick<
-    MemoryRepository,
-    "promoteReviewedMemoryCandidate" | "supersedeMemoryRecord"
-  >;
+  memoryRepository: Pick<MemoryRepository, "applyReviewedMemoryRevision">;
   proposal: ProposeMemoryRevisionResult;
   sourceMemoryRecordId: MemoryRecord["id"];
   reviewer: string;
@@ -386,11 +382,13 @@ export const applyReviewedMemoryRevision = async (
 ): Promise<ApplyReviewedMemoryRevisionResult> => {
   const reviewer = requireText(input.reviewer, "reviewer");
   const reason = requireText(input.reason, "reason");
-  const promotionInput: PromoteMemoryCandidateInput = {
+  const repositoryInput: RepositoryApplyReviewedMemoryRevisionInput = {
     candidateId: input.proposal.memoryCandidate.id,
+    sourceMemoryRecordId: input.sourceMemoryRecordId,
     reviewer,
-    decision: "accepted",
+    reason,
     ...(input.recordKey === undefined ? {} : { recordKey: input.recordKey }),
+    ...(input.reviewedAt === undefined ? {} : { supersededAt: input.reviewedAt }),
     metadata: {
       ...input.proposal.memoryCandidate.metadata,
       ...(input.metadata ?? {}),
@@ -401,25 +399,8 @@ export const applyReviewedMemoryRevision = async (
       }
     }
   };
-  const memoryRecord = await input.memoryRepository.promoteReviewedMemoryCandidate(promotionInput);
-  const supersedeInput: SupersedeMemoryRecordInput = {
-    memoryRecordId: input.sourceMemoryRecordId,
-    reviewer,
-    reason,
-    supersededByMemoryRecordId: memoryRecord.id,
-    ...(input.reviewedAt === undefined ? {} : { supersededAt: input.reviewedAt }),
-    metadata: {
-      ...(input.metadata ?? {}),
-      memoryRevisionCandidateId: input.proposal.memoryCandidate.id,
-      replacementMemoryRecordId: memoryRecord.id
-    }
-  };
-  const supersededMemoryRecord = await input.memoryRepository.supersedeMemoryRecord(supersedeInput);
 
-  return {
-    memoryRecord,
-    supersededMemoryRecord
-  };
+  return input.memoryRepository.applyReviewedMemoryRevision(repositoryInput);
 };
 
 export const rejectMemoryRevision = async (

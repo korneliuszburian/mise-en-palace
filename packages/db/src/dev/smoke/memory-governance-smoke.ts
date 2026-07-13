@@ -284,6 +284,85 @@ export const runMemoryGovernanceSmokeCheck = async (
         smokeId: marker
       }
     });
+
+    const revisionCandidate = await memoryRepository.createMemoryCandidate({
+      projectId: project.id,
+      executionRunId: executionRun.id,
+      proposedBy: "memory-governance-revision-smoke",
+      kind: "constraint",
+      status: "candidate",
+      summary: "Atomic reviewed memory replacement",
+      body: "Replacement must commit with source supersession.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use after reviewed atomic revision.",
+      invalidationRule: "Revisit when the revision is superseded.",
+      sourceClaimIds: [sourceClaim.id],
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "atomic-memory-revision"
+      }
+    });
+    const faultClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
+    try {
+      const faultRepository = new DrizzleMemoryRepository(createKrnDatabase(faultClient), {
+        faultAfterRevisionStage: (stage) => {
+          if (stage === "after_promotion") throw new Error("fault:after_promotion");
+        }
+      });
+      await assertRejected(
+        faultRepository.applyReviewedMemoryRevision({
+          candidateId: revisionCandidate.id,
+          sourceMemoryRecordId: memoryRecord.id,
+          reviewer: "memory-governance-revision-fault",
+          reason: "Atomic revision fault probe",
+          recordKey: `memory-governance-revision:${marker}`,
+          metadata: { smokeId: marker, lifecycleProbe: "atomic-memory-revision" }
+        }),
+        "fault:after_promotion",
+        "Memory revision fault injection did not abort"
+      );
+    } finally {
+      await faultClient.end();
+    }
+    const postFaultRevisionRows = await db.select().from(memoryRecords).where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'atomic-memory-revision' AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
+    const postFaultCandidate = await memoryRepository.getMemoryCandidateById(revisionCandidate.id);
+    if (postFaultRevisionRows.length !== 0 || postFaultCandidate?.status !== "candidate") {
+      throw new Error("Memory revision fault injection left partial promotion state");
+    }
+
+    const revisionClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+    try {
+      const revisionRepositories = revisionClients.map((client) => new DrizzleMemoryRepository(createKrnDatabase(client)));
+      const revisionResults = await Promise.allSettled(revisionRepositories.map((repository, index) => repository.applyReviewedMemoryRevision({
+        candidateId: revisionCandidate.id,
+        sourceMemoryRecordId: memoryRecord.id,
+        reviewer: `memory-governance-revision-race-${index}`,
+        reason: "Concurrent reviewed revision race",
+        recordKey: `memory-governance-revision:${marker}`,
+        metadata: { smokeId: marker, lifecycleProbe: "atomic-memory-revision" }
+      })));
+      const revisionRows = await db.select().from(memoryRecords).where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'atomic-memory-revision' AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
+      const revisionOutboxRows = await db.select().from(outboxEvents).where(sql`
+        (${outboxEvents.topic} = 'memory.candidate.promoted' AND ${outboxEvents.payload}->>'memoryCandidateId' = ${revisionCandidate.id})
+        OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${memoryRecord.id})
+      `);
+      const revisionCandidateReadback = await memoryRepository.getMemoryCandidateById(revisionCandidate.id);
+      assertSmokeReadbackChecks([
+        { label: "atomic memory revision fault leaves no replacement", passed: postFaultRevisionRows.length === 0 },
+        { label: "atomic memory revision has one concurrent winner", passed: fulfilledCount(revisionResults) === 1 },
+        { label: "atomic memory revision creates one replacement", passed: revisionRows.length === 1 },
+        { label: "atomic memory revision accepts candidate once", passed: revisionCandidateReadback?.status === "accepted" },
+        { label: "atomic memory revision emits promotion and supersession outbox", passed: revisionOutboxRows.filter((row) => row.topic === "memory.candidate.promoted").length === 1 && revisionOutboxRows.filter((row) => row.topic === "memory.record.superseded").length === 1 }
+      ], "Atomic memory revision falsifier failed");
+    } finally {
+      await Promise.all(revisionClients.map((client) => client.end()));
+    }
     const reviewedCandidate = await memoryRepository.getMemoryCandidateById(memoryCandidate.id);
     await assertRejected(
       memoryRepository.rejectMemoryCandidate({

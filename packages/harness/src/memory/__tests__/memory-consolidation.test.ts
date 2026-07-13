@@ -487,16 +487,38 @@ describe("reviewed memory revision", () => {
 
     const applied = await applyReviewedMemoryRevision({
       memoryRepository: {
-        async promoteReviewedMemoryCandidate(input) {
+        async applyReviewedMemoryRevision(input) {
           if (candidate === undefined) {
             throw new Error("missing memory candidate");
           }
 
-          return memoryRecordFromCandidate(candidate, input);
-        },
-        async supersedeMemoryRecord(input) {
-          supersedeInput = input;
-          return supersededMemoryRecordFromInput(originalRecord, input);
+          const memoryRecord = memoryRecordFromCandidate(candidate, {
+            candidateId: input.candidateId,
+            reviewer: input.reviewer,
+            decision: "accepted",
+            ...(input.recordKey === undefined ? {} : { recordKey: input.recordKey }),
+            metadata: input.metadata
+          });
+          supersedeInput = {
+            memoryRecordId: input.sourceMemoryRecordId,
+            supersededByMemoryRecordId: memoryRecord.id,
+            reviewer: input.reviewer,
+            reason: input.reason,
+            metadata: {
+              ...(input.metadata ?? {}),
+              replacementMemoryRecordId: memoryRecord.id
+            }
+          };
+          return {
+            memoryRecord,
+            supersededMemoryRecord: supersededMemoryRecordFromInput(originalRecord, {
+              ...supersedeInput,
+              ...(input.supersededAt === undefined ? {} : { supersededAt: input.supersededAt }),
+              metadata: {
+                replacementMemoryRecordId: memoryRecord.id
+              }
+            })
+          };
         }
       },
       proposal,
