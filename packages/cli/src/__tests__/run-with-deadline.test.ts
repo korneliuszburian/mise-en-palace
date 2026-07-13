@@ -34,7 +34,7 @@ describe("run-with-deadline", () => {
   });
 
   it("returns the timeout status after the bounded grace period", () => {
-    const result = run("trap 'printf term >&2; exit 143' TERM; while :; do sleep 1; done", 50, 500);
+    const result = run("process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);", 50, 500);
 
     expect(result.status).toBe(124);
   });
