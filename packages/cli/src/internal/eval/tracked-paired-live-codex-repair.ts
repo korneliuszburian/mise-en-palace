@@ -55,6 +55,10 @@ export type TrialPacketValidation = {
   readonly checksum?: string;
 };
 
+type PairedTrialChecker = (
+  input: Parameters<typeof runPairedRepairChecker>[0]
+) => Promise<PairedRepairScore>;
+
 export type TrackedTrialArtifact = {
   readonly kind: "krn.pairedLiveCodexRepairArtifact.v1";
   readonly status: TrackedTrialStatus;
@@ -281,7 +285,7 @@ export const runTrackedPairedTrial = async (input: {
   readonly checkerRoot: string;
   readonly packet: unknown;
   readonly packetFetchFailure?: string;
-}): Promise<TrackedTrialArtifact> => {
+}, checker: PairedTrialChecker = runPairedRepairChecker): Promise<TrackedTrialArtifact> => {
   const manifestHash = sha256(serializedJson(input.manifest));
   const sourceTreeHash = await hashTree(input.sourceRoot);
   const packetValidation = validateTrialPacket(input.packet, input.manifest);
@@ -325,7 +329,7 @@ export const runTrackedPairedTrial = async (input: {
     };
     const baselineResult = await runArm(baseline, prompts.baseline);
     const krnResult = await runArm(krn, prompts.krn);
-    const score = await runPairedRepairChecker({
+    const score = await checker({
       baseline: { targetRoot: baseline.root, checkerRoot: input.checkerRoot, initialCommit: baseline.commit },
       krn: { targetRoot: krn.root, checkerRoot: input.checkerRoot, initialCommit: krn.commit }
     });
