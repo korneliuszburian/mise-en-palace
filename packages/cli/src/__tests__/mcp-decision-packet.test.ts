@@ -189,6 +189,53 @@ const weakPacketJson = {
   }
 };
 
+const unresolvedSourceDissentEvidenceGapId =
+  "evidence-gap:run-agent-source-dissent:unresolved-accepted-source-dissent:claim-candidate";
+
+const unresolvedSourceDissentPacketJson = {
+  ...weakPacketJson,
+  request: {
+    runId: "run-agent-source-dissent"
+  },
+  packetIdentity: {
+    ...packetJson.packetIdentity,
+    packetId: "decision-packet:run-agent-source-dissent:jkl",
+    checksum: "d".repeat(64),
+    evidenceRef: `packet:${"d".repeat(64)}`
+  },
+  packet: {
+    ...weakPacketJson.packet,
+    sourceClaimIds: ["claim-candidate", "claim-dissenting"],
+    evidenceGaps: [{
+      id: unresolvedSourceDissentEvidenceGapId,
+      reason:
+        "SourceClaim claim-candidate is selected with accepted dissent that has no reviewed canonical resolution.",
+      verificationRequired:
+        "Record a reviewed canonical resolution before treating either path as governing authority."
+    }],
+    sourceConsensus: {
+      ...weakPacketJson.packet.sourceConsensus,
+      conflictingSourceClaimIds: ["claim-candidate"],
+      evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
+    },
+    abstentionScore: {
+      ...weakPacketJson.packet.abstentionScore,
+      reasons: [
+        "missing_governing_decision",
+        "evidence_gap",
+        "conflicting_authority",
+        "unresolved_accepted_source_dissent"
+      ],
+      evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
+    },
+    brief: {
+      ...weakPacketJson.packet.brief,
+      includedSourceClaimIds: ["claim-candidate", "claim-dissenting"],
+      evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
+    }
+  }
+};
+
 const noFormalNegativePacketJson = {
   ...packetJson,
   request: {
@@ -567,6 +614,56 @@ describe("DecisionPacket MCP wrapper", () => {
         },
         brief: {
           evidenceGapIds: [weakContextEvidenceGapId]
+        }
+      }
+    });
+  });
+
+  it("preserves unresolved accepted source dissent as abstaining review context", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-source-dissent",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-source-dissent"
+        }
+      }
+    }, runtime(async () => ({
+      stdout: `${JSON.stringify(unresolvedSourceDissentPacketJson)}\n`
+    })));
+    const result = isRecord(reply) ? reply["result"] : undefined;
+    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
+
+    expect(structuredContent).toMatchObject({
+      kind: "krn.decisionPacketReadback.v1",
+      packetIdentity: {
+        checksum: "d".repeat(64),
+        evidenceRef: `packet:${"d".repeat(64)}`
+      },
+      packet: {
+        governingDecisionIds: [],
+        sourceClaimIds: ["claim-candidate", "claim-dissenting"],
+        evidenceGaps: [{
+          id: unresolvedSourceDissentEvidenceGapId
+        }],
+        sourceConsensus: {
+          decisionLinkedSourceClaimIds: [],
+          conflictingSourceClaimIds: ["claim-candidate"],
+          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
+        },
+        abstentionScore: {
+          status: "abstain",
+          reasons: expect.arrayContaining([
+            "conflicting_authority",
+            "unresolved_accepted_source_dissent"
+          ]),
+          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
+        },
+        brief: {
+          includedSourceClaimIds: ["claim-candidate", "claim-dissenting"],
+          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
         }
       }
     });

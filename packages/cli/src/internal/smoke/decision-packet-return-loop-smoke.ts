@@ -47,6 +47,9 @@ import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 import {
+  handleDecisionPacketMcpMessage
+} from "../mcp/decision-packet-mcp-server.js";
+import {
   isRecord,
   readRecordArray,
   readRequiredRecord,
@@ -126,6 +129,8 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceDissentPacketStatus: string;
   sourceDissentPacketReasons: readonly string[];
   sourceDissentBriefStopsExecution: boolean;
+  sourceDissentMcpPreservesDissentAndGap: boolean;
+  sourceDissentReadOnlyUsefulnessUnchanged: boolean;
   feedbackMaintenanceQueueRecordId: string;
   feedbackMaintenanceQueueStatus: string;
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
@@ -268,6 +273,10 @@ interface SourceConsensusProofInput extends SourcePacketProofInput {
   };
 }
 
+interface SourceDissentProofInput extends SourcePacketProofInput {
+  readonly client: Sql;
+}
+
 interface SourceDissentProofResult {
   proofRunId: string;
   retrievalRunId: string | undefined;
@@ -282,6 +291,10 @@ interface SourceDissentProofResult {
   packetStatus: string;
   packetReasons: readonly string[];
   briefStopsExecution: boolean;
+  mcpPreservesDissentAndGap: boolean;
+  readOnlyUsefulnessRowsBefore: number;
+  readOnlyUsefulnessRowsAfter: number;
+  readOnlyUsefulnessUnchanged: boolean;
 }
 
 interface FeedbackMaintenanceProofResult {
@@ -443,6 +456,44 @@ const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
     readModel: readDecisionPacketReadModel(parsed),
     returnChannels: readReturnChannels(parsed)
   };
+};
+
+const readMcpDecisionPacket = (
+  reply: unknown
+): DecisionPacketSmokeJson["packet"] => {
+  if (!isRecord(reply)) {
+    throw new Error("DecisionPacket MCP smoke reply was not an object");
+  }
+
+  const result = readRequiredRecord(reply, "result", "DecisionPacket MCP smoke reply missed result");
+  const structuredContent = readRequiredRecord(
+    result,
+    "structuredContent",
+    "DecisionPacket MCP smoke reply missed structuredContent"
+  );
+
+  return readPacket(structuredContent);
+};
+
+const countReadOnlyUsefulnessRows = async (input: {
+  readonly client: Sql;
+  readonly executionRunId: string;
+}): Promise<number> => {
+  const rows = await input.client<{ count: number }[]>`
+    select (
+      (select count(*)::int from memory_applications where execution_run_id = ${input.executionRunId}) +
+      (select count(*)::int from memory_feedback_events where execution_run_id = ${input.executionRunId}) +
+      (
+        select count(*)::int
+        from feedback_deltas
+        join review_assessments on review_assessments.id = feedback_deltas.review_assessment_id
+        join evidence_bundles on evidence_bundles.id = review_assessments.evidence_bundle_id
+        where evidence_bundles.execution_run_id = ${input.executionRunId}
+      )
+    )::int as count
+  `;
+
+  return rows[0]?.count ?? 0;
 };
 
 const isSupersededClaimNonGoverning = (input: {
@@ -1432,7 +1483,7 @@ const runSourceConsensusProof = async (
 };
 
 const runUnresolvedAcceptedSourceDissentProof = async (
-  input: SourcePacketProofInput
+  input: SourceDissentProofInput
 ): Promise<SourceDissentProofResult> => {
   const {
     harnessRunRepository,
@@ -1727,16 +1778,55 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     completedAt: "2026-07-07T12:00:00.000Z",
     metadata: smokeMetadata
   });
+  const readOnlyUsefulnessRowsBefore = await countReadOnlyUsefulnessRows({
+    client: input.client,
+    executionRunId: proofRun.id
+  });
   const packet = parseDecisionPacket((await runDecisionPacketCommand({
     ...input.baseRuntime,
     runId: proofRun.id,
     createDatabaseRuntime: async () => input.commandRuntime
   })).stdout);
+  const mcpPacket = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
+    jsonrpc: "2.0",
+    id: "unresolved-source-dissent",
+    method: "tools/call",
+    params: {
+      name: "krn_decision_packet",
+      arguments: {
+        runId: proofRun.id
+      }
+    }
+  }, {
+    env: input.baseRuntime.env,
+    now: input.baseRuntime.now,
+    createId: input.baseRuntime.createId,
+    session: { initialized: true },
+    runDecisionPacket: async (runtime) => runDecisionPacketCommand({
+      ...input.baseRuntime,
+      runId: runtime.runId,
+      createDatabaseRuntime: async () => input.commandRuntime
+    })
+  }));
   const brief = await runCodexBriefCommand({
     ...input.baseRuntime,
     runId: proofRun.id,
     createDatabaseRuntime: async () => input.commandRuntime
   });
+  const readOnlyUsefulnessRowsAfter = await countReadOnlyUsefulnessRows({
+    client: input.client,
+    executionRunId: proofRun.id
+  });
+  const unresolvedAcceptedDissentEvidenceGapId =
+    `evidence-gap:${proofRun.id}:unresolved-accepted-source-dissent:${governingClaim.id}`;
+  const mcpPreservesDissentAndGap = [
+    mcpPacket.sourceClaimIds.includes(governingClaim.id),
+    mcpPacket.sourceClaimIds.includes(dissentingClaim.id),
+    mcpPacket.sourceConsensus.conflictingSourceClaimIds.includes(governingClaim.id),
+    mcpPacket.sourceConsensus.evidenceGapIds.includes(unresolvedAcceptedDissentEvidenceGapId),
+    mcpPacket.abstentionScore.status === "abstain",
+    mcpPacket.abstentionScore.reasons.includes("unresolved_accepted_source_dissent")
+  ].every(Boolean);
 
   if (contextAssembly.metadata.retrievalRunId !== retrievalRun.id) {
     throw new Error("Persisted source dissent proof context assembly lost its retrieval run binding");
@@ -1759,7 +1849,13 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     briefStopsExecution:
       packet.packet.abstentionScore.status === "abstain" &&
       brief.stdout.includes("Do not execute; the DecisionPacket abstains") &&
-      !brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation.")
+      !brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation."),
+    mcpPreservesDissentAndGap,
+    readOnlyUsefulnessRowsBefore,
+    readOnlyUsefulnessRowsAfter,
+    readOnlyUsefulnessUnchanged:
+      readOnlyUsefulnessRowsBefore === 0 &&
+      readOnlyUsefulnessRowsAfter === readOnlyUsefulnessRowsBefore
   };
 };
 
@@ -2496,6 +2592,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     sourceConsensusRetrievalRunId = sourceConsensusProof.retrievalRunId;
     const sourceDissentProof = await runUnresolvedAcceptedSourceDissentProof({
       baseRuntime,
+      client,
       commandRuntime,
       executionRunId: executionRun.id,
       marker,
@@ -2607,6 +2704,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `governingDecisionIds=${sourceDissentProof.packetGoverningDecisionIds.join(",")}; ` +
           `sourceDecisionEdgeIds=${sourceDissentProof.packetSourceDecisionEdgeIds.join(",")}; ` +
           `briefStopsExecution=${sourceDissentProof.briefStopsExecution}`
+      },
+      {
+        label: "unresolved accepted source dissent survives read-only MCP transport",
+        passed: sourceDissentProof.mcpPreservesDissentAndGap,
+        detail:
+          `candidateClaimId=${sourceDissentProof.candidateClaimId}; ` +
+          `dissentingClaimId=${sourceDissentProof.dissentingClaimId}; ` +
+          `mcpPreservesDissentAndGap=${sourceDissentProof.mcpPreservesDissentAndGap}`
+      },
+      {
+        label: "unresolved accepted source dissent readbacks do not promote usefulness",
+        passed: sourceDissentProof.readOnlyUsefulnessUnchanged,
+        detail:
+          `rowsBefore=${sourceDissentProof.readOnlyUsefulnessRowsBefore}; ` +
+          `rowsAfter=${sourceDissentProof.readOnlyUsefulnessRowsAfter}`
       }
     ]);
 
@@ -2688,6 +2800,9 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       sourceDissentPacketStatus: sourceDissentProof.packetStatus,
       sourceDissentPacketReasons: sourceDissentProof.packetReasons,
       sourceDissentBriefStopsExecution: sourceDissentProof.briefStopsExecution,
+      sourceDissentMcpPreservesDissentAndGap: sourceDissentProof.mcpPreservesDissentAndGap,
+      sourceDissentReadOnlyUsefulnessUnchanged:
+        sourceDissentProof.readOnlyUsefulnessUnchanged,
       feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,
       feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
       feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,

@@ -838,6 +838,8 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Unresolved source dissent packet status: ${report.sourceDissentPacketStatus}`,
   `Unresolved source dissent packet reasons: ${report.sourceDissentPacketReasons.join(", ")}`,
   `Unresolved source dissent brief stops execution: ${yesNo(report.sourceDissentBriefStopsExecution)}`,
+  `Unresolved source dissent MCP preserves dissent and gap: ${yesNo(report.sourceDissentMcpPreservesDissentAndGap)}`,
+  `Unresolved source dissent readbacks do not promote usefulness: ${yesNo(report.sourceDissentReadOnlyUsefulnessUnchanged)}`,
   `Selector proof run: ${report.selectorProofRunId}`,
   `Selector helped memory: ${report.selectorHelpedMemoryRecordId}`,
   `Selector stale memory: ${report.selectorStaleMemoryRecordId}`,

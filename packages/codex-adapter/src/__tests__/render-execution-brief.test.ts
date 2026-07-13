@@ -558,6 +558,70 @@ describe("renderExecutionBrief", () => {
     expect(renderExecutionBriefText(brief)).toContain("Packet Status: abstain");
   });
 
+  it("stops an unresolved accepted source dissent without dropping its review context", () => {
+    const dissentEvidenceGap = {
+      id: "evidence-gap:task-1:unresolved-accepted-source-dissent:claim-candidate",
+      reason:
+        "SourceClaim claim-candidate is selected with accepted dissent that has no reviewed canonical resolution.",
+      verificationRequired:
+        "Record a reviewed canonical resolution before treating either path as governing authority."
+    };
+    const packet = packetForBrief({
+      taskContract,
+      contextAssembly: {
+        ...minimalContextAssembly,
+        inclusions: [{
+          subjectType: "source_claim",
+          subjectId: "claim-candidate",
+          reason: "Candidate source authority remains reviewable.",
+          expectedUse: "Review the unresolved accepted dissent before execution.",
+          tokenEstimate: 24,
+          sourceAuthority: "project-decision"
+        }, {
+          subjectType: "source_claim",
+          subjectId: "claim-dissenting",
+          reason: "Accepted contradictory peer remains reviewable.",
+          expectedUse: "Review the unresolved accepted dissent before execution.",
+          tokenEstimate: 24,
+          sourceAuthority: "project-decision"
+        }]
+      },
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Resolve the accepted source dissent before execution.",
+      evidenceGaps: [dissentEvidenceGap]
+    });
+    const dissentPacket: DecisionPacket = {
+      ...packet,
+      sourceConsensus: {
+        ...packet.sourceConsensus,
+        conflictingSourceClaimIds: ["claim-candidate"],
+        evidenceGapIds: [dissentEvidenceGap.id]
+      },
+      abstentionScore: {
+        ...packet.abstentionScore,
+        status: "abstain",
+        score: 0,
+        reasons: [
+          "conflicting_authority",
+          "unresolved_accepted_source_dissent",
+          "evidence_gap"
+        ],
+        evidenceGapIds: [dissentEvidenceGap.id]
+      }
+    };
+
+    const brief = createExecutionBrief({ packet: dissentPacket });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceClaimsSelected).toEqual(["claim-candidate", "claim-dissenting"]);
+    expect(brief.evidenceGaps).toContainEqual(dissentEvidenceGap);
+    expect(brief.stopCondition).toContain("Do not execute");
+    expect(rendered).toContain("Packet Status: abstain");
+    expect(rendered).toContain(dissentEvidenceGap.id);
+    expect(rendered).not.toContain("Stop before Codex execution or hidden state mutation.");
+  });
+
   it("renders an unsafe source exclusion as weak context without inventing rejection authority", () => {
     const packet = packetForBrief({
       taskContract,
