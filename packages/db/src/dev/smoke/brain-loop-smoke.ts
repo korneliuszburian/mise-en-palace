@@ -625,7 +625,12 @@ export const runBrainLoopSmokeCheck = async (
       metadata: {
         smokeId: marker,
         retrievalRunId: retrievalRun.id,
-        conflictSets: filtered.conflictSets
+        conflictSets: filtered.conflictSets,
+        canonicalRevisionTokens: bounded
+          .map((candidate) => candidate.metadata.canonicalRevision)
+          .filter((revision): revision is Record<string, unknown> => (
+            typeof revision === "object" && revision !== null && !Array.isArray(revision)
+          ))
       }
     });
     const contextAssembly = await harnessRunRepository.createContextAssembly({

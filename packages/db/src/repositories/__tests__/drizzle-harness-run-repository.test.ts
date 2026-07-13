@@ -325,7 +325,13 @@ describe("DrizzleHarnessRunRepository", () => {
         );
         const stalePersistence = scaffold.harnessRunRepository.createContextAssembly({
           harnessPlanId: scaffold.harnessPlan.id,
-          inclusions: [],
+          inclusions: [{
+            subjectType: "memory_record",
+            subjectId: memoryRecord.id,
+            reason: "race fixture",
+            expectedUse: "reject stale selection",
+            sourceAuthority: "high"
+          }],
           exclusions: [],
           metadata: {
             smokeId: scaffold.marker,

@@ -343,11 +343,18 @@ const filterActivationCandidates = (
 );
 
 const canonicalRevisionTokensFor = (
-  candidates: readonly FilteredActivationCandidates[number][]
+  candidates: readonly FilteredActivationCandidates[number][],
+  inclusions: readonly ContextAssembly["inclusions"][number][]
 ): Record<string, unknown>[] => candidates
   .map((candidate) => candidate.metadata.canonicalRevision)
   .filter((revision): revision is Record<string, unknown> => (
-    typeof revision === "object" && revision !== null && !Array.isArray(revision)
+    typeof revision === "object" &&
+    revision !== null &&
+    !Array.isArray(revision) &&
+    inclusions.some((inclusion) => (
+      inclusion.subjectType === (revision as Record<string, unknown>).subjectType &&
+      inclusion.subjectId === (revision as Record<string, unknown>).subjectId
+    ))
   ));
 
 const createPersistedContextAssembly = async (
@@ -369,10 +376,14 @@ const createPersistedContextAssembly = async (
     metadata: {
       retrievalRunId,
       conflictSets: conflictResult.conflictSets,
-      activationRetrievalDiagnostics: retrieved.diagnostics,
-      canonicalRevisionTokens: canonicalRevisionTokensFor(filteredCandidates)
+      activationRetrievalDiagnostics: retrieved.diagnostics
     }
   });
+
+  const metadata = {
+    ...draftContext.metadata,
+    canonicalRevisionTokens: canonicalRevisionTokensFor(filteredCandidates, draftContext.inclusions)
+  };
 
   return dependencies.harnessRunRepository.createContextAssembly({
     harnessPlanId: harnessPlan.id,
@@ -380,7 +391,7 @@ const createPersistedContextAssembly = async (
     ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
     inclusions: draftContext.inclusions,
     exclusions: draftContext.exclusions,
-    metadata: draftContext.metadata
+    metadata
   });
 };
 

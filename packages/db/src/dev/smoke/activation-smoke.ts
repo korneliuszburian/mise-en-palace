@@ -552,7 +552,12 @@ export const runActivationSmokeCheck = async (
       metadata: {
         smokeId: marker,
         retrievalRunId: retrievalRun.id,
-        conflictSets: filterResult.conflictSets
+        conflictSets: filterResult.conflictSets,
+        canonicalRevisionTokens: filteredCandidates
+          .map((candidate) => candidate.metadata.canonicalRevision)
+          .filter((revision): revision is Record<string, unknown> => (
+            typeof revision === "object" && revision !== null && !Array.isArray(revision)
+          ))
       }
     });
     const contextAssembly = await harnessRunRepository.createContextAssembly({

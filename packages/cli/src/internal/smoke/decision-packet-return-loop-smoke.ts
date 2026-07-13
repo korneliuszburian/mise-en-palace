@@ -1698,7 +1698,13 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     exclusions: [],
     metadata: {
       ...smokeMetadata,
-      retrievalRunId: retrievalRun.id
+      retrievalRunId: retrievalRun.id,
+      canonicalRevisionTokens: [governingClaim, dissentingClaim].map((claim) => ({
+        subjectType: "source_claim",
+        subjectId: claim.id,
+        updatedAt: claim.updatedAt,
+        status: claim.status
+      }))
     }
   });
   await retrievalRepository.addCandidate({
