@@ -1258,6 +1258,11 @@ const initialTrialFailure = (input: {
   return undefined;
 };
 
+const packetFetchFailureInput = (
+  failure: string | undefined
+): { readonly packetFetchFailure?: string } =>
+  failure === undefined ? {} : { packetFetchFailure: failure };
+
 const buildTrialContext = (
   manifest: PairedTrialManifest,
   sourceTreeHash: string,
@@ -1680,10 +1685,7 @@ export const runTrackedPairedTrial = async (
   }
   const packetResult = await resolveTrialPacket(input);
   const context = buildTrialContext(input.manifest, sourceTreeHash, packetResult.packet);
-  const initialFailure = initialTrialFailure(
-    packetResult.failure === undefined ? {} : { packetFetchFailure: packetResult.failure },
-    context
-  );
+  const initialFailure = initialTrialFailure(packetFetchFailureInput(packetResult.failure), context);
   if (initialFailure !== undefined) {
     return finalizeTrackedTrial({ context, journal: journalResult.journal, artifact: initialFailure });
   }
