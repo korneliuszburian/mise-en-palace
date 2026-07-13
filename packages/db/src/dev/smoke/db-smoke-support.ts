@@ -27,6 +27,7 @@ import {
 import {
   antiMemoryRecords,
   antiMemoryCandidates,
+  contextAssemblies,
   contextExclusions,
   contextItems,
   evidenceBundles,
@@ -846,6 +847,14 @@ export const cleanupHarnessCompilerSmokeRows = async (
       .delete(retrievalRuns)
       .where(eq(retrievalRuns.id, input.retrievalRunId));
   }
+
+  await input.db
+    .delete(retrievalRuns)
+    .where(sql`${retrievalRuns.metadata}->>'smokeId' = ${input.marker}`);
+
+  await input.db
+    .delete(contextAssemblies)
+    .where(sql`${contextAssemblies.metadata}->>'smokeId' = ${input.marker}`);
 
   await input.db
     .delete(workspaces)
