@@ -375,6 +375,7 @@ const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
       `Source consensus relation evidence gaps: ${report.sourceConsensusRelationEvidenceGapCount}`,
       `Unscoped foreign SourceClaim read leak: ${report.unscopedForeignSourceClaimReadLeaks}`,
       `Project-scoped foreign SourceDecision read rejected: ${report.scopedForeignSourceDecisionReadRejected}`,
+      `Project-scoped foreign SourceClaimEdge read rejected: ${report.scopedForeignSourceClaimEdgeReadRejected}`,
       `Outbox events: ${report.outboxEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Source graph smoke")

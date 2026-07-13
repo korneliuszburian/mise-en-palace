@@ -143,6 +143,10 @@ export interface SourceRepository {
   ): Promise<RejectedSourceDecisionKnowledgeSource[]>;
   createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge>;
   listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]>;
+  listSourceClaimEdgesForProject?(
+    projectId: ProjectId,
+    sourceClaimId: SourceClaim["id"]
+  ): Promise<SourceClaimEdge[]>;
   createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;
   getSourceDecisionEdgeById(id: SourceDecisionEdge["id"]): Promise<SourceDecisionEdge | undefined>;
   listSourceDecisionEdgesForClaim(

@@ -105,7 +105,12 @@ describe("runSourceClaimEdgesCommand", () => {
           async listClaimsForProject() {
             throw new Error("listClaimsForProject should not be called");
           },
-          async getSourceClaimById(id) {
+          async getSourceClaimById() {
+            throw new Error("getSourceClaimById should not be called");
+          },
+          async getSourceClaimForProject(projectId, id) {
+            expect(projectId).toBe("project-1");
+
             if (id === sourceClaimId) {
               return sourceClaim;
             }
@@ -116,7 +121,11 @@ describe("runSourceClaimEdgesCommand", () => {
             createSourceClaimEdgeCalled = true;
             throw new Error("createSourceClaimEdge should not be called");
           },
-          async listSourceClaimEdgesForClaim(id) {
+          async listSourceClaimEdgesForClaim() {
+            throw new Error("listSourceClaimEdgesForClaim should not be called");
+          },
+          async listSourceClaimEdgesForProject(projectId, id) {
+            expect(projectId).toBe("project-1");
             return id === sourceClaimId ? [sourceClaimEdge] : [];
           },
           async listSourceDecisionEdgesForClaim() {
@@ -198,6 +207,9 @@ describe("runSourceClaimEdgesCommand", () => {
             throw new Error("listClaimsForProject should not be called");
           },
           async getSourceClaimById() {
+            throw new Error("getSourceClaimById should not be called");
+          },
+          async getSourceClaimForProject() {
             return undefined;
           },
           async createSourceClaimEdge() {
@@ -205,6 +217,9 @@ describe("runSourceClaimEdgesCommand", () => {
           },
           async listSourceClaimEdgesForClaim() {
             throw new Error("listSourceClaimEdgesForClaim should not be called");
+          },
+          async listSourceClaimEdgesForProject() {
+            throw new Error("listSourceClaimEdgesForProject should not be called");
           },
           async listSourceDecisionEdgesForClaim() {
             throw new Error("listSourceDecisionEdgesForClaim should not be called");
@@ -224,7 +239,7 @@ describe("runSourceClaimEdgesCommand", () => {
     })).rejects.toThrow("SourceClaim not found: missing-source-claim");
   });
 
-  it("falsifies project-scoped graph readback by rendering a foreign SourceClaim", async () => {
+  it("rejects a foreign SourceClaim without exposing its claim text", async () => {
     let closeCount = 0;
     const foreignSourceClaimId = "66666666-6666-4666-8666-666666666666" as SourceClaim["id"];
     const foreignSourceClaim: SourceClaim = {
@@ -234,67 +249,77 @@ describe("runSourceClaimEdgesCommand", () => {
       claim: "Project B source claim must not be exposed to Project A operators."
     };
 
-    const result = await runSourceClaimEdgesCommand({
-      env: {
-        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
-      },
-      now: () => now,
-      createId: (prefix) => `${prefix}-1`,
-      command: {
-        kind: "sourceClaimEdges",
-        sourceClaimId: foreignSourceClaimId
-      },
-      createDatabaseRuntime: async () => ({
-        workspaceId: "workspace-1",
-        projectId: "project-a",
-        compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
-        harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
-        memoryRepository: {} as DatabaseRuntime["memoryRepository"],
-        sourceRepository: {
-          async createSourceArtifact() {
-            throw new Error("createSourceArtifact should not be called");
-          },
-          async createSourceClaim() {
-            throw new Error("createSourceClaim should not be called");
-          },
-          async listClaimsForProject() {
-            throw new Error("listClaimsForProject should not be called");
-          },
-          async getSourceClaimById() {
-            return foreignSourceClaim;
-          },
-          async getSourceClaimForProject(projectId, id) {
-            expect(projectId).toBe("project-a");
-            expect(id).toBe(foreignSourceClaimId);
-            return undefined;
-          },
-          async createSourceClaimEdge() {
-            throw new Error("createSourceClaimEdge should not be called");
-          },
-          async listSourceClaimEdgesForClaim() {
-            return [];
-          },
-          async listSourceDecisionEdgesForClaim() {
-            return [];
-          },
-          async createSourceDecisionEdge() {
-            throw new Error("createSourceDecisionEdge should not be called");
-          },
-          async getSourceDecisionEdgeById() {
-            throw new Error("getSourceDecisionEdgeById should not be called");
-          },
-          async createSourceRejection() {
-            throw new Error("createSourceRejection should not be called");
-          }
-        },
-        async close() {
-          closeCount += 1;
-        }
-      })
-    });
+    let failure: unknown;
 
-    expect(result.stdout).toContain(`sourceClaimId: ${foreignSourceClaimId}`);
-    expect(result.stdout).toContain("Project B source claim must not be exposed to Project A operators.");
+    try {
+      await runSourceClaimEdgesCommand({
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "sourceClaimEdges",
+          sourceClaimId: foreignSourceClaimId
+        },
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-a",
+          compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+          harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+          memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async listClaimsForProject() {
+              throw new Error("listClaimsForProject should not be called");
+            },
+            async getSourceClaimById() {
+              return foreignSourceClaim;
+            },
+            async getSourceClaimForProject(projectId, id) {
+              expect(projectId).toBe("project-a");
+              expect(id).toBe(foreignSourceClaimId);
+              return undefined;
+            },
+            async createSourceClaimEdge() {
+              throw new Error("createSourceClaimEdge should not be called");
+            },
+            async listSourceClaimEdgesForClaim() {
+              throw new Error("listSourceClaimEdgesForClaim should not be called");
+            },
+            async listSourceClaimEdgesForProject() {
+              throw new Error("listSourceClaimEdgesForProject should not be called");
+            },
+            async listSourceDecisionEdgesForClaim() {
+              return [];
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async getSourceDecisionEdgeById() {
+              throw new Error("getSourceDecisionEdgeById should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          async close() {
+            closeCount += 1;
+          }
+        })
+      });
+    } catch (error) {
+      failure = error;
+    }
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toBe(`SourceClaim not found: ${foreignSourceClaimId}`);
+    expect((failure as Error).message).not.toContain(foreignSourceClaim.claim);
     expect(closeCount).toBe(1);
   });
 });

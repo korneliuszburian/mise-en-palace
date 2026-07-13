@@ -951,6 +951,30 @@ export class DrizzleSourceRepository implements SourceRepository {
     return rows.map(mapSourceClaimEdge);
   }
 
+  async listSourceClaimEdgesForProject(
+    projectId: ProjectId,
+    sourceClaimId: SourceClaim["id"]
+  ): Promise<SourceClaimEdge[]> {
+    const sourceClaimsForProject = this.db
+      .select({ id: sourceClaims.id })
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(eq(sourceArtifacts.projectId, projectId));
+    const rows = await this.db
+      .select()
+      .from(sourceClaimEdges)
+      .where(and(
+        or(
+          eq(sourceClaimEdges.fromSourceClaimId, sourceClaimId),
+          eq(sourceClaimEdges.toSourceClaimId, sourceClaimId)
+        ),
+        inArray(sourceClaimEdges.fromSourceClaimId, sourceClaimsForProject),
+        inArray(sourceClaimEdges.toSourceClaimId, sourceClaimsForProject)
+      ));
+
+    return rows.map(mapSourceClaimEdge);
+  }
+
   async createSourceDecisionEdge(
     input: CreateSourceDecisionEdgeInput
   ): Promise<SourceDecisionEdge> {

@@ -33,6 +33,7 @@ const methodNames = [
   "listRejectedSourceDecisionKnowledgeSources",
   "createSourceClaimEdge",
   "listSourceClaimEdgesForClaim",
+  "listSourceClaimEdgesForProject",
   "createSourceDecisionEdge",
   "getSourceDecisionEdgeById",
   "listSourceDecisionEdgesForRun",

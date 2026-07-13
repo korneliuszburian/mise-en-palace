@@ -16,6 +16,9 @@ import type {
   DatabaseRuntimeInput
 } from "./database-runtime.js";
 import type {
+  SourceRepository
+} from "@krn/core/repositories/internal";
+import type {
   CliCommand
 } from "./parse-args.js";
 import type {
@@ -36,6 +39,32 @@ export interface SourceClaimEdgesCommandResult {
 export type CreateSourceClaimEdgesDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
+
+const projectScopedSourceClaimEdgesRepositoryFor = (
+  databaseRuntime: DatabaseRuntime
+): {
+  getSourceClaimForProject: NonNullable<SourceRepository["getSourceClaimForProject"]>;
+  listSourceClaimEdgesForProject: NonNullable<SourceRepository["listSourceClaimEdgesForProject"]>;
+} => {
+  const sourceRepository = databaseRuntime.sourceRepository;
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+  const listSourceClaimEdgesForProject = sourceRepository.listSourceClaimEdgesForProject;
+
+  if (getSourceClaimForProject === undefined || listSourceClaimEdgesForProject === undefined) {
+    throw new Error(
+      "krn source claim edges requires project-scoped SourceClaim and SourceClaimEdge reads"
+    );
+  }
+
+  return {
+    getSourceClaimForProject(projectId, sourceClaimId) {
+      return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+    },
+    listSourceClaimEdgesForProject(projectId, sourceClaimId) {
+      return listSourceClaimEdgesForProject.call(sourceRepository, projectId, sourceClaimId);
+    }
+  };
+};
 
 
 const directionFor = (
@@ -173,8 +202,10 @@ export const runSourceClaimEdgesCommand = async (
   });
 
   try {
+    const sourceRepository = projectScopedSourceClaimEdgesRepositoryFor(databaseRuntime);
     const typedSourceClaimId = sourceClaimId as SourceClaim["id"];
-    const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(
+    const sourceClaim = await sourceRepository.getSourceClaimForProject(
+      databaseRuntime.projectId,
       typedSourceClaimId
     );
 
@@ -182,7 +213,8 @@ export const runSourceClaimEdgesCommand = async (
       throw new Error(`SourceClaim not found: ${sourceClaimId}`);
     }
 
-    const edges = await databaseRuntime.sourceRepository.listSourceClaimEdgesForClaim(
+    const edges = await sourceRepository.listSourceClaimEdgesForProject(
+      databaseRuntime.projectId,
       typedSourceClaimId
     );
     const edgeReadbacks = await Promise.all(edges.map(async (edge): Promise<SourceClaimEdgeReadback> => {
@@ -192,7 +224,8 @@ export const runSourceClaimEdgesCommand = async (
         return { edge };
       }
 
-      const relatedSourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(
+      const relatedSourceClaim = await sourceRepository.getSourceClaimForProject(
+        databaseRuntime.projectId,
         relatedSourceClaimId
       );
 

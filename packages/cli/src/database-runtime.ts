@@ -137,6 +137,7 @@ export interface DatabaseRuntime {
     | "listRejectedSourceDecisionKnowledgeSources"
     | "listSourceRejectionsForClaim"
     | "getSourceClaimForProject"
+    | "listSourceClaimEdgesForProject"
   >>;
   retrievalRepository?: Pick<
     RetrievalRepository,
@@ -517,6 +518,8 @@ const createDatabaseRuntimeTransactionRepositories = (
     createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
     getSourceDecisionById: (...args) => sourceRepository.getSourceDecisionById(...args),
     listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
+    listSourceClaimEdgesForProject: (...args) =>
+      sourceRepository.listSourceClaimEdgesForProject(...args),
     createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
     getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
     listSourceDecisionEdgesForClaim: (...args) => sourceRepository.listSourceDecisionEdgesForClaim(...args),

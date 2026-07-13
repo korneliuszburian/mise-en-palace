@@ -75,6 +75,7 @@ export interface SourceGraphSmokeReport {
   projectIsolationRejectedWrites: number;
   unscopedForeignSourceClaimReadLeaks: boolean;
   scopedForeignSourceDecisionReadRejected: boolean;
+  scopedForeignSourceClaimEdgeReadRejected: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
   outboxEventCount: number;
@@ -145,6 +146,7 @@ interface SourceProjectIsolationSmokeProof {
   projectIsolationRejectedWrites: number;
   unscopedForeignSourceClaimReadLeaks: boolean;
   scopedForeignSourceDecisionReadRejected: boolean;
+  scopedForeignSourceClaimEdgeReadRejected: boolean;
   sourceDecisionIdentityReadbackPassed: boolean;
   legacyDecisionEdgeExcluded: boolean;
 }
@@ -211,6 +213,21 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     hasProjectScopedSourceClaimLookup &&
     unscopedForeignSourceClaim?.id === foreignSourceClaim.id &&
     scopedForeignSourceClaim === undefined;
+  const foreignRelatedSourceClaim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: foreignSourceArtifact.id,
+    claim: "Foreign source graph relation context must stay within the foreign project.",
+    mechanism: "A SourceClaimEdge binds two source claims under the same source artifact project.",
+    krnImplication: "Project-scoped graph reads must not return foreign relation edges.",
+    doesNotProve: "This probe does not prove source truth.",
+    sourceAuthority: "project-decision",
+    supportType: "implementation-boundary",
+    consumer: "src002 project isolation smoke",
+    falsifier: "The primary project reads the foreign SourceClaimEdge.",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
   const mismatchedAdoptionRejected = await sourceWriteRejectedFor(
     () => input.sourceRepository.createSourceDecision({
       projectId: input.project.id,
@@ -237,6 +254,46 @@ const createSourceProjectIsolationSmokeProof = async (input: {
       projectIsolationProbe: true
     }
   });
+  await input.sourceRepository.createSourceDecision({
+    projectId: foreignProject.id,
+    sourceClaimId: foreignRelatedSourceClaim.id,
+    status: "adopt",
+    decision: "Adopt the related foreign source graph probe only in its own project.",
+    rationale: "The related foreign claim must be accepted before a SourceClaimEdge can connect it.",
+    falsifier: "A foreign source graph edge is created without accepted endpoint claims.",
+    consumer: "src002 project isolation smoke",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true
+    }
+  });
+  const foreignSourceClaimEdge = await input.sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: foreignSourceClaim.id,
+    toSourceClaimId: foreignRelatedSourceClaim.id,
+    kind: "supports",
+    metadata: {
+      smokeId: input.marker,
+      projectIsolationProbe: true,
+      consumer: "src002 project isolation smoke",
+      doesNotProve: "This edge does not prove source truth."
+    }
+  });
+  const unscopedForeignSourceClaimEdges = await input.sourceRepository.listSourceClaimEdgesForClaim(
+    foreignSourceClaim.id
+  );
+  const listSourceClaimEdgesForProject = input.sourceRepository.listSourceClaimEdgesForProject;
+  const hasProjectScopedSourceClaimEdgeLookup = listSourceClaimEdgesForProject !== undefined;
+  const scopedForeignSourceClaimEdges = listSourceClaimEdgesForProject === undefined
+    ? []
+    : await listSourceClaimEdgesForProject.call(
+      input.sourceRepository,
+      input.project.id,
+      foreignSourceClaim.id
+    );
+  const scopedForeignSourceClaimEdgeReadRejected =
+    hasProjectScopedSourceClaimEdgeLookup &&
+    unscopedForeignSourceClaimEdges.some((edge) => edge.id === foreignSourceClaimEdge.id) &&
+    scopedForeignSourceClaimEdges.length === 0;
   const getSourceDecisionForProject = input.sourceRepository.getSourceDecisionForProject;
   const hasProjectScopedSourceDecisionLookup = getSourceDecisionForProject !== undefined;
   const scopedForeignSourceDecision = getSourceDecisionForProject === undefined
@@ -341,6 +398,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     projectIsolationRejectedWrites,
     unscopedForeignSourceClaimReadLeaks,
     scopedForeignSourceDecisionReadRejected,
+    scopedForeignSourceClaimEdgeReadRejected,
     sourceDecisionIdentityReadbackPassed,
     legacyDecisionEdgeExcluded
   };
@@ -701,6 +759,7 @@ export const runSourceGraphSmokeCheck = async (
       projectIsolationRejectedWrites,
       unscopedForeignSourceClaimReadLeaks,
       scopedForeignSourceDecisionReadRejected,
+      scopedForeignSourceClaimEdgeReadRejected,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded
     } = await createSourceProjectIsolationSmokeProof({
@@ -816,6 +875,10 @@ export const runSourceGraphSmokeCheck = async (
         passed: scopedForeignSourceDecisionReadRejected
       },
       {
+        label: "project-scoped foreign SourceClaimEdge read rejects",
+        passed: scopedForeignSourceClaimEdgeReadRejected
+      },
+      {
         label: "source decision identity project readback",
         passed: sourceDecisionIdentityReadbackPassed
       },
@@ -918,6 +981,7 @@ export const runSourceGraphSmokeCheck = async (
       projectIsolationRejectedWrites,
       unscopedForeignSourceClaimReadLeaks,
       scopedForeignSourceDecisionReadRejected,
+      scopedForeignSourceClaimEdgeReadRejected,
       sourceDecisionIdentityReadbackPassed,
       legacyDecisionEdgeExcluded,
       outboxEventCount: outboxRows[0]?.count ?? 0,
