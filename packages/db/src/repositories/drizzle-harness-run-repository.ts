@@ -108,6 +108,47 @@ interface CanonicalRevisionToken {
   readonly currentVersionId?: string;
 }
 
+const invalidCanonicalRevisionToken = (): never => {
+  throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
+};
+
+const canonicalRevisionTokenFrom = (item: unknown): CanonicalRevisionToken => {
+  if (typeof item !== "object" || item === null || Array.isArray(item)) {
+    return invalidCanonicalRevisionToken();
+  }
+
+  const record = item as Record<string, unknown>;
+  const subjectType = record.subjectType;
+  const subjectId = record.subjectId;
+  const updatedAt = record.updatedAt;
+  const status = record.status;
+  const currentVersionId = record.currentVersionId;
+
+  if (subjectType !== "memory_record" && subjectType !== "source_claim") {
+    return invalidCanonicalRevisionToken();
+  }
+  if (typeof subjectId !== "string") {
+    return invalidCanonicalRevisionToken();
+  }
+  if (typeof updatedAt !== "string") {
+    return invalidCanonicalRevisionToken();
+  }
+  if (typeof status !== "string") {
+    return invalidCanonicalRevisionToken();
+  }
+  if (currentVersionId !== undefined && typeof currentVersionId !== "string") {
+    return invalidCanonicalRevisionToken();
+  }
+
+  return {
+    subjectType,
+    subjectId,
+    updatedAt,
+    status,
+    ...(currentVersionId === undefined ? {} : { currentVersionId })
+  };
+};
+
 const canonicalRevisionTokensFrom = (
   metadata: Record<string, unknown>
 ): CanonicalRevisionToken[] => {
@@ -117,36 +158,54 @@ const canonicalRevisionTokensFrom = (
     return [];
   }
 
-  return value.map((item) => {
-    if (typeof item !== "object" || item === null || Array.isArray(item)) {
-      throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
-    }
+  return value.map(canonicalRevisionTokenFrom);
+};
 
-    const record = item as Record<string, unknown>;
-    const subjectType = record.subjectType;
-    const subjectId = record.subjectId;
-    const updatedAt = record.updatedAt;
-    const status = record.status;
-    const currentVersionId = record.currentVersionId;
+const validateMemoryRevisionToken = async (
+  tx: KrnDatabaseTransaction,
+  token: CanonicalRevisionToken
+): Promise<void> => {
+  const row = requireLinkedRow(
+    (await tx
+      .select({
+        updatedAt: memoryRecords.updatedAt,
+        status: memoryRecords.status,
+        currentVersionId: memoryRecords.currentVersionId
+      })
+      .from(memoryRecords)
+      .where(eq(memoryRecords.id, token.subjectId))
+      .for("update"))[0],
+    `createContextAssembly.memoryRecord.${token.subjectId}`
+  );
 
-    if (
-      (subjectType !== "memory_record" && subjectType !== "source_claim") ||
-      typeof subjectId !== "string" ||
-      typeof updatedAt !== "string" ||
-      typeof status !== "string" ||
-      (currentVersionId !== undefined && typeof currentVersionId !== "string")
-    ) {
-      throw new Error("ContextAssembly canonicalRevisionTokens contain an invalid token");
-    }
+  if (
+    row.updatedAt.toISOString() !== token.updatedAt ||
+    row.status !== token.status ||
+    (token.currentVersionId !== undefined && row.currentVersionId !== token.currentVersionId)
+  ) {
+    throw new Error(`createContextAssembly canonical revision mismatch for memory record ${token.subjectId}`);
+  }
+};
 
-    return {
-      subjectType,
-      subjectId,
-      updatedAt,
-      status,
-      ...(currentVersionId === undefined ? {} : { currentVersionId })
-    };
-  });
+const validateSourceRevisionToken = async (
+  tx: KrnDatabaseTransaction,
+  token: CanonicalRevisionToken
+): Promise<void> => {
+  const row = requireLinkedRow(
+    (await tx
+      .select({
+        updatedAt: sourceClaims.updatedAt,
+        status: sourceClaims.status
+      })
+      .from(sourceClaims)
+      .where(eq(sourceClaims.id, token.subjectId))
+      .for("update"))[0],
+    `createContextAssembly.sourceClaim.${token.subjectId}`
+  );
+
+  if (row.updatedAt.toISOString() !== token.updatedAt || row.status !== token.status) {
+    throw new Error(`createContextAssembly canonical revision mismatch for source claim ${token.subjectId}`);
+  }
 };
 
 const validateCanonicalRevisionTokens = async (
@@ -155,43 +214,9 @@ const validateCanonicalRevisionTokens = async (
 ): Promise<void> => {
   for (const token of canonicalRevisionTokensFrom(metadata)) {
     if (token.subjectType === "memory_record") {
-      const row = requireLinkedRow(
-        (await tx
-          .select({
-            updatedAt: memoryRecords.updatedAt,
-            status: memoryRecords.status,
-            currentVersionId: memoryRecords.currentVersionId
-          })
-          .from(memoryRecords)
-          .where(eq(memoryRecords.id, token.subjectId))
-          .for("update"))[0],
-        `createContextAssembly.memoryRecord.${token.subjectId}`
-      );
-
-      if (
-        row.updatedAt.toISOString() !== token.updatedAt ||
-        row.status !== token.status ||
-        (token.currentVersionId !== undefined && row.currentVersionId !== token.currentVersionId)
-      ) {
-        throw new Error(`createContextAssembly canonical revision mismatch for memory record ${token.subjectId}`);
-      }
-      continue;
-    }
-
-    const row = requireLinkedRow(
-      (await tx
-        .select({
-          updatedAt: sourceClaims.updatedAt,
-          status: sourceClaims.status
-        })
-        .from(sourceClaims)
-        .where(eq(sourceClaims.id, token.subjectId))
-        .for("update"))[0],
-      `createContextAssembly.sourceClaim.${token.subjectId}`
-    );
-
-    if (row.updatedAt.toISOString() !== token.updatedAt || row.status !== token.status) {
-      throw new Error(`createContextAssembly canonical revision mismatch for source claim ${token.subjectId}`);
+      await validateMemoryRevisionToken(tx, token);
+    } else {
+      await validateSourceRevisionToken(tx, token);
     }
   }
 };
