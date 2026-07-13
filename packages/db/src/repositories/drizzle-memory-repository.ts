@@ -923,6 +923,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           invalidationReason: reason,
           metadata: {
             ...currentRow.metadata,
+            replacementMemoryRecordId: replacementRow.id,
             supersessionReview: {
               reviewer,
               reason,
