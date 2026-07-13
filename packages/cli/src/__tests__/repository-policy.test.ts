@@ -328,6 +328,7 @@ describe("repository policy boundaries", () => {
       const env = {
         ...process.env,
         KRN_DATABASE_URL: "postgres://krn:krn@127.0.0.1:59999/krn",
+        KRN_VERIFY_DB_TIMEOUT_MS: "1000",
         PATH: `${fixtureRoot}:${process.env.PATH ?? ""}`,
       };
       const pnpm = process.env.npm_execpath ?? "pnpm";
@@ -350,7 +351,7 @@ describe("repository policy boundaries", () => {
         failure = error as { status?: number; stdout?: string; stderr?: string };
       }
 
-      expect(failure?.status).toBe(1);
+      expect(failure?.status).toBe(124);
       expect(`${failure?.stdout ?? ""}${failure?.stderr ?? ""}`).not.toContain(
         "timeout: command not found in stock macOS profile",
       );
