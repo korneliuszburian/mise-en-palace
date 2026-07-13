@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type {
-  HarnessRunAggregate
+  HarnessRunAggregate,
+  HarnessRunRepository
 } from "@krn/core/repositories";
 
 import type {
-  DatabaseRuntime
-} from "../database-runtime.js";
-import {
-  createNoStoreCompilerDependencies
-} from "../no-store-repositories.js";
+  CreateRunShowDatabaseRuntime
+} from "../run-run-show-command.js";
 import {
   runCli
 } from "../run-cli.js";
@@ -21,12 +19,26 @@ interface DecisionPacketJson {
     readonly evidenceRef: string;
   };
   readonly packet: {
+    readonly governingDecisionIds: readonly string[];
     readonly taskStandardDecisions: readonly {
       readonly decision: string;
       readonly rejectedPath?: string;
     }[];
     readonly sourceClaimIds: readonly string[];
     readonly caveatedSourceClaimIds: readonly string[];
+    readonly sourceRejectionIds: readonly string[];
+    readonly supersededPathIds: readonly string[];
+    readonly rejectedPathIds: readonly string[];
+    readonly contextExclusions: readonly {
+      readonly subjectType: string;
+      readonly subjectId: string;
+      readonly reason: string;
+    }[];
+    readonly sourceConsensus: {
+      readonly sourceRejectionIds: readonly string[];
+      readonly supersededPathIds: readonly string[];
+      readonly rejectedPathIds: readonly string[];
+    };
     readonly verificationCommands: readonly string[];
     readonly abstentionScore: {
       readonly status: string;
@@ -51,10 +63,6 @@ const isDecisionPacketJson = (value: unknown): value is DecisionPacketJson =>
   value !== null &&
   "packetIdentity" in value &&
   "returnChannels" in value;
-
-const notUsed = (method: string): never => {
-  throw new Error(`${method} should not be called`);
-};
 
 const aggregate: HarnessRunAggregate = {
   operatorIntent: {
@@ -320,6 +328,45 @@ const aggregate: HarnessRunAggregate = {
   runEvents: []
 };
 
+const createFixtureDatabaseRuntime = (
+  aggregateForReadback: HarnessRunAggregate,
+  onClose: () => void
+): CreateRunShowDatabaseRuntime => async () => ({
+  harnessRunRepository: {
+    async getHarnessRunByExecutionRunId(runId: string) {
+      return runId === "run-agent-1" ? aggregateForReadback : undefined;
+    }
+  } satisfies Pick<HarnessRunRepository, "getHarnessRunByExecutionRunId">,
+  async close() {
+    onClose();
+  }
+});
+
+const aggregateWithoutFormalNegativeEvidence = (): HarnessRunAggregate => ({
+  ...aggregate,
+  contextAssembly: {
+    ...aggregate.contextAssembly,
+    exclusions: [{
+      subjectType: "source_claim",
+      subjectId: "claim-agent-unsafe",
+      reason: "unsafe",
+      explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+      sourceAuthority: "project-decision"
+    }]
+  },
+  activationTrace: {
+    ...aggregate.activationTrace,
+    candidates: aggregate.activationTrace.candidates.map((candidate) => ({
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        sourceRejectionIds: []
+      }
+    })),
+    decisions: []
+  }
+});
+
 describe("decision packet CLI", () => {
   it("returns a read-only DecisionPacket and evidence return channels for headless agents", async () => {
     let closed = false;
@@ -329,110 +376,9 @@ describe("decision packet CLI", () => {
       },
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
-      createDatabaseRuntime: async (runtimeInput) => {
-        const dependencies = createNoStoreCompilerDependencies(runtimeInput);
-        const harnessRunRepository = {
-          ...dependencies.harnessRunRepository,
-          async createExecutionRun() {
-            return notUsed("createExecutionRun");
-          },
-          async getHarnessRunByExecutionRunId(runId: string) {
-            return runId === "run-agent-1" ? aggregate : undefined;
-          },
-          async createEvidenceBundle() {
-            return notUsed("createEvidenceBundle");
-          },
-          async createReviewAssessment() {
-            return notUsed("createReviewAssessment");
-          },
-          async createFeedbackDelta() {
-            return notUsed("createFeedbackDelta");
-          }
-        } satisfies DatabaseRuntime["harnessRunRepository"];
-        const sourceRepository = {
-          ...dependencies.sourceRepository,
-          async createSourceArtifact() {
-            return notUsed("createSourceArtifact");
-          },
-          async createSourceClaim() {
-            return notUsed("createSourceClaim");
-          },
-          async getSourceClaimById() {
-            return notUsed("getSourceClaimById");
-          },
-          async createSourceClaimEdge() {
-            return notUsed("createSourceClaimEdge");
-          },
-          async createSourceDecisionEdge() {
-            return notUsed("createSourceDecisionEdge");
-          },
-          async getSourceDecisionEdgeById() {
-            return notUsed("getSourceDecisionEdgeById");
-          },
-          async createSourceRejection() {
-            return notUsed("createSourceRejection");
-          }
-        } satisfies DatabaseRuntime["sourceRepository"];
-        const memoryRepository = {
-          async createMemoryCandidate() {
-            return notUsed("createMemoryCandidate");
-          },
-          async getMemoryCandidateById() {
-            return notUsed("getMemoryCandidateById");
-          },
-          async promoteReviewedMemoryCandidate() {
-            return notUsed("promoteReviewedMemoryCandidate");
-          },
-          async rejectMemoryCandidate() {
-            return notUsed("rejectMemoryCandidate");
-          },
-          async getMemoryRecordById() {
-            return notUsed("getMemoryRecordById");
-          },
-          async listMemoryRecordsForProject() {
-            return [];
-          },
-          async invalidateMemoryRecord() {
-            return notUsed("invalidateMemoryRecord");
-          },
-          async recordMemoryApplication() {
-            return notUsed("recordMemoryApplication");
-          },
-          async createMemoryFeedbackEvent() {
-            return notUsed("createMemoryFeedbackEvent");
-          },
-          async createAntiMemoryCandidate() {
-            return notUsed("createAntiMemoryCandidate");
-          },
-          async getAntiMemoryCandidateById() {
-            return notUsed("getAntiMemoryCandidateById");
-          },
-          async promoteReviewedAntiMemoryCandidate() {
-            return notUsed("promoteReviewedAntiMemoryCandidate");
-          },
-          async rejectAntiMemoryCandidate() {
-            return notUsed("rejectAntiMemoryCandidate");
-          },
-          async listActiveMemory() {
-            return [];
-          }
-        } satisfies DatabaseRuntime["memoryRepository"];
-
-        return {
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: {
-            ...dependencies,
-            harnessRunRepository
-          },
-          harnessRunRepository,
-          sourceRepository,
-          memoryRepository,
-          async close() {
-            closed = true;
-          }
-        };
-      }
+      createDatabaseRuntime: createFixtureDatabaseRuntime(aggregate, () => {
+        closed = true;
+      })
     });
     const json: unknown = JSON.parse(result.stdout);
 
@@ -625,6 +571,53 @@ describe("decision packet CLI", () => {
       "does not expose canonical selected SourceDecision ids"
     );
     expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
+    expect(closed).toBe(true);
+  });
+
+  it("keeps unsafe source exclusion explicit without treating it as formal rejection evidence", async () => {
+    let closed = false;
+    const result = await runCli(["decision", "packet", "--run-id", "run-agent-1", "--json"], {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-unsafe`,
+      createDatabaseRuntime: createFixtureDatabaseRuntime(
+        aggregateWithoutFormalNegativeEvidence(),
+        () => {
+          closed = true;
+        }
+      )
+    });
+    const json: unknown = JSON.parse(result.stdout);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(isDecisionPacketJson(json)).toBe(true);
+    if (!isDecisionPacketJson(json)) {
+      throw new Error("decision packet JSON did not expose packet identity");
+    }
+
+    expect(json.packet.governingDecisionIds).toEqual(["frontend-bootstrap-standard"]);
+    expect(json.packet.contextExclusions).toEqual([{
+      subjectType: "source_claim",
+      subjectId: "claim-agent-unsafe",
+      reason: "unsafe",
+      explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+      sourceAuthority: "project-decision"
+    }]);
+    expect(json.packet.sourceRejectionIds).toEqual([]);
+    expect(json.packet.rejectedPathIds).toEqual([]);
+    expect(json.packet.sourceConsensus).toMatchObject({
+      sourceRejectionIds: [],
+      rejectedPathIds: [],
+      supersededPathIds: []
+    });
+    expect(json.packet.abstentionScore).toMatchObject({
+      status: "abstain",
+      reasons: expect.arrayContaining(["missing_rejected_path_evidence"])
+    });
+    expect(json.packet.abstentionScore.status).not.toBe("ready");
     expect(closed).toBe(true);
   });
 

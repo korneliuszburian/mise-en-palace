@@ -103,6 +103,10 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusPacketSupersededPathIds: readonly string[];
   sourceConsensusPacketSourceRejectionIds: readonly string[];
   sourceConsensusCurrentClaimGoverned: boolean;
+  sourceConsensusNoFormalRejectionRunId: string;
+  sourceConsensusNoFormalRejectionStatus: string;
+  sourceConsensusNoFormalRejectionReasons: readonly string[];
+  sourceConsensusNoFormalRejectionKeepsTypedState: boolean;
   sourceConsensusSupersededClaimIsNonGoverning: boolean;
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
   feedbackMaintenanceQueueRecordId: string;
@@ -131,9 +135,11 @@ interface DecisionPacketSmokeJson {
   };
   packet: {
     governingDecisionIds: readonly string[];
+    contextExclusions: readonly DecisionPacketSmokeExclusion[];
     memoryRefs: readonly string[];
     rejectedPathIds: readonly string[];
     sourceClaimIds: readonly string[];
+    sourceRejectionIds: readonly string[];
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readonly string[];
       caveatedSourceClaimIds: readonly string[];
@@ -144,6 +150,10 @@ interface DecisionPacketSmokeJson {
       evidenceGapIds: readonly string[];
     };
     staleDecisionIds: readonly string[];
+    abstentionScore: {
+      status: string;
+      reasons: readonly string[];
+    };
   };
   readModel: {
     context: {
@@ -199,6 +209,14 @@ interface SourceConsensusProofResult {
   packetSupersededPathIds: readonly string[];
   packetSourceRejectionIds: readonly string[];
   currentClaimGoverned: boolean;
+  noFormalRejectionRunId: string;
+  noFormalRejectionStatus: string;
+  noFormalRejectionReasons: readonly string[];
+  noFormalRejectionGoverningDecisionIds: readonly string[];
+  noFormalRejectionContextExclusions: readonly DecisionPacketSmokeExclusion[];
+  noFormalRejectionRejectedPathIds: readonly string[];
+  noFormalRejectionSourceRejectionIds: readonly string[];
+  noFormalRejectionKeepsTypedState: boolean;
   supersededClaimIsNonGoverning: boolean;
   rejectedClaimHasFormalRejection: boolean;
 }
@@ -244,12 +262,24 @@ const readPacket = (
     "sourceConsensus",
     "DecisionPacket smoke readback missed sourceConsensus"
   );
+  const abstentionScore = readRequiredRecord(
+    packet,
+    "abstentionScore",
+    "DecisionPacket smoke readback missed abstentionScore"
+  );
 
   return {
     governingDecisionIds: readStringArray(packet, "governingDecisionIds"),
+    contextExclusions: readRecordArray(packet, "contextExclusions")
+      .flatMap((item) => {
+        const exclusion = readContextExclusion(item);
+
+        return exclusion === undefined ? [] : [exclusion];
+      }),
     memoryRefs: readStringArray(packet, "memoryRefs"),
     rejectedPathIds: readStringArray(packet, "rejectedPathIds"),
     sourceClaimIds: readStringArray(packet, "sourceClaimIds"),
+    sourceRejectionIds: readStringArray(packet, "sourceRejectionIds"),
     sourceConsensus: {
       decisionLinkedSourceClaimIds: readStringArray(sourceConsensus, "decisionLinkedSourceClaimIds"),
       caveatedSourceClaimIds: readStringArray(sourceConsensus, "caveatedSourceClaimIds"),
@@ -259,7 +289,15 @@ const readPacket = (
       sourceRejectionIds: readStringArray(sourceConsensus, "sourceRejectionIds"),
       evidenceGapIds: readStringArray(sourceConsensus, "evidenceGapIds")
     },
-    staleDecisionIds: readStringArray(packet, "staleDecisionIds")
+    staleDecisionIds: readStringArray(packet, "staleDecisionIds"),
+    abstentionScore: {
+      status: readRequiredString(
+        abstentionScore,
+        "status",
+        "DecisionPacket smoke abstentionScore missed status"
+      ),
+      reasons: readStringArray(abstentionScore, "reasons")
+    }
   };
 };
 
@@ -359,6 +397,29 @@ const hasFormalSourceRejection = (input: {
   !input.packet.sourceClaimIds.includes(input.rejectedClaimId) &&
   input.packet.sourceConsensus.sourceRejectionIds.includes(input.sourceRejectionId) &&
   !input.packet.rejectedPathIds.includes(input.rejectedClaimId);
+
+const hasNoFormalRejectionTypedState = (input: {
+  readonly currentDecisionId: string;
+  readonly packet: DecisionPacketSmokeJson["packet"];
+  readonly supersededClaimId: string;
+}): boolean => {
+  const hasExplicitSourceExclusion = input.packet.contextExclusions.some((exclusion) => [
+    exclusion.subjectType === "source_claim",
+    exclusion.subjectId === input.supersededClaimId
+  ].every(Boolean));
+
+  return [
+    input.packet.governingDecisionIds.includes(input.currentDecisionId),
+    hasExplicitSourceExclusion,
+    input.packet.sourceConsensus.supersededPathIds.includes(input.supersededClaimId),
+    input.packet.sourceRejectionIds.length === 0,
+    input.packet.sourceConsensus.sourceRejectionIds.length === 0,
+    input.packet.rejectedPathIds.length === 0,
+    input.packet.sourceConsensus.rejectedPathIds.length === 0,
+    ["weak_context", "abstain"].includes(input.packet.abstentionScore.status),
+    input.packet.abstentionScore.reasons.includes("missing_rejected_path_evidence")
+  ].every(Boolean);
+};
 
 const sourceUsefulnessOutcome = (input: {
   readonly claimId?: string;
@@ -465,11 +526,26 @@ const feedbackOutcome = (
   return typeof outcome === "string" ? outcome : undefined;
 };
 
-const latestFeedbackDeltaOrThrow = (
+const persistedFeedbackDeltaIdOrThrow = (
+  stdout: string,
+  message: string
+): string => {
+  const match = /^feedbackDelta: (.+)$/mu.exec(stdout);
+  const feedbackDeltaId = match?.[1]?.trim();
+
+  if (feedbackDeltaId === undefined || feedbackDeltaId.length === 0) {
+    throw new Error(message);
+  }
+
+  return feedbackDeltaId;
+};
+
+const feedbackDeltaByIdOrThrow = (
   aggregate: { readonly feedbackDeltas: readonly FeedbackDelta[] } | undefined,
+  feedbackDeltaId: string,
   message: string
 ): FeedbackDelta => {
-  const feedbackDelta = aggregate?.feedbackDeltas.at(-1);
+  const feedbackDelta = aggregate?.feedbackDeltas.find((item) => item.id === feedbackDeltaId);
 
   if (feedbackDelta === undefined) {
     throw new Error(message);
@@ -1025,6 +1101,76 @@ const runSourceConsensusProof = async (
     }
   });
 
+  const noFormalRejectionCompile = await compileHarnessPlan({
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    operatorIntent: {
+      rawIntent: `decision packet source consensus without formal rejection ${input.marker}`,
+      source: "cli",
+      metadata: {
+        smokeId: input.marker
+      }
+    },
+    taskContract: {
+      title: "Prove DecisionPacket stays non-ready without formal rejection",
+      objective:
+        "Keep the superseded source claim explicit without turning it into rejected-path authority before a SourceRejection exists.",
+      constraints: ["use source graph consensus", "render a read-only DecisionPacket"],
+      nonGoals: ["no markdown source ledger", "no broad corpus consensus", "no live Codex"],
+      acceptance: [
+        "current decision-linked source claim appears in the DecisionPacket",
+        "superseded source claim remains explicit without formal rejection coverage"
+      ],
+      metadata: {
+        smokeId: input.marker,
+        sourceConsensusProof: "no-formal-rejection"
+      }
+    },
+    tokenBudget: 360,
+    metadata: {
+      smokeId: input.marker,
+      proof: "decision_packet_source_consensus_without_formal_rejection"
+    }
+  }, {
+    harnessRunRepository,
+    memoryRepository,
+    sourceRepository,
+    retrievalRepository,
+    now: () => "2026-07-07T12:00:00.000Z",
+    createId: createIdFactory(input.marker, "source-consensus-no-formal-rejection")
+  });
+  const noFormalRejectionRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId: noFormalRejectionCompile.harnessPlan.id,
+    adapter: "codex",
+    status: "planned",
+    initialEvent: {
+      sequence: 1,
+      type: "smoke.decision_packet_return_loop.source_consensus_without_formal_rejection",
+      message: "DecisionPacket return-loop smoke created no-formal-rejection proof run",
+      payload: {
+        smokeId: input.marker,
+        currentSourceClaimId: currentClaim.id,
+        supersededSourceClaimId: supersededClaim.id
+      }
+    },
+    metadata: {
+      smokeId: input.marker,
+      command: "db:smoke:decision-packet-return-loop",
+      phase: "source-consensus-no-formal-rejection-proof",
+      evidenceContract: noFormalRejectionCompile.evidenceContract
+    }
+  });
+  const noFormalRejectionPacket = parseDecisionPacket((await runDecisionPacketCommand({
+    ...input.baseRuntime,
+    runId: noFormalRejectionRun.id,
+    createDatabaseRuntime: async () => input.commandRuntime
+  })).stdout);
+  const noFormalRejectionKeepsTypedState = hasNoFormalRejectionTypedState({
+    currentDecisionId,
+    packet: noFormalRejectionPacket.packet,
+    supersededClaimId: supersededClaim.id
+  });
+
   const sourceRejection = await sourceRepository.createSourceRejection({
     projectId: input.projectId,
     executionRunId: input.executionRunId,
@@ -1146,6 +1292,14 @@ const runSourceConsensusProof = async (
     packetSupersededPathIds,
     packetSourceRejectionIds: packet.packet.sourceConsensus.sourceRejectionIds,
     currentClaimGoverned,
+    noFormalRejectionRunId: noFormalRejectionRun.id,
+    noFormalRejectionStatus: noFormalRejectionPacket.packet.abstentionScore.status,
+    noFormalRejectionReasons: noFormalRejectionPacket.packet.abstentionScore.reasons,
+    noFormalRejectionGoverningDecisionIds: noFormalRejectionPacket.packet.governingDecisionIds,
+    noFormalRejectionContextExclusions: noFormalRejectionPacket.packet.contextExclusions,
+    noFormalRejectionRejectedPathIds: noFormalRejectionPacket.packet.rejectedPathIds,
+    noFormalRejectionSourceRejectionIds: noFormalRejectionPacket.packet.sourceRejectionIds,
+    noFormalRejectionKeepsTypedState,
     supersededClaimIsNonGoverning,
     rejectedClaimHasFormalRejection
   };
@@ -1679,8 +1833,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
     const aggregateAfterMatching =
       await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
-    const matchingFeedbackDelta = latestFeedbackDeltaOrThrow(
+    const matchingFeedbackDelta = feedbackDeltaByIdOrThrow(
       aggregateAfterMatching,
+      persistedFeedbackDeltaIdOrThrow(
+        matchingEvidence.stdout,
+        "DecisionPacket return-loop smoke matching capture missed persisted feedback delta id"
+      ),
       "DecisionPacket return-loop smoke did not persist matching feedback"
     );
 
@@ -1719,8 +1877,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
     const aggregateAfterStale =
       await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
-    const staleFeedbackDelta = latestFeedbackDeltaOrThrow(
+    const staleFeedbackDelta = feedbackDeltaByIdOrThrow(
       aggregateAfterStale,
+      persistedFeedbackDeltaIdOrThrow(
+        staleEvidence.stdout,
+        "DecisionPacket return-loop smoke stale capture missed persisted feedback delta id"
+      ),
       "DecisionPacket return-loop smoke did not persist stale feedback"
     );
 
@@ -1731,7 +1893,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       staleFeedbackOutcome === "stale" &&
       staleEvidence.stdout.includes(`decisionPacketEvidenceRef: ${packetAfterMatching.packetIdentity.evidenceRef}`);
     const mismatchedChecksum = "0".repeat(64);
-    await runEvidenceCaptureCommand({
+    const mismatchedEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
@@ -1755,8 +1917,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
     const aggregateAfterMismatch =
       await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
-    const mismatchedFeedbackDelta = latestFeedbackDeltaOrThrow(
+    const mismatchedFeedbackDelta = feedbackDeltaByIdOrThrow(
       aggregateAfterMismatch,
+      persistedFeedbackDeltaIdOrThrow(
+        mismatchedEvidence.stdout,
+        "DecisionPacket return-loop smoke mismatched capture missed persisted feedback delta id"
+      ),
       "DecisionPacket return-loop smoke did not persist mismatched feedback"
     );
 
@@ -1906,6 +2072,20 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `decisionEdgeIds=${sourceConsensusProof.packetSourceDecisionEdgeIds.join(",")}`
       },
       {
+        label: "source consensus without formal rejection stays non-ready and explicit",
+        passed: sourceConsensusProof.noFormalRejectionKeepsTypedState,
+        detail:
+          `runId=${sourceConsensusProof.noFormalRejectionRunId}; ` +
+          `status=${sourceConsensusProof.noFormalRejectionStatus}; ` +
+          `reasons=${sourceConsensusProof.noFormalRejectionReasons.join(",")}; ` +
+          `governingDecisionIds=${sourceConsensusProof.noFormalRejectionGoverningDecisionIds.join(",")}; ` +
+          `contextExclusions=${sourceConsensusProof.noFormalRejectionContextExclusions.map((exclusion) =>
+            `${exclusion.subjectType}:${exclusion.subjectId}:${exclusion.reason}`
+          ).join(",")}; ` +
+          `rejectedPathIds=${sourceConsensusProof.noFormalRejectionRejectedPathIds.join(",")}; ` +
+          `sourceRejectionIds=${sourceConsensusProof.noFormalRejectionSourceRejectionIds.join(",")}`
+      },
+      {
         label: "source consensus superseded claim stays non-governing",
         passed: sourceConsensusProof.supersededClaimIsNonGoverning,
         detail:
@@ -1976,6 +2156,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       sourceConsensusPacketSupersededPathIds: sourceConsensusProof.packetSupersededPathIds,
       sourceConsensusPacketSourceRejectionIds: sourceConsensusProof.packetSourceRejectionIds,
       sourceConsensusCurrentClaimGoverned: sourceConsensusProof.currentClaimGoverned,
+      sourceConsensusNoFormalRejectionRunId: sourceConsensusProof.noFormalRejectionRunId,
+      sourceConsensusNoFormalRejectionStatus: sourceConsensusProof.noFormalRejectionStatus,
+      sourceConsensusNoFormalRejectionReasons: sourceConsensusProof.noFormalRejectionReasons,
+      sourceConsensusNoFormalRejectionKeepsTypedState:
+        sourceConsensusProof.noFormalRejectionKeepsTypedState,
       sourceConsensusSupersededClaimIsNonGoverning:
         sourceConsensusProof.supersededClaimIsNonGoverning,
       sourceConsensusRejectedClaimHasFormalRejection:

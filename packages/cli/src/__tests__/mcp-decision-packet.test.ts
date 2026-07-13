@@ -189,6 +189,45 @@ const weakPacketJson = {
   }
 };
 
+const noFormalNegativePacketJson = {
+  ...packetJson,
+  request: {
+    runId: "run-agent-unsafe"
+  },
+  packetIdentity: {
+    ...packetJson.packetIdentity,
+    packetId: "decision-packet:run-agent-unsafe:ghi",
+    checksum: "c".repeat(64),
+    evidenceRef: `packet:${"c".repeat(64)}`
+  },
+  packet: {
+    ...packetJson.packet,
+    contextExclusions: [{
+      subjectType: "source_claim",
+      subjectId: "source-claim:unsafe",
+      reason: "unsafe",
+      explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+      sourceAuthority: "project-decision"
+    }],
+    sourceRejectionIds: [],
+    supersededPathIds: [],
+    rejectedPathIds: [],
+    sourceConsensus: {
+      ...packetJson.packet.sourceConsensus,
+      sourceRejectionIds: [],
+      supersededPathIds: [],
+      rejectedPathIds: []
+    },
+    abstentionScore: {
+      ...packetJson.packet.abstentionScore,
+      status: "weak_context",
+      score: 90,
+      reasons: ["missing_rejected_path_evidence"],
+      evidenceGapIds: []
+    }
+  }
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -528,6 +567,55 @@ describe("DecisionPacket MCP wrapper", () => {
         },
         brief: {
           evidenceGapIds: [weakContextEvidenceGapId]
+        }
+      }
+    });
+  });
+
+  it("preserves typed unsafe context without inventing formal rejection evidence", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-unsafe",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-unsafe"
+        }
+      }
+    }, runtime(async () => ({
+      stdout: `${JSON.stringify(noFormalNegativePacketJson)}\n`
+    })));
+    const result = isRecord(reply) ? reply["result"] : undefined;
+    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
+
+    expect(structuredContent).toMatchObject({
+      kind: "krn.decisionPacketReadback.v1",
+      packetIdentity: {
+        checksum: "c".repeat(64),
+        evidenceRef: `packet:${"c".repeat(64)}`
+      },
+      packet: {
+        governingDecisionIds: ["frontend-project-standard-packet"],
+        contextExclusions: [{
+          subjectType: "source_claim",
+          subjectId: "source-claim:unsafe",
+          reason: "unsafe",
+          explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+          sourceAuthority: "project-decision"
+        }],
+        sourceRejectionIds: [],
+        rejectedPathIds: [],
+        sourceConsensus: {
+          sourceRejectionIds: [],
+          rejectedPathIds: [],
+          supersededPathIds: []
+        },
+        abstentionScore: {
+          status: "weak_context",
+          score: 90,
+          reasons: ["missing_rejected_path_evidence"],
+          evidenceGapIds: []
         }
       }
     });

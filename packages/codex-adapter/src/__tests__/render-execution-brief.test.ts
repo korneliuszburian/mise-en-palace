@@ -239,7 +239,9 @@ const packetForBrief = (input: {
   noiseKnowledgeIds: [],
   unknownKnowledgeIds: [],
   supersededPathIds: [],
-  rejectedPathIds: input.contextAssembly.exclusions.map((item) => item.subjectId),
+  rejectedPathIds: input.contextAssembly.exclusions
+    .filter((item) => item.subjectType === "anti_memory_record")
+    .map((item) => item.subjectId),
   falsifiers: [],
   verificationCommands: input.evidenceContract?.commands.map((item) => item.command) ?? [],
   evidenceGaps: [...(input.evidenceGaps ?? [])],
@@ -554,6 +556,59 @@ describe("renderExecutionBrief", () => {
     expect(brief.abstentionStatus).toBe("abstain");
     expect(brief.stopCondition).toContain("Do not execute");
     expect(renderExecutionBriefText(brief)).toContain("Packet Status: abstain");
+  });
+
+  it("renders an unsafe source exclusion as weak context without inventing rejection authority", () => {
+    const packet = packetForBrief({
+      taskContract,
+      contextAssembly: {
+        ...minimalContextAssembly,
+        exclusions: [{
+          subjectType: "source_claim",
+          subjectId: "claim-agent-unsafe",
+          reason: "unsafe",
+          explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+          score: 50,
+          sourceAuthority: "project-decision"
+        }]
+      },
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Resolve the missing formal negative evidence before execution."
+    });
+    const weakPacket: DecisionPacket = {
+      ...packet,
+      governingDecisionIds: ["frontend-bootstrap-standard"],
+      sourceRejectionIds: [],
+      rejectedPathIds: [],
+      sourceConsensus: {
+        ...packet.sourceConsensus,
+        sourceRejectionIds: [],
+        rejectedPathIds: []
+      },
+      abstentionScore: {
+        ...packet.abstentionScore,
+        status: "weak_context",
+        score: 90,
+        reasons: ["missing_rejected_path_evidence"]
+      }
+    };
+    const brief = createExecutionBrief({ packet: weakPacket });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(weakPacket.rejectedPathIds).toEqual([]);
+    expect(weakPacket.sourceRejectionIds).toEqual([]);
+    expect(brief.abstentionStatus).toBe("weak_context");
+    expect(brief.explicitExclusions).toEqual([{
+      subjectType: "source_claim",
+      subjectId: "claim-agent-unsafe",
+      reason: "unsafe",
+      explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
+      sourceAuthority: "project-decision"
+    }]);
+    expect(rendered).toContain("Packet Status: weak_context");
+    expect(rendered).toContain("source_claim:claim-agent-unsafe");
+    expect(rendered).toContain("reason=unsafe");
   });
 
   it("keeps the existing renderExecutionBrief wrapper stable", () => {
