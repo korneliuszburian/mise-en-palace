@@ -89,7 +89,13 @@ describe("DrizzleHarnessRunRepository", () => {
 
     await expect(new DrizzleHarnessRunRepository(db).createContextAssembly({
       harnessPlanId: "plan-1",
-      inclusions: [],
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: "memory-1",
+        reason: "task-relevant",
+        expectedUse: "apply",
+        sourceAuthority: "high"
+      }],
       exclusions: [],
       metadata: {
         canonicalRevisionTokens: ["not-a-revision-token"]
@@ -121,7 +127,13 @@ describe("DrizzleHarnessRunRepository", () => {
 
     await expect(new DrizzleHarnessRunRepository(db).createContextAssembly({
       harnessPlanId: "plan-1",
-      inclusions: [],
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: "memory-1",
+        reason: "task-relevant",
+        expectedUse: "apply",
+        sourceAuthority: "high"
+      }],
       exclusions: [],
       metadata: {
         canonicalRevisionTokens: [{
@@ -163,6 +175,58 @@ describe("DrizzleHarnessRunRepository", () => {
       metadata: {}
     })).rejects.toThrow("canonical revision coverage");
     expect(insertCalled).toBe(false);
+  });
+
+  it("rejects duplicate, wrong-subject, and extra canonical revision coverage", async () => {
+    const db = {
+      transaction: async (callback: (transaction: unknown) => Promise<unknown>) => callback({
+        insert: () => {
+          throw new Error("coverage validation must run before insert");
+        }
+      })
+    } as unknown as KrnDatabase;
+    const repository = new DrizzleHarnessRunRepository(db);
+    const inclusion = {
+      subjectType: "source_claim" as const,
+      subjectId: "claim-1",
+      reason: "task-relevant",
+      expectedUse: "apply",
+      sourceAuthority: "high" as const
+    };
+    const token = {
+      subjectType: "source_claim" as const,
+      subjectId: "claim-1",
+      updatedAt: "2026-06-01T00:00:00.000Z",
+      status: "active"
+    };
+
+    await expect(repository.createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [inclusion],
+      exclusions: [],
+      metadata: { canonicalRevisionTokens: [token, token] }
+    })).rejects.toThrow("canonical revision coverage mismatch");
+
+    await expect(repository.createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [inclusion],
+      exclusions: [],
+      metadata: {
+        canonicalRevisionTokens: [{ ...token, subjectId: "claim-2" }]
+      }
+    })).rejects.toThrow("canonical revision coverage mismatch");
+
+    await expect(repository.createContextAssembly({
+      harnessPlanId: "plan-1",
+      inclusions: [inclusion],
+      exclusions: [],
+      metadata: {
+        canonicalRevisionTokens: [
+          token,
+          { ...token, subjectId: "claim-2" }
+        ]
+      }
+    })).rejects.toThrow("canonical revision coverage has no inclusion");
   });
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(

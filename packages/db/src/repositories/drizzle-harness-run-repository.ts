@@ -181,18 +181,29 @@ const validateCanonicalRevisionCoverage = (
   inclusions: ContextAssembly["inclusions"],
   tokens: readonly CanonicalRevisionToken[]
 ): void => {
+  const canonicalSubjects = new Set<string>();
+
   for (const inclusion of inclusions) {
     if (inclusion.subjectType !== "memory_record" && inclusion.subjectType !== "source_claim") {
       continue;
     }
 
     const subject = canonicalRevisionSubject(inclusion.subjectType, inclusion.subjectId);
+    canonicalSubjects.add(subject);
     const matches = tokens.filter((token) => (
       canonicalRevisionSubject(token.subjectType, token.subjectId) === subject
     ));
 
     if (matches.length !== 1) {
       throw new Error(`createContextAssembly canonical revision coverage mismatch for ${subject}`);
+    }
+  }
+
+  for (const token of tokens) {
+    const subject = canonicalRevisionSubject(token.subjectType, token.subjectId);
+
+    if (!canonicalSubjects.has(subject)) {
+      throw new Error(`createContextAssembly canonical revision coverage has no inclusion for ${subject}`);
     }
   }
 };
