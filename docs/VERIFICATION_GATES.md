@@ -35,7 +35,10 @@ The GitHub workflow is the remote gate: its fast job covers toolchain,
 platform, workspace, typecheck, tests, Fallow, required evals, and committed
 whitespace; its DB job covers readiness, the same configured-store root test
 followed by a second readiness check, schema, DB smokes, and `eval:db`; its
-scheduled security job covers dependency, secret, and license policy.
+security job runs on every configured trigger. Security uses a provider range
+when one exists and deliberately scans full history for schedule and manual
+runs; a full-history finding is security evidence, not a reason to broaden
+Fallow's changed-files range.
 
 `quality:fallow:ci` prints its resolved base, head, and changed-file count. PR
 and ordinary push runs use their provider base; local, scheduled, manual, and
