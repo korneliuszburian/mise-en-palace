@@ -51,6 +51,15 @@ interface DecisionPacketJson {
       readonly reasons: readonly string[];
     };
   };
+  readonly readModel: {
+    readonly run: {
+      readonly status: string;
+    };
+    readonly task: {
+      readonly id: string;
+      readonly status: string;
+    };
+  };
   readonly returnChannels: {
     readonly evidence: {
       readonly persistedCommand: string;
@@ -67,6 +76,8 @@ const isDecisionPacketJson = (value: unknown): value is DecisionPacketJson =>
   typeof value === "object" &&
   value !== null &&
   "packetIdentity" in value &&
+  "packet" in value &&
+  "readModel" in value &&
   "returnChannels" in value;
 
 const notUsed = (method: string): never => {
@@ -337,6 +348,82 @@ const aggregate: HarnessRunAggregate = {
   runEvents: []
 };
 
+interface EvidenceContractScenario {
+  readonly label: string;
+  readonly taskStatus: HarnessRunAggregate["taskContract"]["status"];
+  readonly runStatus: HarnessRunAggregate["executionRun"]["status"];
+  readonly bindingTaskContractId?: string;
+}
+
+const inactiveEvidenceContractScenarios = [{
+  label: "wrong task binding",
+  taskStatus: "active",
+  runStatus: "running",
+  bindingTaskContractId: "task-agent-other"
+}, {
+  label: "closed task",
+  taskStatus: "closed",
+  runStatus: "running",
+  bindingTaskContractId: "task-agent-1"
+}, {
+  label: "succeeded run",
+  taskStatus: "active",
+  runStatus: "succeeded",
+  bindingTaskContractId: "task-agent-1"
+}, {
+  label: "failed run",
+  taskStatus: "active",
+  runStatus: "failed",
+  bindingTaskContractId: "task-agent-1"
+}, {
+  label: "missing task binding",
+  taskStatus: "active",
+  runStatus: "running"
+}] as const satisfies readonly EvidenceContractScenario[];
+
+const plannedEvidenceContractScenario = {
+  label: "planned run",
+  taskStatus: "active",
+  runStatus: "planned",
+  bindingTaskContractId: "task-agent-1"
+} as const satisfies EvidenceContractScenario;
+
+const aggregateForEvidenceContractScenario = (
+  scenario: EvidenceContractScenario
+): HarnessRunAggregate => ({
+  ...aggregate,
+  taskContract: {
+    ...aggregate.taskContract,
+    status: scenario.taskStatus
+  },
+  harnessPlan: {
+    ...aggregate.harnessPlan,
+    metadata: {
+      ...aggregate.harnessPlan.metadata,
+      evidenceContract: {
+        commands: [{
+          command: "pnpm --filter frontend test",
+          required: true
+        }],
+        diffRisk: "medium",
+        reviewBurden: "Review frontend bootstrap output against the current project standard.",
+        rollbackPath: "Revert the frontend bootstrap slice.",
+        metadata: scenario.bindingTaskContractId === undefined
+          ? {}
+          : { taskContractId: scenario.bindingTaskContractId }
+      }
+    }
+  },
+  executionRun: {
+    ...aggregate.executionRun,
+    status: scenario.runStatus,
+    ...(scenario.runStatus === "planned" ? {} : { startedAt: now }),
+    ...(scenario.runStatus === "succeeded" || scenario.runStatus === "failed"
+      ? { completedAt: now }
+      : {})
+  }
+});
+
 const createFixtureDatabaseRuntime = (
   aggregateForReadback: HarnessRunAggregate,
   onClose: () => void
@@ -443,6 +530,49 @@ const createFixtureDatabaseRuntime = (
       onClose();
     }
   };
+};
+
+const expectScenarioDecisionPacketReadback = async (
+  scenario: EvidenceContractScenario
+): Promise<DecisionPacketJson> => {
+  let closed = false;
+  const aggregateForReadback = aggregateForEvidenceContractScenario(scenario);
+  const result = await runCli(["decision", "packet", "--run-id", "run-agent-1", "--json"], {
+    env: {
+      KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+    },
+    now: () => now,
+    createId: (prefix) => `${prefix}-evidence-contract-scenario`,
+    createDatabaseRuntime: createFixtureDatabaseRuntime(aggregateForReadback, () => {
+      closed = true;
+    })
+  });
+  const json: unknown = JSON.parse(result.stdout);
+
+  expect(result.exitCode).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(isDecisionPacketJson(json)).toBe(true);
+  if (!isDecisionPacketJson(json)) {
+    throw new Error("decision packet JSON did not expose lifecycle readback");
+  }
+
+  expect(aggregateForReadback.harnessPlan.metadata.evidenceContract).toMatchObject({
+    metadata: scenario.bindingTaskContractId === undefined
+      ? {}
+      : { taskContractId: scenario.bindingTaskContractId }
+  });
+  expect(json.readModel).toMatchObject({
+    run: {
+      status: scenario.runStatus
+    },
+    task: {
+      id: "task-agent-1",
+      status: scenario.taskStatus
+    }
+  });
+  expect(closed).toBe(true);
+
+  return json;
 };
 
 const aggregateWithoutFormalNegativeEvidence = (): HarnessRunAggregate => {
@@ -684,6 +814,21 @@ describe("decision packet CLI", () => {
     expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(closed).toBe(true);
   });
+
+  it("keeps the current planned EvidenceContract as the active matrix control", async () => {
+    const json = await expectScenarioDecisionPacketReadback(plannedEvidenceContractScenario);
+
+    expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
+  });
+
+  it.fails.each(inactiveEvidenceContractScenarios)(
+    "does not render $label as an active EvidenceContract",
+    async (scenario) => {
+      const json = await expectScenarioDecisionPacketReadback(scenario);
+
+      expect(json.packet.verificationCommands).toEqual([]);
+    }
+  );
 
   it("keeps unsafe source exclusion explicit without treating it as formal rejection evidence", async () => {
     let closed = false;
