@@ -1,7 +1,7 @@
 import {
   knowledgeUsefulnessOutcomesFromMetadata,
   decisionPacketBindingReadbackFromMetadata,
-  parseEvidenceContract,
+  decideEvidenceContractActivation,
   buildFeedbackRecommendationReadback,
   readMetadataObjectList,
   readMetadataString,
@@ -506,7 +506,13 @@ export const buildDecisionPacketReadModel = (
 ): DecisionPacketReadModel => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
   const activationTrace = activationTraceResource(aggregate);
-  const evidenceContract = parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract);
+  const evidenceContractActivation = decideEvidenceContractActivation({
+    evidenceContract: aggregate.harnessPlan.metadata.evidenceContract,
+    taskContract: aggregate.taskContract,
+    harnessPlan: aggregate.harnessPlan,
+    executionRun: aggregate.executionRun
+  });
+  const evidenceContract = evidenceContractActivation.evidenceContract;
   const knowledgeSelection = knowledgeSelectionResource(aggregate);
 
   return {
@@ -520,6 +526,7 @@ export const buildDecisionPacketReadModel = (
       ? {}
       : { nextAction: aggregate.harnessPlan.nextAction }),
     context: contextResource(aggregate, activationTrace),
+    evidenceContractActivation,
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
     evidenceBundles: aggregate.evidenceBundles.map((bundle) =>
       evidenceBundleResource(bundle, aggregate.executionRun.updatedAt)

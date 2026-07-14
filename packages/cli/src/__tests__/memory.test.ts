@@ -1209,6 +1209,7 @@ describe("runCli", () => {
     const aggregate = memoryHarnessRunAggregate("project-1");
     aggregate.harnessPlan.metadata = {
       evidenceContract: {
+        taskContractId: "task-1",
         commands: [{ command: "pnpm typecheck", required: true }],
         diffRisk: "low",
         reviewBurden: "review",

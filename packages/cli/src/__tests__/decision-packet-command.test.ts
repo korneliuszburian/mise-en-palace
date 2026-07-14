@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import {
+  executionRunStatuses,
+  taskContractStatuses
+} from "@krn/core";
+import type { EvidenceContractInactiveReason } from "@krn/core";
 import type {
   HarnessRunAggregate
 } from "@krn/core/repositories";
@@ -59,6 +64,18 @@ interface DecisionPacketJson {
       readonly id: string;
       readonly status: string;
     };
+    readonly evidenceContractActivation: {
+      readonly status: "active" | "inactive";
+      readonly reason?: string;
+      readonly taskContractId: string;
+      readonly harnessPlanId: string;
+      readonly executionRunId: string;
+      readonly taskContractStatus: string;
+      readonly executionRunStatus: string;
+    };
+    readonly evidenceContract?: {
+      readonly taskContractId: string;
+    };
   };
   readonly returnChannels: {
     readonly evidence: {
@@ -117,6 +134,7 @@ const aggregate: HarnessRunAggregate = {
     summary: "Headless decision packet plan",
     metadata: {
       evidenceContract: {
+        taskContractId: "task-agent-1",
         commands: [{
           command: "pnpm --filter frontend test",
           required: true
@@ -124,9 +142,7 @@ const aggregate: HarnessRunAggregate = {
         diffRisk: "medium",
         reviewBurden: "Review frontend bootstrap output against the current project standard.",
         rollbackPath: "Revert the frontend bootstrap slice.",
-        metadata: {
-          taskContractId: "task-agent-1"
-        }
+        metadata: {}
       }
     },
     createdAt: now,
@@ -353,40 +369,93 @@ interface EvidenceContractScenario {
   readonly taskStatus: HarnessRunAggregate["taskContract"]["status"];
   readonly runStatus: HarnessRunAggregate["executionRun"]["status"];
   readonly bindingTaskContractId?: string;
+  readonly expectedActivation:
+    | { readonly status: "active" }
+    | { readonly status: "inactive"; readonly reason: EvidenceContractInactiveReason };
 }
 
-const inactiveEvidenceContractScenarios = [{
+const inactiveCommandRenderingScenarios = [{
   label: "wrong task binding",
   taskStatus: "active",
   runStatus: "running",
-  bindingTaskContractId: "task-agent-other"
+  bindingTaskContractId: "task-agent-other",
+  expectedActivation: {
+    status: "inactive",
+    reason: "task_contract_binding_mismatch"
+  }
 }, {
   label: "closed task",
   taskStatus: "closed",
   runStatus: "running",
-  bindingTaskContractId: "task-agent-1"
+  bindingTaskContractId: "task-agent-1",
+  expectedActivation: {
+    status: "inactive",
+    reason: "task_contract_not_active"
+  }
 }, {
   label: "succeeded run",
   taskStatus: "active",
   runStatus: "succeeded",
-  bindingTaskContractId: "task-agent-1"
+  bindingTaskContractId: "task-agent-1",
+  expectedActivation: {
+    status: "inactive",
+    reason: "execution_run_terminal"
+  }
 }, {
   label: "failed run",
   taskStatus: "active",
   runStatus: "failed",
-  bindingTaskContractId: "task-agent-1"
+  bindingTaskContractId: "task-agent-1",
+  expectedActivation: {
+    status: "inactive",
+    reason: "execution_run_terminal"
+  }
 }, {
   label: "missing task binding",
   taskStatus: "active",
-  runStatus: "running"
+  runStatus: "running",
+  expectedActivation: {
+    status: "inactive",
+    reason: "missing_task_contract_binding"
+  }
 }] as const satisfies readonly EvidenceContractScenario[];
+
+const lifecycleEvidenceContractScenarios = taskContractStatuses.flatMap((taskStatus) =>
+  executionRunStatuses.map((runStatus): EvidenceContractScenario => ({
+    label: `task=${taskStatus}, run=${runStatus}`,
+    taskStatus,
+    runStatus,
+    bindingTaskContractId: "task-agent-1",
+    expectedActivation: taskStatus === "active" &&
+      (runStatus === "planned" || runStatus === "running")
+      ? { status: "active" }
+      : {
+          status: "inactive",
+          reason: taskStatus === "active"
+            ? "execution_run_terminal"
+            : "task_contract_not_active"
+        }
+  }))
+);
 
 const plannedEvidenceContractScenario = {
   label: "planned run",
   taskStatus: "active",
   runStatus: "planned",
-  bindingTaskContractId: "task-agent-1"
+  bindingTaskContractId: "task-agent-1",
+  expectedActivation: {
+    status: "active"
+  }
 } as const satisfies EvidenceContractScenario;
+
+const inactiveBoundEvidenceContractScenarios = inactiveCommandRenderingScenarios.filter(
+  (scenario) => "bindingTaskContractId" in scenario
+);
+
+const bindingEvidenceContractScenarios = [
+  inactiveCommandRenderingScenarios[0],
+  inactiveCommandRenderingScenarios[4]
+] as const;
 
 const aggregateForEvidenceContractScenario = (
   scenario: EvidenceContractScenario
@@ -401,6 +470,9 @@ const aggregateForEvidenceContractScenario = (
     metadata: {
       ...aggregate.harnessPlan.metadata,
       evidenceContract: {
+        ...(scenario.bindingTaskContractId === undefined
+          ? {}
+          : { taskContractId: scenario.bindingTaskContractId }),
         commands: [{
           command: "pnpm --filter frontend test",
           required: true
@@ -408,9 +480,7 @@ const aggregateForEvidenceContractScenario = (
         diffRisk: "medium",
         reviewBurden: "Review frontend bootstrap output against the current project standard.",
         rollbackPath: "Revert the frontend bootstrap slice.",
-        metadata: scenario.bindingTaskContractId === undefined
-          ? {}
-          : { taskContractId: scenario.bindingTaskContractId }
+        metadata: {}
       }
     }
   },
@@ -556,11 +626,15 @@ const expectScenarioDecisionPacketReadback = async (
     throw new Error("decision packet JSON did not expose lifecycle readback");
   }
 
-  expect(aggregateForReadback.harnessPlan.metadata.evidenceContract).toMatchObject({
-    metadata: scenario.bindingTaskContractId === undefined
-      ? {}
-      : { taskContractId: scenario.bindingTaskContractId }
-  });
+  if (scenario.bindingTaskContractId === undefined) {
+    expect(aggregateForReadback.harnessPlan.metadata.evidenceContract)
+      .not.toHaveProperty("taskContractId");
+  } else {
+    expect(aggregateForReadback.harnessPlan.metadata.evidenceContract).toMatchObject({
+      taskContractId: scenario.bindingTaskContractId,
+      metadata: {}
+    });
+  }
   expect(json.readModel).toMatchObject({
     run: {
       status: scenario.runStatus
@@ -821,7 +895,37 @@ describe("decision packet CLI", () => {
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
   });
 
-  it.fails.each(inactiveEvidenceContractScenarios)(
+  it.each([...lifecycleEvidenceContractScenarios, ...bindingEvidenceContractScenarios])(
+    "classifies $label EvidenceContract activation in the read model",
+    async (scenario: EvidenceContractScenario) => {
+      const json = await expectScenarioDecisionPacketReadback(scenario);
+
+      expect(json.readModel.evidenceContractActivation).toMatchObject({
+        ...scenario.expectedActivation,
+        taskContractId: "task-agent-1",
+        harnessPlanId: "plan-agent-1",
+        executionRunId: "run-agent-1",
+        taskContractStatus: scenario.taskStatus,
+        executionRunStatus: scenario.runStatus
+      });
+
+      if (scenario.bindingTaskContractId === undefined) {
+        expect(json.readModel.evidenceContract).toBeUndefined();
+      } else {
+        expect(json.readModel.evidenceContract).toMatchObject({
+          taskContractId: scenario.bindingTaskContractId
+        });
+      }
+    }
+  );
+
+  it("does not expose commands from a contract missing its task binding", async () => {
+    const json = await expectScenarioDecisionPacketReadback(inactiveCommandRenderingScenarios[4]);
+
+    expect(json.packet.verificationCommands).toEqual([]);
+  });
+
+  it.fails.each(inactiveBoundEvidenceContractScenarios)(
     "does not render $label as an active EvidenceContract",
     async (scenario) => {
       const json = await expectScenarioDecisionPacketReadback(scenario);

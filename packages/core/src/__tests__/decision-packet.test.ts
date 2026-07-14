@@ -1183,6 +1183,7 @@ describe("DecisionPacket builder", () => {
 
   it("fails closed when the active evidence contract contains malformed commands", () => {
     expect(parseEvidenceContract({
+      taskContractId: "task-1",
       commands: [{
         command: "pnpm typecheck",
         required: true

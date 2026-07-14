@@ -50,6 +50,7 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
 });
 
 const contractForCommands = (commands: EvidenceContract["commands"]): EvidenceContract => ({
+  taskContractId: "task-1",
   commands,
   diffRisk: "low" as const,
   reviewBurden: "review",
@@ -258,6 +259,7 @@ describe("evidence bundle completeness", () => {
 
   test("requires fresh active-contract execution proof for helped", () => {
     const evidenceContract = {
+      taskContractId: "task-1",
       commands: [{ command: "pnpm typecheck", required: true }],
       diffRisk: "low" as const,
       reviewBurden: "review",

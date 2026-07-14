@@ -1521,6 +1521,9 @@ describe("compileHarnessPlan", () => {
       createId: (prefix) => `${prefix}-evidence`
     });
 
+    expect(result.evidenceContract.taskContractId).toBe(result.taskContract.id);
+    expect(result.evidenceContract.metadata).not.toHaveProperty("taskContractId");
+    expect(result.harnessPlan.metadata.evidenceContract).toEqual(result.evidenceContract);
     expect(result.evidenceContract.diffRisk).toBe("medium");
     expect(result.evidenceContract.reviewBurden).toContain("changed files");
     expect(result.evidenceContract.rollbackPath).toContain("revert");

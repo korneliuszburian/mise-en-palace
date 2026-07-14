@@ -3,6 +3,7 @@ import type {
   ContextSubjectType,
   DecisionPacketBindingReadback,
   EvidenceContract,
+  EvidenceContractActivationDecision,
   EvidenceCommand,
   EvidenceCommandReadback,
   FeedbackCandidateProposalKind,
@@ -171,6 +172,7 @@ export interface DecisionPacketReadModel {
     activationDiagnostics?: ActivationRetrievalDiagnostics;
     activationTrace?: DecisionPacketReadModelActivationTrace;
   };
+  evidenceContractActivation: EvidenceContractActivationDecision;
   evidenceContract?: EvidenceContract;
   evidenceBundles: {
     id: string;

@@ -10,6 +10,7 @@ import type {
 } from "drizzle-orm/pg-core";
 import postgres from "postgres";
 import type { Sql } from "postgres";
+import type { EvidenceContract } from "@krn/core";
 import {
   compileHarnessPlan
 } from "@krn/harness";
@@ -162,6 +163,7 @@ export interface SmokeTaskContractSeed {
 }
 
 export interface SmokeHarnessPlanSeed {
+  evidenceContract?: Omit<EvidenceContract, "taskContractId">;
   nextAction: string;
   status?: "ready" | "draft" | "running" | "blocked" | "completed";
   summary: string;
@@ -585,7 +587,15 @@ const createSmokeHarnessRecords = async (
     nextAction: input.harnessPlan.nextAction,
     metadata: {
       smokeId: input.marker,
-      ...(input.harnessPlan.metadata ?? {})
+      ...(input.harnessPlan.metadata ?? {}),
+      ...(input.harnessPlan.evidenceContract === undefined
+        ? {}
+        : {
+            evidenceContract: {
+              ...input.harnessPlan.evidenceContract,
+              taskContractId: taskContract.id
+            }
+          })
     }
   });
   const contextAssembly = input.contextAssembly === undefined ? undefined :

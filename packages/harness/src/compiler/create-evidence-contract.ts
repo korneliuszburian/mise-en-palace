@@ -29,6 +29,7 @@ const riskFromTask = (taskContract: TaskContract): DiffRisk => {
 };
 
 export const createEvidenceContract = (taskContract: TaskContract): EvidenceContract => ({
+  taskContractId: taskContract.id,
   commands: [
     {
       command: "pnpm typecheck",
@@ -46,7 +47,5 @@ export const createEvidenceContract = (taskContract: TaskContract): EvidenceCont
   diffRisk: riskFromTask(taskContract),
   reviewBurden: "Summarize changed files, boundary impact, test coverage, and residual risk.",
   rollbackPath: "Use a focused revert of the implementation commit if the slice regresses.",
-  metadata: {
-    taskContractId: taskContract.id
-  }
+  metadata: {}
 });

@@ -162,6 +162,7 @@ const capabilityPlan: CapabilityPlan = {
 };
 
 const evidenceContract: EvidenceContract = {
+  taskContractId: taskContract.id,
   commands: [
     {
       command: "pnpm typecheck",

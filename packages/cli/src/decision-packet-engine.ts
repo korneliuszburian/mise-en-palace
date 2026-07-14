@@ -204,6 +204,7 @@ const capabilityPlanFor = (testCase: DecisionPacketCase): CapabilityPlan => ({
 });
 
 const evidenceContractFor = (testCase: DecisionPacketCase): EvidenceContract => ({
+  taskContractId: `task-contract:${testCase.id}`,
   commands: [
     {
       command: "pnpm --filter @krn/cli test -- decision-packet-eval",

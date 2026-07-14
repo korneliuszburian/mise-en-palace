@@ -363,13 +363,12 @@ export const runBrainLoopSmokeCheck = async (
     harnessPlan: {
       summary: "DB-backed governed memory loop smoke",
       nextAction: "Persist evidence, review it, promote memory through MemoryReviewGate, and activate it.",
-      metadata: {
-        evidenceContract: {
-          commands: requiredEvidenceCommands.map((command) => ({ command, required: true })),
-          diffRisk: "high",
-          reviewBurden: "DB smoke proof only.",
-          rollbackPath: "Delete smoke marker rows."
-        }
+      evidenceContract: {
+        commands: requiredEvidenceCommands.map((command) => ({ command, required: true })),
+        diffRisk: "high",
+        reviewBurden: "DB smoke proof only.",
+        rollbackPath: "Delete smoke marker rows.",
+        metadata: {}
       }
     }
   });

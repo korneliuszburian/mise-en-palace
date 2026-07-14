@@ -268,26 +268,29 @@ export const renderCodexBriefFromAggregate = (
     throw new Error(input.missingContextMessage);
   }
 
+  const readModel = buildDecisionPacketReadModel(input.aggregate);
   const packet = buildDecisionPacketContractReadback({
-    readModel: buildDecisionPacketReadModel(input.aggregate),
+    readModel,
     generatedAt: input.aggregate.executionRun.updatedAt,
     sha256Hex
   }).packet;
   const brief = createExecutionBrief({
     packet
   });
-  const evidenceContract = packet.evidenceContract === undefined
-    ? undefined
-    : {
-        commands: packet.evidenceContract.commands.map((command) => ({
-          command: command.command,
-          required: command.required
-        })),
-        diffRisk: packet.evidenceContract.diffRisk,
-        reviewBurden: packet.evidenceContract.reviewBurden,
-        rollbackPath: packet.evidenceContract.rollbackPath,
-        metadata: {}
-      } satisfies EvidenceContract;
+  const evidenceContract =
+    packet.evidenceContract === undefined || readModel.evidenceContract === undefined
+      ? undefined
+      : {
+          taskContractId: readModel.evidenceContract.taskContractId,
+          commands: packet.evidenceContract.commands.map((command) => ({
+            command: command.command,
+            required: command.required
+          })),
+          diffRisk: packet.evidenceContract.diffRisk,
+          reviewBurden: packet.evidenceContract.reviewBurden,
+          rollbackPath: packet.evidenceContract.rollbackPath,
+          metadata: {}
+        } satisfies EvidenceContract;
 
   return {
     brief,

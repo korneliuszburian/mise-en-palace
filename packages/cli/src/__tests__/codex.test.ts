@@ -127,6 +127,7 @@ describe("runCli", () => {
             }
           },
           evidenceContract: {
+            taskContractId: "task-contract-1",
             commands: [
               {
                 command: "pnpm typecheck",
