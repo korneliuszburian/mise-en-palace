@@ -125,6 +125,20 @@ const requireEmbeddingModelId = (
   return embeddingModelId;
 };
 
+const lockRetrievalRunAuthority = async (
+  tx: KrnDatabaseTransaction,
+  retrievalRunId: string
+): Promise<void> => {
+  requireReturnedRow(
+    await tx
+      .select({ id: retrievalRuns.id })
+      .from(retrievalRuns)
+      .where(eq(retrievalRuns.id, retrievalRunId))
+      .for("update"),
+    "lockRetrievalRunAuthority"
+  );
+};
+
 const weightedScore = (
   input: {
     lexicalScore?: number;
@@ -597,15 +611,20 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   }
 
   async addCandidate(input: AddRetrievalCandidateInput): Promise<RetrievalCandidateRecord> {
-    const row = requireReturnedRow(
-      await this.db
-        .insert(retrievalCandidates)
-        .values(retrievalCandidateInsertValues(input))
-        .returning(),
-      "addRetrievalCandidate"
-    );
+    const authorityInput = structuredClone(input);
 
-    return mapRetrievalCandidate(row);
+    return this.db.transaction(async (tx) => {
+      await lockRetrievalRunAuthority(tx, authorityInput.retrievalRunId);
+      const row = requireReturnedRow(
+        await tx
+          .insert(retrievalCandidates)
+          .values(retrievalCandidateInsertValues(authorityInput))
+          .returning(),
+        "addRetrievalCandidate"
+      );
+
+      return mapRetrievalCandidate(row);
+    });
   }
 
   async createActivationDecision(
@@ -617,15 +636,20 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   async recordActivationDecision(
     input: RecordActivationDecisionInput
   ): Promise<ActivationDecisionRecord> {
-    const row = requireReturnedRow(
-      await this.db
-        .insert(activationDecisions)
-        .values(activationDecisionInsertValues(input))
-        .returning(),
-      "recordActivationDecision"
-    );
+    const authorityInput = structuredClone(input);
 
-    return mapActivationDecision(row);
+    return this.db.transaction(async (tx) => {
+      await lockRetrievalRunAuthority(tx, authorityInput.retrievalRunId);
+      const row = requireReturnedRow(
+        await tx
+          .insert(activationDecisions)
+          .values(activationDecisionInsertValues(authorityInput))
+          .returning(),
+        "recordActivationDecision"
+      );
+
+      return mapActivationDecision(row);
+    });
   }
 
   async listCandidatesForRetrievalRun(
@@ -653,50 +677,74 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   async cleanupTestRetrievalRecords(
     input: CleanupTestRetrievalRecordsInput
   ): Promise<CleanupTestRetrievalRecordsResult> {
-    const deletedContextExclusions = await this.db
-      .delete(contextExclusions)
-      .where(sql`${contextExclusions.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: contextExclusions.id });
-    const deletedContextItems = await this.db
-      .delete(contextItems)
-      .where(sql`${contextItems.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: contextItems.id });
-    const deletedDecisions = await this.db
-      .delete(activationDecisions)
-      .where(sql`${activationDecisions.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: activationDecisions.id });
-    const deletedCandidates = await this.db
-      .delete(retrievalCandidates)
-      .where(sql`${retrievalCandidates.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: retrievalCandidates.id });
-    const deletedEmbeddings = await this.db
-      .delete(embeddings)
-      .where(sql`${embeddings.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: embeddings.id });
-    const deletedSearchDocuments = await this.db
-      .delete(searchDocuments)
-      .where(sql`${searchDocuments.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: searchDocuments.id });
-    const deletedRetrievalRuns = await this.db
-      .delete(retrievalRuns)
-      .where(sql`${retrievalRuns.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: retrievalRuns.id });
-    const deletedEmbeddingModels = await this.db
-      .delete(embeddingModels)
-      .where(sql`${embeddingModels.metadata}->>'smokeId' = ${input.smokeId}`)
-      .returning({ id: embeddingModels.id });
+    const smokeId = input.smokeId;
 
-    return {
-      deletedCount:
-        deletedContextExclusions.length +
-        deletedContextItems.length +
-        deletedDecisions.length +
-        deletedCandidates.length +
-        deletedEmbeddings.length +
-        deletedSearchDocuments.length +
-        deletedRetrievalRuns.length +
-        deletedEmbeddingModels.length
-    };
+    return this.db.transaction(async (tx) => {
+      const candidateRetrievalRunIds = tx
+        .select({ retrievalRunId: retrievalCandidates.retrievalRunId })
+        .from(retrievalCandidates)
+        .where(sql`${retrievalCandidates.metadata}->>'smokeId' = ${smokeId}`);
+      const decisionRetrievalRunIds = tx
+        .select({ retrievalRunId: activationDecisions.retrievalRunId })
+        .from(activationDecisions)
+        .where(sql`${activationDecisions.metadata}->>'smokeId' = ${smokeId}`);
+
+      await tx
+        .select({ id: retrievalRuns.id })
+        .from(retrievalRuns)
+        .where(or(
+          sql`${retrievalRuns.metadata}->>'smokeId' = ${smokeId}`,
+          inArray(retrievalRuns.id, candidateRetrievalRunIds),
+          inArray(retrievalRuns.id, decisionRetrievalRunIds)
+        ))
+        .orderBy(asc(retrievalRuns.id))
+        .for("update");
+
+      const deletedContextExclusions = await tx
+        .delete(contextExclusions)
+        .where(sql`${contextExclusions.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: contextExclusions.id });
+      const deletedContextItems = await tx
+        .delete(contextItems)
+        .where(sql`${contextItems.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: contextItems.id });
+      const deletedDecisions = await tx
+        .delete(activationDecisions)
+        .where(sql`${activationDecisions.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: activationDecisions.id });
+      const deletedCandidates = await tx
+        .delete(retrievalCandidates)
+        .where(sql`${retrievalCandidates.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: retrievalCandidates.id });
+      const deletedEmbeddings = await tx
+        .delete(embeddings)
+        .where(sql`${embeddings.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: embeddings.id });
+      const deletedSearchDocuments = await tx
+        .delete(searchDocuments)
+        .where(sql`${searchDocuments.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: searchDocuments.id });
+      const deletedRetrievalRuns = await tx
+        .delete(retrievalRuns)
+        .where(sql`${retrievalRuns.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: retrievalRuns.id });
+      const deletedEmbeddingModels = await tx
+        .delete(embeddingModels)
+        .where(sql`${embeddingModels.metadata}->>'smokeId' = ${smokeId}`)
+        .returning({ id: embeddingModels.id });
+
+      return {
+        deletedCount:
+          deletedContextExclusions.length +
+          deletedContextItems.length +
+          deletedDecisions.length +
+          deletedCandidates.length +
+          deletedEmbeddings.length +
+          deletedSearchDocuments.length +
+          deletedRetrievalRuns.length +
+          deletedEmbeddingModels.length
+      };
+    });
   }
 
   async storeContextSelection(input: StoreContextSelectionInput): Promise<void> {

@@ -827,7 +827,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Stale feedback stayed diagnostic: ${yesNo(report.staleFeedbackStayedDiagnostic)}`,
   `Mismatched feedback delta: ${report.mismatchedFeedbackDeltaId}`,
   `Mismatched feedback outcome: ${report.mismatchedFeedbackOutcome}`,
-  `Mismatched feedback downgraded: ${yesNo(report.mismatchedFeedbackDowngraded)}`,
+  `Mismatched feedback stripped: ${yesNo(report.mismatchedFeedbackStripped)}`,
   `Mismatched feedback stayed out of next packet: ${yesNo(report.mismatchedFeedbackStayedOutOfNextPacket)}`,
   `Next packet governing decisions: ${report.nextPacketGoverningDecisionIds.join(", ")}`,
   `Next packet stale decisions: ${report.nextPacketStaleDecisionIds.join(", ")}`,

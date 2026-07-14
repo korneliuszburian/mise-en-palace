@@ -1,9 +1,12 @@
+import { createHash } from "node:crypto";
+
 import {
   and,
   asc,
   eq,
   inArray,
   desc,
+  isNull,
   sql
 } from "drizzle-orm";
 import type {
@@ -27,12 +30,17 @@ import type {
   UpdateExecutionRunStatusResult
 } from "@krn/core";
 import {
-  decisionPacketBindingReadbackFromMetadata,
+  authorizeDecisionPacketUsefulness,
+  decisionPacketAuthorityAdmissionCurrent,
   executionRunLifecycleCreatedEvent,
   executionRunLifecycleCreatedEventType,
   executionRunLifecycleTransitionedEvent,
   executionRunLifecycleTransitionedEventType,
   ExecutionRunLifecycleConflictError,
+  isAdmittedCurrentDecisionPacketAuthorityMetadata,
+  projectDecisionPacketUsefulnessSubjects,
+  stampCurrentDecisionPacketAuthorityMetadata,
+  stampUnboundDecisionPacketAuthorityMetadata,
   toEvidenceCommandReadback,
   readMetadataString
 } from "@krn/core";
@@ -75,6 +83,7 @@ import {
   operatorIntents,
   outboxEvents,
   reviewAssessments,
+  retrievalRuns,
   runEvents,
   sourceClaims,
   taskContracts
@@ -407,13 +416,44 @@ export const evidenceCommandsForPersistence = (
 ): EvidenceCommandReadback[] =>
   commands.map(toEvidenceCommandReadback);
 
+const repositoryAuthorityMetadataKeys = new Set([
+  "captureIdentity",
+  "evalExecutionIdentity",
+  "knowledgeUsefulnessOutcomes",
+  "sourceUsefulnessOutcomes"
+]);
+
+const stripRepositoryAuthorityMetadata = (
+  metadata: Record<string, unknown> | undefined
+): Record<string, unknown> => Object.fromEntries(
+  Object.entries(metadata ?? {}).filter(([key]) =>
+    !key.startsWith("decisionPacket") && !repositoryAuthorityMetadataKeys.has(key)
+  )
+);
+
+const repositoryUnboundMetadata = (
+  metadata: Record<string, unknown> | undefined,
+  reason: string
+): Record<string, unknown> => stampUnboundDecisionPacketAuthorityMetadata(
+  stripRepositoryAuthorityMetadata(metadata),
+  reason
+);
+
 const feedbackMetadataSubjectMatch = (
   field: "knowledgeId" | "sourceClaimId" | "sourceDecisionId",
   id: string
 ): SQL => {
+  const admittedCurrentPacket = sql`(
+    ${evidenceBundles.captureChannel} = ${evidenceFeedbackCaptureChannel}
+    and ${feedbackDeltas.captureChannel} = ${evidenceFeedbackCaptureChannel}
+    and ${feedbackDeltas.decisionPacketAuthorityAdmission} = ${decisionPacketAuthorityAdmissionCurrent}
+    and ${feedbackDeltas.metadata}->>'decisionPacketAuthorityAdmission' = ${decisionPacketAuthorityAdmissionCurrent}
+    and ${feedbackDeltas.metadata}->>'decisionPacketBindingState' = 'bound_current'
+  )`;
+
   switch (field) {
     case "knowledgeId":
-      return sql`exists (
+      return sql`${admittedCurrentPacket} and exists (
         select 1
         from jsonb_array_elements(
           coalesce(${feedbackDeltas.metadata}->'knowledgeUsefulnessOutcomes', '[]'::jsonb)
@@ -421,7 +461,7 @@ const feedbackMetadataSubjectMatch = (
         where outcome->>'knowledgeId' = ${id}
       )`;
     case "sourceClaimId":
-      return sql`exists (
+      return sql`${admittedCurrentPacket} and exists (
         select 1
         from jsonb_array_elements(
           coalesce(${feedbackDeltas.metadata}->'sourceUsefulnessOutcomes', '[]'::jsonb)
@@ -429,7 +469,7 @@ const feedbackMetadataSubjectMatch = (
         where outcome->>'sourceClaimId' = ${id}
       )`;
     case "sourceDecisionId":
-      return sql`exists (
+      return sql`${admittedCurrentPacket} and exists (
         select 1
         from jsonb_array_elements(
           coalesce(${feedbackDeltas.metadata}->'sourceUsefulnessOutcomes', '[]'::jsonb)
@@ -565,10 +605,68 @@ const nextRunEventSequence = async (
   return row.sequence;
 };
 
+const lockHarnessPlanAuthority = async (
+  tx: KrnDatabaseTransaction,
+  harnessPlanId: string,
+  operation: string
+): Promise<void> => {
+  requireReturnedRow(
+    await tx
+      .select({ id: harnessPlans.id })
+      .from(harnessPlans)
+      .where(eq(harnessPlans.id, harnessPlanId))
+      .for("update"),
+    `${operation}.harnessPlan`
+  );
+};
+
+const evidenceFeedbackCaptureChannel = "evidence_feedback_v1" as const;
+const evalFeedbackCaptureChannel = "eval_feedback_v1" as const;
+
+const metadataForEvidenceAuthorityRead = (
+  metadata: Record<string, unknown>,
+  captureChannel: string | null
+): Record<string, unknown> => captureChannel === evidenceFeedbackCaptureChannel
+  ? metadata
+  : repositoryUnboundMetadata(
+      metadata,
+      "The owning evidence capture channel does not admit DecisionPacket authority."
+    );
+
+const mapEvidenceBundleForAuthorityRead = (
+  row: typeof evidenceBundles.$inferSelect
+): EvidenceBundle => mapEvidenceBundle({
+  ...row,
+  metadata: metadataForEvidenceAuthorityRead(row.metadata, row.captureChannel)
+});
+
+const mapFeedbackDeltaForAuthorityRead = (
+  row: typeof feedbackDeltas.$inferSelect,
+  captureChannel: string | null
+): FeedbackDelta => mapFeedbackDelta({
+  ...row,
+  metadata: captureChannel === evidenceFeedbackCaptureChannel &&
+    row.captureChannel === evidenceFeedbackCaptureChannel &&
+    row.decisionPacketAuthorityAdmission === decisionPacketAuthorityAdmissionCurrent
+    ? row.metadata
+    : repositoryUnboundMetadata(
+        row.metadata,
+        "The feedback row lacks structural DecisionPacket authority admission."
+      )
+});
+
+interface EvidenceCaptureIdentity {
+  readonly identity: string;
+  readonly channel:
+    | typeof evidenceFeedbackCaptureChannel
+    | typeof evalFeedbackCaptureChannel;
+}
+
 const insertEvidenceBundleAndEvent = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceBundleInput,
-  operation: string
+  operation: string,
+  capture?: EvidenceCaptureIdentity
 ) => {
   const eventSequence = await nextRunEventSequence(
     tx,
@@ -580,7 +678,12 @@ const insertEvidenceBundleAndEvent = async (
       .insert(evidenceBundles)
       .values({
         executionRunId: input.executionRunId,
-        ...(input.captureIdentity === undefined ? {} : { captureIdentity: input.captureIdentity }),
+        ...(capture === undefined
+          ? {}
+          : {
+              captureIdentity: capture.identity,
+              captureChannel: capture.channel
+            }),
         status: input.status ?? "captured",
         changedFiles: input.changedFiles,
         commands: evidenceCommandsForPersistence(input.commands),
@@ -615,61 +718,103 @@ export interface DrizzleHarnessRunRepositoryOptions {
   faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void;
 }
 
+const findCaptureEvidenceBundle = (
+  tx: KrnDatabase,
+  executionRunId: string,
+  captureIdentity: string
+) => tx.query.evidenceBundles.findFirst({
+  where: and(
+    eq(evidenceBundles.executionRunId, executionRunId),
+    eq(evidenceBundles.captureIdentity, captureIdentity)
+  )
+});
+
+const requireCaptureChainChildren = async (
+  tx: KrnDatabase,
+  input: {
+    evidenceBundleId: string;
+    captureChannel:
+      | typeof evidenceFeedbackCaptureChannel
+      | typeof evalFeedbackCaptureChannel;
+    identity: string;
+    label: "Evidence feedback" | "Eval feedback";
+  }
+) => {
+  const reviewAssessmentRow = await tx.query.reviewAssessments.findFirst({
+    where: and(
+      eq(reviewAssessments.evidenceBundleId, input.evidenceBundleId),
+      eq(reviewAssessments.captureChannel, input.captureChannel)
+    )
+  });
+
+  if (reviewAssessmentRow === undefined) {
+    throw new Error(
+      `${input.label} persistence is incomplete for ${input.identity}: review assessment missing`
+    );
+  }
+
+  const feedbackDeltaRow = await tx.query.feedbackDeltas.findFirst({
+    where: and(
+      eq(feedbackDeltas.reviewAssessmentId, reviewAssessmentRow.id),
+      eq(feedbackDeltas.captureChannel, input.captureChannel)
+    )
+  });
+
+  if (feedbackDeltaRow === undefined) {
+    throw new Error(
+      `${input.label} persistence is incomplete for ${input.identity}: feedback delta missing`
+    );
+  }
+
+  return { feedbackDeltaRow, reviewAssessmentRow };
+};
+
 const existingEvidenceFeedbackOnceResult = async (
   tx: KrnDatabase,
   input: CreateEvidenceFeedbackOnceInput,
   captureIdentity: string
 ): Promise<CreateEvidenceFeedbackOnceResult | undefined> => {
-  const evidenceBundleRow = await tx.query.evidenceBundles.findFirst({
-    where: and(
-      eq(evidenceBundles.executionRunId, input.executionRunId),
-      eq(evidenceBundles.captureIdentity, captureIdentity)
-    )
-  });
+  const evidenceBundleRow = await findCaptureEvidenceBundle(
+    tx,
+    input.executionRunId,
+    captureIdentity
+  );
 
   if (evidenceBundleRow === undefined) {
     return undefined;
   }
 
-  const reviewAssessmentRow = await tx.query.reviewAssessments.findFirst({
-    where: eq(reviewAssessments.evidenceBundleId, evidenceBundleRow.id)
-  });
-  if (reviewAssessmentRow === undefined) {
+  if (evidenceBundleRow.captureChannel !== evidenceFeedbackCaptureChannel) {
     throw new Error(
-      `Evidence feedback persistence is incomplete for ${captureIdentity}: review assessment missing`
+      `createEvidenceFeedbackOnce rejected: capture identity collision for ${captureIdentity} is not repository-owned evidence feedback`
     );
   }
 
-  const feedbackDeltaRow = await tx.query.feedbackDeltas.findFirst({
-    where: eq(feedbackDeltas.reviewAssessmentId, reviewAssessmentRow.id)
-  });
-  if (feedbackDeltaRow === undefined) {
+  const { feedbackDeltaRow, reviewAssessmentRow } = await requireCaptureChainChildren(
+    tx,
+    {
+      evidenceBundleId: evidenceBundleRow.id,
+      captureChannel: evidenceFeedbackCaptureChannel,
+      identity: captureIdentity,
+      label: "Evidence feedback"
+    }
+  );
+  if (
+    (feedbackDeltaRow.decisionPacketAuthorityAdmission ===
+      decisionPacketAuthorityAdmissionCurrent) !==
+    isAdmittedCurrentDecisionPacketAuthorityMetadata(feedbackDeltaRow.metadata)
+  ) {
     throw new Error(
-      `Evidence feedback persistence is incomplete for ${captureIdentity}: feedback delta missing`
+      `createEvidenceFeedbackOnce rejected: feedback authority provenance is inconsistent for ${captureIdentity}`
     );
   }
 
-  const feedbackMaintenanceQueueRecordId = input.maintenance === undefined
-    ? undefined
-    : (await tx.query.maintenanceQueues.findFirst({
-        where: eq(
-          maintenanceQueues.queueKey,
-          maintenanceQueueRecordKeyForJob({
-            jobType: "review_feedback_delta",
-            payload: {
-              projectId: input.projectId,
-              feedbackDeltaId: feedbackDeltaRow.id,
-              reason: input.maintenance.reason
-            }
-          })
-        )
-      }))?.id;
-
-  if (input.maintenance !== undefined && feedbackMaintenanceQueueRecordId === undefined) {
-    throw new Error(
-      `Evidence feedback persistence is incomplete for ${captureIdentity}: maintenance queue record missing`
-    );
-  }
+  const feedbackMaintenanceQueueRecordId = (await tx.query.maintenanceQueues.findFirst({
+    where: and(
+      eq(maintenanceQueues.jobType, "review_feedback_delta"),
+      sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${feedbackDeltaRow.id}`
+    )
+  }))?.id;
 
   return {
     evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
@@ -682,28 +827,83 @@ const existingEvidenceFeedbackOnceResult = async (
   };
 };
 
-const declaredBoundPacketLifecycleRevision = (
-  metadata: Record<string, unknown>
-): number | undefined => {
-  if (readMetadataString(metadata, "decisionPacketBindingState") !== "bound_current") {
+const existingEvalFeedbackOnceResult = async (
+  tx: KrnDatabase,
+  input: CreateEvalFeedbackDeltaOnceInput,
+  executionIdentity: string,
+  captureIdentity: string
+): Promise<CreateEvalFeedbackDeltaOnceResult | undefined> => {
+  const evidenceBundleRow = await findCaptureEvidenceBundle(
+    tx,
+    input.executionRunId,
+    captureIdentity
+  );
+
+  if (evidenceBundleRow === undefined) {
     return undefined;
   }
 
-  const packetBinding = decisionPacketBindingReadbackFromMetadata(metadata);
-  const lifecycleRevision = packetBinding.sourceRunLifecycleRevision;
-  if (packetBinding.status !== "bound_current" || lifecycleRevision === undefined) {
+  if (
+    evidenceBundleRow.captureChannel !== evalFeedbackCaptureChannel ||
+    readMetadataString(evidenceBundleRow.metadata, "evalExecutionIdentity") !==
+      executionIdentity
+  ) {
     throw new Error(
-      `createEvidenceFeedbackOnce rejected: ${packetBinding.reason ?? "DecisionPacket bound_current metadata is incomplete."}`
+      `createEvalFeedbackDeltaOnce rejected: reserved capture identity collision for ${executionIdentity}`
     );
   }
 
-  return lifecycleRevision;
+  const { feedbackDeltaRow, reviewAssessmentRow } = await requireCaptureChainChildren(
+    tx,
+    {
+      evidenceBundleId: evidenceBundleRow.id,
+      captureChannel: evalFeedbackCaptureChannel,
+      identity: executionIdentity,
+      label: "Eval feedback"
+    }
+  );
+
+  return {
+    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
+    feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
+    created: false
+  };
 };
 
-const assertEvidenceFeedbackRunAuthority = async (
+const assertNoLegacyEvalFeedbackIdentity = async (
   tx: KrnDatabase,
-  input: CreateEvidenceFeedbackOnceInput
+  input: CreateEvalFeedbackDeltaOnceInput,
+  executionIdentity: string
 ): Promise<void> => {
+  const legacyEvidenceBundleRow = await tx.query.evidenceBundles.findFirst({
+    where: and(
+      eq(evidenceBundles.executionRunId, input.executionRunId),
+      isNull(evidenceBundles.captureIdentity),
+      sql`${evidenceBundles.metadata}->>'evalExecutionIdentity' = ${executionIdentity}`
+    )
+  });
+
+  if (legacyEvidenceBundleRow !== undefined) {
+    throw new Error(
+      `createEvalFeedbackDeltaOnce rejected: legacy eval identity ${executionIdentity} cannot be trusted as repository-owned capture identity`
+    );
+  }
+};
+
+interface LockedHarnessRunAuthority {
+  projectId: ProjectId;
+  lifecycleRevision: number;
+}
+
+const lockHarnessRunAuthority = async (
+  tx: KrnDatabaseTransaction,
+  input: {
+    executionRunId: string;
+    projectId: ProjectId;
+  },
+  operation: "createEvidenceFeedbackOnce" | "createEvalFeedbackDeltaOnce"
+): Promise<LockedHarnessRunAuthority> => {
   const linkedRun = await tx
     .select({
       projectId: taskContracts.projectId,
@@ -719,28 +919,124 @@ const assertEvidenceFeedbackRunAuthority = async (
 
   if (lockedRun === undefined || lockedRun.projectId !== input.projectId) {
     throw new Error(
-      "createEvidenceFeedbackOnce rejected: execution run project does not match capture project"
+      `${operation} rejected: execution run project does not match declared project`
     );
   }
 
-  if (lockedRun.lifecycleRevision !== input.sourceRunLifecycleRevision) {
-    throw new ExecutionRunLifecycleConflictError({
-      kind: "revision",
-      executionRunId: input.executionRunId,
-      expectedLifecycleRevision: input.sourceRunLifecycleRevision,
-      actualLifecycleRevision: lockedRun.lifecycleRevision
-    });
+  return {
+    projectId: input.projectId,
+    lifecycleRevision: lockedRun.lifecycleRevision
+  };
+};
+
+const assertSourceRunLifecycleRevision = (
+  operation: "createEvidenceFeedbackOnce" | "createEvalFeedbackDeltaOnce",
+  executionRunId: string,
+  expectedLifecycleRevision: number,
+  lockedRun: LockedHarnessRunAuthority
+): void => {
+  if (!Number.isSafeInteger(expectedLifecycleRevision) || expectedLifecycleRevision < 1) {
+    throw new Error(`${operation} requires a positive lifecycle revision`);
   }
 
-  const boundPacketRevision = declaredBoundPacketLifecycleRevision(input.evidence.metadata ?? {});
-  if (boundPacketRevision !== undefined && boundPacketRevision !== lockedRun.lifecycleRevision) {
+  if (lockedRun.lifecycleRevision !== expectedLifecycleRevision) {
     throw new ExecutionRunLifecycleConflictError({
       kind: "revision",
-      executionRunId: input.executionRunId,
-      expectedLifecycleRevision: boundPacketRevision,
+      executionRunId,
+      expectedLifecycleRevision,
       actualLifecycleRevision: lockedRun.lifecycleRevision
     });
   }
+};
+
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
+  structuredClone(input);
+
+const evidenceFeedbackAuthoritySnapshot = (
+  input: CreateEvidenceFeedbackOnceInput
+): CreateEvidenceFeedbackOnceInput => snapshotRepositoryInput(input);
+
+const evidenceFeedbackInputWithRepositoryAuthority = (
+  input: CreateEvidenceFeedbackOnceInput,
+  aggregate: HarnessRunAggregate
+): CreateEvidenceFeedbackOnceInput => {
+  const claim = input.decisionPacketClaim;
+
+  if (claim === undefined) {
+    const { maintenance: _maintenance, ...unboundInput } = input;
+
+    return {
+      ...unboundInput,
+      evidence: {
+        ...input.evidence,
+        metadata: stampUnboundDecisionPacketAuthorityMetadata(
+          stripRepositoryAuthorityMetadata(input.evidence.metadata),
+          "No DecisionPacket claim was admitted by the repository."
+        )
+      },
+      feedback: {
+        ...input.feedback,
+        metadata: stampUnboundDecisionPacketAuthorityMetadata(
+          stripRepositoryAuthorityMetadata(input.feedback.metadata),
+          "No DecisionPacket claim was admitted by the repository."
+        )
+      }
+    };
+  }
+
+  const authorization = authorizeDecisionPacketUsefulness({
+    aggregate,
+    runId: input.executionRunId,
+    runtimeProjectId: input.projectId,
+    callerPacketChecksum: claim.checksum,
+    callerPacketGeneratedAt: claim.generatedAt,
+    subjects: projectDecisionPacketUsefulnessSubjects({
+      sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes,
+      knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes
+    }),
+    sha256Hex
+  });
+
+  if (!authorization.authorized) {
+    throw new Error(`createEvidenceFeedbackOnce rejected: ${authorization.reason}`);
+  }
+
+  const authorityIdentity = {
+    checksum: authorization.packetChecksum,
+    generatedAt: authorization.packetGeneratedAt,
+    sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision
+  };
+  const sourceUsefulnessOutcomes = input.sourceUsefulnessOutcomes ?? [];
+  const knowledgeUsefulnessOutcomes = input.knowledgeUsefulnessOutcomes ?? [];
+
+  return {
+    ...input,
+    evidence: {
+      ...input.evidence,
+      metadata: stampCurrentDecisionPacketAuthorityMetadata(
+        stripRepositoryAuthorityMetadata(input.evidence.metadata),
+        authorityIdentity
+      )
+    },
+    feedback: {
+      ...input.feedback,
+      metadata: {
+        ...stampCurrentDecisionPacketAuthorityMetadata(
+          stripRepositoryAuthorityMetadata(input.feedback.metadata),
+          authorityIdentity
+        ),
+        ...(sourceUsefulnessOutcomes.length === 0
+          ? {}
+          : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
+        ...(knowledgeUsefulnessOutcomes.length === 0
+          ? {}
+          : { knowledgeUsefulnessOutcomes: [...knowledgeUsefulnessOutcomes] })
+      }
+    }
+  };
 };
 
 const insertEvidenceReviewAssessment = async (
@@ -752,6 +1048,7 @@ const insertEvidenceReviewAssessment = async (
     .insert(reviewAssessments)
     .values({
       evidenceBundleId,
+      captureChannel: evidenceFeedbackCaptureChannel,
       status: input.review.status ?? "pending",
       reviewer: input.review.reviewer,
       summary: input.review.summary,
@@ -772,6 +1069,10 @@ const insertEvidenceFeedbackDelta = async (
     .insert(feedbackDeltas)
     .values({
       reviewAssessmentId,
+      captureChannel: evidenceFeedbackCaptureChannel,
+      ...(isAdmittedCurrentDecisionPacketAuthorityMetadata(input.feedback.metadata ?? {})
+        ? { decisionPacketAuthorityAdmission: decisionPacketAuthorityAdmissionCurrent }
+        : {}),
       status: input.feedback.status ?? "candidate",
       memoryCandidates: input.feedback.memoryCandidates,
       sourceDecisions: input.feedback.sourceDecisions,
@@ -824,7 +1125,6 @@ const insertEvidenceFeedbackChain = async (
   const evidenceInput = validateEvidenceBundleInputForPersistence({
     ...input.evidence,
     executionRunId: input.executionRunId,
-    captureIdentity,
     metadata: {
       ...(input.evidence.metadata ?? {}),
       captureIdentity,
@@ -834,7 +1134,11 @@ const insertEvidenceFeedbackChain = async (
   const evidenceBundleRow = await insertEvidenceBundleAndEvent(
     tx,
     evidenceInput,
-    "createEvidenceFeedbackOnce.evidenceBundle"
+    "createEvidenceFeedbackOnce.evidenceBundle",
+    {
+      identity: captureIdentity,
+      channel: evidenceFeedbackCaptureChannel
+    }
   );
   faultAfterStage?.("after_evidence_bundle");
   const reviewAssessmentRow = await insertEvidenceReviewAssessment(
@@ -929,21 +1233,24 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     executionRunId: string
   ) {
     const evidenceBundleRows = await db.query.evidenceBundles.findMany({
-      where: eq(evidenceBundles.executionRunId, executionRunId)
+      where: eq(evidenceBundles.executionRunId, executionRunId),
+      orderBy: [asc(evidenceBundles.createdAt), asc(evidenceBundles.id)]
     });
     const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
     const reviewAssessmentRows =
       evidenceBundleIds.length === 0
         ? []
         : await db.query.reviewAssessments.findMany({
-            where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds)
+            where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds),
+            orderBy: [asc(reviewAssessments.createdAt), asc(reviewAssessments.id)]
           });
     const reviewAssessmentIds = reviewAssessmentRows.map((row) => row.id);
     const feedbackDeltaRows =
       reviewAssessmentIds.length === 0
         ? []
         : await db.query.feedbackDeltas.findMany({
-            where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds)
+            where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds),
+            orderBy: [asc(feedbackDeltas.createdAt), asc(feedbackDeltas.id)]
           });
 
     return {
@@ -955,7 +1262,9 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
   private async findActivationTrace(
     db: KrnDatabase | KrnDatabaseTransaction,
-    contextAssembly: ContextAssembly | undefined
+    contextAssembly: ContextAssembly | undefined,
+    taskContract: Pick<TaskContract, "id" | "projectId">,
+    lockRetrievalRun: boolean
   ) {
     if (contextAssembly === undefined) {
       return undefined;
@@ -967,17 +1276,96 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       return undefined;
     }
 
+    const retrievalRunQuery = db
+      .select({ id: retrievalRuns.id })
+      .from(retrievalRuns)
+      .where(and(
+        eq(retrievalRuns.id, retrievalRunId),
+        eq(retrievalRuns.taskContractId, taskContract.id),
+        ...(taskContract.projectId === undefined
+          ? []
+          : [eq(retrievalRuns.projectId, taskContract.projectId)])
+      ))
+      .limit(1);
+    const [ownedRetrievalRun] = lockRetrievalRun
+      ? await retrievalRunQuery.for("update")
+      : await retrievalRunQuery;
+
+    if (ownedRetrievalRun === undefined) {
+      return undefined;
+    }
+
     const retrievalCandidateRows = await db.query.retrievalCandidates.findMany({
-      where: eq(retrievalCandidates.retrievalRunId, retrievalRunId)
+      where: eq(retrievalCandidates.retrievalRunId, retrievalRunId),
+      orderBy: [asc(retrievalCandidates.createdAt), asc(retrievalCandidates.id)]
     });
     const activationDecisionRows = await db.query.activationDecisions.findMany({
-      where: eq(activationDecisions.retrievalRunId, retrievalRunId)
+      where: eq(activationDecisions.retrievalRunId, retrievalRunId),
+      orderBy: [asc(activationDecisions.createdAt), asc(activationDecisions.id)]
     });
 
     return {
       retrievalRunId,
       candidates: retrievalCandidateRows.map(mapRetrievalCandidate),
       decisions: activationDecisionRows.map(mapActivationDecision)
+    };
+  }
+
+  private async findHarnessRunAggregate(
+    db: KrnDatabase | KrnDatabaseTransaction,
+    executionRunId: string,
+    lockRetrievalRun = false
+  ): Promise<HarnessRunAggregate | undefined> {
+    const spineRows = await this.findHarnessRunSpineRows(db, executionRunId);
+
+    if (spineRows === undefined) {
+      return undefined;
+    }
+
+    const contextAssemblyRow = await db.query.contextAssemblies.findFirst({
+      where: eq(contextAssemblies.harnessPlanId, spineRows.harnessPlanRow.id),
+      orderBy: [desc(contextAssemblies.createdAt), desc(contextAssemblies.id)]
+    });
+    const {
+      evidenceBundleRows,
+      reviewAssessmentRows,
+      feedbackDeltaRows
+    } = await this.findEvidenceReviewFeedbackRows(db, executionRunId);
+    const runEventRows = await db.query.runEvents.findMany({
+      where: eq(runEvents.executionRunId, executionRunId),
+      orderBy: asc(runEvents.sequence)
+    });
+    const contextAssembly =
+      contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
+    const activationTrace = await this.findActivationTrace(
+      db,
+      contextAssembly,
+      mapTaskContract(spineRows.taskContractRow),
+      lockRetrievalRun
+    );
+    const evidenceCaptureChannelById = new Map(evidenceBundleRows.map((row) => [
+      row.id,
+      row.captureChannel
+    ]));
+    const feedbackCaptureChannelByReviewId = new Map(reviewAssessmentRows.map((row) => [
+      row.id,
+      evidenceCaptureChannelById.get(row.evidenceBundleId) ?? null
+    ]));
+
+    return {
+      operatorIntent: mapOperatorIntent(spineRows.operatorIntentRow),
+      taskContract: mapTaskContract(spineRows.taskContractRow),
+      harnessPlan: mapHarnessPlan(spineRows.harnessPlanRow),
+      ...(contextAssembly === undefined ? {} : { contextAssembly }),
+      ...(activationTrace === undefined ? {} : { activationTrace }),
+      executionRun: mapExecutionRun(spineRows.executionRunRow),
+      evidenceBundles: evidenceBundleRows.map(mapEvidenceBundleForAuthorityRead),
+      reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
+      feedbackDeltas: feedbackDeltaRows.map((row) => mapFeedbackDeltaForAuthorityRead(
+        row,
+        feedbackCaptureChannelByReviewId.get(row.reviewAssessmentId) ?? null
+      )),
+      runEvents: runEventRows.map(mapRunEvent)
     };
   }
 
@@ -1044,25 +1432,40 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createContextAssembly(input: CreateContextAssemblyInput): Promise<ContextAssembly> {
+    const authorityInput = snapshotRepositoryInput(input);
+    const metadata = authorityInput.metadata ?? {};
+    const tokens = canonicalRevisionTokensFrom(metadata);
+    validateCanonicalRevisionCoverage(authorityInput.inclusions, tokens);
+
     return this.db.transaction(async (tx) => {
-      const metadata = input.metadata ?? {};
-      const tokens = canonicalRevisionTokensFrom(metadata);
-      validateCanonicalRevisionCoverage(input.inclusions, tokens);
+      await lockHarnessPlanAuthority(
+        tx,
+        authorityInput.harnessPlanId,
+        "createContextAssembly"
+      );
+      await tx
+        .select({ id: executionRuns.id })
+        .from(executionRuns)
+        .where(eq(executionRuns.harnessPlanId, authorityInput.harnessPlanId))
+        .orderBy(asc(executionRuns.id))
+        .for("update");
       await validateCanonicalRevisionTokens(tx, metadata);
       const row = requireReturnedRow(
         await tx
           .insert(contextAssemblies)
           .values({
-            harnessPlanId: input.harnessPlanId,
-            status: input.status ?? "assembled",
-            ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-            inclusionCount: input.inclusions.length,
-            exclusionCount: input.exclusions.length,
+            harnessPlanId: authorityInput.harnessPlanId,
+            status: authorityInput.status ?? "assembled",
+            ...(authorityInput.tokenBudget === undefined
+              ? {}
+              : { tokenBudget: authorityInput.tokenBudget }),
+            inclusionCount: authorityInput.inclusions.length,
+            exclusionCount: authorityInput.exclusions.length,
             selectedContext: {
-              inclusions: input.inclusions
+              inclusions: authorityInput.inclusions
             },
             excludedContext: {
-              exclusions: input.exclusions
+              exclusions: authorityInput.exclusions
             },
             metadata
           })
@@ -1075,20 +1478,26 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createExecutionRun(input: CreateExecutionRunInput): Promise<ExecutionRun> {
-    validateExecutionRunCreation(input);
+    const authorityInput = snapshotRepositoryInput(input);
+    validateExecutionRunCreation(authorityInput);
 
     return this.db.transaction(async (tx) => {
+      await lockHarnessPlanAuthority(
+        tx,
+        authorityInput.harnessPlanId,
+        "createExecutionRun"
+      );
       const row = requireReturnedRow(
         await tx
           .insert(executionRuns)
           .values({
-            harnessPlanId: input.harnessPlanId,
-            adapter: input.adapter,
-            status: input.status ?? "planned",
-            ...(input.startedAt === undefined
+            harnessPlanId: authorityInput.harnessPlanId,
+            adapter: authorityInput.adapter,
+            status: authorityInput.status ?? "planned",
+            ...(authorityInput.startedAt === undefined
               ? {}
-              : { startedAt: fromIsoTimestamp(input.startedAt) }),
-            metadata: input.metadata ?? {}
+              : { startedAt: fromIsoTimestamp(authorityInput.startedAt) }),
+            metadata: authorityInput.metadata ?? {}
           })
           .returning(),
         "createExecutionRun"
@@ -1111,16 +1520,18 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async updateExecutionRunStatus(
     input: UpdateExecutionRunStatusInput
   ): Promise<UpdateExecutionRunStatusResult> {
+    const authorityInput = snapshotRepositoryInput(input);
+
     return this.db.transaction(async (tx) => {
       const currentRow = requireReturnedRow(
         await tx
           .select()
           .from(executionRuns)
-          .where(eq(executionRuns.id, input.executionRunId))
+          .where(eq(executionRuns.id, authorityInput.executionRunId))
           .for("update"),
         "updateExecutionRunStatus"
       );
-      const isAlreadyAtStatus = validateExecutionRunTransition(input, currentRow);
+      const isAlreadyAtStatus = validateExecutionRunTransition(authorityInput, currentRow);
 
       if (isAlreadyAtStatus) {
         return {
@@ -1133,19 +1544,19 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         await tx
           .update(executionRuns)
           .set({
-            status: input.status,
+            status: authorityInput.status,
             lifecycleRevision: sql`${executionRuns.lifecycleRevision} + 1`,
-            ...(currentRow.startedAt === null && input.startedAt !== undefined
-              ? { startedAt: fromIsoTimestamp(input.startedAt) }
+            ...(currentRow.startedAt === null && authorityInput.startedAt !== undefined
+              ? { startedAt: fromIsoTimestamp(authorityInput.startedAt) }
               : {}),
-            ...(input.completedAt === undefined
+            ...(authorityInput.completedAt === undefined
               ? {}
-              : { completedAt: fromIsoTimestamp(input.completedAt) }),
+              : { completedAt: fromIsoTimestamp(authorityInput.completedAt) }),
             updatedAt: sql`now()`
           })
           .where(and(
-            eq(executionRuns.id, input.executionRunId),
-            eq(executionRuns.status, input.expectedStatus),
+            eq(executionRuns.id, authorityInput.executionRunId),
+            eq(executionRuns.status, authorityInput.expectedStatus),
             eq(executionRuns.lifecycleRevision, currentRow.lifecycleRevision)
           ))
           .returning(),
@@ -1159,7 +1570,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       );
       const eventSequence = await nextRunEventSequence(
         tx,
-        input.executionRunId,
+        authorityInput.executionRunId,
         "updateExecutionRunStatus"
       );
       const eventRow = requireReturnedRow(
@@ -1198,7 +1609,13 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle> {
-    const evidenceInput = validateEvidenceBundleInputForPersistence(input);
+    const evidenceInput = validateEvidenceBundleInputForPersistence({
+      ...input,
+      metadata: repositoryUnboundMetadata(
+        input.metadata,
+        "Generic evidence persistence does not admit DecisionPacket authority."
+      )
+    });
 
     return this.db.transaction(async (tx) => {
       const row = await insertEvidenceBundleAndEvent(tx, evidenceInput, "createEvidenceBundle");
@@ -1237,7 +1654,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
             memoryCandidates: input.memoryCandidates,
             sourceDecisions: input.sourceDecisions,
             evalCandidates: input.evalCandidates,
-            metadata: input.metadata ?? {}
+            metadata: repositoryUnboundMetadata(
+              input.metadata,
+              "Generic feedback persistence does not admit DecisionPacket usefulness authority."
+            )
           })
           .returning(),
         "createFeedbackDelta"
@@ -1258,32 +1678,57 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async createEvidenceFeedbackOnce(
     input: CreateEvidenceFeedbackOnceInput
   ): Promise<CreateEvidenceFeedbackOnceResult> {
-    const captureIdentity = input.captureIdentity.trim();
+    const authorityInput = evidenceFeedbackAuthoritySnapshot(input);
+    const captureIdentity = authorityInput.captureIdentity.trim();
 
     if (captureIdentity.length === 0) {
       throw new Error("createEvidenceFeedbackOnce requires capture identity");
     }
-    if (
-      !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
-      input.sourceRunLifecycleRevision < 1
-    ) {
-      throw new Error("createEvidenceFeedbackOnce requires a positive lifecycle revision");
+    if (captureIdentity.startsWith("eval:")) {
+      throw new Error("createEvidenceFeedbackOnce capture identity uses the reserved eval namespace");
     }
 
     return this.db.transaction(async (tx) => {
       await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${`${input.executionRunId}:${captureIdentity}`}, 0))`
+        sql`select pg_advisory_xact_lock(hashtextextended(${`${authorityInput.executionRunId}:${captureIdentity}`}, 0))`
       );
 
-      const existing = await existingEvidenceFeedbackOnceResult(tx, input, captureIdentity);
+      const lockedRun = await lockHarnessRunAuthority(
+        tx,
+        authorityInput,
+        "createEvidenceFeedbackOnce"
+      );
+      const existing = await existingEvidenceFeedbackOnceResult(
+        tx,
+        authorityInput,
+        captureIdentity
+      );
       if (existing !== undefined) {
         return existing;
       }
 
-      await assertEvidenceFeedbackRunAuthority(tx, input);
+      assertSourceRunLifecycleRevision(
+        "createEvidenceFeedbackOnce",
+        authorityInput.executionRunId,
+        authorityInput.sourceRunLifecycleRevision,
+        lockedRun
+      );
+      const aggregate = requireLinkedRow(
+        await this.findHarnessRunAggregate(
+          tx,
+          authorityInput.executionRunId,
+          true
+        ),
+        "createEvidenceFeedbackOnce.harnessRunAggregate"
+      );
+      const admittedInput = evidenceFeedbackInputWithRepositoryAuthority(
+        authorityInput,
+        aggregate
+      );
+
       return insertEvidenceFeedbackChain(
         tx,
-        input,
+        admittedInput,
         captureIdentity,
         this.options.faultAfterStage
       );
@@ -1293,7 +1738,9 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async createEvalFeedbackDeltaOnce(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult> {
-    const executionIdentity = input.executionIdentity.trim();
+    const authorityInput = snapshotRepositoryInput(input);
+    const executionIdentity = authorityInput.executionIdentity.trim();
+    const captureIdentity = `eval:${executionIdentity}`;
 
     if (executionIdentity.length === 0) {
       throw new Error("createEvalFeedbackDeltaOnce requires execution identity");
@@ -1301,58 +1748,54 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
     return this.db.transaction(async (tx) => {
       await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${executionIdentity}, 0))`
+        sql`select pg_advisory_xact_lock(hashtextextended(${`${authorityInput.executionRunId}:${captureIdentity}`}, 0))`
       );
 
-      const existingEvidenceBundleRow = await tx.query.evidenceBundles.findFirst({
-        where: and(
-          eq(evidenceBundles.executionRunId, input.executionRunId),
-          sql`${evidenceBundles.metadata} ->> 'evalExecutionIdentity' = ${executionIdentity}`
-        )
-      });
+      const lockedRun = await lockHarnessRunAuthority(
+        tx,
+        authorityInput,
+        "createEvalFeedbackDeltaOnce"
+      );
+      const existing = await existingEvalFeedbackOnceResult(
+        tx,
+        authorityInput,
+        executionIdentity,
+        captureIdentity
+      );
 
-      if (existingEvidenceBundleRow !== undefined) {
-        const existingReviewAssessmentRow = await tx.query.reviewAssessments.findFirst({
-          where: eq(reviewAssessments.evidenceBundleId, existingEvidenceBundleRow.id)
-        });
-
-        if (existingReviewAssessmentRow === undefined) {
-          throw new Error(
-            `Eval feedback persistence is incomplete for ${executionIdentity}: review assessment missing`
-          );
-        }
-
-        const existingFeedbackDeltaRow = await tx.query.feedbackDeltas.findFirst({
-          where: eq(feedbackDeltas.reviewAssessmentId, existingReviewAssessmentRow.id)
-        });
-
-        if (existingFeedbackDeltaRow === undefined) {
-          throw new Error(
-            `Eval feedback persistence is incomplete for ${executionIdentity}: feedback delta missing`
-          );
-        }
-
-        return {
-          evidenceBundle: mapEvidenceBundle(existingEvidenceBundleRow),
-          reviewAssessment: mapReviewAssessment(existingReviewAssessmentRow),
-          feedbackDelta: mapFeedbackDelta(existingFeedbackDeltaRow),
-          created: false
-        };
+      if (existing !== undefined) {
+        return existing;
       }
 
+      await assertNoLegacyEvalFeedbackIdentity(tx, authorityInput, executionIdentity);
+
+      assertSourceRunLifecycleRevision(
+        "createEvalFeedbackDeltaOnce",
+        authorityInput.executionRunId,
+        authorityInput.sourceRunLifecycleRevision,
+        lockedRun
+      );
+
       const evidenceInput = validateEvidenceBundleInputForPersistence({
-        ...input.evidence,
-        executionRunId: input.executionRunId,
+        ...authorityInput.evidence,
+        executionRunId: authorityInput.executionRunId,
         metadata: {
-          ...(input.evidence.metadata ?? {}),
+          ...repositoryUnboundMetadata(
+            authorityInput.evidence.metadata,
+            "Eval evidence persistence does not admit DecisionPacket authority."
+          ),
           evalExecutionIdentity: executionIdentity,
-          projectId: input.projectId
+          projectId: authorityInput.projectId
         }
       });
       const evidenceBundleRow = await insertEvidenceBundleAndEvent(
         tx,
         evidenceInput,
-        "createEvalFeedbackDeltaOnce.evidenceBundle"
+        "createEvalFeedbackDeltaOnce.evidenceBundle",
+        {
+          identity: captureIdentity,
+          channel: evalFeedbackCaptureChannel
+        }
       );
 
       const reviewAssessmentRow = requireReturnedRow(
@@ -1360,11 +1803,12 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .insert(reviewAssessments)
           .values({
             evidenceBundleId: evidenceBundleRow.id,
-            status: input.review.status ?? "pending",
-            reviewer: input.review.reviewer,
-            summary: input.review.summary,
-            findings: input.review.findings,
-            metadata: input.review.metadata ?? {}
+            captureChannel: evalFeedbackCaptureChannel,
+            status: authorityInput.review.status ?? "pending",
+            reviewer: authorityInput.review.reviewer,
+            summary: authorityInput.review.summary,
+            findings: authorityInput.review.findings,
+            metadata: authorityInput.review.metadata ?? {}
           })
           .returning(),
         "createEvalFeedbackDeltaOnce.reviewAssessment"
@@ -1374,11 +1818,19 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .insert(feedbackDeltas)
           .values({
             reviewAssessmentId: reviewAssessmentRow.id,
-            status: input.feedback.status ?? "candidate",
-            memoryCandidates: input.feedback.memoryCandidates,
-            sourceDecisions: input.feedback.sourceDecisions,
-            evalCandidates: input.feedback.evalCandidates,
-            metadata: input.feedback.metadata ?? {}
+            captureChannel: evalFeedbackCaptureChannel,
+            status: authorityInput.feedback.status ?? "candidate",
+            memoryCandidates: authorityInput.feedback.memoryCandidates,
+            sourceDecisions: authorityInput.feedback.sourceDecisions,
+            evalCandidates: authorityInput.feedback.evalCandidates,
+            metadata: {
+              ...repositoryUnboundMetadata(
+                authorityInput.feedback.metadata,
+                "Eval feedback persistence does not admit DecisionPacket usefulness authority."
+              ),
+              evalExecutionIdentity: executionIdentity,
+              projectId: authorityInput.projectId
+            }
           })
           .returning(),
         "createEvalFeedbackDeltaOnce.feedbackDelta"
@@ -1390,7 +1842,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           feedbackDeltaId: feedbackDeltaRow.id,
           reviewAssessmentId: reviewAssessmentRow.id,
           evalExecutionIdentity: executionIdentity,
-          projectId: input.projectId
+          projectId: authorityInput.projectId
         }
       });
 
@@ -1405,7 +1857,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
   async listFeedbackDeltasForProject(projectId: string, limit = 100): Promise<FeedbackDelta[]> {
     const rows = await this.db
-      .select({ feedbackDelta: feedbackDeltas })
+      .select({
+        feedbackDelta: feedbackDeltas,
+        captureChannel: evidenceBundles.captureChannel
+      })
       .from(feedbackDeltas)
       .innerJoin(
         reviewAssessments,
@@ -1431,7 +1886,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       .orderBy(desc(feedbackDeltas.createdAt))
       .limit(limit);
 
-    return rows.map((row) => mapFeedbackDelta(row.feedbackDelta));
+    return rows.map((row) => mapFeedbackDeltaForAuthorityRead(
+      row.feedbackDelta,
+      row.captureChannel
+    ));
   }
 
   async getFeedbackDeltaForProject(
@@ -1441,7 +1899,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     const rows = await this.db
       .select({
         feedbackDelta: feedbackDeltas,
-        linkedProjectId: taskContracts.projectId
+        linkedProjectId: taskContracts.projectId,
+        captureChannel: evidenceBundles.captureChannel
       })
       .from(feedbackDeltas)
       .innerJoin(
@@ -1478,7 +1937,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
     return {
       status: "found",
-      feedbackDelta: mapFeedbackDelta(row.feedbackDelta)
+      feedbackDelta: mapFeedbackDeltaForAuthorityRead(
+        row.feedbackDelta,
+        row.captureChannel
+      )
     };
   }
 
@@ -1507,7 +1969,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
     const rowsBySubject = await Promise.all(subjects.map((subject) =>
       this.db
-        .select({ feedbackDelta: feedbackDeltas })
+        .select({
+          feedbackDelta: feedbackDeltas,
+          captureChannel: evidenceBundles.captureChannel
+        })
         .from(feedbackDeltas)
         .innerJoin(
           reviewAssessments,
@@ -1536,63 +2001,35 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         .orderBy(desc(feedbackDeltas.createdAt), desc(feedbackDeltas.id))
         .limit(limitPerSubject)
     ));
-    const uniqueRows = new Map<string, (typeof rowsBySubject)[number][number]["feedbackDelta"]>();
+    const uniqueRows = new Map<string, (typeof rowsBySubject)[number][number]>();
 
     for (const rows of rowsBySubject) {
       for (const row of rows) {
-        uniqueRows.set(row.feedbackDelta.id, row.feedbackDelta);
+        uniqueRows.set(row.feedbackDelta.id, row);
       }
     }
 
     return [...uniqueRows.values()]
       .sort((left, right) => {
-        const createdAtDifference = right.createdAt.getTime() - left.createdAt.getTime();
+        const createdAtDifference = right.feedbackDelta.createdAt.getTime() -
+          left.feedbackDelta.createdAt.getTime();
 
         return createdAtDifference === 0
-          ? right.id.localeCompare(left.id)
+          ? right.feedbackDelta.id.localeCompare(left.feedbackDelta.id)
           : createdAtDifference;
       })
-      .map(mapFeedbackDelta);
+      .map((row) => mapFeedbackDeltaForAuthorityRead(
+        row.feedbackDelta,
+        row.captureChannel
+      ));
   }
 
   async getHarnessRunByExecutionRunId(
     executionRunId: string
   ): Promise<HarnessRunAggregate | undefined> {
-    return this.db.transaction(async (tx) => {
-      const spineRows = await this.findHarnessRunSpineRows(tx, executionRunId);
-
-      if (spineRows === undefined) {
-        return undefined;
-      }
-
-      const contextAssemblyRow = await tx.query.contextAssemblies.findFirst({
-        where: eq(contextAssemblies.harnessPlanId, spineRows.harnessPlanRow.id)
-      });
-      const {
-        evidenceBundleRows,
-        reviewAssessmentRows,
-        feedbackDeltaRows
-      } = await this.findEvidenceReviewFeedbackRows(tx, executionRunId);
-      const runEventRows = await tx.query.runEvents.findMany({
-        where: eq(runEvents.executionRunId, executionRunId),
-        orderBy: asc(runEvents.sequence)
-      });
-      const contextAssembly =
-        contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
-      const activationTrace = await this.findActivationTrace(tx, contextAssembly);
-
-      return {
-        operatorIntent: mapOperatorIntent(spineRows.operatorIntentRow),
-        taskContract: mapTaskContract(spineRows.taskContractRow),
-        harnessPlan: mapHarnessPlan(spineRows.harnessPlanRow),
-        ...(contextAssembly === undefined ? {} : { contextAssembly }),
-        ...(activationTrace === undefined ? {} : { activationTrace }),
-        executionRun: mapExecutionRun(spineRows.executionRunRow),
-        evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
-        reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
-        feedbackDeltas: feedbackDeltaRows.map(mapFeedbackDelta),
-        runEvents: runEventRows.map(mapRunEvent)
-      };
-    }, { isolationLevel: "repeatable read", accessMode: "read only" });
+    return this.db.transaction(
+      (tx) => this.findHarnessRunAggregate(tx, executionRunId),
+      { isolationLevel: "repeatable read", accessMode: "read only" }
+    );
   }
 }

@@ -80,7 +80,6 @@ interface SmokeFeedbackDeltaInput {
   evidenceEventMessage: string;
   reviewSummary: string;
   metadata?: Record<string, unknown>;
-  maintenance?: { reason: string };
 }
 
 interface SmokeFeedbackDeltaOutput {
@@ -143,8 +142,7 @@ const createSmokeFeedbackDelta = async (
         smokeId: input.marker,
         ...(input.metadata ?? {})
       }
-    },
-    ...(input.maintenance === undefined ? {} : { maintenance: input.maintenance })
+    }
   } satisfies CreateEvidenceFeedbackOnceInput;
   const retryClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
 
@@ -371,24 +369,14 @@ export const runHarnessEvidenceSmokeCheck = async (
       evidenceEventMessage: "Persisted harness evidence smoke captured",
       reviewSummary: "Smoke evidence captured.",
       metadata: {
-        knowledgeUsefulnessOutcomes: [{
-          knowledgeId: "knowledge:older-relevant",
-          outcome: "stale",
-          reason: "Older relevant feedback must remain visible after unrelated newer deltas.",
-          evidenceRefs: ["smoke:harness-evidence:older-relevant"],
-          doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+        sourceClaimCandidates: [{
+          id: "source-claim-older-relevant",
+          claim: "Older relevant candidate remains visible after unrelated newer deltas."
         }],
-        sourceUsefulnessOutcomes: [{
-          sourceClaimId: "source-claim-older-relevant",
-          sourceDecisionId: "source-decision-older-relevant",
-          outcome: "stale",
-          reason: "Source subject feedback must remain project-scoped and bounded.",
-          evidenceRefs: ["smoke:harness-evidence:source-relevant"],
-          doesNotProve: "This smoke does not prove broad source truth."
+        sourceDecisionCandidates: [{
+          id: "source-decision-older-relevant",
+          decision: "Source decision candidate remains project-scoped and bounded."
         }]
-      },
-      maintenance: {
-        reason: "Atomic harness evidence smoke maintenance proof."
       }
     });
     feedbackDeltaId = feedbackDelta.feedbackDeltaId;
@@ -410,12 +398,9 @@ export const runHarnessEvidenceSmokeCheck = async (
       evalCandidates: [],
       metadata: {
         smokeId: marker,
-        knowledgeUsefulnessOutcomes: [{
-          knowledgeId: `knowledge:unrelated-${index}`,
-          outcome: "helped",
-          reason: "Unrelated newer feedback is a retrieval-horizon distractor.",
-          evidenceRefs: [`smoke:harness-evidence:unrelated-${index}`],
-          doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+        sourceClaimCandidates: [{
+          id: `source-claim-unrelated-${index}`,
+          claim: "Unrelated newer candidate is a retrieval-horizon distractor."
         }]
       },
       createdAt: new Date(Date.UTC(2026, 6, 8, 0, 0, index)),
@@ -432,12 +417,9 @@ export const runHarnessEvidenceSmokeCheck = async (
         evalCandidates: [],
         metadata: {
           smokeId: marker,
-          knowledgeUsefulnessOutcomes: [{
-            knowledgeId: "knowledge:older-relevant",
-            outcome: "helped",
-            reason: "The newer same-subject outcome must win deterministically.",
-            evidenceRefs: ["smoke:harness-evidence:newer-relevant"],
-            doesNotProve: "This smoke does not prove broad usefulness ranking quality."
+          sourceClaimCandidates: [{
+            id: "source-claim-older-relevant",
+            claim: "The newer same-subject candidate must win deterministically."
           }]
         },
         createdAt: new Date(Date.UTC(2026, 6, 9)),
@@ -518,8 +500,8 @@ export const runHarnessEvidenceSmokeCheck = async (
     const subjectFeedbackDeltas = await harnessRunRepository.listFeedbackDeltasForSubjects({
       projectId: project.id,
       subjects: [{
-        kind: "knowledge",
-        id: "knowledge:older-relevant"
+        kind: "source_claim",
+        id: "source-claim-older-relevant"
       }],
       limitPerSubject: 1
     });
@@ -597,7 +579,7 @@ export const runHarnessEvidenceSmokeCheck = async (
       feedbackDeltaCount !== 103 ||
       runEventCount !== 2 ||
       feedbackOutboxEventCount !== 1 ||
-      feedbackMaintenanceQueueCount !== 1
+      feedbackMaintenanceQueueCount !== 0
     ) {
       throw new Error(
         `Harness evidence smoke readback did not match linked records: evidence=${evidenceBundleCount}, review=${reviewAssessmentCount}, feedback=${feedbackDeltaCount}, events=${runEventCount}, outbox=${feedbackOutboxEventCount}, maintenance=${feedbackMaintenanceQueueCount}`

@@ -14,6 +14,7 @@ export type {
   FeedbackSubjectKind,
   FeedbackSubjectReference,
   CreateReviewAssessmentInput,
+  DecisionPacketClaim,
   HarnessRunAggregate,
   HarnessRunRepository,
   ListFeedbackDeltasForSubjectsInput,

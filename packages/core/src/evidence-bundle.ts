@@ -220,6 +220,27 @@ export const decisionPacketBindingWriteStates = [
 
 export type DecisionPacketBindingWriteState = typeof decisionPacketBindingWriteStates[number];
 
+export const decisionPacketAuthorityAdmissionCurrent = "current_v1" as const;
+
+export type DecisionPacketAuthorityAdmission =
+  typeof decisionPacketAuthorityAdmissionCurrent;
+
+const decisionPacketAuthorityMetadataKeys = [
+  "decisionPacketAuthorityAdmission",
+  "decisionPacketBindingState",
+  "decisionPacketChecksum",
+  "decisionPacketEvidenceRef",
+  "decisionPacketGeneratedAt",
+  "decisionPacketSourceRunLifecycleRevision",
+  "decisionPacketBindingReason"
+] as const;
+
+export interface CurrentDecisionPacketAuthorityMetadataInput {
+  checksum: string;
+  generatedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
+}
+
 export const decisionPacketBindingStatuses = [
   ...decisionPacketBindingWriteStates,
   "mismatch",
@@ -355,12 +376,72 @@ const trimmedOptionalString = (value: string | undefined): string | undefined =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const decisionPacketAuthorityMetadataKeySet = new Set<string>(
+  decisionPacketAuthorityMetadataKeys
+);
+
+const stripDecisionPacketAuthorityMetadata = (
+  metadata: Record<string, unknown>
+): Record<string, unknown> => Object.fromEntries(
+  Object.entries(metadata).filter(([key]) =>
+    !decisionPacketAuthorityMetadataKeySet.has(key)
+  )
+);
+
+const requiredAuthorityText = (value: string, field: string): string => {
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error(`DecisionPacket authority ${field} must not be empty`);
+  }
+
+  return trimmed;
+};
+
+export const stampCurrentDecisionPacketAuthorityMetadata = (
+  metadata: Record<string, unknown>,
+  input: CurrentDecisionPacketAuthorityMetadataInput
+): Record<string, unknown> => {
+  const checksum = requiredAuthorityText(input.checksum, "checksum");
+
+  if (!isIsoTimestamp(input.generatedAt)) {
+    throw new Error("DecisionPacket authority generatedAt must be an ISO timestamp");
+  }
+  if (
+    !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
+    input.sourceRunLifecycleRevision < 1
+  ) {
+    throw new Error("DecisionPacket authority lifecycle revision must be a positive integer");
+  }
+
+  return {
+    ...stripDecisionPacketAuthorityMetadata(metadata),
+    decisionPacketAuthorityAdmission: decisionPacketAuthorityAdmissionCurrent,
+    decisionPacketBindingState: "bound_current",
+    decisionPacketChecksum: checksum,
+    decisionPacketEvidenceRef: `packet:${checksum}`,
+    decisionPacketGeneratedAt: input.generatedAt,
+    decisionPacketSourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+  };
+};
+
+export const stampUnboundDecisionPacketAuthorityMetadata = (
+  metadata: Record<string, unknown>,
+  reason: string
+): Record<string, unknown> => ({
+  ...stripDecisionPacketAuthorityMetadata(metadata),
+  decisionPacketBindingState: "unbound",
+  decisionPacketBindingReason: requiredAuthorityText(reason, "unbound reason")
+});
+
 const decisionPacketBindingMismatch = (reason: string): DecisionPacketBindingReadback => ({
   status: "mismatch",
   reason
 });
 
 interface DecisionPacketBindingMetadataFields {
+  authorityAdmissionValue: unknown;
+  authorityAdmission: string | undefined;
   stateValue: unknown;
   state: string | undefined;
   checksum: string | undefined;
@@ -385,6 +466,8 @@ const readMetadataPositiveInteger = (
 const decisionPacketBindingMetadataFields = (
   metadata: Record<string, unknown>
 ): DecisionPacketBindingMetadataFields => ({
+  authorityAdmissionValue: metadata.decisionPacketAuthorityAdmission,
+  authorityAdmission: readMetadataString(metadata, "decisionPacketAuthorityAdmission"),
   stateValue: metadata.decisionPacketBindingState,
   state: readMetadataString(metadata, "decisionPacketBindingState"),
   checksum: readMetadataString(metadata, "decisionPacketChecksum"),
@@ -401,6 +484,12 @@ const decisionPacketBindingMetadataFields = (
 const boundCurrentBindingReadback = (
   fields: DecisionPacketBindingMetadataFields
 ): DecisionPacketBindingReadback => {
+  if (fields.authorityAdmission !== decisionPacketAuthorityAdmissionCurrent) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket bound_current metadata lacks current repository authority admission."
+    );
+  }
+
   if (fields.checksum === undefined || fields.evidenceRef !== `packet:${fields.checksum}`) {
     return decisionPacketBindingMismatch(
       "DecisionPacket bound_current metadata has an inconsistent checksum or evidence ref."
@@ -438,6 +527,7 @@ const unboundBindingReadback = (
   fields: DecisionPacketBindingMetadataFields
 ): DecisionPacketBindingReadback => {
   const hasPacketIdentity = [
+    fields.authorityAdmissionValue,
     fields.checksum,
     fields.evidenceRef,
     fields.generatedAt,
@@ -466,6 +556,12 @@ export const decisionPacketBindingReadbackFromMetadata = (
   }
 
   if (fields.state === undefined) {
+    if (fields.authorityAdmissionValue !== undefined) {
+      return decisionPacketBindingMismatch(
+        "DecisionPacket authority admission requires an explicit binding state."
+      );
+    }
+
     return {
       status: "legacy_unknown",
       reason: "DecisionPacket binding state was not recorded for this historical evidence bundle."
@@ -481,6 +577,10 @@ export const decisionPacketBindingReadbackFromMetadata = (
       return decisionPacketBindingMismatch("DecisionPacket binding state is not recognized.");
   }
 };
+
+export const isAdmittedCurrentDecisionPacketAuthorityMetadata = (
+  metadata: Record<string, unknown>
+): boolean => decisionPacketBindingReadbackFromMetadata(metadata).status === "bound_current";
 
 export const parseEvidenceBundleMetadataReadback = (
   input: unknown
@@ -838,15 +938,15 @@ export const evidenceBundleProvesHelped = (input: {
 }): boolean => {
   const bundleCreatedAt = Date.parse(input.bundle.createdAt);
   const packetGeneratedAt = Date.parse(input.packetGeneratedAt);
+  const packetBinding = decisionPacketBindingReadbackFromMetadata(input.bundle.metadata);
 
   if (
     (input.bundle.status !== "captured" && input.bundle.status !== "verified") ||
-    readMetadataString(input.bundle.metadata, "decisionPacketChecksum") !== input.packetChecksum ||
-    readMetadataString(input.bundle.metadata, "decisionPacketGeneratedAt") !== input.packetGeneratedAt ||
-    readMetadataPositiveInteger(
-      input.bundle.metadata,
-      "decisionPacketSourceRunLifecycleRevision"
-    ) !== input.sourceRunLifecycleRevision ||
+    packetBinding.status !== "bound_current" ||
+    packetBinding.checksum !== input.packetChecksum ||
+    packetBinding.evidenceRef !== `packet:${input.packetChecksum}` ||
+    packetBinding.generatedAt !== input.packetGeneratedAt ||
+    packetBinding.sourceRunLifecycleRevision !== input.sourceRunLifecycleRevision ||
     !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
     input.sourceRunLifecycleRevision < 1 ||
     input.evidenceContract === undefined ||

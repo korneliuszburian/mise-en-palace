@@ -1,0 +1,2 @@
+ALTER TABLE "feedback_deltas" ADD COLUMN "decision_packet_authority_admission" text;--> statement-breakpoint
+ALTER TABLE "feedback_deltas" ADD CONSTRAINT "feedback_deltas_decision_packet_authority_admission_known" CHECK ("feedback_deltas"."decision_packet_authority_admission" is null or "feedback_deltas"."decision_packet_authority_admission" = 'current_v1');

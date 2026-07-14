@@ -1,11 +1,15 @@
 import {
   knowledgeUsefulnessOutcomesFromMetadata,
   decisionPacketBindingReadbackFromMetadata,
+  decisionPacketReadModelDoesNotProve,
+  decisionPacketReadModelProves,
   decideEvidenceContractActivation,
   buildFeedbackRecommendationReadback,
+  projectDecisionPacketActivationCandidate,
+  projectDecisionPacketActivationDecision,
+  projectDecisionPacketTask,
   readMetadataObjectList,
   readMetadataString,
-  readMetadataStringList,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
@@ -31,17 +35,8 @@ import {
   candidateReviewabilityReasons,
   changedFileClassification,
   projectResolutionFromMetadata,
-  projectStandardDecisionFromMetadata,
-  pendingAntiMemoryReviewFromMetadata,
-  readMetadataFiniteNumber,
-  sourceClaimAuthorityFromMetadata,
-  sourceClaimEdgeInfluenceFromMetadata,
-  sourceDecisionSupportBoostFromMetadata
+  readMetadataFiniteNumber
 } from "./decision-packet-read-model-decoders.js";
-import {
-  decisionPacketReadModelDoesNotProve,
-  decisionPacketReadModelProves
-} from "./decision-packet-read-model.js";
 import type {
   DecisionPacketReadModelActivationCandidate,
   DecisionPacketReadModelActivationDecision,
@@ -147,47 +142,30 @@ const activationCandidateScores = (
 const activationCandidateResource = (
   candidate: RetrievalCandidateRecord
 ): DecisionPacketReadModelActivationCandidate => {
-  const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
-  const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
-  const sourceRejectionIds = readMetadataStringList(candidate.metadata, "sourceRejectionIds");
-  const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
-  const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
-  const sourceClaimAuthority = sourceClaimAuthorityFromMetadata(candidate.metadata);
+  const authorityProjection = projectDecisionPacketActivationCandidate(candidate);
 
   return {
     id: candidate.id,
     kind: candidate.kind,
     status: candidate.status,
-    subjectType: candidate.subjectType,
-    subjectId: candidate.subjectId,
+    ...authorityProjection,
     sourceAuthority: candidate.sourceAuthority,
-    ...(sourceClaimAuthority === undefined
-      ? {}
-      : {
-          sourceClaimAuthorityStatus: sourceClaimAuthority.status,
-          sourceClaimAuthorityReasons: sourceClaimAuthority.reasons
-        }),
     ...activationCandidateScores(candidate),
-    reason: candidate.reason,
-    ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
-    ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
-    ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost }),
-    ...(sourceRejectionIds.length === 0 ? {} : { sourceRejectionIds }),
-    ...(pendingAntiMemoryReview === undefined ? {} : { pendingAntiMemoryReview })
+    reason: candidate.reason
   };
 };
 
 const activationDecisionResource = (
   decision: ActivationDecisionRecord
 ): DecisionPacketReadModelActivationDecision => {
-  const antiMemoryRecordId = readMetadataString(decision.metadata, "antiMemoryRecordId");
+  const { reason, ...authorityProjection } = projectDecisionPacketActivationDecision(decision);
 
   return {
     id: decision.id,
     subjectType: decision.subjectType,
     subjectId: decision.subjectId,
     decision: decision.decision,
-    reason: decision.reason,
+    reason,
     ...(decision.score === undefined ? {} : { score: decision.score }),
     ...(decision.expectedDecisionImpact === undefined
       ? {}
@@ -195,7 +173,7 @@ const activationDecisionResource = (
     ...(decision.retrievalCandidateId === undefined
       ? {}
       : { retrievalCandidateId: decision.retrievalCandidateId }),
-    ...(antiMemoryRecordId === undefined ? {} : { antiMemoryRecordId })
+    ...authorityProjection
   };
 };
 
@@ -381,15 +359,7 @@ const runResource = (
 
 const taskResource = (
   aggregate: HarnessRunAggregate
-): DecisionPacketReadModelTask => ({
-  id: aggregate.taskContract.id,
-  title: aggregate.taskContract.title,
-  objective: aggregate.taskContract.objective,
-  constraints: [...aggregate.taskContract.constraints],
-  nonGoals: [...aggregate.taskContract.nonGoals],
-  acceptance: [...aggregate.taskContract.acceptance],
-  status: aggregate.taskContract.status
-});
+): DecisionPacketReadModelTask => projectDecisionPacketTask(aggregate.taskContract);
 
 export const activationDiagnosticsResource = (
   contextAssembly: ContextAssembly | undefined

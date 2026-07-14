@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
 import {
+  knowledgeUsefulnessOutcomesFromMetadata,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackDeltaReview,
   summarizeFeedbackCandidateProposals,
@@ -9,6 +10,15 @@ import {
 } from "../feedback-delta.js";
 
 const now = "2026-06-23T07:20:00.000Z";
+
+const admittedPacketAuthority = {
+  decisionPacketAuthorityAdmission: "current_v1",
+  decisionPacketBindingState: "bound_current",
+  decisionPacketChecksum: "packet-checksum",
+  decisionPacketEvidenceRef: "packet:packet-checksum",
+  decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
+  decisionPacketSourceRunLifecycleRevision: 1
+} as const;
 
 const feedback = (overrides: Partial<FeedbackDelta>): FeedbackDelta => ({
   id: "feedback-1",
@@ -59,8 +69,17 @@ describe("review outcome domain", () => {
 });
 
 describe("source usefulness outcome feedback", () => {
-  test("parses complete outcome feedback and drops malformed metadata rows", () => {
+  test("only parses packet-admitted outcome feedback and drops malformed metadata rows", () => {
     expect(sourceUsefulnessOutcomesFromMetadata({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-unadmitted",
+        outcome: "noise",
+        reason: "Caller-authored usefulness must remain non-governing.",
+        doesNotProve: "Unadmitted metadata does not prove usefulness."
+      }]
+    })).toEqual([]);
+    expect(sourceUsefulnessOutcomesFromMetadata({
+      ...admittedPacketAuthority,
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
         sourceDecisionId: "source-decision-1",
@@ -141,6 +160,31 @@ describe("source usefulness outcome feedback", () => {
       doesNotProve: "Unknown outcome does not prove usefulness."
     }]);
   });
+
+  test("keeps knowledge usefulness non-governing without current packet admission", () => {
+    const knowledgeUsefulnessOutcomes = [{
+      knowledgeId: "knowledge-1",
+      outcome: "noise",
+      reason: "The selected knowledge was unrelated.",
+      evidenceRefs: ["evidence-1"],
+      doesNotProve: "Noise feedback does not delete knowledge without review."
+    }];
+
+    expect(knowledgeUsefulnessOutcomesFromMetadata({
+      knowledgeUsefulnessOutcomes
+    })).toEqual([]);
+    expect(knowledgeUsefulnessOutcomesFromMetadata({
+      ...admittedPacketAuthority,
+      knowledgeUsefulnessOutcomes
+    })).toEqual([{
+      knowledgeId: "knowledge-1",
+      outcome: "noise",
+      reason: "The selected knowledge was unrelated.",
+      evidenceRefs: ["evidence-1"],
+      doesNotProve: "Noise feedback does not delete knowledge without review."
+    }]);
+  });
+
 });
 
 describe("feedback candidate proposal summary", () => {

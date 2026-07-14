@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import path from "node:path";
 
 import type {
@@ -18,7 +19,15 @@ import type {
   CreateEvidenceFeedbackOnceInput,
   HarnessRunAggregate
 } from "@krn/core/repositories/internal";
-import { buildDecisionPacketFromReadModel } from "@krn/core";
+import {
+  authorizeDecisionPacketBinding,
+  authorizeDecisionPacketUsefulness,
+  buildDecisionPacketFromReadModel,
+  currentDecisionPacketBindingForHarnessRun
+} from "@krn/core";
+import type {
+  DecisionPacketAuthorization
+} from "@krn/core";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
@@ -26,15 +35,20 @@ import {
   buildDecisionPacketReadModel,
   evidenceBundleFreshness
 } from "../decision-packet-read-model-builders.js";
-import {
-  authorizePacketBinding,
-  authorizePacketUsefulness,
-  currentDecisionPacketBindingForAggregate
-} from "../packet-usefulness-authorization.js";
-import type { PacketAuthorization } from "../packet-usefulness-authorization.js";
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+const currentDecisionPacketBindingForAggregate = (
+  aggregate: HarnessRunAggregate,
+  packetGeneratedAt: string
+) => currentDecisionPacketBindingForHarnessRun({
+  aggregate,
+  packetGeneratedAt,
+  sha256Hex
+});
 
 const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
@@ -114,7 +128,10 @@ const unusedSourceRepository = {
 interface EvidencePersistenceCapture {
   commands?: CreateEvidenceBundleInput["commands"];
   evidenceBundle?: CreateEvidenceBundleInput;
+  decisionPacketClaim?: CreateEvidenceFeedbackOnceInput["decisionPacketClaim"];
   sourceRunLifecycleRevision?: number;
+  sourceUsefulnessOutcomes?: CreateEvidenceFeedbackOnceInput["sourceUsefulnessOutcomes"];
+  knowledgeUsefulnessOutcomes?: CreateEvidenceFeedbackOnceInput["knowledgeUsefulnessOutcomes"];
   sourceDecisions?: CreateFeedbackDeltaInput["sourceDecisions"];
   memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
   feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
@@ -130,7 +147,7 @@ type EnqueueMaintenanceQueueInput = Parameters<
 >[0];
 
 const expectPacketAuthorizationRejection = (
-  authorization: PacketAuthorization,
+  authorization: DecisionPacketAuthorization,
   expectedReason: string
 ): void => {
   expect(authorization.authorized).toBe(false);
@@ -241,49 +258,90 @@ export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   }]
 });
 
+const packetAuthorityMetadataForCapturedEvidence = (
+  input: CreateEvidenceFeedbackOnceInput
+): Record<string, unknown> => input.decisionPacketClaim === undefined
+  ? {
+      decisionPacketBindingState: "unbound",
+      decisionPacketBindingReason: "No DecisionPacket claim was admitted by the repository."
+    }
+  : {
+      decisionPacketAuthorityAdmission: "current_v1",
+      decisionPacketBindingState: "bound_current",
+      decisionPacketChecksum: input.decisionPacketClaim.checksum,
+      decisionPacketEvidenceRef: `packet:${input.decisionPacketClaim.checksum}`,
+      decisionPacketGeneratedAt: input.decisionPacketClaim.generatedAt,
+      decisionPacketSourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+    };
+
+const admittedUsefulnessMetadataForCapturedEvidence = (
+  input: CreateEvidenceFeedbackOnceInput
+): Record<string, unknown> => input.decisionPacketClaim === undefined
+  ? {}
+  : {
+      ...(input.sourceUsefulnessOutcomes === undefined
+        ? {}
+        : { sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes }),
+      ...(input.knowledgeUsefulnessOutcomes === undefined
+        ? {}
+        : { knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes })
+    };
+
 const createCapturingAtomicEvidenceFeedbackResult = (
   input: CreateEvidenceFeedbackOnceInput
-) => ({
-  evidenceBundle: {
-    id: "evidence-bundle-1",
-    executionRunId: input.executionRunId,
-    status: input.evidence.status ?? "captured",
-    changedFiles: input.evidence.changedFiles,
-    commands: input.evidence.commands,
-    diffRisk: input.evidence.diffRisk,
-    reviewBurden: input.evidence.reviewBurden,
-    rollbackPath: input.evidence.rollbackPath,
-    metadata: input.evidence.metadata ?? {},
-    createdAt: now,
-    updatedAt: now
-  },
-  reviewAssessment: {
-    id: "review-assessment-1",
-    evidenceBundleId: "evidence-bundle-1",
-    status: input.review.status ?? "pending",
-    reviewer: input.review.reviewer,
-    summary: input.review.summary,
-    findings: input.review.findings,
-    metadata: input.review.metadata ?? {},
-    createdAt: now,
-    updatedAt: now
-  },
-  feedbackDelta: {
-    id: "feedback-delta-1",
-    reviewAssessmentId: "review-assessment-1",
-    status: input.feedback.status ?? "candidate",
-    memoryCandidates: input.feedback.memoryCandidates,
-    sourceDecisions: input.feedback.sourceDecisions,
-    evalCandidates: input.feedback.evalCandidates,
-    metadata: input.feedback.metadata ?? {},
-    createdAt: now,
-    updatedAt: now
-  },
-  ...(input.maintenance === undefined
-    ? {}
-    : { feedbackMaintenanceQueueRecordId: "maintenance-queue-record-1" }),
-  created: true
-});
+) => {
+  const packetAuthorityMetadata = packetAuthorityMetadataForCapturedEvidence(input);
+  const admittedUsefulnessMetadata = admittedUsefulnessMetadataForCapturedEvidence(input);
+
+  return {
+    evidenceBundle: {
+      id: "evidence-bundle-1",
+      executionRunId: input.executionRunId,
+      status: input.evidence.status ?? "captured",
+      changedFiles: input.evidence.changedFiles,
+      commands: input.evidence.commands,
+      diffRisk: input.evidence.diffRisk,
+      reviewBurden: input.evidence.reviewBurden,
+      rollbackPath: input.evidence.rollbackPath,
+      metadata: {
+        ...(input.evidence.metadata ?? {}),
+        ...packetAuthorityMetadata
+      },
+      createdAt: now,
+      updatedAt: now
+    },
+    reviewAssessment: {
+      id: "review-assessment-1",
+      evidenceBundleId: "evidence-bundle-1",
+      status: input.review.status ?? "pending",
+      reviewer: input.review.reviewer,
+      summary: input.review.summary,
+      findings: input.review.findings,
+      metadata: input.review.metadata ?? {},
+      createdAt: now,
+      updatedAt: now
+    },
+    feedbackDelta: {
+      id: "feedback-delta-1",
+      reviewAssessmentId: "review-assessment-1",
+      status: input.feedback.status ?? "candidate",
+      memoryCandidates: input.feedback.memoryCandidates,
+      sourceDecisions: input.feedback.sourceDecisions,
+      evalCandidates: input.feedback.evalCandidates,
+      metadata: {
+        ...(input.feedback.metadata ?? {}),
+        ...packetAuthorityMetadata,
+        ...admittedUsefulnessMetadata
+      },
+      createdAt: now,
+      updatedAt: now
+    },
+    ...(input.maintenance === undefined
+      ? {}
+      : { feedbackMaintenanceQueueRecordId: "maintenance-queue-record-1" }),
+    created: true
+  };
+};
 
 const createCapturingEvidenceHarnessRunRepository = (
   dependencies: NoStoreCompilerDependencies,
@@ -347,14 +405,19 @@ const createCapturingEvidenceHarnessRunRepository = (
   },
   async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
     capture.sourceRunLifecycleRevision = input.sourceRunLifecycleRevision;
+    capture.decisionPacketClaim = input.decisionPacketClaim;
+    capture.sourceUsefulnessOutcomes = input.sourceUsefulnessOutcomes;
+    capture.knowledgeUsefulnessOutcomes = input.knowledgeUsefulnessOutcomes;
+    const persisted = createCapturingAtomicEvidenceFeedbackResult(input);
     capture.evidenceBundle = {
       ...input.evidence,
-      executionRunId: input.executionRunId
+      executionRunId: input.executionRunId,
+      metadata: persisted.evidenceBundle.metadata
     };
     capture.commands = input.evidence.commands;
     capture.memoryCandidates = input.feedback.memoryCandidates;
     capture.sourceDecisions = input.feedback.sourceDecisions;
-    capture.feedbackDeltaMetadata = input.feedback.metadata;
+    capture.feedbackDeltaMetadata = persisted.feedbackDelta.metadata;
 
     if (input.maintenance !== undefined) {
       capture.maintenanceQueueInputs = [{
@@ -367,7 +430,7 @@ const createCapturingEvidenceHarnessRunRepository = (
       }];
     }
 
-    return createCapturingAtomicEvidenceFeedbackResult(input);
+    return persisted;
   }
 });
 
@@ -456,22 +519,20 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       id: expect.stringMatching(/^[a-f0-9]{64}$/u)
     }
   });
-  expect(capture.feedbackDeltaMetadata).toMatchObject({
-    sourceUsefulnessOutcomes: [{
+  expect(capture.sourceUsefulnessOutcomes).toEqual([expect.objectContaining({
       sourceClaimId: "source-claim-1",
       outcome: "selected",
       reason: "Source claim kept knowledge-intake proof boundaries visible",
       evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future source selector quality"
-    }],
-    knowledgeUsefulnessOutcomes: [{
+    })]);
+  expect(capture.knowledgeUsefulnessOutcomes).toEqual([expect.objectContaining({
       knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
       outcome: "selected",
       reason: "Memory selected the unknown-first parser shape",
       evidenceRefs: [expect.stringMatching(/^packet:/)],
       doesNotProve: "Does not prove future memory recall quality"
-    }]
-  });
+    })]);
   expect(capture.evidenceBundle?.reviewBurden).toBe(
     "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."
   );
@@ -1040,7 +1101,7 @@ describe("runCli", () => {
     });
   });
 
-  it("downgrades persisted knowledge usefulness when evidence refs do not match current evidence", async () => {
+  it("keeps unauthorized usefulness outside persisted feedback", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1098,34 +1159,22 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1 sourceDecision=none");
-    expect(result.stdout).toContain("outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).not.toContain("outcome=helped sourceClaim=source-claim-1");
+    expect(result.stdout).not.toContain(
+      "outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state"
+    );
     expect(result.stdout).toContain("packet checksum is not the current reconstructed packet checksum");
     expect(result.stdout).toContain("DecisionPacket: unbound (DecisionPacket binding rejected: packet checksum is not the current reconstructed packet checksum).");
     expect(result.stdout).not.toContain("DecisionPacket: checksum=fake-packet");
+    expect(capture.decisionPacketClaim).toBeUndefined();
     expect(capture.evidenceBundle?.metadata).toMatchObject({
-      decisionPacketBindingState: "unbound",
-      decisionPacketBindingReason: expect.stringContaining(
-        "packet checksum is not the current reconstructed packet checksum"
-      )
+      decisionPacketBindingState: "unbound"
     });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
-    expect(capture.feedbackDeltaMetadata).toMatchObject({
-      sourceUsefulnessOutcomes: [{
-        sourceClaimId: "source-claim-1",
-        outcome: "unknown",
-        reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
-        evidenceRefs: ["packet:fake-packet"],
-        doesNotProve: "Does not prove future source selection quality"
-      }],
-      knowledgeUsefulnessOutcomes: [{
-        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
-        outcome: "unknown",
-        reason: expect.stringContaining("packet checksum is not the current reconstructed packet checksum"),
-        evidenceRefs: ["packet:fake-packet"],
-        doesNotProve: "Does not prove future memory recall quality"
-      }]
-    });
+    expect(capture.sourceUsefulnessOutcomes).toBeUndefined();
+    expect(capture.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(capture.feedbackDeltaMetadata).not.toHaveProperty("sourceUsefulnessOutcomes");
+    expect(capture.feedbackDeltaMetadata).not.toHaveProperty("knowledgeUsefulnessOutcomes");
     expect(capture.maintenanceQueueInputs).toBeUndefined();
     expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
     expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
@@ -1200,15 +1249,13 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "packet checksum is not the current reconstructed packet checksum"
     );
-    expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1");
-    expect(result.stdout).toContain(
-      "outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state"
+    expect(result.stdout).not.toContain("outcome=helped sourceClaim=source-claim-1");
+    expect(result.stdout).not.toContain(
+      "outcome=helped knowledge=knowledge:ts-boundary-unknown-first-result-state"
     );
+    expect(capture.decisionPacketClaim).toBeUndefined();
     expect(capture.evidenceBundle?.metadata).toMatchObject({
-      decisionPacketBindingState: "unbound",
-      decisionPacketBindingReason: expect.stringContaining(
-        "packet checksum is not the current reconstructed packet checksum"
-      )
+      decisionPacketBindingState: "unbound"
     });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
     expect(capture.sourceRunLifecycleRevision).toBe(
@@ -1217,7 +1264,7 @@ describe("runCli", () => {
     expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 
-  it("does not enqueue maintenance for helped-only persisted usefulness feedback", async () => {
+  it("does not persist usefulness or enqueue maintenance without a packet claim", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1270,23 +1317,18 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "DecisionPacket: unbound (no --decision-packet-checksum supplied)."
+      "DecisionPacket: unbound (No DecisionPacket claim was admitted by the repository.)."
     );
     expect(capture.evidenceBundle?.metadata).toMatchObject({
       decisionPacketBindingState: "unbound",
-      decisionPacketBindingReason: "No DecisionPacket binding was supplied."
+      decisionPacketBindingReason: "No DecisionPacket claim was admitted by the repository."
     });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
-    expect(capture.feedbackDeltaMetadata).toMatchObject({
-      sourceUsefulnessOutcomes: [{
-        sourceClaimId: "source-claim-current",
-        outcome: "unknown"
-      }],
-      knowledgeUsefulnessOutcomes: [{
-        knowledgeId: "knowledge:frontend-template",
-        outcome: "unknown"
-      }]
-    });
+    expect(capture.decisionPacketClaim).toBeUndefined();
+    expect(capture.sourceUsefulnessOutcomes).toBeUndefined();
+    expect(capture.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(capture.feedbackDeltaMetadata).not.toHaveProperty("sourceUsefulnessOutcomes");
+    expect(capture.feedbackDeltaMetadata).not.toHaveProperty("knowledgeUsefulnessOutcomes");
     expect(capture.maintenanceQueueInputs).toBeUndefined();
     expect(result.stdout).not.toContain("feedbackMaintenanceQueueRecord:");
     expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
@@ -1351,6 +1393,10 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(`DecisionPacket: checksum=${packetBinding.packetChecksum} | evidenceRef=${packetBinding.packetEvidenceRef}`);
     expect(result.stdout).toContain(`decisionPacketEvidenceRef: ${packetBinding.packetEvidenceRef}`);
+    expect(capture.decisionPacketClaim).toEqual({
+      checksum: packetBinding.packetChecksum,
+      generatedAt: packetBinding.packetGeneratedAt
+    });
     expect(capture.evidenceBundle?.metadata).toMatchObject({
       decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: packetBinding.packetChecksum,
@@ -1432,6 +1478,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       `decisionPacketEvidenceRef: ${packetBinding.packetEvidenceRef}`
     );
+    expect(capture.decisionPacketClaim).toEqual({
+      checksum: packetBinding.packetChecksum,
+      generatedAt: packetBinding.packetGeneratedAt
+    });
     expect(capture.evidenceBundle?.metadata).toMatchObject({
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
@@ -1592,13 +1642,19 @@ describe("runCli", () => {
       callerPacketChecksum: binding.packetChecksum,
       expectedAuthorized: false,
       reason: "exact DecisionPacket generatedAt is required"
+    }, {
+      callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: "2026-06-21",
+      expectedAuthorized: false,
+      reason: "exact DecisionPacket generatedAt is required"
     }];
 
     for (const testCase of cases) {
-      const authorization = authorizePacketBinding({
+      const authorization = authorizeDecisionPacketBinding({
         aggregate,
         runId: aggregate.executionRun.id,
         runtimeProjectId: "project-1",
+        sha256Hex,
         ...(testCase.callerPacketChecksum === undefined
           ? {}
           : { callerPacketChecksum: testCase.callerPacketChecksum }),
@@ -1636,10 +1692,11 @@ describe("runCli", () => {
       }
     };
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate: changedAggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
+      sha256Hex,
       callerPacketChecksum: staleBinding.packetChecksum,
       callerPacketGeneratedAt: staleBinding.packetGeneratedAt,
       subjects: [{
@@ -1670,10 +1727,11 @@ describe("runCli", () => {
       }
     } satisfies HarnessRunAggregate;
 
-    const authorization = authorizePacketBinding({
+    const authorization = authorizeDecisionPacketBinding({
       aggregate: nextRevision,
       runId: nextRevision.executionRun.id,
       runtimeProjectId: "project-1",
+      sha256Hex,
       callerPacketChecksum: staleBinding.packetChecksum,
       callerPacketGeneratedAt: staleBinding.packetGeneratedAt
     });
@@ -1690,10 +1748,11 @@ describe("runCli", () => {
       firstPacketGeneratedAt
     );
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
+      sha256Hex,
       callerPacketChecksum: firstBinding.packetChecksum,
       callerPacketGeneratedAt: laterPacketGeneratedAt,
       subjects: [{
@@ -1710,10 +1769,11 @@ describe("runCli", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
+      sha256Hex,
       callerPacketChecksum: binding.packetChecksum,
       callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
@@ -1775,10 +1835,11 @@ describe("runCli", () => {
       targetId: "architecture-target-1"
     })]);
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate: aggregateWithDecisionTarget,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-1",
+      sha256Hex,
       callerPacketChecksum: binding.packetChecksum,
       callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
@@ -1795,10 +1856,11 @@ describe("runCli", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate,
       runId: aggregate.executionRun.id,
       runtimeProjectId: "project-b",
+      sha256Hex,
       callerPacketChecksum: binding.packetChecksum,
       callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
@@ -2009,45 +2071,7 @@ describe("runCli", () => {
       },
       async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
         capturedCommands = input.evidence.commands;
-
-        return {
-          evidenceBundle: {
-            id: "evidence-bundle-1",
-            executionRunId: input.executionRunId,
-            status: input.evidence.status ?? "captured",
-            changedFiles: input.evidence.changedFiles,
-            commands: input.evidence.commands,
-            diffRisk: input.evidence.diffRisk,
-            reviewBurden: input.evidence.reviewBurden,
-            rollbackPath: input.evidence.rollbackPath,
-            metadata: input.evidence.metadata ?? {},
-            createdAt: now,
-            updatedAt: now
-          },
-          reviewAssessment: {
-            id: "review-assessment-1",
-            evidenceBundleId: "evidence-bundle-1",
-            status: input.review.status ?? "pending",
-            reviewer: input.review.reviewer,
-            summary: input.review.summary,
-            findings: input.review.findings,
-            metadata: input.review.metadata ?? {},
-            createdAt: now,
-            updatedAt: now
-          },
-          feedbackDelta: {
-            id: "feedback-delta-1",
-            reviewAssessmentId: "review-assessment-1",
-            status: input.feedback.status ?? "candidate",
-            memoryCandidates: input.feedback.memoryCandidates,
-            sourceDecisions: input.feedback.sourceDecisions,
-            evalCandidates: input.feedback.evalCandidates,
-            metadata: input.feedback.metadata ?? {},
-            createdAt: now,
-            updatedAt: now
-          },
-          created: true
-        };
+        return createCapturingAtomicEvidenceFeedbackResult(input);
       }
     };
     const result = await runCli(

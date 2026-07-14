@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import {
+  buildDecisionPacketAuthorityProjection,
+  buildDecisionPacketFromReadModel,
+  currentDecisionPacketBindingForHarnessRun,
   executionRunStatuses,
+  stampCurrentDecisionPacketAuthorityMetadata,
   taskContractStatuses
 } from "@krn/core";
 import type { EvidenceContractInactiveReason } from "@krn/core";
@@ -20,9 +25,14 @@ import type {
 import {
   runCli
 } from "../run-cli.js";
+import {
+  buildDecisionPacketReadModel
+} from "../decision-packet-read-model-builders.js";
 
 const now = "2026-07-07T16:35:00.000Z";
 const runUpdatedAt = "2026-07-07T16:34:00.000Z";
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 interface DecisionPacketJson {
   readonly packetIdentity: {
@@ -319,7 +329,7 @@ const aggregate: HarnessRunAggregate = {
       updatedAt: now
     }],
     evalCandidates: [],
-    metadata: {
+    metadata: stampCurrentDecisionPacketAuthorityMetadata({
         sourceUsefulnessOutcomes: [{
           sourceDecisionId: "source-decision-stale-agent-1",
           outcome: "stale",
@@ -371,7 +381,11 @@ const aggregate: HarnessRunAggregate = {
           doesNotProve:
             "Stale knowledge feedback does not mutate memory without review."
         }]
-      },
+      }, {
+        checksum: "decision-packet-command-test",
+        generatedAt: now,
+        sourceRunLifecycleRevision: 1
+      }),
     createdAt: now,
     updatedAt: now
   }],
@@ -698,6 +712,18 @@ const aggregateWithoutFormalNegativeEvidence = (): HarnessRunAggregate => {
 };
 
 describe("decision packet CLI", () => {
+  it("keeps the authority projection packet-equivalent to the diagnostic read model", () => {
+    const authorityProjection = buildDecisionPacketAuthorityProjection(aggregate);
+
+    expect(authorityProjection.evidenceBundles).toEqual([]);
+    expect(authorityProjection.feedbackDeltas.every(
+      (feedback) => feedback.candidates.length === 0
+    )).toBe(true);
+    expect(buildDecisionPacketFromReadModel(authorityProjection)).toEqual(buildDecisionPacketFromReadModel(
+      buildDecisionPacketReadModel(aggregate)
+    ));
+  });
+
   it("returns a read-only DecisionPacket and evidence return channels for headless agents", async () => {
     let closed = false;
     const result = await runCli(["decision", "packet", "--run-id", "run-agent-1", "--json"], {
@@ -883,6 +909,15 @@ describe("decision packet CLI", () => {
     }
 
     expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
+    const authorityBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate,
+      packetGeneratedAt: now,
+      sha256Hex
+    });
+    expect(json.packetIdentity).toMatchObject({
+      checksum: authorityBinding.packetChecksum,
+      evidenceRef: authorityBinding.packetEvidenceRef
+    });
     expect(json.packet.sourceClaimIds).toContain("claim-agent-1");
     expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
     expect(json.packet.caveatedSourceClaimIds).toEqual([

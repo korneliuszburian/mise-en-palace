@@ -7,6 +7,9 @@ import type {
   AntiMemoryCandidate,
   FeedbackDelta
 } from "@krn/core";
+import {
+  stampCurrentDecisionPacketAuthorityMetadata
+} from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput
 } from "@krn/core/repositories/internal";
@@ -53,15 +56,19 @@ const feedbackDelta: FeedbackDelta = {
   memoryCandidates: [],
   sourceDecisions: [],
   evalCandidates: [],
-  metadata: {
+  metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
       knowledgeId: "knowledge:stale-frontend-standard",
       outcome: "stale",
       reason: "DecisionPacket selected a frontend standard superseded by newer source evidence.",
-      evidenceRefs: ["packet:abc", "test:maintenance-run"],
+      evidenceRefs: ["packet:maintenance-usefulness-packet", "test:maintenance-run"],
       doesNotProve: "This feedback does not prove the knowledge is false globally."
     }]
-  },
+  }, {
+    checksum: "maintenance-usefulness-packet",
+    generatedAt: now,
+    sourceRunLifecycleRevision: 1
+  }),
   createdAt: now,
   updatedAt: now
 };

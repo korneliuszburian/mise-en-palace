@@ -6,6 +6,7 @@ import type {
   SourceClaim,
   SourceDecision
 } from "@krn/core";
+import { stampCurrentDecisionPacketAuthorityMetadata } from "@krn/core";
 import type {
   CreateAntiMemoryCandidateInput
 } from "@krn/core/repositories/internal";
@@ -239,7 +240,11 @@ const feedbackDelta = (metadata: Record<string, unknown>): FeedbackDelta => ({
   memoryCandidates: [],
   sourceDecisions: [],
   evalCandidates: [],
-  metadata,
+  metadata: stampCurrentDecisionPacketAuthorityMetadata(metadata, {
+    checksum: "maintenance-test-packet",
+    generatedAt: isoNow,
+    sourceRunLifecycleRevision: 1
+  }),
   createdAt: isoNow,
   updatedAt: isoNow
 });

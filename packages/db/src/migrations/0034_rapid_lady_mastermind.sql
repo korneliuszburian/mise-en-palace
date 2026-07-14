@@ -1,0 +1,6 @@
+ALTER TABLE "feedback_deltas" ADD COLUMN "capture_channel" text;--> statement-breakpoint
+ALTER TABLE "review_assessments" ADD COLUMN "capture_channel" text;--> statement-breakpoint
+CREATE UNIQUE INDEX "feedback_deltas_review_capture_channel_unique" ON "feedback_deltas" USING btree ("review_assessment_id","capture_channel");--> statement-breakpoint
+CREATE UNIQUE INDEX "review_assessments_evidence_capture_channel_unique" ON "review_assessments" USING btree ("evidence_bundle_id","capture_channel");--> statement-breakpoint
+ALTER TABLE "feedback_deltas" ADD CONSTRAINT "feedback_deltas_capture_channel_known" CHECK ("feedback_deltas"."capture_channel" is null or "feedback_deltas"."capture_channel" in ('evidence_feedback_v1', 'eval_feedback_v1'));--> statement-breakpoint
+ALTER TABLE "review_assessments" ADD CONSTRAINT "review_assessments_capture_channel_known" CHECK ("review_assessments"."capture_channel" is null or "review_assessments"."capture_channel" in ('evidence_feedback_v1', 'eval_feedback_v1'));

@@ -8,6 +8,7 @@ import type {
 import {
   buildMaintenanceQueueWriteBoundaryReadback,
   buildMemoryStalenessMaintenancePreview,
+  decisionPacketBindingReadbackFromMetadata,
   parseMaintenanceJob
 } from "@krn/core";
 import type {
@@ -79,7 +80,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   staleFeedbackStayedDiagnostic: boolean;
   mismatchedFeedbackDeltaId: string;
   mismatchedFeedbackOutcome: string;
-  mismatchedFeedbackDowngraded: boolean;
+  mismatchedFeedbackStripped: boolean;
   mismatchedFeedbackStayedOutOfNextPacket: boolean;
   nextPacketGoverningDecisionIds: readonly string[];
   nextPacketStaleDecisionIds: readonly string[];
@@ -2541,7 +2542,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     feedbackDeltaIds.push(mismatchedFeedbackDelta.id);
 
     const mismatchedFeedbackOutcome = feedbackOutcome(mismatchedFeedbackDelta.metadata);
-    const mismatchedFeedbackDowngraded = mismatchedFeedbackOutcome === "unknown";
+    const mismatchedFeedbackStripped =
+      mismatchedFeedbackOutcome === undefined &&
+      decisionPacketBindingReadbackFromMetadata(mismatchedFeedbackDelta.metadata).status ===
+        "unbound";
     const nextPacket = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
       runId: executionRun.id,
@@ -2667,7 +2671,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "matching feedback accepted as bounded signal", passed: matchingFeedbackStayedDiagnostic },
       { label: "stale feedback packet binding", passed: staleFeedbackBoundToPacket },
       { label: "stale feedback stayed diagnostic", passed: staleFeedbackStayedDiagnostic },
-      { label: "mismatched feedback downgraded", passed: mismatchedFeedbackDowngraded },
+      { label: "mismatched feedback stripped", passed: mismatchedFeedbackStripped },
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfNextPacket },
       { label: "next packet retains activated decisions", passed: nextPacketRetainsActivatedDecision },
       { label: "selector packet includes helped memory", passed: selectorProof.includesHelpedMemory },
@@ -2795,8 +2799,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       staleFeedbackOutcome: staleFeedbackOutcome ?? "missing",
       staleFeedbackStayedDiagnostic,
       mismatchedFeedbackDeltaId: mismatchedFeedbackDelta.id,
-      mismatchedFeedbackOutcome: mismatchedFeedbackOutcome ?? "missing",
-      mismatchedFeedbackDowngraded,
+      mismatchedFeedbackOutcome: mismatchedFeedbackOutcome ?? "absent",
+      mismatchedFeedbackStripped,
       mismatchedFeedbackStayedOutOfNextPacket,
       nextPacketGoverningDecisionIds: nextPacket.packet.governingDecisionIds,
       nextPacketStaleDecisionIds: nextPacket.packet.staleDecisionIds,

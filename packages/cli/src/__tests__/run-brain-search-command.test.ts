@@ -5,6 +5,9 @@ import type {
   MemoryRecord
 } from "@krn/core";
 import {
+  stampCurrentDecisionPacketAuthorityMetadata
+} from "@krn/core";
+import {
   runBrainSearchCommand
 } from "../run-brain-search-command.js";
 import type {
@@ -872,15 +875,22 @@ describe("runBrainSearchCommand", () => {
       memoryCandidates: [],
       sourceDecisions: [],
       evalCandidates: [],
-      metadata: {
+      metadata: stampCurrentDecisionPacketAuthorityMetadata({
         knowledgeUsefulnessOutcomes: [{
           knowledgeId: "memory-record-stale",
           outcome: "stale",
           reason: "A newer frontend starter replaced this retained memory.",
-          evidenceRefs: ["feedback:frontend-starter-rotation"],
+          evidenceRefs: [
+            "packet:brain-search-usefulness-packet",
+            "feedback:frontend-starter-rotation"
+          ],
           doesNotProve: "This feedback does not prove the newer starter is globally best."
         }]
-      },
+      }, {
+        checksum: "brain-search-usefulness-packet",
+        generatedAt: "2026-07-05T00:00:00.000Z",
+        sourceRunLifecycleRevision: 1
+      }),
       createdAt: "2026-07-05T00:00:00.000Z",
       updatedAt: "2026-07-05T00:00:00.000Z"
     };

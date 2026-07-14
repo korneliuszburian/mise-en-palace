@@ -9,6 +9,7 @@ import type {
   ExecutionBrief
 } from "@krn/codex-adapter";
 import {
+  buildDecisionPacketAuthorityProjection,
   buildDecisionPacketContractReadback
 } from "@krn/core";
 import {
@@ -277,7 +278,7 @@ export const renderCodexBriefFromAggregate = (
 
   const readModel = buildDecisionPacketReadModel(input.aggregate);
   const packet = buildDecisionPacketContractReadback({
-    readModel,
+    readModel: buildDecisionPacketAuthorityProjection(input.aggregate),
     generatedAt: input.aggregate.executionRun.updatedAt,
     sha256Hex
   }).packet;

@@ -11,7 +11,7 @@ import type {
   DecisionPacketReadModel
 } from "./run-show-readback.js";
 import {
-  readDecisionPacketReadModel
+  readDecisionPacketSnapshot
 } from "./run-run-show-command.js";
 import type {
   CreateRunShowDatabaseRuntime
@@ -54,18 +54,19 @@ const sha256Hex = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
 
 const buildDecisionPacket = (
-  readModel: DecisionPacketReadModel,
+  authorityProjection: Parameters<typeof buildDecisionPacketContractReadback>[0]["readModel"],
+  diagnosticReadModel: DecisionPacketReadModel,
   generatedAt: string
 ): DecisionPacketCommandReadback => {
   const readback = buildDecisionPacketContractReadback({
-    readModel,
+    readModel: authorityProjection,
     generatedAt,
     sha256Hex
   });
 
   return {
     ...readback,
-    readModel,
+    readModel: diagnosticReadModel,
     proof: readback.proof
   };
 };
@@ -79,7 +80,7 @@ export const runDecisionPacketCommand = async (
     throw new Error(missingDecisionPacketDatabaseUrlMessage);
   }
 
-  const readModel = await readDecisionPacketReadModel({
+  const snapshot = await readDecisionPacketSnapshot({
     env: runtime.env,
     now: runtime.now,
     createId: runtime.createId,
@@ -91,6 +92,10 @@ export const runDecisionPacketCommand = async (
   });
 
   return {
-    stdout: `${JSON.stringify(buildDecisionPacket(readModel, runtime.now()), null, 2)}\n`
+    stdout: `${JSON.stringify(buildDecisionPacket(
+      snapshot.authorityProjection,
+      snapshot.diagnosticReadModel,
+      runtime.now()
+    ), null, 2)}\n`
   };
 };

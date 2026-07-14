@@ -2,7 +2,11 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessEvidenceCommandHelpedProof,
+  decisionPacketBindingReadbackFromMetadata,
   evidenceBundleProvesHelped,
+  isAdmittedCurrentDecisionPacketAuthorityMetadata,
+  stampCurrentDecisionPacketAuthorityMetadata,
+  stampUnboundDecisionPacketAuthorityMetadata,
   toEvidenceCommandReadback,
   normalizeTargetEvidence,
   parseEvidenceBundleMetadataReadback,
@@ -69,7 +73,10 @@ const provesHelped = (
 ): boolean => evidenceBundleProvesHelped({
   bundle: bundle({
     metadata: {
+      decisionPacketAuthorityAdmission: "current_v1",
+      decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: "packet-checksum",
+      decisionPacketEvidenceRef: "packet:packet-checksum",
       decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
       decisionPacketSourceRunLifecycleRevision: 1
     },
@@ -294,6 +301,30 @@ describe("evidence bundle completeness", () => {
       bundle: bundle({
         metadata: {
           decisionPacketChecksum: packetChecksum,
+          decisionPacketGeneratedAt: packetGeneratedAt,
+          decisionPacketSourceRunLifecycleRevision: 1
+        },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "command_runner",
+          exitCode: 0,
+          capturedAt: now
+        }]
+      }),
+      evidenceContract,
+      packetChecksum,
+      packetGeneratedAt,
+      sourceRunLifecycleRevision: 1
+    })).toBe(false);
+
+    expect(evidenceBundleProvesHelped({
+      bundle: bundle({
+        metadata: {
+          decisionPacketAuthorityAdmission: "current_v1",
+          decisionPacketBindingState: "bound_current",
+          decisionPacketChecksum: packetChecksum,
+          decisionPacketEvidenceRef: `packet:${packetChecksum}`,
           decisionPacketGeneratedAt: packetGeneratedAt,
           decisionPacketSourceRunLifecycleRevision: 1
         },
@@ -600,6 +631,57 @@ describe("evidence bundle completeness", () => {
     expect(parseEvidenceBundleMetadataReadback(null)).toEqual({
       sourceRefs: []
     });
+  });
+
+  test("stamps current authority from repository-owned fields and contracts unbound history", () => {
+    const callerMetadata = {
+      smokeId: "smoke-1",
+      decisionPacketAuthorityAdmission: "forged",
+      decisionPacketBindingState: "bound_current",
+      decisionPacketChecksum: "forged-checksum",
+      decisionPacketEvidenceRef: "packet:forged-checksum",
+      decisionPacketGeneratedAt: "2026-06-23T06:00:00.000Z",
+      decisionPacketSourceRunLifecycleRevision: 99,
+      decisionPacketBindingReason: "forged reason"
+    };
+    const current = stampCurrentDecisionPacketAuthorityMetadata(callerMetadata, {
+      checksum: " packet-checksum ",
+      generatedAt: "2026-06-23T07:00:00.000Z",
+      sourceRunLifecycleRevision: 2
+    });
+
+    expect(current).toEqual({
+      smokeId: "smoke-1",
+      decisionPacketAuthorityAdmission: "current_v1",
+      decisionPacketBindingState: "bound_current",
+      decisionPacketChecksum: "packet-checksum",
+      decisionPacketEvidenceRef: "packet:packet-checksum",
+      decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
+      decisionPacketSourceRunLifecycleRevision: 2
+    });
+    expect(decisionPacketBindingReadbackFromMetadata(current)).toEqual({
+      status: "bound_current",
+      checksum: "packet-checksum",
+      evidenceRef: "packet:packet-checksum",
+      generatedAt: "2026-06-23T07:00:00.000Z",
+      sourceRunLifecycleRevision: 2
+    });
+    expect(isAdmittedCurrentDecisionPacketAuthorityMetadata(current)).toBe(true);
+
+    const unbound = stampUnboundDecisionPacketAuthorityMetadata(
+      current,
+      " No canonical packet admission. "
+    );
+    expect(unbound).toEqual({
+      smokeId: "smoke-1",
+      decisionPacketBindingState: "unbound",
+      decisionPacketBindingReason: "No canonical packet admission."
+    });
+    expect(decisionPacketBindingReadbackFromMetadata(unbound)).toEqual({
+      status: "unbound",
+      reason: "No canonical packet admission."
+    });
+    expect(isAdmittedCurrentDecisionPacketAuthorityMetadata(unbound)).toBe(false);
   });
 
 });

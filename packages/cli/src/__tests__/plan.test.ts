@@ -13,6 +13,9 @@ import type {
   MemoryRecord,
   SourceClaim
 } from "@krn/core";
+import {
+  stampCurrentDecisionPacketAuthorityMetadata
+} from "@krn/core";
 import type {
   CreateEvidenceBundleInput,
   CreateFeedbackDeltaInput,
@@ -44,15 +47,22 @@ const knowledgeFeedbackDelta = (
   memoryCandidates: [],
   sourceDecisions: [],
   evalCandidates: [],
-  metadata: {
+  metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
       knowledgeId,
       outcome,
       reason: "The knowledge was selected for a previous plan and proved stale for this task class.",
-      evidenceRefs: ["test:plan knowledge usefulness feedback"],
+      evidenceRefs: [
+        "packet:plan-usefulness-packet",
+        "test:plan knowledge usefulness feedback"
+      ],
       doesNotProve: "One feedback delta does not prove broad knowledge ranking quality."
     }]
-  },
+  }, {
+    checksum: "plan-usefulness-packet",
+    generatedAt: now,
+    sourceRunLifecycleRevision: 1
+  }),
   createdAt: now,
   updatedAt: now
 });

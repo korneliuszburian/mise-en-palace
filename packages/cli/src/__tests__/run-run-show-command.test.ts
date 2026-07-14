@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import type {
   HarnessRunAggregate
 } from "@krn/core/repositories";
+import {
+  stampCurrentDecisionPacketAuthorityMetadata
+} from "@krn/core";
 
 import {
   runRunShowCommand
@@ -250,17 +253,12 @@ const aggregate: HarnessRunAggregate = {
     diffRisk: "medium",
     reviewBurden: "Review readback output.",
     rollbackPath: "Revert run show commit.",
-    metadata: {
+    metadata: stampCurrentDecisionPacketAuthorityMetadata({
       changedFileClassification: {
         intended: ["packages/cli/src/run-run-show-command.ts"],
         unrelated: [],
         unknown: []
       },
-      decisionPacketBindingState: "bound_current",
-      decisionPacketChecksum: "packet-run-show",
-      decisionPacketEvidenceRef: "packet:packet-run-show",
-      decisionPacketGeneratedAt: now,
-      decisionPacketSourceRunLifecycleRevision: 3,
       targetEvidence: {
         targetRepo: "../wilq-seo",
         mode: "observation_only",
@@ -284,7 +282,11 @@ const aggregate: HarnessRunAggregate = {
           "Target evidence does not prove product readiness or V02-01 second-operator usability."
         ]
       }
-    },
+    }, {
+      checksum: "packet-run-show",
+      generatedAt: now,
+      sourceRunLifecycleRevision: 3
+    }),
     createdAt: now,
     updatedAt: now
   }],
@@ -342,43 +344,47 @@ const aggregate: HarnessRunAggregate = {
       updatedAt: now
     }],
     evalCandidates: [],
-    metadata: {
+    metadata: stampCurrentDecisionPacketAuthorityMetadata({
       reviewability: "needs_more_evidence",
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "claim-1",
         sourceDecisionId: "source-decision-candidate-1",
         outcome: "helped",
         reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
-        evidenceRefs: ["evidence-1", "feedback-1"],
+        evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
         doesNotProve:
           "This source outcome does not prove the source selector will choose the same claim in future runs."
       }, {
         sourceClaimId: "claim-weak",
         outcome: "stale",
         reason: "Weak source was excluded and should not guide future evidence proof claims.",
-        evidenceRefs: ["context-1"],
+        evidenceRefs: ["packet:packet-run-show", "context-1"],
         doesNotProve:
           "This stale outcome does not alter or deprecate SourceClaim truth."
       }, {
         sourceClaimId: "claim-incomplete",
         outcome: "helped",
         reason: "Missing doesNotProve should drop this malformed feedback row.",
-        evidenceRefs: ["feedback-1"]
+        evidenceRefs: ["packet:packet-run-show", "feedback-1"]
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         outcome: "helped",
         reason: "Memory selected the unknown-first parser shape for the implementation.",
-        evidenceRefs: ["evidence-1", "feedback-1"],
+        evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
         doesNotProve:
           "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
       }, {
         knowledgeId: "knowledge-incomplete",
         outcome: "helped",
         reason: "Missing doesNotProve should drop this malformed knowledge row.",
-        evidenceRefs: ["feedback-1"]
+        evidenceRefs: ["packet:packet-run-show", "feedback-1"]
       }]
-    },
+    }, {
+      checksum: "packet-run-show",
+      generatedAt: now,
+      sourceRunLifecycleRevision: 3
+    }),
     createdAt: now,
     updatedAt: now
   }],
@@ -631,6 +637,7 @@ describe("runRunShowCommand", () => {
     const cases = [{
       name: "current binding",
       metadata: {
+        decisionPacketAuthorityAdmission: "current_v1",
         decisionPacketBindingState: "bound_current",
         decisionPacketChecksum: "packet-bound",
         decisionPacketEvidenceRef: "packet:packet-bound",
@@ -647,6 +654,7 @@ describe("runRunShowCommand", () => {
     }, {
       name: "binding missing source run lifecycle revision",
       metadata: {
+        decisionPacketAuthorityAdmission: "current_v1",
         decisionPacketBindingState: "bound_current",
         decisionPacketChecksum: "packet-bound",
         decisionPacketEvidenceRef: "packet:packet-bound",
@@ -669,6 +677,7 @@ describe("runRunShowCommand", () => {
     }, {
       name: "internally mismatched binding",
       metadata: {
+        decisionPacketAuthorityAdmission: "current_v1",
         decisionPacketBindingState: "bound_current",
         decisionPacketChecksum: "packet-bound",
         decisionPacketEvidenceRef: "packet:other",
@@ -904,14 +913,14 @@ describe("runRunShowCommand", () => {
           sourceDecisionId: "source-decision-candidate-1",
           outcome: "helped",
           reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
-          evidenceRefs: ["evidence-1", "feedback-1"],
+          evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
           doesNotProve:
             "This source outcome does not prove the source selector will choose the same claim in future runs."
         }, {
           sourceClaimId: "claim-weak",
           outcome: "stale",
           reason: "Weak source was excluded and should not guide future evidence proof claims.",
-          evidenceRefs: ["context-1"],
+          evidenceRefs: ["packet:packet-run-show", "context-1"],
           doesNotProve:
             "This stale outcome does not alter or deprecate SourceClaim truth."
         }],
@@ -919,7 +928,7 @@ describe("runRunShowCommand", () => {
           knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
           outcome: "helped",
           reason: "Memory selected the unknown-first parser shape for the implementation.",
-          evidenceRefs: ["evidence-1", "feedback-1"],
+          evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
           doesNotProve:
             "This knowledge outcome does not prove future knowledge recall or TypeScript quality."
         }]

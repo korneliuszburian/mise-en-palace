@@ -28,6 +28,7 @@ import type {
   SourceClaimAuthorityStatus,
   SourceDecisionTargetType
 } from "./source.js";
+import type { TaskContractStatus } from "./task-contract.js";
 
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
 
@@ -101,6 +102,7 @@ export interface DecisionPacketTask {
   constraints: readonly string[];
   nonGoals: readonly string[];
   acceptance: readonly string[];
+  status?: TaskContractStatus;
 }
 
 export interface DecisionPacketContextInclusion {
@@ -531,20 +533,24 @@ export interface DecisionPacketContractReadback {
 
 export type DecisionPacketSha256Hex = (value: string) => string;
 
-const canonicalJson = (value: unknown): string => {
+function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map(canonicalJson).join(",")}]`;
   }
 
-  if (typeof value === "object" && value !== null) {
-    return `{${Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
-      .join(",")}}`;
-  }
+  return typeof value === "object" && value !== null
+    ? canonicalJsonObject(value)
+    : JSON.stringify(value) ?? "null";
+}
 
-  return JSON.stringify(value) ?? "null";
-};
+function canonicalJsonObject(value: object): string {
+  const entries = Object.entries(value)
+    .sort(([left], [right]) => left.localeCompare(right));
+
+  return `{${entries
+    .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+    .join(",")}}`;
+}
 
 const sourceDecisionEdgeIdsFor = (
   readModel: DecisionPacketReadModelInput,

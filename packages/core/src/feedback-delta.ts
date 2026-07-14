@@ -5,6 +5,7 @@ import type {
   SourceDecisionId
 } from "./ids.js";
 import type { EvalCandidateProposal } from "./eval.js";
+import { isAdmittedCurrentDecisionPacketAuthorityMetadata } from "./evidence-bundle.js";
 import type { MemoryCandidate } from "./memory.js";
 import {
   readMetadataObjectList,
@@ -261,8 +262,12 @@ const sourceUsefulnessOutcomeField = (
 
 export const sourceUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
-): SourceUsefulnessOutcomeFeedback[] =>
-  readMetadataObjectList(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
+): SourceUsefulnessOutcomeFeedback[] => {
+  if (!isAdmittedCurrentDecisionPacketAuthorityMetadata(metadata)) {
+    return [];
+  }
+
+  return readMetadataObjectList(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
     const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
     const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
     const reason = readMetadataString(item, "reason");
@@ -285,11 +290,16 @@ export const sourceUsefulnessOutcomesFromMetadata = (
       doesNotProve
     }];
   });
+};
 
 export const knowledgeUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
-): KnowledgeUsefulnessOutcomeFeedback[] =>
-  readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes").flatMap((item) => {
+): KnowledgeUsefulnessOutcomeFeedback[] => {
+  if (!isAdmittedCurrentDecisionPacketAuthorityMetadata(metadata)) {
+    return [];
+  }
+
+  return readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes").flatMap((item) => {
     const knowledgeId = readMetadataString(item, "knowledgeId");
     const reason = readMetadataString(item, "reason");
     const doesNotProve = readMetadataString(item, "doesNotProve");
@@ -306,6 +316,7 @@ export const knowledgeUsefulnessOutcomesFromMetadata = (
       doesNotProve
     }];
   });
+};
 
 const metadataCandidateRefs = (
   metadata: Record<string, unknown>,

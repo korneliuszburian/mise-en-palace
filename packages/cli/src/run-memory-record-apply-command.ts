@@ -1,4 +1,8 @@
 import {
+  createHash
+} from "node:crypto";
+import {
+  authorizeDecisionPacketUsefulness,
   buildFeedbackRecommendationReadback,
   decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
@@ -27,9 +31,6 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
-import {
-  authorizePacketUsefulness
-} from "./packet-usefulness-authorization.js";
 
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 
@@ -46,6 +47,8 @@ type CreateMemoryRecordApplyDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const defaultExpectedUse = (command: MemoryRecordApplyCommand): string =>
   `Operator explicitly applied memory record ${command.memoryId ?? ""} to run ${command.runId ?? ""}`;
@@ -270,10 +273,11 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error(`Execution run not found: ${applicationInput.executionRunId}`);
     }
 
-    const authorization = authorizePacketUsefulness({
+    const authorization = authorizeDecisionPacketUsefulness({
       aggregate,
       runId: applicationInput.executionRunId,
       runtimeProjectId: databaseRuntime.projectId,
+      sha256Hex,
       ...(command.decisionPacketChecksum === undefined
         ? {}
         : { callerPacketChecksum: command.decisionPacketChecksum }),

@@ -12,6 +12,7 @@ import type {
 export interface BuildDecisionPacketEvalFailurePersistenceInput {
   result: DecisionPacketEvalResult;
   executionRunId: string;
+  sourceRunLifecycleRevision: number;
   projectId: string;
   evalCommand: string;
   now: string;
@@ -115,6 +116,7 @@ export const buildDecisionPacketEvalFailurePersistenceInput = (
 
   return {
     executionRunId,
+    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
     projectId,
     executionIdentity,
     evidence: {
@@ -208,6 +210,7 @@ export const persistDecisionPacketEvalFailures = async (
   const persistenceInput = buildDecisionPacketEvalFailurePersistenceInput({
     result: input.result,
     executionRunId: input.executionRunId,
+    sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
     projectId: input.projectId,
     evalCommand: input.evalCommand,
     now: input.now

@@ -5,6 +5,12 @@ import {
 import {
   DrizzleHarnessRunRepository
 } from "@krn/db/adapters";
+import {
+  buildDecisionPacketAuthorityProjection
+} from "@krn/core";
+import type {
+  DecisionPacketReadModelInput
+} from "@krn/core";
 import type {
   HarnessRunAggregate,
   HarnessRunRepository
@@ -105,11 +111,17 @@ export const runRunShowCommand = async (
   });
 };
 
-export const readDecisionPacketReadModel = async (
+export interface DecisionPacketSnapshot {
+  authorityProjection: DecisionPacketReadModelInput;
+  diagnosticReadModel: DecisionPacketReadModel;
+}
+
+export const readDecisionPacketSnapshot = async (
   runtime: RunShowCommandRuntime
-): Promise<DecisionPacketReadModel> => {
-  return readExecutionRunAggregate(runtime, buildDecisionPacketReadModel);
-};
+): Promise<DecisionPacketSnapshot> => readExecutionRunAggregate(runtime, (aggregate) => ({
+  authorityProjection: buildDecisionPacketAuthorityProjection(aggregate),
+  diagnosticReadModel: buildDecisionPacketReadModel(aggregate)
+}));
 
 const readExecutionRunAggregate = async <TResult>(
   runtime: RunShowCommandRuntime,

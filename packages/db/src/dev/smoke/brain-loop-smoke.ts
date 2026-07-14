@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   eq,
   inArray,
@@ -18,12 +20,19 @@ import {
   retrieveActivationCandidates
 } from "@krn/harness";
 import {
+  buildDecisionPacketAuthorityProjection,
+  buildDecisionPacketFromReadModel,
   buildMemoryStalenessMaintenancePreview,
-  sourceUsefulnessOutcomesFromMetadata
+  currentDecisionPacketBindingForHarnessRun,
+  isAdmittedCurrentDecisionPacketAuthorityMetadata,
+  knowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import type {
   DecisionPacket
 } from "@krn/core";
+import type {
+  CreateEvidenceFeedbackOnceInput
+} from "@krn/core/repositories";
 
 import type { KrnDatabase } from "../../database.js";
 import {
@@ -138,6 +147,9 @@ const nextRunRepoInstallationId = "repo-installation-memory-loop-consumer";
 const downgradedRunRepoInstallationId = "repo-installation-memory-loop-rejector";
 const consolidationRunRepoInstallationId = "repo-installation-memory-loop-consolidation";
 const revisionRunRepoInstallationId = "repo-installation-memory-loop-revision";
+
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const capturedCurrentEvidenceMetadata = (marker: string): Record<string, string> => ({
   smokeId: marker,
@@ -290,18 +302,6 @@ const sourceDecisionTraceTargets = (input: {
   }
 ] as const;
 
-const governingDecisionIdsFromMetadata = (
-  metadata: Record<string, unknown>
-): string[] => unique(sourceUsefulnessOutcomesFromMetadata(metadata).flatMap((outcome) =>
-  outcome.sourceDecisionId !== undefined && (
-    outcome.outcome === "selected" ||
-    outcome.outcome === "used" ||
-    outcome.outcome === "helped"
-  )
-    ? [outcome.sourceDecisionId]
-    : []
-));
-
 const antiMemoryRejectedPathIdsFromActivationDecisions = (
   decisions: readonly { reason: string; metadata: Record<string, unknown> }[]
 ): string[] => unique(decisions.flatMap((decision) => {
@@ -424,9 +424,6 @@ export const runBrainLoopSmokeCheck = async (
       },
       metadata: {
         smokeId: marker,
-        decisionPacketChecksum: `memory-loop-packet-${marker}`,
-        decisionPacketGeneratedAt: now,
-        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision,
         doesNotProve: "Evidence capture does not mutate Memory Core without review."
       }
     });
@@ -496,13 +493,10 @@ export const runBrainLoopSmokeCheck = async (
       metadata: {
         smokeId: marker,
         memoryRecordMutation: "none",
-        sourceUsefulnessOutcomes: [{
-          sourceDecisionId: sourceDecision.id,
-          outcome: "helped",
-          reason: "The accepted SourceDecision anchored the memory promotion and next activation proof.",
-          evidenceRefs: [evidenceBundle.id, reviewAssessment.id],
-          doesNotProve:
-            "A helpful smoke SourceDecision does not prove broad source truth, activation quality, or product readiness."
+        sourceClaimCandidates: [{
+          id: proposedSourceClaim.id,
+          claim:
+            "The accepted source claim remains reviewable feedback, not generic usefulness authority."
         }]
       }
     });
@@ -650,6 +644,118 @@ export const runBrainLoopSmokeCheck = async (
       }
     });
 
+    const packetAggregate = requireSmokeReadbackValue(
+      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
+      "current DecisionPacket aggregate",
+      "Memory loop smoke could not reconstruct the current DecisionPacket"
+    );
+    const currentDecisionPacket = buildDecisionPacketFromReadModel(
+      buildDecisionPacketAuthorityProjection(packetAggregate)
+    );
+    const decisionPacketGoverningDecisionIds = [
+      ...currentDecisionPacket.governingDecisionIds
+    ];
+    const decisionPacketSelectedMemory =
+      currentDecisionPacket.memoryRefs.includes(memoryRecord.id);
+    const packetBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: packetAggregate,
+      packetGeneratedAt: packetAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
+    const createEvidenceFeedbackOnce = harnessRunRepository.createEvidenceFeedbackOnce;
+
+    if (createEvidenceFeedbackOnce === undefined) {
+      throw new Error(
+        "Memory loop smoke requires repository-admitted atomic DecisionPacket feedback"
+      );
+    }
+
+    const admittedPacketFeedbackInput = {
+      executionRunId: executionRun.id,
+      sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision,
+      projectId: project.id,
+      captureIdentity: `memory-loop:${marker}:packet-feedback`,
+      decisionPacketClaim: {
+        checksum: packetBinding.packetChecksum,
+        generatedAt: packetBinding.packetGeneratedAt
+      },
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: memoryRecord.id,
+        outcome: "helped" as const,
+        reason:
+          "The MemoryRecord selected by the current DecisionPacket anchored the reviewed memory-loop proof.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          evidenceBundle.id,
+          reviewAssessment.id
+        ],
+        doesNotProve:
+          "Repository admission for one selected MemoryRecord does not expose SourceDecision row IDs or prove broad memory quality."
+      }],
+      evidence: {
+        status: "captured" as const,
+        changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
+        commands: requiredEvidenceCommands.map((command, index) => ({
+          command,
+          status: "passed" as const,
+          provenance: "command_runner" as const,
+          exitCode: 0,
+          capturedAt: new Date(
+            Date.parse(packetBinding.packetGeneratedAt) + 1000
+          ).toISOString(),
+          outputRef: `smoke:${marker}:memory-loop-packet-verification:${index}`,
+          doesNotProve:
+            "This smoke command does not prove product readiness, ranking quality, or autonomous memory quality."
+        })),
+        diffRisk: "low" as const,
+        reviewBurden: "Repository-admitted DecisionPacket feedback proof only.",
+        rollbackPath: "Delete smoke marker rows.",
+        event: {
+          type: "smoke.memory_loop.packet_feedback_captured",
+          message: "Memory loop packet-bound feedback captured",
+          payload: {
+            smokeId: marker
+          }
+        },
+        metadata: {
+          smokeId: marker,
+          doesNotProve:
+            "Packet-bound evidence does not promote memory or source truth by itself."
+        }
+      },
+      review: {
+        status: "accepted" as const,
+        reviewer: "memory-loop-smoke",
+        summary: "Packet-bound evidence supports one selected MemoryRecord outcome.",
+        findings: [],
+        metadata: {
+          smokeId: marker
+        }
+      },
+      feedback: {
+        status: "candidate" as const,
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: [],
+        metadata: {
+          smokeId: marker,
+          memoryRecordMutation: "none"
+        }
+      }
+    } satisfies CreateEvidenceFeedbackOnceInput;
+    const admittedPacketFeedback = await createEvidenceFeedbackOnce.call(
+      harnessRunRepository,
+      admittedPacketFeedbackInput
+    );
+    const admittedMemoryUsefulnessPersisted = knowledgeUsefulnessOutcomesFromMetadata(
+      admittedPacketFeedback.feedbackDelta.metadata
+    ).some((outcome) =>
+      outcome.knowledgeId === memoryRecord.id && outcome.outcome === "helped"
+    );
+    const admittedPacketFeedbackBound = isAdmittedCurrentDecisionPacketAuthorityMetadata(
+      admittedPacketFeedback.feedbackDelta.metadata
+    );
+
     const memoryApplication = await memoryRepository.recordMemoryApplication({
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
@@ -658,10 +764,10 @@ export const runBrainLoopSmokeCheck = async (
       expectedUse: "Verify next activation reused reviewed memory.",
       outcome: "helped",
       notes: "DB-backed memory loop smoke included reviewed memory in context.",
-      packetChecksum: `memory-loop-packet-${marker}`,
-      packetGeneratedAt: now,
-      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
-      evidenceBundleId: evidenceBundle.id,
+      packetChecksum: packetBinding.packetChecksum,
+      packetGeneratedAt: packetBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
+      evidenceBundleId: admittedPacketFeedback.evidenceBundle.id,
       metadata: {
         smokeId: marker
       }
@@ -1044,9 +1150,6 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === revisionReplacementMemory.id
     ).length;
-    const decisionPacketGoverningDecisionIds = governingDecisionIdsFromMetadata(
-      feedbackDelta.metadata
-    );
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
@@ -1119,9 +1222,9 @@ export const runBrainLoopSmokeCheck = async (
 
     assertSmokeReadbackChecks([
       { label: "harness aggregate", passed: aggregate !== undefined },
-      { label: "evidence bundle", passed: aggregate?.evidenceBundles.length === 1 },
-      { label: "review assessment", passed: aggregate?.reviewAssessments.length === 1 },
-      { label: "feedback delta", passed: aggregate?.feedbackDeltas.length === 1 },
+      { label: "evidence bundles", passed: aggregate?.evidenceBundles.length === 2 },
+      { label: "review assessments", passed: aggregate?.reviewAssessments.length === 2 },
+      { label: "feedback deltas", passed: aggregate?.feedbackDeltas.length === 2 },
       { label: "source decision adopted", passed: sourceDecision.status === "adopt" },
       {
         label: "source decision smoke metadata",
@@ -1142,8 +1245,18 @@ export const runBrainLoopSmokeCheck = async (
           sourceDecisionTraceRefs(sourceDecisionTraceTargetsForRun).join(",")
       },
       {
-        label: "decision packet governing source decision",
-        passed: decisionPacketGoverningDecisionIds.join(",") === sourceDecision.id
+        label: "decision packet selected memory",
+        passed: decisionPacketSelectedMemory
+      },
+      {
+        label: "decision packet excludes SourceDecision row authority",
+        passed:
+          decisionPacketGoverningDecisionIds.length === 0 &&
+          !decisionPacketGoverningDecisionIds.includes(sourceDecision.id)
+      },
+      {
+        label: "selected memory usefulness admitted by repository",
+        passed: admittedPacketFeedbackBound && admittedMemoryUsefulnessPersisted
       },
       {
         label: "decision packet anti-memory rejected path",

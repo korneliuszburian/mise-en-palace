@@ -16,6 +16,7 @@ import type {
   SourceClaimAuthorityStatus,
   SourceDecisionTargetType,
   SourceUsefulnessOutcome,
+  TaskContractStatus,
   TargetEvidence
 } from "@krn/core";
 import type { ActivationRetrievalDiagnostics } from "@krn/harness";
@@ -161,7 +162,7 @@ export interface DecisionPacketReadModel {
     constraints: string[];
     nonGoals: string[];
     acceptance: string[];
-    status: string;
+    status: TaskContractStatus;
   };
   nextAction?: string;
   knowledgeSelection?: KnowledgePlanSelection;
@@ -255,16 +256,3 @@ export type DecisionPacketReadModelEvidenceBundle = DecisionPacketReadModel["evi
 export type DecisionPacketReadModelReviewAssessment = DecisionPacketReadModel["reviewAssessments"][number];
 export type DecisionPacketReadModelFeedbackDelta = DecisionPacketReadModel["feedbackDeltas"][number];
 export type DecisionPacketReadModelProof = DecisionPacketReadModel["proof"];
-
-export const decisionPacketReadModelProves = [
-  "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
-  "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
-  "this readback surface exposes no write action"
-];
-
-export const decisionPacketReadModelDoesNotProve = [
-  "commands were executed by this readback command or that their selected set is sufficient",
-  "activation scoring quality or production graph retrieval quality",
-  "memory quality, source truth, review correctness, or product readiness",
-  "Memory Core mutation"
-];

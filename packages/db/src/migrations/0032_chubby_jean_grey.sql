@@ -1,0 +1,2 @@
+ALTER TABLE "evidence_bundles" ADD COLUMN "capture_channel" text;--> statement-breakpoint
+ALTER TABLE "evidence_bundles" ADD CONSTRAINT "evidence_bundles_capture_channel_known" CHECK ("evidence_bundles"."capture_channel" is null or "evidence_bundles"."capture_channel" in ('evidence_feedback_v1', 'eval_feedback_v1'));

@@ -4,6 +4,9 @@ import type {
   FeedbackDelta,
   MemoryRecord
 } from "@krn/core";
+import {
+  stampCurrentDecisionPacketAuthorityMetadata
+} from "@krn/core";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
@@ -15,6 +18,7 @@ import {
 import { runCli } from "../run-cli.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const usefulnessPacketChecksum = "brain-usefulness-packet";
 
 const storeKnowledgeMemory = (): MemoryRecord => ({
   id: "memory-record-1" as MemoryRecord["id"],
@@ -54,15 +58,22 @@ const knowledgeFeedbackDelta = (
   memoryCandidates: [],
   sourceDecisions: [],
   evalCandidates: [],
-  metadata: {
+  metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
       knowledgeId,
       outcome: "helped",
       reason: "The knowledge changed the implementation decision.",
-      evidenceRefs: ["test:memory recall store-backed"],
+      evidenceRefs: [
+        `packet:${usefulnessPacketChecksum}`,
+        "test:memory recall store-backed"
+      ],
       doesNotProve: "One helped event does not prove broad usefulness."
     }]
-  },
+  }, {
+    checksum: usefulnessPacketChecksum,
+    generatedAt: now,
+    sourceRunLifecycleRevision: 1
+  }),
   createdAt: now,
   updatedAt: now
 });
@@ -329,7 +340,10 @@ describe("runCli", () => {
       id: "knowledge:store-backed-usefulness",
       usefulnessFeedback: {
         outcome: "helped",
-        evidenceRefs: ["test:memory recall store-backed"]
+        evidenceRefs: [
+          `packet:${usefulnessPacketChecksum}`,
+          "test:memory recall store-backed"
+        ]
       }
     });
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");

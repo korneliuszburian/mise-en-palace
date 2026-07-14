@@ -249,6 +249,7 @@ export const evidenceBundles = pgTable(
       .notNull()
       .references(() => executionRuns.id, { onDelete: "cascade" }),
     captureIdentity: text("capture_identity"),
+    captureChannel: text("capture_channel"),
     status: evidenceBundleStatus("status").notNull().default("draft"),
     changedFiles: jsonListColumn("changed_files"),
     commands: jsonListColumn("commands"),
@@ -265,6 +266,10 @@ export const evidenceBundles = pgTable(
       table.executionRunId,
       table.captureIdentity
     ),
+    check(
+      "evidence_bundles_capture_channel_known",
+      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
+    ),
     index("evidence_bundles_status_idx").on(table.status)
   ]
 );
@@ -276,6 +281,7 @@ export const reviewAssessments = pgTable(
     evidenceBundleId: uuid("evidence_bundle_id")
       .notNull()
       .references(() => evidenceBundles.id, { onDelete: "cascade" }),
+    captureChannel: text("capture_channel"),
     status: reviewAssessmentStatus("status").notNull().default("pending"),
     reviewer: text("reviewer").notNull(),
     summary: text("summary").notNull(),
@@ -286,6 +292,14 @@ export const reviewAssessments = pgTable(
   },
   (table) => [
     index("review_assessments_evidence_bundle_id_idx").on(table.evidenceBundleId),
+    uniqueIndex("review_assessments_evidence_capture_channel_unique").on(
+      table.evidenceBundleId,
+      table.captureChannel
+    ),
+    check(
+      "review_assessments_capture_channel_known",
+      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
+    ),
     index("review_assessments_status_idx").on(table.status)
   ]
 );
@@ -297,6 +311,8 @@ export const feedbackDeltas = pgTable(
     reviewAssessmentId: uuid("review_assessment_id")
       .notNull()
       .references(() => reviewAssessments.id, { onDelete: "cascade" }),
+    captureChannel: text("capture_channel"),
+    decisionPacketAuthorityAdmission: text("decision_packet_authority_admission"),
     status: feedbackDeltaStatus("status").notNull().default("candidate"),
     memoryCandidates: jsonListColumn("memory_candidates"),
     sourceDecisions: jsonListColumn("source_decisions"),
@@ -307,6 +323,18 @@ export const feedbackDeltas = pgTable(
   },
   (table) => [
     index("feedback_deltas_review_assessment_id_idx").on(table.reviewAssessmentId),
+    uniqueIndex("feedback_deltas_review_capture_channel_unique").on(
+      table.reviewAssessmentId,
+      table.captureChannel
+    ),
+    check(
+      "feedback_deltas_capture_channel_known",
+      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
+    ),
+    check(
+      "feedback_deltas_decision_packet_authority_admission_known",
+      sql`${table.decisionPacketAuthorityAdmission} is null or ${table.decisionPacketAuthorityAdmission} = 'current_v1'`
+    ),
     index("feedback_deltas_status_idx").on(table.status)
   ]
 );

@@ -795,6 +795,7 @@ describe("runDecisionPacketEval", () => {
     const persistenceInput = buildDecisionPacketEvalFailurePersistenceInput({
       evalCommand: "pnpm --filter @krn/cli eval:decision-packet failing-fixture.json",
       executionRunId: "execution-run-eval-1",
+      sourceRunLifecycleRevision: 1,
       now: "2026-07-09T12:00:00.000Z",
       projectId: "project-eval-1",
       result
@@ -812,6 +813,7 @@ describe("runDecisionPacketEval", () => {
     });
     expect(persistenceInput).toMatchObject({
       executionRunId: "execution-run-eval-1",
+      sourceRunLifecycleRevision: 1,
       projectId: "project-eval-1",
       executionIdentity:
         "project-eval-1:execution-run-eval-1:krn.decisionPacket.eval.v1:1",
@@ -868,6 +870,7 @@ describe("runDecisionPacketEval", () => {
     const persistenceInput = buildDecisionPacketEvalFailurePersistenceInput({
       evalCommand: "pnpm --filter @krn/cli eval:decision-packet suite-threshold-fixture.json",
       executionRunId: "execution-run-eval-threshold",
+      sourceRunLifecycleRevision: 1,
       now: "2026-07-09T12:00:00.000Z",
       projectId: "project-eval-1",
       result
@@ -902,6 +905,7 @@ describe("runDecisionPacketEval", () => {
     expect(buildDecisionPacketEvalFailurePersistenceInput({
       evalCommand: "pnpm --filter @krn/cli eval:decision-packet passing-fixture.json",
       executionRunId: "execution-run-eval-pass",
+      sourceRunLifecycleRevision: 1,
       now: "2026-07-09T12:00:00.000Z",
       projectId: "project-eval-1",
       result

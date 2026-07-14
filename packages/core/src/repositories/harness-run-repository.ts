@@ -12,10 +12,13 @@ import type {
   FeedbackDelta,
   FeedbackDeltaCreateStatus,
   HarnessPlan,
+  IsoTimestamp,
+  KnowledgeUsefulnessOutcomeFeedback,
   OperatorIntent,
   ProjectId,
   ReviewAssessment,
   ReviewFinding,
+  SourceUsefulnessOutcomeFeedback,
   TaskContract
 } from "@krn/core";
 
@@ -59,7 +62,6 @@ export type CreateEvidenceBundleStatus = Extract<EvidenceBundle["status"], "draf
 
 export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   executionRunId: string;
-  captureIdentity?: string;
   status?: CreateEvidenceBundleStatus;
   changedFiles: string[];
   commands: EvidenceCommand[];
@@ -116,6 +118,7 @@ export interface FeedbackDeltaLookupRepository {
 
 export interface CreateEvalFeedbackDeltaOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
+  sourceRunLifecycleRevision: number;
   projectId: ProjectId;
   executionIdentity: string;
   evidence: Omit<CreateEvidenceBundleInput, "executionRunId">;
@@ -130,12 +133,20 @@ export interface CreateEvalFeedbackDeltaOnceResult {
   created: boolean;
 }
 
+export interface DecisionPacketClaim {
+  checksum: string;
+  generatedAt: IsoTimestamp;
+}
+
 export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
   sourceRunLifecycleRevision: number;
   projectId: ProjectId;
   captureIdentity: string;
-  evidence: Omit<CreateEvidenceBundleInput, "executionRunId" | "captureIdentity">;
+  decisionPacketClaim?: DecisionPacketClaim;
+  sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+  knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  evidence: Omit<CreateEvidenceBundleInput, "executionRunId">;
   review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
   feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
   maintenance?: {

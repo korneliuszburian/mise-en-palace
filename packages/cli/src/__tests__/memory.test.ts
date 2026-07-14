@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
+
+import {
+  currentDecisionPacketBindingForHarnessRun
+} from "@krn/core";
 
 import type {
   AntiMemoryCandidate,
@@ -22,9 +27,19 @@ import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
 import type { DatabaseRuntime } from "../database-runtime.js";
 import { runCli } from "../run-cli.js";
 import { runMemoryRecordApplyCommand } from "../run-memory-record-apply-command.js";
-import { currentDecisionPacketBindingForAggregate } from "../packet-usefulness-authorization.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+const currentDecisionPacketBindingForAggregate = (
+  aggregate: HarnessRunAggregate,
+  packetGeneratedAt: string
+) => currentDecisionPacketBindingForHarnessRun({
+  aggregate,
+  packetGeneratedAt,
+  sha256Hex
+});
 
 const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {

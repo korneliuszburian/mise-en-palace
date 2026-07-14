@@ -1,5 +1,7 @@
 import {
   decisionPacketBindingReadbackFromMetadata,
+  decisionPacketReadModelDoesNotProve,
+  decisionPacketReadModelProves,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
   toEvidenceCommandReadback
@@ -32,10 +34,6 @@ import {
   decisionPacketReadModelSourceUsefulnessOutcomes,
   evidenceBundleFreshness
 } from "./decision-packet-read-model-builders.js";
-import {
-  decisionPacketReadModelDoesNotProve,
-  decisionPacketReadModelProves
-} from "./decision-packet-read-model.js";
 import type {
   DecisionPacketReadModelActivationCandidate,
   DecisionPacketReadModelKnowledgeUsefulnessOutcome,

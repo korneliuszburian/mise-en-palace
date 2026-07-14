@@ -15,6 +15,11 @@ import {
 import {
   DrizzleHarnessRunRepository
 } from "@krn/db/adapters";
+import {
+  decisionPacketBindingReadbackFromMetadata,
+  knowledgeUsefulnessOutcomesFromMetadata,
+  sourceUsefulnessOutcomesFromMetadata
+} from "@krn/core";
 
 import {
   parseDecisionPacketEvalFixture,
@@ -165,6 +170,7 @@ export const runEvalFeedbackPersistenceSmokeCheck = async (
           compiled.executionRun.id
         );
         const readbackFeedbackDelta = aggregate?.feedbackDeltas[0];
+        const readbackEvidenceBundle = aggregate?.evidenceBundles[0];
 
         assertSmokeReadbackChecks([
           {
@@ -212,6 +218,20 @@ export const runEvalFeedbackPersistenceSmokeCheck = async (
             passed:
               readbackFeedbackDelta?.memoryCandidates.length === 0 &&
               readbackFeedbackDelta.sourceDecisions.length === 0
+          },
+          {
+            label: "eval persistence remains outside DecisionPacket authority",
+            passed:
+              readbackEvidenceBundle !== undefined &&
+              decisionPacketBindingReadbackFromMetadata(
+                readbackEvidenceBundle.metadata
+              ).status === "unbound" &&
+              readbackFeedbackDelta !== undefined &&
+              decisionPacketBindingReadbackFromMetadata(
+                readbackFeedbackDelta.metadata
+              ).status === "unbound" &&
+              sourceUsefulnessOutcomesFromMetadata(readbackFeedbackDelta.metadata).length === 0 &&
+              knowledgeUsefulnessOutcomesFromMetadata(readbackFeedbackDelta.metadata).length === 0
           },
           {
             label: "passing eval creates no persistence",
