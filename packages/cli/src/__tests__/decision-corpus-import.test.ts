@@ -78,6 +78,9 @@ describe("runDecisionCorpusImport", () => {
         missingRowCount: 0,
         declaredEvidenceRefCount: 11,
         capturedEvidenceRefCount: 0,
+        capturedCurrentEvidenceRefCount: 0,
+        capturedStaleEvidenceRefCount: 0,
+        capturedUnknownEvidenceRefCount: 0,
         missingEvidenceRefCount: 10,
         mismatchedEvidenceRefCount: 0,
         externallyUnverifiedEvidenceRefCount: 1

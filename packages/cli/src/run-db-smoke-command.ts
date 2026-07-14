@@ -787,7 +787,7 @@ const runDecisionCorpusImportSmokeTarget: DbSmokeTargetHandler = async (
       `External evidence status: ${report.externalEvidenceStatus}`,
       `Source coverage: ${report.coverage.status}`,
       `Source coverage rows: declared=${report.coverage.declaredRowCount}, captured=${report.coverage.capturedRowCount}, missing=${report.coverage.missingRowCount}`,
-      `Source coverage evidence: declared=${report.coverage.declaredEvidenceRefCount}, captured=${report.coverage.capturedEvidenceRefCount}, missing=${report.coverage.missingEvidenceRefCount}, mismatched=${report.coverage.mismatchedEvidenceRefCount}, externallyUnverified=${report.coverage.externallyUnverifiedEvidenceRefCount}`,
+      `Source coverage evidence: declared=${report.coverage.declaredEvidenceRefCount}, captured=${report.coverage.capturedEvidenceRefCount}, capturedCurrent=${report.coverage.capturedCurrentEvidenceRefCount}, capturedStale=${report.coverage.capturedStaleEvidenceRefCount}, capturedUnknown=${report.coverage.capturedUnknownEvidenceRefCount}, missing=${report.coverage.missingEvidenceRefCount}, mismatched=${report.coverage.mismatchedEvidenceRefCount}, externallyUnverified=${report.coverage.externallyUnverifiedEvidenceRefCount}`,
       `Source coverage missing evidence refs: ${report.coverage.missingEvidenceRefs.join(", ") || "none"}`,
       `Governing SourceClaim: ${report.governingSourceClaimId}`,
       `Governing SourceDecisionEdge: ${report.governingSourceDecisionEdgeId}`,

@@ -404,6 +404,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("DB writes: none");
     expect(result.stdout).toContain("coverage: incomplete");
     expect(result.stdout).toContain("declaredRows=11");
+    expect(result.stdout).toContain("capturedCurrentEvidenceRefs=0");
+    expect(result.stdout).toContain("capturedStaleEvidenceRefs=0");
+    expect(result.stdout).toContain("capturedUnknownEvidenceRefs=0");
     expect(result.stdout).toContain("doesNotProve: source truth");
   });
 

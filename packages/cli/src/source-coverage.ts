@@ -1,14 +1,13 @@
 import type {
+  SourceDecisionEvidenceFreshness,
   SourceDecisionEvidenceProvenance,
   SourceDecisionEvidenceStatus
 } from "@krn/core/repositories/internal";
 
 export type SourceCoverageStatus =
-  | "declared_scope_complete"
+  | "declared_scope_current_complete"
   | "incomplete"
   | "unknown";
-
-export type SourceCoverageFreshness = "current" | "stale" | "unknown";
 
 export interface SourceCoverageDeclaredRow {
   readonly decisionId: string;
@@ -25,7 +24,7 @@ export interface SourceCoverageEvidence {
   readonly status: SourceDecisionEvidenceStatus;
   readonly capturedAt?: string;
   readonly contentHash?: string;
-  readonly freshness?: SourceCoverageFreshness;
+  readonly freshness?: SourceDecisionEvidenceFreshness;
   readonly provenance?: SourceDecisionEvidenceProvenance;
   readonly reason?: string;
 }
@@ -37,6 +36,9 @@ export interface SourceCoverageReport {
   readonly missingRowCount: number;
   readonly declaredEvidenceRefCount: number;
   readonly capturedEvidenceRefCount: number;
+  readonly capturedCurrentEvidenceRefCount: number;
+  readonly capturedStaleEvidenceRefCount: number;
+  readonly capturedUnknownEvidenceRefCount: number;
   readonly missingEvidenceRefCount: number;
   readonly mismatchedEvidenceRefCount: number;
   readonly externallyUnverifiedEvidenceRefCount: number;
@@ -62,6 +64,9 @@ const unknownReport = (
   missingRowCount: 0,
   declaredEvidenceRefCount: 0,
   capturedEvidenceRefCount: 0,
+  capturedCurrentEvidenceRefCount: 0,
+  capturedStaleEvidenceRefCount: 0,
+  capturedUnknownEvidenceRefCount: 0,
   missingEvidenceRefCount: 0,
   mismatchedEvidenceRefCount: 0,
   externallyUnverifiedEvidenceRefCount: 0,
@@ -73,7 +78,9 @@ const unknownReport = (
 });
 
 type CoverageOutcome =
-  | "captured"
+  | "captured_current"
+  | "captured_stale"
+  | "captured_unknown"
   | "missing"
   | "mismatched"
   | "externally_unverified";
@@ -81,6 +88,9 @@ type CoverageOutcome =
 interface CoverageDelta {
   readonly capturedRow: boolean;
   readonly capturedEvidenceRefCount: number;
+  readonly capturedCurrentEvidenceRefCount: number;
+  readonly capturedStaleEvidenceRefCount: number;
+  readonly capturedUnknownEvidenceRefCount: number;
   readonly missingEvidenceRefCount: number;
   readonly mismatchedEvidenceRefCount: number;
   readonly externallyUnverifiedEvidenceRefCount: number;
@@ -100,8 +110,16 @@ const classifyEvidenceRef = (
   }
 
   switch (matchingEvidence.status) {
-    case "captured":
-      return "captured";
+    case "captured": {
+      switch (matchingEvidence.freshness) {
+        case "current":
+          return "captured_current";
+        case "stale":
+          return "captured_stale";
+        default:
+          return "captured_unknown";
+      }
+    }
     case "missing":
       return "missing";
     case "digest_mismatch":
@@ -111,6 +129,11 @@ const classifyEvidenceRef = (
   }
 };
 
+const isCapturedOutcome = (outcome: CoverageOutcome): boolean =>
+  outcome === "captured_current" ||
+  outcome === "captured_stale" ||
+  outcome === "captured_unknown";
+
 const assessDeclaredRow = (
   declaredRow: SourceCoverageDeclaredRow,
   evidence: readonly SourceCoverageEvidence[]
@@ -119,6 +142,9 @@ const assessDeclaredRow = (
     return {
       capturedRow: false,
       capturedEvidenceRefCount: 0,
+      capturedCurrentEvidenceRefCount: 0,
+      capturedStaleEvidenceRefCount: 0,
+      capturedUnknownEvidenceRefCount: 0,
       missingEvidenceRefCount: declaredRow.evidenceRefs.length,
       mismatchedEvidenceRefCount: 0,
       externallyUnverifiedEvidenceRefCount: 0,
@@ -134,8 +160,11 @@ const assessDeclaredRow = (
   }));
 
   return {
-    capturedRow: outcomes.length > 0 && outcomes.every(({ outcome }) => outcome === "captured"),
-    capturedEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "captured").length,
+    capturedRow: outcomes.length > 0 && outcomes.every(({ outcome }) => isCapturedOutcome(outcome)),
+    capturedEvidenceRefCount: outcomes.filter(({ outcome }) => isCapturedOutcome(outcome)).length,
+    capturedCurrentEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "captured_current").length,
+    capturedStaleEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "captured_stale").length,
+    capturedUnknownEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "captured_unknown").length,
     missingEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "missing").length,
     mismatchedEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "mismatched").length,
     externallyUnverifiedEvidenceRefCount: outcomes.filter(({ outcome }) => outcome === "externally_unverified").length,
@@ -162,18 +191,25 @@ const evidenceByDecisionId = (
   return grouped;
 };
 
-const coverageIsComplete = (input: {
+const coverageIsCurrentComplete = (input: {
+  readonly capturedRowCount: number;
+  readonly declaredRowCount: number;
   readonly missingDecisionIds: readonly string[];
   readonly missingEvidenceRefCount: number;
   readonly mismatchedEvidenceRefCount: number;
   readonly externallyUnverifiedEvidenceRefCount: number;
-  readonly capturedEvidenceRefCount: number;
+  readonly capturedCurrentEvidenceRefCount: number;
+  readonly capturedStaleEvidenceRefCount: number;
+  readonly capturedUnknownEvidenceRefCount: number;
   readonly declaredEvidenceRefCount: number;
-}): boolean => input.missingDecisionIds.length === 0 &&
+}): boolean => input.capturedRowCount === input.declaredRowCount &&
+  input.missingDecisionIds.length === 0 &&
   input.missingEvidenceRefCount === 0 &&
   input.mismatchedEvidenceRefCount === 0 &&
   input.externallyUnverifiedEvidenceRefCount === 0 &&
-  input.capturedEvidenceRefCount === input.declaredEvidenceRefCount;
+  input.capturedCurrentEvidenceRefCount === input.declaredEvidenceRefCount &&
+  input.capturedStaleEvidenceRefCount === 0 &&
+  input.capturedUnknownEvidenceRefCount === 0;
 
 export const evaluateSourceCoverage = (input: {
   readonly scope?: SourceCoverageScope;
@@ -189,6 +225,9 @@ export const evaluateSourceCoverage = (input: {
   const mismatchedEvidenceRefs: string[] = [];
   let capturedRowCount = 0;
   let capturedEvidenceRefCount = 0;
+  let capturedCurrentEvidenceRefCount = 0;
+  let capturedStaleEvidenceRefCount = 0;
+  let capturedUnknownEvidenceRefCount = 0;
   let missingEvidenceRefCount = 0;
   let mismatchedEvidenceRefCount = 0;
   let externallyUnverifiedEvidenceRefCount = 0;
@@ -207,6 +246,9 @@ export const evaluateSourceCoverage = (input: {
       capturedRowCount += 1;
     }
     capturedEvidenceRefCount += delta.capturedEvidenceRefCount;
+    capturedCurrentEvidenceRefCount += delta.capturedCurrentEvidenceRefCount;
+    capturedStaleEvidenceRefCount += delta.capturedStaleEvidenceRefCount;
+    capturedUnknownEvidenceRefCount += delta.capturedUnknownEvidenceRefCount;
     missingEvidenceRefCount += delta.missingEvidenceRefCount;
     mismatchedEvidenceRefCount += delta.mismatchedEvidenceRefCount;
     externallyUnverifiedEvidenceRefCount += delta.externallyUnverifiedEvidenceRefCount;
@@ -218,15 +260,19 @@ export const evaluateSourceCoverage = (input: {
     (count, row) => count + row.evidenceRefs.length,
     0
   );
-  const status = coverageIsComplete({
+  const status = coverageIsCurrentComplete({
+    capturedRowCount,
+    declaredRowCount: input.scope.declaredRows.length,
     missingDecisionIds,
     missingEvidenceRefCount,
     mismatchedEvidenceRefCount,
     externallyUnverifiedEvidenceRefCount,
-    capturedEvidenceRefCount,
+    capturedCurrentEvidenceRefCount,
+    capturedStaleEvidenceRefCount,
+    capturedUnknownEvidenceRefCount,
     declaredEvidenceRefCount
   })
-    ? "declared_scope_complete"
+    ? "declared_scope_current_complete"
     : "incomplete";
 
   return {
@@ -236,6 +282,9 @@ export const evaluateSourceCoverage = (input: {
     missingRowCount: missingDecisionIds.length,
     declaredEvidenceRefCount,
     capturedEvidenceRefCount,
+    capturedCurrentEvidenceRefCount,
+    capturedStaleEvidenceRefCount,
+    capturedUnknownEvidenceRefCount,
     missingEvidenceRefCount,
     mismatchedEvidenceRefCount,
     externallyUnverifiedEvidenceRefCount,

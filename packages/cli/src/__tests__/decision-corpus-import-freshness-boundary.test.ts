@@ -15,6 +15,7 @@ import {
   persistDecisionCorpusImport,
   type PersistedDecisionCorpusRow
 } from "../internal/smoke/run-decision-corpus-import-db-smoke.js";
+import { evaluateSourceCoverage } from "../source-coverage.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const now = "2026-07-12T00:00:00.000Z";
@@ -206,12 +207,16 @@ describe("decision corpus import evidence freshness boundary", () => {
           createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
         });
         const rows: PersistedDecisionCorpusRow[] = [];
+        const importFixtures = freshnessCases.map((freshnessCase) => ({
+          ...freshnessCase,
+          fixture: fixtureWithCurrentDecision(freshnessCase.decisionId)
+        }));
 
-        for (const freshnessCase of freshnessCases) {
+        for (const freshnessCase of importFixtures) {
           const persistedRows = await persistDecisionCorpusImport({
             runtime,
             projectId: runtime.projectId,
-            fixture: fixtureWithCurrentDecision(freshnessCase.decisionId),
+            fixture: freshnessCase.fixture,
             smokeId: `${marker}-${freshnessCase.freshness}`,
             now,
             resolveEvidence: capturedEvidenceResolver(freshnessCase.freshness)
@@ -223,6 +228,19 @@ describe("decision corpus import evidence freshness boundary", () => {
         const lifecycleProjections = await Promise.all(rows.map((row) =>
           importLifecycleProjection(client, row)
         ));
+        const coverage = evaluateSourceCoverage({
+          scope: {
+            declaredRows: importFixtures.flatMap(
+              ({ fixture }) => fixture.coverageScope?.declaredRows ?? []
+            )
+          },
+          evidence: rows.map((row) => ({
+            decisionId: row.decisionId,
+            evidenceRef: row.evidenceRef,
+            status: row.evidenceStatus,
+            freshness: row.evidenceFreshness
+          }))
+        });
 
         expect(lifecycleProjections).toEqual([
           {
@@ -253,6 +271,20 @@ describe("decision corpus import evidence freshness boundary", () => {
             searchDocumentValidityStatus: "expired"
           }
         ]);
+        expect(coverage).toMatchObject({
+          status: "incomplete",
+          declaredRowCount: 3,
+          capturedRowCount: 3,
+          missingRowCount: 0,
+          declaredEvidenceRefCount: 3,
+          capturedEvidenceRefCount: 3,
+          capturedCurrentEvidenceRefCount: 1,
+          capturedStaleEvidenceRefCount: 1,
+          capturedUnknownEvidenceRefCount: 1,
+          missingEvidenceRefCount: 0,
+          mismatchedEvidenceRefCount: 0,
+          externallyUnverifiedEvidenceRefCount: 0
+        });
       } finally {
         try {
           try {

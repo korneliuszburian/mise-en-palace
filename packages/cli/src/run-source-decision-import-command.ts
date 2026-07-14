@@ -175,7 +175,7 @@ const formatSourceDecisionImportText = (
           "Persisted rows:",
           ...summarizeRows(input.rows)
         ]),
-    `coverage: ${input.coverage.status} (declaredRows=${input.coverage.declaredRowCount}, capturedRows=${input.coverage.capturedRowCount}, missingRows=${input.coverage.missingRowCount}, declaredEvidenceRefs=${input.coverage.declaredEvidenceRefCount}, capturedEvidenceRefs=${input.coverage.capturedEvidenceRefCount}, missingEvidenceRefs=${input.coverage.missingEvidenceRefCount}, mismatchedEvidenceRefs=${input.coverage.mismatchedEvidenceRefCount}, externallyUnverified=${input.coverage.externallyUnverifiedEvidenceRefCount})`,
+    `coverage: ${input.coverage.status} (declaredRows=${input.coverage.declaredRowCount}, capturedRows=${input.coverage.capturedRowCount}, missingRows=${input.coverage.missingRowCount}, declaredEvidenceRefs=${input.coverage.declaredEvidenceRefCount}, capturedEvidenceRefs=${input.coverage.capturedEvidenceRefCount}, capturedCurrentEvidenceRefs=${input.coverage.capturedCurrentEvidenceRefCount}, capturedStaleEvidenceRefs=${input.coverage.capturedStaleEvidenceRefCount}, capturedUnknownEvidenceRefs=${input.coverage.capturedUnknownEvidenceRefCount}, missingEvidenceRefs=${input.coverage.missingEvidenceRefCount}, mismatchedEvidenceRefs=${input.coverage.mismatchedEvidenceRefCount}, externallyUnverified=${input.coverage.externallyUnverifiedEvidenceRefCount})`,
     "",
     "Proof:",
     "- compact source-to-decision rows parsed unknown-first and validated before store writes",
