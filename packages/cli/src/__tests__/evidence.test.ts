@@ -1277,6 +1277,157 @@ describe("runCli", () => {
     });
   });
 
+  it("reproduces fixed-point application false positives for unrelated, unchanged, stale, and pre-application evidence", async () => {
+    const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
+    const verificationCompletedAt = "2026-06-21T12:01:00.000Z";
+    const captureObservedAt = "2026-06-21T12:10:00.000Z";
+    const artifact = createCommandOutputArtifact({
+      command: verificationCommand,
+      exitCode: 0,
+      startedAt: verificationCompletedAt,
+      completedAt: verificationCompletedAt,
+      stdout: new TextEncoder().encode("verification passed\n"),
+      stdoutTotalByteCount: 20,
+      stderr: new Uint8Array(),
+      stderrTotalByteCount: 0
+    }, sha256Hex);
+    const falsePositiveCases = [{
+      label: "caller-declared unrelated root file",
+      applicationPath: "packages/cli/src/unrelated-config.ts",
+      intendedFiles: ["packages/cli/src/unrelated-config.ts"],
+      gitStatus: " M packages/cli/src/unrelated-config.ts\n"
+    }, {
+      label: "unchanged target with contradictory changed-file row",
+      applicationPath: "src/unchanged-target.ts",
+      intendedFiles: [],
+      gitStatus: "",
+      targetEvidence: {
+        targetRepo: "../target",
+        mode: "write-authorized",
+        dirtyBefore: "clean",
+        dirtyAfter: "clean",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "fresh-current-task",
+        targetPatchLifecycle: "none",
+        changedFiles: [{
+          status: "M",
+          path: "src/unchanged-target.ts",
+          ownership: "owned-by-current-krn-run"
+        }]
+      }
+    }, {
+      label: "stale target status",
+      applicationPath: "src/stale-target.ts",
+      intendedFiles: [],
+      gitStatus: "",
+      targetEvidence: {
+        targetRepo: "../target",
+        mode: "write-authorized",
+        dirtyBefore: "dirty",
+        dirtyAfter: "dirty",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "changed-since-selection",
+        targetPatchLifecycle: "active",
+        changedFiles: [{
+          status: "M",
+          path: "src/stale-target.ts",
+          ownership: "owned-by-current-krn-run"
+        }]
+      }
+    }, {
+      label: "verification observed before application status",
+      applicationPath: "packages/cli/src/application-observed-later.ts",
+      intendedFiles: ["packages/cli/src/application-observed-later.ts"],
+      gitStatus: " M packages/cli/src/application-observed-later.ts\n"
+    }] as const;
+
+    for (const [index, falsePositive] of falsePositiveCases.entries()) {
+      const dependencies = createNoStoreCompilerDependencies({
+        now: () => captureObservedAt,
+        createId: (prefix) => `${prefix}-${index}`
+      });
+      const capture: EvidencePersistenceCapture = {};
+      const aggregate = createEvidencePersistenceAggregate();
+      aggregate.harnessPlan.metadata = {
+        evidenceContract: {
+          taskContractId: aggregate.taskContract.id,
+          commands: [{ command: verificationCommand, required: true }],
+          diffRisk: "low",
+          reviewBurden: "review",
+          rollbackPath: "revert",
+          metadata: {}
+        }
+      };
+      const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+      const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+        dependencies,
+        aggregate,
+        capture
+      );
+
+      await runEvidenceCaptureCommand({
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        persist: true,
+        runId: aggregate.executionRun.id,
+        decisionPacketChecksum: packetBinding.packetChecksum,
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+        intendedFiles: [...falsePositive.intendedFiles],
+        commandOutcomes: [{
+          command: verificationCommand,
+          status: "passed",
+          provenance: "command_runner",
+          exitCode: 0,
+          capturedAt: verificationCompletedAt,
+          outputRef: artifact.outputRef
+        }],
+        commandOutputArtifacts: [artifact],
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+          outcome: "helped",
+          reason: `${falsePositive.label} allegedly proves application and later verification.`,
+          evidenceRefs: [
+            packetBinding.packetEvidenceRef,
+            falsePositive.applicationPath,
+            verificationCommand,
+            artifact.outputRef
+          ],
+          doesNotProve: "The fixture records a current false positive, not valid application proof."
+        }],
+        ...("targetEvidence" in falsePositive
+          ? { targetEvidence: falsePositive.targetEvidence }
+          : {}),
+        now: () => captureObservedAt,
+        createId: (prefix) => `${prefix}-${index}`,
+        readGitStatus: async () => falsePositive.gitStatus,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      });
+
+      expect(
+        capture.knowledgeUsefulnessOutcomes,
+        falsePositive.label
+      ).toEqual([expect.objectContaining({
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        outcome: "helped"
+      })]);
+    }
+  });
+
   it("keeps unauthorized usefulness outside persisted feedback", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
