@@ -909,7 +909,7 @@ describe("runRunShowCommand", () => {
           "this readback surface exposes no write action"
         ],
         doesNotProve: [
-          "commands were executed by this readback command",
+          "commands were executed by this readback command or that their selected set is sufficient",
           "activation scoring quality or production graph retrieval quality",
           "memory quality, source truth, review correctness, or product readiness",
           "Memory Core mutation"
@@ -956,12 +956,14 @@ describe("runRunShowCommand", () => {
       "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
       "this readback surface exposes no write action"
     ]);
-    expect(parsed.proof.proves).not.toContain("commands were executed by this readback command");
+    expect(parsed.proof.proves).not.toContain(
+      "commands were executed by this readback command or that their selected set is sufficient"
+    );
     expect(parsed.proof.proves).not.toContain(
       "memory quality, source truth, review correctness, or product readiness"
     );
     expect(parsed.proof.doesNotProve).toEqual([
-      "commands were executed by this readback command",
+      "commands were executed by this readback command or that their selected set is sufficient",
       "activation scoring quality or production graph retrieval quality",
       "memory quality, source truth, review correctness, or product readiness",
       "Memory Core mutation"

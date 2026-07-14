@@ -10,9 +10,42 @@ import {
   decisionPacketNegativePathsForContext,
   type DecisionPacketReadModelInput
 } from "../decision-packet.js";
-import { parseEvidenceContract } from "../evidence-contract.js";
+import {
+  parseEvidenceContract,
+  type EvidenceContract
+} from "../evidence-contract.js";
 
 const now = "2026-07-08T14:45:00.000Z";
+
+const activeEvidenceContractResourcesFor = (
+  runId: string,
+  commands: EvidenceContract["commands"] = [{
+    command: "pnpm test",
+    required: true
+  }]
+): Pick<DecisionPacketReadModelInput, "evidenceContract" | "evidenceContractActivation"> => {
+  const evidenceContract: EvidenceContract = {
+    taskContractId: `task-${runId}`,
+    commands,
+    diffRisk: "medium",
+    reviewBurden: "Review the current task-bound change.",
+    rollbackPath: "Revert the current task-bound change.",
+    metadata: {}
+  };
+
+  return {
+    evidenceContract,
+    evidenceContractActivation: {
+      status: "active",
+      evidenceContract,
+      taskContractId: evidenceContract.taskContractId,
+      harnessPlanId: `plan-${runId}`,
+      executionRunId: runId,
+      taskContractStatus: "active",
+      executionRunStatus: "planned"
+    }
+  };
+};
 
 const fakeSha256Hex = (value: string): string => {
   let hash = 0;
@@ -30,6 +63,10 @@ const readModel = {
     status: "planned",
     updatedAt: now
   },
+  ...activeEvidenceContractResourcesFor("run-decision-packet-1", [{
+    command: "pnpm --filter frontend test",
+    required: true
+  }]),
   context: {
     inclusions: 3,
     exclusions: 2,
@@ -104,12 +141,6 @@ const readModel = {
       }]
     }
   },
-  evidenceContract: {
-    commands: [{
-      command: "pnpm --filter frontend test",
-      required: true
-    }]
-  },
   evidenceBundles: [{
     commands: [{
       command: "pnpm --filter frontend test"
@@ -179,6 +210,7 @@ const relationReadModel = (
     id: "run-relation-consensus",
     updatedAt: now
   },
+  ...activeEvidenceContractResourcesFor("run-relation-consensus"),
   context: {
     inclusions: 2,
     exclusions: 0,
@@ -233,6 +265,7 @@ const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInpu
     id: "run-unresolved-accepted-source-dissent",
     updatedAt: now
   },
+  ...activeEvidenceContractResourcesFor("run-unresolved-accepted-source-dissent"),
   context: {
     inclusions: 3,
     exclusions: 0,
@@ -324,6 +357,7 @@ const sourceClaimExclusionReadModel = (input: {
     id: `run-source-claim-exclusion-${input.reason}`,
     updatedAt: now
   },
+  ...activeEvidenceContractResourcesFor(`run-source-claim-exclusion-${input.reason}`),
   context: {
     inclusions: 1,
     exclusions: 1,
@@ -371,6 +405,7 @@ const deferredSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
     id: "run-deferred-source-dissent",
     updatedAt: now
   },
+  ...activeEvidenceContractResourcesFor("run-deferred-source-dissent"),
   context: {
     inclusions: 2,
     exclusions: 1,
@@ -544,6 +579,7 @@ describe("DecisionPacket builder", () => {
         id: "run-canonical-source-decision",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-canonical-source-decision"),
       context: {
         inclusions: 1,
         exclusions: 0,
@@ -666,15 +702,13 @@ describe("DecisionPacket builder", () => {
   it("uses the active evidence contract instead of historical command observations", () => {
     const packet = buildDecisionPacketFromReadModel({
       ...readModel,
-      evidenceContract: {
-        commands: [{
+      ...activeEvidenceContractResourcesFor("run-decision-packet-1", [{
           command: "pnpm typecheck",
           required: true
         }, {
           command: "pnpm test -- current-task",
           required: false
-        }]
-      },
+        }]),
       evidenceBundles: [{
         commands: [{
           command: "pnpm old-check=failed"
@@ -697,12 +731,65 @@ describe("DecisionPacket builder", () => {
     expect(packet.falsifiers).not.toContain("pnpm old-check=skipped");
   });
 
+  it("keeps an inactive contract as history without promoting its commands", () => {
+    const resources = activeEvidenceContractResourcesFor("run-decision-packet-1", [{
+      command: "pnpm historical-terminal-check",
+      required: true
+    }]);
+    const activeDecision = resources.evidenceContractActivation;
+
+    if (activeDecision.status !== "active") {
+      throw new Error("active EvidenceContract test fixture was not active");
+    }
+
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      ...resources,
+      run: {
+        ...readModel.run,
+        status: "succeeded"
+      },
+      evidenceContractActivation: {
+        status: "inactive",
+        reason: "execution_run_terminal",
+        evidenceContract: activeDecision.evidenceContract,
+        taskContractId: activeDecision.taskContractId,
+        harnessPlanId: activeDecision.harnessPlanId,
+        executionRunId: activeDecision.executionRunId,
+        taskContractStatus: activeDecision.taskContractStatus,
+        executionRunStatus: "succeeded"
+      }
+    });
+
+    expect(packet.evidenceContract).toBeUndefined();
+    expect(packet.verificationCommands).toEqual([]);
+    expect(packet.evidenceGaps).toContainEqual(expect.objectContaining({
+      id: "evidence-gap:missing-active-contract",
+      reason: expect.stringContaining("execution_run_terminal")
+    }));
+    expect(packet.abstentionScore.status).toBe("abstain");
+  });
+
   it("does not guess current verification when the active contract is absent", () => {
-    const { evidenceContract, ...readModelWithoutContract } = readModel;
+    const {
+      evidenceContract,
+      evidenceContractActivation,
+      ...readModelWithoutContract
+    } = readModel;
     void evidenceContract;
+    void evidenceContractActivation;
 
     const packet = buildDecisionPacketFromReadModel({
       ...readModelWithoutContract,
+      evidenceContractActivation: {
+        status: "inactive",
+        reason: "missing_evidence_contract",
+        taskContractId: "task-run-decision-packet-1",
+        harnessPlanId: "plan-run-decision-packet-1",
+        executionRunId: "run-decision-packet-1",
+        taskContractStatus: "active",
+        executionRunStatus: "planned"
+      },
       evidenceBundles: [{
         commands: [{
           command: "pnpm historical-check=passed"
@@ -711,6 +798,10 @@ describe("DecisionPacket builder", () => {
     });
 
     expect(packet.verificationCommands).toEqual([]);
+    expect(packet.evidenceGaps).toContainEqual(expect.objectContaining({
+      id: "evidence-gap:missing-active-contract",
+      reason: expect.stringContaining("missing_evidence_contract")
+    }));
     expect(packet.falsifiers).toEqual([
       "A matching app setup packet omits the current template decision."
     ]);
@@ -722,6 +813,7 @@ describe("DecisionPacket builder", () => {
         id: "run-feedback-only-authority",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-feedback-only-authority"),
       context: {
         inclusions: 0,
         exclusions: 0,
@@ -778,6 +870,7 @@ describe("DecisionPacket builder", () => {
         id: "run-authority-superseded",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-authority-superseded"),
       context: {
         inclusions: 0,
         exclusions: 1,
@@ -851,6 +944,7 @@ describe("DecisionPacket builder", () => {
         id: "run-governing-rejected-feedback",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-governing-rejected-feedback"),
       context: {
         inclusions: 1,
         exclusions: 0,
@@ -989,6 +1083,7 @@ describe("DecisionPacket builder", () => {
         id: "run-authority-states",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-authority-states"),
       context: {
         inclusions: 3,
         exclusions: 0,
@@ -1051,6 +1146,7 @@ describe("DecisionPacket builder", () => {
         id: "run-governing-plus-unsupported-source",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-governing-plus-unsupported-source"),
       context: {
         inclusions: 2,
         exclusions: 0,
@@ -1111,6 +1207,7 @@ describe("DecisionPacket builder", () => {
         id: "run-hurt-feedback",
         updatedAt: now
       },
+      ...activeEvidenceContractResourcesFor("run-hurt-feedback"),
       context: {
         inclusions: 2,
         exclusions: 0,

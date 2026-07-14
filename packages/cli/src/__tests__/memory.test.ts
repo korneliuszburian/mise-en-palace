@@ -1321,6 +1321,128 @@ describe("runCli", () => {
     );
   });
 
+  it.each([{
+    label: "terminal execution run",
+    taskStatus: "active" as const,
+    runStatus: "succeeded" as const,
+    bindingTaskContractId: "task-1"
+  }, {
+    label: "closed task contract",
+    taskStatus: "closed" as const,
+    runStatus: "running" as const,
+    bindingTaskContractId: "task-1"
+  }, {
+    label: "mismatched task binding",
+    taskStatus: "active" as const,
+    runStatus: "running" as const,
+    bindingTaskContractId: "task-other"
+  }])("rejects helped memory evidence from an inactive $label contract", async (scenario) => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate = memoryHarnessRunAggregate("project-1");
+    aggregate.taskContract.status = scenario.taskStatus;
+    aggregate.executionRun.status = scenario.runStatus;
+    aggregate.harnessPlan.metadata = {
+      evidenceContract: {
+        taskContractId: scenario.bindingTaskContractId,
+        commands: [{ command: "pnpm typecheck", required: true }],
+        diffRisk: "low",
+        reviewBurden: "review",
+        rollbackPath: "revert",
+        metadata: {}
+      }
+    };
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    aggregate.evidenceBundles = [{
+      id: "evidence-bundle-inactive-contract",
+      executionRunId: aggregate.executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: [{
+        command: "pnpm typecheck",
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: "smoke:inactive-contract"
+      }],
+      diffRisk: "low",
+      reviewBurden: "review",
+      rollbackPath: "revert",
+      metadata: {
+        decisionPacketChecksum: packetBinding.packetChecksum,
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+      },
+      createdAt: now,
+      updatedAt: now
+    }];
+
+    await expect(runMemoryRecordApplyCommand({
+      command: {
+        kind: "memoryRecordApply",
+        persist: true,
+        runId: aggregate.executionRun.id,
+        memoryId: "memory-record-1",
+        evidenceBundleId: "evidence-bundle-inactive-contract",
+        decisionPacketChecksum: packetBinding.packetChecksum,
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+        outcome: "helped",
+        notes: "Inactive contracts cannot authorize helped feedback.",
+        metadata: {}
+      },
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: dependencies,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: {
+          ...unusedMemoryRepository,
+          async getMemoryRecordById(id) {
+            return {
+              id,
+              projectId: "project-1",
+              currentVersionId: "memory-record-version-1",
+              key: "memory:memory-candidate-1",
+              kind: "constraint",
+              status: "active",
+              summary: "Use Postgres edge tables first",
+              body: "Source graph should use Postgres edge tables first",
+              owner: "operator",
+              confidence: 70,
+              applicationGuidance: "Use for this task.",
+              invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+              sourceLineage: [{ sourceId: "source-claim-1" }],
+              isUserPreference: false,
+              validFrom: now,
+              positiveFeedbackCount: 0,
+              negativeFeedbackCount: 0,
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            };
+          },
+          async recordMemoryApplicationWithEffectsOnce(): Promise<never> {
+            throw new Error("inactive usefulness write reached repository");
+          }
+        },
+        harnessRunRepository: {
+          ...createMemoryHarnessRunRepository(dependencies, "project-1"),
+          async getHarnessRunByExecutionRunId() {
+            return aggregate;
+          }
+        },
+        async close() {}
+      })
+    })).rejects.toThrow(
+      "helped memory application requires a fresh successful verification EvidenceBundle"
+    );
+  });
+
   it("does not repeat the same packet-bound memory application", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,

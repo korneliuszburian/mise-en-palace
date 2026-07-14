@@ -50,6 +50,17 @@ interface DecisionPacketJson {
       readonly rejectedPathIds: readonly string[];
     };
     readonly verificationCommands: readonly string[];
+    readonly evidenceContract?: {
+      readonly commands: readonly {
+        readonly command: string;
+        readonly required: boolean;
+      }[];
+    };
+    readonly evidenceGaps: readonly {
+      readonly id: string;
+      readonly reason: string;
+      readonly verificationRequired: string;
+    }[];
     readonly abstentionScore: {
       readonly status: string;
       readonly score: number;
@@ -263,7 +274,8 @@ const aggregate: HarnessRunAggregate = {
     id: "run-agent-1",
     harnessPlanId: "plan-agent-1",
     adapter: "cli",
-    status: "succeeded",
+    status: "running",
+    startedAt: now,
     metadata: {},
     createdAt: now,
     updatedAt: now
@@ -448,14 +460,15 @@ const plannedEvidenceContractScenario = {
   }
 } as const satisfies EvidenceContractScenario;
 
-const inactiveBoundEvidenceContractScenarios = inactiveCommandRenderingScenarios.filter(
-  (scenario) => "bindingTaskContractId" in scenario
-);
-
 const bindingEvidenceContractScenarios = [
   inactiveCommandRenderingScenarios[0],
   inactiveCommandRenderingScenarios[4]
 ] as const;
+
+const inactiveEvidenceContractScenarios = [
+  ...lifecycleEvidenceContractScenarios,
+  ...bindingEvidenceContractScenarios
+].filter((scenario) => scenario.expectedActivation.status === "inactive");
 
 const aggregateForEvidenceContractScenario = (
   scenario: EvidenceContractScenario
@@ -893,6 +906,13 @@ describe("decision packet CLI", () => {
     const json = await expectScenarioDecisionPacketReadback(plannedEvidenceContractScenario);
 
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
+    expect(json.packet.evidenceContract?.commands).toEqual([{
+      command: "pnpm --filter frontend test",
+      required: true
+    }]);
+    expect(json.packet.evidenceGaps).not.toContainEqual(expect.objectContaining({
+      id: "evidence-gap:missing-active-contract"
+    }));
   });
 
   it.each([...lifecycleEvidenceContractScenarios, ...bindingEvidenceContractScenarios])(
@@ -925,12 +945,22 @@ describe("decision packet CLI", () => {
     expect(json.packet.verificationCommands).toEqual([]);
   });
 
-  it.fails.each(inactiveBoundEvidenceContractScenarios)(
+  it.each(inactiveEvidenceContractScenarios)(
     "does not render $label as an active EvidenceContract",
     async (scenario) => {
       const json = await expectScenarioDecisionPacketReadback(scenario);
 
+      if (scenario.expectedActivation.status !== "inactive") {
+        throw new Error("inactive EvidenceContract scenario was not classified inactive");
+      }
+
       expect(json.packet.verificationCommands).toEqual([]);
+      expect(json.packet.evidenceContract).toBeUndefined();
+      expect(json.packet.evidenceGaps).toContainEqual(expect.objectContaining({
+        id: "evidence-gap:missing-active-contract",
+        reason: expect.stringContaining(scenario.expectedActivation.reason)
+      }));
+      expect(json.packet.abstentionScore.status).toBe("abstain");
     }
   );
 

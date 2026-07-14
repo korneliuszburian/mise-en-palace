@@ -261,7 +261,7 @@ export const decisionPacketReadModelProves = [
 ];
 
 export const decisionPacketReadModelDoesNotProve = [
-  "commands were executed by this readback command",
+  "commands were executed by this readback command or that their selected set is sufficient",
   "activation scoring quality or production graph retrieval quality",
   "memory quality, source truth, review correctness, or product readiness",
   "Memory Core mutation"

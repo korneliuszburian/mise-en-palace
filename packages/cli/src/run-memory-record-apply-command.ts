@@ -1,7 +1,7 @@
 import {
   buildFeedbackRecommendationReadback,
+  decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
-  parseEvidenceContract,
   parseMemoryApplicationInput
 } from "@krn/core";
 import type {
@@ -190,12 +190,19 @@ const hasFreshHelpedVerification = (input: {
   }
 
   const bundle = aggregate.evidenceBundles.find((candidate) => candidate.id === input.evidenceBundleId);
+  const activation = decideEvidenceContractActivation({
+    evidenceContract: aggregate.harnessPlan.metadata.evidenceContract,
+    taskContract: aggregate.taskContract,
+    harnessPlan: aggregate.harnessPlan,
+    executionRun: aggregate.executionRun
+  });
 
-  return bundle !== undefined &&
+  return activation.status === "active" &&
+    bundle !== undefined &&
     bundle.executionRunId === input.runId &&
     evidenceBundleProvesHelped({
       bundle,
-      evidenceContract: parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract),
+      evidenceContract: activation.evidenceContract,
       packetChecksum: input.packetChecksum,
       packetGeneratedAt: input.packetGeneratedAt
     });

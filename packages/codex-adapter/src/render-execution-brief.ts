@@ -1,3 +1,6 @@
+import {
+  decisionPacketMissingActiveEvidenceContractGapId
+} from "@krn/core";
 import type {
   DecisionPacket
 } from "@krn/core";
@@ -228,13 +231,16 @@ const renderEvidenceGaps = (
   );
 
 const missingEvidenceContractGap: ExecutionBriefEvidenceGap = {
-  id: "evidence-gap:missing-active-contract",
+  id: decisionPacketMissingActiveEvidenceContractGapId,
   reason: "The DecisionPacket has no active task-bound EvidenceContract.",
   verificationRequired: "Bind a current EvidenceContract before treating any command as required verification."
 };
 
 export const createExecutionBrief = (input: RenderExecutionBriefInput): ExecutionBrief => {
   const { packet } = input;
+  const abstentionStatus = packet.evidenceContract === undefined
+    ? "abstain"
+    : packet.abstentionScore.status;
   const includedContext = packet.contextInclusions.map((inclusion) => ({ ...inclusion }));
   const explicitExclusions = packet.contextExclusions.map((exclusion) => ({ ...exclusion }));
   const sourceClaimsSelected = includedContext
@@ -262,7 +268,11 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       };
   const evidenceGaps = [
     ...packet.evidenceGaps,
-    ...(packet.evidenceContract === undefined ? [missingEvidenceContractGap] : [])
+    ...(packet.evidenceContract === undefined && !packet.evidenceGaps.some(
+      (gap) => gap.id === decisionPacketMissingActiveEvidenceContractGapId
+    )
+      ? [missingEvidenceContractGap]
+      : [])
   ];
   const doesNotProve = [...new Set([
     ...packet.doesNotProve,
@@ -274,7 +284,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
 
   return {
     formatVersion: executionBriefFormatVersion,
-    abstentionStatus: packet.abstentionScore.status,
+    abstentionStatus,
     title: "KRN Codex Execution Brief",
     objective: packet.task.objective,
     nonGoals: [...packet.task.nonGoals],
@@ -296,7 +306,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     evidenceGaps,
     toolBoundaries: [...packet.toolBoundaries],
     evidenceContract,
-    stopCondition: packet.abstentionScore.status === "abstain"
+    stopCondition: abstentionStatus === "abstain"
       ? "Do not execute; the DecisionPacket abstains until its evidence gaps are resolved."
       : "Stop before Codex execution or hidden state mutation.",
     rollbackExpectation: evidenceContract.rollbackPath,

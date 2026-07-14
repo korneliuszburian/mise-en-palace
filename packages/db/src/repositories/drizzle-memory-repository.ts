@@ -25,6 +25,7 @@ import type {
   ProjectId
 } from "@krn/core";
 import {
+  decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
   parseEvidenceContract
 } from "@krn/core";
@@ -65,6 +66,7 @@ import {
   evidenceBundles,
   executionRuns,
   harnessPlans,
+  taskContracts,
   outboxEvents
 } from "../schema/index.js";
 import {
@@ -1250,10 +1252,17 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     }
 
     const bundle = mapEvidenceBundle(linked.bundle);
-    const evidenceContract = parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract);
+    const activation = decideEvidenceContractActivation({
+      evidenceContract: linked.harnessPlan.metadata.evidenceContract,
+      taskContract: linked.taskContract,
+      harnessPlan: linked.harnessPlan,
+      executionRun: linked.executionRun
+    });
     const valid = evidenceBundleProvesHelped({
       bundle,
-      evidenceContract,
+      evidenceContract: activation.status === "active"
+        ? activation.evidenceContract
+        : undefined,
       packetChecksum: input.packetChecksum,
       packetGeneratedAt: input.packetGeneratedAt
     });
@@ -1274,11 +1283,13 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       .select({
         bundle: evidenceBundles,
         executionRun: executionRuns,
-        harnessPlan: harnessPlans
+        harnessPlan: harnessPlans,
+        taskContract: taskContracts
       })
       .from(evidenceBundles)
       .innerJoin(executionRuns, eq(executionRuns.id, evidenceBundles.executionRunId))
       .innerJoin(harnessPlans, eq(harnessPlans.id, executionRuns.harnessPlanId))
+      .innerJoin(taskContracts, eq(taskContracts.id, harnessPlans.taskContractId))
       .where(and(
         eq(evidenceBundles.id, evidenceBundleId),
         eq(evidenceBundles.executionRunId, executionRunId),
@@ -1625,6 +1636,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return false;
     }
 
+    // Canonical replay preserves proof admitted while the run was active. Reclassifying
+    // against a later terminal lifecycle would erase valid historical feedback; the
+    // transactional write guard above owns current activation admission.
     return evidenceBundleProvesHelped({
       bundle: mapEvidenceBundle(linked.bundle),
       evidenceContract: parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract),

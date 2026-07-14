@@ -6,6 +6,10 @@ import {
 import {
   DrizzleMaintenanceQueueRepository
 } from "@krn/db/adapters";
+import {
+  decisionPacketMissingActiveEvidenceContractGapId,
+  parseEvidenceContract
+} from "@krn/core";
 import type {
   EvidenceContract
 } from "@krn/core";
@@ -41,6 +45,11 @@ export interface RunShowDbSmokeReport {
   packetBindingStatus: string;
   packetBindingStoredChecksumMatched: boolean;
   packetBindingRetryStable: boolean;
+  terminalActivationInactive: boolean;
+  terminalContractHistoryVisible: boolean;
+  terminalCommandsSuppressed: boolean;
+  terminalEvidenceGapPresent: boolean;
+  terminalPacketAbstained: boolean;
   evidenceBundleCount: number;
   reviewAssessmentCount: number;
   feedbackDeltaCount: number;
@@ -83,6 +92,40 @@ const requiredString = (
   return field;
 };
 
+const recordHasStrings = (
+  value: unknown,
+  expected: Readonly<Record<string, string>>
+): boolean => isRecord(value) && Object.entries(expected).every(
+  ([key, expectedValue]) => readString(value, key) === expectedValue
+);
+
+const arrayHasRecordWithString = (
+  value: unknown,
+  key: string,
+  expectedValue: string
+): boolean => Array.isArray(value) && value.some((item) =>
+  isRecord(item) && readString(item, key) === expectedValue
+);
+
+const evidenceContractProofShape = (contract: EvidenceContract) => ({
+  taskContractId: contract.taskContractId,
+  commands: contract.commands,
+  diffRisk: contract.diffRisk,
+  reviewBurden: contract.reviewBurden,
+  rollbackPath: contract.rollbackPath
+});
+
+const evidenceContractHistoryMatches = (
+  value: unknown,
+  expected: EvidenceContract
+): boolean => {
+  const parsed = parseEvidenceContract(value);
+
+  return parsed !== undefined &&
+    JSON.stringify(evidenceContractProofShape(parsed)) ===
+      JSON.stringify(evidenceContractProofShape(expected));
+};
+
 interface PacketIdentity {
   checksum: string;
   evidenceRef: string;
@@ -120,6 +163,14 @@ interface PacketBindingReadback {
   packetBinding: Record<string, unknown>;
 }
 
+interface TerminalEvidenceContractReadback {
+  activationInactive: boolean;
+  contractHistoryVisible: boolean;
+  commandsSuppressed: boolean;
+  evidenceGapPresent: boolean;
+  packetAbstained: boolean;
+}
+
 const readPacketIdentity = (value: Record<string, unknown>): PacketIdentity => {
   const packetIdentity = value.packetIdentity;
 
@@ -148,6 +199,43 @@ const readPacketBinding = (value: Record<string, unknown>): Record<string, unkno
   }
 
   return packetBinding;
+};
+
+const terminalEvidenceContractReadback = (
+  value: Record<string, unknown>,
+  evidenceContract: EvidenceContract,
+  executionRunId: string
+): TerminalEvidenceContractReadback => {
+  const readModel = value.readModel;
+  const packet = value.packet;
+
+  if (!isRecord(readModel) || !isRecord(packet)) {
+    throw new Error("Run-show DB smoke terminal DecisionPacket missed readModel or packet");
+  }
+
+  const activation = readModel.evidenceContractActivation;
+  const historicalContract = readModel.evidenceContract;
+  const abstentionScore = packet.abstentionScore;
+  const verificationCommands = packet.verificationCommands;
+  const evidenceGaps = packet.evidenceGaps;
+
+  return {
+    activationInactive: recordHasStrings(activation, {
+      status: "inactive",
+      reason: "execution_run_terminal",
+      executionRunId
+    }),
+    contractHistoryVisible: evidenceContractHistoryMatches(historicalContract, evidenceContract),
+    commandsSuppressed: Array.isArray(verificationCommands) &&
+      verificationCommands.length === 0 &&
+      packet.evidenceContract === undefined,
+    evidenceGapPresent: arrayHasRecordWithString(
+      evidenceGaps,
+      "id",
+      decisionPacketMissingActiveEvidenceContractGapId
+    ),
+    packetAbstained: recordHasStrings(abstentionScore, { status: "abstain" })
+  };
 };
 
 const parseJsonReadback = (
@@ -349,6 +437,31 @@ const assertPacketBindingSmoke = (input: {
   }
 };
 
+const assertTerminalEvidenceContractReadback = (
+  readback: TerminalEvidenceContractReadback
+): void => {
+  const failed = [{
+    label: "inactive terminal activation",
+    passed: readback.activationInactive
+  }, {
+    label: "historical contract visibility",
+    passed: readback.contractHistoryVisible
+  }, {
+    label: "terminal command suppression",
+    passed: readback.commandsSuppressed
+  }, {
+    label: "inactive-contract evidence gap",
+    passed: readback.evidenceGapPresent
+  }, {
+    label: "terminal packet abstention",
+    passed: readback.packetAbstained
+  }].find((check) => !check.passed);
+
+  if (failed !== undefined) {
+    throw new Error(`Run-show DB smoke terminal EvidenceContract failed ${failed.label}`);
+  }
+};
+
 export const runRunShowDbSmokeCheck = async (
   input: RunShowDbSmokeInput
 ): Promise<RunShowDbSmokeReport> => {
@@ -450,6 +563,41 @@ export const runRunShowDbSmokeCheck = async (
       retryStable
     });
 
+    const runningEventSequence = capture.retryCapture.aggregate.runEvents.length + 1;
+    await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "planned",
+      status: "running",
+      startedAt: "2026-07-13T00:00:02.000Z",
+      event: {
+        sequence: runningEventSequence,
+        type: "smoke.run_show.started",
+        message: "Run-show smoke entered the active running lifecycle",
+        payload: { marker }
+      }
+    });
+    await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "running",
+      status: "succeeded",
+      completedAt: "2026-07-13T00:00:03.000Z",
+      event: {
+        sequence: runningEventSequence + 1,
+        type: "smoke.run_show.succeeded",
+        message: "Run-show smoke entered terminal history",
+        payload: { marker }
+      }
+    });
+    const terminalContractReadback = terminalEvidenceContractReadback(
+      parseJsonReadback((await runDecisionPacketCommand({
+        ...runtime,
+        createDatabaseRuntime: async () => commandRuntime
+      })).stdout),
+      result.evidenceContract,
+      executionRun.id
+    );
+    assertTerminalEvidenceContractReadback(terminalContractReadback);
+
     const remainingMarkerCount = await cleanup();
     cleanedUp = true;
 
@@ -462,6 +610,11 @@ export const runRunShowDbSmokeCheck = async (
       packetBindingStatus: readback.packetBindingStatus,
       packetBindingStoredChecksumMatched: storedChecksumMatched,
       packetBindingRetryStable: retryStable,
+      terminalActivationInactive: terminalContractReadback.activationInactive,
+      terminalContractHistoryVisible: terminalContractReadback.contractHistoryVisible,
+      terminalCommandsSuppressed: terminalContractReadback.commandsSuppressed,
+      terminalEvidenceGapPresent: terminalContractReadback.evidenceGapPresent,
+      terminalPacketAbstained: terminalContractReadback.packetAbstained,
       evidenceBundleCount: capture.retryCapture.aggregate.evidenceBundles.length,
       reviewAssessmentCount: capture.retryCapture.aggregate.reviewAssessments.length,
       feedbackDeltaCount: capture.retryCapture.aggregate.feedbackDeltas.length,

@@ -11,7 +11,8 @@ import type {
   ProjectStandardDecisionReadback
 } from "./memory.js";
 import type {
-  EvidenceContract
+  EvidenceContract,
+  EvidenceContractActivationDecision
 } from "./evidence-contract.js";
 import type {
   DiffRisk
@@ -26,6 +27,9 @@ import type {
 } from "./source.js";
 
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
+
+export const decisionPacketMissingActiveEvidenceContractGapId =
+  "evidence-gap:missing-active-contract" as const;
 
 export type DecisionPacketFormatVersion = typeof decisionPacketFormatVersion;
 
@@ -383,6 +387,7 @@ export interface DecisionPacketReadModelInput {
   task?: DecisionPacketTask;
   toolBoundaries?: readonly string[];
   nextAction?: string;
+  evidenceContractActivation: EvidenceContractActivationDecision;
   evidenceContract?: Pick<EvidenceContract, "commands" | "diffRisk" | "reviewBurden" | "rollbackPath">;
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
   feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
@@ -769,8 +774,23 @@ const memoryRefsWithPendingAntiMemoryReview = (
 };
 
 const verificationCommandsFor = (
-  readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.evidenceContract?.commands.map((command) => command.command) ?? []);
+  evidenceContract: EvidenceContract | undefined
+): string[] => unique(evidenceContract?.commands.map((command) => command.command) ?? []);
+
+const inactiveEvidenceContractGapFor = (
+  activation: EvidenceContractActivationDecision
+): DecisionPacketEvidenceGap[] => activation.status === "active"
+  ? []
+  : [{
+      id: decisionPacketMissingActiveEvidenceContractGapId,
+      reason: [
+        `EvidenceContract activation is inactive (${activation.reason})`,
+        `for task ${activation.taskContractId}, harness plan ${activation.harnessPlanId},`,
+        `and execution run ${activation.executionRunId}.`
+      ].join(" "),
+      verificationRequired:
+        "Bind a current EvidenceContract before treating any command as required verification."
+    }];
 
 const governingGuidanceCandidatesFor = (input: {
   readonly readModel: DecisionPacketReadModelInput;
@@ -983,6 +1003,9 @@ const uniqueEvidenceGaps = (
 export const buildDecisionPacketFromReadModel = (
   readModel: DecisionPacketReadModelInput
 ): DecisionPacket => {
+  const activeEvidenceContract = readModel.evidenceContractActivation.status === "active"
+    ? readModel.evidenceContractActivation.evidenceContract
+    : undefined;
   const inclusions = readModel.context.inclusionDetails;
   const exclusions = readModel.context.exclusionDetails ?? [];
   const sourceClaimIds = sourceClaimIdsFor(readModel);
@@ -1038,6 +1061,7 @@ export const buildDecisionPacketFromReadModel = (
     staleDecisionIds
   });
   const evidenceGaps = uniqueEvidenceGaps([
+    ...inactiveEvidenceContractGapFor(readModel.evidenceContractActivation),
     ...evidenceGapsFor({
       runId: readModel.run.id,
       governingDecisionIds,
@@ -1100,17 +1124,17 @@ export const buildDecisionPacketFromReadModel = (
       sourceAuthority: exclusion.sourceAuthority ?? "low"
     })),
     toolBoundaries: [...(readModel.toolBoundaries ?? [])],
-    ...(readModel.evidenceContract === undefined
+    ...(activeEvidenceContract === undefined
       ? {}
       : {
           evidenceContract: {
-            commands: readModel.evidenceContract.commands.map((command) => ({
+            commands: activeEvidenceContract.commands.map((command) => ({
               command: command.command,
               required: command.required
             })),
-            diffRisk: readModel.evidenceContract.diffRisk,
-            reviewBurden: readModel.evidenceContract.reviewBurden,
-            rollbackPath: readModel.evidenceContract.rollbackPath
+            diffRisk: activeEvidenceContract.diffRisk,
+            reviewBurden: activeEvidenceContract.reviewBurden,
+            rollbackPath: activeEvidenceContract.rollbackPath
           }
         }),
     nextAction: readModel.nextAction ??
@@ -1132,7 +1156,7 @@ export const buildDecisionPacketFromReadModel = (
     supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
     falsifiers: unique(taskStandardDecisions.map((decision) => decision.falsifier)),
-    verificationCommands: verificationCommandsFor(readModel),
+    verificationCommands: verificationCommandsFor(activeEvidenceContract),
     evidenceGaps,
     sourceConsensus,
     abstentionScore: buildDecisionPacketAbstentionScore({

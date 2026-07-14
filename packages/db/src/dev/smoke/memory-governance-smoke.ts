@@ -873,6 +873,85 @@ export const runMemoryGovernanceSmokeCheck = async (
         integrityProbe: "counter-rebuild"
       }
     });
+    const terminalPacketChecksum = `${packetChecksum}:terminal-history`;
+    const terminalVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: requiredVerificationCommands.map((command, index) => verificationCommand(
+        command.command,
+        0,
+        `smoke:${marker}:memory-governance-terminal-verification:${index}`
+      )),
+      diffRisk: "low",
+      reviewBurden: "Memory governance terminal EvidenceContract falsifier.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 6,
+        type: "smoke.memory_governance.terminal_verification_captured",
+        message: "Memory governance terminal verification falsifier captured",
+        payload: {
+          smokeId: marker,
+          decisionPacketChecksum: terminalPacketChecksum
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        decisionPacketChecksum: terminalPacketChecksum,
+        decisionPacketGeneratedAt: packetGeneratedAt
+      }
+    });
+    await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "planned",
+      status: "running",
+      startedAt: new Date(Date.parse(packetGeneratedAt) + 2000).toISOString(),
+      event: {
+        sequence: 7,
+        type: "smoke.memory_governance.execution_started",
+        message: "Memory governance smoke execution started",
+        payload: { smokeId: marker }
+      }
+    });
+    await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "running",
+      status: "succeeded",
+      completedAt: new Date(Date.parse(packetGeneratedAt) + 3000).toISOString(),
+      event: {
+        sequence: 8,
+        type: "smoke.memory_governance.execution_succeeded",
+        message: "Memory governance smoke execution became terminal history",
+        payload: { smokeId: marker }
+      }
+    });
+    const counterBeforeInactiveApplication = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        memoryRecordId: counterIntegrityMemoryRecord.id,
+        packetChecksum: terminalPacketChecksum,
+        evidenceBundleId: terminalVerificationEvidenceBundle.id,
+        metadata: {
+          smokeId: marker,
+          evidenceFalsifier: "inactive-terminal-contract"
+        }
+      }),
+      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "Memory governance accepted helped evidence from a terminal EvidenceContract"
+    );
+    const counterAfterInactiveApplication = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+
+    if (
+      counterBeforeInactiveApplication?.positiveFeedbackCount !==
+      counterAfterInactiveApplication?.positiveFeedbackCount
+    ) {
+      throw new Error("Memory governance terminal EvidenceContract changed the positive feedback counter");
+    }
     if (memoryRepository.rebuildMemoryApplicationCounters === undefined) {
       throw new Error("Memory governance smoke requires memory application counter rebuild");
     }

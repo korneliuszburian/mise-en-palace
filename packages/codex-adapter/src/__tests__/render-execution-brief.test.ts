@@ -533,9 +533,39 @@ describe("renderExecutionBrief", () => {
     });
 
     const rendered = renderExecutionBriefText(brief);
-    expect(rendered).toContain("Packet Status: ready");
+    expect(rendered).toContain("Packet Status: abstain");
     expect(rendered).toContain("Active: no (unverified)");
+    expect(brief.stopCondition).toContain("Do not execute");
     expect(rendered).not.toContain("pnpm typecheck");
+  });
+
+  it("keeps the packet-owned inactive-contract gap singular and non-actionable", () => {
+    const inactiveContractGap = {
+      id: "evidence-gap:missing-active-contract",
+      reason:
+        "EvidenceContract activation is inactive (execution_run_terminal) for execution run run-1.",
+      verificationRequired:
+        "Bind a current EvidenceContract before treating any command as required verification."
+    };
+    const brief = createExecutionBrief({
+      packet: packetForBrief({
+        taskContract,
+        contextAssembly: { ...minimalContextAssembly, status: "abstained" },
+        capabilityPlan,
+        nextAction: "Bind a current EvidenceContract before execution.",
+        evidenceGaps: [inactiveContractGap]
+      })
+    });
+
+    expect(brief.evidenceContract).toMatchObject({
+      active: false,
+      commands: []
+    });
+    expect(brief.evidenceGaps.filter((gap) => gap.id === inactiveContractGap.id)).toEqual([
+      inactiveContractGap
+    ]);
+    expect(brief.stopCondition).toContain("Do not execute");
+    expect(renderExecutionBriefText(brief)).not.toContain("pnpm typecheck");
   });
 
   it("keeps an abstaining packet non-actionable", () => {

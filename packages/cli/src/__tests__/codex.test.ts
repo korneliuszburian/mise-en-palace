@@ -189,13 +189,14 @@ describe("runCli", () => {
       feedbackDeltas: [],
       runEvents: []
     };
+    let persistedAggregate: HarnessRunAggregate = aggregate;
     const harnessRunRepository = {
       ...dependencies.harnessRunRepository,
       async createExecutionRun(_input: CreateExecutionRunInput) {
         throw new Error("codex brief must not create execution runs");
       },
       async getHarnessRunByExecutionRunId(runId: string) {
-        return runId === "execution-run-1" ? aggregate : undefined;
+        return runId === "execution-run-1" ? persistedAggregate : undefined;
       },
       async createEvidenceBundle(): Promise<never> {
         throw new Error("createEvidenceBundle should not be called");
@@ -239,12 +240,12 @@ describe("runCli", () => {
         throw new Error("createSourceRejection should not be called");
       }
     } satisfies DatabaseRuntime["sourceRepository"];
-    const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
+    const cliRuntime = {
       env: {
         KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
       },
       now: () => now,
-      createId: (prefix) => `${prefix}-1`,
+      createId: (prefix: string) => `${prefix}-1`,
       createDatabaseRuntime: async () => ({
         workspaceId: "workspace-1",
         projectId: "project-1",
@@ -259,7 +260,11 @@ describe("runCli", () => {
           return undefined;
         }
       })
-    });
+    };
+    const result = await runCli(
+      ["codex", "brief", "--run-id", "execution-run-1"],
+      cliRuntime
+    );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
@@ -285,6 +290,27 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- pnpm typecheck (required)");
     expect(result.stdout).toContain("Diff risk: medium");
     expect(result.stdout).toContain("Review burden: Review the CLI output only.");
+
+    persistedAggregate = {
+      ...aggregate,
+      executionRun: {
+        ...aggregate.executionRun,
+        status: "succeeded",
+        completedAt: now
+      }
+    };
+    const terminalResult = await runCli(
+      ["codex", "brief", "--run-id", "execution-run-1"],
+      cliRuntime
+    );
+
+    expect(terminalResult.exitCode).toBe(0);
+    expect(terminalResult.stderr).toBe("");
+    expect(terminalResult.stdout).toContain("Packet Status: abstain");
+    expect(terminalResult.stdout).toContain("Active: no (unverified)");
+    expect(terminalResult.stdout).toContain("execution_run_terminal");
+    expect(terminalResult.stdout).toContain("Stop Condition: Do not execute");
+    expect(terminalResult.stdout).not.toContain("- pnpm typecheck (required)");
   });
 
   it("requires database config for codex brief", async () => {
