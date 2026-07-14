@@ -518,6 +518,7 @@ describe("DrizzleHarnessRunRepository", () => {
           executionRunId: runningRun.id,
           expectedStatus: "running",
           status: "succeeded",
+          startedAt: "2026-07-13T10:00:00.000Z",
           completedAt: "2026-07-13T10:02:00.000Z",
           event: {
             sequence: 3,
@@ -552,6 +553,7 @@ describe("DrizzleHarnessRunRepository", () => {
         });
 
         expect(runningRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
+        expect(succeededRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
         expect(succeededRun.completedAt).toBe("2026-07-13T10:02:00.000Z");
         expect(sameStateRetry.status).toBe("succeeded");
         expect(plannedRun.lifecycleRevision).toBe(1);
@@ -571,6 +573,154 @@ describe("DrizzleHarnessRunRepository", () => {
         `;
         expect(executionRunCount).toBe(1);
         expect(eventCount).toBe(3);
+      } finally {
+        await scaffold.cleanup();
+        await scaffold.client.end();
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "persists lifecycle timestamps for direct planned-to-terminal runs",
+    async () => {
+      const marker = `krn_execution_direct_terminal_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "direct execution terminal timestamps",
+        workspacePrefix: "krn-execution-direct-terminal",
+        projectSlug: "execution-direct-terminal",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `direct execution terminal timestamps ${marker}`,
+        taskContract: {
+          title: "Persist direct terminal timestamps",
+          objective: "Keep validated lifecycle timestamps coherent after persistence.",
+          constraints: ["real PostgreSQL"],
+          nonGoals: ["no provider execution"],
+          acceptance: ["blocked and cancelled preserve exact timestamps"]
+        },
+        harnessPlan: {
+          summary: "Direct execution terminal timestamp smoke",
+          nextAction: "Transition planned runs directly to terminal states."
+        }
+      });
+
+      try {
+        const transitions = [
+          {
+            status: "blocked",
+            startedAt: "2026-07-14T10:00:00.000Z",
+            completedAt: "2026-07-14T10:01:00.000Z"
+          },
+          {
+            status: "cancelled",
+            startedAt: "2026-07-14T11:00:00.000Z",
+            completedAt: "2026-07-14T11:01:00.000Z"
+          }
+        ] as const;
+
+        for (const transition of transitions) {
+          const planned = await scaffold.harnessRunRepository.createExecutionRun({
+            harnessPlanId: scaffold.harnessPlan.id,
+            adapter: "direct-terminal-timestamps",
+            status: "planned",
+            initialEvent: {
+              sequence: 1,
+              type: "smoke.execution_direct_terminal.created",
+              message: "created planned run",
+              payload: { smokeId: marker, terminalStatus: transition.status }
+            },
+            metadata: {
+              smokeId: marker,
+              terminalStatus: transition.status
+            }
+          });
+          const terminal = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+            executionRunId: planned.id,
+            expectedStatus: "planned",
+            status: transition.status,
+            startedAt: transition.startedAt,
+            completedAt: transition.completedAt,
+            event: {
+              sequence: 2,
+              type: `smoke.execution_direct_terminal.${transition.status}`,
+              message: `directly ${transition.status}`,
+              payload: { smokeId: marker, terminalStatus: transition.status }
+            }
+          });
+
+          expect(terminal).toMatchObject({
+            status: transition.status,
+            lifecycleRevision: 2,
+            startedAt: transition.startedAt,
+            completedAt: transition.completedAt
+          });
+          const aggregate = await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(
+            planned.id
+          );
+          expect(aggregate?.executionRun).toMatchObject({
+            status: transition.status,
+            lifecycleRevision: 2,
+            startedAt: transition.startedAt,
+            completedAt: transition.completedAt
+          });
+        }
+
+        const incoherentPlanned = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "direct-terminal-timestamps",
+          status: "planned",
+          initialEvent: {
+            sequence: 1,
+            type: "smoke.execution_direct_terminal.created",
+            message: "created incoherent planned run",
+            payload: { smokeId: marker, terminalStatus: "incoherent" }
+          },
+          metadata: {
+            smokeId: marker,
+            terminalStatus: "incoherent"
+          }
+        });
+        await expect(scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: incoherentPlanned.id,
+          expectedStatus: "planned",
+          status: "blocked",
+          startedAt: "2026-07-14T12:01:00.000Z",
+          completedAt: "2026-07-14T12:00:00.000Z",
+          event: {
+            sequence: 2,
+            type: "smoke.execution_direct_terminal.incoherent",
+            message: "incoherent direct transition",
+            payload: { smokeId: marker, terminalStatus: "incoherent" }
+          }
+        })).rejects.toThrow("execution run lifecycle completedAt cannot precede startedAt");
+        const incoherentAggregate =
+          await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(
+            incoherentPlanned.id
+          );
+        expect(incoherentAggregate?.executionRun).toMatchObject({
+          status: "planned",
+          lifecycleRevision: 1
+        });
+        expect(incoherentAggregate?.executionRun.startedAt).toBeUndefined();
+        expect(incoherentAggregate?.executionRun.completedAt).toBeUndefined();
+
+        const [{ executionRunCount }] = await scaffold.client<{
+          executionRunCount: number;
+        }[]>`
+          select count(*)::int as "executionRunCount"
+          from execution_runs
+          where metadata->>'smokeId' = ${marker}
+        `;
+        const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
+          select count(*)::int as "eventCount"
+          from run_events
+          where payload->>'smokeId' = ${marker}
+        `;
+        expect(executionRunCount).toBe(3);
+        expect(eventCount).toBe(5);
       } finally {
         await scaffold.cleanup();
         await scaffold.client.end();

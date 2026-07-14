@@ -1079,7 +1079,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .set({
             status: input.status,
             lifecycleRevision: sql`${executionRuns.lifecycleRevision} + 1`,
-            ...(input.status === "running" && input.startedAt !== undefined
+            ...(currentRow.startedAt === null && input.startedAt !== undefined
               ? { startedAt: fromIsoTimestamp(input.startedAt) }
               : {}),
             ...(input.completedAt === undefined
