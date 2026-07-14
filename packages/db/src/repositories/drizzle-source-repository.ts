@@ -589,6 +589,35 @@ export const assertSourceClaimEdgeGovernance = (
   }
 };
 
+const assertSourceClaimChunkOwnership = async (
+  db: KrnDatabase | KrnDatabaseTransaction,
+  input: Pick<CreateSourceClaimInput, "sourceArtifactId" | "sourceChunkId">
+): Promise<void> => {
+  if (input.sourceChunkId === undefined) {
+    return;
+  }
+
+  const [sourceChunk] = await db
+    .select({
+      id: sourceChunks.id,
+      sourceArtifactId: sourceChunks.sourceArtifactId
+    })
+    .from(sourceChunks)
+    .where(eq(sourceChunks.id, input.sourceChunkId))
+    .limit(1);
+
+  if (sourceChunk === undefined) {
+    throw new Error(`SourceClaim sourceChunkId ${input.sourceChunkId} was not found`);
+  }
+
+  if (sourceChunk.sourceArtifactId !== input.sourceArtifactId) {
+    throw new Error(
+      `SourceClaim sourceChunkId ${sourceChunk.id} belongs to sourceArtifactId `
+      + `${sourceChunk.sourceArtifactId}; expected ${input.sourceArtifactId}`
+    );
+  }
+};
+
 export class DrizzleSourceRepository implements SourceRepository {
   constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
@@ -636,6 +665,7 @@ export class DrizzleSourceRepository implements SourceRepository {
 
   async createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim> {
     assertSourceClaimGovernance(input);
+    await assertSourceClaimChunkOwnership(this.db, input);
 
     const row = requireReturnedRow(
       await this.db

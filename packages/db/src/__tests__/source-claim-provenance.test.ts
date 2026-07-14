@@ -1,12 +1,13 @@
 import crypto from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 
 import { createKrnDatabase, type KrnDatabaseTransaction } from "../database.js";
 import { DrizzleSourceRepository } from "../repositories/drizzle-source-repository.js";
 import {
+  outboxEvents,
   projects,
   sourceChunks,
   sourceClaims,
@@ -99,19 +100,20 @@ const createArtifactWithChunk = async (
 const sourceClaimInput = (
   marker: string,
   sourceArtifactId: string,
-  sourceChunkId: string
+  sourceChunkId?: string,
+  caseLabel?: string
 ) => ({
   sourceArtifactId,
-  sourceChunkId,
+  ...(sourceChunkId === undefined ? {} : { sourceChunkId }),
   claim: "SourceClaim must cite a chunk from its own artifact.",
   mechanism: "Independent artifact and chunk foreign keys permit a mixed provenance tuple.",
   krnImplication: "Mixed provenance can misattribute governing source support.",
   doesNotProve: "This fixture does not prove claim text matches source bytes.",
   sourceAuthority: "project-decision" as const,
   supportType: "implementation-boundary" as const,
-  consumer: "md7u.34 SourceClaim provenance falsifier",
+  consumer: "SourceClaim provenance boundary test",
   falsifier: "The claim persists with a chunk owned by a different source artifact.",
-  metadata: { smokeId: marker }
+  metadata: { smokeId: marker, ...(caseLabel === undefined ? {} : { caseLabel }) }
 });
 
 const selectClaimChunkTuple = async (
@@ -138,10 +140,13 @@ const withRolledBackTransaction = async (
 
   try {
     try {
-      await database.transaction(async (transaction) => {
-        await test(transaction, marker);
-        throw expectedFixtureRollback;
-      });
+      await database.transaction(
+        async (transaction) => {
+          await test(transaction, marker);
+          throw expectedFixtureRollback;
+        },
+        { isolationLevel: "repeatable read" }
+      );
     } catch (error) {
       if (error !== expectedFixtureRollback) {
         throw error;
@@ -154,7 +159,7 @@ const withRolledBackTransaction = async (
 
 describe("source claim provenance", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "currently falsifies that the repository rejects a chunk from another source artifact",
+    "rejects a chunk from another source artifact before repository writes",
     async () => {
       await withRolledBackTransaction(async (transaction, marker) => {
         const sourceRepository = new DrizzleSourceRepository(transaction);
@@ -171,18 +176,74 @@ describe("source claim provenance", () => {
           projectAId,
           "repository-wrong-artifact"
         );
-        const sourceClaim = await sourceRepository.createSourceClaim(sourceClaimInput(
+        const mismatchInput = sourceClaimInput(
           marker,
           claimArtifact.artifactId,
-          wrongArtifact.chunkId
+          wrongArtifact.chunkId,
+          "repository-mismatch"
+        );
+        const outboxEventsBefore = await transaction
+          .select({ id: outboxEvents.id })
+          .from(outboxEvents)
+          .orderBy(outboxEvents.id);
+        let mismatchError: unknown;
+
+        try {
+          await sourceRepository.createSourceClaim(mismatchInput);
+        } catch (error) {
+          mismatchError = error;
+        }
+
+        expect(mismatchError).toBeInstanceOf(Error);
+
+        if (!(mismatchError instanceof Error)) {
+          throw new Error("SourceClaim ownership mismatch did not reject with an Error");
+        }
+
+        expect(mismatchError.message).toBe(
+          `SourceClaim sourceChunkId ${wrongArtifact.chunkId} belongs to sourceArtifactId `
+          + `${wrongArtifact.artifactId}; expected ${claimArtifact.artifactId}`
+        );
+
+        const rejectedClaims = await transaction
+          .select({ id: sourceClaims.id })
+          .from(sourceClaims)
+          .where(and(
+            eq(sourceClaims.sourceArtifactId, claimArtifact.artifactId),
+            eq(sourceClaims.sourceChunkId, wrongArtifact.chunkId)
+          ));
+        const outboxEventsAfter = await transaction
+          .select({ id: outboxEvents.id })
+          .from(outboxEvents)
+          .orderBy(outboxEvents.id);
+
+        expect(rejectedClaims).toEqual([]);
+        expect(outboxEventsAfter).toEqual(outboxEventsBefore);
+
+        const validClaim = await sourceRepository.createSourceClaim(sourceClaimInput(
+          marker,
+          claimArtifact.artifactId,
+          claimArtifact.chunkId,
+          "valid-matching-chunk"
+        ));
+        const chunklessClaim = await sourceRepository.createSourceClaim(sourceClaimInput(
+          marker,
+          claimArtifact.artifactId,
+          undefined,
+          "chunkless-proposed"
         ));
 
-        expect(await selectClaimChunkTuple(transaction, sourceClaim.id)).toEqual([{
-          claimId: sourceClaim.id,
+        expect(await selectClaimChunkTuple(transaction, validClaim.id)).toEqual([{
+          claimId: validClaim.id,
           claimSourceArtifactId: claimArtifact.artifactId,
-          sourceChunkId: wrongArtifact.chunkId,
-          chunkSourceArtifactId: wrongArtifact.artifactId
+          sourceChunkId: claimArtifact.chunkId,
+          chunkSourceArtifactId: claimArtifact.artifactId
         }]);
+        expect(chunklessClaim).toMatchObject({
+          sourceArtifactId: claimArtifact.artifactId,
+          status: "proposed"
+        });
+        expect(chunklessClaim).not.toHaveProperty("sourceChunkId");
       });
     }
   );
