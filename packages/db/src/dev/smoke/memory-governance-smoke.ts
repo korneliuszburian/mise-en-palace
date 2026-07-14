@@ -98,6 +98,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   let missingRequiredCommandEvidenceRejected = false;
   let unresolvedOutputReferenceEvidenceRejected = false;
   let mismatchedPacketIssuanceRejected = false;
+  let staleLifecycleRevisionRejected = false;
 
   const cleanup = async (): Promise<number> => {
     await cleanupMemoryGovernanceSmokeRows({
@@ -447,7 +448,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: incoherentPacketChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
       }
     });
     const missingRequiredPacketChecksum = `${packetChecksum}:missing-required`;
@@ -475,7 +477,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: missingRequiredPacketChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
       }
     });
     const unresolvedOutputPacketChecksum = `${packetChecksum}:unresolved-output`;
@@ -502,7 +505,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: unresolvedOutputPacketChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
       }
     });
     const verificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
@@ -529,7 +533,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: packetChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
       }
     });
     const packetBoundApplication = {
@@ -537,6 +542,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       packetChecksum,
       packetGeneratedAt,
+      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
       evidenceBundleId: verificationEvidenceBundle.id,
       expectedUse: "Guide memory governance smoke.",
       outcome: "helped",
@@ -651,6 +657,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       packetChecksum: `${packetChecksum}:stale`,
       packetGeneratedAt,
+      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
       expectedUse: "Verify stale application creates one review chain.",
       outcome: "stale" as const,
       notes: "Stale memory must create reviewable negative effects atomically.",
@@ -864,6 +871,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       packetChecksum,
       packetGeneratedAt,
+      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
       evidenceBundleId: verificationEvidenceBundle.id,
       expectedUse: "Prove a packet-bound application survives counter rebuild.",
       outcome: "helped",
@@ -871,6 +879,89 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         integrityProbe: "counter-rebuild"
+      }
+    });
+    const staleLifecyclePacketChecksum = `${packetChecksum}:stale-lifecycle`;
+    const staleLifecycleVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
+      executionRunId: executionRun.id,
+      status: "captured",
+      changedFiles: [],
+      commands: requiredVerificationCommands.map((command, index) => verificationCommand(
+        command.command,
+        0,
+        `smoke:${marker}:memory-governance-stale-lifecycle-verification:${index}`
+      )),
+      diffRisk: "low",
+      reviewBurden: "Memory governance stale lifecycle revision falsifier.",
+      rollbackPath: "Delete smoke marker rows.",
+      event: {
+        sequence: 6,
+        type: "smoke.memory_governance.stale_lifecycle_verification_captured",
+        message: "Memory governance stale lifecycle revision falsifier captured",
+        payload: {
+          smokeId: marker,
+          decisionPacketChecksum: staleLifecyclePacketChecksum
+        }
+      },
+      metadata: {
+        smokeId: marker,
+        decisionPacketChecksum: staleLifecyclePacketChecksum,
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
+      }
+    });
+    const runningExecutionRun = await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "planned",
+      status: "running",
+      startedAt: new Date(Date.parse(packetGeneratedAt) + 2000).toISOString(),
+      event: {
+        sequence: 7,
+        type: "smoke.memory_governance.execution_started",
+        message: "Memory governance smoke execution started",
+        payload: { smokeId: marker }
+      }
+    });
+    const counterBeforeStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        memoryRecordId: counterIntegrityMemoryRecord.id,
+        packetChecksum: staleLifecyclePacketChecksum,
+        evidenceBundleId: staleLifecycleVerificationEvidenceBundle.id,
+        metadata: {
+          smokeId: marker,
+          evidenceFalsifier: "stale-active-lifecycle-revision"
+        }
+      }),
+      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "Memory governance accepted helped evidence from an earlier active lifecycle revision"
+    );
+    const staleLifecycleApplicationRows = await db
+      .select()
+      .from(memoryApplications)
+      .where(eq(memoryApplications.decisionPacketChecksum, staleLifecyclePacketChecksum));
+    const counterAfterStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+    staleLifecycleRevisionRejected =
+      runningExecutionRun.lifecycleRevision === executionRun.lifecycleRevision + 1 &&
+      staleLifecycleApplicationRows.length === 0 &&
+      counterBeforeStaleLifecycleApplication?.positiveFeedbackCount ===
+        counterAfterStaleLifecycleApplication?.positiveFeedbackCount;
+
+    const succeededExecutionRun = await harnessRunRepository.updateExecutionRunStatus({
+      executionRunId: executionRun.id,
+      expectedStatus: "running",
+      status: "succeeded",
+      completedAt: new Date(Date.parse(packetGeneratedAt) + 3000).toISOString(),
+      event: {
+        sequence: 8,
+        type: "smoke.memory_governance.execution_succeeded",
+        message: "Memory governance smoke execution became terminal history",
+        payload: { smokeId: marker }
       }
     });
     const terminalPacketChecksum = `${packetChecksum}:terminal-history`;
@@ -887,7 +978,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance terminal EvidenceContract falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 6,
+        sequence: 9,
         type: "smoke.memory_governance.terminal_verification_captured",
         message: "Memory governance terminal verification falsifier captured",
         payload: {
@@ -898,31 +989,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       metadata: {
         smokeId: marker,
         decisionPacketChecksum: terminalPacketChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt
-      }
-    });
-    await harnessRunRepository.updateExecutionRunStatus({
-      executionRunId: executionRun.id,
-      expectedStatus: "planned",
-      status: "running",
-      startedAt: new Date(Date.parse(packetGeneratedAt) + 2000).toISOString(),
-      event: {
-        sequence: 7,
-        type: "smoke.memory_governance.execution_started",
-        message: "Memory governance smoke execution started",
-        payload: { smokeId: marker }
-      }
-    });
-    await harnessRunRepository.updateExecutionRunStatus({
-      executionRunId: executionRun.id,
-      expectedStatus: "running",
-      status: "succeeded",
-      completedAt: new Date(Date.parse(packetGeneratedAt) + 3000).toISOString(),
-      event: {
-        sequence: 8,
-        type: "smoke.memory_governance.execution_succeeded",
-        message: "Memory governance smoke execution became terminal history",
-        payload: { smokeId: marker }
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: succeededExecutionRun.lifecycleRevision
       }
     });
     const counterBeforeInactiveApplication = await memoryRepository.getMemoryRecordById(
@@ -933,6 +1001,7 @@ export const runMemoryGovernanceSmokeCheck = async (
         ...packetBoundApplication,
         memoryRecordId: counterIntegrityMemoryRecord.id,
         packetChecksum: terminalPacketChecksum,
+        sourceRunLifecycleRevision: succeededExecutionRun.lifecycleRevision,
         evidenceBundleId: terminalVerificationEvidenceBundle.id,
         metadata: {
           smokeId: marker,
@@ -1310,6 +1379,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "different packet issuance cannot reuse verification evidence",
         passed: mismatchedPacketIssuanceRejected
+      },
+      {
+        label: "earlier active lifecycle revision cannot authorize helped evidence",
+        passed: staleLifecycleRevisionRejected
       },
       {
         label: "incoherent command evidence cannot create helped application",

@@ -70,13 +70,15 @@ const provesHelped = (
   bundle: bundle({
     metadata: {
       decisionPacketChecksum: "packet-checksum",
-      decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z"
+      decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
+      decisionPacketSourceRunLifecycleRevision: 1
     },
     commands
   }),
   evidenceContract: contractForCommands(contractCommands),
   packetChecksum: "packet-checksum",
-  packetGeneratedAt: "2026-06-23T07:00:00.000Z"
+  packetGeneratedAt: "2026-06-23T07:00:00.000Z",
+  sourceRunLifecycleRevision: 1
 });
 
 const commandProofAssessment = (command: EvidenceCommand) =>
@@ -273,7 +275,8 @@ describe("evidence bundle completeness", () => {
       bundle: bundle({
         metadata: {
           decisionPacketChecksum: packetChecksum,
-          decisionPacketGeneratedAt: packetGeneratedAt
+          decisionPacketGeneratedAt: packetGeneratedAt,
+          decisionPacketSourceRunLifecycleRevision: 1
         },
         commands: [{
           command: "pnpm typecheck",
@@ -283,14 +286,16 @@ describe("evidence bundle completeness", () => {
       }),
       evidenceContract,
       packetChecksum,
-      packetGeneratedAt
+      packetGeneratedAt,
+      sourceRunLifecycleRevision: 1
     })).toBe(false);
 
     expect(evidenceBundleProvesHelped({
       bundle: bundle({
         metadata: {
           decisionPacketChecksum: packetChecksum,
-          decisionPacketGeneratedAt: packetGeneratedAt
+          decisionPacketGeneratedAt: packetGeneratedAt,
+          decisionPacketSourceRunLifecycleRevision: 1
         },
         commands: [{
           command: "pnpm typecheck",
@@ -302,7 +307,8 @@ describe("evidence bundle completeness", () => {
       }),
       evidenceContract,
       packetChecksum,
-      packetGeneratedAt
+      packetGeneratedAt,
+      sourceRunLifecycleRevision: 1
     })).toBe(true);
   });
 
@@ -311,7 +317,8 @@ describe("evidence bundle completeness", () => {
       bundle: bundle({
         metadata: {
           decisionPacketChecksum: "packet-checksum",
-          decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z"
+          decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
+          decisionPacketSourceRunLifecycleRevision: 1
         },
         commands: [{
           command: "pnpm typecheck",
@@ -323,7 +330,31 @@ describe("evidence bundle completeness", () => {
       }),
       evidenceContract: helpedEvidenceContract(true),
       packetChecksum: "packet-checksum",
-      packetGeneratedAt: "2026-06-23T07:01:00.000Z"
+      packetGeneratedAt: "2026-06-23T07:01:00.000Z",
+      sourceRunLifecycleRevision: 1
+    })).toBe(false);
+  });
+
+  test("rejects verification evidence from an earlier execution lifecycle revision", () => {
+    expect(evidenceBundleProvesHelped({
+      bundle: bundle({
+        metadata: {
+          decisionPacketChecksum: "packet-checksum",
+          decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
+          decisionPacketSourceRunLifecycleRevision: 1
+        },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "command_runner",
+          exitCode: 0,
+          capturedAt: now
+        }]
+      }),
+      evidenceContract: helpedEvidenceContract(true),
+      packetChecksum: "packet-checksum",
+      packetGeneratedAt: "2026-06-23T07:00:00.000Z",
+      sourceRunLifecycleRevision: 2
     })).toBe(false);
   });
 

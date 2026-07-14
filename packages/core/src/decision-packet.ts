@@ -18,6 +18,9 @@ import type {
   DiffRisk
 } from "./evidence-bundle.js";
 import type {
+  ExecutionRunStatus
+} from "./execution-run.js";
+import type {
   SourceAuthorityLabel,
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
@@ -374,7 +377,8 @@ export interface DecisionPacket {
 export interface DecisionPacketReadModelInput {
   run: {
     id: string;
-    status?: string;
+    status: ExecutionRunStatus;
+    lifecycleRevision: number;
     updatedAt: string;
   };
   context: {
@@ -484,7 +488,8 @@ export interface DecisionPacketIdentity {
   checksum: string;
   evidenceRef: string;
   generatedAt: string;
-  sourceRunStatus: string;
+  sourceRunStatus: ExecutionRunStatus;
+  sourceRunLifecycleRevision: number;
   sourceRunUpdatedAt: string;
   freshness: {
     status: "current_read_model_snapshot";
@@ -1200,7 +1205,8 @@ export const buildDecisionPacketIdentity = (input: {
     request: {
       runId: input.runId
     },
-    sourceRunStatus: input.readModel.run.status ?? "unknown",
+    sourceRunStatus: input.readModel.run.status,
+    sourceRunLifecycleRevision: input.readModel.run.lifecycleRevision,
     sourceRunUpdatedAt: input.readModel.run.updatedAt
   }));
 
@@ -1210,7 +1216,8 @@ export const buildDecisionPacketIdentity = (input: {
     checksum,
     evidenceRef: `packet:${checksum}`,
     generatedAt: input.generatedAt,
-    sourceRunStatus: input.readModel.run.status ?? "unknown",
+    sourceRunStatus: input.readModel.run.status,
+    sourceRunLifecycleRevision: input.readModel.run.lifecycleRevision,
     sourceRunUpdatedAt: input.readModel.run.updatedAt,
     freshness: {
       status: "current_read_model_snapshot",

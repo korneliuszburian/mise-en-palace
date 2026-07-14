@@ -1032,6 +1032,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .update(executionRuns)
           .set({
             status: input.status,
+            lifecycleRevision: sql`${executionRuns.lifecycleRevision} + 1`,
             ...(input.status === "running" && input.startedAt !== undefined
               ? { startedAt: fromIsoTimestamp(input.startedAt) }
               : {}),
@@ -1043,7 +1044,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           })
           .where(and(
             eq(executionRuns.id, input.executionRunId),
-            eq(executionRuns.status, input.expectedStatus)
+            eq(executionRuns.status, input.expectedStatus),
+            eq(executionRuns.lifecycleRevision, currentRow.lifecycleRevision)
           ))
           .returning(),
         "updateExecutionRunStatus"

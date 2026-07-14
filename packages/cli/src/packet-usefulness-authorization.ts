@@ -43,6 +43,7 @@ export interface DecisionPacketBinding {
   packetChecksum: string;
   packetEvidenceRef: string;
   packetGeneratedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
 }
 
 export type PacketAuthorization =
@@ -78,7 +79,8 @@ export const currentDecisionPacketBindingForAggregate = (
   return {
     packetChecksum: packetIdentity.checksum,
     packetEvidenceRef: packetIdentity.evidenceRef,
-    packetGeneratedAt: packetIdentity.generatedAt
+    packetGeneratedAt: packetIdentity.generatedAt,
+    sourceRunLifecycleRevision: packetIdentity.sourceRunLifecycleRevision
   };
 };
 

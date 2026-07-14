@@ -220,6 +220,7 @@ export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
     harnessPlanId: "harness-plan-1",
     adapter: "codex",
     status: "planned",
+    lifecycleRevision: 1,
     metadata: {},
     createdAt: now,
     updatedAt: now
@@ -1127,6 +1128,89 @@ describe("runCli", () => {
     expect(result.stdout).not.toContain("feedbackMaintenanceRun:");
   });
 
+  it("keeps evidence capture unbound after the execution lifecycle revision advances", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const issuedAggregate = createEvidencePersistenceAggregate();
+    const issuedBinding = currentDecisionPacketBindingForAggregate(issuedAggregate, now);
+    const currentAggregate: HarnessRunAggregate = {
+      ...issuedAggregate,
+      executionRun: {
+        ...issuedAggregate.executionRun,
+        lifecycleRevision: issuedAggregate.executionRun.lifecycleRevision + 1
+      }
+    };
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      currentAggregate,
+      capture
+    );
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        currentAggregate.executionRun.id,
+        "--decision-packet-checksum",
+        issuedBinding.packetChecksum,
+        "--decision-packet-generated-at",
+        issuedBinding.packetGeneratedAt,
+        "--intended-file",
+        "packages/cli/src/run-evidence-capture-command.ts",
+        "--source-usefulness",
+        `claim:source-claim-1=helped|Earlier lifecycle packet allegedly helped|${issuedBinding.packetEvidenceRef}|Does not prove current source usefulness`,
+        "--memory-usefulness",
+        `knowledge:ts-boundary-unknown-first-result-state=helped|Earlier lifecycle packet allegedly helped|${issuedBinding.packetEvidenceRef}|Does not prove current memory usefulness`,
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "packet checksum is not the current reconstructed packet checksum"
+    );
+    expect(result.stdout).toContain("outcome=unknown sourceClaim=source-claim-1");
+    expect(result.stdout).toContain(
+      "outcome=unknown knowledge=knowledge:ts-boundary-unknown-first-result-state"
+    );
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketBindingState: "unbound",
+      decisionPacketBindingReason: expect.stringContaining(
+        "packet checksum is not the current reconstructed packet checksum"
+      )
+    });
+    expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
+    expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
   it("does not enqueue maintenance for helped-only persisted usefulness feedback", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
@@ -1264,12 +1348,14 @@ describe("runCli", () => {
     expect(capture.evidenceBundle?.metadata).toMatchObject({
       decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: packetBinding.packetChecksum,
-      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef
+      decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
+      decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision
     });
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
+      decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-current",
         outcome: "selected",
@@ -1343,12 +1429,14 @@ describe("runCli", () => {
     expect(capture.evidenceBundle?.metadata).toMatchObject({
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
-      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision
     });
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketEvidenceRef: packetBinding.packetEvidenceRef,
-      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision
     });
   });
 
@@ -1553,6 +1641,35 @@ describe("runCli", () => {
         id: "source-claim-1",
         evidenceRefs: [staleBinding.packetEvidenceRef]
       }]
+    });
+
+    expectPacketAuthorizationRejection(authorization, "current reconstructed packet checksum");
+  });
+
+  it("rejects a packet binding from an earlier execution lifecycle revision", () => {
+    const aggregate = createEvidencePersistenceAggregate();
+    const firstRevision = {
+      ...aggregate,
+      executionRun: {
+        ...aggregate.executionRun,
+        lifecycleRevision: 1
+      }
+    } satisfies HarnessRunAggregate;
+    const staleBinding = currentDecisionPacketBindingForAggregate(firstRevision, now);
+    const nextRevision = {
+      ...firstRevision,
+      executionRun: {
+        ...firstRevision.executionRun,
+        lifecycleRevision: 2
+      }
+    } satisfies HarnessRunAggregate;
+
+    const authorization = authorizePacketBinding({
+      aggregate: nextRevision,
+      runId: nextRevision.executionRun.id,
+      runtimeProjectId: "project-1",
+      callerPacketChecksum: staleBinding.packetChecksum,
+      callerPacketGeneratedAt: staleBinding.packetGeneratedAt
     });
 
     expectPacketAuthorizationRejection(authorization, "current reconstructed packet checksum");
@@ -1814,6 +1931,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "planned",
+        lifecycleRevision: 1,
         metadata: {},
         createdAt: now,
         updatedAt: now

@@ -112,6 +112,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "succeeded",
+        lifecycleRevision: 3,
         metadata: {},
         createdAt: now,
         updatedAt: now
@@ -234,6 +235,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "succeeded",
+        lifecycleRevision: 3,
         metadata: {},
         createdAt: now,
         updatedAt: now
@@ -345,6 +347,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "succeeded",
+        lifecycleRevision: 3,
         metadata: {},
         createdAt: now,
         updatedAt: now
@@ -432,6 +435,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "succeeded",
+        lifecycleRevision: 3,
         metadata: {},
         createdAt: now,
         updatedAt: now

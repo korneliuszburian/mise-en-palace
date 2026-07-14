@@ -579,6 +579,7 @@ export const mapExecutionRun = (row: ExecutionRunRow): ExecutionRun => ({
   harnessPlanId: row.harnessPlanId,
   adapter: row.adapter,
   status: row.status,
+  lifecycleRevision: row.lifecycleRevision,
   ...(row.startedAt === null ? {} : { startedAt: toIsoTimestamp(row.startedAt) }),
   ...(row.completedAt === null ? {} : { completedAt: toIsoTimestamp(row.completedAt) }),
   metadata: metadataOrEmpty(row.metadata),

@@ -54,13 +54,14 @@ const fakeSha256Hex = (value: string): string => {
     hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   }
 
-  return hash.toString(16).padStart(64, "0");
+  return hash.toString(16).padStart(8, "0").repeat(8);
 };
 
 const readModel = {
   run: {
     id: "run-decision-packet-1",
     status: "planned",
+    lifecycleRevision: 1,
     updatedAt: now
   },
   ...activeEvidenceContractResourcesFor("run-decision-packet-1", [{
@@ -208,6 +209,8 @@ const relationReadModel = (
 ): DecisionPacketReadModelInput => ({
   run: {
     id: "run-relation-consensus",
+    status: "planned",
+    lifecycleRevision: 1,
     updatedAt: now
   },
   ...activeEvidenceContractResourcesFor("run-relation-consensus"),
@@ -263,6 +266,8 @@ const relationReadModel = (
 const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
   run: {
     id: "run-unresolved-accepted-source-dissent",
+    status: "planned",
+    lifecycleRevision: 1,
     updatedAt: now
   },
   ...activeEvidenceContractResourcesFor("run-unresolved-accepted-source-dissent"),
@@ -355,6 +360,8 @@ const sourceClaimExclusionReadModel = (input: {
 }): DecisionPacketReadModelInput => ({
   run: {
     id: `run-source-claim-exclusion-${input.reason}`,
+    status: "planned",
+    lifecycleRevision: 1,
     updatedAt: now
   },
   ...activeEvidenceContractResourcesFor(`run-source-claim-exclusion-${input.reason}`),
@@ -403,6 +410,8 @@ const sourceClaimExclusionReadModel = (input: {
 const deferredSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
   run: {
     id: "run-deferred-source-dissent",
+    status: "planned",
+    lifecycleRevision: 1,
     updatedAt: now
   },
   ...activeEvidenceContractResourcesFor("run-deferred-source-dissent"),
@@ -577,6 +586,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-canonical-source-decision",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-canonical-source-decision"),
@@ -811,6 +822,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-feedback-only-authority",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-feedback-only-authority"),
@@ -868,6 +881,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-authority-superseded",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-authority-superseded"),
@@ -942,6 +957,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-governing-rejected-feedback",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-governing-rejected-feedback"),
@@ -1081,6 +1098,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-authority-states",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-authority-states"),
@@ -1144,6 +1163,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-governing-plus-unsupported-source",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-governing-plus-unsupported-source"),
@@ -1205,6 +1226,8 @@ describe("DecisionPacket builder", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-hurt-feedback",
+        status: "planned",
+        lifecycleRevision: 1,
         updatedAt: now
       },
       ...activeEvidenceContractResourcesFor("run-hurt-feedback"),
@@ -1310,6 +1333,11 @@ describe("DecisionPacket builder", () => {
       generatedAt: now,
       sha256Hex: fakeSha256Hex
     });
+    const replay = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
 
     expect(first.packetIdentity.checksum).toMatch(/^[a-f0-9]{64}$/u);
     expect(first.packetIdentity.evidenceRef).toBe(`packet:${first.packetIdentity.checksum}`);
@@ -1323,6 +1351,7 @@ describe("DecisionPacket builder", () => {
       "does not expose canonical selected SourceDecision ids"
     );
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
+    expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
   });
 
@@ -1361,5 +1390,28 @@ describe("DecisionPacket builder", () => {
     });
 
     expect(running.packetIdentity.checksum).not.toBe(planned.packetIdentity.checksum);
+  });
+
+  it("changes packet identity when only the execution lifecycle revision changes", () => {
+    const first = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+    const nextRevision = buildDecisionPacketContractReadback({
+      readModel: {
+        ...readModel,
+        run: {
+          ...readModel.run,
+          lifecycleRevision: 2
+        }
+      },
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+
+    expect(nextRevision.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
+    expect(nextRevision.packetIdentity.packetId).not.toBe(first.packetIdentity.packetId);
+    expect(nextRevision.packetIdentity.sourceRunLifecycleRevision).toBe(2);
   });
 });

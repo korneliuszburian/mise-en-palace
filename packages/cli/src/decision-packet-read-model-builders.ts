@@ -372,6 +372,7 @@ const runResource = (
 ): DecisionPacketReadModelRun => ({
   id: aggregate.executionRun.id,
   status: aggregate.executionRun.status,
+  lifecycleRevision: aggregate.executionRun.lifecycleRevision,
   adapter: aggregate.executionRun.adapter,
   createdAt: aggregate.executionRun.createdAt,
   updatedAt: aggregate.executionRun.updatedAt,

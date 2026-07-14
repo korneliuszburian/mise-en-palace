@@ -133,6 +133,7 @@ interface PersistedDecisionPacketBindingMetadata {
   decisionPacketChecksum?: string;
   decisionPacketEvidenceRef?: string;
   decisionPacketGeneratedAt?: string;
+  decisionPacketSourceRunLifecycleRevision?: number;
 }
 
 const canonicalCaptureIdentityJson = (value: unknown): string => {
@@ -1125,7 +1126,8 @@ const persistedPacketBindingMetadataFor = (
       decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: authorization.packetChecksum,
       decisionPacketEvidenceRef: authorization.packetEvidenceRef,
-      decisionPacketGeneratedAt: authorization.packetGeneratedAt
+      decisionPacketGeneratedAt: authorization.packetGeneratedAt,
+      decisionPacketSourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision
     };
   }
 

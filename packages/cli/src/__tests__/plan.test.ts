@@ -135,6 +135,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 ...(runInput.startedAt === undefined ? {} : { startedAt: runInput.startedAt }),
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
@@ -230,6 +231,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now
@@ -430,6 +432,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now
@@ -585,6 +588,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now
@@ -747,6 +751,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now
@@ -973,6 +978,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now
@@ -1132,6 +1138,7 @@ describe("runCli", () => {
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
                 status: runInput.status ?? "planned",
+                lifecycleRevision: 1,
                 metadata: runInput.metadata ?? {},
                 createdAt: now,
                 updatedAt: now

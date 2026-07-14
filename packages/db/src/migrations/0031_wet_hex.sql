@@ -1,0 +1,2 @@
+ALTER TABLE "execution_runs" ADD COLUMN "lifecycle_revision" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "execution_runs" ADD CONSTRAINT "execution_runs_lifecycle_revision_positive" CHECK ("execution_runs"."lifecycle_revision" > 0);

@@ -1,4 +1,5 @@
 import {
+  check,
   index,
   integer,
   pgEnum,
@@ -8,6 +9,7 @@ import {
   uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm/sql";
 
 import {
   contextAssemblyStatuses,
@@ -224,6 +226,7 @@ export const executionRuns = pgTable(
       .references(() => harnessPlans.id, { onDelete: "cascade" }),
     adapter: text("adapter").notNull(),
     status: executionRunStatus("status").notNull().default("planned"),
+    lifecycleRevision: integer("lifecycle_revision").notNull().default(1),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     metadata: metadataColumn(),
@@ -233,7 +236,8 @@ export const executionRuns = pgTable(
   (table) => [
     index("execution_runs_harness_plan_id_idx").on(table.harnessPlanId),
     index("execution_runs_status_idx").on(table.status),
-    index("execution_runs_adapter_idx").on(table.adapter)
+    index("execution_runs_adapter_idx").on(table.adapter),
+    check("execution_runs_lifecycle_revision_positive", sql`${table.lifecycleRevision} > 0`)
   ]
 );
 

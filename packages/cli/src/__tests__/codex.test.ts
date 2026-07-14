@@ -180,6 +180,7 @@ describe("runCli", () => {
         harnessPlanId: "harness-plan-1",
         adapter: "codex",
         status: "planned",
+        lifecycleRevision: 1,
         metadata: {},
         createdAt: now,
         updatedAt: now

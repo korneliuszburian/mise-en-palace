@@ -326,6 +326,9 @@ const renderEvidenceBundle = (
         ...(packetBinding.checksum === undefined ? [] : [`  packetBindingChecksum: ${packetBinding.checksum}`]),
         ...(packetBinding.evidenceRef === undefined ? [] : [`  packetBindingEvidenceRef: ${packetBinding.evidenceRef}`]),
         ...(packetBinding.generatedAt === undefined ? [] : [`  packetBindingGeneratedAt: ${packetBinding.generatedAt}`]),
+        ...(packetBinding.sourceRunLifecycleRevision === undefined
+          ? []
+          : [`  packetBindingSourceRunLifecycleRevision: ${packetBinding.sourceRunLifecycleRevision}`]),
         ...(packetBinding.reason === undefined ? [] : [`  packetBindingReason: ${packetBinding.reason}`]),
         `  changedFiles: ${bundle.changedFiles.length}`,
         "  changed file classification:",

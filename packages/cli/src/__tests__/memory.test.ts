@@ -149,6 +149,7 @@ const memoryHarnessRunAggregate = (projectId: string): HarnessRunAggregate => ({
     harnessPlanId: "harness-plan-1",
     adapter: "codex",
     status: "running",
+    lifecycleRevision: 2,
     startedAt: now,
     metadata: {},
     createdAt: now,
@@ -1171,6 +1172,8 @@ describe("runCli", () => {
                   memoryRecordId: input.memoryRecordId,
                   executionRunId: input.executionRunId,
                   packetChecksum: input.packetChecksum,
+                  packetGeneratedAt: input.packetGeneratedAt,
+                  sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
                   proofClass: "packet_bound",
                   expectedUse: input.expectedUse,
                   ...(input.outcome === undefined ? {} : { outcome: input.outcome }),
@@ -1236,7 +1239,8 @@ describe("runCli", () => {
       rollbackPath: "revert",
       metadata: {
         decisionPacketChecksum: packetBinding.packetChecksum,
-        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision
       },
       createdAt: now,
       updatedAt: now
@@ -1373,7 +1377,8 @@ describe("runCli", () => {
       rollbackPath: "revert",
       metadata: {
         decisionPacketChecksum: packetBinding.packetChecksum,
-        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt
+        decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision
       },
       createdAt: now,
       updatedAt: now
@@ -1510,6 +1515,8 @@ describe("runCli", () => {
                 memoryRecordId: input.memoryRecordId,
                 executionRunId: input.executionRunId,
                 packetChecksum: input.packetChecksum,
+                packetGeneratedAt: input.packetGeneratedAt,
+                sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
                 proofClass: "packet_bound",
                 expectedUse: input.expectedUse,
                 outcome: input.outcome,
@@ -1680,6 +1687,8 @@ describe("runCli", () => {
                   memoryRecordId: input.memoryRecordId,
                   executionRunId: input.executionRunId,
                   packetChecksum: input.packetChecksum,
+                  packetGeneratedAt: input.packetGeneratedAt,
+                  sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
                   proofClass: "packet_bound",
                   expectedUse: input.expectedUse,
                   outcome: input.outcome,

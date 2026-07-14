@@ -310,8 +310,13 @@ export const mapAntiMemoryCandidate = (row: AntiMemoryCandidateRow): AntiMemoryC
 export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplication => {
   const metadata = metadataOrEmpty(row.metadata);
   const packetGeneratedAt = stringOrUndefined(metadata.decisionPacketGeneratedAt);
+  const sourceRunLifecycleRevision = metadata.decisionPacketSourceRunLifecycleRevision;
   const hasPacketGeneratedAt =
     packetGeneratedAt !== undefined && Number.isFinite(Date.parse(packetGeneratedAt));
+  const hasSourceRunLifecycleRevision =
+    typeof sourceRunLifecycleRevision === "number" &&
+    Number.isSafeInteger(sourceRunLifecycleRevision) &&
+    sourceRunLifecycleRevision > 0;
 
   return {
     id: row.id,
@@ -321,11 +326,13 @@ export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplicati
       ? {}
       : { packetChecksum: row.decisionPacketChecksum }),
     ...(packetGeneratedAt === undefined || !hasPacketGeneratedAt ? {} : { packetGeneratedAt }),
+    ...(hasSourceRunLifecycleRevision ? { sourceRunLifecycleRevision } : {}),
     proofClass:
       row.executionRunId !== null &&
       row.decisionPacketChecksum !== null &&
       row.decisionPacketChecksum.trim().length > 0 &&
-      hasPacketGeneratedAt
+      hasPacketGeneratedAt &&
+      hasSourceRunLifecycleRevision
         ? "packet_bound"
         : "legacy_history",
     ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),

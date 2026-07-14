@@ -605,7 +605,8 @@ describe("memory governance mappers", () => {
       outcome: "helped",
       notes: "Prevented adding a separate memory store.",
       metadata: {
-        decisionPacketGeneratedAt: createdAt.toISOString()
+        decisionPacketGeneratedAt: createdAt.toISOString(),
+        decisionPacketSourceRunLifecycleRevision: 1
       },
       createdAt
     });
@@ -616,9 +617,36 @@ describe("memory governance mappers", () => {
       executionRunId: "run-1",
       packetChecksum: "packet-1",
       packetGeneratedAt: createdAt.toISOString(),
+      sourceRunLifecycleRevision: 1,
       proofClass: "packet_bound",
       outcome: "helped"
     });
+  });
+
+  it("keeps pre-revision packet metadata as legacy history", () => {
+    const mapMemoryApplication = mapper("mapMemoryApplication");
+
+    const result = mapMemoryApplication({
+      id: "pre-revision-memory-application-1",
+      memoryRecordId: "memory-record-1",
+      executionRunId: "run-1",
+      decisionPacketChecksum: "packet-legacy",
+      taskContractId: null,
+      contextAssemblyId: null,
+      expectedUse: "Historical application before lifecycle revision binding.",
+      outcome: "helped",
+      notes: "No source run lifecycle revision was persisted.",
+      metadata: {
+        decisionPacketGeneratedAt: createdAt.toISOString()
+      },
+      createdAt
+    });
+
+    expect(result).toMatchObject({
+      id: "pre-revision-memory-application-1",
+      proofClass: "legacy_history"
+    });
+    expect(result.sourceRunLifecycleRevision).toBeUndefined();
   });
 
   it("marks NULL packet identity as legacy history", () => {

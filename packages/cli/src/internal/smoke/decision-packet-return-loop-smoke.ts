@@ -155,6 +155,7 @@ interface DecisionPacketSmokeJson {
     checksum: string;
     evidenceRef: string;
     generatedAt: string;
+    sourceRunLifecycleRevision: number;
   };
   packet: {
     governingDecisionIds: readonly string[];
@@ -322,11 +323,21 @@ const readPacketIdentity = (
     "packetIdentity",
     "DecisionPacket smoke readback missed packetIdentity"
   );
+  const sourceRunLifecycleRevision = packetIdentity.sourceRunLifecycleRevision;
+
+  if (
+    typeof sourceRunLifecycleRevision !== "number" ||
+    !Number.isSafeInteger(sourceRunLifecycleRevision) ||
+    sourceRunLifecycleRevision < 1
+  ) {
+    throw new Error("DecisionPacket smoke readback missed source run lifecycle revision");
+  }
 
   return {
     checksum: readRequiredString(packetIdentity, "checksum", "DecisionPacket smoke readback missed checksum"),
     evidenceRef: readRequiredString(packetIdentity, "evidenceRef", "DecisionPacket smoke readback missed evidenceRef"),
-    generatedAt: readRequiredString(packetIdentity, "generatedAt", "DecisionPacket smoke readback missed generatedAt")
+    generatedAt: readRequiredString(packetIdentity, "generatedAt", "DecisionPacket smoke readback missed generatedAt"),
+    sourceRunLifecycleRevision
   };
 };
 
@@ -1930,6 +1941,7 @@ const runSelectorFeedbackProof = async (
     readonly executionRunId: string;
     readonly packetChecksum: string;
     readonly packetGeneratedAt: string;
+    readonly sourceRunLifecycleRevision: number;
     readonly verificationEvidenceBundleId: string;
     readonly feedbackDeltaId: string;
     readonly marker: string;
@@ -2090,6 +2102,7 @@ const runSelectorFeedbackProof = async (
     notes: "Store-backed helped feedback should keep this memory eligible for next activation.",
     packetChecksum: input.packetChecksum,
     packetGeneratedAt: input.packetGeneratedAt,
+    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
     evidenceBundleId: input.verificationEvidenceBundleId,
     metadata: {
       smokeId: input.marker,
@@ -2107,6 +2120,7 @@ const runSelectorFeedbackProof = async (
       notes: `Store-backed stale feedback ${attempt} should make this memory unsafe for next activation.`,
       packetChecksum: `${input.packetChecksum}-stale-${attempt}`,
       packetGeneratedAt: input.packetGeneratedAt,
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
       metadata: {
         smokeId: input.marker,
         selectorFeedbackProof: "stale",
@@ -2652,6 +2666,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       executionRunId: executionRun.id,
       packetChecksum: firstPacket.packetIdentity.checksum,
       packetGeneratedAt: firstPacket.packetIdentity.generatedAt,
+      sourceRunLifecycleRevision: firstPacket.packetIdentity.sourceRunLifecycleRevision,
       verificationEvidenceBundleId: aggregateAfterMatching?.evidenceBundles.at(-1)?.id ?? "",
       feedbackDeltaId: staleFeedbackDelta.id,
       marker,

@@ -6,6 +6,7 @@ import type {
   EvidenceContractActivationDecision,
   EvidenceCommand,
   EvidenceCommandReadback,
+  ExecutionRunStatus,
   FeedbackCandidateProposalKind,
   FeedbackRecommendationReadback,
   ProjectStandardDecisionReadback,
@@ -146,7 +147,8 @@ export interface DecisionPacketReadModel {
   mutation: "none";
   run: {
     id: string;
-    status: string;
+    status: ExecutionRunStatus;
+    lifecycleRevision: number;
     adapter: string;
     createdAt: string;
     updatedAt: string;

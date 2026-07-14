@@ -130,6 +130,7 @@ interface PacketIdentity {
   checksum: string;
   evidenceRef: string;
   generatedAt: string;
+  sourceRunLifecycleRevision: number;
 }
 
 interface PacketBindingSmokeRuntime {
@@ -177,11 +178,21 @@ const readPacketIdentity = (value: Record<string, unknown>): PacketIdentity => {
   if (!isRecord(packetIdentity)) {
     throw new Error("Run-show DB smoke DecisionPacket readback missed packetIdentity");
   }
+  const sourceRunLifecycleRevision = packetIdentity.sourceRunLifecycleRevision;
+
+  if (
+    typeof sourceRunLifecycleRevision !== "number" ||
+    !Number.isSafeInteger(sourceRunLifecycleRevision) ||
+    sourceRunLifecycleRevision < 1
+  ) {
+    throw new Error("Run-show DB smoke packet source run lifecycle revision is missing");
+  }
 
   return {
     checksum: requiredString(packetIdentity, "checksum", "Run-show DB smoke packet checksum is missing"),
     evidenceRef: requiredString(packetIdentity, "evidenceRef", "Run-show DB smoke packet evidence ref is missing"),
-    generatedAt: requiredString(packetIdentity, "generatedAt", "Run-show DB smoke packet generatedAt is missing")
+    generatedAt: requiredString(packetIdentity, "generatedAt", "Run-show DB smoke packet generatedAt is missing"),
+    sourceRunLifecycleRevision
   };
 };
 
@@ -374,7 +385,8 @@ const runPacketBindingReadback = async (input: {
       "KRN Decision Packet Read Model",
       `Run ID: ${input.runtime.runId}`,
       "Mutation: none",
-      "packetBinding: bound_current"
+      "packetBinding: bound_current",
+      "packetBindingSourceRunLifecycleRevision:"
     ].every((line) => textReadback.stdout.includes(line)),
     jsonReadbackMatched:
       readbackKind === "krn.decisionPacket.readModel.v1" &&
@@ -399,10 +411,12 @@ const packetBindingStoredChecksumMatched = (
     metadata.decisionPacketChecksum === packetIdentity.checksum,
     metadata.decisionPacketEvidenceRef === packetIdentity.evidenceRef,
     metadata.decisionPacketGeneratedAt === packetIdentity.generatedAt,
+    metadata.decisionPacketSourceRunLifecycleRevision === packetIdentity.sourceRunLifecycleRevision,
     readback.packetBindingStatus === "bound_current",
     readString(readback.packetBinding, "checksum") === packetIdentity.checksum,
     readString(readback.packetBinding, "evidenceRef") === packetIdentity.evidenceRef,
-    readString(readback.packetBinding, "generatedAt") === packetIdentity.generatedAt
+    readString(readback.packetBinding, "generatedAt") === packetIdentity.generatedAt,
+    readback.packetBinding.sourceRunLifecycleRevision === packetIdentity.sourceRunLifecycleRevision
   ].every(Boolean);
 };
 

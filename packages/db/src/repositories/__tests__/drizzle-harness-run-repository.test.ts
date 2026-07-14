@@ -45,6 +45,7 @@ describe("DrizzleHarnessRunRepository", () => {
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
       status,
+      lifecycleRevision: 1,
       startedAt: timestamps.startedAt ?? null,
       completedAt: timestamps.completedAt ?? null,
       metadata: {},
@@ -515,6 +516,10 @@ describe("DrizzleHarnessRunRepository", () => {
         expect(runningRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
         expect(succeededRun.completedAt).toBe("2026-07-13T10:02:00.000Z");
         expect(sameStateRetry.status).toBe("succeeded");
+        expect(plannedRun.lifecycleRevision).toBe(1);
+        expect(runningRun.lifecycleRevision).toBe(2);
+        expect(succeededRun.lifecycleRevision).toBe(3);
+        expect(sameStateRetry.lifecycleRevision).toBe(3);
 
         const [{ executionRunCount }] = await scaffold.client<{ executionRunCount: number }[]>`
           select count(*)::int as "executionRunCount"

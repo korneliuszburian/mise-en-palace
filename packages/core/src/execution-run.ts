@@ -20,6 +20,7 @@ export interface ExecutionRun {
   harnessPlanId: HarnessPlanId;
   adapter: string;
   status: ExecutionRunStatus;
+  lifecycleRevision: number;
   startedAt?: IsoTimestamp;
   completedAt?: IsoTimestamp;
   metadata: Record<string, unknown>;

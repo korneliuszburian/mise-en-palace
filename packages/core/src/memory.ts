@@ -153,6 +153,7 @@ export interface MemoryApplication {
   executionRunId?: ExecutionRunId;
   packetChecksum?: string;
   packetGeneratedAt?: IsoTimestamp;
+  sourceRunLifecycleRevision?: number;
   proofClass: MemoryApplicationProofClass;
   taskContractId?: TaskContractId;
   contextAssemblyId?: ContextAssemblyId;

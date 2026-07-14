@@ -111,6 +111,16 @@ const packetGeneratedAtFromMetadata = (
     : undefined;
 };
 
+const sourceRunLifecycleRevisionFromMetadata = (
+  metadata: Record<string, unknown>
+): number | undefined => {
+  const value = metadata.decisionPacketSourceRunLifecycleRevision;
+
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? value
+    : undefined;
+};
+
 export const memoryPromotionMetadata = (
   candidate: MemoryCandidate,
   input: { metadata?: Record<string, unknown> }
@@ -172,6 +182,38 @@ type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
 type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
 type AntiMemoryCandidateInsertRow = typeof antiMemoryCandidates.$inferInsert;
 type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
+
+interface PacketBoundMemoryApplicationIdentity {
+  executionRunId: string;
+  packetChecksum: string;
+  packetGeneratedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
+}
+
+const packetBoundMemoryApplicationIdentity = (
+  row: MemoryApplicationRow
+): PacketBoundMemoryApplicationIdentity | undefined => {
+  const packetChecksum = row.decisionPacketChecksum?.trim();
+  const packetGeneratedAt = packetGeneratedAtFromMetadata(row.metadata);
+  const sourceRunLifecycleRevision = sourceRunLifecycleRevisionFromMetadata(row.metadata);
+
+  if (
+    row.executionRunId === null ||
+    packetChecksum === undefined ||
+    packetChecksum.length === 0 ||
+    packetGeneratedAt === undefined ||
+    sourceRunLifecycleRevision === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    executionRunId: row.executionRunId,
+    packetChecksum,
+    packetGeneratedAt,
+    sourceRunLifecycleRevision
+  };
+};
 
 type MemoryApplicationCounterState = {
   canonicalOutcomeCounts: Record<MemoryApplicationOutcome, number>;
@@ -1180,6 +1222,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       ...input.metadata,
       decisionPacketChecksum,
       decisionPacketGeneratedAt: input.packetGeneratedAt,
+      decisionPacketSourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
       ...(input.evidenceBundleId === undefined
         ? {}
         : { verificationEvidenceBundleId: input.evidenceBundleId })
@@ -1187,15 +1230,20 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   });
 
   private assertPacketBoundApplication = (
-    input: Pick<RecordMemoryApplicationInput, "executionRunId" | "packetChecksum" | "packetGeneratedAt">
+    input: Pick<
+      RecordMemoryApplicationInput,
+      "executionRunId" | "packetChecksum" | "packetGeneratedAt" | "sourceRunLifecycleRevision"
+    >
   ): void => {
     if (
       input.executionRunId.trim().length === 0 ||
       input.packetChecksum.trim().length === 0 ||
-      !Number.isFinite(Date.parse(input.packetGeneratedAt))
+      !Number.isFinite(Date.parse(input.packetGeneratedAt)) ||
+      !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
+      input.sourceRunLifecycleRevision < 1
     ) {
       throw new Error(
-        "memory application requires a non-empty execution run, DecisionPacket checksum, and packet generatedAt"
+        "memory application requires a non-empty execution run, DecisionPacket checksum, packet generatedAt, and lifecycle revision"
       );
     }
   };
@@ -1239,6 +1287,22 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       );
     }
 
+    const [lockedExecutionRun] = await tx
+      .select()
+      .from(executionRuns)
+      .where(eq(executionRuns.id, input.executionRunId))
+      .limit(1)
+      .for("update");
+
+    if (
+      lockedExecutionRun === undefined ||
+      lockedExecutionRun.lifecycleRevision !== input.sourceRunLifecycleRevision
+    ) {
+      throw new Error(
+        "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+      );
+    }
+
     const linked = await this.findApplicationEvidenceBundle(
       input.evidenceBundleId,
       input.executionRunId,
@@ -1264,7 +1328,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         ? activation.evidenceContract
         : undefined,
       packetChecksum: input.packetChecksum,
-      packetGeneratedAt: input.packetGeneratedAt
+      packetGeneratedAt: input.packetGeneratedAt,
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
     });
 
     if (!valid) {
@@ -1602,18 +1667,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     row: MemoryApplicationRow,
     tx: KrnDatabase
   ): Promise<boolean> {
-    if (
-      row.executionRunId === null ||
-      row.decisionPacketChecksum === null ||
-      row.decisionPacketChecksum.trim().length === 0 ||
-      row.outcome === null
-    ) {
-      return false;
-    }
+    const packetIdentity = packetBoundMemoryApplicationIdentity(row);
 
-    const packetGeneratedAt = packetGeneratedAtFromMetadata(row.metadata);
-
-    if (packetGeneratedAt === undefined) {
+    if (row.outcome === null || packetIdentity === undefined) {
       return false;
     }
 
@@ -1628,7 +1684,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
     const linked = await this.findApplicationEvidenceBundle(
       verificationEvidenceBundleId,
-      row.executionRunId,
+      packetIdentity.executionRunId,
       tx
     );
 
@@ -1642,8 +1698,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return evidenceBundleProvesHelped({
       bundle: mapEvidenceBundle(linked.bundle),
       evidenceContract: parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract),
-      packetChecksum: row.decisionPacketChecksum,
-      packetGeneratedAt
+      packetChecksum: packetIdentity.packetChecksum,
+      packetGeneratedAt: packetIdentity.packetGeneratedAt,
+      sourceRunLifecycleRevision: packetIdentity.sourceRunLifecycleRevision
     });
   }
 

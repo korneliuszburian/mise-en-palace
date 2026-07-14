@@ -181,6 +181,7 @@ const hasFreshHelpedVerification = (input: {
   evidenceBundleId: string | undefined;
   packetChecksum: string;
   packetGeneratedAt: string;
+  sourceRunLifecycleRevision: number;
   runId: string;
 }): boolean => {
   const aggregate = input.aggregate;
@@ -204,7 +205,8 @@ const hasFreshHelpedVerification = (input: {
       bundle,
       evidenceContract: activation.evidenceContract,
       packetChecksum: input.packetChecksum,
-      packetGeneratedAt: input.packetGeneratedAt
+      packetGeneratedAt: input.packetGeneratedAt,
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
     });
 };
 
@@ -214,6 +216,7 @@ const assertHelpedMemoryApplicationEvidence = (input: {
   evidenceBundleId: string | undefined;
   packetChecksum: string;
   packetGeneratedAt: string;
+  sourceRunLifecycleRevision: number;
   runId: string;
 }): void => {
   if (input.outcome !== "helped") {
@@ -300,6 +303,7 @@ export const runMemoryRecordApplyCommand = async (
       evidenceBundleId: command.evidenceBundleId,
       packetChecksum: authorization.packetChecksum,
       packetGeneratedAt: authorization.packetGeneratedAt,
+      sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision,
       runId: applicationInput.executionRunId
     });
 
@@ -355,11 +359,13 @@ export const runMemoryRecordApplyCommand = async (
       ...(command.evidenceBundleId === undefined ? {} : { evidenceBundleId: command.evidenceBundleId }),
       packetChecksum: authorization.packetChecksum,
       packetGeneratedAt: authorization.packetGeneratedAt,
+      sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision,
       metadata: {
         ...applicationInput.metadata,
         decisionPacketChecksum: authorization.packetChecksum,
         decisionPacketEvidenceRef: authorization.packetEvidenceRef,
         decisionPacketGeneratedAt: authorization.packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision,
         usefulnessSubject: `memory_record:${applicationInput.memoryRecordId}`,
         ...(command.evidenceBundleId === undefined
           ? {}

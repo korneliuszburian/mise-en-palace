@@ -218,6 +218,7 @@ const aggregate: HarnessRunAggregate = {
     harnessPlanId: "plan-1",
     adapter: "cli",
     status: "succeeded",
+    lifecycleRevision: 3,
     metadata: {
       projectResolution: {
         kind: "connected_repo_path",
@@ -255,7 +256,11 @@ const aggregate: HarnessRunAggregate = {
         unrelated: [],
         unknown: []
       },
+      decisionPacketBindingState: "bound_current",
       decisionPacketChecksum: "packet-run-show",
+      decisionPacketEvidenceRef: "packet:packet-run-show",
+      decisionPacketGeneratedAt: now,
+      decisionPacketSourceRunLifecycleRevision: 3,
       targetEvidence: {
         targetRepo: "../wilq-seo",
         mode: "observation_only",
@@ -463,7 +468,8 @@ describe("runRunShowCommand", () => {
     );
     expect(result.stdout).toContain("- targetReadModel: not_provided sourceSeeds=0 ownerFiles=0 trustExclusions=0");
     expect(result.stdout).toContain("changed file classification:");
-    expect(result.stdout).toContain("packetBinding: legacy_unknown");
+    expect(result.stdout).toContain("packetBinding: bound_current");
+    expect(result.stdout).toContain("packetBindingSourceRunLifecycleRevision: 3");
     expect(result.stdout).toContain("- intended=1");
     expect(result.stdout).toContain("- unrelated=0");
     expect(result.stdout).toContain("- unknown=0");
@@ -628,13 +634,27 @@ describe("runRunShowCommand", () => {
         decisionPacketBindingState: "bound_current",
         decisionPacketChecksum: "packet-bound",
         decisionPacketEvidenceRef: "packet:packet-bound",
-        decisionPacketGeneratedAt: now
+        decisionPacketGeneratedAt: now,
+        decisionPacketSourceRunLifecycleRevision: 3
       },
       expected: {
         status: "bound_current",
         checksum: "packet-bound",
         evidenceRef: "packet:packet-bound",
-        generatedAt: now
+        generatedAt: now,
+        sourceRunLifecycleRevision: 3
+      }
+    }, {
+      name: "binding missing source run lifecycle revision",
+      metadata: {
+        decisionPacketBindingState: "bound_current",
+        decisionPacketChecksum: "packet-bound",
+        decisionPacketEvidenceRef: "packet:packet-bound",
+        decisionPacketGeneratedAt: now
+      },
+      expected: {
+        status: "mismatch",
+        reason: "DecisionPacket bound_current metadata is missing a valid lifecycle revision."
       }
     }, {
       name: "explicit unbound binding",
@@ -652,7 +672,8 @@ describe("runRunShowCommand", () => {
         decisionPacketBindingState: "bound_current",
         decisionPacketChecksum: "packet-bound",
         decisionPacketEvidenceRef: "packet:other",
-        decisionPacketGeneratedAt: now
+        decisionPacketGeneratedAt: now,
+        decisionPacketSourceRunLifecycleRevision: 3
       },
       expected: {
         status: "mismatch"
@@ -821,7 +842,8 @@ describe("runRunShowCommand", () => {
       },
       evidenceBundles: [{
         packetBinding: {
-          status: "legacy_unknown"
+          status: "bound_current",
+          sourceRunLifecycleRevision: 3
         },
         changedFiles: {
           classification: {

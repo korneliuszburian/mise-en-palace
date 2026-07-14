@@ -22,6 +22,7 @@ import {
 } from "../run-cli.js";
 
 const now = "2026-07-07T16:35:00.000Z";
+const runUpdatedAt = "2026-07-07T16:34:00.000Z";
 
 interface DecisionPacketJson {
   readonly packetIdentity: {
@@ -275,10 +276,11 @@ const aggregate: HarnessRunAggregate = {
     harnessPlanId: "plan-agent-1",
     adapter: "cli",
     status: "running",
-    startedAt: now,
+    lifecycleRevision: 2,
+    startedAt: runUpdatedAt,
     metadata: {},
-    createdAt: now,
-    updatedAt: now
+    createdAt: runUpdatedAt,
+    updatedAt: runUpdatedAt
   },
   evidenceBundles: [{
     id: "evidence-agent-1",
@@ -726,7 +728,8 @@ describe("decision packet CLI", () => {
         checksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
         evidenceRef: expect.stringMatching(/^packet:[a-f0-9]{64}$/u),
         generatedAt: now,
-        sourceRunUpdatedAt: now,
+        sourceRunUpdatedAt: runUpdatedAt,
+        sourceRunLifecycleRevision: 2,
         freshness: {
           status: "current_read_model_snapshot"
         }

@@ -233,6 +233,7 @@ export interface DecisionPacketBindingReadback {
   checksum?: string;
   evidenceRef?: string;
   generatedAt?: IsoTimestamp;
+  sourceRunLifecycleRevision?: number;
   reason?: string;
 }
 
@@ -365,8 +366,21 @@ interface DecisionPacketBindingMetadataFields {
   checksum: string | undefined;
   evidenceRef: string | undefined;
   generatedAt: string | undefined;
+  sourceRunLifecycleRevisionValue: unknown;
+  sourceRunLifecycleRevision: number | undefined;
   reason: string | undefined;
 }
+
+const readMetadataPositiveInteger = (
+  metadata: Record<string, unknown>,
+  key: string
+): number | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? value
+    : undefined;
+};
 
 const decisionPacketBindingMetadataFields = (
   metadata: Record<string, unknown>
@@ -376,6 +390,11 @@ const decisionPacketBindingMetadataFields = (
   checksum: readMetadataString(metadata, "decisionPacketChecksum"),
   evidenceRef: readMetadataString(metadata, "decisionPacketEvidenceRef"),
   generatedAt: readMetadataString(metadata, "decisionPacketGeneratedAt"),
+  sourceRunLifecycleRevisionValue: metadata.decisionPacketSourceRunLifecycleRevision,
+  sourceRunLifecycleRevision: readMetadataPositiveInteger(
+    metadata,
+    "decisionPacketSourceRunLifecycleRevision"
+  ),
   reason: readMetadataString(metadata, "decisionPacketBindingReason")
 });
 
@@ -394,6 +413,12 @@ const boundCurrentBindingReadback = (
     );
   }
 
+  if (fields.sourceRunLifecycleRevision === undefined) {
+    return decisionPacketBindingMismatch(
+      "DecisionPacket bound_current metadata is missing a valid lifecycle revision."
+    );
+  }
+
   if (fields.reason !== undefined) {
     return decisionPacketBindingMismatch(
       "DecisionPacket bound_current metadata must not include an unbound reason."
@@ -404,7 +429,8 @@ const boundCurrentBindingReadback = (
     status: "bound_current",
     checksum: fields.checksum,
     evidenceRef: fields.evidenceRef,
-    generatedAt: fields.generatedAt
+    generatedAt: fields.generatedAt,
+    sourceRunLifecycleRevision: fields.sourceRunLifecycleRevision
   };
 };
 
@@ -414,7 +440,8 @@ const unboundBindingReadback = (
   const hasPacketIdentity = [
     fields.checksum,
     fields.evidenceRef,
-    fields.generatedAt
+    fields.generatedAt,
+    fields.sourceRunLifecycleRevisionValue
   ].some((field) => field !== undefined);
 
   if (hasPacketIdentity || fields.reason === undefined) {
@@ -807,6 +834,7 @@ export const evidenceBundleProvesHelped = (input: {
   evidenceContract: EvidenceContract | undefined;
   packetChecksum: string;
   packetGeneratedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
 }): boolean => {
   const bundleCreatedAt = Date.parse(input.bundle.createdAt);
   const packetGeneratedAt = Date.parse(input.packetGeneratedAt);
@@ -815,6 +843,12 @@ export const evidenceBundleProvesHelped = (input: {
     (input.bundle.status !== "captured" && input.bundle.status !== "verified") ||
     readMetadataString(input.bundle.metadata, "decisionPacketChecksum") !== input.packetChecksum ||
     readMetadataString(input.bundle.metadata, "decisionPacketGeneratedAt") !== input.packetGeneratedAt ||
+    readMetadataPositiveInteger(
+      input.bundle.metadata,
+      "decisionPacketSourceRunLifecycleRevision"
+    ) !== input.sourceRunLifecycleRevision ||
+    !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
+    input.sourceRunLifecycleRevision < 1 ||
     input.evidenceContract === undefined ||
     !Number.isFinite(bundleCreatedAt) ||
     !Number.isFinite(packetGeneratedAt) ||

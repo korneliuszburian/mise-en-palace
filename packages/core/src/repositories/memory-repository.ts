@@ -116,6 +116,7 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   evidenceBundleId?: string;
   packetChecksum: string;
   packetGeneratedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
 }
 
 export interface RecordMemoryApplicationOnceInput extends RecordMemoryApplicationInput {
