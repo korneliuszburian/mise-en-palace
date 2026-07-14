@@ -4,6 +4,7 @@ import { inspectDatabaseRequiredTables } from "./readiness-support.js";
 
 export type SourceAuthorityIntegrityViolationKind =
   | "project_mismatch"
+  | "claim_chunk_artifact_mismatch"
   | "missing_terminal_review"
   | "conflicting_terminal_review"
   | "claim_decision_status_mismatch"
@@ -146,6 +147,21 @@ const inspectViolations = async (
         and not exists (
           select 1 from source_authority_quarantines quarantine
           where quarantine.entity_type = 'source_decision' and quarantine.entity_id = sd.id
+        )
+    ),
+    claim_chunk_artifact_mismatches as (
+      select
+        'claim_chunk_artifact_mismatch'::text as kind,
+        sc.id::text as subject_id,
+        'SourceClaim source chunk belongs to a different SourceArtifact'::text as detail
+      from source_claims sc
+      join source_chunks chunk on chunk.id = sc.source_chunk_id
+      where chunk.source_artifact_id <> sc.source_artifact_id
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_claim'
+            and quarantine.entity_id = sc.id
+            and quarantine.reason = 'claim_chunk_artifact_mismatch'
         )
     ),
     terminal_review_counts as (
@@ -325,6 +341,7 @@ const inspectViolations = async (
       detail
     from (
       select * from project_mismatches
+      union all select * from claim_chunk_artifact_mismatches
       union all select * from missing_reviews
       union all select * from conflicting_reviews
       union all select * from status_mismatches

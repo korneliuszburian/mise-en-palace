@@ -244,12 +244,39 @@ describe("source claim provenance", () => {
           status: "proposed"
         });
         expect(chunklessClaim).not.toHaveProperty("sourceChunkId");
+
+        await transaction
+          .delete(sourceChunks)
+          .where(eq(sourceChunks.id, claimArtifact.chunkId));
+        const [validClaimAfterChunkDelete] = await transaction
+          .select({
+            sourceArtifactId: sourceClaims.sourceArtifactId,
+            sourceChunkId: sourceClaims.sourceChunkId
+          })
+          .from(sourceClaims)
+          .where(eq(sourceClaims.id, validClaim.id));
+        const [chunklessClaimAfterChunkDelete] = await transaction
+          .select({
+            sourceArtifactId: sourceClaims.sourceArtifactId,
+            sourceChunkId: sourceClaims.sourceChunkId
+          })
+          .from(sourceClaims)
+          .where(eq(sourceClaims.id, chunklessClaim.id));
+
+        expect(validClaimAfterChunkDelete).toEqual({
+          sourceArtifactId: claimArtifact.artifactId,
+          sourceChunkId: null
+        });
+        expect(chunklessClaimAfterChunkDelete).toEqual({
+          sourceArtifactId: claimArtifact.artifactId,
+          sourceChunkId: null
+        });
       });
     }
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "currently persists a cross-project chunk through direct SQL",
+    "rejects cross-project inserts and ownership updates through direct SQL",
     async () => {
       await withRolledBackTransaction(async (transaction, marker) => {
         const sourceRepository = new DrizzleSourceRepository(transaction);
@@ -271,18 +298,63 @@ describe("source claim provenance", () => {
           claimArtifact.artifactId,
           claimArtifact.chunkId
         ));
-        const updatedRows = await transaction
-          .update(sourceClaims)
-          .set({ sourceChunkId: foreignArtifact.chunkId })
-          .where(eq(sourceClaims.id, sourceClaim.id))
-          .returning({ id: sourceClaims.id });
 
-        expect(updatedRows).toEqual([{ id: sourceClaim.id }]);
+        await expect(transaction.transaction(async (nestedTransaction) =>
+          nestedTransaction
+            .insert(sourceClaims)
+            .values(sourceClaimInput(
+              marker,
+              claimArtifact.artifactId,
+              foreignArtifact.chunkId,
+              "sql-insert-mismatch"
+            ))
+            .returning({ id: sourceClaims.id })
+        )).rejects.toMatchObject({
+          cause: {
+            code: "23503",
+            constraint_name: "source_claims_chunk_artifact_fk"
+          }
+        });
+        await expect(transaction.transaction(async (nestedTransaction) =>
+          nestedTransaction
+            .update(sourceClaims)
+            .set({ sourceChunkId: foreignArtifact.chunkId })
+            .where(eq(sourceClaims.id, sourceClaim.id))
+            .returning({ id: sourceClaims.id })
+        )).rejects.toMatchObject({
+          cause: {
+            code: "23503",
+            constraint_name: "source_claims_chunk_artifact_fk"
+          }
+        });
+        expect(await transaction
+          .select({ id: sourceClaims.id })
+          .from(sourceClaims)
+          .where(and(
+            eq(sourceClaims.sourceArtifactId, claimArtifact.artifactId),
+            eq(sourceClaims.sourceChunkId, foreignArtifact.chunkId)
+          ))).toEqual([]);
+        await transaction
+          .delete(sourceChunks)
+          .where(eq(sourceChunks.id, foreignArtifact.chunkId));
+        await expect(transaction.transaction(async (nestedTransaction) =>
+          nestedTransaction
+            .update(sourceChunks)
+            .set({ sourceArtifactId: foreignArtifact.artifactId })
+            .where(eq(sourceChunks.id, claimArtifact.chunkId))
+            .returning({ id: sourceChunks.id })
+        )).rejects.toMatchObject({
+          cause: {
+            code: "23503",
+            constraint_name: "source_claims_chunk_artifact_fk"
+          }
+        });
+
         expect(await selectClaimChunkTuple(transaction, sourceClaim.id)).toEqual([{
           claimId: sourceClaim.id,
           claimSourceArtifactId: claimArtifact.artifactId,
-          sourceChunkId: foreignArtifact.chunkId,
-          chunkSourceArtifactId: foreignArtifact.artifactId
+          sourceChunkId: claimArtifact.chunkId,
+          chunkSourceArtifactId: claimArtifact.artifactId
         }]);
       });
     }

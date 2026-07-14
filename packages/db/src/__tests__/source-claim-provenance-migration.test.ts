@@ -1,0 +1,533 @@
+import crypto from "node:crypto";
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import postgres from "postgres";
+import { describe, expect, it } from "vitest";
+
+import { migrateDatabase } from "../migration-readiness.js";
+import { inspectSourceAuthorityIntegrity } from "../source-authority-integrity-readiness.js";
+
+const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+const migrationsFolder = fileURLToPath(new URL("../migrations", import.meta.url));
+const migrationTestTimeoutMs = 60_000;
+
+interface MigrationJournalEntry {
+  readonly idx: number;
+  readonly version: string;
+  readonly when: number;
+  readonly tag: string;
+  readonly breakpoints: boolean;
+}
+
+interface MigrationJournal {
+  readonly version: string;
+  readonly dialect: string;
+  readonly entries: readonly MigrationJournalEntry[];
+}
+
+interface MismatchedClaimFixture {
+  readonly projectId: string;
+  readonly claimArtifactId: string;
+  readonly wrongChunkId: string;
+  readonly actualChunkArtifactId: string;
+  readonly claimId: string;
+  readonly decisionId: string;
+  readonly edgeId: string;
+  readonly searchId: string;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isMigrationJournalEntry = (value: unknown): value is MigrationJournalEntry =>
+  isRecord(value) &&
+  typeof value.idx === "number" &&
+  Number.isInteger(value.idx) &&
+  typeof value.version === "string" &&
+  typeof value.when === "number" &&
+  Number.isFinite(value.when) &&
+  typeof value.tag === "string" &&
+  typeof value.breakpoints === "boolean";
+
+const isMigrationJournal = (value: unknown): value is MigrationJournal =>
+  isRecord(value) &&
+  typeof value.version === "string" &&
+  typeof value.dialect === "string" &&
+  Array.isArray(value.entries) &&
+  value.entries.every(isMigrationJournalEntry);
+
+const parseMigrationJournal = (contents: string): MigrationJournal => {
+  const parsed: unknown = JSON.parse(contents);
+
+  if (!isMigrationJournal(parsed)) {
+    throw new Error("migration journal has an invalid shape");
+  }
+
+  return parsed;
+};
+
+const databaseUrlFor = (input: string, databaseName: string): string => {
+  const parsed = new URL(input);
+  parsed.pathname = `/${databaseName}`;
+  return parsed.toString();
+};
+
+const createDisposableDatabase = async (input: string): Promise<{
+  readonly databaseUrl: string;
+  readonly cleanup: () => Promise<void>;
+}> => {
+  const databaseName = `krn_source_claim_migration_${crypto.randomUUID().replaceAll("-", "")}`;
+  const adminClient = postgres(databaseUrlFor(input, "postgres"), {
+    max: 1,
+    onnotice: () => undefined
+  });
+
+  try {
+    await adminClient.unsafe(`create database ${databaseName}`);
+  } catch (error) {
+    await adminClient.end();
+    throw error;
+  }
+
+  return {
+    databaseUrl: databaseUrlFor(input, databaseName),
+    cleanup: async () => {
+      try {
+        await adminClient.unsafe(`drop database if exists ${databaseName} with (force)`);
+      } finally {
+        await adminClient.end();
+      }
+    }
+  };
+};
+
+const createMigrationsFolderThrough0029 = async (): Promise<{
+  readonly migrationsFolder: string;
+  readonly cleanup: () => Promise<void>;
+}> => {
+  const temporaryFolder = await mkdtemp(join(tmpdir(), "krn-migrations-through-0029-"));
+
+  try {
+    const journalPath = join(migrationsFolder, "meta", "_journal.json");
+    const journal = parseMigrationJournal(await readFile(journalPath, "utf8"));
+    const entries = journal.entries.filter((entry) => entry.idx <= 29);
+
+    if (
+      entries.length !== 30 ||
+      entries.some((entry, index) => entry.idx !== index) ||
+      entries.at(-1)?.tag !== "0029_careful_spyke"
+    ) {
+      throw new Error("migration journal does not contain the expected contiguous 0000-0029 range");
+    }
+
+    const temporaryJournalPath = join(temporaryFolder, "meta", "_journal.json");
+    await mkdir(dirname(temporaryJournalPath), { recursive: true });
+    await Promise.all(entries.map(async (entry) => {
+      const filename = `${entry.tag}.sql`;
+      await copyFile(join(migrationsFolder, filename), join(temporaryFolder, filename));
+    }));
+    await writeFile(
+      temporaryJournalPath,
+      `${JSON.stringify({ ...journal, entries }, null, 2)}\n`,
+      "utf8"
+    );
+  } catch (error) {
+    await rm(temporaryFolder, { recursive: true, force: true });
+    throw error;
+  }
+
+  return {
+    migrationsFolder: temporaryFolder,
+    cleanup: () => rm(temporaryFolder, { recursive: true, force: true })
+  };
+};
+
+const seedMismatchedClaim = async (
+  input: string,
+  marker: string
+): Promise<MismatchedClaimFixture> => {
+  const client = postgres(input, { max: 1, onnotice: () => undefined });
+  const evidenceContentHash = `sha256:${marker}:evidence`;
+  const evidenceMetadata = {
+    smokeId: marker,
+    evidenceStatus: "captured",
+    evidenceContentHash,
+    evidenceFreshness: "current"
+  };
+
+  try {
+    const rows = await client<MismatchedClaimFixture[]>`
+      with workspace as (
+        insert into workspaces (slug, display_name, metadata)
+        values (${marker}, ${marker}, ${client.json({ smokeId: marker })})
+        returning id
+      ), project as (
+        insert into projects (workspace_id, slug, display_name, metadata)
+        select id, ${marker}, ${marker}, ${client.json({ smokeId: marker })}
+        from workspace
+        returning id
+      ), claim_artifact as (
+        insert into source_artifacts (
+          project_id, kind, trust_tier, uri, title, content_hash, metadata
+        )
+        select
+          id,
+          'doc',
+          'project-decision',
+          ${`source-authority://${marker}/claim-artifact`},
+          'claim artifact',
+          ${`sha256:${marker}:claim-artifact`},
+          ${client.json(evidenceMetadata)}
+        from project
+        returning id
+      ), actual_chunk_artifact as (
+        insert into source_artifacts (
+          project_id, kind, trust_tier, uri, title, content_hash, metadata
+        )
+        select
+          id,
+          'doc',
+          'project-decision',
+          ${`source-authority://${marker}/actual-chunk-artifact`},
+          'actual chunk artifact',
+          ${`sha256:${marker}:actual-chunk-artifact`},
+          ${client.json({ smokeId: marker })}
+        from project
+        returning id
+      ), claim_artifact_chunk as (
+        insert into source_chunks (
+          source_artifact_id, ordinal, content, content_hash, metadata
+        )
+        select
+          id,
+          0,
+          'captured evidence for the claim artifact',
+          ${evidenceContentHash},
+          ${client.json(evidenceMetadata)}
+        from claim_artifact
+        returning id
+      ), wrong_chunk as (
+        insert into source_chunks (
+          source_artifact_id, ordinal, content, content_hash, metadata
+        )
+        select
+          id,
+          0,
+          'chunk owned by the other artifact',
+          ${`sha256:${marker}:wrong-chunk`},
+          ${client.json({ smokeId: marker })}
+        from actual_chunk_artifact
+        returning id
+      ), claim as (
+        insert into source_claims (
+          source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+          does_not_prove, trust_tier, support_type, consumer, status, metadata
+        )
+        select
+          claim_artifact.id,
+          wrong_chunk.id,
+          'legacy mismatched claim',
+          'a pre-0030 write linked a chunk from a different artifact',
+          'the migration must quarantine authority before enforcing provenance',
+          'does not prove captured evidence authority',
+          'project-decision',
+          'implementation-boundary',
+          'source claim provenance migration',
+          'accepted',
+          ${client.json(evidenceMetadata)}
+        from claim_artifact, wrong_chunk
+        returning id
+      ), decision as (
+        insert into source_decisions (
+          project_id, source_claim_id, status, decision, rationale,
+          falsifier, consumer, metadata
+        )
+        select
+          project.id,
+          claim.id,
+          'adopt',
+          'legacy adopted decision',
+          'the legacy row appeared coherent before artifact-chunk integrity',
+          'migration detects the mismatched chunk owner',
+          'source claim provenance migration',
+          ${client.json(evidenceMetadata)}
+        from project, claim
+        returning id
+      ), edge as (
+        insert into source_decision_edges (
+          source_claim_id, source_decision_id, target_type, target_id,
+          support_type, confidence, notes, metadata
+        )
+        select
+          claim.id,
+          decision.id,
+          'architecture_decision',
+          ${marker},
+          'implementation-boundary',
+          'high',
+          'legacy governing edge',
+          ${client.json({ smokeId: marker })}
+        from claim, decision
+        returning id
+      ), search as (
+        insert into search_documents (
+          project_id, subject_type, subject_id, source_artifact_id, source_chunk_id,
+          source_claim_id, source_decision_id, trust_tier, validity_status,
+          title, body, search_text, metadata
+        )
+        select
+          project.id,
+          'source_claim',
+          claim.id,
+          claim_artifact.id,
+          wrong_chunk.id,
+          claim.id,
+          decision.id,
+          'project-decision',
+          'active',
+          'legacy active search document',
+          'legacy active search document body',
+          'legacy active search document',
+          ${client.json({ smokeId: marker })}
+        from project, claim_artifact, wrong_chunk, claim, decision
+        returning id
+      )
+      select
+        project.id::text as "projectId",
+        claim_artifact.id::text as "claimArtifactId",
+        wrong_chunk.id::text as "wrongChunkId",
+        actual_chunk_artifact.id::text as "actualChunkArtifactId",
+        claim.id::text as "claimId",
+        decision.id::text as "decisionId",
+        edge.id::text as "edgeId",
+        search.id::text as "searchId"
+      from
+        project,
+        claim_artifact,
+        actual_chunk_artifact,
+        claim_artifact_chunk,
+        wrong_chunk,
+        claim,
+        decision,
+        edge,
+        search
+    `;
+    const fixture = rows[0];
+
+    if (fixture === undefined) {
+      throw new Error("failed to seed a mismatched SourceClaim migration fixture");
+    }
+
+    return fixture;
+  } finally {
+    await client.end();
+  }
+};
+
+describe("SourceClaim provenance migration", () => {
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "quarantines legacy artifact-chunk mismatches before validating the composite foreign key",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      let pre0030Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough0029>> | undefined;
+      const marker = `source-claim-migration-${crypto.randomUUID()}`;
+
+      try {
+        pre0030Migrations = await createMigrationsFolderThrough0029();
+        const pre0030Report = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0030Migrations.migrationsFolder
+        });
+        expect(pre0030Report).toMatchObject({
+          expectedMigrationCount: 30,
+          appliedMigrationCount: 30,
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
+
+        const fixture = await seedMismatchedClaim(disposable.databaseUrl, marker);
+        const post0030Report = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+        expect(post0030Report).toMatchObject({
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
+        expect(post0030Report.expectedMigrationCount).toBeGreaterThan(30);
+        expect(post0030Report.appliedMigrationCount).toBe(
+          post0030Report.expectedMigrationCount
+        );
+
+        const client = postgres(disposable.databaseUrl, {
+          max: 1,
+          onnotice: () => undefined
+        });
+
+        try {
+          const claimRows = await client<{
+            status: string;
+            sourceChunkId: string | null;
+          }[]>`
+            select status::text, source_chunk_id::text as "sourceChunkId"
+            from source_claims
+            where id = ${fixture.claimId}
+          `;
+          expect(claimRows).toEqual([{ status: "proposed", sourceChunkId: null }]);
+
+          const decisionRows = await client<{
+            status: string;
+            projectId: string | null;
+          }[]>`
+            select status::text, project_id::text as "projectId"
+            from source_decisions
+            where id = ${fixture.decisionId}
+          `;
+          expect(decisionRows).toEqual([{ status: "lab_test", projectId: null }]);
+
+          const edgeRows = await client<{ count: number }[]>`
+            select count(*)::int as count
+            from source_decision_edges
+            where id = ${fixture.edgeId}
+          `;
+          expect(edgeRows).toEqual([{ count: 0 }]);
+
+          const searchRows = await client<{
+            validityStatus: string;
+            invalidated: boolean;
+          }[]>`
+            select
+              validity_status::text as "validityStatus",
+              invalidated_at is not null as invalidated
+            from search_documents
+            where id = ${fixture.searchId}
+          `;
+          expect(searchRows).toEqual([{
+            validityStatus: "invalidated",
+            invalidated: true
+          }]);
+
+          const quarantineRows = await client<{
+            entityType: string;
+            entityId: string;
+          }[]>`
+            select entity_type as "entityType", entity_id::text as "entityId"
+            from source_authority_quarantines
+            where reason = 'claim_chunk_artifact_mismatch'
+              and entity_id in (
+                ${fixture.claimId},
+                ${fixture.decisionId},
+                ${fixture.edgeId},
+                ${fixture.searchId}
+              )
+            order by entity_type
+          `;
+          expect(quarantineRows).toEqual([
+            { entityType: "search_document", entityId: fixture.searchId },
+            { entityType: "source_claim", entityId: fixture.claimId },
+            { entityType: "source_decision", entityId: fixture.decisionId },
+            { entityType: "source_decision_edge", entityId: fixture.edgeId }
+          ]);
+
+          const claimQuarantineRows = await client<{
+            claimArtifactId: string | null;
+            wrongChunkId: string | null;
+            actualChunkArtifactId: string | null;
+          }[]>`
+            select
+              metadata->>'source_artifact_id' as "claimArtifactId",
+              metadata->>'source_chunk_id' as "wrongChunkId",
+              metadata->>'chunk_source_artifact_id' as "actualChunkArtifactId"
+            from source_authority_quarantines
+            where entity_type = 'source_claim'
+              and entity_id = ${fixture.claimId}
+              and reason = 'claim_chunk_artifact_mismatch'
+          `;
+          expect(claimQuarantineRows).toEqual([{
+            claimArtifactId: fixture.claimArtifactId,
+            wrongChunkId: fixture.wrongChunkId,
+            actualChunkArtifactId: fixture.actualChunkArtifactId
+          }]);
+
+          const constraintRows = await client<{
+            validated: boolean;
+            deleteAction: string;
+            localColumns: string[];
+            referencedColumns: string[];
+            deleteSetColumns: string[];
+          }[]>`
+            select
+              constraint_row.convalidated as validated,
+              constraint_row.confdeltype::text as "deleteAction",
+              array(
+                select attribute.attname::text
+                from unnest(constraint_row.conkey) with ordinality as key(attnum, position)
+                join pg_attribute attribute
+                  on attribute.attrelid = constraint_row.conrelid
+                 and attribute.attnum = key.attnum
+                order by key.position
+              ) as "localColumns",
+              array(
+                select attribute.attname::text
+                from unnest(constraint_row.confkey) with ordinality as key(attnum, position)
+                join pg_attribute attribute
+                  on attribute.attrelid = constraint_row.confrelid
+                 and attribute.attnum = key.attnum
+                order by key.position
+              ) as "referencedColumns",
+              array(
+                select attribute.attname::text
+                from unnest(constraint_row.confdelsetcols) with ordinality as key(attnum, position)
+                join pg_attribute attribute
+                  on attribute.attrelid = constraint_row.conrelid
+                 and attribute.attnum = key.attnum
+                order by key.position
+              ) as "deleteSetColumns"
+            from pg_constraint constraint_row
+            where constraint_row.conname = 'source_claims_chunk_artifact_fk'
+              and constraint_row.conrelid = 'source_claims'::regclass
+              and constraint_row.contype = 'f'
+          `;
+          expect(constraintRows).toEqual([{
+            validated: true,
+            deleteAction: "n",
+            localColumns: ["source_chunk_id", "source_artifact_id"],
+            referencedColumns: ["id", "source_artifact_id"],
+            deleteSetColumns: ["source_chunk_id"]
+          }]);
+        } finally {
+          await client.end();
+        }
+
+        const integrity = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          storeName: "postgres",
+          schemaIdentity: "post-0030-source-claim-provenance"
+        });
+        expect(integrity).toMatchObject({
+          schemaReady: true,
+          readOnly: true,
+          violationCount: 0,
+          violations: [],
+          integrityReady: true
+        });
+      } finally {
+        await Promise.all([
+          pre0030Migrations?.cleanup() ?? Promise.resolve(),
+          disposable.cleanup()
+        ]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+});

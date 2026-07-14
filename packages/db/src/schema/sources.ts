@@ -109,6 +109,7 @@ export const sourceChunks = pgTable(
     createdAt: createdAtColumn()
   },
   (table) => [
+    uniqueIndex("source_chunks_id_artifact_unique").on(table.id, table.sourceArtifactId),
     uniqueIndex("source_chunks_artifact_ordinal_unique").on(
       table.sourceArtifactId,
       table.ordinal

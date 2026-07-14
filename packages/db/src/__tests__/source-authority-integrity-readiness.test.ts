@@ -478,9 +478,41 @@ describe("source authority integrity readiness", () => {
         `;
         const evidenceDecision = await createDecision(evidenceClaim, "adopt", projectOne, fixtureMetadata(marker, "sha256:decision-evidence"));
 
+        const chunkMismatchClaimArtifact = await createArtifact("claim-chunk-mismatch");
+        const chunkMismatchOwnerArtifact = await createArtifact("claim-chunk-owner");
+        const chunkMismatchChunk = await client<{ id: string }[]>`
+          insert into source_chunks (source_artifact_id, ordinal, content, content_hash, metadata)
+          values (${chunkMismatchOwnerArtifact}, 0, 'mismatched claim chunk', ${`sha256:${marker}:claim-chunk-mismatch`}, ${client.json({ smokeId: marker })})
+          returning id
+        `;
+        const chunkMismatchClaim = await client<{ id: string }[]>`
+          insert into source_claims (
+            source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+            does_not_prove, trust_tier, support_type, consumer, status, metadata
+          )
+          values (
+            ${chunkMismatchClaimArtifact}, ${chunkMismatchChunk[0]!.id}, 'mismatched chunk claim',
+            'claim and chunk identify different artifacts', 'readiness must expose the mismatch',
+            'does not prove claim text matches chunk bytes', 'project-decision',
+            'implementation-boundary', 'source authority smoke', 'proposed',
+            ${client.json({ smokeId: marker })}
+          )
+          returning id
+        `;
+
         const before = await client<{ count: number }[]>`select count(*)::int as count from source_artifacts`;
+        const mismatchBefore = await client<{ sourceArtifactId: string; sourceChunkId: string }[]>`
+          select source_artifact_id::text as "sourceArtifactId", source_chunk_id::text as "sourceChunkId"
+          from source_claims
+          where id = ${chunkMismatchClaim[0]!.id}
+        `;
         const report = await inspectSourceAuthorityIntegrity({ databaseUrl: databaseUrl! });
         const after = await client<{ count: number }[]>`select count(*)::int as count from source_artifacts`;
+        const mismatchAfter = await client<{ sourceArtifactId: string; sourceChunkId: string }[]>`
+          select source_artifact_id::text as "sourceArtifactId", source_chunk_id::text as "sourceChunkId"
+          from source_claims
+          where id = ${chunkMismatchClaim[0]!.id}
+        `;
         const fixtureSubjectIds = [
           mismatchDecision,
           missingClaim,
@@ -489,12 +521,15 @@ describe("source authority integrity readiness", () => {
           invalidEdge[0]!.id,
           activeSearch[0]!.id,
           incompleteArtifact[0]!.id,
-          evidenceDecision
+          evidenceDecision,
+          chunkMismatchClaim[0]!.id
         ];
         const fixtureViolations = report.violations.filter((item) => fixtureSubjectIds.includes(item.subjectId));
 
         expect(report.readOnly).toBe(true);
+        expect(report.integrityReady).toBe(false);
         expect(after[0]?.count).toBe(before[0]?.count);
+        expect(mismatchAfter).toEqual(mismatchBefore);
         expect(new Set(fixtureViolations.map((item) => item.id)).size).toBe(fixtureViolations.length);
         expect(fixtureViolations).toEqual(expect.arrayContaining([
           expect.objectContaining({ kind: "project_mismatch", subjectId: mismatchDecision }),
@@ -504,7 +539,13 @@ describe("source authority integrity readiness", () => {
           expect.objectContaining({ kind: "governing_edge_without_current_reviewed_decision", subjectId: invalidEdge[0]!.id }),
           expect.objectContaining({ kind: "active_search_without_canonical_authority", subjectId: activeSearch[0]!.id }),
           expect.objectContaining({ kind: "incomplete_import_lifecycle", subjectId: incompleteArtifact[0]!.id }),
-          expect.objectContaining({ kind: "captured_evidence_missing_or_mismatched", subjectId: evidenceDecision })
+          expect.objectContaining({ kind: "captured_evidence_missing_or_mismatched", subjectId: evidenceDecision }),
+          {
+            id: `claim_chunk_artifact_mismatch:${chunkMismatchClaim[0]!.id}`,
+            kind: "claim_chunk_artifact_mismatch",
+            subjectId: chunkMismatchClaim[0]!.id,
+            detail: "SourceClaim source chunk belongs to a different SourceArtifact"
+          }
         ]));
         void evidenceChunk;
       } finally {
