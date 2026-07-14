@@ -15,6 +15,7 @@ import type {
   DiffRisk,
   EvalCandidateProposal,
   EvidenceCommand,
+  EvidenceBundleHelpedProofAssessment,
   EvidenceCommandReadback,
   MemoryCandidate,
   KnowledgeUsefulnessOutcomeFeedback,
@@ -26,13 +27,16 @@ import type {
 import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
+  assessEvidenceBundleHelpedProof,
   assessCandidateReviewability,
+  decideEvidenceContractActivation,
   decisionPacketBindingReadbackFromMetadata,
   decisionPacketUsefulnessAuthorizationDowngradeReason,
   isReviewableFeedbackOutcome,
   knowledgeUsefulnessOutcomesFromMetadata,
   projectDecisionPacketUsefulnessSubjects,
   sourceUsefulnessOutcomesFromMetadata,
+  stampCurrentDecisionPacketAuthorityMetadata,
   toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
@@ -75,7 +79,7 @@ import type {
 
 const execFileAsync = promisify(execFile);
 
-const sha256Hex = (value: string): string =>
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 
 export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
@@ -901,6 +905,10 @@ interface UsefulnessEvidenceClass {
   verificationRefs: ReadonlySet<string>;
 }
 
+type UsefulnessOutcomeProofFailureReason =
+  | "missing_current_application_reference"
+  | "missing_strict_verification_reference";
+
 const evidenceCommandOutputRefs = (
   command: EvidenceCommandReadback
 ): string[] => "outputRef" in command && command.outputRef !== undefined
@@ -908,33 +916,70 @@ const evidenceCommandOutputRefs = (
   : [];
 
 const usefulnessEvidenceClassFor = (input: {
-  readonly changedFiles: readonly ChangedFile[];
-  readonly commands: readonly EvidenceCommandReadback[];
+  readonly classification: ChangedFileClassification;
+  readonly strictVerificationRefs: readonly string[];
   readonly targetEvidence: TargetEvidence | undefined;
 }): UsefulnessEvidenceClass => ({
   applicationRefs: new Set([
-    ...input.changedFiles.map((file) => file.path),
+    ...input.classification.intended.map((file) => file.path),
     ...(input.targetEvidence?.changedFiles
       .filter((file) => file.ownership === "owned_by_current_krn_run" || file.ownership === "partial")
       .map((file) => file.path) ?? [])
   ]),
-  verificationRefs: new Set(input.commands.flatMap((command) =>
-    command.status === "passed"
-      ? [command.command, ...evidenceCommandOutputRefs(command)]
-      : []
-  ))
+  verificationRefs: new Set(input.strictVerificationRefs)
 });
 
 const evidenceClassDowngradeReason = (
   requestedOutcome: "used" | "helped",
   provenOutcome: "selected" | "used" | "helped",
-  reason: string
+  reason: string,
+  helpedProofAssessment: EvidenceBundleHelpedProofAssessment,
+  outcomeProofFailureReason: UsefulnessOutcomeProofFailureReason | undefined
 ): string => {
   const requiredEvidence = requestedOutcome === "helped"
     ? "current application evidence and successful current verification/output proof"
     : "current application evidence";
 
-  return `Downgraded: ${requestedOutcome} requires ${requiredEvidence}; current evidence supports ${provenOutcome} only. Original reason: ${reason}`;
+  const helpedProofReason = requestedOutcome === "helped" && helpedProofAssessment.status === "ineligible"
+    ? ` Helped proof reason: ${helpedProofAssessment.reason}.`
+    : "";
+  const outcomeProofReason = outcomeProofFailureReason === undefined
+    ? ""
+    : ` Outcome proof reason: ${outcomeProofFailureReason}.`;
+
+  return `Downgraded: ${requestedOutcome} requires ${requiredEvidence}; current evidence supports ${provenOutcome} only.${helpedProofReason}${outcomeProofReason} Original reason: ${reason}`;
+};
+
+const usefulnessOutcomeProofFailureReason = (input: {
+  readonly hasApplicationEvidence: boolean;
+  readonly hasVerificationEvidence: boolean;
+  readonly requestedOutcome: "used" | "helped";
+}): UsefulnessOutcomeProofFailureReason | undefined => {
+  if (!input.hasApplicationEvidence) {
+    return "missing_current_application_reference";
+  }
+
+  return input.requestedOutcome === "helped" && !input.hasVerificationEvidence
+    ? "missing_strict_verification_reference"
+    : undefined;
+};
+
+const provenUsefulnessOutcome = (input: {
+  readonly hasApplicationEvidence: boolean;
+  readonly hasVerificationEvidence: boolean;
+  readonly helpedProofAssessment: EvidenceBundleHelpedProofAssessment;
+  readonly requestedOutcome: "used" | "helped";
+}): "selected" | "used" | "helped" => {
+  if (!input.hasApplicationEvidence) {
+    return "selected";
+  }
+  if (input.requestedOutcome === "used") {
+    return "used";
+  }
+
+  return input.hasVerificationEvidence && input.helpedProofAssessment.status === "eligible"
+    ? "helped"
+    : "used";
 };
 
 const downgradeUsefulnessOutcomesWithoutApplicationProof = <T extends {
@@ -943,7 +988,8 @@ const downgradeUsefulnessOutcomesWithoutApplicationProof = <T extends {
   readonly evidenceRefs: readonly string[];
 }>(
   outcomes: readonly T[] | undefined,
-  evidenceClass: UsefulnessEvidenceClass
+  evidenceClass: UsefulnessEvidenceClass,
+  helpedProofAssessment: EvidenceBundleHelpedProofAssessment
 ): readonly T[] | undefined => outcomes?.map((outcome) => {
   if (outcome.outcome !== "used" && outcome.outcome !== "helped") {
     return outcome;
@@ -952,20 +998,30 @@ const downgradeUsefulnessOutcomesWithoutApplicationProof = <T extends {
   const refs = new Set(outcome.evidenceRefs);
   const hasApplicationEvidence = [...refs].some((ref) => evidenceClass.applicationRefs.has(ref));
   const hasVerificationEvidence = [...refs].some((ref) => evidenceClass.verificationRefs.has(ref));
-  const provenOutcome = outcome.outcome === "used"
-    ? hasApplicationEvidence ? "used" : "selected"
-    : hasApplicationEvidence && hasVerificationEvidence
-      ? "helped"
-      : hasApplicationEvidence
-        ? "used"
-        : "selected";
+  const provenOutcome = provenUsefulnessOutcome({
+    requestedOutcome: outcome.outcome,
+    hasApplicationEvidence,
+    hasVerificationEvidence,
+    helpedProofAssessment
+  });
+  const outcomeProofFailureReason = usefulnessOutcomeProofFailureReason({
+    requestedOutcome: outcome.outcome,
+    hasApplicationEvidence,
+    hasVerificationEvidence
+  });
 
   return provenOutcome === outcome.outcome
     ? outcome
     : {
         ...outcome,
         outcome: provenOutcome,
-        reason: evidenceClassDowngradeReason(outcome.outcome, provenOutcome, outcome.reason)
+        reason: evidenceClassDowngradeReason(
+          outcome.outcome,
+          provenOutcome,
+          outcome.reason,
+          helpedProofAssessment,
+          outcomeProofFailureReason
+        )
       };
 });
 
@@ -1209,8 +1265,10 @@ interface EvidenceBackedUsefulnessOutcomes {
 const evidenceBackedUsefulnessOutcomesFor = (input: {
   readonly captureIdentity: string;
   readonly changedFiles: readonly ChangedFile[];
+  readonly classification: ChangedFileClassification;
   readonly commands: readonly EvidenceCommandReadback[];
   readonly decisionPacketChecksum: string | undefined;
+  readonly helpedProof: CaptureHelpedProof;
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
@@ -1230,19 +1288,21 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
     currentEvidenceRefs
   );
   const evidenceClass = usefulnessEvidenceClassFor({
-    changedFiles: input.changedFiles,
-    commands: input.commands,
+    classification: input.classification,
+    strictVerificationRefs: input.helpedProof.verificationRefs,
     targetEvidence: input.targetEvidence
   });
 
   return {
     sourceOutcomes: downgradeUsefulnessOutcomesWithoutApplicationProof(
       evidenceLinkedSourceOutcomes,
-      evidenceClass
+      evidenceClass,
+      input.helpedProof.assessment
     ),
     knowledgeOutcomes: downgradeUsefulnessOutcomesWithoutApplicationProof(
       evidenceLinkedKnowledgeOutcomes,
-      evidenceClass
+      evidenceClass,
+      input.helpedProof.assessment
     )
   };
 };
@@ -1467,6 +1527,80 @@ const renderEvidenceCaptureOutput = (input: {
   ...renderPersistedEvidenceIdentity(input.persistedIdentity)
 ].join("\n") + "\n";
 
+interface CaptureHelpedProof {
+  assessment: EvidenceBundleHelpedProofAssessment;
+  verificationRefs: string[];
+}
+
+const strictVerificationRefs = (
+  evidence: CreateEvidenceBundleInput,
+  requiredCommands: ReadonlySet<string>
+): string[] => evidence.commands
+  .map(toEvidenceCommandReadback)
+  .filter((command) => command.kind === "command_runner" && requiredCommands.has(command.command))
+  .flatMap((command) => [command.command, ...evidenceCommandOutputRefs(command)]);
+
+const captureHelpedProof = (input: {
+  readonly aggregate: HarnessRunAggregate;
+  readonly createdAt: string;
+  readonly evidence: CreateEvidenceBundleInput;
+  readonly packetBinding: DecisionPacketBinding | undefined;
+}): CaptureHelpedProof => {
+  if (input.packetBinding === undefined) {
+    return {
+      assessment: { status: "ineligible", reason: "packet_not_bound_current" },
+      verificationRefs: []
+    };
+  }
+
+  const activation = decideEvidenceContractActivation({
+    evidenceContract: input.aggregate.harnessPlan.metadata.evidenceContract,
+    taskContract: input.aggregate.taskContract,
+    harnessPlan: input.aggregate.harnessPlan,
+    executionRun: input.aggregate.executionRun
+  });
+  const binding = input.packetBinding;
+
+  const evidenceContract = activation.status === "active"
+    ? activation.evidenceContract
+    : undefined;
+  const assessment = assessEvidenceBundleHelpedProof({
+    bundle: {
+      status: input.evidence.status ?? "captured",
+      commands: input.evidence.commands,
+      ...(input.evidence.commandOutputArtifacts === undefined
+        ? {}
+        : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
+      metadata: stampCurrentDecisionPacketAuthorityMetadata(
+        input.evidence.metadata ?? {},
+        {
+          checksum: binding.packetChecksum,
+          generatedAt: binding.packetGeneratedAt,
+          sourceRunLifecycleRevision: binding.sourceRunLifecycleRevision
+        }
+      ),
+      createdAt: input.createdAt
+    },
+    evidenceContract,
+    packetChecksum: binding.packetChecksum,
+    packetGeneratedAt: binding.packetGeneratedAt,
+    sourceRunLifecycleRevision: binding.sourceRunLifecycleRevision,
+    sha256Hex
+  });
+
+  return {
+    assessment,
+    verificationRefs: assessment.status === "eligible" && evidenceContract !== undefined
+      ? strictVerificationRefs(
+        input.evidence,
+        new Set(evidenceContract.commands
+          .filter((command) => command.required)
+          .map((command) => command.command))
+      )
+      : []
+  };
+};
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
@@ -1536,11 +1670,30 @@ const persistEvidenceCapture = async (
       projectId,
       runId
     );
+    const evidence = buildEvidenceBundleInput(
+      runId,
+      changedFiles,
+      classification,
+      commands,
+      commandOutputArtifacts,
+      diffRisk,
+      targetEvidence,
+      counts,
+      environmentFingerprint
+    );
+    const helpedProof = captureHelpedProof({
+      aggregate,
+      createdAt: runtime.now(),
+      evidence,
+      packetBinding: packet.binding
+    });
     const evidenceBackedUsefulness = evidenceBackedUsefulnessOutcomesFor({
       captureIdentity,
       changedFiles,
+      classification,
       commands,
       decisionPacketChecksum: packet.binding?.packetChecksum,
+      helpedProof,
       knowledgeOutcomes: usefulness.knowledgeOutcomes,
       sourceOutcomes: usefulness.sourceOutcomes,
       targetEvidence
@@ -1573,17 +1726,7 @@ const persistEvidenceCapture = async (
       ...(admittedUsefulness.knowledgeOutcomes === undefined
         ? {}
         : { knowledgeUsefulnessOutcomes: admittedUsefulness.knowledgeOutcomes }),
-      evidence: buildEvidenceBundleInput(
-        runId,
-        changedFiles,
-        classification,
-        commands,
-        commandOutputArtifacts,
-        diffRisk,
-        targetEvidence,
-        counts,
-        environmentFingerprint
-      ),
+      evidence,
       review: buildReviewAssessmentInput(runId, counts),
       feedback: buildFeedbackDeltaInput(
         captureIdentity,

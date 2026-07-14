@@ -25,6 +25,7 @@ import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
   buildDecisionPacketFromReadModel,
+  createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
 import type {
@@ -38,9 +39,10 @@ import {
   evidenceBundleFreshness
 } from "../decision-packet-read-model-builders.js";
 import { runCli } from "../run-cli.js";
+import { runEvidenceCaptureCommand } from "../run-evidence-capture-command.js";
 
 const now = "2026-06-21T12:00:00.000Z";
-const sha256Hex = (value: string): string =>
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 const temporaryDirectories: string[] = [];
 
@@ -1045,21 +1047,31 @@ describe("runCli", () => {
     expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 
-  it("requires current application and verification refs for used and helped", async () => {
+  it("downgrades operator-reported helped outcomes with one shared typed reason", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
     const capture: EvidencePersistenceCapture = {};
     const aggregate = createEvidencePersistenceAggregate();
+    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
+    const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
+    aggregate.harnessPlan.metadata = {
+      evidenceContract: {
+        taskContractId: aggregate.taskContract.id,
+        commands: [{ command: verificationCommand, required: true }],
+        diffRisk: "low",
+        reviewBurden: "review",
+        rollbackPath: "revert",
+        metadata: {}
+      }
+    };
     const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
       dependencies,
       aggregate,
       capture
     );
-    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
-    const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
     const result = await runCli(
       [
         "evidence",
@@ -1077,7 +1089,7 @@ describe("runCli", () => {
         "--source-usefulness",
         `claim:source-claim-1=helped|Source application and verification both passed|${packetBinding.packetEvidenceRef},${applicationPath},${verificationCommand}|Does not prove source truth`,
         "--memory-usefulness",
-        `knowledge:ts-boundary-unknown-first-result-state=used|Memory application was observed|${packetBinding.packetEvidenceRef},${applicationPath}|Does not prove memory usefulness`,
+        `knowledge:ts-boundary-unknown-first-result-state=helped|Knowledge application and verification allegedly passed|${packetBinding.packetEvidenceRef},${applicationPath},${verificationCommand}|Does not prove memory usefulness`,
         "--persist"
       ],
       {
@@ -1110,11 +1122,157 @@ describe("runCli", () => {
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
-        outcome: "helped"
+        outcome: "used",
+        reason: expect.stringContaining("not_execution_backed")
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
-        outcome: "used"
+        outcome: "used",
+        reason: expect.stringContaining("not_execution_backed")
+      }]
+    });
+  });
+
+  it("does not lend shared execution-backed proof to unrelated source or knowledge refs", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
+    const unrelatedPath = "packages/cli/src/unrelated-change.ts";
+    const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
+    const operatorReportedCommand = "pnpm unrelated-check";
+    aggregate.harnessPlan.metadata = {
+      evidenceContract: {
+        taskContractId: aggregate.taskContract.id,
+        commands: [{ command: verificationCommand, required: true }],
+        diffRisk: "low",
+        reviewBurden: "review",
+        rollbackPath: "revert",
+        metadata: {}
+      }
+    };
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const artifact = createCommandOutputArtifact({
+      command: verificationCommand,
+      exitCode: 0,
+      startedAt: now,
+      completedAt: now,
+      stdout: new TextEncoder().encode("verification passed\n"),
+      stdoutTotalByteCount: 20,
+      stderr: new Uint8Array(),
+      stderrTotalByteCount: 0
+    }, sha256Hex);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+
+    await runEvidenceCaptureCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      intendedFiles: [applicationPath],
+      commandOutcomes: [{
+        command: verificationCommand,
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: now,
+        outputRef: artifact.outputRef
+      }, {
+        command: operatorReportedCommand,
+        status: "passed",
+        provenance: "operator_reported"
+      }],
+      commandOutputArtifacts: [artifact],
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "helped",
+        reason: "Execution-backed source application passed.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          applicationPath,
+          verificationCommand,
+          artifact.outputRef
+        ],
+        doesNotProve: "Does not prove source truth."
+      }, {
+        sourceClaimId: "source-claim-current",
+        outcome: "helped",
+        reason: "Unrelated change and operator report allegedly prove source usefulness.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          unrelatedPath,
+          operatorReportedCommand
+        ],
+        doesNotProve: "Does not prove source truth."
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        outcome: "helped",
+        reason: "Execution-backed knowledge application passed.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          applicationPath,
+          verificationCommand,
+          artifact.outputRef
+        ],
+        doesNotProve: "Does not prove future memory usefulness."
+      }, {
+        knowledgeId: "knowledge:frontend-template",
+        outcome: "helped",
+        reason: "Unrelated change and operator report allegedly prove knowledge usefulness.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          unrelatedPath,
+          operatorReportedCommand
+        ],
+        doesNotProve: "Does not prove future memory usefulness."
+      }],
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ` M ${applicationPath}\n M ${unrelatedPath}\n`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {
+          ...dependencies,
+          harnessRunRepository
+        },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "helped"
+      }, {
+        sourceClaimId: "source-claim-current",
+        outcome: "selected",
+        reason: expect.stringContaining("missing_current_application_reference")
+      }],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        outcome: "helped"
+      }, {
+        knowledgeId: "knowledge:frontend-template",
+        outcome: "selected",
+        reason: expect.stringContaining("missing_current_application_reference")
       }]
     });
   });

@@ -208,6 +208,29 @@ export type EvidenceCommandHelpedProofAssessment =
       reason: EvidenceCommandHelpedProofFailureReason;
     };
 
+export type EvidenceBundleHelpedProofFailureReason =
+  | "bundle_not_captured_or_verified"
+  | "packet_not_bound_current"
+  | "packet_binding_mismatch"
+  | "missing_active_evidence_contract"
+  | "invalid_bundle_created_at"
+  | "invalid_packet_generated_at"
+  | "bundle_created_before_packet_issuance"
+  | "missing_required_commands"
+  | "duplicate_command_output_artifact"
+  | "missing_required_command_outcome"
+  | "ambiguous_required_command_outcome"
+  | EvidenceCommandHelpedProofFailureReason;
+
+export type EvidenceBundleHelpedProofAssessment =
+  | {
+      status: "eligible";
+    }
+  | {
+      status: "ineligible";
+      reason: EvidenceBundleHelpedProofFailureReason;
+    };
+
 export interface EvidenceBundle {
   id: EvidenceBundleId;
   executionRunId: ExecutionRunId;
@@ -1019,35 +1042,82 @@ export const assessEvidenceCommandHelpedProof = (input: {
   });
 };
 
-export const evidenceBundleProvesHelped = (input: {
-  bundle: EvidenceBundle;
-  evidenceContract: EvidenceContract | undefined;
+type EvidenceBundleHelpedProofInput = Pick<
+  EvidenceBundle,
+  "commandOutputArtifacts" | "commands" | "createdAt" | "metadata" | "status"
+>;
+
+const ineligibleBundleHelpedProof = (
+  reason: EvidenceBundleHelpedProofFailureReason
+): EvidenceBundleHelpedProofAssessment => ({ status: "ineligible", reason });
+
+const bundleBindingFailureReason = (input: {
+  bundle: EvidenceBundleHelpedProofInput;
   packetChecksum: string;
   packetGeneratedAt: IsoTimestamp;
   sourceRunLifecycleRevision: number;
-  sha256Hex: CommandOutputArtifactSha256Hex;
-}): boolean => {
-  const bundleCreatedAt = Date.parse(input.bundle.createdAt);
-  const packetGeneratedAt = Date.parse(input.packetGeneratedAt);
-  const packetBinding = decisionPacketBindingReadbackFromMetadata(input.bundle.metadata);
-
-  if (
-    (input.bundle.status !== "captured" && input.bundle.status !== "verified") ||
-    packetBinding.status !== "bound_current" ||
-    packetBinding.checksum !== input.packetChecksum ||
-    packetBinding.evidenceRef !== `packet:${input.packetChecksum}` ||
-    packetBinding.generatedAt !== input.packetGeneratedAt ||
-    packetBinding.sourceRunLifecycleRevision !== input.sourceRunLifecycleRevision ||
-    !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
-    input.sourceRunLifecycleRevision < 1 ||
-    input.evidenceContract === undefined ||
-    !Number.isFinite(bundleCreatedAt) ||
-    !Number.isFinite(packetGeneratedAt) ||
-    bundleCreatedAt < packetGeneratedAt
-  ) {
-    return false;
+}): EvidenceBundleHelpedProofFailureReason | undefined => {
+  if (input.bundle.status !== "captured" && input.bundle.status !== "verified") {
+    return "bundle_not_captured_or_verified";
   }
 
+  const packetBinding = decisionPacketBindingReadbackFromMetadata(input.bundle.metadata);
+
+  if (packetBinding.status !== "bound_current") {
+    return "packet_not_bound_current";
+  }
+
+  const bindingMatches = [
+    packetBinding.checksum === input.packetChecksum,
+    packetBinding.evidenceRef === `packet:${input.packetChecksum}`,
+    packetBinding.generatedAt === input.packetGeneratedAt,
+    packetBinding.sourceRunLifecycleRevision === input.sourceRunLifecycleRevision,
+    Number.isSafeInteger(input.sourceRunLifecycleRevision),
+    input.sourceRunLifecycleRevision >= 1
+  ].every(Boolean);
+
+  return bindingMatches
+    ? undefined
+    : "packet_binding_mismatch";
+};
+
+const bundleTimeFailureReason = (input: {
+  bundleCreatedAt: number;
+  packetGeneratedAt: number;
+}): EvidenceBundleHelpedProofFailureReason | undefined => {
+  if (!Number.isFinite(input.bundleCreatedAt)) {
+    return "invalid_bundle_created_at";
+  }
+  if (!Number.isFinite(input.packetGeneratedAt)) {
+    return "invalid_packet_generated_at";
+  }
+
+  return input.bundleCreatedAt < input.packetGeneratedAt
+    ? "bundle_created_before_packet_issuance"
+    : undefined;
+};
+
+const commandOutputArtifactsByRef = (
+  artifacts: readonly CommandOutputArtifact[]
+): Map<string, CommandOutputArtifact> | undefined => {
+  const indexed = new Map<string, CommandOutputArtifact>();
+
+  for (const artifact of artifacts) {
+    if (indexed.has(artifact.outputRef)) {
+      return undefined;
+    }
+    indexed.set(artifact.outputRef, artifact);
+  }
+
+  return indexed;
+};
+
+const assessRequiredCommandProof = (input: {
+  bundle: EvidenceBundleHelpedProofInput;
+  evidenceContract: EvidenceContract;
+  packetGeneratedAt: IsoTimestamp;
+  sha256Hex: CommandOutputArtifactSha256Hex;
+}): EvidenceBundleHelpedProofAssessment => {
   const requiredCommands = new Set(
     input.evidenceContract.commands
       .filter((command) => command.required)
@@ -1055,35 +1125,74 @@ export const evidenceBundleProvesHelped = (input: {
   );
 
   if (requiredCommands.size === 0) {
-    return false;
+    return ineligibleBundleHelpedProof("missing_required_commands");
   }
 
-  const commandOutputArtifactsByRef = new Map<string, CommandOutputArtifact>();
+  const artifactsByRef = commandOutputArtifactsByRef(input.bundle.commandOutputArtifacts ?? []);
 
-  for (const artifact of input.bundle.commandOutputArtifacts ?? []) {
-    if (commandOutputArtifactsByRef.has(artifact.outputRef)) {
-      return false;
-    }
-
-    commandOutputArtifactsByRef.set(artifact.outputRef, artifact);
+  if (artifactsByRef === undefined) {
+    return ineligibleBundleHelpedProof("duplicate_command_output_artifact");
   }
 
   const commandReadbacks = input.bundle.commands.map(toEvidenceCommandReadback);
 
-  return [...requiredCommands].every((requiredCommand) => {
-    const outcomes = commandReadbacks.filter(
-      (command) => command.command === requiredCommand
-    );
+  for (const requiredCommand of requiredCommands) {
+    const outcomes = commandReadbacks.filter((command) => command.command === requiredCommand);
 
     if (outcomes.length !== 1) {
-      return false;
+      return ineligibleBundleHelpedProof(
+        outcomes.length === 0
+          ? "missing_required_command_outcome"
+          : "ambiguous_required_command_outcome"
+      );
     }
 
-    return assessEvidenceCommandHelpedProof({
+    const assessment = assessEvidenceCommandHelpedProof({
       command: outcomes[0]!,
       packetGeneratedAt: input.packetGeneratedAt,
-      resolveCommandOutputArtifact: (outputRef) => commandOutputArtifactsByRef.get(outputRef),
+      resolveCommandOutputArtifact: (outputRef) => artifactsByRef.get(outputRef),
       sha256Hex: input.sha256Hex
-    }).status === "eligible";
+    });
+
+    if (assessment.status === "ineligible") {
+      return assessment;
+    }
+  }
+
+  return { status: "eligible" };
+};
+
+export const assessEvidenceBundleHelpedProof = (input: {
+  bundle: EvidenceBundleHelpedProofInput;
+  evidenceContract: EvidenceContract | undefined;
+  packetChecksum: string;
+  packetGeneratedAt: IsoTimestamp;
+  sourceRunLifecycleRevision: number;
+  sha256Hex: CommandOutputArtifactSha256Hex;
+}): EvidenceBundleHelpedProofAssessment => {
+  const bindingFailure = bundleBindingFailureReason(input);
+  if (bindingFailure !== undefined) {
+    return ineligibleBundleHelpedProof(bindingFailure);
+  }
+  if (input.evidenceContract === undefined) {
+    return ineligibleBundleHelpedProof("missing_active_evidence_contract");
+  }
+  const timeFailure = bundleTimeFailureReason({
+    bundleCreatedAt: Date.parse(input.bundle.createdAt),
+    packetGeneratedAt: Date.parse(input.packetGeneratedAt)
+  });
+  if (timeFailure !== undefined) {
+    return ineligibleBundleHelpedProof(timeFailure);
+  }
+
+  return assessRequiredCommandProof({
+    bundle: input.bundle,
+    evidenceContract: input.evidenceContract,
+    packetGeneratedAt: input.packetGeneratedAt,
+    sha256Hex: input.sha256Hex
   });
 };
+
+export const evidenceBundleProvesHelped = (
+  input: Parameters<typeof assessEvidenceBundleHelpedProof>[0]
+): boolean => assessEvidenceBundleHelpedProof(input).status === "eligible";

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { createHash } from "node:crypto";
 
 import {
+  assessEvidenceBundleHelpedProof,
   assessEvidenceCommandHelpedProof,
   decisionPacketBindingReadbackFromMetadata,
   evidenceBundleProvesHelped,
@@ -602,6 +603,31 @@ describe("evidence bundle completeness", () => {
       sourceRunLifecycleRevision: 1,
       sha256Hex
     })).toBe(false);
+  });
+
+  test("returns the shared typed reason for operator-reported helped evidence", () => {
+    expect(assessEvidenceBundleHelpedProof({
+      bundle: bundle({
+        metadata: stampCurrentDecisionPacketAuthorityMetadata({}, {
+          checksum: "packet-checksum",
+          generatedAt: packetGeneratedAt,
+          sourceRunLifecycleRevision: 1
+        }),
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "operator_reported"
+        }]
+      }),
+      evidenceContract: helpedEvidenceContract(true),
+      packetChecksum: "packet-checksum",
+      packetGeneratedAt,
+      sourceRunLifecycleRevision: 1,
+      sha256Hex
+    })).toEqual({
+      status: "ineligible",
+      reason: "not_execution_backed"
+    });
   });
 
   test("rejects verification evidence from an earlier execution lifecycle revision", () => {
