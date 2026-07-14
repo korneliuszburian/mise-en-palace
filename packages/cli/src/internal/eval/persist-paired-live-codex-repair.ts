@@ -6,6 +6,10 @@ import type {
   HeldOutArmScore
 } from "./paired-live-codex-repair.js";
 import {
+  pairedArmScoreSummary,
+  pairedCommandEvidence
+} from "./paired-command-evidence.js";
+import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 import {
@@ -47,33 +51,6 @@ const readBackPersistedCandidate = (value: unknown, candidateId: string): boolea
     isRecord(feedback) && readCandidate(feedback, candidateId)
   );
 };
-
-const commandEvidence = (
-  arm: "baseline" | "krn",
-  label: string,
-  result: {
-    readonly command: string;
-    readonly args: readonly string[];
-    readonly exitCode: number | null;
-    readonly stderr: string;
-    readonly durationMs?: number;
-  },
-  capturedAt: string,
-  runId: string
-) => ({
-  command: `${arm}:${label} ${result.command} ${result.args.join(" ")}`.trim(),
-  status: result.stderr.includes("skipped")
-    ? "skipped" as const
-    : result.exitCode === 0
-      ? "passed" as const
-      : "failed" as const,
-  provenance: "command_runner" as const,
-  ...(result.exitCode === null ? {} : { exitCode: result.exitCode }),
-  capturedAt,
-  outputRef: `checker:paired-live-codex-repair:${runId}:${arm}:${label}`,
-  assertedBy: "krn-paired-live-codex-repair",
-  doesNotProve: `Command outcome (${result.durationMs ?? "unknown"}ms) does not prove arbitrary-repository portability or product readiness.`
-});
 
 const targetChangedFiles = (
   arm: "baseline" | "krn",
@@ -145,24 +122,28 @@ const main = async (): Promise<void> => {
     ],
     createdAt: now
   });
-  const commandOutcomes = [
+  const commandEvidenceRows = [
     ...(score.baseline.commands === undefined ? [] : [
-      commandEvidence("baseline", "test", score.baseline.commands.test, now, runId),
-      commandEvidence("baseline", "typecheck", score.baseline.commands.typecheck, now, runId),
-      commandEvidence("baseline", "diff-check", score.baseline.commands.diffCheck, now, runId)
+      pairedCommandEvidence("baseline", "test", score.baseline.commands.test),
+      pairedCommandEvidence("baseline", "typecheck", score.baseline.commands.typecheck),
+      pairedCommandEvidence("baseline", "diff-check", score.baseline.commands.diffCheck)
     ]),
     ...(score.baseline.runtimeCommand === undefined ? [] : [
-      commandEvidence("baseline", "held-out-runtime", score.baseline.runtimeCommand, now, runId)
+      pairedCommandEvidence("baseline", "held-out-runtime", score.baseline.runtimeCommand)
     ]),
     ...(score.krn.commands === undefined ? [] : [
-      commandEvidence("krn", "test", score.krn.commands.test, now, runId),
-      commandEvidence("krn", "typecheck", score.krn.commands.typecheck, now, runId),
-      commandEvidence("krn", "diff-check", score.krn.commands.diffCheck, now, runId)
+      pairedCommandEvidence("krn", "test", score.krn.commands.test),
+      pairedCommandEvidence("krn", "typecheck", score.krn.commands.typecheck),
+      pairedCommandEvidence("krn", "diff-check", score.krn.commands.diffCheck)
     ]),
     ...(score.krn.runtimeCommand === undefined ? [] : [
-      commandEvidence("krn", "held-out-runtime", score.krn.runtimeCommand, now, runId)
+      pairedCommandEvidence("krn", "held-out-runtime", score.krn.runtimeCommand)
     ])
   ];
+  const commandOutcomes = commandEvidenceRows.map((row) => row.command);
+  const commandOutputArtifacts = commandEvidenceRows.flatMap((row) =>
+    row.commandOutputArtifact === undefined ? [] : [row.commandOutputArtifact]
+  );
   const targetEvidence = {
     targetRepo: `${baselineRoot};${krnRoot}`,
     mode: "headless_repair",
@@ -193,6 +174,7 @@ const main = async (): Promise<void> => {
     runId,
     decisionPacketChecksum: packetChecksum,
     commandOutcomes,
+    commandOutputArtifacts,
     targetEvidence,
     evalCandidateProposals: [candidate],
     readGitStatus: async () => ""
@@ -222,7 +204,12 @@ const main = async (): Promise<void> => {
     environmentFingerprint,
     persistedInDecisionPacket: persisted,
     evidenceIdentity,
-    score,
+    score: {
+      outcome: score.outcome,
+      reason: score.reason,
+      baseline: pairedArmScoreSummary(score.baseline),
+      krn: pairedArmScoreSummary(score.krn)
+    },
     proof: {
       proves: [
         "the actual paired checker outcome was stored as a reviewable EvalCandidate",

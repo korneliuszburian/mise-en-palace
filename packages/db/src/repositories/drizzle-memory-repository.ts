@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   and,
   asc,
@@ -63,6 +65,7 @@ import {
   memoryFeedbackEvents,
   memoryRecordVersions,
   memoryRecords,
+  evidenceCommandArtifacts,
   evidenceBundles,
   executionRuns,
   harnessPlans,
@@ -80,8 +83,12 @@ import {
   mapMemoryCandidate,
   mapMemoryFeedbackEvent,
   mapMemoryRecord,
+  mapCommandOutputArtifact,
   mapEvidenceBundle
 } from "./mappers.js";
+
+const sha256Hex = (value: string | Uint8Array): string =>
+  createHash("sha256").update(value).digest("hex");
 
 const smokePayload = (
   metadata: Record<string, unknown> | undefined
@@ -1315,7 +1322,10 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       );
     }
 
-    const bundle = mapEvidenceBundle(linked.bundle);
+    const bundle = mapEvidenceBundle(
+      linked.bundle,
+      linked.commandOutputArtifactRows.map(mapCommandOutputArtifact)
+    );
     const activation = decideEvidenceContractActivation({
       evidenceContract: linked.harnessPlan.metadata.evidenceContract,
       taskContract: linked.taskContract,
@@ -1329,7 +1339,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         : undefined,
       packetChecksum: input.packetChecksum,
       packetGeneratedAt: input.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      sha256Hex
     });
 
     if (!valid) {
@@ -1362,7 +1373,16 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       ))
       .limit(1);
 
-    return linked;
+    if (linked === undefined) {
+      return undefined;
+    }
+
+    const commandOutputArtifactRows = await tx.query.evidenceCommandArtifacts.findMany({
+      where: eq(evidenceCommandArtifacts.evidenceBundleId, linked.bundle.id),
+      orderBy: asc(evidenceCommandArtifacts.commandOrdinal)
+    });
+
+    return { ...linked, commandOutputArtifactRows };
   }
 
   private async insertMemoryApplication(
@@ -1696,11 +1716,15 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     // against a later terminal lifecycle would erase valid historical feedback; the
     // transactional write guard above owns current activation admission.
     return evidenceBundleProvesHelped({
-      bundle: mapEvidenceBundle(linked.bundle),
+      bundle: mapEvidenceBundle(
+        linked.bundle,
+        linked.commandOutputArtifactRows.map(mapCommandOutputArtifact)
+      ),
       evidenceContract: parseEvidenceContract(linked.harnessPlan.metadata.evidenceContract),
       packetChecksum: packetIdentity.packetChecksum,
       packetGeneratedAt: packetIdentity.packetGeneratedAt,
-      sourceRunLifecycleRevision: packetIdentity.sourceRunLifecycleRevision
+      sourceRunLifecycleRevision: packetIdentity.sourceRunLifecycleRevision,
+      sha256Hex
     });
   }
 

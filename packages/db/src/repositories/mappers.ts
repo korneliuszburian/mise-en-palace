@@ -3,6 +3,7 @@ import type {
   ContextAssembly,
   ContextExclusion,
   ContextInclusion,
+  CommandOutputArtifact,
   DiffRisk,
   EvidenceBundle,
   EvidenceCommand,
@@ -49,6 +50,7 @@ import type {
 import type {
   activationDecisions,
   contextAssemblies,
+  evidenceCommandArtifacts,
   embeddingModels,
   embeddings,
   executionRuns,
@@ -101,6 +103,7 @@ type TaskContractRow = InferSelectModel<typeof taskContracts>;
 type HarnessPlanRow = InferSelectModel<typeof harnessPlans>;
 type ContextAssemblyRow = InferSelectModel<typeof contextAssemblies>;
 type ExecutionRunRow = InferSelectModel<typeof executionRuns>;
+type EvidenceCommandArtifactRow = InferSelectModel<typeof evidenceCommandArtifacts>;
 type SourceArtifactRow = InferSelectModel<typeof sourceArtifacts>;
 type SourceChunkRow = InferSelectModel<typeof sourceChunks>;
 type SourceClaimRow = InferSelectModel<typeof sourceClaims>;
@@ -587,6 +590,30 @@ export const mapExecutionRun = (row: ExecutionRunRow): ExecutionRun => ({
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
+export const mapCommandOutputArtifact = (
+  row: EvidenceCommandArtifactRow
+): CommandOutputArtifact => ({
+  outputRef: row.outputRef,
+  command: row.command,
+  exitCode: row.exitCode,
+  startedAt: toIsoTimestamp(row.startedAt),
+  completedAt: toIsoTimestamp(row.completedAt),
+  stdout: {
+    bytes: new Uint8Array(row.stdoutBytes),
+    storedByteCount: row.stdoutBytes.byteLength,
+    totalByteCount: row.stdoutTotalByteCount,
+    truncated: row.stdoutTruncated,
+    sha256: row.stdoutSha256
+  },
+  stderr: {
+    bytes: new Uint8Array(row.stderrBytes),
+    storedByteCount: row.stderrBytes.byteLength,
+    totalByteCount: row.stderrTotalByteCount,
+    truncated: row.stderrTruncated,
+    sha256: row.stderrSha256
+  }
+});
+
 export const mapEvidenceBundle = (
   row: {
     id: string;
@@ -600,13 +627,17 @@ export const mapEvidenceBundle = (
     metadata: unknown;
     createdAt: Date;
     updatedAt: Date;
-  }
+  },
+  commandOutputArtifacts: readonly CommandOutputArtifact[] = []
 ): EvidenceBundle => ({
   id: row.id,
   executionRunId: row.executionRunId,
   status: row.status,
   changedFiles: stringListOrEmpty(row.changedFiles),
   commands: evidenceCommandsOrEmpty(row.commands),
+  ...(commandOutputArtifacts.length === 0
+    ? {}
+    : { commandOutputArtifacts: [...commandOutputArtifacts] }),
   diffRisk: asDiffRisk(row.diffRisk),
   reviewBurden: row.reviewBurden,
   rollbackPath: row.rollbackPath,

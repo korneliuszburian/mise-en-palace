@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { createHash } from "node:crypto";
 
 import {
   assessEvidenceCommandHelpedProof,
@@ -15,9 +16,34 @@ import {
   type EvidenceCommand,
   type EvidenceCommandHelpedProofFailureReason
 } from "../evidence-bundle.js";
+import {
+  assessCommandOutputArtifactIntegrity,
+  createCommandOutputArtifact
+} from "../command-output-artifact.js";
+import type { CommandOutputArtifact } from "../command-output-artifact.js";
 import type { EvidenceContract } from "../evidence-contract.js";
+import { isIsoTimestamp } from "../time.js";
 
 const now = "2026-06-23T07:10:00.000Z";
+const packetGeneratedAt = "2026-06-23T07:00:00.000Z";
+const sha256Hex = (value: string | Uint8Array): string =>
+  createHash("sha256").update(value).digest("hex");
+
+const commandOutputArtifact = (input: {
+  command?: string;
+  exitCode?: number;
+  startedAt?: string;
+  completedAt?: string;
+  stdout?: Uint8Array;
+  stderr?: Uint8Array;
+} = {}): CommandOutputArtifact => createCommandOutputArtifact({
+  command: input.command ?? "pnpm typecheck",
+  exitCode: input.exitCode ?? 0,
+  startedAt: input.startedAt ?? "2026-06-23T07:09:00.000Z",
+  completedAt: input.completedAt ?? now,
+  stdout: input.stdout ?? Buffer.from("typecheck passed\n"),
+  stderr: input.stderr ?? new Uint8Array()
+}, sha256Hex);
 
 const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
   id: "evidence-bundle-1",
@@ -65,33 +91,79 @@ const contractForCommands = (commands: EvidenceContract["commands"]): EvidenceCo
 const helpedEvidenceContract = (required: boolean): EvidenceContract =>
   contractForCommands([{ command: "pnpm typecheck", required }]);
 
+const executionBackedCommands = (
+  commands: EvidenceBundle["commands"],
+  suppliedArtifacts: readonly CommandOutputArtifact[]
+): {
+  commands: EvidenceBundle["commands"];
+  artifacts: CommandOutputArtifact[];
+} => {
+  const artifacts = [...suppliedArtifacts];
+
+  return {
+    commands: commands.map((command) => {
+      if (
+        command.provenance !== "command_runner" ||
+        command.outputRef !== undefined ||
+        command.exitCode === undefined ||
+        !isIsoTimestamp(command.capturedAt)
+      ) {
+        return command;
+      }
+
+      const artifact = commandOutputArtifact({
+        command: command.command,
+        exitCode: command.exitCode,
+        startedAt: command.capturedAt,
+        completedAt: command.capturedAt
+      });
+      artifacts.push(artifact);
+
+      return {
+        ...command,
+        outputRef: artifact.outputRef
+      };
+    }),
+    artifacts
+  };
+};
+
 const provesHelped = (
   commands: EvidenceBundle["commands"],
   contractCommands: EvidenceContract["commands"] = [
     { command: "pnpm typecheck", required: true }
-  ]
-): boolean => evidenceBundleProvesHelped({
-  bundle: bundle({
-    metadata: {
-      decisionPacketAuthorityAdmission: "current_v1",
-      decisionPacketBindingState: "bound_current",
-      decisionPacketChecksum: "packet-checksum",
-      decisionPacketEvidenceRef: "packet:packet-checksum",
-      decisionPacketGeneratedAt: "2026-06-23T07:00:00.000Z",
-      decisionPacketSourceRunLifecycleRevision: 1
-    },
-    commands
-  }),
-  evidenceContract: contractForCommands(contractCommands),
-  packetChecksum: "packet-checksum",
-  packetGeneratedAt: "2026-06-23T07:00:00.000Z",
-  sourceRunLifecycleRevision: 1
-});
+  ],
+  suppliedArtifacts: readonly CommandOutputArtifact[] = []
+): boolean => {
+  const prepared = executionBackedCommands(commands, suppliedArtifacts);
+
+  return evidenceBundleProvesHelped({
+    bundle: bundle({
+      metadata: {
+        decisionPacketAuthorityAdmission: "current_v1",
+        decisionPacketBindingState: "bound_current",
+        decisionPacketChecksum: "packet-checksum",
+        decisionPacketEvidenceRef: "packet:packet-checksum",
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: 1
+      },
+      commands: prepared.commands,
+      commandOutputArtifacts: prepared.artifacts
+    }),
+    evidenceContract: contractForCommands(contractCommands),
+    packetChecksum: "packet-checksum",
+    packetGeneratedAt,
+    sourceRunLifecycleRevision: 1,
+    sha256Hex
+  });
+};
 
 const commandProofAssessment = (command: EvidenceCommand) =>
   assessEvidenceCommandHelpedProof({
     command: toEvidenceCommandReadback(command),
-    packetGeneratedAt: "2026-06-23T07:00:00.000Z"
+    packetGeneratedAt,
+    resolveCommandOutputArtifact: () => undefined,
+    sha256Hex
   });
 
 describe("evidence bundle completeness", () => {
@@ -219,6 +291,166 @@ describe("evidence bundle completeness", () => {
     }
   });
 
+  test("rejects an unresolved command-runner output reference as helped proof", () => {
+    expect(provesHelped([{
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: now,
+      outputRef: "command-output:sha256:missing"
+    }])).toBe(false);
+  });
+
+  test("accepts a fresh successful command-runner artifact with valid content integrity", () => {
+    const artifact = commandOutputArtifact();
+    const command: EvidenceCommand = {
+      command: artifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef
+    };
+
+    expect(assessCommandOutputArtifactIntegrity(artifact, sha256Hex)).toEqual({
+      status: "valid"
+    });
+    expect(provesHelped([command], [
+      { command: artifact.command, required: true }
+    ], [artifact])).toBe(true);
+  });
+
+  test("rejects tampered command-runner bytes", () => {
+    const artifact = commandOutputArtifact();
+    const tamperedBytes = artifact.stdout.bytes.slice();
+    tamperedBytes[0] = (tamperedBytes[0] ?? 0) ^ 1;
+    const tamperedArtifact: CommandOutputArtifact = {
+      ...artifact,
+      stdout: {
+        ...artifact.stdout,
+        bytes: tamperedBytes
+      }
+    };
+    const command: EvidenceCommand = {
+      command: artifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef
+    };
+
+    expect(assessCommandOutputArtifactIntegrity(tamperedArtifact, sha256Hex)).toEqual({
+      status: "invalid",
+      reason: "stdout_sha256_mismatch"
+    });
+    expect(provesHelped([command], [
+      { command: artifact.command, required: true }
+    ], [tamperedArtifact])).toBe(false);
+  });
+
+  test("rejects ambiguous duplicate command output references", () => {
+    const artifact = commandOutputArtifact();
+    const command: EvidenceCommand = {
+      command: artifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef
+    };
+
+    expect(provesHelped([command], [
+      { command: artifact.command, required: true }
+    ], [artifact, artifact])).toBe(false);
+  });
+
+  test("rejects multiple outcomes for the same required command", () => {
+    const passedArtifact = commandOutputArtifact({
+      completedAt: "2026-06-23T07:09:00.000Z"
+    });
+    const failedArtifact = commandOutputArtifact({
+      exitCode: 1,
+      startedAt: "2026-06-23T07:09:30.000Z",
+      completedAt: "2026-06-23T07:10:00.000Z"
+    });
+    const passed: EvidenceCommand = {
+      command: passedArtifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: passedArtifact.exitCode,
+      capturedAt: passedArtifact.completedAt,
+      outputRef: passedArtifact.outputRef
+    };
+    const failed: EvidenceCommand = {
+      command: failedArtifact.command,
+      status: "failed",
+      provenance: "command_runner",
+      exitCode: failedArtifact.exitCode,
+      capturedAt: failedArtifact.completedAt,
+      outputRef: failedArtifact.outputRef
+    };
+    const contract = [{ command: passed.command, required: true }];
+    const artifacts = [passedArtifact, failedArtifact];
+
+    expect(provesHelped([passed, failed], contract, artifacts)).toBe(false);
+    expect(provesHelped([failed, passed], contract, artifacts)).toBe(false);
+  });
+
+  test("rejects mismatched and pre-packet command-runner artifact metadata", () => {
+    const artifact = commandOutputArtifact();
+    const command = toEvidenceCommandReadback({
+      command: artifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef
+    });
+
+    expect(assessCommandOutputArtifactIntegrity({
+      ...artifact,
+      completedAt: "2026-06-23T07:11:00.000Z"
+    }, sha256Hex)).toEqual({
+      status: "invalid",
+      reason: "output_ref_mismatch"
+    });
+
+    expect(assessEvidenceCommandHelpedProof({
+      command,
+      packetGeneratedAt,
+      resolveCommandOutputArtifact: () => ({
+        ...artifact,
+        command: "pnpm test"
+      }),
+      sha256Hex
+    })).toEqual({
+      status: "ineligible",
+      reason: "command_output_artifact_command_mismatch"
+    });
+
+    const prePacketArtifact = commandOutputArtifact({
+      startedAt: "2026-06-23T06:59:59.000Z"
+    });
+    expect(assessEvidenceCommandHelpedProof({
+      command: toEvidenceCommandReadback({
+        command: prePacketArtifact.command,
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: prePacketArtifact.exitCode,
+        capturedAt: prePacketArtifact.completedAt,
+        outputRef: prePacketArtifact.outputRef
+      }),
+      packetGeneratedAt,
+      resolveCommandOutputArtifact: () => prePacketArtifact,
+      sha256Hex
+    })).toEqual({
+      status: "ineligible",
+      reason: "command_output_artifact_started_before_packet_issuance"
+    });
+  });
+
   test("requires every distinct required command while optional rows remain informative", () => {
     const passed = (command: string): EvidenceCommand => ({
       command,
@@ -275,8 +507,8 @@ describe("evidence bundle completeness", () => {
       rollbackPath: "revert",
       metadata: {}
     };
-    const packetGeneratedAt = "2026-06-23T07:00:00.000Z";
     const packetChecksum = "packet-checksum";
+    const artifact = commandOutputArtifact();
 
     expect(evidenceBundleProvesHelped({
       bundle: bundle({
@@ -294,7 +526,8 @@ describe("evidence bundle completeness", () => {
       evidenceContract,
       packetChecksum,
       packetGeneratedAt,
-      sourceRunLifecycleRevision: 1
+      sourceRunLifecycleRevision: 1,
+      sha256Hex
     })).toBe(false);
 
     expect(evidenceBundleProvesHelped({
@@ -315,7 +548,8 @@ describe("evidence bundle completeness", () => {
       evidenceContract,
       packetChecksum,
       packetGeneratedAt,
-      sourceRunLifecycleRevision: 1
+      sourceRunLifecycleRevision: 1,
+      sha256Hex
     })).toBe(false);
 
     expect(evidenceBundleProvesHelped({
@@ -333,13 +567,16 @@ describe("evidence bundle completeness", () => {
           status: "passed",
           provenance: "command_runner",
           exitCode: 0,
-          capturedAt: now
-        }]
+          capturedAt: now,
+          outputRef: artifact.outputRef
+        }],
+        commandOutputArtifacts: [artifact]
       }),
       evidenceContract,
       packetChecksum,
       packetGeneratedAt,
-      sourceRunLifecycleRevision: 1
+      sourceRunLifecycleRevision: 1,
+      sha256Hex
     })).toBe(true);
   });
 
@@ -362,7 +599,8 @@ describe("evidence bundle completeness", () => {
       evidenceContract: helpedEvidenceContract(true),
       packetChecksum: "packet-checksum",
       packetGeneratedAt: "2026-06-23T07:01:00.000Z",
-      sourceRunLifecycleRevision: 1
+      sourceRunLifecycleRevision: 1,
+      sha256Hex
     })).toBe(false);
   });
 
@@ -385,7 +623,8 @@ describe("evidence bundle completeness", () => {
       evidenceContract: helpedEvidenceContract(true),
       packetChecksum: "packet-checksum",
       packetGeneratedAt: "2026-06-23T07:00:00.000Z",
-      sourceRunLifecycleRevision: 2
+      sourceRunLifecycleRevision: 2,
+      sha256Hex
     })).toBe(false);
   });
 

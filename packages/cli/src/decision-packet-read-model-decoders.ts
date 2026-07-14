@@ -125,22 +125,6 @@ export const changedFileClassification = (
   };
 };
 
-export const metadataArrayLength = (
-  metadata: Record<string, unknown>,
-  groupKey: string,
-  key: string
-): string => {
-  const group = metadataRecordValue(metadata[groupKey]);
-
-  if (group === undefined) {
-    return "unknown";
-  }
-
-  const value = group[key];
-
-  return Array.isArray(value) ? String(value.length) : "unknown";
-};
-
 export const readMetadataFiniteNumber = (
   metadata: Record<string, unknown>,
   key: string

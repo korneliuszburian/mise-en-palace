@@ -8,6 +8,7 @@ import type {
 import {
   buildMaintenanceQueueWriteBoundaryReadback,
   buildMemoryStalenessMaintenancePreview,
+  createCommandOutputArtifact,
   decisionPacketBindingReadbackFromMetadata,
   parseMaintenanceJob
 } from "@krn/core";
@@ -48,6 +49,9 @@ import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 import {
+  commandOutputArtifactSha256Hex
+} from "../../command-output-artifact-hash.js";
+import {
   handleDecisionPacketMcpMessage
 } from "../mcp/decision-packet-mcp-server.js";
 import {
@@ -58,6 +62,9 @@ import {
   readString,
   readStringArray
 } from "./json-readers.js";
+
+const returnChannelCheckpointCommand =
+  "decision-packet return-channel checkpoint";
 
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
@@ -2367,6 +2374,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     });
     retrievalRunId = compiledRetrievalRunId;
+    // Compiler defaults are broad pnpm checks this smoke does not execute; persist
+    // the smoke-only contract for the genuine in-process return-channel checkpoint.
+    const returnLoopEvidenceContract = {
+      ...result.evidenceContract,
+      commands: [{ command: returnChannelCheckpointCommand, required: true }]
+    };
+    const harnessPlanMetadata = JSON.stringify({
+      ...result.harnessPlan.metadata,
+      evidenceContract: returnLoopEvidenceContract
+    });
+    await client`
+      update harness_plans
+      set metadata = ${harnessPlanMetadata}::jsonb
+      where id = ${result.harnessPlan.id}
+    `;
 
     const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
     const commandRuntime = createSmokeCommandRuntime({
@@ -2406,18 +2428,30 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
     }
     const unseenDecisionId = `source-decision-unseen:${marker}`;
+    const checkpointStartedAt = new Date().toISOString();
     const returnChannelHasChecksum =
       firstPacket.returnChannels.evidence.persistedCommand.includes(firstPacket.packetIdentity.checksum) &&
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
         "does not expose canonical selected SourceDecision ids"
       );
-    const requiredVerificationCommands = result.evidenceContract.commands.filter(
-      (command) => command.required
-    );
 
-    if (requiredVerificationCommands.length === 0) {
-      throw new Error("DecisionPacket return-loop smoke requires an active required verification command");
+    if (!returnChannelHasChecksum) {
+      throw new Error("DecisionPacket return-loop checkpoint did not bind the return channel");
     }
+
+    const checkpointCompletedAt = new Date().toISOString();
+    const checkpointArtifact = createCommandOutputArtifact({
+      command: returnChannelCheckpointCommand,
+      exitCode: 0,
+      startedAt: checkpointStartedAt,
+      completedAt: checkpointCompletedAt,
+      stdout: new TextEncoder().encode(JSON.stringify({
+        packetChecksum: firstPacket.packetIdentity.checksum,
+        packetEvidenceRef: firstPacket.packetIdentity.evidenceRef,
+        returnChannelHasChecksum
+      })),
+      stderr: new Uint8Array()
+    }, commandOutputArtifactSha256Hex);
 
     const matchingEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
@@ -2425,14 +2459,15 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
-      commandOutcomes: requiredVerificationCommands.map((command, index) => ({
-        command: command.command,
+      commandOutcomes: [{
+        command: checkpointArtifact.command,
         status: "passed",
         provenance: "command_runner",
-        exitCode: 0,
-        capturedAt: "2026-07-07T12:00:01.000Z",
-        outputRef: `smoke:${marker}:decision-packet-verification:${index}`
-      })),
+        exitCode: checkpointArtifact.exitCode,
+        capturedAt: checkpointArtifact.completedAt,
+        outputRef: checkpointArtifact.outputRef
+      }],
+      commandOutputArtifacts: [checkpointArtifact],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
           claimId: helpedFeedbackSource.claimId,

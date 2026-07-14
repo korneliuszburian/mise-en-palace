@@ -23,6 +23,7 @@ import {
   buildDecisionPacketAuthorityProjection,
   buildDecisionPacketFromReadModel,
   buildMemoryStalenessMaintenancePreview,
+  createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
   knowledgeUsefulnessOutcomesFromMetadata
@@ -138,17 +139,17 @@ export interface BrainLoopSmokeReport {
 
 const now = smokeFixtureClocks.brainLoop.now;
 const requiredEvidenceCommands = [
-  "pnpm typecheck",
-  "pnpm test",
-  "git diff --check"
+  "memory-loop checkpoint: packet selected reviewed memory"
 ] as const;
+const initialEvidenceObservationCommand =
+  "memory-loop observation: execution run persisted";
 const memoryOriginRepoInstallationId = "repo-installation-memory-loop-source";
 const nextRunRepoInstallationId = "repo-installation-memory-loop-consumer";
 const downgradedRunRepoInstallationId = "repo-installation-memory-loop-rejector";
 const consolidationRunRepoInstallationId = "repo-installation-memory-loop-consolidation";
 const revisionRunRepoInstallationId = "repo-installation-memory-loop-revision";
 
-const sha256Hex = (value: string): string =>
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 
 const capturedCurrentEvidenceMetadata = (marker: string): Record<string, string> => ({
@@ -157,6 +158,45 @@ const capturedCurrentEvidenceMetadata = (marker: string): Record<string, string>
   evidenceContentHash: `sha256:memory-loop-evidence:${marker}`,
   evidenceFreshness: "current"
 });
+
+const packetSelectionCheckpoint = (input: {
+  readonly selected: boolean;
+  readonly executionRunId: string;
+  readonly memoryRecordId: string;
+  readonly packetChecksum: string;
+}) => {
+  const observedAt = Date.now();
+  const artifact = createCommandOutputArtifact({
+    command: requiredEvidenceCommands[0],
+    exitCode: input.selected ? 0 : 1,
+    startedAt: new Date(observedAt).toISOString(),
+    completedAt: new Date().toISOString(),
+    stdout: new TextEncoder().encode(JSON.stringify({
+      checkpoint: "packet_selected_reviewed_memory",
+      decisionPacketSelectedMemory: input.selected,
+      executionRunId: input.executionRunId,
+      memoryRecordId: input.memoryRecordId,
+      packetChecksum: input.packetChecksum
+    })),
+    stderr: input.selected
+      ? new Uint8Array()
+      : new TextEncoder().encode("DecisionPacket did not select the reviewed MemoryRecord")
+  }, sha256Hex);
+
+  return {
+    artifact,
+    command: {
+      command: artifact.command,
+      status: artifact.exitCode === 0 ? "passed" as const : "failed" as const,
+      provenance: "command_runner" as const,
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef,
+      doesNotProve:
+        "This smoke command does not prove product readiness, ranking quality, or autonomous memory quality."
+    }
+  };
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -403,15 +443,15 @@ export const runBrainLoopSmokeCheck = async (
       executionRunId: executionRun.id,
       status: "captured",
       changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
-      commands: requiredEvidenceCommands.map((command, index) => ({
-        command,
+      commands: [{
+        command: initialEvidenceObservationCommand,
         status: "passed" as const,
-        provenance: "command_runner" as const,
+        provenance: "operator_reported" as const,
         exitCode: 0,
-        capturedAt: new Date(Date.parse(executionRun.updatedAt) + 1000).toISOString(),
-        outputRef: `smoke:${marker}:memory-loop-verification:${index}`,
+        capturedAt: new Date().toISOString(),
+        assertedBy: "memory-loop-smoke",
         doesNotProve: "This command does not prove product readiness, ranking quality, maintenance execution, or autonomous memory quality."
-      })),
+      }],
       diffRisk: "low",
       reviewBurden: "DB smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
@@ -670,6 +710,13 @@ export const runBrainLoopSmokeCheck = async (
       );
     }
 
+    const checkpoint = packetSelectionCheckpoint({
+      selected: decisionPacketSelectedMemory,
+      executionRunId: packetAggregate.executionRun.id,
+      memoryRecordId: memoryRecord.id,
+      packetChecksum: packetBinding.packetChecksum
+    });
+
     const admittedPacketFeedbackInput = {
       executionRunId: executionRun.id,
       sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision,
@@ -695,18 +742,8 @@ export const runBrainLoopSmokeCheck = async (
       evidence: {
         status: "captured" as const,
         changedFiles: ["packages/db/src/dev/smoke/brain-loop-smoke.ts"],
-        commands: requiredEvidenceCommands.map((command, index) => ({
-          command,
-          status: "passed" as const,
-          provenance: "command_runner" as const,
-          exitCode: 0,
-          capturedAt: new Date(
-            Date.parse(packetBinding.packetGeneratedAt) + 1000
-          ).toISOString(),
-          outputRef: `smoke:${marker}:memory-loop-packet-verification:${index}`,
-          doesNotProve:
-            "This smoke command does not prove product readiness, ranking quality, or autonomous memory quality."
-        })),
+        commands: [checkpoint.command],
+        commandOutputArtifacts: [checkpoint.artifact],
         diffRisk: "low" as const,
         reviewBurden: "Repository-admitted DecisionPacket feedback proof only.",
         rollbackPath: "Delete smoke marker rows.",
@@ -1153,8 +1190,8 @@ export const runBrainLoopSmokeCheck = async (
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
-    const decisionPacketFalsifierCommands = evidenceBundle.commands.map((command) =>
-      command.command
+    const decisionPacketFalsifierCommands = admittedPacketFeedback.evidenceBundle.commands.map(
+      (command) => command.command
     );
     const decisionPacketNonProofs = unique([
       ...evidenceBundle.commands.flatMap((command) =>
@@ -1264,7 +1301,7 @@ export const runBrainLoopSmokeCheck = async (
       },
       {
         label: "decision packet falsifier command",
-        passed: decisionPacketFalsifierCommands.includes("pnpm typecheck")
+        passed: decisionPacketFalsifierCommands.includes(requiredEvidenceCommands[0])
       },
       {
         label: "decision packet non-proof boundary",

@@ -9,6 +9,14 @@ import {
 import { isIsoTimestamp } from "./time.js";
 import type { IsoTimestamp } from "./time.js";
 import type { EvidenceContract } from "./evidence-contract.js";
+import {
+  assessCommandOutputArtifactIntegrity
+} from "./command-output-artifact.js";
+import type {
+  CommandOutputArtifact,
+  CommandOutputArtifactSha256Hex,
+  ResolveCommandOutputArtifact
+} from "./command-output-artifact.js";
 
 export const evidenceBundleStatuses = [
   "draft",
@@ -174,7 +182,14 @@ export type EvidenceCommandReadback =
 
 export type EvidenceCommandHelpedProofFailureReason =
   | "not_execution_backed"
+  | "missing_output_reference"
   | "unresolved_output_reference"
+  | "command_output_artifact_reference_mismatch"
+  | "command_output_artifact_command_mismatch"
+  | "command_output_artifact_exit_code_mismatch"
+  | "command_output_artifact_completed_at_mismatch"
+  | "command_output_artifact_started_before_packet_issuance"
+  | "command_output_artifact_integrity_mismatch"
   | "missing_captured_at"
   | "invalid_captured_at"
   | "invalid_packet_generated_at"
@@ -199,6 +214,7 @@ export interface EvidenceBundle {
   status: EvidenceBundleStatus;
   changedFiles: string[];
   commands: EvidenceCommand[];
+  commandOutputArtifacts?: CommandOutputArtifact[];
   diffRisk: DiffRisk;
   reviewBurden: string;
   rollbackPath: string;
@@ -910,9 +926,69 @@ const commandStatusAssessment = (
   return ineligibleCommandHelpedProof("command_not_passed");
 };
 
+const commandOutputArtifactMismatchReason = (
+  command: CommandRunnerEvidenceCommand,
+  artifact: CommandOutputArtifact,
+  outputRef: string,
+  packetGeneratedAt: IsoTimestamp
+): EvidenceCommandHelpedProofFailureReason | undefined => {
+  if (artifact.outputRef !== outputRef) {
+    return "command_output_artifact_reference_mismatch";
+  }
+  if (artifact.command !== command.command) {
+    return "command_output_artifact_command_mismatch";
+  }
+  if (artifact.exitCode !== command.exitCode) {
+    return "command_output_artifact_exit_code_mismatch";
+  }
+  if (artifact.completedAt !== command.capturedAt) {
+    return "command_output_artifact_completed_at_mismatch";
+  }
+  if (Date.parse(artifact.startedAt) < Date.parse(packetGeneratedAt)) {
+    return "command_output_artifact_started_before_packet_issuance";
+  }
+
+  return undefined;
+};
+
+const commandOutputArtifactAssessment = (input: {
+  command: CommandRunnerEvidenceCommand;
+  packetGeneratedAt: IsoTimestamp;
+  resolveCommandOutputArtifact: ResolveCommandOutputArtifact;
+  sha256Hex: CommandOutputArtifactSha256Hex;
+}): EvidenceCommandHelpedProofAssessment => {
+  const outputRef = input.command.outputRef?.trim();
+
+  if (outputRef === undefined || outputRef.length === 0) {
+    return ineligibleCommandHelpedProof("missing_output_reference");
+  }
+
+  const artifact = input.resolveCommandOutputArtifact(outputRef);
+
+  if (artifact === undefined) {
+    return ineligibleCommandHelpedProof("unresolved_output_reference");
+  }
+
+  const mismatchReason = commandOutputArtifactMismatchReason(
+    input.command,
+    artifact,
+    outputRef,
+    input.packetGeneratedAt
+  );
+  if (mismatchReason !== undefined) {
+    return ineligibleCommandHelpedProof(mismatchReason);
+  }
+
+  return assessCommandOutputArtifactIntegrity(artifact, input.sha256Hex).status === "valid"
+    ? { status: "eligible" }
+    : ineligibleCommandHelpedProof("command_output_artifact_integrity_mismatch");
+};
+
 export const assessEvidenceCommandHelpedProof = (input: {
   command: EvidenceCommandReadback;
   packetGeneratedAt: IsoTimestamp;
+  resolveCommandOutputArtifact: ResolveCommandOutputArtifact;
+  sha256Hex: CommandOutputArtifactSha256Hex;
 }): EvidenceCommandHelpedProofAssessment => {
   if (
     input.command.kind === "captured_output_file" ||
@@ -925,8 +1001,22 @@ export const assessEvidenceCommandHelpedProof = (input: {
     return ineligibleCommandHelpedProof("not_execution_backed");
   }
 
-  return commandCaptureAssessment(input.command, input.packetGeneratedAt) ??
-    commandStatusAssessment(input.command);
+  const captureAssessment = commandCaptureAssessment(input.command, input.packetGeneratedAt);
+  if (captureAssessment !== undefined) {
+    return captureAssessment;
+  }
+
+  const statusAssessment = commandStatusAssessment(input.command);
+  if (statusAssessment.status === "ineligible") {
+    return statusAssessment;
+  }
+
+  return commandOutputArtifactAssessment({
+    command: input.command,
+    packetGeneratedAt: input.packetGeneratedAt,
+    resolveCommandOutputArtifact: input.resolveCommandOutputArtifact,
+    sha256Hex: input.sha256Hex
+  });
 };
 
 export const evidenceBundleProvesHelped = (input: {
@@ -935,6 +1025,7 @@ export const evidenceBundleProvesHelped = (input: {
   packetChecksum: string;
   packetGeneratedAt: IsoTimestamp;
   sourceRunLifecycleRevision: number;
+  sha256Hex: CommandOutputArtifactSha256Hex;
 }): boolean => {
   const bundleCreatedAt = Date.parse(input.bundle.createdAt);
   const packetGeneratedAt = Date.parse(input.packetGeneratedAt);
@@ -967,14 +1058,32 @@ export const evidenceBundleProvesHelped = (input: {
     return false;
   }
 
-  const provenCommands = new Set(input.bundle.commands
-    .map(toEvidenceCommandReadback)
-    .filter((command) =>
-      assessEvidenceCommandHelpedProof({
-        command,
-        packetGeneratedAt: input.packetGeneratedAt
-      }).status === "eligible")
-    .map((command) => command.command));
+  const commandOutputArtifactsByRef = new Map<string, CommandOutputArtifact>();
 
-  return [...requiredCommands].every((command) => provenCommands.has(command));
+  for (const artifact of input.bundle.commandOutputArtifacts ?? []) {
+    if (commandOutputArtifactsByRef.has(artifact.outputRef)) {
+      return false;
+    }
+
+    commandOutputArtifactsByRef.set(artifact.outputRef, artifact);
+  }
+
+  const commandReadbacks = input.bundle.commands.map(toEvidenceCommandReadback);
+
+  return [...requiredCommands].every((requiredCommand) => {
+    const outcomes = commandReadbacks.filter(
+      (command) => command.command === requiredCommand
+    );
+
+    if (outcomes.length !== 1) {
+      return false;
+    }
+
+    return assessEvidenceCommandHelpedProof({
+      command: outcomes[0]!,
+      packetGeneratedAt: input.packetGeneratedAt,
+      resolveCommandOutputArtifact: (outputRef) => commandOutputArtifactsByRef.get(outputRef),
+      sha256Hex: input.sha256Hex
+    }).status === "eligible";
+  });
 };

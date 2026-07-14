@@ -3,6 +3,7 @@ import type {
   HarnessRunAggregate
 } from "@krn/core/repositories";
 import {
+  createCommandOutputArtifact,
   stampCurrentDecisionPacketAuthorityMetadata
 } from "@krn/core";
 
@@ -12,8 +13,20 @@ import {
 import type {
   DecisionPacketReadModel
 } from "../run-run-show-command.js";
+import {
+  commandOutputArtifactSha256Hex
+} from "../evidence-command-artifacts.js";
 
 const now = "2026-06-25T14:40:00.000Z";
+const commandOutputSecret = "runner output must not appear in run show";
+const runShowCommandOutputArtifact = createCommandOutputArtifact({
+  command: "pnpm test",
+  exitCode: 0,
+  startedAt: now,
+  completedAt: now,
+  stdout: new TextEncoder().encode(commandOutputSecret),
+  stderr: new Uint8Array()
+}, commandOutputArtifactSha256Hex);
 
 const activationRetrievalDiagnostics = {
   projectScoped: true,
@@ -249,7 +262,15 @@ const aggregate: HarnessRunAggregate = {
       assertedBy: "run-show-test",
       doesNotProve:
         "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    }, {
+      command: runShowCommandOutputArtifact.command,
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: runShowCommandOutputArtifact.exitCode,
+      capturedAt: runShowCommandOutputArtifact.completedAt,
+      outputRef: runShowCommandOutputArtifact.outputRef
     }],
+    commandOutputArtifacts: [runShowCommandOutputArtifact],
     diffRisk: "medium",
     reviewBurden: "Review readback output.",
     rollbackPath: "Revert run show commit.",
@@ -489,6 +510,16 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
     expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
     expect(result.stdout).toContain("pnpm typecheck: passed | provenance=captured_output_file");
+    expect(result.stdout).toContain("artifactIntegrity: unresolved");
+    expect(result.stdout).toContain("pnpm test: passed | provenance=command_runner");
+    expect(result.stdout).toContain("artifactIntegrity: valid");
+    expect(result.stdout).toContain("command output artifacts:");
+    expect(result.stdout).toContain(`outputRef: ${runShowCommandOutputArtifact.outputRef}`);
+    expect(result.stdout).toContain("storedBytesSha256:");
+    expect(result.stdout).toContain("storedByteCount:");
+    expect(result.stdout).toContain("totalByteCount:");
+    expect(result.stdout).toContain("truncated: false");
+    expect(result.stdout).not.toContain(commandOutputSecret);
     expect(result.stdout).toContain("doesNotProve: This command result does not prove memory quality");
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
     expect(result.stdout).toContain("source_decision_candidate:source-decision-candidate-1");
@@ -541,6 +572,24 @@ describe("runRunShowCommand", () => {
       },
       evidenceBundles: aggregate.evidenceBundles.map((bundle) => ({
         ...bundle,
+        commands: [...bundle.commands, {
+          command: "pnpm lint",
+          status: "passed" as const,
+          provenance: "command_runner" as const,
+          exitCode: 0,
+          capturedAt: now
+        }],
+        ...(bundle.commandOutputArtifacts === undefined
+          ? {}
+          : {
+              commandOutputArtifacts: bundle.commandOutputArtifacts.map((artifact) => ({
+                ...artifact,
+                stdout: {
+                  ...artifact.stdout,
+                  sha256: "0".repeat(64)
+                }
+              }))
+            }),
         metadata: {
           ...bundle.metadata,
           changedFileClassification: "not-a-record"
@@ -611,6 +660,35 @@ describe("runRunShowCommand", () => {
       outputRef: "test-output:run-show",
       assertedBy: "run-show-test"
     });
+    expect(parsed.evidenceBundles[0]?.commands[0]).toMatchObject({
+      artifactIntegrity: "unresolved"
+    });
+    expect(parsed.evidenceBundles[0]?.commands[1]).toMatchObject({
+      outputRef: runShowCommandOutputArtifact.outputRef,
+      artifactIntegrity: "invalid",
+      artifactIntegrityReason: "stdout_sha256_mismatch"
+    });
+    expect(parsed.evidenceBundles[0]?.commands[2]).toMatchObject({
+      command: "pnpm lint",
+      provenance: "command_runner",
+      artifactIntegrity: "unresolved"
+    });
+    expect(parsed.evidenceBundles[0]?.commandOutputArtifacts[0]).toMatchObject({
+      outputRef: runShowCommandOutputArtifact.outputRef,
+      integrity: "invalid",
+      integrityReason: "stdout_sha256_mismatch",
+      exitCode: 0,
+      startedAt: now,
+      completedAt: now,
+      stdout: {
+        storedBytesSha256: "0".repeat(64),
+        storedByteCount: commandOutputSecret.length,
+        totalByteCount: commandOutputSecret.length,
+        truncated: false
+      }
+    });
+    expect(parsed.evidenceBundles[0]?.commandOutputArtifacts[0]?.stdout).not.toHaveProperty("bytes");
+    expect(result.stdout).not.toContain(commandOutputSecret);
     expect(parsed.feedbackDeltas[0]?.candidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -887,6 +965,25 @@ describe("runRunShowCommand", () => {
           provenance: "captured_output_file",
           doesNotProve:
             "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+        }, {
+          command: "pnpm test",
+          status: "passed",
+          provenance: "command_runner",
+          artifactIntegrity: "valid",
+          outputRef: runShowCommandOutputArtifact.outputRef
+        }],
+        commandOutputArtifacts: [{
+          outputRef: runShowCommandOutputArtifact.outputRef,
+          integrity: "valid",
+          exitCode: 0,
+          startedAt: now,
+          completedAt: now,
+          stdout: {
+            storedBytesSha256: runShowCommandOutputArtifact.stdout.sha256,
+            storedByteCount: commandOutputSecret.length,
+            totalByteCount: commandOutputSecret.length,
+            truncated: false
+          }
         }]
       }],
       feedbackDeltas: [{

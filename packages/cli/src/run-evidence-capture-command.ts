@@ -11,6 +11,7 @@ import {
 import type {
   DecisionPacketAuthorization,
   DecisionPacketBinding,
+  CommandOutputArtifact,
   DiffRisk,
   EvalCandidateProposal,
   EvidenceCommand,
@@ -55,6 +56,12 @@ import {
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
+import type {
+  EvidenceCommandCaptureInput
+} from "./evidence-command-artifacts.js";
+import {
+  prepareEvidenceCommandArtifacts
+} from "./evidence-command-artifacts.js";
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
@@ -78,7 +85,8 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   decisionPacketChecksum?: string;
   decisionPacketGeneratedAt?: string;
   intendedFiles?: readonly string[];
-  commandOutcomes?: readonly EvidenceCommand[];
+  commandOutcomes?: readonly EvidenceCommandCaptureInput[];
+  commandOutputArtifacts?: readonly CommandOutputArtifact[];
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
@@ -450,9 +458,6 @@ const renderCommand = (command: EvidenceCommand): string => {
 const hasWeakCommandProvenance = (commands: readonly EvidenceCommandReadback[]): boolean =>
   commands.some((command) => command.kind === "default_template");
 
-const normalizeCommands = (commands: readonly EvidenceCommand[]): EvidenceCommandReadback[] =>
-  commands.map(toEvidenceCommandReadback);
-
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
   runtime.persist ? postgresPersistedLabel : "disabled (explicit printed-only preview; use --persist to write)";
 
@@ -811,6 +816,7 @@ const buildEvidenceBundleInput = (
   changedFiles: readonly ChangedFile[],
   classification: ChangedFileClassification,
   commands: EvidenceCommandReadback[],
+  commandOutputArtifacts: CommandOutputArtifact[],
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
@@ -820,6 +826,7 @@ const buildEvidenceBundleInput = (
   status: "captured",
   changedFiles: changedFiles.map((file) => file.path),
   commands,
+  ...(commandOutputArtifacts.length === 0 ? {} : { commandOutputArtifacts }),
   diffRisk,
   reviewBurden: reviewBurdenWithTargetEvidence(classification, targetEvidence),
   rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
@@ -1465,6 +1472,7 @@ const persistEvidenceCapture = async (
   changedFiles: readonly ChangedFile[],
   classification: ChangedFileClassification,
   commands: EvidenceCommandReadback[],
+  commandOutputArtifacts: CommandOutputArtifact[],
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
@@ -1570,6 +1578,7 @@ const persistEvidenceCapture = async (
         changedFiles,
         classification,
         commands,
+        commandOutputArtifacts,
         diffRisk,
         targetEvidence,
         counts,
@@ -1619,10 +1628,18 @@ export const runEvidenceCaptureCommand = async (
     statusCwd: runtime.cwd
   });
   const changedFileClassification = classifyChangedFiles(changedFiles, runtime.intendedFiles);
-  const commands =
+  const commandInputs =
     runtime.commandOutcomes === undefined || runtime.commandOutcomes.length === 0
-      ? normalizeCommands(defaultCommands())
-      : normalizeCommands(runtime.commandOutcomes);
+      ? defaultCommands()
+      : runtime.commandOutcomes;
+  const preparedCommandEvidence = await prepareEvidenceCommandArtifacts({
+    cwd: runtime.cwd,
+    commands: commandInputs,
+    ...(runtime.commandOutputArtifacts === undefined
+      ? {}
+      : { commandOutputArtifacts: runtime.commandOutputArtifacts })
+  });
+  const commands = preparedCommandEvidence.commands;
   const targetEvidence =
     runtime.targetEvidence === undefined
       ? undefined
@@ -1636,6 +1653,7 @@ export const runEvidenceCaptureCommand = async (
       changedFiles,
       changedFileClassification,
       commands,
+      preparedCommandEvidence.commandOutputArtifacts,
       diffRisk,
       targetEvidence,
       runtime.sourceUsefulnessOutcomes,

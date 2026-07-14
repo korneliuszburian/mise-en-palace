@@ -2,6 +2,7 @@ export * from "./capability-plan.js";
 export * from "./activation.js";
 export * from "./candidate-reviewability.js";
 export * from "./codex-adapter-plan-ref.js";
+export * from "./command-output-artifact.js";
 export * from "./context-assembly.js";
 export * from "./decision-packet.js";
 export * from "./decision-packet-authority.js";

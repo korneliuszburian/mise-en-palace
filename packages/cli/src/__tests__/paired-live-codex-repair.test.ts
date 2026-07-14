@@ -9,6 +9,7 @@ import {
   pairedRepairUsefulnessOutcome,
   scorePairedRepairs,
   scoreTargetRepair,
+  runCommand,
   runHeldOutRuntimeWorker,
   type CommandResult,
   type HeldOutObservation
@@ -44,6 +45,17 @@ const sourceFiles = {
 };
 
 describe("paired live Codex repair eval", () => {
+  it("forces a timed-out command to settle when it ignores SIGTERM", async () => {
+    const result = await runCommand(process.execPath, [
+      "-e",
+      "process.on('SIGTERM',()=>{});setTimeout(()=>process.exit(0),500);"
+    ], process.cwd(), { timeoutMs: 150 });
+
+    expect(result.exitCode).toBeNull();
+    expect(result.stderr).toContain("command timed out");
+    expect(result.durationMs).toBeLessThan(400);
+  });
+
   it("generates a packet-only prompt delta and stable hashes", () => {
     const first = buildPairedRepairPrompts({
       task: "repair the boundary",

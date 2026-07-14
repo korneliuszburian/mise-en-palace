@@ -1432,7 +1432,9 @@ describe("DrizzleHarnessRunRepository", () => {
             },
             packetChecksum: forgedChecksum,
             packetGeneratedAt,
-            sourceRunLifecycleRevision: executionRun.lifecycleRevision
+            sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+            sha256Hex: (value) =>
+              crypto.createHash("sha256").update(value).digest("hex")
           }),
           genericKnowledgeOutcomes:
             knowledgeUsefulnessOutcomesFromMetadata(genericFeedback.metadata).length,
@@ -2369,7 +2371,9 @@ describe("DrizzleHarnessRunRepository", () => {
             },
             packetChecksum: packetBinding.packetChecksum,
             packetGeneratedAt: packetBinding.packetGeneratedAt,
-            sourceRunLifecycleRevision: executionRun.lifecycleRevision
+            sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+            sha256Hex: (value) =>
+              crypto.createHash("sha256").update(value).digest("hex")
           })).toBe(false);
         }
         expect(poisonedPacketBinding.packetChecksum).toBe(packetBinding.packetChecksum);

@@ -15,6 +15,7 @@ import type {
 } from "drizzle-orm";
 import type {
   ContextAssembly,
+  CommandOutputArtifact,
   EvidenceBundle,
   EvidenceCommand,
   ExecutionRun,
@@ -30,6 +31,7 @@ import type {
   UpdateExecutionRunStatusResult
 } from "@krn/core";
 import {
+  assessCommandOutputArtifactIntegrity,
   authorizeDecisionPacketUsefulness,
   decisionPacketAuthorityAdmissionCurrent,
   executionRunLifecycleCreatedEvent,
@@ -74,6 +76,7 @@ import type {
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   contextAssemblies,
+  evidenceCommandArtifacts,
   evidenceBundles,
   executionRuns,
   feedbackDeltas,
@@ -99,6 +102,7 @@ import {
 import {
   mapActivationDecision,
   mapContextAssembly,
+  mapCommandOutputArtifact,
   mapEvidenceBundle,
   mapExecutionRun,
   mapFeedbackDelta,
@@ -416,6 +420,112 @@ export const evidenceCommandsForPersistence = (
 ): EvidenceCommandReadback[] =>
   commands.map(toEvidenceCommandReadback);
 
+interface CommandOutputArtifactPersistence {
+  readonly artifact: CommandOutputArtifact;
+  readonly commandOrdinal: number;
+  readonly artifactSha256: string;
+}
+
+const commandOutputArtifactRefPrefix = "command-output:sha256:";
+
+const copyCommandOutputArtifact = (
+  artifact: CommandOutputArtifact
+): CommandOutputArtifact => ({
+  ...artifact,
+  stdout: {
+    ...artifact.stdout,
+    bytes: Uint8Array.from(artifact.stdout.bytes)
+  },
+  stderr: {
+    ...artifact.stderr,
+    bytes: Uint8Array.from(artifact.stderr.bytes)
+  }
+});
+
+type ArtifactBearingCommand = Extract<
+  EvidenceCommandReadback,
+  { kind: "command_runner" | "captured_output_file" }
+>;
+
+interface CommandArtifactBinding {
+  readonly command: ArtifactBearingCommand;
+  readonly commandOrdinal: number;
+}
+
+const commandBindsArtifact = (
+  command: EvidenceCommandReadback,
+  artifact: CommandOutputArtifact
+): command is ArtifactBearingCommand => (
+  command.kind === "command_runner" || command.kind === "captured_output_file"
+) && command.outputRef === artifact.outputRef;
+
+const commandArtifactBindings = (
+  commands: readonly EvidenceCommandReadback[],
+  artifact: CommandOutputArtifact
+): CommandArtifactBinding[] => commands
+  .flatMap((command, commandOrdinal) => commandBindsArtifact(command, artifact)
+    ? [{ command, commandOrdinal }]
+    : []);
+
+const assertCommandArtifactBindingMatches = (
+  binding: CommandArtifactBinding,
+  artifact: CommandOutputArtifact
+): void => {
+  if (binding.command.command !== artifact.command) {
+    throw new Error(`Command output artifact command does not match: ${artifact.outputRef}`);
+  }
+  if (binding.command.exitCode !== artifact.exitCode) {
+    throw new Error(`Command output artifact exit code does not match: ${artifact.outputRef}`);
+  }
+  if (binding.command.capturedAt !== artifact.completedAt) {
+    throw new Error(`Command output artifact completedAt does not match capturedAt: ${artifact.outputRef}`);
+  }
+  const expectedStatus = artifact.exitCode === 0 ? "passed" : "failed";
+  if (binding.command.status !== expectedStatus) {
+    throw new Error(`Command output artifact status does not match exit code: ${artifact.outputRef}`);
+  }
+};
+
+const commandOutputArtifactsForPersistence = (
+  commands: readonly EvidenceCommand[],
+  artifacts: readonly CommandOutputArtifact[]
+): CommandOutputArtifactPersistence[] => {
+  const commandReadbacks = evidenceCommandsForPersistence(commands);
+  const seenOutputRefs = new Set<string>();
+
+  return artifacts.map((sourceArtifact) => {
+    const integrity = assessCommandOutputArtifactIntegrity(sourceArtifact, sha256Hex);
+    if (integrity.status === "invalid") {
+      throw new Error(`Command output artifact failed integrity validation: ${integrity.reason}`);
+    }
+
+    const artifact = copyCommandOutputArtifact(sourceArtifact);
+    if (seenOutputRefs.has(artifact.outputRef)) {
+      throw new Error(`Command output artifact reference is duplicated: ${artifact.outputRef}`);
+    }
+    seenOutputRefs.add(artifact.outputRef);
+
+    const matches = commandArtifactBindings(commandReadbacks, artifact);
+    if (matches.length !== 1) {
+      throw new Error(
+        `Command output artifact must bind exactly one artifact-bearing command row: ${artifact.outputRef}`
+      );
+    }
+
+    const match = matches[0];
+    if (match === undefined) {
+      throw new Error(`Command output artifact command binding is missing: ${artifact.outputRef}`);
+    }
+    assertCommandArtifactBindingMatches(match, artifact);
+
+    return {
+      artifact,
+      commandOrdinal: match.commandOrdinal,
+      artifactSha256: artifact.outputRef.slice(commandOutputArtifactRefPrefix.length)
+    };
+  });
+};
+
 const repositoryAuthorityMetadataKeys = new Set([
   "captureIdentity",
   "evalExecutionIdentity",
@@ -567,11 +677,16 @@ export const validateEvidenceBundleInputForPersistence = (
     rollbackPath: input.rollbackPath,
     metadata: input.metadata ?? {}
   });
+  const commandOutputArtifacts = commandOutputArtifactsForPersistence(
+    parsed.commands,
+    input.commandOutputArtifacts ?? []
+  ).map(({ artifact }) => artifact);
 
   return {
     ...input,
     changedFiles: parsed.changedFiles,
     commands: parsed.commands,
+    ...(commandOutputArtifacts.length === 0 ? {} : { commandOutputArtifacts }),
     diffRisk: parsed.diffRisk,
     reviewBurden: parsed.reviewBurden,
     rollbackPath: parsed.rollbackPath,
@@ -623,6 +738,35 @@ const lockHarnessPlanAuthority = async (
 const evidenceFeedbackCaptureChannel = "evidence_feedback_v1" as const;
 const evalFeedbackCaptureChannel = "eval_feedback_v1" as const;
 
+type EvidenceCommandArtifactRow = typeof evidenceCommandArtifacts.$inferSelect;
+
+const findCommandOutputArtifactRows = async (
+  db: KrnDatabase | KrnDatabaseTransaction,
+  evidenceBundleIds: readonly string[]
+): Promise<EvidenceCommandArtifactRow[]> => evidenceBundleIds.length === 0
+  ? []
+  : db.query.evidenceCommandArtifacts.findMany({
+      where: inArray(evidenceCommandArtifacts.evidenceBundleId, [...evidenceBundleIds]),
+      orderBy: [
+        asc(evidenceCommandArtifacts.evidenceBundleId),
+        asc(evidenceCommandArtifacts.commandOrdinal)
+      ]
+    });
+
+const commandOutputArtifactRowsByBundleId = (
+  rows: readonly EvidenceCommandArtifactRow[]
+): ReadonlyMap<string, readonly EvidenceCommandArtifactRow[]> => {
+  const grouped = new Map<string, EvidenceCommandArtifactRow[]>();
+
+  for (const row of rows) {
+    const bundleRows = grouped.get(row.evidenceBundleId) ?? [];
+    bundleRows.push(row);
+    grouped.set(row.evidenceBundleId, bundleRows);
+  }
+
+  return grouped;
+};
+
 const metadataForEvidenceAuthorityRead = (
   metadata: Record<string, unknown>,
   captureChannel: string | null
@@ -634,11 +778,12 @@ const metadataForEvidenceAuthorityRead = (
     );
 
 const mapEvidenceBundleForAuthorityRead = (
-  row: typeof evidenceBundles.$inferSelect
+  row: typeof evidenceBundles.$inferSelect,
+  commandOutputArtifactRows: readonly EvidenceCommandArtifactRow[] = []
 ): EvidenceBundle => mapEvidenceBundle({
   ...row,
   metadata: metadataForEvidenceAuthorityRead(row.metadata, row.captureChannel)
-});
+}, commandOutputArtifactRows.map(mapCommandOutputArtifact));
 
 const mapFeedbackDeltaForAuthorityRead = (
   row: typeof feedbackDeltas.$inferSelect,
@@ -668,6 +813,10 @@ const insertEvidenceBundleAndEvent = async (
   operation: string,
   capture?: EvidenceCaptureIdentity
 ) => {
+  const commandArtifacts = commandOutputArtifactsForPersistence(
+    input.commands,
+    input.commandOutputArtifacts ?? []
+  );
   const eventSequence = await nextRunEventSequence(
     tx,
     input.executionRunId,
@@ -696,6 +845,31 @@ const insertEvidenceBundleAndEvent = async (
     operation
   );
 
+  const commandOutputArtifactRows = commandArtifacts.length === 0
+    ? []
+    : (await tx
+      .insert(evidenceCommandArtifacts)
+      .values(commandArtifacts.map(({ artifact, artifactSha256, commandOrdinal }) => ({
+        evidenceBundleId: row.id,
+        commandOrdinal,
+        command: artifact.command,
+        exitCode: artifact.exitCode,
+        startedAt: fromIsoTimestamp(artifact.startedAt),
+        completedAt: fromIsoTimestamp(artifact.completedAt),
+        stdoutBytes: artifact.stdout.bytes,
+        stderrBytes: artifact.stderr.bytes,
+        stdoutTotalByteCount: artifact.stdout.totalByteCount,
+        stderrTotalByteCount: artifact.stderr.totalByteCount,
+        stdoutTruncated: artifact.stdout.truncated,
+        stderrTruncated: artifact.stderr.truncated,
+        stdoutSha256: artifact.stdout.sha256,
+        stderrSha256: artifact.stderr.sha256,
+        artifactSha256,
+        outputRef: artifact.outputRef
+      })))
+      .returning())
+      .sort((left, right) => left.commandOrdinal - right.commandOrdinal);
+
   await tx.insert(runEvents).values({
     executionRunId: input.executionRunId,
     sequence: eventSequence,
@@ -705,7 +879,7 @@ const insertEvidenceBundleAndEvent = async (
     payload: input.event.payload ?? {}
   });
 
-  return row;
+  return { commandOutputArtifactRows, evidenceBundleRow: row };
 };
 
 export type EvidenceFeedbackPersistenceStage =
@@ -815,9 +989,16 @@ const existingEvidenceFeedbackOnceResult = async (
       sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${feedbackDeltaRow.id}`
     )
   }))?.id;
+  const commandOutputArtifactRows = await findCommandOutputArtifactRows(
+    tx,
+    [evidenceBundleRow.id]
+  );
 
   return {
-    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    evidenceBundle: mapEvidenceBundle(
+      evidenceBundleRow,
+      commandOutputArtifactRows.map(mapCommandOutputArtifact)
+    ),
     reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
     feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
     ...(feedbackMaintenanceQueueRecordId === undefined
@@ -862,9 +1043,16 @@ const existingEvalFeedbackOnceResult = async (
       label: "Eval feedback"
     }
   );
+  const commandOutputArtifactRows = await findCommandOutputArtifactRows(
+    tx,
+    [evidenceBundleRow.id]
+  );
 
   return {
-    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    evidenceBundle: mapEvidenceBundle(
+      evidenceBundleRow,
+      commandOutputArtifactRows.map(mapCommandOutputArtifact)
+    ),
     reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
     feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
     created: false
@@ -949,7 +1137,7 @@ const assertSourceRunLifecycleRevision = (
   }
 };
 
-const sha256Hex = (value: string): string =>
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 
 const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
@@ -1131,7 +1319,7 @@ const insertEvidenceFeedbackChain = async (
       projectId: input.projectId
     }
   });
-  const evidenceBundleRow = await insertEvidenceBundleAndEvent(
+  const { commandOutputArtifactRows, evidenceBundleRow } = await insertEvidenceBundleAndEvent(
     tx,
     evidenceInput,
     "createEvidenceFeedbackOnce.evidenceBundle",
@@ -1173,7 +1361,10 @@ const insertEvidenceFeedbackChain = async (
   faultAfterStage?.("after_maintenance_queue");
 
   return {
-    evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+    evidenceBundle: mapEvidenceBundle(
+      evidenceBundleRow,
+      commandOutputArtifactRows.map(mapCommandOutputArtifact)
+    ),
     reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
     feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
     ...(feedbackMaintenanceQueueRecordId === undefined
@@ -1237,6 +1428,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       orderBy: [asc(evidenceBundles.createdAt), asc(evidenceBundles.id)]
     });
     const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
+    const commandOutputArtifactRows = await findCommandOutputArtifactRows(db, evidenceBundleIds);
     const reviewAssessmentRows =
       evidenceBundleIds.length === 0
         ? []
@@ -1254,6 +1446,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           });
 
     return {
+      commandOutputArtifactRows,
       evidenceBundleRows,
       reviewAssessmentRows,
       feedbackDeltaRows
@@ -1327,10 +1520,14 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       orderBy: [desc(contextAssemblies.createdAt), desc(contextAssemblies.id)]
     });
     const {
+      commandOutputArtifactRows,
       evidenceBundleRows,
       reviewAssessmentRows,
       feedbackDeltaRows
     } = await this.findEvidenceReviewFeedbackRows(db, executionRunId);
+    const commandArtifactRowsByBundleId = commandOutputArtifactRowsByBundleId(
+      commandOutputArtifactRows
+    );
     const runEventRows = await db.query.runEvents.findMany({
       where: eq(runEvents.executionRunId, executionRunId),
       orderBy: asc(runEvents.sequence)
@@ -1359,7 +1556,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       ...(contextAssembly === undefined ? {} : { contextAssembly }),
       ...(activationTrace === undefined ? {} : { activationTrace }),
       executionRun: mapExecutionRun(spineRows.executionRunRow),
-      evidenceBundles: evidenceBundleRows.map(mapEvidenceBundleForAuthorityRead),
+      evidenceBundles: evidenceBundleRows.map((row) => mapEvidenceBundleForAuthorityRead(
+        row,
+        commandArtifactRowsByBundleId.get(row.id) ?? []
+      )),
       reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
       feedbackDeltas: feedbackDeltaRows.map((row) => mapFeedbackDeltaForAuthorityRead(
         row,
@@ -1618,9 +1818,13 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     });
 
     return this.db.transaction(async (tx) => {
-      const row = await insertEvidenceBundleAndEvent(tx, evidenceInput, "createEvidenceBundle");
+      const { commandOutputArtifactRows, evidenceBundleRow } =
+        await insertEvidenceBundleAndEvent(tx, evidenceInput, "createEvidenceBundle");
 
-      return mapEvidenceBundle(row);
+      return mapEvidenceBundle(
+        evidenceBundleRow,
+        commandOutputArtifactRows.map(mapCommandOutputArtifact)
+      );
     });
   }
 
@@ -1788,7 +1992,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           projectId: authorityInput.projectId
         }
       });
-      const evidenceBundleRow = await insertEvidenceBundleAndEvent(
+      const { commandOutputArtifactRows, evidenceBundleRow } = await insertEvidenceBundleAndEvent(
         tx,
         evidenceInput,
         "createEvalFeedbackDeltaOnce.evidenceBundle",
@@ -1847,7 +2051,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       });
 
       return {
-        evidenceBundle: mapEvidenceBundle(evidenceBundleRow),
+        evidenceBundle: mapEvidenceBundle(
+          evidenceBundleRow,
+          commandOutputArtifactRows.map(mapCommandOutputArtifact)
+        ),
         reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
         feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
         created: true

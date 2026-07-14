@@ -10,7 +10,7 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--captured-at <iso-timestamp>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
     "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
@@ -93,10 +93,14 @@ describe("parseEvidenceArgs", () => {
       "passed",
       "--exit-code",
       "0",
+      "--started-at",
+      "2026-06-21T12:00:00.000Z",
       "--captured-at",
       "2026-06-21T12:00:01.000Z",
-      "--output",
-      ".local-lab/typecheck.txt",
+      "--stdout-file",
+      ".local-lab/typecheck.stdout",
+      "--stderr-file",
+      ".local-lab/typecheck.stderr",
       "--command=pnpm test",
       "--status=failed",
       "--exit-code=1"
@@ -109,8 +113,10 @@ describe("parseEvidenceArgs", () => {
             command: "pnpm typecheck",
             status: "passed",
             exitCode: 0,
+            startedAt: "2026-06-21T12:00:00.000Z",
             capturedAt: "2026-06-21T12:00:01.000Z",
-            outputPath: ".local-lab/typecheck.txt"
+            stdoutFile: ".local-lab/typecheck.stdout",
+            stderrFile: ".local-lab/typecheck.stderr"
           },
           {
             command: "pnpm test",
@@ -151,10 +157,34 @@ describe("parseEvidenceArgs", () => {
       "capture",
       "--command",
       "pnpm typecheck",
+      "--started-at",
+      "June 23, 2026 07:09:00 GMT"
+    ])).toEqual({
+      error: "--started-at requires a valid ISO timestamp"
+    });
+
+    expect(parseEvidenceArgs([
+      "capture",
+      "--command",
+      "pnpm typecheck",
       "--captured-at",
       "June 23, 2026 07:10:00 GMT"
     ])).toEqual({
       error: "--captured-at requires a valid ISO timestamp"
+    });
+  });
+
+  it("rejects the ambiguous legacy --output input", () => {
+    expect(parseEvidenceArgs([
+      "capture",
+      "--command",
+      "pnpm typecheck",
+      "--status",
+      "passed",
+      "--output",
+      ".local-lab/typecheck.txt"
+    ])).toEqual({
+      error: evidenceUsage
     });
   });
 

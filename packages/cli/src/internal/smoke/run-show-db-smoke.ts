@@ -1,4 +1,13 @@
 import {
+  mkdtemp,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import {
+  tmpdir
+} from "node:os";
+import path from "node:path";
+import {
   cleanupHarnessCompilerSmokeRows,
   createCompiledSmokeExecution,
   createHarnessCompilerSmokeRuntime
@@ -286,26 +295,6 @@ const parseJsonReadback = (
   return parsed;
 };
 
-const requiredEvidenceCommands = (
-  evidenceContract: EvidenceContract,
-  marker: string
-) => {
-  const commands = evidenceContract.commands.filter((command) => command.required);
-
-  if (commands.length === 0) {
-    throw new Error("Run-show DB smoke requires an active required verification command");
-  }
-
-  return commands.map((command, index) => ({
-    command: command.command,
-    status: "passed" as const,
-    provenance: "command_runner" as const,
-    exitCode: 0,
-    capturedAt: "2026-07-13T00:00:01.000Z",
-    outputRef: `smoke:${marker}:packet-binding:${index}`
-  }));
-};
-
 const persistedEvidenceChainFor = (
   aggregate: HarnessRunAggregate | undefined,
   phase: string
@@ -332,42 +321,66 @@ const persistedEvidenceChainFor = (
 
 const capturePacketBindingEvidence = async (input: {
   commandRuntime: DatabaseRuntime;
-  evidenceContract: EvidenceContract;
   marker: string;
   runtime: PacketBindingSmokeRuntime;
 }): Promise<PacketBindingCapture> => {
-  const decisionPacket = parseJsonReadback((await runDecisionPacketCommand({
+  const startedAt = new Date().toISOString();
+  const decisionPacketResult = await runDecisionPacketCommand({
     ...input.runtime,
     createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
+  });
+  const completedAt = new Date().toISOString();
+  const decisionPacket = parseJsonReadback(decisionPacketResult.stdout);
   const packetIdentity = readPacketIdentity(decisionPacket);
-  const captureRuntime = {
-    ...input.runtime,
-    cwd: process.cwd(),
-    persist: true,
-    decisionPacketChecksum: packetIdentity.checksum,
-    decisionPacketGeneratedAt: packetIdentity.generatedAt,
-    commandOutcomes: requiredEvidenceCommands(input.evidenceContract, input.marker),
-    readGitStatus: async () => "",
-    createDatabaseRuntime: async () => input.commandRuntime
-  };
-
-  await runEvidenceCaptureCommand(captureRuntime);
-  const firstCapture = persistedEvidenceChainFor(
-    await input.commandRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(input.runtime.runId),
-    "first"
+  const captureDirectory = await mkdtemp(
+    path.join(tmpdir(), `krn-run-show-smoke-${input.marker}-`)
   );
+  const stdoutFile = path.join(captureDirectory, "decision-packet.stdout");
+  const stderrFile = path.join(captureDirectory, "decision-packet.stderr");
 
-  await runEvidenceCaptureCommand(captureRuntime);
+  try {
+    await Promise.all([
+      writeFile(stdoutFile, decisionPacketResult.stdout),
+      writeFile(stderrFile, "")
+    ]);
+    const captureRuntime = {
+      ...input.runtime,
+      cwd: process.cwd(),
+      persist: true,
+      decisionPacketChecksum: packetIdentity.checksum,
+      decisionPacketGeneratedAt: packetIdentity.generatedAt,
+      commandOutcomes: [{
+        command: "krn decision packet readback observation",
+        status: "passed" as const,
+        exitCode: 0,
+        startedAt,
+        capturedAt: completedAt,
+        stdoutFile,
+        stderrFile
+      }],
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.commandRuntime
+    };
 
-  return {
-    packetIdentity,
-    firstCapture,
-    retryCapture: persistedEvidenceChainFor(
+    await runEvidenceCaptureCommand(captureRuntime);
+    const firstCapture = persistedEvidenceChainFor(
       await input.commandRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(input.runtime.runId),
-      "retried"
-    )
-  };
+      "first"
+    );
+
+    await runEvidenceCaptureCommand(captureRuntime);
+
+    return {
+      packetIdentity,
+      firstCapture,
+      retryCapture: persistedEvidenceChainFor(
+        await input.commandRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(input.runtime.runId),
+        "retried"
+      )
+    };
+  } finally {
+    await rm(captureDirectory, { recursive: true, force: true });
+  }
 };
 
 const evidenceChainHasExactCounts = (chain: PersistedEvidenceChain): boolean => [
@@ -411,12 +424,16 @@ const runPacketBindingReadback = async (input: {
       `Run ID: ${input.runtime.runId}`,
       "Mutation: none",
       "packetBinding: bound_current",
-      "packetBindingSourceRunLifecycleRevision:"
+      "packetBindingSourceRunLifecycleRevision:",
+      "command output artifacts:",
+      "storedBytesSha256:"
     ].every((line) => textReadback.stdout.includes(line)),
     jsonReadbackMatched:
       readbackKind === "krn.decisionPacket.readModel.v1" &&
       readbackMutation === "none" &&
-      readRunId(parsed) === input.runtime.runId,
+      readRunId(parsed) === input.runtime.runId &&
+      jsonReadback.stdout.includes('"commandOutputArtifacts"') &&
+      !jsonReadback.stdout.includes('"bytes"'),
     packetBindingStatus,
     readbackKind,
     readbackMutation,
@@ -581,7 +598,6 @@ export const runRunShowDbSmokeCheck = async (
     };
     const capture = await capturePacketBindingEvidence({
       commandRuntime,
-      evidenceContract: result.evidenceContract,
       marker,
       runtime
     });

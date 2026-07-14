@@ -5,6 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { EvalCandidateProposal } from "@krn/core";
+import {
+  createBoundedStreamCollector,
+  startCommandDeadline
+} from "../../bounded-command-execution.js";
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
@@ -21,6 +25,12 @@ export type CommandResult = {
   readonly exitCode: number | null;
   readonly stdout: string;
   readonly stderr: string;
+  readonly stdoutStoredBytes?: Uint8Array;
+  readonly stdoutTotalByteCount?: number;
+  readonly stderrStoredBytes?: Uint8Array;
+  readonly stderrTotalByteCount?: number;
+  readonly startedAt?: string;
+  readonly completedAt?: string;
   readonly durationMs?: number;
 };
 
@@ -446,43 +456,69 @@ export const runCommand = (
   cwd: string,
   options: RunCommandOptions = {}
 ): Promise<CommandResult> => new Promise((resolve) => {
-  const startedAt = Date.now();
+  const startedAtMilliseconds = Date.now();
+  const startedAt = new Date(startedAtMilliseconds).toISOString();
   const child = spawn(command, args, {
     cwd,
     env: options.env,
     stdio: ["pipe", "pipe", "pipe"]
   });
+  const stdoutCapture = createBoundedStreamCollector();
+  const stderrCapture = createBoundedStreamCollector();
   let stdout = "";
   let stderr = "";
+  let settled = false;
   let timedOut = false;
-  const timeout = options.timeoutMs === undefined
-    ? undefined
-    : setTimeout(() => {
+  const clearCommandDeadline = startCommandDeadline(
+    child,
+    options.timeoutMs,
+    () => {
       timedOut = true;
-      child.kill("SIGTERM");
-    }, options.timeoutMs);
+    }
+  );
 
   const finish = (exitCode: number | null): void => {
-    if (timeout !== undefined) {
-      clearTimeout(timeout);
-    }
-    resolve({
+    if (settled) return;
+    settled = true;
+    clearCommandDeadline();
+    const stdoutSnapshot = stdoutCapture.snapshot();
+    const stderrSnapshot = stderrCapture.snapshot();
+    const commandResult: CommandResult = {
       command,
       args: [...args],
       exitCode: timedOut ? null : exitCode,
       stdout,
       stderr: timedOut ? `${stderr}command timed out` : stderr,
-      durationMs: Date.now() - startedAt
+      stdoutTotalByteCount: stdoutSnapshot.totalByteCount,
+      stderrTotalByteCount: stderrSnapshot.totalByteCount,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      durationMs: Date.now() - startedAtMilliseconds
+    };
+
+    Object.defineProperties(commandResult, {
+      stdoutStoredBytes: {
+        value: stdoutSnapshot.bytes,
+        enumerable: false
+      },
+      stderrStoredBytes: {
+        value: stderrSnapshot.bytes,
+        enumerable: false
+      }
     });
+
+    resolve(commandResult);
   };
 
-  if (options.input !== undefined) child.stdin.end(options.input);
-  else child.stdin.end();
+  if (options.input === undefined) child.stdin.end();
+  else child.stdin.end(options.input);
 
   child.stdout.on("data", (chunk: Buffer) => {
+    stdoutCapture.append(chunk);
     stdout += chunk.toString();
   });
   child.stderr.on("data", (chunk: Buffer) => {
+    stderrCapture.append(chunk);
     stderr += chunk.toString();
   });
   child.on("error", (error: Error) => {
@@ -698,6 +734,8 @@ const runHeldOutTargetRepairChecker = async (
     exitCode: null,
     stdout: "",
     stderr: "skipped because target preflight was invalid",
+    startedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
     durationMs: 0
   });
 

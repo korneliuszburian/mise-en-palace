@@ -1,16 +1,12 @@
 import {
-  decisionPacketBindingReadbackFromMetadata,
   decisionPacketReadModelDoesNotProve,
   decisionPacketReadModelProves,
-  summarizeFeedbackCandidateProposals,
-  targetEvidenceFromMetadata,
-  toEvidenceCommandReadback
+  summarizeFeedbackCandidateProposals
 } from "@krn/core";
 import type {
   ContextAssembly,
   ContextExclusion,
   ContextInclusion,
-  EvidenceCommand,
   FeedbackDelta,
   TargetEvidence
 } from "@krn/core";
@@ -22,7 +18,6 @@ import type { ProjectResolution } from "./database-runtime.js";
 import { formatProjectResolutionKind } from "./project-resolution-format.js";
 import { formatKnowledgeSelectionLines } from "./knowledge-selection.js";
 import {
-  metadataArrayLength,
   projectResolutionFromMetadata
 } from "./decision-packet-read-model-decoders.js";
 import {
@@ -32,39 +27,72 @@ import {
   decisionPacketReadModelCandidates,
   decisionPacketReadModelKnowledgeUsefulnessOutcomes,
   decisionPacketReadModelSourceUsefulnessOutcomes,
-  evidenceBundleFreshness
+  decisionPacketEvidenceBundleResource
 } from "./decision-packet-read-model-builders.js";
 import type {
   DecisionPacketReadModelActivationCandidate,
+  DecisionPacketReadModelCommand,
+  DecisionPacketReadModelCommandOutputArtifact,
   DecisionPacketReadModelKnowledgeUsefulnessOutcome,
   DecisionPacketReadModelSourceUsefulnessOutcome
 } from "./decision-packet-read-model.js";
 
-const renderCommand = (command: EvidenceCommand): string[] => {
-  const commandReadback = toEvidenceCommandReadback(command);
-
-  return [
-    `- ${commandReadback.command}: ${commandReadback.status} | provenance=${commandReadback.provenance}`,
-    ...(!('exitCode' in commandReadback) || commandReadback.exitCode === undefined
+const renderCommand = (command: DecisionPacketReadModelCommand): string[] => [
+    `- ${command.command}: ${command.status} | provenance=${command.provenance}`,
+    ...(command.exitCode === undefined
       ? []
-      : [`  exitCode: ${commandReadback.exitCode}`]),
-    ...(!('outputRef' in commandReadback) || commandReadback.outputRef === undefined
+      : [`  exitCode: ${command.exitCode}`]),
+    ...(command.outputRef === undefined
       ? []
-      : [`  outputRef: ${commandReadback.outputRef}`]),
-    ...(!('capturedAt' in commandReadback) || commandReadback.capturedAt === undefined
+      : [`  outputRef: ${command.outputRef}`]),
+    ...(command.artifactIntegrity === undefined
       ? []
-      : [`  capturedAt: ${commandReadback.capturedAt}`]),
-    ...(!('assertedBy' in commandReadback) || commandReadback.assertedBy === undefined
+      : [`  artifactIntegrity: ${command.artifactIntegrity}`]),
+    ...(command.artifactIntegrityReason === undefined
       ? []
-      : [`  assertedBy: ${commandReadback.assertedBy}`]),
-    `  doesNotProve: ${commandReadback.doesNotProve}`
+      : [`  artifactIntegrityReason: ${command.artifactIntegrityReason}`]),
+    ...(command.capturedAt === undefined
+      ? []
+      : [`  capturedAt: ${command.capturedAt}`]),
+    ...(command.assertedBy === undefined
+      ? []
+      : [`  assertedBy: ${command.assertedBy}`]),
+    `  doesNotProve: ${command.doesNotProve}`
   ];
-};
 
-const renderCommands = (commands: readonly EvidenceCommand[]): string[] =>
+const renderCommands = (commands: readonly DecisionPacketReadModelCommand[]): string[] =>
   commands.length === 0
     ? ["- none"]
     : commands.flatMap(renderCommand);
+
+const renderCommandOutputArtifact = (
+  artifact: DecisionPacketReadModelCommandOutputArtifact
+): string[] => [
+  `- outputRef: ${artifact.outputRef}`,
+  `  integrity: ${artifact.integrity}`,
+  ...(artifact.integrityReason === undefined
+    ? []
+    : [`  integrityReason: ${artifact.integrityReason}`]),
+  `  exitCode: ${artifact.exitCode}`,
+  `  startedAt: ${artifact.startedAt}`,
+  `  completedAt: ${artifact.completedAt}`,
+  "  stdout:",
+  `    storedBytesSha256: ${artifact.stdout.storedBytesSha256}`,
+  `    storedByteCount: ${artifact.stdout.storedByteCount}`,
+  `    totalByteCount: ${artifact.stdout.totalByteCount}`,
+  `    truncated: ${artifact.stdout.truncated}`,
+  "  stderr:",
+  `    storedBytesSha256: ${artifact.stderr.storedBytesSha256}`,
+  `    storedByteCount: ${artifact.stderr.storedByteCount}`,
+  `    totalByteCount: ${artifact.stderr.totalByteCount}`,
+  `    truncated: ${artifact.stderr.truncated}`
+];
+
+const renderCommandOutputArtifacts = (
+  artifacts: readonly DecisionPacketReadModelCommandOutputArtifact[]
+): string[] => artifacts.length === 0
+  ? ["- none"]
+  : artifacts.flatMap(renderCommandOutputArtifact);
 
 const contextSubjectRef = (item: { subjectType: string; subjectId: string }): string =>
   `${item.subjectType}:${item.subjectId}`;
@@ -309,17 +337,20 @@ const renderEvidenceBundle = (
   return [
     "Evidence Bundles:",
     ...aggregate.evidenceBundles.flatMap((bundle) => {
-      const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
-      const packetBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
+      const resource = decisionPacketEvidenceBundleResource(
+        bundle,
+        aggregate.executionRun.updatedAt
+      );
+      const packetBinding = resource.packetBinding;
 
       return [
-        `- ${bundle.id}: status=${bundle.status} freshness=${evidenceBundleFreshness(bundle, aggregate.executionRun.updatedAt)} diffRisk=${bundle.diffRisk}`,
-        `  executionRunId: ${bundle.executionRunId}`,
-        `  createdAt: ${bundle.createdAt}`,
-        `  updatedAt: ${bundle.updatedAt}`,
-        ...(typeof bundle.metadata.decisionPacketChecksum === "string"
-          ? [`  packetChecksum: ${bundle.metadata.decisionPacketChecksum}`]
-          : []),
+        `- ${resource.id}: status=${resource.status} freshness=${resource.freshness} diffRisk=${resource.diffRisk}`,
+        `  executionRunId: ${resource.executionRunId}`,
+        `  createdAt: ${resource.createdAt}`,
+        `  updatedAt: ${resource.updatedAt}`,
+        ...(resource.packetChecksum === undefined
+          ? []
+          : [`  packetChecksum: ${resource.packetChecksum}`]),
         `  packetBinding: ${packetBinding.status}`,
         ...(packetBinding.checksum === undefined ? [] : [`  packetBindingChecksum: ${packetBinding.checksum}`]),
         ...(packetBinding.evidenceRef === undefined ? [] : [`  packetBindingEvidenceRef: ${packetBinding.evidenceRef}`]),
@@ -328,16 +359,18 @@ const renderEvidenceBundle = (
           ? []
           : [`  packetBindingSourceRunLifecycleRevision: ${packetBinding.sourceRunLifecycleRevision}`]),
         ...(packetBinding.reason === undefined ? [] : [`  packetBindingReason: ${packetBinding.reason}`]),
-        `  changedFiles: ${bundle.changedFiles.length}`,
+        `  changedFiles: ${resource.changedFiles.all.length}`,
         "  changed file classification:",
-        `  - intended=${metadataArrayLength(bundle.metadata, "changedFileClassification", "intended")}`,
-        `  - unrelated=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unrelated")}`,
-        `  - unknown=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unknown")}`,
-        `  reviewBurden: ${bundle.reviewBurden}`,
-        `  rollbackPath: ${bundle.rollbackPath}`,
+        `  - intended=${resource.changedFiles.classification.intended.length}`,
+        `  - unrelated=${resource.changedFiles.classification.unrelated.length}`,
+        `  - unknown=${resource.changedFiles.classification.unknown.length}`,
+        `  reviewBurden: ${resource.reviewBurden}`,
+        `  rollbackPath: ${resource.rollbackPath}`,
         "  commands:",
-        ...renderCommands(bundle.commands).map((line) => `  ${line}`),
-        ...renderTargetEvidence(targetEvidence)
+        ...renderCommands(resource.commands).map((line) => `  ${line}`),
+        "  command output artifacts:",
+        ...renderCommandOutputArtifacts(resource.commandOutputArtifacts).map((line) => `  ${line}`),
+        ...renderTargetEvidence(resource.targetEvidence)
       ];
     })
   ];

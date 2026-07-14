@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
@@ -40,6 +42,19 @@ import { runCli } from "../run-cli.js";
 const now = "2026-06-21T12:00:00.000Z";
 const sha256Hex = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
+const temporaryDirectories: string[] = [];
+
+const temporaryDirectory = async (): Promise<string> => {
+  const directory = await mkdtemp(path.join(tmpdir(), "krn-cli-evidence-"));
+  temporaryDirectories.push(directory);
+  return directory;
+};
+
+afterEach(async () => {
+  await Promise.all(temporaryDirectories.splice(0).map((directory) =>
+    rm(directory, { recursive: true, force: true })
+  ));
+});
 
 const currentDecisionPacketBindingForAggregate = (
   aggregate: HarnessRunAggregate,
@@ -300,6 +315,9 @@ const createCapturingAtomicEvidenceFeedbackResult = (
       status: input.evidence.status ?? "captured",
       changedFiles: input.evidence.changedFiles,
       commands: input.evidence.commands,
+      ...(input.evidence.commandOutputArtifacts === undefined
+        ? {}
+        : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
       diffRisk: input.evidence.diffRisk,
       reviewBurden: input.evidence.reviewBurden,
       rollbackPath: input.evidence.rollbackPath,
@@ -1874,6 +1892,17 @@ describe("runCli", () => {
   });
 
   it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
+    const evidenceDirectory = await temporaryDirectory();
+    const typecheckStdout = path.join(evidenceDirectory, "typecheck.stdout");
+    const typecheckStderr = path.join(evidenceDirectory, "typecheck.stderr");
+    const testStdout = path.join(evidenceDirectory, "test.stdout");
+    const testStderr = path.join(evidenceDirectory, "test.stderr");
+    await Promise.all([
+      writeFile(typecheckStdout, "typecheck output is private\n"),
+      writeFile(typecheckStderr, ""),
+      writeFile(testStdout, ""),
+      writeFile(testStderr, "test failure is private\n")
+    ]);
     const result = await runCli(
       [
         "evidence",
@@ -1884,16 +1913,28 @@ describe("runCli", () => {
         "passed",
         "--exit-code",
         "0",
-        "--output",
-        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--started-at",
+        "2026-06-21T12:00:00.000Z",
+        "--captured-at",
+        "2026-06-21T12:00:01.000Z",
+        "--stdout-file",
+        typecheckStdout,
+        "--stderr-file",
+        typecheckStderr,
         "--command",
         "pnpm test",
         "--status",
         "failed",
         "--exit-code",
         "1",
-        "--output",
-        ".local-lab/p7-self-hosting/03-test.txt"
+        "--started-at",
+        "2026-06-21T12:00:02.000Z",
+        "--captured-at",
+        "2026-06-21T12:00:03.000Z",
+        "--stdout-file",
+        testStdout,
+        "--stderr-file",
+        testStderr
       ],
       {
         env: {},
@@ -1905,12 +1946,14 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain(
-      "pnpm typecheck: passed | provenance=captured_output_file | exitCode=0 | output=.local-lab/p7-self-hosting/02-typecheck.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    expect(result.stdout).toMatch(
+      /pnpm typecheck: passed \| provenance=captured_output_file \| exitCode=0 \| output=command-output:sha256:[a-f0-9]{64}/u
     );
-    expect(result.stdout).toContain(
-      "pnpm test: failed | provenance=captured_output_file | exitCode=1 | output=.local-lab/p7-self-hosting/03-test.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    expect(result.stdout).toMatch(
+      /pnpm test: failed \| provenance=captured_output_file \| exitCode=1 \| output=command-output:sha256:[a-f0-9]{64}/u
     );
+    expect(result.stdout).not.toContain("typecheck output is private");
+    expect(result.stdout).not.toContain("test failure is private");
     expect(result.stdout).not.toContain("pnpm typecheck: skipped");
   });
 
@@ -1945,11 +1988,17 @@ describe("runCli", () => {
   });
 
   it("persists supplied evidence command outcomes for a run id", async () => {
+    const evidenceDirectory = await temporaryDirectory();
+    const stdoutFile = path.join(evidenceDirectory, "typecheck.stdout");
+    const stderrFile = path.join(evidenceDirectory, "typecheck.stderr");
+    await writeFile(stdoutFile, "typecheck passed\n");
+    await writeFile(stderrFile, "");
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
     let capturedCommands: CreateEvidenceBundleInput["commands"] | undefined;
+    let capturedArtifacts: CreateEvidenceBundleInput["commandOutputArtifacts"];
     const aggregate: HarnessRunAggregate = {
       operatorIntent: {
         id: "operator-intent-1",
@@ -2028,6 +2077,7 @@ describe("runCli", () => {
       },
       async createEvidenceBundle(input: CreateEvidenceBundleInput) {
         capturedCommands = input.commands;
+        capturedArtifacts = input.commandOutputArtifacts;
 
         return {
           id: "evidence-bundle-1",
@@ -2035,6 +2085,9 @@ describe("runCli", () => {
           status: input.status ?? "captured",
           changedFiles: input.changedFiles,
           commands: input.commands,
+          ...(input.commandOutputArtifacts === undefined
+            ? {}
+            : { commandOutputArtifacts: input.commandOutputArtifacts }),
           diffRisk: input.diffRisk,
           reviewBurden: input.reviewBurden,
           rollbackPath: input.rollbackPath,
@@ -2071,6 +2124,7 @@ describe("runCli", () => {
       },
       async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
         capturedCommands = input.evidence.commands;
+        capturedArtifacts = input.evidence.commandOutputArtifacts;
         return createCapturingAtomicEvidenceFeedbackResult(input);
       }
     };
@@ -2087,8 +2141,14 @@ describe("runCli", () => {
         "passed",
         "--exit-code",
         "0",
-        "--output",
-        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--started-at",
+        "2026-06-21T12:00:00.000Z",
+        "--captured-at",
+        "2026-06-21T12:00:01.000Z",
+        "--stdout-file",
+        stdoutFile,
+        "--stderr-file",
+        stderrFile,
         "--command",
         "pnpm test",
         "--status",
@@ -2129,8 +2189,8 @@ describe("runCli", () => {
         status: "passed",
         provenance: "captured_output_file",
         exitCode: 0,
-        outputPath: ".local-lab/p7-self-hosting/02-typecheck.txt",
-        outputRef: ".local-lab/p7-self-hosting/02-typecheck.txt",
+        capturedAt: "2026-06-21T12:00:01.000Z",
+        outputRef: capturedArtifacts?.[0]?.outputRef,
         doesNotProve:
           "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       },
@@ -2144,6 +2204,67 @@ describe("runCli", () => {
           "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       }
     ]);
+    expect(capturedArtifacts).toEqual([expect.objectContaining({
+      outputRef: capturedCommands?.[0]?.outputRef,
+      command: "pnpm typecheck",
+      exitCode: 0,
+      startedAt: "2026-06-21T12:00:00.000Z",
+      completedAt: "2026-06-21T12:00:01.000Z",
+      stdout: expect.objectContaining({
+        storedByteCount: 17,
+        totalByteCount: 17,
+        truncated: false
+      }),
+      stderr: expect.objectContaining({
+        storedByteCount: 0,
+        totalByteCount: 0,
+        truncated: false
+      })
+    })]);
+  });
+
+  it("fails an explicit missing output file before opening persistence", async () => {
+    const evidenceDirectory = await temporaryDirectory();
+    const stderrFile = path.join(evidenceDirectory, "stderr.log");
+    await writeFile(stderrFile, "");
+    let persistenceOpenCount = 0;
+
+    const result = await runCli([
+      "evidence",
+      "capture",
+      "--run-id",
+      "execution-run-1",
+      "--persist",
+      "--command",
+      "pnpm test",
+      "--status",
+      "failed",
+      "--exit-code",
+      "1",
+      "--started-at",
+      "2026-06-21T12:00:00.000Z",
+      "--captured-at",
+      "2026-06-21T12:00:01.000Z",
+      "--stdout-file",
+      path.join(evidenceDirectory, "missing.log"),
+      "--stderr-file",
+      stderrFile
+    ], {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => {
+        persistenceOpenCount += 1;
+        throw new Error("Persistence must not open");
+      }
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unable to capture --stdout-file");
+    expect(persistenceOpenCount).toBe(0);
   });
 
   it("prints clean evidence capture when there are no changed files", async () => {

@@ -47,7 +47,7 @@ type CreateMemoryRecordApplyDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-const sha256Hex = (value: string): string =>
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 
 const defaultExpectedUse = (command: MemoryRecordApplyCommand): string =>
@@ -209,7 +209,8 @@ const hasFreshHelpedVerification = (input: {
       evidenceContract: activation.evidenceContract,
       packetChecksum: input.packetChecksum,
       packetGeneratedAt: input.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      sha256Hex
     });
 };
 

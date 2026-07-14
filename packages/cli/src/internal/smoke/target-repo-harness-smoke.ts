@@ -1,10 +1,6 @@
 import {
-  execFile,
   spawn
 } from "node:child_process";
-import {
-  promisify
-} from "node:util";
 import type {
   Sql
 } from "postgres";
@@ -19,10 +15,12 @@ import type {
   HarnessRunAggregate
 } from "@krn/core/repositories";
 import type {
+  CommandOutputArtifact,
   EvidenceCommand,
   MemoryRecord
 } from "@krn/core";
 import {
+  createCommandOutputArtifact,
   toEvidenceCommandReadback
 } from "@krn/core";
 import type {
@@ -31,6 +29,12 @@ import type {
 import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
+import {
+  commandOutputArtifactSha256Hex
+} from "../../command-output-artifact-hash.js";
+import {
+  runBoundedCommand
+} from "../../bounded-command-execution.js";
 import {
   isRecord,
   readRequiredRecord,
@@ -57,8 +61,6 @@ import {
   sumCountRows,
   yesNo
 } from "../../codex-brief-support.js";
-
-const execFileAsync = promisify(execFile);
 
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;
@@ -163,6 +165,7 @@ interface DecisionPacketConsumerProof {
 interface TargetCommandProof {
   command: string;
   evidenceCommand: EvidenceCommand;
+  commandOutputArtifact: CommandOutputArtifact;
 }
 
 interface PacketBoundTargetEvidenceProof extends TargetEvidenceReadbackProof {
@@ -778,25 +781,40 @@ const readMcpDecisionPacketProof = async (input: {
 };
 
 const runTargetFixtureCommand = async (
-  targetRepoPath: string,
-  marker: string
+  targetRepoPath: string
 ): Promise<TargetCommandProof> => {
   const command = `pnpm --dir ${targetRepoPath} test`;
+  const result = await runBoundedCommand(
+    "pnpm",
+    ["--dir", targetRepoPath, "test"],
+    process.cwd()
+  );
 
-  await execFileAsync("pnpm", ["--dir", targetRepoPath, "test"], {
-    cwd: process.cwd()
-  });
+  if (result.exitCode !== 0) {
+    throw new Error("Target fixture command failed");
+  }
+
+  const commandOutputArtifact = createCommandOutputArtifact({
+    command,
+    exitCode: 0,
+    startedAt: result.startedAt,
+    completedAt: result.completedAt,
+    stdout: result.stdout,
+    stdoutTotalByteCount: result.stdoutTotalByteCount,
+    stderr: result.stderr,
+    stderrTotalByteCount: result.stderrTotalByteCount
+  }, commandOutputArtifactSha256Hex);
 
   return {
     command,
+    commandOutputArtifact,
     evidenceCommand: {
       command,
       status: "passed",
       provenance: "command_runner",
       exitCode: 0,
-      capturedAt: smokeFixtureClocks.targetRepoHarness.now,
-      outputRef: `target-command:${marker}:typescript-basic-test`,
-      assertedBy: "target-repo-harness-smoke",
+      capturedAt: commandOutputArtifact.completedAt,
+      outputRef: commandOutputArtifact.outputRef,
       doesNotProve:
         "Target fixture typecheck proves this fixture command passed; it does not prove arbitrary target repos or live Codex edits."
     }
@@ -878,7 +896,7 @@ const capturePacketBoundTargetEvidence = async (input: {
   readonly now: string;
   readonly targetRepoPath: string;
 }): Promise<PacketBoundTargetEvidenceProof> => {
-  const targetCommandProof = await runTargetFixtureCommand(input.targetRepoPath, input.marker);
+  const targetCommandProof = await runTargetFixtureCommand(input.targetRepoPath);
   const evidenceCapture = await runEvidenceCaptureCommand({
     env: {
       KRN_DATABASE_URL: input.databaseUrl
@@ -891,6 +909,7 @@ const capturePacketBoundTargetEvidence = async (input: {
     decisionPacketChecksum: input.decisionPacketProof.checksum,
     decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
     commandOutcomes: [targetCommandProof.evidenceCommand],
+    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
     targetEvidence: {
       targetRepo: input.targetRepoPath,
       mode: "observation_only",

@@ -1,11 +1,13 @@
 import type {
-  EvidenceCommand,
   EvidenceCommandStatus,
   KnowledgeUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceChangedFileInput,
   TargetEvidenceInput
 } from "@krn/core";
+import type {
+  EvidenceCommandCaptureInput
+} from "./evidence-command-artifacts.js";
 import {
   isIsoTimestamp,
   isSourceUsefulnessOutcome
@@ -18,7 +20,7 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--captured-at <iso-timestamp>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
@@ -80,41 +82,77 @@ const incoherentCommandExitCodeError = (
 type CompletedEvidenceCommand =
   | {
       ok: true;
-      command: EvidenceCommand;
+      command: EvidenceCommandCaptureInput;
     }
   | {
       ok: false;
       error: string;
     };
 
-const optionalEvidenceCommandFields = (
-  pending: Partial<EvidenceCommand>
-): Partial<Omit<EvidenceCommand, "command" | "status">> => {
-  const fields: Partial<Omit<EvidenceCommand, "command" | "status">> = {};
-  const capturedAt = pending.capturedAt?.trim();
-  const outputPath = pending.outputPath?.trim();
+const nonEmptyTrimmed = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
 
-  if (pending.exitCode !== undefined) {
-    fields.exitCode = pending.exitCode;
-  }
-
-  if (capturedAt !== undefined && capturedAt.length > 0) {
-    fields.capturedAt = capturedAt;
-  }
-
-  if (outputPath !== undefined && outputPath.length > 0) {
-    fields.outputPath = outputPath;
-  }
-
-  return fields;
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
-const completeEvidenceCommand = (
-  pending: Partial<EvidenceCommand>
-): CompletedEvidenceCommand => {
-  const command = pending.command?.trim();
+const optionalEvidenceCommandFields = (
+  pending: Partial<EvidenceCommandCaptureInput>
+): Partial<Omit<EvidenceCommandCaptureInput, "command" | "status">> => {
+  const startedAt = nonEmptyTrimmed(pending.startedAt);
+  const capturedAt = nonEmptyTrimmed(pending.capturedAt);
+  const stdoutFile = nonEmptyTrimmed(pending.stdoutFile);
+  const stderrFile = nonEmptyTrimmed(pending.stderrFile);
 
-  if (command === undefined || command.length === 0) {
+  return {
+    ...(pending.exitCode === undefined ? {} : { exitCode: pending.exitCode }),
+    ...(startedAt === undefined ? {} : { startedAt }),
+    ...(capturedAt === undefined ? {} : { capturedAt }),
+    ...(stdoutFile === undefined ? {} : { stdoutFile }),
+    ...(stderrFile === undefined ? {} : { stderrFile })
+  };
+};
+
+const outputArtifactRequestError = (
+  pending: Partial<EvidenceCommandCaptureInput>,
+  status: EvidenceCommandStatus
+): string | undefined => {
+  if (status !== "passed" && status !== "failed") {
+    return "command output files require --status passed or failed";
+  }
+  if (pending.exitCode === undefined) {
+    return "command output files require --exit-code";
+  }
+  if (pending.startedAt === undefined) {
+    return "command output files require --started-at";
+  }
+  if (pending.capturedAt === undefined) {
+    return "command output files require --captured-at";
+  }
+  if (pending.stdoutFile === undefined || pending.stderrFile === undefined) {
+    return "command output capture requires both --stdout-file and --stderr-file";
+  }
+  if (Date.parse(pending.capturedAt) < Date.parse(pending.startedAt)) {
+    return "--captured-at must be at or after --started-at";
+  }
+
+  return undefined;
+};
+
+const outputArtifactRequested = (
+  pending: Partial<EvidenceCommandCaptureInput>
+): boolean => [
+  pending.startedAt,
+  pending.capturedAt,
+  pending.stdoutFile,
+  pending.stderrFile
+].some((value) => value !== undefined);
+
+const completeEvidenceCommand = (
+  pending: Partial<EvidenceCommandCaptureInput>
+): CompletedEvidenceCommand => {
+  const command = nonEmptyTrimmed(pending.command);
+
+  if (command === undefined) {
     return {
       ok: false,
       error: "--command requires a non-empty value"
@@ -136,6 +174,13 @@ const completeEvidenceCommand = (
     return { ok: false, error: exitCodeError };
   }
 
+  if (outputArtifactRequested(pending)) {
+    const artifactRequestError = outputArtifactRequestError(pending, status);
+    if (artifactRequestError !== undefined) {
+      return { ok: false, error: artifactRequestError };
+    }
+  }
+
   return {
     ok: true,
     command: {
@@ -147,8 +192,8 @@ const completeEvidenceCommand = (
 };
 
 const pushPendingCommand = (
-  commands: EvidenceCommand[],
-  pending: Partial<EvidenceCommand> | undefined
+  commands: EvidenceCommandCaptureInput[],
+  pending: Partial<EvidenceCommandCaptureInput> | undefined
 ): { error?: string } => {
   if (pending === undefined) {
     return {};
@@ -165,7 +210,7 @@ const pushPendingCommand = (
   return {};
 };
 
-const parseVerification = (value: string): { command?: EvidenceCommand; error?: string } => {
+const parseVerification = (value: string): { command?: EvidenceCommandCaptureInput; error?: string } => {
   const separatorIndex = value.lastIndexOf("=");
 
   if (separatorIndex < 0) {
@@ -531,8 +576,8 @@ const parseOptionAfterPendingCommand = (
   rest: readonly string[],
   index: number,
   optionName: string,
-  commandOutcomes: EvidenceCommand[],
-  pendingCommand: Partial<EvidenceCommand> | undefined
+  commandOutcomes: EvidenceCommandCaptureInput[],
+  pendingCommand: Partial<EvidenceCommandCaptureInput> | undefined
 ): ParsedStringOption => {
   const parsed = parseEvidenceOption(rest, index, optionName);
 
@@ -557,8 +602,8 @@ type EvidenceParseState = {
   runId: string | undefined;
   decisionPacketChecksum: string | undefined;
   decisionPacketGeneratedAt: string | undefined;
-  pendingCommand: Partial<EvidenceCommand> | undefined;
-  commandOutcomes: EvidenceCommand[];
+  pendingCommand: Partial<EvidenceCommandCaptureInput> | undefined;
+  commandOutcomes: EvidenceCommandCaptureInput[];
   intendedFiles: string[];
   targetRepo: string | undefined;
   targetMode: string | undefined;
@@ -620,8 +665,10 @@ const evidenceOptionNames = [
   "--memory-usefulness",
   "--status",
   "--exit-code",
+  "--started-at",
   "--captured-at",
-  "--output"
+  "--stdout-file",
+  "--stderr-file"
 ] as const;
 
 type EvidenceOptionName = typeof evidenceOptionNames[number];
@@ -1053,6 +1100,42 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
+  "--started-at": (rest, index, state) => {
+    const parsed = parseNonEmptyOption(
+      rest,
+      index,
+      "--started-at",
+      "--started-at requires a valid ISO timestamp"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--started-at requires a preceding --command"
+      };
+    }
+
+    if (!isIsoTimestamp(parsed.value)) {
+      return {
+        ok: false,
+        error: "--started-at requires a valid ISO timestamp"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      startedAt: parsed.value
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
   "--captured-at": (rest, index, state) => {
     const parsed = parseNonEmptyOption(
       rest,
@@ -1089,8 +1172,13 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
-  "--output": (rest, index, state) => {
-    const parsed = parseEvidenceOption(rest, index, "--output");
+  "--stdout-file": (rest, index, state) => {
+    const parsed = parseNonEmptyOption(
+      rest,
+      index,
+      "--stdout-file",
+      "--stdout-file requires a non-empty path"
+    );
 
     if (!parsed.ok) {
       return parsed;
@@ -1099,13 +1187,42 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
     if (state.pendingCommand === undefined) {
       return {
         ok: false,
-        error: "--output requires a preceding --command"
+        error: "--stdout-file requires a preceding --command"
       };
     }
 
     state.pendingCommand = {
       ...state.pendingCommand,
-      outputPath: parsed.value
+      stdoutFile: parsed.value
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--stderr-file": (rest, index, state) => {
+    const parsed = parseNonEmptyOption(
+      rest,
+      index,
+      "--stderr-file",
+      "--stderr-file requires a non-empty path"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--stderr-file requires a preceding --command"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      stderrFile: parsed.value
     };
 
     return {

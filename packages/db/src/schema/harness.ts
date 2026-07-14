@@ -1,4 +1,6 @@
 import {
+  bigint,
+  boolean,
   check,
   index,
   integer,
@@ -23,6 +25,7 @@ import {
 } from "@krn/core";
 
 import {
+  byteaColumn,
   createdAtColumn,
   jsonListColumn,
   jsonObjectColumn,
@@ -271,6 +274,110 @@ export const evidenceBundles = pgTable(
       sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
     ),
     index("evidence_bundles_status_idx").on(table.status)
+  ]
+);
+
+export const evidenceCommandArtifacts = pgTable(
+  "evidence_command_artifacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    evidenceBundleId: uuid("evidence_bundle_id")
+      .notNull()
+      .references(() => evidenceBundles.id, { onDelete: "cascade" }),
+    commandOrdinal: integer("command_ordinal").notNull(),
+    command: text("command").notNull(),
+    exitCode: integer("exit_code").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+    stdoutBytes: byteaColumn("stdout_bytes").notNull(),
+    stderrBytes: byteaColumn("stderr_bytes").notNull(),
+    stdoutTotalByteCount: bigint("stdout_total_byte_count", { mode: "number" }).notNull(),
+    stderrTotalByteCount: bigint("stderr_total_byte_count", { mode: "number" }).notNull(),
+    stdoutTruncated: boolean("stdout_truncated").notNull(),
+    stderrTruncated: boolean("stderr_truncated").notNull(),
+    stdoutSha256: text("stdout_sha256").notNull(),
+    stderrSha256: text("stderr_sha256").notNull(),
+    artifactSha256: text("artifact_sha256").notNull(),
+    outputRef: text("output_ref").notNull(),
+    createdAt: createdAtColumn()
+  },
+  (table) => [
+    uniqueIndex("evidence_command_artifacts_bundle_ordinal_unique").on(
+      table.evidenceBundleId,
+      table.commandOrdinal
+    ),
+    uniqueIndex("evidence_command_artifacts_bundle_output_ref_unique").on(
+      table.evidenceBundleId,
+      table.outputRef
+    ),
+    check(
+      "evidence_command_artifacts_ordinal_nonnegative",
+      sql`${table.commandOrdinal} >= 0`
+    ),
+    check(
+      "evidence_command_artifacts_command_nonempty",
+      sql`btrim(${table.command}) <> ''`
+    ),
+    check(
+      "evidence_command_artifacts_timestamp_order",
+      sql`${table.completedAt} >= ${table.startedAt}`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_byte_count_nonnegative",
+      sql`${table.stdoutTotalByteCount} >= 0`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_byte_count_nonnegative",
+      sql`${table.stderrTotalByteCount} >= 0`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_byte_cap",
+      sql`octet_length(${table.stdoutBytes}) <= 65536`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_byte_cap",
+      sql`octet_length(${table.stderrBytes}) <= 65536`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_byte_count_coherent",
+      sql`${table.stdoutTotalByteCount} >= octet_length(${table.stdoutBytes})`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_byte_count_coherent",
+      sql`${table.stderrTotalByteCount} >= octet_length(${table.stderrBytes})`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_stored_length_exact",
+      sql`octet_length(${table.stdoutBytes}) = least(${table.stdoutTotalByteCount}, 65536)`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_stored_length_exact",
+      sql`octet_length(${table.stderrBytes}) = least(${table.stderrTotalByteCount}, 65536)`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_truncation_coherent",
+      sql`${table.stdoutTruncated} = (${table.stdoutTotalByteCount} > octet_length(${table.stdoutBytes}))`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_truncation_coherent",
+      sql`${table.stderrTruncated} = (${table.stderrTotalByteCount} > octet_length(${table.stderrBytes}))`
+    ),
+    check(
+      "evidence_command_artifacts_stdout_sha256_format",
+      sql`${table.stdoutSha256} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "evidence_command_artifacts_stderr_sha256_format",
+      sql`${table.stderrSha256} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "evidence_command_artifacts_sha256_format",
+      sql`${table.artifactSha256} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "evidence_command_artifacts_output_ref_matches_sha256",
+      sql`${table.outputRef} = 'command-output:sha256:' || ${table.artifactSha256}`
+    )
   ]
 );
 

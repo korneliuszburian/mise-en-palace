@@ -1,0 +1,41 @@
+CREATE TABLE "evidence_command_artifacts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"evidence_bundle_id" uuid NOT NULL,
+	"command_ordinal" integer NOT NULL,
+	"command" text NOT NULL,
+	"exit_code" integer NOT NULL,
+	"started_at" timestamp with time zone NOT NULL,
+	"completed_at" timestamp with time zone NOT NULL,
+	"stdout_bytes" "bytea" NOT NULL,
+	"stderr_bytes" "bytea" NOT NULL,
+	"stdout_total_byte_count" bigint NOT NULL,
+	"stderr_total_byte_count" bigint NOT NULL,
+	"stdout_truncated" boolean NOT NULL,
+	"stderr_truncated" boolean NOT NULL,
+	"stdout_sha256" text NOT NULL,
+	"stderr_sha256" text NOT NULL,
+	"artifact_sha256" text NOT NULL,
+	"output_ref" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "evidence_command_artifacts_ordinal_nonnegative" CHECK ("evidence_command_artifacts"."command_ordinal" >= 0),
+	CONSTRAINT "evidence_command_artifacts_command_nonempty" CHECK (btrim("evidence_command_artifacts"."command") <> ''),
+	CONSTRAINT "evidence_command_artifacts_timestamp_order" CHECK ("evidence_command_artifacts"."completed_at" >= "evidence_command_artifacts"."started_at"),
+	CONSTRAINT "evidence_command_artifacts_stdout_byte_count_nonnegative" CHECK ("evidence_command_artifacts"."stdout_total_byte_count" >= 0),
+	CONSTRAINT "evidence_command_artifacts_stderr_byte_count_nonnegative" CHECK ("evidence_command_artifacts"."stderr_total_byte_count" >= 0),
+	CONSTRAINT "evidence_command_artifacts_stdout_byte_cap" CHECK (octet_length("evidence_command_artifacts"."stdout_bytes") <= 65536),
+	CONSTRAINT "evidence_command_artifacts_stderr_byte_cap" CHECK (octet_length("evidence_command_artifacts"."stderr_bytes") <= 65536),
+	CONSTRAINT "evidence_command_artifacts_stdout_byte_count_coherent" CHECK ("evidence_command_artifacts"."stdout_total_byte_count" >= octet_length("evidence_command_artifacts"."stdout_bytes")),
+	CONSTRAINT "evidence_command_artifacts_stderr_byte_count_coherent" CHECK ("evidence_command_artifacts"."stderr_total_byte_count" >= octet_length("evidence_command_artifacts"."stderr_bytes")),
+	CONSTRAINT "evidence_command_artifacts_stdout_stored_length_exact" CHECK (octet_length("evidence_command_artifacts"."stdout_bytes") = least("evidence_command_artifacts"."stdout_total_byte_count", 65536)),
+	CONSTRAINT "evidence_command_artifacts_stderr_stored_length_exact" CHECK (octet_length("evidence_command_artifacts"."stderr_bytes") = least("evidence_command_artifacts"."stderr_total_byte_count", 65536)),
+	CONSTRAINT "evidence_command_artifacts_stdout_truncation_coherent" CHECK ("evidence_command_artifacts"."stdout_truncated" = ("evidence_command_artifacts"."stdout_total_byte_count" > octet_length("evidence_command_artifacts"."stdout_bytes"))),
+	CONSTRAINT "evidence_command_artifacts_stderr_truncation_coherent" CHECK ("evidence_command_artifacts"."stderr_truncated" = ("evidence_command_artifacts"."stderr_total_byte_count" > octet_length("evidence_command_artifacts"."stderr_bytes"))),
+	CONSTRAINT "evidence_command_artifacts_stdout_sha256_format" CHECK ("evidence_command_artifacts"."stdout_sha256" ~ '^[0-9a-f]{64}$'),
+	CONSTRAINT "evidence_command_artifacts_stderr_sha256_format" CHECK ("evidence_command_artifacts"."stderr_sha256" ~ '^[0-9a-f]{64}$'),
+	CONSTRAINT "evidence_command_artifacts_sha256_format" CHECK ("evidence_command_artifacts"."artifact_sha256" ~ '^[0-9a-f]{64}$'),
+	CONSTRAINT "evidence_command_artifacts_output_ref_matches_sha256" CHECK ("evidence_command_artifacts"."output_ref" = 'command-output:sha256:' || "evidence_command_artifacts"."artifact_sha256")
+);
+--> statement-breakpoint
+ALTER TABLE "evidence_command_artifacts" ADD CONSTRAINT "evidence_command_artifacts_evidence_bundle_id_evidence_bundles_id_fk" FOREIGN KEY ("evidence_bundle_id") REFERENCES "public"."evidence_bundles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "evidence_command_artifacts_bundle_ordinal_unique" ON "evidence_command_artifacts" USING btree ("evidence_bundle_id","command_ordinal");--> statement-breakpoint
+CREATE UNIQUE INDEX "evidence_command_artifacts_bundle_output_ref_unique" ON "evidence_command_artifacts" USING btree ("evidence_bundle_id","output_ref");

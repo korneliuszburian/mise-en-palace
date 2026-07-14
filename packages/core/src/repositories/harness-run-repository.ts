@@ -65,6 +65,7 @@ export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   status?: CreateEvidenceBundleStatus;
   changedFiles: string[];
   commands: EvidenceCommand[];
+  commandOutputArtifacts?: NonNullable<EvidenceBundle["commandOutputArtifacts"]>;
   diffRisk: EvidenceBundle["diffRisk"];
   reviewBurden: string;
   rollbackPath: string;

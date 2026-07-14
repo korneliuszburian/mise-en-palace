@@ -3,6 +3,7 @@ import {
   jsonb,
   timestamp
 } from "drizzle-orm/pg-core";
+import { customType } from "drizzle-orm/pg-core/columns/custom";
 
 export type JsonObject = Record<string, unknown>;
 export type JsonList = unknown[];
@@ -18,6 +19,15 @@ export const jsonListColumn = <TName extends string>(name: TName) =>
 
 export const requiredJsonListColumn = <TName extends string>(name: TName) =>
   jsonb(name).$type<JsonList>().notNull();
+
+export const byteaColumn = customType<{
+  data: Uint8Array;
+  driverData: Uint8Array;
+}>({
+  dataType() {
+    return "bytea";
+  }
+});
 
 export const metadataColumn = () => jsonObjectColumn("metadata");
 

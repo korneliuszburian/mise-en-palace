@@ -1,5 +1,6 @@
 import type {
   CandidateReviewability,
+  CommandOutputArtifactIntegrityFailureReason,
   ContextSubjectType,
   DecisionPacketBindingReadback,
   EvidenceContract,
@@ -36,9 +37,29 @@ export interface DecisionPacketReadModelCommand {
   provenance: EvidenceCommandReadback["provenance"];
   exitCode?: number;
   outputRef?: string;
+  artifactIntegrity?: "valid" | "invalid" | "unresolved";
+  artifactIntegrityReason?: CommandOutputArtifactIntegrityFailureReason;
   capturedAt?: string;
   assertedBy?: string;
   doesNotProve: string;
+}
+
+export interface DecisionPacketReadModelCommandOutputStreamArtifact {
+  storedBytesSha256: string;
+  storedByteCount: number;
+  totalByteCount: number;
+  truncated: boolean;
+}
+
+export interface DecisionPacketReadModelCommandOutputArtifact {
+  outputRef: string;
+  integrity: "valid" | "invalid";
+  integrityReason?: CommandOutputArtifactIntegrityFailureReason;
+  exitCode: number;
+  startedAt: string;
+  completedAt: string;
+  stdout: DecisionPacketReadModelCommandOutputStreamArtifact;
+  stderr: DecisionPacketReadModelCommandOutputStreamArtifact;
 }
 
 export interface DecisionPacketReadModelChangedFiles {
@@ -191,6 +212,7 @@ export interface DecisionPacketReadModel {
     rollbackPath: string;
     changedFiles: DecisionPacketReadModelChangedFiles;
     commands: DecisionPacketReadModelCommand[];
+    commandOutputArtifacts: DecisionPacketReadModelCommandOutputArtifact[];
     targetEvidence?: TargetEvidence;
   }[];
   reviewAssessments: {

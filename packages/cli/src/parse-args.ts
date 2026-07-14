@@ -1,10 +1,12 @@
 import type {
-  EvidenceCommand,
   KnowledgeUsefulnessOutcomeFeedback,
   SourceClaimEdgeKind,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
 } from "@krn/core";
+import type {
+  EvidenceCommandCaptureInput
+} from "./evidence-command-artifacts.js";
 import type {
   KnowledgeSearchFilter
 } from "@krn/harness";
@@ -129,7 +131,7 @@ export type CliCommand =
       decisionPacketChecksum?: string;
       decisionPacketGeneratedAt?: string;
       intendedFiles?: readonly string[];
-      commandOutcomes?: readonly EvidenceCommand[];
+      commandOutcomes?: readonly EvidenceCommandCaptureInput[];
       targetEvidence?: TargetEvidenceInput;
       sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
       knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];

@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
 
 import {
+  createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
   decisionPacketBindingReadbackFromMetadata
 } from "@krn/core";
 import type {
+  CommandOutputArtifact,
   EvidenceCommand,
   IsoTimestamp
 } from "@krn/core";
@@ -30,6 +32,7 @@ import {
 import {
   antiMemoryRecords,
   antiMemoryCandidates,
+  harnessPlans,
   memoryApplications,
   memoryFeedbackEvents,
   memoryRecords,
@@ -38,8 +41,125 @@ import {
   workspaces
 } from "../../schema/index.js";
 
-const sha256Hex = (value: string): string =>
+const memoryGovernanceCheckpointCommand =
+  "memory-governance checkpoint: current harness aggregate readback";
+
+const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
+
+type MemoryGovernanceVerificationMode =
+  | "successful"
+  | "failed"
+  | "missing_required"
+  | "unresolved_output";
+
+const memoryGovernanceArtifactVerificationModes = new Set<MemoryGovernanceVerificationMode>([
+  "successful",
+  "failed"
+]);
+
+const memoryGovernanceCheckpointMatches = (input: {
+  executionRunId: string;
+  expectedExecutionRunId: string;
+  expectedHarnessPlanId: string;
+  expectedLifecycleRevision: number;
+  harnessPlanId: string;
+  lifecycleRevision: number;
+}): boolean =>
+  input.executionRunId === input.expectedExecutionRunId &&
+  input.harnessPlanId === input.expectedHarnessPlanId &&
+  input.lifecycleRevision === input.expectedLifecycleRevision;
+
+const canonicalVerificationReadbackMatches = (input: {
+  admittedBinding: ReturnType<typeof decisionPacketBindingReadbackFromMetadata>;
+  expectedArtifactCount: number;
+  packetBinding: ReturnType<typeof currentDecisionPacketBindingForHarnessRun>;
+  persistedArtifactCount: number;
+}): boolean =>
+  input.admittedBinding.status === "bound_current" &&
+  input.admittedBinding.checksum === input.packetBinding.packetChecksum &&
+  input.admittedBinding.generatedAt === input.packetBinding.packetGeneratedAt &&
+  input.admittedBinding.sourceRunLifecycleRevision ===
+    input.packetBinding.sourceRunLifecycleRevision &&
+  input.persistedArtifactCount === input.expectedArtifactCount;
+
+const unresolvedOutputCommand = (
+  command: string,
+  outputRef: string,
+  capturedAt: IsoTimestamp
+): EvidenceCommand => ({
+  command,
+  status: "passed",
+  provenance: "captured_output_file",
+  exitCode: 0,
+  capturedAt,
+  outputRef
+});
+
+const memoryGovernanceCheckpointArtifacts = (input: {
+  commands: readonly { command: string }[];
+  completedAt: IsoTimestamp;
+  executionRunId: string;
+  expectedExecutionRunId: string;
+  expectedHarnessPlanId: string;
+  expectedLifecycleRevision: number;
+  harnessPlanId: string;
+  lifecycleRevision: number;
+  passed: boolean;
+  startedAt: IsoTimestamp;
+}): CommandOutputArtifact[] => input.commands.map((command) =>
+  createCommandOutputArtifact({
+    command: command.command,
+    exitCode: input.passed ? 0 : 7,
+    startedAt: input.startedAt,
+    completedAt: input.completedAt,
+    stdout: new TextEncoder().encode(JSON.stringify({
+      checkpoint: "current_harness_aggregate_readback",
+      executionRunId: input.executionRunId,
+      expectedExecutionRunId: input.expectedExecutionRunId,
+      harnessPlanId: input.harnessPlanId,
+      expectedHarnessPlanId: input.expectedHarnessPlanId,
+      lifecycleRevision: input.lifecycleRevision,
+      expectedLifecycleRevision: input.expectedLifecycleRevision
+    })),
+    stderr: input.passed
+      ? new Uint8Array()
+      : new TextEncoder().encode(JSON.stringify({
+          checkpoint: "current_harness_aggregate_readback",
+          lifecycleRevision: input.lifecycleRevision,
+          expectedLifecycleRevision: input.expectedLifecycleRevision
+        }))
+  }, sha256Hex)
+);
+
+const memoryGovernanceVerificationCommands = (input: {
+  artifacts: readonly CommandOutputArtifact[];
+  capturedAt: IsoTimestamp;
+  commands: readonly { command: string }[];
+  marker: string;
+  mode: MemoryGovernanceVerificationMode;
+}): EvidenceCommand[] => {
+  if (input.mode === "missing_required") {
+    return [];
+  }
+
+  if (input.mode === "unresolved_output") {
+    return input.commands.map((command, index) => unresolvedOutputCommand(
+      command.command,
+      `smoke:${input.marker}:memory-governance-unresolved-output:${index}`,
+      input.capturedAt
+    ));
+  }
+
+  return input.artifacts.map((artifact) => ({
+    command: artifact.command,
+    status: artifact.exitCode === 0 ? "passed" : "failed",
+    provenance: "command_runner",
+    exitCode: artifact.exitCode,
+    capturedAt: artifact.completedAt,
+    outputRef: artifact.outputRef
+  }));
+};
 
 const assertRejected = async (
   operation: Promise<unknown>,
@@ -110,7 +230,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   const task = `memory governance smoke ${marker}`;
   let retrievalRunId: string | undefined;
-  let incoherentCommandEvidenceRejected = false;
+  let failedCommandEvidenceRejected = false;
   let missingRequiredCommandEvidenceRejected = false;
   let unresolvedOutputReferenceEvidenceRejected = false;
   let mismatchedPacketIssuanceRejected = false;
@@ -155,6 +275,20 @@ export const runMemoryGovernanceSmokeCheck = async (
       task,
       workspaceSlug
     });
+    // This smoke executes an in-process readback checkpoint, not the compiler's pnpm defaults.
+    const memoryGovernanceEvidenceContract = {
+      ...result.evidenceContract,
+      commands: [{ command: memoryGovernanceCheckpointCommand, required: true }]
+    };
+    await db
+      .update(harnessPlans)
+      .set({
+        metadata: {
+          ...result.harnessPlan.metadata,
+          evidenceContract: memoryGovernanceEvidenceContract
+        }
+      })
+      .where(eq(harnessPlans.id, result.harnessPlan.id));
     retrievalRunId = compiledRetrievalRunId;
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
@@ -407,7 +541,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       "expected proposed or candidate status",
       "Memory governance allowed rejection after acceptance"
     );
-    const requiredVerificationCommands = result.evidenceContract.commands.filter(
+    const requiredVerificationCommands = memoryGovernanceEvidenceContract.commands.filter(
       (command) => command.required
     );
 
@@ -415,33 +549,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       throw new Error("Memory governance smoke requires an active required verification command");
     }
 
-    const verificationCapturedAtFor = (packetGeneratedAt: IsoTimestamp): IsoTimestamp =>
-      new Date(Date.parse(packetGeneratedAt) + 1000).toISOString();
-    const verificationCommand = (
-      command: string,
-      exitCode: number,
-      outputRef: string,
-      capturedAt: IsoTimestamp
-    ): EvidenceCommand => ({
-      command,
-      status: "passed" as const,
-      provenance: "command_runner" as const,
-      exitCode,
-      capturedAt,
-      outputRef
-    });
-    const unresolvedOutputCommand = (
-      command: string,
-      outputRef: string,
-      capturedAt: IsoTimestamp
-    ): EvidenceCommand => ({
-      command,
-      status: "passed" as const,
-      provenance: "captured_output_file" as const,
-      exitCode: 0,
-      capturedAt,
-      outputRef
-    });
     const createEvidenceFeedbackOnce = harnessRunRepository.createEvidenceFeedbackOnce;
 
     if (createEvidenceFeedbackOnce === undefined) {
@@ -452,11 +559,12 @@ export const runMemoryGovernanceSmokeCheck = async (
 
     const createCanonicalVerificationEvidence = async (input: {
       captureSuffix: string;
-      commandsForPacket(packetGeneratedAt: IsoTimestamp): EvidenceCommand[];
+      verificationMode: MemoryGovernanceVerificationMode;
       reviewBurden: string;
       eventType: string;
       eventMessage: string;
     }) => {
+      const checkpointObservedAt = Date.now();
       const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
         executionRun.id
       );
@@ -469,6 +577,41 @@ export const runMemoryGovernanceSmokeCheck = async (
         aggregate,
         packetGeneratedAt: aggregate.executionRun.updatedAt,
         sha256Hex
+      });
+      const expectedLifecycleRevision = input.verificationMode === "failed"
+        ? aggregate.executionRun.lifecycleRevision + 1
+        : aggregate.executionRun.lifecycleRevision;
+      const checkpointPassed = memoryGovernanceCheckpointMatches({
+        executionRunId: aggregate.executionRun.id,
+        expectedExecutionRunId: executionRun.id,
+        expectedHarnessPlanId: result.harnessPlan.id,
+        expectedLifecycleRevision,
+        harnessPlanId: aggregate.harnessPlan.id,
+        lifecycleRevision: aggregate.executionRun.lifecycleRevision
+      });
+      const checkpointCompletedAt = new Date().toISOString();
+      const commandOutputArtifacts = memoryGovernanceArtifactVerificationModes.has(
+        input.verificationMode
+      )
+        ? memoryGovernanceCheckpointArtifacts({
+            commands: requiredVerificationCommands,
+            completedAt: checkpointCompletedAt,
+            executionRunId: aggregate.executionRun.id,
+            expectedExecutionRunId: executionRun.id,
+            expectedHarnessPlanId: result.harnessPlan.id,
+            expectedLifecycleRevision,
+            harnessPlanId: aggregate.harnessPlan.id,
+            lifecycleRevision: aggregate.executionRun.lifecycleRevision,
+            passed: checkpointPassed,
+            startedAt: new Date(checkpointObservedAt).toISOString()
+          })
+        : [];
+      const commands = memoryGovernanceVerificationCommands({
+        artifacts: commandOutputArtifacts,
+        capturedAt: new Date(checkpointObservedAt).toISOString(),
+        commands: requiredVerificationCommands,
+        marker,
+        mode: input.verificationMode
       });
       const captureIdentity = `memory-governance:${marker}:${input.captureSuffix}`;
       const atomicInput = {
@@ -483,7 +626,10 @@ export const runMemoryGovernanceSmokeCheck = async (
         evidence: {
           status: "captured" as const,
           changedFiles: [],
-          commands: input.commandsForPacket(packetBinding.packetGeneratedAt),
+          commands,
+          ...(commandOutputArtifacts.length === 0
+            ? {}
+            : { commandOutputArtifacts }),
           diffRisk: "low" as const,
           reviewBurden: input.reviewBurden,
           rollbackPath: "Delete smoke marker rows.",
@@ -528,14 +674,15 @@ export const runMemoryGovernanceSmokeCheck = async (
       const admittedBinding = decisionPacketBindingReadbackFromMetadata(
         persisted.evidenceBundle.metadata
       );
+      const persistedArtifactCount =
+        persisted.evidenceBundle.commandOutputArtifacts?.length ?? 0;
 
-      if (
-        admittedBinding.status !== "bound_current" ||
-        admittedBinding.checksum !== packetBinding.packetChecksum ||
-        admittedBinding.generatedAt !== packetBinding.packetGeneratedAt ||
-        admittedBinding.sourceRunLifecycleRevision !==
-          packetBinding.sourceRunLifecycleRevision
-      ) {
+      if (!canonicalVerificationReadbackMatches({
+        admittedBinding,
+        expectedArtifactCount: commandOutputArtifacts.length,
+        packetBinding,
+        persistedArtifactCount
+      })) {
         throw new Error(
           `Memory governance ${input.captureSuffix} evidence lacked canonical repository admission`
         );
@@ -546,57 +693,30 @@ export const runMemoryGovernanceSmokeCheck = async (
         packetBinding
       };
     };
-    const incoherentVerification = await createCanonicalVerificationEvidence({
-      captureSuffix: "incoherent-command",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands.map(
-        (command, index) => verificationCommand(
-          command.command,
-          index === 0 ? 7 : 0,
-          `smoke:${marker}:memory-governance-incoherent-verification:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )
-      ),
-      reviewBurden: "Memory governance incoherent command falsifier.",
-      eventType: "smoke.memory_governance.incoherent_verification_captured",
-      eventMessage: "Memory governance incoherent verification evidence captured"
+    const failedVerification = await createCanonicalVerificationEvidence({
+      captureSuffix: "failed-command",
+      verificationMode: "failed",
+      reviewBurden: "Memory governance failed command falsifier.",
+      eventType: "smoke.memory_governance.failed_verification_captured",
+      eventMessage: "Memory governance failed verification evidence captured"
     });
     const missingRequiredVerification = await createCanonicalVerificationEvidence({
       captureSuffix: "missing-required-command",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands
-        .slice(0, -1)
-        .map((command, index) => verificationCommand(
-          command.command,
-          0,
-          `smoke:${marker}:memory-governance-missing-required-verification:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )),
+      verificationMode: "missing_required",
       reviewBurden: "Memory governance missing required command falsifier.",
       eventType: "smoke.memory_governance.missing_required_verification_captured",
       eventMessage: "Memory governance partial verification evidence captured"
     });
     const unresolvedOutputVerification = await createCanonicalVerificationEvidence({
       captureSuffix: "unresolved-output-reference",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands.map(
-        (command, index) => unresolvedOutputCommand(
-          command.command,
-          `smoke:${marker}:memory-governance-unresolved-output:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )
-      ),
+      verificationMode: "unresolved_output",
       reviewBurden: "Memory governance unresolved output reference falsifier.",
       eventType: "smoke.memory_governance.unresolved_output_verification_captured",
       eventMessage: "Memory governance unresolved output verification evidence captured"
     });
     const canonicalVerification = await createCanonicalVerificationEvidence({
       captureSuffix: "successful-verification",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands.map(
-        (command, index) => verificationCommand(
-          command.command,
-          0,
-          `smoke:${marker}:memory-governance-verification:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )
-      ),
+      verificationMode: "successful",
       reviewBurden: "Memory governance smoke proof.",
       eventType: "smoke.memory_governance.verification_captured",
       eventMessage: "Memory governance verification evidence captured"
@@ -624,16 +744,16 @@ export const runMemoryGovernanceSmokeCheck = async (
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
         ...packetBoundApplication,
-        packetChecksum: incoherentVerification.packetBinding.packetChecksum,
-        packetGeneratedAt: incoherentVerification.packetBinding.packetGeneratedAt,
+        packetChecksum: failedVerification.packetBinding.packetChecksum,
+        packetGeneratedAt: failedVerification.packetBinding.packetGeneratedAt,
         sourceRunLifecycleRevision:
-          incoherentVerification.packetBinding.sourceRunLifecycleRevision,
-        evidenceBundleId: incoherentVerification.evidenceBundle.id
+          failedVerification.packetBinding.sourceRunLifecycleRevision,
+        evidenceBundleId: failedVerification.evidenceBundle.id
       }),
       "helped memory application requires a fresh successful verification EvidenceBundle",
-      "Memory governance accepted passed command evidence with a non-zero exit code"
+      "Memory governance accepted failed command evidence"
     );
-    incoherentCommandEvidenceRejected = true;
+    failedCommandEvidenceRejected = true;
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
@@ -982,14 +1102,7 @@ export const runMemoryGovernanceSmokeCheck = async (
     });
     const staleLifecycleVerification = await createCanonicalVerificationEvidence({
       captureSuffix: "stale-lifecycle",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands.map(
-        (command, index) => verificationCommand(
-          command.command,
-          0,
-          `smoke:${marker}:memory-governance-stale-lifecycle-verification:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )
-      ),
+      verificationMode: "successful",
       reviewBurden: "Memory governance stale lifecycle revision falsifier.",
       eventType: "smoke.memory_governance.stale_lifecycle_verification_captured",
       eventMessage: "Memory governance stale lifecycle revision falsifier captured"
@@ -1059,14 +1172,7 @@ export const runMemoryGovernanceSmokeCheck = async (
     const succeededExecutionRun = succeededTransition.executionRun;
     const terminalVerification = await createCanonicalVerificationEvidence({
       captureSuffix: "terminal-contract",
-      commandsForPacket: (packetGeneratedAt) => requiredVerificationCommands.map(
-        (command, index) => verificationCommand(
-          command.command,
-          0,
-          `smoke:${marker}:memory-governance-terminal-verification:${index}`,
-          verificationCapturedAtFor(packetGeneratedAt)
-        )
-      ),
+      verificationMode: "successful",
       reviewBurden: "Memory governance terminal EvidenceContract falsifier.",
       eventType: "smoke.memory_governance.terminal_verification_captured",
       eventMessage: "Memory governance terminal verification falsifier captured"
@@ -1472,8 +1578,8 @@ export const runMemoryGovernanceSmokeCheck = async (
         passed: staleLifecycleRevisionRejected
       },
       {
-        label: "incoherent command evidence cannot create helped application",
-        passed: incoherentCommandEvidenceRejected
+        label: "failed command evidence cannot create helped application",
+        passed: failedCommandEvidenceRejected
       },
       {
         label: "incomplete required command evidence cannot create helped application",

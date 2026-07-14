@@ -1,4 +1,5 @@
 import {
+  assessCommandOutputArtifactIntegrity,
   knowledgeUsefulnessOutcomesFromMetadata,
   decisionPacketBindingReadbackFromMetadata,
   decisionPacketReadModelDoesNotProve,
@@ -16,6 +17,7 @@ import {
   toEvidenceCommandReadback
 } from "@krn/core";
 import type {
+  CommandOutputArtifact,
   ContextAssembly,
   ContextExclusion,
   ContextInclusion,
@@ -43,6 +45,7 @@ import type {
   DecisionPacketReadModelActivationTrace,
   DecisionPacketReadModelCandidate,
   DecisionPacketReadModelCommand,
+  DecisionPacketReadModelCommandOutputArtifact,
   DecisionPacketReadModelContextExclusion,
   DecisionPacketReadModelContextInclusion,
   DecisionPacketReadModelContext,
@@ -58,11 +61,52 @@ import type {
   DecisionPacketReadModelTask
 } from "./decision-packet-read-model.js";
 import {
+  commandOutputArtifactSha256Hex
+} from "./command-output-artifact-hash.js";
+import {
   knowledgeSelectionFromMetadata
 } from "./knowledge-selection.js";
 import type { ProjectResolution } from "./database-runtime.js";
 
-const commandResource = (command: EvidenceCommand): DecisionPacketReadModelCommand => {
+const commandOutputIntegrityResource = (
+  command: EvidenceCommand,
+  commandReadback: ReturnType<typeof toEvidenceCommandReadback>,
+  artifactsByRef: ReadonlyMap<string, CommandOutputArtifact>
+): Pick<
+  DecisionPacketReadModelCommand,
+  "artifactIntegrity" | "artifactIntegrityReason"
+> => {
+  if (!("outputRef" in commandReadback) || commandReadback.outputRef === undefined) {
+    return command.provenance === "command_runner" ||
+      command.provenance === "captured_output_file" ||
+      command.provenance === "external_log"
+      ? { artifactIntegrity: "unresolved" }
+      : {};
+  }
+
+  const artifact = artifactsByRef.get(commandReadback.outputRef);
+
+  if (artifact === undefined) {
+    return { artifactIntegrity: "unresolved" };
+  }
+
+  const integrity = assessCommandOutputArtifactIntegrity(
+    artifact,
+    commandOutputArtifactSha256Hex
+  );
+
+  return integrity.status === "valid"
+    ? { artifactIntegrity: "valid" }
+    : {
+        artifactIntegrity: "invalid",
+        artifactIntegrityReason: integrity.reason
+      };
+};
+
+const commandResource = (
+  command: EvidenceCommand,
+  artifactsByRef: ReadonlyMap<string, CommandOutputArtifact>
+): DecisionPacketReadModelCommand => {
   const commandReadback = toEvidenceCommandReadback(command);
 
   return {
@@ -75,6 +119,7 @@ const commandResource = (command: EvidenceCommand): DecisionPacketReadModelComma
     ...(!('outputRef' in commandReadback) || commandReadback.outputRef === undefined
       ? {}
       : { outputRef: commandReadback.outputRef }),
+    ...commandOutputIntegrityResource(command, commandReadback, artifactsByRef),
     ...(!('capturedAt' in commandReadback) || commandReadback.capturedAt === undefined
       ? {}
       : { capturedAt: commandReadback.capturedAt }),
@@ -82,6 +127,34 @@ const commandResource = (command: EvidenceCommand): DecisionPacketReadModelComma
       ? {}
       : { assertedBy: commandReadback.assertedBy }),
     doesNotProve: commandReadback.doesNotProve
+  };
+};
+
+const commandOutputArtifactResource = (
+  artifact: CommandOutputArtifact
+): DecisionPacketReadModelCommandOutputArtifact => {
+  const integrity = assessCommandOutputArtifactIntegrity(
+    artifact,
+    commandOutputArtifactSha256Hex
+  );
+  const streamResource = (
+    stream: CommandOutputArtifact["stdout"]
+  ) => ({
+    storedBytesSha256: stream.sha256,
+    storedByteCount: stream.storedByteCount,
+    totalByteCount: stream.totalByteCount,
+    truncated: stream.truncated
+  });
+
+  return {
+    outputRef: artifact.outputRef,
+    integrity: integrity.status,
+    ...(integrity.status === "valid" ? {} : { integrityReason: integrity.reason }),
+    exitCode: artifact.exitCode,
+    startedAt: artifact.startedAt,
+    completedAt: artifact.completedAt,
+    stdout: streamResource(artifact.stdout),
+    stderr: streamResource(artifact.stderr)
   };
 };
 
@@ -400,13 +473,17 @@ export const evidenceBundleFreshness = (
   return createdAt >= reference ? "fresh_current" : "stale_historical";
 };
 
-const evidenceBundleResource = (
+export const decisionPacketEvidenceBundleResource = (
   bundle: HarnessRunAggregate["evidenceBundles"][number],
   referenceTime: string
 ): DecisionPacketReadModelEvidenceBundle => {
   const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
   const packetChecksum = readMetadataString(bundle.metadata, "decisionPacketChecksum");
   const packetBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
+  const commandOutputArtifacts = bundle.commandOutputArtifacts ?? [];
+  const commandOutputArtifactsByRef = new Map(
+    commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
+  );
 
   return {
     id: bundle.id,
@@ -424,7 +501,10 @@ const evidenceBundleResource = (
       all: bundle.changedFiles,
       classification: changedFileClassification(bundle)
     },
-    commands: bundle.commands.map(commandResource),
+    commands: bundle.commands.map((command) =>
+      commandResource(command, commandOutputArtifactsByRef)
+    ),
+    commandOutputArtifacts: commandOutputArtifacts.map(commandOutputArtifactResource),
     ...(targetEvidence === undefined ? {} : { targetEvidence })
   };
 };
@@ -500,7 +580,7 @@ export const buildDecisionPacketReadModel = (
     evidenceContractActivation,
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
     evidenceBundles: aggregate.evidenceBundles.map((bundle) =>
-      evidenceBundleResource(bundle, aggregate.executionRun.updatedAt)
+      decisionPacketEvidenceBundleResource(bundle, aggregate.executionRun.updatedAt)
     ),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
     feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaResource),
