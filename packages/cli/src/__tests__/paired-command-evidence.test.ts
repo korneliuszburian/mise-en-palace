@@ -12,14 +12,14 @@ import {
   pairedCommandEvidence
 } from "../internal/eval/paired-command-evidence.js";
 
-const secret = "PAIR_EVAL_SECRET_SENTINEL";
+const outputMarker = "PAIR_EVAL_SECRET_SENTINEL";
 
 const commandResult = (overrides: Partial<CommandResult> = {}): CommandResult => ({
   command: "pnpm",
   args: ["test"],
   exitCode: 0,
-  stdout: `${secret}:stdout`,
-  stderr: `${secret}:stderr`,
+  stdout: `${outputMarker}:stdout`,
+  stderr: `${outputMarker}:stderr`,
   startedAt: "2026-07-14T20:00:00.000Z",
   completedAt: "2026-07-14T20:00:01.000Z",
   durationMs: 1000,
@@ -40,7 +40,7 @@ describe("paired command evidence", () => {
         untrackedFiles: [],
         changedFiles: ["src/index.ts"],
         forbiddenFiles: [],
-        statusOutput: `${secret}:status`
+        statusOutput: `${outputMarker}:status`
       },
       commands: {
         test: result,
@@ -52,7 +52,7 @@ describe("paired command evidence", () => {
     const summary = pairedArmScoreSummary(arm);
     const rendered = JSON.stringify(summary);
 
-    expect(rendered).not.toContain(secret);
+    expect(rendered).not.toContain(outputMarker);
     expect(summary.commands?.test.stdout).toMatchObject({
       storedByteCount: Buffer.byteLength(result.stdout),
       totalByteCount: Buffer.byteLength(result.stdout),
@@ -65,10 +65,10 @@ describe("paired command evidence", () => {
 
   it("uses runner provenance only when exact executed bytes and times exist", () => {
     const executed = commandResult({
-      stdoutStoredBytes: new TextEncoder().encode(`${secret}:stdout`),
-      stdoutTotalByteCount: Buffer.byteLength(`${secret}:stdout`),
-      stderrStoredBytes: new TextEncoder().encode(`${secret}:stderr`),
-      stderrTotalByteCount: Buffer.byteLength(`${secret}:stderr`)
+      stdoutStoredBytes: new TextEncoder().encode(`${outputMarker}:stdout`),
+      stdoutTotalByteCount: Buffer.byteLength(`${outputMarker}:stdout`),
+      stderrStoredBytes: new TextEncoder().encode(`${outputMarker}:stderr`),
+      stderrTotalByteCount: Buffer.byteLength(`${outputMarker}:stderr`)
     });
     const runner = pairedCommandEvidence("krn", "test", executed);
     const skipped = pairedCommandEvidence("baseline", "test", commandResult({
