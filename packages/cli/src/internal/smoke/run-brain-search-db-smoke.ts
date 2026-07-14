@@ -247,6 +247,15 @@ const cleanupMarkerRows = async (
   await deleteMarkerMetadataRows(client, "feedback_deltas", smokeId);
   await deleteMarkerMetadataRows(client, "review_assessments", smokeId);
   await deleteMarkerMetadataRows(client, "evidence_bundles", smokeId);
+  await client`
+    delete from run_events
+    where payload->>'smokeId' = ${smokeId}
+      or execution_run_id in (
+        select id from execution_runs
+        where metadata->>'smokeId' = ${smokeId}
+          or metadata->>'source' = ${smokeSource}
+      )
+  `;
   await deleteMarkerMetadataRows(client, "execution_runs", smokeId);
   await deleteMarkerMetadataRows(client, "harness_plans", smokeId);
   await deleteMarkerMetadataRows(client, "task_contracts", smokeId);
@@ -255,10 +264,6 @@ const cleanupMarkerRows = async (
     delete from outbox_events
     where payload->>'smokeId' = ${smokeId}
       or payload->>'source' = ${smokeSource}
-  `;
-  await client`
-    delete from run_events
-    where payload->>'smokeId' = ${smokeId}
   `;
 };
 
@@ -273,7 +278,13 @@ const countMarkerRows = async (
         (select count(*)::int from outbox_events where payload->>'source' = ${smokeSource}) +
         (select count(*)::int from retrieval_runs where metadata->>'smokeId' = ${smokeId}) +
         (select count(*)::int from retrieval_runs where metadata->>'source' = ${smokeSource}) +
-        (select count(*)::int from run_events where payload->>'smokeId' = ${smokeId}) +
+        (select count(*)::int from run_events
+          where payload->>'smokeId' = ${smokeId}
+            or execution_run_id in (
+              select id from execution_runs
+              where metadata->>'smokeId' = ${smokeId}
+                or metadata->>'source' = ${smokeSource}
+            )) +
         (select count(*)::int from operator_intents where metadata->>'smokeId' = ${smokeId}) +
         (select count(*)::int from task_contracts where metadata->>'smokeId' = ${smokeId}) +
         (select count(*)::int from harness_plans where metadata->>'smokeId' = ${smokeId}) +
@@ -403,15 +414,6 @@ export const runBrainSearchDbSmokeCheck = async (
       harnessPlanId: sessionACompile.harnessPlan.id,
       adapter: "krn-db-smoke-memory-search",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.memory_search.session_a.started",
-        message: "Brain-search DB smoke Session A started",
-        payload: {
-          smokeId: input.smokeId,
-          query
-        }
-      },
       metadata: {
         ...metadata,
         session: "A"
@@ -425,39 +427,13 @@ export const runBrainSearchDbSmokeCheck = async (
       executionRunId: sessionAExecutionRun.id,
       expectedStatus: "planned",
       status: "running",
-      startedAt: input.now,
-      event: {
-        sequence: 2,
-        type: "smoke.memory_search.session_a.running",
-        message: "Brain-search DB smoke Session A started",
-        payload: {
-          smokeId: input.smokeId,
-          query
-        }
-      },
-      metadata: {
-        ...metadata,
-        session: "A"
-      }
+      startedAt: input.now
     });
     await updateExecutionRunStatus.call(runtime.harnessRunRepository, {
       executionRunId: sessionAExecutionRun.id,
       expectedStatus: "running",
       status: "succeeded",
-      completedAt: input.now,
-      event: {
-        sequence: 3,
-        type: "smoke.memory_search.session_a.succeeded",
-        message: "Brain-search DB smoke Session A completed",
-        payload: {
-          smokeId: input.smokeId,
-          query
-        }
-      },
-      metadata: {
-        ...metadata,
-        session: "A"
-      }
+      completedAt: input.now
     });
     const sessionAEvidenceBundle = await runtime.harnessRunRepository.createEvidenceBundle({
       executionRunId: sessionAExecutionRun.id,
@@ -475,7 +451,6 @@ export const runBrainSearchDbSmokeCheck = async (
       reviewBurden: "DB smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 4,
         type: "smoke.memory_search.session_a.evidence_captured",
         message: "Brain-search DB smoke Session A evidence captured",
         payload: {

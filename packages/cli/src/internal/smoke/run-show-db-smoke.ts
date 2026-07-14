@@ -546,14 +546,6 @@ export const runRunShowDbSmokeCheck = async (
       acceptance: "read back persisted run through krn run show",
       command: "db:smoke:run-show",
       db,
-      eventMessage: "Run-show smoke created persisted run",
-      eventPayload: (compiledResult) => ({
-        operatorIntentId: compiledResult.operatorIntent.id,
-        taskContractId: compiledResult.taskContract.id,
-        harnessPlanId: compiledResult.harnessPlan.id,
-        contextAssemblyId: compiledResult.contextAssembly.id
-      }),
-      eventType: "smoke.run_show.persisted",
       marker,
       projectSlug,
       task,
@@ -605,31 +597,29 @@ export const runRunShowDbSmokeCheck = async (
       retryStable
     });
 
-    const runningEventSequence = capture.retryCapture.aggregate.runEvents.length + 1;
-    await harnessRunRepository.updateExecutionRunStatus({
+    const runningTransition = await harnessRunRepository.updateExecutionRunStatus({
       executionRunId: executionRun.id,
       expectedStatus: "planned",
       status: "running",
-      startedAt: "2026-07-13T00:00:02.000Z",
-      event: {
-        sequence: runningEventSequence,
-        type: "smoke.run_show.started",
-        message: "Run-show smoke entered the active running lifecycle",
-        payload: { marker }
-      }
+      startedAt: "2026-07-13T00:00:02.000Z"
     });
-    const succeededRun = await harnessRunRepository.updateExecutionRunStatus({
+
+    if (runningTransition.kind !== "transitioned") {
+      throw new Error("Run-show smoke expected the planned run to transition to running");
+    }
+
+    const succeededTransition = await harnessRunRepository.updateExecutionRunStatus({
       executionRunId: executionRun.id,
       expectedStatus: "running",
       status: "succeeded",
-      completedAt: "2026-07-13T00:00:03.000Z",
-      event: {
-        sequence: runningEventSequence + 1,
-        type: "smoke.run_show.succeeded",
-        message: "Run-show smoke entered terminal history",
-        payload: { marker }
-      }
+      completedAt: "2026-07-13T00:00:03.000Z"
     });
+
+    if (succeededTransition.kind !== "transitioned") {
+      throw new Error("Run-show smoke expected the running run to transition to succeeded");
+    }
+
+    const succeededRun = succeededTransition.executionRun;
     const terminalContractReadback = terminalEvidenceContractReadback(
       parseJsonReadback((await runDecisionPacketCommand({
         ...runtime,

@@ -107,8 +107,6 @@ export const runEvalFeedbackPersistenceSmokeCheck = async (
       command: "db:smoke:eval-feedback-persistence",
       constraints: ["do not promote eval candidates automatically"],
       db,
-      eventMessage: "Eval feedback persistence smoke plan created",
-      eventType: "smoke.eval_feedback_persistence.plan_persisted",
       includeEvidenceContract: false,
       marker,
       nonGoals: ["do not mutate memory or source authority"],

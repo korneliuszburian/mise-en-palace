@@ -804,12 +804,6 @@ const buildEvidencePersistenceCounts = (
   targetEvidencePresent: targetEvidence !== undefined
 });
 
-const nextEvidenceEventSequence = (aggregate: HarnessRunAggregate): number =>
-  aggregate.runEvents.reduce(
-    (max, event) => Math.max(max, event.sequence),
-    0
-  ) + 1;
-
 const changedFileClassificationMetadata = (
   classification: ChangedFileClassification
 ): Record<string, string[]> => ({
@@ -827,7 +821,6 @@ const buildEvidenceBundleInput = (
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
   counts: EvidencePersistenceCounts,
-  eventSequence: number,
   packetBindingMetadata: PersistedDecisionPacketBindingMetadata,
   environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>
 ): CreateEvidenceBundleInput => ({
@@ -839,7 +832,6 @@ const buildEvidenceBundleInput = (
   reviewBurden: reviewBurdenWithTargetEvidence(classification, targetEvidence),
   rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
   event: {
-    sequence: eventSequence,
     type: "evidence.captured",
     message: "Evidence captured from CLI",
     payload: {
@@ -1599,7 +1591,6 @@ const persistEvidenceCapture = async (
         diffRisk,
         targetEvidence,
         counts,
-        nextEvidenceEventSequence(aggregate),
         packetBindingMetadata,
         environmentFingerprint
       ),

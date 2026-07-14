@@ -202,7 +202,14 @@ export const countRunEventsBySmokeId = (
   client: Sql,
   marker: string
 ): Promise<CountRow[]> =>
-  client<CountRow[]>`select count(*)::int as count from run_events where payload->>'smokeId' = ${marker}`;
+  client<CountRow[]>`
+    select count(*)::int as count
+    from run_events
+    where payload->>'smokeId' = ${marker}
+      or execution_run_id in (
+        select id from execution_runs where metadata->>'smokeId' = ${marker}
+      )
+  `;
 
 export const countSourceArtifactsBySmokeId = (
   client: Sql,

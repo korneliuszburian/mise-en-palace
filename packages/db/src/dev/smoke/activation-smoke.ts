@@ -20,6 +20,8 @@ import {
   cleanupActivationSmokeRows,
   countActivationSmokeMarkerRows,
   countSmokeContextSelectionRows,
+  createRunningSmokeExecutionRun,
+  createSmokeContextAssembly,
   createSmokeHarnessScaffold,
   requireSmokeReadbackValue
 } from "./db-smoke-support.js";
@@ -169,23 +171,12 @@ export const runActivationSmokeCheck = async (
   const sourceRepository: DrizzleSourceRepository = scaffold.sourceRepository;
 
   try {
-    const executionRun = await harnessRunRepository.createExecutionRun({
-      harnessPlanId: harnessPlan.id,
-      adapter: "smoke",
-      status: "running",
-      startedAt: now,
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.activation.started",
-        message: "Activation smoke started",
-        payload: {
-          smokeId: marker
-        }
-      },
-      metadata: {
-        smokeId: marker
-      }
-    });
+    const executionRun = await createRunningSmokeExecutionRun(
+      harnessRunRepository,
+      harnessPlan.id,
+      marker,
+      now
+    );
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -552,31 +543,17 @@ export const runActivationSmokeCheck = async (
       metadata: {
         smokeId: marker,
         retrievalRunId: retrievalRun.id,
-        conflictSets: filterResult.conflictSets,
-        canonicalRevisionTokens: filteredCandidates
-          .map((candidate) => candidate.metadata.canonicalRevision)
-          .filter((revision): revision is Record<string, unknown> => (
-            typeof revision === "object" && revision !== null && !Array.isArray(revision)
-          ))
+        conflictSets: filterResult.conflictSets
       }
     });
-    const contextAssembly = await harnessRunRepository.createContextAssembly({
-      harnessPlanId: harnessPlan.id,
-      status: draftContext.status,
-      ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
-      inclusions: draftContext.inclusions,
-      exclusions: draftContext.exclusions,
-      metadata: {
-        ...draftContext.metadata,
-        canonicalRevisionTokens: (draftContext.metadata.canonicalRevisionTokens as Record<string, unknown>[])
-          .filter((revision) => draftContext.inclusions.some((inclusion) => (
-            inclusion.subjectType === revision.subjectType && inclusion.subjectId === revision.subjectId
-          ))),
-        ...(draftContext.observationPrefix === undefined
-          ? {}
-          : { observationPrefixSnapshot: draftContext.observationPrefix })
-      }
-    });
+    const contextAssembly = await createSmokeContextAssembly(
+      harnessRunRepository,
+      draftContext,
+      filteredCandidates,
+      draftContext.observationPrefix === undefined
+        ? {}
+        : { observationPrefixSnapshot: draftContext.observationPrefix }
+    );
     setContextAssemblyId(contextAssembly.id);
 
     await persistActivationTrace({

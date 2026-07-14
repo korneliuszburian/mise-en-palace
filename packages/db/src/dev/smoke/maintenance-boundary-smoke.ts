@@ -9,6 +9,7 @@ import {
   assertSmokeReadbackChecks,
   cleanupActivationSmokeRows,
   countActivationSmokeMarkerRows,
+  createRunningSmokeExecutionRun,
   createSmokeHarnessScaffold,
   requireSmokeReadbackValue
 } from "./db-smoke-support.js";
@@ -90,23 +91,12 @@ export const runMaintenanceBoundarySmokeCheck = async (
   } = scaffold;
 
   try {
-    const executionRun = await harnessRunRepository.createExecutionRun({
-      harnessPlanId: harnessPlan.id,
-      adapter: "smoke",
-      status: "running",
-      startedAt: now,
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.maintenance_boundary.started",
-        message: "Maintenance boundary smoke started",
-        payload: {
-          smokeId: marker
-        }
-      },
-      metadata: {
-        smokeId: marker
-      }
-    });
+    const executionRun = await createRunningSmokeExecutionRun(
+      harnessRunRepository,
+      harnessPlan.id,
+      marker,
+      now
+    );
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",

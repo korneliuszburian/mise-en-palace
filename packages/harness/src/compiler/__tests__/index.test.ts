@@ -216,7 +216,7 @@ class FakeHarnessRunRepository implements HarnessRunRepository {
     throw new Error("not used by compiler");
   }
 
-  async updateExecutionRunStatus(_input: UpdateExecutionRunStatusInput): Promise<ExecutionRun> {
+  async updateExecutionRunStatus(_input: UpdateExecutionRunStatusInput): Promise<never> {
     throw new Error("not used by compiler");
   }
 

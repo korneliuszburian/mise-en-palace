@@ -8,6 +8,7 @@ import type {
   ExecutionRun,
   ExecutionRunId,
   ExecutionRunStatus,
+  UpdateExecutionRunStatusResult,
   FeedbackDelta,
   FeedbackDeltaCreateStatus,
   HarnessPlan,
@@ -25,7 +26,7 @@ import type {
   ActivationDecisionRecord,
   RetrievalCandidateRecord,
   RepositoryMetadata,
-  RunEventInput,
+  OrdinaryRunEventInput,
   RunEventRecord
 } from "./types.js";
 
@@ -44,7 +45,6 @@ export interface CreateExecutionRunInput extends RepositoryMetadata {
   adapter: string;
   status?: ExecutionRunStatus;
   startedAt?: string;
-  initialEvent: RunEventInput;
 }
 
 export interface UpdateExecutionRunStatusInput {
@@ -53,8 +53,6 @@ export interface UpdateExecutionRunStatusInput {
   status: ExecutionRunStatus;
   startedAt?: string;
   completedAt?: string;
-  event: RunEventInput;
-  metadata?: Record<string, unknown>;
 }
 
 export type CreateEvidenceBundleStatus = Extract<EvidenceBundle["status"], "draft" | "captured">;
@@ -68,7 +66,7 @@ export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   diffRisk: EvidenceBundle["diffRisk"];
   reviewBurden: string;
   rollbackPath: string;
-  event: RunEventInput;
+  event: OrdinaryRunEventInput;
 }
 
 export interface CreateReviewAssessmentInput extends RepositoryMetadata {
@@ -176,7 +174,9 @@ export interface HarnessRunRepository {
   createHarnessPlan(input: CreateHarnessPlanInput): Promise<HarnessPlan>;
   createContextAssembly(input: CreateContextAssemblyInput): Promise<ContextAssembly>;
   createExecutionRun(input: CreateExecutionRunInput): Promise<ExecutionRun>;
-  updateExecutionRunStatus(input: UpdateExecutionRunStatusInput): Promise<ExecutionRun>;
+  updateExecutionRunStatus(
+    input: UpdateExecutionRunStatusInput
+  ): Promise<UpdateExecutionRunStatusResult>;
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;

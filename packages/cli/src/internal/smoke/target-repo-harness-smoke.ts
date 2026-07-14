@@ -303,7 +303,13 @@ const cleanupMarkerRows = async (
   )`;
   await client`delete from source_claims where metadata->>'smokeId' = ${marker}`;
   await client`delete from source_artifacts where metadata->>'smokeId' = ${marker}`;
-  await client`delete from run_events where payload->>'smokeId' = ${marker}`;
+  await client`
+    delete from run_events
+    where payload->>'smokeId' = ${marker}
+      or execution_run_id in (
+        select id from execution_runs where metadata->>'smokeId' = ${marker}
+      )
+  `;
 
   for (const retrievalRunId of retrievalRunIds) {
     await client`delete from retrieval_runs where id = ${retrievalRunId}`;
@@ -1303,16 +1309,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
       harnessPlanId: baselineResult.harnessPlan.id,
       adapter: "codex",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.target_repo_harness.baseline",
-        message: "Target repo harness smoke baseline run created",
-        payload: {
-          smokeId: marker,
-          projectId: project.id,
-          memoryRecordId: memoryRecord.id
-        }
-      },
       metadata: {
         smokeId: marker,
         phase: "baseline",
@@ -1396,20 +1392,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
       harnessPlanId: result.harnessPlan.id,
       adapter: "codex",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.target_repo_harness.persisted",
-        message: "Target repo harness smoke persisted run created",
-        payload: {
-          smokeId: marker,
-          projectId: project.id,
-          projectKernelId: projectKernel.id,
-          repoInstallationId: repoInstallation.id,
-          sourceSeeds: targetFixtureSourceSeeds,
-          ownerFiles: targetFixtureOwnerFiles,
-          trustExclusions: targetFixtureTrustExclusions
-        }
-      },
       metadata: {
         smokeId: marker,
         command: "db:smoke:target-repo-harness",

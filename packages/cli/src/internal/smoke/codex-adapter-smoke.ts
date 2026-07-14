@@ -106,7 +106,13 @@ const cleanupMarkerRows = async (
   retrievalRunId: string | undefined,
   contextAssemblyId: string | undefined
 ): Promise<number> => {
-  await client`delete from run_events where payload->>'smokeId' = ${marker}`;
+  await client`
+    delete from run_events
+    where payload->>'smokeId' = ${marker}
+      or execution_run_id in (
+        select id from execution_runs where metadata->>'smokeId' = ${marker}
+      )
+  `;
 
   if (retrievalRunId !== undefined) {
     await client`delete from retrieval_runs where id = ${retrievalRunId}`;
@@ -492,17 +498,6 @@ export const runCodexAdapterSmokeCheck = async (
       harnessPlanId: result.harnessPlan.id,
       adapter: "codex",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.codex_adapter.persisted",
-        message: "Codex adapter smoke persisted run created",
-        payload: {
-          smokeId: marker,
-          taskContractId: result.taskContract.id,
-          harnessPlanId: result.harnessPlan.id,
-          contextAssemblyId: result.contextAssembly.id
-        }
-      },
       metadata: {
         smokeId: marker,
         codexAdapterPlanRef: result.codexAdapterPlanRef,

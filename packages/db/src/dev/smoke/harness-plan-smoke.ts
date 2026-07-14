@@ -58,14 +58,6 @@ export const runHarnessPlanSmokeCheck = async (
       acceptance: "read back persisted run aggregate",
       command: "db:smoke:harness-plan",
       db,
-      eventMessage: "Persisted harness plan smoke created",
-      eventPayload: (compiledResult) => ({
-        operatorIntentId: compiledResult.operatorIntent.id,
-        taskContractId: compiledResult.taskContract.id,
-        harnessPlanId: compiledResult.harnessPlan.id,
-        contextAssemblyId: compiledResult.contextAssembly.id
-      }),
-      eventType: "smoke.harness_plan.persisted",
       marker,
       projectSlug,
       task,

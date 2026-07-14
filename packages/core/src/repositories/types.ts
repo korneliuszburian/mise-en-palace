@@ -92,8 +92,7 @@ export interface RunEventRecord {
   occurredAt: IsoTimestamp;
 }
 
-export interface RunEventInput {
-  sequence: number;
+export interface OrdinaryRunEventInput {
   type: string;
   severity?: RunEventSeverity;
   message: string;
@@ -336,10 +335,6 @@ export interface CreateOutboxEventInput {
   topic: string;
   payload: Record<string, unknown>;
   availableAt?: IsoTimestamp;
-}
-
-export interface AppendRunEventInput extends RunEventInput {
-  executionRunId: ExecutionRunId;
 }
 
 export interface CreateWorkspaceInput extends RepositoryMetadata {

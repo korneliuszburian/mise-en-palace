@@ -854,18 +854,6 @@ const createPersistedPlanIdentity = async (
           harnessPlanId: result.harnessPlan.id,
           adapter: "codex",
           status: "planned",
-          initialEvent: {
-            sequence: 1,
-            type: "plan.persisted",
-            message: "Persisted harness plan created",
-            payload: {
-              operatorIntentId: result.operatorIntent.id,
-              taskContractId: result.taskContract.id,
-              harnessPlanId: result.harnessPlan.id,
-              contextAssemblyId: result.contextAssembly.id,
-              codexAdapterPlanRefId: result.codexAdapterPlanRef.id
-            }
-          },
           metadata: {
             command,
             ...projectScopedMetadataForRun(compilerRuntime),

@@ -139,12 +139,7 @@ describe("DrizzleHarnessRunRepository", () => {
     await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
-      status: "succeeded",
-      initialEvent: {
-        sequence: 1,
-        type: "run.created",
-        message: "Run created"
-      }
+      status: "succeeded"
     })).rejects.toThrow("execution run lifecycle");
   });
 
@@ -154,12 +149,7 @@ describe("DrizzleHarnessRunRepository", () => {
     await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
-      status: "failed",
-      initialEvent: {
-        sequence: 1,
-        type: "run.created",
-        message: "Run created"
-      }
+      status: "failed"
     })).rejects.toThrow("execution run lifecycle");
   });
 
@@ -172,24 +162,14 @@ describe("DrizzleHarnessRunRepository", () => {
     await expect(repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
       expectedStatus: "succeeded",
-      status: "running",
-      event: {
-        sequence: 2,
-        type: "run.restarted",
-        message: "Run restarted"
-      }
+      status: "running"
     })).rejects.toThrow("execution run lifecycle");
 
     await expect(repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
       expectedStatus: "succeeded",
       status: "succeeded",
-      completedAt: "2026-07-13T09:59:00.000Z",
-      event: {
-        sequence: 3,
-        type: "run.completed",
-        message: "Run completed"
-      }
+      completedAt: "2026-07-13T09:59:00.000Z"
     })).rejects.toThrow("execution run lifecycle");
   });
 
@@ -199,12 +179,7 @@ describe("DrizzleHarnessRunRepository", () => {
     await expect(new DrizzleHarnessRunRepository(missingStart.db).createExecutionRun({
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
-      status: "running",
-      initialEvent: {
-        sequence: 1,
-        type: "run.started",
-        message: "Run started"
-      }
+      status: "running"
     })).rejects.toThrow("execution run lifecycle");
 
     const completionBeforeStart = fakeExecutionRunDatabase(executionRunRow("running", {
@@ -215,12 +190,7 @@ describe("DrizzleHarnessRunRepository", () => {
       executionRunId: "execution-run-1",
       expectedStatus: "running",
       status: "succeeded",
-      completedAt: "2026-07-13T09:59:00.000Z",
-      event: {
-        sequence: 2,
-        type: "run.completed",
-        message: "Run completed"
-      }
+      completedAt: "2026-07-13T09:59:00.000Z"
     })).rejects.toThrow("execution run lifecycle");
   });
 
@@ -228,27 +198,19 @@ describe("DrizzleHarnessRunRepository", () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("running"));
     const repository = new DrizzleHarnessRunRepository(fake.db);
 
-    await repository.updateExecutionRunStatus({
+    const first = await repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
       expectedStatus: "running",
-      status: "running",
-      event: {
-        sequence: 2,
-        type: "run.started",
-        message: "Run started"
-      }
+      status: "running"
     });
-    await repository.updateExecutionRunStatus({
+    const second = await repository.updateExecutionRunStatus({
       executionRunId: "execution-run-1",
       expectedStatus: "running",
-      status: "running",
-      event: {
-        sequence: 2,
-        type: "run.started",
-        message: "Run started"
-      }
+      status: "running"
     });
 
+    expect(first.kind).toBe("already_at_status");
+    expect(second.kind).toBe("already_at_status");
     expect(fake.insertedValues).toHaveLength(0);
   });
 
@@ -479,12 +441,6 @@ describe("DrizzleHarnessRunRepository", () => {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "lifecycle-falsifier",
           status: "planned",
-          initialEvent: {
-            sequence: 1,
-            type: "smoke.execution_lifecycle.created",
-            message: "created planned",
-            payload: { smokeId: marker, status: "planned" }
-          },
           metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
         });
 
@@ -492,74 +448,50 @@ describe("DrizzleHarnessRunRepository", () => {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "lifecycle-falsifier",
           status: "succeeded",
-          initialEvent: {
-            sequence: 1,
-            type: "smoke.execution_lifecycle.illegal_create",
-            message: "terminal create must be rejected",
-            payload: { smokeId: marker }
-          },
           metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
         })).rejects.toThrow("execution run lifecycle");
 
         const plannedRun = await createRun();
-        const runningRun = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+        const runningTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: plannedRun.id,
           expectedStatus: "planned",
           status: "running",
-          startedAt: "2026-07-13T10:01:00.000Z",
-          event: {
-            sequence: 2,
-            type: "smoke.execution_lifecycle.started",
-            message: "started with startedAt",
-            payload: { smokeId: marker }
-          }
+          startedAt: "2026-07-13T10:01:00.000Z"
         });
-        const succeededRun = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+        if (runningTransition.kind !== "transitioned") {
+          throw new Error("planned-to-running transition unexpectedly became a no-op");
+        }
+        const runningRun = runningTransition.executionRun;
+        const succeededTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: runningRun.id,
           expectedStatus: "running",
           status: "succeeded",
           startedAt: "2026-07-13T10:00:00.000Z",
-          completedAt: "2026-07-13T10:02:00.000Z",
-          event: {
-            sequence: 3,
-            type: "smoke.execution_lifecycle.succeeded",
-            message: "completed coherently",
-            payload: { smokeId: marker }
-          }
+          completedAt: "2026-07-13T10:02:00.000Z"
         });
+        if (succeededTransition.kind !== "transitioned") {
+          throw new Error("running-to-succeeded transition unexpectedly became a no-op");
+        }
+        const succeededRun = succeededTransition.executionRun;
 
         await expect(scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: succeededRun.id,
           expectedStatus: "succeeded",
-          status: "running",
-          event: {
-            sequence: 4,
-            type: "smoke.execution_lifecycle.terminal_reversal",
-            message: "terminal reversal must be rejected",
-            payload: { smokeId: marker }
-          }
+          status: "running"
         })).rejects.toThrow("execution run lifecycle");
 
         const sameStateRetry = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: succeededRun.id,
           expectedStatus: "succeeded",
-          status: "succeeded",
-          event: {
-            sequence: 4,
-            type: "smoke.execution_lifecycle.same_state_retry",
-            message: "terminal retry is idempotent",
-            payload: { smokeId: marker }
-          }
+          status: "succeeded"
         });
 
         expect(runningRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
         expect(succeededRun.startedAt).toBe("2026-07-13T10:01:00.000Z");
         expect(succeededRun.completedAt).toBe("2026-07-13T10:02:00.000Z");
-        expect(sameStateRetry.status).toBe("succeeded");
         expect(plannedRun.lifecycleRevision).toBe(1);
         expect(runningRun.lifecycleRevision).toBe(2);
         expect(succeededRun.lifecycleRevision).toBe(3);
-        expect(sameStateRetry.lifecycleRevision).toBe(3);
 
         const [{ executionRunCount }] = await scaffold.client<{ executionRunCount: number }[]>`
           select count(*)::int as "executionRunCount"
@@ -569,10 +501,80 @@ describe("DrizzleHarnessRunRepository", () => {
         const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
           select count(*)::int as "eventCount"
           from run_events
-          where payload->>'smokeId' = ${marker}
+          where execution_run_id = ${plannedRun.id}
+        `;
+        const lifecycleEventRows = await scaffold.client<{
+          id: string;
+          message: string;
+          occurredAt: string;
+          payload: Record<string, unknown>;
+          sequence: number;
+          severity: string;
+          type: string;
+        }[]>`
+          select
+            id,
+            sequence,
+            type,
+            severity,
+            message,
+            payload,
+            to_char(occurred_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as "occurredAt"
+          from run_events
+          where execution_run_id = ${plannedRun.id}
+          order by sequence
         `;
         expect(executionRunCount).toBe(1);
         expect(eventCount).toBe(3);
+        expect(lifecycleEventRows).toEqual([
+          {
+            id: expect.any(String),
+            sequence: 1,
+            type: "execution_run.lifecycle.created",
+            severity: "info",
+            message: "Execution run created with status planned.",
+            payload: { status: "planned", lifecycleRevision: 1 },
+            occurredAt: expect.any(String)
+          },
+          {
+            id: expect.any(String),
+            sequence: 2,
+            type: "execution_run.lifecycle.transitioned",
+            severity: "info",
+            message: "Execution run transitioned from planned to running.",
+            payload: {
+              fromStatus: "planned",
+              toStatus: "running",
+              lifecycleRevision: 2
+            },
+            occurredAt: expect.any(String)
+          },
+          {
+            id: expect.any(String),
+            sequence: 3,
+            type: "execution_run.lifecycle.transitioned",
+            severity: "info",
+            message: "Execution run transitioned from running to succeeded.",
+            payload: {
+              fromStatus: "running",
+              toStatus: "succeeded",
+              lifecycleRevision: 3
+            },
+            occurredAt: expect.any(String)
+          }
+        ]);
+        expect(runningTransition.lifecycleEvent).toEqual({
+          ...lifecycleEventRows[1],
+          executionRunId: plannedRun.id
+        });
+        expect(succeededTransition.lifecycleEvent).toEqual({
+          ...lifecycleEventRows[2],
+          executionRunId: plannedRun.id
+        });
+        expect(sameStateRetry).toEqual({
+          kind: "already_at_status",
+          executionRun: succeededRun
+        });
       } finally {
         await scaffold.cleanup();
         await scaffold.client.end();
@@ -626,12 +628,6 @@ describe("DrizzleHarnessRunRepository", () => {
             harnessPlanId: scaffold.harnessPlan.id,
             adapter: "direct-terminal-timestamps",
             status: "planned",
-            initialEvent: {
-              sequence: 1,
-              type: "smoke.execution_direct_terminal.created",
-              message: "created planned run",
-              payload: { smokeId: marker, terminalStatus: transition.status }
-            },
             metadata: {
               smokeId: marker,
               terminalStatus: transition.status
@@ -642,20 +638,36 @@ describe("DrizzleHarnessRunRepository", () => {
             expectedStatus: "planned",
             status: transition.status,
             startedAt: transition.startedAt,
-            completedAt: transition.completedAt,
-            event: {
-              sequence: 2,
-              type: `smoke.execution_direct_terminal.${transition.status}`,
-              message: `directly ${transition.status}`,
-              payload: { smokeId: marker, terminalStatus: transition.status }
-            }
+            completedAt: transition.completedAt
           });
 
           expect(terminal).toMatchObject({
-            status: transition.status,
-            lifecycleRevision: 2,
-            startedAt: transition.startedAt,
-            completedAt: transition.completedAt
+            kind: "transitioned",
+            executionRun: {
+              status: transition.status,
+              lifecycleRevision: 2,
+              startedAt: transition.startedAt,
+              completedAt: transition.completedAt
+            },
+            lifecycleEvent: {
+              executionRunId: planned.id,
+              sequence: 2,
+              type: "execution_run.lifecycle.transitioned",
+              severity: "info",
+              payload: {
+                fromStatus: "planned",
+                toStatus: transition.status,
+                lifecycleRevision: 2
+              }
+            }
+          });
+          if (terminal.kind !== "transitioned") {
+            throw new Error("direct terminal transition unexpectedly became a no-op");
+          }
+          expect(terminal.lifecycleEvent.payload).toEqual({
+            fromStatus: "planned",
+            toStatus: transition.status,
+            lifecycleRevision: 2
           });
           const aggregate = await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(
             planned.id
@@ -672,12 +684,6 @@ describe("DrizzleHarnessRunRepository", () => {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "direct-terminal-timestamps",
           status: "planned",
-          initialEvent: {
-            sequence: 1,
-            type: "smoke.execution_direct_terminal.created",
-            message: "created incoherent planned run",
-            payload: { smokeId: marker, terminalStatus: "incoherent" }
-          },
           metadata: {
             smokeId: marker,
             terminalStatus: "incoherent"
@@ -688,13 +694,7 @@ describe("DrizzleHarnessRunRepository", () => {
           expectedStatus: "planned",
           status: "blocked",
           startedAt: "2026-07-14T12:01:00.000Z",
-          completedAt: "2026-07-14T12:00:00.000Z",
-          event: {
-            sequence: 2,
-            type: "smoke.execution_direct_terminal.incoherent",
-            message: "incoherent direct transition",
-            payload: { smokeId: marker, terminalStatus: "incoherent" }
-          }
+          completedAt: "2026-07-14T12:00:00.000Z"
         })).rejects.toThrow("execution run lifecycle completedAt cannot precede startedAt");
         const incoherentAggregate =
           await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(
@@ -717,7 +717,11 @@ describe("DrizzleHarnessRunRepository", () => {
         const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
           select count(*)::int as "eventCount"
           from run_events
-          where payload->>'smokeId' = ${marker}
+          where execution_run_id in (
+            select id
+            from execution_runs
+            where metadata->>'smokeId' = ${marker}
+          )
         `;
         expect(executionRunCount).toBe(3);
         expect(eventCount).toBe(5);
@@ -776,6 +780,7 @@ describe("DrizzleHarnessRunRepository", () => {
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "allows exactly one concurrent execution lifecycle transition",
+    // fallow-ignore-next-line complexity -- the two-client lock race needs explicit settlement and cleanup branches
     async () => {
       const marker = `krn_execution_lifecycle_race_${crypto.randomUUID().replaceAll("-", "")}`;
       const scaffold = await createSmokeHarnessScaffold({
@@ -813,25 +818,13 @@ describe("DrizzleHarnessRunRepository", () => {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "lifecycle-race",
           status: "planned",
-          initialEvent: {
-            sequence: 1,
-            type: "smoke.execution_lifecycle_race.created",
-            message: "race run created",
-            payload: { smokeId: marker }
-          },
           metadata: { smokeId: marker }
         });
         await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: planned.id,
           expectedStatus: "planned",
           status: "running",
-          startedAt: "2026-07-13T10:01:00.000Z",
-          event: {
-            sequence: 2,
-            type: "smoke.execution_lifecycle_race.started",
-            message: "race run started",
-            payload: { smokeId: marker }
-          }
+          startedAt: "2026-07-13T10:01:00.000Z"
         });
         const successBackendPid = await postgresBackendPid(scaffold.client);
         const failureBackendPid = await postgresBackendPid(contenderClient);
@@ -846,13 +839,7 @@ describe("DrizzleHarnessRunRepository", () => {
           executionRunId: planned.id,
           expectedStatus: "running",
           status: "succeeded",
-          completedAt: "2026-07-13T10:02:00.000Z",
-          event: {
-            sequence: 3,
-            type: "smoke.execution_lifecycle_race.succeeded",
-            message: "success contender",
-            payload: { smokeId: marker, contender: "success" }
-          }
+          completedAt: "2026-07-13T10:02:00.000Z"
         });
         transitionPromises = [successTransition];
         await waitForPostgresBackendBlock(
@@ -864,13 +851,7 @@ describe("DrizzleHarnessRunRepository", () => {
           executionRunId: planned.id,
           expectedStatus: "running",
           status: "failed",
-          completedAt: "2026-07-13T10:03:00.000Z",
-          event: {
-            sequence: 3,
-            type: "smoke.execution_lifecycle_race.failed",
-            message: "failure contender",
-            payload: { smokeId: marker, contender: "failure" }
-          }
+          completedAt: "2026-07-13T10:03:00.000Z"
         });
         transitionPromises = [successTransition, failureTransition];
         await waitForPostgresBackendBlock(
@@ -893,6 +874,9 @@ describe("DrizzleHarnessRunRepository", () => {
         )[0];
         if (winner === undefined) {
           throw new Error("execution lifecycle race did not produce a winner");
+        }
+        if (winner.kind !== "transitioned") {
+          throw new Error("execution lifecycle race winner unexpectedly became a no-op");
         }
         expect(loserReason).toBeInstanceOf(ExecutionRunLifecycleConflictError);
         expect(loserReason).toMatchObject({
@@ -933,17 +917,35 @@ describe("DrizzleHarnessRunRepository", () => {
         );
         const completedAt = "2026-07-13T10:02:00.000Z";
 
-        expect(winner.status).toBe("succeeded");
+        expect(winner.executionRun.status).toBe("succeeded");
         expect(runReadback?.status).toBe("succeeded");
         expect(runReadback?.lifecycleRevision).toBe(3);
         expect(runReadback?.startedAt).toBe("2026-07-13T10:01:00.000Z");
         expect(runReadback?.completedAt).toBe(completedAt);
-        expect(winner.lifecycleRevision).toBe(3);
-        expect(winner.completedAt).toBe(completedAt);
+        expect(winner.executionRun.lifecycleRevision).toBe(3);
+        expect(winner.executionRun.completedAt).toBe(completedAt);
+        expect(winner.lifecycleEvent).toMatchObject({
+          executionRunId: planned.id,
+          sequence: 3,
+          type: "execution_run.lifecycle.transitioned",
+          severity: "info",
+          payload: {
+            fromStatus: "running",
+            toStatus: "succeeded",
+            lifecycleRevision: 3
+          }
+        });
+        expect(winner.lifecycleEvent.payload).toEqual({
+          fromStatus: "running",
+          toStatus: "succeeded",
+          lifecycleRevision: 3
+        });
         expect(eventReadback.map((event) => event.sequence)).toEqual([1, 2, 3]);
-        expect(eventReadback[2]).toMatchObject({
-          type: "smoke.execution_lifecycle_race.succeeded",
-          payload: { contender: "success" }
+        expect(eventReadback[2]?.type).toBe("execution_run.lifecycle.transitioned");
+        expect(eventReadback[2]?.payload).toEqual({
+          fromStatus: "running",
+          toStatus: "succeeded",
+          lifecycleRevision: 3
         });
         expect(aggregate?.executionRun).toMatchObject({
           status: "succeeded",
@@ -956,6 +958,141 @@ describe("DrizzleHarnessRunRepository", () => {
           await controlClient.unsafe("rollback");
         }
         await Promise.allSettled(transitionPromises);
+        await scaffold.cleanup();
+        await Promise.all([
+          scaffold.client.end(),
+          contenderClient.end(),
+          controlClient.end()
+        ]);
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "serializes concurrent ordinary evidence event sequences under the execution run lock",
+    async () => {
+      const marker = `krn_evidence_event_race_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "ordinary evidence event race smoke",
+        workspacePrefix: "krn-evidence-event-race",
+        projectSlug: "evidence-event-race",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `ordinary evidence event race ${marker}`,
+        taskContract: {
+          title: "Serialize ordinary evidence events",
+          objective: "Allocate unique event sequences for concurrent evidence writers.",
+          constraints: ["real PostgreSQL", "independent connections", "no sleeps"],
+          nonGoals: ["no lifecycle transition"],
+          acceptance: ["both evidence bundles persist with contiguous event sequences"]
+        },
+        harnessPlan: {
+          summary: "Ordinary evidence event sequence race",
+          nextAction: "Race two evidence bundle writers for one execution run."
+        }
+      });
+      const contenderClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const controlClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const contenderRepository = new DrizzleHarnessRunRepository(
+        createKrnDatabase(contenderClient)
+      );
+      let controlTransactionOpen = false;
+      let evidencePromises: readonly Promise<unknown>[] = [];
+
+      try {
+        const planned = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "evidence-event-race",
+          status: "planned",
+          metadata: { smokeId: marker }
+        });
+        const firstWriterPid = await postgresBackendPid(scaffold.client);
+        const secondWriterPid = await postgresBackendPid(contenderClient);
+        const controlPid = await postgresBackendPid(controlClient);
+        const evidenceInput = (writer: "first" | "second") => ({
+          executionRunId: planned.id,
+          captureIdentity: `${marker}:${writer}`,
+          status: "captured" as const,
+          changedFiles: [`smoke/${writer}.ts`],
+          commands: [{ command: `verify ${writer}`, status: "passed" as const }],
+          diffRisk: "low" as const,
+          reviewBurden: `${writer} concurrent evidence writer.`,
+          rollbackPath: "Delete marker-scoped smoke rows.",
+          event: {
+            type: `smoke.evidence_event_race.${writer}`,
+            message: `${writer} ordinary evidence event`,
+            payload: { smokeId: marker, writer }
+          },
+          metadata: { smokeId: marker, writer }
+        });
+
+        await controlClient.unsafe("begin");
+        controlTransactionOpen = true;
+        await controlClient`
+          select id from execution_runs where id = ${planned.id} for update
+        `;
+        const firstEvidence = scaffold.harnessRunRepository.createEvidenceBundle(
+          evidenceInput("first")
+        );
+        evidencePromises = [firstEvidence];
+        await waitForPostgresBackendBlock(controlClient, firstWriterPid, [controlPid]);
+        const secondEvidence = contenderRepository.createEvidenceBundle(
+          evidenceInput("second")
+        );
+        evidencePromises = [firstEvidence, secondEvidence];
+        await waitForPostgresBackendBlock(
+          controlClient,
+          secondWriterPid,
+          [controlPid, firstWriterPid]
+        );
+        await controlClient.unsafe("commit");
+        controlTransactionOpen = false;
+
+        const persistedEvidence = await Promise.all([firstEvidence, secondEvidence]);
+        const eventReadback = await scaffold.client<{
+          payload: Record<string, unknown>;
+          sequence: number;
+          type: string;
+        }[]>`
+          select sequence, type, payload
+          from run_events
+          where execution_run_id = ${planned.id}
+          order by sequence
+        `;
+        const ordinaryEvents = eventReadback
+          .slice(1)
+          .toSorted((left, right) => left.type.localeCompare(right.type));
+
+        expect(persistedEvidence.map((bundle) => bundle.executionRunId)).toEqual([
+          planned.id,
+          planned.id
+        ]);
+        expect(new Set(persistedEvidence.map((bundle) => bundle.id)).size).toBe(2);
+        expect(eventReadback.map((event) => event.sequence)).toEqual([1, 2, 3]);
+        expect(eventReadback[0]).toMatchObject({
+          sequence: 1,
+          type: "execution_run.lifecycle.created"
+        });
+        expect(ordinaryEvents).toEqual([
+          {
+            sequence: expect.any(Number),
+            type: "smoke.evidence_event_race.first",
+            payload: { smokeId: marker, writer: "first" }
+          },
+          {
+            sequence: expect.any(Number),
+            type: "smoke.evidence_event_race.second",
+            payload: { smokeId: marker, writer: "second" }
+          }
+        ]);
+      } finally {
+        if (controlTransactionOpen) {
+          await controlClient.unsafe("rollback");
+        }
+        await Promise.allSettled(evidencePromises);
         await scaffold.cleanup();
         await Promise.all([
           scaffold.client.end(),
@@ -1006,12 +1143,6 @@ describe("DrizzleHarnessRunRepository", () => {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "evidence-lifecycle-race",
           status: "planned",
-          initialEvent: {
-            sequence: 1,
-            type: "smoke.evidence_lifecycle_race.created",
-            message: "evidence race run created",
-            payload: { smokeId: marker }
-          },
           metadata: { smokeId: marker }
         });
         const captureIdentity = `evidence-lifecycle-race:${marker}`;
@@ -1032,7 +1163,6 @@ describe("DrizzleHarnessRunRepository", () => {
             reviewBurden: "Lifecycle race proof only.",
             rollbackPath: "Delete marker-scoped smoke rows.",
             event: {
-              sequence: 2,
               type: "smoke.evidence_lifecycle_race.captured",
               message: "stale evidence must not persist",
               payload: { smokeId: marker, captureIdentity }
@@ -1078,18 +1208,16 @@ describe("DrizzleHarnessRunRepository", () => {
           [blockerBackendPid]
         );
 
-        const running = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+        const runningTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: planned.id,
           expectedStatus: "planned",
           status: "running",
-          startedAt: "2026-07-13T11:01:00.000Z",
-          event: {
-            sequence: 3,
-            type: "smoke.evidence_lifecycle_race.started",
-            message: "lifecycle transition wins before stale capture",
-            payload: { smokeId: marker }
-          }
+          startedAt: "2026-07-13T11:01:00.000Z"
         });
+        if (runningTransition.kind !== "transitioned") {
+          throw new Error("evidence race lifecycle transition unexpectedly became a no-op");
+        }
+        const running = runningTransition.executionRun;
 
         await blockerClient.unsafe("commit");
         blockerTransactionOpen = false;
@@ -1151,7 +1279,6 @@ describe("DrizzleHarnessRunRepository", () => {
           evidence: {
             ...staleInput.evidence,
             event: {
-              sequence: 4,
               type: "smoke.evidence_lifecycle_race.malformed_binding",
               message: "incomplete packet binding must not persist",
               payload: { smokeId: marker, captureIdentity: malformedBindingIdentity }
@@ -1177,7 +1304,6 @@ describe("DrizzleHarnessRunRepository", () => {
           evidence: {
             ...staleInput.evidence,
             event: {
-              sequence: 4,
               type: "smoke.evidence_lifecycle_race.mismatched_binding",
               message: "stale packet binding must not borrow the current run revision",
               payload: { smokeId: marker, captureIdentity: mismatchedBindingIdentity }
@@ -1222,7 +1348,6 @@ describe("DrizzleHarnessRunRepository", () => {
           evidence: {
             ...staleInput.evidence,
             event: {
-              sequence: 4,
               type: "smoke.evidence_lifecycle_race.current_captured",
               message: "current evidence may persist",
               payload: { smokeId: marker, captureIdentity: currentCaptureIdentity }
@@ -1239,19 +1364,24 @@ describe("DrizzleHarnessRunRepository", () => {
         const currentCapture = await captureRepository.createEvidenceFeedbackOnce(currentInput);
         expect(currentCapture.created).toBe(true);
 
-        const succeeded = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+        const succeededTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
           executionRunId: planned.id,
           expectedStatus: "running",
           status: "succeeded",
-          completedAt: "2026-07-13T11:02:00.000Z",
-          event: {
-            sequence: 5,
-            type: "smoke.evidence_lifecycle_race.succeeded",
-            message: "lifecycle advances after current evidence",
-            payload: { smokeId: marker }
+          completedAt: "2026-07-13T11:02:00.000Z"
+        });
+        expect(succeededTransition).toMatchObject({
+          kind: "transitioned",
+          executionRun: { lifecycleRevision: 3 },
+          lifecycleEvent: {
+            sequence: 4,
+            payload: {
+              fromStatus: "running",
+              toStatus: "succeeded",
+              lifecycleRevision: 3
+            }
           }
         });
-        expect(succeeded.lifecycleRevision).toBe(3);
 
         const historicalRetry = await captureRepository.createEvidenceFeedbackOnce(currentInput);
         expect(historicalRetry).toMatchObject({
@@ -1481,6 +1611,30 @@ describe("DrizzleHarnessRunRepository", () => {
     ]);
   });
 
+  it("rejects reserved lifecycle event types for ordinary evidence", () => {
+    for (const type of [
+      "execution_run.lifecycle.created",
+      "execution_run.lifecycle.transitioned"
+    ]) {
+      expect(() =>
+        validateEvidenceBundleInputForPersistence({
+          executionRunId: "execution-run-1",
+          status: "captured",
+          changedFiles: [],
+          commands: [],
+          diffRisk: "low",
+          reviewBurden: "Reserved lifecycle event type rejection.",
+          rollbackPath: "No rows persisted.",
+          event: {
+            type,
+            message: "ordinary evidence must not claim lifecycle authority"
+          },
+          metadata: {}
+        })
+      ).toThrow(`ordinary run event cannot use reserved lifecycle type ${type}`);
+    }
+  });
+
   it("validates evidence metadata before persistence", () => {
     expect(() =>
       validateEvidenceBundleInputForPersistence({
@@ -1492,7 +1646,6 @@ describe("DrizzleHarnessRunRepository", () => {
         reviewBurden: "Review evidence metadata shape.",
         rollbackPath: "git revert <commit>",
         event: {
-          sequence: 1,
           type: "evidence.captured",
           message: "Evidence captured"
         },
@@ -1516,7 +1669,6 @@ describe("DrizzleHarnessRunRepository", () => {
       reviewBurden: "Review evidence metadata shape.",
       rollbackPath: "git revert <commit>",
       event: {
-        sequence: 1,
         type: "evidence.captured",
         message: "Evidence captured"
       },

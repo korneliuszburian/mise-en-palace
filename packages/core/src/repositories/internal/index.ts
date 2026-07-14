@@ -1,4 +1,3 @@
-export * from "../event-ledger-repository.js";
 export * from "../harness-run-repository.js";
 export * from "../memory-repository.js";
 export * from "../outbox-repository.js";

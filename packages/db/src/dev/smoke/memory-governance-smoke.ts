@@ -132,8 +132,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       command: "db:smoke:memory-governance",
       constraints: ["persist reviewed memory candidates and anti-memory"],
       db,
-      eventMessage: "Memory governance smoke plan created",
-      eventType: "smoke.memory_governance.plan_persisted",
       includeEvidenceContract: true,
       marker,
       nonGoals: ["do not mutate runtime markdown memory"],
@@ -437,7 +435,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance incoherent command falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 2,
         type: "smoke.memory_governance.incoherent_verification_captured",
         message: "Memory governance incoherent verification evidence captured",
         payload: {
@@ -466,7 +463,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance missing required command falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 3,
         type: "smoke.memory_governance.missing_required_verification_captured",
         message: "Memory governance partial verification evidence captured",
         payload: {
@@ -494,7 +490,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance unresolved output reference falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 4,
         type: "smoke.memory_governance.unresolved_output_verification_captured",
         message: "Memory governance unresolved output verification evidence captured",
         payload: {
@@ -522,7 +517,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance smoke proof.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 5,
         type: "smoke.memory_governance.verification_captured",
         message: "Memory governance verification evidence captured",
         payload: {
@@ -895,7 +889,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance stale lifecycle revision falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 6,
         type: "smoke.memory_governance.stale_lifecycle_verification_captured",
         message: "Memory governance stale lifecycle revision falsifier captured",
         payload: {
@@ -910,18 +903,16 @@ export const runMemoryGovernanceSmokeCheck = async (
         decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
       }
     });
-    const runningExecutionRun = await harnessRunRepository.updateExecutionRunStatus({
+    const runningTransition = await harnessRunRepository.updateExecutionRunStatus({
       executionRunId: executionRun.id,
       expectedStatus: "planned",
       status: "running",
-      startedAt: new Date(Date.parse(packetGeneratedAt) + 2000).toISOString(),
-      event: {
-        sequence: 7,
-        type: "smoke.memory_governance.execution_started",
-        message: "Memory governance smoke execution started",
-        payload: { smokeId: marker }
-      }
+      startedAt: new Date(Date.parse(packetGeneratedAt) + 2000).toISOString()
     });
+    if (runningTransition.kind !== "transitioned") {
+      throw new Error("Memory governance execution run did not transition to running");
+    }
+    const runningExecutionRun = runningTransition.executionRun;
     const counterBeforeStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
       counterIntegrityMemoryRecord.id
     );
@@ -952,18 +943,16 @@ export const runMemoryGovernanceSmokeCheck = async (
       counterBeforeStaleLifecycleApplication?.positiveFeedbackCount ===
         counterAfterStaleLifecycleApplication?.positiveFeedbackCount;
 
-    const succeededExecutionRun = await harnessRunRepository.updateExecutionRunStatus({
+    const succeededTransition = await harnessRunRepository.updateExecutionRunStatus({
       executionRunId: executionRun.id,
       expectedStatus: "running",
       status: "succeeded",
-      completedAt: new Date(Date.parse(packetGeneratedAt) + 3000).toISOString(),
-      event: {
-        sequence: 8,
-        type: "smoke.memory_governance.execution_succeeded",
-        message: "Memory governance smoke execution became terminal history",
-        payload: { smokeId: marker }
-      }
+      completedAt: new Date(Date.parse(packetGeneratedAt) + 3000).toISOString()
     });
+    if (succeededTransition.kind !== "transitioned") {
+      throw new Error("Memory governance execution run did not transition to succeeded");
+    }
+    const succeededExecutionRun = succeededTransition.executionRun;
     const terminalPacketChecksum = `${packetChecksum}:terminal-history`;
     const terminalVerificationEvidenceBundle = await harnessRunRepository.createEvidenceBundle({
       executionRunId: executionRun.id,
@@ -978,7 +967,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       reviewBurden: "Memory governance terminal EvidenceContract falsifier.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 9,
         type: "smoke.memory_governance.terminal_verification_captured",
         message: "Memory governance terminal verification falsifier captured",
         payload: {

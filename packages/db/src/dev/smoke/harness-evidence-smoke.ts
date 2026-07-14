@@ -114,7 +114,6 @@ const createSmokeFeedbackDelta = async (
       reviewBurden: "Smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 2,
         type: input.evidenceEventType,
         message: input.evidenceEventMessage,
         payload: {
@@ -353,8 +352,6 @@ export const runHarnessEvidenceSmokeCheck = async (
       acceptance: "read back persisted evidence records",
       command: "db:smoke:harness-evidence",
       db,
-      eventMessage: "Persisted harness evidence smoke plan created",
-      eventType: "smoke.harness_evidence.plan_persisted",
       marker,
       projectSlug,
       task,
@@ -497,14 +494,6 @@ export const runHarnessEvidenceSmokeCheck = async (
       harnessPlanId: otherHarnessPlan.id,
       adapter: "codex",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.harness_evidence.other_project_plan_persisted",
-        message: "Other project harness evidence smoke plan created",
-        payload: {
-          smokeId: marker
-        }
-      },
       metadata: {
         smokeId: marker
       }

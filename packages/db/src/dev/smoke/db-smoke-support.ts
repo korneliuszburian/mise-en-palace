@@ -14,6 +14,9 @@ import type { EvidenceContract } from "@krn/core";
 import {
   compileHarnessPlan
 } from "@krn/harness";
+import type {
+  assembleContext
+} from "@krn/harness";
 
 import type { KrnDatabase } from "../../database.js";
 import { createKrnDatabase } from "../../database.js";
@@ -32,6 +35,7 @@ import {
   contextExclusions,
   contextItems,
   evidenceBundles,
+  executionRuns,
   feedbackDeltas,
   memoryApplications,
   memoryCandidates,
@@ -74,6 +78,16 @@ type SmokeExecutionRunRecord = Awaited<
   ReturnType<DrizzleHarnessRunRepository["createExecutionRun"]>
 >;
 type SmokeHarnessCompileResult = Awaited<ReturnType<typeof compileHarnessPlan>>;
+type SmokeContextAssemblyDraft = ReturnType<typeof assembleContext>;
+
+interface SmokeContextRevisionCandidate {
+  readonly metadata: Record<string, unknown>;
+}
+
+interface SmokeContextRevisionInclusion {
+  readonly subjectId: string;
+  readonly subjectType: string;
+}
 
 export interface SmokeDatabase {
   client: Sql;
@@ -124,9 +138,6 @@ export interface SmokeHarnessCompileOutput extends SmokeProjectRecords {
 }
 
 export interface SmokeCompiledExecutionInput extends SmokeHarnessCompileInput {
-  eventMessage: string;
-  eventPayload?: (result: SmokeHarnessCompileResult) => Record<string, unknown>;
-  eventType: string;
   includeEvidenceContract?: boolean;
 }
 
@@ -134,6 +145,58 @@ export interface SmokeCompiledExecutionOutput extends SmokeHarnessCompileOutput 
   executionRun: SmokeExecutionRunRecord;
   retrievalRunId: string | undefined;
 }
+
+export const createRunningSmokeExecutionRun = (
+  harnessRunRepository: DrizzleHarnessRunRepository,
+  harnessPlanId: string,
+  marker: string,
+  startedAt: string
+): Promise<SmokeExecutionRunRecord> => harnessRunRepository.createExecutionRun({
+  harnessPlanId,
+  adapter: "smoke",
+  status: "running",
+  startedAt,
+  metadata: { smokeId: marker }
+});
+
+const includedSmokeContextRevisionTokens = (
+  candidates: readonly SmokeContextRevisionCandidate[],
+  inclusions: readonly SmokeContextRevisionInclusion[]
+): Record<string, unknown>[] => candidates.flatMap((candidate) => {
+  const revision = candidate.metadata.canonicalRevision;
+
+  if (typeof revision !== "object" || revision === null || Array.isArray(revision)) {
+    return [];
+  }
+
+  const token = revision as Record<string, unknown>;
+  return inclusions.some((inclusion) => (
+    inclusion.subjectType === token.subjectType && inclusion.subjectId === token.subjectId
+  ))
+    ? [token]
+    : [];
+});
+
+export const createSmokeContextAssembly = (
+  harnessRunRepository: DrizzleHarnessRunRepository,
+  draft: SmokeContextAssemblyDraft,
+  candidates: readonly SmokeContextRevisionCandidate[],
+  metadata: Record<string, unknown> = {}
+): Promise<SmokeContextAssemblyRecord> => harnessRunRepository.createContextAssembly({
+  harnessPlanId: draft.harnessPlanId,
+  status: draft.status,
+  ...(draft.tokenBudget === undefined ? {} : { tokenBudget: draft.tokenBudget }),
+  inclusions: draft.inclusions,
+  exclusions: draft.exclusions,
+  metadata: {
+    ...draft.metadata,
+    ...metadata,
+    canonicalRevisionTokens: includedSmokeContextRevisionTokens(
+      candidates,
+      draft.inclusions
+    )
+  }
+});
 
 export interface SmokeHarnessPreparationInput {
   db: KrnDatabase;
@@ -465,20 +528,10 @@ export const createCompiledSmokeExecution = async (
   const retrievalRunId = typeof maybeRetrievalRunId === "string"
     ? maybeRetrievalRunId
     : undefined;
-  const eventPayload = input.eventPayload?.(result);
   const executionRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: result.harnessPlan.id,
     adapter: "codex",
     status: "planned",
-    initialEvent: {
-      sequence: 1,
-      type: input.eventType,
-      message: input.eventMessage,
-      payload: {
-        smokeId: input.marker,
-        ...(eventPayload ?? {})
-      }
-    },
     metadata: {
       smokeId: input.marker,
       ...(input.includeEvidenceContract === false ? {} : {
@@ -800,6 +853,17 @@ const countSmokeRows = async (
   return rows[0]?.count ?? 0;
 };
 
+const smokeRunEventPredicate = (
+  input: SmokeBaseMarkerInput
+): SQL => sql`(
+  ${runEvents.payload}->>'smokeId' = ${input.marker}
+  or ${runEvents.executionRunId} in (
+    select ${executionRuns.id}
+    from ${executionRuns}
+    where ${executionRuns.metadata}->>'smokeId' = ${input.marker}
+  )
+)`;
+
 const countSmokeBaseMarkerRows = async (
   input: SmokeBaseMarkerCountInput
 ): Promise<number> => sumSmokeCountTasks([
@@ -814,7 +878,7 @@ const smokeBaseMarkerCountTasks = (
   () => countSmokeRows(input.db, workspaces, eq(workspaces.slug, input.workspaceSlug)),
   () => countSmokeRows(input.db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${input.marker}`),
   () => countSmokeRows(input.db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${input.marker}`),
-  () => countSmokeRows(input.db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${input.marker}`)
+  () => countSmokeRows(input.db, runEvents, smokeRunEventPredicate(input))
 ];
 
 const optionalSmokeCount = <Value>(
@@ -828,7 +892,7 @@ const countHarnessCompilerSmokeRows = async (
   input: HarnessCompilerSmokeRowInput
 ): Promise<number> => sumSmokeCountTasks([
   () => countSmokeRows(input.db, workspaces, eq(workspaces.slug, input.workspaceSlug)),
-  () => countSmokeRows(input.db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, runEvents, smokeRunEventPredicate(input)),
   optionalSmokeCount(
     input.retrievalRunId,
     (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
@@ -844,7 +908,7 @@ export const cleanupHarnessCompilerSmokeRows = async (
 ): Promise<number> => {
   await input.db
     .delete(runEvents)
-    .where(sql`${runEvents.payload}->>'smokeId' = ${input.marker}`);
+    .where(smokeRunEventPredicate(input));
 
   if (input.feedbackDeltaId !== undefined) {
     await input.db
@@ -942,7 +1006,7 @@ const cleanupSmokeBaseRows = async (
     .where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${input.marker}`);
   await input.db
     .delete(runEvents)
-    .where(sql`${runEvents.payload}->>'smokeId' = ${input.marker}`);
+    .where(smokeRunEventPredicate(input));
   await input.db
     .delete(workspaces)
     .where(eq(workspaces.slug, input.workspaceSlug));

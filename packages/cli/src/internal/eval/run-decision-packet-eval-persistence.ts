@@ -14,7 +14,6 @@ export interface BuildDecisionPacketEvalFailurePersistenceInput {
   executionRunId: string;
   projectId: string;
   evalCommand: string;
-  eventSequence: number;
   now: string;
 }
 
@@ -133,7 +132,6 @@ export const buildDecisionPacketEvalFailurePersistenceInput = (
       reviewBurden: "Review the deterministic eval failure classification and evidence refs before any durable remediation.",
       rollbackPath: "Reject the review assessment or feedback candidate; no MemoryRecord or SourceClaim is changed by this persistence.",
       event: {
-        sequence: input.eventSequence,
         type: "eval.failure.captured",
         message: "DecisionPacket eval failure captured for review",
         payload: {
@@ -212,10 +210,6 @@ export const persistDecisionPacketEvalFailures = async (
     executionRunId: input.executionRunId,
     projectId: input.projectId,
     evalCommand: input.evalCommand,
-    eventSequence: aggregate.runEvents.reduce(
-      (max, event) => Math.max(max, event.sequence),
-      0
-    ) + 1,
     now: input.now
   });
 

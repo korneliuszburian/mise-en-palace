@@ -111,14 +111,6 @@ export const runRetrievalSubstrateSmokeCheck = async (
       harnessPlanId: harnessPlan.id,
       adapter: "codex",
       status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.retrieval_substrate.plan_created",
-        message: "Retrieval substrate smoke plan created",
-        payload: {
-          smokeId: marker
-        }
-      },
       metadata: {
         smokeId: marker
       }
@@ -135,7 +127,6 @@ export const runRetrievalSubstrateSmokeCheck = async (
       reviewBurden: "Smoke proof only.",
       rollbackPath: "Delete smoke marker rows.",
       event: {
-        sequence: 2,
         type: "smoke.retrieval_substrate.evidence_captured",
         message: "Retrieval substrate smoke evidence captured",
         payload: {

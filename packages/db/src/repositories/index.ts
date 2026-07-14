@@ -1,4 +1,3 @@
-export * from "./drizzle-event-ledger-repository.js";
 export * from "./drizzle-harness-run-repository.js";
 export * from "./drizzle-memory-repository.js";
 export * from "./drizzle-observation-repository.js";

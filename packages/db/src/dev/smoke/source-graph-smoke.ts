@@ -621,8 +621,6 @@ export const runSourceGraphSmokeCheck = async (
       command: "db:smoke:source-graph",
       constraints: ["persist source claims and source decision edges"],
       db,
-      eventMessage: "Source graph smoke plan created",
-      eventType: "smoke.source_graph.plan_persisted",
       includeEvidenceContract: false,
       marker,
       nonGoals: ["do not mutate runtime markdown memory"],

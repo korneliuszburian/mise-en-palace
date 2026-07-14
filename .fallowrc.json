@@ -8,13 +8,6 @@
   ],
   "usedClassMembers": [
     {
-      "implements": "EventLedgerRepository",
-      "members": [
-        "appendRunEvent",
-        "listRunEvents"
-      ]
-    },
-    {
       "implements": "HarnessRunRepository",
       "members": [
         "createOperatorIntent",

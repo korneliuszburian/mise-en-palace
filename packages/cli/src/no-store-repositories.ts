@@ -9,7 +9,8 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   SourceClaim,
-  TaskContract
+  TaskContract,
+  UpdateExecutionRunStatusResult
 } from "@krn/core";
 import type {
   HarnessCompilerDependencies
@@ -120,7 +121,9 @@ export const createNoStoreCompilerDependencies = (
       return notUsed("createExecutionRun");
     },
 
-    async updateExecutionRunStatus(_input: UpdateExecutionRunStatusInput): Promise<ExecutionRun> {
+    async updateExecutionRunStatus(
+      _input: UpdateExecutionRunStatusInput
+    ): Promise<UpdateExecutionRunStatusResult> {
       return notUsed("updateExecutionRunStatus");
     },
 

@@ -15,6 +15,7 @@ import type {
   EvidenceBundle,
   EvidenceCommand,
   ExecutionRun,
+  ExecutionRunLifecycleTransitionedEventRecord,
   FeedbackDelta,
   ProjectId,
   HarnessPlan,
@@ -22,10 +23,15 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   TaskContract,
-  ExecutionRunStatus
+  ExecutionRunStatus,
+  UpdateExecutionRunStatusResult
 } from "@krn/core";
 import {
   decisionPacketBindingReadbackFromMetadata,
+  executionRunLifecycleCreatedEvent,
+  executionRunLifecycleCreatedEventType,
+  executionRunLifecycleTransitionedEvent,
+  executionRunLifecycleTransitionedEventType,
   ExecutionRunLifecycleConflictError,
   toEvidenceCommandReadback,
   readMetadataString
@@ -168,6 +174,7 @@ const validateExecutionRunCreation = (input: CreateExecutionRunInput): void => {
   }
 }
 
+// fallow-ignore-next-line complexity -- one explicit lifecycle matrix validates status and timestamp coherence
 const validateExecutionRunTransition = (input: UpdateExecutionRunStatusInput, current: {
   readonly status: ExecutionRunStatus;
   readonly startedAt: Date | null;
@@ -497,9 +504,21 @@ const feedbackSubjectMatch = (subject: FeedbackSubjectReference): SQL => {
   }
 };
 
+const assertOrdinaryRunEventType = (
+  event: CreateEvidenceBundleInput["event"]
+): void => {
+  if (
+    event.type === executionRunLifecycleCreatedEventType ||
+    event.type === executionRunLifecycleTransitionedEventType
+  ) {
+    throw new Error(`ordinary run event cannot use reserved lifecycle type ${event.type}`);
+  }
+};
+
 export const validateEvidenceBundleInputForPersistence = (
   input: CreateEvidenceBundleInput
 ): CreateEvidenceBundleInput => {
+  assertOrdinaryRunEventType(input.event);
   const parsed = parseEvidenceCaptureInput({
     changedFiles: input.changedFiles,
     commands: input.commands,
@@ -520,11 +539,42 @@ export const validateEvidenceBundleInputForPersistence = (
   };
 };
 
+const nextRunEventSequence = async (
+  tx: KrnDatabaseTransaction,
+  executionRunId: string,
+  operation: string
+): Promise<number> => {
+  requireReturnedRow(
+    await tx
+      .select({ id: executionRuns.id })
+      .from(executionRuns)
+      .where(eq(executionRuns.id, executionRunId))
+      .for("update"),
+    `${operation}.executionRun`
+  );
+  const row = requireReturnedRow(
+    await tx
+      .select({
+        sequence: sql<number>`(coalesce(max(${runEvents.sequence}), 0) + 1)::int`
+      })
+      .from(runEvents)
+      .where(eq(runEvents.executionRunId, executionRunId)),
+    `${operation}.runEventSequence`
+  );
+
+  return row.sequence;
+};
+
 const insertEvidenceBundleAndEvent = async (
-  tx: KrnDatabase,
+  tx: KrnDatabaseTransaction,
   input: CreateEvidenceBundleInput,
   operation: string
 ) => {
+  const eventSequence = await nextRunEventSequence(
+    tx,
+    input.executionRunId,
+    operation
+  );
   const row = requireReturnedRow(
     await tx
       .insert(evidenceBundles)
@@ -545,7 +595,7 @@ const insertEvidenceBundleAndEvent = async (
 
   await tx.insert(runEvents).values({
     executionRunId: input.executionRunId,
-    sequence: input.event.sequence,
+    sequence: eventSequence,
     type: input.event.type,
     severity: input.event.severity ?? "info",
     message: input.event.message,
@@ -766,7 +816,7 @@ const insertEvidenceFeedbackMaintenanceQueue = async (
     ).id;
 
 const insertEvidenceFeedbackChain = async (
-  tx: KrnDatabase,
+  tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   captureIdentity: string,
   faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void
@@ -1044,20 +1094,23 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         "createExecutionRun"
       );
 
+      const executionRun = mapExecutionRun(row);
+      const lifecycleEvent = executionRunLifecycleCreatedEvent(executionRun);
+
       await tx.insert(runEvents).values({
         executionRunId: row.id,
-        sequence: input.initialEvent.sequence,
-        type: input.initialEvent.type,
-        severity: input.initialEvent.severity ?? "info",
-        message: input.initialEvent.message,
-        payload: input.initialEvent.payload ?? {}
+        sequence: 1,
+        ...lifecycleEvent,
+        payload: { ...lifecycleEvent.payload }
       });
 
-      return mapExecutionRun(row);
+      return executionRun;
     });
   }
 
-  async updateExecutionRunStatus(input: UpdateExecutionRunStatusInput): Promise<ExecutionRun> {
+  async updateExecutionRunStatus(
+    input: UpdateExecutionRunStatusInput
+  ): Promise<UpdateExecutionRunStatusResult> {
     return this.db.transaction(async (tx) => {
       const currentRow = requireReturnedRow(
         await tx
@@ -1067,10 +1120,13 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .for("update"),
         "updateExecutionRunStatus"
       );
-      const isSameStateRetry = validateExecutionRunTransition(input, currentRow);
+      const isAlreadyAtStatus = validateExecutionRunTransition(input, currentRow);
 
-      if (isSameStateRetry) {
-        return mapExecutionRun(currentRow);
+      if (isAlreadyAtStatus) {
+        return {
+          kind: "already_at_status",
+          executionRun: mapExecutionRun(currentRow)
+        };
       }
 
       const row = requireReturnedRow(
@@ -1085,8 +1141,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
             ...(input.completedAt === undefined
               ? {}
               : { completedAt: fromIsoTimestamp(input.completedAt) }),
-            updatedAt: sql`now()`,
-            ...(input.metadata === undefined ? {} : { metadata: input.metadata })
+            updatedAt: sql`now()`
           })
           .where(and(
             eq(executionRuns.id, input.executionRunId),
@@ -1097,16 +1152,48 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         "updateExecutionRunStatus"
       );
 
-      await tx.insert(runEvents).values({
-        executionRunId: row.id,
-        sequence: input.event.sequence,
-        type: input.event.type,
-        severity: input.event.severity ?? "info",
-        message: input.event.message,
-        payload: input.event.payload ?? {}
-      });
+      const executionRun = mapExecutionRun(row);
+      const event = executionRunLifecycleTransitionedEvent(
+        mapExecutionRun(currentRow),
+        executionRun
+      );
+      const eventSequence = await nextRunEventSequence(
+        tx,
+        input.executionRunId,
+        "updateExecutionRunStatus"
+      );
+      const eventRow = requireReturnedRow(
+        await tx
+          .insert(runEvents)
+          .values({
+            executionRunId: row.id,
+            sequence: eventSequence,
+            ...event,
+            payload: { ...event.payload }
+          })
+          .returning(),
+        "updateExecutionRunStatus.runEvent"
+      );
+      const persistedEvent = mapRunEvent(eventRow);
+      if (persistedEvent.executionRunId === undefined) {
+        throw new Error("updateExecutionRunStatus.runEvent lost its execution run identity");
+      }
+      const lifecycleEvent: ExecutionRunLifecycleTransitionedEventRecord = {
+        id: persistedEvent.id,
+        executionRunId: persistedEvent.executionRunId,
+        sequence: persistedEvent.sequence,
+        type: event.type,
+        severity: event.severity,
+        message: event.message,
+        payload: event.payload,
+        occurredAt: persistedEvent.occurredAt
+      };
 
-      return mapExecutionRun(row);
+      return {
+        kind: "transitioned",
+        executionRun,
+        lifecycleEvent
+      };
     });
   }
 

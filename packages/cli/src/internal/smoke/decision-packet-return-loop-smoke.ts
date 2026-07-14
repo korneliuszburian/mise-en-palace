@@ -1363,16 +1363,6 @@ const runSourceConsensusProof = async (
     harnessPlanId: noFormalRejectionCompile.harnessPlan.id,
     adapter: "codex",
     status: "planned",
-    initialEvent: {
-      sequence: 1,
-      type: "smoke.decision_packet_return_loop.source_consensus_without_formal_rejection",
-      message: "DecisionPacket return-loop smoke created no-formal-rejection proof run",
-      payload: {
-        smokeId: input.marker,
-        currentSourceClaimId: currentClaim.id,
-        supersededSourceClaimId: supersededClaim.id
-      }
-    },
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -1451,17 +1441,6 @@ const runSourceConsensusProof = async (
     harnessPlanId: sourceConsensusCompile.harnessPlan.id,
     adapter: "codex",
     status: "planned",
-    initialEvent: {
-      sequence: 1,
-      type: "smoke.decision_packet_return_loop.source_consensus",
-      message: "DecisionPacket return-loop smoke created source consensus proof run",
-      payload: {
-        smokeId: input.marker,
-        currentSourceClaimId: currentClaim.id,
-        supersededSourceClaimId: supersededClaim.id,
-        rejectedSourceClaimId: rejectedClaim.id
-      }
-    },
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -1718,16 +1697,6 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     harnessPlanId: harnessPlan.id,
     adapter: "codex",
     status: "planned",
-    initialEvent: {
-      sequence: 1,
-      type: "smoke.decision_packet_return_loop.unresolved_accepted_source_dissent",
-      message: "DecisionPacket return-loop smoke created unresolved accepted source dissent proof run",
-      payload: {
-        smokeId: input.marker,
-        candidateClaimId: governingClaim.id,
-        dissentingClaimId: dissentingClaim.id
-      }
-    },
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -2216,16 +2185,6 @@ const runSelectorFeedbackProof = async (
     harnessPlanId: selectorCompile.harnessPlan.id,
     adapter: "codex",
     status: "planned",
-    initialEvent: {
-      sequence: 1,
-      type: "smoke.decision_packet_return_loop.selector_feedback",
-      message: "DecisionPacket return-loop smoke created selector feedback proof run",
-      payload: {
-        smokeId: input.marker,
-        helpedMemoryRecordId: selectorHelpedMemory.id,
-        staleMemoryRecordId: selectorStaleMemory.id
-      }
-    },
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -2357,14 +2316,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       acceptance: "bind headless decision packet feedback to packet checksum",
       command: "db:smoke:decision-packet-return-loop",
       db,
-      eventMessage: "Agent-packet return-loop smoke created persisted run",
-      eventPayload: (compiledResult) => ({
-        operatorIntentId: compiledResult.operatorIntent.id,
-        taskContractId: compiledResult.taskContract.id,
-        harnessPlanId: compiledResult.harnessPlan.id,
-        contextAssemblyId: compiledResult.contextAssembly.id
-      }),
-      eventType: "smoke.decision_packet_return_loop.persisted",
       marker,
       projectSlug,
       task,
