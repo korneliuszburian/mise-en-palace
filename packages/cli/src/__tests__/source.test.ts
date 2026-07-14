@@ -128,15 +128,24 @@ const createSourceHarnessRunRepository = (
 
 const withSourceTransaction = (
   runtime: DatabaseRuntime,
-  retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>
-): DatabaseRuntime => ({
-  ...runtime,
-  retrievalRepository,
-  withTransaction: async (_lockKey, work) => work({
-    sourceRepository: runtime.sourceRepository,
-    retrievalRepository
-  })
-});
+  retrievalRepository: NoStoreCompilerDependencies["retrievalRepository"]
+): DatabaseRuntime => {
+  const transactionRetrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
+    ...retrievalRepository,
+    async createSearchDocument(): Promise<never> {
+      throw new Error("createSearchDocument should not be called");
+    }
+  };
+
+  return {
+    ...runtime,
+    retrievalRepository: transactionRetrievalRepository,
+    withTransaction: async (_lockKey, work) => work({
+      sourceRepository: runtime.sourceRepository,
+      retrievalRepository: transactionRetrievalRepository
+    })
+  };
+};
 
 describe("runCli", () => {
   it("prints source claim add help", async () => {
