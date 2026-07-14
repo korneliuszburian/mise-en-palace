@@ -147,7 +147,10 @@ describe("source authority write boundary", () => {
           decisionCount: 1,
           edgeCount: 1,
           sourceChunkCount: 0,
-          evidenceViolations: ["captured_evidence_missing_or_mismatched"]
+          evidenceViolations: [
+            "captured_evidence_missing_or_mismatched",
+            "governing_evidence_not_current"
+          ]
         });
       } finally {
         await cleanupFixture(fixture);

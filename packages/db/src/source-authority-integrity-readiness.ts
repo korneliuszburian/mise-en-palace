@@ -10,14 +10,37 @@ export type SourceAuthorityIntegrityViolationKind =
   | "governing_edge_without_current_reviewed_decision"
   | "active_search_without_canonical_authority"
   | "incomplete_import_lifecycle"
-  | "captured_evidence_missing_or_mismatched";
+  | "captured_evidence_missing_or_mismatched"
+  | "governing_evidence_not_current";
 
-export interface SourceAuthorityIntegrityViolation {
+interface SourceAuthorityIntegrityViolationBase {
   id: string;
-  kind: SourceAuthorityIntegrityViolationKind;
   subjectId: string;
   detail: string;
 }
+
+type GeneralSourceAuthorityIntegrityViolationKind = Exclude<
+  SourceAuthorityIntegrityViolationKind,
+  "governing_evidence_not_current"
+>;
+
+interface NonCurrentGoverningEvidenceContext {
+  projectId: string | null;
+  sourceArtifactId: string;
+  sourceChunkId: string | null;
+  sourceClaimId: string;
+  sourceDecisionId: string;
+  evidenceRef: string;
+  evidenceFreshness: "stale" | "unknown";
+}
+
+export type SourceAuthorityIntegrityViolation =
+  | SourceAuthorityIntegrityViolationBase & {
+      kind: GeneralSourceAuthorityIntegrityViolationKind;
+    }
+  | SourceAuthorityIntegrityViolationBase & NonCurrentGoverningEvidenceContext & {
+      kind: "governing_evidence_not_current";
+    };
 
 export interface SourceAuthorityIntegrityReadinessInput {
   databaseUrl: string;
@@ -52,13 +75,13 @@ const requiredSourceAuthorityTables = [
 
 type RawViolation = {
   id: string;
-  kind: SourceAuthorityIntegrityViolationKind;
+  kind: GeneralSourceAuthorityIntegrityViolationKind;
   subjectId: string;
   detail: string;
 };
 
 const violation = (
-  kind: SourceAuthorityIntegrityViolationKind,
+  kind: GeneralSourceAuthorityIntegrityViolationKind,
   subjectId: string,
   detail: string
 ): SourceAuthorityIntegrityViolation => ({
@@ -67,6 +90,43 @@ const violation = (
   subjectId,
   detail
 });
+
+const inspectNonCurrentGoverningEvidence = async (
+  client: Sql | TransactionSql
+): Promise<SourceAuthorityIntegrityViolation[]> => {
+  const rows = await client<NonCurrentGoverningEvidenceContext[]>`
+    select
+      coalesce(decision.project_id, sa.project_id)::text as "projectId",
+      sa.id::text as "sourceArtifactId",
+      sc.source_chunk_id::text as "sourceChunkId",
+      sc.id::text as "sourceClaimId",
+      decision.id::text as "sourceDecisionId",
+      coalesce(nullif(sa.metadata->>'evidenceRef', ''), sa.uri) as "evidenceRef",
+      case
+        when sa.metadata->>'evidenceFreshness' = 'stale' then 'stale'
+        else 'unknown'
+      end as "evidenceFreshness"
+    from source_decisions decision
+    join source_claims sc on sc.id = decision.source_claim_id
+    join source_artifacts sa on sa.id = sc.source_artifact_id
+    where decision.status = 'adopt'
+      and coalesce(sa.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+      and not exists (
+        select 1 from source_authority_quarantines quarantine
+        where quarantine.entity_type = 'source_decision' and quarantine.entity_id = decision.id
+      )
+    order by decision.id
+  `;
+
+  return rows.map((row) => ({
+    id: `governing_evidence_not_current:${row.sourceDecisionId}`,
+    kind: "governing_evidence_not_current",
+    subjectId: row.sourceDecisionId,
+    detail:
+      `governing SourceDecision evidence freshness is ${row.evidenceFreshness}, not current`,
+    ...row
+  }));
+};
 
 const inspectViolations = async (
   client: Sql | TransactionSql
@@ -212,8 +272,22 @@ const inspectViolations = async (
         chunk.id is null or
         sc.id is null or
         decision.id is null or
-        (sa.metadata->>'decisionCorpusStatus' = 'current' and (
-          decision.status <> 'adopt' or sc.status <> 'accepted' or edge.id is null or search.id is null or search.validity_status <> 'active'
+        (sa.metadata->>'decisionCorpusStatus' = 'current' and not (
+          (
+            decision.status = 'adopt' and
+            sc.status = 'accepted' and
+            edge.id is not null and
+            search.id is not null and
+            search.validity_status = 'active'
+          ) or (
+            sa.metadata->>'evidenceStatus' = 'captured' and
+            coalesce(sa.metadata->>'evidenceFreshness', 'unknown') <> 'current' and
+            decision.status = 'defer' and
+            sc.status = 'deprecated' and
+            edge.id is null and
+            search.id is not null and
+            search.validity_status = 'expired'
+          )
         )) or
         (sa.metadata->>'decisionCorpusStatus' = 'stale' and (
           decision.status <> 'defer' or sc.status <> 'deprecated' or edge.id is not null or search.id is null or search.validity_status <> 'expired'
@@ -262,7 +336,14 @@ const inspectViolations = async (
     order by kind, subject_id
   `;
 
-  return rows.map((row) => violation(row.kind, row.subjectId, row.detail));
+  const violations = rows.map((row) => violation(row.kind, row.subjectId, row.detail));
+  const nonCurrentGoverningEvidence = await inspectNonCurrentGoverningEvidence(client);
+
+  return [...violations, ...nonCurrentGoverningEvidence].sort((left, right) =>
+    left.kind === right.kind
+      ? left.subjectId.localeCompare(right.subjectId)
+      : left.kind.localeCompare(right.kind)
+  );
 };
 
 export const inspectSourceAuthorityIntegrity = async (
@@ -292,22 +373,29 @@ export const inspectSourceAuthorityIntegrity = async (
       };
     }
 
-    return await client.begin(async (tx) => {
-      await tx`set transaction read only`;
-      const readOnlyRows = await tx<{ readOnly: string }[]>`
-        select current_setting('transaction_read_only') as "readOnly"
+    return await client.begin("isolation level repeatable read read only", async (tx) => {
+      const transactionRows = await tx<{
+        isolationLevel: string;
+        readOnly: string;
+      }[]>`
+        select
+          current_setting('transaction_isolation') as "isolationLevel",
+          current_setting('transaction_read_only') as "readOnly"
       `;
       const violations = await inspectViolations(tx);
+      const transaction = transactionRows[0];
+      const snapshotReadOnly = transaction?.readOnly === "on";
+      const snapshotRepeatable = transaction?.isolationLevel === "repeatable read";
 
       return {
         storeName: input.storeName ?? "postgres",
         schemaIdentity: input.schemaIdentity ?? "unknown",
         checkedAt,
         ...tableInspection,
-        readOnly: readOnlyRows[0]?.readOnly === "on",
+        readOnly: snapshotReadOnly,
         violationCount: violations.length,
         violations,
-        integrityReady: readOnlyRows[0]?.readOnly === "on" && violations.length === 0
+        integrityReady: snapshotReadOnly && snapshotRepeatable && violations.length === 0
       };
     });
   } finally {

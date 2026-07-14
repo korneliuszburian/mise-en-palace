@@ -1,11 +1,214 @@
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 
+import { migrateDatabase } from "../migration-readiness.js";
 import { inspectSourceAuthorityIntegrity } from "../source-authority-integrity-readiness.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+const migrationsFolder = fileURLToPath(new URL("../migrations", import.meta.url));
+
+const databaseUrlFor = (input: string, databaseName: string): string => {
+  const parsed = new URL(input);
+  parsed.pathname = `/${databaseName}`;
+  return parsed.toString();
+};
+
+const createDisposableDatabase = async (input: string): Promise<{
+  readonly databaseUrl: string;
+  readonly cleanup: () => Promise<void>;
+}> => {
+  const databaseName = `krn_source_authority_integrity_${crypto.randomUUID().replaceAll("-", "")}`;
+  const adminClient = postgres(databaseUrlFor(input, "postgres"), {
+    max: 1,
+    onnotice: () => undefined
+  });
+
+  try {
+    await adminClient.unsafe(`create database ${databaseName}`);
+  } catch (error) {
+    await adminClient.end();
+    throw error;
+  }
+
+  return {
+    databaseUrl: databaseUrlFor(input, databaseName),
+    cleanup: async () => {
+      try {
+        await adminClient.unsafe(`drop database if exists ${databaseName} with (force)`);
+      } finally {
+        await adminClient.end();
+      }
+    }
+  };
+};
+
+type EvidenceFreshness = "current" | "stale" | "unknown";
+
+interface GoverningEvidenceFixture {
+  readonly projectId: string;
+  readonly sourceArtifactId: string;
+  readonly sourceChunkId: string;
+  readonly sourceClaimId: string;
+  readonly sourceDecisionId: string;
+  readonly evidenceRef: string;
+}
+
+const createGoverningEvidenceFixture = async (
+  client: ReturnType<typeof postgres>,
+  input: {
+    readonly projectId: string;
+    readonly marker: string;
+    readonly freshness: EvidenceFreshness | "unrecognized";
+    readonly lifecycle?: "deferred" | "governing";
+    readonly decisionCorpusStatus?: "current";
+  }
+): Promise<GoverningEvidenceFixture> => {
+  const lifecycle = input.lifecycle ?? "governing";
+  const evidenceRef = `source-authority://${input.marker}/evidence`;
+  const evidenceContentHash = `sha256:${input.marker}:evidence`;
+  const metadata = {
+    smokeId: input.marker,
+    evidenceRef,
+    evidenceStatus: "captured",
+    evidenceContentHash,
+    evidenceFreshness: input.freshness,
+    ...(input.decisionCorpusStatus === undefined
+      ? {}
+      : { decisionCorpusStatus: input.decisionCorpusStatus })
+  };
+  const rows = await client<GoverningEvidenceFixture[]>`
+    with artifact as (
+      insert into source_artifacts (
+        project_id, import_id, import_row_id, kind, trust_tier, uri, title, content_hash, metadata
+      )
+      values (
+        ${input.projectId},
+        ${input.decisionCorpusStatus === undefined ? null : input.marker},
+        ${input.decisionCorpusStatus === undefined ? null : input.marker},
+        'doc',
+        'project-decision',
+        ${evidenceRef},
+        ${input.marker},
+        ${`sha256:${input.marker}:artifact`},
+        ${client.json(metadata)}
+      )
+      returning id, project_id, uri
+    ), chunk as (
+      insert into source_chunks (source_artifact_id, ordinal, content, content_hash, metadata)
+      select id, 0, 'captured fixture evidence', ${evidenceContentHash}, ${client.json(metadata)}
+      from artifact
+      returning id
+    ), claim as (
+      insert into source_claims (
+        source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+        does_not_prove, trust_tier, support_type, consumer, status, metadata
+      )
+      select
+        artifact.id,
+        chunk.id,
+        'governing fixture claim',
+        'captured evidence supports the fixture decision',
+        'integrity must report non-current governing evidence',
+        'does not prove remote source truth',
+        'project-decision',
+        'implementation-boundary',
+        'source authority integrity readiness',
+        ${lifecycle === "governing" ? "accepted" : "deprecated"},
+        ${client.json(metadata)}
+      from artifact, chunk
+      returning id
+    ), decision as (
+      insert into source_decisions (
+        project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata
+      )
+      select
+        artifact.project_id,
+        claim.id,
+        ${lifecycle === "governing" ? "adopt" : "defer"},
+        'adopt fixture authority',
+        'fixture rationale',
+        'non-current evidence remains governing',
+        'source authority integrity readiness',
+        ${client.json(metadata)}
+      from artifact, claim
+      returning id
+    ), edge as (
+      insert into source_decision_edges (
+        source_claim_id, source_decision_id, target_type, target_id,
+        support_type, confidence, notes, metadata
+      )
+      select
+        claim.id,
+        decision.id,
+        'architecture_decision',
+        ${input.marker},
+        'implementation-boundary',
+        'high',
+        'fixture governing edge',
+        ${client.json({ smokeId: input.marker })}
+      from claim, decision
+      where ${lifecycle} = 'governing'
+      returning id
+    ), search as (
+      insert into search_documents (
+        project_id, subject_type, subject_id, source_artifact_id, source_chunk_id,
+        source_claim_id, source_decision_id, trust_tier, validity_status,
+        title, body, search_text, metadata
+      )
+      select
+        artifact.project_id,
+        'source_claim',
+        claim.id,
+        artifact.id,
+        chunk.id,
+        claim.id,
+        decision.id,
+        'project-decision',
+        ${lifecycle === "governing" ? "active" : "expired"},
+        'fixture governing search',
+        'fixture governing search body',
+        'fixture governing search',
+        ${client.json({ smokeId: input.marker })}
+      from artifact, chunk, claim, decision
+      returning id
+    )
+    select
+      artifact.project_id::text as "projectId",
+      artifact.id::text as "sourceArtifactId",
+      chunk.id::text as "sourceChunkId",
+      claim.id::text as "sourceClaimId",
+      decision.id::text as "sourceDecisionId",
+      artifact.uri as "evidenceRef"
+    from artifact, chunk, claim, decision, search
+  `;
+  const fixture = rows[0];
+
+  if (fixture === undefined) {
+    throw new Error(`failed to create governing evidence fixture ${input.marker}`);
+  }
+
+  return fixture;
+};
+
+const expectedFreshnessViolation = (
+  fixture: GoverningEvidenceFixture,
+  freshness: Exclude<EvidenceFreshness, "current">
+) => ({
+  id: `governing_evidence_not_current:${fixture.sourceDecisionId}`,
+  kind: "governing_evidence_not_current",
+  subjectId: fixture.sourceDecisionId,
+  projectId: fixture.projectId,
+  sourceArtifactId: fixture.sourceArtifactId,
+  sourceChunkId: fixture.sourceChunkId,
+  sourceClaimId: fixture.sourceClaimId,
+  sourceDecisionId: fixture.sourceDecisionId,
+  evidenceRef: fixture.evidenceRef,
+  evidenceFreshness: freshness,
+  detail: `governing SourceDecision evidence freshness is ${freshness}, not current`
+});
 
 const fixtureMetadata = (smokeId: string, evidenceContentHash = "sha256:fixture-evidence"): Record<string, unknown> => ({
   smokeId,
@@ -53,6 +256,124 @@ const cleanupFixture = async (
 };
 
 describe("source authority integrity readiness", () => {
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "reports zero, one, and multiple non-current governing evidence rows without writing",
+    async () => {
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        const emptyReport = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposableDatabase.databaseUrl
+        });
+        const workspace = await client<{ id: string }[]>`
+          insert into workspaces (slug, display_name)
+          values ('source-authority-freshness', 'Source authority freshness')
+          returning id
+        `;
+        const project = await client<{ id: string }[]>`
+          insert into projects (workspace_id, slug, display_name)
+          values (${workspace[0]!.id}, 'source-authority-freshness', 'Source authority freshness')
+          returning id
+        `;
+        const projectId = project[0]!.id;
+
+        await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "governing-current",
+          freshness: "current"
+        });
+        await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "deferred-unknown",
+          freshness: "unknown",
+          lifecycle: "deferred",
+          decisionCorpusStatus: "current"
+        });
+        await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "deferred-stale",
+          freshness: "stale",
+          lifecycle: "deferred",
+          decisionCorpusStatus: "current"
+        });
+        await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "deferred-unrecognized",
+          freshness: "unrecognized",
+          lifecycle: "deferred",
+          decisionCorpusStatus: "current"
+        });
+        const currentReport = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposableDatabase.databaseUrl
+        });
+        const unknownFixture = await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "governing-unknown",
+          freshness: "unknown",
+          decisionCorpusStatus: "current"
+        });
+        const unknownReport = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposableDatabase.databaseUrl
+        });
+        const staleFixture = await createGoverningEvidenceFixture(client, {
+          projectId,
+          marker: "governing-stale",
+          freshness: "stale",
+          decisionCorpusStatus: "current"
+        });
+        const beforeFinalInspection = await client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_decisions
+        `;
+        const staleReport = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposableDatabase.databaseUrl
+        });
+        const afterFinalInspection = await client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_decisions
+        `;
+
+        expect(emptyReport).toMatchObject({
+          readOnly: true,
+          violationCount: 0,
+          violations: [],
+          integrityReady: true
+        });
+        expect(currentReport).toMatchObject({
+          readOnly: true,
+          violationCount: 0,
+          violations: [],
+          integrityReady: true
+        });
+        expect(unknownReport).toMatchObject({
+          readOnly: true,
+          violationCount: 1,
+          violations: [expectedFreshnessViolation(unknownFixture, "unknown")],
+          integrityReady: false
+        });
+        expect(staleReport).toMatchObject({
+          readOnly: true,
+          violationCount: 2,
+          integrityReady: false
+        });
+        expect(staleReport.violations).toEqual(expect.arrayContaining([
+          expectedFreshnessViolation(staleFixture, "stale"),
+          expectedFreshnessViolation(unknownFixture, "unknown")
+        ]));
+        expect(afterFinalInspection).toEqual(beforeFinalInspection);
+      } finally {
+        await client.end();
+        await disposableDatabase.cleanup();
+      }
+    },
+    60_000
+  );
+
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "reports each controlled authority violation exactly once without writing",
     async () => {
