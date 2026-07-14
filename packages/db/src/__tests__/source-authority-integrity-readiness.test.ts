@@ -500,14 +500,14 @@ describe("source authority integrity readiness", () => {
           returning id
         `;
 
-        const before = await client<{ count: number }[]>`select count(*)::int as count from source_artifacts`;
+        const fixtureRowsBefore = await fixtureResidueCount(client, marker);
         const mismatchBefore = await client<{ sourceArtifactId: string; sourceChunkId: string }[]>`
           select source_artifact_id::text as "sourceArtifactId", source_chunk_id::text as "sourceChunkId"
           from source_claims
           where id = ${chunkMismatchClaim[0]!.id}
         `;
         const report = await inspectSourceAuthorityIntegrity({ databaseUrl: databaseUrl! });
-        const after = await client<{ count: number }[]>`select count(*)::int as count from source_artifacts`;
+        const fixtureRowsAfter = await fixtureResidueCount(client, marker);
         const mismatchAfter = await client<{ sourceArtifactId: string; sourceChunkId: string }[]>`
           select source_artifact_id::text as "sourceArtifactId", source_chunk_id::text as "sourceChunkId"
           from source_claims
@@ -528,7 +528,7 @@ describe("source authority integrity readiness", () => {
 
         expect(report.readOnly).toBe(true);
         expect(report.integrityReady).toBe(false);
-        expect(after[0]?.count).toBe(before[0]?.count);
+        expect(fixtureRowsAfter).toBe(fixtureRowsBefore);
         expect(mismatchAfter).toEqual(mismatchBefore);
         expect(new Set(fixtureViolations.map((item) => item.id)).size).toBe(fixtureViolations.length);
         expect(fixtureViolations).toEqual(expect.arrayContaining([
