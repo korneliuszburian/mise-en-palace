@@ -1225,6 +1225,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
     );
 
     retrievalRunIds.push(baselineRetrievalRunId);
+    const capturedSourceMetadata = {
+      smokeId: marker,
+      evidenceRef: `operator://target-repo-harness-smoke/${marker}#captured-evidence`,
+      evidenceStatus: "captured",
+      evidenceContentHash: `sha256:target-repo-harness-smoke-${marker}:captured-evidence`,
+      evidenceFreshness: "current"
+    };
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -1232,12 +1239,20 @@ export const runTargetRepoHarnessSmokeCheck = async (
       uri: `operator://target-repo-harness-smoke/${marker}`,
       title: "Target repo harness smoke memory source",
       contentHash: `target-repo-harness-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: capturedSourceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      heading: "Target fixture readiness memory",
+      content:
+        "Target fixture readiness memory should help target-like planning when scoped to the same project.",
+      contentHash: `target-repo-harness-smoke-chunk-${marker}`,
+      metadata: capturedSourceMetadata
     });
     const sourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       claim: "Target fixture readiness memory should help target-like planning when scoped to the same project.",
       mechanism: "A reviewed, project-scoped MemoryRecord is available before planning and can be selected as bounded context.",
       krnImplication: "Target-like runs can measure whether selected memory helped without automatically promoting new memory.",
@@ -1248,9 +1263,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       falsifier: "The smoke cannot activate the memory or record helped feedback for the run.",
       revisitWhen: "Target memory usefulness semantics change.",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: capturedSourceMetadata
     });
     const sourceDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,

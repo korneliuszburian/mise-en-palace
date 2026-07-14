@@ -519,6 +519,19 @@ export const runBrainSearchDbSmokeCheck = async (
         memoryRecordMutation: "candidate_only_until_promotion"
       }
     });
+    const capturedSourceMetadata = {
+      ...metadata,
+      evidenceRef: `smoke://memory-search/${input.smokeId}#captured-evidence`,
+      evidenceStatus: "captured",
+      evidenceContentHash: `sha256:memory-search-${input.smokeId}:captured-evidence`,
+      evidenceFreshness: "current"
+    };
+    const createSourceChunk = runtime.sourceRepository.createSourceChunk;
+
+    if (createSourceChunk === undefined) {
+      throw new Error("SourceChunk creation is unavailable for memory-search DB smoke");
+    }
+
     const sourceArtifact = await runtime.sourceRepository.createSourceArtifact({
       projectId,
       kind: "doc",
@@ -526,10 +539,19 @@ export const runBrainSearchDbSmokeCheck = async (
       uri: `smoke://memory-search/${input.smokeId}`,
       title: "Memory search DB dogfood source",
       contentHash: `memory-search-${input.smokeId}`,
-      metadata
+      metadata: capturedSourceMetadata
+    });
+    const sourceChunk = await createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      heading: "Store-backed runtime memory",
+      content: `${retainedStandardChallenge.claim} Marker: ${query}.`,
+      contentHash: `memory-search-chunk-${input.smokeId}`,
+      metadata: capturedSourceMetadata
     });
     const sourceClaim = await runtime.sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       claim: `${retainedStandardChallenge.claim} Marker: ${query}.`,
       mechanism: retainedStandardChallenge.mechanism,
       krnImplication: retainedStandardChallenge.implication,
@@ -540,7 +562,7 @@ export const runBrainSearchDbSmokeCheck = async (
       consumer: retainedStandardChallenge.consumer,
       falsifier: retainedStandardChallenge.falsifier,
       metadata: {
-        ...metadata,
+        ...capturedSourceMetadata,
         challengeCaseId: retainedStandardChallenge.id,
         selectedKnowledgeId: retainedStandardChallenge.selectedKnowledgeId
       }

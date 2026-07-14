@@ -114,6 +114,13 @@ const createAcceptedSourceClaim = async (
   projectId: string,
   label: string
 ): Promise<SourceClaim> => {
+  const metadata = {
+    smokeId: fixture.marker,
+    evidenceRef: `source-claim-edge-integrity://${fixture.marker}/${label}`,
+    evidenceStatus: "captured",
+    evidenceContentHash: `sha256:${fixture.marker}:${label}:captured-evidence`,
+    evidenceFreshness: "current"
+  };
   const sourceArtifact = await sourceRepository.createSourceArtifact({
     projectId,
     kind: "operator_input",
@@ -121,10 +128,18 @@ const createAcceptedSourceClaim = async (
     uri: `source-claim-edge-integrity://${fixture.marker}/${label}`,
     title: `SourceClaimEdge integrity ${label}`,
     contentHash: `source-claim-edge-integrity-${fixture.marker}-${label}`,
-    metadata: { smokeId: fixture.marker }
+    metadata
+  });
+  const sourceChunk = await sourceRepository.createSourceChunk({
+    sourceArtifactId: sourceArtifact.id,
+    ordinal: 0,
+    content: `Captured SourceClaimEdge integrity evidence for ${label}.`,
+    contentHash: `sha256:${fixture.marker}:${label}:chunk`,
+    metadata
   });
   const sourceClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
     claim: `SourceClaimEdge integrity ${label} must remain reviewable.`,
     mechanism: "The fixture records a concrete source claim endpoint for graph integrity checks.",
     krnImplication: "Invalid SourceClaimEdge rows can distort source consensus and graph readback.",
@@ -133,7 +148,7 @@ const createAcceptedSourceClaim = async (
     supportType: "implementation-boundary",
     consumer: "md7u.138 source claim edge integrity",
     falsifier: "An invalid SourceClaimEdge is stored without a reviewable endpoint claim.",
-    metadata: { smokeId: fixture.marker }
+    metadata
   });
 
   await sourceRepository.createSourceDecision({

@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import type {
-  SourceClaimStatus
-} from "@krn/core";
-
-import type {
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
@@ -128,6 +124,18 @@ const createSourceHarnessRunRepository = (
   async createFeedbackDelta(): Promise<never> {
     throw new Error("createFeedbackDelta should not be called");
   }
+});
+
+const withSourceTransaction = (
+  runtime: DatabaseRuntime,
+  retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>
+): DatabaseRuntime => ({
+  ...runtime,
+  retrievalRepository,
+  withTransaction: async (_lockKey, work) => work({
+    sourceRepository: runtime.sourceRepository,
+    retrievalRepository
+  })
 });
 
 describe("runCli", () => {
@@ -540,7 +548,7 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
+        createDatabaseRuntime: async () => withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -585,7 +593,7 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        })
+        }, dependencies.retrievalRepository)
       }
     );
 
@@ -641,7 +649,7 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
+        createDatabaseRuntime: async () => withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -700,7 +708,7 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        })
+        }, dependencies.retrievalRepository)
       }
     );
 
@@ -774,7 +782,7 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
+        createDatabaseRuntime: async () => withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -804,7 +812,7 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        })
+        }, dependencies.retrievalRepository)
       }
     );
 
@@ -841,7 +849,7 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
+        createDatabaseRuntime: async () => withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -886,7 +894,7 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        })
+        }, dependencies.retrievalRepository)
       }
     );
 
@@ -897,82 +905,21 @@ describe("runCli", () => {
     );
   });
 
-  it("persists source decision adoption before linking a decision edge", async () => {
+  it("fails source decision adoption before writes when transactions are unavailable", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    let sourceClaimStatus: SourceClaimStatus = "proposed";
+    let decisionWrites = 0;
     const createDatabaseRuntime = async (): Promise<DatabaseRuntime> => ({
       workspaceId: "workspace-1",
       projectId: "project-1",
       compilerDependencies: dependencies,
       sourceRepository: {
         ...unusedSourceRepository,
-        async createSourceDecision(input) {
-          sourceClaimStatus = "accepted";
-
-          return {
-            id: "source-decision-1",
-            ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-            ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
-            status: input.status,
-            decision: input.decision,
-            rationale: input.rationale,
-            falsifier: input.falsifier,
-            consumer: input.consumer,
-            metadata: input.metadata ?? {},
-            createdAt: now,
-            updatedAt: now
-          };
-        },
-        async getSourceClaimById(id) {
-          return {
-            id,
-            sourceArtifactId: "source-artifact-1",
-            claim: "KRN source decisions should be operator-facing.",
-            mechanism: "SourceDecision adoption updates claim lifecycle.",
-            krnImplication: "SourceDecisionEdge link can use accepted claims.",
-            doesNotProve: "This does not prove source truth.",
-            sourceAuthority: "project-decision",
-            supportType: "implementation-boundary",
-            consumer: "source decision link dogfood",
-            falsifier: "Accepted claim readback fails.",
-            status: sourceClaimStatus,
-            metadata: {},
-            createdAt: now,
-            updatedAt: now
-          };
-        },
-        async createSourceDecisionEdge(input) {
-          return {
-            id: "source-decision-edge-1",
-            sourceClaimId: input.sourceClaimId,
-            targetType: input.targetType,
-            targetId: input.targetId,
-            supportType: input.supportType,
-            confidence: input.confidence,
-            notes: input.notes,
-            metadata: input.metadata ?? {},
-            createdAt: now
-          };
-        },
-        async getSourceDecisionEdgeById(id) {
-          if (id !== "source-decision-edge-1") {
-            return undefined;
-          }
-
-          return {
-            id: "source-decision-edge-1",
-            sourceClaimId: "source-claim-1",
-            targetType: "harness_run",
-            targetId: "execution-run-1",
-            supportType: "implementation-boundary",
-            confidence: "high",
-            notes: "Used to prove adoption before decision-edge link",
-            metadata: {},
-            createdAt: now
-          };
+        async createSourceDecision(): Promise<never> {
+          decisionWrites += 1;
+          throw new Error("createSourceDecision must not be called without a transaction");
         }
       },
       harnessRunRepository: createSourceHarnessRunRepository(dependencies),
@@ -981,7 +928,7 @@ describe("runCli", () => {
         return undefined;
       }
     });
-    const adoption = await runCli(
+    const result = await runCli(
       [
         "source",
         "decision",
@@ -1007,44 +954,12 @@ describe("runCli", () => {
         createDatabaseRuntime
       }
     );
-    const link = await runCli(
-      [
-        "source",
-        "decision",
-        "link",
-        "--source-claim-id",
-        "source-claim-1",
-        "--source-decision-id",
-        "source-decision-1",
-        "--target-type",
-        "harness_run",
-        "--target-id",
-        "execution-run-1",
-        "--support-type",
-        "implementation-boundary",
-        "--confidence",
-        "high",
-        "--notes",
-        "Used to prove adoption before decision-edge link",
-        "--persist"
-      ],
-      {
-        env: {
-          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
-        },
-        now: () => now,
-        createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime
-      }
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "SourceDecision adoption transaction is unavailable in this database runtime"
     );
-
-    expect(adoption.exitCode).toBe(0);
-    expect(adoption.stdout).toContain("sourceClaimReadback: accepted");
-    expect(link.exitCode).toBe(0);
-    expect(link.stderr).toBe("");
-    expect(link.stdout).toContain("sourceDecisionEdge: source-decision-edge-1");
-    expect(link.stdout).toContain("sourceDecisionEdgeReadback: hit");
-    expect(link.stdout).toContain("target: harness_run/execution-run-1");
+    expect(decisionWrites).toBe(0);
   });
 
   it("previews source decision link without DB writes", async () => {

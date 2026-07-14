@@ -50,6 +50,13 @@ export interface RetrievalSubstrateSmokeReport {
 const deterministicSmokeVector = (hotIndex: number): number[] =>
   Array.from({ length: 1536 }, (_, index) => (index === hotIndex ? 1 : 0));
 
+const capturedCurrentEvidenceMetadata = (marker: string): Record<string, string> => ({
+  smokeId: marker,
+  evidenceStatus: "captured",
+  evidenceContentHash: `sha256:retrieval-substrate-evidence:${marker}`,
+  evidenceFreshness: "current"
+});
+
 export const runRetrievalSubstrateSmokeCheck = async (
   input: RetrievalSubstrateSmokeInput
 ): Promise<RetrievalSubstrateSmokeReport> => {
@@ -139,6 +146,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
         smokeId: marker
       }
     });
+    const sourceEvidenceMetadata = capturedCurrentEvidenceMetadata(marker);
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -146,12 +154,18 @@ export const runRetrievalSubstrateSmokeCheck = async (
       uri: `operator://retrieval-substrate-smoke/${marker}`,
       title: "Retrieval substrate smoke source",
       contentHash: `retrieval-substrate-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      content: "Captured evidence for the Postgres retrieval substrate source claim.",
+      contentHash: `retrieval-substrate-smoke-${marker}-chunk-bytes`,
+      metadata: sourceEvidenceMetadata
     });
     const sourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       executionRunId: executionRun.id,
       claim: "Retrieval substrate should keep lexical search and vector-ready records inside Postgres.",
       mechanism: "SearchDocument stores text/FTS data and Embedding stores a pgvector row linked to the document.",
@@ -163,9 +177,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       falsifier: "Retrieval substrate smoke readback or cleanup fails.",
       revisitWhen: "2027-01-01T00:00:00.000Z",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
     });
     const sourceDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,

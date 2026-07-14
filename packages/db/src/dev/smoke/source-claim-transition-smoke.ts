@@ -26,7 +26,10 @@ export interface SourceClaimTransitionSmokeInput {
   workspaceId: string;
   sourceRepository: Pick<
     SourceRepository,
-    "createSourceArtifact" | "createSourceClaim" | "createSourceDecision"
+    | "createSourceArtifact"
+    | "createSourceChunk"
+    | "createSourceClaim"
+    | "createSourceDecision"
   >;
 }
 
@@ -49,10 +52,28 @@ export interface SourceClaimTransitionSmokeReport {
   nonTerminalReview: SourceClaimTransitionCaseReadback;
 }
 
+const capturedCurrentEvidenceMetadata = (
+  marker: string,
+  label: string
+): Record<string, string> => ({
+  evidenceStatus: "captured",
+  evidenceContentHash: `sha256:source-claim-transition-evidence:${marker}:${label}`,
+  evidenceFreshness: "current"
+});
+
 const createProbeClaim = async (
   input: SourceClaimTransitionSmokeInput,
-  label: string
+  label: string,
+  options: { captureEvidence?: boolean } = {}
 ): Promise<SourceClaim> => {
+  const captureEvidence = options.captureEvidence ?? true;
+  const metadata = {
+    smokeId: input.marker,
+    transitionProbe: label,
+    ...(captureEvidence
+      ? capturedCurrentEvidenceMetadata(input.marker, label)
+      : {})
+  };
   const sourceArtifact = await input.sourceRepository.createSourceArtifact({
     projectId: input.projectId,
     kind: "operator_input",
@@ -60,14 +81,21 @@ const createProbeClaim = async (
     uri: `operator://source-claim-transition/${input.marker}/${label}`,
     title: `Source claim transition ${label}`,
     contentHash: `source-claim-transition-${input.marker}-${label}`,
-    metadata: {
-      smokeId: input.marker,
-      transitionProbe: label
-    }
+    metadata
   });
+  const sourceChunk = captureEvidence
+    ? await input.sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      content: `Captured source claim transition evidence for ${label}.`,
+      contentHash: `source-claim-transition-${input.marker}-${label}-chunk-bytes`,
+      metadata
+    })
+    : undefined;
 
   return input.sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    ...(sourceChunk === undefined ? {} : { sourceChunkId: sourceChunk.id }),
     claim: `Source claim transition probe ${label} must have one terminal winner.`,
     mechanism: "The source claim transition is owned by a guarded PostgreSQL write.",
     krnImplication: "Concurrent source reviews must not create competing authority.",
@@ -77,10 +105,7 @@ const createProbeClaim = async (
     consumer: "source claim transition smoke",
     falsifier: "Two terminal decisions or outbox events persist for one claim.",
     revisitWhen: "2026-12-31T00:00:00.000Z",
-    metadata: {
-      smokeId: input.marker,
-      transitionProbe: label
-    }
+    metadata
   });
 };
 
@@ -414,7 +439,9 @@ export const runSourceClaimTransitionSmokeCheck = async (
     statuses: ["adopt", "adopt"],
     label: "double-adopt"
   });
-  const doubleRejectClaim = await createProbeClaim(input, "double-reject");
+  const doubleRejectClaim = await createProbeClaim(input, "double-reject", {
+    captureEvidence: false
+  });
   const doubleRejectRace = await runRace({
     databaseUrl: input.databaseUrl,
     db: input.db,

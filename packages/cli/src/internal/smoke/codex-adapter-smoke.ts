@@ -320,6 +320,13 @@ export const runCodexAdapterSmokeCheck = async (
         smokeId: marker
       }
     });
+    const capturedSourceMetadata = {
+      smokeId: marker,
+      evidenceRef: `operator://codex-adapter-smoke/${marker}#captured-evidence`,
+      evidenceStatus: "captured",
+      evidenceContentHash: `sha256:codex-adapter-smoke-${marker}:captured-evidence`,
+      evidenceFreshness: "current"
+    };
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -327,12 +334,20 @@ export const runCodexAdapterSmokeCheck = async (
       uri: `operator://codex-adapter-smoke/${marker}`,
       title: "Codex adapter smoke source",
       contentHash: `codex-adapter-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: capturedSourceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      heading: "Bounded Codex adapter brief",
+      content:
+        "Codex adapter smoke must render a bounded execution brief from persisted harness state.",
+      contentHash: `codex-adapter-smoke-chunk-${marker}`,
+      metadata: capturedSourceMetadata
     });
     const adapterClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       claim:
         "Codex adapter smoke must render a bounded execution brief from persisted harness state.",
       mechanism:
@@ -345,9 +360,7 @@ export const runCodexAdapterSmokeCheck = async (
       consumer: "M26 Codex adapter smoke",
       falsifier: "The smoke command cannot render objective, context, evidence, or proof boundaries.",
       revisitWhen: "2030-01-01T00:00:00.000Z",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: capturedSourceMetadata
     });
     const adapterDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,

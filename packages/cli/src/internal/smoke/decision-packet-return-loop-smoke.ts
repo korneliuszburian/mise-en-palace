@@ -554,17 +554,33 @@ const sourceUsefulnessOutcome = (input: {
     "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
 });
 
+const capturedCurrentEvidenceMetadata = (
+  marker: string,
+  scope: string
+): Record<string, string> => ({
+  smokeId: marker,
+  evidenceStatus: "captured",
+  evidenceContentHash: `sha256:decision-packet-return-loop:${marker}:${scope}:evidence`,
+  evidenceFreshness: "current"
+});
+
 const createFeedbackSourceClaim = async (
   input: {
     readonly marker: string;
     readonly projectId: string;
     readonly sourceArtifactId: string;
+    readonly sourceChunkId: string;
     readonly sourceRepository: SourceRepository;
     readonly proof: FeedbackSourceProof;
   }
 ): Promise<FeedbackSourceClaimProof> => {
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    "feedback-source-claims"
+  );
   const claim = await input.sourceRepository.createSourceClaim({
     sourceArtifactId: input.sourceArtifactId,
+    sourceChunkId: input.sourceChunkId,
     claim: `DecisionPacket return-loop feedback ${input.proof} source claim must stay bound to current activation.`,
     mechanism:
       "Source-usefulness feedback is attached to a selected SourceClaim while source decisions and support edges remain canonical authority.",
@@ -579,7 +595,7 @@ const createFeedbackSourceClaim = async (
       "Feedback maintenance cannot resolve the persisted SourceDecision back to a linked SourceClaim.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       feedbackSourceClaim: input.proof
     }
   });
@@ -1116,6 +1132,10 @@ const runSourceConsensusProof = async (
     retrievalRepository,
     sourceRepository
   } = input.repositories;
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    "source-consensus"
+  );
   const sourceArtifact = await sourceRepository.createSourceArtifact({
     projectId: input.projectId,
     kind: "run",
@@ -1124,12 +1144,23 @@ const runSourceConsensusProof = async (
     contentHash: `decision-packet-source-consensus-${input.marker}`,
     sourceAuthority: "project-decision",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
+      sourceConsensusProof: true
+    }
+  });
+  const sourceChunk = await sourceRepository.createSourceChunk({
+    sourceArtifactId: sourceArtifact.id,
+    ordinal: 0,
+    content: "Captured evidence for the DecisionPacket source consensus smoke.",
+    contentHash: `decision-packet-source-consensus-chunk-${input.marker}`,
+    metadata: {
+      ...evidenceMetadata,
       sourceConsensusProof: true
     }
   });
   const currentClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
     executionRunId: input.executionRunId,
     claim: "Current DecisionPacket source consensus must govern the source consensus proof.",
     mechanism:
@@ -1145,12 +1176,13 @@ const runSourceConsensusProof = async (
       "The final DecisionPacket misses the current decision-linked claim or treats superseded/rejected source paths as governing guidance.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       sourceConsensusProof: "current"
     }
   });
   const supersededClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
     executionRunId: input.executionRunId,
     claim: "Superseded DecisionPacket source consensus should no longer govern.",
     mechanism:
@@ -1166,7 +1198,7 @@ const runSourceConsensusProof = async (
       "The final DecisionPacket includes the superseded source claim as governing authority.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       sourceConsensusProof: "superseded"
     }
   });
@@ -1490,6 +1522,10 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     retrievalRepository,
     sourceRepository
   } = input.repositories;
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    "unresolved-source-dissent"
+  );
   const sourceArtifact = await sourceRepository.createSourceArtifact({
     projectId: input.projectId,
     kind: "run",
@@ -1498,12 +1534,23 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     contentHash: `decision-packet-unresolved-source-dissent-${input.marker}`,
     sourceAuthority: "project-decision",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
+      unresolvedAcceptedSourceDissentProof: true
+    }
+  });
+  const sourceChunk = await sourceRepository.createSourceChunk({
+    sourceArtifactId: sourceArtifact.id,
+    ordinal: 0,
+    content: "Captured evidence for the DecisionPacket unresolved accepted source dissent smoke.",
+    contentHash: `decision-packet-unresolved-source-dissent-chunk-${input.marker}`,
+    metadata: {
+      ...evidenceMetadata,
       unresolvedAcceptedSourceDissentProof: true
     }
   });
   const governingClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
     executionRunId: input.executionRunId,
     claim:
       "Unresolved accepted source dissent must stop DecisionPacket execution until a reviewed canonical resolution exists.",
@@ -1520,12 +1567,13 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       "A DecisionPacket with this unresolved accepted dissent remains executable instead of abstaining.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       unresolvedAcceptedSourceDissentProof: "governing"
     }
   });
   const dissentingClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
     executionRunId: input.executionRunId,
     claim:
       "An unresolved accepted source peer contradicts the governing DecisionPacket instruction and requires review before execution.",
@@ -1542,7 +1590,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       "The DecisionPacket silently drops the accepted dissent or issues executable guidance.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       unresolvedAcceptedSourceDissentProof: "dissenting"
     }
   });
@@ -1901,6 +1949,10 @@ const runSelectorFeedbackProof = async (
     retrievalRepository,
     sourceRepository
   } = input.repositories;
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    "selector-feedback"
+  );
   const selectorSourceArtifact = await sourceRepository.createSourceArtifact({
     projectId: input.projectId,
     kind: "run",
@@ -1909,12 +1961,23 @@ const runSelectorFeedbackProof = async (
     contentHash: `decision-packet-selector-feedback-${input.marker}`,
     sourceAuthority: "project-decision",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
+      selectorFeedbackProof: true
+    }
+  });
+  const selectorSourceChunk = await sourceRepository.createSourceChunk({
+    sourceArtifactId: selectorSourceArtifact.id,
+    ordinal: 0,
+    content: "Captured evidence for the DecisionPacket selector feedback smoke.",
+    contentHash: `decision-packet-selector-feedback-chunk-${input.marker}`,
+    metadata: {
+      ...evidenceMetadata,
       selectorFeedbackProof: true
     }
   });
   const selectorSourceClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: selectorSourceArtifact.id,
+    sourceChunkId: selectorSourceChunk.id,
     executionRunId: input.executionRunId,
     claim: "Store-backed memory usefulness feedback must affect the next DecisionPacket through activation selection.",
     mechanism:
@@ -1931,7 +1994,7 @@ const runSelectorFeedbackProof = async (
     revisitWhen: "DecisionPacket feedback or activation selector contracts change.",
     status: "proposed",
     metadata: {
-      smokeId: input.marker,
+      ...evidenceMetadata,
       selectorFeedbackProof: true
     }
   });
@@ -2293,6 +2356,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       task,
       workspaceSlug,
       prepare: async ({ project, sourceRepository }) => {
+        const evidenceMetadata = capturedCurrentEvidenceMetadata(
+          marker,
+          "feedback-source-claims"
+        );
         const feedbackSourceArtifact = await sourceRepository.createSourceArtifact({
           projectId: project.id,
           kind: "run",
@@ -2301,7 +2368,17 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           contentHash: `decision-packet-feedback-source-claims-${marker}`,
           sourceAuthority: "project-decision",
           metadata: {
-            smokeId: marker,
+            ...evidenceMetadata,
+            feedbackSourceClaims: true
+          }
+        });
+        const feedbackSourceChunk = await sourceRepository.createSourceChunk({
+          sourceArtifactId: feedbackSourceArtifact.id,
+          ordinal: 0,
+          content: "Captured evidence for the DecisionPacket feedback source claims smoke.",
+          contentHash: `decision-packet-feedback-source-claims-chunk-${marker}`,
+          metadata: {
+            ...evidenceMetadata,
             feedbackSourceClaims: true
           }
         });
@@ -2309,6 +2386,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           marker,
           projectId: project.id,
           sourceArtifactId: feedbackSourceArtifact.id,
+          sourceChunkId: feedbackSourceChunk.id,
           sourceRepository,
           proof: "helped"
         });
@@ -2316,6 +2394,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           marker,
           projectId: project.id,
           sourceArtifactId: feedbackSourceArtifact.id,
+          sourceChunkId: feedbackSourceChunk.id,
           sourceRepository,
           proof: "stale"
         });

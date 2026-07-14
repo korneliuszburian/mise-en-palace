@@ -121,79 +121,92 @@ export const runSourceDecisionAdoptCommand = async (
   });
 
   try {
-    if (databaseRuntime.sourceRepository.createSourceDecision === undefined) {
-      throw new Error("SourceDecision persistence is unavailable in this database runtime");
+    const sourceClaimId = decisionInput.sourceClaimId;
+
+    if (sourceClaimId === undefined) {
+      throw new Error("SourceDecision adoption requires sourceClaimId");
     }
 
-    const sourceDecision = await databaseRuntime.sourceRepository.createSourceDecision({
-      projectId: databaseRuntime.projectId,
-      ...(decisionInput.sourceClaimId === undefined
-        ? {}
-        : { sourceClaimId: decisionInput.sourceClaimId }),
-      status: decisionInput.status,
-      decision: decisionInput.decision,
-      rationale: decisionInput.rationale,
-      falsifier: decisionInput.falsifier,
-      consumer: decisionInput.consumer,
-      metadata: decisionInput.metadata
-    });
-    if (
-      decisionInput.sourceClaimId !== undefined &&
-      databaseRuntime.sourceRepository.getSourceClaimForProject === undefined
-    ) {
-      throw new Error("Project-scoped SourceClaim lookup is unavailable");
+    if (databaseRuntime.withTransaction === undefined) {
+      throw new Error("SourceDecision adoption transaction is unavailable in this database runtime");
     }
 
-    const sourceClaimReadback = decisionInput.sourceClaimId === undefined
-      ? undefined
-      : await databaseRuntime.sourceRepository.getSourceClaimForProject?.(
+    return await databaseRuntime.withTransaction(
+      `source-authority:${databaseRuntime.projectId}:${sourceClaimId}`,
+      async (transactionRuntime) => {
+        const sourceRepository = transactionRuntime.sourceRepository;
+
+        if (sourceRepository.createSourceDecision === undefined) {
+          throw new Error("SourceDecision persistence is unavailable in this database runtime");
+        }
+
+        if (sourceRepository.getSourceClaimForProject === undefined) {
+          throw new Error("Project-scoped SourceClaim lookup is unavailable");
+        }
+
+        const sourceDecision = await sourceRepository.createSourceDecision({
+          projectId: databaseRuntime.projectId,
+          sourceClaimId,
+          status: decisionInput.status,
+          decision: decisionInput.decision,
+          rationale: decisionInput.rationale,
+          falsifier: decisionInput.falsifier,
+          consumer: decisionInput.consumer,
+          metadata: decisionInput.metadata
+        });
+        const sourceClaimReadback = await sourceRepository.getSourceClaimForProject(
           databaseRuntime.projectId,
-          decisionInput.sourceClaimId
+          sourceClaimId
         );
 
-    if (sourceClaimReadback === undefined) {
-      throw new Error(`SourceClaim readback missing after adoption: ${decisionInput.sourceClaimId}`);
-    }
+        if (sourceClaimReadback === undefined) {
+          throw new Error(`SourceClaim readback missing after adoption: ${sourceClaimId}`);
+        }
 
-    if (sourceClaimReadback.status !== "accepted") {
-      throw new Error(
-        `SourceDecision adoption requires accepted SourceClaim readback; current status ${sourceClaimReadback.status}`
-      );
-    }
+        if (sourceClaimReadback.status !== "accepted") {
+          throw new Error(
+            `SourceDecision adoption requires accepted SourceClaim readback; current status ${sourceClaimReadback.status}`
+          );
+        }
 
-    let link: { sourceDecisionEdgeId: string; edge: ReturnType<typeof parseSourceDecisionEdgeInput> } | undefined;
+        let link: {
+          sourceDecisionEdgeId: string;
+          edge: ReturnType<typeof parseSourceDecisionEdgeInput>;
+        } | undefined;
 
-    if (command.link === true) {
-      const edgeInput = parseSourceDecisionEdgeInput({
-        sourceClaimId: decisionInput.sourceClaimId,
-        sourceDecisionId: sourceDecision.id,
-        targetType: command.linkTargetType,
-        targetId: command.linkTargetId,
-        supportType: command.linkSupportType,
-        confidence: command.linkConfidence,
-        notes: command.linkNotes,
-        metadata: command.metadata
-      });
-      const sourceDecisionEdge = await databaseRuntime.sourceRepository.createSourceDecisionEdge({
-        sourceClaimId: edgeInput.sourceClaimId,
-        sourceDecisionId: edgeInput.sourceDecisionId,
-        targetType: edgeInput.targetType,
-        targetId: edgeInput.targetId,
-        supportType: edgeInput.supportType,
-        confidence: edgeInput.confidence,
-        notes: edgeInput.notes,
-        metadata: edgeInput.metadata
-      });
-      link = { sourceDecisionEdgeId: sourceDecisionEdge.id, edge: edgeInput };
-    }
+        if (command.link === true) {
+          const edgeInput = parseSourceDecisionEdgeInput({
+            sourceClaimId,
+            sourceDecisionId: sourceDecision.id,
+            targetType: command.linkTargetType,
+            targetId: command.linkTargetId,
+            supportType: command.linkSupportType,
+            confidence: command.linkConfidence,
+            notes: command.linkNotes,
+            metadata: command.metadata
+          });
+          const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+            sourceClaimId: edgeInput.sourceClaimId,
+            sourceDecisionId: edgeInput.sourceDecisionId,
+            targetType: edgeInput.targetType,
+            targetId: edgeInput.targetId,
+            supportType: edgeInput.supportType,
+            confidence: edgeInput.confidence,
+            notes: edgeInput.notes,
+            metadata: edgeInput.metadata
+          });
+          link = { sourceDecisionEdgeId: sourceDecisionEdge.id, edge: edgeInput };
+        }
 
-    return {
-      stdout: formatPersisted({
-        sourceDecisionId: sourceDecision.id,
-        decision: decisionInput,
-        ...(link === undefined ? {} : { link })
-      })
-    };
+        return {
+          stdout: formatPersisted({
+            sourceDecisionId: sourceDecision.id,
+            decision: decisionInput,
+            ...(link === undefined ? {} : { link })
+          })
+        };
+      }
+    );
   } finally {
     await databaseRuntime.close();
   }

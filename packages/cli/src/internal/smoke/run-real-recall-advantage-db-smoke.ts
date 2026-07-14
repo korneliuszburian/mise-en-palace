@@ -196,6 +196,7 @@ const createSmokeSourceArtifact = async (
 
 interface SmokeSourceClaimSeed {
   readonly sourceArtifactId: string;
+  readonly sourceChunkId: string;
   readonly claim: string;
   readonly mechanism: string;
   readonly krnImplication: string;
@@ -214,6 +215,7 @@ const createSmokeSourceClaim = async (
 ): Promise<string> => {
   const sourceClaim = await runtime.sourceRepository.createSourceClaim({
     sourceArtifactId: seed.sourceArtifactId,
+    sourceChunkId: seed.sourceChunkId,
     claim: seed.claim,
     mechanism: seed.mechanism,
     krnImplication: seed.krnImplication,
@@ -334,28 +336,47 @@ const seedRealRecallClaim = async (
   input: RealRecallAdvantageDbSmokeInput,
   metadata: Record<string, unknown>
 ): Promise<string> => {
-  const claimMetadata = {
+  const evidenceRef = `smoke://real-recall-advantage/${variant.artifactSlug}-${decision.id}`;
+  const evidenceMetadata = {
     ...metadata,
     decisionId: decision.id,
-    ...variant.extraMetadata
+    ...variant.extraMetadata,
+    evidenceRef,
+    evidenceStatus: "captured",
+    evidenceContentHash:
+      `sha256:real-recall:${input.smokeId}:${variant.artifactSlug}:${decision.id}:evidence`,
+    evidenceFreshness: "current"
   };
   const sourceArtifactId = await createSmokeSourceArtifact(
     runtime,
     projectId,
-    `smoke://real-recall-advantage/${variant.artifactSlug}-${decision.id}`,
+    evidenceRef,
     `Real recall advantage ${variant.artifactSlug} ${decision.id}`,
     `real-recall-${variant.artifactSlug}-${input.smokeId}-${decision.id}`,
-    metadata
+    evidenceMetadata
   );
+  const sourceChunk = await runtime.sourceRepository.createSourceChunk?.({
+    sourceArtifactId,
+    ordinal: 0,
+    content: `${variant.claimText}\n\n${variant.mechanism}`,
+    contentHash: `real-recall-chunk-${variant.artifactSlug}-${input.smokeId}-${decision.id}`,
+    metadata: evidenceMetadata
+  });
+
+  if (sourceChunk === undefined) {
+    throw new Error("SourceChunk creation is unavailable for real-recall-advantage DB smoke");
+  }
+
   const sourceClaimId = await createSmokeSourceClaim(runtime, {
     sourceArtifactId,
+    sourceChunkId: sourceChunk.id,
     claim: `${variant.claimText} Marker: ${decision.query}.`,
     mechanism: variant.mechanism,
     krnImplication: variant.krnImplication,
     doesNotProve: variant.doesNotProve,
     consumer: decision.consumer,
     falsifier: decision.falsifier,
-    metadata: claimMetadata
+    metadata: evidenceMetadata
   });
   const sourceDecisionId = await createSmokeSourceDecision(runtime, {
     projectId,
@@ -364,7 +385,7 @@ const seedRealRecallClaim = async (
     rationale: variant.decisionRationale,
     falsifier: decision.falsifier,
     consumer: decision.consumer,
-    metadata: claimMetadata
+    metadata: evidenceMetadata
   });
 
   await runtime.sourceRepository.createSourceDecisionEdge({
@@ -376,7 +397,7 @@ const seedRealRecallClaim = async (
     confidence: variant.edgeConfidence,
     notes: variant.edgeNotes,
     metadata: {
-      ...claimMetadata,
+      ...evidenceMetadata,
       sourceDecisionId
     }
   });
@@ -394,7 +415,7 @@ const seedRealRecallClaim = async (
       smokeId: input.smokeId
     },
     metadata: {
-      ...claimMetadata,
+      ...evidenceMetadata,
       sourceDecisionId
     }
   });

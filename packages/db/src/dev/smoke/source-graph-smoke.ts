@@ -130,6 +130,16 @@ const isSourceGraphInfluenceMetadata = (
   return value.edgeKinds.every((edgeKind) => typeof edgeKind === "string");
 };
 
+const capturedCurrentEvidenceMetadata = (
+  marker: string,
+  scope: string
+): Record<string, string> => ({
+  smokeId: marker,
+  evidenceStatus: "captured",
+  evidenceContentHash: `sha256:source-graph-evidence:${marker}:${scope}`,
+  evidenceFreshness: "current"
+});
+
 const sourceWriteRejectedFor = async (
   operation: () => Promise<unknown>,
   expectedMessage: string
@@ -170,6 +180,10 @@ const createSourceProjectIsolationSmokeProof = async (input: {
       projectIsolationProbe: true
     }
   });
+  const foreignEvidenceMetadata = {
+    ...capturedCurrentEvidenceMetadata(input.marker, "foreign-project"),
+    projectIsolationProbe: true
+  };
   const foreignSourceArtifact = await input.sourceRepository.createSourceArtifact({
     projectId: foreignProject.id,
     kind: "operator_input",
@@ -177,13 +191,18 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     uri: `operator://source-graph-smoke/${input.marker}/foreign`,
     title: "Foreign source graph smoke source",
     contentHash: `source-graph-smoke-${input.marker}-foreign`,
-    metadata: {
-      smokeId: input.marker,
-      projectIsolationProbe: true
-    }
+    metadata: foreignEvidenceMetadata
+  });
+  const foreignSourceChunk = await input.sourceRepository.createSourceChunk({
+    sourceArtifactId: foreignSourceArtifact.id,
+    ordinal: 0,
+    content: "Captured evidence for the foreign-project source graph isolation probe.",
+    contentHash: `source-graph-smoke-${input.marker}-foreign-chunk-bytes`,
+    metadata: foreignEvidenceMetadata
   });
   const foreignSourceClaim = await input.sourceRepository.createSourceClaim({
     sourceArtifactId: foreignSourceArtifact.id,
+    sourceChunkId: foreignSourceChunk.id,
     claim: "Foreign project source graph claim must not govern the primary project.",
     mechanism: "Project-scoped source artifacts bind the claim to a separate project.",
     krnImplication: "Cross-project source authority must fail closed.",
@@ -192,10 +211,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     supportType: "implementation-boundary",
     consumer: "src002 project isolation smoke",
     falsifier: "The foreign source claim governs the primary project.",
-    metadata: {
-      smokeId: input.marker,
-      projectIsolationProbe: true
-    }
+    metadata: foreignEvidenceMetadata
   });
   const unscopedForeignSourceClaim = await input.sourceRepository.getSourceClaimById(
     foreignSourceClaim.id
@@ -215,6 +231,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     scopedForeignSourceClaim === undefined;
   const foreignRelatedSourceClaim = await input.sourceRepository.createSourceClaim({
     sourceArtifactId: foreignSourceArtifact.id,
+    sourceChunkId: foreignSourceChunk.id,
     claim: "Foreign source graph relation context must stay within the foreign project.",
     mechanism: "A SourceClaimEdge binds two source claims under the same source artifact project.",
     krnImplication: "Project-scoped graph reads must not return foreign relation edges.",
@@ -223,10 +240,7 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     supportType: "implementation-boundary",
     consumer: "src002 project isolation smoke",
     falsifier: "The primary project reads the foreign SourceClaimEdge.",
-    metadata: {
-      smokeId: input.marker,
-      projectIsolationProbe: true
-    }
+    metadata: foreignEvidenceMetadata
   });
   const mismatchedAdoptionRejected = await sourceWriteRejectedFor(
     () => input.sourceRepository.createSourceDecision({
@@ -617,6 +631,7 @@ export const runSourceGraphSmokeCheck = async (
       workspaceSlug
     });
     retrievalRunId = compiledRetrievalRunId;
+    const sourceEvidenceMetadata = capturedCurrentEvidenceMetadata(marker, "primary");
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -624,12 +639,18 @@ export const runSourceGraphSmokeCheck = async (
       uri: `operator://source-graph-smoke/${marker}`,
       title: "Source graph smoke source",
       contentHash: `source-graph-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      content: "Captured evidence for the primary source graph smoke claims.",
+      contentHash: `source-graph-smoke-${marker}-primary-chunk-bytes`,
+      metadata: sourceEvidenceMetadata
     });
     const sourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       executionRunId: executionRun.id,
       claim: "KRN should persist source claims and typed source decision edges.",
       mechanism: "Postgres stores harness runs and source graph records transactionally.",
@@ -641,12 +662,11 @@ export const runSourceGraphSmokeCheck = async (
       falsifier: "Source graph smoke readback or cleanup fails.",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
     });
     const staleSourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       executionRunId: executionRun.id,
       claim: "Source graph smoke only needs source decision edges.",
       mechanism: "Before B-01, source claim edge relations existed but were not repository-visible.",
@@ -658,12 +678,11 @@ export const runSourceGraphSmokeCheck = async (
       falsifier: "Temporal claim edge readback or cleanup fails.",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
     });
     const duplicateSourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       executionRunId: executionRun.id,
       claim: "Source graph smoke has adjacent duplicate relation evidence.",
       mechanism: "A duplicate SourceClaimEdge keeps relation evidence reviewable without merging source truth.",
@@ -675,9 +694,7 @@ export const runSourceGraphSmokeCheck = async (
       falsifier: "Duplicate source claim edge influence is absent from activation readback.",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
     });
     const readBackClaim = await sourceRepository.getSourceClaimById(sourceClaim.id);
     const sourceDecision = await sourceRepository.createSourceDecision({

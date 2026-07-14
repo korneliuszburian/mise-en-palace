@@ -179,6 +179,7 @@ const sourceDecisionEdgeProjection = {
 interface SourceDecisionClaimContext {
   sourceClaim: SourceClaim;
   sourceArtifactProjectId: string | null;
+  sourceArtifactMetadata: Record<string, unknown>;
 }
 
 interface SourceClaimProjectContext extends SourceDecisionClaimContext {}
@@ -187,6 +188,7 @@ interface SourceDecisionEdgeContext {
   sourceClaim: SourceClaim;
   sourceDecision: SourceDecision;
   sourceArtifactProjectId: string | null;
+  sourceArtifactMetadata: Record<string, unknown>;
 }
 
 const selectSourceClaimProjectRow = (
@@ -195,7 +197,8 @@ const selectSourceClaimProjectRow = (
 ) => tx
   .select({
     sourceClaim: sourceClaims,
-    sourceArtifactProjectId: sourceArtifacts.projectId
+    sourceArtifactProjectId: sourceArtifacts.projectId,
+    sourceArtifactMetadata: sourceArtifacts.metadata
   })
   .from(sourceClaims)
   .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
@@ -211,13 +214,14 @@ const getSourceDecisionClaim = async (
   }
 
   const row = requireReturnedRow(
-    await selectSourceClaimProjectRow(tx, sourceClaimId),
+    await selectSourceClaimProjectRow(tx, sourceClaimId).for("update"),
     "getSourceClaimForSourceDecision"
   );
 
   return {
     sourceClaim: mapSourceClaim(row.sourceClaim),
-    sourceArtifactProjectId: row.sourceArtifactProjectId
+    sourceArtifactProjectId: row.sourceArtifactProjectId,
+    sourceArtifactMetadata: row.sourceArtifactMetadata
   };
 };
 
@@ -233,7 +237,8 @@ const getSourceClaimProjectContext = async (
 
   return {
     sourceClaim: mapSourceClaim(row.sourceClaim),
-    sourceArtifactProjectId: row.sourceArtifactProjectId
+    sourceArtifactProjectId: row.sourceArtifactProjectId,
+    sourceArtifactMetadata: row.sourceArtifactMetadata
   };
 };
 
@@ -246,7 +251,8 @@ const getSourceDecisionEdgeContext = async (
       .select({
         sourceClaim: sourceClaims,
         sourceDecision: sourceDecisions,
-        sourceArtifactProjectId: sourceArtifacts.projectId
+        sourceArtifactProjectId: sourceArtifacts.projectId,
+        sourceArtifactMetadata: sourceArtifacts.metadata
       })
       .from(sourceDecisions)
       .innerJoin(sourceClaims, eq(sourceDecisions.sourceClaimId, sourceClaims.id))
@@ -255,15 +261,171 @@ const getSourceDecisionEdgeContext = async (
         eq(sourceDecisions.id, input.sourceDecisionId),
         eq(sourceClaims.id, input.sourceClaimId)
       ))
-      .limit(1),
+      .limit(1)
+      .for("update"),
     "getSourceDecisionEdgeContext"
   );
 
   return {
     sourceClaim: mapSourceClaim(row.sourceClaim),
     sourceDecision: mapSourceDecision(row.sourceDecision),
-    sourceArtifactProjectId: row.sourceArtifactProjectId
+    sourceArtifactProjectId: row.sourceArtifactProjectId,
+    sourceArtifactMetadata: row.sourceArtifactMetadata
   };
+};
+
+interface CapturedCurrentEvidenceIdentity {
+  readonly evidenceStatus: "captured";
+  readonly evidenceContentHash: string;
+  readonly evidenceFreshness: "current";
+}
+
+type EvidenceMetadataKey = keyof CapturedCurrentEvidenceIdentity;
+
+const evidenceMetadataValue = (
+  metadata: Record<string, unknown>,
+  key: EvidenceMetadataKey
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : undefined;
+};
+
+const capturedCurrentEvidenceError = (
+  operation: string,
+  sourceClaimId: string,
+  detail: string
+): Error => new Error(
+  `${operation} requires coherent captured-current evidence for SourceClaim ${sourceClaimId}: ${detail}`
+);
+
+const resolveCapturedCurrentEvidenceIdentity = async (
+  tx: KrnDatabaseTransaction,
+  context: SourceDecisionClaimContext,
+  operation: string
+): Promise<CapturedCurrentEvidenceIdentity> => {
+  const sourceChunkId = context.sourceClaim.sourceChunkId;
+
+  if (sourceChunkId === undefined) {
+    throw capturedCurrentEvidenceError(
+      operation,
+      context.sourceClaim.id,
+      "sourceChunkId is missing"
+    );
+  }
+
+  const sourceChunk = requireReturnedRow(
+    await tx
+      .select({
+        id: sourceChunks.id,
+        sourceArtifactId: sourceChunks.sourceArtifactId,
+        metadata: sourceChunks.metadata
+      })
+      .from(sourceChunks)
+      .where(eq(sourceChunks.id, sourceChunkId))
+      .limit(1)
+      .for("update"),
+    "getCapturedCurrentSourceChunk"
+  );
+
+  if (sourceChunk.sourceArtifactId !== context.sourceClaim.sourceArtifactId) {
+    throw capturedCurrentEvidenceError(
+      operation,
+      context.sourceClaim.id,
+      `sourceChunkId ${sourceChunk.id} belongs to sourceArtifactId ${sourceChunk.sourceArtifactId}`
+    );
+  }
+
+  const metadataSources = [
+    ["SourceArtifact", context.sourceArtifactMetadata],
+    ["SourceClaim", context.sourceClaim.metadata],
+    ["SourceChunk", sourceChunk.metadata]
+  ] as const;
+  const evidenceContentHash = evidenceMetadataValue(
+    context.sourceArtifactMetadata,
+    "evidenceContentHash"
+  );
+
+  if (evidenceContentHash === undefined) {
+    throw capturedCurrentEvidenceError(
+      operation,
+      context.sourceClaim.id,
+      "SourceArtifact evidenceContentHash is missing"
+    );
+  }
+
+  for (const [label, metadata] of metadataSources) {
+    if (evidenceMetadataValue(metadata, "evidenceStatus") !== "captured") {
+      throw capturedCurrentEvidenceError(
+        operation,
+        context.sourceClaim.id,
+        `${label} evidenceStatus is not captured`
+      );
+    }
+
+    if (evidenceMetadataValue(metadata, "evidenceFreshness") !== "current") {
+      throw capturedCurrentEvidenceError(
+        operation,
+        context.sourceClaim.id,
+        `${label} evidenceFreshness is not current`
+      );
+    }
+
+    if (evidenceMetadataValue(metadata, "evidenceContentHash") !== evidenceContentHash) {
+      throw capturedCurrentEvidenceError(
+        operation,
+        context.sourceClaim.id,
+        `${label} evidenceContentHash does not match SourceArtifact`
+      );
+    }
+  }
+
+  return {
+    evidenceStatus: "captured",
+    evidenceContentHash,
+    evidenceFreshness: "current"
+  };
+};
+
+const sourceDecisionMetadataWithEvidence = (
+  metadata: Record<string, unknown> | undefined,
+  evidence: CapturedCurrentEvidenceIdentity,
+  sourceClaimId: string
+): Record<string, unknown> => {
+  const inputMetadata = metadata ?? {};
+
+  for (const key of Object.keys(evidence) as EvidenceMetadataKey[]) {
+    if (
+      inputMetadata[key] !== undefined &&
+      evidenceMetadataValue(inputMetadata, key) !== evidence[key]
+    ) {
+      throw capturedCurrentEvidenceError(
+        "SourceDecision adopt",
+        sourceClaimId,
+        `input ${key} conflicts with persisted evidence identity`
+      );
+    }
+  }
+
+  return { ...inputMetadata, ...evidence };
+};
+
+const assertSourceDecisionCarriesEvidence = (
+  sourceDecision: SourceDecision,
+  evidence: CapturedCurrentEvidenceIdentity,
+  sourceClaimId: string
+): void => {
+  for (const key of Object.keys(evidence) as EvidenceMetadataKey[]) {
+    if (evidenceMetadataValue(sourceDecision.metadata, key) !== evidence[key]) {
+      throw capturedCurrentEvidenceError(
+        "SourceDecisionEdge",
+        sourceClaimId,
+        `SourceDecision ${key} does not match persisted evidence identity`
+      );
+    }
+  }
 };
 
 const resolveSourceDecisionProjectId = (
@@ -803,6 +965,17 @@ export class DrizzleSourceRepository implements SourceRepository {
         input.projectId,
         sourceClaimContext?.sourceArtifactProjectId
       );
+      const decisionMetadata = input.status === "adopt" && sourceClaimContext !== undefined
+        ? sourceDecisionMetadataWithEvidence(
+            input.metadata,
+            await resolveCapturedCurrentEvidenceIdentity(
+              tx,
+              sourceClaimContext,
+              "SourceDecision adopt"
+            ),
+            sourceClaimContext.sourceClaim.id
+          )
+        : input.metadata ?? {};
 
       await arbitrateSourceClaimTerminalReview(tx, input.sourceClaimId, sourceClaimStatus);
 
@@ -817,7 +990,7 @@ export class DrizzleSourceRepository implements SourceRepository {
             rationale: input.rationale,
             falsifier: input.falsifier,
             consumer: input.consumer,
-            metadata: input.metadata ?? {}
+            metadata: decisionMetadata
           })
           .returning(),
         "createSourceDecision"
@@ -1057,6 +1230,16 @@ export class DrizzleSourceRepository implements SourceRepository {
     return this.db.transaction(async (tx) => {
       const context = await getSourceDecisionEdgeContext(tx, input);
       assertSourceDecisionEdgeContext(context);
+      const evidence = await resolveCapturedCurrentEvidenceIdentity(
+        tx,
+        context,
+        "SourceDecisionEdge"
+      );
+      assertSourceDecisionCarriesEvidence(
+        context.sourceDecision,
+        evidence,
+        context.sourceClaim.id
+      );
 
       const row = requireReturnedRow(
         await tx

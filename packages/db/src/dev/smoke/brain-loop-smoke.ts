@@ -137,6 +137,13 @@ const downgradedRunRepoInstallationId = "repo-installation-memory-loop-rejector"
 const consolidationRunRepoInstallationId = "repo-installation-memory-loop-consolidation";
 const revisionRunRepoInstallationId = "repo-installation-memory-loop-revision";
 
+const capturedCurrentEvidenceMetadata = (marker: string): Record<string, string> => ({
+  smokeId: marker,
+  evidenceStatus: "captured",
+  evidenceContentHash: `sha256:memory-loop-evidence:${marker}`,
+  evidenceFreshness: "current"
+});
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -445,6 +452,7 @@ export const runBrainLoopSmokeCheck = async (
         reviewBurden: "low"
       }
     });
+    const sourceEvidenceMetadata = capturedCurrentEvidenceMetadata(marker);
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -452,12 +460,18 @@ export const runBrainLoopSmokeCheck = async (
       uri: `operator://memory-loop-smoke/${marker}`,
       title: "Memory loop smoke source",
       contentHash: `memory-loop-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      content: "Captured evidence for the DB-backed memory loop source claim.",
+      contentHash: `memory-loop-smoke-${marker}-chunk-bytes`,
+      metadata: sourceEvidenceMetadata
     });
     const proposedSourceClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
       executionRunId: executionRun.id,
       claim: "A reviewed evidence bundle can become Memory Core context for a later activation.",
       mechanism: "Postgres persists evidence, review, feedback, a reviewable MemoryCandidate, MemoryReviewGate promotion, and activation trace readback.",
@@ -469,9 +483,7 @@ export const runBrainLoopSmokeCheck = async (
       falsifier: "Memory loop smoke readback or cleanup fails.",
       revisitWhen: "The evidence, memory, or activation persistence contracts change.",
       status: "proposed",
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
     });
     const sourceDecision = await sourceRepository.createSourceDecision({
       projectId: project.id,
