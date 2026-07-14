@@ -1588,6 +1588,7 @@ const persistEvidenceCapture = async (
     );
     const atomicResult = await createEvidenceFeedbackOnce.call(databaseRuntime.harnessRunRepository, {
       executionRunId: runId,
+      sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
       projectId,
       captureIdentity,
       evidence: buildEvidenceBundleInput(

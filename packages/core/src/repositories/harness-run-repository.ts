@@ -134,6 +134,7 @@ export interface CreateEvalFeedbackDeltaOnceResult {
 
 export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
+  sourceRunLifecycleRevision: number;
   projectId: ProjectId;
   captureIdentity: string;
   evidence: Omit<CreateEvidenceBundleInput, "executionRunId" | "captureIdentity">;

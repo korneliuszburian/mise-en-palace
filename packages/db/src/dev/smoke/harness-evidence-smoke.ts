@@ -73,6 +73,7 @@ interface SmokeFeedbackDeltaInput {
   databaseUrl: string;
   projectId: string;
   executionRunId: string;
+  sourceRunLifecycleRevision: number;
   marker: string;
   changedFile: string;
   evidenceEventType: string;
@@ -99,6 +100,7 @@ const createSmokeFeedbackDelta = async (
 
   const atomicInput = {
     executionRunId: input.executionRunId,
+    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
     projectId: input.projectId,
     captureIdentity: `harness-evidence:${input.marker}`,
     evidence: {
@@ -365,6 +367,7 @@ export const runHarnessEvidenceSmokeCheck = async (
       databaseUrl: input.databaseUrl,
       projectId: project.id,
       executionRunId: executionRun.id,
+      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
       marker,
       changedFile: "smoke/harness-evidence.ts",
       evidenceEventType: "smoke.harness_evidence.evidence_captured",
@@ -512,6 +515,7 @@ export const runHarnessEvidenceSmokeCheck = async (
       databaseUrl: input.databaseUrl,
       projectId: otherProject.id,
       executionRunId: otherExecutionRun.id,
+      sourceRunLifecycleRevision: otherExecutionRun.lifecycleRevision,
       marker,
       changedFile: "smoke/harness-evidence-other.ts",
       evidenceEventType: "smoke.harness_evidence.other_project_evidence_captured",

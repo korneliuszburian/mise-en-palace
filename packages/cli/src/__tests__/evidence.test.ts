@@ -114,6 +114,7 @@ const unusedSourceRepository = {
 interface EvidencePersistenceCapture {
   commands?: CreateEvidenceBundleInput["commands"];
   evidenceBundle?: CreateEvidenceBundleInput;
+  sourceRunLifecycleRevision?: number;
   sourceDecisions?: CreateFeedbackDeltaInput["sourceDecisions"];
   memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
   feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
@@ -345,6 +346,7 @@ const createCapturingEvidenceHarnessRunRepository = (
     };
   },
   async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+    capture.sourceRunLifecycleRevision = input.sourceRunLifecycleRevision;
     capture.evidenceBundle = {
       ...input.evidence,
       executionRunId: input.executionRunId
@@ -875,6 +877,7 @@ describe("runCli", () => {
     expectPersistedEvidenceCandidates(capture);
     expectPersistedEvidenceMetadata(capture);
     expectDefaultTemplateCommands(capture.commands);
+    expect(capture.sourceRunLifecycleRevision).toBe(aggregate.executionRun.lifecycleRevision);
     expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 
@@ -1208,6 +1211,9 @@ describe("runCli", () => {
       )
     });
     expect(capture.evidenceBundle?.metadata).not.toHaveProperty("decisionPacketChecksum");
+    expect(capture.sourceRunLifecycleRevision).toBe(
+      currentAggregate.executionRun.lifecycleRevision
+    );
     expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 

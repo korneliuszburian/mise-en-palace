@@ -127,10 +127,13 @@ const evidenceContractHistoryMatches = (
 };
 
 interface PacketIdentity {
+  packetId: string;
   checksum: string;
   evidenceRef: string;
   generatedAt: string;
+  sourceRunStatus: string;
   sourceRunLifecycleRevision: number;
+  sourceRunUpdatedAt: string;
 }
 
 interface PacketBindingSmokeRuntime {
@@ -169,6 +172,7 @@ interface TerminalEvidenceContractReadback {
   contractHistoryVisible: boolean;
   commandsSuppressed: boolean;
   evidenceGapPresent: boolean;
+  packetIdentityMatched: boolean;
   packetAbstained: boolean;
 }
 
@@ -189,10 +193,21 @@ const readPacketIdentity = (value: Record<string, unknown>): PacketIdentity => {
   }
 
   return {
+    packetId: requiredString(packetIdentity, "packetId", "Run-show DB smoke packet id is missing"),
     checksum: requiredString(packetIdentity, "checksum", "Run-show DB smoke packet checksum is missing"),
     evidenceRef: requiredString(packetIdentity, "evidenceRef", "Run-show DB smoke packet evidence ref is missing"),
     generatedAt: requiredString(packetIdentity, "generatedAt", "Run-show DB smoke packet generatedAt is missing"),
-    sourceRunLifecycleRevision
+    sourceRunStatus: requiredString(
+      packetIdentity,
+      "sourceRunStatus",
+      "Run-show DB smoke packet source run status is missing"
+    ),
+    sourceRunLifecycleRevision,
+    sourceRunUpdatedAt: requiredString(
+      packetIdentity,
+      "sourceRunUpdatedAt",
+      "Run-show DB smoke packet source run updatedAt is missing"
+    )
   };
 };
 
@@ -215,7 +230,8 @@ const readPacketBinding = (value: Record<string, unknown>): Record<string, unkno
 const terminalEvidenceContractReadback = (
   value: Record<string, unknown>,
   evidenceContract: EvidenceContract,
-  executionRunId: string
+  terminalRun: HarnessRunAggregate["executionRun"],
+  firstPacketIdentity: PacketIdentity
 ): TerminalEvidenceContractReadback => {
   const readModel = value.readModel;
   const packet = value.packet;
@@ -229,12 +245,13 @@ const terminalEvidenceContractReadback = (
   const abstentionScore = packet.abstentionScore;
   const verificationCommands = packet.verificationCommands;
   const evidenceGaps = packet.evidenceGaps;
+  const packetIdentity = readPacketIdentity(value);
 
   return {
     activationInactive: recordHasStrings(activation, {
       status: "inactive",
       reason: "execution_run_terminal",
-      executionRunId
+      executionRunId: terminalRun.id
     }),
     contractHistoryVisible: evidenceContractHistoryMatches(historicalContract, evidenceContract),
     commandsSuppressed: Array.isArray(verificationCommands) &&
@@ -245,6 +262,14 @@ const terminalEvidenceContractReadback = (
       "id",
       decisionPacketMissingActiveEvidenceContractGapId
     ),
+    packetIdentityMatched: [
+      firstPacketIdentity.sourceRunStatus === "planned",
+      packetIdentity.packetId !== firstPacketIdentity.packetId,
+      packetIdentity.checksum !== firstPacketIdentity.checksum,
+      packetIdentity.sourceRunStatus === terminalRun.status,
+      packetIdentity.sourceRunLifecycleRevision === terminalRun.lifecycleRevision,
+      packetIdentity.sourceRunUpdatedAt === terminalRun.updatedAt
+    ].every(Boolean),
     packetAbstained: recordHasStrings(abstentionScore, { status: "abstain" })
   };
 };
@@ -467,6 +492,9 @@ const assertTerminalEvidenceContractReadback = (
     label: "inactive-contract evidence gap",
     passed: readback.evidenceGapPresent
   }, {
+    label: "terminal packet identity",
+    passed: readback.packetIdentityMatched
+  }, {
     label: "terminal packet abstention",
     passed: readback.packetAbstained
   }].find((check) => !check.passed);
@@ -590,7 +618,7 @@ export const runRunShowDbSmokeCheck = async (
         payload: { marker }
       }
     });
-    await harnessRunRepository.updateExecutionRunStatus({
+    const succeededRun = await harnessRunRepository.updateExecutionRunStatus({
       executionRunId: executionRun.id,
       expectedStatus: "running",
       status: "succeeded",
@@ -608,7 +636,8 @@ export const runRunShowDbSmokeCheck = async (
         createDatabaseRuntime: async () => commandRuntime
       })).stdout),
       result.evidenceContract,
-      executionRun.id
+      succeededRun,
+      capture.packetIdentity
     );
     assertTerminalEvidenceContractReadback(terminalContractReadback);
 

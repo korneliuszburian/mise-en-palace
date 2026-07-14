@@ -25,6 +25,8 @@ import type {
   ExecutionRunStatus
 } from "@krn/core";
 import {
+  decisionPacketBindingReadbackFromMetadata,
+  ExecutionRunLifecycleConflictError,
   toEvidenceCommandReadback,
   readMetadataString
 } from "@krn/core";
@@ -172,9 +174,12 @@ const validateExecutionRunTransition = (input: UpdateExecutionRunStatusInput, cu
   readonly completedAt: Date | null;
 }): boolean => {
   if (current.status !== input.expectedStatus) {
-    throw new Error(
-      `execution run lifecycle expected ${input.expectedStatus} but found ${current.status}`
-    );
+    throw new ExecutionRunLifecycleConflictError({
+      kind: "status",
+      executionRunId: input.executionRunId,
+      expectedStatus: input.expectedStatus,
+      actualStatus: current.status
+    });
   }
 
   if (current.status === input.status) {
@@ -627,23 +632,64 @@ const existingEvidenceFeedbackOnceResult = async (
   };
 };
 
-const assertEvidenceFeedbackRunProject = async (
+const declaredBoundPacketLifecycleRevision = (
+  metadata: Record<string, unknown>
+): number | undefined => {
+  if (readMetadataString(metadata, "decisionPacketBindingState") !== "bound_current") {
+    return undefined;
+  }
+
+  const packetBinding = decisionPacketBindingReadbackFromMetadata(metadata);
+  const lifecycleRevision = packetBinding.sourceRunLifecycleRevision;
+  if (packetBinding.status !== "bound_current" || lifecycleRevision === undefined) {
+    throw new Error(
+      `createEvidenceFeedbackOnce rejected: ${packetBinding.reason ?? "DecisionPacket bound_current metadata is incomplete."}`
+    );
+  }
+
+  return lifecycleRevision;
+};
+
+const assertEvidenceFeedbackRunAuthority = async (
   tx: KrnDatabase,
   input: CreateEvidenceFeedbackOnceInput
 ): Promise<void> => {
   const linkedRun = await tx
-    .select({ projectId: taskContracts.projectId })
+    .select({
+      projectId: taskContracts.projectId,
+      lifecycleRevision: executionRuns.lifecycleRevision
+    })
     .from(executionRuns)
     .innerJoin(harnessPlans, eq(executionRuns.harnessPlanId, harnessPlans.id))
     .innerJoin(taskContracts, eq(harnessPlans.taskContractId, taskContracts.id))
     .where(eq(executionRuns.id, input.executionRunId))
-    .limit(1);
-  const linkedRunProjectId = linkedRun[0]?.projectId;
+    .limit(1)
+    .for("update", { of: executionRuns });
+  const lockedRun = linkedRun[0];
 
-  if (linkedRunProjectId === undefined || linkedRunProjectId !== input.projectId) {
+  if (lockedRun === undefined || lockedRun.projectId !== input.projectId) {
     throw new Error(
       "createEvidenceFeedbackOnce rejected: execution run project does not match capture project"
     );
+  }
+
+  if (lockedRun.lifecycleRevision !== input.sourceRunLifecycleRevision) {
+    throw new ExecutionRunLifecycleConflictError({
+      kind: "revision",
+      executionRunId: input.executionRunId,
+      expectedLifecycleRevision: input.sourceRunLifecycleRevision,
+      actualLifecycleRevision: lockedRun.lifecycleRevision
+    });
+  }
+
+  const boundPacketRevision = declaredBoundPacketLifecycleRevision(input.evidence.metadata ?? {});
+  if (boundPacketRevision !== undefined && boundPacketRevision !== lockedRun.lifecycleRevision) {
+    throw new ExecutionRunLifecycleConflictError({
+      kind: "revision",
+      executionRunId: input.executionRunId,
+      expectedLifecycleRevision: boundPacketRevision,
+      actualLifecycleRevision: lockedRun.lifecycleRevision
+    });
   }
 };
 
@@ -1130,6 +1176,12 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     if (captureIdentity.length === 0) {
       throw new Error("createEvidenceFeedbackOnce requires capture identity");
     }
+    if (
+      !Number.isSafeInteger(input.sourceRunLifecycleRevision) ||
+      input.sourceRunLifecycleRevision < 1
+    ) {
+      throw new Error("createEvidenceFeedbackOnce requires a positive lifecycle revision");
+    }
 
     return this.db.transaction(async (tx) => {
       await tx.execute(
@@ -1141,7 +1193,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         return existing;
       }
 
-      await assertEvidenceFeedbackRunProject(tx, input);
+      await assertEvidenceFeedbackRunAuthority(tx, input);
       return insertEvidenceFeedbackChain(
         tx,
         input,

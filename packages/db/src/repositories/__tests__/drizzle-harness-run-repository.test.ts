@@ -3,7 +3,9 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import postgres from "postgres";
+import { ExecutionRunLifecycleConflictError } from "@krn/core";
 import type { EvalCandidateProposal } from "@krn/core";
+import type { CreateEvidenceFeedbackOnceInput } from "@krn/core/repositories";
 
 import { createKrnDatabase, type KrnDatabase } from "../../database.js";
 import {
@@ -11,7 +13,11 @@ import {
   countActivationSmokeMarkerRows,
   createSmokeHarnessScaffold
 } from "../../dev/smoke/db-smoke-support.js";
-import { contextAssemblies, outboxEvents, runEvents } from "../../schema/index.js";
+import {
+  contextAssemblies,
+  outboxEvents,
+  runEvents
+} from "../../schema/index.js";
 import {
   DrizzleHarnessRunRepository,
   evidenceCommandsForPersistence,
@@ -31,6 +37,38 @@ const evalCandidate: EvalCandidateProposal = {
   sourceEvidence: ["source-1"],
   metadata: {},
   createdAt: "2026-07-07T00:00:00.000Z"
+};
+
+const postgresBackendPid = async (
+  client: ReturnType<typeof postgres>
+): Promise<number> => {
+  const rows = await client<{ pid: number }[]>`select pg_backend_pid()::int as pid`;
+  const pid = rows[0]?.pid;
+
+  if (pid === undefined) {
+    throw new Error("PostgreSQL race barrier could not read its backend PID");
+  }
+
+  return pid;
+};
+
+const waitForPostgresBackendBlock = async (
+  observer: ReturnType<typeof postgres>,
+  targetPid: number,
+  expectedBlockerPids: readonly number[]
+): Promise<void> => {
+  for (let attempt = 0; attempt < 500; attempt += 1) {
+    const rows = await observer<{ blockingPids: number[] }[]>`
+      select pg_blocking_pids(${targetPid})::int[] as "blockingPids"
+    `;
+    if (rows[0]?.blockingPids.some((pid) => expectedBlockerPids.includes(pid)) === true) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+
+  throw new Error(`PostgreSQL backend ${targetPid} did not reach the expected lock barrier`);
 };
 
 describe("DrizzleHarnessRunRepository", () => {
@@ -613,6 +651,9 @@ describe("DrizzleHarnessRunRepository", () => {
         }
       });
       const contenderClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const controlClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      let controlTransactionOpen = false;
+      let transitionPromises: readonly Promise<unknown>[] = [];
 
       try {
         const contenderRepository = new DrizzleHarnessRunRepository(
@@ -642,50 +683,468 @@ describe("DrizzleHarnessRunRepository", () => {
             payload: { smokeId: marker }
           }
         });
+        const successBackendPid = await postgresBackendPid(scaffold.client);
+        const failureBackendPid = await postgresBackendPid(contenderClient);
+        const controlBackendPid = await postgresBackendPid(controlClient);
 
-        const results = await Promise.allSettled([
-          scaffold.harnessRunRepository.updateExecutionRunStatus({
-            executionRunId: planned.id,
-            expectedStatus: "running",
-            status: "succeeded",
-            completedAt: "2026-07-13T10:02:00.000Z",
-            event: {
-              sequence: 3,
-              type: "smoke.execution_lifecycle_race.succeeded",
-              message: "success contender",
-              payload: { smokeId: marker, contender: "success" }
-            }
-          }),
-          contenderRepository.updateExecutionRunStatus({
-            executionRunId: planned.id,
-            expectedStatus: "running",
-            status: "failed",
-            completedAt: "2026-07-13T10:02:00.000Z",
-            event: {
-              sequence: 3,
-              type: "smoke.execution_lifecycle_race.failed",
-              message: "failure contender",
-              payload: { smokeId: marker, contender: "failure" }
-            }
-          })
-        ]);
+        await controlClient.unsafe("begin");
+        controlTransactionOpen = true;
+        await controlClient`
+          select id from execution_runs where id = ${planned.id} for update
+        `;
+        const successTransition = scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: planned.id,
+          expectedStatus: "running",
+          status: "succeeded",
+          completedAt: "2026-07-13T10:02:00.000Z",
+          event: {
+            sequence: 3,
+            type: "smoke.execution_lifecycle_race.succeeded",
+            message: "success contender",
+            payload: { smokeId: marker, contender: "success" }
+          }
+        });
+        transitionPromises = [successTransition];
+        await waitForPostgresBackendBlock(
+          controlClient,
+          successBackendPid,
+          [controlBackendPid]
+        );
+        const failureTransition = contenderRepository.updateExecutionRunStatus({
+          executionRunId: planned.id,
+          expectedStatus: "running",
+          status: "failed",
+          completedAt: "2026-07-13T10:03:00.000Z",
+          event: {
+            sequence: 3,
+            type: "smoke.execution_lifecycle_race.failed",
+            message: "failure contender",
+            payload: { smokeId: marker, contender: "failure" }
+          }
+        });
+        transitionPromises = [successTransition, failureTransition];
+        await waitForPostgresBackendBlock(
+          controlClient,
+          failureBackendPid,
+          [controlBackendPid, successBackendPid]
+        );
+        await controlClient.unsafe("commit");
+        controlTransactionOpen = false;
+        const results = await Promise.allSettled([successTransition, failureTransition]);
 
         expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
         expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
 
-        const [{ status }] = await scaffold.client<{ status: string }[]>`
-          select status from execution_runs where id = ${planned.id}
+        const winner = results.flatMap((result) =>
+          result.status === "fulfilled" ? [result.value] : []
+        )[0];
+        const loserReason = results.flatMap((result) =>
+          result.status === "rejected" ? [result.reason as unknown] : []
+        )[0];
+        if (winner === undefined) {
+          throw new Error("execution lifecycle race did not produce a winner");
+        }
+        expect(loserReason).toBeInstanceOf(ExecutionRunLifecycleConflictError);
+        expect(loserReason).toMatchObject({
+          conflict: {
+            kind: "status",
+            executionRunId: planned.id,
+            expectedStatus: "running",
+            actualStatus: "succeeded"
+          }
+        });
+
+        const [runReadback] = await scaffold.client<{
+          status: string;
+          lifecycleRevision: number;
+          startedAt: string | null;
+          completedAt: string | null;
+        }[]>`
+          select
+            status,
+            lifecycle_revision as "lifecycleRevision",
+            to_char(started_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as "startedAt",
+            to_char(completed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as "completedAt"
+          from execution_runs
+          where id = ${planned.id}
         `;
-        const [{ eventCount }] = await scaffold.client<{ eventCount: number }[]>`
-          select count(*)::int as "eventCount"
+        const eventReadback = await scaffold.client<{
+          sequence: number;
+          type: string;
+          payload: Record<string, unknown>;
+        }[]>`
+          select sequence, type, payload
           from run_events
-          where payload->>'smokeId' = ${marker}
+          where execution_run_id = ${planned.id}
+          order by sequence
         `;
-        expect(["succeeded", "failed"]).toContain(status);
-        expect(eventCount).toBe(3);
+        const aggregate = await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(
+          planned.id
+        );
+        const completedAt = "2026-07-13T10:02:00.000Z";
+
+        expect(winner.status).toBe("succeeded");
+        expect(runReadback?.status).toBe("succeeded");
+        expect(runReadback?.lifecycleRevision).toBe(3);
+        expect(runReadback?.startedAt).toBe("2026-07-13T10:01:00.000Z");
+        expect(runReadback?.completedAt).toBe(completedAt);
+        expect(winner.lifecycleRevision).toBe(3);
+        expect(winner.completedAt).toBe(completedAt);
+        expect(eventReadback.map((event) => event.sequence)).toEqual([1, 2, 3]);
+        expect(eventReadback[2]).toMatchObject({
+          type: "smoke.execution_lifecycle_race.succeeded",
+          payload: { contender: "success" }
+        });
+        expect(aggregate?.executionRun).toMatchObject({
+          status: "succeeded",
+          lifecycleRevision: 3,
+          startedAt: "2026-07-13T10:01:00.000Z",
+          completedAt
+        });
       } finally {
+        if (controlTransactionOpen) {
+          await controlClient.unsafe("rollback");
+        }
+        await Promise.allSettled(transitionPromises);
         await scaffold.cleanup();
-        await Promise.all([scaffold.client.end(), contenderClient.end()]);
+        await Promise.all([
+          scaffold.client.end(),
+          contenderClient.end(),
+          controlClient.end()
+        ]);
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "rejects stale evidence persistence after a concurrent lifecycle transition",
+    async () => {
+      const marker = `krn_evidence_lifecycle_race_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "evidence lifecycle race smoke",
+        workspacePrefix: "krn-evidence-lifecycle-race",
+        projectSlug: "evidence-lifecycle-race",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `evidence lifecycle race ${marker}`,
+        taskContract: {
+          title: "Reject stale evidence persistence",
+          objective: "Bind an authorized evidence write to the exact ExecutionRun revision.",
+          constraints: ["real PostgreSQL", "independent connections", "no sleeps"],
+          nonGoals: ["no external command execution"],
+          acceptance: ["stale revision rejects the entire evidence feedback chain"]
+        },
+        harnessPlan: {
+          summary: "Evidence lifecycle race smoke",
+          nextAction: "Race a lifecycle transition against evidence persistence."
+        }
+      });
+      const captureClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const blockerClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const captureRepository = new DrizzleHarnessRunRepository(
+        createKrnDatabase(captureClient)
+      );
+      let blockerTransactionOpen = false;
+      let staleCapture: ReturnType<DrizzleHarnessRunRepository["createEvidenceFeedbackOnce"]> |
+        undefined;
+
+      try {
+        const planned = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "evidence-lifecycle-race",
+          status: "planned",
+          initialEvent: {
+            sequence: 1,
+            type: "smoke.evidence_lifecycle_race.created",
+            message: "evidence race run created",
+            payload: { smokeId: marker }
+          },
+          metadata: { smokeId: marker }
+        });
+        const captureIdentity = `evidence-lifecycle-race:${marker}`;
+        const stalePacketChecksum = crypto
+          .createHash("sha256")
+          .update(`${marker}:revision:1`)
+          .digest("hex");
+        const staleInput = {
+          executionRunId: planned.id,
+          projectId: scaffold.project.id,
+          captureIdentity,
+          sourceRunLifecycleRevision: planned.lifecycleRevision,
+          evidence: {
+            status: "captured" as const,
+            changedFiles: ["smoke/evidence-lifecycle-race.ts"],
+            commands: [{ command: "pnpm typecheck", status: "passed" as const }],
+            diffRisk: "low" as const,
+            reviewBurden: "Lifecycle race proof only.",
+            rollbackPath: "Delete marker-scoped smoke rows.",
+            event: {
+              sequence: 2,
+              type: "smoke.evidence_lifecycle_race.captured",
+              message: "stale evidence must not persist",
+              payload: { smokeId: marker, captureIdentity }
+            },
+            metadata: {
+              smokeId: marker,
+              decisionPacketBindingState: "bound_current",
+              decisionPacketChecksum: stalePacketChecksum,
+              decisionPacketEvidenceRef: `packet:${stalePacketChecksum}`,
+              decisionPacketGeneratedAt: "2026-07-13T11:00:00.000Z",
+              decisionPacketSourceRunLifecycleRevision: planned.lifecycleRevision
+            }
+          },
+          review: {
+            status: "pending" as const,
+            reviewer: "krn-race-smoke",
+            summary: "Stale evidence persistence must roll back.",
+            findings: [],
+            metadata: { smokeId: marker }
+          },
+          feedback: {
+            status: "candidate" as const,
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: { smokeId: marker }
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        const captureBackendPid = await postgresBackendPid(captureClient);
+        const blockerBackendPid = await postgresBackendPid(blockerClient);
+
+        await blockerClient.unsafe("begin");
+        blockerTransactionOpen = true;
+        await blockerClient`
+          select pg_advisory_xact_lock(
+            hashtextextended(${`${planned.id}:${captureIdentity}`}, 0)
+          )
+        `;
+        staleCapture = captureRepository.createEvidenceFeedbackOnce(staleInput);
+        await waitForPostgresBackendBlock(
+          blockerClient,
+          captureBackendPid,
+          [blockerBackendPid]
+        );
+
+        const running = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: planned.id,
+          expectedStatus: "planned",
+          status: "running",
+          startedAt: "2026-07-13T11:01:00.000Z",
+          event: {
+            sequence: 3,
+            type: "smoke.evidence_lifecycle_race.started",
+            message: "lifecycle transition wins before stale capture",
+            payload: { smokeId: marker }
+          }
+        });
+
+        await blockerClient.unsafe("commit");
+        blockerTransactionOpen = false;
+        const [captureResult] = await Promise.allSettled([staleCapture]);
+
+        expect(running.lifecycleRevision).toBe(2);
+        expect(captureResult.status).toBe("rejected");
+        if (captureResult.status !== "rejected") {
+          throw new Error("stale evidence capture unexpectedly persisted");
+        }
+        expect(captureResult.reason).toBeInstanceOf(ExecutionRunLifecycleConflictError);
+        expect(captureResult.reason).toMatchObject({
+          conflict: {
+            kind: "revision",
+            executionRunId: planned.id,
+            expectedLifecycleRevision: 1,
+            actualLifecycleRevision: 2
+          }
+        });
+
+        const [sideEffects] = await scaffold.client<{
+          evidenceBundleCount: number;
+          reviewAssessmentCount: number;
+          feedbackDeltaCount: number;
+          feedbackOutboxCount: number;
+          runEventCount: number;
+        }[]>`
+          select
+            (select count(*)::int from evidence_bundles where capture_identity = ${captureIdentity}) as "evidenceBundleCount",
+            (select count(*)::int from review_assessments review
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${captureIdentity}) as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas where metadata->>'captureIdentity' = ${captureIdentity}) as "feedbackDeltaCount",
+            (select count(*)::int from outbox_events where payload->>'captureIdentity' = ${captureIdentity}) as "feedbackOutboxCount",
+            (select count(*)::int from run_events where execution_run_id = ${planned.id}) as "runEventCount"
+        `;
+        expect(sideEffects).toEqual({
+          evidenceBundleCount: 0,
+          reviewAssessmentCount: 0,
+          feedbackDeltaCount: 0,
+          feedbackOutboxCount: 0,
+          runEventCount: 2
+        });
+
+        const aggregateAfterConflict =
+          await scaffold.harnessRunRepository.getHarnessRunByExecutionRunId(planned.id);
+        expect(aggregateAfterConflict?.executionRun).toMatchObject({
+          status: "running",
+          lifecycleRevision: 2,
+          startedAt: "2026-07-13T11:01:00.000Z"
+        });
+        expect(aggregateAfterConflict?.executionRun.completedAt).toBeUndefined();
+
+        const malformedBindingIdentity = `${captureIdentity}:malformed-binding`;
+        const malformedBindingInput = {
+          ...staleInput,
+          sourceRunLifecycleRevision: running.lifecycleRevision,
+          captureIdentity: malformedBindingIdentity,
+          evidence: {
+            ...staleInput.evidence,
+            event: {
+              sequence: 4,
+              type: "smoke.evidence_lifecycle_race.malformed_binding",
+              message: "incomplete packet binding must not persist",
+              payload: { smokeId: marker, captureIdentity: malformedBindingIdentity }
+            },
+            metadata: {
+              smokeId: marker,
+              decisionPacketBindingState: "bound_current",
+              decisionPacketSourceRunLifecycleRevision: running.lifecycleRevision
+            }
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        await expect(
+          captureRepository.createEvidenceFeedbackOnce(malformedBindingInput)
+        ).rejects.toThrow(
+          "DecisionPacket bound_current metadata has an inconsistent checksum or evidence ref"
+        );
+
+        const mismatchedBindingIdentity = `${captureIdentity}:mismatched-binding`;
+        const mismatchedBindingInput = {
+          ...staleInput,
+          sourceRunLifecycleRevision: running.lifecycleRevision,
+          captureIdentity: mismatchedBindingIdentity,
+          evidence: {
+            ...staleInput.evidence,
+            event: {
+              sequence: 4,
+              type: "smoke.evidence_lifecycle_race.mismatched_binding",
+              message: "stale packet binding must not borrow the current run revision",
+              payload: { smokeId: marker, captureIdentity: mismatchedBindingIdentity }
+            }
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        const [mismatchedBindingResult] = await Promise.allSettled([
+          captureRepository.createEvidenceFeedbackOnce(mismatchedBindingInput)
+        ]);
+        expect(mismatchedBindingResult?.status).toBe("rejected");
+        if (mismatchedBindingResult?.status !== "rejected") {
+          throw new Error("stale DecisionPacket binding unexpectedly persisted");
+        }
+        expect(mismatchedBindingResult.reason).toBeInstanceOf(
+          ExecutionRunLifecycleConflictError
+        );
+        expect(mismatchedBindingResult.reason).toMatchObject({
+          conflict: {
+            kind: "revision",
+            executionRunId: planned.id,
+            expectedLifecycleRevision: 1,
+            actualLifecycleRevision: 2
+          }
+        });
+        const [mismatchedBindingSideEffects] = await scaffold.client<{ count: number }[]>`
+          select count(*)::int as count
+          from evidence_bundles
+          where capture_identity = ${malformedBindingIdentity}
+             or capture_identity = ${mismatchedBindingIdentity}
+        `;
+        expect(mismatchedBindingSideEffects?.count).toBe(0);
+
+        const currentCaptureIdentity = `${captureIdentity}:current`;
+        const currentPacketChecksum = crypto
+          .createHash("sha256")
+          .update(`${marker}:revision:2`)
+          .digest("hex");
+        const currentInput = {
+          ...staleInput,
+          sourceRunLifecycleRevision: running.lifecycleRevision,
+          captureIdentity: currentCaptureIdentity,
+          evidence: {
+            ...staleInput.evidence,
+            event: {
+              sequence: 4,
+              type: "smoke.evidence_lifecycle_race.current_captured",
+              message: "current evidence may persist",
+              payload: { smokeId: marker, captureIdentity: currentCaptureIdentity }
+            },
+            metadata: {
+              ...staleInput.evidence.metadata,
+              decisionPacketChecksum: currentPacketChecksum,
+              decisionPacketEvidenceRef: `packet:${currentPacketChecksum}`,
+              decisionPacketGeneratedAt: "2026-07-13T11:01:00.000Z",
+              decisionPacketSourceRunLifecycleRevision: running.lifecycleRevision
+            }
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        const currentCapture = await captureRepository.createEvidenceFeedbackOnce(currentInput);
+        expect(currentCapture.created).toBe(true);
+
+        const succeeded = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: planned.id,
+          expectedStatus: "running",
+          status: "succeeded",
+          completedAt: "2026-07-13T11:02:00.000Z",
+          event: {
+            sequence: 5,
+            type: "smoke.evidence_lifecycle_race.succeeded",
+            message: "lifecycle advances after current evidence",
+            payload: { smokeId: marker }
+          }
+        });
+        expect(succeeded.lifecycleRevision).toBe(3);
+
+        const historicalRetry = await captureRepository.createEvidenceFeedbackOnce(currentInput);
+        expect(historicalRetry).toMatchObject({
+          created: false,
+          evidenceBundle: { id: currentCapture.evidenceBundle.id },
+          reviewAssessment: { id: currentCapture.reviewAssessment.id },
+          feedbackDelta: { id: currentCapture.feedbackDelta.id }
+        });
+
+        const [historicalRetryCounts] = await scaffold.client<{
+          evidenceBundleCount: number;
+          reviewAssessmentCount: number;
+          feedbackDeltaCount: number;
+          feedbackOutboxCount: number;
+          runEventCount: number;
+        }[]>`
+          select
+            (select count(*)::int from evidence_bundles where capture_identity = ${currentCaptureIdentity}) as "evidenceBundleCount",
+            (select count(*)::int from review_assessments review
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${currentCaptureIdentity}) as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas where metadata->>'captureIdentity' = ${currentCaptureIdentity}) as "feedbackDeltaCount",
+            (select count(*)::int from outbox_events where payload->>'captureIdentity' = ${currentCaptureIdentity}) as "feedbackOutboxCount",
+            (select count(*)::int from run_events where execution_run_id = ${planned.id}) as "runEventCount"
+        `;
+        expect(historicalRetryCounts).toEqual({
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          feedbackOutboxCount: 1,
+          runEventCount: 4
+        });
+      } finally {
+        if (blockerTransactionOpen) {
+          await blockerClient.unsafe("rollback");
+        }
+        await staleCapture?.catch(() => undefined);
+        await scaffold.cleanup();
+        await Promise.all([
+          scaffold.client.end(),
+          captureClient.end(),
+          blockerClient.end()
+        ]);
       }
     }
   );
