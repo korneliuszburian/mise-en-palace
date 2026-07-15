@@ -38,8 +38,7 @@ import {
   memoryFeedbackEvents,
   memoryRecords,
   memoryRecordVersions,
-  outboxEvents,
-  workspaces
+  outboxEvents
 } from "../../schema/index.js";
 
 const memoryGovernanceCheckpointCommand =
@@ -266,6 +265,7 @@ export const runMemoryGovernanceSmokeCheck = async (
   let staleLifecycleRevisionRejected = false;
   let fabricatedApplicationAuthorityRejected = false;
   let crossRunTaskContextRejected = false;
+  let crossProjectMemoryApplicationRejected = false;
   let unselectedMemoryApplicationRejected = false;
   let conflictingRetryRejected = false;
   let conflictRaceApplicationCount = 0;
@@ -823,6 +823,133 @@ export const runMemoryGovernanceSmokeCheck = async (
         smokeId: marker
       }
     } as const;
+    const otherOperatorIntent = await harnessRunRepository.createOperatorIntent({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      source: "cli",
+      rawIntent: `${task} other run`,
+      metadata: { smokeId: marker }
+    });
+    const otherTaskContract = await harnessRunRepository.createTaskContract({
+      operatorIntentId: otherOperatorIntent.id,
+      projectId: project.id,
+      title: `${task} other run`,
+      objective: "Provide valid but cross-run task authority.",
+      constraints: [],
+      nonGoals: [],
+      acceptance: ["Cross-run application authority rejects."],
+      metadata: { smokeId: marker }
+    });
+    const otherHarnessPlan = await harnessRunRepository.createHarnessPlan({
+      taskContractId: otherTaskContract.id,
+      version: 1,
+      status: "running",
+      summary: "Other memory governance run",
+      nextAction: "Remain unrelated to the canonical execution run.",
+      metadata: { smokeId: marker }
+    });
+    const otherContextAssembly = await harnessRunRepository.createContextAssembly({
+      harnessPlanId: otherHarnessPlan.id,
+      status: "assembled",
+      tokenBudget: 128,
+      inclusions: [],
+      exclusions: [],
+      metadata: { smokeId: marker }
+    });
+    const crossProject = await new DrizzleProjectRepository(db).createProject({
+      workspaceId: workspace.id,
+      slug: `memory-governance-cross-project-${marker}`,
+      displayName: `memory-governance-cross-project-${marker}`,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "cross-project-authority"
+      }
+    });
+    const crossProjectApplicationMemory = await memoryRepository.createMemoryRecord({
+      projectId: crossProject.id,
+      key: `memory-governance-cross-project-application:${marker}`,
+      kind: "constraint",
+      summary: "Cross-project application authority probe",
+      body: "A memory from another project cannot be applied to this execution run.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use only to falsify cross-project application admission.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        applicationKind: "cross-project-authority"
+      }
+    });
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        taskContractId: otherTaskContract.id,
+        metadata: {
+          smokeId: marker,
+          applicationKind: "cross-run-task-authority"
+        }
+      }),
+      "task contract does not match the execution run",
+      "Memory governance accepted a task contract from another run before admission"
+    );
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        contextAssemblyId: otherContextAssembly.id,
+        metadata: {
+          smokeId: marker,
+          applicationKind: "cross-run-context-authority"
+        }
+      }),
+      "context assembly does not match the execution run",
+      "Memory governance accepted a context assembly from another run before admission"
+    );
+    const rejectedLineageApplicationRows = await db
+      .select({ id: memoryApplications.id })
+      .from(memoryApplications)
+      .where(sql`${memoryApplications.metadata}->>'applicationKind' IN (
+        'cross-run-task-authority',
+        'cross-run-context-authority'
+      )`);
+    const rejectedLineageOutboxRows = await db
+      .select({ id: outboxEvents.id })
+      .from(outboxEvents)
+      .where(sql`${outboxEvents.topic} = 'memory.application.created'
+        AND ${outboxEvents.payload}->>'memoryRecordId' = ${memoryRecord.id}
+        AND ${outboxEvents.payload}->>'executionRunId' = ${executionRun.id}`);
+    if (rejectedLineageApplicationRows.length !== 0 || rejectedLineageOutboxRows.length !== 0) {
+      throw new Error("Rejected cross-run memory application authority left persisted effects");
+    }
+    crossRunTaskContextRejected = true;
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        memoryRecordId: crossProjectApplicationMemory.id,
+        metadata: {
+          smokeId: marker,
+          applicationKind: "cross-project-authority"
+        }
+      }),
+      "run, task project, and memory record do not match",
+      "Memory governance accepted a memory record from another project before admission"
+    );
+    const rejectedProjectApplicationRows = await db
+      .select({ id: memoryApplications.id })
+      .from(memoryApplications)
+      .where(eq(memoryApplications.memoryRecordId, crossProjectApplicationMemory.id));
+    const rejectedProjectOutboxRows = await db
+      .select({ id: outboxEvents.id })
+      .from(outboxEvents)
+      .where(sql`${outboxEvents.topic} = 'memory.application.created'
+        AND ${outboxEvents.payload}->>'memoryRecordId' = ${crossProjectApplicationMemory.id}
+        AND ${outboxEvents.payload}->>'executionRunId' = ${executionRun.id}`);
+    if (rejectedProjectApplicationRows.length !== 0 || rejectedProjectOutboxRows.length !== 0) {
+      throw new Error("Rejected cross-project memory application authority left persisted effects");
+    }
+    crossProjectMemoryApplicationRejected = true;
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
@@ -934,56 +1061,7 @@ export const runMemoryGovernanceSmokeCheck = async (
     );
     mismatchedPacketIssuanceRejected = true;
 
-    const otherOperatorIntent = await harnessRunRepository.createOperatorIntent({
-      workspaceId: workspace.id,
-      projectId: project.id,
-      source: "cli",
-      rawIntent: `${task} other run`,
-      metadata: { smokeId: marker }
-    });
-    const otherTaskContract = await harnessRunRepository.createTaskContract({
-      operatorIntentId: otherOperatorIntent.id,
-      projectId: project.id,
-      title: `${task} other run`,
-      objective: "Provide valid but cross-run task authority.",
-      constraints: [],
-      nonGoals: [],
-      acceptance: ["Cross-run application authority rejects."],
-      metadata: { smokeId: marker }
-    });
-    const otherHarnessPlan = await harnessRunRepository.createHarnessPlan({
-      taskContractId: otherTaskContract.id,
-      version: 1,
-      status: "running",
-      summary: "Other memory governance run",
-      nextAction: "Remain unrelated to the canonical execution run.",
-      metadata: { smokeId: marker }
-    });
-    const otherContextAssembly = await harnessRunRepository.createContextAssembly({
-      harnessPlanId: otherHarnessPlan.id,
-      status: "assembled",
-      tokenBudget: 128,
-      inclusions: [],
-      exclusions: [],
-      metadata: { smokeId: marker }
-    });
     const unverifiedPacketApplication = packetBoundApplication;
-
-    await assertRejected(
-      memoryRepository.recordMemoryApplicationWithEffectsOnce({
-        ...unverifiedPacketApplication,
-        taskContractId: otherTaskContract.id,
-        contextAssemblyId: otherContextAssembly.id,
-        outcome: "neutral",
-        metadata: {
-          smokeId: marker,
-          applicationKind: "cross-run-authority"
-        }
-      }),
-      "memory application identity conflict",
-      "Memory governance accepted valid task and context identities from another run"
-    );
-    crossRunTaskContextRejected = true;
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
@@ -1815,23 +1893,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const activeMemoryAfterInvalidation = await memoryRepository.listActiveMemory(project.id, 10);
-    const smokeWorkspace = await db.query.workspaces.findFirst({
-      where: eq(workspaces.slug, workspaceSlug)
-    });
-
-    if (smokeWorkspace === undefined) {
-      throw new Error("Memory governance smoke workspace was not found for lifecycle probes");
-    }
-
-    const crossProject = await new DrizzleProjectRepository(db).createProject({
-      workspaceId: smokeWorkspace.id,
-      slug: `memory-governance-cross-project-${marker}`,
-      displayName: `memory-governance-cross-project-${marker}`,
-      metadata: {
-        smokeId: marker,
-        lifecycleProbe: "cross-project-supersession"
-      }
-    });
     const supersessionCurrent = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `memory-governance-supersession-current:${marker}`,
@@ -2151,6 +2212,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       {
         label: "cross-run task and context authority rejects",
         passed: crossRunTaskContextRejected
+      },
+      {
+        label: "cross-project memory application authority rejects",
+        passed: crossProjectMemoryApplicationRejected
       },
       {
         label: "unselected memory authority rejects",
