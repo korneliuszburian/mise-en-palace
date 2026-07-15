@@ -30,3 +30,4 @@ export * from "./source-artifact-preview-extraction.js";
 export * from "./task-contract.js";
 export * from "./target-fit.js";
 export * from "./time.js";
+export * from "./usefulness-application-evidence.js";
