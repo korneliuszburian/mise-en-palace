@@ -639,6 +639,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     private readonly options: {
       faultAfterStage?: (stage: MemoryApplicationPersistenceStage) => void | Promise<void>;
       faultAfterRevisionStage?: (stage: MemoryRevisionPersistenceStage) => void;
+      beforeCounterRebuildPersist?: () => Promise<void>;
+      faultAfterCounterRebuildReset?: () => void;
     } = {}
   ) {}
 
@@ -1985,18 +1987,17 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       .update(memoryRecords)
       .set({
         positiveFeedbackCount: 0,
-        negativeFeedbackCount: 0,
-        updatedAt: new Date()
+        negativeFeedbackCount: 0
       })
       .where(isNotNull(memoryRecords.id));
+    this.options.faultAfterCounterRebuildReset?.();
 
     for (const [memoryRecordId, counts] of state.countsByMemoryRecord) {
       await tx
         .update(memoryRecords)
         .set({
           positiveFeedbackCount: counts.positiveFeedbackCount,
-          negativeFeedbackCount: counts.negativeFeedbackCount,
-          updatedAt: new Date()
+          negativeFeedbackCount: counts.negativeFeedbackCount
         })
         .where(eq(memoryRecords.id, memoryRecordId));
     }
@@ -2004,11 +2005,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return memoryRecordRows.length;
   }
 
-  // fallow-ignore-next-line unused-class-member -- public repair boundary consumed by the real PostgreSQL governance smoke and future doctor repair flow
   async rebuildMemoryApplicationCounters(): Promise<RebuildMemoryApplicationCountersResult> {
     return this.db.transaction(async (tx) => {
+      await tx.execute(sql`lock table "memory_applications" in share mode`);
       const { applicationRows, canonicalApplications } = await this.classifyMemoryApplications(tx);
       const counterState = this.memoryApplicationCounterState(canonicalApplications);
+      await this.options.beforeCounterRebuildPersist?.();
       const rebuiltMemoryRecordCount = await this.persistMemoryApplicationCounters(
         counterState,
         tx

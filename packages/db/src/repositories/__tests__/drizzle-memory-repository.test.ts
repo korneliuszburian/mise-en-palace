@@ -1,12 +1,53 @@
 import { describe, expect, it } from "vitest";
+import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { eq, sql } from "drizzle-orm";
+import postgres from "postgres";
 
 import {
   activeMemorySelectionOrder,
   antiMemoryPromotionMetadata,
   assertAntiMemoryCandidateInvariants,
   assertMemoryCoreInvariants,
+  DrizzleMemoryRepository,
   memoryPromotionMetadata
 } from "../drizzle-memory-repository.js";
+import { createKrnDatabase } from "../../database.js";
+import {
+  cleanupActivationSmokeRows,
+  countActivationSmokeMarkerRows,
+  createSmokeHarnessScaffold
+} from "../../dev/smoke/db-smoke-support.js";
+import { memoryApplications, memoryRecords } from "../../schema/index.js";
+
+const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+const postgresIt = it.skipIf(databaseUrl === undefined || databaseUrl.length === 0);
+const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
+
+const waitForBackendTableLock = async (
+  observer: ReturnType<typeof postgres>,
+  backendPid: number
+): Promise<void> => {
+  const deadline = Date.now() + 5_000;
+
+  while (Date.now() < deadline) {
+    const [activity] = await observer<{
+      waitEventType: string | null;
+    }[]>`
+      select wait_event_type as "waitEventType"
+      from pg_stat_activity
+      where pid = ${backendPid}
+    `;
+
+    if (activity?.waitEventType === "Lock") {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  throw new Error(`writer backend ${backendPid} did not wait for the rebuild table lock`);
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,6 +83,169 @@ const orderDirection = (order: unknown): "asc" | "desc" | undefined => {
 };
 
 describe("DrizzleMemoryRepository", () => {
+  postgresIt("serializes counter rebuild with a concurrent memory application", async () => {
+    const marker = `krn_counter_rebuild_race_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "memory counter rebuild race",
+      workspacePrefix: "krn-counter-rebuild-race",
+      projectSlug: "counter-rebuild-race",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `memory counter rebuild race ${marker}`,
+      taskContract: {
+        title: "Falsify memory counter rebuild races",
+        objective: "Keep a committed application visible after counter reconciliation.",
+        constraints: ["two PostgreSQL connections"],
+        nonGoals: ["measure throughput"],
+        acceptance: ["counter equals canonical applications at one serialized snapshot"]
+      },
+      harnessPlan: {
+        summary: "Memory counter rebuild race",
+        nextAction: "Interleave one application after classification."
+      }
+    });
+    const writerClient = postgres(databaseUrl!, { max: 1 });
+    const observerClient = postgres(databaseUrl!, { max: 1 });
+    const writerDb = createKrnDatabase(writerClient);
+    let releaseRebuild = (): void => undefined;
+    let reportClassified = (): void => undefined;
+    const rebuildClassified = new Promise<void>((resolve) => {
+      reportClassified = resolve;
+    });
+    const allowRebuildPersist = new Promise<void>((resolve) => {
+      releaseRebuild = resolve;
+    });
+
+    try {
+      const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
+        harnessPlanId: scaffold.harnessPlan.id,
+        adapter: "counter-rebuild-race",
+        status: "planned",
+        metadata: { smokeId: marker }
+      });
+      const memoryRecord = await scaffold.memoryRepository.createMemoryRecord({
+        projectId: scaffold.project.id,
+        key: `memory:counter-rebuild-race:${marker}`,
+        kind: "constraint",
+        status: "active",
+        summary: "Counter rebuild race target",
+        body: "A committed hurt application must remain counted after reconciliation.",
+        owner: "kernel",
+        confidence: 90,
+        applicationGuidance: "Use only for the counter rebuild race test.",
+        invalidationRule: "Remove after the race test.",
+        sourceLineage: [{ sourceId: `source:${marker}` }],
+        isUserPreference: false,
+        metadata: { smokeId: marker }
+      });
+      const rankingPeerInputs = [
+        { key: "newer", updatedAt: new Date("2026-07-14T06:00:00.000Z") },
+        { key: "older", updatedAt: new Date("2026-07-13T06:00:00.000Z") }
+      ] as const;
+      const rankingPeers = await Promise.all(rankingPeerInputs.map(({ key }) =>
+        scaffold.memoryRepository.createMemoryRecord({
+          projectId: scaffold.project.id,
+          key: `memory:counter-rebuild-race:${key}:${marker}`,
+          kind: "constraint",
+          status: "active",
+          summary: `Counter rebuild ranking peer ${key}`,
+          body: "Counter-only repair must not rewrite semantic recency.",
+          owner: "kernel",
+          confidence: 80,
+          applicationGuidance: "Use only for the counter rebuild ordering test.",
+          invalidationRule: "Remove after the ordering test.",
+          sourceLineage: [{ sourceId: `source:${marker}` }],
+          isUserPreference: false,
+          metadata: { smokeId: marker, rankingPeer: key }
+        })
+      ));
+      await Promise.all(rankingPeers.map((peer, index) => scaffold.db
+        .update(memoryRecords)
+        .set({ updatedAt: rankingPeerInputs[index]!.updatedAt })
+        .where(eq(memoryRecords.id, peer.id))));
+      const beforeRebuildPeers = await Promise.all(rankingPeers.map((peer) =>
+        scaffold.memoryRepository.getMemoryRecordById(peer.id)
+      ));
+      const beforeRebuildOrder = (await scaffold.memoryRepository
+        .listActiveMemory(scaffold.project.id, 100))
+        .filter((record) => rankingPeers.some((peer) => peer.id === record.id))
+        .map((record) => record.id);
+      const rebuildRepository = new DrizzleMemoryRepository(scaffold.db, {
+        beforeCounterRebuildPersist: async () => {
+          reportClassified();
+          await allowRebuildPersist;
+        }
+      });
+      const rebuild = rebuildRepository.rebuildMemoryApplicationCounters();
+      await rebuildClassified;
+
+      const [{ pid: writerBackendPid }] = await writerClient<{ pid: number }[]>`
+        select pg_backend_pid()::int as pid
+      `;
+      const writer = writerDb.transaction(async (tx) => {
+        await tx.insert(memoryApplications).values({
+          memoryRecordId: memoryRecord.id,
+          executionRunId: executionRun.id,
+          decisionPacketChecksum: "a".repeat(64),
+          expectedUse: "Falsify a stale counter snapshot.",
+          outcome: "hurt",
+          notes: "Committed after rebuild classification.",
+          metadata: {
+            smokeId: marker,
+            decisionPacketChecksum: "a".repeat(64),
+            decisionPacketGeneratedAt: "2026-07-15T06:00:00.000Z",
+            decisionPacketSourceRunLifecycleRevision: 1,
+            memoryApplicationRequestFingerprint: "race-fingerprint"
+          }
+        });
+        await tx
+          .update(memoryRecords)
+          .set({
+            negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`,
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, memoryRecord.id));
+      });
+      await waitForBackendTableLock(observerClient, writerBackendPid);
+
+      releaseRebuild();
+      await Promise.all([rebuild, writer]);
+
+      const afterRebuild = await scaffold.memoryRepository.getMemoryRecordById(memoryRecord.id);
+      const afterRebuildPeers = await Promise.all(rankingPeers.map((peer) =>
+        scaffold.memoryRepository.getMemoryRecordById(peer.id)
+      ));
+      const afterRebuildOrder = (await scaffold.memoryRepository
+        .listActiveMemory(scaffold.project.id, 100))
+        .filter((record) => rankingPeers.some((peer) => peer.id === record.id))
+        .map((record) => record.id);
+      expect(afterRebuild?.negativeFeedbackCount).toBe(1);
+      expect(afterRebuildPeers.map((peer) => peer?.updatedAt))
+        .toEqual(beforeRebuildPeers.map((peer) => peer?.updatedAt));
+      expect(afterRebuildOrder).toEqual(beforeRebuildOrder);
+
+      const faultRepository = new DrizzleMemoryRepository(scaffold.db, {
+        faultAfterCounterRebuildReset: () => {
+          throw new Error("fault:after_counter_rebuild_reset");
+        }
+      });
+      await expect(faultRepository.rebuildMemoryApplicationCounters())
+        .rejects.toThrow("fault:after_counter_rebuild_reset");
+      const afterFault = await scaffold.memoryRepository.getMemoryRecordById(memoryRecord.id);
+      expect(afterFault).toMatchObject({
+        negativeFeedbackCount: afterRebuild?.negativeFeedbackCount,
+        updatedAt: afterRebuild?.updatedAt
+      });
+    } finally {
+      releaseRebuild();
+      await scaffold.cleanup();
+      await Promise.all([scaffold.client.end(), writerClient.end(), observerClient.end()]);
+    }
+  });
+
   it("orders active memory before limit by negative feedback, positive feedback, then recency", () => {
     const order = activeMemorySelectionOrder();
 
