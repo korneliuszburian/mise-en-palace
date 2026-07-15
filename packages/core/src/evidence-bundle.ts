@@ -329,6 +329,7 @@ export const commandResultDoesNotProve =
 export const targetEvidenceDoesNotProve = [
   "Target evidence does not prove KRN source correctness.",
   "Target evidence content-addresses the current patch but does not independently prove who created it or that the repository was clean before the run.",
+  "Target evidence observes one admission snapshot; it does not lock the repository against a concurrent or later mutation.",
   "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
   "Target evidence does not prove product readiness or V02-01 second-operator usability."
 ] as const;

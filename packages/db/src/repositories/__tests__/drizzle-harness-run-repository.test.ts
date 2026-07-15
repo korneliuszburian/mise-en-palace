@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,7 @@ import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import {
   buildDecisionPacketAuthorityProjection,
+  canonicalTargetRepoPath,
   collectTargetStateSnapshot,
   createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
@@ -1534,6 +1535,9 @@ describe("DrizzleHarnessRunRepository", () => {
         path.join(targetRepo, "src/application.ts"),
         "export const application = true;\n"
       );
+      const targetRepoAlias = `${targetRepo}-alias`;
+      await symlink(targetRepo, targetRepoAlias, "dir");
+      const canonicalTargetRepo = await canonicalTargetRepoPath(targetRepo);
       let blockerTransactionOpen = false;
       let captureB: ReturnType<DrizzleHarnessRunRepository["createEvidenceFeedbackOnce"]> |
         undefined;
@@ -1944,7 +1948,7 @@ describe("DrizzleHarnessRunRepository", () => {
           packetGeneratedAt: packetBeforeProvedHelped.packetGeneratedAt,
           sourceRunLifecycleRevision: executionRun.lifecycleRevision,
           targetState: {
-            targetRepo,
+            targetRepo: targetRepoAlias,
             treeIdentity: applicationSnapshot.treeIdentity,
             patchIdentity: applicationSnapshot.patchIdentity,
             changedFiles: [...applicationSnapshot.changedPaths]
@@ -1964,7 +1968,14 @@ describe("DrizzleHarnessRunRepository", () => {
           .recordUsefulnessApplicationOnce(applicationIdentity);
         expect(application).toMatchObject({
           created: true,
-          application: { ...applicationIdentity, appliedAt: expect.any(String) }
+          application: {
+            ...applicationIdentity,
+            targetState: {
+              ...applicationIdentity.targetState,
+              targetRepo: canonicalTargetRepo
+            },
+            appliedAt: expect.any(String)
+          }
         });
         expect(applicationRetry).toMatchObject({
           created: false,
@@ -2022,7 +2033,7 @@ describe("DrizzleHarnessRunRepository", () => {
                   undefined
                 ).evidence.metadata,
                 targetEvidence: {
-                  targetRepo,
+                  targetRepo: targetRepoAlias,
                   mode: "headless_repair",
                   dirtyBefore: "clean",
                   dirtyAfter: "dirty",
@@ -2118,7 +2129,7 @@ describe("DrizzleHarnessRunRepository", () => {
                 undefined
               ).evidence.metadata,
               targetEvidence: {
-                targetRepo,
+                targetRepo: targetRepoAlias,
                 mode: "headless_repair",
                 dirtyBefore: "clean",
                 dirtyAfter: "dirty",
@@ -2418,7 +2429,10 @@ describe("DrizzleHarnessRunRepository", () => {
           captureBClient.end(),
           blockerClient.end()
         ]);
-        await rm(targetRepo, { recursive: true, force: true });
+        await Promise.all([
+          rm(targetRepoAlias, { force: true }),
+          rm(targetRepo, { recursive: true, force: true })
+        ]);
       }
     }
   );

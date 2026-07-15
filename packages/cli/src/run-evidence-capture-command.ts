@@ -32,6 +32,7 @@ import {
   authorizeDecisionPacketUsefulness,
   assessCurrentDecisionPacketHelpedProof,
   assessCandidateReviewability,
+  canonicalTargetRepoPath,
   collectTargetStateSnapshot,
   decideEvidenceContractActivation,
   decisionPacketBindingReadbackFromMetadata,
@@ -2081,7 +2082,9 @@ const applicationTargetEvidence = async (
   runtime: EvidenceCaptureRuntime,
   targetEvidence: TargetEvidenceInput
 ): Promise<TargetEvidence> => {
-  const targetRepo = path.resolve(runtime.cwd, targetEvidence.targetRepo);
+  const targetRepo = await canonicalTargetRepoPath(
+    path.resolve(runtime.cwd, targetEvidence.targetRepo)
+  );
   const snapshot = await (runtime.readTargetStateSnapshot ?? collectTargetStateSnapshot)(
     targetRepo
   );

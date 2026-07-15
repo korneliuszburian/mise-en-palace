@@ -38,6 +38,7 @@ import {
   assessCommandOutputArtifactIntegrity,
   assessCurrentDecisionPacketHelpedProof,
   authorizeDecisionPacketUsefulness,
+  canonicalTargetRepoPath,
   collectTargetStateSnapshot,
   decideEvidenceContractActivation,
   decisionPacketAuthorityAdmissionCurrent,
@@ -1336,10 +1337,13 @@ const applicationTargetMatchesCapture = async (
   if (applicationTarget === undefined || !targetEvidenceClaimsFreshOwnedPatch(target)) {
     return false;
   }
-  const snapshot = await readTargetStateSnapshot(target.targetRepo);
+  const targetRepo = await canonicalTargetRepoPath(target.targetRepo);
+  if (targetRepo !== applicationTarget.targetRepo) {
+    return false;
+  }
+  const snapshot = await readTargetStateSnapshot(targetRepo);
 
   return snapshotMatchesApplicationTarget(snapshot, applicationTarget) &&
-    target.targetRepo === applicationTarget.targetRepo &&
     target.treeIdentity === applicationTarget.treeIdentity &&
     target.patchIdentity === applicationTarget.patchIdentity &&
     JSON.stringify(target.changedFiles.map((file) => file.path).sort()) ===
@@ -2488,12 +2492,21 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async recordUsefulnessApplicationOnce(
     input: UsefulnessApplicationEvidenceIdentity
   ): Promise<RecordUsefulnessApplicationOnceResult> {
-    const authorityInput = parseUsefulnessApplicationEvidenceIdentity(
+    const parsedInput = parseUsefulnessApplicationEvidenceIdentity(
       snapshotRepositoryInput(input)
     );
-    if (authorityInput === undefined) {
+    if (parsedInput === undefined) {
       throw new Error("recordUsefulnessApplicationOnce requires valid application evidence");
     }
+    const authorityInput = parsedInput.targetState === undefined
+      ? parsedInput
+      : {
+          ...parsedInput,
+          targetState: {
+            ...parsedInput.targetState,
+            targetRepo: await canonicalTargetRepoPath(parsedInput.targetState.targetRepo)
+          }
+        };
     await requireCurrentApplicationTarget(
       authorityInput,
       this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
