@@ -13,20 +13,12 @@ import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
 import {
-  parseDecisionPacketContractReadback
+  parseDecisionPacketContractReadback,
+  type DecisionPacketJsonObject as JsonObject,
+  type DecisionPacketJsonValue as JsonValue
 } from "./decision-packet-contract-parser.js";
 
 type JsonRpcId = string | number;
-
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | JsonObject;
-
-type JsonObject = { readonly [key: string]: JsonValue };
 
 interface JsonRpcRequest {
   readonly jsonrpc: "2.0";
@@ -413,9 +405,7 @@ const runDecisionPacket = async (
     );
   }
 
-  return jsonResult(boundedReadback(annotateMcpTransportProof(
-    readback as unknown as JsonValue
-  )));
+  return jsonResult(boundedReadback(annotateMcpTransportProof(readback)));
 };
 
 // fallow-ignore-next-line complexity -- protocol boundary distinguishes schema, tool, argument, and execution failure channels

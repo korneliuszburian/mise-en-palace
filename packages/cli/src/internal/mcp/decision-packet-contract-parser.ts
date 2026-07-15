@@ -4,9 +4,20 @@ import {
 import {
   decisionPacketChecksum,
   type DecisionPacket,
-  type DecisionPacketContractReadback,
   type DecisionPacketIdentity
 } from "@krn/core";
+
+export type DecisionPacketJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | DecisionPacketJsonValue[]
+  | DecisionPacketJsonObject;
+
+export type DecisionPacketJsonObject = {
+  readonly [key: string]: DecisionPacketJsonValue;
+};
 
 const transportProof =
   "DecisionPacket was served through the read-only krn_decision_packet MCP tool";
@@ -320,7 +331,7 @@ const isProof = (value: unknown): boolean =>
 export const parseDecisionPacketContractReadback = (
   value: unknown,
   requestedRunId: string
-): DecisionPacketContractReadback | undefined => {
+): DecisionPacketJsonObject | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -350,5 +361,5 @@ export const parseDecisionPacketContractReadback = (
     return undefined;
   }
 
-  return value as unknown as DecisionPacketContractReadback;
+  return value as DecisionPacketJsonObject;
 };
