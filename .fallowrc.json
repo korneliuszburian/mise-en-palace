@@ -28,6 +28,7 @@
         "listMemoryCandidates",
         "listMemoryRecordsForProject",
         "listActiveMemory",
+        "listHistoricalMemoryWarnings",
         "createMemoryCandidate",
         "invalidateMemoryRecord",
         "supersedeMemoryRecord",
@@ -63,6 +64,7 @@
         "createSourceClaimEdge",
         "listSourceClaimEdgesForClaim",
         "createSourceDecisionEdge",
+        "listHistoricalClaimWarningsForProject",
         "listSourceDecisionEdgesForRun",
         "createSourceRejection",
         "getSourceDecisionEdgeById"
