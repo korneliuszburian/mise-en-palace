@@ -16,6 +16,8 @@ export interface DecisionPacketTransportMeasurement {
 }
 
 export const decisionPacketTransportBudget = {
+  maximumInputLineUtf8Bytes: 16 * 1024,
+  maximumRunIdUtf8Bytes: 256,
   maximumMessageUtf8Bytes: 64 * 1024,
   maximumCollectionElements: 64
 } as const;

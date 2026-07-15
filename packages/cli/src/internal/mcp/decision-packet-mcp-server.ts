@@ -2,6 +2,9 @@ import {
   randomUUID
 } from "node:crypto";
 import {
+  Buffer
+} from "node:buffer";
+import {
   isCliEntrypoint
 } from "../eval/eval-main.js";
 import {
@@ -18,6 +21,10 @@ import {
   type DecisionPacketJsonObject as JsonObject,
   type DecisionPacketJsonValue as JsonValue
 } from "./decision-packet-contract-parser.js";
+import {
+  decisionPacketTransportBudget,
+  measureDecisionPacketTransport
+} from "./decision-packet-transport-measurement.js";
 
 type JsonRpcId = string | number;
 
@@ -85,6 +92,9 @@ const decisionPacketExecutionErrorClass = "decision_packet_execution_failed";
 const decisionPacketExecutionErrorText =
   `KRN DecisionPacket execution failed (error_class=${decisionPacketExecutionErrorClass}). `
   + "Verify the runId and KRN database readiness, then retry.";
+const decisionPacketOutputLimitErrorText =
+  "KRN DecisionPacket output exceeds the MCP transport budget "
+  + "(error_class=decision_packet_output_limit_exceeded).";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -228,6 +238,9 @@ const jsonResult = (
   structuredContent: value,
   isError: false
 });
+
+const outputLimitResult = (): ToolCallResult =>
+  textResult(decisionPacketOutputLimitErrorText, true);
 
 const isJsonObject = (
   value: JsonValue | undefined
@@ -385,6 +398,14 @@ const runDecisionPacket = async (
       : { createDatabaseRuntime: runtime.createDatabaseRuntime })
   };
   const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
+
+  if (
+    Buffer.byteLength(result.stdout, "utf8")
+      > decisionPacketTransportBudget.maximumMessageUtf8Bytes
+  ) {
+    return outputLimitResult();
+  }
+
   const parsed: unknown = JSON.parse(result.stdout);
   const readback = parseDecisionPacketContractReadback(parsed, runId);
 
@@ -395,7 +416,17 @@ const runDecisionPacket = async (
     );
   }
 
-  return jsonResult(boundedReadback(annotateMcpTransportProof(readback)));
+  const bounded = boundedReadback(annotateMcpTransportProof(readback));
+  const measurement = measureDecisionPacketTransport(bounded);
+
+  if (
+    measurement.collectionLength.maximum
+      > decisionPacketTransportBudget.maximumCollectionElements
+  ) {
+    return outputLimitResult();
+  }
+
+  return jsonResult(bounded);
 };
 
 // fallow-ignore-next-line complexity -- protocol boundary distinguishes schema, tool, argument, and execution failure channels
@@ -450,10 +481,26 @@ const runToolCall = async (
     };
   }
 
+  const runId = args["runId"].trim();
+
+  if (
+    Buffer.byteLength(runId, "utf8")
+      > decisionPacketTransportBudget.maximumRunIdUtf8Bytes
+  ) {
+    return {
+      kind: "protocol_error",
+      error: {
+        code: -32602,
+        message:
+          `krn_decision_packet runId exceeds ${decisionPacketTransportBudget.maximumRunIdUtf8Bytes} UTF-8 bytes`
+      }
+    };
+  }
+
   try {
     return {
       kind: "result",
-      result: await runDecisionPacket(runtime, args["runId"].trim())
+      result: await runDecisionPacket(runtime, runId)
     };
   } catch {
     return {
@@ -576,9 +623,16 @@ export const handleDecisionPacketMcpMessage = async (
       return handleListToolsRequest(message);
     case "tools/call": {
       const outcome = await runToolCall(runtime, message.params);
-      return outcome.kind === "protocol_error"
-        ? errorResponse(requestId(message), outcome.error.code, outcome.error.message)
-        : response(requestId(message), outcome.result);
+      if (outcome.kind === "protocol_error") {
+        return errorResponse(requestId(message), outcome.error.code, outcome.error.message);
+      }
+
+      const reply = response(requestId(message), outcome.result);
+      return outcome.result.isError === true ||
+        measureDecisionPacketTransport(reply).utf8Bytes
+          <= decisionPacketTransportBudget.maximumMessageUtf8Bytes
+        ? reply
+        : response(requestId(message), outputLimitResult());
     }
     default:
       return errorResponse(requestId(message), -32601, `Method not found: ${message.method}`);
@@ -618,69 +672,103 @@ export const serveDecisionPacketMcpStdio = async (
   output: WritableOutput,
   runtime: DecisionPacketMcpRuntime = defaultRuntime()
 ): Promise<void> => {
-  let buffer = "";
-  let decoder = new TextDecoder("utf-8", { fatal: true });
+  let lineChunks: Buffer[] = [];
+  let lineUtf8Bytes = 0;
+  let discardingOversizeLine = false;
 
   const writeParseError = (): void => {
     output.write(`${JSON.stringify(errorResponse(null, -32700, "Parse error"))}\n`);
   };
+  const writeInputLimitError = (): void => {
+    output.write(`${JSON.stringify(errorResponse(
+      null,
+      -32001,
+      `MCP input line exceeds ${decisionPacketTransportBudget.maximumInputLineUtf8Bytes} UTF-8 bytes`
+    ))}\n`);
+  };
 
-  const drainCompleteLines = async (): Promise<void> => {
-    for (;;) {
-      const lineEnd = buffer.indexOf("\n");
+  const resetLine = (): void => {
+    lineChunks = [];
+    lineUtf8Bytes = 0;
+    discardingOversizeLine = false;
+  };
 
-      if (lineEnd === -1) {
-        return;
-      }
+  const appendLineBytes = (bytes: Buffer): void => {
+    if (discardingOversizeLine) {
+      return;
+    }
 
-      const line = buffer.slice(0, lineEnd).trim();
-      buffer = buffer.slice(lineEnd + 1);
+    const nextLineUtf8Bytes = lineUtf8Bytes + bytes.byteLength;
+    if (nextLineUtf8Bytes > decisionPacketTransportBudget.maximumInputLineUtf8Bytes) {
+      lineChunks = [];
+      lineUtf8Bytes = 0;
+      discardingOversizeLine = true;
+      writeInputLimitError();
+      return;
+    }
 
-      if (line.length === 0) {
-        continue;
-      }
+    if (bytes.byteLength > 0) {
+      lineChunks.push(bytes);
+    }
+    lineUtf8Bytes = nextLineUtf8Bytes;
+  };
 
-      let parsed: unknown;
+  const processCompleteLine = async (): Promise<void> => {
+    if (discardingOversizeLine) {
+      resetLine();
+      return;
+    }
 
-      try {
-        const message: unknown = JSON.parse(line);
-        parsed = message;
-      } catch {
-        writeParseError();
-        continue;
-      }
+    const bytes = Buffer.concat(lineChunks, lineUtf8Bytes);
+    resetLine();
 
-      const reply = await handleDecisionPacketMcpMessage(parsed, runtime);
+    let line: string;
+    try {
+      line = new TextDecoder("utf-8", { fatal: true }).decode(bytes).trim();
+    } catch {
+      writeParseError();
+      return;
+    }
 
-      if (reply !== undefined) {
-        output.write(`${JSON.stringify(reply)}\n`);
-      }
+    if (line.length === 0) {
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(line) as unknown;
+    } catch {
+      writeParseError();
+      return;
+    }
+
+    const reply = await handleDecisionPacketMcpMessage(parsed, runtime);
+    if (reply !== undefined) {
+      output.write(`${JSON.stringify(reply)}\n`);
     }
   };
 
   for await (const chunk of input) {
-    try {
-      buffer += typeof chunk === "string"
-        ? decoder.decode() + chunk
-        : decoder.decode(chunk, { stream: true });
-    } catch {
-      writeParseError();
-      buffer = "";
-      decoder = new TextDecoder("utf-8", { fatal: true });
-      continue;
+    const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
+    let offset = 0;
+
+    for (;;) {
+      const lineEnd = bytes.indexOf(0x0a, offset);
+      if (lineEnd === -1) {
+        appendLineBytes(bytes.subarray(offset));
+        break;
+      }
+
+      appendLineBytes(bytes.subarray(offset, lineEnd));
+      await processCompleteLine();
+      offset = lineEnd + 1;
+
+      if (offset === bytes.byteLength) {
+        break;
+      }
     }
-
-    await drainCompleteLines();
   }
 
-  try {
-    buffer += decoder.decode();
-  } catch {
-    writeParseError();
-    return;
-  }
-
-  await drainCompleteLines();
 };
 
 if (isCliEntrypoint(import.meta.url)) {

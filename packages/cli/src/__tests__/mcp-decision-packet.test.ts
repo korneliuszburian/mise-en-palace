@@ -1,6 +1,15 @@
 import {
+  spawnSync
+} from "node:child_process";
+import {
   createHash
 } from "node:crypto";
+import {
+  createRequire
+} from "node:module";
+import {
+  fileURLToPath
+} from "node:url";
 import {
   decisionPacketChecksum,
   type DecisionPacket,
@@ -28,6 +37,7 @@ import {
 
 const now = "2026-07-07T22:00:00.000Z";
 const weakContextEvidenceGapId = "evidence-gap:run-agent-weak:no-governing-decision";
+const moduleRequire = createRequire(import.meta.url);
 
 const sha256Hex = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
@@ -1016,6 +1026,216 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(unboundedProbe.collectionLength.maximum).toBeGreaterThan(
       decisionPacketTransportBudget.maximumCollectionElements
     );
+  });
+
+  it("rejects oversize messages without truncating packets and remains usable", async () => {
+    const {
+      maximumInputLineUtf8Bytes,
+      maximumRunIdUtf8Bytes
+    } = decisionPacketTransportBudget;
+    const outputLimitText = "KRN DecisionPacket output exceeds the MCP transport budget (error_class=decision_packet_output_limit_exceeded).";
+    let runCount = 0;
+
+    const oversizedRunId = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "oversize-run-id",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: { runId: "r".repeat(maximumRunIdUtf8Bytes + 1) }
+      }
+    }, runtime(async () => {
+      runCount += 1;
+      return { stdout: JSON.stringify(packetJson) };
+    }));
+
+    expect(runCount).toBe(0);
+    expect(oversizedRunId).toMatchObject({
+      error: {
+        code: -32602,
+        message: "krn_decision_packet runId exceeds 256 UTF-8 bytes"
+      }
+    });
+
+    const boundaryRunId = "r".repeat(maximumRunIdUtf8Bytes);
+    await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "boundary-run-id",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: { runId: boundaryRunId }
+      }
+    }, runtime(async () => {
+      runCount += 1;
+      return { stdout: JSON.stringify(packetJson) };
+    }));
+    expect(runCount).toBe(1);
+
+    const callPacket = async (fixture: typeof packetJson, id: string) =>
+      handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id,
+        method: "tools/call",
+        params: {
+          name: "krn_decision_packet",
+          arguments: { runId: fixture.request.runId }
+        }
+      }, runtime(async () => ({ stdout: JSON.stringify(fixture) })));
+
+    const baseResponse = await callPacket(packetJson, "output-byte-boundary");
+    const baseBytes = measureDecisionPacketTransport(baseResponse).utf8Bytes;
+    const outputPaddingBytes =
+      decisionPacketTransportBudget.maximumMessageUtf8Bytes - baseBytes;
+
+    expect(outputPaddingBytes % 2).toBe(1);
+
+    const boundaryPacket = bindFixtureIdentity({
+      ...packetJson,
+      packet: {
+        ...packetJson.packet,
+        task: {
+          ...packetJson.packet.task,
+          objective: `${packetJson.packet.task.objective}${"x".repeat(
+            Math.floor(outputPaddingBytes / 2)
+          )}`
+        }
+      }
+    });
+    const boundaryResponse = await callPacket(boundaryPacket, "output-byte-boundary");
+    const boundaryResult = requiredRecord(
+      requiredRecord(boundaryResponse, "boundary response")["result"],
+      "boundary result"
+    );
+
+    expect(measureDecisionPacketTransport(boundaryResponse).utf8Bytes).toBe(
+      decisionPacketTransportBudget.maximumMessageUtf8Bytes - 1
+    );
+    expect(requiredRecord(
+      boundaryResult["structuredContent"],
+      "boundary structuredContent"
+    )["packetIdentity"]).toMatchObject({ checksum: boundaryPacket.packetIdentity.checksum });
+
+    const oversizedByteResponse = await callPacket(
+      boundaryPacket,
+      "output-byte-boundaryxx"
+    );
+
+    expect(oversizedByteResponse).toMatchObject({
+      result: {
+        isError: true,
+        content: [{ type: "text", text: outputLimitText }]
+      }
+    });
+    expect(JSON.stringify(oversizedByteResponse)).not.toContain(
+      boundaryPacket.packetIdentity.checksum
+    );
+
+    const collectionPacket = (length: number) => bindFixtureIdentity({
+      ...packetJson,
+      packet: {
+        ...packetJson.packet,
+        toolBoundaries: Array.from({ length }, (_, index) => `boundary-${index}`)
+      }
+    });
+    const boundaryCollectionPacket = collectionPacket(
+      decisionPacketTransportBudget.maximumCollectionElements
+    );
+    const boundaryCollectionResponse = await callPacket(
+      boundaryCollectionPacket,
+      "output-collection-boundary"
+    );
+    const boundaryCollectionResult = requiredRecord(
+      requiredRecord(boundaryCollectionResponse, "boundary collection response")["result"],
+      "boundary collection result"
+    );
+
+    expect(requiredRecord(
+      boundaryCollectionResult["structuredContent"],
+      "boundary collection structuredContent"
+    )["packetIdentity"]).toMatchObject({
+      checksum: boundaryCollectionPacket.packetIdentity.checksum
+    });
+
+    const oversizedCollectionPacket = collectionPacket(
+      decisionPacketTransportBudget.maximumCollectionElements + 1
+    );
+    const oversizedCollectionResponse = await callPacket(
+      oversizedCollectionPacket,
+      "output-collection-boundary"
+    );
+
+    expect(oversizedCollectionResponse).toMatchObject({
+      result: {
+        isError: true,
+        content: [{ type: "text", text: outputLimitText }]
+      }
+    });
+    expect(JSON.stringify(oversizedCollectionResponse)).not.toContain(
+      oversizedCollectionPacket.packetIdentity.checksum
+    );
+
+    const pingLine = (bytes: number, id: string): string => {
+      const prefix = `{"jsonrpc":"2.0","id":"${id}","method":"ping","params":{"padding":"`;
+      const suffix = "\"}}";
+      return `${prefix}${"p".repeat(bytes - Buffer.byteLength(prefix + suffix, "utf8"))}${suffix}`;
+    };
+    async function* input(): AsyncIterable<string> {
+      yield `${pingLine(maximumInputLineUtf8Bytes, "line-boundary")}\n`;
+      yield `${pingLine(maximumInputLineUtf8Bytes + 1, "line-oversize")}\n`;
+      yield "{\"jsonrpc\":\"2.0\",\"id\":\"after-oversize\",\"method\":\"ping\"}\n";
+    }
+    const output: string[] = [];
+
+    await serveDecisionPacketMcpStdio(input(), {
+      write: (chunk) => output.push(chunk)
+    }, runtime());
+
+    expect(output.map((line) => JSON.parse(line))).toEqual([
+      { jsonrpc: "2.0", id: "line-boundary", result: {} },
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32001,
+          message: "MCP input line exceeds 16384 UTF-8 bytes"
+        }
+      },
+      { jsonrpc: "2.0", id: "after-oversize", result: {} }
+    ]);
+  });
+
+  it("rejects a megabyte line in spawned MCP stdio within a timeout", () => {
+    const serverEntry = fileURLToPath(new URL(
+      "../internal/mcp/decision-packet-mcp-server.ts",
+      import.meta.url
+    ));
+    const afterOversize = "{\"jsonrpc\":\"2.0\",\"id\":\"spawn-after-oversize\",\"method\":\"ping\"}\n";
+    const child = spawnSync(
+      process.execPath,
+      [moduleRequire.resolve("tsx/cli"), serverEntry],
+      {
+        encoding: "utf8",
+        input: `${"x".repeat(1024 * 1024)}\n${afterOversize}`,
+        maxBuffer: 2 * 1024 * 1024,
+        timeout: 10_000
+      }
+    );
+
+    expect(child.error).toBeUndefined();
+    expect(child.status).toBe(0);
+    expect(child.stderr).toBe("");
+    expect(child.stdout.trim().split("\n").map((line) => JSON.parse(line))).toEqual([
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: {
+          code: -32001,
+          message: "MCP input line exceeds 16384 UTF-8 bytes"
+        }
+      },
+      { jsonrpc: "2.0", id: "spawn-after-oversize", result: {} }
+    ]);
   });
 
   it("wraps the existing DecisionPacket contract as structured tool output", async () => {
